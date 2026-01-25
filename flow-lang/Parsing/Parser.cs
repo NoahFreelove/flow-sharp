@@ -382,6 +382,16 @@ public class Parser
 
     private Expression ParsePrimary()
     {
+        // Lazy expression
+        if (Match(TokenType.Lazy))
+        {
+            var location = PreviousToken.Location;
+            Expect(TokenType.LParen, "Expected '(' after 'lazy'");
+            var innerExpr = ParseExpression();
+            Expect(TokenType.RParen, "Expected ')' after lazy expression");
+            return new LazyExpression(location, innerExpr);
+        }
+
         // Literals
         if (Match(TokenType.IntLiteral))
             return new LiteralExpression(PreviousToken.Location, (int)PreviousToken.Value!);
@@ -396,16 +406,19 @@ public class Parser
             return new LiteralExpression(PreviousToken.Location, (bool)PreviousToken.Value!);
 
         if (Match(TokenType.NoteLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
         if (Match(TokenType.SemitoneLiteral))
-            return new LiteralExpression(PreviousToken.Location, (int)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+
+        if (Match(TokenType.CentLiteral))
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
         if (Match(TokenType.TimeLiteral))
-            return new LiteralExpression(PreviousToken.Location, (double)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
         if (Match(TokenType.DecibelLiteral))
-            return new LiteralExpression(PreviousToken.Location, (double)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
         // Parenthesized expression or function call
         if (Match(TokenType.LParen))
@@ -479,7 +492,7 @@ public class Parser
             var text = CurrentToken.Text;
 
             // Special types
-            if (text is "Buffer" or "Note" or "Semitone" or "Millisecond" or "Second" or "Decibel")
+            if (text is "Buffer" or "Note" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel" or "Lazy")
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)
@@ -488,7 +501,7 @@ public class Parser
                 var singular = text.Substring(0, text.Length - 1);
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
-                    or "Note" or "Semitone" or "Millisecond" or "Second" or "Decibel")
+                    or "Note" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel")
                     return true;
             }
         }
@@ -507,6 +520,7 @@ public class Parser
             or TokenType.BoolLiteral
             or TokenType.NoteLiteral
             or TokenType.SemitoneLiteral
+            or TokenType.CentLiteral
             or TokenType.TimeLiteral
             or TokenType.DecibelLiteral;
     }

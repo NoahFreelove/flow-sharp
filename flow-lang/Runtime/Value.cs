@@ -31,6 +31,7 @@ public class Value
     public static Value Buffer(object? value = null) => new(value, BufferType.Instance);
     public static Value Note(string value) => new(value, NoteType.Instance);
     public static Value Semitone(int value) => new(value, SemitoneType.Instance);
+    public static Value Cent(double value) => new(value, CentType.Instance);
     public static Value Millisecond(double value) => new(value, MillisecondType.Instance);
     public static Value Second(double value) => new(value, SecondType.Instance);
     public static Value Decibel(double value) => new(value, DecibelType.Instance);
@@ -38,6 +39,11 @@ public class Value
     public static Value Array(IReadOnlyList<Value> elements, FlowType elementType)
     {
         return new Value(elements, new ArrayType(elementType));
+    }
+
+    public static Value Lazy(Thunk thunk, FlowType innerType)
+    {
+        return new Value(thunk, new LazyType(innerType));
     }
 
     /// <summary>
@@ -110,6 +116,8 @@ public class Value
         if (Data is bool b) return b ? "true" : "false";
         if (Data is IReadOnlyList<Value> arr)
             return $"[{string.Join(", ", arr.Select(v => v.ToString()))}]";
+        if (Data is Thunk thunk)
+            return thunk.IsEvaluated ? $"<lazy: {thunk.Force()}>" : "<lazy: unevaluated>";
         return Data.ToString() ?? "null";
     }
 }

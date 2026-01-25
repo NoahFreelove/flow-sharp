@@ -35,6 +35,7 @@ public class ExpressionEvaluator
             FlowExpression flow => EvaluateFlow(flow),
             ArrayIndexExpression idx => EvaluateArrayIndex(idx),
             BinaryExpression bin => EvaluateBinary(bin),
+            LazyExpression lazy => EvaluateLazy(lazy),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -45,10 +46,76 @@ public class ExpressionEvaluator
         {
             int i => Value.Int(i),
             double d => Value.Double(d),
-            string s => Value.String(s),
             bool b => Value.Bool(b),
+            string s => TryParseSpecialLiteral(s) ?? Value.String(s),
             _ => throw new NotSupportedException($"Literal type {lit.Value.GetType()} not supported")
         };
+    }
+
+    private Value? TryParseSpecialLiteral(string text)
+    {
+        // Try to parse as Note (A-G with optional octave and alteration)
+        try
+        {
+            var (note, octave, alteration) = NoteType.Parse(text);
+            return Value.Note(text); // Store original text
+        }
+        catch
+        {
+            // Not a note, continue
+        }
+
+        // Try to parse as Semitone (+/-Nst)
+        if (text.EndsWith("st"))
+        {
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (int.TryParse(numberPart, out int semitoneValue))
+            {
+                return Value.Semitone(semitoneValue);
+            }
+        }
+
+        // Try to parse as Cent (+/-Nc)
+        if (text.EndsWith("c") && text.Length > 1)
+        {
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, out double centValue))
+            {
+                return Value.Cent(centValue);
+            }
+        }
+
+        // Try to parse as Time (Nms or Ns)
+        if (text.EndsWith("ms"))
+        {
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, out double msValue))
+            {
+                return Value.Millisecond(msValue);
+            }
+        }
+        else if (text.EndsWith("s") && !text.EndsWith("ms"))
+        {
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, out double sValue))
+            {
+                return Value.Second(sValue);
+            }
+        }
+
+        // Try to parse as Decibel (+/-NdB or NdB)
+        if (text.EndsWith("dB"))
+        {
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, out double dbValue))
+            {
+                return Value.Decibel(dbValue);
+            }
+        }
+
+        // If we can't parse it as a special literal, return null
+        // and the caller will treat it as a regular string
+        return null;
     }
 
     private Value EvaluateVariable(VariableExpression var)
@@ -193,5 +260,18 @@ public class ExpressionEvaluator
 
         _errorReporter.ReportError($"Cannot apply operator {bin.Operator} to {left.Type} and {right.Type}", bin.Location);
         return Value.Void();
+    }
+
+    private Value EvaluateLazy(LazyExpression lazy)
+    {
+        // Create a thunk that captures the expression and evaluator
+        // Don't evaluate the inner expression yet!
+        var thunk = new Thunk(lazy.InnerExpression, this);
+
+        // Determine the inner type (simplified - assume Void for now, proper type inference would be better)
+        // In a full implementation, you'd want to infer the type from the expression
+        var innerType = lazy.InnerExpression.ResolvedType ?? VoidType.Instance;
+
+        return Value.Lazy(thunk, innerType);
     }
 }

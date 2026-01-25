@@ -5,8 +5,21 @@ Note: The C# implementations are linked at runtime
 internal proc print (String: s)
 
 internal proc len (Void[]: arr)
+internal proc len(String: s)
 
+Note: str overloads for all types
 internal proc str (Int: value)
+internal proc str (Float: value)
+internal proc str (Double: value)
+internal proc str (String: value)
+internal proc str (Bool: value)
+internal proc str (Note: value)
+internal proc str (Semitone: value)
+internal proc str (Cent: value)
+internal proc str (Millisecond: value)
+internal proc str (Second: value)
+internal proc str (Decibel: value)
+internal proc str (Void[]: value)
 
 Note: Varargs function - accepts any number of values (using plural syntax)
 internal proc list (Voids: items)
@@ -19,3 +32,13 @@ internal proc sub (Int: a, Int: b)
 internal proc mul (Int: a, Int: b)
 
 internal proc div (Int: a, Int: b)
+
+Note: Lazy evaluation
+internal proc eval (Lazy<Void>: value)
+
+internal proc if (Bool: cond, Lazy<Void>: if_true, Lazy<Void>: otherwise)
+internal proc and (Lazy<Bool>: left, Lazy<Bool>: right)
+internal proc and (Bool: left, Bool: right)
+
+internal proc or (Lazy<Bool>: left, Lazy<Bool>: right)
+internal proc or (Bool: left, Bool: right)

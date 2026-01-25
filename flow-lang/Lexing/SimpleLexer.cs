@@ -1,5 +1,6 @@
 using FlowLang.Core;
 using FlowLang.Diagnostics;
+using FlowLang.TypeSystem.SpecialTypes;
 using System.Text;
 
 namespace FlowLang.Lexing;
@@ -63,6 +64,16 @@ public class SimpleLexer
             return new Token(TokenType.Arrow, "->", start);
         }
 
+        // Check for special literals that start with +/- before treating them as operators
+        // Semitones: +/-Nst (e.g., +1st, -5st)
+        // Decibels: +/-NdB (e.g., +6dB, -3dB)
+        if ((c == '+' || c == '-') && char.IsDigit(PeekNext()))
+        {
+            var lookahead = TryLookAheadSpecialLiteral();
+            if (lookahead != null)
+                return lookahead;
+        }
+
         // Check for specific single-character tokens
         switch (c)
         {
@@ -79,12 +90,14 @@ public class SimpleLexer
             case ']': return SingleChar(TokenType.RBracket);
             case ',': return SingleChar(TokenType.Comma);
             case ';': return SingleChar(TokenType.Semicolon);
+            case '<': return SingleChar(TokenType.LessThan);
+            case '>': return SingleChar(TokenType.GreaterThan);
             case '"': return ScanString(start);
         }
 
-        // Numbers start with digits
+        // Numbers start with digits - could be part of time/decibel literals
         if (char.IsDigit(c))
-            return ScanNumber(start);
+            return ScanNumberOrSpecialLiteral(start);
 
         // Everything else is an identifier (any character that's not whitespace or reserved)
         if (!IsAtEnd())
@@ -165,6 +178,218 @@ public class SimpleLexer
         return new Token(TokenType.IntLiteral, sb.ToString(), start, intValue);
     }
 
+    private Token? TryLookAheadSpecialLiteral()
+    {
+        // Try to match +/-Nst or +/-NdB or +/-Nms or +/-Ns
+        var start = new SourceLocation(_line, _column, _fileName);
+        int savePos = _position;
+        int saveLine = _line;
+        int saveCol = _column;
+
+        var sb = new StringBuilder();
+
+        // Consume sign
+        sb.Append(Advance());
+
+        // Consume digits
+        if (!char.IsDigit(Peek()))
+        {
+            // Rewind
+            _position = savePos;
+            _line = saveLine;
+            _column = saveCol;
+            return null;
+        }
+
+        while (!IsAtEnd() && char.IsDigit(Peek()))
+        {
+            sb.Append(Advance());
+        }
+
+        // Check for decimal point (for time/decibel values)
+        if (!IsAtEnd() && Peek() == '.' && char.IsDigit(PeekNext()))
+        {
+            sb.Append(Advance()); // Consume '.'
+            while (!IsAtEnd() && char.IsDigit(Peek()))
+            {
+                sb.Append(Advance());
+            }
+        }
+
+        // Check for suffix
+        var text = sb.ToString();
+
+        // Try "st" suffix (semitone)
+        if (!IsAtEnd() && Peek() == 's' && PeekNext() == 't')
+        {
+            sb.Append(Advance());
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            // Parse as semitone
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (int.TryParse(numberPart, out int semitoneValue))
+            {
+                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue);
+            }
+        }
+
+        // Try "c" suffix (cent - microtone)
+        if (!IsAtEnd() && Peek() == 'c' && !char.IsLetter(PeekNext()))
+        {
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            // Parse as cent
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, out double centValue))
+            {
+                return new Token(TokenType.CentLiteral, text, start, centValue);
+            }
+        }
+
+        // Try "dB" suffix (decibel)
+        if (!IsAtEnd() && Peek() == 'd' && PeekNext() == 'B')
+        {
+            sb.Append(Advance());
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            // Parse as decibel
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, out double decibelValue))
+            {
+                return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+            }
+        }
+
+        // Try "ms" suffix (milliseconds)
+        if (!IsAtEnd() && Peek() == 'm' && PeekNext() == 's')
+        {
+            sb.Append(Advance());
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            // Parse as milliseconds
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, out double msValue))
+            {
+                return new Token(TokenType.TimeLiteral, text, start, msValue);
+            }
+        }
+
+        // Try "s" suffix (seconds) - but not if followed by 't' (that would be part of 'st')
+        if (!IsAtEnd() && Peek() == 's' && PeekNext() != 't')
+        {
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            // Parse as seconds
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, out double sValue))
+            {
+                return new Token(TokenType.TimeLiteral, text, start, sValue);
+            }
+        }
+
+        // Not a special literal - rewind
+        _position = savePos;
+        _line = saveLine;
+        _column = saveCol;
+        return null;
+    }
+
+    private Token ScanNumberOrSpecialLiteral(SourceLocation start)
+    {
+        var sb = new StringBuilder();
+
+        // Consume digits
+        while (!IsAtEnd() && char.IsDigit(Peek()))
+        {
+            sb.Append(Advance());
+        }
+
+        // Check for float
+        if (!IsAtEnd() && Peek() == '.' && char.IsDigit(PeekNext()))
+        {
+            sb.Append(Advance()); // Consume '.'
+
+            while (!IsAtEnd() && char.IsDigit(Peek()))
+            {
+                sb.Append(Advance());
+            }
+        }
+
+        var numberText = sb.ToString();
+
+        // Check for special suffixes (ms, s, dB, c) - NOT st because that requires a sign
+        if (!IsAtEnd())
+        {
+            // Try "ms" suffix (milliseconds)
+            if (Peek() == 'm' && PeekNext() == 's')
+            {
+                sb.Append(Advance());
+                sb.Append(Advance());
+                var text = sb.ToString();
+
+                string numberPart = text.Substring(0, text.Length - 2);
+                if (double.TryParse(numberPart, out double msValue))
+                {
+                    return new Token(TokenType.TimeLiteral, text, start, msValue);
+                }
+            }
+            // Try "dB" suffix (decibel) - for unsigned decibels like 0dB
+            else if (Peek() == 'd' && PeekNext() == 'B')
+            {
+                sb.Append(Advance());
+                sb.Append(Advance());
+                var text = sb.ToString();
+
+                string numberPart = text.Substring(0, text.Length - 2);
+                if (double.TryParse(numberPart, out double dbValue))
+                {
+                    return new Token(TokenType.DecibelLiteral, text, start, dbValue);
+                }
+            }
+            // Try "c" suffix (cent) - but not if followed by a letter (could be 'c' in a longer identifier)
+            else if (Peek() == 'c' && !char.IsLetter(PeekNext()))
+            {
+                sb.Append(Advance());
+                var text = sb.ToString();
+
+                string numberPart = text.Substring(0, text.Length - 1);
+                if (double.TryParse(numberPart, out double centValue))
+                {
+                    return new Token(TokenType.CentLiteral, text, start, centValue);
+                }
+            }
+            // Try "s" suffix (seconds) - but not if followed by 't'
+            else if (Peek() == 's' && PeekNext() != 't')
+            {
+                sb.Append(Advance());
+                var text = sb.ToString();
+
+                string numberPart = text.Substring(0, text.Length - 1);
+                if (double.TryParse(numberPart, out double sValue))
+                {
+                    return new Token(TokenType.TimeLiteral, text, start, sValue);
+                }
+            }
+        }
+
+        // Regular number (int or float)
+        if (numberText.Contains('.'))
+        {
+            var floatValue = double.Parse(numberText);
+            return new Token(TokenType.FloatLiteral, numberText, start, floatValue);
+        }
+        else
+        {
+            var intValue = int.Parse(numberText);
+            return new Token(TokenType.IntLiteral, numberText, start, intValue);
+        }
+    }
+
     private Token ScanIdentifierOrKeyword(SourceLocation start)
     {
         var sb = new StringBuilder();
@@ -182,6 +407,30 @@ public class SimpleLexer
 
         var text = sb.ToString();
 
+        // Special case: Check if this looks like a note (A-G + digits) followed by alteration (+/-)
+        // We need to peek ahead for alterations because +/- are token boundaries
+        if (text.Length >= 2)
+        {
+            char firstChar = char.ToUpper(text[0]);
+            if (firstChar >= 'A' && firstChar <= 'G' && char.IsDigit(text[1]))
+            {
+                // This could be a note like A3, check for alteration
+                if (!IsAtEnd() && (Peek() == '+' || Peek() == '-'))
+                {
+                    char alterationChar = Peek();
+                    sb.Append(Advance()); // Consume first +/-
+
+                    // Check for double alteration (++ or --)
+                    if (!IsAtEnd() && Peek() == alterationChar)
+                    {
+                        sb.Append(Advance()); // Consume second +/-
+                    }
+
+                    text = sb.ToString();
+                }
+            }
+        }
+
         if (string.IsNullOrEmpty(text))
             throw new Exception($"Empty identifier at {start}");
 
@@ -193,6 +442,7 @@ public class SimpleLexer
             "return" => TokenType.Return,
             "use" => TokenType.Use,
             "internal" => TokenType.Internal,
+            "lazy" => TokenType.Lazy,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,
             "Float" => TokenType.Float,
@@ -209,13 +459,142 @@ public class SimpleLexer
 
         object? value = type == TokenType.BoolLiteral ? (text == "true") : null;
 
+        // If it's an identifier, check if it's a special literal
+        if (type == TokenType.Identifier)
+        {
+            // Try to parse as Note (A-G followed by optional octave and alteration)
+            if (TryParseNote(text, out var noteValue))
+            {
+                return new Token(TokenType.NoteLiteral, text, start, noteValue);
+            }
+
+            // Try to parse as Semitone (+/-Nst)
+            if (TryParseSemitone(text, out var semitoneValue))
+            {
+                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue);
+            }
+
+            // Try to parse as Time (Nms or Ns)
+            if (TryParseTime(text, out var timeValue, out var timeUnit))
+            {
+                return new Token(TokenType.TimeLiteral, text, start, timeValue);
+            }
+
+            // Try to parse as Decibel (+/-NdB)
+            if (TryParseDecibel(text, out var decibelValue))
+            {
+                return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+            }
+        }
+
         return new Token(type, text, start, value);
+    }
+
+    private bool TryParseNote(string text, out string noteValue)
+    {
+        noteValue = text;
+
+        if (text.Length == 0)
+            return false;
+
+        char firstChar = char.ToUpper(text[0]);
+        if (firstChar < 'A' || firstChar > 'G')
+            return false;
+
+        // Don't tokenize bare single letters as notes - they could be variable names
+        // Only recognize as note literal if it has:
+        // 1. An octave number (A4, C3, etc.)
+        // 2. An alteration (A+, C--, etc.)
+        if (text.Length == 1)
+            return false;
+
+        try
+        {
+            // Use the NoteType.Parse method to validate
+            var (note, octave, alteration) = NoteType.Parse(text);
+            // Store the original text as the value
+            noteValue = text;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryParseSemitone(string text, out int semitoneValue)
+    {
+        semitoneValue = 0;
+
+        // Semitone format: +Nst or -Nst
+        if (!text.EndsWith("st"))
+            return false;
+
+        string numberPart = text.Substring(0, text.Length - 2);
+        if (string.IsNullOrEmpty(numberPart))
+            return false;
+
+        // Must start with + or -
+        if (numberPart[0] != '+' && numberPart[0] != '-')
+            return false;
+
+        if (int.TryParse(numberPart, out semitoneValue))
+            return true;
+
+        return false;
+    }
+
+    private bool TryParseTime(string text, out double timeValue, out string unit)
+    {
+        timeValue = 0;
+        unit = "";
+
+        // Time format: Nms or Ns
+        if (text.EndsWith("ms"))
+        {
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, out timeValue))
+            {
+                unit = "ms";
+                return true;
+            }
+        }
+        else if (text.EndsWith("s") && !text.EndsWith("ms"))
+        {
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, out timeValue))
+            {
+                unit = "s";
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool TryParseDecibel(string text, out double decibelValue)
+    {
+        decibelValue = 0;
+
+        // Decibel format: +/-NdB or NdB
+        if (!text.EndsWith("dB"))
+            return false;
+
+        string numberPart = text.Substring(0, text.Length - 2);
+        if (string.IsNullOrEmpty(numberPart))
+            return false;
+
+        if (double.TryParse(numberPart, out decibelValue))
+            return true;
+
+        return false;
     }
 
     private bool IsTokenBoundary(char c)
     {
         return c is '@' or '=' or ':' or '+' or '-' or '*' or '/' or '.'
-            or '(' or ')' or '[' or ']' or ',' or ';' or '"';
+            or '(' or ')' or '[' or ']' or ',' or ';' or '"'
+            or '<' or '>';
     }
 
     private void SkipWhitespaceAndComments()
@@ -228,7 +607,7 @@ public class SimpleLexer
             {
                 Advance();
             }
-            else if (c == 'N' && _source.Substring(_position).StartsWith("Note:"))
+            else if (c == 'N' && _column == 1 && _source.Substring(_position).StartsWith("Note:"))
             {
                 // Skip comment until end of line
                 while (!IsAtEnd() && Peek() != '\n')

@@ -12,6 +12,7 @@ public enum TokenType
     Use,
     Note,
     Internal,
+    Lazy,
 
     // Type keywords
     Void,
@@ -31,6 +32,7 @@ public enum TokenType
     BoolLiteral,
     NoteLiteral,        // A+, C--, etc.
     SemitoneLiteral,    // +1st, -5st
+    CentLiteral,        // +50c, -25c (microtones)
     TimeLiteral,        // 100ms, 2.5s
     DecibelLiteral,     // -3dB, +6dB
 
@@ -43,6 +45,8 @@ public enum TokenType
     Minus,              // -
     Star,               // *
     Slash,              // /
+    LessThan,           // <
+    GreaterThan,        // >
 
     // Delimiters
     LParen,             // (

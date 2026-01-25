@@ -23,6 +23,33 @@ public static class TypeParser
         var token = tokens[index];
         bool isVarArgs = false;
 
+        // Check for generic Lazy<T> type FIRST
+        if (token.Type == TokenType.Identifier && token.Text == "Lazy")
+        {
+            index++; // Move past "Lazy"
+
+            // Check if generic type parameter is specified
+            if (index < tokens.Count && tokens[index].Type == TokenType.LessThan)
+            {
+                index++; // Skip <
+
+                // Parse inner type
+                var (innerType, nextIndex, _) = ParseType(tokens, index);
+                index = nextIndex;
+
+                if (index >= tokens.Count || tokens[index].Type != TokenType.GreaterThan)
+                    throw new ParseException($"Expected '>' after Lazy inner type at {tokens[index].Location}");
+                index++; // Skip >
+
+                return (new LazyType(innerType), index, isVarArgs: false);
+            }
+            else
+            {
+                // No generic parameter specified - default to Lazy<Void>
+                return (new LazyType(VoidType.Instance), index, isVarArgs: false);
+            }
+        }
+
         // Check for plural form (varargs) like "Ints", "Strings", "Voids"
         if (token.Type == TokenType.Identifier && token.Text.EndsWith("s"))
         {
@@ -49,6 +76,7 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "Buffer" => BufferType.Instance,
             TokenType.Identifier when token.Text == "Note" => NoteType.Instance,
             TokenType.Identifier when token.Text == "Semitone" => SemitoneType.Instance,
+            TokenType.Identifier when token.Text == "Cent" => CentType.Instance,
             TokenType.Identifier when token.Text == "Millisecond" => MillisecondType.Instance,
             TokenType.Identifier when token.Text == "Second" => SecondType.Instance,
             TokenType.Identifier when token.Text == "Decibel" => DecibelType.Instance,
@@ -90,6 +118,7 @@ public static class TypeParser
             "Buffer" => BufferType.Instance,
             "Note" => NoteType.Instance,
             "Semitone" => SemitoneType.Instance,
+            "Cent" => CentType.Instance,
             "Millisecond" => MillisecondType.Instance,
             "Second" => SecondType.Instance,
             "Decibel" => DecibelType.Instance,
