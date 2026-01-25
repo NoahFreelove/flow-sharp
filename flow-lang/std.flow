@@ -1,0 +1,21 @@
+Note: Flow Standard Library
+Note: This file defines all built-in functions as internal procedures
+Note: The C# implementations are linked at runtime
+
+internal proc print (String: s)
+
+internal proc len (Void[]: arr)
+
+internal proc str (Int: value)
+
+Note: Varargs function - accepts any number of values (using plural syntax)
+internal proc list (Voids: items)
+
+internal proc add (Int: a, Int: b)
+internal proc add (Float: a, Float: b)
+
+internal proc sub (Int: a, Int: b)
+
+internal proc mul (Int: a, Int: b)
+
+internal proc div (Int: a, Int: b)
