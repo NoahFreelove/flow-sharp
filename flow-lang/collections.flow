@@ -1,0 +1,5 @@
+Note: Collections Library for flow-lang
+Note: This library should make it easier to work with arrays
+
+internal proc head (Voids: arr)
+internal proc tail (Voids: arr)

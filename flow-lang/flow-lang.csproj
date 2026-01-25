@@ -15,6 +15,11 @@
       <None Update="std.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+      <None Include="bin\Debug\net9.0\collections.flow" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="bin\Debug\net9.0\" />
     </ItemGroup>
 
 </Project>

@@ -12,13 +12,29 @@ public static class stdlib
 
     /// <summary>
     /// Creates an array from variable arguments.
+    /// If all elements have the same type, uses that type.
+    /// If elements have different types, uses Void[] (mixed-type array).
     /// </summary>
     public static Value List(IReadOnlyList<Value> args)
     {
         if (args.Count == 0)
             return Value.Array([], VoidType.Instance);
 
-        var elementType = args[0].Type;
+        // Check if all elements have the same type
+        var firstType = args[0].Type;
+        bool allSameType = true;
+
+        for (int i = 1; i < args.Count; i++)
+        {
+            if (!args[i].Type.Equals(firstType))
+            {
+                allSameType = false;
+                break;
+            }
+        }
+
+        // Use the common type if all are the same, otherwise use Void for mixed types
+        var elementType = allSameType ? firstType : VoidType.Instance;
         return Value.Array(args.ToList(), elementType);
     }
 
@@ -292,5 +308,55 @@ public static class stdlib
         var left = args[0].As<bool>();
         var right = args[1].As<bool>();
         return Value.Bool(left || right);
+    }
+
+    // ===== Equality and Comparison Functions =====
+
+    /// <summary>
+    /// Loose equality with type conversion (like JavaScript ==).
+    /// </summary>
+    public static Value Equals(IReadOnlyList<Value> args)
+    {
+        return Value.Bool(Utils.LooseEquals(args[0], args[1]));
+    }
+
+    /// <summary>
+    /// Strict equality - type and value must match (like JavaScript ===).
+    /// </summary>
+    public static Value StrictEquals(IReadOnlyList<Value> args)
+    {
+        return Value.Bool(Utils.StrictEquals(args[0], args[1]));
+    }
+
+    /// <summary>
+    /// Less than comparison for numeric types.
+    /// </summary>
+    public static Value LessThan(IReadOnlyList<Value> args)
+    {
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) < 0);
+    }
+
+    /// <summary>
+    /// Greater than comparison for numeric types.
+    /// </summary>
+    public static Value GreaterThan(IReadOnlyList<Value> args)
+    {
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) > 0);
+    }
+
+    /// <summary>
+    /// Less than or equal comparison for numeric types.
+    /// </summary>
+    public static Value LessThanOrEqual(IReadOnlyList<Value> args)
+    {
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) <= 0);
+    }
+
+    /// <summary>
+    /// Greater than or equal comparison for numeric types.
+    /// </summary>
+    public static Value GreaterThanOrEqual(IReadOnlyList<Value> args)
+    {
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) >= 0);
     }
 }

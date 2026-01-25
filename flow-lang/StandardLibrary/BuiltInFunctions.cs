@@ -16,6 +16,12 @@ public static class BuiltInFunctions
     /// </summary>
     public static void RegisterAllImplementations(InternalFunctionRegistry registry)
     {
+        RegisterStdLib(registry);
+        RegisterCollections(registry);
+    }
+
+    private static void RegisterStdLib(InternalFunctionRegistry registry)
+    {
         // ===== Array Functions =====
 
         var listSignature = new FunctionSignature(
@@ -131,5 +137,47 @@ public static class BuiltInFunctions
         var orBoolSignature = new FunctionSignature(
             "or", [BoolType.Instance, BoolType.Instance]);
         registry.Register("or", orBoolSignature, stdlib.OrBool);
+
+        // ===== Equality and Comparison Functions =====
+
+        var equalsSignature = new FunctionSignature(
+            "equals",
+            [VoidType.Instance, VoidType.Instance]);
+        registry.Register("equals", equalsSignature, stdlib.Equals);
+
+        var sequalsSignature = new FunctionSignature(
+            "sequals",
+            [VoidType.Instance, VoidType.Instance]);
+        registry.Register("sequals", sequalsSignature, stdlib.StrictEquals);
+
+        var ltSignature = new FunctionSignature(
+            "lt",
+            [VoidType.Instance, VoidType.Instance]);
+        registry.Register("lt", ltSignature, stdlib.LessThan);
+
+        var gtSignature = new FunctionSignature(
+            "gt",
+            [VoidType.Instance, VoidType.Instance]);
+        registry.Register("gt", gtSignature, stdlib.GreaterThan);
+
+        var lteSignature = new FunctionSignature(
+            "lte",
+            [VoidType.Instance, VoidType.Instance]);
+        registry.Register("lte", lteSignature, stdlib.LessThanOrEqual);
+
+        var gteSignature = new FunctionSignature(
+            "gte",
+            [VoidType.Instance, VoidType.Instance]);
+        registry.Register("gte", gteSignature, stdlib.GreaterThanOrEqual);
+    }
+
+    private static void RegisterCollections(InternalFunctionRegistry registry)
+    {
+        var headSignature = new FunctionSignature("head", [new ArrayType(VoidType.Instance)]);
+        registry.Register("head", headSignature, collections.Head);
+        
+        var tailSignature = new FunctionSignature("tail", [new ArrayType(VoidType.Instance)]);
+        registry.Register("tail", tailSignature, collections.Tail);
+
     }
 }

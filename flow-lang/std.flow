@@ -42,3 +42,11 @@ internal proc and (Bool: left, Bool: right)
 
 internal proc or (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc or (Bool: left, Bool: right)
+
+Note: Equality and comparison operators
+internal proc equals (Void: a, Void: b)
+internal proc sequals (Void: a, Void: b)
+internal proc lt (Void: a, Void: b)
+internal proc gt (Void: a, Void: b)
+internal proc lte (Void: a, Void: b)
+internal proc gte (Void: a, Void: b)

@@ -36,6 +36,24 @@ public class Value
     public static Value Second(double value) => new(value, SecondType.Instance);
     public static Value Decibel(double value) => new(value, DecibelType.Instance);
 
+    /// <summary>
+    /// Automatically infers the Flow type from a CLR object and creates a Value.
+    /// </summary>
+    public static Value From(object? obj) => obj switch
+    {
+        null => Void(),
+        int i => Int(i),
+        long l => Long(l),
+        float f => Float(f),
+        double d => Double(d),
+        bool b => Bool(b),
+        string s => String(s),
+        BigInteger bi => Number(bi),
+        Thunk t => throw new InvalidOperationException("Use Value.Lazy() to create lazy values"),
+        IReadOnlyList<Value> arr => throw new InvalidOperationException("Use Value.Array() to create array values"),
+        _ => throw new InvalidOperationException($"Cannot infer Flow type from CLR type {obj.GetType()}")
+    };
+
     public static Value Array(IReadOnlyList<Value> elements, FlowType elementType)
     {
         return new Value(elements, new ArrayType(elementType));
