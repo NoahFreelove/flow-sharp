@@ -8,8 +8,14 @@ namespace FlowLang.StandardLibrary;
 
 public static class Utils
 {
+    private static int FIXED_RAND_SEED = 0;
     private static int RAND_SEED = 0;
     private static Random? fixed_gen = null;
+    
+    private static Random? gen = null;
+    
+    // People who use random noise in tracks may like a certain seed so they can use the 
+    // ?? operator to use the fixed gen and reset it at playback to get "consistent randomness"
 
     private static Random GetRand(bool fixed_rng = false)
     {
@@ -17,28 +23,34 @@ public static class Utils
         {
             if (fixed_gen == null)
             {
-                if (RAND_SEED == 0)
+                if (FIXED_RAND_SEED == 0)
                 {
-                    RAND_SEED = Random.Shared.Next();
+                    FIXED_RAND_SEED = Random.Shared.Next();
                 }
 
-                fixed_gen = new Random(RAND_SEED);
+                fixed_gen = new Random(FIXED_RAND_SEED);
             }
 
             return fixed_gen;
         }
 
-        return Random.Shared;
+        if (gen == null)
+        {
+            RAND_SEED = Random.Shared.Next();
+            gen = new Random(RAND_SEED);
+        }
+
+        return gen;
     }
 
     public static void ResetGen()
     {
-        fixed_gen = new Random(RAND_SEED);
+        fixed_gen = new Random(FIXED_RAND_SEED);
     }
 
     public static void SetSeed(int seed)
     {
-        RAND_SEED = seed;
+        FIXED_RAND_SEED = seed;
         ResetGen();
     }
 
