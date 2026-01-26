@@ -30,11 +30,17 @@ public class Value
     public static Value Number(BigInteger value) => new(value, NumberType.Instance);
     public static Value Buffer(object? value = null) => new(value, BufferType.Instance);
     public static Value Note(string value) => new(value, NoteType.Instance);
+    public static Value Bar(BarData value) => new(value, BarType.Instance);
     public static Value Semitone(int value) => new(value, SemitoneType.Instance);
     public static Value Cent(double value) => new(value, CentType.Instance);
     public static Value Millisecond(double value) => new(value, MillisecondType.Instance);
     public static Value Second(double value) => new(value, SecondType.Instance);
     public static Value Decibel(double value) => new(value, DecibelType.Instance);
+    public static Value OscillatorState(StandardLibrary.Audio.OscillatorState value) => new(value, OscillatorStateType.Instance);
+    public static Value Envelope(StandardLibrary.Audio.Envelope value) => new(value, EnvelopeType.Instance);
+    public static Value Beat(double value) => new(value, BeatType.Instance);
+    public static Value Voice(StandardLibrary.Audio.Voice value) => new(value, VoiceType.Instance);
+    public static Value Track(StandardLibrary.Audio.Track value) => new(value, TrackType.Instance);
 
     /// <summary>
     /// Automatically infers the Flow type from a CLR object and creates a Value.

@@ -1,0 +1,144 @@
+Int TIME_SIGNATURE_NOTE = 4
+Int TIME_SIGNATURE_NOTES_PER_BAR = 4
+
+Note: Composition and Timeline Standard Library
+Note: Phase 3b: Timeline Abstractions
+
+Note: ===== BPM Context =====
+
+Note: Sets the global BPM (beats per minute) for timeline conversions
+internal proc setBPM(Double: bpm)
+
+Note: Gets the current global BPM
+internal proc getBPM()
+
+Note: ===== Time Conversions =====
+
+Note: Converts beats to frames based on current BPM
+internal proc beatsToFrames(Double: beats, Int: sampleRate)
+
+Note: Converts frames to beats based on current BPM
+internal proc framesToBeats(Int: frames, Int: sampleRate)
+
+Note: ===== Voice Management =====
+
+Note: Creates a voice with buffer positioned at beat offset
+internal proc createVoice(Buffer: buffer, Double: offsetBeats)
+
+Note: Sets the gain of a voice
+internal proc setVoiceGain(Voice: voice, Double: gain)
+
+Note: Sets the pan of a voice (-1.0 = left, 0.0 = center, 1.0 = right)
+internal proc setVoicePan(Voice: voice, Double: pan)
+
+Note: ===== Track Management =====
+
+Note: Creates a new track with specified sample rate and channels
+internal proc createTrack(Int: sampleRate, Int: channels)
+
+Note: Adds a voice to a track
+internal proc addVoice(Track: track, Voice: voice)
+
+Note: Sets the offset of a track in beats
+internal proc setTrackOffset(Track: track, Double: offsetBeats)
+
+Note: Sets the gain of a track
+internal proc setTrackGain(Track: track, Double: gain)
+
+Note: Sets the pan of a track
+internal proc setTrackPan(Track: track, Double: pan)
+
+Note: Renders a track to a buffer with specified duration in beats
+internal proc renderTrack(Track: track, Double: durationBeats)
+
+Note: ===== Convenience Layer =====
+
+Note: Import default sample rate from audio module
+use "@audio"
+
+Note: Set session BPM (shorthand)
+proc bpm(Double: tempo)
+    (setBPM tempo)
+end proc
+
+Note: Create voice positioned at specific beat
+proc voiceAt(Buffer: buffer, Double: beat)
+    (createVoice buffer beat)
+end proc
+
+Note: Create voice positioned at specific bar (assumes 4/4 time)
+proc voiceAtBar(Buffer: buffer, Int: bar)
+    Int beatsPerBar = 4
+    Double beatPos = (intToDouble bar) * (intToDouble beatsPerBar)
+    (createVoice buffer beatPos)
+end proc
+
+Note: Create stereo track with default sample rate
+proc createStereoTrack()
+    Int channels = 2
+    (createTrack DEFAULT_SAMPLE_RATE channels)
+end proc
+
+Note: Create mono track with default sample rate
+proc createMonoTrack()
+    Int channels = 1
+    (createTrack DEFAULT_SAMPLE_RATE channels)
+end proc
+
+Note: Add voice to track and return track (for chaining)
+proc withVoice(Track: track, Voice: voice)
+    track -> addVoice voice
+    track
+end proc
+
+Note: Set track offset and return track (for chaining)
+proc startAt(Track: track, Double: beat)
+    track -> setTrackOffset beat
+    track
+end proc
+
+Note: Set track offset to specific bar (assumes 4/4 time)
+proc startAtBar(Track: track, Int: bar)
+    Int beatsPerBar = 4
+    Double beatPos = (intToDouble bar) * (intToDouble beatsPerBar)
+    track -> setTrackOffset beatPos
+    track
+end proc
+
+Note: Set track gain and return track (for chaining)
+proc withGain(Track: track, Double: gain)
+    track -> setTrackGain gain
+    track
+end proc
+
+Note: Set track pan and return track (for chaining)
+proc withPan(Track: track, Double: pan)
+    track -> setTrackPan pan
+    track
+end proc
+
+Note: Render track with specified duration in beats
+proc render(Track: track, Double: durationBeats)
+    (renderTrack track durationBeats)
+end proc
+
+Note: Render track for specified number of bars (assumes 4/4 time)
+proc renderBars(Track: track, Int: bars)
+    Int beatsPerBar = 4
+    Double beats = (intToDouble bars) * (intToDouble beatsPerBar)
+    (renderTrack track beats)
+end proc
+
+Note: ===== Voice Gain and Pan Helpers =====
+
+Note: Set voice gain and return voice (for chaining)
+proc voiceWithGain(Voice: voice, Double: gain)
+    voice -> setVoiceGain gain
+    voice
+end proc
+
+Note: Set voice pan and return voice (for chaining)
+proc voiceWithPan(Voice: voice, Double: pan)
+    voice -> setVoicePan pan
+    voice
+end proc

@@ -18,7 +18,7 @@ public class Repl
     public void Run()
     {
         Console.WriteLine("Flow REPL - Type ':quit' to exit, ':help' for help");
-        Console.WriteLine("Multi-line input: start with 'proc', 'use', etc. and the REPL will continue");
+        Console.WriteLine("Multi-line input: end a line with \\ to continue on next line");
         Console.WriteLine();
 
         while (true)
@@ -64,6 +64,12 @@ public class Repl
         if (string.IsNullOrWhiteSpace(firstLine))
             return string.Empty;
 
+        // Check if line ends with backslash continuation
+        if (firstLine.TrimEnd().EndsWith("\\"))
+        {
+            return ReadBackslashContinuation(firstLine);
+        }
+
         // Check if this might be a multi-line statement
         var trimmed = firstLine.TrimStart();
         if (!NeedsMoreLines(trimmed))
@@ -88,6 +94,34 @@ public class Repl
                 break;
         }
 
+        return string.Join("\n", lines);
+    }
+
+    private string ReadBackslashContinuation(string firstLine)
+    {
+        var lines = new List<string>();
+        var currentLine = firstLine;
+
+        while (currentLine.TrimEnd().EndsWith("\\"))
+        {
+            // Remove the trailing backslash
+            lines.Add(currentLine.TrimEnd().TrimEnd('\\'));
+
+            // Read next line with continuation prompt
+            Console.Write("... ");
+            currentLine = Console.ReadLine();
+
+            if (currentLine == null)
+                break;
+        }
+
+        // Add the final line (without backslash)
+        if (currentLine != null)
+        {
+            lines.Add(currentLine);
+        }
+
+        // Join all lines with newline to preserve lexer behavior
         return string.Join("\n", lines);
     }
 
@@ -153,16 +187,23 @@ public class Repl
         Console.WriteLine("  :clear, :cls      - Clear the screen");
         Console.WriteLine();
         Console.WriteLine("Multi-line Input:");
-        Console.WriteLine("  Starting with 'proc' automatically enables multi-line mode");
-        Console.WriteLine("  The prompt changes to '...' for continuation lines");
-        Console.WriteLine("  Type 'end proc' to complete the function");
+        Console.WriteLine("  Method 1: End a line with \\ to continue on the next line");
+        Console.WriteLine("            The prompt changes to '...' for continuation");
+        Console.WriteLine("  Method 2: Starting with 'proc' automatically enables multi-line mode");
         Console.WriteLine();
         Console.WriteLine("Examples:");
-        Console.WriteLine("  > use \"std.flow\"");
+        Console.WriteLine("  > use \"@std\"");
         Console.WriteLine("  > Int x = 5");
         Console.WriteLine("  > x");
         Console.WriteLine("  5");
         Console.WriteLine();
+        Console.WriteLine("  Backslash continuation:");
+        Console.WriteLine("  > (list 1 \\");
+        Console.WriteLine("  ...     2 \\");
+        Console.WriteLine("  ...     3)");
+        Console.WriteLine("  [1, 2, 3]");
+        Console.WriteLine();
+        Console.WriteLine("  Proc definition:");
         Console.WriteLine("  > proc double (Int: n)");
         Console.WriteLine("  ...     n * 2");
         Console.WriteLine("  ... end proc");

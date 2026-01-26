@@ -63,6 +63,43 @@ public class StackFrame
         return _variables.ContainsKey(name) || (Parent?.HasVariable(name) ?? false);
     }
 
+    /// <summary>
+    /// Gets all variables declared in this frame (not including parent frames).
+    /// </summary>
+    public IReadOnlyDictionary<string, Value> GetLocalVariables()
+    {
+        return _variables;
+    }
+
+    /// <summary>
+    /// Gets all variables accessible from this frame, including parent frames.
+    /// If a variable is shadowed, only the most local version is included.
+    /// </summary>
+    public IReadOnlyDictionary<string, Value> GetAllAccessibleVariables()
+    {
+        var result = new Dictionary<string, Value>();
+
+        // Start from root and work down so local variables override parent variables
+        var frames = new Stack<StackFrame>();
+        var current = this;
+        while (current != null)
+        {
+            frames.Push(current);
+            current = current.Parent;
+        }
+
+        while (frames.Count > 0)
+        {
+            var frame = frames.Pop();
+            foreach (var (name, value) in frame._variables)
+            {
+                result[name] = value; // Overwrite if shadowed
+            }
+        }
+
+        return result;
+    }
+
     // Function management
 
     public void DeclareFunction(FunctionOverload overload)

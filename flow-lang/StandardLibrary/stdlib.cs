@@ -1,5 +1,6 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary;
 
@@ -8,45 +9,6 @@ namespace FlowLang.StandardLibrary;
 /// </summary>
 public static class stdlib
 {
-    // ===== Array Functions =====
-
-    /// <summary>
-    /// Creates an array from variable arguments.
-    /// If all elements have the same type, uses that type.
-    /// If elements have different types, uses Void[] (mixed-type array).
-    /// </summary>
-    public static Value List(IReadOnlyList<Value> args)
-    {
-        if (args.Count == 0)
-            return Value.Array([], VoidType.Instance);
-
-        // Check if all elements have the same type
-        var firstType = args[0].Type;
-        bool allSameType = true;
-
-        for (int i = 1; i < args.Count; i++)
-        {
-            if (!args[i].Type.Equals(firstType))
-            {
-                allSameType = false;
-                break;
-            }
-        }
-
-        // Use the common type if all are the same, otherwise use Void for mixed types
-        var elementType = allSameType ? firstType : VoidType.Instance;
-        return Value.Array(args.ToList(), elementType);
-    }
-
-    /// <summary>
-    /// Returns the length of an array.
-    /// </summary>
-    public static Value Len(IReadOnlyList<Value> args)
-    {
-        var arr = args[0].As<IReadOnlyList<Value>>();
-        return Value.Int(arr.Count);
-    }
-    
     /// <summary>
     /// Returns the length of a string.
     /// </summary>
@@ -118,6 +80,15 @@ public static class stdlib
     }
 
     /// <summary>
+    /// Converts a Bar to string.
+    /// </summary>
+    public static Value StrBar(IReadOnlyList<Value> args)
+    {
+        var bar = args[0].As<BarData>();
+        return Value.String(bar.ToString());
+    }
+
+    /// <summary>
     /// Converts a Semitone to string with sign and "st" suffix.
     /// </summary>
     public static Value StrSemitone(IReadOnlyList<Value> args)
@@ -166,6 +137,34 @@ public static class stdlib
     public static Value StrArray(IReadOnlyList<Value> args)
     {
         return Value.String(args[0].ToString());
+    }
+    
+    public static Value Concat(IReadOnlyList<Value> args)
+    {
+        var arg1 = args[0].As<string>();
+        var arg2 = args[1].As<string>();
+
+        return Value.String(arg1 + arg2);
+    }
+
+    // ===== Type Conversion Functions =====
+
+    /// <summary>
+    /// Converts an Int to Double.
+    /// </summary>
+    public static Value IntToDouble(IReadOnlyList<Value> args)
+    {
+        int value = args[0].As<int>();
+        return Value.Double((double)value);
+    }
+
+    /// <summary>
+    /// Converts a Double to Int (truncates).
+    /// </summary>
+    public static Value DoubleToInt(IReadOnlyList<Value> args)
+    {
+        double value = args[0].As<double>();
+        return Value.Int((int)value);
     }
 
     // ===== Arithmetic Functions =====
@@ -358,5 +357,35 @@ public static class stdlib
     public static Value GreaterThanOrEqual(IReadOnlyList<Value> args)
     {
         return Value.Bool(Utils.CompareNumeric(args[0], args[1]) >= 0);
+    }
+
+
+    /// <summary>
+    /// Returns a random Float between 0.0 and 1.0.
+    /// </summary>
+    public static Value Rand(IReadOnlyList<Value> args)
+    {
+        return Value.Float(Utils.FRand());
+    }
+    
+    public static Value FixedRand(IReadOnlyList<Value> args)
+    {
+        return Value.Float(Utils.FRand(true));
+    }
+    
+    public static Value FixedRandReset(IReadOnlyList<Value> args)
+    {
+        Utils.ResetGen();
+        return Value.Void();
+    }
+    
+    public static Value FixedRandSet(IReadOnlyList<Value> args)
+    {
+        var val = args[0];
+        if (val.Type is not IntType)                                                      
+            throw new InvalidOperationException($"Expected Int, got {val.Type}"); 
+        
+        Utils.SetSeed(val.As<int>());
+        return Value.Void();
     }
 }

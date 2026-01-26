@@ -50,7 +50,8 @@ public static class TypeParser
             }
         }
 
-        // Check for plural form (varargs) like "Ints", "Strings", "Voids"
+        // Check for plural form (arrays) like "Ints", "Strings", "Voids"
+        // This is syntactic sugar for Int[], String[], Void[], etc.
         if (token.Type == TokenType.Identifier && token.Text.EndsWith("s"))
         {
             var singularName = token.Text.Substring(0, token.Text.Length - 1);
@@ -58,7 +59,7 @@ public static class TypeParser
             if (baseType != null)
             {
                 index++; // Move past the type name
-                return (baseType, index, isVarArgs: true);
+                return (new ArrayType(baseType), index, isVarArgs: false);
             }
         }
 
@@ -75,11 +76,17 @@ public static class TypeParser
             TokenType.Buf => BufType.Instance,
             TokenType.Identifier when token.Text == "Buffer" => BufferType.Instance,
             TokenType.Identifier when token.Text == "Note" => NoteType.Instance,
+            TokenType.Identifier when token.Text == "Bar" => BarType.Instance,
             TokenType.Identifier when token.Text == "Semitone" => SemitoneType.Instance,
             TokenType.Identifier when token.Text == "Cent" => CentType.Instance,
             TokenType.Identifier when token.Text == "Millisecond" => MillisecondType.Instance,
             TokenType.Identifier when token.Text == "Second" => SecondType.Instance,
             TokenType.Identifier when token.Text == "Decibel" => DecibelType.Instance,
+            TokenType.Identifier when token.Text == "OscillatorState" => OscillatorStateType.Instance,
+            TokenType.Identifier when token.Text == "Envelope" => EnvelopeType.Instance,
+            TokenType.Identifier when token.Text == "Beat" => BeatType.Instance,
+            TokenType.Identifier when token.Text == "Voice" => VoiceType.Instance,
+            TokenType.Identifier when token.Text == "Track" => TrackType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
 
@@ -117,6 +124,7 @@ public static class TypeParser
             "Buf" => BufType.Instance,
             "Buffer" => BufferType.Instance,
             "Note" => NoteType.Instance,
+            "Bar" => BarType.Instance,
             "Semitone" => SemitoneType.Instance,
             "Cent" => CentType.Instance,
             "Millisecond" => MillisecondType.Instance,

@@ -4,7 +4,7 @@ Note: The C# implementations are linked at runtime
 
 internal proc print (String: s)
 
-internal proc len (Void[]: arr)
+internal proc len (Voids: arr)
 internal proc len(String: s)
 
 Note: str overloads for all types
@@ -14,15 +14,19 @@ internal proc str (Double: value)
 internal proc str (String: value)
 internal proc str (Bool: value)
 internal proc str (Note: value)
+internal proc str (Bar: value)
 internal proc str (Semitone: value)
 internal proc str (Cent: value)
 internal proc str (Millisecond: value)
 internal proc str (Second: value)
 internal proc str (Decibel: value)
-internal proc str (Void[]: value)
+internal proc str (Voids: value)
 
-Note: Varargs function - accepts any number of values (using plural syntax)
-internal proc list (Voids: items)
+internal proc concat (String: a, String: b)
+
+Note: Type conversions
+internal proc intToDouble (Int: value)
+internal proc doubleToInt (Double: value)
 
 internal proc add (Int: a, Int: b)
 internal proc add (Float: a, Float: b)
@@ -50,3 +54,8 @@ internal proc lt (Void: a, Void: b)
 internal proc gt (Void: a, Void: b)
 internal proc lte (Void: a, Void: b)
 internal proc gte (Void: a, Void: b)
+
+internal proc ?()
+internal proc ??()
+internal proc ??reset()
+internal proc ??set(Int: seed)

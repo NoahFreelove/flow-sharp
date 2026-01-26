@@ -1,0 +1,291 @@
+Note: Audio Processing Standard Library
+Note: Phase 1: AudioBuffer Foundation
+
+Note: ===== Core Buffer Operations =====
+
+Note: Creates a new audio buffer with the specified parameters
+internal proc createBuffer(Int: frames, Int: channels, Int: sampleRate)
+
+Note: Gets the number of frames in a buffer
+internal proc getFrames(Buffer: buffer)
+
+Note: Gets the number of channels in a buffer
+internal proc getChannels(Buffer: buffer)
+
+Note: Gets the sample rate of a buffer
+internal proc getSampleRate(Buffer: buffer)
+
+Note: Gets a sample at the specified frame and channel
+internal proc getSample(Buffer: buffer, Int: frame, Int: channel)
+
+Note: Sets a sample at the specified frame and channel
+internal proc setSample(Buffer: buffer, Int: frame, Int: channel, Double: value)
+
+Note: Fills a buffer with a constant value
+internal proc fillBuffer(Buffer: buffer, Double: value)
+
+Note: Mixes two buffers together with individual gain controls
+internal proc mixBuffers(Buffer: a, Buffer: b, Double: gainA, Double: gainB)
+
+Note: ===== File I/O Operations =====
+
+Note: Export audio buffer to WAV file with default 16-bit PCM format
+internal proc exportWav(Buffer: buffer, String: filepath)
+
+Note: Export audio buffer to WAV file with specified bit depth (16, 24, or 32)
+internal proc exportWav(Buffer: buffer, String: filepath, Int: bitDepth)
+
+Note: ===== USER CONVENIENCE LAYER =====
+
+Note: ===== Global Configuration =====
+Note: Users can override these at program start
+
+Note: Default sample rate (44.1 kHz CD quality)
+Int DEFAULT_SAMPLE_RATE = 44100
+
+Note: Default channel count (2 = stereo)
+Int DEFAULT_CHANNELS = 2
+
+Note: Common sample rates for convenience
+Int SR_44k = 44100
+Int SR_48k = 48000
+Int SR_88k = 88200
+Int SR_96k = 96000
+Int SR_192k = 192000
+
+Note: Common bit depths (for future WAV export)
+Int BD_16 = 16
+Int BD_24 = 24
+Int BD_32 = 32
+
+Note: ===== Time Conversion =====
+
+Note: Convert seconds to frames
+proc secondsToFrames(Double: seconds, Int: sampleRate)
+    Double srDouble = (intToDouble sampleRate)
+    Double framesD = seconds * srDouble
+    (doubleToInt framesD)
+end proc
+
+Note: Convert frames to seconds
+proc framesToSeconds(Int: frames, Int: sampleRate)
+    Double framesD = (intToDouble frames)
+    Double srD = (intToDouble sampleRate)
+    framesD / srD
+end proc
+
+Note: Get buffer duration in seconds
+proc bufferDuration(Buffer: b)
+    Int frames = (getFrames b)
+    Int sr = (getSampleRate b)
+    (framesToSeconds frames sr)
+end proc
+
+Note: ===== Simplified Buffer Creation =====
+
+Note: Create stereo buffer with default sample rate
+proc createBufferStereo(Double: seconds)
+    Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
+    (createBuffer frames DEFAULT_CHANNELS DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: Create mono buffer with default sample rate
+proc createBufferMono(Double: seconds)
+    Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
+    Int mono = 1
+    (createBuffer frames mono DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: Create stereo buffer with custom sample rate
+proc createBufferStereoCustom(Double: seconds, Int: sampleRate)
+    Int frames = (secondsToFrames seconds sampleRate)
+    Int stereo = 2
+    (createBuffer frames stereo sampleRate)
+end proc
+
+Note: Create mono buffer with custom sample rate
+proc createBufferMonoCustom(Double: seconds, Int: sampleRate)
+    Int frames = (secondsToFrames seconds sampleRate)
+    Int mono = 1
+    (createBuffer frames mono sampleRate)
+end proc
+
+Note: ===== Common Buffer Templates =====
+
+Note: Create silent stereo buffer
+proc createSilence(Double: seconds)
+    Buffer b = (createBufferStereo seconds)
+    Double zero = (intToDouble 0)
+    (fillBuffer b zero)
+    b
+end proc
+
+Note: Create silent mono buffer
+proc createSilenceMono(Double: seconds)
+    Buffer b = (createBufferMono seconds)
+    Double zero = (intToDouble 0)
+    (fillBuffer b zero)
+    b
+end proc
+
+Note: Create buffer filled with constant value
+proc createClip(Double: seconds, Double: value)
+    Buffer b = (createBufferStereo seconds)
+    (fillBuffer b value)
+    b
+end proc
+
+Note: Create mono buffer filled with constant value
+proc createClipMono(Double: seconds, Double: value)
+    Buffer b = (createBufferMono seconds)
+    (fillBuffer b value)
+    b
+end proc
+
+Note: ===== Buffer Inspection =====
+
+Note: Check if buffer is mono
+proc isMono(Buffer: b)
+    Int ch = (getChannels b)
+    Int one = 1
+    (equals ch one)
+end proc
+
+Note: Check if buffer is stereo
+proc isStereo(Buffer: b)
+    Int ch = (getChannels b)
+    Int two = 2
+    (equals ch two)
+end proc
+
+Note: Check if two buffers are compatible (same rate and channels)
+proc buffersCompatible(Buffer: a, Buffer: b)
+    Int srA = (getSampleRate a)
+    Int srB = (getSampleRate b)
+    Int chA = (getChannels a)
+    Int chB = (getChannels b)
+
+    Bool sameRate = (equals srA srB)
+    Bool sameCh = (equals chA chB)
+
+    (and sameRate sameCh)
+end proc
+
+Note: ===== Sample Access Shortcuts =====
+
+Note: Short form for getSample
+proc sampleAt(Buffer: b, Int: frame, Int: channel)
+    (getSample b frame channel)
+end proc
+
+Note: Short form for setSample
+proc setSampleAt(Buffer: b, Int: frame, Int: channel, Double: value)
+    (setSample b frame channel value)
+end proc
+
+Note: Fill with alias
+proc fill(Buffer: b, Double: value)
+    (fillBuffer b value)
+end proc
+
+Note: ===== Phase 3a: Signal Generation =====
+
+Note: ===== Oscillator State Management =====
+
+Note: Creates a new oscillator state with specified frequency and sample rate
+internal proc createOscillatorState(Double: frequency, Int: sampleRate)
+
+Note: Resets the oscillator phase to zero
+internal proc resetPhase(OscillatorState: state)
+
+Note: ===== Signal Generators =====
+
+Note: Fills buffer with sine wave, maintaining phase continuity
+internal proc generateSine(Buffer: buffer, OscillatorState: state, Double: amplitude)
+
+Note: Fills buffer with sawtooth wave, maintaining phase continuity
+internal proc generateSaw(Buffer: buffer, OscillatorState: state, Double: amplitude)
+
+Note: Fills buffer with square wave, maintaining phase continuity
+internal proc generateSquare(Buffer: buffer, OscillatorState: state, Double: amplitude)
+
+Note: Fills buffer with triangle wave, maintaining phase continuity
+internal proc generateTriangle(Buffer: buffer, OscillatorState: state, Double: amplitude)
+
+Note: ===== Buffer Helpers =====
+
+Note: Creates a copy of a buffer
+internal proc copyBuffer(Buffer: source)
+
+Note: Extracts a slice from buffer [startFrame, endFrame)
+internal proc sliceBuffer(Buffer: source, Int: startFrame, Int: endFrame)
+
+Note: Appends two buffers together
+internal proc appendBuffers(Buffer: a, Buffer: b)
+
+Note: Scales all samples in buffer by gain factor (in-place)
+internal proc scaleBuffer(Buffer: buffer, Double: gain)
+
+Note: ===== Envelope Creation and Application =====
+
+Note: Creates an AR (Attack-Release) envelope
+internal proc createAR(Double: attackSec, Double: releaseSec, Int: sampleRate)
+
+Note: Creates an ADSR (Attack-Decay-Sustain-Release) envelope
+internal proc createADSR(Double: attack, Double: decay, Double: sustain, Double: release, Int: sr)
+
+Note: Applies envelope curve to buffer (modifies in-place)
+internal proc applyEnvelope(Buffer: buffer, Envelope: envelope)
+
+Note: ===== Convenience Layer =====
+
+Note: Create oscillator with default sample rate
+proc createOsc(Double: frequency)
+    (createOscillatorState frequency DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: Create sine tone with specified duration, frequency, and amplitude
+proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    OscillatorState osc = (createOsc frequency)
+    Double amp = amplitude
+    b -> generateSine osc amp
+    b
+end proc
+
+Note: Create sawtooth tone
+proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    OscillatorState osc = (createOsc frequency)
+    Double amp = amplitude
+    b -> generateSaw osc amp
+    b
+end proc
+
+Note: Create square tone
+proc createSquareTone(Double: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    OscillatorState osc = (createOsc frequency)
+    Double amp = amplitude
+    b -> generateSquare osc amp
+    b
+end proc
+
+Note: Create triangle tone
+proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    OscillatorState osc = (createOsc frequency)
+    Double amp = amplitude
+    b -> generateTriangle osc amp
+    b
+end proc
+
+Note: Create AR envelope with default sample rate
+proc ar(Double: attackSec, Double: releaseSec)
+    (createAR attackSec releaseSec DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: Create ADSR envelope with default sample rate
+proc adsr(Double: attack, Double: decay, Double: sustain, Double: release)
+    (createADSR attack decay sustain release DEFAULT_SAMPLE_RATE)
+end proc

@@ -492,7 +492,7 @@ public class Parser
             var text = CurrentToken.Text;
 
             // Special types
-            if (text is "Buffer" or "Note" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel" or "Lazy")
+            if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel" or "Lazy")
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)
@@ -501,7 +501,7 @@ public class Parser
                 var singular = text.Substring(0, text.Length - 1);
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
-                    or "Note" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel")
+                    or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel")
                     return true;
             }
         }

@@ -7,3 +7,5 @@ riderModule.iml
 tests/
 *.flow
 *.md
+flow-interpreter/flow-interpreter
+*.wav

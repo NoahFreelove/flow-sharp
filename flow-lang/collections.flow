@@ -1,5 +1,18 @@
 Note: Collections Library for flow-lang
 Note: This library should make it easier to work with arrays
 
+Note: Varargs function - accepts any number of values (using ... syntax)
+internal proc list (Void...: items)
+
 internal proc head (Voids: arr)
 internal proc tail (Voids: arr)
+internal proc last (Voids: arr)
+internal proc init (Voids: arr)
+internal proc empty (Voids: arr)
+internal proc reverse (Voids: arr)
+internal proc take (Voids: arr, Int: n)
+internal proc drop (Voids: arr, Int: n)
+internal proc append (Voids: arr, Void: element)
+internal proc prepend (Void: element, Voids: arr)
+internal proc concat (Voids: arr1, Voids: arr2)
+internal proc contains (Voids: arr, Void: element)

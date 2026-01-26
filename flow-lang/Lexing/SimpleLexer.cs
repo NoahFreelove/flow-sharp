@@ -607,6 +607,20 @@ public class SimpleLexer
             {
                 Advance();
             }
+            else if (c == '\\' && PeekNext() == '\n')
+            {
+                // Line continuation: backslash followed by newline
+                Advance(); // Skip backslash
+                Advance(); // Skip newline
+                // Continue processing (whitespace will be skipped in next iteration)
+            }
+            else if (c == '\\' && PeekNext() == '\r' && _position + 2 < _source.Length && _source[_position + 2] == '\n')
+            {
+                // Line continuation: backslash followed by CRLF (Windows line endings)
+                Advance(); // Skip backslash
+                Advance(); // Skip \r
+                Advance(); // Skip \n
+            }
             else if (c == 'N' && _column == 1 && _source.Substring(_position).StartsWith("Note:"))
             {
                 // Skip comment until end of line
