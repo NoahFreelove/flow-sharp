@@ -41,6 +41,10 @@ public class Value
     public static Value Beat(double value) => new(value, BeatType.Instance);
     public static Value Voice(StandardLibrary.Audio.Voice value) => new(value, VoiceType.Instance);
     public static Value Track(StandardLibrary.Audio.Track value) => new(value, TrackType.Instance);
+    public static Value NoteValue(int enumValue) => new(enumValue, NoteValueType.Instance);
+    public static Value TimeSignature(TimeSignatureData timeSig) => new(timeSig, TimeSignatureType.Instance);
+    public static Value MusicalNote(MusicalNoteData note) => new(note, NoteType.Instance);
+    public static Value Sequence(SequenceData sequence) => new(sequence, SequenceType.Instance);
 
     /// <summary>
     /// Automatically infers the Flow type from a CLR object and creates a Value.

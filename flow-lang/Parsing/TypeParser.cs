@@ -87,6 +87,9 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "Beat" => BeatType.Instance,
             TokenType.Identifier when token.Text == "Voice" => VoiceType.Instance,
             TokenType.Identifier when token.Text == "Track" => TrackType.Instance,
+            TokenType.Identifier when token.Text == "NoteValue" => NoteValueType.Instance,
+            TokenType.Identifier when token.Text == "TimeSignature" => TimeSignatureType.Instance,
+            TokenType.Identifier when token.Text == "Sequence" => SequenceType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
 
@@ -130,6 +133,14 @@ public static class TypeParser
             "Millisecond" => MillisecondType.Instance,
             "Second" => SecondType.Instance,
             "Decibel" => DecibelType.Instance,
+            "OscillatorState" => OscillatorStateType.Instance,
+            "Envelope" => EnvelopeType.Instance,
+            "Beat" => BeatType.Instance,
+            "Voice" => VoiceType.Instance,
+            "Track" => TrackType.Instance,
+            "NoteValue" => NoteValueType.Instance,
+            "TimeSignature" => TimeSignatureType.Instance,
+            "Sequence" => SequenceType.Instance,
             _ => null
         };
     }

@@ -125,3 +125,53 @@ public sealed class NoteType : FlowType
         return $"{note}{octave}{alterationStr}";
     }
 }
+
+/// <summary>
+/// Represents a musical note with pitch, duration, and rest information for classical composition.
+/// </summary>
+public class MusicalNoteData
+{
+    public char NoteName { get; }
+    public int Octave { get; }
+    public int Alteration { get; }
+    public int? DurationValue { get; }
+    public bool IsRest { get; }
+
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest)
+    {
+        NoteName = noteName;
+        Octave = octave;
+        Alteration = alteration;
+        DurationValue = durationValue;
+        IsRest = isRest;
+    }
+
+    /// <summary>
+    /// Calculates the duration of this note in beats based on the time signature denominator.
+    /// </summary>
+    public double GetBeats(int timeSigDenominator)
+    {
+        if (!DurationValue.HasValue)
+            return 1.0; // Default to 1 beat if no duration specified
+
+        double fraction = NoteValueType.ToFraction((NoteValueType.Value)DurationValue.Value);
+        return fraction * timeSigDenominator;
+    }
+
+    public override string ToString()
+    {
+        if (IsRest)
+        {
+            string durationName = DurationValue.HasValue
+                ? NoteValueType.Format((NoteValueType.Value)DurationValue.Value)
+                : "quarter";
+            return $"{durationName}Rest";
+        }
+
+        string noteStr = NoteType.Format(NoteName, Octave, Alteration);
+        string durationName2 = DurationValue.HasValue
+            ? NoteValueType.Format((NoteValueType.Value)DurationValue.Value)
+            : "quarter";
+        return $"{durationName2}({noteStr})";
+    }
+}

@@ -247,36 +247,28 @@ end proc
 Note: Create sine tone with specified duration, frequency, and amplitude
 proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
-    OscillatorState osc = (createOsc frequency)
-    Double amp = amplitude
-    b -> generateSine osc amp
+    (generateSine b (createOsc frequency) amplitude)
     b
 end proc
 
 Note: Create sawtooth tone
 proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
-    OscillatorState osc = (createOsc frequency)
-    Double amp = amplitude
-    b -> generateSaw osc amp
+    (generateSaw b (createOsc frequency) amplitude)
     b
 end proc
 
 Note: Create square tone
 proc createSquareTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
-    OscillatorState osc = (createOsc frequency)
-    Double amp = amplitude
-    b -> generateSquare osc amp
+    (generateSquare b (createOsc frequency) amplitude)
     b
 end proc
 
 Note: Create triangle tone
 proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
-    OscillatorState osc = (createOsc frequency)
-    Double amp = amplitude
-    b -> generateTriangle osc amp
+    (generateTriangle b (createOsc frequency) amplitude)
     b
 end proc
 

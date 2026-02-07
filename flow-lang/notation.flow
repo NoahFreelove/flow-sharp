@@ -1,0 +1,202 @@
+Note: Musical Notation Library for Flow
+Note: Provides classical music composition with note durations, rests, and time signatures
+
+Note: ===== Note Value Constants =====
+
+NoteValue WHOLE = 0
+NoteValue HALF = 1
+NoteValue QUARTER = 2
+NoteValue EIGHTH = 3
+NoteValue SIXTEENTH = 4
+NoteValue THIRTYSECOND = 5
+
+Note: ===== Time Signature Presets =====
+
+TimeSignature TS_4_4 = (createTimeSignature 4 4)
+TimeSignature TS_3_4 = (createTimeSignature 3 4)
+TimeSignature TS_6_8 = (createTimeSignature 6 8)
+TimeSignature TS_2_4 = (createTimeSignature 2 4)
+TimeSignature TS_5_4 = (createTimeSignature 5 4)
+TimeSignature TS_9_8 = (createTimeSignature 9 8)
+TimeSignature TS_12_8 = (createTimeSignature 12 8)
+
+Note: ===== Note Creation Convenience Functions =====
+
+Note: Creates a whole note with the given pitch
+MusicalNote whole = fn Note pitch => (
+    (createMusicalNote pitch WHOLE)
+)
+
+Note: Creates a half note with the given pitch
+MusicalNote half = fn Note pitch => (
+    (createMusicalNote pitch HALF)
+)
+
+Note: Creates a quarter note with the given pitch
+MusicalNote quarter = fn Note pitch => (
+    (createMusicalNote pitch QUARTER)
+)
+
+Note: Creates an eighth note with the given pitch
+MusicalNote eighth = fn Note pitch => (
+    (createMusicalNote pitch EIGHTH)
+)
+
+Note: Creates a sixteenth note with the given pitch
+MusicalNote sixteenth = fn Note pitch => (
+    (createMusicalNote pitch SIXTEENTH)
+)
+
+Note: Creates a thirty-second note with the given pitch
+MusicalNote thirtysecond = fn Note pitch => (
+    (createMusicalNote pitch THIRTYSECOND)
+)
+
+Note: ===== Rest Creation Convenience Functions =====
+
+Note: Creates a whole rest
+MusicalNote wholeRest = fn => (
+    (createRest WHOLE)
+)
+
+Note: Creates a half rest
+MusicalNote halfRest = fn => (
+    (createRest HALF)
+)
+
+Note: Creates a quarter rest
+MusicalNote quarterRest = fn => (
+    (createRest QUARTER)
+)
+
+Note: Creates an eighth rest
+MusicalNote eighthRest = fn => (
+    (createRest EIGHTH)
+)
+
+Note: Creates a sixteenth rest
+MusicalNote sixteenthRest = fn => (
+    (createRest SIXTEENTH)
+)
+
+Note: Creates a thirty-second rest
+MusicalNote thirtysecondRest = fn => (
+    (createRest THIRTYSECOND)
+)
+
+Note: ===== Bar Creation Convenience Functions =====
+
+Note: Creates a 4/4 bar from a list of musical notes
+Bar bar4_4 = fn MusicalNote[] notes => (
+    (createMusicalBar notes TS_4_4)
+)
+
+Note: Creates a 3/4 bar from a list of musical notes
+Bar bar3_4 = fn MusicalNote[] notes => (
+    (createMusicalBar notes TS_3_4)
+)
+
+Note: Creates a 6/8 bar from a list of musical notes
+Bar bar6_8 = fn MusicalNote[] notes => (
+    (createMusicalBar notes TS_6_8)
+)
+
+Note: Creates a 2/4 bar from a list of musical notes
+Bar bar2_4 = fn MusicalNote[] notes => (
+    (createMusicalBar notes TS_2_4)
+)
+
+Note: Creates a 5/4 bar from a list of musical notes
+Bar bar5_4 = fn MusicalNote[] notes => (
+    (createMusicalBar notes TS_5_4)
+)
+
+Note: ===== Incremental Bar Building =====
+
+Note: Creates an empty bar with a time signature
+Note: Notes can be added incrementally using tryAddNote or addNote
+Bar createEmptyBar = fn TimeSignature timeSig => (
+    (createEmptyMusicalBar timeSig)
+)
+
+Note: Tries to add a note to a bar
+Note: Returns true if successful, false if the note would exceed the bar capacity
+Bool tryAddNote = fn Bar bar, MusicalNote note => (
+    (tryAddNoteToBar bar note)
+)
+
+Note: Adds a note to a bar
+Note: Throws an error if the note would exceed the bar capacity
+Void addNote = fn Bar bar, MusicalNote note => (
+    (addNoteToBar bar note)
+)
+
+Note: ===== Bar Validation Helpers =====
+
+Note: Gets the remaining capacity of a bar in beats
+Note: Returns 0 if the bar is full or over capacity
+Double remaining = fn Bar bar => (
+    (getRemainingBeats bar)
+)
+
+Note: Checks if a note would fit in the bar without exceeding capacity
+Bool fits = fn Bar bar, MusicalNote note => (
+    (wouldFit bar note)
+)
+
+Note: Calculates how much overflow exists if the bar exceeds capacity
+Note: Returns 0 if within capacity, positive number if over capacity
+Double overflow = fn Bar bar => (
+    (calculateOverflow bar)
+)
+
+Note: ===== Bar Rendering Functions =====
+
+Note: Renders a bar to a collection of positioned voices using a synthesizer
+Note: synthType: "sine", "saw", or "square"
+Note: sampleRate: audio sample rate (typically 44100)
+Note: bpm: tempo in beats per minute
+Voice[] renderBar = fn Bar bar, String synthType, Int sampleRate, Double bpm => (
+    (renderBarToVoices bar synthType sampleRate bpm)
+)
+
+Note: ===== Sequence Functions =====
+
+Note: Creates an empty sequence
+Note: Bars can be added to the sequence and will be automatically positioned
+Sequence newSequence = fn => (
+    (createSequence)
+)
+
+Note: Adds a bar to a sequence
+Note: The bar will be automatically positioned after the last bar
+Sequence addToSequence = fn Sequence seq, Bar bar => (
+    (addBarToSequence seq bar)
+)
+
+Note: Renders a sequence to positioned voices
+Note: All bars in the sequence are rendered at their calculated positions
+Voice[] renderSequence = fn Sequence seq, String synthType, Int sampleRate, Double bpm => (
+    (renderSequenceToVoices seq synthType sampleRate bpm)
+)
+
+Note: ===== Manual Bar Positioning Functions =====
+
+Note: Renders a bar at a specific beat offset
+Note: Allows manual control over bar positioning on the timeline
+Voice[] renderBarAtBeat = fn Bar bar, Double beatOffset, String synthType, Int sampleRate, Double bpm => (
+    (renderBarAtBeat bar beatOffset synthType sampleRate bpm)
+)
+
+Note: Renders a bar at a specific time offset (in seconds)
+Note: Time offset is converted to beats based on BPM
+Voice[] renderBarAtTime = fn Bar bar, Double timeSeconds, String synthType, Int sampleRate, Double bpm => (
+    (renderBarAtTime bar timeSeconds synthType sampleRate bpm)
+)
+
+Note: ===== Pitch Functions =====
+
+Note: Converts a note pitch to its frequency in Hz
+Double frequency = fn Note pitch => (
+    (noteToFrequency pitch)
+)

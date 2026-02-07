@@ -1,8 +1,13 @@
-Int TIME_SIGNATURE_NOTE = 4
-Int TIME_SIGNATURE_NOTES_PER_BAR = 4
-
 Note: Composition and Timeline Standard Library
 Note: Phase 3b: Timeline Abstractions
+Note:
+Note: For classical music composition with note durations and time signatures,
+Note: see the @notation library which provides structured musical notation.
+Note:
+Note: This library provides DAW-style timeline composition with positioned audio clips.
+
+Int TIME_SIGNATURE_NOTE = 4
+Int TIME_SIGNATURE_NOTES_PER_BAR = 4
 
 Note: ===== BPM Context =====
 

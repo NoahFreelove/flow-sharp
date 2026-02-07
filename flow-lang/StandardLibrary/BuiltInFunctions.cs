@@ -20,6 +20,7 @@ public static class BuiltInFunctions
         RegisterCollections(registry);
         RegisterAudio(registry);
         RegisterBars(registry);
+        RegisterMusicalNotationFunctions(registry);
     }
 
     private static void RegisterStdLib(InternalFunctionRegistry registry)
@@ -466,5 +467,253 @@ public static class BuiltInFunctions
             "getTimeSignature",
             [BarType.Instance]);
         registry.Register("getTimeSignature", getTimeSignatureSignature, Bars.GetTimeSignature);
+    }
+
+    private static void RegisterMusicalNotationFunctions(InternalFunctionRegistry registry)
+    {
+        // ===== Musical Note Creation =====
+
+        var createMusicalNoteSignature = new FunctionSignature(
+            "createMusicalNote",
+            [NoteType.Instance, NoteValueType.Instance]);
+        registry.Register("createMusicalNote", createMusicalNoteSignature, args =>
+        {
+            string pitchStr = (string)args[0].Data!;
+            int durationValue = (int)args[1].Data!;
+            var note = Audio.ClassicalComposition.CreateMusicalNote(pitchStr, durationValue);
+            return Value.MusicalNote(note);
+        });
+
+        var createRestSignature = new FunctionSignature(
+            "createRest",
+            [NoteValueType.Instance]);
+        registry.Register("createRest", createRestSignature, args =>
+        {
+            int durationValue = (int)args[0].Data!;
+            var rest = Audio.ClassicalComposition.CreateRest(durationValue);
+            return Value.MusicalNote(rest);
+        });
+
+        // ===== Time Signature =====
+
+        var createTimeSignatureSignature = new FunctionSignature(
+            "createTimeSignature",
+            [IntType.Instance, IntType.Instance]);
+        registry.Register("createTimeSignature", createTimeSignatureSignature, args =>
+        {
+            int numerator = (int)args[0].Data!;
+            int denominator = (int)args[1].Data!;
+            var timeSig = Audio.ClassicalComposition.CreateTimeSignature(numerator, denominator);
+            return Value.TimeSignature(timeSig);
+        });
+
+        // ===== Musical Bar Creation =====
+
+        var createMusicalBarSignature = new FunctionSignature(
+            "createMusicalBar",
+            [new ArrayType(NoteType.Instance), TimeSignatureType.Instance]);
+        registry.Register("createMusicalBar", createMusicalBarSignature, args =>
+        {
+            var notesArray = (IReadOnlyList<Value>)args[0].Data!;
+            var notes = new List<MusicalNoteData>();
+            foreach (var noteValue in notesArray)
+            {
+                notes.Add((MusicalNoteData)noteValue.Data!);
+            }
+
+            var timeSig = (TimeSignatureData)args[1].Data!;
+            var bar = Audio.ClassicalComposition.CreateMusicalBar(notes, timeSig);
+            return Value.Bar(bar);
+        });
+
+        // ===== Incremental Bar Building =====
+
+        var createEmptyMusicalBarSignature = new FunctionSignature(
+            "createEmptyMusicalBar",
+            [TimeSignatureType.Instance]);
+        registry.Register("createEmptyMusicalBar", createEmptyMusicalBarSignature, args =>
+        {
+            var timeSig = (TimeSignatureData)args[0].Data!;
+            var bar = Audio.ClassicalComposition.CreateEmptyMusicalBar(timeSig);
+            return Value.Bar(bar);
+        });
+
+        var tryAddNoteToBarSignature = new FunctionSignature(
+            "tryAddNoteToBar",
+            [BarType.Instance, NoteType.Instance]);
+        registry.Register("tryAddNoteToBar", tryAddNoteToBarSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            var note = (MusicalNoteData)args[1].Data!;
+            bool success = Audio.ClassicalComposition.TryAddNoteToBar(bar, note);
+            return Value.Bool(success);
+        });
+
+        var addNoteToBarSignature = new FunctionSignature(
+            "addNoteToBar",
+            [BarType.Instance, NoteType.Instance]);
+        registry.Register("addNoteToBar", addNoteToBarSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            var note = (MusicalNoteData)args[1].Data!;
+            Audio.ClassicalComposition.AddNoteToBar(bar, note);
+            return Value.Void();
+        });
+
+        // ===== Musical Conversions =====
+
+        var noteValueToBeatsSignature = new FunctionSignature(
+            "noteValueToBeats",
+            [NoteValueType.Instance, IntType.Instance]);
+        registry.Register("noteValueToBeats", noteValueToBeatsSignature, args =>
+        {
+            int noteValueEnum = (int)args[0].Data!;
+            int denominator = (int)args[1].Data!;
+            double beats = Audio.MusicalConversions.NoteValueToBeats(noteValueEnum, denominator);
+            return Value.Double(beats);
+        });
+
+        var validateBarDurationSignature = new FunctionSignature(
+            "validateBarDuration",
+            [BarType.Instance, TimeSignatureType.Instance]);
+        registry.Register("validateBarDuration", validateBarDurationSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            var timeSig = (TimeSignatureData)args[1].Data!;
+            bool isValid = Audio.MusicalConversions.ValidateBarDuration(bar, timeSig);
+            return Value.Bool(isValid);
+        });
+
+        // ===== Bar Validation Helpers =====
+
+        var getRemainingBeatsSignature = new FunctionSignature(
+            "getRemainingBeats",
+            [BarType.Instance]);
+        registry.Register("getRemainingBeats", getRemainingBeatsSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            double remaining = Audio.MusicalConversions.GetRemainingBeats(bar);
+            return Value.Double(remaining);
+        });
+
+        var wouldFitSignature = new FunctionSignature(
+            "wouldFit",
+            [BarType.Instance, NoteType.Instance]);
+        registry.Register("wouldFit", wouldFitSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            var note = (MusicalNoteData)args[1].Data!;
+            bool fits = Audio.MusicalConversions.WouldFit(bar, note);
+            return Value.Bool(fits);
+        });
+
+        var calculateOverflowSignature = new FunctionSignature(
+            "calculateOverflow",
+            [BarType.Instance]);
+        registry.Register("calculateOverflow", calculateOverflowSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            double overflow = Audio.MusicalConversions.CalculateOverflow(bar);
+            return Value.Double(overflow);
+        });
+
+        // ===== Bar Rendering =====
+
+        var renderBarToVoicesSignature = new FunctionSignature(
+            "renderBarToVoices",
+            [BarType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+        registry.Register("renderBarToVoices", renderBarToVoicesSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            string synthType = (string)args[1].Data!;
+            int sampleRate = (int)args[2].Data!;
+            double bpm = (double)args[3].Data!;
+
+            var voices = Audio.BarRenderer.RenderBarToVoices(bar, synthType, sampleRate, bpm);
+            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            return Value.Array(voiceValues, VoiceType.Instance);
+        });
+
+        // ===== Sequence Functions =====
+
+        var createSequenceSignature = new FunctionSignature("createSequence", []);
+        registry.Register("createSequence", createSequenceSignature, args =>
+        {
+            var sequence = Audio.SequenceRenderer.CreateSequence();
+            return Value.Sequence(sequence);
+        });
+
+        var addBarToSequenceSignature = new FunctionSignature(
+            "addBarToSequence",
+            [SequenceType.Instance, BarType.Instance]);
+        registry.Register("addBarToSequence", addBarToSequenceSignature, args =>
+        {
+            var sequence = (SequenceData)args[0].Data!;
+            var bar = (BarData)args[1].Data!;
+            Audio.SequenceRenderer.AddBarToSequence(sequence, bar);
+            return Value.Sequence(sequence);
+        });
+
+        var renderSequenceToVoicesSignature = new FunctionSignature(
+            "renderSequenceToVoices",
+            [SequenceType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+        registry.Register("renderSequenceToVoices", renderSequenceToVoicesSignature, args =>
+        {
+            var sequence = (SequenceData)args[0].Data!;
+            string synthType = (string)args[1].Data!;
+            int sampleRate = (int)args[2].Data!;
+            double bpm = (double)args[3].Data!;
+
+            var voices = Audio.SequenceRenderer.RenderSequenceToVoices(sequence, synthType, sampleRate, bpm);
+            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            return Value.Array(voiceValues, VoiceType.Instance);
+        });
+
+        // ===== Manual Bar Positioning =====
+
+        var renderBarAtBeatSignature = new FunctionSignature(
+            "renderBarAtBeat",
+            [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+        registry.Register("renderBarAtBeat", renderBarAtBeatSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            double beatOffset = (double)args[1].Data!;
+            string synthType = (string)args[2].Data!;
+            int sampleRate = (int)args[3].Data!;
+            double bpm = (double)args[4].Data!;
+
+            var voices = Audio.BarRenderer.RenderBarAtBeat(bar, beatOffset, synthType, sampleRate, bpm);
+            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            return Value.Array(voiceValues, VoiceType.Instance);
+        });
+
+        var renderBarAtTimeSignature = new FunctionSignature(
+            "renderBarAtTime",
+            [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+        registry.Register("renderBarAtTime", renderBarAtTimeSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            double timeSeconds = (double)args[1].Data!;
+            string synthType = (string)args[2].Data!;
+            int sampleRate = (int)args[3].Data!;
+            double bpm = (double)args[4].Data!;
+
+            var voices = Audio.BarRenderer.RenderBarAtTime(bar, timeSeconds, synthType, sampleRate, bpm);
+            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            return Value.Array(voiceValues, VoiceType.Instance);
+        });
+
+        // ===== Pitch Conversion =====
+
+        var noteToFrequencySignature = new FunctionSignature(
+            "noteToFrequency",
+            [NoteType.Instance]);
+        registry.Register("noteToFrequency", noteToFrequencySignature, args =>
+        {
+            string noteStr = (string)args[0].Data!;
+            var (noteName, octave, alteration) = NoteType.Parse(noteStr);
+            double frequency = Audio.PitchConversion.NoteToFrequency(noteName, octave, alteration);
+            return Value.Double(frequency);
+        });
     }
 }
