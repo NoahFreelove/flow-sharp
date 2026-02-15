@@ -1,3 +1,4 @@
+using FlowLang.Ast.Statements;
 using FlowLang.Core;
 using FlowLang.TypeSystem;
 
@@ -14,4 +15,4 @@ public record LambdaParameter(string Name, FlowType Type);
 public record LambdaExpression(
     SourceLocation Location,
     IReadOnlyList<LambdaParameter> Parameters,
-    Expression Body) : Expression(Location);
+    IReadOnlyList<Statement> Body) : Expression(Location);

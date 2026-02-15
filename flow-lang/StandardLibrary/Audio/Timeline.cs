@@ -106,6 +106,17 @@ public static class Timeline
         return Value.Void();
     }
 
+    /// <summary>
+    /// Sets the offset of a voice in beats.
+    /// </summary>
+    public static Value SetVoiceOffset(IReadOnlyList<Value> args)
+    {
+        var voice = args[0].As<Voice>();
+        double offset = args[1].As<double>();
+        voice.OffsetBeats = offset;
+        return Value.Void();
+    }
+
     // ===== Track Management =====
 
     /// <summary>

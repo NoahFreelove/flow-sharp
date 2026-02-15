@@ -464,6 +464,11 @@ public static class BuiltInFunctions
             [VoiceType.Instance, DoubleType.Instance]);
         registry.Register("setVoicePan", setVoicePanSignature, Audio.Timeline.SetVoicePan);
 
+        var setVoiceOffsetSignature = new FunctionSignature(
+            "setVoiceOffset",
+            [VoiceType.Instance, DoubleType.Instance]);
+        registry.Register("setVoiceOffset", setVoiceOffsetSignature, Audio.Timeline.SetVoiceOffset);
+
         var createTrackSignature = new FunctionSignature(
             "createTrack",
             [IntType.Instance, IntType.Instance]);
@@ -607,7 +612,7 @@ public static class BuiltInFunctions
 
         var tryAddNoteToBarSignature = new FunctionSignature(
             "tryAddNoteToBar",
-            [BarType.Instance, NoteType.Instance]);
+            [BarType.Instance, MusicalNoteType.Instance]);
         registry.Register("tryAddNoteToBar", tryAddNoteToBarSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -618,7 +623,7 @@ public static class BuiltInFunctions
 
         var addNoteToBarSignature = new FunctionSignature(
             "addNoteToBar",
-            [BarType.Instance, NoteType.Instance]);
+            [BarType.Instance, MusicalNoteType.Instance]);
         registry.Register("addNoteToBar", addNoteToBarSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -665,7 +670,7 @@ public static class BuiltInFunctions
 
         var wouldFitSignature = new FunctionSignature(
             "wouldFit",
-            [BarType.Instance, NoteType.Instance]);
+            [BarType.Instance, MusicalNoteType.Instance]);
         registry.Register("wouldFit", wouldFitSignature, args =>
         {
             var bar = (BarData)args[0].Data!;

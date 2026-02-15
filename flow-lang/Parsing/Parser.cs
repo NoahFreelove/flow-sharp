@@ -151,7 +151,7 @@ public class Parser
             }
 
             Expect(TokenType.Colon, "Expected ':' after parameter type");
-            var paramName = Expect(TokenType.Identifier, "Expected parameter name").Text;
+            var paramName = ExpectParameterName().Text;
 
             parameters.Add(new Parameter(paramName, paramType, isVarArgs));
 
@@ -676,8 +676,9 @@ public class Parser
             return expr;
         }
 
-        // Variable or function call
-        if (Match(TokenType.Identifier))
+        // Variable or function call (also allow music context keywords as identifiers)
+        if (Match(TokenType.Identifier) || Match(TokenType.Tempo) || Match(TokenType.Swing)
+            || Match(TokenType.Key) || Match(TokenType.Timesig))
         {
             var name = PreviousToken.Text;
             var location = PreviousToken.Location;
@@ -718,7 +719,7 @@ public class Parser
             var (paramType, nextIndex, isVarArgs) = TypeParser.ParseType(_tokens, _current);
             _current = nextIndex;
 
-            var paramName = Expect(TokenType.Identifier, "Expected parameter name in lambda").Text;
+            var paramName = ExpectParameterName("Expected parameter name in lambda").Text;
             parameters.Add(new LambdaParameter(paramName, paramType));
 
             if (!Check(TokenType.FatArrow))
@@ -727,7 +728,28 @@ public class Parser
 
         Expect(TokenType.FatArrow, "Expected '=>' in lambda expression");
 
-        var body = ParseExpression();
+        List<Statement> body;
+        if (Check(TokenType.LParen) && _current + 1 < _tokens.Count && IsTypeKeyword(_tokens[_current + 1].Type))
+        {
+            // Multi-statement lambda body: ( stmt1 stmt2 ... )
+            Advance(); // consume '('
+            body = new List<Statement>();
+            while (!Check(TokenType.RParen) && !IsAtEnd())
+            {
+                while (Match(TokenType.Semicolon)) ; // skip semicolons
+                if (Check(TokenType.RParen)) break;
+                var stmt = ParseStatement();
+                if (stmt != null) body.Add(stmt);
+                Match(TokenType.Semicolon);
+            }
+            Expect(TokenType.RParen, "Expected ')' after lambda body");
+        }
+        else
+        {
+            // Single-expression body (existing behavior)
+            var expr = ParseExpression();
+            body = new List<Statement> { new ExpressionStatement(expr.Location, expr) };
+        }
         return new LambdaExpression(location, parameters, body);
     }
 
@@ -1037,6 +1059,14 @@ public class Parser
     {
         if (Check(type)) return Advance();
         throw new ParseException($"{message}. Got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+    }
+
+    private Token ExpectParameterName(string errorMessage = "Expected parameter name")
+    {
+        if (Check(TokenType.Identifier) || Check(TokenType.Tempo) || Check(TokenType.Swing)
+            || Check(TokenType.Key) || Check(TokenType.Timesig))
+            return Advance();
+        return Expect(TokenType.Identifier, errorMessage);
     }
 
     private bool IsAtEnd() => CurrentToken.Type == TokenType.Eof;

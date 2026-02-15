@@ -29,8 +29,8 @@ public class StackFrame
         if (_variables.ContainsKey(name))
             throw new InvalidOperationException($"Variable '{name}' already declared in this scope");
 
-        if (HasFunction(name))
-            throw new InvalidOperationException($"Cannot declare variable '{name}': a function with that name already exists");
+        if (_functions.ContainsKey(name))
+            throw new InvalidOperationException($"Cannot declare variable '{name}': a function with that name already exists in this scope");
 
         _variables[name] = value;
     }

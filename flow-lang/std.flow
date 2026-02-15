@@ -2,6 +2,9 @@ Note: Flow Standard Library
 Note: This file defines all built-in functions as internal procedures
 Note: The C# implementations are linked at runtime
 
+use "@collections"
+use "@bars"
+
 internal proc print (String: s)
 
 internal proc len (Voids: arr)

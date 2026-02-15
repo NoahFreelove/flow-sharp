@@ -72,7 +72,7 @@ public class ModuleLoader
                 return ModuleLoadResult.Error;
 
             // 4. Execute in current context (no new frame - imports add to current scope)
-            var interpreter = new Interpreter.Interpreter(context, _errorReporter);
+            var interpreter = new Interpreter.Interpreter(context, _errorReporter, this);
             interpreter.Execute(program);
 
             _loadedModules.Add(resolvedPath);

@@ -292,13 +292,11 @@ public class ExpressionEvaluator
 
     private Value EvaluateLambda(LambdaExpression lambda)
     {
-        // Create a ProcDeclaration wrapping the lambda body in a return statement
         var uniqueName = $"__lambda_{Guid.NewGuid():N}";
         var parameters = lambda.Parameters.Select(p =>
             new Parameter(p.Name, p.Type)).ToList();
 
-        var returnStmt = new ReturnStatement(lambda.Location, lambda.Body);
-        var body = new List<Statement> { returnStmt };
+        var body = lambda.Body.ToList();
         var proc = new ProcDeclaration(lambda.Location, uniqueName, parameters, body, false);
 
         // Snapshot capture: capture all currently visible variables at lambda creation time.

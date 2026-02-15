@@ -19,14 +19,16 @@ public class Interpreter
     private readonly RuntimeContext _context;
     private readonly ErrorReporter _errorReporter;
     private readonly ExpressionEvaluator _evaluator;
+    private readonly ModuleLoader _moduleLoader;
     private Value? _returnValue;
     private Value? _lastExpressionValue;
 
-    public Interpreter(RuntimeContext context, ErrorReporter errorReporter)
+    public Interpreter(RuntimeContext context, ErrorReporter errorReporter, ModuleLoader? moduleLoader = null)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
         _evaluator = new ExpressionEvaluator(context, errorReporter, this);
+        _moduleLoader = moduleLoader ?? new ModuleLoader(errorReporter);
 
         // Wire up the invoker for higher-order functions in the standard library
         StandardLibrary.collections.Invoker = (overload, args) =>
@@ -366,12 +368,10 @@ public class Interpreter
 
     private void ExecuteImport(ImportStatement import)
     {
-        var moduleLoader = new ModuleLoader(_errorReporter);
-
         // Get current file from import statement location
         string? currentFile = import.Location.FileName;
 
-        var result = moduleLoader.LoadModule(import.FilePath, currentFile ?? "", _context, import.Location);
+        var result = _moduleLoader.LoadModule(import.FilePath, currentFile ?? "", _context, import.Location);
 
         if (result == ModuleLoadResult.Error)
         {

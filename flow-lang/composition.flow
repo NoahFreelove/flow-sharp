@@ -36,6 +36,9 @@ internal proc setVoiceGain(Voice: voice, Double: gain)
 Note: Sets the pan of a voice (-1.0 = left, 0.0 = center, 1.0 = right)
 internal proc setVoicePan(Voice: voice, Double: pan)
 
+Note: Sets the offset of a voice in beats
+internal proc setVoiceOffset(Voice: voice, Double: offsetBeats)
+
 Note: ===== Track Management =====
 
 Note: Creates a new track with specified sample rate and channels
