@@ -98,6 +98,13 @@ public class SimpleLexer
             case ']': return SingleChar(TokenType.RBracket);
             case '{': return SingleChar(TokenType.LBrace);
             case '}': return SingleChar(TokenType.RBrace);
+            case '|': return SingleChar(TokenType.Pipe);
+            case '~': return SingleChar(TokenType.Tilde);
+            case '_':
+                // Standalone underscore is a rest token; if followed by word characters it's part of an identifier
+                if (IsAtEnd() || !char.IsLetterOrDigit(PeekNext()))
+                    return SingleChar(TokenType.Underscore);
+                break; // Fall through to identifier scanning
             case ',': return SingleChar(TokenType.Comma);
             case ';': return SingleChar(TokenType.Semicolon);
             case '<': return SingleChar(TokenType.LessThan);

@@ -62,6 +62,9 @@ public enum TokenType
     RBracket,           // ]
     LBrace,             // {
     RBrace,             // }
+    Pipe,               // | (note stream bar delimiter)
+    Underscore,         // _ (rest in note stream)
+    Tilde,              // ~ (tie between notes)
     Comma,              // ,
     Semicolon,          // ;
     Ellipsis,           // ...
