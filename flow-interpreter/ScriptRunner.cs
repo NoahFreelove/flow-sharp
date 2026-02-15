@@ -7,12 +7,19 @@ namespace FlowInterpreter;
 /// </summary>
 public class ScriptRunner
 {
-    public int RunScript(string filePath)
+    public int RunScript(string filePath, string? deviceName = null)
     {
         try
         {
             var source = File.ReadAllText(filePath);
-            var engine = new FlowEngine();
+            using var engine = new FlowEngine();
+
+            // Configure audio device if specified
+            if (deviceName != null && engine.AudioManager.IsAudioAvailable())
+            {
+                var backend = engine.AudioManager.GetBackend();
+                backend.SetDevice(deviceName);
+            }
 
             var success = engine.Execute(source, filePath);
 

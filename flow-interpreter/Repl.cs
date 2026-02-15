@@ -5,6 +5,8 @@ namespace FlowInterpreter;
 
 /// <summary>
 /// Read-Eval-Print Loop for interactive Flow execution.
+/// Maintains audio backend state across evaluations.
+/// Handles Ctrl+C to stop playback without exiting.
 /// </summary>
 public class Repl
 {
@@ -21,45 +23,67 @@ public class Repl
         Console.WriteLine("Multi-line input: end a line with \\ to continue on next line");
         Console.WriteLine();
 
-        while (true)
+        // Handle Ctrl+C: stop audio playback, don't exit REPL
+        Console.CancelKeyPress += (_, e) =>
         {
-            var input = ReadCompleteInput();
+            e.Cancel = true; // Prevent process exit
+            _engine.StopAudio();
+            Console.WriteLine();
+            Console.Write("> ");
+        };
 
-            if (string.IsNullOrWhiteSpace(input))
-                continue;
-
-            // Handle special commands
-            if (input.StartsWith(':'))
+        try
+        {
+            while (true)
             {
-                if (!HandleCommand(input))
-                    break;
-                continue;
-            }
+                var input = ReadCompleteInput();
 
-            // Execute input and get result
-            var result = _engine.ExecuteExpression(input, "<repl>");
+                if (input == null)
+                    break; // EOF (e.g., Ctrl+D)
 
-            if (_engine.ErrorReporter.HasErrors)
-            {
-                // Print errors
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(_engine.ErrorReporter.FormatErrors());
-                Console.ResetColor();
+                if (string.IsNullOrWhiteSpace(input))
+                    continue;
+
+                // Handle special commands
+                if (input.StartsWith(':'))
+                {
+                    if (!HandleCommand(input))
+                        break;
+                    continue;
+                }
+
+                // Execute input and get result
+                var result = _engine.ExecuteExpression(input, "<repl>");
+
+                if (_engine.ErrorReporter.HasErrors)
+                {
+                    // Print errors
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(_engine.ErrorReporter.FormatErrors());
+                    Console.ResetColor();
+                }
+                else if (result != null && result.Type is not VoidType)
+                {
+                    // Print the result (if it's not Void)
+                    Console.WriteLine(result.ToString());
+                }
             }
-            else if (result != null && result.Type is not VoidType)
-            {
-                // Print the result (if it's not Void)
-                Console.WriteLine(result.ToString());
-            }
+        }
+        finally
+        {
+            _engine.Dispose();
         }
 
         Console.WriteLine("Goodbye!");
     }
 
-    private string ReadCompleteInput()
+    private string? ReadCompleteInput()
     {
         Console.Write("> ");
         var firstLine = Console.ReadLine();
+
+        if (firstLine == null)
+            return null; // EOF
 
         if (string.IsNullOrWhiteSpace(firstLine))
             return string.Empty;
@@ -175,8 +199,16 @@ public class Repl
             ":quit" or ":q" or ":exit" => false,
             ":help" or ":h" => ShowHelp(),
             ":clear" or ":cls" => ClearScreen(),
+            ":stop" => StopAudio(),
             _ => UnknownCommand(command)
         };
+    }
+
+    private bool StopAudio()
+    {
+        _engine.StopAudio();
+        Console.WriteLine("Audio playback stopped.");
+        return true;
     }
 
     private bool ShowHelp()
@@ -185,6 +217,14 @@ public class Repl
         Console.WriteLine("  :quit, :q, :exit  - Exit the REPL");
         Console.WriteLine("  :help, :h         - Show this help");
         Console.WriteLine("  :clear, :cls      - Clear the screen");
+        Console.WriteLine("  :stop             - Stop audio playback");
+        Console.WriteLine();
+        Console.WriteLine("Audio Playback:");
+        Console.WriteLine("  Ctrl+C            - Stop current audio playback");
+        Console.WriteLine("  (play buffer)     - Play an audio buffer");
+        Console.WriteLine("  (loop buffer)     - Loop audio (Ctrl+C to stop)");
+        Console.WriteLine("  (preview buffer)  - Quick low-quality preview");
+        Console.WriteLine("  (stop)            - Stop playback from code");
         Console.WriteLine();
         Console.WriteLine("Multi-line Input:");
         Console.WriteLine("  Method 1: End a line with \\ to continue on the next line");
@@ -193,22 +233,9 @@ public class Repl
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  > use \"@std\"");
-        Console.WriteLine("  > Int x = 5");
-        Console.WriteLine("  > x");
-        Console.WriteLine("  5");
-        Console.WriteLine();
-        Console.WriteLine("  Backslash continuation:");
-        Console.WriteLine("  > (list 1 \\");
-        Console.WriteLine("  ...     2 \\");
-        Console.WriteLine("  ...     3)");
-        Console.WriteLine("  [1, 2, 3]");
-        Console.WriteLine();
-        Console.WriteLine("  Proc definition:");
-        Console.WriteLine("  > proc double (Int: n)");
-        Console.WriteLine("  ...     n * 2");
-        Console.WriteLine("  ... end proc");
-        Console.WriteLine("  > (double 21)");
-        Console.WriteLine("  42");
+        Console.WriteLine("  > use \"@audio\"");
+        Console.WriteLine("  > Buffer t = (createSineTone 0.5 440.0 0.3)");
+        Console.WriteLine("  > t -> play");
         Console.WriteLine();
         return true;
     }
