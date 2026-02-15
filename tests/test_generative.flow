@@ -1,0 +1,38 @@
+use "@std"
+
+timesig 4/4 {
+    Note: Uniform random choice
+    Sequence rand1 = | (? C4 E4 G4) (? C4 E4 G4) (? C4 E4 G4) (? C4 E4 G4) |
+    (print (str rand1))
+
+    Note: Seeded random is deterministic
+    (??set 42)
+    Sequence seeded1 = | (?? C4 E4 G4) (?? D4 F4 A4) (?? E4 G4 B4) (?? C4 E4 G4) |
+    (print (str seeded1))
+    (??reset)
+    Sequence seeded2 = | (?? C4 E4 G4) (?? D4 F4 A4) (?? E4 G4 B4) (?? C4 E4 G4) |
+    (print (str seeded2))
+
+    Note: Weighted random choice
+    Sequence weighted = | (? C4:50 E4:30 G4:20) (? C4:50 E4:30 G4:20) _ _ |
+    (print (str weighted))
+
+    Note: Random with rests as options
+    Sequence withRests = | (? C4 _) (? E4 _) (? G4 _) (? C4 _) |
+    (print (str withRests))
+}
+
+Note: Euclidean rhythms
+Sequence euclid1 = (euclidean 3 8 C4)
+(print (str euclid1))
+
+Sequence euclid2 = (euclidean 5 8 E4)
+(print (str euclid2))
+
+Sequence euclid3 = (euclidean 4 4 G4)
+(print (str euclid3))
+
+Sequence euclid4 = (euclidean 1 4 A4)
+(print (str euclid4))
+
+(print "generative tests complete")

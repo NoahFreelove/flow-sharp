@@ -782,5 +782,81 @@ public static class BuiltInFunctions
             double frequency = Audio.PitchConversion.NoteToFrequency(noteName, octave, alteration);
             return Value.Double(frequency);
         });
+
+        // ===== Euclidean Rhythm =====
+
+        var euclideanSignature = new FunctionSignature(
+            "euclidean",
+            [IntType.Instance, IntType.Instance, NoteType.Instance]);
+        registry.Register("euclidean", euclideanSignature, args =>
+        {
+            int hits = (int)args[0].Data!;
+            int steps = (int)args[1].Data!;
+            string noteStr = (string)args[2].Data!;
+
+            if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
+            if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
+            if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
+
+            var (noteName, octave, alteration) = NoteType.Parse(noteStr);
+
+            // Bjorklund algorithm for euclidean rhythm
+            var pattern = Bjorklund(hits, steps);
+
+            // Choose duration based on steps count
+            var duration = steps switch
+            {
+                <= 4 => NoteValueType.Value.QUARTER,
+                <= 8 => NoteValueType.Value.EIGHTH,
+                <= 16 => NoteValueType.Value.SIXTEENTH,
+                _ => NoteValueType.Value.THIRTYSECOND
+            };
+
+            var notes = new List<MusicalNoteData>();
+            foreach (bool isHit in pattern)
+            {
+                if (isHit)
+                    notes.Add(new MusicalNoteData(noteName, octave, alteration, (int)duration, isRest: false));
+                else
+                    notes.Add(new MusicalNoteData(' ', 0, 0, (int)duration, isRest: true));
+            }
+
+            var timeSig = new TimeSignatureData(4, 4);
+            var bar = new BarData(notes, timeSig);
+            var sequence = new SequenceData();
+            sequence.AddBar(bar);
+            return Value.Sequence(sequence);
+        });
+    }
+
+    /// <summary>
+    /// Bjorklund algorithm: distributes hits evenly across steps.
+    /// </summary>
+    private static bool[] Bjorklund(int hits, int steps)
+    {
+        if (hits >= steps)
+            return Enumerable.Repeat(true, steps).ToArray();
+
+        // Build groups using the Euclidean algorithm
+        var groups = new List<List<bool>>();
+        for (int i = 0; i < steps; i++)
+            groups.Add(new List<bool> { i < hits });
+
+        int splitPoint = hits;
+        int remainder = steps - hits;
+
+        while (remainder > 1)
+        {
+            int distribute = Math.Min(splitPoint, remainder);
+            for (int i = 0; i < distribute; i++)
+            {
+                groups[i].AddRange(groups[groups.Count - 1]);
+                groups.RemoveAt(groups.Count - 1);
+            }
+            remainder = groups.Count - (splitPoint < remainder ? splitPoint : distribute);
+            splitPoint = distribute;
+        }
+
+        return groups.SelectMany(g => g).ToArray();
     }
 }

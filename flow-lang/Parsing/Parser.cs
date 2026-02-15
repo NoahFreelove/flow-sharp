@@ -702,6 +702,62 @@ public class Parser
                 continue;
             }
 
+            // Random choice: (? C4 E4 G4) or (?? C4 E4 G4) with optional weights
+            if (Check(TokenType.LParen) && !IsAtEnd())
+            {
+                // Peek ahead: need ( followed by ? or ??
+                int savedPos = _current;
+                Advance(); // consume (
+                if (Check(TokenType.Identifier) && (CurrentToken.Text == "?" || CurrentToken.Text == "??"))
+                {
+                    var elemLoc = _tokens[savedPos].Location;
+                    bool isSeeded = CurrentToken.Text == "??";
+                    Advance(); // consume ? or ??
+                    var choices = new List<(string Note, int? Weight)>();
+                    while (!Check(TokenType.RParen) && !IsAtEnd())
+                    {
+                        if (Check(TokenType.NoteLiteral))
+                        {
+                            var noteToken = Advance();
+                            int? weight = null;
+                            if (Match(TokenType.Colon))
+                            {
+                                var wt = Expect(TokenType.IntLiteral, "Expected weight after ':'");
+                                weight = (int)wt.Value!;
+                            }
+                            choices.Add((noteToken.Text, weight));
+                        }
+                        else if (Match(TokenType.Underscore))
+                        {
+                            // Allow rest _ as a choice
+                            int? weight = null;
+                            if (Match(TokenType.Colon))
+                            {
+                                var wt = Expect(TokenType.IntLiteral, "Expected weight after ':'");
+                                weight = (int)wt.Value!;
+                            }
+                            choices.Add(("_", weight));
+                        }
+                        else
+                        {
+                            _errorReporter.ReportError($"Expected note or '_' in random choice, got '{CurrentToken.Text}'", CurrentToken.Location);
+                            Advance();
+                        }
+                    }
+                    Expect(TokenType.RParen, "Expected ')' after random choice");
+                    if (choices.Count == 0) _errorReporter.ReportError("Random choice requires at least one option", elemLoc);
+                    string? durSuffix = TryParseDurationSuffix();
+                    bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                    currentBarElements.Add(new RandomChoiceElement(elemLoc, choices, isSeeded, durSuffix, isDotted));
+                    continue;
+                }
+                else
+                {
+                    // Not a random choice — rewind
+                    _current = savedPos;
+                }
+            }
+
             // Chord bracket: [C4 E4 G4]
             if (Match(TokenType.LBracket))
             {
@@ -810,7 +866,8 @@ public class Parser
         // Note stream elements are: notes, rests, chord brackets, named chords, pipes
         // Identifiers can be roman numerals inside note streams
         if (type is TokenType.NoteLiteral or TokenType.Underscore
-            or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral)
+            or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral
+            or TokenType.LParen)
             return false;
         // Check if identifier is a roman numeral
         if (type == TokenType.Identifier && ScaleDatabase.IsRomanNumeral(CurrentToken.Text))

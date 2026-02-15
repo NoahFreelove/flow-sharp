@@ -1,4 +1,5 @@
 using FlowLang.Ast.Expressions;
+using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
 
@@ -92,6 +93,10 @@ public class NoteStreamCompiler
                         musicalNotes.Add(chordNote);
                     }
                     break;
+
+                case RandomChoiceElement choice:
+                    musicalNotes.Add(CompileRandomChoiceElement(choice, autoFitDuration));
+                    break;
             }
         }
 
@@ -118,6 +123,7 @@ public class NoteStreamCompiler
                 ChordElement c => c.DurationSuffix,
                 NamedChordElement nc => nc.DurationSuffix,
                 RomanNumeralElement rn => rn.DurationSuffix,
+                RandomChoiceElement rc => rc.DurationSuffix,
                 _ => null
             };
 
@@ -128,6 +134,7 @@ public class NoteStreamCompiler
                 ChordElement c => c.IsDotted,
                 NamedChordElement nc => nc.IsDotted,
                 RomanNumeralElement rn => rn.IsDotted,
+                RandomChoiceElement rc => rc.IsDotted,
                 _ => false
             };
 
@@ -336,5 +343,63 @@ public class NoteStreamCompiler
         if (autoFitDuration != null)
             return (int)autoFitDuration.Value;
         return (int)NoteValueType.Value.QUARTER;
+    }
+
+    /// <summary>
+    /// Compiles a RandomChoiceElement by selecting one note randomly from the choice set.
+    /// </summary>
+    private MusicalNoteData CompileRandomChoiceElement(RandomChoiceElement choice, NoteValueType.Value? autoFitDuration)
+    {
+        int? durationValue = ResolveDuration(choice.DurationSuffix, autoFitDuration);
+
+        // Select a note from the choices
+        string selectedNote;
+        bool hasWeights = choice.Choices.Any(c => c.Weight.HasValue);
+
+        if (hasWeights)
+        {
+            // Weighted random selection
+            int totalWeight = choice.Choices.Sum(c => c.Weight ?? 0);
+            if (totalWeight <= 0)
+            {
+                Console.Error.WriteLine("Warning: random choice weights sum to 0, using uniform selection");
+                hasWeights = false;
+            }
+            else
+            {
+                if (totalWeight != 100)
+                {
+                    Console.Error.WriteLine($"Warning: random choice weights sum to {totalWeight}, not 100. Normalizing.");
+                }
+                float rand = Utils.FRand(choice.IsSeeded) * totalWeight;
+                float cumulative = 0;
+                selectedNote = choice.Choices[^1].Note; // Default to last
+                foreach (var (note, weight) in choice.Choices)
+                {
+                    cumulative += weight ?? 0;
+                    if (rand < cumulative)
+                    {
+                        selectedNote = note;
+                        break;
+                    }
+                }
+                return CreateNoteFromChoice(selectedNote, durationValue);
+            }
+        }
+
+        // Uniform random selection
+        int index = (int)(Utils.FRand(choice.IsSeeded) * choice.Choices.Count);
+        index = Math.Clamp(index, 0, choice.Choices.Count - 1);
+        selectedNote = choice.Choices[index].Note;
+        return CreateNoteFromChoice(selectedNote, durationValue);
+    }
+
+    private static MusicalNoteData CreateNoteFromChoice(string noteStr, int? durationValue)
+    {
+        if (noteStr == "_")
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+
+        var (name, octave, alteration) = NoteType.Parse(noteStr);
+        return new MusicalNoteData(name, octave, alteration, durationValue, isRest: false);
     }
 }

@@ -81,3 +81,6 @@ internal proc down (Sequence: seq, Int: octaves)
 internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
 internal proc concat (Sequence: a, Sequence: b)
+
+Note: Generative features
+internal proc euclidean (Int: hits, Int: steps, Note: pitch)
