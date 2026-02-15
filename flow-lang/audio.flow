@@ -282,6 +282,11 @@ proc adsr(Double: attack, Double: decay, Double: sustain, Double: release)
     (createADSR attack decay sustain release DEFAULT_SAMPLE_RATE)
 end proc
 
+Note: ===== Sequence/Bar Rendering =====
+
+Note: Render a sequence's bars to positioned voices using specified synth, sample rate, and BPM
+internal proc renderSequenceToVoices(Sequence: seq, String: synthType, Int: sampleRate, Double: bpm)
+
 Note: ===== Phase 5: Audio Effects (DSP) =====
 
 Note: Apply Schroeder reverb with room size (0-1), default damping and mix

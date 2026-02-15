@@ -161,16 +161,24 @@ public class Interpreter
                     break;
 
                 case MusicalContextType.Key:
-                    var keyExpr = (LiteralExpression)ctx.Value;
-                    string keyName = (string)keyExpr.Value;
-                    if (!MusicalContext.IsValidKey(keyName))
+                    if (ctx.Value is LiteralExpression keyExpr)
+                    {
+                        string keyName = (string)keyExpr.Value;
+                        if (!MusicalContext.IsValidKey(keyName))
+                        {
+                            _errorReporter.ReportError(
+                                $"Unrecognized key '{keyName}'. Valid keys include: Cmajor, Aminor, Fsharpmajor, etc.",
+                                ctx.Location);
+                            return;
+                        }
+                        musicalCtx.Key = keyName;
+                    }
+                    else
                     {
                         _errorReporter.ReportError(
-                            $"Unrecognized key '{keyName}'. Valid keys include: Cmajor, Aminor, Fsharpmajor, etc.",
-                            ctx.Location);
+                            "Expected a key name literal (e.g., Cmajor, Aminor)", ctx.Location);
                         return;
                     }
-                    musicalCtx.Key = keyName;
                     break;
             }
 

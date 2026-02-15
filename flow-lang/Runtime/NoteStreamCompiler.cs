@@ -221,7 +221,7 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER; // Default to quarter note
         }
 
-        return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false);
+        return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false, centOffset: note.CentOffset);
     }
 
     /// <summary>

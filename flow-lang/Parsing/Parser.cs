@@ -1091,7 +1091,8 @@ public class Parser
             if (CurrentToken.Type is TokenType.Proc or TokenType.Return
                 or TokenType.Use or TokenType.Internal
                 or TokenType.Timesig or TokenType.Tempo
-                or TokenType.Swing or TokenType.Key)
+                or TokenType.Swing or TokenType.Key
+                or TokenType.Section)
             {
                 return;
             }

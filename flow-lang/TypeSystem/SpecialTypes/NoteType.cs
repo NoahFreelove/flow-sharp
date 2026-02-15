@@ -136,14 +136,16 @@ public class MusicalNoteData
     public int Alteration { get; }
     public int? DurationValue { get; }
     public bool IsRest { get; }
+    public double? CentOffset { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest)
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null)
     {
         NoteName = noteName;
         Octave = octave;
         Alteration = alteration;
         DurationValue = durationValue;
         IsRest = isRest;
+        CentOffset = centOffset;
     }
 
     /// <summary>
