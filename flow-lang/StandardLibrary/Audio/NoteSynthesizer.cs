@@ -1,4 +1,5 @@
 using System;
+using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
@@ -187,6 +188,10 @@ namespace FlowLang.StandardLibrary.Audio
                 "saw" or "sawtooth" => new SawSynthesizer(),
                 "square" => new SquareSynthesizer(),
                 "triangle" => new TriangleSynthesizer(),
+                "piano" => new PianoSynthesizer(),
+                "brass" or "horn" => new BrassSynthesizer(),
+                "sax" or "saxophone" => new SaxSynthesizer(),
+                "drums" or "drum" => new DrumSynthesizer(),
                 _ => throw new ArgumentException($"Unknown synthesizer type: {synthType}")
             };
         }

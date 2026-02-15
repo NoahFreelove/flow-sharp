@@ -65,7 +65,7 @@ public static class EnvelopeProcessor
     /// <summary>
     /// Generates an envelope curve as an array of amplitude multipliers.
     /// </summary>
-    private static float[] GenerateEnvelopeCurve(Envelope envelope, int totalFrames)
+    public static float[] GenerateEnvelopeCurve(Envelope envelope, int totalFrames)
     {
         float[] curve = new float[totalFrames];
 

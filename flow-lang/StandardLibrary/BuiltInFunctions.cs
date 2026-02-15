@@ -23,6 +23,7 @@ public static class BuiltInFunctions
         RegisterBars(registry);
         RegisterMusicalNotationFunctions(registry);
         Audio.EffectsFunctions.Register(registry);
+        Audio.SongRenderer.Register(registry);
         Transforms.TransformFunctions.Register(registry);
         Harmony.HarmonyFunctions.Register(registry);
     }

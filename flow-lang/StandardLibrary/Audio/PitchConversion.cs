@@ -31,7 +31,7 @@ namespace FlowLang.StandardLibrary.Audio
         /// Converts note information to a MIDI note number.
         /// C4 (middle C) = 60, A4 = 69
         /// </summary>
-        private static int GetMidiNote(char noteName, int octave, int alteration)
+        public static int GetMidiNote(char noteName, int octave, int alteration)
         {
             int noteOffset = noteName switch
             {
