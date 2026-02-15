@@ -1,0 +1,7 @@
+use "@std"
+
+tempo -5 {
+    (print "should not print - negative tempo")
+}
+
+(print "after invalid tempo block")

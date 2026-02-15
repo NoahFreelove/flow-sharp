@@ -1,0 +1,42 @@
+use "@std"
+
+tempo 120 {
+    (print "tempo block works")
+}
+
+timesig 4/4 {
+    (print "timesig 4/4 block works")
+}
+
+tempo 120 {
+    timesig 4/4 {
+        (print "nested 4/4 at 120 bpm")
+    }
+    timesig 3/4 {
+        (print "nested 3/4 at 120 bpm")
+    }
+}
+
+key Cmajor {
+    (print "key Cmajor block works")
+}
+
+swing 55% {
+    (print "swing 55 percent block works")
+}
+
+swing 0.6 {
+    (print "swing 0.6 block works")
+}
+
+tempo 100 {
+    timesig 6/8 {
+        key Aminor {
+            swing 55% {
+                (print "deeply nested context works")
+            }
+        }
+    }
+}
+
+(print "outside context blocks")

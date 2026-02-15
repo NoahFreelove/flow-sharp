@@ -292,48 +292,44 @@ public class Parser
                 break;
 
             case MusicalContextType.Tempo:
-                // Accept Int or Float literal for tempo
+            {
+                int tempoSign = 1;
+                var tempoLoc = CurrentToken.Location;
+                if (Match(TokenType.Minus)) tempoSign = -1;
+                else if (Match(TokenType.Plus)) tempoSign = 1;
                 if (Check(TokenType.IntLiteral))
-                {
-                    value = new LiteralExpression(CurrentToken.Location, (int)Advance().Value!);
-                }
+                    value = new LiteralExpression(tempoLoc, tempoSign * (int)Advance().Value!);
                 else if (Check(TokenType.FloatLiteral))
-                {
-                    value = new LiteralExpression(CurrentToken.Location, (double)Advance().Value!);
-                }
+                    value = new LiteralExpression(tempoLoc, tempoSign * (double)Advance().Value!);
                 else
-                {
                     throw new ParseException($"Expected numeric tempo value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
-                }
                 break;
+            }
 
             case MusicalContextType.Swing:
-                // Parse percentage (e.g., 60%) or float (e.g., 0.6)
+            {
+                int swingSign = 1;
+                var swingLoc = CurrentToken.Location;
+                if (Match(TokenType.Minus)) swingSign = -1;
+                else if (Match(TokenType.Plus)) swingSign = 1;
                 if (Check(TokenType.IntLiteral))
                 {
                     var intToken = Advance();
-                    int intVal = (int)intToken.Value!;
-                    // Check for % sign (parsed as Identifier)
+                    int intVal = swingSign * (int)intToken.Value!;
                     if (Check(TokenType.Identifier) && CurrentToken.Text == "%")
                     {
-                        Advance(); // consume %
-                        value = new LiteralExpression(intToken.Location, intVal / 100.0);
+                        Advance();
+                        value = new LiteralExpression(swingLoc, intVal / 100.0);
                     }
                     else
-                    {
-                        // Treat as a raw integer (unusual but allowed)
-                        value = new LiteralExpression(intToken.Location, (double)intVal);
-                    }
+                        value = new LiteralExpression(swingLoc, (double)intVal);
                 }
                 else if (Check(TokenType.FloatLiteral))
-                {
-                    value = new LiteralExpression(CurrentToken.Location, (double)Advance().Value!);
-                }
+                    value = new LiteralExpression(swingLoc, swingSign * (double)Advance().Value!);
                 else
-                {
                     throw new ParseException($"Expected swing value (percentage or float), got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
-                }
                 break;
+            }
 
             case MusicalContextType.Key:
                 // Accept identifier like Cmajor, Aminor, etc.
@@ -696,9 +692,7 @@ public class Parser
 
     private bool IsArgumentStart(TokenType type)
     {
-        // For optional parentheses syntax, only allow literal arguments
-        // This avoids ambiguity with identifiers in expressions
-        // To pass variables or complex expressions, use explicit syntax: (func arg)
+        // For optional parentheses syntax: identifiers and literals can be arguments
         // Note: LParen is intentionally excluded here despite being an unambiguous
         // expression start. Including it would cause identifiers followed by parenthesized
         // expressions to be misinterpreted as function calls (e.g., `xs (fn ...)` inside
@@ -711,7 +705,8 @@ public class Parser
             or TokenType.SemitoneLiteral
             or TokenType.CentLiteral
             or TokenType.TimeLiteral
-            or TokenType.DecibelLiteral;
+            or TokenType.DecibelLiteral
+            or TokenType.Identifier;
     }
 
     private bool Check(TokenType type)

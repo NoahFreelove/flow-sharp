@@ -27,6 +27,15 @@ public class Interpreter
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
         _evaluator = new ExpressionEvaluator(context, errorReporter, this);
+
+        // Wire up the invoker for higher-order functions in the standard library
+        StandardLibrary.collections.Invoker = (overload, args) =>
+        {
+            if (overload.IsInternal)
+                return overload.Implementation!(args);
+            else
+                return ExecuteUserFunction(overload.Declaration!, args);
+        };
     }
 
     /// <summary>
@@ -77,6 +86,10 @@ public class Interpreter
                 ExecuteImport(import);
                 break;
 
+            case MusicalContextStatement ctx:
+                ExecuteMusicalContext(ctx);
+                break;
+
             case ExpressionStatement exprStmt:
                 var value = _evaluator.Evaluate(exprStmt.Expression);
                 _lastExpressionValue = value;  // Store for REPL
@@ -84,6 +97,87 @@ public class Interpreter
 
             default:
                 throw new NotSupportedException($"Statement type {stmt.GetType().Name} not supported");
+        }
+    }
+
+    private void ExecuteMusicalContext(MusicalContextStatement ctx)
+    {
+        _context.PushFrame();
+        try
+        {
+            var musicalCtx = new MusicalContext();
+
+            switch (ctx.ContextType)
+            {
+                case MusicalContextType.Timesig:
+                    var num = _evaluator.Evaluate(ctx.Value);
+                    var den = _evaluator.Evaluate(ctx.Value2!);
+                    int numVal = num.As<int>();
+                    int denVal = den.As<int>();
+                    try
+                    {
+                        musicalCtx.TimeSignature = new TimeSignatureData(numVal, denVal);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        _errorReporter.ReportError(ex.Message, ctx.Location);
+                        return;
+                    }
+                    break;
+
+                case MusicalContextType.Tempo:
+                    var tempoVal = _evaluator.Evaluate(ctx.Value);
+                    double tempo = tempoVal.Type is IntType
+                        ? (double)tempoVal.As<int>()
+                        : tempoVal.As<double>();
+                    if (!MusicalContext.IsValidTempo(tempo))
+                    {
+                        _errorReporter.ReportError(
+                            $"Tempo must be positive, got {tempo}", ctx.Location);
+                        return;
+                    }
+                    musicalCtx.Tempo = tempo;
+                    break;
+
+                case MusicalContextType.Swing:
+                    var swingVal = _evaluator.Evaluate(ctx.Value);
+                    double swing = swingVal.Type is IntType
+                        ? (double)swingVal.As<int>()
+                        : swingVal.As<double>();
+                    if (!MusicalContext.IsValidSwing(swing))
+                    {
+                        _errorReporter.ReportError(
+                            $"Swing must be between 0.0 and 1.0, got {swing}", ctx.Location);
+                        return;
+                    }
+                    musicalCtx.Swing = swing;
+                    break;
+
+                case MusicalContextType.Key:
+                    var keyExpr = (LiteralExpression)ctx.Value;
+                    string keyName = (string)keyExpr.Value;
+                    if (!MusicalContext.IsValidKey(keyName))
+                    {
+                        _errorReporter.ReportError(
+                            $"Unrecognized key '{keyName}'. Valid keys include: Cmajor, Aminor, Fsharpmajor, etc.",
+                            ctx.Location);
+                        return;
+                    }
+                    musicalCtx.Key = keyName;
+                    break;
+            }
+
+            _context.CurrentFrame.MusicalContext = musicalCtx;
+
+            foreach (var stmt in ctx.Body)
+            {
+                ExecuteStatement(stmt);
+                if (_returnValue != null) break;
+            }
+        }
+        finally
+        {
+            _context.PopFrame();
         }
     }
 
@@ -124,7 +218,9 @@ public class Interpreter
         var value = _evaluator.Evaluate(varDecl.Value);
 
         // Check if this is a default value initialization (when expression evaluates to Int 0 for non-Int types)
-        bool isDefaultInit = value.Type is IntType && value.As<int>() == 0 && varDecl.Type is not IntType;
+        // Exclude NoteValue since it's int-backed and 0 is a valid enum value (WHOLE)
+        bool isDefaultInit = value.Type is IntType && value.As<int>() == 0 && varDecl.Type is not IntType
+            && varDecl.Type is not TypeSystem.SpecialTypes.NoteValueType;
 
         if (isDefaultInit)
         {
@@ -134,7 +230,9 @@ public class Interpreter
         else
         {
             // Type checking (simplified - just check if compatible)
-            if (!value.Type.IsCompatibleWith(varDecl.Type) && !value.Type.CanConvertTo(varDecl.Type))
+            // Skip type check for function values (lambdas assigned to variables with return-type annotations)
+            if (value.Type is not TypeSystem.PrimitiveTypes.FunctionType
+                && !value.Type.IsCompatibleWith(varDecl.Type) && !value.Type.CanConvertTo(varDecl.Type))
             {
                 _errorReporter.ReportError(
                     $"Cannot assign {value.Type} to variable of type {varDecl.Type}",
@@ -225,9 +323,9 @@ public class Interpreter
         // Get current file from import statement location
         string? currentFile = import.Location.FileName;
 
-        var success = moduleLoader.LoadModule(import.FilePath, currentFile ?? "", _context);
+        var result = moduleLoader.LoadModule(import.FilePath, currentFile ?? "", _context, import.Location);
 
-        if (!success)
+        if (result == ModuleLoadResult.Error)
         {
             _errorReporter.ReportError($"Failed to import '{import.FilePath}'", import.Location);
         }
@@ -238,12 +336,32 @@ public class Interpreter
     /// </summary>
     public Value ExecuteUserFunction(ProcDeclaration proc, IReadOnlyList<Value> args)
     {
+        return ExecuteUserFunctionWithCaptures(proc, args, null);
+    }
+
+    /// <summary>
+    /// Executes a user-defined function with optional captured closure variables.
+    /// </summary>
+    public Value ExecuteUserFunctionWithCaptures(
+        ProcDeclaration proc,
+        IReadOnlyList<Value> args,
+        IReadOnlyDictionary<string, Value>? capturedVariables)
+    {
         // Create new stack frame
         _context.PushFrame();
 
         try
         {
-            // Bind parameters
+            // Inject captured closure variables (snapshot from lambda creation time)
+            if (capturedVariables != null)
+            {
+                foreach (var (name, value) in capturedVariables)
+                {
+                    _context.DeclareVariable(name, value);
+                }
+            }
+
+            // Bind parameters (may shadow captured variables, which is correct)
             for (int i = 0; i < proc.Parameters.Count; i++)
             {
                 var param = proc.Parameters[i];
@@ -275,7 +393,11 @@ public class Interpreter
                     paramValue = args[i];
                 }
 
-                _context.DeclareVariable(param.Name, paramValue);
+                // Use SetVariable if the name was already declared (from captures), otherwise declare
+                if (capturedVariables != null && capturedVariables.ContainsKey(param.Name))
+                    _context.SetVariable(param.Name, paramValue);
+                else
+                    _context.DeclareVariable(param.Name, paramValue);
             }
 
             // Execute function body with implicit return collection
