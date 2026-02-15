@@ -1,4 +1,5 @@
 using FlowLang.Ast.Expressions;
+using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Runtime;
@@ -33,7 +34,7 @@ public class NoteStreamCompiler
 
         foreach (var bar in noteStream.Bars)
         {
-            var barData = CompileBar(bar, timeSig);
+            var barData = CompileBar(bar, timeSig, context);
             sequence.AddBar(barData);
         }
 
@@ -43,7 +44,7 @@ public class NoteStreamCompiler
     /// <summary>
     /// Compiles a single bar of note stream elements into a BarData.
     /// </summary>
-    private BarData CompileBar(NoteStreamBar bar, TimeSignatureData timeSig)
+    private BarData CompileBar(NoteStreamBar bar, TimeSignatureData timeSig, MusicalContext context)
     {
         var musicalNotes = new List<MusicalNoteData>();
 
@@ -77,6 +78,20 @@ public class NoteStreamCompiler
                         musicalNotes.Add(chordNote);
                     }
                     break;
+
+                case NamedChordElement namedChord:
+                    foreach (var chordNote in CompileNamedChordElement(namedChord, autoFitDuration))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case RomanNumeralElement romanNumeral:
+                    foreach (var chordNote in CompileRomanNumeralElement(romanNumeral, autoFitDuration, context))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
             }
         }
 
@@ -101,6 +116,8 @@ public class NoteStreamCompiler
                 NoteElement n => n.DurationSuffix,
                 RestElement r => r.DurationSuffix,
                 ChordElement c => c.DurationSuffix,
+                NamedChordElement nc => nc.DurationSuffix,
+                RomanNumeralElement rn => rn.DurationSuffix,
                 _ => null
             };
 
@@ -109,6 +126,8 @@ public class NoteStreamCompiler
                 NoteElement n => n.IsDotted,
                 RestElement r => r.IsDotted,
                 ChordElement c => c.IsDotted,
+                NamedChordElement nc => nc.IsDotted,
+                RomanNumeralElement rn => rn.IsDotted,
                 _ => false
             };
 
@@ -249,5 +268,73 @@ public class NoteStreamCompiler
         }
 
         return notes;
+    }
+
+    /// <summary>
+    /// Compiles a NamedChordElement (e.g., Cmaj7) into multiple MusicalNoteData.
+    /// </summary>
+    private List<MusicalNoteData> CompileNamedChordElement(NamedChordElement namedChord, NoteValueType.Value? autoFitDuration)
+    {
+        var notes = new List<MusicalNoteData>();
+        int? durationValue = ResolveDuration(namedChord.DurationSuffix, autoFitDuration);
+
+        if (!ChordParser.TryParse(namedChord.ChordSymbol, out var chordData) || chordData == null)
+        {
+            // Invalid chord — insert a rest as fallback
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true));
+            return notes;
+        }
+
+        foreach (var noteName in chordData.NoteNames)
+        {
+            var (name, octave, alteration) = NoteType.Parse(noteName);
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false));
+        }
+
+        return notes;
+    }
+
+    /// <summary>
+    /// Compiles a RomanNumeralElement into multiple MusicalNoteData using the active key context.
+    /// </summary>
+    private List<MusicalNoteData> CompileRomanNumeralElement(
+        RomanNumeralElement romanNumeral, NoteValueType.Value? autoFitDuration, MusicalContext context)
+    {
+        var notes = new List<MusicalNoteData>();
+        int? durationValue = ResolveDuration(romanNumeral.DurationSuffix, autoFitDuration);
+
+        if (context.Key == null)
+        {
+            // No key context — insert a rest as fallback
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true));
+            return notes;
+        }
+
+        var chordData = ScaleDatabase.ResolveRomanNumeral(romanNumeral.Numeral, context.Key);
+        if (chordData == null)
+        {
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true));
+            return notes;
+        }
+
+        foreach (var noteName in chordData.NoteNames)
+        {
+            var (name, octave, alteration) = NoteType.Parse(noteName);
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false));
+        }
+
+        return notes;
+    }
+
+    /// <summary>
+    /// Resolves a duration suffix to a NoteValue, falling back to autoFitDuration or quarter note.
+    /// </summary>
+    private int? ResolveDuration(string? durationSuffix, NoteValueType.Value? autoFitDuration)
+    {
+        if (durationSuffix != null && DurationSuffixMap.TryGetValue(durationSuffix, out var noteVal))
+            return (int)noteVal;
+        if (autoFitDuration != null)
+            return (int)autoFitDuration.Value;
+        return (int)NoteValueType.Value.QUARTER;
     }
 }

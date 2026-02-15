@@ -4,6 +4,8 @@ using FlowLang.Ast.Statements;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
 using FlowLang.Lexing;
+using FlowLang.StandardLibrary;
+using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -537,6 +539,9 @@ public class Parser
         if (Match(TokenType.DecibelLiteral))
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
+        if (Match(TokenType.ChordLiteral))
+            return new ChordLiteralExpression(PreviousToken.Location, PreviousToken.Text);
+
         // Lambda expression: fn Type name, Type name => body
         if (Match(TokenType.Fn))
         {
@@ -714,6 +719,18 @@ public class Parser
                 continue;
             }
 
+            // Named chord element in note stream: Cmaj7, Dm, etc.
+            if (Check(TokenType.ChordLiteral))
+            {
+                var chordToken = Advance();
+                var elemLoc = chordToken.Location;
+                string chordSymbol = chordToken.Text;
+                string? durSuffix = TryParseDurationSuffix();
+                bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                currentBarElements.Add(new NamedChordElement(elemLoc, chordSymbol, durSuffix, isDotted));
+                continue;
+            }
+
             // Note element: C4, C4q, C4q., C4h~
             if (Check(TokenType.NoteLiteral))
             {
@@ -730,6 +747,21 @@ public class Parser
                 }
                 currentBarElements.Add(new NoteElement(elemLoc, noteName, durSuffix, isDotted, isTied, centOffset));
                 continue;
+            }
+
+            // Identifier in note stream: check for roman numerals (handled at compile time)
+            if (Check(TokenType.Identifier))
+            {
+                var identText = CurrentToken.Text;
+                if (ScaleDatabase.IsRomanNumeral(identText))
+                {
+                    var rnToken = Advance();
+                    var elemLoc = rnToken.Location;
+                    string? durSuffix = TryParseDurationSuffix();
+                    bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                    currentBarElements.Add(new RomanNumeralElement(elemLoc, identText, durSuffix, isDotted));
+                    continue;
+                }
             }
 
             // If we encounter something unexpected, break out
@@ -775,9 +807,15 @@ public class Parser
     private bool IsEndOfNoteStream()
     {
         var type = CurrentToken.Type;
-        // Note stream elements are: notes, rests, chord brackets, pipes
-        return type is not (TokenType.NoteLiteral or TokenType.Underscore
-            or TokenType.LBracket or TokenType.Pipe);
+        // Note stream elements are: notes, rests, chord brackets, named chords, pipes
+        // Identifiers can be roman numerals inside note streams
+        if (type is TokenType.NoteLiteral or TokenType.Underscore
+            or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral)
+            return false;
+        // Check if identifier is a roman numeral
+        if (type == TokenType.Identifier && ScaleDatabase.IsRomanNumeral(CurrentToken.Text))
+            return false;
+        return true;
     }
 
     // Helper methods
@@ -805,7 +843,7 @@ public class Parser
             // Special types
             if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent"
                 or "Millisecond" or "Second" or "Decibel" or "Lazy"
-                or "MusicalNote" or "Function"
+                or "MusicalNote" or "Function" or "Chord"
                 or "OscillatorState" or "Envelope" or "Beat" or "Voice"
                 or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
                 return true;
@@ -817,7 +855,7 @@ public class Parser
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
                     or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel"
-                    or "MusicalNote" or "Function"
+                    or "MusicalNote" or "Function" or "Chord"
                     or "OscillatorState" or "Envelope" or "Beat" or "Voice"
                     or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
                     return true;
@@ -843,6 +881,7 @@ public class Parser
             or TokenType.CentLiteral
             or TokenType.TimeLiteral
             or TokenType.DecibelLiteral
+            or TokenType.ChordLiteral
             or TokenType.Identifier;
     }
 

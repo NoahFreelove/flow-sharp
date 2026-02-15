@@ -1,0 +1,60 @@
+use "@std"
+
+timesig 4/4 {
+    Sequence mel = | C4 D4 E4 F4 |
+
+    Note: transpose
+    Sequence t1 = mel -> transpose +2st
+    (print (str t1))
+
+    Note: invert uses explicit call syntax to avoid parser greedy LParen issue
+    Sequence inv = (invert mel)
+    (print (str inv))
+
+    Note: retrograde
+    Sequence ret = (retrograde mel)
+    (print (str ret))
+
+    Note: augment and diminish
+    Sequence aug = (augment mel)
+    (print (str aug))
+    Sequence dim = (diminish mel)
+    (print (str dim))
+
+    Note: octave shift
+    Sequence u = mel -> up 1
+    (print (str u))
+    Sequence d = mel -> down 1
+    (print (str d))
+
+    Note: repeat
+    Sequence rep = mel -> repeat 2
+    (print (str rep))
+
+    Note: concat
+    Sequence cat = (concat mel mel)
+    (print (str cat))
+
+    Note: chaining transforms via explicit calls
+    Sequence chained = (retrograde (transpose mel +5st))
+    (print (str chained))
+
+    Note: repeat with transposition
+    Sequence repT = mel -> repeat 3 +4st
+    (print (str repT))
+}
+
+Note: Edge cases
+timesig 4/4 {
+    Note: all rest bar retrograde
+    Sequence empty = | _ _ _ _ |
+    Sequence emptyRet = (retrograde empty)
+    (print (str emptyRet))
+
+    Note: single note invert stays the same
+    Sequence single = | C4 _ _ _ |
+    Sequence singleInv = (invert single)
+    (print (str singleInv))
+}
+
+(print "transforms tests complete")

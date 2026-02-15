@@ -42,6 +42,28 @@ public record ChordElement(
 ) : NoteStreamElement(Location);
 
 /// <summary>
+/// A named chord symbol in a note stream (e.g., Cmaj7, Dm7).
+/// Parsed at compile time via ChordParser.
+/// </summary>
+public record NamedChordElement(
+    SourceLocation Location,
+    string ChordSymbol,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A roman numeral chord reference in a note stream (e.g., I, iv, V7).
+/// Resolved at compile time via ScaleDatabase using the active key context.
+/// </summary>
+public record RomanNumeralElement(
+    SourceLocation Location,
+    string Numeral,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
 /// A bar within a note stream, delimited by | ... |
 /// </summary>
 public record NoteStreamBar(
