@@ -1,5 +1,6 @@
 using FlowLang.Ast;
 using FlowLang.Ast.Expressions;
+using FlowLang.Ast.Statements;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
@@ -32,10 +33,13 @@ public class ExpressionEvaluator
             LiteralExpression lit => EvaluateLiteral(lit),
             VariableExpression var => EvaluateVariable(var),
             FunctionCallExpression call => EvaluateFunctionCall(call),
-            FlowExpression flow => EvaluateFlow(flow),
             ArrayIndexExpression idx => EvaluateArrayIndex(idx),
             BinaryExpression bin => EvaluateBinary(bin),
+            ArrayLiteralExpression arrLit => EvaluateArrayLiteral(arrLit),
+            LambdaExpression lambda => EvaluateLambda(lambda),
+            MemberAccessExpression member => EvaluateMemberAccess(member),
             LazyExpression lazy => EvaluateLazy(lazy),
+            NoteStreamExpression noteStream => EvaluateNoteStream(noteStream),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -154,11 +158,32 @@ public class ExpressionEvaluator
         var argValues = call.Arguments.Select(Evaluate).ToList();
         var argTypes = argValues.Select(v => v.Type).ToList();
 
-        // Resolve function overload
-        var overload = _context.ResolveFunction(call.Name, argTypes, call.Location);
+        // Try to resolve function overload
+        var overload = _context.TryResolveFunction(call.Name, argTypes);
+
+        // If no function found, try looking up as a variable holding a lambda
+        if (overload == null)
+        {
+            try
+            {
+                var variable = _context.GetVariable(call.Name);
+                if (variable.Data is FunctionOverload varOverload)
+                {
+                    overload = varOverload;
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Not a variable either
+            }
+        }
 
         if (overload == null)
+        {
+            // Report error using the full resolution path
+            _context.ResolveFunction(call.Name, argTypes, call.Location);
             return Value.Void();
+        }
 
         // Execute function
         if (overload.IsInternal)
@@ -168,29 +193,10 @@ public class ExpressionEvaluator
         }
         else
         {
-            // Execute user-defined function
-            return _interpreter.ExecuteUserFunction(overload.Declaration!, argValues);
+            // Execute user-defined function (with closure captures if present)
+            return _interpreter.ExecuteUserFunctionWithCaptures(
+                overload.Declaration!, argValues, overload.CapturedVariables);
         }
-    }
-
-    private Value EvaluateFlow(FlowExpression flow)
-    {
-        // Flow expressions should have been transformed by parser,
-        // but handle them here just in case
-        var left = Evaluate(flow.Left);
-
-        if (flow.Right is FunctionCallExpression funcCall)
-        {
-            // Prepend left to arguments
-            var args = new List<Expression> { new LiteralExpression(flow.Left.Location, left.Data!) };
-            args.AddRange(funcCall.Arguments);
-
-            var newCall = funcCall with { Arguments = args };
-            return EvaluateFunctionCall(newCall);
-        }
-
-        // Fallback: just evaluate right side
-        return Evaluate(flow.Right);
     }
 
     private Value EvaluateArrayIndex(ArrayIndexExpression idx)
@@ -212,6 +218,11 @@ public class ExpressionEvaluator
 
         int indexValue = index.As<int>();
 
+        // Support negative indices: -1 is last element, -2 is second-to-last, etc.
+        if (indexValue < 0) indexValue = arr.Count + indexValue;
+
+        // Soft-failure model: report error and return Void rather than throwing,
+        // allowing the program to continue executing after an out-of-bounds access.
         if (indexValue < 0 || indexValue >= arr.Count)
         {
             _errorReporter.ReportError($"Array index {indexValue} out of bounds (0-{arr.Count - 1})", idx.Location);
@@ -237,7 +248,7 @@ public class ExpressionEvaluator
                 BinaryOperator.Add => Value.Int(l + r),
                 BinaryOperator.Subtract => Value.Int(l - r),
                 BinaryOperator.Multiply => Value.Int(l * r),
-                BinaryOperator.Divide => r != 0 ? Value.Int(l / r) : throw new DivideByZeroException(),
+                BinaryOperator.Divide => r != 0 ? Value.Int(l / r) : ReportDivisionByZero(bin.Location),
                 _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
             };
         }
@@ -253,12 +264,111 @@ public class ExpressionEvaluator
                 BinaryOperator.Add => Value.Double(l + r),
                 BinaryOperator.Subtract => Value.Double(l - r),
                 BinaryOperator.Multiply => Value.Double(l * r),
-                BinaryOperator.Divide => r != 0 ? Value.Double(l / r) : throw new DivideByZeroException(),
+                BinaryOperator.Divide => r != 0 ? Value.Double(l / r) : ReportDivisionByZero(bin.Location),
                 _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
             };
         }
 
         _errorReporter.ReportError($"Cannot apply operator {bin.Operator} to {left.Type} and {right.Type}", bin.Location);
+        return Value.Void();
+    }
+
+    private Value EvaluateArrayLiteral(ArrayLiteralExpression arrLit)
+    {
+        var elements = arrLit.Elements.Select(Evaluate).ToList();
+
+        if (elements.Count == 0)
+            return Value.Array(elements, VoidType.Instance);
+
+        var elementType = elements[0].Type;
+        if (!elements.All(e => e.Type.Equals(elementType)))
+            elementType = VoidType.Instance;
+
+        return Value.Array(elements, elementType);
+    }
+
+    private Value EvaluateLambda(LambdaExpression lambda)
+    {
+        // Create a ProcDeclaration wrapping the lambda body in a return statement
+        var uniqueName = $"__lambda_{Guid.NewGuid():N}";
+        var parameters = lambda.Parameters.Select(p =>
+            new Parameter(p.Name, p.Type)).ToList();
+
+        var returnStmt = new ReturnStatement(lambda.Location, lambda.Body);
+        var body = new List<Statement> { returnStmt };
+        var proc = new ProcDeclaration(lambda.Location, uniqueName, parameters, body, false);
+
+        // Snapshot capture: capture all currently visible variables at lambda creation time.
+        // This ensures the lambda sees the values as they were when it was created,
+        // not any later mutations (immutable-leaning semantics).
+        var capturedVars = _context.CurrentFrame.GetAllAccessibleVariables();
+
+        var inputTypes = parameters.Select(p => p.Type).ToList();
+        var signature = new FunctionSignature(uniqueName, inputTypes);
+        var overload = FunctionOverload.UserDefined(uniqueName, signature, proc, capturedVars);
+
+        return Value.Function(overload);
+    }
+
+    private Value EvaluateMemberAccess(MemberAccessExpression member)
+    {
+        var obj = Evaluate(member.Object);
+
+        // Handle known types with property maps
+        if (obj.Data is StandardLibrary.Audio.Voice voice)
+        {
+            return member.MemberName switch
+            {
+                "OffsetBeats" => Value.Double(voice.OffsetBeats),
+                "Gain" => Value.Double(voice.Gain),
+                "Pan" => Value.Double(voice.Pan),
+                _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
+            };
+        }
+
+        if (obj.Data is StandardLibrary.Audio.Track track)
+        {
+            return member.MemberName switch
+            {
+                "SampleRate" => Value.Int(track.SampleRate),
+                "Channels" => Value.Int(track.Channels),
+                "OffsetBeats" => Value.Double(track.OffsetBeats),
+                "Gain" => Value.Double(track.Gain),
+                "Pan" => Value.Double(track.Pan),
+                _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
+            };
+        }
+
+        if (obj.Data is TypeSystem.SpecialTypes.BarData barData)
+        {
+            return member.MemberName switch
+            {
+                "TimeSignature" => Value.TimeSignature(barData.TimeSignature),
+                "Count" => Value.Int(barData.Notes.Count),
+                _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
+            };
+        }
+
+        // Fallback: try reflection
+        var prop = obj.Data?.GetType().GetProperty(member.MemberName);
+        if (prop != null)
+        {
+            var val = prop.GetValue(obj.Data);
+            return Value.From(val);
+        }
+
+        return ReportUnknownMember(obj.Type, member.MemberName, member.Location);
+    }
+
+    private Value ReportUnknownMember(FlowType type, string memberName, Core.SourceLocation location)
+    {
+        _errorReporter.ReportError($"Type '{type}' has no member '{memberName}'", location);
+        return Value.Void();
+    }
+
+    private Value ReportDivisionByZero(Core.SourceLocation location)
+    {
+        _errorReporter.ReportError("Division by zero", location);
         return Value.Void();
     }
 
@@ -273,5 +383,16 @@ public class ExpressionEvaluator
         var innerType = lazy.InnerExpression.ResolvedType ?? VoidType.Instance;
 
         return Value.Lazy(thunk, innerType);
+    }
+
+    /// <summary>
+    /// Evaluates a note stream expression into a Sequence value using the active musical context.
+    /// </summary>
+    private Value EvaluateNoteStream(NoteStreamExpression noteStream)
+    {
+        var context = _context.GetMusicalContext();
+        var compiler = new NoteStreamCompiler();
+        var sequence = compiler.Compile(noteStream, context);
+        return Value.Sequence(sequence);
     }
 }

@@ -84,7 +84,14 @@ public static class BuiltInFunctions
 
         var strArraySignature = new FunctionSignature("str", [new ArrayType(VoidType.Instance)]);
         registry.Register("str", strArraySignature, stdlib.StrArray);
-        
+
+        var strSequenceSignature = new FunctionSignature("str", [SequenceType.Instance]);
+        registry.Register("str", strSequenceSignature, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            return Value.String(seq.ToString());
+        });
+
         var concatSignature = new FunctionSignature("concat", [StringType.Instance, StringType.Instance]);
         registry.Register("concat", concatSignature, stdlib.Concat);
 

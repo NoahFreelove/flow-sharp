@@ -21,6 +21,7 @@ internal proc str (Millisecond: value)
 internal proc str (Second: value)
 internal proc str (Decibel: value)
 internal proc str (Voids: value)
+internal proc str (Sequence: value)
 
 internal proc concat (String: a, String: b)
 
@@ -30,12 +31,20 @@ internal proc doubleToInt (Double: value)
 
 internal proc add (Int: a, Int: b)
 internal proc add (Float: a, Float: b)
+internal proc add (Double: a, Double: b)
 
 internal proc sub (Int: a, Int: b)
+internal proc sub (Double: a, Double: b)
 
 internal proc mul (Int: a, Int: b)
+internal proc mul (Double: a, Double: b)
 
 internal proc div (Int: a, Int: b)
+internal proc div (Double: a, Double: b)
+
+Note: String-to-number conversions
+internal proc stringToInt (String: s)
+internal proc stringToDouble (String: s)
 
 Note: Lazy evaluation
 internal proc eval (Lazy<Void>: value)
