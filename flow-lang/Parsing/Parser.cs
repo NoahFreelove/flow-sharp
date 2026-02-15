@@ -18,6 +18,9 @@ public class Parser
     private readonly List<Token> _tokens;
     private readonly ErrorReporter _errorReporter;
     private int _current = 0;
+    // When true, disables the "identifier followed by literal = function call"
+    // heuristic in ParsePrimary. Set while parsing arguments inside (func arg1 arg2).
+    private bool _inFuncCallArgs = false;
 
     public Parser(List<Token> tokens, ErrorReporter errorReporter)
     {
@@ -540,6 +543,12 @@ public class Parser
             return ParseLambdaExpression();
         }
 
+        // Note stream expression: | C4 D4 E4 F4 |
+        if (Match(TokenType.Pipe))
+        {
+            return ParseNoteStream();
+        }
+
         // Array literal [elem1, elem2, ...]
         if (Match(TokenType.LBracket))
         {
@@ -641,6 +650,126 @@ public class Parser
 
         var body = ParseExpression();
         return new LambdaExpression(location, parameters, body);
+    }
+
+    /// <summary>
+    /// Parses a note stream: | element element ... | element element ... |
+    /// The opening | has already been consumed.
+    /// </summary>
+    private Expression ParseNoteStream()
+    {
+        var location = PreviousToken.Location;
+        var bars = new List<NoteStreamBar>();
+        var currentBarElements = new List<NoteStreamElement>();
+
+        while (!IsAtEnd())
+        {
+            // End of bar / end of stream
+            if (Match(TokenType.Pipe))
+            {
+                // Save current bar
+                bars.Add(new NoteStreamBar(location, currentBarElements));
+                currentBarElements = new List<NoteStreamElement>();
+
+                // Check if this was the final closing pipe
+                // A closing pipe is followed by a non-note-stream token
+                if (IsAtEnd() || IsEndOfNoteStream())
+                    break;
+
+                continue;
+            }
+
+            // Rest element: _
+            if (Match(TokenType.Underscore))
+            {
+                var elemLoc = PreviousToken.Location;
+                string? durSuffix = TryParseDurationSuffix();
+                bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                currentBarElements.Add(new RestElement(elemLoc, durSuffix, isDotted));
+                continue;
+            }
+
+            // Chord bracket: [C4 E4 G4]
+            if (Match(TokenType.LBracket))
+            {
+                var elemLoc = PreviousToken.Location;
+                var notes = new List<string>();
+                while (!Check(TokenType.RBracket) && !IsAtEnd())
+                {
+                    var noteToken = Expect(TokenType.NoteLiteral, "Expected note literal in chord bracket");
+                    notes.Add(noteToken.Text);
+                }
+                Expect(TokenType.RBracket, "Expected ']' after chord bracket");
+                string? durSuffix = TryParseDurationSuffix();
+                bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                currentBarElements.Add(new ChordElement(elemLoc, notes, durSuffix, isDotted));
+                continue;
+            }
+
+            // Note element: C4, C4q, C4q., C4h~
+            if (Check(TokenType.NoteLiteral))
+            {
+                var noteToken = Advance();
+                var elemLoc = noteToken.Location;
+                string noteName = noteToken.Text;
+                string? durSuffix = TryParseDurationSuffix();
+                bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                bool isTied = Match(TokenType.Tilde);
+                double? centOffset = null;
+                if (Check(TokenType.CentLiteral))
+                {
+                    centOffset = (double)Advance().Value!;
+                }
+                currentBarElements.Add(new NoteElement(elemLoc, noteName, durSuffix, isDotted, isTied, centOffset));
+                continue;
+            }
+
+            // If we encounter something unexpected, break out
+            break;
+        }
+
+        // If we broke out without a closing pipe, the last bar is incomplete but still valid
+        if (currentBarElements.Count > 0)
+        {
+            bars.Add(new NoteStreamBar(location, currentBarElements));
+        }
+
+        if (bars.Count == 0)
+        {
+            _errorReporter.ReportError("Empty note stream", location);
+        }
+
+        return new NoteStreamExpression(location, bars);
+    }
+
+    /// <summary>
+    /// Tries to parse a duration suffix (w, h, q, e, s, t) from the current token.
+    /// Returns null if no valid duration suffix is found.
+    /// </summary>
+    private string? TryParseDurationSuffix()
+    {
+        if (Check(TokenType.Identifier))
+        {
+            var text = CurrentToken.Text;
+            if (text is "w" or "h" or "q" or "e" or "s" or "t")
+            {
+                Advance();
+                return text;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if the current position looks like the end of a note stream.
+    /// Returns true if the next token is not a note-stream element.
+    /// </summary>
+    private bool IsEndOfNoteStream()
+    {
+        var type = CurrentToken.Type;
+        // Note stream elements are: notes, rests, chord brackets, pipes
+        return type is not (TokenType.NoteLiteral or TokenType.Underscore
+            or TokenType.LBracket or TokenType.Pipe);
     }
 
     // Helper methods
