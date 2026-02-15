@@ -456,11 +456,12 @@ public class Parser
             // x -> func (expr) becomes func(x, expr) (parenthesized args in flow context)
             if (right is VariableExpression varExpr)
             {
-                // Collect additional parenthesized arguments after the function name in flow context
+                // Collect a single parenthesized argument after the function name in flow context
                 // This supports: x -> concat (expr) -> print
-                // Only collect parenthesized expressions - not bare identifiers, which could be next statements
+                // Only collect one parenthesized expression to avoid consuming the next statement
+                // (e.g., `arr -> each (lambda)\n("next stmt")` should not treat the second line as an arg)
                 var args = new List<Expression> { left };
-                while (!IsAtEnd() && Check(TokenType.LParen))
+                if (!IsAtEnd() && Check(TokenType.LParen))
                 {
                     args.Add(ParseAdditive());
                 }
@@ -687,12 +688,14 @@ public class Parser
             // Note: We only support simple arguments (literals, identifiers) for optional parens
             // For complex arguments (parenthesized expressions), use explicit syntax: (func (expr))
             // Disabled inside (func ...) args to prevent (add n 1) from becoming add(n(1))
-            if (!_inFuncCallArgs && IsArgumentStart(CurrentToken.Type))
+            if (!_inFuncCallArgs && IsArgumentStart(CurrentToken.Type)
+                && CurrentToken.Location.Line == location.Line)
             {
                 var args = new List<Expression>();
 
                 // Parse simple arguments until we hit a terminator or non-argument token
-                while (!IsAtEnd() && IsArgumentStart(CurrentToken.Type))
+                while (!IsAtEnd() && IsArgumentStart(CurrentToken.Type)
+                       && CurrentToken.Location.Line == location.Line)
                 {
                     args.Add(ParseUnary()); // Parse argument expression
                 }
