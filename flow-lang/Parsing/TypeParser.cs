@@ -23,6 +23,12 @@ public static class TypeParser
         var token = tokens[index];
         bool isVarArgs = false;
 
+        // Check for function type: (Type, Type => Type)
+        if (token.Type == TokenType.LParen && LooksLikeFunctionType(tokens, index))
+        {
+            return ParseFunctionType(tokens, index);
+        }
+
         // Check for generic Lazy<T> type FIRST
         if (token.Type == TokenType.Identifier && token.Text == "Lazy")
         {
@@ -90,6 +96,8 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "NoteValue" => NoteValueType.Instance,
             TokenType.Identifier when token.Text == "TimeSignature" => TimeSignatureType.Instance,
             TokenType.Identifier when token.Text == "Sequence" => SequenceType.Instance,
+            TokenType.Identifier when token.Text == "MusicalNote" => MusicalNoteType.Instance,
+            TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
 
@@ -106,6 +114,62 @@ public static class TypeParser
         }
 
         return (parsedType, index, isVarArgs);
+    }
+
+    /// <summary>
+    /// Checks if a token sequence starting at index looks like a function type: (Type, ... => Type).
+    /// Scans for a FatArrow at parenthesis depth 1 before the matching RParen.
+    /// </summary>
+    public static bool LooksLikeFunctionType(List<Token> tokens, int index)
+    {
+        if (index >= tokens.Count || tokens[index].Type != TokenType.LParen)
+            return false;
+
+        int depth = 1;
+        int pos = index + 1;
+        while (pos < tokens.Count && depth > 0)
+        {
+            var t = tokens[pos];
+            if (t.Type == TokenType.LParen) depth++;
+            else if (t.Type == TokenType.RParen) depth--;
+            else if (t.Type == TokenType.FatArrow && depth == 1) return true;
+            pos++;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Parses a function type annotation: (ParamType1, ParamType2 => ReturnType)
+    /// Returns FunctionType.Instance (function types are structurally compatible at runtime).
+    /// </summary>
+    private static (FlowType type, int nextIndex, bool isVarArgs) ParseFunctionType(List<Token> tokens, int index)
+    {
+        index++; // skip opening (
+
+        // Parse parameter types until =>
+        while (index < tokens.Count && tokens[index].Type != TokenType.FatArrow)
+        {
+            // Parse each parameter type (we validate them but store as FunctionType.Instance)
+            var (_, nextIdx, _) = ParseType(tokens, index);
+            index = nextIdx;
+
+            if (index < tokens.Count && tokens[index].Type == TokenType.Comma)
+                index++; // skip comma between parameter types
+        }
+
+        if (index >= tokens.Count || tokens[index].Type != TokenType.FatArrow)
+            throw new ParseException($"Expected '=>' in function type at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+        index++; // skip =>
+
+        // Parse return type
+        var (_, retNextIdx, _) = ParseType(tokens, index);
+        index = retNextIdx;
+
+        if (index >= tokens.Count || tokens[index].Type != TokenType.RParen)
+            throw new ParseException($"Expected ')' after function type at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+        index++; // skip closing )
+
+        return (FunctionType.Instance, index, false);
     }
 
     /// <summary>
@@ -141,6 +205,8 @@ public static class TypeParser
             "NoteValue" => NoteValueType.Instance,
             "TimeSignature" => TimeSignatureType.Instance,
             "Sequence" => SequenceType.Instance,
+            "MusicalNote" => MusicalNoteType.Instance,
+            "Function" => FunctionType.Instance,
             _ => null
         };
     }

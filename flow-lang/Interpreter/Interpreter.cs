@@ -34,7 +34,8 @@ public class Interpreter
             if (overload.IsInternal)
                 return overload.Implementation!(args);
             else
-                return ExecuteUserFunction(overload.Declaration!, args);
+                return ExecuteUserFunctionWithCaptures(
+                    overload.Declaration!, args, overload.CapturedVariables);
         };
     }
 

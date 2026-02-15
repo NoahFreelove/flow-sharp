@@ -1,0 +1,135 @@
+Note: Comprehensive Lambda Function Tests
+Note: Tests: basic lambdas, function types, closures, higher-order functions, edge cases, errors
+
+use "@std"
+use "@collections"
+
+Note: ===== HAPPY PATH TESTS =====
+
+Note: Test 1: Basic lambda assigned to Function variable
+Function doubler = fn Int n => (mul n 2)
+Int r1 = (doubler 5)
+(print (str r1))
+
+Note: Test 2: Multi-param lambda
+Function adder = fn Int a, Int b => (add a b)
+Int r2 = (adder 3 4)
+(print (str r2))
+
+Note: Test 3: Zero-param lambda
+Function getFortyTwo = fn => 42
+Int r3 = (getFortyTwo)
+(print (str r3))
+
+Note: Test 4: Function type annotation (Int => Int)
+(Int => Int) tripler = fn Int n => (mul n 3)
+Int r4 = (tripler 4)
+(print (str r4))
+
+Note: Test 5: Function type annotation (Int, Int => Int)
+(Int, Int => Int) multiplier = fn Int a, Int b => (mul a b)
+Int r5 = (multiplier 6 7)
+(print (str r5))
+
+Note: Test 6: Function type annotation (Void => Int)
+(Void => Int) constVal = fn => 99
+Int r6 = (constVal)
+(print (str r6))
+
+Note: Test 7: Lambda with map
+Int[] nums = (list 1 2 3 4 5)
+Int[] doubled = (map nums (fn Int n => (mul n 2)))
+(print (str doubled))
+
+Note: Test 8: Lambda with filter
+Int[] evens = (filter nums (fn Int n => (equals 0 (sub n (mul (div n 2) 2)))))
+(print (str evens))
+
+Note: Test 9: Lambda with each
+(each (list 10 20 30) (fn Int n => (print (str n))))
+
+Note: Test 10: Lambda with reduce
+Int total = (reduce nums 0 (fn Int acc, Int n => (add acc n)))
+(print (str total))
+
+Note: ===== CLOSURE / CAPTURE TESTS =====
+
+Note: Test 11: Closure captures variable from enclosing scope
+Int x = 10
+Function addX = fn Int n => (add n x)
+Int r11 = (addX 5)
+(print (str r11))
+
+Note: Test 12: Snapshot capture - lambda sees original value after mutation
+Int y = 100
+Function addY = fn Int n => (add n y)
+y = 999
+Int r12 = (addY 5)
+(print (str r12))
+
+Note: Test 13: Closure through map
+Int factor = 3
+Int[] scaled = (map (list 1 2 3) (fn Int n => (mul n factor)))
+(print (str scaled))
+
+Note: Test 14: Closure snapshot through map (factor changes after lambda created)
+Int f2 = 10
+Function scaler = fn Int n => (mul n f2)
+f2 = 1
+Int[] scaled2 = (map (list 1 2 3) scaler)
+(print (str scaled2))
+
+Note: ===== EDGE CASE TESTS =====
+
+Note: Test 15: Lambda returning a boolean
+Function isPositive = fn Int n => (gt n 0)
+Bool r15a = (isPositive 5)
+Bool r15b = (isPositive 0)
+(print (str r15a))
+(print (str r15b))
+
+Note: Test 16: Lambda with string operations
+Function greet = fn String name => (concat "Hello, " name)
+String r16 = (greet "Flow")
+(print r16)
+
+Note: Test 17: Lambda called via flow operator (semicolon separates from next statement)
+Int r17 = 5 -> doubler; (print (str r17))
+
+Note: Test 18: Lambda chained via flow operator
+Int r18 = 3 -> doubler -> tripler; (print (str r18))
+
+Note: Test 19: Empty list with map (edge case - no elements to transform)
+Int[] emptyArr = (list)
+Int[] emptyResult = (map emptyArr (fn Int n => (mul n 2)))
+(print (str emptyResult))
+
+Note: Test 20: Single element list with filter
+Int[] single = (list 42)
+Int[] filtered = (filter single (fn Int n => (gt n 10)))
+(print (str filtered))
+
+Note: Test 21: Reduce with single element
+Int singleReduce = (reduce (list 7) 0 (fn Int acc, Int n => (add acc n)))
+(print (str singleReduce))
+
+Note: Test 22: Nested lambda calls
+Function compose = fn Int n => (doubler (tripler n))
+Int r22 = (compose 2)
+(print (str r22))
+
+Note: Test 23: Lambda with parenthesized body (notation style)
+Function parenBody = fn Int n => (
+    (add n 100)
+)
+Int r23 = (parenBody 5)
+(print (str r23))
+
+Note: ===== NOTATION MODULE TEST =====
+
+Note: Test 24: Verify @notation loads and lambdas in it work
+use "@notation"
+(print "notation loaded")
+
+Note: All tests complete
+(print "ALL LAMBDA TESTS PASSED")

@@ -164,18 +164,27 @@ public class FunctionOverload
     public Func<IReadOnlyList<Value>, Value>? Implementation { get; }
     public Ast.Statements.ProcDeclaration? Declaration { get; }
 
+    /// <summary>
+    /// Variables captured at lambda creation time (snapshot capture).
+    /// Null for non-lambda functions. When set, these bindings are injected
+    /// into the lambda's execution frame before the body runs.
+    /// </summary>
+    public IReadOnlyDictionary<string, Value>? CapturedVariables { get; }
+
     public bool IsInternal => Implementation != null;
 
     private FunctionOverload(
         string name,
         FunctionSignature signature,
         Func<IReadOnlyList<Value>, Value>? implementation,
-        Ast.Statements.ProcDeclaration? declaration)
+        Ast.Statements.ProcDeclaration? declaration,
+        IReadOnlyDictionary<string, Value>? capturedVariables = null)
     {
         Name = name;
         Signature = signature;
         Implementation = implementation;
         Declaration = declaration;
+        CapturedVariables = capturedVariables;
     }
 
     public static FunctionOverload Internal(
@@ -189,8 +198,9 @@ public class FunctionOverload
     public static FunctionOverload UserDefined(
         string name,
         FunctionSignature signature,
-        Ast.Statements.ProcDeclaration declaration)
+        Ast.Statements.ProcDeclaration declaration,
+        IReadOnlyDictionary<string, Value>? capturedVariables = null)
     {
-        return new FunctionOverload(name, signature, null, declaration);
+        return new FunctionOverload(name, signature, null, declaration, capturedVariables);
     }
 }

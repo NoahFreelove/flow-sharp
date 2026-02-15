@@ -578,15 +578,22 @@ public class Parser
             // Check if this is a function call like (func arg1 arg2)
             // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
             if (Check(TokenType.Identifier) && _current + 1 < _tokens.Count
-                && _tokens[_current + 1].Type != TokenType.Arrow)
+                && _tokens[_current + 1].Type != TokenType.Arrow
+                && _tokens[_current + 1].Type != TokenType.Dot
+                && _tokens[_current + 1].Type != TokenType.At)
             {
                 var name = Advance().Text;
                 var args = new List<Expression>();
 
+                // Inside (func ...) args, disable the "identifier literal = function call"
+                // heuristic so that (add n 1) parses as add(n, 1), not add(n(1)).
+                var savedFlag = _inFuncCallArgs;
+                _inFuncCallArgs = true;
                 while (!Check(TokenType.RParen) && !IsAtEnd())
                 {
                     args.Add(ParseExpression());
                 }
+                _inFuncCallArgs = savedFlag;
 
                 Expect(TokenType.RParen, "Expected ')' after function arguments");
                 return new FunctionCallExpression(location, name, args);
@@ -607,7 +614,8 @@ public class Parser
             // Look ahead: if next token starts a simple argument, this is a function call
             // Note: We only support simple arguments (literals, identifiers) for optional parens
             // For complex arguments (parenthesized expressions), use explicit syntax: (func (expr))
-            if (IsArgumentStart(CurrentToken.Type))
+            // Disabled inside (func ...) args to prevent (add n 1) from becoming add(n(1))
+            if (!_inFuncCallArgs && IsArgumentStart(CurrentToken.Type))
             {
                 var args = new List<Expression>();
 
