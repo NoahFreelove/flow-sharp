@@ -13,6 +13,11 @@ public enum TokenType
     Note,
     Internal,
     Lazy,
+    Fn,
+    Timesig,
+    Tempo,
+    Swing,
+    Key,
 
     // Type keywords
     Void,
@@ -38,6 +43,8 @@ public enum TokenType
 
     // Operators
     Arrow,              // ->
+    FatArrow,           // =>
+    Dot,                // .
     At,                 // @
     Assign,             // =
     Colon,              // :
@@ -53,6 +60,8 @@ public enum TokenType
     RParen,             // )
     LBracket,           // [
     RBracket,           // ]
+    LBrace,             // {
+    RBrace,             // }
     Comma,              // ,
     Semicolon,          // ;
     Ellipsis,           // ...

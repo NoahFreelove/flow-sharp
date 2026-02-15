@@ -78,7 +78,15 @@ public class SimpleLexer
         switch (c)
         {
             case '@': return SingleChar(TokenType.At);
-            case '=': return SingleChar(TokenType.Assign);
+            case '=':
+                if (PeekNext() == '>')
+                {
+                    Advance();
+                    Advance();
+                    return new Token(TokenType.FatArrow, "=>", start);
+                }
+                return SingleChar(TokenType.Assign);
+            case '.': return SingleChar(TokenType.Dot);
             case ':': return SingleChar(TokenType.Colon);
             case '+': return SingleChar(TokenType.Plus);
             case '-': return SingleChar(TokenType.Minus);
@@ -88,6 +96,8 @@ public class SimpleLexer
             case ')': return SingleChar(TokenType.RParen);
             case '[': return SingleChar(TokenType.LBracket);
             case ']': return SingleChar(TokenType.RBracket);
+            case '{': return SingleChar(TokenType.LBrace);
+            case '}': return SingleChar(TokenType.RBrace);
             case ',': return SingleChar(TokenType.Comma);
             case ';': return SingleChar(TokenType.Semicolon);
             case '<': return SingleChar(TokenType.LessThan);
@@ -143,7 +153,11 @@ public class SimpleLexer
         }
 
         if (IsAtEnd())
-            throw new Exception($"Unterminated string at {start}");
+        {
+            _errorReporter.ReportError("Unterminated string literal", start);
+            var partialValue = sb.ToString();
+            return new Token(TokenType.StringLiteral, $"\"{partialValue}\"", start, partialValue);
+        }
 
         Advance(); // Skip closing quote
 
@@ -443,6 +457,11 @@ public class SimpleLexer
             "use" => TokenType.Use,
             "internal" => TokenType.Internal,
             "lazy" => TokenType.Lazy,
+            "fn" => TokenType.Fn,
+            "timesig" => TokenType.Timesig,
+            "tempo" => TokenType.Tempo,
+            "swing" => TokenType.Swing,
+            "key" => TokenType.Key,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,
             "Float" => TokenType.Float,
@@ -497,7 +516,9 @@ public class SimpleLexer
         if (text.Length == 0)
             return false;
 
-        char firstChar = char.ToUpper(text[0]);
+        // Only recognize uppercase note names as note literals (A-G)
+        // Lowercase names like c4, d4 are treated as identifiers (variable names)
+        char firstChar = text[0];
         if (firstChar < 'A' || firstChar > 'G')
             return false;
 
@@ -593,8 +614,8 @@ public class SimpleLexer
     private bool IsTokenBoundary(char c)
     {
         return c is '@' or '=' or ':' or '+' or '-' or '*' or '/' or '.'
-            or '(' or ')' or '[' or ']' or ',' or ';' or '"'
-            or '<' or '>';
+            or '(' or ')' or '[' or ']' or '{' or '}' or ',' or ';' or '"'
+            or '<' or '>' or '|' or '~';
     }
 
     private void SkipWhitespaceAndComments()
@@ -621,7 +642,7 @@ public class SimpleLexer
                 Advance(); // Skip \r
                 Advance(); // Skip \n
             }
-            else if (c == 'N' && _column == 1 && _source.Substring(_position).StartsWith("Note:"))
+            else if (c == 'N' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("Note:"))
             {
                 // Skip comment until end of line
                 while (!IsAtEnd() && Peek() != '\n')
@@ -634,6 +655,18 @@ public class SimpleLexer
                 break;
             }
         }
+    }
+
+    private bool IsStartOfLineContent()
+    {
+        // Check if all preceding characters on the current line are whitespace
+        for (int i = _position - 1; i >= 0; i--)
+        {
+            char ch = _source[i];
+            if (ch == '\n') return true; // Reached start of line, all whitespace before us
+            if (!char.IsWhiteSpace(ch)) return false; // Non-whitespace found before us
+        }
+        return true; // Reached start of source
     }
 
     private char Peek() => IsAtEnd() ? '\0' : _source[_position];

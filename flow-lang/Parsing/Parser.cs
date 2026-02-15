@@ -81,6 +81,16 @@ public class Parser
         if (Match(TokenType.Use))
             return ParseImportStatement();
 
+        // Musical context blocks
+        if (Match(TokenType.Timesig))
+            return ParseMusicalContextStatement(MusicalContextType.Timesig);
+        if (Match(TokenType.Tempo))
+            return ParseMusicalContextStatement(MusicalContextType.Tempo);
+        if (Match(TokenType.Swing))
+            return ParseMusicalContextStatement(MusicalContextType.Swing);
+        if (Match(TokenType.Key))
+            return ParseMusicalContextStatement(MusicalContextType.Key);
+
         // Check for variable declaration: Type identifier =
         if (IsTypeKeyword(CurrentToken.Type))
         {
@@ -264,6 +274,100 @@ public class Parser
         return new ImportStatement(location, (string)path.Value!);
     }
 
+    private MusicalContextStatement ParseMusicalContextStatement(MusicalContextType contextType)
+    {
+        var location = PreviousToken.Location;
+        Expression value;
+        Expression? value2 = null;
+
+        switch (contextType)
+        {
+            case MusicalContextType.Timesig:
+                // Parse numerator / denominator (e.g., 4/4, 3/4, 7/8)
+                value = new LiteralExpression(CurrentToken.Location,
+                    (int)Expect(TokenType.IntLiteral, "Expected integer numerator for time signature").Value!);
+                Expect(TokenType.Slash, "Expected '/' separator in time signature (e.g., timesig 4/4)");
+                value2 = new LiteralExpression(CurrentToken.Location,
+                    (int)Expect(TokenType.IntLiteral, "Expected integer denominator for time signature").Value!);
+                break;
+
+            case MusicalContextType.Tempo:
+                // Accept Int or Float literal for tempo
+                if (Check(TokenType.IntLiteral))
+                {
+                    value = new LiteralExpression(CurrentToken.Location, (int)Advance().Value!);
+                }
+                else if (Check(TokenType.FloatLiteral))
+                {
+                    value = new LiteralExpression(CurrentToken.Location, (double)Advance().Value!);
+                }
+                else
+                {
+                    throw new ParseException($"Expected numeric tempo value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+                }
+                break;
+
+            case MusicalContextType.Swing:
+                // Parse percentage (e.g., 60%) or float (e.g., 0.6)
+                if (Check(TokenType.IntLiteral))
+                {
+                    var intToken = Advance();
+                    int intVal = (int)intToken.Value!;
+                    // Check for % sign (parsed as Identifier)
+                    if (Check(TokenType.Identifier) && CurrentToken.Text == "%")
+                    {
+                        Advance(); // consume %
+                        value = new LiteralExpression(intToken.Location, intVal / 100.0);
+                    }
+                    else
+                    {
+                        // Treat as a raw integer (unusual but allowed)
+                        value = new LiteralExpression(intToken.Location, (double)intVal);
+                    }
+                }
+                else if (Check(TokenType.FloatLiteral))
+                {
+                    value = new LiteralExpression(CurrentToken.Location, (double)Advance().Value!);
+                }
+                else
+                {
+                    throw new ParseException($"Expected swing value (percentage or float), got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+                }
+                break;
+
+            case MusicalContextType.Key:
+                // Accept identifier like Cmajor, Aminor, etc.
+                var keyToken = Expect(TokenType.Identifier, "Expected key name (e.g., Cmajor, Aminor)");
+                value = new LiteralExpression(keyToken.Location, keyToken.Text);
+                break;
+
+            default:
+                throw new ParseException($"Unknown musical context type: {contextType}");
+        }
+
+        // Expect body block
+        Expect(TokenType.LBrace, "Expected '{' to open musical context block");
+
+        var body = new List<Statement>();
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            while (Match(TokenType.Semicolon)) ; // skip semicolons
+
+            if (Check(TokenType.RBrace) || IsAtEnd())
+                break;
+
+            var stmt = ParseStatement();
+            if (stmt != null)
+                body.Add(stmt);
+
+            Match(TokenType.Semicolon);
+        }
+
+        Expect(TokenType.RBrace, "Expected '}' to close musical context block");
+
+        return new MusicalContextStatement(location, contextType, value, value2, body);
+    }
+
     private Expression ParseExpression()
     {
         return ParseFlowExpression();
@@ -282,10 +386,18 @@ public class Parser
             // Transform right side if it's an identifier or function call
             // x -> func becomes func(x)
             // x -> func(arg) becomes func(x, arg)
+            // x -> func (expr) becomes func(x, expr) (parenthesized args in flow context)
             if (right is VariableExpression varExpr)
             {
-                // Convert identifier to function call with left as first argument
-                right = new FunctionCallExpression(right.Location, varExpr.Name, [left]);
+                // Collect additional parenthesized arguments after the function name in flow context
+                // This supports: x -> concat (expr) -> print
+                // Only collect parenthesized expressions - not bare identifiers, which could be next statements
+                var args = new List<Expression> { left };
+                while (!IsAtEnd() && Check(TokenType.LParen))
+                {
+                    args.Add(ParseAdditive());
+                }
+                right = new FunctionCallExpression(right.Location, varExpr.Name, args);
             }
             else if (right is FunctionCallExpression funcCall)
             {
@@ -367,9 +479,15 @@ public class Parser
         {
             if (Match(TokenType.At))
             {
-                // Array indexing: arr@index
-                var index = ParsePrimary();
+                // Array indexing: arr@index (supports unary minus for negative indices)
+                var index = ParseUnary();
                 expr = new ArrayIndexExpression(expr.Location, expr, index);
+            }
+            else if (Match(TokenType.Dot))
+            {
+                // Member access: obj.member
+                var memberName = Expect(TokenType.Identifier, "Expected member name after '.'").Text;
+                expr = new MemberAccessExpression(expr.Location, expr, memberName);
             }
             else
             {
@@ -420,13 +538,42 @@ public class Parser
         if (Match(TokenType.DecibelLiteral))
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
+        // Lambda expression: fn Type name, Type name => body
+        if (Match(TokenType.Fn))
+        {
+            return ParseLambdaExpression();
+        }
+
+        // Array literal [elem1, elem2, ...]
+        if (Match(TokenType.LBracket))
+        {
+            var location = PreviousToken.Location;
+            var elements = new List<Expression>();
+
+            while (!Check(TokenType.RBracket) && !IsAtEnd())
+            {
+                elements.Add(ParseExpression());
+                if (!Check(TokenType.RBracket))
+                {
+                    // Support both comma-separated and space-separated array elements
+                    if (Check(TokenType.Comma))
+                        Advance(); // consume optional comma
+                }
+            }
+
+            Expect(TokenType.RBracket, "Expected ']' after array literal");
+            return new ArrayLiteralExpression(location, elements);
+        }
+
         // Parenthesized expression or function call
         if (Match(TokenType.LParen))
         {
             var location = PreviousToken.Location;
 
             // Check if this is a function call like (func arg1 arg2)
-            if (Check(TokenType.Identifier))
+            // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
+            if (Check(TokenType.Identifier) && _current + 1 < _tokens.Count
+                && _tokens[_current + 1].Type != TokenType.Arrow)
             {
                 var name = Advance().Text;
                 var args = new List<Expression>();
@@ -475,6 +622,31 @@ public class Parser
         throw new ParseException($"Unexpected token {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
     }
 
+    private Expression ParseLambdaExpression()
+    {
+        var location = PreviousToken.Location;
+        var parameters = new List<LambdaParameter>();
+
+        // Parse parameters: Type name, Type name => body
+        // The fat arrow terminates the parameter list
+        while (!Check(TokenType.FatArrow) && !IsAtEnd())
+        {
+            var (paramType, nextIndex, isVarArgs) = TypeParser.ParseType(_tokens, _current);
+            _current = nextIndex;
+
+            var paramName = Expect(TokenType.Identifier, "Expected parameter name in lambda").Text;
+            parameters.Add(new LambdaParameter(paramName, paramType));
+
+            if (!Check(TokenType.FatArrow))
+                Expect(TokenType.Comma, "Expected ',' between lambda parameters");
+        }
+
+        Expect(TokenType.FatArrow, "Expected '=>' in lambda expression");
+
+        var body = ParseExpression();
+        return new LambdaExpression(location, parameters, body);
+    }
+
     // Helper methods
 
     private bool IsTypeKeyword(TokenType type)
@@ -486,13 +658,23 @@ public class Parser
             return true;
         }
 
+        // Function type: (Type, Type => Type)
+        if (type == TokenType.LParen && TypeParser.LooksLikeFunctionType(_tokens, _current))
+        {
+            return true;
+        }
+
         // Check for special types and plural forms (array types)
         if (type == TokenType.Identifier)
         {
             var text = CurrentToken.Text;
 
             // Special types
-            if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel" or "Lazy")
+            if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent"
+                or "Millisecond" or "Second" or "Decibel" or "Lazy"
+                or "MusicalNote" or "Function"
+                or "OscillatorState" or "Envelope" or "Beat" or "Voice"
+                or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)
@@ -501,7 +683,10 @@ public class Parser
                 var singular = text.Substring(0, text.Length - 1);
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
-                    or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel")
+                    or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel"
+                    or "MusicalNote" or "Function"
+                    or "OscillatorState" or "Envelope" or "Beat" or "Voice"
+                    or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
                     return true;
             }
         }
@@ -514,6 +699,10 @@ public class Parser
         // For optional parentheses syntax, only allow literal arguments
         // This avoids ambiguity with identifiers in expressions
         // To pass variables or complex expressions, use explicit syntax: (func arg)
+        // Note: LParen is intentionally excluded here despite being an unambiguous
+        // expression start. Including it would cause identifiers followed by parenthesized
+        // expressions to be misinterpreted as function calls (e.g., `xs (fn ...)` inside
+        // `(each xs (fn ...))`). Use explicit function call syntax instead: (func (expr))
         return type is TokenType.IntLiteral
             or TokenType.FloatLiteral
             or TokenType.StringLiteral
@@ -573,7 +762,9 @@ public class Parser
             if (PreviousToken.Type == TokenType.Semicolon) return;
 
             if (CurrentToken.Type is TokenType.Proc or TokenType.Return
-                or TokenType.Use or TokenType.Internal)
+                or TokenType.Use or TokenType.Internal
+                or TokenType.Timesig or TokenType.Tempo
+                or TokenType.Swing or TokenType.Key)
             {
                 return;
             }
