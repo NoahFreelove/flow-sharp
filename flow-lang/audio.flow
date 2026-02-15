@@ -281,3 +281,32 @@ Note: Create ADSR envelope with default sample rate
 proc adsr(Double: attack, Double: decay, Double: sustain, Double: release)
     (createADSR attack decay sustain release DEFAULT_SAMPLE_RATE)
 end proc
+
+Note: ===== Phase 6: Playback =====
+
+Note: Play an audio buffer through the system audio output
+internal proc play(Buffer: buffer)
+
+Note: Play a sequence (renders to audio then plays)
+internal proc play(Sequence: seq)
+
+Note: Loop a buffer indefinitely (stop with Ctrl+C or stop function)
+internal proc loop(Buffer: buffer)
+
+Note: Loop a buffer N times
+internal proc loop(Buffer: buffer, Int: count)
+
+Note: Low-quality preview playback (mono 22050Hz)
+internal proc preview(Buffer: buffer)
+
+Note: Stop any currently playing audio
+internal proc stop()
+
+Note: List available audio output devices
+internal proc audioDevices()
+
+Note: Set the active audio output device
+internal proc setAudioDevice(String: deviceName)
+
+Note: Check if audio output is available on this system
+internal proc isAudioAvailable()

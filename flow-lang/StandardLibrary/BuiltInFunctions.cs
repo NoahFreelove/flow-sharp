@@ -1,3 +1,4 @@
+using FlowLang.Audio;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
@@ -21,6 +22,15 @@ public static class BuiltInFunctions
         RegisterAudio(registry);
         RegisterBars(registry);
         RegisterMusicalNotationFunctions(registry);
+    }
+
+    /// <summary>
+    /// Registers all C# implementations including playback functions that need an audio manager.
+    /// </summary>
+    public static void RegisterAllImplementations(InternalFunctionRegistry registry, AudioPlaybackManager audioManager)
+    {
+        RegisterAllImplementations(registry);
+        Audio.PlaybackFunctions.Register(registry, audioManager);
     }
 
     private static void RegisterStdLib(InternalFunctionRegistry registry)
@@ -113,6 +123,34 @@ public static class BuiltInFunctions
             [IntType.Instance, IntType.Instance]);
         registry.Register("div", divSignature, stdlib.DivInt);
 
+        // Float/Double overloads for arithmetic
+        var addDoubleSignature = new FunctionSignature(
+            "add",
+            [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("add", addDoubleSignature, stdlib.AddFloat);
+
+        var subDoubleSignature = new FunctionSignature(
+            "sub",
+            [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("sub", subDoubleSignature, stdlib.SubDouble);
+
+        var mulDoubleSignature = new FunctionSignature(
+            "mul",
+            [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("mul", mulDoubleSignature, stdlib.MulDouble);
+
+        var divDoubleSignature = new FunctionSignature(
+            "div",
+            [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("div", divDoubleSignature, stdlib.DivDouble);
+
+        // String-to-number conversions
+        var stringToIntSignature = new FunctionSignature("stringToInt", [StringType.Instance]);
+        registry.Register("stringToInt", stringToIntSignature, stdlib.StringToInt);
+
+        var stringToDoubleSignature = new FunctionSignature("stringToDouble", [StringType.Instance]);
+        registry.Register("stringToDouble", stringToDoubleSignature, stdlib.StringToDouble);
+
         // ===== Lazy Evaluation Functions =====
 
         // Note: eval is registered with Lazy<Void> but will work with any Lazy<T>
@@ -143,6 +181,9 @@ public static class BuiltInFunctions
         registry.Register("or", orBoolSignature, stdlib.OrBool);
 
         // ===== Equality and Comparison Functions =====
+        // VoidType.Instance is used as a wildcard/"any type" parameter in these signatures.
+        // The overload resolver treats Void as compatible with all types, allowing these
+        // functions to accept arguments of any type.
 
         var equalsSignature = new FunctionSignature(
             "equals",
@@ -232,11 +273,27 @@ public static class BuiltInFunctions
         var prependSignature = new FunctionSignature("prepend", [VoidType.Instance, new ArrayType(VoidType.Instance)]);
         registry.Register("prepend", prependSignature, collections.Prepend);
 
+        // Note: "concat" is intentionally overloaded for both strings (in RegisterStdLib)
+        // and arrays (here). The overload resolver selects the correct one by argument types.
         var concatSignature = new FunctionSignature("concat", [new ArrayType(VoidType.Instance), new ArrayType(VoidType.Instance)]);
         registry.Register("concat", concatSignature, collections.Concat);
 
         var containsSignature = new FunctionSignature("contains", [new ArrayType(VoidType.Instance), VoidType.Instance]);
         registry.Register("contains", containsSignature, collections.Contains);
+
+        // ===== Higher-Order Functions =====
+
+        var eachSignature = new FunctionSignature("each", [new ArrayType(VoidType.Instance), FunctionType.Instance]);
+        registry.Register("each", eachSignature, collections.Each);
+
+        var mapSignature = new FunctionSignature("map", [new ArrayType(VoidType.Instance), FunctionType.Instance]);
+        registry.Register("map", mapSignature, collections.Map);
+
+        var filterSignature = new FunctionSignature("filter", [new ArrayType(VoidType.Instance), FunctionType.Instance]);
+        registry.Register("filter", filterSignature, collections.Filter);
+
+        var reduceSignature = new FunctionSignature("reduce", [new ArrayType(VoidType.Instance), VoidType.Instance, FunctionType.Instance]);
+        registry.Register("reduce", reduceSignature, collections.Reduce);
     }
 
     private static void RegisterAudio(InternalFunctionRegistry registry)
