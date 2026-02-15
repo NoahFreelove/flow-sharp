@@ -12,6 +12,11 @@ public class StackFrame
 
     public StackFrame? Parent { get; }
 
+    /// <summary>
+    /// Optional musical context for this scope. Null means "inherit from parent".
+    /// </summary>
+    public MusicalContext? MusicalContext { get; set; }
+
     public StackFrame(StackFrame? parent = null)
     {
         Parent = parent;

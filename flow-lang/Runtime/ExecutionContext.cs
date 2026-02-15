@@ -12,6 +12,8 @@ public class ExecutionContext
     private readonly Stack<StackFrame> _callStack = new();
     private readonly ErrorReporter _errorReporter;
     private readonly OverloadResolver _overloadResolver;
+    private int _callDepth = 0;
+    private const int MaxCallDepth = 1000;
 
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }
@@ -33,6 +35,10 @@ public class ExecutionContext
     /// </summary>
     public void PushFrame()
     {
+        _callDepth++;
+        if (_callDepth > MaxCallDepth)
+            throw new InvalidOperationException($"Stack overflow: maximum call depth of {MaxCallDepth} exceeded");
+
         var newFrame = new StackFrame(CurrentFrame);
         _callStack.Push(newFrame);
     }
@@ -46,6 +52,7 @@ public class ExecutionContext
             throw new InvalidOperationException("Cannot pop global frame");
 
         _callStack.Pop();
+        _callDepth--;
     }
 
     /// <summary>
@@ -100,6 +107,34 @@ public class ExecutionContext
             return null;
 
         return overloads.FirstOrDefault(o => o.Signature == signature);
+    }
+
+    /// <summary>
+    /// Resolves the current musical context by walking the stack from top to bottom.
+    /// First non-null value for each property wins. Uses defaults for any unresolved properties.
+    /// Defaults: 4/4 time signature, 120 BPM, 0.5 swing (straight), no key.
+    /// </summary>
+    public MusicalContext GetMusicalContext()
+    {
+        var resolved = new MusicalContext();
+        foreach (var frame in _callStack)
+        {
+            if (frame.MusicalContext != null)
+            {
+                resolved.TimeSignature ??= frame.MusicalContext.TimeSignature;
+                resolved.Tempo ??= frame.MusicalContext.Tempo;
+                resolved.Swing ??= frame.MusicalContext.Swing;
+                resolved.Key ??= frame.MusicalContext.Key;
+            }
+            if (resolved.TimeSignature != null && resolved.Tempo != null
+                && resolved.Swing != null && resolved.Key != null)
+                break;
+        }
+        // Defaults
+        resolved.TimeSignature ??= new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
+        resolved.Tempo ??= 120.0;
+        resolved.Swing ??= 0.5;
+        return resolved;
     }
 
     /// <summary>
