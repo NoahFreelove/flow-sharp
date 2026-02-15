@@ -22,6 +22,7 @@ public static class BuiltInFunctions
         RegisterAudio(registry);
         RegisterBars(registry);
         RegisterMusicalNotationFunctions(registry);
+        Audio.EffectsFunctions.Register(registry);
     }
 
     /// <summary>

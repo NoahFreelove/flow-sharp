@@ -282,6 +282,35 @@ proc adsr(Double: attack, Double: decay, Double: sustain, Double: release)
     (createADSR attack decay sustain release DEFAULT_SAMPLE_RATE)
 end proc
 
+Note: ===== Phase 5: Audio Effects (DSP) =====
+
+Note: Apply Schroeder reverb with room size (0-1), default damping and mix
+internal proc reverb(Buffer: buffer, Double: roomSize)
+
+Note: Apply Schroeder reverb with room size (0-1), damping (0-1), and wet/dry mix (0-1)
+internal proc reverb(Buffer: buffer, Double: roomSize, Double: damping, Double: mix)
+
+Note: Apply lowpass filter at cutoff frequency (Hz)
+internal proc lowpass(Buffer: buffer, Double: cutoffHz)
+
+Note: Apply highpass filter at cutoff frequency (Hz)
+internal proc highpass(Buffer: buffer, Double: cutoffHz)
+
+Note: Apply bandpass filter between low and high frequencies (Hz)
+internal proc bandpass(Buffer: buffer, Double: lowHz, Double: highHz)
+
+Note: Apply dynamic range compression with threshold (dB, must be <= 0) and ratio (>= 1.0)
+internal proc compress(Buffer: buffer, Double: thresholdDb, Double: ratio)
+
+Note: Apply compression with full control: threshold (dB), ratio, attack (ms), release (ms)
+internal proc compress(Buffer: buffer, Double: thresholdDb, Double: ratio, Double: attackMs, Double: releaseMs)
+
+Note: Apply feedback delay with time (ms), feedback (0-1), and wet/dry mix (0-1)
+internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: mix)
+
+Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
+internal proc gain(Buffer: buffer, Double: gainDb)
+
 Note: ===== Phase 6: Playback =====
 
 Note: Play an audio buffer through the system audio output
