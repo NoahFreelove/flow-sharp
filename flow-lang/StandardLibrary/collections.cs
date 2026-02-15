@@ -6,6 +6,12 @@ namespace FlowLang.StandardLibrary;
 
 public static class collections
 {
+    /// <summary>
+    /// Invoker delegate for calling function overloads from within the standard library.
+    /// Set by the Interpreter at startup.
+    /// </summary>
+    internal static Func<FunctionOverload, IReadOnlyList<Value>, Value>? Invoker { get; set; }
+
     // ===== Array Functions =====
 
     /// <summary>
@@ -52,7 +58,7 @@ public static class collections
 
         var elements = arr.As<IReadOnlyList<Value>>();
         if (elements.Count == 0)
-            return Value.Void();
+            throw new InvalidOperationException("Cannot get head of empty array");
 
         return elements[0];
     }
@@ -75,7 +81,7 @@ public static class collections
 
         var elements = arr.As<IReadOnlyList<Value>>();
         if (elements.Count == 0)
-            return Value.Void();
+            throw new InvalidOperationException("Cannot get last of empty array");
 
         return elements[^1];
     }
@@ -122,6 +128,7 @@ public static class collections
 
         var elements = arr.As<IReadOnlyList<Value>>();
         var count = n.As<int>();
+        if (count < 0) count = 0;
         return Value.Array(elements.Take(count).ToArray(), arrayType.ElementType);
     }
 
@@ -137,6 +144,7 @@ public static class collections
 
         var elements = arr.As<IReadOnlyList<Value>>();
         var count = n.As<int>();
+        if (count < 0) count = 0;
         return Value.Array(elements.Skip(count).ToArray(), arrayType.ElementType);
     }
 
@@ -200,6 +208,77 @@ public static class collections
         return Value.Bool(false);
     }
 
+    // ===== Higher-Order Functions =====
+
+    public static Value Each(IReadOnlyList<Value> args)
+    {
+        var arr = args[0].As<IReadOnlyList<Value>>();
+        var callback = args[1].As<FunctionOverload>();
+
+        foreach (var element in arr)
+        {
+            Invoker!(callback, new List<Value> { element });
+        }
+
+        return Value.Void();
+    }
+
+    public static Value Map(IReadOnlyList<Value> args)
+    {
+        var arr = args[0].As<IReadOnlyList<Value>>();
+        var callback = args[1].As<FunctionOverload>();
+
+        var results = new List<Value>();
+        foreach (var element in arr)
+        {
+            results.Add(Invoker!(callback, new List<Value> { element }));
+        }
+
+        if (results.Count == 0)
+            return Value.Array(results, VoidType.Instance);
+
+        var elementType = results[0].Type;
+        if (!results.All(r => r.Type.Equals(elementType)))
+            elementType = VoidType.Instance;
+
+        return Value.Array(results, elementType);
+    }
+
+    public static Value Filter(IReadOnlyList<Value> args)
+    {
+        var arr = args[0].As<IReadOnlyList<Value>>();
+        var callback = args[1].As<FunctionOverload>();
+
+        var results = new List<Value>();
+        foreach (var element in arr)
+        {
+            var result = Invoker!(callback, new List<Value> { element });
+            if (result.As<bool>())
+                results.Add(element);
+        }
+
+        if (results.Count == 0)
+            return Value.Array(results, VoidType.Instance);
+
+        var elementType = results[0].Type;
+        return Value.Array(results, elementType);
+    }
+
+    public static Value Reduce(IReadOnlyList<Value> args)
+    {
+        var arr = args[0].As<IReadOnlyList<Value>>();
+        var initial = args[1];
+        var callback = args[2].As<FunctionOverload>();
+
+        var accumulator = initial;
+        foreach (var element in arr)
+        {
+            accumulator = Invoker!(callback, new List<Value> { accumulator, element });
+        }
+
+        return accumulator;
+    }
+
     private static bool ValueEquals(Value a, Value b)
     {
         if (!a.Type.Equals(b.Type))
@@ -208,8 +287,8 @@ public static class collections
         return a.Type switch
         {
             IntType => a.As<int>() == b.As<int>(),
-            FloatType => Math.Abs(a.As<float>() - b.As<float>()) < float.Epsilon,
-            DoubleType => Math.Abs(a.As<double>() - b.As<double>()) < double.Epsilon,
+            FloatType => Math.Abs(a.As<double>() - b.As<double>()) < 1e-9,
+            DoubleType => Math.Abs(a.As<double>() - b.As<double>()) < 1e-9,
             BoolType => a.As<bool>() == b.As<bool>(),
             StringType => a.As<string>() == b.As<string>(),
             _ => ReferenceEquals(a.Data, b.Data)

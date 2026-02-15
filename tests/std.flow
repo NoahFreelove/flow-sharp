@@ -1,0 +1,58 @@
+Note: Flow Standard Library
+Note: This file defines all built-in functions as internal procedures
+Note: The C# implementations are linked at runtime
+
+internal proc print (String: s)
+
+internal proc len (Void[]: arr)
+
+internal proc str (Int: value)
+
+Note: Varargs function - accepts any number of values (using ellipsis syntax)
+internal proc list (Void...: items)
+
+internal proc add (Int: a, Int: b)
+internal proc add (Float: a, Float: b)
+
+internal proc sub (Int: a, Int: b)
+
+internal proc mul (Int: a, Int: b)
+
+internal proc div (Int: a, Int: b)
+
+internal proc str (String: value)
+internal proc str (Bool: value)
+internal proc str (Double: value)
+internal proc str (Void[]: arr)
+internal proc str (Sequence: value)
+internal proc str (Chord: value)
+internal proc concat (String: a, String: b)
+internal proc len (String: s)
+
+internal proc chordNotes (Chord: c)
+internal proc chordRoot (Chord: c)
+internal proc chordQuality (Chord: c)
+internal proc arpeggio (Chord: c, String: direction)
+internal proc scaleNotes (String: keyName)
+internal proc resolveNumeral (String: numeral, String: keyName)
+
+internal proc str (Section: value)
+internal proc str (Song: value)
+internal proc getSections (Song: s)
+internal proc sectionSequences (Section: s)
+
+internal proc equals (Void: a, Void: b)
+internal proc lt (Void: a, Void: b)
+internal proc gt (Void: a, Void: b)
+
+internal proc head (Void[]: arr)
+internal proc tail (Void[]: arr)
+internal proc last (Void[]: arr)
+internal proc empty (Void[]: arr)
+internal proc reverse (Void[]: arr)
+internal proc append (Void[]: arr, Void: elem)
+internal proc contains (Void[]: arr, Void: elem)
+internal proc each (Void[]: arr, Function: f)
+internal proc map (Void[]: arr, Function: f)
+internal proc filter (Void[]: arr, Function: f)
+internal proc reduce (Void[]: arr, Void: init, Function: f)

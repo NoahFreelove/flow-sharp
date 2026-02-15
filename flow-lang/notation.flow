@@ -1,6 +1,28 @@
 Note: Musical Notation Library for Flow
 Note: Provides classical music composition with note durations, rests, and time signatures
 
+Note: ===== Internal C# Function Declarations =====
+
+internal proc createMusicalNote (Note: pitch, NoteValue: duration)
+internal proc createRest (NoteValue: duration)
+internal proc createTimeSignature (Int: numerator, Int: denominator)
+internal proc createMusicalBar (Notes: notes, TimeSignature: timeSig)
+internal proc createEmptyMusicalBar (TimeSignature: timeSig)
+internal proc tryAddNoteToBar (Bar: bar, Note: note)
+internal proc addNoteToBar (Bar: bar, Note: note)
+internal proc noteValueToBeats (NoteValue: noteValue, Int: denominator)
+internal proc validateBarDuration (Bar: bar, TimeSignature: timeSig)
+internal proc getRemainingBeats (Bar: bar)
+internal proc wouldFit (Bar: bar, Note: note)
+internal proc calculateOverflow (Bar: bar)
+internal proc renderBarToVoices (Bar: bar, String: synthType, Int: sampleRate, Double: bpm)
+internal proc createSequence ()
+internal proc addBarToSequence (Sequence: seq, Bar: bar)
+internal proc renderSequenceToVoices (Sequence: seq, String: synthType, Int: sampleRate, Double: bpm)
+internal proc renderBarAtBeat (Bar: bar, Double: beatOffset, String: synthType, Int: sampleRate, Double: bpm)
+internal proc renderBarAtTime (Bar: bar, Double: timeSeconds, String: synthType, Int: sampleRate, Double: bpm)
+internal proc noteToFrequency (Note: pitch)
+
 Note: ===== Note Value Constants =====
 
 NoteValue WHOLE = 0
@@ -181,18 +203,7 @@ Voice[] renderSequence = fn Sequence seq, String synthType, Int sampleRate, Doub
 )
 
 Note: ===== Manual Bar Positioning Functions =====
-
-Note: Renders a bar at a specific beat offset
-Note: Allows manual control over bar positioning on the timeline
-Voice[] renderBarAtBeat = fn Bar bar, Double beatOffset, String synthType, Int sampleRate, Double bpm => (
-    (renderBarAtBeat bar beatOffset synthType sampleRate bpm)
-)
-
-Note: Renders a bar at a specific time offset (in seconds)
-Note: Time offset is converted to beats based on BPM
-Voice[] renderBarAtTime = fn Bar bar, Double timeSeconds, String synthType, Int sampleRate, Double bpm => (
-    (renderBarAtTime bar timeSeconds synthType sampleRate bpm)
-)
+Note: renderBarAtBeat and renderBarAtTime are available directly as internal functions
 
 Note: ===== Pitch Functions =====
 

@@ -1,5 +1,6 @@
 using FlowLang.Core;
 using FlowLang.Diagnostics;
+using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
 using System.Text;
 
@@ -469,6 +470,7 @@ public class SimpleLexer
             "tempo" => TokenType.Tempo,
             "swing" => TokenType.Swing,
             "key" => TokenType.Key,
+            "section" => TokenType.Section,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,
             "Float" => TokenType.Float,
@@ -510,6 +512,12 @@ public class SimpleLexer
             if (TryParseDecibel(text, out var decibelValue))
             {
                 return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+            }
+
+            // Try to parse as Chord (Cmaj7, Dm, Gsus4, etc.)
+            if (ChordParser.IsChordSymbol(text))
+            {
+                return new Token(TokenType.ChordLiteral, text, start, text);
             }
         }
 

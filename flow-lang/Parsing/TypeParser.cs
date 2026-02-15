@@ -97,6 +97,9 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "TimeSignature" => TimeSignatureType.Instance,
             TokenType.Identifier when token.Text == "Sequence" => SequenceType.Instance,
             TokenType.Identifier when token.Text == "MusicalNote" => MusicalNoteType.Instance,
+            TokenType.Identifier when token.Text == "Chord" => ChordType.Instance,
+            TokenType.Identifier when token.Text == "Section" => SectionType.Instance,
+            TokenType.Identifier when token.Text == "Song" => SongType.Instance,
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -206,6 +209,9 @@ public static class TypeParser
             "TimeSignature" => TimeSignatureType.Instance,
             "Sequence" => SequenceType.Instance,
             "MusicalNote" => MusicalNoteType.Instance,
+            "Chord" => ChordType.Instance,
+            "Section" => SectionType.Instance,
+            "Song" => SongType.Instance,
             "Function" => FunctionType.Instance,
             _ => null
         };

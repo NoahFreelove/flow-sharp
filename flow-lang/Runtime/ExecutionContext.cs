@@ -1,6 +1,7 @@
 using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary;
 using FlowLang.TypeSystem;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Runtime;
 
@@ -18,6 +19,7 @@ public class ExecutionContext
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
+    public Dictionary<string, SectionData> SectionRegistry { get; } = new();
 
     public ExecutionContext(ErrorReporter errorReporter, InternalFunctionRegistry internalRegistry)
     {

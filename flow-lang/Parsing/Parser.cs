@@ -96,6 +96,10 @@ public class Parser
         if (Match(TokenType.Key))
             return ParseMusicalContextStatement(MusicalContextType.Key);
 
+        // Section declaration: section name { ... }
+        if (Match(TokenType.Section))
+            return ParseSectionDeclaration();
+
         // Check for variable declaration: Type identifier =
         if (IsTypeKeyword(CurrentToken.Type))
         {
@@ -208,7 +212,15 @@ public class Parser
         // Check if there's an initializer
         if (Match(TokenType.Assign))
         {
-            value = ParseExpression();
+            // Special case: Song type with [section1 section2*N ...] arrangement syntax
+            if (varType is SongType && Check(TokenType.LBracket))
+            {
+                value = ParseSongExpression();
+            }
+            else
+            {
+                value = ParseExpression();
+            }
         }
         else
         {
@@ -270,6 +282,60 @@ public class Parser
         var location = PreviousToken.Location;
         var value = ParseExpression();
         return new ReturnStatement(location, value);
+    }
+
+    private SongExpression ParseSongExpression()
+    {
+        var location = CurrentToken.Location;
+        Expect(TokenType.LBracket, "Expected '[' for song arrangement");
+
+        var sections = new List<SongSectionReference>();
+
+        while (!Check(TokenType.RBracket) && !IsAtEnd())
+        {
+            var sectionName = Expect(TokenType.Identifier, "Expected section name in song arrangement").Text;
+            int repeatCount = 1;
+
+            // Check for repeat: name*N
+            if (Match(TokenType.Star))
+            {
+                var countToken = Expect(TokenType.IntLiteral, "Expected repeat count after '*'");
+                repeatCount = (int)countToken.Value!;
+            }
+
+            sections.Add(new SongSectionReference(sectionName, repeatCount));
+        }
+
+        Expect(TokenType.RBracket, "Expected ']' after song arrangement");
+
+        return new SongExpression(location, sections);
+    }
+
+    private SectionDeclaration ParseSectionDeclaration()
+    {
+        var location = PreviousToken.Location;
+        var name = Expect(TokenType.Identifier, "Expected section name").Text;
+
+        Expect(TokenType.LBrace, "Expected '{' after section name");
+
+        var body = new List<Statement>();
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            while (Match(TokenType.Semicolon)) ;
+
+            if (Check(TokenType.RBrace) || IsAtEnd())
+                break;
+
+            var stmt = ParseStatement();
+            if (stmt != null)
+                body.Add(stmt);
+
+            Match(TokenType.Semicolon);
+        }
+
+        Expect(TokenType.RBrace, "Expected '}' after section body");
+
+        return new SectionDeclaration(location, name, body);
     }
 
     private ImportStatement ParseImportStatement()
@@ -900,7 +966,7 @@ public class Parser
             // Special types
             if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent"
                 or "Millisecond" or "Second" or "Decibel" or "Lazy"
-                or "MusicalNote" or "Function" or "Chord"
+                or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
                 or "OscillatorState" or "Envelope" or "Beat" or "Voice"
                 or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
                 return true;
@@ -912,7 +978,7 @@ public class Parser
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
                     or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel"
-                    or "MusicalNote" or "Function" or "Chord"
+                    or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
                     or "OscillatorState" or "Envelope" or "Beat" or "Voice"
                     or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
                     return true;

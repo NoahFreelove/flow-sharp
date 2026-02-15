@@ -134,6 +134,47 @@ namespace FlowLang.StandardLibrary.Audio
     }
 
     /// <summary>
+    /// Triangle wave synthesizer - produces smooth, mellow tones.
+    /// </summary>
+    public class TriangleSynthesizer : INoteSynthesizer
+    {
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        {
+            if (note.IsRest)
+                return CreateSilence(sampleRate, durationBeats, bpm);
+
+            double frequency = PitchConversion.NoteToFrequency(note);
+            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
+            int numSamples = (int)(durationSeconds * sampleRate);
+
+            AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
+            double amplitude = 0.3;
+
+            for (int i = 0; i < numSamples; i++)
+            {
+                double t = i / (double)sampleRate;
+                double phase = (frequency * t) % 1.0;
+                float sample = (float)(amplitude * (phase < 0.5 ? 4 * phase - 1 : 3 - 4 * phase));
+                buffer.SetSample(i, 0, sample);
+            }
+
+            return buffer;
+        }
+
+        private double BeatsToSeconds(double beats, double bpm)
+        {
+            return (beats / bpm) * 60.0;
+        }
+
+        private AudioBuffer CreateSilence(int sampleRate, double durationBeats, double bpm)
+        {
+            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
+            int numSamples = (int)(durationSeconds * sampleRate);
+            return new AudioBuffer(numSamples, 1, sampleRate);
+        }
+    }
+
+    /// <summary>
     /// Factory for creating synthesizers by name.
     /// </summary>
     public static class SynthesizerFactory
@@ -145,6 +186,7 @@ namespace FlowLang.StandardLibrary.Audio
                 "sine" => new SineSynthesizer(),
                 "saw" or "sawtooth" => new SawSynthesizer(),
                 "square" => new SquareSynthesizer(),
+                "triangle" => new TriangleSynthesizer(),
                 _ => throw new ArgumentException($"Unknown synthesizer type: {synthType}")
             };
         }

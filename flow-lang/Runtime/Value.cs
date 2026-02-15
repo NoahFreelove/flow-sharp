@@ -43,8 +43,12 @@ public class Value
     public static Value Track(StandardLibrary.Audio.Track value) => new(value, TrackType.Instance);
     public static Value NoteValue(int enumValue) => new(enumValue, NoteValueType.Instance);
     public static Value TimeSignature(TimeSignatureData timeSig) => new(timeSig, TimeSignatureType.Instance);
-    public static Value MusicalNote(MusicalNoteData note) => new(note, NoteType.Instance);
+    public static Value MusicalNote(MusicalNoteData note) => new(note, MusicalNoteType.Instance);
     public static Value Sequence(SequenceData sequence) => new(sequence, SequenceType.Instance);
+    public static Value Chord(ChordData chord) => new(chord, ChordType.Instance);
+    public static Value Section(SectionData section) => new(section, SectionType.Instance);
+    public static Value Song(SongData song) => new(song, SongType.Instance);
+    public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
 
     /// <summary>
     /// Automatically infers the Flow type from a CLR object and creates a Value.
@@ -89,6 +93,7 @@ public class Value
             if (targetType is FloatType) return Float(intVal);
             if (targetType is DoubleType) return Double(intVal);
             if (targetType is NumberType) return Number(new BigInteger(intVal));
+            if (targetType is NoteValueType) return NoteValue(intVal);
         }
 
         if (Data is long longVal)
@@ -146,6 +151,7 @@ public class Value
             return $"[{string.Join(", ", arr.Select(v => v.ToString()))}]";
         if (Data is Thunk thunk)
             return thunk.IsEvaluated ? $"<lazy: {thunk.Force()}>" : "<lazy: unevaluated>";
+        if (Data is double d) return d.ToString("G10");
         return Data.ToString() ?? "null";
     }
 }

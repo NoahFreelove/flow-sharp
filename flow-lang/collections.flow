@@ -16,3 +16,9 @@ internal proc append (Voids: arr, Void: element)
 internal proc prepend (Void: element, Voids: arr)
 internal proc concat (Voids: arr1, Voids: arr2)
 internal proc contains (Voids: arr, Void: element)
+
+Note: Higher-order functions
+internal proc each (Voids: arr, Function: callback)
+internal proc map (Voids: arr, Function: callback)
+internal proc filter (Voids: arr, Function: callback)
+internal proc reduce (Voids: arr, Void: initial, Function: callback)

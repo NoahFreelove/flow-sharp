@@ -3,6 +3,16 @@ using FlowLang.Diagnostics;
 namespace FlowLang.Runtime;
 
 /// <summary>
+/// Result of a module load operation.
+/// </summary>
+public enum ModuleLoadResult
+{
+    Loaded,
+    AlreadyLoaded,
+    Error
+}
+
+/// <summary>
 /// Handles loading and executing imported modules.
 /// </summary>
 public class ModuleLoader
@@ -18,19 +28,20 @@ public class ModuleLoader
 
     /// <summary>
     /// Loads a module from the given path.
-    /// Returns true if successfully loaded, false if already loaded or circular dependency.
+    /// Returns Loaded on success, AlreadyLoaded if previously imported, Error on failure.
     /// </summary>
-    public bool LoadModule(string path, string currentFile, ExecutionContext context)
+    public ModuleLoadResult LoadModule(string path, string currentFile, ExecutionContext context, Core.SourceLocation? importLocation = null)
     {
         var resolvedPath = ResolvePath(path, currentFile);
+        var errorLocation = importLocation ?? Core.SourceLocation.Unknown;
 
         if (_loadedModules.Contains(resolvedPath))
-            return false; // Already loaded
+            return ModuleLoadResult.AlreadyLoaded;
 
         if (_currentlyLoading.Contains(resolvedPath))
         {
-            _errorReporter.ReportError($"Circular import detected: {resolvedPath}", Core.SourceLocation.Unknown);
-            return false;
+            _errorReporter.ReportError($"Circular import detected: {resolvedPath}", errorLocation);
+            return ModuleLoadResult.Error;
         }
 
         _currentlyLoading.Add(resolvedPath);
@@ -40,9 +51,8 @@ public class ModuleLoader
             // 1. Check file exists
             if (!File.Exists(resolvedPath))
             {
-                _errorReporter.ReportError($"Import file not found: {resolvedPath}",
-                    Core.SourceLocation.Unknown);
-                return false;
+                _errorReporter.ReportError($"Import file not found: {resolvedPath}", errorLocation);
+                return ModuleLoadResult.Error;
             }
 
             // 2. Read file contents
@@ -53,26 +63,25 @@ public class ModuleLoader
             var tokens = lexer.Tokenize();
 
             if (_errorReporter.HasErrors)
-                return false;
+                return ModuleLoadResult.Error;
 
             var parser = new Parsing.Parser(tokens, _errorReporter);
             var program = parser.Parse();
 
             if (_errorReporter.HasErrors)
-                return false;
+                return ModuleLoadResult.Error;
 
             // 4. Execute in current context (no new frame - imports add to current scope)
             var interpreter = new Interpreter.Interpreter(context, _errorReporter);
             interpreter.Execute(program);
 
             _loadedModules.Add(resolvedPath);
-            return !_errorReporter.HasErrors;
+            return _errorReporter.HasErrors ? ModuleLoadResult.Error : ModuleLoadResult.Loaded;
         }
         catch (Exception ex)
         {
-            _errorReporter.ReportError($"Error loading module {resolvedPath}: {ex.Message}",
-                Core.SourceLocation.Unknown);
-            return false;
+            _errorReporter.ReportError($"Error loading module {resolvedPath}: {ex.Message}", errorLocation);
+            return ModuleLoadResult.Error;
         }
         finally
         {

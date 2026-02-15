@@ -18,6 +18,7 @@ public enum TokenType
     Tempo,
     Swing,
     Key,
+    Section,
 
     // Type keywords
     Void,
@@ -40,6 +41,7 @@ public enum TokenType
     CentLiteral,        // +50c, -25c (microtones)
     TimeLiteral,        // 100ms, 2.5s
     DecibelLiteral,     // -3dB, +6dB
+    ChordLiteral,       // Cmaj7, Dm, Gsus4
 
     // Operators
     Arrow,              // ->

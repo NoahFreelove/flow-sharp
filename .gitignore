@@ -9,3 +9,4 @@ tests/
 *.md
 flow-interpreter/flow-interpreter
 *.wav
+.claude/plugins/*

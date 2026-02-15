@@ -9,8 +9,13 @@ namespace FlowLang.StandardLibrary.Audio;
 /// </summary>
 public static class Timeline
 {
-    // ===== BPM Context (global state) =====
-    private static double CurrentBPM = 120.0;
+    // ===== BPM Context (thread-local state) =====
+    [ThreadStatic] private static double? _currentBPM;
+    private static double CurrentBPM
+    {
+        get => _currentBPM ?? 120.0;
+        set => _currentBPM = value;
+    }
 
     /// <summary>
     /// Sets the global BPM (beats per minute) for timeline conversions.

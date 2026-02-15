@@ -13,6 +13,12 @@ namespace FlowLang.TypeSystem.SpecialTypes
 
         public override int GetSpecificity() => 132;
 
+        public override bool IsCompatibleWith(FlowType other)
+        {
+            // NoteValue is backed by int, allow Int values to be used as NoteValue
+            return other is NoteValueType || other is PrimitiveTypes.IntType || base.IsCompatibleWith(other);
+        }
+
         public enum Value
         {
             WHOLE = 0,

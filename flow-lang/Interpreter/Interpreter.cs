@@ -87,6 +87,10 @@ public class Interpreter
                 ExecuteImport(import);
                 break;
 
+            case SectionDeclaration section:
+                ExecuteSectionDeclaration(section);
+                break;
+
             case MusicalContextStatement ctx:
                 ExecuteMusicalContext(ctx);
                 break;
@@ -175,6 +179,49 @@ public class Interpreter
                 ExecuteStatement(stmt);
                 if (_returnValue != null) break;
             }
+        }
+        finally
+        {
+            _context.PopFrame();
+        }
+    }
+
+    private void ExecuteSectionDeclaration(SectionDeclaration section)
+    {
+        // Check for duplicate section names
+        if (_context.SectionRegistry.ContainsKey(section.Name))
+        {
+            _errorReporter.ReportError(
+                $"Section '{section.Name}' is already defined", section.Location);
+            return;
+        }
+
+        // Push a new scope for the section body
+        _context.PushFrame();
+        try
+        {
+            // Snapshot the musical context before executing the body
+            var musicalContext = _context.GetMusicalContext();
+
+            // Execute the section body
+            foreach (var stmt in section.Body)
+            {
+                ExecuteStatement(stmt);
+                if (_returnValue != null) break;
+            }
+
+            // Collect all Sequence variables declared in the section scope
+            var sequences = new Dictionary<string, SequenceData>();
+            foreach (var (name, value) in _context.CurrentFrame.GetLocalVariables())
+            {
+                if (value.Data is SequenceData seq)
+                {
+                    sequences[name] = seq;
+                }
+            }
+
+            var sectionData = new SectionData(section.Name, sequences, musicalContext);
+            _context.SectionRegistry[section.Name] = sectionData;
         }
         finally
         {

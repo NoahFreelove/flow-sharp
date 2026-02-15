@@ -108,5 +108,39 @@ public static class HarmonyFunctions
                 return Value.Void();
             return Value.Chord(chordData);
         });
+
+        // str(Section) -> String
+        var strSectionSignature = new FunctionSignature("str", [SectionType.Instance]);
+        registry.Register("str", strSectionSignature, args =>
+        {
+            var section = args[0].As<SectionData>();
+            return Value.String(section.ToString());
+        });
+
+        // str(Song) -> String
+        var strSongSignature = new FunctionSignature("str", [SongType.Instance]);
+        registry.Register("str", strSongSignature, args =>
+        {
+            var song = args[0].As<SongData>();
+            return Value.String(song.ToString());
+        });
+
+        // getSections(Song) -> Strings
+        var getSectionsSignature = new FunctionSignature("getSections", [SongType.Instance]);
+        registry.Register("getSections", getSectionsSignature, args =>
+        {
+            var song = args[0].As<SongData>();
+            var names = song.Sections.Select(s => Value.String(s.Name)).ToArray();
+            return Value.Array(names, StringType.Instance);
+        });
+
+        // sectionSequences(Section) -> Strings (returns names of sequences in section)
+        var sectionSequencesSignature = new FunctionSignature("sectionSequences", [SectionType.Instance]);
+        registry.Register("sectionSequences", sectionSequencesSignature, args =>
+        {
+            var section = args[0].As<SectionData>();
+            var names = section.Sequences.Keys.Select(k => Value.String(k)).ToArray();
+            return Value.Array(names, StringType.Instance);
+        });
     }
 }

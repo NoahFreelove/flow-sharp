@@ -1,0 +1,55 @@
+Note: Test roman numerals in key context
+use "std.flow"
+
+Note: === Roman numerals in C major ===
+key Cmajor {
+    Note: I = C major, IV = F major, V = G major
+    Sequence seq1 = | I IV V I |
+    (print (str seq1))
+
+    Note: ii = D minor, V7 = G dominant 7th
+    Sequence seq2 = | ii V7 I |
+    (print (str seq2))
+}
+
+Note: === Roman numerals in A minor ===
+key Aminor {
+    Note: i = A minor, iv = D minor, v = E minor
+    Sequence seq3 = | i iv v i |
+    (print (str seq3))
+}
+
+Note: === Resolve roman numeral via function ===
+Chord c1 = (resolveNumeral "I" "Cmajor")
+(print (concat "I in C major: " (str c1)))
+
+Chord c2 = (resolveNumeral "V" "Cmajor")
+(print (concat "V in C major: " (str c2)))
+
+Chord c3 = (resolveNumeral "iv" "Aminor")
+(print (concat "iv in A minor: " (str c3)))
+
+Note: === All 7 degrees in C major ===
+Chord d1 = (resolveNumeral "I" "Cmajor")
+Chord d2 = (resolveNumeral "ii" "Cmajor")
+Chord d3 = (resolveNumeral "iii" "Cmajor")
+Chord d4 = (resolveNumeral "IV" "Cmajor")
+Chord d5 = (resolveNumeral "V" "Cmajor")
+Chord d6 = (resolveNumeral "vi" "Cmajor")
+Chord d7 = (resolveNumeral "vii" "Cmajor")
+(print (concat "I: " (str d1)))
+(print (concat "ii: " (str d2)))
+(print (concat "iii: " (str d3)))
+(print (concat "IV: " (str d4)))
+(print (concat "V: " (str d5)))
+(print (concat "vi: " (str d6)))
+(print (concat "vii: " (str d7)))
+
+Note: === With extensions ===
+Chord ext1 = (resolveNumeral "V7" "Cmajor")
+(print (concat "V7 in C major: " (str ext1)))
+
+Chord ext2 = (resolveNumeral "ii7" "Cmajor")
+(print (concat "ii7 in C major: " (str ext2)))
+
+(print "All roman numeral tests passed!")

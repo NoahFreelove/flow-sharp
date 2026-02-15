@@ -1,0 +1,72 @@
+Note: Test Song Structure - Sections and Song Arrangement
+
+use "std.flow"
+
+Note: === Test 1: Basic section declaration ===
+(print "Test 1: Basic section declaration")
+
+section intro {
+    Sequence melody = | C4 E4 G4 C5 |
+}
+
+(print "PASS: section intro declared")
+
+Note: === Test 2: Section with multiple sequences ===
+(print "Test 2: Multiple sequences in section")
+
+section verse {
+    Sequence lead = | E4 E4 F4 G4 |
+    Sequence bass = | C3 C3 G3 G3 |
+}
+
+(print "PASS: section verse declared with 2 sequences")
+
+Note: === Test 3: Song arrangement with sections ===
+(print "Test 3: Song arrangement")
+
+section chorus {
+    Sequence lead = | G4 A4 G4 E4 |
+}
+
+Song mySong = [intro verse chorus]
+(print (str mySong))
+(print "PASS: song created")
+
+Note: === Test 4: Song with repeat counts ===
+(print "Test 4: Song with repeats")
+
+Song withRepeats = [intro verse*2 chorus verse chorus*2]
+(print (str withRepeats))
+(print "PASS: song with repeats created")
+
+Note: === Test 5: getSections function ===
+(print "Test 5: getSections")
+
+Strings sections = (getSections mySong)
+(print (str sections))
+(print "PASS: getSections works")
+
+Note: === Test 6: Empty section ===
+(print "Test 6: Empty section")
+
+section bridge {
+}
+
+Song withBridge = [intro bridge chorus]
+(print (str withBridge))
+(print "PASS: empty section in song works")
+
+Note: === Test 7: Section with musical context ===
+(print "Test 7: Section with musical context")
+
+key Cmajor {
+    section outro {
+        Sequence melody = | I IV V I |
+    }
+}
+
+Song fullSong = [intro verse chorus bridge outro]
+(print (str fullSong))
+(print "PASS: section with musical context works")
+
+(print "All song structure tests passed!")

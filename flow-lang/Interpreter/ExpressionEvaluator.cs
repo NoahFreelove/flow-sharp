@@ -2,6 +2,7 @@ using FlowLang.Ast;
 using FlowLang.Ast.Expressions;
 using FlowLang.Ast.Statements;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -36,10 +37,12 @@ public class ExpressionEvaluator
             ArrayIndexExpression idx => EvaluateArrayIndex(idx),
             BinaryExpression bin => EvaluateBinary(bin),
             ArrayLiteralExpression arrLit => EvaluateArrayLiteral(arrLit),
+            ChordLiteralExpression chordLit => EvaluateChordLiteral(chordLit),
             LambdaExpression lambda => EvaluateLambda(lambda),
             MemberAccessExpression member => EvaluateMemberAccess(member),
             LazyExpression lazy => EvaluateLazy(lazy),
             NoteStreamExpression noteStream => EvaluateNoteStream(noteStream),
+            SongExpression song => EvaluateSong(song),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -339,12 +342,45 @@ public class ExpressionEvaluator
             };
         }
 
+        if (obj.Data is ChordData chordData)
+        {
+            return member.MemberName switch
+            {
+                "Root" => Value.String(chordData.Root),
+                "Quality" => Value.String(chordData.Quality),
+                "Octave" => Value.Int(chordData.Octave),
+                "NoteNames" => Value.Array(
+                    chordData.NoteNames.Select(n => Value.String(n)).ToArray(),
+                    TypeSystem.PrimitiveTypes.StringType.Instance),
+                _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
+            };
+        }
+
         if (obj.Data is TypeSystem.SpecialTypes.BarData barData)
         {
             return member.MemberName switch
             {
                 "TimeSignature" => Value.TimeSignature(barData.TimeSignature),
                 "Count" => Value.Int(barData.Notes.Count),
+                _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
+            };
+        }
+
+        if (obj.Data is SectionData sectionData)
+        {
+            return member.MemberName switch
+            {
+                "Name" => Value.String(sectionData.Name),
+                "SequenceCount" => Value.Int(sectionData.Sequences.Count),
+                _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
+            };
+        }
+
+        if (obj.Data is SongData songData)
+        {
+            return member.MemberName switch
+            {
+                "SectionCount" => Value.Int(songData.Sections.Count),
                 _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
             };
         }
@@ -388,11 +424,50 @@ public class ExpressionEvaluator
     /// <summary>
     /// Evaluates a note stream expression into a Sequence value using the active musical context.
     /// </summary>
+    private Value EvaluateChordLiteral(ChordLiteralExpression chordLit)
+    {
+        if (ChordParser.TryParse(chordLit.ChordText, out var chordData))
+        {
+            return Value.Chord(chordData!);
+        }
+
+        _errorReporter.ReportError($"Invalid chord symbol: '{chordLit.ChordText}'", chordLit.Location);
+        return Value.Void();
+    }
+
     private Value EvaluateNoteStream(NoteStreamExpression noteStream)
     {
         var context = _context.GetMusicalContext();
         var compiler = new NoteStreamCompiler();
         var sequence = compiler.Compile(noteStream, context);
         return Value.Sequence(sequence);
+    }
+
+    private Value EvaluateSong(SongExpression song)
+    {
+        var sectionRefs = new List<SongSectionRef>();
+
+        foreach (var sectionRef in song.Sections)
+        {
+            if (!_context.SectionRegistry.ContainsKey(sectionRef.Name))
+            {
+                _errorReporter.ReportError(
+                    $"Undefined section '{sectionRef.Name}' in song arrangement", song.Location);
+                return Value.Void();
+            }
+
+            if (sectionRef.RepeatCount <= 0)
+            {
+                _errorReporter.ReportError(
+                    $"Repeat count must be positive, got {sectionRef.RepeatCount} for section '{sectionRef.Name}'",
+                    song.Location);
+                return Value.Void();
+            }
+
+            sectionRefs.Add(new SongSectionRef(sectionRef.Name, sectionRef.RepeatCount));
+        }
+
+        var songData = new SongData(sectionRefs, new Dictionary<string, SectionData>(_context.SectionRegistry));
+        return Value.Song(songData);
     }
 }

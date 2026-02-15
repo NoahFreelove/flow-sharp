@@ -11,36 +11,40 @@ public static class Utils
     private static int FIXED_RAND_SEED = 0;
     private static int RAND_SEED = 0;
     private static Random? fixed_gen = null;
-    
+
     private static Random? gen = null;
-    
-    // People who use random noise in tracks may like a certain seed so they can use the 
+    private static readonly object _randLock = new();
+
+    // People who use random noise in tracks may like a certain seed so they can use the
     // ?? operator to use the fixed gen and reset it at playback to get "consistent randomness"
 
     private static Random GetRand(bool fixed_rng = false)
     {
-        if (fixed_rng)
+        lock (_randLock)
         {
-            if (fixed_gen == null)
+            if (fixed_rng)
             {
-                if (FIXED_RAND_SEED == 0)
+                if (fixed_gen == null)
                 {
-                    FIXED_RAND_SEED = Random.Shared.Next();
+                    if (FIXED_RAND_SEED == 0)
+                    {
+                        FIXED_RAND_SEED = Random.Shared.Next();
+                    }
+
+                    fixed_gen = new Random(FIXED_RAND_SEED);
                 }
 
-                fixed_gen = new Random(FIXED_RAND_SEED);
+                return fixed_gen;
             }
 
-            return fixed_gen;
-        }
+            if (gen == null)
+            {
+                RAND_SEED = Random.Shared.Next();
+                gen = new Random(RAND_SEED);
+            }
 
-        if (gen == null)
-        {
-            RAND_SEED = Random.Shared.Next();
-            gen = new Random(RAND_SEED);
+            return gen;
         }
-
-        return gen;
     }
 
     public static void ResetGen()

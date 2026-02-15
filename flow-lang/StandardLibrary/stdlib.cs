@@ -186,7 +186,7 @@ public static class stdlib
     {
         var a = args[0].As<double>();
         var b = args[1].As<double>();
-        return Value.Float(a + b);
+        return Value.Double(a + b);
     }
 
     /// <summary>
@@ -216,8 +216,61 @@ public static class stdlib
     {
         var a = args[0].As<int>();
         var b = args[1].As<int>();
-        if (b == 0) throw new DivideByZeroException();
+        if (b == 0) return Value.Void();
         return Value.Int(a / b);
+    }
+
+    /// <summary>
+    /// Subtracts two doubles.
+    /// </summary>
+    public static Value SubDouble(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
+        return Value.Double(a - b);
+    }
+
+    /// <summary>
+    /// Multiplies two doubles.
+    /// </summary>
+    public static Value MulDouble(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
+        return Value.Double(a * b);
+    }
+
+    /// <summary>
+    /// Divides two doubles.
+    /// </summary>
+    public static Value DivDouble(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
+        if (b == 0) return Value.Void();
+        return Value.Double(a / b);
+    }
+
+    /// <summary>
+    /// Converts a string to an Int. Returns Void on failure.
+    /// </summary>
+    public static Value StringToInt(IReadOnlyList<Value> args)
+    {
+        var str = args[0].As<string>();
+        if (int.TryParse(str, out int result))
+            return Value.Int(result);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Converts a string to a Double. Returns Void on failure.
+    /// </summary>
+    public static Value StringToDouble(IReadOnlyList<Value> args)
+    {
+        var str = args[0].As<string>();
+        if (double.TryParse(str, out double result))
+            return Value.Double(result);
+        return Value.Void();
     }
 
     // ===== Lazy Evaluation Functions =====

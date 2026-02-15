@@ -49,6 +49,8 @@ public class ImplicitReturnCollector
 
         // Return array of collected values
         var elementType = _collectedValues[0].Type;
+        if (!_collectedValues.All(v => v.Type.Equals(elementType)))
+            elementType = VoidType.Instance;
         return Value.Array(_collectedValues, elementType);
     }
 
