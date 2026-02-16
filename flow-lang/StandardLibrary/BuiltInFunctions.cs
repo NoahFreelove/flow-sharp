@@ -428,6 +428,16 @@ public static class BuiltInFunctions
             [BufferType.Instance, DoubleType.Instance]);
         registry.Register("scaleBuffer", scaleBufferSignature, Audio.BufferHelpers.ScaleBuffer);
 
+        var fadeInSignature = new FunctionSignature(
+            "fadeIn",
+            [BufferType.Instance, DoubleType.Instance]);
+        registry.Register("fadeIn", fadeInSignature, Audio.BufferHelpers.FadeIn);
+
+        var fadeOutSignature = new FunctionSignature(
+            "fadeOut",
+            [BufferType.Instance, DoubleType.Instance]);
+        registry.Register("fadeOut", fadeOutSignature, Audio.BufferHelpers.FadeOut);
+
         // ===== Envelope Operations =====
 
         var createARSignature = new FunctionSignature(

@@ -226,6 +226,12 @@ internal proc appendBuffers(Buffer: a, Buffer: b)
 Note: Scales all samples in buffer by gain factor (in-place)
 internal proc scaleBuffer(Buffer: buffer, Double: gain)
 
+Note: Applies a linear fade-in from silence over the specified duration (seconds)
+internal proc fadeIn(Buffer: buffer, Double: duration)
+
+Note: Applies a linear fade-out to silence over the specified duration (seconds) at the end
+internal proc fadeOut(Buffer: buffer, Double: duration)
+
 Note: ===== Envelope Creation and Application =====
 
 Note: Creates an AR (Attack-Release) envelope

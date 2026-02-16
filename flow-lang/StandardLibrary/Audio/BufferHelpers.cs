@@ -109,4 +109,61 @@ public static class BufferHelpers
 
         return Value.Void();
     }
+
+    /// <summary>
+    /// Applies a linear fade-in to a copy of the buffer.
+    /// The fade ramps amplitude from 0 to 1 over the specified duration in seconds.
+    /// </summary>
+    public static Value FadeIn(IReadOnlyList<Value> args)
+    {
+        var source = args[0].As<AudioBuffer>();
+        double durationSeconds = args[1].As<double>();
+
+        int fadeSamples = (int)(durationSeconds * source.SampleRate);
+        int fadeFrames = Math.Min(fadeSamples, source.Frames);
+
+        var result = new AudioBuffer(source.Frames, source.Channels, source.SampleRate);
+        Array.Copy(source.Data, result.Data, source.Data.Length);
+
+        for (int frame = 0; frame < fadeFrames; frame++)
+        {
+            float t = (float)frame / fadeFrames;
+            for (int ch = 0; ch < source.Channels; ch++)
+            {
+                float sample = result.GetSample(frame, ch);
+                result.SetSample(frame, ch, sample * t);
+            }
+        }
+
+        return Value.Buffer(result);
+    }
+
+    /// <summary>
+    /// Applies a linear fade-out to a copy of the buffer.
+    /// The fade ramps amplitude from 1 to 0 over the specified duration in seconds at the end of the buffer.
+    /// </summary>
+    public static Value FadeOut(IReadOnlyList<Value> args)
+    {
+        var source = args[0].As<AudioBuffer>();
+        double durationSeconds = args[1].As<double>();
+
+        int fadeSamples = (int)(durationSeconds * source.SampleRate);
+        int fadeFrames = Math.Min(fadeSamples, source.Frames);
+        int fadeStart = source.Frames - fadeFrames;
+
+        var result = new AudioBuffer(source.Frames, source.Channels, source.SampleRate);
+        Array.Copy(source.Data, result.Data, source.Data.Length);
+
+        for (int frame = fadeStart; frame < source.Frames; frame++)
+        {
+            float t = 1.0f - ((float)(frame - fadeStart) / fadeFrames);
+            for (int ch = 0; ch < source.Channels; ch++)
+            {
+                float sample = result.GetSample(frame, ch);
+                result.SetSample(frame, ch, sample * t);
+            }
+        }
+
+        return Value.Buffer(result);
+    }
 }
