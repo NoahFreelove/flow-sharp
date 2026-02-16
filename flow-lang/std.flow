@@ -108,5 +108,8 @@ internal proc ritardando (Sequence: seq, Double: amount)
 internal proc accelerando (Sequence: seq, Double: amount)
 internal proc fermata (Sequence: seq, Int: noteIndex)
 
+Note: Humanize
+internal proc humanize (Sequence: seq, Double: amount)
+
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)

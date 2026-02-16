@@ -25,6 +25,7 @@ public static class TransformFunctions
         RegisterConcat(registry);
         RegisterDynamicTransforms(registry);
         RegisterTempoTransforms(registry);
+        RegisterHumanize(registry);
     }
 
     // ===== MIDI Helpers =====
@@ -633,6 +634,47 @@ public static class TransformFunctions
                     newNotes.Add(note);
                 }
                 if (!note.IsRest) noteIndex++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    // ===== Humanize =====
+
+    private static void RegisterHumanize(InternalFunctionRegistry registry)
+    {
+        var humanizeSig = new FunctionSignature("humanize",
+            [SequenceType.Instance, DoubleType.Instance]);
+        registry.Register("humanize", humanizeSig, Humanize);
+    }
+
+    private static readonly Random HumanizeRng = new();
+
+    private static Value Humanize(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest)
+                {
+                    newNotes.Add(note);
+                    continue;
+                }
+
+                // Velocity jitter: random variation scaled by amount
+                double velJitter = (HumanizeRng.NextDouble() * 2.0 - 1.0) * amount * 0.2;
+                double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);
+
+                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    newVelocity, note.Articulation, note.IsDotted));
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }

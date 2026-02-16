@@ -1,0 +1,27 @@
+use "@std"
+use "@audio"
+
+(print "=== Test Humanization ===")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence mel = | C4 D4 E4 F4 |
+            Sequence human = mel -> humanize 0.2
+            (print (str human))
+
+            Sequence tight = mel -> humanize 0.05
+            (print (str tight))
+
+            section humanSec {
+                Sequence hmel = | C4 D4 E4 F4 |
+            }
+            Song humanSong = [humanSec]
+            Buffer humanBuf = (renderSong humanSong "piano")
+            Int humanFrames = (getFrames humanBuf)
+            (print (concat "humanized frames: " (str humanFrames)))
+        }
+    }
+}
+
+(print "humanize tests complete")
