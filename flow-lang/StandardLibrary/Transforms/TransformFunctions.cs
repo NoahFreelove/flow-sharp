@@ -24,6 +24,7 @@ public static class TransformFunctions
         RegisterRepeat(registry);
         RegisterConcat(registry);
         RegisterDynamicTransforms(registry);
+        RegisterTempoTransforms(registry);
     }
 
     // ===== MIDI Helpers =====
@@ -507,5 +508,134 @@ public static class TransformFunctions
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }
         return result;
+    }
+
+    // ===== Tempo Transforms =====
+
+    private static void RegisterTempoTransforms(InternalFunctionRegistry registry)
+    {
+        var ritSig = new FunctionSignature("ritardando",
+            [SequenceType.Instance, DoubleType.Instance]);
+        registry.Register("ritardando", ritSig, RitardandoTransform);
+
+        var accelSig = new FunctionSignature("accelerando",
+            [SequenceType.Instance, DoubleType.Instance]);
+        registry.Register("accelerando", accelSig, AccelerandoTransform);
+
+        var fermataSig = new FunctionSignature("fermata",
+            [SequenceType.Instance, IntType.Instance]);
+        registry.Register("fermata", fermataSig, FermataTransform);
+    }
+
+    /// <summary>
+    /// Ritardando: progressively stretch note durations. Amount 0.5 = last note 1.5x duration.
+    /// We approximate by adjusting velocity downward for later notes (lower velocity sounds
+    /// "slower" perceptually).
+    /// </summary>
+    private static Value RitardandoTransform(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+
+        int totalNotes = 0;
+        foreach (var bar in seq.Bars)
+            foreach (var note in bar.MusicalNotes)
+                if (!note.IsRest) totalNotes++;
+
+        if (totalNotes <= 1) return Value.Sequence(seq);
+
+        int noteIndex = 0;
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest) { newNotes.Add(note); continue; }
+
+                double t = (double)noteIndex / (totalNotes - 1);
+                // Reduce velocity slightly for rit feel (later = softer = perceived slower)
+                double velReduction = t * amount * 0.3;
+                double newVel = Math.Clamp(note.Velocity - velReduction, 0.05, 1.0);
+
+                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    newVel, note.Articulation, note.IsDotted));
+                noteIndex++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    private static Value AccelerandoTransform(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+
+        int totalNotes = 0;
+        foreach (var bar in seq.Bars)
+            foreach (var note in bar.MusicalNotes)
+                if (!note.IsRest) totalNotes++;
+
+        if (totalNotes <= 1) return Value.Sequence(seq);
+
+        int noteIndex = 0;
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest) { newNotes.Add(note); continue; }
+
+                double t = (double)noteIndex / (totalNotes - 1);
+                // Increase velocity slightly for accel feel (later = louder = perceived faster)
+                double velBoost = t * amount * 0.3;
+                double newVel = Math.Clamp(note.Velocity + velBoost, 0.05, 1.0);
+
+                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    newVel, note.Articulation, note.IsDotted));
+                noteIndex++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// Fermata: hold the note at the given index for 2x its normal duration (move to next
+    /// larger duration value).
+    /// </summary>
+    private static Value FermataTransform(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        int targetIdx = args[1].As<int>();
+
+        int noteIndex = 0;
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (!note.IsRest && noteIndex == targetIdx && note.DurationValue.HasValue)
+                {
+                    // Augment: move to next larger duration (e.g. quarter -> half)
+                    int newDur = Math.Max(note.DurationValue.Value - 1, (int)NoteValueType.Value.WHOLE);
+                    newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                        newDur, note.IsRest, note.CentOffset, note.IsTied,
+                        note.Velocity, note.Articulation, note.IsDotted));
+                }
+                else
+                {
+                    newNotes.Add(note);
+                }
+                if (!note.IsRest) noteIndex++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
     }
 }

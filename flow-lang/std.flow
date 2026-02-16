@@ -103,5 +103,10 @@ internal proc resolveNumeral (String: numeral, String: keyName)
 internal proc getSections (Song: s)
 internal proc sectionSequences (Section: s)
 
+Note: Tempo expression transforms
+internal proc ritardando (Sequence: seq, Double: amount)
+internal proc accelerando (Sequence: seq, Double: amount)
+internal proc fermata (Sequence: seq, Int: noteIndex)
+
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)

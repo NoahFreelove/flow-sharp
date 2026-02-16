@@ -169,6 +169,28 @@ public class Interpreter
                     musicalCtx.Velocity = vel;
                     break;
 
+                case MusicalContextType.Rit:
+                {
+                    var targetVal = _evaluator.Evaluate(ctx.Value);
+                    double targetTempo = targetVal.Type is IntType
+                        ? (double)targetVal.As<int>()
+                        : targetVal.As<double>();
+                    // Approximate rit by averaging current tempo and target
+                    double currentTempo = _context.GetMusicalContext().Tempo ?? 120.0;
+                    musicalCtx.Tempo = (currentTempo + targetTempo) / 2.0;
+                    break;
+                }
+                case MusicalContextType.Accel:
+                {
+                    var targetVal = _evaluator.Evaluate(ctx.Value);
+                    double targetTempo = targetVal.Type is IntType
+                        ? (double)targetVal.As<int>()
+                        : targetVal.As<double>();
+                    double currentTempo = _context.GetMusicalContext().Tempo ?? 120.0;
+                    musicalCtx.Tempo = (currentTempo + targetTempo) / 2.0;
+                    break;
+                }
+
                 case MusicalContextType.Key:
                     if (ctx.Value is LiteralExpression keyExpr)
                     {

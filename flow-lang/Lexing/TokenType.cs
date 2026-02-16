@@ -20,6 +20,8 @@ public enum TokenType
     Key,
     Section,
     Dynamics,
+    Rit,
+    Accel,
 
     // Type keywords
     Void,

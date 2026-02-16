@@ -97,6 +97,10 @@ public class Parser
             return ParseMusicalContextStatement(MusicalContextType.Key);
         if (Match(TokenType.Dynamics))
             return ParseMusicalContextStatement(MusicalContextType.Dynamics);
+        if (Match(TokenType.Rit))
+            return ParseMusicalContextStatement(MusicalContextType.Rit);
+        if (Match(TokenType.Accel))
+            return ParseMusicalContextStatement(MusicalContextType.Accel);
 
         // Section declaration: section name { ... }
         if (Match(TokenType.Section))
@@ -425,6 +429,19 @@ public class Parser
                 {
                     value = new LiteralExpression(dynToken.Location, velocity.Value);
                 }
+                break;
+            }
+
+            case MusicalContextType.Rit:
+            case MusicalContextType.Accel:
+            {
+                var tempoLoc = CurrentToken.Location;
+                if (Check(TokenType.IntLiteral))
+                    value = new LiteralExpression(tempoLoc, (int)Advance().Value!);
+                else if (Check(TokenType.FloatLiteral))
+                    value = new LiteralExpression(tempoLoc, (double)Advance().Value!);
+                else
+                    throw new ParseException($"Expected target tempo for {contextType}, got {CurrentToken.Type}");
                 break;
             }
 
@@ -1218,7 +1235,8 @@ public class Parser
                 or TokenType.Use or TokenType.Internal
                 or TokenType.Timesig or TokenType.Tempo
                 or TokenType.Swing or TokenType.Key
-                or TokenType.Dynamics or TokenType.Section)
+                or TokenType.Dynamics or TokenType.Rit or TokenType.Accel
+                or TokenType.Section)
             {
                 return;
             }
