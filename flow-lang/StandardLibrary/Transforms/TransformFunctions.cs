@@ -124,7 +124,7 @@ public static class TransformFunctions
             }
 
             var (name, oct, alt) = FromMidi(midi);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, isDotted: note.IsDotted);
+            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -188,7 +188,7 @@ public static class TransformFunctions
             inverted = Math.Clamp(inverted, MIDI_MIN, MIDI_MAX);
 
             var (name, oct, alt) = FromMidi(inverted);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, isDotted: note.IsDotted);
+            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -246,7 +246,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.WHOLE;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, isDotted: note.IsDotted);
+            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -267,7 +267,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.THIRTYSECOND;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, isDotted: note.IsDotted);
+            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -354,7 +354,7 @@ public static class TransformFunctions
                     int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + cumulativeTranspose;
                     midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
                     var (name, oct, alt) = FromMidi(midi);
-                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, isDotted: note.IsDotted));
+                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted));
                 }
                 var newBar = new BarData(newNotes, bar.TimeSignature!);
                 result.AddBar(newBar);
