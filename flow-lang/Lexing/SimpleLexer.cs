@@ -471,6 +471,7 @@ public class SimpleLexer
             "swing" => TokenType.Swing,
             "key" => TokenType.Key,
             "section" => TokenType.Section,
+            "dynamics" => TokenType.Dynamics,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,
             "Float" => TokenType.Float,

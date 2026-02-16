@@ -95,6 +95,8 @@ public class Parser
             return ParseMusicalContextStatement(MusicalContextType.Swing);
         if (Match(TokenType.Key))
             return ParseMusicalContextStatement(MusicalContextType.Key);
+        if (Match(TokenType.Dynamics))
+            return ParseMusicalContextStatement(MusicalContextType.Dynamics);
 
         // Section declaration: section name { ... }
         if (Match(TokenType.Section))
@@ -407,6 +409,24 @@ public class Parser
                 var keyToken = Expect(TokenType.Identifier, "Expected key name (e.g., Cmajor, Aminor)");
                 value = new LiteralExpression(keyToken.Location, keyToken.Text);
                 break;
+
+            case MusicalContextType.Dynamics:
+            {
+                var dynToken = Expect(TokenType.Identifier, "Expected dynamic level (pp, p, mp, mf, f, ff, fff, ppp)");
+                var velocity = TryParseDynamicMarking(dynToken.Text);
+                if (!velocity.HasValue)
+                {
+                    _errorReporter.ReportError(
+                        $"Unknown dynamic marking '{dynToken.Text}'. Use: ppp, pp, p, mp, mf, f, ff, fff",
+                        dynToken.Location);
+                    value = new LiteralExpression(dynToken.Location, 0.63);
+                }
+                else
+                {
+                    value = new LiteralExpression(dynToken.Location, velocity.Value);
+                }
+                break;
+            }
 
             default:
                 throw new ParseException($"Unknown musical context type: {contextType}");
@@ -1186,7 +1206,7 @@ public class Parser
                 or TokenType.Use or TokenType.Internal
                 or TokenType.Timesig or TokenType.Tempo
                 or TokenType.Swing or TokenType.Key
-                or TokenType.Section)
+                or TokenType.Dynamics or TokenType.Section)
             {
                 return;
             }

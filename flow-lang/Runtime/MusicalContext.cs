@@ -36,6 +36,7 @@ public class MusicalContext
     public double? Tempo { get; set; }
     public double? Swing { get; set; }  // 0.0 to 1.0 (0.5 = straight, 0.67 = triplet swing)
     public string? Key { get; set; }    // e.g., "Cmajor", "Aminor"
+    public double? Velocity { get; set; }  // 0.0 to 1.0 (null = inherit, default mf = 0.63)
 
     /// <summary>
     /// Creates a new context with all values inherited (null).
@@ -50,7 +51,8 @@ public class MusicalContext
         TimeSignature = TimeSignature,
         Tempo = Tempo,
         Swing = Swing,
-        Key = Key
+        Key = Key,
+        Velocity = Velocity
     };
 
     /// <summary>
@@ -85,6 +87,7 @@ public class MusicalContext
         if (Tempo != null) parts.Add($"tempo={Tempo}");
         if (Swing != null) parts.Add($"swing={Swing}");
         if (Key != null) parts.Add($"key={Key}");
+        if (Velocity != null) parts.Add($"velocity={Velocity}");
         return $"MusicalContext({string.Join(", ", parts)})";
     }
 }

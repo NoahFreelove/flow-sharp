@@ -20,4 +20,21 @@ timesig 4/4 {
 
 (print "articulation test complete")
 
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            dynamics f {
+                Sequence forteMel = | C4 D4 E4 F4 |
+                (print (str forteMel))
+                dynamics pp {
+                    Sequence softMel = | C4 D4 E4 F4 |
+                    (print (str softMel))
+                }
+            }
+        }
+    }
+}
+
+(print "dynamics context block test complete")
+
 (print "dynamics test complete")

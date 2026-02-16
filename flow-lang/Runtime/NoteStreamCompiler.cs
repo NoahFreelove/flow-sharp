@@ -65,7 +65,7 @@ public class NoteStreamCompiler
             switch (element)
             {
                 case NoteElement note:
-                    musicalNotes.Add(CompileNoteElement(note, autoFitDuration));
+                    musicalNotes.Add(CompileNoteElement(note, autoFitDuration, context));
                     break;
 
                 case RestElement rest:
@@ -209,7 +209,7 @@ public class NoteStreamCompiler
     /// <summary>
     /// Compiles a NoteElement into a MusicalNoteData.
     /// </summary>
-    private MusicalNoteData CompileNoteElement(NoteElement note, NoteValueType.Value? autoFitDuration)
+    private MusicalNoteData CompileNoteElement(NoteElement note, NoteValueType.Value? autoFitDuration, MusicalContext context)
     {
         var (noteName, octave, alteration) = NoteType.Parse(note.NoteName);
         int? durationValue;
@@ -227,8 +227,8 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER; // Default to quarter note
         }
 
-        // Determine velocity: note-level override > default mf
-        double velocity = note.Velocity ?? 0.63;
+        // Determine velocity: note-level override > context velocity > default mf
+        double velocity = note.Velocity ?? context.Velocity ?? 0.63;
 
         // Apply accent articulations as velocity boost
         var articulation = note.ArticulationMark ?? Articulation.Normal;

@@ -160,6 +160,15 @@ public class Interpreter
                     musicalCtx.Swing = swing;
                     break;
 
+                case MusicalContextType.Dynamics:
+                    var velVal = _evaluator.Evaluate(ctx.Value);
+                    double vel = velVal.Type is IntType
+                        ? (double)velVal.As<int>()
+                        : velVal.As<double>();
+                    vel = Math.Clamp(vel, 0.0, 1.0);
+                    musicalCtx.Velocity = vel;
+                    break;
+
                 case MusicalContextType.Key:
                     if (ctx.Value is LiteralExpression keyExpr)
                     {

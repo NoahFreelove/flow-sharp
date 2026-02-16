@@ -19,6 +19,7 @@ public enum TokenType
     Swing,
     Key,
     Section,
+    Dynamics,
 
     // Type keywords
     Void,

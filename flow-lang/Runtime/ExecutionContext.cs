@@ -127,9 +127,11 @@ public class ExecutionContext
                 resolved.Tempo ??= frame.MusicalContext.Tempo;
                 resolved.Swing ??= frame.MusicalContext.Swing;
                 resolved.Key ??= frame.MusicalContext.Key;
+                resolved.Velocity ??= frame.MusicalContext.Velocity;
             }
             if (resolved.TimeSignature != null && resolved.Tempo != null
-                && resolved.Swing != null && resolved.Key != null)
+                && resolved.Swing != null && resolved.Key != null
+                && resolved.Velocity != null)
                 break;
         }
         // Defaults
