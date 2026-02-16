@@ -20,4 +20,11 @@ tempo 120 {
     }
 }
 
+timesig 4/4 {
+    Sequence inlineCresc = | pp C4 cresc D4 E4 ff F4 |
+    (print (str inlineCresc))
+}
+
+(print "inline crescendo test complete")
+
 (print "crescendo tests complete")

@@ -104,7 +104,66 @@ public class NoteStreamCompiler
             }
         }
 
+        // Post-process: if notes have varying velocities, smooth-interpolate between them
+        // This handles the common case of: | pp C4 cresc D4 E4 ff F4 |
+        // where D4 and E4 should get interpolated velocities
+        InterpolateVelocities(musicalNotes);
+
         return new BarData(musicalNotes, timeSig);
+    }
+
+    /// <summary>
+    /// Interpolates velocities for notes that don't have explicit velocity markings.
+    /// Finds notes with explicit (different) velocities and linearly interpolates between them.
+    /// </summary>
+    private static void InterpolateVelocities(List<MusicalNoteData> notes)
+    {
+        if (notes.Count < 3) return;
+
+        // Find unique velocities among non-rest notes
+        var nonRestVelocities = notes.Where(n => !n.IsRest).Select(n => n.Velocity).Distinct().ToList();
+        if (nonRestVelocities.Count < 2) return; // All same velocity, nothing to interpolate
+
+        // Simple linear interpolation from first non-rest to last non-rest
+        int firstIdx = -1, lastIdx = -1;
+        for (int i = 0; i < notes.Count; i++)
+        {
+            if (!notes[i].IsRest)
+            {
+                if (firstIdx == -1) firstIdx = i;
+                lastIdx = i;
+            }
+        }
+
+        if (firstIdx == lastIdx) return;
+
+        double startVel = notes[firstIdx].Velocity;
+        double endVel = notes[lastIdx].Velocity;
+        if (Math.Abs(startVel - endVel) < 0.01) return; // Effectively same
+
+        // Count non-rest notes for interpolation
+        int nonRestCount = 0;
+        for (int i = firstIdx; i <= lastIdx; i++)
+            if (!notes[i].IsRest) nonRestCount++;
+
+        if (nonRestCount < 3) return; // Need at least 3 to interpolate
+
+        int noteIdx = 0;
+        for (int i = firstIdx; i <= lastIdx; i++)
+        {
+            if (notes[i].IsRest) continue;
+
+            // First and last keep their explicit velocities
+            if (noteIdx > 0 && noteIdx < nonRestCount - 1)
+            {
+                double t = (double)noteIdx / (nonRestCount - 1);
+                double vel = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
+                var n = notes[i];
+                notes[i] = new MusicalNoteData(n.NoteName, n.Octave, n.Alteration,
+                    n.DurationValue, n.IsRest, n.CentOffset, n.IsTied, vel, n.Articulation, n.IsDotted);
+            }
+            noteIdx++;
+        }
     }
 
     /// <summary>

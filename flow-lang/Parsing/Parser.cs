@@ -900,6 +900,18 @@ public class Parser
                 continue;
             }
 
+            // Crescendo/decrescendo span markers (consumed as visual indicators;
+            // actual interpolation is handled by NoteStreamCompiler post-processing)
+            if (Check(TokenType.Identifier))
+            {
+                var text = CurrentToken.Text;
+                if (text == "cresc" || text == "decresc")
+                {
+                    Advance();
+                    continue;
+                }
+            }
+
             // Dynamic marking: pp, p, mp, mf, f, ff, fff, ppp, sfz, fp
             if (Check(TokenType.Identifier))
             {
@@ -1044,8 +1056,8 @@ public class Parser
             or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral
             or TokenType.LParen or TokenType.GreaterThan)
             return false;
-        // Check if identifier is a roman numeral, dynamic marking, or articulation mark
-        if (type == TokenType.Identifier && (ScaleDatabase.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc"))
+        // Check if identifier is a roman numeral, dynamic marking, articulation mark, or cresc/decresc
+        if (type == TokenType.Identifier && (ScaleDatabase.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc" or "cresc" or "decresc"))
             return false;
         // Lowercase identifiers are variable references — continue the stream
         if (type == TokenType.Identifier)
