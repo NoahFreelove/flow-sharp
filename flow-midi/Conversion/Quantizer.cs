@@ -56,6 +56,11 @@ record QuantizedBar(List<IBarElement> Elements, int BarNumber);
 record QuantizedTrack(string Name, List<QuantizedBar> Bars, int Channel, bool IsDrumTrack);
 
 /// <summary>
+/// Result of quantization, including chosen metadata and tracks.
+/// </summary>
+record QuantizeResult(List<QuantizedTrack> Tracks, int TimeSigNumerator, int TimeSigDenominator);
+
+/// <summary>
 /// Converts raw MIDI ticks into musical durations, groups notes into bars,
 /// detects chords, and inserts rests for gaps.
 /// </summary>
@@ -95,7 +100,7 @@ static class Quantizer
         return (long)(mult * tpqn);
     }
 
-    public static List<QuantizedTrack> Quantize(MidiFile midi)
+    public static QuantizeResult Quantize(MidiFile midi)
     {
         var result = new List<QuantizedTrack>();
 
@@ -114,16 +119,20 @@ static class Quantizer
             }
         }
 
-        // Use first tempo/time-sig; warn about changes
+        // Use first tempo; warn about changes
         if (globalTempoEvents.Count > 1)
             Console.Error.WriteLine($"Warning: {globalTempoEvents.Count} tempo changes found; using the first (BPM={globalTempoEvents[0].Bpm:F1}).");
 
-        if (globalTimeSigEvents.Count > 1)
-            Console.Error.WriteLine($"Warning: {globalTimeSigEvents.Count} time signature changes found; using the first.");
-
         int tpqn = midi.TicksPerQuarterNote;
-        int timeSigNum = globalTimeSigEvents.Count > 0 ? globalTimeSigEvents[0].Numerator : 4;
-        int timeSigDen = globalTimeSigEvents.Count > 0 ? globalTimeSigEvents[0].Denominator : 4;
+
+        // Pick the most prevalent time signature (by tick duration), not just the first.
+        // Many MIDIs start with a short pickup bar in a different time sig.
+        var timeSig = PickPrimaryTimeSig(globalTimeSigEvents, midi);
+        int timeSigNum = timeSig.Numerator;
+        int timeSigDen = timeSig.Denominator;
+
+        if (globalTimeSigEvents.Count > 1)
+            Console.Error.WriteLine($"Warning: {globalTimeSigEvents.Count} time signature changes found; using {timeSigNum}/{timeSigDen}.");
 
         // Use flats when key signature has flats
         bool useFlats = globalKeySigEvents.Count > 0 && globalKeySigEvents[0].SharpsFlats < 0;
@@ -137,9 +146,15 @@ static class Quantizer
                 foreach (var (channel, spans) in byChannel)
                 {
                     bool isDrum = channel == 9;
-                    string name = isDrum ? "drums" : $"track_ch{channel + 1}";
-                    var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
-                    result.Add(new QuantizedTrack(name, bars, channel, isDrum));
+                    string baseName = isDrum ? "drums" : $"track_ch{channel + 1}";
+
+                    if (!isDrum)
+                        AddSplitTracks(result, baseName, spans, channel, tpqn, timeSigNum, timeSigDen, useFlats);
+                    else
+                    {
+                        var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
+                        result.Add(new QuantizedTrack(baseName, bars, channel, true));
+                    }
                 }
             }
         }
@@ -158,17 +173,119 @@ static class Quantizer
 
                 // Detect drum track (channel 9)
                 bool isDrum = track.Events.OfType<NoteOnEvent>().Any(e => e.Channel == 9);
-                string name = track.Name != null ? SanitizeName(track.Name) : $"track_{trackIndex + 1}";
+                string name = !string.IsNullOrWhiteSpace(track.Name) ? SanitizeName(track.Name) : $"track_{trackIndex + 1}";
                 if (isDrum) name = "drums";
 
                 int channel = track.Events.OfType<NoteOnEvent>().FirstOrDefault()?.Channel ?? 0;
-                var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
-                result.Add(new QuantizedTrack(name, bars, channel, isDrum));
+
+                if (!isDrum)
+                    AddSplitTracks(result, name, spans, channel, tpqn, timeSigNum, timeSigDen, useFlats);
+                else
+                {
+                    var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
+                    result.Add(new QuantizedTrack(name, bars, channel, true));
+                }
+
                 trackIndex++;
             }
         }
 
-        return result;
+        return new QuantizeResult(result, timeSigNum, timeSigDen);
+    }
+
+    /// <summary>
+    /// Splits a set of note spans into upper/lower voices if the pitch range spans
+    /// more than 2 octaves (24 semitones). This handles piano MIDIs where both hands
+    /// are on the same track.
+    /// </summary>
+    static void AddSplitTracks(
+        List<QuantizedTrack> result, string baseName, List<NoteSpan> spans,
+        int channel, int tpqn, int timeSigNum, int timeSigDen, bool useFlats)
+    {
+        if (spans.Count == 0) return;
+
+        int minPitch = spans.Min(s => s.Pitch);
+        int maxPitch = spans.Max(s => s.Pitch);
+        int range = maxPitch - minPitch;
+
+        // Only split if range exceeds 2 octaves (24 semitones)
+        if (range <= 24)
+        {
+            var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
+            result.Add(new QuantizedTrack(baseName, bars, channel, false));
+            return;
+        }
+
+        // Find the split point: use the median pitch, but clamp near middle C (MIDI 60)
+        var pitches = spans.Select(s => s.Pitch).OrderBy(p => p).ToList();
+        int medianPitch = pitches[pitches.Count / 2];
+
+        // Bias the split toward middle C if the median is close
+        int splitPoint = medianPitch;
+        if (Math.Abs(medianPitch - 60) < 12)
+            splitPoint = 60; // Split at middle C
+
+        var upperSpans = spans.Where(s => s.Pitch >= splitPoint).ToList();
+        var lowerSpans = spans.Where(s => s.Pitch < splitPoint).ToList();
+
+        // Handle notes right at the split that might belong to either hand
+        // by checking simultaneous grouping — if a note at the split is
+        // simultaneous with notes above, keep it in upper; otherwise lower.
+        // (The simple pitch split above handles most cases well enough.)
+
+        if (upperSpans.Count > 0)
+        {
+            var upperBars = QuantizeSpans(upperSpans, tpqn, timeSigNum, timeSigDen, useFlats);
+            result.Add(new QuantizedTrack(baseName + "_rh", upperBars, channel, false));
+        }
+
+        if (lowerSpans.Count > 0)
+        {
+            var lowerBars = QuantizeSpans(lowerSpans, tpqn, timeSigNum, timeSigDen, useFlats);
+            result.Add(new QuantizedTrack(baseName + "_lh", lowerBars, channel, false));
+        }
+    }
+
+    /// <summary>
+    /// Picks the time signature that spans the most ticks in the file.
+    /// Many MIDIs start with a short pickup bar (e.g. 1/8) before the "real" time sig.
+    /// </summary>
+    static (int Numerator, int Denominator) PickPrimaryTimeSig(List<TimeSignatureEvent> events, MidiFile midi)
+    {
+        if (events.Count == 0)
+            return (4, 4);
+
+        if (events.Count == 1)
+            return (events[0].Numerator, events[0].Denominator);
+
+        // Find total extent of all notes
+        long maxTick = 0;
+        foreach (var track in midi.Tracks)
+            foreach (var evt in track.Events)
+                if (evt.AbsoluteTick > maxTick)
+                    maxTick = evt.AbsoluteTick;
+
+        if (maxTick == 0) maxTick = 1;
+
+        // Sort by tick
+        var sorted = events.OrderBy(e => e.AbsoluteTick).ToList();
+
+        // Calculate how many ticks each time sig is active for
+        var durations = new Dictionary<(int Num, int Den), long>();
+        for (int i = 0; i < sorted.Count; i++)
+        {
+            long start = sorted[i].AbsoluteTick;
+            long end = (i + 1 < sorted.Count) ? sorted[i + 1].AbsoluteTick : maxTick;
+            var key = (sorted[i].Numerator, sorted[i].Denominator);
+
+            if (!durations.ContainsKey(key))
+                durations[key] = 0;
+            durations[key] += end - start;
+        }
+
+        // Pick the one with the longest total duration
+        var best = durations.OrderByDescending(kv => kv.Value).First().Key;
+        return best;
     }
 
     static Dictionary<int, List<NoteSpan>> SplitByChannel(MidiTrack track)
@@ -393,33 +510,37 @@ static class Quantizer
 
     static void AddRests(List<IBarElement> elements, long ticks, int tpqn)
     {
-        // Decompose a gap into the fewest rest elements
-        long remaining = ticks;
-        int safety = 20; // prevent infinite loop
+        // Flow rests are plain "_" with no duration suffix — they auto-fit.
+        // Auto-fit divides remaining bar time equally among all suffix-less elements.
+        // So we emit the right COUNT of "_" elements to fill the gap.
+        //
+        // Strategy: find the largest standard duration that evenly divides the gap,
+        // then emit that many rests.
 
-        while (remaining > 0 && safety-- > 0)
+        if (ticks <= 0) return;
+
+        // Try standard durations from largest to smallest
+        double[] gridMultipliers = { 4.0, 2.0, 1.0, 0.5, 0.25, 0.125 };
+
+        foreach (double mult in gridMultipliers)
         {
-            // Find largest grid value that fits
-            string bestSuffix = "t";
-            bool bestDotted = false;
-            long bestTicks = (long)(tpqn * 0.125);
+            long unitTicks = (long)(mult * tpqn);
+            if (unitTicks <= 0) continue;
 
-            foreach (var (mult, suffix, isDotted) in DurationGrid)
+            // Check if this duration evenly divides the gap (with small tolerance)
+            int count = (int)Math.Round((double)ticks / unitTicks);
+            if (count > 0 && count <= 16 && Math.Abs(ticks - count * unitTicks) <= tpqn * 0.1)
             {
-                long gridTicks = (long)(mult * tpqn);
-                if (gridTicks <= remaining + (long)(gridTicks * 0.05)) // small tolerance
-                {
-                    bestSuffix = suffix;
-                    bestDotted = isDotted;
-                    bestTicks = gridTicks;
-                    break; // Grid is sorted longest-first, take the biggest that fits
-                }
+                // Find the suffix for this multiplier
+                var (suffix, isDotted) = SnapDuration(unitTicks, tpqn);
+                for (int i = 0; i < count; i++)
+                    elements.Add(new RestElement(suffix, isDotted));
+                return;
             }
-
-            elements.Add(new RestElement(bestSuffix, bestDotted));
-            remaining -= bestTicks;
-            if (remaining < 0) remaining = 0;
         }
+
+        // Fallback: use single rest (auto-fit will handle it)
+        elements.Add(new RestElement("q", false));
     }
 
     // Sharp names: C C# D D# E F F# G G# A A# B

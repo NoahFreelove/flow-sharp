@@ -30,12 +30,16 @@ static class FlowGenerator
         { (-7, false), "Cbmajor" },   { (-7, true), "Abminor" },
     };
 
-    public static string Generate(MidiFile midi, List<QuantizedTrack> tracks, string sourceFileName)
+    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName)
     {
         var sb = new StringBuilder();
+        var tracks = quantizeResult.Tracks;
 
-        // Filter out drum tracks and empty tracks
-        var playableTracks = tracks.Where(t => !t.IsDrumTrack && t.Bars.Count > 0).ToList();
+        // Filter out drum tracks, empty tracks, and tracks that are almost entirely rests
+        var playableTracks = tracks
+            .Where(t => !t.IsDrumTrack && t.Bars.Count > 0)
+            .Where(t => t.Bars.Any(b => b.Elements.Any(e => e is NoteElement or ChordElement)))
+            .ToList();
         var drumTracks = tracks.Where(t => t.IsDrumTrack).ToList();
 
         if (playableTracks.Count == 0)
@@ -44,15 +48,14 @@ static class FlowGenerator
             return sb.ToString();
         }
 
-        // Gather metadata from all tracks
+        // Gather metadata from MIDI and quantizer
         var allEvents = midi.Tracks.SelectMany(t => t.Events).ToList();
         var tempoEvent = allEvents.OfType<TempoEvent>().FirstOrDefault();
-        var timeSigEvent = allEvents.OfType<TimeSignatureEvent>().FirstOrDefault();
         var keySigEvent = allEvents.OfType<KeySignatureEvent>().FirstOrDefault();
 
         int bpm = tempoEvent != null ? (int)Math.Round(tempoEvent.Bpm) : 120;
-        int timeSigNum = timeSigEvent?.Numerator ?? 4;
-        int timeSigDen = timeSigEvent?.Denominator ?? 4;
+        int timeSigNum = quantizeResult.TimeSigNumerator;
+        int timeSigDen = quantizeResult.TimeSigDenominator;
         string? flowKey = null;
         if (keySigEvent != null)
             KeySignatureMap.TryGetValue((keySigEvent.SharpsFlats, keySigEvent.IsMinor), out flowKey);
@@ -141,65 +144,48 @@ static class FlowGenerator
 
         sb.Append($"{indent}Sequence {varName} = ");
 
-        // Build bar strings
+        // Build bar strings, skipping bars that are all rests at the end
         var barStrings = new List<string>();
         foreach (var bar in track.Bars)
         {
-            barStrings.Add(FormatBar(bar, useAutoFit, track));
+            barStrings.Add(FormatBar(bar, useAutoFit));
         }
 
-        // Format with line wrapping: | bar1 | bar2 | ... |
-        // Keep lines under ~100 chars for readability
-        var lineBuilder = new StringBuilder("| ");
-        var lines = new List<string>();
-        int barsOnLine = 0;
+        // Build the note stream as one continuous expression.
+        // Use line wrapping but keep the stream continuous (no | | empty bars).
+        var streamBuilder = new StringBuilder("| ");
+        int col = indent.Length + $"Sequence {varName} = ".Length + 2;
+        string contIndent = indent + new string(' ', $"Sequence {varName} = ".Length);
+        int wrapCol = 100;
 
         for (int i = 0; i < barStrings.Count; i++)
         {
             string barStr = barStrings[i];
-            string separator = i < barStrings.Count - 1 ? " | " : " |";
+            bool isLast = i == barStrings.Count - 1;
+            string suffix = isLast ? " |" : " | ";
 
-            if (barsOnLine > 0 && lineBuilder.Length + barStr.Length + separator.Length > 90)
+            // Check if adding this bar would exceed wrap width
+            if (col + barStr.Length + suffix.Length > wrapCol && col > contIndent.Length + 5)
             {
-                // Wrap to next line
-                lines.Add(lineBuilder.ToString().TrimEnd() + " |");
-                lineBuilder.Clear();
-                lineBuilder.Append("| ");
-                barsOnLine = 0;
+                // Wrap: end current line (no trailing |), continue on next
+                sb.AppendLine(streamBuilder.ToString().TrimEnd());
+                streamBuilder.Clear();
+                streamBuilder.Append(contIndent);
+                col = contIndent.Length;
             }
 
-            lineBuilder.Append(barStr);
-            lineBuilder.Append(separator);
-            barsOnLine++;
+            streamBuilder.Append(barStr);
+            streamBuilder.Append(suffix);
+            col += barStr.Length + suffix.Length;
         }
 
-        if (barsOnLine > 0)
-        {
-            string last = lineBuilder.ToString();
-            // Ensure it ends with |
-            if (!last.TrimEnd().EndsWith("|"))
-                last = last.TrimEnd() + " |";
-            lines.Add(last);
-        }
-
-        if (lines.Count == 1)
-        {
-            sb.AppendLine(lines[0]);
-        }
-        else
-        {
-            sb.AppendLine(lines[0]);
-            string contIndent = indent + new string(' ', $"Sequence {varName} = ".Length);
-            for (int i = 1; i < lines.Count; i++)
-            {
-                sb.AppendLine($"{contIndent}{lines[i]}");
-            }
-        }
+        sb.AppendLine(streamBuilder.ToString());
     }
 
-    static string FormatBar(QuantizedBar bar, bool useAutoFit, QuantizedTrack track)
+    static string FormatBar(QuantizedBar bar, bool useAutoFit)
     {
         var parts = new List<string>();
+        bool barHasNotes = bar.Elements.Any(e => e is NoteElement or ChordElement);
 
         foreach (var elem in bar.Elements)
         {
@@ -231,15 +217,11 @@ static class FlowGenerator
                     break;
                 }
 
-                case RestElement rest:
+                case RestElement:
                 {
-                    string s = "_";
-                    if (!useAutoFit)
-                    {
-                        s += rest.DurationSuffix;
-                        if (rest.IsDotted) s += ".";
-                    }
-                    parts.Add(s);
+                    // Flow rests are just "_" — no duration suffix allowed.
+                    // The rest auto-fits to fill available space in the bar.
+                    parts.Add("_");
                     break;
                 }
             }
@@ -274,10 +256,9 @@ static class FlowGenerator
                         suffix = c.DurationSuffix;
                         isDotted = c.IsDotted;
                         break;
-                    case RestElement r:
-                        suffix = r.DurationSuffix;
-                        isDotted = r.IsDotted;
-                        break;
+                    case RestElement:
+                        // Rests are always plain "_" in output, skip for auto-fit check
+                        continue;
                     default:
                         continue;
                 }

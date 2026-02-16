@@ -12,6 +12,7 @@ class Program
 
         string? inputPath = null;
         string? outputPath = null;
+        bool dump = false;
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -20,6 +21,9 @@ class Program
                 case "-h" or "--help":
                     PrintUsage();
                     return 0;
+                case "--dump":
+                    dump = true;
+                    break;
                 case "-o":
                     if (i + 1 >= args.Length)
                     {
@@ -65,8 +69,14 @@ class Program
             var bytes = File.ReadAllBytes(inputPath);
             var midiFile = Midi.MidiParser.Parse(bytes);
 
-            var quantizedTracks = Conversion.Quantizer.Quantize(midiFile);
-            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizedTracks, Path.GetFileName(inputPath));
+            if (dump)
+            {
+                Diagnostics.Dump(midiFile);
+                return 0;
+            }
+
+            var quantizeResult = Conversion.Quantizer.Quantize(midiFile);
+            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath));
 
             if (outputPath != null)
             {
