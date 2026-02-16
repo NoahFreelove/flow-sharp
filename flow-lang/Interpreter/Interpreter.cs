@@ -327,6 +327,11 @@ public class Interpreter
             MillisecondType => Value.Millisecond(0.0),
             SecondType => Value.Second(0.0),
             DecibelType => Value.Decibel(0.0),
+            BeatType => Value.Beat(0.0),
+            NoteValueType => Value.NoteValue(0),
+            TimeSignatureType => Value.TimeSignature(new TimeSignatureData(4, 4)),
+            SequenceType => Value.Sequence(new SequenceData()),
+            BarType => Value.Bar(new BarData(new List<MusicalNoteData>(), new TimeSignatureData(4, 4))),
             _ => Value.Void()
         };
     }

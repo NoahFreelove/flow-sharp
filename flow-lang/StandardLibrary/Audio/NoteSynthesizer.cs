@@ -191,6 +191,7 @@ namespace FlowLang.StandardLibrary.Audio
                 "piano" => new PianoSynthesizer(),
                 "brass" or "horn" => new BrassSynthesizer(),
                 "sax" or "saxophone" => new SaxSynthesizer(),
+                "flute" => new FluteSynthesizer(),
                 "drums" or "drum" => new DrumSynthesizer(),
                 _ => throw new ArgumentException($"Unknown synthesizer type: {synthType}")
             };

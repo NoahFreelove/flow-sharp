@@ -42,6 +42,15 @@ namespace FlowLang.StandardLibrary.Audio
                 // Calculate duration in beats
                 double durationBeats = note.GetBeats(bar.TimeSignature.Denominator);
 
+                // For tied notes, extend render duration so the audio tail overlaps the next note.
+                // This creates a legato transition since voices mix additively on the timeline.
+                if (note.IsTied)
+                {
+                    double overlapSeconds = 0.1; // 100ms overlap for smooth crossfade
+                    double overlapBeats = (overlapSeconds / 60.0) * bpm;
+                    durationBeats += overlapBeats;
+                }
+
                 // Render note to audio buffer
                 AudioBuffer buffer = synthesizer.RenderNote(note, sampleRate, durationBeats, bpm);
 

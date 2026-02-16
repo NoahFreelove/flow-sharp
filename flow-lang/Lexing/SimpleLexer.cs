@@ -496,6 +496,25 @@ public class SimpleLexer
                 return new Token(TokenType.NoteLiteral, text, start, noteValue);
             }
 
+            // Check for note + duration suffix (e.g., C4h, D5q, E3w)
+            // The duration suffix (w/h/q/e/s/t) gets consumed as part of the identifier
+            // but should be a separate token for the parser's TryParseDurationSuffix
+            if (text.Length >= 3)
+            {
+                char lastChar = text[^1];
+                if (lastChar is 'w' or 'h' or 'q' or 'e' or 's' or 't')
+                {
+                    string notePartText = text[..^1];
+                    if (TryParseNote(notePartText, out var notePartValue))
+                    {
+                        // Rewind position by 1 so the duration suffix becomes a separate token
+                        _position--;
+                        _column--;
+                        return new Token(TokenType.NoteLiteral, notePartText, start, notePartValue);
+                    }
+                }
+            }
+
             // Try to parse as Semitone (+/-Nst)
             if (TryParseSemitone(text, out var semitoneValue))
             {

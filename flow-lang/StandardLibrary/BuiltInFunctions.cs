@@ -119,6 +119,21 @@ public static class BuiltInFunctions
             [FloatType.Instance, FloatType.Instance]);
         registry.Register("add", addFloatSignature, stdlib.AddFloat);
 
+        var subFloatSignature = new FunctionSignature(
+            "sub",
+            [FloatType.Instance, FloatType.Instance]);
+        registry.Register("sub", subFloatSignature, stdlib.SubFloat);
+
+        var mulFloatSignature = new FunctionSignature(
+            "mul",
+            [FloatType.Instance, FloatType.Instance]);
+        registry.Register("mul", mulFloatSignature, stdlib.MulFloat);
+
+        var divFloatSignature = new FunctionSignature(
+            "div",
+            [FloatType.Instance, FloatType.Instance]);
+        registry.Register("div", divFloatSignature, stdlib.DivFloat);
+
         var subSignature = new FunctionSignature(
             "sub",
             [IntType.Instance, IntType.Instance]);
@@ -134,11 +149,11 @@ public static class BuiltInFunctions
             [IntType.Instance, IntType.Instance]);
         registry.Register("div", divSignature, stdlib.DivInt);
 
-        // Float/Double overloads for arithmetic
+        // Double overloads for arithmetic
         var addDoubleSignature = new FunctionSignature(
             "add",
             [DoubleType.Instance, DoubleType.Instance]);
-        registry.Register("add", addDoubleSignature, stdlib.AddFloat);
+        registry.Register("add", addDoubleSignature, stdlib.AddDouble);
 
         var subDoubleSignature = new FunctionSignature(
             "sub",

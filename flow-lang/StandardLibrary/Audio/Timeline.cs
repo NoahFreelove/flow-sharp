@@ -225,6 +225,17 @@ public static class Timeline
                     float existing = result.GetSample(destFrame, ch);
                     result.SetSample(destFrame, ch, existing + sample);
                 }
+
+                // If voice is mono but track is stereo, duplicate to right channel
+                if (voice.Buffer.Channels == 1 && track.Channels == 2)
+                {
+                    float sample = voice.Buffer.GetSample(frame, 0);
+                    sample *= (float)(voice.Gain * track.Gain);
+                    sample *= CalculatePanGain(1, voice.Pan, track.Pan);
+
+                    float existing = result.GetSample(destFrame, 1);
+                    result.SetSample(destFrame, 1, existing + sample);
+                }
             }
         }
 

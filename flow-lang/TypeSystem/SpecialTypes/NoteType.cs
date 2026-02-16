@@ -137,8 +137,9 @@ public class MusicalNoteData
     public int? DurationValue { get; }
     public bool IsRest { get; }
     public double? CentOffset { get; }
+    public bool IsTied { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null)
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false)
     {
         NoteName = noteName;
         Octave = octave;
@@ -146,6 +147,7 @@ public class MusicalNoteData
         DurationValue = durationValue;
         IsRest = isRest;
         CentOffset = centOffset;
+        IsTied = isTied;
     }
 
     /// <summary>

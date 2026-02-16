@@ -13,8 +13,8 @@ public sealed class LongType : FlowType
 
     public override bool CanConvertTo(FlowType target)
     {
-        // Long can convert to Double, Number
-        return target is DoubleType or NumberType
+        // Long can convert to Float, Double, Number
+        return target is FloatType or DoubleType or NumberType
             || base.CanConvertTo(target);
     }
 

@@ -98,6 +98,7 @@ public class Value
 
         if (Data is long longVal)
         {
+            if (targetType is FloatType) return Float(longVal);
             if (targetType is DoubleType) return Double(longVal);
             if (targetType is NumberType) return Number(new BigInteger(longVal));
         }

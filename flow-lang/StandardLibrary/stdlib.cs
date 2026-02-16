@@ -186,6 +186,47 @@ public static class stdlib
     {
         var a = args[0].As<double>();
         var b = args[1].As<double>();
+        return Value.Float(a + b);
+    }
+
+    /// <summary>
+    /// Subtracts two floats.
+    /// </summary>
+    public static Value SubFloat(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
+        return Value.Float(a - b);
+    }
+
+    /// <summary>
+    /// Multiplies two floats.
+    /// </summary>
+    public static Value MulFloat(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
+        return Value.Float(a * b);
+    }
+
+    /// <summary>
+    /// Divides two floats.
+    /// </summary>
+    public static Value DivFloat(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
+        if (b == 0) throw new InvalidOperationException("Division by zero");
+        return Value.Float(a / b);
+    }
+
+    /// <summary>
+    /// Adds two doubles.
+    /// </summary>
+    public static Value AddDouble(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<double>();
+        var b = args[1].As<double>();
         return Value.Double(a + b);
     }
 
@@ -216,7 +257,7 @@ public static class stdlib
     {
         var a = args[0].As<int>();
         var b = args[1].As<int>();
-        if (b == 0) return Value.Void();
+        if (b == 0) throw new InvalidOperationException("Division by zero");
         return Value.Int(a / b);
     }
 
@@ -247,7 +288,7 @@ public static class stdlib
     {
         var a = args[0].As<double>();
         var b = args[1].As<double>();
-        if (b == 0) return Value.Void();
+        if (b == 0) throw new InvalidOperationException("Division by zero");
         return Value.Double(a / b);
     }
 
