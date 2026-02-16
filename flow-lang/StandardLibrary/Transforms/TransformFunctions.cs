@@ -23,6 +23,7 @@ public static class TransformFunctions
         RegisterOctaveShift(registry);
         RegisterRepeat(registry);
         RegisterConcat(registry);
+        RegisterDynamicTransforms(registry);
     }
 
     // ===== MIDI Helpers =====
@@ -120,7 +121,7 @@ public static class TransformFunctions
             }
 
             var (name, oct, alt) = FromMidi(midi);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false);
+            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, isDotted: note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -184,7 +185,7 @@ public static class TransformFunctions
             inverted = Math.Clamp(inverted, MIDI_MIN, MIDI_MAX);
 
             var (name, oct, alt) = FromMidi(inverted);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false);
+            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, isDotted: note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -242,7 +243,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.WHOLE;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest);
+            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, isDotted: note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -263,7 +264,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.THIRTYSECOND;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest);
+            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, isDotted: note.IsDotted);
         });
 
         return Value.Sequence(result);
@@ -350,7 +351,7 @@ public static class TransformFunctions
                     int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + cumulativeTranspose;
                     midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
                     var (name, oct, alt) = FromMidi(midi);
-                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false));
+                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, isDotted: note.IsDotted));
                 }
                 var newBar = new BarData(newNotes, bar.TimeSignature!);
                 result.AddBar(newBar);
@@ -385,5 +386,126 @@ public static class TransformFunctions
             result.AddBar(newBar);
         }
         return Value.Sequence(result);
+    }
+
+    // ===== Dynamic Transforms =====
+
+    private static void RegisterDynamicTransforms(InternalFunctionRegistry registry)
+    {
+        var crescSig = new FunctionSignature("crescendo",
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("crescendo", crescSig, Crescendo);
+
+        var decrescSig = new FunctionSignature("decrescendo",
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("decrescendo", decrescSig, Decrescendo);
+
+        var swellSig = new FunctionSignature("swell",
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("swell", swellSig, Swell);
+    }
+
+    private static Value Crescendo(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double startVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+        double endVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
+        return Value.Sequence(ApplyVelocityGradient(seq, startVel, endVel));
+    }
+
+    private static Value Decrescendo(IReadOnlyList<Value> args)
+    {
+        return Crescendo(args);
+    }
+
+    private static Value Swell(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double edgeVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+        double peakVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
+
+        int totalNotes = 0;
+        foreach (var bar in seq.Bars)
+            foreach (var note in bar.MusicalNotes)
+                if (!note.IsRest) totalNotes++;
+
+        if (totalNotes <= 1)
+            return Value.Sequence(seq);
+
+        int midpoint = totalNotes / 2;
+        int noteIndex = 0;
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest)
+                {
+                    newNotes.Add(note);
+                    continue;
+                }
+
+                double t;
+                if (noteIndex <= midpoint)
+                    t = (double)noteIndex / midpoint;
+                else
+                    t = 1.0 - ((double)(noteIndex - midpoint) / (totalNotes - 1 - midpoint));
+
+                double velocity = Math.Clamp(edgeVel + t * (peakVel - edgeVel), 0.0, 1.0);
+
+                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    velocity, note.Articulation, note.IsDotted));
+                noteIndex++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    private static SequenceData ApplyVelocityGradient(SequenceData seq, double startVel, double endVel)
+    {
+        int totalNotes = 0;
+        foreach (var bar in seq.Bars)
+            foreach (var note in bar.MusicalNotes)
+                if (!note.IsRest) totalNotes++;
+
+        if (totalNotes <= 1)
+        {
+            return TransformNotes(seq, note =>
+            {
+                if (note.IsRest) return note;
+                return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    startVel, note.Articulation, note.IsDotted);
+            });
+        }
+
+        int noteIndex = 0;
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest)
+                {
+                    newNotes.Add(note);
+                    continue;
+                }
+
+                double t = (double)noteIndex / (totalNotes - 1);
+                double velocity = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
+
+                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    velocity, note.Articulation, note.IsDotted));
+                noteIndex++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return result;
     }
 }

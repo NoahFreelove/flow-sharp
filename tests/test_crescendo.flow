@@ -1,0 +1,23 @@
+use "@std"
+
+(print "=== Test Crescendo/Decrescendo ===")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence mel = | C4 D4 E4 F4 |
+            Sequence growing = mel -> crescendo 0.25 0.875
+            (print (str growing))
+
+            Sequence loud = | C4 D4 E4 F4 |
+            Sequence dying = loud -> decrescendo 0.875 0.25
+            (print (str dying))
+
+            Sequence base = | C4 D4 E4 F4 G4 A4 B4 C5 |
+            Sequence swelled = base -> swell 0.25 0.875
+            (print (str swelled))
+        }
+    }
+}
+
+(print "crescendo tests complete")
