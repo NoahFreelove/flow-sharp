@@ -93,6 +93,27 @@ public record RandomChoiceElement(
 ) : NoteStreamElement(Location);
 
 /// <summary>
+/// A ghost note - played very softly (velocity ~0.15).
+/// Syntax: (ghost C4)
+/// </summary>
+public record GhostNoteElement(
+    SourceLocation Location,
+    string NoteName,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A grace note - a quick ornamental note before the main note.
+/// Rendered as a very short note (32nd) at moderate velocity.
+/// Syntax: (grace B3)
+/// </summary>
+public record GraceNoteElement(
+    SourceLocation Location,
+    string NoteName
+) : NoteStreamElement(Location);
+
+/// <summary>
 /// A bar within a note stream, delimited by | ... |
 /// </summary>
 public record NoteStreamBar(

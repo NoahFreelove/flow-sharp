@@ -832,12 +832,33 @@ public class Parser
                 continue;
             }
 
-            // Random choice: (? C4 E4 G4) or (?? C4 E4 G4) with optional weights
+            // Parenthesized elements: (ghost C4), (grace B3), (? C4 E4 G4), (?? C4 E4 G4)
             if (Check(TokenType.LParen) && !IsAtEnd())
             {
-                // Peek ahead: need ( followed by ? or ??
                 int savedPos = _current;
                 Advance(); // consume (
+                if (Check(TokenType.Identifier) && CurrentToken.Text == "ghost")
+                {
+                    var elemLoc = _tokens[savedPos].Location;
+                    Advance(); // consume "ghost"
+                    var noteToken = Expect(TokenType.NoteLiteral, "Expected note literal after 'ghost'");
+                    string? durSuffix = TryParseDurationSuffix();
+                    bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                    Expect(TokenType.RParen, "Expected ')' after ghost note");
+                    currentBarElements.Add(new GhostNoteElement(elemLoc, noteToken.Text, durSuffix, isDotted));
+                    continue;
+                }
+
+                if (Check(TokenType.Identifier) && CurrentToken.Text == "grace")
+                {
+                    var elemLoc = _tokens[savedPos].Location;
+                    Advance(); // consume "grace"
+                    var noteToken = Expect(TokenType.NoteLiteral, "Expected note literal after 'grace'");
+                    Expect(TokenType.RParen, "Expected ')' after grace note");
+                    currentBarElements.Add(new GraceNoteElement(elemLoc, noteToken.Text));
+                    continue;
+                }
+
                 if (Check(TokenType.Identifier) && (CurrentToken.Text == "?" || CurrentToken.Text == "??"))
                 {
                     var elemLoc = _tokens[savedPos].Location;

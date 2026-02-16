@@ -26,6 +26,7 @@ public static class TransformFunctions
         RegisterDynamicTransforms(registry);
         RegisterTempoTransforms(registry);
         RegisterHumanize(registry);
+        RegisterOrnamentTransforms(registry);
     }
 
     // ===== MIDI Helpers =====
@@ -675,6 +676,88 @@ public static class TransformFunctions
                 newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
                     newVelocity, note.Articulation, note.IsDotted));
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    // ===== Ornament Transforms (Trill / Tremolo) =====
+
+    private static void RegisterOrnamentTransforms(InternalFunctionRegistry registry)
+    {
+        var trillSig = new FunctionSignature("trill",
+            [SequenceType.Instance, SemitoneType.Instance]);
+        registry.Register("trill", trillSig, Trill);
+
+        var tremSig = new FunctionSignature("tremolo",
+            [SequenceType.Instance, IntType.Instance]);
+        registry.Register("tremolo", tremSig, Tremolo);
+    }
+
+    private static Value Trill(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        int semitones = args[1].As<int>();
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest || !note.DurationValue.HasValue)
+                {
+                    newNotes.Add(note);
+                    continue;
+                }
+
+                // Split into rapid alternation: note -> upper -> note -> upper
+                int trillDur = Math.Min(note.DurationValue.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
+                int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
+                int upperMidi = Math.Clamp(midi + semitones, MIDI_MIN, MIDI_MAX);
+                var (upperName, upperOct, upperAlt) = FromMidi(upperMidi);
+
+                // 4 alternations
+                for (int i = 0; i < 4; i++)
+                {
+                    if (i % 2 == 0)
+                        newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                            trillDur, false, note.CentOffset, false, note.Velocity, note.Articulation));
+                    else
+                        newNotes.Add(new MusicalNoteData(upperName, upperOct, upperAlt,
+                            trillDur, false, velocity: note.Velocity));
+                }
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    private static Value Tremolo(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        int reps = Math.Clamp(args[1].As<int>(), 1, 16);
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest || !note.DurationValue.HasValue)
+                {
+                    newNotes.Add(note);
+                    continue;
+                }
+
+                // Subdivide: use a smaller duration for each repetition
+                int subDur = Math.Min(note.DurationValue.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
+                for (int i = 0; i < reps; i++)
+                {
+                    newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
+                        subDur, false, note.CentOffset, false, note.Velocity, note.Articulation));
+                }
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }

@@ -437,7 +437,7 @@ public class ExpressionEvaluator
     {
         var context = _context.GetMusicalContext();
         var compiler = new NoteStreamCompiler();
-        var sequence = compiler.Compile(noteStream, context);
+        var sequence = compiler.Compile(noteStream, context, _context);
         return Value.Sequence(sequence);
     }
 

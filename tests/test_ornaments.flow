@@ -1,0 +1,33 @@
+use "@std"
+use "@audio"
+
+(print "=== Test Ornaments ===")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence ghosty = | C4 (ghost D4) E4 F4 |
+            (print (str ghosty))
+
+            Sequence graceful = | (grace B3) C4 D4 E4 F4 |
+            (print (str graceful))
+
+            Sequence mel = | C4h E4h |
+            Sequence trilled = mel -> trill +2st
+            (print (str trilled))
+
+            Sequence trem = mel -> tremolo 4
+            (print (str trem))
+
+            section ornSec {
+                Sequence omel = | C4 (ghost D4) E4 F4 |
+            }
+            Song ornSong = [ornSec]
+            Buffer ornBuf = (renderSong ornSong "piano")
+            Int ornFrames = (getFrames ornBuf)
+            (print (concat "ornament frames: " (str ornFrames)))
+        }
+    }
+}
+
+(print "ornament tests complete")

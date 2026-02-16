@@ -111,5 +111,9 @@ internal proc fermata (Sequence: seq, Int: noteIndex)
 Note: Humanize
 internal proc humanize (Sequence: seq, Double: amount)
 
+Note: Ornament transforms
+internal proc trill (Sequence: seq, Semitone: interval)
+internal proc tremolo (Sequence: seq, Int: repetitions)
+
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)

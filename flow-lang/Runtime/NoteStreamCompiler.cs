@@ -101,6 +101,23 @@ public class NoteStreamCompiler
                 case VariableReferenceElement varRef:
                     musicalNotes.Add(CompileVariableReferenceElement(varRef, autoFitDuration, executionContext));
                     break;
+
+                case GhostNoteElement ghost:
+                {
+                    var (name, octave, alteration) = NoteType.Parse(ghost.NoteName);
+                    int? dv = ResolveDuration(ghost.DurationSuffix, autoFitDuration);
+                    musicalNotes.Add(new MusicalNoteData(name, octave, alteration, dv,
+                        isRest: false, velocity: 0.15));
+                    break;
+                }
+
+                case GraceNoteElement grace:
+                {
+                    var (name, octave, alteration) = NoteType.Parse(grace.NoteName);
+                    musicalNotes.Add(new MusicalNoteData(name, octave, alteration,
+                        (int)NoteValueType.Value.THIRTYSECOND, isRest: false, velocity: 0.5));
+                    break;
+                }
             }
         }
 
@@ -188,6 +205,8 @@ public class NoteStreamCompiler
                 RomanNumeralElement rn => rn.DurationSuffix,
                 RandomChoiceElement rc => rc.DurationSuffix,
                 VariableReferenceElement vr => vr.DurationSuffix,
+                GhostNoteElement g => g.DurationSuffix,
+                GraceNoteElement _ => null,
                 _ => null
             };
 
@@ -200,6 +219,8 @@ public class NoteStreamCompiler
                 RomanNumeralElement rn => rn.IsDotted,
                 RandomChoiceElement rc => rc.IsDotted,
                 VariableReferenceElement vr => vr.IsDotted,
+                GhostNoteElement g => g.IsDotted,
+                GraceNoteElement _ => false,
                 _ => false
             };
 
