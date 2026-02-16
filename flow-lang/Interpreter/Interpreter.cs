@@ -261,7 +261,7 @@ public class Interpreter
                 }
             }
 
-            var sectionData = new SectionData(section.Name, sequences, musicalContext);
+            var sectionData = new SectionData(section.Name, sequences, musicalContext, section.Location);
             _context.SectionRegistry[section.Name] = sectionData;
         }
         finally

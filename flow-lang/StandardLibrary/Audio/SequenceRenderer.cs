@@ -1,3 +1,4 @@
+using FlowLang.Audio;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
@@ -43,6 +44,37 @@ namespace FlowLang.StandardLibrary.Audio
                     synthType,
                     sampleRate,
                     bpm);
+
+                allVoices.AddRange(barVoices);
+            }
+
+            return allVoices;
+        }
+
+        /// <summary>
+        /// Timeline-aware version of RenderSequenceToVoices.
+        /// </summary>
+        public static List<Voice> RenderSequenceToVoices(
+            SequenceData sequence,
+            string synthType,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level")
+        {
+            var allVoices = new List<Voice>();
+            var timeline = sequence.ToTimeline();
+
+            foreach (var (bar, offsetBeats) in timeline)
+            {
+                var barVoices = BarRenderer.RenderBarAtBeat(
+                    bar,
+                    offsetBeats,
+                    synthType,
+                    sampleRate,
+                    bpm,
+                    timelineMap,
+                    scopeName);
 
                 allVoices.AddRange(barVoices);
             }

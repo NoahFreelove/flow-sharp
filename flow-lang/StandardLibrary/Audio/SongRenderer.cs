@@ -1,3 +1,4 @@
+using FlowLang.Audio;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
@@ -119,6 +120,83 @@ public static class SongRenderer
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Renders a Song to an AudioBuffer and a TimelineMap for editor live highlighting.
+    /// </summary>
+    public static (AudioBuffer Buffer, TimelineMap Timeline) RenderSongWithTimeline(SongData song, string synthType)
+    {
+        var timelineMap = new TimelineMap();
+        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        double accumulatedSeconds = 0;
+
+        foreach (var sectionRef in song.Sections)
+        {
+            if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
+                throw new InvalidOperationException($"renderSong: section '{sectionRef.Name}' not found in song registry");
+
+            var (sectionBuffer, sectionTimeline) = RenderSectionWithTimeline(sectionData, synthType);
+
+            for (int r = 0; r < sectionRef.RepeatCount; r++)
+            {
+                // Offset this repeat's timeline entries
+                var repeatTimeline = new TimelineMap();
+                foreach (var entry in sectionTimeline.Entries)
+                {
+                    repeatTimeline.Add(entry with
+                    {
+                        StartSeconds = entry.StartSeconds + accumulatedSeconds,
+                        EndSeconds = entry.EndSeconds + accumulatedSeconds
+                    });
+                }
+                timelineMap.Merge(repeatTimeline);
+
+                // Add section-level entry if source location is available
+                if (sectionData.SourceLocation != null)
+                {
+                    double sectionDuration = (double)sectionBuffer.Frames / sectionBuffer.SampleRate;
+                    timelineMap.Add(new TimelineEntry(
+                        accumulatedSeconds,
+                        accumulatedSeconds + sectionDuration,
+                        sectionData.SourceLocation,
+                        sectionData.Name.Length + "section ".Length,
+                        $"section:{sectionData.Name}"));
+                }
+
+                accumulatedSeconds += (double)sectionBuffer.Frames / sectionBuffer.SampleRate;
+                result = AppendBuffers(result, sectionBuffer);
+            }
+        }
+
+        return (result, timelineMap);
+    }
+
+    /// <summary>
+    /// Timeline-aware version of RenderSection.
+    /// </summary>
+    private static (AudioBuffer Buffer, TimelineMap Timeline) RenderSectionWithTimeline(SectionData section, string synthType)
+    {
+        double bpm = section.Context?.Tempo ?? DefaultBpm;
+        var allVoices = new List<Voice>();
+        double maxBeats = 0;
+        var timelineMap = new TimelineMap();
+        string scopeName = $"note:{section.Name}";
+
+        foreach (var (name, sequence) in section.Sequences)
+        {
+            var voices = SequenceRenderer.RenderSequenceToVoices(
+                sequence, synthType, DefaultSampleRate, bpm, timelineMap, scopeName);
+            allVoices.AddRange(voices);
+
+            if (sequence.TotalBeats > maxBeats)
+                maxBeats = sequence.TotalBeats;
+        }
+
+        if (allVoices.Count == 0 || maxBeats <= 0)
+            return (new AudioBuffer(0, StereoChannels, DefaultSampleRate), timelineMap);
+
+        return (MixVoicesToStereoBuffer(allVoices, bpm, DefaultSampleRate, maxBeats), timelineMap);
     }
 
     /// <summary>

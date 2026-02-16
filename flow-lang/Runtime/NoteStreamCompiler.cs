@@ -111,7 +111,7 @@ public class NoteStreamCompiler
                         ? ResolveDuration(ghost.DurationSuffix, autoFitDuration)
                         : (int)NoteValueType.Value.SIXTEENTH;
                     musicalNotes.Add(new MusicalNoteData(name, octave, alteration, dv,
-                        isRest: false, velocity: 0.15));
+                        isRest: false, velocity: 0.15, sourceLocation: ghost.Location, sourceLength: CalcSourceLength(ghost)));
                     break;
                 }
 
@@ -119,7 +119,8 @@ public class NoteStreamCompiler
                 {
                     var (name, octave, alteration) = NoteType.Parse(grace.NoteName);
                     musicalNotes.Add(new MusicalNoteData(name, octave, alteration,
-                        (int)NoteValueType.Value.THIRTYSECOND, isRest: false, velocity: 0.5));
+                        (int)NoteValueType.Value.THIRTYSECOND, isRest: false, velocity: 0.5,
+                        sourceLocation: grace.Location, sourceLength: CalcSourceLength(grace)));
                     break;
                 }
             }
@@ -181,7 +182,7 @@ public class NoteStreamCompiler
                 double vel = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
                 var n = notes[i];
                 notes[i] = new MusicalNoteData(n.NoteName, n.Octave, n.Alteration,
-                    n.DurationValue, n.IsRest, n.CentOffset, n.IsTied, vel, n.Articulation, n.IsDotted);
+                    n.DurationValue, n.IsRest, n.CentOffset, n.IsTied, vel, n.Articulation, n.IsDotted, n.SourceLocation, n.SourceLength);
             }
             noteIdx++;
         }
@@ -340,7 +341,7 @@ public class NoteStreamCompiler
         return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
             centOffset: note.CentOffset, isTied: note.IsTied,
             velocity: velocity, articulation: articulation,
-            isDotted: note.IsDotted);
+            isDotted: note.IsDotted, sourceLocation: note.Location, sourceLength: CalcSourceLength(note));
     }
 
     /// <summary>
@@ -363,7 +364,7 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER;
         }
 
-        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: rest.IsDotted);
+        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: rest.IsDotted, sourceLocation: rest.Location, sourceLength: CalcSourceLength(rest));
     }
 
     /// <summary>
@@ -387,10 +388,11 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER;
         }
 
+        int chordLen = CalcSourceLength(chord);
         foreach (var noteName in chord.Notes)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen));
         }
 
         return notes;
@@ -407,14 +409,15 @@ public class NoteStreamCompiler
         if (!ChordParser.TryParse(namedChord.ChordSymbol, out var chordData) || chordData == null)
         {
             // Invalid chord — insert a rest as fallback
-            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: namedChord.IsDotted));
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: CalcSourceLength(namedChord)));
             return notes;
         }
 
+        int ncLen = CalcSourceLength(namedChord);
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen));
         }
 
         return notes;
@@ -429,24 +432,25 @@ public class NoteStreamCompiler
         var notes = new List<MusicalNoteData>();
         int? durationValue = ResolveDuration(romanNumeral.DurationSuffix, autoFitDuration);
 
+        int rnLen = CalcSourceLength(romanNumeral);
         if (context.Key == null)
         {
             // No key context — insert a rest as fallback
-            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted));
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
             return notes;
         }
 
         var chordData = ScaleDatabase.ResolveRomanNumeral(romanNumeral.Numeral, context.Key);
         if (chordData == null)
         {
-            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted));
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
             return notes;
         }
 
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
         }
 
         return notes;
@@ -502,7 +506,7 @@ public class NoteStreamCompiler
                         break;
                     }
                 }
-                return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted);
+                return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted, choice.Location, CalcSourceLength(choice));
             }
         }
 
@@ -510,7 +514,7 @@ public class NoteStreamCompiler
         int index = (int)(Utils.FRand(choice.IsSeeded) * choice.Choices.Count);
         index = Math.Clamp(index, 0, choice.Choices.Count - 1);
         selectedNote = choice.Choices[index].Note;
-        return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted);
+        return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted, choice.Location, CalcSourceLength(choice));
     }
 
     /// <summary>
@@ -523,10 +527,11 @@ public class NoteStreamCompiler
     {
         int? durationValue = ResolveDuration(varRef.DurationSuffix, autoFitDuration);
 
+        int vrLen = CalcSourceLength(varRef);
         if (executionContext == null)
         {
             Console.Error.WriteLine($"Warning: cannot resolve variable '{varRef.VariableName}' in note stream (no execution context)");
-            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
         }
 
         Value value;
@@ -537,7 +542,7 @@ public class NoteStreamCompiler
         catch (InvalidOperationException)
         {
             Console.Error.WriteLine($"Warning: undefined variable '{varRef.VariableName}' in note stream, inserting rest");
-            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
         }
 
         // Handle Note type (string like "C4", "D#5")
@@ -547,12 +552,12 @@ public class NoteStreamCompiler
             {
                 var (noteName, octave, alteration) = NoteType.Parse(noteStr);
                 return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
-                    centOffset: varRef.CentOffset, isTied: varRef.IsTied, isDotted: varRef.IsDotted);
+                    centOffset: varRef.CentOffset, isTied: varRef.IsTied, isDotted: varRef.IsDotted, sourceLocation: varRef.Location, sourceLength: vrLen);
             }
             catch
             {
                 Console.Error.WriteLine($"Warning: variable '{varRef.VariableName}' has invalid note value '{noteStr}', inserting rest");
-                return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+                return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
             }
         }
 
@@ -570,19 +575,55 @@ public class NoteStreamCompiler
             return new MusicalNoteData(musicalNote.NoteName, musicalNote.Octave, musicalNote.Alteration,
                 finalDuration, isRest: musicalNote.IsRest,
                 centOffset: finalCentOffset, isTied: finalTied, isDotted: finalDotted,
-                velocity: musicalNote.Velocity, articulation: musicalNote.Articulation);
+                velocity: musicalNote.Velocity, articulation: musicalNote.Articulation,
+                sourceLocation: varRef.Location, sourceLength: vrLen);
         }
 
         Console.Error.WriteLine($"Warning: variable '{varRef.VariableName}' is type {value.Type.Name}, expected Note or MusicalNote, inserting rest");
-        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
     }
 
-    private static MusicalNoteData CreateNoteFromChoice(string noteStr, int? durationValue, bool isDotted = false)
+    private static MusicalNoteData CreateNoteFromChoice(string noteStr, int? durationValue, bool isDotted = false, Core.SourceLocation? sourceLocation = null, int sourceLength = 0)
     {
         if (noteStr == "_")
-            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: isDotted);
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: isDotted, sourceLocation: sourceLocation, sourceLength: sourceLength);
 
         var (name, octave, alteration) = NoteType.Parse(noteStr);
-        return new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: isDotted);
+        return new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: isDotted, sourceLocation: sourceLocation, sourceLength: sourceLength);
+    }
+
+    /// <summary>
+    /// Calculates the source text length for a note stream element.
+    /// </summary>
+    private static int CalcSourceLength(NoteStreamElement element)
+    {
+        return element switch
+        {
+            NoteElement n => n.NoteName.Length
+                + (n.DurationSuffix?.Length ?? 0)
+                + (n.IsDotted ? 1 : 0)
+                + (n.IsTied ? 1 : 0),
+            RestElement r => 1 // "_"
+                + (r.DurationSuffix?.Length ?? 0)
+                + (r.IsDotted ? 1 : 0),
+            ChordElement c => c.Notes.Sum(n => n.Length) + c.Notes.Count - 1 + 2 // [C4 E4 G4] brackets + spaces
+                + (c.DurationSuffix?.Length ?? 0)
+                + (c.IsDotted ? 1 : 0),
+            NamedChordElement nc => nc.ChordSymbol.Length
+                + (nc.DurationSuffix?.Length ?? 0)
+                + (nc.IsDotted ? 1 : 0),
+            RomanNumeralElement rn => rn.Numeral.Length
+                + (rn.DurationSuffix?.Length ?? 0)
+                + (rn.IsDotted ? 1 : 0),
+            VariableReferenceElement vr => vr.VariableName.Length
+                + (vr.DurationSuffix?.Length ?? 0)
+                + (vr.IsDotted ? 1 : 0)
+                + (vr.IsTied ? 1 : 0),
+            GhostNoteElement g => "(ghost )".Length + g.NoteName.Length
+                + (g.DurationSuffix?.Length ?? 0),
+            GraceNoteElement gr => "(grace )".Length + gr.NoteName.Length,
+            RandomChoiceElement rc => rc.Choices.Sum(c => c.Note.Length + (c.Weight.HasValue ? c.Weight.Value.ToString().Length + 1 : 0)) + rc.Choices.Count - 1 + 4, // (? ... )
+            _ => 2
+        };
     }
 }

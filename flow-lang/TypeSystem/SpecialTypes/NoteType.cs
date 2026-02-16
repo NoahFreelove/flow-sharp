@@ -155,7 +155,17 @@ public class MusicalNoteData
     public double Velocity { get; }
     public Articulation Articulation { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false)
+    /// <summary>
+    /// Optional source location for timeline mapping (editor live highlighting).
+    /// </summary>
+    public FlowLang.Core.SourceLocation? SourceLocation { get; }
+
+    /// <summary>
+    /// Length of the original source token (e.g., "C4" = 2, "C4q." = 4) for precise highlighting.
+    /// </summary>
+    public int SourceLength { get; }
+
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0)
     {
         NoteName = noteName;
         Octave = octave;
@@ -167,6 +177,8 @@ public class MusicalNoteData
         IsDotted = isDotted;
         Velocity = Math.Clamp(velocity, 0.0, 1.0);
         Articulation = articulation;
+        SourceLocation = sourceLocation;
+        SourceLength = sourceLength;
     }
 
     /// <summary>

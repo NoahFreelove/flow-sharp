@@ -124,7 +124,7 @@ public static class TransformFunctions
             }
 
             var (name, oct, alt) = FromMidi(midi);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
+            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
         });
 
         return Value.Sequence(result);
@@ -188,7 +188,7 @@ public static class TransformFunctions
             inverted = Math.Clamp(inverted, MIDI_MIN, MIDI_MAX);
 
             var (name, oct, alt) = FromMidi(inverted);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
+            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
         });
 
         return Value.Sequence(result);
@@ -246,7 +246,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.WHOLE;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
+            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
         });
 
         return Value.Sequence(result);
@@ -267,7 +267,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.THIRTYSECOND;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted);
+            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
         });
 
         return Value.Sequence(result);
@@ -354,7 +354,7 @@ public static class TransformFunctions
                     int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + cumulativeTranspose;
                     midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
                     var (name, oct, alt) = FromMidi(midi);
-                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted));
+                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
                 }
                 var newBar = new BarData(newNotes, bar.TimeSignature!);
                 result.AddBar(newBar);
@@ -460,7 +460,7 @@ public static class TransformFunctions
 
                 newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    velocity, note.Articulation, note.IsDotted));
+                    velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
                 noteIndex++;
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
@@ -482,7 +482,7 @@ public static class TransformFunctions
                 if (note.IsRest) return note;
                 return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    startVel, note.Articulation, note.IsDotted);
+                    startVel, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
             });
         }
 
@@ -504,7 +504,7 @@ public static class TransformFunctions
 
                 newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    velocity, note.Articulation, note.IsDotted));
+                    velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
                 noteIndex++;
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
@@ -562,7 +562,7 @@ public static class TransformFunctions
 
                 newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    newVel, note.Articulation, note.IsDotted));
+                    newVel, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
                 noteIndex++;
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
@@ -598,7 +598,7 @@ public static class TransformFunctions
 
                 newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    newVel, note.Articulation, note.IsDotted));
+                    newVel, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
                 noteIndex++;
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
@@ -628,7 +628,7 @@ public static class TransformFunctions
                     int newDur = Math.Max(note.DurationValue.Value - 1, (int)NoteValueType.Value.WHOLE);
                     newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                         newDur, note.IsRest, note.CentOffset, note.IsTied,
-                        note.Velocity, note.Articulation, note.IsDotted));
+                        note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
                 }
                 else
                 {
@@ -675,7 +675,7 @@ public static class TransformFunctions
 
                 newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
                     note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    newVelocity, note.Articulation, note.IsDotted));
+                    newVelocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }
@@ -723,10 +723,10 @@ public static class TransformFunctions
                 {
                     if (i % 2 == 0)
                         newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                            trillDur, false, note.CentOffset, false, note.Velocity, note.Articulation));
+                            trillDur, false, note.CentOffset, false, note.Velocity, note.Articulation, sourceLocation: note.SourceLocation, sourceLength: note.SourceLength));
                     else
                         newNotes.Add(new MusicalNoteData(upperName, upperOct, upperAlt,
-                            trillDur, false, velocity: note.Velocity));
+                            trillDur, false, velocity: note.Velocity, sourceLocation: note.SourceLocation, sourceLength: note.SourceLength));
                 }
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
@@ -756,7 +756,7 @@ public static class TransformFunctions
                 for (int i = 0; i < reps; i++)
                 {
                     newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                        subDur, false, note.CentOffset, false, note.Velocity, note.Articulation));
+                        subDur, false, note.CentOffset, false, note.Velocity, note.Articulation, sourceLocation: note.SourceLocation, sourceLength: note.SourceLength));
                 }
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));

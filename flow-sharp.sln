@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-lang", "flow-lang\flow
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-interpreter", "flow-interpreter\flow-interpreter.csproj", "{803583CD-6AE6-475A-8D98-4463A395F01F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-editor", "flow-editor\flow-editor.csproj", "{38E4F79C-E357-46BD-977B-9E6FAAEB5AE9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,5 +21,9 @@ Global
 		{803583CD-6AE6-475A-8D98-4463A395F01F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{803583CD-6AE6-475A-8D98-4463A395F01F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{803583CD-6AE6-475A-8D98-4463A395F01F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38E4F79C-E357-46BD-977B-9E6FAAEB5AE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38E4F79C-E357-46BD-977B-9E6FAAEB5AE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38E4F79C-E357-46BD-977B-9E6FAAEB5AE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38E4F79C-E357-46BD-977B-9E6FAAEB5AE9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -96,4 +96,16 @@ public class InternalFunctionRegistry
     }
 
     public bool HasImplementation(string name) => _implementations.ContainsKey(name);
+
+    /// <summary>
+    /// Replaces all implementations for a given function name with a single new one.
+    /// Used by the editor to intercept built-in functions like renderSong/play.
+    /// </summary>
+    public void ReplaceAll(string name, FunctionSignature signature, Func<IReadOnlyList<Value>, Value> implementation)
+    {
+        _implementations[name] = new List<(FunctionSignature, Func<IReadOnlyList<Value>, Value>)>
+        {
+            (signature, implementation)
+        };
+    }
 }

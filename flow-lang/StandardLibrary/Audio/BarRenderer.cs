@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using FlowLang.Audio;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
@@ -147,6 +148,69 @@ namespace FlowLang.StandardLibrary.Audio
             // Convert seconds to beats: beats = (seconds / 60) * bpm
             double beatOffset = (timeSeconds / 60.0) * bpm;
             return RenderBarAtBeat(bar, beatOffset, synthType, sampleRate, bpm);
+        }
+
+        /// <summary>
+        /// Timeline-aware version of RenderBarToVoices. Populates the timeline map
+        /// with entries for each rendered note (at beat offset 0).
+        /// </summary>
+        public static List<Voice> RenderBarToVoices(
+            BarData bar,
+            string synthType,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level")
+        {
+            return RenderBarAtBeat(bar, 0, synthType, sampleRate, bpm, timelineMap, scopeName);
+        }
+
+        /// <summary>
+        /// Timeline-aware version of RenderBarAtBeat.
+        /// </summary>
+        public static List<Voice> RenderBarAtBeat(
+            BarData bar,
+            double beatOffset,
+            string synthType,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level")
+        {
+            // Render voices (timeline entries are recorded with barOffsetBeats = beatOffset)
+            var voices = RenderBarToVoices(bar, synthType, sampleRate, bpm);
+
+            // Record timeline entries
+            if (timelineMap != null && bar.TimeSignature != null)
+            {
+                double secondsPerBeat = 60.0 / bpm;
+                var timeline = bar.ToTimeline();
+
+                foreach (var (note, offsetBeats) in timeline)
+                {
+                    if (note.IsRest || note.SourceLocation == null)
+                        continue;
+
+                    double durationBeats = note.GetBeats(bar.TimeSignature.Denominator);
+                    double noteStartSeconds = (beatOffset + offsetBeats) * secondsPerBeat;
+                    double noteEndSeconds = noteStartSeconds + (durationBeats * secondsPerBeat);
+
+                    timelineMap.Add(new TimelineEntry(
+                        noteStartSeconds,
+                        noteEndSeconds,
+                        note.SourceLocation,
+                        note.SourceLength > 0 ? note.SourceLength : note.ToString().Length,
+                        scopeName));
+                }
+            }
+
+            // Apply beat offset
+            foreach (var voice in voices)
+            {
+                voice.OffsetBeats += beatOffset;
+            }
+
+            return voices;
         }
     }
 }

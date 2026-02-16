@@ -8,12 +8,14 @@ public class SectionData
     public string Name { get; }
     public Dictionary<string, SequenceData> Sequences { get; }
     public Runtime.MusicalContext? Context { get; }
+    public Core.SourceLocation? SourceLocation { get; }
 
-    public SectionData(string name, Dictionary<string, SequenceData> sequences, Runtime.MusicalContext? context)
+    public SectionData(string name, Dictionary<string, SequenceData> sequences, Runtime.MusicalContext? context, Core.SourceLocation? sourceLocation = null)
     {
         Name = name;
         Sequences = sequences;
         Context = context;
+        SourceLocation = sourceLocation;
     }
 
     public override string ToString()
