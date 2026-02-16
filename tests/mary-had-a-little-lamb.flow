@@ -7,24 +7,22 @@ use "@audio"
 tempo 240 {
     timesig 4/4 {
         key Cmajor {
-
-
-section mary {
-    Sequence melody = | E4 D4 C4 D4 | E4 E4 E4h |
-}
-
-section mid {
-	Sequence melody = |D4 D4 D4h| E4 E4 E4h |
-}
-
-section ending {
-	Sequence melody = |D4 D4 E4 D4 | C4w|
-}
-
-Song song = [mary mid mary ending]
-Buffer output = (renderSong song "piano")
-(play output)
-
+		section mary {
+		    Sequence melody = | E4 D4 C4 D4 | E4 E4 E4h |
+		}
+		
+		section mid {
+			Sequence melody = |D4 D4 D4h| E4 G4 G4h |
+		}
+		
+		section ending {
+			Sequence melody = |D4 D4 E4 D4 | C4w|
+		}
+		
+		Song song = [mary mid mary ending]
+		
+		Buffer output = (renderSong song "piano")
+		(play output)
         }
     }
 }
