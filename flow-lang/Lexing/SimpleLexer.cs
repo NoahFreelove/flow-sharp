@@ -474,6 +474,7 @@ public class SimpleLexer
             "dynamics" => TokenType.Dynamics,
             "rit" => TokenType.Rit,
             "accel" => TokenType.Accel,
+            "pickup" => TokenType.Pickup,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,
             "Float" => TokenType.Float,

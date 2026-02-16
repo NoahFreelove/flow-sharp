@@ -60,6 +60,12 @@ public class BarData
     /// </summary>
     public BarMode Mode { get; set; }
 
+    /// <summary>
+    /// Whether this bar is a pickup (anacrusis) bar.
+    /// Pickup bars use their actual note duration instead of the full time signature.
+    /// </summary>
+    public bool IsPickup { get; set; }
+
     public BarData()
     {
         Notes = new List<string>();
@@ -121,6 +127,18 @@ public class BarData
         if (index < 0 || index >= Notes.Count)
             throw new IndexOutOfRangeException($"Note index {index} out of range [0, {Notes.Count})");
         return Notes[index];
+    }
+
+    /// <summary>
+    /// Returns the actual total beats of note content in this bar.
+    /// For pickup bars, this is the sum of note durations rather than the time signature numerator.
+    /// </summary>
+    public double GetActualBeats()
+    {
+        if (Mode != BarMode.Musical || TimeSignature == null)
+            return TimeSignature?.Numerator ?? 4;
+
+        return MusicalNotes.Sum(n => n.GetBeats(TimeSignature.Denominator));
     }
 
     /// <summary>

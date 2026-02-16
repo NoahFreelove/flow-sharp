@@ -118,7 +118,8 @@ public record GraceNoteElement(
 /// </summary>
 public record NoteStreamBar(
     SourceLocation Location,
-    IReadOnlyList<NoteStreamElement> Elements
+    IReadOnlyList<NoteStreamElement> Elements,
+    bool IsPickup = false
 );
 
 /// <summary>

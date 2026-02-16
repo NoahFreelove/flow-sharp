@@ -37,7 +37,7 @@ namespace FlowLang.TypeSystem.SpecialTypes
             }
 
             Bars.Add(bar);
-            TotalBeats += bar.TimeSignature.Numerator;
+            TotalBeats += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace FlowLang.TypeSystem.SpecialTypes
                 timeline.Add((bar, offset));
                 if (bar.TimeSignature != null)
                 {
-                    offset += bar.TimeSignature.Numerator;
+                    offset += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
                 }
             }
 

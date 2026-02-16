@@ -652,6 +652,13 @@ public class Parser
             return ParseLambdaExpression();
         }
 
+        // Pickup note stream: pickup | C4 D4 |
+        if (Match(TokenType.Pickup))
+        {
+            Expect(TokenType.Pipe, "Expected '|' after 'pickup'");
+            return ParseNoteStream(isPickup: true);
+        }
+
         // Note stream expression: | C4 D4 E4 F4 |
         if (Match(TokenType.Pipe))
         {
@@ -797,12 +804,13 @@ public class Parser
     /// Parses a note stream: | element element ... | element element ... |
     /// The opening | has already been consumed.
     /// </summary>
-    private Expression ParseNoteStream()
+    private Expression ParseNoteStream(bool isPickup = false)
     {
         var location = PreviousToken.Location;
         var bars = new List<NoteStreamBar>();
         var currentBarElements = new List<NoteStreamElement>();
         double? stickyVelocity = null;
+        bool nextBarIsPickup = isPickup;
 
         while (!IsAtEnd())
         {
@@ -810,9 +818,10 @@ public class Parser
             if (Match(TokenType.Pipe))
             {
                 // Save current bar
-                bars.Add(new NoteStreamBar(location, currentBarElements));
+                bars.Add(new NoteStreamBar(location, currentBarElements, nextBarIsPickup));
                 currentBarElements = new List<NoteStreamElement>();
                 stickyVelocity = null;
+                nextBarIsPickup = false; // Only the first bar is pickup
 
                 // Check if this was the final closing pipe
                 // A closing pipe is followed by a non-note-stream token
@@ -1021,7 +1030,7 @@ public class Parser
         // If we broke out without a closing pipe, the last bar is incomplete but still valid
         if (currentBarElements.Count > 0)
         {
-            bars.Add(new NoteStreamBar(location, currentBarElements));
+            bars.Add(new NoteStreamBar(location, currentBarElements, nextBarIsPickup));
         }
 
         if (bars.Count == 0)

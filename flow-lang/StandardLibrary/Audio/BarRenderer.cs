@@ -105,7 +105,7 @@ namespace FlowLang.StandardLibrary.Audio
                 }
 
                 // Move to next bar position
-                currentOffset += bar.TimeSignature.Numerator;
+                currentOffset += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
             }
 
             return allVoices;

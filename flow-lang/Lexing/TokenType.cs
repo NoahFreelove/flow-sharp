@@ -22,6 +22,7 @@ public enum TokenType
     Dynamics,
     Rit,
     Accel,
+    Pickup,
 
     // Type keywords
     Void,

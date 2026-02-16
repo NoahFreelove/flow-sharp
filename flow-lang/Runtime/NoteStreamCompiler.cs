@@ -36,6 +36,7 @@ public class NoteStreamCompiler
         foreach (var bar in noteStream.Bars)
         {
             var barData = CompileBar(bar, timeSig, context, executionContext);
+            barData.IsPickup = bar.IsPickup;
             sequence.AddBar(barData);
         }
 
