@@ -22,8 +22,8 @@ public class BrassSynthesizer : INoteSynthesizer
         var samples = new float[numSamples];
 
         // Sawtooth fundamental + octave-up saw for brightness
-        SynthUtils.GenerateSaw(samples, frequency, 0.20, sampleRate);
-        SynthUtils.GenerateSaw(samples, frequency * 2, 0.05, sampleRate);
+        SynthUtils.GenerateSaw(samples, frequency, 0.20 * note.Velocity, sampleRate);
+        SynthUtils.GenerateSaw(samples, frequency * 2, 0.05 * note.Velocity, sampleRate);
 
         // Slow brass swell ADSR
         float[] envelope = SynthUtils.GenerateADSR(

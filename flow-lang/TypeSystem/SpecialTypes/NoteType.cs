@@ -127,6 +127,19 @@ public sealed class NoteType : FlowType
 }
 
 /// <summary>
+/// Articulation affects how a note's envelope is shaped.
+/// </summary>
+public enum Articulation
+{
+    Normal,     // Default envelope
+    Staccato,   // Short, detached (~50% duration)
+    Tenuto,     // Full sustain, held to full value
+    Marcato,    // Accented + slightly shortened
+    Accent,     // Velocity bump, normal duration
+    Sforzando   // Sudden loud spike, then return to previous dynamic
+}
+
+/// <summary>
 /// Represents a musical note with pitch, duration, and rest information for classical composition.
 /// </summary>
 public class MusicalNoteData
@@ -138,8 +151,11 @@ public class MusicalNoteData
     public bool IsRest { get; }
     public double? CentOffset { get; }
     public bool IsTied { get; }
+    public bool IsDotted { get; }
+    public double Velocity { get; }
+    public Articulation Articulation { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false)
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false)
     {
         NoteName = noteName;
         Octave = octave;
@@ -148,6 +164,9 @@ public class MusicalNoteData
         IsRest = isRest;
         CentOffset = centOffset;
         IsTied = isTied;
+        IsDotted = isDotted;
+        Velocity = Math.Clamp(velocity, 0.0, 1.0);
+        Articulation = articulation;
     }
 
     /// <summary>
@@ -159,6 +178,7 @@ public class MusicalNoteData
             return 1.0; // Default to 1 beat if no duration specified
 
         double fraction = NoteValueType.ToFraction((NoteValueType.Value)DurationValue.Value);
+        if (IsDotted) fraction *= 1.5;
         return fraction * timeSigDenominator;
     }
 

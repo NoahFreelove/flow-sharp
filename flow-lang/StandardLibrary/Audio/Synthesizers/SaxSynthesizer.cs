@@ -46,29 +46,29 @@ public class SaxSynthesizer : INoteSynthesizer
             double phaseInc = freq / sampleRate;
 
             // Sawtooth: (2 * phase - 1)
-            samples[i] = (float)(0.22 * (2.0 * phase - 1.0));
+            samples[i] = (float)(0.22 * note.Velocity * (2.0 * phase - 1.0));
             phase += phaseInc;
             if (phase >= 1.0) phase -= 1.0;
         }
 
         // --- 2. Additional harmonics for reed buzz ---
         // 2nd harmonic (octave) — even harmonics are what distinguish sax from clarinet
-        SynthUtils.GenerateSine(samples, frequency * 2, 0.08, sampleRate);
+        SynthUtils.GenerateSine(samples, frequency * 2, 0.08 * note.Velocity, sampleRate);
         // 3rd harmonic — adds nasal quality
-        SynthUtils.GenerateSine(samples, frequency * 3, 0.05, sampleRate);
+        SynthUtils.GenerateSine(samples, frequency * 3, 0.05 * note.Velocity, sampleRate);
         // 4th harmonic — brightness
-        SynthUtils.GenerateSine(samples, frequency * 4, 0.03, sampleRate);
+        SynthUtils.GenerateSine(samples, frequency * 4, 0.03 * note.Velocity, sampleRate);
 
         // --- 3. Sub-harmonic growl layer ---
         // Sax players often produce a subtle sub-octave through reed buzz/multiphonics.
         // This adds warmth and body that pure saw lacks.
-        SynthUtils.GenerateSine(samples, frequency * 0.5, 0.03, sampleRate);
+        SynthUtils.GenerateSine(samples, frequency * 0.5, 0.03 * note.Velocity, sampleRate);
 
         // --- 4. Breath noise ---
         // Saxophones have significant air turbulence noise, especially in the attack.
         // We generate broadband noise and shape it with its own fast-decay envelope.
         var breathNoise = new float[numSamples];
-        SynthUtils.GenerateWhiteNoise(breathNoise, 0.06);
+        SynthUtils.GenerateWhiteNoise(breathNoise, 0.06 * (0.5 + note.Velocity * 0.5));
         float[] breathEnv = SynthUtils.GenerateADSR(
             attack: 0.01, decay: 0.08, sustain: 0.15, release: 0.05,
             frames: numSamples, sampleRate: sampleRate);

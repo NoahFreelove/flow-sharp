@@ -27,7 +27,7 @@ namespace FlowLang.StandardLibrary.Audio
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
-            double amplitude = 0.3; // Moderate amplitude to avoid clipping
+            double amplitude = 0.3 * note.Velocity; // Moderate amplitude to avoid clipping
 
             for (int i = 0; i < numSamples; i++)
             {
@@ -67,7 +67,7 @@ namespace FlowLang.StandardLibrary.Audio
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
-            double amplitude = 0.2; // Lower amplitude for sawtooth (more harmonics)
+            double amplitude = 0.2 * note.Velocity; // Lower amplitude for sawtooth (more harmonics)
 
             for (int i = 0; i < numSamples; i++)
             {
@@ -108,7 +108,7 @@ namespace FlowLang.StandardLibrary.Audio
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
-            double amplitude = 0.2; // Lower amplitude for square wave (many harmonics)
+            double amplitude = 0.2 * note.Velocity; // Lower amplitude for square wave (many harmonics)
 
             for (int i = 0; i < numSamples; i++)
             {
@@ -149,7 +149,7 @@ namespace FlowLang.StandardLibrary.Audio
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
-            double amplitude = 0.3;
+            double amplitude = 0.3 * note.Velocity;
 
             for (int i = 0; i < numSamples; i++)
             {

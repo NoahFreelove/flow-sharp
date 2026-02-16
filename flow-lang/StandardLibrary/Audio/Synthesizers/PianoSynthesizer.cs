@@ -26,7 +26,7 @@ public class PianoSynthesizer : INoteSynthesizer
         double inharmonicity = 0.0004 * Math.Exp((60 - midiNote) * 0.02);
 
         var samples = new float[numSamples];
-        double baseAmp = 0.18;
+        double baseAmp = 0.18 * note.Velocity;
 
         // --- 1. Inharmonic partials with string beating ---
         // Render fundamental as a detuned pair (~1.7 cents) for slow amplitude beating
@@ -68,7 +68,7 @@ public class PianoSynthesizer : INoteSynthesizer
 
         // --- 4. Hammer strike transient (added after filtering to preserve click) ---
         var transient = new float[numSamples];
-        SynthUtils.GenerateWhiteNoise(transient, 0.025);
+        SynthUtils.GenerateWhiteNoise(transient, 0.025 * note.Velocity);
 
         float[] transientEnv = SynthUtils.GenerateADSR(
             attack: 0.0003, decay: 0.002, sustain: 0.0, release: 0.0005,

@@ -42,6 +42,18 @@ namespace FlowLang.StandardLibrary.Audio
                 // Calculate duration in beats
                 double durationBeats = note.GetBeats(bar.TimeSignature.Denominator);
 
+                // Apply articulation to duration
+                switch (note.Articulation)
+                {
+                    case Articulation.Staccato:
+                        durationBeats *= 0.5;
+                        break;
+                    case Articulation.Marcato:
+                        durationBeats *= 0.8;
+                        break;
+                    // Normal, Tenuto, Accent, Sforzando don't shorten duration
+                }
+
                 // For tied notes, extend render duration so the audio tail overlaps the next note.
                 // This creates a legato transition since voices mix additively on the timeline.
                 if (note.IsTied)

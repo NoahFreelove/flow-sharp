@@ -1,0 +1,23 @@
+use "@std"
+
+(print "=== Test Dynamics ===")
+
+timesig 4/4 {
+    Sequence basic = | C4 D4 E4 F4 |
+    (print (str basic))
+
+    Sequence withDyn = | ff C4 D4 pp E4 F4 |
+    (print (str withDyn))
+}
+
+timesig 4/4 {
+    Sequence accented = | C4q> D4q E4q F4q> |
+    (print (str accented))
+
+    Sequence articulated = | C4q stacc D4q ten E4q marc F4q |
+    (print (str articulated))
+}
+
+(print "articulation test complete")
+
+(print "dynamics test complete")

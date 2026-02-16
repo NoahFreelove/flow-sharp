@@ -28,14 +28,14 @@ public class NoteStreamCompiler
     /// <summary>
     /// Compiles a NoteStreamExpression into a SequenceData using the given musical context.
     /// </summary>
-    public SequenceData Compile(NoteStreamExpression noteStream, MusicalContext context)
+    public SequenceData Compile(NoteStreamExpression noteStream, MusicalContext context, ExecutionContext? executionContext = null)
     {
         var sequence = new SequenceData();
         var timeSig = context.TimeSignature ?? new TimeSignatureData(4, 4);
 
         foreach (var bar in noteStream.Bars)
         {
-            var barData = CompileBar(bar, timeSig, context);
+            var barData = CompileBar(bar, timeSig, context, executionContext);
             sequence.AddBar(barData);
         }
 
@@ -45,7 +45,7 @@ public class NoteStreamCompiler
     /// <summary>
     /// Compiles a single bar of note stream elements into a BarData.
     /// </summary>
-    private BarData CompileBar(NoteStreamBar bar, TimeSignatureData timeSig, MusicalContext context)
+    private BarData CompileBar(NoteStreamBar bar, TimeSignatureData timeSig, MusicalContext context, ExecutionContext? executionContext)
     {
         var musicalNotes = new List<MusicalNoteData>();
 
@@ -97,6 +97,10 @@ public class NoteStreamCompiler
                 case RandomChoiceElement choice:
                     musicalNotes.Add(CompileRandomChoiceElement(choice, autoFitDuration));
                     break;
+
+                case VariableReferenceElement varRef:
+                    musicalNotes.Add(CompileVariableReferenceElement(varRef, autoFitDuration, executionContext));
+                    break;
             }
         }
 
@@ -124,6 +128,7 @@ public class NoteStreamCompiler
                 NamedChordElement nc => nc.DurationSuffix,
                 RomanNumeralElement rn => rn.DurationSuffix,
                 RandomChoiceElement rc => rc.DurationSuffix,
+                VariableReferenceElement vr => vr.DurationSuffix,
                 _ => null
             };
 
@@ -135,6 +140,7 @@ public class NoteStreamCompiler
                 NamedChordElement nc => nc.IsDotted,
                 RomanNumeralElement rn => rn.IsDotted,
                 RandomChoiceElement rc => rc.IsDotted,
+                VariableReferenceElement vr => vr.IsDotted,
                 _ => false
             };
 
@@ -221,7 +227,22 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER; // Default to quarter note
         }
 
-        return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false, centOffset: note.CentOffset, isTied: note.IsTied);
+        // Determine velocity: note-level override > default mf
+        double velocity = note.Velocity ?? 0.63;
+
+        // Apply accent articulations as velocity boost
+        var articulation = note.ArticulationMark ?? Articulation.Normal;
+        if (articulation == Articulation.Accent)
+            velocity = Math.Min(velocity + 0.2, 1.0);
+        else if (articulation == Articulation.Marcato)
+            velocity = Math.Min(velocity + 0.3, 1.0);
+        else if (articulation == Articulation.Sforzando)
+            velocity = 0.95;
+
+        return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
+            centOffset: note.CentOffset, isTied: note.IsTied,
+            velocity: velocity, articulation: articulation,
+            isDotted: note.IsDotted);
     }
 
     /// <summary>
@@ -244,7 +265,7 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER;
         }
 
-        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: rest.IsDotted);
     }
 
     /// <summary>
@@ -271,7 +292,7 @@ public class NoteStreamCompiler
         foreach (var noteName in chord.Notes)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted));
         }
 
         return notes;
@@ -288,14 +309,14 @@ public class NoteStreamCompiler
         if (!ChordParser.TryParse(namedChord.ChordSymbol, out var chordData) || chordData == null)
         {
             // Invalid chord — insert a rest as fallback
-            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true));
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: namedChord.IsDotted));
             return notes;
         }
 
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted));
         }
 
         return notes;
@@ -313,21 +334,21 @@ public class NoteStreamCompiler
         if (context.Key == null)
         {
             // No key context — insert a rest as fallback
-            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true));
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted));
             return notes;
         }
 
         var chordData = ScaleDatabase.ResolveRomanNumeral(romanNumeral.Numeral, context.Key);
         if (chordData == null)
         {
-            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true));
+            notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted));
             return notes;
         }
 
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted));
         }
 
         return notes;
@@ -383,7 +404,7 @@ public class NoteStreamCompiler
                         break;
                     }
                 }
-                return CreateNoteFromChoice(selectedNote, durationValue);
+                return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted);
             }
         }
 
@@ -391,15 +412,79 @@ public class NoteStreamCompiler
         int index = (int)(Utils.FRand(choice.IsSeeded) * choice.Choices.Count);
         index = Math.Clamp(index, 0, choice.Choices.Count - 1);
         selectedNote = choice.Choices[index].Note;
-        return CreateNoteFromChoice(selectedNote, durationValue);
+        return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted);
     }
 
-    private static MusicalNoteData CreateNoteFromChoice(string noteStr, int? durationValue)
+    /// <summary>
+    /// Compiles a VariableReferenceElement by resolving the variable from the execution context.
+    /// Supports Note (string) and MusicalNote (MusicalNoteData) variable types.
+    /// Falls back to a rest on error (undefined variable, wrong type).
+    /// </summary>
+    private MusicalNoteData CompileVariableReferenceElement(
+        VariableReferenceElement varRef, NoteValueType.Value? autoFitDuration, ExecutionContext? executionContext)
+    {
+        int? durationValue = ResolveDuration(varRef.DurationSuffix, autoFitDuration);
+
+        if (executionContext == null)
+        {
+            Console.Error.WriteLine($"Warning: cannot resolve variable '{varRef.VariableName}' in note stream (no execution context)");
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+        }
+
+        Value value;
+        try
+        {
+            value = executionContext.GetVariable(varRef.VariableName);
+        }
+        catch (InvalidOperationException)
+        {
+            Console.Error.WriteLine($"Warning: undefined variable '{varRef.VariableName}' in note stream, inserting rest");
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+        }
+
+        // Handle Note type (string like "C4", "D#5")
+        if (value.Type is NoteType && value.Data is string noteStr)
+        {
+            try
+            {
+                var (noteName, octave, alteration) = NoteType.Parse(noteStr);
+                return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
+                    centOffset: varRef.CentOffset, isTied: varRef.IsTied, isDotted: varRef.IsDotted);
+            }
+            catch
+            {
+                Console.Error.WriteLine($"Warning: variable '{varRef.VariableName}' has invalid note value '{noteStr}', inserting rest");
+                return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+            }
+        }
+
+        // Handle MusicalNote type (MusicalNoteData)
+        if (value.Data is MusicalNoteData musicalNote)
+        {
+            // Use stream-level duration/modifiers if provided, otherwise use the MusicalNote's own values
+            int? finalDuration = varRef.DurationSuffix != null
+                ? ResolveDuration(varRef.DurationSuffix, autoFitDuration)
+                : musicalNote.DurationValue ?? durationValue;
+            bool finalDotted = varRef.DurationSuffix != null ? varRef.IsDotted : musicalNote.IsDotted;
+            bool finalTied = varRef.IsTied || musicalNote.IsTied;
+            double? finalCentOffset = varRef.CentOffset ?? musicalNote.CentOffset;
+
+            return new MusicalNoteData(musicalNote.NoteName, musicalNote.Octave, musicalNote.Alteration,
+                finalDuration, isRest: musicalNote.IsRest,
+                centOffset: finalCentOffset, isTied: finalTied, isDotted: finalDotted,
+                velocity: musicalNote.Velocity, articulation: musicalNote.Articulation);
+        }
+
+        Console.Error.WriteLine($"Warning: variable '{varRef.VariableName}' is type {value.Type.Name}, expected Note or MusicalNote, inserting rest");
+        return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+    }
+
+    private static MusicalNoteData CreateNoteFromChoice(string noteStr, int? durationValue, bool isDotted = false)
     {
         if (noteStr == "_")
-            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true);
+            return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: isDotted);
 
         var (name, octave, alteration) = NoteType.Parse(noteStr);
-        return new MusicalNoteData(name, octave, alteration, durationValue, isRest: false);
+        return new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: isDotted);
     }
 }

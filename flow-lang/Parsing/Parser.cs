@@ -765,6 +765,7 @@ public class Parser
         var location = PreviousToken.Location;
         var bars = new List<NoteStreamBar>();
         var currentBarElements = new List<NoteStreamElement>();
+        double? stickyVelocity = null;
 
         while (!IsAtEnd())
         {
@@ -774,6 +775,7 @@ public class Parser
                 // Save current bar
                 bars.Add(new NoteStreamBar(location, currentBarElements));
                 currentBarElements = new List<NoteStreamElement>();
+                stickyVelocity = null;
 
                 // Check if this was the final closing pipe
                 // A closing pipe is followed by a non-note-stream token
@@ -878,6 +880,18 @@ public class Parser
                 continue;
             }
 
+            // Dynamic marking: pp, p, mp, mf, f, ff, fff, ppp, sfz, fp
+            if (Check(TokenType.Identifier))
+            {
+                var dynVelocity = TryParseDynamicMarking(CurrentToken.Text);
+                if (dynVelocity.HasValue)
+                {
+                    Advance();
+                    stickyVelocity = dynVelocity.Value;
+                    continue;
+                }
+            }
+
             // Note element: C4, C4q, C4q., C4h~
             if (Check(TokenType.NoteLiteral))
             {
@@ -892,11 +906,12 @@ public class Parser
                 {
                     centOffset = (double)Advance().Value!;
                 }
-                currentBarElements.Add(new NoteElement(elemLoc, noteName, durSuffix, isDotted, isTied, centOffset));
+                Articulation? articMark = TryParseArticulation();
+                currentBarElements.Add(new NoteElement(elemLoc, noteName, durSuffix, isDotted, isTied, centOffset, stickyVelocity, articMark));
                 continue;
             }
 
-            // Identifier in note stream: check for roman numerals (handled at compile time)
+            // Identifier in note stream: roman numerals or variable references
             if (Check(TokenType.Identifier))
             {
                 var identText = CurrentToken.Text;
@@ -908,6 +923,24 @@ public class Parser
                     bool isDotted = durSuffix != null && Match(TokenType.Dot);
                     currentBarElements.Add(new RomanNumeralElement(elemLoc, identText, durSuffix, isDotted));
                     continue;
+                }
+                else if (identText is not ("w" or "h" or "q" or "e" or "s" or "t"))
+                {
+                    // Lowercase-initial identifiers are variable references
+                    if (identText.Length > 0 && char.IsLower(identText[0]))
+                    {
+                        var varToken = Advance();
+                        var elemLoc = varToken.Location;
+                        string? durSuffix = TryParseDurationSuffix();
+                        bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                        bool isTied = Match(TokenType.Tilde);
+                        double? centOffset = null;
+                        if (Check(TokenType.CentLiteral))
+                            centOffset = (double)Advance().Value!;
+                        currentBarElements.Add(new VariableReferenceElement(
+                            elemLoc, identText, durSuffix, isDotted, isTied, centOffset));
+                        continue;
+                    }
                 }
             }
 
@@ -948,6 +981,37 @@ public class Parser
     }
 
     /// <summary>
+    /// Tries to parse an articulation mark after a note element.
+    /// Recognizes: > (accent), stacc (staccato), ten (tenuto), marc (marcato).
+    /// Returns null if no articulation is found.
+    /// </summary>
+    private Articulation? TryParseArticulation()
+    {
+        if (Check(TokenType.GreaterThan))
+        {
+            Advance();
+            return Articulation.Accent;
+        }
+        if (Check(TokenType.Identifier))
+        {
+            var text = CurrentToken.Text;
+            switch (text)
+            {
+                case "stacc":
+                    Advance();
+                    return Articulation.Staccato;
+                case "ten":
+                    Advance();
+                    return Articulation.Tenuto;
+                case "marc":
+                    Advance();
+                    return Articulation.Marcato;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
     /// Checks if the current position looks like the end of a note stream.
     /// Returns true if the next token is not a note-stream element.
     /// </summary>
@@ -958,12 +1022,42 @@ public class Parser
         // Identifiers can be roman numerals inside note streams
         if (type is TokenType.NoteLiteral or TokenType.Underscore
             or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral
-            or TokenType.LParen)
+            or TokenType.LParen or TokenType.GreaterThan)
             return false;
-        // Check if identifier is a roman numeral
-        if (type == TokenType.Identifier && ScaleDatabase.IsRomanNumeral(CurrentToken.Text))
+        // Check if identifier is a roman numeral, dynamic marking, or articulation mark
+        if (type == TokenType.Identifier && (ScaleDatabase.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc"))
             return false;
+        // Lowercase identifiers are variable references — continue the stream
+        if (type == TokenType.Identifier)
+        {
+            var text = CurrentToken.Text;
+            if (text.Length > 0 && char.IsLower(text[0])
+                && text is not ("w" or "h" or "q" or "e" or "s" or "t"))
+                return false;
+        }
         return true;
+    }
+
+    /// <summary>
+    /// Checks if a token text is a dynamic marking and returns its velocity (0.0-1.0).
+    /// Returns null if not a dynamic marking.
+    /// </summary>
+    private static double? TryParseDynamicMarking(string text)
+    {
+        return text switch
+        {
+            "ppp" => 0.125,
+            "pp"  => 0.25,
+            "p"   => 0.375,
+            "mp"  => 0.5,
+            "mf"  => 0.625,
+            "f"   => 0.75,
+            "ff"  => 0.875,
+            "fff" => 1.0,
+            "sfz" => 0.95,
+            "fp"  => 0.75,
+            _     => null
+        };
     }
 
     // Helper methods

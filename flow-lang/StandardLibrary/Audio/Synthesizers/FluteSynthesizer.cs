@@ -35,13 +35,13 @@ public class FluteSynthesizer : INoteSynthesizer
             double vibrato = 1.0 + VibratoDepth * Math.Sin(2.0 * Math.PI * VibratoRate * t);
             double freq = frequency * vibrato;
             double phaseInc = freq / sampleRate;
-            samples[i] += (float)(0.18 * (phase < 0.5 ? 1.0 : -1.0));
+            samples[i] += (float)(0.18 * note.Velocity * (phase < 0.5 ? 1.0 : -1.0));
             phase += phaseInc;
             if (phase >= 1.0) phase -= 1.0;
         }
 
         // Nasal sine harmonic at 3x frequency
-        SynthUtils.GenerateSine(samples, frequency * 3, 0.04, sampleRate);
+        SynthUtils.GenerateSine(samples, frequency * 3, 0.04 * note.Velocity, sampleRate);
 
         // ADSR envelope
         float[] envelope = SynthUtils.GenerateADSR(

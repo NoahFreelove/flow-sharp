@@ -1,4 +1,5 @@
 using FlowLang.Core;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Ast.Expressions;
 
@@ -17,7 +18,9 @@ public record NoteElement(
     string? DurationSuffix,   // w, h, q, e, s, t (null = auto-fit)
     bool IsDotted,            // e.g., C4q.
     bool IsTied,              // e.g., C4h~
-    double? CentOffset        // e.g., +50c, -25c (null = none)
+    double? CentOffset,       // e.g., +50c, -25c (null = none)
+    double? Velocity,         // 0.0–1.0 dynamic level (null = default)
+    Articulation? ArticulationMark // staccato, legato, accent, etc. (null = normal)
 ) : NoteStreamElement(Location);
 
 /// <summary>
@@ -61,6 +64,20 @@ public record RomanNumeralElement(
     string Numeral,
     string? DurationSuffix,
     bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A variable reference in a note stream (e.g., root, myNote).
+/// Resolved at evaluation time from the execution context.
+/// Supports the same modifiers as NoteElement: duration, dot, tie, cent offset.
+/// </summary>
+public record VariableReferenceElement(
+    SourceLocation Location,
+    string VariableName,
+    string? DurationSuffix,
+    bool IsDotted,
+    bool IsTied,
+    double? CentOffset
 ) : NoteStreamElement(Location);
 
 /// <summary>
