@@ -1,0 +1,45 @@
+use "@std"
+use "@audio"
+
+(print "=== Expressive Piano Demo ===")
+(print "Rendering a short expressive piano piece...")
+
+tempo 72 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: Opening phrase - gentle start with crescendo
+            section intro {
+                Sequence phrase1 = | pp C4q E4q G4q C5q | -> crescendo 0.2 0.7
+                Sequence phrase2 = | mf E4q G4q B4q E5q | -> humanize 0.1
+            }
+
+            Note: Development - louder, with articulation
+            section development {
+                Sequence theme = | f C4q> D4q E4q stacc F4q |
+                Sequence variation = theme -> transpose +4st -> decrescendo 0.8 0.4
+            }
+
+            Note: Climax - fortissimo with swell
+            section climax {
+                Sequence peak = | C4q E4q G4q C5q E5q G5q C6q C6q | -> swell 0.5 1.0
+            }
+
+            Note: Resolution - quiet ending with ritardando feel
+            section resolution {
+                Sequence ending = | mp G4q E4q C4h | -> ritardando 0.5
+                Sequence finalChord = | pp C4w |
+            }
+
+            Song piece = [intro development climax resolution]
+            Buffer rendered = (renderSong piece "piano")
+            Buffer withFadeIn = rendered -> fadeIn 0.3
+            Buffer final = withFadeIn -> fadeOut 0.5
+            Int totalFrames = (getFrames final)
+            (print (concat "Total frames: " (str totalFrames)))
+            Int duration = (div totalFrames 44100)
+            (print (concat "Duration: ~" (concat (str duration) "s")))
+        }
+    }
+}
+
+(print "Demo complete!")
