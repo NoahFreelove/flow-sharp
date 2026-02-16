@@ -105,7 +105,10 @@ public class NoteStreamCompiler
                 case GhostNoteElement ghost:
                 {
                     var (name, octave, alteration) = NoteType.Parse(ghost.NoteName);
-                    int? dv = ResolveDuration(ghost.DurationSuffix, autoFitDuration);
+                    // Ghost notes default to sixteenth duration (short, ornamental)
+                    int? dv = ghost.DurationSuffix != null
+                        ? ResolveDuration(ghost.DurationSuffix, autoFitDuration)
+                        : (int)NoteValueType.Value.SIXTEENTH;
                     musicalNotes.Add(new MusicalNoteData(name, octave, alteration, dv,
                         isRest: false, velocity: 0.15));
                     break;
@@ -196,6 +199,22 @@ public class NoteStreamCompiler
 
         foreach (var elem in elements)
         {
+            // Ghost notes (without explicit duration) and grace notes use fixed short durations
+            // and should not participate in auto-fit calculation. They're ornamental.
+            if (elem is GraceNoteElement)
+            {
+                // Grace notes always use 32nd — count as explicit
+                explicitBeats += NoteValueType.ToFraction(NoteValueType.Value.THIRTYSECOND) * timeSig.Denominator;
+                continue;
+            }
+
+            if (elem is GhostNoteElement ghostElem && ghostElem.DurationSuffix == null)
+            {
+                // Ghost notes without explicit duration use sixteenth — count as explicit
+                explicitBeats += NoteValueType.ToFraction(NoteValueType.Value.SIXTEENTH) * timeSig.Denominator;
+                continue;
+            }
+
             string? durSuffix = elem switch
             {
                 NoteElement n => n.DurationSuffix,
@@ -206,7 +225,6 @@ public class NoteStreamCompiler
                 RandomChoiceElement rc => rc.DurationSuffix,
                 VariableReferenceElement vr => vr.DurationSuffix,
                 GhostNoteElement g => g.DurationSuffix,
-                GraceNoteElement _ => null,
                 _ => null
             };
 
@@ -220,7 +238,6 @@ public class NoteStreamCompiler
                 RandomChoiceElement rc => rc.IsDotted,
                 VariableReferenceElement vr => vr.IsDotted,
                 GhostNoteElement g => g.IsDotted,
-                GraceNoteElement _ => false,
                 _ => false
             };
 

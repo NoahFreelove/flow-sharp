@@ -1,0 +1,247 @@
+use "@std"
+use "@audio"
+
+(print "========================================")
+(print "  Flow Expression Feature Showcase")
+(print "  Each section demonstrates a feature")
+(print "========================================")
+(print "")
+
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+
+            Note: ==========================================
+            Note: BLOCK 1 - Dynamic Markings (per-note velocity)
+            Note: Each note gets louder: pp -> p -> mf -> f -> ff
+            Note: ==========================================
+
+            (print "[1] Dynamic Markings - notes get progressively louder")
+
+            section dynamicMarkings {
+                Sequence rising = | pp C4q p E4q mf G4q f C5q |
+                Sequence loud = | ff E5q ff G5q f E5q mf C5q |
+            }
+
+            Note: ==========================================
+            Note: BLOCK 2 - Articulation Marks
+            Note: Accent (>), staccato, tenuto, marcato
+            Note: ==========================================
+
+            (print "[2] Articulation - accent, staccato, tenuto, marcato")
+
+            section articulations {
+                Sequence accented = | f C4q> E4q> G4q> C5q> |
+                Sequence staccatoLine = | f C5q stacc D5q stacc E5q stacc F5q stacc |
+                Sequence tenutoLine = | mf G4q ten A4q ten B4q ten C5q ten |
+                Sequence marcatoLine = | f C4q marc E4q marc G4q marc C5q marc |
+            }
+
+            Note: ==========================================
+            Note: BLOCK 3 - Dynamics Context Block
+            Note: Sets a default velocity for all notes inside
+            Note: ==========================================
+
+            (print "[3] Dynamics Context Block - entire passage at forte")
+
+            dynamics f {
+                section dynamicsContext {
+                    Sequence ctxMelody = | C4q D4q E4q F4q |
+                    Sequence ctxHarmony = | E4q F4q G4q A4q |
+                }
+            }
+
+            Note: ==========================================
+            Note: BLOCK 4 - Crescendo / Decrescendo Transforms
+            Note: Gradual volume sweep across a phrase
+            Note: ==========================================
+
+            (print "[4] Crescendo & Decrescendo - gradual volume ramps")
+
+            section crescDecrescTransform {
+                Sequence growingPhrase = | C4q D4q E4q F4q G4q A4q B4q C5q | -> crescendo 0.15 0.9
+                Sequence shrinkingPhrase = | C5q B4q A4q G4q F4q E4q D4q C4q | -> decrescendo 0.9 0.15
+            }
+
+            Note: ==========================================
+            Note: BLOCK 5 - Swell Transform
+            Note: Quiet -> loud -> quiet (diamond shape)
+            Note: ==========================================
+
+            (print "[5] Swell - diamond-shaped volume curve")
+
+            section swellDemo {
+                Sequence diamondPhrase = | C4q D4q E4q F4q G4q F4q E4q D4q | -> swell 0.15 0.95
+            }
+
+            Note: ==========================================
+            Note: BLOCK 6 - Inline Cresc/Decresc in Note Streams
+            Note: Written directly in bar notation
+            Note: ==========================================
+
+            (print "[6] Inline Cresc/Decresc - written inside | bars |")
+
+            section inlineDynamics {
+                Sequence inlineGrow = | pp C4q cresc D4q E4q ff F4q |
+                Sequence inlineFade = | ff G4q decresc F4q E4q pp D4q |
+            }
+
+            Note: ==========================================
+            Note: BLOCK 7 - Ritardando & Accelerando Transforms
+            Note: Simulated tempo change via velocity shaping
+            Note: ==========================================
+
+            (print "[7] Ritardando & Accelerando - tempo expression")
+
+            section tempoExpression {
+                Sequence slowingDown = | mf C5q B4q A4q G4q | -> ritardando 0.7
+                Sequence speedingUp = | mf C4q D4q E4q F4q | -> accelerando 0.7
+            }
+
+            Note: ==========================================
+            Note: BLOCK 8 - Fermata Transform
+            Note: Hold the 3rd note (index 2) longer
+            Note: ==========================================
+
+            (print "[8] Fermata - held note on beat 3")
+
+            section fermataDemo {
+                Sequence heldNote = | mf C4q D4q E4q F4q | -> fermata 2
+            }
+
+            Note: ==========================================
+            Note: BLOCK 9 - Humanize Transform
+            Note: Subtle random velocity variation for natural feel
+            Note: ==========================================
+
+            (print "[9] Humanize - natural velocity variation")
+
+            section humanizeDemo {
+                Sequence mechanical = | mf C4e D4e E4e F4e G4e A4e B4e C5e |
+                Sequence natural = mechanical -> humanize 0.25
+            }
+
+            Note: ==========================================
+            Note: BLOCK 10 - Ghost Notes
+            Note: Very quiet "felt not heard" notes between beats
+            Note: ==========================================
+
+            (print "[10] Ghost Notes - barely audible passing tones")
+
+            section ghostDemo {
+                Sequence funkyLine = | f C4q (ghost D4) E4q (ghost F4) G4q (ghost A4) C5q |
+            }
+
+            Note: ==========================================
+            Note: BLOCK 11 - Grace Notes
+            Note: Quick ornamental notes before the main note
+            Note: ==========================================
+
+            (print "[11] Grace Notes - quick ornament before main note")
+
+            section graceDemo {
+                Sequence graceful = | mf (grace B3) C4q (grace D4) E4q (grace F4) G4q C5q |
+            }
+
+            Note: ==========================================
+            Note: BLOCK 12 - Trill Transform
+            Note: Rapid alternation between note and upper neighbor
+            Note: ==========================================
+
+            (print "[12] Trill - rapid alternation with upper note")
+
+            section trillDemo {
+                Sequence trillLine = | mf C4h E4h | -> trill +2st
+            }
+
+            Note: ==========================================
+            Note: BLOCK 13 - Tremolo Transform
+            Note: Rapid repetition of the same note
+            Note: ==========================================
+
+            (print "[13] Tremolo - rapid repetition of each note")
+
+            section tremoloDemo {
+                Sequence tremLine = | f C4h G4h | -> tremolo 4
+            }
+
+            Note: ==========================================
+            Note: BLOCK 14 - Velocity Preserved Through Transforms
+            Note: ff dynamics survive transpose, invert, retrograde
+            Note: ==========================================
+
+            (print "[14] Velocity Preservation - ff survives transforms")
+
+            section preserveDemo {
+                Sequence original = | ff C4q E4q G4q C5q |
+                Sequence transposedUp = original -> transpose +5st
+                Sequence invertedMel = original -> invert
+                Sequence backwards = original -> retrograde
+            }
+
+            Note: ==========================================
+            Note: BLOCK 15 - Combined Expression (grand finale)
+            Note: Multiple features layered together
+            Note: ==========================================
+
+            (print "[15] Grand Finale - combining all features")
+
+            section grandFinale {
+                Sequence opening = | pp (grace B3) C4q cresc E4q G4q ff C5q> |
+                Sequence peak = | ff C5q marc E5q marc G5q marc C6q marc | -> humanize 0.1
+                Sequence descent = | ff G5q F5q E5q D5q C5q B4q A4q G4q | -> decrescendo 0.95 0.2
+                Sequence ending = | pp C4q (ghost E4) G4q C5w | -> ritardando 0.5
+            }
+
+            Note: ==========================================
+            Note: ASSEMBLE AND RENDER
+            Note: ==========================================
+
+            (print "")
+            (print "Assembling song from all 15 sections...")
+
+            Song showcase = [
+                dynamicMarkings
+                articulations
+                dynamicsContext
+                crescDecrescTransform
+                swellDemo
+                inlineDynamics
+                tempoExpression
+                fermataDemo
+                humanizeDemo
+                ghostDemo
+                graceDemo
+                trillDemo
+                tremoloDemo
+                preserveDemo
+                grandFinale
+            ]
+
+            (print "Rendering with piano synthesizer...")
+            Buffer rendered = (renderSong showcase "piano")
+
+            Note: BLOCK 16 - FadeIn/FadeOut (buffer-level)
+            (print "[16] FadeIn/FadeOut - smooth entry and exit")
+            Buffer withFadeIn = rendered -> fadeIn 0.5
+            Buffer final = withFadeIn -> fadeOut 1.0
+
+            Int totalFrames = (getFrames final)
+            Int sampleRate = 44100
+            Int durationSec = (div totalFrames sampleRate)
+
+            (print "")
+            (print (concat "Total frames: " (str totalFrames)))
+            (print (concat "Duration:     ~" (concat (str durationSec) " seconds")))
+
+            (exportWav final "feature_showcase.wav")
+            (print "")
+            (print "Exported to: feature_showcase.wav")
+        }
+    }
+}
+
+(print "")
+(print "========================================")
+(print "  Showcase complete!")
+(print "========================================")
