@@ -29,12 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. User can write a `while` loop that terminates on a condition, and the REPL halts a runaway loop after hitting the iteration guard
   3. User can embed expressions in strings (e.g., `"tempo is {bpm}"`) and see interpolated output from `print`
   4. User can pipe a Sequence to a visualization function and see a piano-roll ASCII grid in the terminal showing pitch vs. time
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
+- [ ] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
+- [ ] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
 
 ### Phase 2: Audio Pipeline
 **Goal**: Users can load audio samples, position sounds in the stereo field, apply sidechain compression, and play polyphonic arrangements without voice clipping
