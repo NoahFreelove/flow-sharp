@@ -46,6 +46,9 @@ public enum TokenType
     TimeLiteral,        // 100ms, 2.5s
     DecibelLiteral,     // -3dB, +6dB
     ChordLiteral,       // Cmaj7, Dm, Gsus4
+    InterpolatedStringStart,   // $"
+    InterpolatedStringEnd,     // " (closing an interpolated string)
+    InterpolatedStringText,    // Text segments between { } in interpolated strings
 
     // Operators
     Arrow,              // ->

@@ -43,6 +43,7 @@ public class ExpressionEvaluator
             LazyExpression lazy => EvaluateLazy(lazy),
             NoteStreamExpression noteStream => EvaluateNoteStream(noteStream),
             SongExpression song => EvaluateSong(song),
+            InterpolatedStringExpression interp => EvaluateInterpolatedString(interp),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -439,6 +440,20 @@ public class ExpressionEvaluator
         var compiler = new NoteStreamCompiler();
         var sequence = compiler.Compile(noteStream, context, _context);
         return Value.Sequence(sequence);
+    }
+
+    private Value EvaluateInterpolatedString(InterpolatedStringExpression expr)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (var part in expr.Parts)
+        {
+            var val = Evaluate(part);
+            if (val.Data is string s)
+                sb.Append(s);
+            else
+                sb.Append(val.Data?.ToString() ?? "");
+        }
+        return Value.String(sb.ToString());
     }
 
     private Value EvaluateSong(SongExpression song)

@@ -17,6 +17,7 @@ public class SimpleLexer
     private int _position = 0;
     private int _line = 1;
     private int _column = 1;
+    private readonly Queue<Token> _pendingTokens = new();
 
     public SimpleLexer(string source, ErrorReporter errorReporter, string? fileName = null)
     {
@@ -45,6 +46,10 @@ public class SimpleLexer
 
     private Token? NextToken()
     {
+        // Return pending tokens from multi-token productions (e.g., interpolated strings)
+        if (_pendingTokens.Count > 0)
+            return _pendingTokens.Dequeue();
+
         var start = new SourceLocation(_line, _column, _fileName);
         char c = Peek();
 
@@ -73,6 +78,12 @@ public class SimpleLexer
             var lookahead = TryLookAheadSpecialLiteral();
             if (lookahead != null)
                 return lookahead;
+        }
+
+        // Interpolated string: $"..."
+        if (c == '$' && PeekNext() == '"')
+        {
+            return ScanInterpolatedString(start);
         }
 
         // Check for specific single-character tokens
@@ -171,6 +182,106 @@ public class SimpleLexer
 
         var value = sb.ToString();
         return new Token(TokenType.StringLiteral, $"\"{value}\"", start, value);
+    }
+
+    private Token ScanInterpolatedString(SourceLocation start)
+    {
+        Advance(); // Skip '$'
+        Advance(); // Skip '"'
+
+        var tokens = new List<Token>();
+        tokens.Add(new Token(TokenType.InterpolatedStringStart, "$\"", start));
+
+        var textSb = new StringBuilder();
+
+        while (!IsAtEnd() && Peek() != '"')
+        {
+            if (Peek() == '\\')
+            {
+                Advance(); // Skip backslash
+                if (IsAtEnd()) break;
+
+                char escaped = Advance();
+                textSb.Append(escaped switch
+                {
+                    'n' => '\n',
+                    'r' => '\r',
+                    't' => '\t',
+                    '"' => '"',
+                    '\\' => '\\',
+                    '{' => '{',
+                    '}' => '}',
+                    _ => escaped
+                });
+            }
+            else if (Peek() == '{')
+            {
+                // Flush accumulated text as InterpolatedStringText
+                if (textSb.Length > 0)
+                {
+                    var textValue = textSb.ToString();
+                    tokens.Add(new Token(TokenType.InterpolatedStringText, textValue,
+                        new SourceLocation(_line, _column, _fileName), textValue));
+                    textSb.Clear();
+                }
+
+                Advance(); // Skip '{'
+
+                // Lex the expression tokens until matching '}'
+                int braceDepth = 1;
+                while (!IsAtEnd() && braceDepth > 0)
+                {
+                    SkipWhitespaceAndComments();
+                    if (IsAtEnd()) break;
+
+                    if (Peek() == '}')
+                    {
+                        braceDepth--;
+                        if (braceDepth == 0)
+                        {
+                            Advance(); // Skip closing '}'
+                            break;
+                        }
+                    }
+                    else if (Peek() == '{')
+                    {
+                        // Nested braces not supported - report error
+                        _errorReporter.ReportError("Nested braces not supported in string interpolation",
+                            new SourceLocation(_line, _column, _fileName));
+                        Advance();
+                        break;
+                    }
+
+                    var exprToken = NextToken();
+                    if (exprToken != null)
+                        tokens.Add(exprToken);
+                }
+            }
+            else
+            {
+                textSb.Append(Advance());
+            }
+        }
+
+        // Flush remaining text
+        if (textSb.Length > 0)
+        {
+            var textValue = textSb.ToString();
+            tokens.Add(new Token(TokenType.InterpolatedStringText, textValue,
+                new SourceLocation(_line, _column, _fileName), textValue));
+        }
+
+        if (!IsAtEnd())
+            Advance(); // Skip closing '"'
+
+        tokens.Add(new Token(TokenType.InterpolatedStringEnd, "\"",
+            new SourceLocation(_line, _column, _fileName)));
+
+        // Return the first token, enqueue the rest
+        for (int i = 1; i < tokens.Count; i++)
+            _pendingTokens.Enqueue(tokens[i]);
+
+        return tokens[0];
     }
 
     private Token ScanNumber(SourceLocation start)
@@ -653,7 +764,7 @@ public class SimpleLexer
     {
         return c is '@' or '=' or ':' or '+' or '-' or '*' or '/' or '.'
             or '(' or ')' or '[' or ']' or '{' or '}' or ',' or ';' or '"'
-            or '<' or '>' or '|' or '~';
+            or '<' or '>' or '|' or '~' or '$';
     }
 
     private void SkipWhitespaceAndComments()

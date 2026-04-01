@@ -625,6 +625,9 @@ public class Parser
         if (Match(TokenType.StringLiteral))
             return new LiteralExpression(PreviousToken.Location, (string)PreviousToken.Value!);
 
+        if (Match(TokenType.InterpolatedStringStart))
+            return ParseInterpolatedString();
+
         if (Match(TokenType.BoolLiteral))
             return new LiteralExpression(PreviousToken.Location, (bool)PreviousToken.Value!);
 
@@ -752,6 +755,28 @@ public class Parser
         }
 
         throw new ParseException($"Unexpected token {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+    }
+
+    private Expression ParseInterpolatedString()
+    {
+        var location = PreviousToken.Location;
+        var parts = new List<Expression>();
+
+        while (!Check(TokenType.InterpolatedStringEnd) && !IsAtEnd())
+        {
+            if (Match(TokenType.InterpolatedStringText))
+            {
+                parts.Add(new LiteralExpression(PreviousToken.Location, (string)PreviousToken.Value!));
+            }
+            else
+            {
+                // Parse an expression (the tokens between { and } were already lexed inline)
+                parts.Add(ParseExpression());
+            }
+        }
+
+        Expect(TokenType.InterpolatedStringEnd, "Expected closing '\"' for interpolated string");
+        return new InterpolatedStringExpression(location, parts);
     }
 
     private Expression ParseLambdaExpression()
@@ -1203,6 +1228,7 @@ public class Parser
             or TokenType.TimeLiteral
             or TokenType.DecibelLiteral
             or TokenType.ChordLiteral
+            or TokenType.InterpolatedStringStart
             or TokenType.Identifier;
     }
 
