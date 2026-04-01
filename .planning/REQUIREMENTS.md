@@ -40,7 +40,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Visualization
 
-- [ ] **VIS-01**: User can visualize sequences as piano-roll ASCII art in the terminal
+- [x] **VIS-01**: User can visualize sequences as piano-roll ASCII art in the terminal
 
 ### Live Coding
 
@@ -87,7 +87,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | LANG-02 | Phase 1 | Pending |
 | LANG-03 | Phase 1 | Pending |
 | LANG-04 | Phase 1 | Pending |
-| VIS-01 | Phase 1 | Pending |
+| VIS-01 | Phase 1 | Complete |
 | AUDIO-01 | Phase 2 | Pending |
 | AUDIO-02 | Phase 2 | Pending |
 | AUDIO-03 | Phase 2 | Pending |

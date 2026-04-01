@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [ ] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
 - [ ] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
-- [ ] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
+- [x] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
 
 ### Phase 2: Audio Pipeline
 **Goal**: Users can load audio samples, position sounds in the stereo field, apply sidechain compression, and play polyphonic arrangements without voice clipping
