@@ -15,6 +15,16 @@ public class ExecutionContext
     private readonly OverloadResolver _overloadResolver;
     private int _callDepth = 0;
     private const int MaxCallDepth = 1000;
+    private int _maxIterations = 10000;
+
+    /// <summary>
+    /// Maximum number of iterations allowed per loop before the iteration guard triggers.
+    /// </summary>
+    public int MaxIterations
+    {
+        get => _maxIterations;
+        set => _maxIterations = value > 0 ? value : throw new ArgumentException("MaxIterations must be positive");
+    }
 
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }

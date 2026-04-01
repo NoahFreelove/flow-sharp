@@ -12,6 +12,16 @@ using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 namespace FlowLang.Interpreter;
 
 /// <summary>
+/// Signal exception thrown by break statements to exit the innermost loop.
+/// </summary>
+public class BreakSignal : Exception { }
+
+/// <summary>
+/// Signal exception thrown by continue statements to skip to the next loop iteration.
+/// </summary>
+public class ContinueSignal : Exception { }
+
+/// <summary>
 /// Main interpreter for executing Flow AST.
 /// </summary>
 public class Interpreter
@@ -101,6 +111,20 @@ public class Interpreter
                 var value = _evaluator.Evaluate(exprStmt.Expression);
                 _lastExpressionValue = value;  // Store for REPL
                 break;
+
+            case ForStatement forStmt:
+                ExecuteForStatement(forStmt);
+                break;
+
+            case WhileStatement whileStmt:
+                ExecuteWhileStatement(whileStmt);
+                break;
+
+            case BreakStatement:
+                throw new BreakSignal();
+
+            case ContinueStatement:
+                throw new ContinueSignal();
 
             default:
                 throw new NotSupportedException($"Statement type {stmt.GetType().Name} not supported");
@@ -224,6 +248,72 @@ public class Interpreter
         finally
         {
             _context.PopFrame();
+        }
+    }
+
+    private void ExecuteForStatement(ForStatement stmt)
+    {
+        var collectionValue = _evaluator.Evaluate(stmt.Collection);
+        var items = collectionValue.Data as List<Value>;
+        if (items == null)
+        {
+            _errorReporter.ReportError($"Cannot iterate over {collectionValue.Type.Name}; expected an array", stmt.Location);
+            return;
+        }
+        int iterations = 0;
+        foreach (var item in items)
+        {
+            if (++iterations > _context.MaxIterations)
+            {
+                _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in for loop", stmt.Location);
+                break;
+            }
+            _context.PushFrame();
+            try
+            {
+                _context.CurrentFrame.DeclareVariable(stmt.VariableName, item);
+                foreach (var bodyStmt in stmt.Body)
+                {
+                    ExecuteStatement(bodyStmt);
+                    if (_returnValue != null) return;
+                }
+            }
+            catch (BreakSignal) { break; }
+            catch (ContinueSignal) { continue; }
+            finally { _context.PopFrame(); }
+        }
+    }
+
+    private void ExecuteWhileStatement(WhileStatement stmt)
+    {
+        int iterations = 0;
+        while (true)
+        {
+            if (++iterations > _context.MaxIterations)
+            {
+                _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in while loop", stmt.Location);
+                break;
+            }
+            var condValue = _evaluator.Evaluate(stmt.Condition);
+            if (condValue.Data is not bool condBool)
+            {
+                _errorReporter.ReportError("While condition must evaluate to Bool", stmt.Location);
+                return;
+            }
+            if (!condBool) break;
+
+            _context.PushFrame();
+            try
+            {
+                foreach (var bodyStmt in stmt.Body)
+                {
+                    ExecuteStatement(bodyStmt);
+                    if (_returnValue != null) return;
+                }
+            }
+            catch (BreakSignal) { break; }
+            catch (ContinueSignal) { continue; }
+            finally { _context.PopFrame(); }
         }
     }
 

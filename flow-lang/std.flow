@@ -120,3 +120,6 @@ internal proc visualize (Sequence: seq)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)
+
+Note: Iteration guard
+internal proc setMaxIterations (Int: limit)

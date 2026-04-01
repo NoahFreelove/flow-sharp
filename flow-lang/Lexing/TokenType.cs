@@ -23,6 +23,11 @@ public enum TokenType
     Rit,
     Accel,
     Pickup,
+    For,
+    While,
+    Break,
+    Continue,
+    In,
 
     // Type keywords
     Void,

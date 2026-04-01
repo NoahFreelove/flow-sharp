@@ -1,0 +1,40 @@
+use "@std"
+
+Note: Test for loop over array
+Int[] nums = [1, 2, 3, 4, 5]
+Int sum = 0
+for Int n in nums {
+  sum = sum + n
+}
+(print (str sum))
+Note: Expected: 15
+
+Note: Test for loop over empty array
+Int[] emptyArr = []
+for Int x in emptyArr {
+  (print "should not print")
+}
+(print "empty loop ok")
+
+Note: Test nested for loops
+Int product = 0
+for Int i in [1, 2, 3] {
+  for Int j in [10, 20] {
+    product = product + i * j
+  }
+}
+(print (str product))
+Note: Expected: 180
+
+Note: Test for loop with single element
+Int[] single = [42]
+for Int s in single {
+  (print (str s))
+}
+Note: Expected: 42
+
+Note: Test for loop variable scoping (n should not leak)
+for Int n in [1, 2, 3] {
+  Int doubled = n * 2
+}
+(print "scoping ok")

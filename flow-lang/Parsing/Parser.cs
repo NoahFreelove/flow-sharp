@@ -23,6 +23,7 @@ public class Parser
     // When true, disables the "identifier followed by literal = function call"
     // heuristic in ParsePrimary. Set while parsing arguments inside (func arg1 arg2).
     private bool _inFuncCallArgs = false;
+    private bool _inLoop = false;
 
     public Parser(List<Token> tokens, ErrorReporter errorReporter)
     {
@@ -105,6 +106,24 @@ public class Parser
         // Section declaration: section name { ... }
         if (Match(TokenType.Section))
             return ParseSectionDeclaration();
+
+        // Loop constructs
+        if (Match(TokenType.For))
+            return ParseForStatement();
+        if (Match(TokenType.While))
+            return ParseWhileStatement();
+        if (Match(TokenType.Break))
+        {
+            if (!_inLoop)
+                throw new ParseException("'break' can only be used inside a loop");
+            return new BreakStatement(PreviousToken.Location);
+        }
+        if (Match(TokenType.Continue))
+        {
+            if (!_inLoop)
+                throw new ParseException("'continue' can only be used inside a loop");
+            return new ContinueStatement(PreviousToken.Location);
+        }
 
         // Check for variable declaration: Type identifier =
         if (IsTypeKeyword(CurrentToken.Type))
@@ -470,6 +489,58 @@ public class Parser
         Expect(TokenType.RBrace, "Expected '}' to close musical context block");
 
         return new MusicalContextStatement(location, contextType, value, value2, body);
+    }
+
+    private ForStatement ParseForStatement()
+    {
+        var location = PreviousToken.Location;
+        var (elementType, nextIndex, isVarArgs) = TypeParser.ParseType(_tokens, _current);
+        _current = nextIndex;
+        if (isVarArgs)
+            elementType = new ArrayType(elementType);
+        var varName = Expect(TokenType.Identifier, "Expected variable name in for loop").Text;
+        Expect(TokenType.In, "Expected 'in' after variable name in for loop");
+        var collection = ParseExpression();
+        Expect(TokenType.LBrace, "Expected '{' to begin for loop body");
+
+        var savedInLoop = _inLoop;
+        _inLoop = true;
+        var body = new List<Statement>();
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            while (Match(TokenType.Semicolon)) ;
+            if (Check(TokenType.RBrace) || IsAtEnd()) break;
+            var stmt = ParseStatement();
+            if (stmt != null) body.Add(stmt);
+            Match(TokenType.Semicolon);
+        }
+        _inLoop = savedInLoop;
+
+        Expect(TokenType.RBrace, "Expected '}' to close for loop body");
+        return new ForStatement(location, elementType, varName, collection, body);
+    }
+
+    private WhileStatement ParseWhileStatement()
+    {
+        var location = PreviousToken.Location;
+        var condition = ParseExpression();
+        Expect(TokenType.LBrace, "Expected '{' to begin while loop body");
+
+        var savedInLoop = _inLoop;
+        _inLoop = true;
+        var body = new List<Statement>();
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            while (Match(TokenType.Semicolon)) ;
+            if (Check(TokenType.RBrace) || IsAtEnd()) break;
+            var stmt = ParseStatement();
+            if (stmt != null) body.Add(stmt);
+            Match(TokenType.Semicolon);
+        }
+        _inLoop = savedInLoop;
+
+        Expect(TokenType.RBrace, "Expected '}' to close while loop body");
+        return new WhileStatement(location, condition, body);
     }
 
     private Expression ParseExpression()
