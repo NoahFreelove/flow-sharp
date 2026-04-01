@@ -404,7 +404,7 @@ public class ExpressionEvaluator
     private Value ReportDivisionByZero(Core.SourceLocation location)
     {
         _errorReporter.ReportError("Division by zero", location);
-        throw new InvalidOperationException("Division by zero");
+        return Value.Void();
     }
 
     private Value EvaluateLazy(LazyExpression lazy)

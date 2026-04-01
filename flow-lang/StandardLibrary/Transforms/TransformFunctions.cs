@@ -207,14 +207,19 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
 
-        var result = new SequenceData();
+        // True retrograde: reverse both the bar order AND the notes within each bar
+        var reversedBars = new List<BarData>();
         foreach (var bar in seq.Bars)
         {
             var reversedNotes = new List<MusicalNoteData>(bar.MusicalNotes);
             reversedNotes.Reverse();
-            var newBar = new BarData(reversedNotes, bar.TimeSignature!);
-            result.AddBar(newBar);
+            reversedBars.Add(new BarData(reversedNotes, bar.TimeSignature!));
         }
+        reversedBars.Reverse();
+
+        var result = new SequenceData();
+        foreach (var bar in reversedBars)
+            result.AddBar(bar);
         return Value.Sequence(result);
     }
 
@@ -418,7 +423,11 @@ public static class TransformFunctions
 
     private static Value Decrescendo(IReadOnlyList<Value> args)
     {
-        return Crescendo(args);
+        var seq = args[0].As<SequenceData>();
+        double startVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+        double endVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
+        // Reverse the velocity gradient: decrescendo goes from endVel down to startVel
+        return Value.Sequence(ApplyVelocityGradient(seq, endVel, startVel));
     }
 
     private static Value Swell(IReadOnlyList<Value> args)
@@ -451,10 +460,13 @@ public static class TransformFunctions
                 }
 
                 double t;
-                if (noteIndex <= midpoint)
+                int descendLength = totalNotes - 1 - midpoint;
+                if (noteIndex <= midpoint && midpoint > 0)
                     t = (double)noteIndex / midpoint;
+                else if (descendLength > 0)
+                    t = 1.0 - ((double)(noteIndex - midpoint) / descendLength);
                 else
-                    t = 1.0 - ((double)(noteIndex - midpoint) / (totalNotes - 1 - midpoint));
+                    t = 1.0;
 
                 double velocity = Math.Clamp(edgeVel + t * (peakVel - edgeVel), 0.0, 1.0);
 

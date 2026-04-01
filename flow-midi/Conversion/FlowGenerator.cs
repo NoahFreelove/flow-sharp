@@ -20,7 +20,7 @@ static class FlowGenerator
         { (4, false), "Emajor" },     { (4, true), "Csharpminor" },
         { (5, false), "Bmajor" },     { (5, true), "Gsharpminor" },
         { (6, false), "Fsharpmajor" },{ (6, true), "Dsharpminor" },
-        { (7, false), "Csharpmajor" },{ (7, true), "Gsharpminor" },
+        { (7, false), "Csharpmajor" },{ (7, true), "Asharpminor" },
         { (-1, false), "Fmajor" },    { (-1, true), "Dminor" },
         { (-2, false), "Bbmajor" },   { (-2, true), "Gminor" },
         { (-3, false), "Ebmajor" },   { (-3, true), "Cminor" },
