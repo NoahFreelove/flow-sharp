@@ -40,6 +40,7 @@ public class FlowEngine : IDisposable
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry);
+        BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         _interpreter = new Interpreter.Interpreter(_context, _errorReporter);
     }
 
@@ -53,6 +54,7 @@ public class FlowEngine : IDisposable
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry);
+        BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         _interpreter = new Interpreter.Interpreter(_context, _errorReporter);
     }
 

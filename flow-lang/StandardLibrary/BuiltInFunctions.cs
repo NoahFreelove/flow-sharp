@@ -12,6 +12,24 @@ namespace FlowLang.StandardLibrary;
 /// </summary>
 public static class BuiltInFunctions
 {
+    private static FlowLang.Runtime.ExecutionContext? _context;
+
+    /// <summary>
+    /// Registers iteration guard functions that need ExecutionContext.
+    /// Must be called AFTER ExecutionContext is created (called from FlowEngine).
+    /// </summary>
+    public static void RegisterIterationGuard(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
+    {
+        _context = context;
+
+        var setMaxIterSignature = new FunctionSignature("setMaxIterations", [IntType.Instance]);
+        registry.Register("setMaxIterations", setMaxIterSignature, args =>
+        {
+            _context.MaxIterations = args[0].As<int>();
+            return Value.Void();
+        });
+    }
+
     /// <summary>
     /// Registers all C# implementations of internal functions.
     /// </summary>

@@ -117,3 +117,6 @@ internal proc tremolo (Sequence: seq, Int: repetitions)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)
+
+Note: Iteration guard
+internal proc setMaxIterations (Int: limit)
