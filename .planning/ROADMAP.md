@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
+- [x] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
 - [ ] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
 - [x] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
 

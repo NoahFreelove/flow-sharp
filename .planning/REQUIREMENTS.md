@@ -11,7 +11,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **LANG-01**: User can iterate over collections with `for` loop construct
 - [x] **LANG-02**: User can write conditional loops with `while` construct
-- [ ] **LANG-03**: User can use string interpolation to embed expressions in strings
+- [x] **LANG-03**: User can use string interpolation to embed expressions in strings
 - [x] **LANG-04**: User can add iteration guards (max iterations) to prevent infinite loops in REPL
 
 ### Audio Pipeline
@@ -85,7 +85,7 @@ Deferred to future release. Tracked but not in current roadmap.
 |-------------|-------|--------|
 | LANG-01 | Phase 1 | Complete |
 | LANG-02 | Phase 1 | Complete |
-| LANG-03 | Phase 1 | Pending |
+| LANG-03 | Phase 1 | Complete |
 | LANG-04 | Phase 1 | Complete |
 | VIS-01 | Phase 1 | Complete |
 | AUDIO-01 | Phase 2 | Pending |
