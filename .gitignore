@@ -7,6 +7,8 @@ riderModule.iml
 tests/
 *.flow
 *.md
+!.planning/**/*.md
+!CLAUDE.md
 flow-interpreter/flow-interpreter
 *.wav
 .claude/plugins/*
