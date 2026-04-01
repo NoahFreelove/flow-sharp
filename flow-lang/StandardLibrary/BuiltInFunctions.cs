@@ -26,6 +26,7 @@ public static class BuiltInFunctions
         Audio.SongRenderer.Register(registry);
         Transforms.TransformFunctions.Register(registry);
         Harmony.HarmonyFunctions.Register(registry);
+        VisualizationFunctions.Register(registry);
     }
 
     /// <summary>
