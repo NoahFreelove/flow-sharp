@@ -1,0 +1,20 @@
+use "@std"
+
+Note: Test basic visualization
+tempo 120 {
+  timesig 4/4 {
+    key Cmajor {
+      Sequence melody = | C4q D4q E4q F4q |
+      (visualize melody)
+
+      Note: Test with flow operator
+      | G4h E4h | -> visualize
+
+      Note: Test with rests
+      Sequence withRests = | C4q _ E4q _ |
+      (visualize withRests)
+    }
+  }
+}
+
+(print "visualization test complete")

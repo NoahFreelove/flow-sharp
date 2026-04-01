@@ -115,5 +115,8 @@ Note: Ornament transforms
 internal proc trill (Sequence: seq, Semitone: interval)
 internal proc tremolo (Sequence: seq, Int: repetitions)
 
+Note: Visualization
+internal proc visualize (Sequence: seq)
+
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)
