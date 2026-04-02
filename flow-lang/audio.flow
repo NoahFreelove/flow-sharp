@@ -334,6 +334,9 @@ internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Do
 Note: Apply sidechain compression with custom attack and release times (ms)
 internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio, Double: attackMs, Double: releaseMs)
 
+Note: Apply constant-power stereo panning. Pan: -1.0 = left, 0.0 = center, 1.0 = right. Returns stereo buffer.
+internal proc pan(Buffer: buffer, Double: panValue)
+
 Note: ===== Phase 6: Playback =====
 
 Note: Play an audio buffer through the system audio output

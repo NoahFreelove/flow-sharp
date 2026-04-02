@@ -93,29 +93,32 @@ public static class SongRenderer
         {
             int voiceStartFrame = (int)(voice.OffsetBeats * secondsPerBeat * sampleRate);
 
+            // Constant-power panning using voice.Pan (D-05, D-08 bug fix)
+            float panAngle = (float)((voice.Pan + 1.0) * 0.25 * Math.PI);
+            float leftGain = MathF.Cos(panAngle) * (float)voice.Gain;
+            float rightGain = MathF.Sin(panAngle) * (float)voice.Gain;
+
             for (int frame = 0; frame < voice.Buffer.Frames; frame++)
             {
                 int destFrame = voiceStartFrame + frame;
                 if (destFrame < 0 || destFrame >= totalFrames) continue;
 
-                for (int ch = 0; ch < voice.Buffer.Channels && ch < StereoChannels; ch++)
+                // Get mono sample from voice (downmix if stereo)
+                float sample;
+                if (voice.Buffer.Channels == 1)
                 {
-                    float sample = voice.Buffer.GetSample(frame, ch);
-                    sample *= (float)voice.Gain;
-
-                    float existing = result.GetSample(destFrame, ch);
-                    result.SetSample(destFrame, ch, existing + sample);
+                    sample = voice.Buffer.GetSample(frame, 0);
+                }
+                else
+                {
+                    sample = 0f;
+                    for (int ch = 0; ch < voice.Buffer.Channels; ch++)
+                        sample += voice.Buffer.GetSample(frame, ch);
+                    sample /= voice.Buffer.Channels;
                 }
 
-                // If voice is mono but output is stereo, duplicate to right channel
-                if (voice.Buffer.Channels == 1 && StereoChannels == 2)
-                {
-                    float sample = voice.Buffer.GetSample(frame, 0);
-                    sample *= (float)voice.Gain;
-
-                    float existing = result.GetSample(destFrame, 1);
-                    result.SetSample(destFrame, 1, existing + sample);
-                }
+                result.SetSample(destFrame, 0, result.GetSample(destFrame, 0) + sample * leftGain);
+                result.SetSample(destFrame, 1, result.GetSample(destFrame, 1) + sample * rightGain);
             }
         }
 

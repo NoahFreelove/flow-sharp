@@ -102,6 +102,8 @@ public class Parser
             return ParseMusicalContextStatement(MusicalContextType.Rit);
         if (Match(TokenType.Accel))
             return ParseMusicalContextStatement(MusicalContextType.Accel);
+        if (Match(TokenType.Pan))
+            return ParseMusicalContextStatement(MusicalContextType.Pan);
 
         // Section declaration: section name { ... }
         if (Match(TokenType.Section))
@@ -157,7 +159,17 @@ public class Parser
     private ProcDeclaration ParseProcDeclaration(bool isInternal)
     {
         var location = PreviousToken.Location;
-        var name = Expect(TokenType.Identifier, "Expected procedure name").Text;
+        // Allow musical context keywords (like 'pan') as procedure names
+        string name;
+        if (Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Tempo)
+            || Check(TokenType.Swing) || Check(TokenType.Key) || Check(TokenType.Timesig))
+        {
+            name = Advance().Text;
+        }
+        else
+        {
+            name = Expect(TokenType.Identifier, "Expected procedure name").Text;
+        }
 
         var parameters = new List<Parameter>();
         Expect(TokenType.LParen, "Expected '(' after procedure name");
@@ -464,6 +476,21 @@ public class Parser
                 break;
             }
 
+            case MusicalContextType.Pan:
+            {
+                int panSign = 1;
+                var panLoc = CurrentToken.Location;
+                if (Match(TokenType.Minus)) panSign = -1;
+                else if (Match(TokenType.Plus)) panSign = 1;
+                if (Check(TokenType.IntLiteral))
+                    value = new LiteralExpression(panLoc, panSign * (double)(int)Advance().Value!);
+                else if (Check(TokenType.FloatLiteral))
+                    value = new LiteralExpression(panLoc, panSign * (double)Advance().Value!);
+                else
+                    throw new ParseException($"Expected numeric pan value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+                break;
+            }
+
             default:
                 throw new ParseException($"Unknown musical context type: {contextType}");
         }
@@ -767,7 +794,7 @@ public class Parser
 
             // Check if this is a function call like (func arg1 arg2)
             // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
-            if (Check(TokenType.Identifier) && _current + 1 < _tokens.Count
+            if ((Check(TokenType.Identifier) || Check(TokenType.Pan)) && _current + 1 < _tokens.Count
                 && _tokens[_current + 1].Type != TokenType.Arrow
                 && _tokens[_current + 1].Type != TokenType.Dot
                 && _tokens[_current + 1].Type != TokenType.At)
@@ -797,7 +824,7 @@ public class Parser
 
         // Variable or function call (also allow music context keywords as identifiers)
         if (Match(TokenType.Identifier) || Match(TokenType.Tempo) || Match(TokenType.Swing)
-            || Match(TokenType.Key) || Match(TokenType.Timesig))
+            || Match(TokenType.Key) || Match(TokenType.Timesig) || Match(TokenType.Pan))
         {
             var name = PreviousToken.Text;
             var location = PreviousToken.Location;
@@ -1337,7 +1364,7 @@ public class Parser
     private Token ExpectParameterName(string errorMessage = "Expected parameter name")
     {
         if (Check(TokenType.Identifier) || Check(TokenType.Tempo) || Check(TokenType.Swing)
-            || Check(TokenType.Key) || Check(TokenType.Timesig))
+            || Check(TokenType.Key) || Check(TokenType.Timesig) || Check(TokenType.Pan))
             return Advance();
         return Expect(TokenType.Identifier, errorMessage);
     }
@@ -1363,7 +1390,7 @@ public class Parser
                 or TokenType.Timesig or TokenType.Tempo
                 or TokenType.Swing or TokenType.Key
                 or TokenType.Dynamics or TokenType.Rit or TokenType.Accel
-                or TokenType.Section)
+                or TokenType.Pan or TokenType.Section)
             {
                 return;
             }

@@ -215,6 +215,22 @@ public class Interpreter
                     break;
                 }
 
+                case MusicalContextType.Pan:
+                {
+                    var panVal = _evaluator.Evaluate(ctx.Value);
+                    double pan = panVal.Type is IntType
+                        ? (double)panVal.As<int>()
+                        : panVal.As<double>();
+                    if (pan < -1.0 || pan > 1.0)
+                    {
+                        _errorReporter.ReportError(
+                            $"Pan value must be between -1.0 and 1.0, got {pan}", ctx.Location);
+                        return;
+                    }
+                    musicalCtx.Pan = pan;
+                    break;
+                }
+
                 case MusicalContextType.Key:
                     if (ctx.Value is LiteralExpression keyExpr)
                     {

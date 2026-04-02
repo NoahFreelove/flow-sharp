@@ -585,6 +585,7 @@ public class SimpleLexer
             "dynamics" => TokenType.Dynamics,
             "rit" => TokenType.Rit,
             "accel" => TokenType.Accel,
+            "pan" => TokenType.Pan,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
