@@ -325,6 +325,9 @@ internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: m
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
 
+Note: Apply constant-power stereo panning. Pan: -1.0 = left, 0.0 = center, 1.0 = right. Returns stereo buffer.
+internal proc pan(Buffer: buffer, Double: panValue)
+
 Note: ===== Phase 6: Playback =====
 
 Note: Play an audio buffer through the system audio output
