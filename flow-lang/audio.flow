@@ -35,6 +35,9 @@ internal proc exportWav(Buffer: buffer, String: filepath)
 Note: Export audio buffer to WAV file with specified bit depth (16, 24, or 32)
 internal proc exportWav(Buffer: buffer, String: filepath, Int: bitDepth)
 
+Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
+internal proc loadWav(String: filepath)
+
 Note: ===== USER CONVENIENCE LAYER =====
 
 Note: ===== Global Configuration =====
