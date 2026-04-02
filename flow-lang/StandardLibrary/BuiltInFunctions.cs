@@ -398,6 +398,10 @@ public static class BuiltInFunctions
         var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance]);
         registry.Register("loadWav", loadWavSignature, Audio.FileIO.LoadWav);
 
+        // writeMidi(String, Song) -> Void - export Song to MIDI file
+        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
+        registry.Register("writeMidi", writeMidiSignature, Audio.MidiExport.WriteMidi);
+
         // ===== Signal Generation Operations =====
 
         var createOscillatorStateSignature = new FunctionSignature(
