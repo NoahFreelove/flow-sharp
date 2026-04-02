@@ -328,6 +328,12 @@ internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: m
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
 
+Note: Apply sidechain compression: source ducks under trigger signal
+internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio)
+
+Note: Apply sidechain compression with custom attack and release times (ms)
+internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio, Double: attackMs, Double: releaseMs)
+
 Note: ===== Phase 6: Playback =====
 
 Note: Play an audio buffer through the system audio output
