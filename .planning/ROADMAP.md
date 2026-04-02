@@ -64,8 +64,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Custom oscillator definitions (WavetableSynthesizer + oscillator() built-in)
-- [ ] 03-02-PLAN.md -- MIDI file export (DryWetMidi + writeMidi built-in)
+- [x] 03-01-PLAN.md -- Custom oscillator definitions (WavetableSynthesizer + oscillator() built-in)
+- [x] 03-02-PLAN.md -- MIDI file export (DryWetMidi + writeMidi built-in)
 
 ### Phase 4: Composition Tools
 **Goal**: Users can write chord progressions with automatic voicing, layer polyrhythmic patterns, and generate probabilistic variations of sequences
