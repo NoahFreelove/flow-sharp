@@ -48,7 +48,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- WAV file loading (loadWav) and sidechain compression
+- [x] 02-01-PLAN.md -- WAV file loading (loadWav) and sidechain compression
 - [ ] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
 - [ ] 02-03-PLAN.md -- Polyphonic voice allocation with configurable limits and stealing
 
