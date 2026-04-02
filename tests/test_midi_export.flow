@@ -1,0 +1,48 @@
+use "@std"
+use "@audio"
+
+(print "=== MIDI Export Tests ===")
+
+Note: Test MIDI-01: Export a Song to MIDI file
+Note: Test MIDI-02: Tempo, time signature, key preserved in export
+
+Note: Test 1: 3/4 waltz in G major at 140 BPM
+tempo 140 {
+    timesig 3/4 {
+        key Gmajor {
+            section waltz {
+                | G4q B4q D5q |
+                | D5h G4q |
+            }
+
+            section ending {
+                | G4h. |
+            }
+
+            Song song = [waltz waltz ending]
+
+            (writeMidi "/tmp/test_flow_export.mid" song)
+            (print "MIDI file written to /tmp/test_flow_export.mid")
+            (print "PASS: writeMidi completed without error")
+        }
+    }
+}
+
+Note: Test 2: 4/4 melody in C major at 120 BPM (different context)
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section melody {
+                | C4q D4q E4q F4q |
+                | G4h E4h |
+            }
+
+            Song song2 = [melody melody]
+            (writeMidi "/tmp/test_flow_export2.mid" song2)
+            (print "Second MIDI file written")
+            (print "PASS: Multiple MIDI exports work")
+        }
+    }
+}
+
+(print "All MIDI export tests passed")

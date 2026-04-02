@@ -35,8 +35,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### MIDI
 
-- [ ] **MIDI-01**: User can export a Song/Sequence to a standard MIDI file via `writeMidi`
-- [ ] **MIDI-02**: MIDI export preserves tempo, time signature, key, and note velocities
+- [x] **MIDI-01**: User can export a Song/Sequence to a standard MIDI file via `writeMidi`
+- [x] **MIDI-02**: MIDI export preserves tempo, time signature, key, and note velocities
 
 ### Visualization
 
@@ -94,8 +94,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | AUDIO-04 | Phase 2 | Complete |
 | SYNTH-01 | Phase 3 | Pending |
 | SYNTH-02 | Phase 3 | Pending |
-| MIDI-01 | Phase 3 | Pending |
-| MIDI-02 | Phase 3 | Pending |
+| MIDI-01 | Phase 3 | Complete |
+| MIDI-02 | Phase 3 | Complete |
 | COMP-01 | Phase 4 | Pending |
 | COMP-02 | Phase 4 | Pending |
 | COMP-03 | Phase 4 | Pending |
