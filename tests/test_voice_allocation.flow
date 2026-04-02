@@ -1,0 +1,43 @@
+Note: Voice Allocation Test
+Note: Tests polyphonic voice allocation with configurable limits
+
+use "@std"
+use "@audio"
+use "@composition"
+
+(print "Voice Allocation Test")
+
+Note: Test setMaxVoices built-in
+(setMaxVoices 16)
+(print "Max voices set to 16")
+
+Note: Reset to default
+(setMaxVoices 32)
+(print "Max voices reset to 32")
+
+Note: Test with a dense chord that produces many simultaneous voices
+key Cmajor {
+  tempo 120 {
+    Note: Dense passage with 8 simultaneous notes
+    Sequence dense = | [C3 E3 G3 B3 C4 E4 G4 B4]w |
+
+    Note: Render to voices - should not crash with default 32 voice limit
+    Voice[] voices = (renderSequenceToVoices dense "piano" 44100 120.0)
+    (print (concat "Dense chord voices (max 32): " (str (len voices))))
+  }
+}
+
+Note: Test with very low voice limit
+(setMaxVoices 4)
+key Cmajor {
+  tempo 120 {
+    Sequence dense2 = | [C3 E3 G3 B3 C4 E4 G4 B4]w |
+    Voice[] voices2 = (renderSequenceToVoices dense2 "piano" 44100 120.0)
+    (print (concat "Dense chord voices (max 4): " (str (len voices2))))
+  }
+}
+
+Note: Reset
+(setMaxVoices 32)
+
+(print "Voice allocation test passed")

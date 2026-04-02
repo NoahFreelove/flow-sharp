@@ -48,7 +48,7 @@ namespace FlowLang.StandardLibrary.Audio
                 allVoices.AddRange(barVoices);
             }
 
-            return allVoices;
+            return VoiceAllocator.Allocate(allVoices, sampleRate);
         }
 
         /// <summary>
@@ -79,7 +79,7 @@ namespace FlowLang.StandardLibrary.Audio
                 allVoices.AddRange(barVoices);
             }
 
-            return allVoices;
+            return VoiceAllocator.Allocate(allVoices, sampleRate);
         }
     }
 }
