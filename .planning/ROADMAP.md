@@ -13,7 +13,7 @@ This milestone takes Flow from a capable music notation language to a full-featu
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Language Foundations** - Add loops, string interpolation, iteration guards, and sequence visualization
-- [ ] **Phase 2: Audio Pipeline** - Add sample loading, stereo panning, sidechain compression, and polyphonic voice allocation
+- [x] **Phase 2: Audio Pipeline** - Add sample loading, stereo panning, sidechain compression, and polyphonic voice allocation (completed 2026-04-02)
 - [ ] **Phase 3: Synthesis & MIDI Export** - Add custom oscillator definitions and MIDI file export
 - [ ] **Phase 4: Composition Tools** - Add chord progression DSL, polyrhythm support, and probabilistic pattern variation
 - [ ] **Phase 5: Live Coding** - Add beat-synced live reload with playback state preservation
@@ -49,7 +49,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md -- WAV file loading (loadWav) and sidechain compression
-- [ ] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
+- [x] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
 - [x] 02-03-PLAN.md -- Polyphonic voice allocation with configurable limits and stealing
 
 ### Phase 3: Synthesis & MIDI Export
@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Language Foundations | 0/3 | Not started | - |
-| 2. Audio Pipeline | 0/3 | Not started | - |
+| 2. Audio Pipeline | 3/3 | Complete   | 2026-04-02 |
 | 3. Synthesis & MIDI Export | 0/3 | Not started | - |
 | 4. Composition Tools | 0/3 | Not started | - |
 | 5. Live Coding | 0/2 | Not started | - |
