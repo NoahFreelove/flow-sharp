@@ -22,6 +22,7 @@ public static class EffectsFunctions
         RegisterCompressor(registry);
         RegisterDelay(registry);
         RegisterGain(registry);
+        RegisterSidechain(registry);
     }
 
     // ===== Reverb =====
@@ -254,6 +255,61 @@ public static class EffectsFunctions
                 $"Warning: gain({gainDb:F1} dB) causes clipping. Consider reducing gain or applying compression first.");
         }
 
+        return Value.Buffer(result);
+    }
+
+    // ===== Sidechain Compression =====
+
+    private static void RegisterSidechain(InternalFunctionRegistry registry)
+    {
+        // sidechain(Buffer source, Buffer trigger, Double threshold, Double ratio) -> Buffer
+        var sidechainSimpleSig = new FunctionSignature("sidechain",
+            [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("sidechain", sidechainSimpleSig, SidechainSimple);
+
+        // sidechain(Buffer source, Buffer trigger, Double threshold, Double ratio, Double attackMs, Double releaseMs) -> Buffer
+        var sidechainFullSig = new FunctionSignature("sidechain",
+            [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance,
+             DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("sidechain", sidechainFullSig, SidechainFull);
+    }
+
+    /// <summary>
+    /// sidechain(Buffer source, Buffer trigger, Double threshold, Double ratio)
+    /// When piped: bass -> sidechain(kick, -12.0, 4.0) becomes sidechain(bass, kick, -12.0, 4.0)
+    /// where args[0]=source (piped), args[1]=trigger.
+    /// </summary>
+    private static Value SidechainSimple(IReadOnlyList<Value> args)
+    {
+        var source = args[0].As<AudioBuffer>();
+        var trigger = args[1].As<AudioBuffer>();
+        float threshold = (float)args[2].As<double>();
+        float ratio = (float)args[3].As<double>();
+
+        if (source.Frames == 0)
+            return Value.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
+
+        var result = SidechainCompressor.Apply(source, trigger, threshold, ratio);
+        return Value.Buffer(result);
+    }
+
+    /// <summary>
+    /// sidechain(Buffer source, Buffer trigger, Double threshold, Double ratio, Double attackMs, Double releaseMs)
+    /// Full control over attack and release times.
+    /// </summary>
+    private static Value SidechainFull(IReadOnlyList<Value> args)
+    {
+        var source = args[0].As<AudioBuffer>();
+        var trigger = args[1].As<AudioBuffer>();
+        float threshold = (float)args[2].As<double>();
+        float ratio = (float)args[3].As<double>();
+        float attackMs = (float)args[4].As<double>();
+        float releaseMs = (float)args[5].As<double>();
+
+        if (source.Frames == 0)
+            return Value.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
+
+        var result = SidechainCompressor.Apply(source, trigger, threshold, ratio, attackMs, releaseMs);
         return Value.Buffer(result);
     }
 }

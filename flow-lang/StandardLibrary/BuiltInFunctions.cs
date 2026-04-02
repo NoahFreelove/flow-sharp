@@ -393,6 +393,10 @@ public static class BuiltInFunctions
             [BufferType.Instance, StringType.Instance, IntType.Instance]);
         registry.Register("exportWav", exportWavWithDepthSignature, Audio.FileIO.ExportWavWithBitDepth);
 
+        // loadWav(String) -> Buffer - load WAV file
+        var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance]);
+        registry.Register("loadWav", loadWavSignature, Audio.FileIO.LoadWav);
+
         // ===== Signal Generation Operations =====
 
         var createOscillatorStateSignature = new FunctionSignature(

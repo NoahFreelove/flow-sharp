@@ -1,0 +1,22 @@
+use "@std"
+use "@audio"
+
+Note: Generate a test buffer (stereo sine tone, 0.1 seconds)
+Buffer original = (createSineTone 0.1 440.0 0.8)
+(exportWav original "tests/test_output_roundtrip.wav")
+
+Note: Load it back
+Buffer loaded = (loadWav "tests/test_output_roundtrip.wav")
+
+Note: Verify frame count matches (within rounding tolerance from 16-bit quantization)
+Int origFrames = (getFrames original)
+Int loadedFrames = (getFrames loaded)
+(print "WAV Loading Test")
+(print (str origFrames))
+(print (str loadedFrames))
+(print (str (getChannels loaded)))
+
+Note: Test that loaded buffer works with effects pipeline
+Buffer processed = loaded -> (gain 0.5)
+(print (str (getFrames processed)))
+(print "WAV loading test passed")

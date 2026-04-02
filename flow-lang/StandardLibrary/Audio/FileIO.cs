@@ -232,4 +232,186 @@ public static class FileIO
 
         return Math.Clamp(sample, -1.0f, 1.0f);
     }
+
+    // ===== WAV Loading =====
+
+    /// <summary>
+    /// Flow-callable wrapper for loading a WAV file into a Buffer.
+    /// </summary>
+    public static Value LoadWav(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var buffer = LoadWavInternal(filepath);
+        return Value.Buffer(buffer);
+    }
+
+    /// <summary>
+    /// Loads a WAV file from disk and returns an AudioBuffer.
+    /// Supports 16-bit, 24-bit, and 32-bit PCM formats.
+    /// Resamples to 44100 Hz if the source sample rate differs.
+    /// </summary>
+    public static AudioBuffer LoadWavInternal(string filepath)
+    {
+        if (string.IsNullOrWhiteSpace(filepath))
+            throw new ArgumentException("Filepath cannot be null or empty", nameof(filepath));
+        if (!File.Exists(filepath))
+            throw new FileNotFoundException($"WAV file not found: {filepath}", filepath);
+
+        using var fileStream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+        using var reader = new BinaryReader(fileStream);
+
+        // Read RIFF header
+        var riffId = new string(reader.ReadChars(4));
+        if (riffId != "RIFF")
+            throw new InvalidDataException($"Invalid WAV file: expected RIFF header, got '{riffId}'");
+
+        int fileSize = reader.ReadInt32(); // file size - 8
+
+        var waveId = new string(reader.ReadChars(4));
+        if (waveId != "WAVE")
+            throw new InvalidDataException($"Invalid WAV file: expected WAVE format, got '{waveId}'");
+
+        // Parse chunks (do NOT assume fmt/data order)
+        short audioFormat = 0;
+        short channels = 0;
+        int sampleRate = 0;
+        short bitsPerSample = 0;
+        bool fmtFound = false;
+        float[]? samples = null;
+
+        while (fileStream.Position < fileStream.Length)
+        {
+            // Read chunk ID and size
+            if (fileStream.Length - fileStream.Position < 8)
+                break;
+
+            var chunkId = new string(reader.ReadChars(4));
+            int chunkSize = reader.ReadInt32();
+
+            switch (chunkId)
+            {
+                case "fmt ":
+                    audioFormat = reader.ReadInt16();
+                    if (audioFormat != 1)
+                        throw new InvalidDataException(
+                            $"Unsupported WAV format: expected PCM (1), got {audioFormat}");
+                    channels = reader.ReadInt16();
+                    sampleRate = reader.ReadInt32();
+                    int byteRate = reader.ReadInt32(); // read but unused
+                    short blockAlign = reader.ReadInt16(); // read but unused
+                    bitsPerSample = reader.ReadInt16();
+                    // Skip extra format bytes if chunk is larger than 16
+                    if (chunkSize > 16)
+                        reader.ReadBytes(chunkSize - 16);
+                    fmtFound = true;
+                    break;
+
+                case "data":
+                    if (!fmtFound)
+                        throw new InvalidDataException("WAV file has data chunk before fmt chunk");
+                    int totalSamples = chunkSize / (bitsPerSample / 8);
+                    samples = ReadSamples(reader, totalSamples, bitsPerSample);
+                    break;
+
+                default:
+                    // Skip unknown chunks; handle odd chunk sizes with padding
+                    int skipBytes = chunkSize;
+                    if (chunkSize % 2 != 0)
+                        skipBytes++;
+                    if (fileStream.Position + skipBytes <= fileStream.Length)
+                        reader.ReadBytes(skipBytes);
+                    else
+                        fileStream.Position = fileStream.Length; // EOF
+                    break;
+            }
+        }
+
+        if (!fmtFound)
+            throw new InvalidDataException("WAV file missing fmt chunk");
+        if (samples == null)
+            throw new InvalidDataException("WAV file missing data chunk");
+
+        // Create AudioBuffer from parsed data
+        int frames = samples.Length / channels;
+        var buffer = new AudioBuffer(frames, channels, sampleRate);
+        Array.Copy(samples, buffer.Data, samples.Length);
+
+        // Resample to 44100 Hz if needed
+        if (sampleRate != 44100)
+            buffer = Resample(buffer, 44100);
+
+        return buffer;
+    }
+
+    /// <summary>
+    /// Reads PCM samples from a BinaryReader, converting to float32.
+    /// Supports 16-bit, 24-bit, and 32-bit PCM.
+    /// </summary>
+    private static float[] ReadSamples(BinaryReader reader, int totalSamples, short bitsPerSample)
+    {
+        var samples = new float[totalSamples];
+
+        switch (bitsPerSample)
+        {
+            case 16:
+                for (int i = 0; i < totalSamples; i++)
+                    samples[i] = reader.ReadInt16() / 32768f;
+                break;
+
+            case 24:
+                for (int i = 0; i < totalSamples; i++)
+                {
+                    byte b0 = reader.ReadByte();
+                    byte b1 = reader.ReadByte();
+                    byte b2 = reader.ReadByte();
+                    // Assemble 24-bit signed integer (little-endian)
+                    int value = b0 | (b1 << 8) | (b2 << 16);
+                    // Sign-extend from 24-bit
+                    if ((value & 0x800000) != 0)
+                        value |= unchecked((int)0xFF000000);
+                    samples[i] = value / 8388608f;
+                }
+                break;
+
+            case 32:
+                for (int i = 0; i < totalSamples; i++)
+                    samples[i] = reader.ReadInt32() / 2147483648f;
+                break;
+
+            default:
+                throw new InvalidDataException(
+                    $"Unsupported bit depth: {bitsPerSample}. Only 16, 24, and 32-bit PCM are supported.");
+        }
+
+        return samples;
+    }
+
+    /// <summary>
+    /// Resamples an AudioBuffer to a target sample rate using linear interpolation.
+    /// </summary>
+    public static AudioBuffer Resample(AudioBuffer source, int targetRate)
+    {
+        if (source.SampleRate == targetRate)
+            return source;
+
+        double ratio = (double)source.SampleRate / targetRate;
+        int newFrames = (int)(source.Frames / ratio);
+        var result = new AudioBuffer(newFrames, source.Channels, targetRate);
+
+        for (int frame = 0; frame < newFrames; frame++)
+        {
+            double srcPos = frame * ratio;
+            int srcFrame = (int)srcPos;
+            float frac = (float)(srcPos - srcFrame);
+
+            for (int ch = 0; ch < source.Channels; ch++)
+            {
+                float s0 = source.GetSample(Math.Min(srcFrame, source.Frames - 1), ch);
+                float s1 = source.GetSample(Math.Min(srcFrame + 1, source.Frames - 1), ch);
+                result.SetSample(frame, ch, s0 + frac * (s1 - s0));
+            }
+        }
+
+        return result;
+    }
 }

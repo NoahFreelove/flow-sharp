@@ -35,6 +35,9 @@ internal proc exportWav(Buffer: buffer, String: filepath)
 Note: Export audio buffer to WAV file with specified bit depth (16, 24, or 32)
 internal proc exportWav(Buffer: buffer, String: filepath, Int: bitDepth)
 
+Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
+internal proc loadWav(String: filepath)
+
 Note: ===== USER CONVENIENCE LAYER =====
 
 Note: ===== Global Configuration =====
@@ -324,6 +327,12 @@ internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: m
 
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
+
+Note: Apply sidechain compression: source ducks under trigger signal
+internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio)
+
+Note: Apply sidechain compression with custom attack and release times (ms)
+internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio, Double: attackMs, Double: releaseMs)
 
 Note: ===== Phase 6: Playback =====
 
