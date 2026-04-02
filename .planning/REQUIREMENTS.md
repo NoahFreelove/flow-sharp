@@ -17,7 +17,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 ### Audio Pipeline
 
 - [x] **AUDIO-01**: User can load WAV files as audio buffers via `loadWav` function
-- [ ] **AUDIO-02**: User can control stereo panning per voice/buffer with `pan` function
+- [x] **AUDIO-02**: User can control stereo panning per voice/buffer with `pan` function
 - [x] **AUDIO-03**: User can apply sidechain compression driven by a trigger buffer
 - [x] **AUDIO-04**: User can allocate polyphonic voices with configurable voice limits and stealing
 
@@ -89,7 +89,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | LANG-04 | Phase 1 | Complete |
 | VIS-01 | Phase 1 | Complete |
 | AUDIO-01 | Phase 2 | Complete |
-| AUDIO-02 | Phase 2 | Pending |
+| AUDIO-02 | Phase 2 | Complete |
 | AUDIO-03 | Phase 2 | Complete |
 | AUDIO-04 | Phase 2 | Complete |
 | SYNTH-01 | Phase 3 | Pending |
