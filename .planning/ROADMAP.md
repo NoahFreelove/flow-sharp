@@ -61,12 +61,11 @@ Plans:
   2. Custom oscillators work with the existing voice allocation and effects pipeline (no special-casing required by the user)
   3. User can call `writeMidi("output.mid", song)` and open the resulting file in any DAW or MIDI player
   4. Exported MIDI files contain correct tempo, time signature, key signature, and per-note velocities matching the Flow source
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md -- Custom oscillator definitions (WavetableSynthesizer + oscillator() built-in)
+- [ ] 03-02-PLAN.md -- MIDI file export (DryWetMidi + writeMidi built-in)
 
 ### Phase 4: Composition Tools
 **Goal**: Users can write chord progressions with automatic voicing, layer polyrhythmic patterns, and generate probabilistic variations of sequences
@@ -107,6 +106,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Language Foundations | 0/3 | Not started | - |
 | 2. Audio Pipeline | 3/3 | Complete   | 2026-04-02 |
-| 3. Synthesis & MIDI Export | 0/3 | Not started | - |
+| 3. Synthesis & MIDI Export | 0/2 | Not started | - |
 | 4. Composition Tools | 0/3 | Not started | - |
 | 5. Live Coding | 0/2 | Not started | - |
