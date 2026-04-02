@@ -76,6 +76,22 @@ namespace FlowLang.StandardLibrary.Audio
         }
 
         /// <summary>
+        /// Overload that applies pan value from musical context to all rendered voices.
+        /// </summary>
+        public static List<Voice> RenderBarToVoices(
+            BarData bar,
+            string synthType,
+            int sampleRate,
+            double bpm,
+            double pan)
+        {
+            var voices = RenderBarToVoices(bar, synthType, sampleRate, bpm);
+            foreach (var voice in voices)
+                voice.Pan = pan;
+            return voices;
+        }
+
+        /// <summary>
         /// Renders multiple bars sequentially to a collection of voices.
         /// Each bar is positioned after the previous one.
         /// </summary>
