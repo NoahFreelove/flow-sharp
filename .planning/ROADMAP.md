@@ -45,12 +45,12 @@ Plans:
   2. User can call `pan(buffer, -1.0)` through `pan(buffer, 1.0)` to position a voice left-to-right in stereo output
   3. User can apply sidechain compression to a bass buffer triggered by a kick buffer, producing the characteristic pumping effect
   4. User can render a Song with 8+ simultaneous notes and hear clean polyphony with configurable voice limits and voice stealing
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
-- [ ] 02-03: TBD
+- [ ] 02-01-PLAN.md -- WAV file loading (loadWav) and sidechain compression
+- [ ] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
+- [ ] 02-03-PLAN.md -- Polyphonic voice allocation with configurable limits and stealing
 
 ### Phase 3: Synthesis & MIDI Export
 **Goal**: Users can define their own oscillator waveforms in Flow code and export compositions as standard MIDI files
