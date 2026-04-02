@@ -102,8 +102,15 @@ public class Parser
             return ParseMusicalContextStatement(MusicalContextType.Rit);
         if (Match(TokenType.Accel))
             return ParseMusicalContextStatement(MusicalContextType.Accel);
-        if (Match(TokenType.Pan))
+        // Only parse `pan` as a context block when followed by a numeric literal or sign
+        // (e.g., `pan 0.5 { ... }` or `pan -1.0 { ... }`), not when used as a variable name.
+        if (Check(TokenType.Pan) && _current + 1 < _tokens.Count
+            && (_tokens[_current + 1].Type is TokenType.IntLiteral or TokenType.FloatLiteral
+                or TokenType.Minus or TokenType.Plus))
+        {
+            Advance(); // consume `pan`
             return ParseMusicalContextStatement(MusicalContextType.Pan);
+        }
 
         // Section declaration: section name { ... }
         if (Match(TokenType.Section))
