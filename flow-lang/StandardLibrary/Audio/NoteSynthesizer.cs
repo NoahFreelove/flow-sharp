@@ -177,12 +177,29 @@ namespace FlowLang.StandardLibrary.Audio
 
     /// <summary>
     /// Factory for creating synthesizers by name.
+    /// Supports both built-in synthesizers and user-registered custom wavetables.
     /// </summary>
     public static class SynthesizerFactory
     {
+        private static readonly Dictionary<string, float[]> _customWavetables = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Registers a custom wavetable (single-cycle waveform) under the given name.
+        /// Once registered, the name can be used as an instrument in renderSong().
+        /// </summary>
+        public static void RegisterWavetable(string name, float[] wavetable)
+        {
+            _customWavetables[name.ToLowerInvariant()] = wavetable;
+        }
+
         public static INoteSynthesizer Create(string synthType)
         {
-            return synthType.ToLowerInvariant() switch
+            string key = synthType.ToLowerInvariant();
+
+            if (_customWavetables.TryGetValue(key, out var wavetable))
+                return new WavetableSynthesizer(wavetable);
+
+            return key switch
             {
                 "sine" => new SineSynthesizer(),
                 "saw" or "sawtooth" => new SawSynthesizer(),
