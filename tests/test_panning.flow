@@ -30,4 +30,17 @@ Int pipedCh = (getChannels piped)
 Note: Verify all outputs are stereo (Pitfall 2: mono promoted to stereo)
 (print (concat "All stereo: " (str (and (equals centerCh 2) (and (equals leftCh 2) (equals rightCh 2))))))
 
+Note: Test pan context block (D-07)
+pan 0.5 {
+  Buffer contextPanned = (createSineTone 0.1 440.0 0.5)
+  (print "Context pan block executed")
+}
+
+Note: Test pan context block with negative value
+pan -0.5 {
+  Buffer contextPannedLeft = (createSineTone 0.1 440.0 0.5)
+  (print "Negative pan context block executed")
+}
+
+(print "Pan context block test passed")
 (print "Panning test passed")
