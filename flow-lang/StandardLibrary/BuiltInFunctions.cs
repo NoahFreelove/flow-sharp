@@ -564,6 +564,59 @@ public static class BuiltInFunctions
             Audio.VoiceAllocator.MaxVoices = maxVoices;
             return Value.Void();
         });
+
+        // ===== Custom Oscillator Registration =====
+
+        // Helper to convert a Flow array of numeric values to float[]
+        static float[] ExtractWavetable(IReadOnlyList<Value> floatArray)
+        {
+            float[] wavetable = new float[floatArray.Count];
+            for (int i = 0; i < floatArray.Count; i++)
+            {
+                var val = floatArray[i].Data;
+                wavetable[i] = val is double d ? (float)d : val is float f ? f : val is int intVal ? (float)intVal : Convert.ToSingle(val);
+            }
+            return wavetable;
+        }
+
+        // oscillator(String, Function) - register custom wavetable via generator proc with default 2048 table size
+        var oscillatorSignature = new FunctionSignature("oscillator", [StringType.Instance, FunctionType.Instance]);
+        registry.Register("oscillator", oscillatorSignature, args =>
+        {
+            string name = args[0].As<string>();
+            var proc = args[1].As<FunctionOverload>();
+            int tableSize = 2048;
+            var result = collections.Invoker!(proc, new List<Value> { Value.Int(tableSize) });
+            var floatArray = result.As<IReadOnlyList<Value>>();
+            Audio.SynthesizerFactory.RegisterWavetable(name, ExtractWavetable(floatArray));
+            return Value.Void();
+        });
+
+        // oscillator(String, Function, Int) - register custom wavetable via generator proc with specified table size
+        var oscillatorWithSizeSignature = new FunctionSignature("oscillator", [StringType.Instance, FunctionType.Instance, IntType.Instance]);
+        registry.Register("oscillator", oscillatorWithSizeSignature, args =>
+        {
+            string name = args[0].As<string>();
+            var proc = args[1].As<FunctionOverload>();
+            int tableSize = args[2].As<int>();
+            if (tableSize < 64) tableSize = 64;
+            var result = collections.Invoker!(proc, new List<Value> { Value.Int(tableSize) });
+            var floatArray = result.As<IReadOnlyList<Value>>();
+            Audio.SynthesizerFactory.RegisterWavetable(name, ExtractWavetable(floatArray));
+            return Value.Void();
+        });
+
+        // oscillator(String, Void[]) - register custom wavetable from pre-built array
+        var oscillatorArraySignature = new FunctionSignature("oscillator", [StringType.Instance, new ArrayType(VoidType.Instance)]);
+        registry.Register("oscillator", oscillatorArraySignature, args =>
+        {
+            string name = args[0].As<string>();
+            var floatArray = args[1].As<IReadOnlyList<Value>>();
+            if (floatArray.Count == 0)
+                throw new InvalidOperationException("oscillator: wavetable array must not be empty");
+            Audio.SynthesizerFactory.RegisterWavetable(name, ExtractWavetable(floatArray));
+            return Value.Void();
+        });
     }
 
     private static void RegisterBars(InternalFunctionRegistry registry)
