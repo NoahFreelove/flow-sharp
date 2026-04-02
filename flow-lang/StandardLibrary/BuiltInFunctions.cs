@@ -548,6 +548,18 @@ public static class BuiltInFunctions
             "renderTrack",
             [TrackType.Instance, DoubleType.Instance]);
         registry.Register("renderTrack", renderTrackSignature, Audio.Timeline.RenderTrack);
+
+        // ===== Voice Allocation =====
+
+        var setMaxVoicesSignature = new FunctionSignature("setMaxVoices", [IntType.Instance]);
+        registry.Register("setMaxVoices", setMaxVoicesSignature, args =>
+        {
+            int maxVoices = args[0].As<int>();
+            if (maxVoices < 1)
+                throw new InvalidOperationException("maxVoices must be at least 1");
+            Audio.VoiceAllocator.MaxVoices = maxVoices;
+            return Value.Void();
+        });
     }
 
     private static void RegisterBars(InternalFunctionRegistry registry)

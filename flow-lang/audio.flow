@@ -365,3 +365,8 @@ internal proc setAudioDevice(String: deviceName)
 
 Note: Check if audio output is available on this system
 internal proc isAudioAvailable()
+
+Note: ===== Voice Allocation =====
+
+Note: Set the maximum number of simultaneous voices (default 32)
+internal proc setMaxVoices(Int: maxVoices)
