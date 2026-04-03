@@ -81,7 +81,7 @@ Plans:
 
 Plans:
 - [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [x] 04-02: Polyrhythm layering and probabilistic pattern variation
 - [ ] 04-03: TBD
 
 ### Phase 5: Live Coding
