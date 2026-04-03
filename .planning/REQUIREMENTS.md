@@ -28,15 +28,15 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Composition
 
-- [x] **COMP-01**: User can write chord progressions with a DSL that auto-generates voicings
-- [x] **COMP-02**: Chord DSL resolves voice leading (minimal movement between chords)
-- [ ] **COMP-03**: User can write polyrhythmic patterns with overlapping time signatures
-- [ ] **COMP-04**: User can generate probabilistic pattern variations from a source sequence
+- [ ] **COMP-01**: User can write chord progressions with a DSL that auto-generates voicings
+- [ ] **COMP-02**: Chord DSL resolves voice leading (minimal movement between chords)
+- [x] **COMP-03**: User can write polyrhythmic patterns with overlapping time signatures
+- [x] **COMP-04**: User can generate probabilistic pattern variations from a source sequence
 
 ### MIDI
 
-- [x] **MIDI-01**: User can export a Song/Sequence to a standard MIDI file via `writeMidi`
-- [x] **MIDI-02**: MIDI export preserves tempo, time signature, key, and note velocities
+- [ ] **MIDI-01**: User can export a Song/Sequence to a standard MIDI file via `writeMidi`
+- [ ] **MIDI-02**: MIDI export preserves tempo, time signature, key, and note velocities
 
 ### Visualization
 
@@ -94,12 +94,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | AUDIO-04 | Phase 2 | Complete |
 | SYNTH-01 | Phase 3 | Pending |
 | SYNTH-02 | Phase 3 | Pending |
-| MIDI-01 | Phase 3 | Complete |
-| MIDI-02 | Phase 3 | Complete |
-| COMP-01 | Phase 4 | Complete |
-| COMP-02 | Phase 4 | Complete |
-| COMP-03 | Phase 4 | Pending |
-| COMP-04 | Phase 4 | Pending |
+| MIDI-01 | Phase 3 | Pending |
+| MIDI-02 | Phase 3 | Pending |
+| COMP-01 | Phase 4 | Pending |
+| COMP-02 | Phase 4 | Pending |
+| COMP-03 | Phase 4 | Complete |
+| COMP-04 | Phase 4 | Complete |
 | LIVE-01 | Phase 5 | Pending |
 | LIVE-02 | Phase 5 | Pending |
 

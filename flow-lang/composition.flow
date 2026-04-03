@@ -150,3 +150,31 @@ proc voiceWithPan(Voice: voice, Double: pan)
     voice -> setVoicePan pan
     voice
 end proc
+
+Note: ===== Polyrhythm =====
+
+Note: Overlay two sequences with different time signatures, using LCM for cycle alignment
+internal proc polyrhythm(Sequence: seq1, Sequence: seq2)
+
+Note: Overlay two sequences with explicit beat count override
+internal proc polyrhythm(Sequence: seq1, Sequence: seq2, Int: beats)
+
+Note: ===== Pattern Variation =====
+
+Note: Vary a sequence with random mutation type (pitch, rhythm, rest, velocity)
+internal proc vary(Sequence: seq, Double: probability)
+
+Note: Vary a sequence with specific mutation type
+internal proc vary(Sequence: seq, Double: probability, String: mutationType)
+
+Note: Vary a sequence with seeded random for reproducibility
+internal proc vary(Sequence: seq, Double: probability, Int: seed)
+
+Note: Vary a sequence with specific mutation type and seed
+internal proc vary(Sequence: seq, Double: probability, String: mutationType, Int: seed)
+
+Note: Vary a sequence with specific mutation type and diatonic key constraint
+internal proc vary(Sequence: seq, Double: probability, String: mutationType, String: keyName)
+
+Note: Vary a sequence with specific mutation type, diatonic key, and seed
+internal proc vary(Sequence: seq, Double: probability, String: mutationType, String: keyName, Int: seed)
