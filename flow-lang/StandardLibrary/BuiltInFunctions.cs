@@ -47,6 +47,7 @@ public static class BuiltInFunctions
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
         Composition.PolyrhythmFunctions.Register(registry);
+        Composition.VariationFunctions.Register(registry);
     }
 
     /// <summary>
