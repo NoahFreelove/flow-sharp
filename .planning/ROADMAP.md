@@ -12,9 +12,9 @@ This milestone takes Flow from a capable music notation language to a full-featu
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Language Foundations** - Add loops, string interpolation, iteration guards, and sequence visualization
+- [x] **Phase 1: Language Foundations** - Add loops, string interpolation, iteration guards, and sequence visualization (completed 2026-04-01)
 - [x] **Phase 2: Audio Pipeline** - Add sample loading, stereo panning, sidechain compression, and polyphonic voice allocation (completed 2026-04-02)
-- [ ] **Phase 3: Synthesis & MIDI Export** - Add custom oscillator definitions and MIDI file export
+- [x] **Phase 3: Synthesis & MIDI Export** - Add custom oscillator definitions and MIDI file export (completed 2026-04-02)
 - [ ] **Phase 4: Composition Tools** - Add chord progression DSL, polyrhythm support, and probabilistic pattern variation
 - [ ] **Phase 5: Live Coding** - Add beat-synced live reload with playback state preservation
 
@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
-- [ ] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
+- [x] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
 - [x] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
 
 ### Phase 2: Audio Pipeline
@@ -104,8 +104,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Language Foundations | 0/3 | Not started | - |
-| 2. Audio Pipeline | 3/3 | Complete   | 2026-04-02 |
-| 3. Synthesis & MIDI Export | 0/2 | Not started | - |
+| 1. Language Foundations | 3/3 | Complete | 2026-04-01 |
+| 2. Audio Pipeline | 3/3 | Complete | 2026-04-02 |
+| 3. Synthesis & MIDI Export | 2/2 | Complete | 2026-04-02 |
 | 4. Composition Tools | 0/3 | Not started | - |
 | 5. Live Coding | 0/2 | Not started | - |
