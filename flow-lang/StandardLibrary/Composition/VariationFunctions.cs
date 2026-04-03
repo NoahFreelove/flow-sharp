@@ -249,14 +249,14 @@ public static class VariationFunctions
     private static void MutateRhythm(MusicalNoteData note, Random rng, List<MusicalNoteData> output)
     {
         // Only split if duration allows halving
-        // whole(1) -> half(2), half(2) -> quarter(4), quarter(4) -> eighth(8), eighth(8) -> sixteenth(16)
+        // NoteValueType.Value enum: WHOLE=0, HALF=1, QUARTER=2, EIGHTH=3, SIXTEENTH=4
         int? halfDuration = note.DurationValue switch
         {
-            1 => 2,   // whole -> half
-            2 => 4,   // half -> quarter
-            4 => 8,   // quarter -> eighth
-            8 => 16,  // eighth -> sixteenth
-            _ => null  // Can't split further or unknown
+            0 => 1,   // whole -> half
+            1 => 2,   // half -> quarter
+            2 => 3,   // quarter -> eighth
+            3 => 4,   // eighth -> sixteenth
+            _ => null  // Can't split further (sixteenth) or unknown
         };
 
         if (halfDuration == null)
