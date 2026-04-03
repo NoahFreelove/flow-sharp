@@ -46,6 +46,7 @@ public static class BuiltInFunctions
         Transforms.TransformFunctions.Register(registry);
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
+        Composition.PolyrhythmFunctions.Register(registry);
     }
 
     /// <summary>

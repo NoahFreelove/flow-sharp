@@ -89,7 +89,7 @@ public static class SongRenderer
     /// <summary>
     /// Positions and mixes a list of voices into a stereo AudioBuffer.
     /// </summary>
-    private static AudioBuffer MixVoicesToStereoBuffer(
+    internal static AudioBuffer MixVoicesToStereoBuffer(
         List<Voice> voices, double bpm, int sampleRate, double totalBeats)
     {
         double secondsPerBeat = 60.0 / bpm;

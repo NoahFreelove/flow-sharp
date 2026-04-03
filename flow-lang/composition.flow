@@ -150,3 +150,11 @@ proc voiceWithPan(Voice: voice, Double: pan)
     voice -> setVoicePan pan
     voice
 end proc
+
+Note: ===== Polyrhythm =====
+
+Note: Overlay two sequences with different time signatures, using LCM for cycle alignment
+internal proc polyrhythm(Sequence: seq1, Sequence: seq2)
+
+Note: Overlay two sequences with explicit beat count override
+internal proc polyrhythm(Sequence: seq1, Sequence: seq2, Int: beats)
