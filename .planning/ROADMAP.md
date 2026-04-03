@@ -12,9 +12,9 @@ This milestone takes Flow from a capable music notation language to a full-featu
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Language Foundations** - Add loops, string interpolation, iteration guards, and sequence visualization
-- [ ] **Phase 2: Audio Pipeline** - Add sample loading, stereo panning, sidechain compression, and polyphonic voice allocation
-- [ ] **Phase 3: Synthesis & MIDI Export** - Add custom oscillator definitions and MIDI file export
+- [x] **Phase 1: Language Foundations** - Add loops, string interpolation, iteration guards, and sequence visualization (completed 2026-04-01)
+- [x] **Phase 2: Audio Pipeline** - Add sample loading, stereo panning, sidechain compression, and polyphonic voice allocation (completed 2026-04-02)
+- [x] **Phase 3: Synthesis & MIDI Export** - Add custom oscillator definitions and MIDI file export (completed 2026-04-02)
 - [ ] **Phase 4: Composition Tools** - Add chord progression DSL, polyrhythm support, and probabilistic pattern variation
 - [ ] **Phase 5: Live Coding** - Add beat-synced live reload with playback state preservation
 
@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
-- [ ] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
+- [x] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
 - [x] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
 
 ### Phase 2: Audio Pipeline
@@ -49,7 +49,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md -- WAV file loading (loadWav) and sidechain compression
-- [ ] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
+- [x] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
 - [x] 02-03-PLAN.md -- Polyphonic voice allocation with configurable limits and stealing
 
 ### Phase 3: Synthesis & MIDI Export
@@ -61,12 +61,11 @@ Plans:
   2. Custom oscillators work with the existing voice allocation and effects pipeline (no special-casing required by the user)
   3. User can call `writeMidi("output.mid", song)` and open the resulting file in any DAW or MIDI player
   4. Exported MIDI files contain correct tempo, time signature, key signature, and per-note velocities matching the Flow source
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [x] 03-01-PLAN.md -- Custom oscillator definitions (WavetableSynthesizer + oscillator() built-in)
+- [x] 03-02-PLAN.md -- MIDI file export (DryWetMidi + writeMidi built-in)
 
 ### Phase 4: Composition Tools
 **Goal**: Users can write chord progressions with automatic voicing, layer polyrhythmic patterns, and generate probabilistic variations of sequences
@@ -77,12 +76,11 @@ Plans:
   2. Adjacent chords in a progression use voice leading (notes move by minimal intervals rather than jumping between octaves)
   3. User can overlay two sequences with different time signatures (e.g., 3/4 over 4/4) and hear them cycle correctly against each other
   4. User can generate variations of a pattern where notes are probabilistically altered, producing musically related but non-identical sequences each time
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [x] 04-02: Polyrhythm layering and probabilistic pattern variation
-- [ ] 04-03: TBD
+- [x] 04-01-PLAN.md -- Chord progression DSL with voice leading (progression keyword, parser, ProgressionCompiler)
+- [x] 04-02-PLAN.md -- Polyrhythm layering and probabilistic pattern variation (polyrhythm, vary built-ins)
 
 ### Phase 5: Live Coding
 **Goal**: Users can edit Flow scripts during playback and hear changes take effect at musically appropriate moments without interruption
@@ -105,8 +103,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Language Foundations | 0/3 | Not started | - |
-| 2. Audio Pipeline | 0/3 | Not started | - |
-| 3. Synthesis & MIDI Export | 0/3 | Not started | - |
-| 4. Composition Tools | 0/3 | Not started | - |
+| 1. Language Foundations | 3/3 | Complete | 2026-04-01 |
+| 2. Audio Pipeline | 3/3 | Complete | 2026-04-02 |
+| 3. Synthesis & MIDI Export | 2/2 | Complete | 2026-04-02 |
+| 4. Composition Tools | 0/2 | Not started | - |
 | 5. Live Coding | 0/2 | Not started | - |
