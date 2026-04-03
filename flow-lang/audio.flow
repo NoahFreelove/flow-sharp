@@ -370,3 +370,19 @@ Note: ===== Voice Allocation =====
 
 Note: Set the maximum number of simultaneous voices (default 32)
 internal proc setMaxVoices(Int: maxVoices)
+
+Note: ===== Custom Oscillator Registration =====
+
+Note: Register a custom wavetable oscillator via generator function (default 2048 table size)
+internal proc oscillator(String: name, Function: generator)
+
+Note: Register a custom wavetable oscillator via generator function with specified table size
+internal proc oscillator(String: name, Function: generator, Int: tableSize)
+
+Note: Register a custom wavetable oscillator from a pre-built array
+internal proc oscillator(String: name, Voids: wavetable)
+
+Note: ===== MIDI Export =====
+
+Note: Export a Song to a MIDI file
+internal proc writeMidi(String: filepath, Song: song)

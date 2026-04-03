@@ -1,3 +1,4 @@
+using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
 using FlowLang.Runtime;
@@ -134,7 +135,7 @@ public static class MidiExport
 
         using (var manager = conductorChunk.ManageTimedEvents())
         {
-            manager.Events.Add(conductorEvents);
+            manager.Objects.Add(conductorEvents);
         }
         midiFile.Chunks.Add(conductorChunk);
 
@@ -223,7 +224,7 @@ public static class MidiExport
 
         using (var manager = noteTrackChunk.ManageTimedEvents())
         {
-            manager.Events.Add(noteEvents);
+            manager.Objects.Add(noteEvents);
         }
         midiFile.Chunks.Add(noteTrackChunk);
 
