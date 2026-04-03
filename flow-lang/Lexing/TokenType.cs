@@ -29,6 +29,7 @@ public enum TokenType
     Break,
     Continue,
     In,
+    Progression,
 
     // Type keywords
     Void,

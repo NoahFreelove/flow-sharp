@@ -760,6 +760,12 @@ public class Parser
             return ParseLambdaExpression();
         }
 
+        // Progression expression: progression | I IV V | or progression voices 4 | I IV V |
+        if (Match(TokenType.Progression))
+        {
+            return ParseProgressionExpression();
+        }
+
         // Pickup note stream: pickup | C4 D4 |
         if (Match(TokenType.Pickup))
         {
@@ -928,6 +934,80 @@ public class Parser
             body = new List<Statement> { new ExpressionStatement(expr.Location, expr) };
         }
         return new LambdaExpression(location, parameters, body);
+    }
+
+    /// <summary>
+    /// Parses a progression expression: progression [voices N] | I IV V |
+    /// The 'progression' keyword has already been consumed.
+    /// </summary>
+    private Expression ParseProgressionExpression()
+    {
+        var location = PreviousToken.Location;
+
+        // Optional: voices N modifier
+        int? voiceCount = null;
+        if (Check(TokenType.Identifier) && CurrentToken.Text == "voices")
+        {
+            Advance(); // consume "voices"
+            var countToken = Expect(TokenType.IntLiteral, "Expected integer after 'voices'");
+            voiceCount = (int)countToken.Value!;
+        }
+
+        Expect(TokenType.Pipe, "Expected '|' after 'progression' keyword");
+
+        var chords = new List<ProgressionElement>();
+
+        while (!Check(TokenType.Pipe) && !IsAtEnd())
+        {
+            var elemLocation = CurrentToken.Location;
+
+            // Roman numerals are lexed as Identifier tokens
+            if (!Check(TokenType.Identifier))
+            {
+                _errorReporter.ReportError(
+                    $"Expected roman numeral in progression, got '{CurrentToken.Text}'",
+                    CurrentToken.Location);
+                Advance(); // skip bad token
+                continue;
+            }
+
+            var numeralToken = Advance();
+            string numeral = numeralToken.Text;
+
+            // Validate it looks like a roman numeral
+            if (!ScaleDatabase.IsRomanNumeral(numeral))
+            {
+                _errorReporter.ReportError(
+                    $"'{numeral}' is not a valid roman numeral chord symbol",
+                    numeralToken.Location);
+            }
+
+            // Optional :N bar count suffix
+            int barCount = 1;
+            if (Match(TokenType.Colon))
+            {
+                var countToken = Expect(TokenType.IntLiteral, "Expected integer after ':' in progression element");
+                barCount = (int)countToken.Value!;
+                if (barCount < 1)
+                {
+                    _errorReporter.ReportError(
+                        "Bar count must be at least 1",
+                        countToken.Location);
+                    barCount = 1;
+                }
+            }
+
+            chords.Add(new ProgressionElement(elemLocation, numeral, barCount));
+        }
+
+        Expect(TokenType.Pipe, "Expected closing '|' in progression");
+
+        if (chords.Count == 0)
+        {
+            _errorReporter.ReportError("Progression must contain at least one chord", location);
+        }
+
+        return new ProgressionExpression(location, chords, voiceCount);
     }
 
     /// <summary>

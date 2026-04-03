@@ -43,6 +43,7 @@ public class ExpressionEvaluator
             LazyExpression lazy => EvaluateLazy(lazy),
             NoteStreamExpression noteStream => EvaluateNoteStream(noteStream),
             SongExpression song => EvaluateSong(song),
+            ProgressionExpression progression => EvaluateProgression(progression),
             InterpolatedStringExpression interp => EvaluateInterpolatedString(interp),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
@@ -439,6 +440,22 @@ public class ExpressionEvaluator
         var context = _context.GetMusicalContext();
         var compiler = new NoteStreamCompiler();
         var sequence = compiler.Compile(noteStream, context, _context);
+        return Value.Sequence(sequence);
+    }
+
+    private Value EvaluateProgression(ProgressionExpression progression)
+    {
+        var context = _context.GetMusicalContext();
+        if (context.Key == null)
+        {
+            _errorReporter.ReportError(
+                "progression requires an active key context (use `key Cmajor { ... }`)",
+                progression.Location);
+            return Value.Void();
+        }
+
+        var compiler = new ProgressionCompiler();
+        var sequence = compiler.Compile(progression, context);
         return Value.Sequence(sequence);
     }
 
