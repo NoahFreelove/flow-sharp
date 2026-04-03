@@ -79,7 +79,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Chord progression DSL with voice leading (progression keyword, parser, ProgressionCompiler)
+- [x] 04-01-PLAN.md -- Chord progression DSL with voice leading (progression keyword, parser, ProgressionCompiler)
 - [ ] 04-02-PLAN.md -- Polyrhythm layering and probabilistic pattern variation (polyrhythm, vary built-ins)
 
 ### Phase 5: Live Coding
