@@ -55,8 +55,13 @@ tempo 90 {
             (visualize varied)
 
             Note: Build and render
-            section chordPad { chords }
-            Song song = [chordPad]
+            section chordPad {
+                Sequence pad = chords
+            }
+            section melPart {
+                Sequence mel = melody
+            }
+            Song song = [chordPad melPart]
             Buffer mix = (renderSong song "piano")
 
             Note: --- Phase 2: Stereo panning + export ---
