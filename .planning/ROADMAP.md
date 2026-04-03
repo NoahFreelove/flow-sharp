@@ -76,12 +76,11 @@ Plans:
   2. Adjacent chords in a progression use voice leading (notes move by minimal intervals rather than jumping between octaves)
   3. User can overlay two sequences with different time signatures (e.g., 3/4 over 4/4) and hear them cycle correctly against each other
   4. User can generate variations of a pattern where notes are probabilistically altered, producing musically related but non-identical sequences each time
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
-- [ ] 04-03: TBD
+- [ ] 04-01-PLAN.md -- Chord progression DSL with voice leading (progression keyword, parser, ProgressionCompiler)
+- [ ] 04-02-PLAN.md -- Polyrhythm layering and probabilistic pattern variation (polyrhythm, vary built-ins)
 
 ### Phase 5: Live Coding
 **Goal**: Users can edit Flow scripts during playback and hear changes take effect at musically appropriate moments without interruption
@@ -107,5 +106,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Language Foundations | 3/3 | Complete | 2026-04-01 |
 | 2. Audio Pipeline | 3/3 | Complete | 2026-04-02 |
 | 3. Synthesis & MIDI Export | 2/2 | Complete | 2026-04-02 |
-| 4. Composition Tools | 0/3 | Not started | - |
+| 4. Composition Tools | 0/2 | Not started | - |
 | 5. Live Coding | 0/2 | Not started | - |
