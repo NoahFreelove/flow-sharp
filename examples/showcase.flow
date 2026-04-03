@@ -54,14 +54,12 @@ tempo 90 {
             (print $"Varied melody (40% mutation):")
             (visualize varied)
 
-            Note: Build and render
-            section chordPad {
+            Note: Build and render — both sequences in one section = layered
+            section fullMix {
                 Sequence pad = chords
-            }
-            section melPart {
                 Sequence mel = melody
             }
-            Song song = [chordPad melPart]
+            Song song = [fullMix]
             Buffer mix = (renderSong song "piano")
 
             Note: --- Phase 2: Stereo panning + export ---
