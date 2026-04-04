@@ -13,6 +13,7 @@ public class ExecutionContext
     private readonly Stack<StackFrame> _callStack = new();
     private readonly ErrorReporter _errorReporter;
     private readonly OverloadResolver _overloadResolver;
+    private readonly TextWriter? _diagnosticOutput;
     private int _callDepth = 0;
     private const int MaxCallDepth = 1000;
     private int _maxIterations = 10000;
@@ -31,16 +32,22 @@ public class ExecutionContext
     public InternalFunctionRegistry InternalRegistry { get; }
     public Dictionary<string, SectionData> SectionRegistry { get; } = new();
 
-    public ExecutionContext(ErrorReporter errorReporter, InternalFunctionRegistry internalRegistry)
+    public ExecutionContext(ErrorReporter errorReporter, InternalFunctionRegistry internalRegistry, TextWriter? diagnosticOutput = null)
     {
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
         InternalRegistry = internalRegistry ?? throw new ArgumentNullException(nameof(internalRegistry));
-        _overloadResolver = new OverloadResolver(errorReporter);
+        _diagnosticOutput = diagnosticOutput;
+        _overloadResolver = new OverloadResolver(errorReporter, diagnosticOutput);
 
         // Create and push global frame
         GlobalFrame = new StackFrame();
         _callStack.Push(GlobalFrame);
     }
+
+    /// <summary>
+    /// The diagnostic output writer for verbose logging (null when verbose mode is off).
+    /// </summary>
+    public TextWriter? DiagnosticOutput => _diagnosticOutput;
 
     /// <summary>
     /// Pushes a new stack frame for a function call.
@@ -108,6 +115,7 @@ public class ExecutionContext
 
         if (overloads.Count == 0)
         {
+            _diagnosticOutput?.WriteLine($"[verbose] Function '{name}' not found (0 overloads registered)");
             _errorReporter.ReportError($"Function '{name}' not found", location);
             return null;
         }
@@ -139,10 +147,12 @@ public class ExecutionContext
                 resolved.Key ??= frame.MusicalContext.Key;
                 resolved.Velocity ??= frame.MusicalContext.Velocity;
                 resolved.Pan ??= frame.MusicalContext.Pan;
+                resolved.Gain ??= frame.MusicalContext.Gain;
             }
             if (resolved.TimeSignature != null && resolved.Tempo != null
                 && resolved.Swing != null && resolved.Key != null
-                && resolved.Velocity != null && resolved.Pan != null)
+                && resolved.Velocity != null && resolved.Pan != null
+                && resolved.Gain != null)
                 break;
         }
         // Defaults

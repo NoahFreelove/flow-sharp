@@ -1,3 +1,5 @@
+using FlowLang.TypeSystem.PrimitiveTypes;
+
 namespace FlowLang.TypeSystem.SpecialTypes;
 
 /// <summary>
@@ -14,6 +16,15 @@ public sealed class CentType : FlowType
     public override string Name => "Cent";
 
     public override int GetSpecificity() => 143;
+
+    /// <summary>
+    /// Cent is compatible with Double and Float, allowing transpose(seq, 50.0)
+    /// to match the transpose(Sequence, Cent) overload.
+    /// </summary>
+    public override bool IsCompatibleWith(FlowType target)
+    {
+        return target is DoubleType or FloatType || base.IsCompatibleWith(target);
+    }
 
     /// <summary>
     /// Parse a cent value from string (e.g., "+50c", "-25c", "100c").

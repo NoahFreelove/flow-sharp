@@ -23,6 +23,10 @@ public class Repl
         Console.WriteLine("Multi-line input: end a line with \\ to continue on next line");
         Console.WriteLine();
 
+        // Auto-import standard modules for REPL convenience
+        // Script mode requires explicit imports for reproducibility
+        AutoImportStandardModules();
+
         // Handle Ctrl+C: stop audio playback, don't exit REPL
         Console.CancelKeyPress += (_, e) =>
         {
@@ -75,6 +79,23 @@ public class Repl
         }
 
         Console.WriteLine("Goodbye!");
+    }
+
+    private void AutoImportStandardModules()
+    {
+        var imports = new[]
+        {
+            "use \"@std\"",
+            "use \"@audio\"",
+            "use \"@collections\""
+        };
+
+        foreach (var import in imports)
+        {
+            _engine.Execute(import, "<repl-init>");
+            // Clear any errors from auto-import (e.g., if audio not available)
+            _engine.ErrorReporter.Clear();
+        }
     }
 
     private string? ReadCompleteInput()

@@ -155,6 +155,68 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
         }
     }
 
+    public void EnsureInitialized(int sampleRate, int channels)
+    {
+        lock (_lock)
+        {
+            if (IsInitialized && sampleRate == _sampleRate && channels == _channels)
+                return;
+        }
+
+        if (!Initialize(sampleRate, channels))
+            throw new InvalidOperationException(
+                "No audio output available. Install PipeWire or PulseAudio.");
+    }
+
+    public void WriteChunk(float[] samples, int offset, int count, int sampleRate, int channels)
+    {
+        if (count <= 0)
+            return;
+
+        EnsureInitialized(sampleRate, channels);
+
+        // Clamp samples in-place check; write from a clamped sub-buffer
+        // to avoid allocating a full copy of the source array.
+        var chunk = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            int srcIdx = offset + i;
+            if (srcIdx >= samples.Length) break;
+            float s = samples[srcIdx];
+            if (float.IsNaN(s) || float.IsInfinity(s))
+                chunk[i] = 0f;
+            else
+                chunk[i] = Math.Clamp(s, -1.0f, 1.0f);
+        }
+
+        var handle = GCHandle.Alloc(chunk, GCHandleType.Pinned);
+        try
+        {
+            int writeBytes = count * sizeof(float);
+
+            lock (_lock)
+            {
+                if (!IsInitialized)
+                    return;
+
+                int error;
+                var ptr = handle.AddrOfPinnedObject();
+                int result = pa_simple_write(_connection, ptr, (nuint)writeBytes, out error);
+
+                if (result < 0)
+                {
+                    var errorMsg = Marshal.PtrToStringAnsi(pa_strerror(error));
+                    throw new InvalidOperationException($"PulseAudio write error: {errorMsg}");
+                }
+            }
+            // Note: No pa_simple_drain -- streaming loop feeds continuously.
+        }
+        finally
+        {
+            handle.Free();
+        }
+    }
+
     public void Stop()
     {
         lock (_lock)

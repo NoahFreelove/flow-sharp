@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-stopped_at: Phase 5 context gathered
-last_updated: "2026-04-03T15:04:25.545Z"
-last_activity: 2026-04-03
+milestone: v1.1
+milestone_name: Polish & Foundations
+status: verifying
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-04-04T04:03:10.675Z"
+last_activity: 2026-04-04
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
   completed_plans: 10
   percent: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 03 — synthesis-midi-export
+**Current focus:** Phase 10 — vocalization
 
 ## Current Position
 
-Phase: 5
+Phase: 10
 Plan: Not started
-Status: Completed Plan 04-02
-Last activity: 2026-04-03
+Status: Phase complete — ready for verification
+Last activity: 2026-04-04
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -60,6 +60,9 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P02 | 16min | 2 tasks | 13 files |
 | Phase 02 P02 | 2min | 2 tasks | 13 files |
 | Phase 04 P01 | 5min | 2 tasks | 6 files |
+| Phase 09 P02 | 5min | 1 tasks | 1 files |
+| Phase 10 P01 | 2min | 2 tasks | 3 files |
+| Phase 10 P02 | 2min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -84,6 +87,10 @@ Recent decisions affecting current work:
 - [Phase 02]: Pan keyword dual-use: works as both musical context block and function name
 - [Phase 04]: Voice leading uses greedy nearest-neighbor: bass follows root, upper voices minimize semitone movement
 - [Phase 04]: Progression compiler pattern: keyword -> AST -> resolve chords -> voice lead -> build SequenceData
+- [Phase 09]: Used Note: comments in tutorial (// not supported by lexer)
+- [Phase 09]: Tutorial uses exportWav (actual registered name) not writeWav
+- [Phase 10]: Combined Task 1+2 commit due to FormantSynthesizer->ConsonantSynthesizer compile dependency
+- [Phase 10]: TtsHook uses Process with 30s timeout and WAV stream parsing for external TTS
 
 ### Pending Todos
 
@@ -97,6 +104,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-03T15:04:25.543Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-live-coding/05-CONTEXT.md
+Last session: 2026-04-04T03:24:23.647Z
+Stopped at: Completed 10-02-PLAN.md
+Resume file: None

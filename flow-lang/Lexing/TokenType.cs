@@ -23,6 +23,7 @@ public enum TokenType
     Rit,
     Accel,
     Pan,
+    Gain,
     Pickup,
     For,
     While,

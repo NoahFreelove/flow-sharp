@@ -1,41 +1,30 @@
 # Feature Landscape
 
-**Domain:** Music programming language (interpreted, statically-typed, composition-focused)
-**Researched:** 2026-03-29
-**Comparable systems:** SuperCollider, Sonic Pi, ChucK, Tidal Cycles, Strudel, Csound, Faust, FoxDot
-
-## Current State of Flow
-
-Flow already has a strong foundation: note streams, chord literals, roman numeral resolution, musical context blocks (tempo/key/timesig/swing), section/song structure, 4 synthesizers, DSP effects, pattern transforms, euclidean rhythms, random choice, WAV export, real-time playback, and MIDI import. The language is further along than most hobby music languages. The gaps below are what separates it from being genuinely useful for real composition work.
-
----
+**Domain:** v1.1 polish and foundations for a music production language
+**Researched:** 2026-04-02
+**Scope:** 8 specific features targeted for v1.1 milestone
 
 ## Table Stakes
 
-Features users expect from any music programming language that claims to support composition and playback. Missing any of these makes the language feel incomplete or broken for its target audience.
+Features users expect. Missing = product feels incomplete or broken.
 
-| Feature | Why Expected | Complexity | Flow Status | Notes |
-|---------|--------------|------------|-------------|-------|
-| **Loop constructs (for/while)** | Every programming language has iteration; `map`/`each` are not sufficient for imperative patterns like "play this 8 times with variation" | Low | Missing | SuperCollider has `do`, `collect`, `while`; Sonic Pi has `times`, `loop`; ChucK has `for`, `while`. Flow's functional `map`/`each` exist but explicit loops are expected for procedural music logic. |
-| **Sample loading (loadWav)** | Loading audio files is fundamental -- drums, textures, found sound. Every music language supports this. | Medium | Missing | ChucK: `SndBuf`; Sonic Pi: `sample`; SuperCollider: `Buffer.read`; Tidal: `sample` is the primary way to make sound. Without this, Flow is synthesis-only, which severely limits usability. |
-| **MIDI output/export** | Users need to get compositions into DAWs. MIDI export is the universal interchange format for musical data. | Medium | Missing (import exists) | Flow has MIDI import but no export. SuperCollider, ChucK, and Sonic Pi all support MIDI out. At minimum, export to .mid file; real-time MIDI out is a bonus. |
-| **Per-voice panning / basic spatial** | Stereo placement is fundamental to mixing. Every multi-voice system needs pan control. | Low | Missing | Even basic `pan` as a per-voice parameter (-1.0 to 1.0) is expected. Csound and SuperCollider have full spatialization; Flow needs at minimum stereo panning per voice. |
-| **Voice allocation / polyphony** | Playing multiple notes simultaneously with proper voice management. Currently song rendering handles multiple voices but the model is implicit. | Medium | Partial | SuperCollider uses SynthDef + Synth nodes with explicit voice management. Flow's song renderer handles multi-voice but users need explicit control: voice count limits, voice stealing policy. |
-| **String interpolation** | Basic language ergonomics. Printing debug info or generating output requires string building. | Low | Missing | Every modern language has this. `"tempo is {tempo}"` or equivalent. Trivial to implement in the lexer/parser. |
-| **Sidechain compression** | Standard mixing technique. The "pumping bass" effect is ubiquitous in electronic music. | Low | Missing | Implementation: a compressor whose gain reduction is driven by a separate input signal. Requires routing one buffer's envelope to control another buffer's dynamics. |
+| Feature | Why Expected | Complexity | Dependencies | Notes |
+|---------|--------------|------------|--------------|-------|
+| `//` line comments | Every language has comments. Flow currently has NONE -- users cannot annotate their code. This is the single most glaring omission. | Low | Lexer (`SimpleLexer.SkipWhitespaceAndComments`) | `SkipWhitespaceAndComments` already handles whitespace and line continuation. Add `// -> skip to EOL` check. ~5 lines of code. Must match `//` before single `/` reaches token dispatch, which is naturally handled since comment skipping runs first. |
+| Math stdlib (sin, cos, abs, sqrt, min, max) | Any language doing audio/music needs basic math. Users writing custom oscillators or generative patterns need these. Zero math functions are registered despite `Math.*` used internally. | Low | `BuiltInFunctions.RegisterStdLib`, existing type system | Register thin wrappers around `System.Math`. Include: `sin`, `cos`, `tan`, `abs`, `sqrt`, `pow`, `log`, `exp`, `floor`, `ceil`, `round`, `min`, `max`, `pi`, `tau`. Overload `abs`/`min`/`max` for Int and Double. |
+| `exportWav` -> `writeWav` rename | Codebase inconsistency: CLAUDE.md and .flow stdlib reference `writeWav`, but C# registration is `exportWav` (BuiltInFunctions.cs lines 387-397). Confuses every user. | Low | `BuiltInFunctions.cs`, test/script files using `exportWav` | Register both names pointing to same implementation. Print one-time deprecation warning for `exportWav`. Update all .flow files. |
+| `mix()` for layering buffers | Audio layering is fundamental. `mixBuffers(a, b, 1.0, 1.0)` exists but the 4-arg signature is clunky for the common case. | Low | Existing `AudioCore.MixBuffers` | Add: `mix(Buffer, Buffer)` at equal gain (1.0, 1.0), and varargs-style `mix` taking an array of buffers. Keep `mixBuffers` as backward-compatible alias. |
+| `--verbose` flag | Standard CLI debugging feature. When scripts produce unexpected output, users need visibility into overload resolution, module loading, and audio rendering decisions. | Low-Med | `Program.cs` (flag parsing), `FlowEngine`, `OverloadResolver` | Add `--verbose` / `-v` to `ParseFlags`. Thread verbosity through `FlowEngine`. Key areas: overload resolution candidates/scores, module loading paths, audio buffer sizes/sample rates. Output to stderr. |
+| REPL auto-imports | REPL is unusable for quick experiments -- users must type `use "@std"` every time. Every mature REPL pre-loads the standard library. | Low | `Repl.cs`, existing module loader | Before REPL loop, execute `use "@std"` + `use "@audio"` + `use "@notation"`. Add `--bare` flag for clean sessions. Add `:reset` REPL command. |
 
 ## Differentiators
 
-Features that would set Flow apart from comparable systems. Not expected, but create real value.
+Features that set Flow apart. Not expected in generic languages, but valuable for music production.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **Chord progression DSL with auto-voicing** | Flow already has chord literals and roman numerals. Adding voice leading, inversions, and drop voicings would make Flow uniquely powerful for harmonic composition. No other music programming language has this as a first-class DSL. | High | Sonic Pi has basic `chord()` but no voice leading. This is a genuine differentiator -- Flow's `key` context + roman numerals are the perfect foundation. |
-| **Beat-synced live reload** | Modify code, hear changes on the next bar boundary. Sonic Pi's `live_loop` and Tidal's cycle-synced eval are the gold standard. | High | Flow's watch mode reloads on file change but likely restarts playback. True beat-sync means: detect change, wait for next bar/cycle boundary, hot-swap the relevant section. |
-| **Custom oscillator definitions** | Let users define oscillators as Flow functions that generate sample buffers, not just pick from piano/brass/sax/drums. | Medium | SuperCollider's SynthDef is the benchmark. Flow's approach should be simpler: a `proc` that takes frequency + duration and returns a Buffer. |
-| **Pattern variation / probabilistic generation** | Beyond `(? ...)` random choice: Markov chains, weighted pattern mutation, conditional branching within note streams. | Medium | Tidal Cycles excels here with `degrade`, `sometimes`, `often`, `rarely`. Flow should add probability-weighted transforms. |
-| **Polyrhythm support** | Overlapping time signatures / different cycle lengths playing simultaneously. | High | Tidal's core strength -- polymeter syntax. Flow needs ability to layer sequences with different time signatures. |
-| **Sequence visualization (piano-roll ASCII)** | See what you composed before rendering audio. Instant feedback loop. | Low | No comparable music language does this well in a terminal. Low complexity, high perceived value. |
+| Feature | Value Proposition | Complexity | Dependencies | Notes |
+|---------|-------------------|------------|--------------|-------|
+| Per-section volume/gain in songs | Mix-level control within song arrangement: `Song s = [intro@0.8 verse chorus@1.2 outro@0.5]`. No text-based music language offers inline volume in arrangement syntax. | Medium | Parser (SongExpression), `SongRenderer`, `SectionReference` type | Best approach: syntax extension `section@volume` in `[...]` song expressions. `SectionReference` already has `Name` and `RepeatCount` -- add `Volume` (default 1.0). `RenderSection` returns a buffer; multiply by volume before `AppendBuffers`. |
+| Tempo ramps (gradual BPM change) | Essential for expressive music. Abrupt tempo changes sound mechanical. `ritardando`/`accelerando` exist but only stretch note durations -- they do NOT change rendering BPM. | High | `MusicalContext`, `SongRenderer`, `NoteStreamCompiler` | Hardest feature on the list. Current rendering assumes constant BPM. True tempo ramps make beat-to-time mapping non-linear. See detailed notes below. |
 
 ## Anti-Features
 
@@ -43,58 +32,148 @@ Features to explicitly NOT build in this milestone.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **Full DAW / GUI editor** | Flow is text-first by design. Building a DAW is a multi-year project. | Improve REPL feedback. Export to DAW-compatible formats (WAV, MIDI). |
-| **VST/AU plugin hosting** | Complex plugin hosting framework, sandbox security, platform-specific APIs. Enormous complexity. | Focus on built-in synthesis and sample loading. Use MIDI out to drive VST instruments in a DAW. |
-| **Real-time audio input** | Requires low-latency audio I/O, monitoring, feedback prevention. Different architecture. | Flow is a composition language, not a live effects processor. |
-| **Multi-user collaboration** | Network sync, conflict resolution, permissions. | Share .flow files via git. |
-| **Complex OOP / class system** | Flow uses `proc` and simple types. Classes/inheritance would bloat the language. | Keep proc + type system. Add simple record types only if needed. |
+| Block comments (`/* ... */`) | Adds lexer complexity (nesting, unterminated detection) for minimal gain. Line comments cover 99% of use cases. | Ship `//` only. Revisit if requested. |
+| Full logging framework (levels, files, config) | Overkill for an interpreter CLI. | `--verbose` prints to stderr. One boolean. No log levels. |
+| Math as a module (`use "@math"`) | Math functions are fundamental like `print` and `str`. | Register directly in `RegisterStdLib`, always available. |
+| Dynamic tempo via variable binding | `tempo myVar { ... }` with runtime-changing `myVar` would require lazy tempo evaluation across the entire pipeline. | Use `tempoRamp(start, end)` for gradual changes. Use per-section `tempo X { ... }` blocks for step changes. |
+| Auto-normalization on mix | Silently changes levels, making gain staging impossible to reason about. | `mix()` sums at equal gain. Provide separate `normalize(buffer)`. |
 
 ## Feature Dependencies
 
 ```
-Loop constructs -----> Pattern Variation (loops are the natural place to apply probabilistic transforms)
-                \---> Chord Progression DSL (iteration over progressions)
-
-Sample Loading -----> Sidechain Compression (need a kick drum sample to drive sidechain)
-               \---> Richer drum patterns (sample-based drums > synth drums)
-
-Voice Allocation ---> Custom Oscillators (voices use oscillators)
-                \---> Polyrhythm (parallel time grids per voice)
-
-String Interpolation (standalone -- no dependencies)
-Per-Voice Panning (standalone -- math on existing stereo buffers)
-Sequence Visualization (standalone -- reads existing data structures)
-MIDI Export (standalone -- requires DryWetMidi package)
-Beat-Synced Reload (standalone -- extends existing watch mode)
+// comments       -> (none, fully independent)
+Math stdlib       -> (none, fully independent)
+exportWav rename  -> (none, fully independent)
+mix()             -> existing mixBuffers infrastructure
+--verbose         -> (none, CLI-level change)
+REPL auto-imports -> existing module loader + stdlib .flow files
+Per-section volume -> Parser SongExpression + SongRenderer
+Tempo ramps       -> MusicalContext + NoteStreamCompiler + SongRenderer (deep pipeline)
 ```
+
+No circular dependencies. The first six features are fully independent -- can be implemented in any order or in parallel. Per-section volume requires a parser change. Tempo ramps touch the deepest layers.
+
+## Implementation Complexity Tiers
+
+### Tier 1: Trivial (< 30 min each, < 20 lines of code)
+- **`//` line comments** -- add check in `SkipWhitespaceAndComments` (line 777 of SimpleLexer.cs)
+- **`exportWav` -> `writeWav` rename** -- register alias in BuiltInFunctions.cs, update .flow files
+
+### Tier 2: Simple (1-2 hours each, 20-80 lines of code)
+- **Math stdlib** -- register ~15 functions as thin `Math.*` wrappers
+- **`mix()` overloads** -- 2-3 new signatures wrapping existing `MixBuffers`
+- **REPL auto-imports** -- execute `use` statements before REPL loop starts
+
+### Tier 3: Moderate (2-4 hours, multiple files)
+- **`--verbose` flag** -- flag parsing trivial, but threading verbosity through FlowEngine/Interpreter/OverloadResolver touches ~5 files
+- **Per-section volume** -- parser extension for `@volume` in song expressions + gain application in SongRenderer
+
+### Tier 4: Complex (1+ days, architectural impact)
+- **Tempo ramps** -- non-linear beat-to-time mapping affects NoteStreamCompiler and SongRenderer core loops
 
 ## MVP Recommendation
 
-### Phase 1 -- Language Foundations (unblock everything else)
-1. **Loop constructs (for/while)** -- Low complexity, unblocks iteration patterns
-2. **String interpolation** -- Low complexity, quality of life
-3. **Sequence visualization** -- Low complexity, high impact on feedback loop
+**Phase 1 (quick wins -- all Tier 1+2):** Ship together. All table stakes, independent, low-risk, immediately improve usability.
 
-### Phase 2 -- Audio Pipeline Expansion
-4. **Sample import (loadWav)** -- Opens sample-based composition
-5. **Panning / spatial audio** -- Stereo mixing
-6. **Sidechain compression** -- Production technique
-7. **Polyphonic voice allocation** -- Richer arrangements
+1. `//` line comments
+2. Math stdlib functions
+3. `exportWav` -> `writeWav` rename (keep `exportWav` as deprecated alias)
+4. `mix()` convenience overloads
+5. REPL auto-imports
 
-### Phase 3 -- Creative Features
-8. **Custom oscillator definitions** -- Programmable synthesis
-9. **Pattern variation / probabilistic generation** -- Generative music
-10. **MIDI export** -- Interoperability with DAWs
+**Phase 2 (DX):** `--verbose` flag.
 
-### Phase 4 -- Advanced Features
-11. **Chord progression DSL** -- Music theory as syntax
-12. **Polyrhythm support** -- Complex rhythmic structures
-13. **Beat-synced live reload** -- Live coding experience
+**Phase 3 (music features):** Per-section volume.
 
-**Defer:** Polyrhythm and beat-synced live reload are highest complexity with most risk. They may need their own research spikes.
+**Defer to later milestone:** Tempo ramps. Existing `ritardando`/`accelerando` cover the common case. True BPM ramps require deep pipeline changes best done in a dedicated "expressive rendering" milestone.
+
+## Detailed Implementation Notes
+
+### `//` Line Comments
+
+Current: `SkipWhitespaceAndComments` (SimpleLexer.cs line 777) handles whitespace and line continuation only.
+
+Add after the whitespace check, before `Note:` check:
+```csharp
+else if (c == '/' && PeekNext() == '/')
+{
+    while (!IsAtEnd() && Peek() != '\n') Advance();
+}
+```
+
+Safe because: string scanning happens in `ScanString`/`ScanInterpolatedString` which do not call this method, so `//` inside strings is unaffected. Comments are consumed as whitespace before `NextToken` ever sees `/`.
+
+### Math Stdlib Functions
+
+| Function | Signature(s) | C# Mapping |
+|----------|-------------|------------|
+| `sin(Double) -> Double` | 1 | `Math.Sin` |
+| `cos(Double) -> Double` | 1 | `Math.Cos` |
+| `tan(Double) -> Double` | 1 | `Math.Tan` |
+| `abs(Int) -> Int` | 2 | `Math.Abs(int)` |
+| `abs(Double) -> Double` | | `Math.Abs(double)` |
+| `sqrt(Double) -> Double` | 1 | `Math.Sqrt` |
+| `pow(Double, Double) -> Double` | 1 | `Math.Pow` |
+| `log(Double) -> Double` | 1 | `Math.Log` (natural) |
+| `exp(Double) -> Double` | 1 | `Math.Exp` |
+| `floor(Double) -> Int` | 1 | `(int)Math.Floor` |
+| `ceil(Double) -> Int` | 1 | `(int)Math.Ceiling` |
+| `round(Double) -> Int` | 1 | `(int)Math.Round` |
+| `min(Int, Int) -> Int` | 2 | `Math.Min(int,int)` |
+| `min(Double, Double) -> Double` | | `Math.Min(double,double)` |
+| `max(Int, Int) -> Int` | 2 | `Math.Max(int,int)` |
+| `max(Double, Double) -> Double` | | `Math.Max(double,double)` |
+| `pi() -> Double` | 0-arg | `Math.PI` |
+| `tau() -> Double` | 0-arg | `Math.Tau` |
+
+### `exportWav` -> `writeWav`
+
+Register both names pointing to `Audio.FileIO.ExportWav` and `Audio.FileIO.ExportWavWithBitDepth`. Update all .flow files that reference `exportWav`. The old name continues working.
+
+### `mix()` Overloads
+
+Add to `RegisterAudio`:
+- `mix(Buffer, Buffer) -> Buffer` -- calls `MixBuffers` with gains 1.0, 1.0
+- `mix(Buffer, Buffer, Double, Double) -> Buffer` -- alias for `mixBuffers`
+
+Keep `mixBuffers` registered for backward compatibility.
+
+### REPL Auto-Imports
+
+In `Repl.cs`, after engine creation and before the input loop:
+```csharp
+_engine.Execute("use \"@std\"\nuse \"@audio\"\nuse \"@notation\"", "<repl-init>");
+```
+
+Add `--bare` CLI flag to skip. Add `:imports` command to list loaded modules.
+
+### `--verbose` Flag
+
+Add to `CliFlags` record. Pass to `FlowEngine` as a property. Key diagnostic points:
+- **OverloadResolver**: candidates considered, specificity scores, winner (most valuable for debugging)
+- **ModuleLoader**: file paths resolved and loaded
+- **SongRenderer**: section durations, buffer sizes, instrument assignments
+
+All output to stderr so it does not interfere with script stdout.
+
+### Per-Section Volume
+
+Extend `SectionReference` (wherever it is defined) with `double Volume = 1.0`. Parser recognizes `section@0.8` in song `[...]` expressions (similar to `section*N` for repeats). In `SongRenderer.RenderSong`, after `RenderSection` returns a buffer, scale all samples by `sectionRef.Volume`.
+
+Syntax: `@` followed by a float literal. Can combine with repeats: `chorus*3@0.9`.
+
+### Tempo Ramps
+
+Current: `MusicalContext.Tempo` is a single double. All beat-to-sample conversion uses `samples = (beats / bpm) * 60 * sampleRate`.
+
+For true tempo ramps, beat-to-time mapping becomes: `time(B) = integral_0^B (60 / bpm(b)) db`. This affects `NoteStreamCompiler` and `SongRenderer.MixVoicesToStereoBuffer`.
+
+Practical v1.1 approach: Do NOT implement continuous ramps. Instead, support per-section tempo (which already works via `tempo X { ... }` inside sections) and document it as the recommended pattern. Defer continuous ramps to a later milestone where the rendering pipeline can be rearchitected with tempo-as-function.
+
+If continuous ramps are demanded: add `tempoRamp(startBPM, endBPM)` as a new musical context block. Internally, discretize to small steps (e.g., per-beat tempo changes) rather than true integration. This approximation is perceptually indistinguishable and avoids rewriting the core rendering loop.
 
 ## Sources
 
-- Existing codebase analysis: `flow-lang/StandardLibrary/`, `flow-lang/Runtime/`, `flow-lang/Parsing/`
-- PROJECT.md active requirements list
-- Comparable systems: Sonic Pi, TidalCycles, SuperCollider, ChucK, Csound, Faust
+- Codebase: `SimpleLexer.cs` line 777 (no comment handling), `BuiltInFunctions.cs` lines 387-397 (`exportWav` registration, no math functions), `AudioCore.cs` line 169 (existing `MixBuffers`), `SongRenderer.cs` (constant BPM, no per-section volume), `Program.cs` (current CLI flags, no `--verbose`), `Repl.cs` (no auto-imports)
+- `TransformFunctions.cs` lines 531-537: `ritardando`/`accelerando` as note-duration transforms (not BPM ramps)
+- `.planning/PROJECT.md`: v1.1 target feature list

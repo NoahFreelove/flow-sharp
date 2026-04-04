@@ -27,6 +27,9 @@ internal proc fillBuffer(Buffer: buffer, Double: value)
 Note: Mixes two buffers together with individual gain controls
 internal proc mixBuffers(Buffer: a, Buffer: b, Double: gainA, Double: gainB)
 
+Note: Mix two buffers by summing samples at unity gain (handles different lengths and mono/stereo promotion)
+internal proc mix(Buffer: a, Buffer: b)
+
 Note: ===== File I/O Operations =====
 
 Note: Export audio buffer to WAV file with default 16-bit PCM format
@@ -34,6 +37,12 @@ internal proc exportWav(Buffer: buffer, String: filepath)
 
 Note: Export audio buffer to WAV file with specified bit depth (16, 24, or 32)
 internal proc exportWav(Buffer: buffer, String: filepath, Int: bitDepth)
+
+Note: Primary WAV export (path-first, matches writeMidi convention)
+internal proc writeWav(String: filepath, Buffer: buffer)
+
+Note: Primary WAV export with custom bit depth (path-first, matches writeMidi convention)
+internal proc writeWav(String: filepath, Buffer: buffer, Int: bitDepth)
 
 Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
 internal proc loadWav(String: filepath)
@@ -386,3 +395,22 @@ Note: ===== MIDI Export =====
 
 Note: Export a Song to a MIDI file
 internal proc writeMidi(String: filepath, Song: song)
+
+Note: ===== Tempo Ramp Rendering =====
+
+Note: Render a sequence with linearly interpolated BPM (ritardando/accelerando)
+internal proc tempoRamp(Sequence: seq, Double: startBPM, Double: endBPM)
+
+Note: Render a sequence with linearly interpolated BPM using specified instrument
+internal proc tempoRamp(Sequence: seq, Double: startBPM, Double: endBPM, String: instrument)
+
+Note: ===== Vocalization =====
+
+Note: Synthesize a vowel/syllable at a given pitch and duration (seconds)
+internal proc sing(String: phoneme, Note: pitch, Double: duration)
+
+Note: Run external TTS engine on text, return audio buffer
+internal proc tts(String: text)
+
+Note: Set the external TTS command (default: "espeak-ng --stdout")
+internal proc setTtsCommand(String: command)

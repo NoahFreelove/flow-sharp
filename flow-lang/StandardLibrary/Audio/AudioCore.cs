@@ -163,6 +163,62 @@ public static class AudioCore
     }
 
     /// <summary>
+    /// Mixes two buffers by summing samples at unity gain.
+    /// Handles different-length buffers (zero-pads shorter) and
+    /// promotes mono to stereo when channel counts differ.
+    /// </summary>
+    public static Value Mix(IReadOnlyList<Value> args)
+    {
+        var bufferA = args[0].As<AudioBuffer>();
+        var bufferB = args[1].As<AudioBuffer>();
+
+        // Validate sample rate compatibility
+        if (bufferA.SampleRate != bufferB.SampleRate)
+            throw new ArgumentException("Buffers must have the same sample rate");
+
+        // Promote mono to stereo if channel counts differ
+        if (bufferA.Channels != bufferB.Channels)
+        {
+            if (bufferA.Channels == 1)
+                bufferA = MonoToStereo(bufferA);
+            else if (bufferB.Channels == 1)
+                bufferB = MonoToStereo(bufferB);
+            else
+                throw new ArgumentException(
+                    $"Cannot mix buffers with {bufferA.Channels} and {bufferB.Channels} channels");
+        }
+
+        // Output length = max of both buffers
+        int frames = Math.Max(bufferA.Frames, bufferB.Frames);
+        var result = new AudioBuffer(frames, bufferA.Channels, bufferA.SampleRate);
+
+        // Sum samples; out-of-range indices read as 0
+        for (int i = 0; i < result.Data.Length; i++)
+        {
+            float sampleA = i < bufferA.Data.Length ? bufferA.Data[i] : 0f;
+            float sampleB = i < bufferB.Data.Length ? bufferB.Data[i] : 0f;
+            result.Data[i] = sampleA + sampleB;
+        }
+
+        return Value.Buffer(result);
+    }
+
+    /// <summary>
+    /// Promotes a mono AudioBuffer to stereo by duplicating samples to both channels.
+    /// </summary>
+    private static AudioBuffer MonoToStereo(AudioBuffer mono)
+    {
+        var stereo = new AudioBuffer(mono.Frames, 2, mono.SampleRate);
+        for (int f = 0; f < mono.Frames; f++)
+        {
+            float sample = mono.Data[f];
+            stereo.Data[f * 2] = sample;
+            stereo.Data[f * 2 + 1] = sample;
+        }
+        return stereo;
+    }
+
+    /// <summary>
     /// Mixes two buffers together with individual gain controls.
     /// Result is written to a new buffer.
     /// </summary>

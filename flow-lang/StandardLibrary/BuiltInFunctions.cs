@@ -36,6 +36,7 @@ public static class BuiltInFunctions
     public static void RegisterAllImplementations(InternalFunctionRegistry registry)
     {
         RegisterStdLib(registry);
+        RegisterMath(registry);
         RegisterCollections(registry);
         RegisterAudio(registry);
         RegisterBars(registry);
@@ -43,11 +44,13 @@ public static class BuiltInFunctions
         Audio.EffectsFunctions.Register(registry);
         Audio.PanningFunctions.Register(registry);
         Audio.SongRenderer.Register(registry);
+        Audio.TempoRampRenderer.Register(registry);
         Transforms.TransformFunctions.Register(registry);
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
         Composition.PolyrhythmFunctions.Register(registry);
         Composition.VariationFunctions.Register(registry);
+        Audio.Vocalization.VocalizationFunctions.Register(registry);
     }
 
     /// <summary>
@@ -278,6 +281,67 @@ public static class BuiltInFunctions
         registry.Register("??set", setRandSignature, stdlib.FixedRandSet);
     }
 
+    private static void RegisterMath(InternalFunctionRegistry registry)
+    {
+        // ===== Trigonometric Functions =====
+        registry.Register("sin", new FunctionSignature("sin", [DoubleType.Instance]),
+            args => Value.Double(Math.Sin(args[0].As<double>())));
+
+        registry.Register("cos", new FunctionSignature("cos", [DoubleType.Instance]),
+            args => Value.Double(Math.Cos(args[0].As<double>())));
+
+        registry.Register("tan", new FunctionSignature("tan", [DoubleType.Instance]),
+            args => Value.Double(Math.Tan(args[0].As<double>())));
+
+        // ===== Absolute Value =====
+        registry.Register("abs", new FunctionSignature("abs", [DoubleType.Instance]),
+            args => Value.Double(Math.Abs(args[0].As<double>())));
+
+        registry.Register("abs", new FunctionSignature("abs", [IntType.Instance]),
+            args => Value.Int(Math.Abs(args[0].As<int>())));
+
+        // ===== Square Root =====
+        registry.Register("sqrt", new FunctionSignature("sqrt", [DoubleType.Instance]),
+            args => Value.Double(Math.Sqrt(args[0].As<double>())));
+
+        // ===== Min / Max =====
+        registry.Register("min", new FunctionSignature("min", [DoubleType.Instance, DoubleType.Instance]),
+            args => Value.Double(Math.Min(args[0].As<double>(), args[1].As<double>())));
+
+        registry.Register("min", new FunctionSignature("min", [IntType.Instance, IntType.Instance]),
+            args => Value.Int(Math.Min(args[0].As<int>(), args[1].As<int>())));
+
+        registry.Register("max", new FunctionSignature("max", [DoubleType.Instance, DoubleType.Instance]),
+            args => Value.Double(Math.Max(args[0].As<double>(), args[1].As<double>())));
+
+        registry.Register("max", new FunctionSignature("max", [IntType.Instance, IntType.Instance]),
+            args => Value.Int(Math.Max(args[0].As<int>(), args[1].As<int>())));
+
+        // ===== Rounding =====
+        registry.Register("floor", new FunctionSignature("floor", [DoubleType.Instance]),
+            args => Value.Int((int)Math.Floor(args[0].As<double>())));
+
+        registry.Register("ceil", new FunctionSignature("ceil", [DoubleType.Instance]),
+            args => Value.Int((int)Math.Ceiling(args[0].As<double>())));
+
+        registry.Register("round", new FunctionSignature("round", [DoubleType.Instance]),
+            args => Value.Int((int)Math.Round(args[0].As<double>())));
+
+        // ===== Power / Logarithm =====
+        registry.Register("pow", new FunctionSignature("pow", [DoubleType.Instance, DoubleType.Instance]),
+            args => Value.Double(Math.Pow(args[0].As<double>(), args[1].As<double>())));
+
+        registry.Register("log", new FunctionSignature("log", [DoubleType.Instance]),
+            args => Value.Double(Math.Log(args[0].As<double>())));
+
+        // ===== Constants =====
+        registry.Register("pi", new FunctionSignature("pi", []),
+            args => Value.Double(Math.PI));
+
+        registry.Register("tau", new FunctionSignature("tau", []),
+            args => Value.Double(Math.Tau));
+    }
+
     private static void RegisterCollections(InternalFunctionRegistry registry)
     {
         // ===== Array Functions =====
@@ -382,6 +446,9 @@ public static class BuiltInFunctions
             [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
         registry.Register("mixBuffers", mixBuffersSignature, Audio.AudioCore.MixBuffers);
 
+        var mixSignature = new FunctionSignature("mix", [BufferType.Instance, BufferType.Instance]);
+        registry.Register("mix", mixSignature, Audio.AudioCore.Mix);
+
         // ===== File I/O Operations =====
 
         // exportWav(Buffer, String) - default 16-bit
@@ -395,6 +462,18 @@ public static class BuiltInFunctions
             "exportWav",
             [BufferType.Instance, StringType.Instance, IntType.Instance]);
         registry.Register("exportWav", exportWavWithDepthSignature, Audio.FileIO.ExportWavWithBitDepth);
+
+        // writeWav(String, Buffer) - primary name, path-first arg order (matches writeMidi)
+        var writeWavSignature = new FunctionSignature(
+            "writeWav",
+            [StringType.Instance, BufferType.Instance]);
+        registry.Register("writeWav", writeWavSignature, Audio.FileIO.WriteWav);
+
+        // writeWav(String, Buffer, Int) - with bit depth
+        var writeWavWithDepthSignature = new FunctionSignature(
+            "writeWav",
+            [StringType.Instance, BufferType.Instance, IntType.Instance]);
+        registry.Register("writeWav", writeWavWithDepthSignature, Audio.FileIO.WriteWavWithBitDepth);
 
         // loadWav(String) -> Buffer - load WAV file
         var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance]);

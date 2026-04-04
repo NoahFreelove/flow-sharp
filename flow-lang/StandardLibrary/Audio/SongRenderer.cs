@@ -61,6 +61,7 @@ public static class SongRenderer
     {
         double bpm = section.Context?.Tempo ?? DefaultBpm;
         double pan = section.Context?.Pan ?? 0.0;
+        double gain = section.Context?.Gain ?? 1.0;
         var allVoices = new List<Voice>();
         double maxBeats = 0;
 
@@ -68,11 +69,12 @@ public static class SongRenderer
         {
             var voices = SequenceRenderer.RenderSequenceToVoices(
                 sequence, synthType, DefaultSampleRate, bpm);
-            // Apply pan from musical context to all voices in this section
-            if (pan != 0.0)
+            // Apply pan and gain from musical context to all voices in this section
+            foreach (var voice in voices)
             {
-                foreach (var voice in voices)
+                if (pan != 0.0)
                     voice.Pan = pan;
+                voice.Gain *= gain;
             }
             allVoices.AddRange(voices);
 
@@ -188,6 +190,8 @@ public static class SongRenderer
     private static (AudioBuffer Buffer, TimelineMap Timeline) RenderSectionWithTimeline(SectionData section, string synthType)
     {
         double bpm = section.Context?.Tempo ?? DefaultBpm;
+        double pan = section.Context?.Pan ?? 0.0;
+        double gain = section.Context?.Gain ?? 1.0;
         var allVoices = new List<Voice>();
         double maxBeats = 0;
         var timelineMap = new TimelineMap();
@@ -197,6 +201,13 @@ public static class SongRenderer
         {
             var voices = SequenceRenderer.RenderSequenceToVoices(
                 sequence, synthType, DefaultSampleRate, bpm, timelineMap, scopeName);
+            // Apply pan and gain from musical context to all voices in this section
+            foreach (var voice in voices)
+            {
+                if (pan != 0.0)
+                    voice.Pan = pan;
+                voice.Gain *= gain;
+            }
             allVoices.AddRange(voices);
 
             if (sequence.TotalBeats > maxBeats)

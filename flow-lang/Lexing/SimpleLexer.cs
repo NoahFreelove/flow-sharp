@@ -586,6 +586,7 @@ public class SimpleLexer
             "rit" => TokenType.Rit,
             "accel" => TokenType.Accel,
             "pan" => TokenType.Pan,
+            "gain" => TokenType.Gain,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
@@ -797,6 +798,14 @@ public class SimpleLexer
                 Advance(); // Skip backslash
                 Advance(); // Skip \r
                 Advance(); // Skip \n
+            }
+            else if (c == '/' && PeekNext() == '/')
+            {
+                // Line comment: skip to end of line
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
             }
             else if (c == 'N' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("Note:"))
             {

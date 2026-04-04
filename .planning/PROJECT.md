@@ -8,6 +8,24 @@ Flow is an interpreted, statically-typed programming language designed for music
 
 Users can write musical ideas as code and hear them immediately — the language must faithfully translate musical notation into correct, playable audio.
 
+## Current Milestone: v1.1 Polish & Foundations
+
+**Goal:** Fix critical bugs that break user scripts, improve developer experience with missing language features, then expand music production capabilities.
+
+**Target features:**
+- Fix Sequence type overload resolution (transpose, vary fail)
+- Fix sections silently dropping bare expressions (0-frame renders)
+- Better error reporting (don't mask real failures)
+- `//` line comments
+- Math functions (sin, cos, abs, sqrt, min, max)
+- Rename `exportWav` → `writeWav` for consistency
+- `mix()` for layering buffers
+- Per-section volume/gain in songs
+- More synth presets (strings, organ, bell)
+- Tempo ramps (gradual BPM change)
+- REPL auto-imports
+- `--verbose` flag for debugging
+
 ## Requirements
 
 ### Validated
@@ -34,6 +52,7 @@ Users can write musical ideas as code and hear them immediately — the language
 - ✓ Ornaments (trill, tremolo) and articulations — existing
 - ✓ Generative features (euclidean rhythms, random choice) — existing
 - ✓ Basic editor with live highlighting — existing
+- ✓ Vocal synthesis (formant-based sing(), external TTS hook) — Validated in Phase 10: Vocalization
 
 ### Active
 
@@ -107,4 +126,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-01 after initialization*
+*Last updated: 2026-04-04 — Phase 10 (Vocalization) complete*

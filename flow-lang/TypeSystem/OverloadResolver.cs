@@ -8,10 +8,12 @@ namespace FlowLang.TypeSystem;
 public class OverloadResolver
 {
     private readonly ErrorReporter _errorReporter;
+    private readonly TextWriter? _diagnosticOutput;
 
-    public OverloadResolver(ErrorReporter errorReporter)
+    public OverloadResolver(ErrorReporter errorReporter, TextWriter? diagnosticOutput = null)
     {
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
+        _diagnosticOutput = diagnosticOutput;
     }
 
     /// <summary>
@@ -38,6 +40,13 @@ public class OverloadResolver
 
         if (matchingCandidates.Count == 0)
         {
+            if (_diagnosticOutput != null)
+            {
+                _diagnosticOutput.WriteLine($"[verbose] Resolving '{functionName}' with args ({string.Join(", ", argTypes)})");
+                _diagnosticOutput.WriteLine($"[verbose]   {candidates.Count} candidate(s) checked, none matched");
+                foreach (var sig in candidates)
+                    _diagnosticOutput.WriteLine($"[verbose]   candidate: {sig}");
+            }
             _errorReporter.ReportError(
                 $"No matching overload for function '{functionName}' with argument types ({string.Join(", ", argTypes)})",
                 location);

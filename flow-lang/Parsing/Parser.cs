@@ -111,6 +111,15 @@ public class Parser
             Advance(); // consume `pan`
             return ParseMusicalContextStatement(MusicalContextType.Pan);
         }
+        // Only parse `gain` as a context block when followed by a numeric literal or sign
+        // (e.g., `gain 0.5 { ... }`), not when used as a function name.
+        if (Check(TokenType.Gain) && _current + 1 < _tokens.Count
+            && (_tokens[_current + 1].Type is TokenType.IntLiteral or TokenType.FloatLiteral
+                or TokenType.Minus or TokenType.Plus))
+        {
+            Advance(); // consume `gain`
+            return ParseMusicalContextStatement(MusicalContextType.Gain);
+        }
 
         // Section declaration: section name { ... }
         if (Match(TokenType.Section))
@@ -168,8 +177,9 @@ public class Parser
         var location = PreviousToken.Location;
         // Allow musical context keywords (like 'pan') as procedure names
         string name;
-        if (Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Tempo)
-            || Check(TokenType.Swing) || Check(TokenType.Key) || Check(TokenType.Timesig))
+        if (Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)
+            || Check(TokenType.Tempo) || Check(TokenType.Swing) || Check(TokenType.Key)
+            || Check(TokenType.Timesig))
         {
             name = Advance().Text;
         }
@@ -498,6 +508,21 @@ public class Parser
                 break;
             }
 
+            case MusicalContextType.Gain:
+            {
+                int gainSign = 1;
+                var gainLoc = CurrentToken.Location;
+                if (Match(TokenType.Minus)) gainSign = -1;
+                else if (Match(TokenType.Plus)) gainSign = 1;
+                if (Check(TokenType.IntLiteral))
+                    value = new LiteralExpression(gainLoc, gainSign * (double)(int)Advance().Value!);
+                else if (Check(TokenType.FloatLiteral))
+                    value = new LiteralExpression(gainLoc, gainSign * (double)Advance().Value!);
+                else
+                    throw new ParseException($"Expected numeric gain value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+                break;
+            }
+
             default:
                 throw new ParseException($"Unknown musical context type: {contextType}");
         }
@@ -807,7 +832,7 @@ public class Parser
 
             // Check if this is a function call like (func arg1 arg2)
             // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
-            if ((Check(TokenType.Identifier) || Check(TokenType.Pan)) && _current + 1 < _tokens.Count
+            if ((Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)) && _current + 1 < _tokens.Count
                 && _tokens[_current + 1].Type != TokenType.Arrow
                 && _tokens[_current + 1].Type != TokenType.Dot
                 && _tokens[_current + 1].Type != TokenType.At)
@@ -837,7 +862,8 @@ public class Parser
 
         // Variable or function call (also allow music context keywords as identifiers)
         if (Match(TokenType.Identifier) || Match(TokenType.Tempo) || Match(TokenType.Swing)
-            || Match(TokenType.Key) || Match(TokenType.Timesig) || Match(TokenType.Pan))
+            || Match(TokenType.Key) || Match(TokenType.Timesig) || Match(TokenType.Pan)
+            || Match(TokenType.Gain))
         {
             var name = PreviousToken.Text;
             var location = PreviousToken.Location;
@@ -1451,7 +1477,8 @@ public class Parser
     private Token ExpectParameterName(string errorMessage = "Expected parameter name")
     {
         if (Check(TokenType.Identifier) || Check(TokenType.Tempo) || Check(TokenType.Swing)
-            || Check(TokenType.Key) || Check(TokenType.Timesig) || Check(TokenType.Pan))
+            || Check(TokenType.Key) || Check(TokenType.Timesig) || Check(TokenType.Pan)
+            || Check(TokenType.Gain))
             return Advance();
         return Expect(TokenType.Identifier, errorMessage);
     }

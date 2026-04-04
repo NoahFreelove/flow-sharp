@@ -18,12 +18,14 @@ public enum ModuleLoadResult
 public class ModuleLoader
 {
     private readonly ErrorReporter _errorReporter;
+    private readonly TextWriter? _diagnosticOutput;
     private readonly HashSet<string> _loadedModules = new();
     private readonly HashSet<string> _currentlyLoading = new();
 
-    public ModuleLoader(ErrorReporter errorReporter)
+    public ModuleLoader(ErrorReporter errorReporter, TextWriter? diagnosticOutput = null)
     {
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
+        _diagnosticOutput = diagnosticOutput;
     }
 
     /// <summary>
@@ -51,6 +53,7 @@ public class ModuleLoader
             // 1. Check file exists
             if (!File.Exists(resolvedPath))
             {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - file not found");
                 _errorReporter.ReportError($"Import file not found: {resolvedPath}", errorLocation);
                 return ModuleLoadResult.Error;
             }
@@ -76,10 +79,17 @@ public class ModuleLoader
             interpreter.Execute(program);
 
             _loadedModules.Add(resolvedPath);
-            return _errorReporter.HasErrors ? ModuleLoadResult.Error : ModuleLoadResult.Loaded;
+            if (_errorReporter.HasErrors)
+            {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - errors during execution");
+                return ModuleLoadResult.Error;
+            }
+            _diagnosticOutput?.WriteLine($"[verbose] Loaded module: {resolvedPath}");
+            return ModuleLoadResult.Loaded;
         }
         catch (Exception ex)
         {
+            _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - {ex.Message}");
             _errorReporter.ReportError($"Error loading module {resolvedPath}: {ex.Message}", errorLocation);
             return ModuleLoadResult.Error;
         }

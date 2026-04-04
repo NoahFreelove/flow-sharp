@@ -1,0 +1,58 @@
+Note: Test Vocalization - Formant Synthesis and TTS Hook
+use "@std"
+use "@audio"
+
+Note: ===== Test 1: Basic vowel synthesis =====
+(print "Test 1: Synthesize 'ah' vowel at C4 for 0.5 seconds")
+Buffer vowelAh = (sing "ah" C4 0.5)
+(print $"  frames: {(str (getFrames vowelAh))}")
+(print "PASS: sing ah produced audio buffer")
+
+Note: ===== Test 2: All 5 vowels =====
+(print "Test 2: All 5 vowels")
+Buffer vowelEe = (sing "ee" A4 0.3)
+(print $"  ee frames: {(str (getFrames vowelEe))}")
+Buffer vowelEh = (sing "eh" E4 0.3)
+(print $"  eh frames: {(str (getFrames vowelEh))}")
+Buffer vowelOh = (sing "oh" G4 0.3)
+(print $"  oh frames: {(str (getFrames vowelOh))}")
+Buffer vowelOo = (sing "oo" D4 0.3)
+(print $"  oo frames: {(str (getFrames vowelOo))}")
+(print "PASS: all 5 vowels synthesized")
+
+Note: ===== Test 3: Consonant syllables =====
+(print "Test 3: Consonant syllables")
+Buffer syllableNa = (sing "na" C4 0.5)
+(print $"  na frames: {(str (getFrames syllableNa))}")
+Buffer syllableTa = (sing "ta" E4 0.3)
+(print $"  ta frames: {(str (getFrames syllableTa))}")
+Buffer syllableSa = (sing "sa" G4 0.3)
+(print $"  sa frames: {(str (getFrames syllableSa))}")
+(print "PASS: consonant syllables synthesized")
+
+Note: ===== Test 4: Mix vocal with instrumental =====
+(print "Test 4: Mix vocal with instrument buffer")
+Buffer vocal = (sing "ah" C4 1.0)
+Buffer tone = (createSineTone 1.0 440.0 0.5)
+Buffer mixed = (mix vocal tone)
+(print $"  mixed frames: {(str (getFrames mixed))}")
+(print "PASS: vocal mixed with instrumental")
+
+Note: ===== Test 5: Different pitches =====
+(print "Test 5: Different pitches")
+Buffer low = (sing "oh" C3 0.3)
+Buffer high = (sing "oh" C5 0.3)
+(print $"  low frames: {(str (getFrames low))}")
+(print $"  high frames: {(str (getFrames high))}")
+(print "PASS: different pitches work")
+
+Note: ===== Test 6: Export vocal to WAV =====
+(print "Test 6: Export vocal to WAV")
+Buffer exportVocal = (sing "ee" A4 1.0)
+(writeWav "/tmp/test_vocal.wav" exportVocal)
+(print "PASS: vocal exported to WAV")
+
+Note: TTS test skipped (requires espeak-ng installed)
+Note: To test manually: (tts "hello world")
+
+(print "All vocalization tests passed!")

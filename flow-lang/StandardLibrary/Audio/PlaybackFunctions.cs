@@ -15,6 +15,17 @@ public static class PlaybackFunctions
     private static AudioPlaybackManager? _manager;
 
     /// <summary>
+    /// Gets the current static manager reference. Used by LiveReloadManager to save/restore
+    /// around background engine creation (which overwrites the static via Register).
+    /// </summary>
+    public static AudioPlaybackManager? GetManager() => _manager;
+
+    /// <summary>
+    /// Sets the static manager reference. Used by LiveReloadManager to restore after background render.
+    /// </summary>
+    public static void SetManager(AudioPlaybackManager manager) => _manager = manager;
+
+    /// <summary>
     /// Registers all playback-related built-in functions.
     /// </summary>
     /// <param name="registry">The function registry to register with.</param>
@@ -72,6 +83,13 @@ public static class PlaybackFunctions
         if (buffer.Frames == 0 || buffer.Data.Length == 0)
             return Value.Void();
 
+        // Capture mode: store buffer instead of playing
+        if (_manager!.CaptureMode)
+        {
+            _manager.SetCapturedBuffer(buffer);
+            return Value.Void();
+        }
+
         PlaySamples(buffer.Data, buffer.SampleRate, buffer.Channels);
         return Value.Void();
     }
@@ -103,6 +121,13 @@ public static class PlaybackFunctions
         if (mixedBuffer.Frames == 0)
             return Value.Void();
 
+        // Capture mode: store buffer instead of playing
+        if (_manager!.CaptureMode)
+        {
+            _manager.SetCapturedBuffer(mixedBuffer);
+            return Value.Void();
+        }
+
         PlaySamples(mixedBuffer.Data, mixedBuffer.SampleRate, mixedBuffer.Channels);
         return Value.Void();
     }
@@ -116,6 +141,13 @@ public static class PlaybackFunctions
 
         if (buffer.Frames == 0)
             return Value.Void();
+
+        // Capture mode: store buffer instead of looping
+        if (_manager!.CaptureMode)
+        {
+            _manager.SetCapturedBuffer(buffer);
+            return Value.Void();
+        }
 
         var ct = _manager!.StartPlayback();
 
@@ -153,6 +185,13 @@ public static class PlaybackFunctions
 
         if (buffer.Frames == 0)
             return Value.Void();
+
+        // Capture mode: store buffer instead of looping
+        if (_manager!.CaptureMode)
+        {
+            _manager.SetCapturedBuffer(buffer);
+            return Value.Void();
+        }
 
         var ct = _manager!.StartPlayback();
 

@@ -231,6 +231,22 @@ public class Interpreter
                     break;
                 }
 
+                case MusicalContextType.Gain:
+                {
+                    var gainVal = _evaluator.Evaluate(ctx.Value);
+                    double gain = gainVal.Type is IntType
+                        ? (double)gainVal.As<int>()
+                        : gainVal.As<double>();
+                    if (gain < 0.0 || gain > 2.0)
+                    {
+                        _errorReporter.ReportError(
+                            $"Gain must be between 0.0 and 2.0, got {gain}", ctx.Location);
+                        return;
+                    }
+                    musicalCtx.Gain = gain;
+                    break;
+                }
+
                 case MusicalContextType.Key:
                     if (ctx.Value is LiteralExpression keyExpr)
                     {
@@ -350,10 +366,20 @@ public class Interpreter
             // Snapshot the musical context before executing the body
             var musicalContext = _context.GetMusicalContext();
 
+            // Track bare expression results during body execution
+            var bareExpressionSequences = new List<SequenceData>();
+
             // Execute the section body
             foreach (var stmt in section.Body)
             {
                 ExecuteStatement(stmt);
+
+                // Capture bare expressions that produce sequences
+                if (stmt is ExpressionStatement && _lastExpressionValue?.Data is SequenceData exprSeq)
+                {
+                    bareExpressionSequences.Add(exprSeq);
+                }
+
                 if (_returnValue != null) break;
             }
 
@@ -364,6 +390,16 @@ public class Interpreter
                 if (value.Data is SequenceData seq)
                 {
                     sequences[name] = seq;
+                }
+            }
+
+            // Add bare expression sequences with auto-generated names
+            for (int i = 0; i < bareExpressionSequences.Count; i++)
+            {
+                // Only add if not already captured as a named variable
+                if (!sequences.ContainsValue(bareExpressionSequences[i]))
+                {
+                    sequences[$"_anon_{i}"] = bareExpressionSequences[i];
                 }
             }
 
