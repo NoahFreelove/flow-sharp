@@ -30,7 +30,8 @@ namespace FlowLang.StandardLibrary.Audio
             SequenceData sequence,
             string synthType,
             int sampleRate,
-            double bpm)
+            double bpm,
+            int maxVoices = 32)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
@@ -48,7 +49,7 @@ namespace FlowLang.StandardLibrary.Audio
                 allVoices.AddRange(barVoices);
             }
 
-            return VoiceAllocator.Allocate(allVoices, sampleRate);
+            return VoiceAllocator.Allocate(allVoices, sampleRate, maxVoices);
         }
 
         /// <summary>
@@ -60,7 +61,8 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm,
             TimelineMap timelineMap,
-            string scopeName = "top-level")
+            string scopeName = "top-level",
+            int maxVoices = 32)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
@@ -79,7 +81,7 @@ namespace FlowLang.StandardLibrary.Audio
                 allVoices.AddRange(barVoices);
             }
 
-            return VoiceAllocator.Allocate(allVoices, sampleRate);
+            return VoiceAllocator.Allocate(allVoices, sampleRate, maxVoices);
         }
     }
 }

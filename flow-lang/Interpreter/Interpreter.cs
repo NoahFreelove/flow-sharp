@@ -24,7 +24,7 @@ public class ContinueSignal : Exception { }
 /// <summary>
 /// Main interpreter for executing Flow AST.
 /// </summary>
-public class Interpreter
+public class Interpreter : IFunctionInvoker
 {
     private readonly RuntimeContext _context;
     private readonly ErrorReporter _errorReporter;
@@ -32,6 +32,8 @@ public class Interpreter
     private readonly ModuleLoader _moduleLoader;
     private Value? _returnValue;
     private Value? _lastExpressionValue;
+    private int _recursionDepth = 0;
+    private const int MaxRecursionDepth = 1000;
 
     public Interpreter(RuntimeContext context, ErrorReporter errorReporter, ModuleLoader? moduleLoader = null)
     {
@@ -40,15 +42,8 @@ public class Interpreter
         _evaluator = new ExpressionEvaluator(context, errorReporter, this);
         _moduleLoader = moduleLoader ?? new ModuleLoader(errorReporter);
 
-        // Wire up the invoker for higher-order functions in the standard library
-        StandardLibrary.collections.Invoker = (overload, args) =>
-        {
-            if (overload.IsInternal)
-                return overload.Implementation!(args);
-            else
-                return ExecuteUserFunctionWithCaptures(
-                    overload.Declaration!, args, overload.CapturedVariables);
-        };
+        // Wire up the invoker for higher-order functions
+        _context.Invoker = this;
     }
 
     /// <summary>
@@ -581,6 +576,13 @@ public class Interpreter
         IReadOnlyList<Value> args,
         IReadOnlyDictionary<string, Value>? capturedVariables)
     {
+        if (++_recursionDepth > MaxRecursionDepth)
+        {
+            _recursionDepth--;
+            _errorReporter.ReportError($"Recursion depth limit ({MaxRecursionDepth}) exceeded", proc.Location);
+            return Value.Void();
+        }
+
         // Create new stack frame
         _context.PushFrame();
 
@@ -665,6 +667,7 @@ public class Interpreter
         finally
         {
             _context.PopFrame();
+            _recursionDepth--;
         }
     }
 }

@@ -8,21 +8,16 @@ namespace FlowLang.StandardLibrary.Audio;
 public static class VoiceAllocator
 {
     /// <summary>
-    /// Maximum number of simultaneous voices allowed. Default is 32.
-    /// Can be changed at runtime via the setMaxVoices() built-in function.
-    /// </summary>
-    public static int MaxVoices { get; set; } = 32;
-
-    /// <summary>
     /// Allocates voices from a list, enforcing the voice limit.
-    /// If the list exceeds MaxVoices, the quietest voices are dropped.
+    /// If the list exceeds maxVoices, the quietest voices are dropped.
     /// </summary>
     /// <param name="voices">List of voices to allocate.</param>
     /// <param name="sampleRate">Sample rate for fade calculations.</param>
-    /// <returns>A list containing at most MaxVoices voices, keeping the loudest.</returns>
-    public static List<Voice> Allocate(List<Voice> voices, int sampleRate)
+    /// <param name="maxVoices">Maximum number of voices to keep.</param>
+    /// <returns>A list containing at most maxVoices voices, keeping the loudest.</returns>
+    public static List<Voice> Allocate(List<Voice> voices, int sampleRate, int maxVoices)
     {
-        if (voices.Count <= MaxVoices)
+        if (voices.Count <= maxVoices)
             return voices;
 
         // Sort by peak amplitude descending — keep the loudest voices
@@ -31,12 +26,12 @@ public static class VoiceAllocator
             .OrderByDescending(x => x.peak)
             .ToList();
 
-        // Keep the loudest MaxVoices voices
-        var kept = sorted.Take(MaxVoices).Select(x => x.voice).ToList();
+        // Keep the loudest maxVoices voices
+        var kept = sorted.Take(maxVoices).Select(x => x.voice).ToList();
 
         // Apply fade-out to stolen voices for clean removal
         // (safety measure in case they were partially mixed elsewhere)
-        for (int i = MaxVoices; i < sorted.Count; i++)
+        for (int i = maxVoices; i < sorted.Count; i++)
         {
             ApplyFadeOut(sorted[i].voice, sampleRate);
         }

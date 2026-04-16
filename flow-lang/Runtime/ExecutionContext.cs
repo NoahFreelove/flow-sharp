@@ -27,10 +27,59 @@ public class ExecutionContext
         set => _maxIterations = value > 0 ? value : throw new ArgumentException("MaxIterations must be positive");
     }
 
+    // ===== Random Number Generation State =====
+    
+    public int FixedRandSeed { get; set; } = 0;
+    public Random? FixedGen { get; set; }
+    public Random? Gen { get; set; }
+    public readonly object RandLock = new();
+
+    public Random GetRand(bool fixedRng = false)
+    {
+        lock (RandLock)
+        {
+            if (fixedRng)
+            {
+                if (FixedGen == null)
+                {
+                    if (FixedRandSeed == 0) FixedRandSeed = Random.Shared.Next();
+                    FixedGen = new Random(FixedRandSeed);
+                }
+                return FixedGen;
+            }
+            
+            if (Gen == null)
+            {
+                Gen = new Random(Random.Shared.Next());
+            }
+            return Gen;
+        }
+    }
+
+    public void ResetGen()
+    {
+        lock (RandLock)
+        {
+            FixedGen = new Random(FixedRandSeed);
+        }
+    }
+
+    public void SetSeed(int seed)
+    {
+        FixedRandSeed = seed;
+        ResetGen();
+    }
+
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
     public Dictionary<string, SectionData> SectionRegistry { get; } = new();
+    
+    /// <summary>
+    /// Invoker used to execute userspace functions/lambdas from standard library or engine.
+    /// Injected by the interpreter upon creation.
+    /// </summary>
+    public Interpreter.IFunctionInvoker? Invoker { get; set; }
 
     public ExecutionContext(ErrorReporter errorReporter, InternalFunctionRegistry internalRegistry, TextWriter? diagnosticOutput = null)
     {

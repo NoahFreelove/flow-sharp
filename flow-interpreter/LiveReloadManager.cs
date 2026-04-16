@@ -341,18 +341,10 @@ public sealed class LiveReloadManager : IDisposable
             return null;
         }
 
-        // Save the current static PlaybackFunctions manager reference before creating
-        // a new engine (which overwrites it via RegisterAllImplementations)
-        var savedManager = PlaybackFunctions.GetManager();
-
         using var engine = new FlowEngine();
         engine.AudioManager.CaptureMode = true;
 
         engine.Execute(source, filePath);
-
-        // Restore the original manager so the streaming loop's play() still works
-        if (savedManager != null)
-            PlaybackFunctions.SetManager(savedManager);
 
         // Extract musical context from the execution
         musicalContext = engine.Context.GetMusicalContext();
@@ -362,11 +354,15 @@ public sealed class LiveReloadManager : IDisposable
 
         if (buffer == null)
         {
-            // Also try ExecuteExpression as fallback for scripts that return a Buffer
-            var result = engine.ExecuteExpression(source, filePath);
-            if (result?.Data is AudioBuffer audioBuf)
+            // Fallback: check if the last evaluated expression produced a Buffer
+            // We already ran engine.Execute(source, filePath), so we just read the result
+            if (!engine.ErrorReporter.HasErrors)
             {
-                buffer = audioBuf;
+                var result = engine.GetLastExpressionResult();
+                if (result?.Data is AudioBuffer audioBuf)
+                {
+                    buffer = audioBuf;
+                }
             }
         }
 

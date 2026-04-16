@@ -22,6 +22,12 @@ public sealed class AudioPlaybackManager : IDisposable
     public bool CaptureMode { get; set; }
 
     /// <summary>
+    /// Maximum number of simultaneous voices allowed. Default is 32.
+    /// Can be changed at runtime via the setMaxVoices() built-in function.
+    /// </summary>
+    public int MaxVoices { get; set; } = 32;
+
+    /// <summary>
     /// Retrieves the buffer captured during CaptureMode execution. Returns null if none captured.
     /// Clears the captured buffer after retrieval.
     /// </summary>

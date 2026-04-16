@@ -2,6 +2,7 @@ using FlowLang.Ast.Expressions;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
+using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.Runtime;
 
@@ -11,6 +12,16 @@ namespace FlowLang.Runtime;
 /// </summary>
 public class NoteStreamCompiler
 {
+    /// <summary>
+    /// Minimum difference between start/end velocities required to trigger interpolation.
+    /// </summary>
+    private const double VelocityInterpolationTolerance = 0.01;
+
+    /// <summary>
+    /// Minimum number of non-rest notes needed between endpoints to perform interpolation.
+    /// </summary>
+    private const int MinInterpolationNoteCount = 3;
+
     /// <summary>
     /// Maps duration suffix characters to NoteValue enum values.
     /// w=whole, h=half, q=quarter, e=eighth, s=sixteenth, t=32nd
@@ -96,7 +107,7 @@ public class NoteStreamCompiler
                     break;
 
                 case RandomChoiceElement choice:
-                    musicalNotes.Add(CompileRandomChoiceElement(choice, autoFitDuration));
+                    musicalNotes.Add(CompileRandomChoiceElement(choice, autoFitDuration, executionContext));
                     break;
 
                 case VariableReferenceElement varRef:
@@ -161,14 +172,14 @@ public class NoteStreamCompiler
 
         double startVel = notes[firstIdx].Velocity;
         double endVel = notes[lastIdx].Velocity;
-        if (Math.Abs(startVel - endVel) < 0.01) return; // Effectively same
+        if (Math.Abs(startVel - endVel) < VelocityInterpolationTolerance) return;
 
         // Count non-rest notes for interpolation
         int nonRestCount = 0;
         for (int i = firstIdx; i <= lastIdx; i++)
             if (!notes[i].IsRest) nonRestCount++;
 
-        if (nonRestCount < 3) return; // Need at least 3 to interpolate
+        if (nonRestCount < MinInterpolationNoteCount) return;
 
         int noteIdx = 0;
         for (int i = firstIdx; i <= lastIdx; i++)
@@ -468,10 +479,17 @@ public class NoteStreamCompiler
         return (int)NoteValueType.Value.QUARTER;
     }
 
+    private float GetRandomFloat(bool isSeeded, ExecutionContext? context)
+    {
+        if (context != null)
+            return context.GetRand(isSeeded).NextSingle();
+        return Random.Shared.NextSingle();
+    }
+
     /// <summary>
     /// Compiles a RandomChoiceElement by selecting one note randomly from the choice set.
     /// </summary>
-    private MusicalNoteData CompileRandomChoiceElement(RandomChoiceElement choice, NoteValueType.Value? autoFitDuration)
+    private MusicalNoteData CompileRandomChoiceElement(RandomChoiceElement choice, NoteValueType.Value? autoFitDuration, ExecutionContext? executionContext)
     {
         int? durationValue = ResolveDuration(choice.DurationSuffix, autoFitDuration);
 
@@ -494,7 +512,7 @@ public class NoteStreamCompiler
                 {
                     Console.Error.WriteLine($"Warning: random choice weights sum to {totalWeight}, not 100. Normalizing.");
                 }
-                float rand = Utils.FRand(choice.IsSeeded) * totalWeight;
+                float rand = GetRandomFloat(choice.IsSeeded, executionContext) * totalWeight;
                 float cumulative = 0;
                 selectedNote = choice.Choices[^1].Note; // Default to last
                 foreach (var (note, weight) in choice.Choices)
@@ -511,7 +529,7 @@ public class NoteStreamCompiler
         }
 
         // Uniform random selection
-        int index = (int)(Utils.FRand(choice.IsSeeded) * choice.Choices.Count);
+        int index = (int)(GetRandomFloat(choice.IsSeeded, executionContext) * choice.Choices.Count);
         index = Math.Clamp(index, 0, choice.Choices.Count - 1);
         selectedNote = choice.Choices[index].Note;
         return CreateNoteFromChoice(selectedNote, durationValue, choice.IsDotted, choice.Location, CalcSourceLength(choice));
