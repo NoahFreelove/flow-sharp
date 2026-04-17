@@ -461,6 +461,12 @@ public static class BuiltInFunctions
             [DoubleType.Instance, IntType.Instance]);
         registry.Register("createOscillatorState", createOscillatorStateSignature, Audio.SignalGeneration.CreateOscillatorState);
 
+        var createSineToneSig = new FunctionSignature("createSineTone", [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("createSineTone", createSineToneSig, Audio.SignalGeneration.CreateSineTone);
+        
+        var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
+
         var resetPhaseSignature = new FunctionSignature(
             "resetPhase",
             [OscillatorStateType.Instance]);
@@ -650,6 +656,8 @@ public static class BuiltInFunctions
     /// </summary>
     public static void RegisterContextDependentFunctions(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
     {
+        Audio.SongRenderer.RegisterContextDependent(registry, context);
+        Composition.SongFunctions.Register(registry, context);
         // ===== Random Generator Functions =====
 
         var randSignature = new FunctionSignature("?", []);
@@ -988,10 +996,16 @@ public static class BuiltInFunctions
             [NoteType.Instance]);
         registry.Register("noteToFrequency", noteToFrequencySignature, args =>
         {
-            string noteStr = (string)args[0].Data!;
-            var (noteName, octave, alteration) = NoteType.Parse(noteStr);
-            double frequency = Audio.PitchConversion.NoteToFrequency(noteName, octave, alteration);
-            return Value.Double(frequency);
+            if (args[0].Data is string stringNote)
+            {
+                var (noteName, octave, alteration) = NoteType.Parse(stringNote);
+                return Value.Double(Audio.PitchConversion.NoteToFrequency(noteName, octave, alteration));
+            }
+            else if (args[0].Data is MusicalNoteData musicalNoteData)
+            {
+                return Value.Double(Audio.PitchConversion.NoteToFrequency(musicalNoteData.NoteName, musicalNoteData.Octave, musicalNoteData.Alteration));
+            }
+            throw new Exception("Invalid argument data for noteToFrequency");
         });
 
         // ===== Euclidean Rhythm =====

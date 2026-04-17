@@ -17,6 +17,15 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm)
         {
+            return RenderBarToVoices(bar, SynthesizerFactory.Create(synthType), sampleRate, bpm);
+        }
+
+        public static List<Voice> RenderBarToVoices(
+            BarData bar,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm)
+        {
             if (bar.Mode != BarMode.Musical)
             {
                 throw new InvalidOperationException("Can only render musical mode bars. Use bar creation functions to create musical bars.");
@@ -27,8 +36,6 @@ namespace FlowLang.StandardLibrary.Audio
                 throw new InvalidOperationException("Bar must have a time signature to render.");
             }
 
-            // Create synthesizer
-            INoteSynthesizer synthesizer = SynthesizerFactory.Create(synthType);
 
             // Convert bar to timeline
             var timeline = bar.ToTimeline();
@@ -139,7 +146,17 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm)
         {
-            var voices = RenderBarToVoices(bar, synthType, sampleRate, bpm);
+            return RenderBarAtBeat(bar, beatOffset, SynthesizerFactory.Create(synthType), sampleRate, bpm);
+        }
+
+        public static List<Voice> RenderBarAtBeat(
+            BarData bar,
+            double beatOffset,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm)
+        {
+            var voices = RenderBarToVoices(bar, synthesizer, sampleRate, bpm);
 
             // Add beat offset to all voices
             foreach (var voice in voices)
@@ -161,9 +178,19 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm)
         {
+            return RenderBarAtTime(bar, timeSeconds, SynthesizerFactory.Create(synthType), sampleRate, bpm);
+        }
+
+        public static List<Voice> RenderBarAtTime(
+            BarData bar,
+            double timeSeconds,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm)
+        {
             // Convert seconds to beats: beats = (seconds / 60) * bpm
             double beatOffset = (timeSeconds / 60.0) * bpm;
-            return RenderBarAtBeat(bar, beatOffset, synthType, sampleRate, bpm);
+            return RenderBarAtBeat(bar, beatOffset, synthesizer, sampleRate, bpm);
         }
 
         /// <summary>
@@ -178,7 +205,18 @@ namespace FlowLang.StandardLibrary.Audio
             TimelineMap timelineMap,
             string scopeName = "top-level")
         {
-            return RenderBarAtBeat(bar, 0, synthType, sampleRate, bpm, timelineMap, scopeName);
+            return RenderBarToVoices(bar, SynthesizerFactory.Create(synthType), sampleRate, bpm, timelineMap, scopeName);
+        }
+
+        public static List<Voice> RenderBarToVoices(
+            BarData bar,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level")
+        {
+            return RenderBarAtBeat(bar, 0, synthesizer, sampleRate, bpm, timelineMap, scopeName);
         }
 
         /// <summary>
@@ -193,8 +231,20 @@ namespace FlowLang.StandardLibrary.Audio
             TimelineMap timelineMap,
             string scopeName = "top-level")
         {
+            return RenderBarAtBeat(bar, beatOffset, SynthesizerFactory.Create(synthType), sampleRate, bpm, timelineMap, scopeName);
+        }
+
+        public static List<Voice> RenderBarAtBeat(
+            BarData bar,
+            double beatOffset,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level")
+        {
             // Render voices (timeline entries are recorded with barOffsetBeats = beatOffset)
-            var voices = RenderBarToVoices(bar, synthType, sampleRate, bpm);
+            var voices = RenderBarToVoices(bar, synthesizer, sampleRate, bpm);
 
             // Record timeline entries
             if (timelineMap != null && bar.TimeSignature != null)

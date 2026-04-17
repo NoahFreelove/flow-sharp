@@ -205,12 +205,16 @@ Note: ===== Phase 3a: Signal Generation =====
 Note: ===== Oscillator State Management =====
 
 Note: Creates a new oscillator state with specified frequency and sample rate
-internal proc createOscillatorState(Double: frequency, Int: sampleRate)
-
-Note: Resets the oscillator phase to zero
+internal proc createOscillatorState(Double: freq, Int: sampleRate)
 internal proc resetPhase(OscillatorState: state)
 
-Note: ===== Signal Generators =====
+Note: ===== Musical Note utilities =====
+internal proc noteToFrequency(Note: n)
+
+internal proc createSineTone(Double: duration, Double: freq, Double: amp)
+internal proc createClip(Double: duration, Double: amp)
+
+Note: ===== Basic Generators =====
 
 Note: Fills buffer with sine wave, maintaining phase continuity
 internal proc generateSine(Buffer: buffer, OscillatorState: state, Double: amplitude)
@@ -307,6 +311,11 @@ internal proc renderSequenceToVoices(Sequence: seq, String: synthType, Int: samp
 
 Note: Render an entire Song arrangement to a stereo Buffer
 internal proc renderSong(Song: song, String: synthType)
+internal proc renderSong(Song: song, Function: synth)
+internal proc createSong(String: title)
+internal proc addBarToSong(Song: song, String: sectionName)
+internal proc addBarToSong(Song: song, String: sectionName, Int: count)
+internal proc addBarToSong(Song: song, Sequence: seq)
 
 Note: ===== Phase 5: Audio Effects (DSP) =====
 
@@ -353,6 +362,8 @@ internal proc play(Buffer: buffer)
 
 Note: Play a sequence (renders to audio then plays)
 internal proc play(Sequence: seq)
+internal proc stream(Buffer: buffer)
+internal proc stream(Sequence: seq)
 
 Note: Loop a buffer indefinitely (stop with Ctrl+C or stop function)
 internal proc loop(Buffer: buffer)

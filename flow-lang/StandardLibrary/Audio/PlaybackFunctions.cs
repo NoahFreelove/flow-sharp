@@ -27,13 +27,21 @@ public static class PlaybackFunctions
         var playSeqSig = new FunctionSignature("play", [SequenceType.Instance]);
         registry.Register("play", playSeqSig, args => PlaySequence(args, manager));
 
-        // loop(Buffer) -> Void — loops indefinitely until stopped
+        // loop(Buffer) -> Void — loops indefinitely (non-blocking)
         var loopBufferSig = new FunctionSignature("loop", [BufferType.Instance]);
-        registry.Register("loop", loopBufferSig, args => LoopBufferInfinite(args, manager));
+        registry.Register("loop", loopBufferSig, args => LoopBufferInfiniteAsync(args, manager));
 
-        // loop(Buffer, Int) -> Void — loops N times
+        // loop(Buffer, Int) -> Void — loops N times (non-blocking)
         var loopBufferNSig = new FunctionSignature("loop", [BufferType.Instance, IntType.Instance]);
-        registry.Register("loop", loopBufferNSig, args => LoopBufferN(args, manager));
+        registry.Register("loop", loopBufferNSig, args => LoopBufferNAsync(args, manager));
+
+        // stream(Buffer) -> Void — plays without blocking the interpreter
+        var streamBufferSig = new FunctionSignature("stream", [BufferType.Instance]);
+        registry.Register("stream", streamBufferSig, args => StreamBuffer(args, manager));
+
+        // stream(Sequence) -> Void — renders and streams
+        var streamSeqSig = new FunctionSignature("stream", [SequenceType.Instance]);
+        registry.Register("stream", streamSeqSig, args => StreamSequence(args, manager));
 
         // preview(Buffer) -> Void — low-quality mono 22050Hz playback
         var previewSig = new FunctionSignature("preview", [BufferType.Instance]);
@@ -78,6 +86,30 @@ public static class PlaybackFunctions
     }
 
     /// <summary>
+    /// Renders a Sequence and streams it without blocking.
+    /// </summary>
+    private static Value StreamSequence(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    {
+        var sequence = args[0].As<SequenceData>();
+        if (sequence.Count == 0) return Value.Void();
+
+        Task.Run(() => PlaySequence(args, manager));
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Streams a buffer without blocking.
+    /// </summary>
+    private static Value StreamBuffer(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    {
+        var buffer = args[0].As<AudioBuffer>();
+        if (buffer.Frames == 0) return Value.Void();
+
+        Task.Run(() => PlayBuffer(args, manager));
+        return Value.Void();
+    }
+
+    /// <summary>
     /// Renders a Sequence to audio using a sine synthesizer at 120 BPM (or current BPM),
     /// then plays the result.
     /// </summary>
@@ -113,14 +145,24 @@ public static class PlaybackFunctions
     }
 
     /// <summary>
-    /// Loops a buffer indefinitely. Stops when StopPlayback is called or Ctrl+C.
+    /// Loops a buffer indefinitely (non-blocking).
+    /// </summary>
+    private static Value LoopBufferInfiniteAsync(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    {
+        var buffer = args[0].As<AudioBuffer>();
+        if (buffer.Frames == 0) return Value.Void();
+
+        Task.Run(() => LoopBufferInfinite(args, manager));
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Loops a buffer indefinitely. Blocks until cancelled.
     /// </summary>
     private static Value LoopBufferInfinite(IReadOnlyList<Value> args, AudioPlaybackManager manager)
     {
         var buffer = args[0].As<AudioBuffer>();
-
-        if (buffer.Frames == 0)
-            return Value.Void();
+        if (buffer.Frames == 0) return Value.Void();
 
         if (manager.CaptureMode)
         {
@@ -147,6 +189,18 @@ public static class PlaybackFunctions
         {
         }
 
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Loops a buffer N times (non-blocking).
+    /// </summary>
+    private static Value LoopBufferNAsync(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    {
+        var buffer = args[0].As<AudioBuffer>();
+        if (buffer.Frames == 0) return Value.Void();
+
+        Task.Run(() => LoopBufferN(args, manager));
         return Value.Void();
     }
 

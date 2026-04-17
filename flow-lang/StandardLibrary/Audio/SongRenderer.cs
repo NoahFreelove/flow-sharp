@@ -25,6 +25,56 @@ public static class SongRenderer
     }
 
     /// <summary>
+    /// Registers contextual version of renderSong that supports custom lambda instruments.
+    /// </summary>
+    public static void RegisterContextDependent(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
+    {
+        var lambdaSig = new FunctionSignature(
+            "renderSong",
+            [SongType.Instance, TypeSystem.PrimitiveTypes.FunctionType.Instance]);
+        registry.Register("renderSong", lambdaSig, args => RenderSongWithLambda(args, context));
+    }
+
+    /// <summary>
+    /// renderSong(Song, Function) -> Buffer
+    /// Renders a song using a custom Flow lambda as the instrument.
+    /// </summary>
+    private static Value RenderSongWithLambda(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
+    {
+        var song = args[0].As<SongData>();
+        var lambda = args[1].As<FunctionOverload>();
+
+        // Create a wrapper for the lambda that matches the INoteSynthesizer requirement
+        var synth = new FlowFunctionSynthesizer((note, duration, bpm) =>
+        {
+            var noteValue = Value.MusicalNote(note);
+            var durValue = Value.Double(duration);
+            var bpmValue = Value.Double(bpm);
+
+            // Call the function via the context's invoker
+            var resultValue = context.Invoker!.ExecuteUserFunction(lambda.Declaration!, [noteValue, durValue, bpmValue]);
+            return resultValue.As<AudioBuffer>();
+        });
+
+        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+
+        foreach (var sectionRef in song.Sections)
+        {
+            if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
+                throw new InvalidOperationException($"renderSong: section '{sectionRef.Name}' not found in song registry");
+
+            var sectionBuffer = RenderSection(sectionData, synth);
+
+            for (int r = 0; r < sectionRef.RepeatCount; r++)
+            {
+                result = AppendBuffers(result, sectionBuffer);
+            }
+        }
+
+        return Value.Buffer(result);
+    }
+
+    /// <summary>
     /// renderSong(Song, String) -> Buffer
     /// Iterates the song arrangement, renders each section, handles repeats,
     /// and concatenates all section buffers into one stereo output.
@@ -59,6 +109,11 @@ public static class SongRenderer
     /// </summary>
     private static AudioBuffer RenderSection(SectionData section, string synthType)
     {
+        return RenderSection(section, SynthesizerFactory.Create(synthType));
+    }
+
+    private static AudioBuffer RenderSection(SectionData section, INoteSynthesizer synthesizer)
+    {
         double bpm = section.Context?.Tempo ?? DefaultBpm;
         double pan = section.Context?.Pan ?? 0.0;
         double gain = section.Context?.Gain ?? 1.0;
@@ -68,7 +123,7 @@ public static class SongRenderer
         foreach (var (name, sequence) in section.Sequences)
         {
             var voices = SequenceRenderer.RenderSequenceToVoices(
-                sequence, synthType, DefaultSampleRate, bpm);
+                sequence, synthesizer, DefaultSampleRate, bpm);
             // Apply pan and gain from musical context to all voices in this section
             foreach (var voice in voices)
             {

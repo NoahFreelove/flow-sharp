@@ -1,6 +1,8 @@
 using System.Text;
+using FlowLang.StandardLibrary.Audio;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
+using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary;
@@ -19,6 +21,9 @@ public static class VisualizationFunctions
     {
         var sig = new FunctionSignature("visualize", [SequenceType.Instance]);
         registry.Register("visualize", sig, Visualize);
+
+        var sig2 = new FunctionSignature("visualize", [BufferType.Instance]);
+        registry.Register("visualize", sig2, VisualizeBuffer);
     }
 
     /// <summary>
@@ -185,6 +190,93 @@ public static class VisualizationFunctions
         }
         sb.AppendLine();
 
+        Console.Write(sb.ToString());
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Visualizes an AudioBuffer as an ASCII waveform.
+    /// </summary>
+    public static Value VisualizeBuffer(IReadOnlyList<Value> args)
+    {
+        var buffer = args[0].As<AudioBuffer>();
+        if (buffer.Frames == 0)
+        {
+            Console.WriteLine("(empty buffer)");
+            return Value.Void();
+        }
+
+        // Downmix to mono if stereo
+        float[] data;
+        if (buffer.Channels == 1)
+        {
+            data = buffer.Data;
+        }
+        else
+        {
+            data = new float[buffer.Frames];
+            for (int i = 0; i < buffer.Frames; i++)
+            {
+                float sum = 0;
+                for (int ch = 0; ch < buffer.Channels; ch++)
+                    sum += buffer.GetSample(i, ch);
+                data[i] = sum / buffer.Channels;
+            }
+        }
+
+        const int width = 80;
+        const int height = 20;
+        char[,] grid = new char[height, width];
+        for (int r = 0; r < height; r++)
+            for (int c = 0; c < width; c++)
+                grid[r, c] = ' ';
+
+        // Subsample the data to fit width
+        float step = (float)buffer.Frames / width;
+        for (int x = 0; x < width; x++)
+        {
+            int start = (int)(x * step);
+            int end = (int)((x + 1) * step);
+            if (end > buffer.Frames) end = buffer.Frames;
+
+            // Find min/max in this window
+            float min = 1f;
+            float max = -1f;
+            for (int i = start; i < end; i++)
+            {
+                if (data[i] < min) min = data[i];
+                if (data[i] > max) max = data[i];
+            }
+
+            // Map to grid rows
+            int rMin = (int)((1f - max) * 0.5f * (height - 1));
+            int rMax = (int)((1f - min) * 0.5f * (height - 1));
+            rMin = Math.Clamp(rMin, 0, height - 1);
+            rMax = Math.Clamp(rMax, 0, height - 1);
+
+            for (int r = rMin; r <= rMax; r++)
+                grid[r, x] = '#';
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"Waveform Visualization ({buffer.Frames} frames, {buffer.SampleRate}Hz)");
+        sb.Append("    +");
+        sb.Append(new string('-', width));
+        sb.AppendLine("+");
+
+        for (int r = 0; r < height; r++)
+        {
+            float val = 1.0f - (r * 2.0f / (height - 1));
+            sb.Append($"{val,4:F1} |");
+            for (int c = 0; c < width; c++)
+                sb.Append(grid[r, c]);
+            sb.AppendLine("|");
+        }
+
+        sb.Append("    +");
+        sb.Append(new string('-', width));
+        sb.AppendLine("+");
+        
         Console.Write(sb.ToString());
         return Value.Void();
     }

@@ -176,6 +176,25 @@ namespace FlowLang.StandardLibrary.Audio
     }
 
     /// <summary>
+    /// Synthesizer that delegates note rendering to a Flow function.
+    /// The function is expected to take (MusicalNote, Double duration, Double bpm) and return a Buffer.
+    /// </summary>
+    public class FlowFunctionSynthesizer : INoteSynthesizer
+    {
+        private readonly Func<MusicalNoteData, double, double, AudioBuffer> _renderFunc;
+
+        public FlowFunctionSynthesizer(Func<MusicalNoteData, double, double, AudioBuffer> renderFunc)
+        {
+            _renderFunc = renderFunc ?? throw new ArgumentNullException(nameof(renderFunc));
+        }
+
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        {
+            return _renderFunc(note, durationBeats, bpm);
+        }
+    }
+
+    /// <summary>
     /// Factory for creating synthesizers by name.
     /// Supports both built-in synthesizers and user-registered custom wavetables.
     /// </summary>

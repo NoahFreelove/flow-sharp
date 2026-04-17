@@ -125,6 +125,7 @@ internal proc tremolo (Sequence: seq, Int: repetitions)
 
 Note: Visualization
 internal proc visualize (Sequence: seq)
+internal proc visualize (Buffer: b)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)

@@ -137,20 +137,28 @@ public class ExpressionEvaluator
         }
         catch (InvalidOperationException)
         {
-            // Variable not found - check if it's a zero-argument function
-            var overload = _context.TryResolveFunction(var.Name, Array.Empty<FlowType>());
+            // Variable not found - check if it's a zero-argument function or a function reference
+            var overloads = _context.CurrentFrame.GetFunctionOverloads(var.Name);
 
-            if (overload != null)
+            if (overloads.Count > 0)
             {
-                // Call the zero-argument function
-                if (overload.IsInternal)
+                // Try resolving with 0 args first (for backwards compatibility with existing 0-arg function shortcuts)
+                var zeroArgOverload = _context.TryResolveFunction(var.Name, Array.Empty<FlowType>());
+                if (zeroArgOverload != null)
                 {
-                    return overload.Implementation!(new List<Value>());
+                    if (zeroArgOverload.IsInternal)
+                    {
+                        return zeroArgOverload.Implementation!(new List<Value>());
+                    }
+                    else
+                    {
+                        return _invoker.ExecuteUserFunction(zeroArgOverload.Declaration!, new List<Value>());
+                    }
                 }
-                else
-                {
-                    return _invoker.ExecuteUserFunction(overload.Declaration!, new List<Value>());
-                }
+
+                // If not a 0-arg function, return it as a Function Value (the first available overload for now)
+                // In Flow, Function types are structurally compatible.
+                return Value.Function(overloads[0]);
             }
 
             // Not a variable or function

@@ -33,6 +33,16 @@ namespace FlowLang.StandardLibrary.Audio
             double bpm,
             int maxVoices = 32)
         {
+            return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, maxVoices);
+        }
+
+        public static List<Voice> RenderSequenceToVoices(
+            SequenceData sequence,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            int maxVoices = 32)
+        {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
 
@@ -42,7 +52,7 @@ namespace FlowLang.StandardLibrary.Audio
                 var barVoices = BarRenderer.RenderBarAtBeat(
                     bar,
                     offsetBeats,
-                    synthType,
+                    synthesizer,
                     sampleRate,
                     bpm);
 
@@ -64,6 +74,18 @@ namespace FlowLang.StandardLibrary.Audio
             string scopeName = "top-level",
             int maxVoices = 32)
         {
+            return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, timelineMap, scopeName, maxVoices);
+        }
+
+        public static List<Voice> RenderSequenceToVoices(
+            SequenceData sequence,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level",
+            int maxVoices = 32)
+        {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
 
@@ -72,7 +94,7 @@ namespace FlowLang.StandardLibrary.Audio
                 var barVoices = BarRenderer.RenderBarAtBeat(
                     bar,
                     offsetBeats,
-                    synthType,
+                    synthesizer,
                     sampleRate,
                     bpm,
                     timelineMap,
