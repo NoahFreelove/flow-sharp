@@ -53,6 +53,12 @@ public static class FileIO
         int dataSize = buffer.Frames * buffer.Channels * bytesPerSample;
         int fileSize = 36 + dataSize; // 44 bytes header - 8 bytes = 36
 
+        // Ensure parent directory exists (idempotent — no-op if present).
+        // Benefits both exportWav and writeWav via this shared helper.
+        var dir = Path.GetDirectoryName(filepath);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
         // Write WAV file
         using var fileStream = new FileStream(filepath, FileMode.Create, FileAccess.Write);
         using var writer = new BinaryWriter(fileStream);

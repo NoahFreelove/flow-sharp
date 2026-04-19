@@ -88,6 +88,9 @@ public static class Collections
             throw new InvalidOperationException($"Expected Array, got {arr.Type}");
 
         var elements = arr.As<IReadOnlyList<Value>>();
+        if (elements.Count == 0)
+            throw new InvalidOperationException("Cannot get init of empty array");
+
         return Value.Array(elements.Take(elements.Count - 1).ToArray(), arrayType.ElementType);
     }
 

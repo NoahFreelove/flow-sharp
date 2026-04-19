@@ -149,7 +149,7 @@ public class Interpreter : IFunctionInvoker
                     catch (ArgumentException ex)
                     {
                         _errorReporter.ReportError(ex.Message, ctx.Location);
-                        return;
+                        break;
                     }
                     break;
 
@@ -162,7 +162,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Tempo must be positive, got {tempo}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Tempo = tempo;
                     break;
@@ -176,7 +176,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Swing must be between 0.0 and 1.0, got {swing}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Swing = swing;
                     break;
@@ -222,7 +222,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Pan value must be between -1.0 and 1.0, got {pan}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Pan = pan;
                     break;
@@ -238,7 +238,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Gain must be between 0.0 and 2.0, got {gain}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Gain = gain;
                     break;
@@ -253,7 +253,7 @@ public class Interpreter : IFunctionInvoker
                             _errorReporter.ReportError(
                                 $"Unrecognized key '{keyName}'. Valid keys include: Cmajor, Aminor, Fsharpmajor, etc.",
                                 ctx.Location);
-                            return;
+                            break;
                         }
                         musicalCtx.Key = keyName;
                     }
@@ -261,7 +261,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             "Expected a key name literal (e.g., Cmajor, Aminor)", ctx.Location);
-                        return;
+                        break;
                     }
                     break;
             }
@@ -289,7 +289,7 @@ public class Interpreter : IFunctionInvoker
             _context.PopFrame();
         }
     }
-    // AUDIT-VERIFIED 2026-04-18: C1 — Confirmed: body skipped after validation error (tests/spike/c1-musical-context-body.flow)
+    // AUDIT-VERIFIED 2026-04-19: C1 — Fixed (returns→breaks); body now runs under partial/default context (tests/spike/c1-musical-context-body.flow GREEN)
 
     private void ExecuteForStatement(ForStatement stmt)
     {

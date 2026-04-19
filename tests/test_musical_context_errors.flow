@@ -1,7 +1,7 @@
 use "@std"
 
 tempo -5 {
-    (print "should not print - negative tempo")
+    (print "body ran under partial tempo context")
 }
 
 (print "after invalid tempo block")

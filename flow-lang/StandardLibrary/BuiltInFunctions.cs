@@ -211,7 +211,15 @@ public static class BuiltInFunctions
         var ifSignature = new FunctionSignature(
             "if", [BoolType.Instance, new LazyType(VoidType.Instance), new LazyType(VoidType.Instance)]);
         registry.Register("if", ifSignature, StdLib.If);
-        
+
+        // Strict (non-Lazy) if overload — Void-wildcard covers all Bool-T-T concrete shapes
+        // (String/String, Double/Double, Int/Int, etc.). The Lazy overload above has higher
+        // specificity for Lazy<Void> args, so it wins when args are lazy-wrapped.
+        var ifStrictSignature = new FunctionSignature(
+            "if", [BoolType.Instance, VoidType.Instance, VoidType.Instance]);
+        registry.Register("if", ifStrictSignature, StdLib.IfStrict);
+
+
         var andSignature = new FunctionSignature(
             "and", [new LazyType(BoolType.Instance), new LazyType(BoolType.Instance)]);
         registry.Register("and", andSignature, StdLib.And);

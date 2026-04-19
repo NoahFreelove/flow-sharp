@@ -51,10 +51,12 @@ Int sqSize = 4096
 Double sqSizeD = (intToDouble sqSize)
 Float[] sqTable = []
 Int j = 0
+Double posOne = 1.0
+Double negOne = (sub 0.0 1.0)
 while (lt j sqSize) {
     Double jd = (intToDouble j)
     Double phase2 = jd / sqSizeD
-    Double sample2 = (if (lt phase2 0.5) 1.0 -1.0)
+    Double sample2 = (if (lt phase2 0.5) posOne negOne)
     sqTable = (append sqTable sample2)
     j = (add j 1)
 }

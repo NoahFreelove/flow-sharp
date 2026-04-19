@@ -87,8 +87,8 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 ### v1.2 Stability & Composer DX (Phases 11-16) — in progress
 
 - [x] **Phase 11: Audit Spike** — Reproduce or close C1–C5 audit claims with failing tests or documented dismissals (completed 2026-04-19; 1 Confirmed C1, 4 Dismissed C2–C5)
-- [ ] **Phase 12: Stability** — Ship confirmed bug fixes (C6, C7), contingent fixes surviving the spike (including C5 migration comms if real), and unblock the failing test suite
-- [ ] **Phase 13: Nyquist Validation Backfill** — Retroactive VALIDATION.md for v1.1 phases 6-9, authored against requirements to avoid confirmation bias
+- [x] **Phase 12: Stability** — Ship confirmed bug fixes (C6 → FIX-05, C7 → FIX-06, C1 → FIX-07a), reframe TEST-03 around real failures (if-overload + auto-mkdir), and unblock the failing test suite (completed 2026-04-19; 4 Shipped + 2 Closed as audit false positives; 68/68 suite green; C5 BREAKING CHANGE bundle NOT TRIGGERED per F-02)
+- [x] **Phase 13: Nyquist Validation Backfill** — Retroactive VALIDATION.md for v1.1 phases 6-9 shipped + Phase 10 promoted to nyquist_compliant (completed 2026-04-20)
 - [ ] **Phase 14: Composer DX Part 1** — `slice`, enharmonic helpers (`Db`/`H`), MIDI velocity verification end-to-end (smallest-surface DX first)
 - [ ] **Phase 15: Composer DX Part 2** — Euclidean swing/humanize (reuses velocity infra), then `reverbTime` context block (widest blast radius, shipped last)
 - [ ] **Phase 16: Tutorial Refresh** — `examples/tutorial.flow` demonstrates v1.1 + v1.2 features end-to-end, produces audible WAV + MIDI
@@ -124,7 +124,16 @@ Plans:
   3. Every C1–C5 item the spike confirmed real ships with a numeric (not behavioral) regression test and its fix in a separate commit, preserving bisectability.
   4. If C5 (`augment`/`diminish` swap) was confirmed real, the correct-semantics fix ships with release-notes BREAKING CHANGE entry, `augmentV1`/`diminishV1` transitional aliases, and updated `examples/*.flow` call sites — all in the same release.
   5. The v1.1 soft-failure contract is preserved: validation errors inside musical-context blocks accumulate in `ErrorReporter` and execution continues, and explicit/implicit `return` from procs still works.
-**Plans**: TBD
+**Plans**: 6 plans
+
+Plans:
+- [x] 12-01-PLAN.md — xUnit harness scaffold (flow-lang.Tests) + wrap-as-Theory migration of all 55 .flow scripts (completed 2026-04-19; 54/55 green, spike/c1 RED per D-11)
+- [x] 12-02-PLAN.md — FIX-05 init([]) raises InvalidOperationException matching head/last semantics + native unit tests (completed 2026-04-19; commit 6e5a960; 3/3 CollectionsTests green)
+- [x] 12-03-PLAN.md — FIX-06 Thunk uses Lazy<Value> with ExecutionAndPublication for failure caching + native unit tests (completed 2026-04-19; commit 557923a; 4/4 ThunkTests green; ExpressionEvaluator.Evaluate promoted to virtual for test-double enablement)
+- [x] 12-04-PLAN.md — FIX-07a ExecuteMusicalContext returns→breaks + spike/c1 RED→GREEN flip + soft-failure unit tests (completed 2026-04-19; commits 327aa3c + fd9d801; 6/6 ExecuteMusicalContextTests green; spike/c1 GREEN; AUDIT-VERIFIED C1 Confirmed→Fixed)
+- [x] 12-05-PLAN.md — if(Bool, Void, Void) wildcard overload + exportWav/writeWav auto-mkdir in shared ExportWavInternal (completed 2026-04-19; commits 9afbe7a + c09cd82; 68/68 suite green; test_full_song RED→GREEN; test_custom_oscillator Tests 1/2/3 RED→GREEN — Test 4 deferred to plan 12-06 via DEFER-01 for missing `range` stdlib)
+- [x] 12-06-PLAN.md — REQUIREMENTS.md closure + 12-VERIFICATION.md rollup with FIX-* commit hashes (completed 2026-04-19; commits c94c379 + b5a8702; FIX-05/06/07a Shipped, TEST-01/02 Closed as audit false positives, TEST-03 Shipped/Reframed; DEFER-01 `range` forward-referenced to future phase)
+
 
 ### Phase 13: Nyquist Validation Backfill
 **Goal**: v1.1 phases 6–9 each carry a requirements-derived `VALIDATION.md` that would fail if the phase's feature were removed, closing the documentation-lag tech debt carried from v1.1 close.
@@ -134,7 +143,14 @@ Plans:
   1. `.planning/phases/06-diagnostics-bug-fixes/VALIDATION.md`, `07-developer-experience/VALIDATION.md`, `08-audio-production/VALIDATION.md`, and `09-advanced-features/VALIDATION.md` each satisfy the Nyquist checklist with tests authored against the requirement doc first and the implementation second.
   2. Phase 10 (`10-vocalization`) draft validation is either promoted to `nyquist_compliant: true` or carries an explicit written waiver describing what could not be validated and why.
   3. At least one validation test per phase pins a specific observable value (error message text, buffer byte hash, numeric duration, etc.) rather than asserting "no exception thrown" or "buffer is non-null".
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+- [x] 13-01-PLAN.md — Phase 6 VALIDATION.md (QOL-01, FIX-01, FIX-02 incl. gain-nested, FIX-03) + VerboseFlag + SectionGainBareExpression Facts (completed 2026-04-20; commits ff901fa + 4cf0ccd + 39d53f3; 71/71 suite green; 06-VALIDATION.md at nyquist_compliant: true)
+- [x] 13-02-PLAN.md — Phase 7 VALIDATION.md (DX-01..04) + RepLAutoImport Fact + tightened sentinels for test_comments/test_math/test_writewav (completed 2026-04-20; commits fb1a1ae + ed64dec + 9d7575f; 72/72 suite green; 07-VALIDATION.md at nyquist_compliant: true; DX-02 Double format drift documented per Pitfall 5)
+- [x] 13-03-PLAN.md — Phase 8 VALIDATION.md (AUDIO-05/06/07) + Mix + SynthesizerFactory Unit Facts + tightened sentinels (completed 2026-04-20; commits ea1d95a + 511085f + b077491; 76/76 suite green; 08-VALIDATION.md at nyquist_compliant: true; AudioCore.Mix IReadOnlyList<Value> signature + SynthesizerFactory outer-namespace + stereo channel-count drift documented under two-pass strict)
+- [x] 13-04-PLAN.md — Phase 9 VALIDATION.md (AUDIO-08, QOL-02) + Tutorial Integration Fact + test_tempo_ramp sentinel (completed 2026-04-20; commits ade6fbd + 1a41ada + 1cb508d; 77/77 suite green; 09-VALIDATION.md at nyquist_compliant: true; zero Divergences — AUDIO-08 + QOL-02 both literally testable as drafted; tutorial.flow GREEN under HEAD so no Skip/deferral needed)
+- [x] 13-05-PLAN.md — Phase 10 VALIDATION.md promotion (VOC-01 88200 pin + unknown-vowel + VOC-02 round-trip + empty-command Facts) + TEST-04 closure (completed 2026-04-20; commits 331d059 + 81f348c + 21e773d; 81/81 suite green; 10-VALIDATION.md promoted to nyquist_compliant: true; 4 new Facts under flow-lang.Tests/Unit/Phase10/; VOC-02 empty-command assertion shifted from Assert.Equal to Assert.Contains per 2-arg ArgumentException ctor; syllable sample-count Pitfall 8 documented)
 
 ### Phase 14: Composer DX Part 1
 **Goal**: Composers get three Tier-A building blocks that add no new keyword surface and sit on top of already-shipped infrastructure: bar-level sequence slicing, enharmonic note spellings (`Db`, `Eb`, `H`, …), and a verified end-to-end MIDI-velocity chain driven by `dynamics` / `crescendo` / `decrescendo` / `swell`.
@@ -186,8 +202,8 @@ Plans:
 | 9. Advanced Features | v1.1 | 2/2 | Complete | 2026-04-04 |
 | 10. Vocalization | v1.1 | 2/2 | Complete | 2026-04-04 |
 | 11. Audit Spike | v1.2 | 6/6 | Complete | 2026-04-19 |
-| 12. Stability | v1.2 | 0/? | Not started | - |
-| 13. Nyquist Validation Backfill | v1.2 | 0/? | Not started | - |
+| 12. Stability | v1.2 | 6/6 | Complete    | 2026-04-19 |
+| 13. Nyquist Validation Backfill | v1.2 | 5/5 | Complete    | 2026-04-20 |
 | 14. Composer DX Part 1 | v1.2 | 0/? | Not started | - |
 | 15. Composer DX Part 2 | v1.2 | 0/? | Not started | - |
 | 16. Tutorial Refresh | v1.2 | 0/? | Not started | - |

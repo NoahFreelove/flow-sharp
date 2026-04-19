@@ -56,6 +56,7 @@ Note: Lazy evaluation
 internal proc eval (Lazy<Void>: value)
 
 internal proc if (Bool: cond, Lazy<Void>: if_true, Lazy<Void>: otherwise)
+internal proc if (Bool: cond, Void: if_true, Void: otherwise)
 internal proc and (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc and (Bool: left, Bool: right)
 

@@ -28,7 +28,7 @@ public class ExpressionEvaluator
         _invoker = invoker ?? throw new ArgumentNullException(nameof(invoker));
     }
 
-    public Value Evaluate(Expression expr)
+    public virtual Value Evaluate(Expression expr)
     {
         return expr switch
         {

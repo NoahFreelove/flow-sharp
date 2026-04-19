@@ -88,8 +88,13 @@ public class InternalFunctionRegistry
         if (registered.Equals(requested))
             return true;
 
-        // VoidType mathematically represents 'Any'
-        if (registered is TypeSystem.PrimitiveTypes.VoidType || requested is TypeSystem.PrimitiveTypes.VoidType)
+        // VoidType mathematically represents 'Any' — but NOT a match against LazyType.
+        // Lazy is not interchangeable with concrete types at the C# implementation level
+        // (Lazy impls expect Thunks, strict impls expect concrete values). Excluding Lazy
+        // here disambiguates the Lazy/strict `if` overloads (plan 12-05, TEST-03).
+        if (registered is TypeSystem.PrimitiveTypes.VoidType && requested is not TypeSystem.PrimitiveTypes.LazyType)
+            return true;
+        if (requested is TypeSystem.PrimitiveTypes.VoidType && registered is not TypeSystem.PrimitiveTypes.LazyType)
             return true;
 
         // Special case: ArrayType(Void) matches any ArrayType
