@@ -32,6 +32,7 @@ public class Interpreter : IFunctionInvoker
     private readonly ModuleLoader _moduleLoader;
     private Value? _returnValue;
     private Value? _lastExpressionValue;
+    private List<SequenceData>? _activeSectionBareExpressions;
     private int _recursionDepth = 0;
     private const int MaxRecursionDepth = 1000;
 
@@ -269,6 +270,16 @@ public class Interpreter : IFunctionInvoker
             foreach (var stmt in ctx.Body)
             {
                 ExecuteStatement(stmt);
+
+                // When nested inside a section, capture bare expression sequences
+                // so `section { gain N { | notes | } }` produces audible output.
+                if (_activeSectionBareExpressions != null
+                    && stmt is ExpressionStatement
+                    && _lastExpressionValue?.Data is SequenceData innerSeq)
+                {
+                    _activeSectionBareExpressions.Add(innerSeq);
+                }
+
                 if (_returnValue != null) break;
             }
         }
@@ -364,18 +375,29 @@ public class Interpreter : IFunctionInvoker
             // Track bare expression results during body execution
             var bareExpressionSequences = new List<SequenceData>();
 
-            // Execute the section body
-            foreach (var stmt in section.Body)
+            // Install capture sink so nested MusicalContextStatement bodies
+            // (gain/tempo/timesig/key) also surface bare-expression sequences.
+            var previousCapture = _activeSectionBareExpressions;
+            _activeSectionBareExpressions = bareExpressionSequences;
+            try
             {
-                ExecuteStatement(stmt);
-
-                // Capture bare expressions that produce sequences
-                if (stmt is ExpressionStatement && _lastExpressionValue?.Data is SequenceData exprSeq)
+                // Execute the section body
+                foreach (var stmt in section.Body)
                 {
-                    bareExpressionSequences.Add(exprSeq);
-                }
+                    ExecuteStatement(stmt);
 
-                if (_returnValue != null) break;
+                    // Capture bare expressions that produce sequences
+                    if (stmt is ExpressionStatement && _lastExpressionValue?.Data is SequenceData exprSeq)
+                    {
+                        bareExpressionSequences.Add(exprSeq);
+                    }
+
+                    if (_returnValue != null) break;
+                }
+            }
+            finally
+            {
+                _activeSectionBareExpressions = previousCapture;
             }
 
             // Collect all Sequence variables declared in the section scope
