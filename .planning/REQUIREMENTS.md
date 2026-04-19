@@ -53,29 +53,29 @@ Requirements for milestone v1.1: Polish & Foundations.
 
 ### Bug Fixes
 
-- [ ] **FIX-01**: Sequence type resolves correctly in overload matching (transpose, vary, and all transforms work with Sequence arguments)
-- [ ] **FIX-02**: Bare expressions inside sections are captured as anonymous sequences (no silent 0-frame renders)
-- [ ] **FIX-03**: Error reporter distinguishes fatal vs non-fatal errors and does not mask function-not-found failures as success
-- [ ] **FIX-04**: Background FlowEngine instances do not clobber static PlaybackFunctions manager (proper isolation)
+- [x] **FIX-01**: Sequence type resolves correctly in overload matching (transpose, vary, and all transforms work with Sequence arguments)
+- [x] **FIX-02**: Bare expressions inside sections are captured as anonymous sequences (no silent 0-frame renders) — including inside nested gain/tempo/timesig/key context blocks
+- [x] **FIX-03**: Error reporter distinguishes fatal vs non-fatal errors and does not mask function-not-found failures as success
+- [~] **FIX-04**: Background FlowEngine instances do not clobber static PlaybackFunctions manager (proper isolation) — **INVALID**: premise does not hold in current architecture. `PlaybackFunctions.Register` (line 20) captures the manager via per-registration closure (no static state), and `LiveReloadManager` uses a fresh `FlowEngine` per re-render. No static-state clobbering can occur. Reclassified 2026-04-18 during v1.1 audit.
 
 ### Developer Experience
 
-- [ ] **DX-01**: Lexer supports `//` line comments (skipped like whitespace)
-- [ ] **DX-02**: Math standard library: sin, cos, abs, sqrt, min, max, floor, ceil, pi, tau
+- [x] **DX-01**: Lexer supports `//` line comments (skipped like whitespace)
+- [x] **DX-02**: Math standard library: sin, cos, abs, sqrt, min, max, floor, ceil, pi, tau
 - [x] **DX-03**: `writeWav` function added as primary name, `exportWav` kept as alias for backwards compatibility
 - [x] **DX-04**: REPL mode auto-imports @std, @audio, @collections without explicit use statements
 
 ### Audio Production
 
-- [ ] **AUDIO-05**: `mix(buffer1, buffer2)` layers two audio buffers by summing samples
-- [ ] **AUDIO-06**: Per-section gain control in song rendering
+- [x] **AUDIO-05**: `mix(buffer1, buffer2)` layers two audio buffers by summing samples
+- [x] **AUDIO-06**: Per-section gain control in song rendering
 - [x] **AUDIO-07**: Three new synth presets: strings (detuned saws), organ (Hammond additive), bell (Risset inharmonic partials)
 - [x] **AUDIO-08**: Tempo ramp transform: `tempoRamp(sequence, startBPM, endBPM) -> Buffer` for gradual tempo changes
 
 ### Quality of Life
 
-- [ ] **QOL-01**: `--verbose` flag shows registered functions, loaded modules, and type resolution details
-- [ ] **QOL-02**: Interactive tutorial — guided .flow script teaching the language from basics to full songs
+- [x] **QOL-01**: `--verbose` flag shows registered functions, loaded modules, and type resolution details
+- [x] **QOL-02**: Interactive tutorial — guided .flow script teaching the language from basics to full songs
 
 ### Vocalization
 
@@ -144,20 +144,20 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| QOL-01 | Phase 6 | Pending |
-| FIX-01 | Phase 6 | Pending |
-| FIX-02 | Phase 6 | Pending |
-| FIX-03 | Phase 6 | Pending |
-| FIX-04 | Phase 6 | Pending |
-| DX-01 | Phase 7 | Pending |
-| DX-02 | Phase 7 | Pending |
+| QOL-01 | Phase 6 | Complete |
+| FIX-01 | Phase 6 | Complete |
+| FIX-02 | Phase 6 | Complete |
+| FIX-03 | Phase 6 | Complete |
+| FIX-04 | Phase 6 | Invalid (premise does not hold) |
+| DX-01 | Phase 7 | Complete |
+| DX-02 | Phase 7 | Complete |
 | DX-03 | Phase 7 | Complete |
 | DX-04 | Phase 7 | Complete |
-| AUDIO-05 | Phase 8 | Pending |
-| AUDIO-06 | Phase 8 | Pending |
+| AUDIO-05 | Phase 8 | Complete |
+| AUDIO-06 | Phase 8 | Complete |
 | AUDIO-07 | Phase 8 | Complete |
 | AUDIO-08 | Phase 9 | Complete |
-| QOL-02 | Phase 9 | Pending |
+| QOL-02 | Phase 9 | Complete |
 | VOC-01 | Phase 10 | Complete |
 | VOC-02 | Phase 10 | Complete |
 

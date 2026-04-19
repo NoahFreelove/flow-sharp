@@ -85,17 +85,19 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-### Task 2 N/A: LiveReloadManager.cs does not exist
+### Task 2 N/A: FIX-04 premise does not hold in current architecture
 
 **Found during:** Task 2 (Fix static manager isolation)
-- **Issue:** The plan references `flow-interpreter/LiveReloadManager.cs` with a `RenderScript` method and `PlaybackFunctions.GetManager()/SetManager()` methods. Neither the file nor these methods exist in the codebase. Watch mode is handled directly in `Program.cs` using a single long-lived FlowEngine instance, which already avoids the static manager clobbering issue described in FIX-04.
-- **Resolution:** Task 2 skipped as N/A. The FIX-04 scenario (background engine clobbering static manager) does not apply to the current single-engine watch mode architecture.
-- **Impact:** FIX-04 requirement cannot be completed because the problem doesn't exist in the current code.
+- **Issue:** The plan references `PlaybackFunctions.GetManager()/SetManager()` static accessors. These methods do not exist. `PlaybackFunctions.Register` (line 20) captures the `AudioPlaybackManager` via per-registration closure — there is no static `_manager` field. `LiveReloadManager.cs` exists (390 lines) and creates a fresh `FlowEngine` per re-render (line 344), so each reload owns its own manager. Background engine instances cannot clobber each other because no shared static state exists.
+- **Resolution:** Task 2 skipped as N/A. The FIX-04 scenario (background engine clobbering a static manager) is structurally impossible in the current architecture.
+- **Impact:** FIX-04 reclassified as `Invalid` (see REQUIREMENTS.md v1.1 traceability table, updated 2026-04-18 during milestone audit).
+
+> **2026-04-18 correction:** An earlier version of this summary claimed `LiveReloadManager.cs` did not exist. That was factually wrong — the file does exist. The correct reason the requirement is N/A is the closure-captured manager pattern described above, verified during the v1.1 milestone audit.
 
 ---
 
-**Total deviations:** 1 (Task 2 N/A due to nonexistent target file)
-**Impact on plan:** Core deliverable (--verbose flag) completed. FIX-04 target does not exist in codebase.
+**Total deviations:** 1 (Task 2 N/A — FIX-04 premise invalid)
+**Impact on plan:** Core deliverable (--verbose flag) completed. FIX-04 reclassified as Invalid during v1.1 audit.
 
 ## Issues Encountered
 - `tests/` directory is gitignored; used `git add -f` to force-add the test file
