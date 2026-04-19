@@ -62,26 +62,34 @@ Int a = 1; Int b = 2; Int c = (add a b)
 
 ## Comments
 
-Comments start with `Note:` — no `//` or `#` syntax:
+Flow supports two comment styles — both run to end of line:
 
 ```flow
 Note: This is a comment
+// This is also a comment
 Int x = 5  Note: inline comment
+Int y = 7  // inline comment
 ```
+
+`Note:` must start at the beginning of a line's content. `//` works anywhere.
 
 ## Printing Values
 
-Always convert to string before printing:
+Convert to string or use string interpolation:
 
 ```flow
 use "@std"
 
 Int x = 42
-(print (str x))     Note: prints "42"
-(print (str 3.14))  Note: prints "3.14"
-(print (str true))  Note: prints "true"
+(print (str x))              Note: prints "42"
+(print (str 3.14))
+(print (str true))
 
-Note: Concatenate for labeled output
+Note: Interpolation is usually cleanest
+(print $"value: {x}")
+(print $"total: {x + 100}")
+
+Note: Traditional concat
 (print (concat "Value: " (str x)))
 ```
 
@@ -151,7 +159,23 @@ use "@std"
 (print "hello")
 ```
 
-### 2. G7 vs Gdom7
+### 2. Accidentals: `+`/`-` vs `s`/`f`
+
+Notes and chord roots use different accidental syntaxes:
+
+```flow
+Note: note literal — use + and -
+Note cSharp = C4+
+Note bFlat  = B3-
+
+Note: chord symbol — use s and f
+Chord cSharpMaj = Csmaj
+Chord bFlatMin  = Bfm
+```
+
+This is a common source of confusion.
+
+### 3. G7 vs Gdom7
 
 `G7` is parsed as the note G at octave 7, not a G7 chord:
 
@@ -163,7 +187,7 @@ Note: This is the CHORD:
 Chord g7chord = Gdom7
 ```
 
-### 3. Missing Musical Context for Note Streams
+### 4. Missing Musical Context for Note Streams
 
 ```flow
 Note: May not work correctly without timesig:
@@ -175,7 +199,7 @@ timesig 4/4 {
 }
 ```
 
-### 4. Name Conflicts with Imports
+### 5. Name Conflicts with Imports
 
 Since imports execute in caller's scope with no namespacing, be careful with common names:
 
@@ -185,7 +209,7 @@ use "lib_b.flow"
 Note: if both define a function called "process", the second one wins
 ```
 
-### 5. Snapshot Closure Capture
+### 6. Snapshot Closure Capture
 
 Lambdas capture variables at creation time, not at call time:
 
@@ -198,7 +222,7 @@ x = 999
 Int result = (f 5)  Note: 15, not 1004 (captured x=10)
 ```
 
-### 6. Comparison Operators are Functions
+### 7. Comparison Operators are Functions
 
 There are no `==`, `<`, `>` operators. Use function calls:
 
@@ -214,7 +238,7 @@ Bool isLess = (lt x 5)
 Bool isMore = (gt x 5)
 ```
 
-### 7. Division by Zero
+### 8. Division by Zero
 
 Division by zero returns Void rather than crashing:
 
@@ -288,8 +312,26 @@ Sequence euclid = (euclidean 3 8 C4)
 (print (str euclid))
 ```
 
+## Loops for Stateful Work
+
+For counting, accumulating, or early-exit patterns, use `for` / `while`:
+
+```flow
+use "@std"
+
+Int total = 0
+for Int n in (list 1 2 3 4 5) {
+    total = total + n
+}
+(print $"total: {total}")
+```
+
+See [Loops](Loops.md).
+
 ## See Also
 
 - [Quick Start](Quick-Start.md) - Getting started
 - [Language Basics](Language-Basics.md) - Fundamentals
 - [Examples](Examples.md) - Complete working programs
+- [Loops](Loops.md) - `for`, `while`, `break`, `continue`
+- [String Interpolation](String-Interpolation.md) - `$"..."` syntax

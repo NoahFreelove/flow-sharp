@@ -4,23 +4,23 @@ Flow's standard library provides all built-in functions. Most programs need `use
 
 ## Why `use "@std"` Matters
 
-Without `use "@std"`, you only have raw language syntax (variables, operators, `proc`, note streams). Essential functions like `print`, `str`, `concat`, `add`, `sub`, `list`, `map`, `filter`, and all collection operations require the standard library.
+Without `use "@std"`, you only have raw language syntax (variables, operators, `proc`, note streams, context blocks). Essential functions like `print`, `str`, `concat`, `add`, `sub`, `list`, `map`, `filter`, and all collection operations require the standard library.
 
 ```flow
 use "@std"
-(print "Now I can use print!")
+(print "now print works")
 ```
 
 ## Modules
 
 | Module | Import | Provides |
 |--------|--------|----------|
-| `@std` | `use "@std"` | Core functions + collections + bars (imports @collections and @bars) |
+| `@std` | `use "@std"` | Core + collections + bars (also auto-imports `@collections` and `@bars`) |
 | `@collections` | `use "@collections"` | List operations (head, tail, map, filter, etc.) |
-| `@audio` | `use "@audio"` | Audio creation, effects, playback, synthesis |
+| `@audio` | `use "@audio"` | Audio creation, effects, playback, synthesis, MIDI/WAV I/O |
 | `@notation` | `use "@notation"` | Musical notation (note durations, rests, time signatures) |
 | `@bars` | `use "@bars"` | Bar/note operations |
-| `@composition` | `use "@composition"` | Timeline, voice, track convenience functions |
+| `@composition` | `use "@composition"` | Timeline, voice, track, polyrhythm, variation |
 
 `@std` automatically imports `@collections` and `@bars`, so you rarely need to import them separately.
 
@@ -31,7 +31,6 @@ use "@std"
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `print` | `(String) -> Void` | Print string with newline |
-| `input` | `() -> String` | Read line from stdin |
 
 ### String Operations
 
@@ -41,74 +40,90 @@ use "@std"
 | `len` | `(String) -> Int` | String length |
 | `concat` | `(String, String) -> String` | Concatenate strings |
 
-`str` has overloads for: Int, Float, Double, String, Bool, Note, Bar, Semitone, Cent, Millisecond, Second, Decibel, Array, Sequence, Chord, Section, Song.
+`str` has overloads for Int, Float, Double, String, Bool, Note, Bar, Semitone, Cent, Millisecond, Second, Decibel, Array, Sequence, Chord, Section, Song.
 
 ### Arithmetic
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `add` | `(Int, Int) -> Int` | Addition |
+| `add` | `(Int, Int) -> Int` (plus Float / Double overloads) | Addition |
 | `sub` | `(Int, Int) -> Int` | Subtraction |
 | `mul` | `(Int, Int) -> Int` | Multiplication |
-| `div` | `(Int, Int) -> Int` | Integer division |
-| `add` | `(Double, Double) -> Double` | Double addition |
-| `sub` | `(Double, Double) -> Double` | Double subtraction |
-| `mul` | `(Double, Double) -> Double` | Double multiplication |
-| `div` | `(Double, Double) -> Double` | Double division |
+| `div` | `(Int, Int) -> Int` | Integer division (and Float/Double overloads) |
+| `abs` | `(Int) -> Int` / `(Double) -> Double` | Absolute value |
+| `min` | `(Int, Int) -> Int` / `(Double, Double) -> Double` | Minimum |
+| `max` | `(Int, Int) -> Int` / `(Double, Double) -> Double` | Maximum |
 
-Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
+Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
+
+### Math
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `sin` | `(Double) -> Double` | Sine |
+| `cos` | `(Double) -> Double` | Cosine |
+| `tan` | `(Double) -> Double` | Tangent |
+| `sqrt` | `(Double) -> Double` | Square root |
+| `floor` | `(Double) -> Int` | Round down |
+| `ceil` | `(Double) -> Int` | Round up |
+| `round` | `(Double) -> Int` | Round to nearest |
+| `pow` | `(Double, Double) -> Double` | Exponentiation |
+| `log` | `(Double) -> Double` | Natural log |
+| `pi` | `() -> Double` | π |
+| `tau` | `() -> Double` | 2π |
 
 ### Comparison
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `equals` | `(Void, Void) -> Bool` | Loose equality (with type coercion) |
-| `sequals` | `(Void, Void) -> Bool` | Strict equality (type must match) |
-| `lt` | `(Void, Void) -> Bool` | Less than |
-| `gt` | `(Void, Void) -> Bool` | Greater than |
-| `lte` | `(Void, Void) -> Bool` | Less than or equal |
-| `gte` | `(Void, Void) -> Bool` | Greater than or equal |
+| `equals` | `(T, T) -> Bool` | Loose equality (with type coercion) |
+| `sequals` | `(T, T) -> Bool` | Strict equality (types must match) |
+| `lt` | `(T, T) -> Bool` | Less than |
+| `gt` | `(T, T) -> Bool` | Greater than |
+| `lte` | `(T, T) -> Bool` | Less than or equal |
+| `gte` | `(T, T) -> Bool` | Greater than or equal |
 
 ### Logical
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `and` | `(Bool, Bool) -> Bool` | Logical AND |
-| `or` | `(Bool, Bool) -> Bool` | Logical OR |
+| `and` | `(Bool, Bool) -> Bool` | Eager AND |
+| `and` | `(Lazy<Bool>, Lazy<Bool>) -> Bool` | Short-circuit AND |
+| `or` | `(Bool, Bool) -> Bool` | Eager OR |
+| `or` | `(Lazy<Bool>, Lazy<Bool>) -> Bool` | Short-circuit OR |
 | `not` | `(Bool) -> Bool` | Logical NOT |
-| `if` | `(Bool, Lazy, Lazy) -> T` | Conditional (lazy evaluation) |
-
-`and` and `or` also have lazy overloads that short-circuit evaluation.
+| `if` | `(Bool, Lazy<T>, Lazy<T>) -> T` | Conditional (lazy branches) |
 
 ### Type Conversion
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `intToDouble` | `(Int) -> Double` | Int to Double |
-| `doubleToInt` | `(Double) -> Int` | Double to Int (truncates) |
-| `stringToInt` | `(String) -> Int\|Void` | Parse string to Int |
-| `stringToDouble` | `(String) -> Double\|Void` | Parse string to Double |
+| `intToDouble` | `(Int) -> Double` | Int → Double |
+| `doubleToInt` | `(Double) -> Int` | Double → Int (truncates) |
+| `stringToInt` | `(String) -> Int` | Parse Int (returns Void on failure) |
+| `stringToDouble` | `(String) -> Double` | Parse Double (returns Void on failure) |
 
-### Lazy Evaluation
+### Lazy and Control
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `eval` | `(Lazy) -> T` | Force evaluation of lazy value |
+| `eval` | `(Lazy<T>) -> T` | Force evaluation of a lazy value |
+| `setMaxIterations` | `(Int) -> Void` | Cap loop iterations (safety limit) |
 
 ### Random
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `?` | `() -> Float` | Random float 0.0-1.0 |
-| `??` | `() -> Float` | Seeded random float |
-| `??set` | `(Int) -> Void` | Set random seed |
-| `??reset` | `() -> Void` | Reset seeded random |
+| `?` | `() -> Float` | Random float [0, 1) |
+| `??` | `() -> Float` | Seeded random float [0, 1) |
+| `??set` | `(Int) -> Void` | Set the seeded RNG state |
+| `??reset` | `() -> Void` | Reset the seeded RNG |
 
 ## Collection Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `list` | `(...T) -> T[]` | Create array (varargs) |
+| `list` | `(...T) -> T[]` | Create array from varargs |
 | `length` / `len` | `(T[]) -> Int` | Array length |
 | `head` | `(T[]) -> T` | First element |
 | `tail` | `(T[]) -> T[]` | All except first |
@@ -124,10 +139,12 @@ Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
 | `contains` | `(T[], T) -> Bool` | Contains element? |
 | `map` | `(T[], T => U) -> U[]` | Transform elements |
 | `filter` | `(T[], T => Bool) -> T[]` | Filter by predicate |
-| `reduce` | `(T[], U, (U,T) => U) -> U` | Fold with accumulator |
+| `reduce` | `(T[], U, (U, T) => U) -> U` | Fold with accumulator |
 | `each` | `(T[], T => Void) -> Void` | Apply for side effects |
-| `range` | `(Int, Int) -> Int[]` | Integer range |
-| `zip` | `(T[], U[]) -> [T,U][]` | Pair elements |
+| `range` | `(Int, Int) -> Int[]` | Integer range `[lo, hi)` |
+| `zip` | `(T[], U[]) -> [T, U][]` | Pair elements |
+
+See [Collections](Collections.md) for details.
 
 ## Audio Functions
 
@@ -135,29 +152,29 @@ Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `createBuffer` | `(Int, Int, Int) -> Buffer` | Create buffer (frames, channels, sampleRate) |
-| `getFrames` | `(Buffer) -> Int` | Frame count |
-| `getChannels` | `(Buffer) -> Int` | Channel count |
-| `getSampleRate` | `(Buffer) -> Int` | Sample rate |
+| `createBuffer` | `(Int, Int, Int) -> Buffer` | Create buffer (frames, channels, sample rate) |
+| `getFrames` / `getChannels` / `getSampleRate` | `(Buffer) -> Int` | Buffer metadata |
 | `getSample` | `(Buffer, Int, Int) -> Float` | Get sample (frame, channel) |
 | `setSample` | `(Buffer, Int, Int, Double) -> Void` | Set sample |
 | `fillBuffer` | `(Buffer, Double) -> Void` | Fill with constant |
 | `copyBuffer` | `(Buffer) -> Buffer` | Deep copy |
 | `sliceBuffer` | `(Buffer, Int, Int) -> Buffer` | Extract slice |
-| `appendBuffers` | `(Buffer, Buffer) -> Buffer` | Concatenate |
-| `scaleBuffer` | `(Buffer, Double) -> Void` | Scale amplitude |
-| `mixBuffers` | `(Buffer, Buffer, Double, Double) -> Buffer` | Mix with gains |
+| `appendBuffers` | `(Buffer, Buffer) -> Buffer` | Concatenate end-to-end |
+| `scaleBuffer` | `(Buffer, Double) -> Buffer` | Multiply all samples by gain |
+| `mix` | `(Buffer, Buffer) -> Buffer` | Mix at unity gain |
+| `mixBuffers` | `(Buffer, Buffer, Double, Double) -> Buffer` | Mix with per-source gains |
+| `fadeIn` | `(Buffer, Double) -> Buffer` | Linear fade-in (seconds) |
+| `fadeOut` | `(Buffer, Double) -> Buffer` | Linear fade-out (seconds) |
 
 ### Signal Generation
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `createOscillatorState` | `(Double, Int) -> OscillatorState` | Create oscillator |
+| `createOscillatorState` | `(Double, Int) -> OscillatorState` | Oscillator state |
 | `resetPhase` | `(OscillatorState) -> Void` | Reset phase |
-| `generateSine` | `(Buffer, OscillatorState, Double) -> Void` | Sine wave |
-| `generateSaw` | `(Buffer, OscillatorState, Double) -> Void` | Sawtooth wave |
-| `generateSquare` | `(Buffer, OscillatorState, Double) -> Void` | Square wave |
-| `generateTriangle` | `(Buffer, OscillatorState, Double) -> Void` | Triangle wave |
+| `generateSine` / `generateSaw` / `generateSquare` / `generateTriangle` | `(Buffer, OscillatorState, Double) -> Void` | Fill buffer with waveform |
+| `createSineTone` / `createSawTone` / `createSquareTone` / `createTriangleTone` | `(Double, Double, Double) -> Buffer` | Ready-to-use tone (duration, frequency, amplitude) |
+| `oscillator` | `(String, Array)` / `(String, Function)` / `(String, Function, Int)` | Register a custom wavetable oscillator |
 
 ### Envelopes
 
@@ -165,53 +182,73 @@ Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
 |----------|-----------|-------------|
 | `createAR` | `(Double, Double, Int) -> Envelope` | Attack-Release envelope |
 | `createADSR` | `(Double, Double, Double, Double, Int) -> Envelope` | ADSR envelope |
-| `applyEnvelope` | `(Buffer, Envelope) -> Void` | Apply envelope (in-place) |
+| `applyEnvelope` | `(Buffer, Envelope) -> Buffer` | Apply envelope shape |
 
 ### Effects
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `reverb` | `(Buffer, Double) -> Buffer` | Reverb (roomSize) |
-| `reverb` | `(Buffer, Double, Double, Double) -> Buffer` | Reverb (room/damp/mix) |
-| `lowpass` | `(Buffer, Double) -> Buffer` | Low-pass filter |
-| `highpass` | `(Buffer, Double) -> Buffer` | High-pass filter |
+| `reverb` | `(Buffer, Double) -> Buffer` / `(Buffer, Double, Double, Double) -> Buffer` | Reverb |
+| `lowpass` / `highpass` | `(Buffer, Double) -> Buffer` | Filters (cutoff Hz) |
 | `bandpass` | `(Buffer, Double, Double) -> Buffer` | Band-pass filter |
-| `compress` | `(Buffer, Double, Double) -> Buffer` | Compressor |
-| `compress` | `(Buffer, Double, Double, Double, Double) -> Buffer` | Full compressor |
+| `compress` | `(Buffer, Double, Double) -> Buffer` / `(Buffer, Double, Double, Double, Double) -> Buffer` | Compressor |
+| `sidechain` | `(Buffer, Buffer, Double, Double) -> Buffer` / `(… , Double, Double)` | Sidechain compressor |
 | `delay` | `(Buffer, Double, Double, Double) -> Buffer` | Feedback delay |
-| `gain` | `(Buffer, Double) -> Buffer` | Gain in dB |
-| `fadeIn` | `(Buffer, Double) -> Buffer` | Linear fade-in |
-| `fadeOut` | `(Buffer, Double) -> Buffer` | Linear fade-out |
+| `gain` | `(Buffer, Double) -> Buffer` | Gain (dB) |
+| `pan` | `(Buffer, Double) -> Buffer` | Stereo pan (-1 .. +1) |
 
 ### Playback
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `play` | `(Buffer) -> Void` | Play buffer |
-| `play` | `(Sequence) -> Void` | Render and play |
-| `loop` | `(Buffer) -> Void` | Loop indefinitely |
-| `loop` | `(Buffer, Int) -> Void` | Loop N times |
+| `play` | `(Buffer) -> Void` / `(Sequence) -> Void` | Play (blocking) |
+| `stream` | `(Buffer) -> Void` / `(Sequence) -> Void` | Play asynchronously |
+| `loop` | `(Buffer) -> Void` / `(Buffer, Int) -> Void` | Loop indefinitely / N times |
 | `preview` | `(Buffer) -> Void` | Low-quality preview |
 | `stop` | `() -> Void` | Stop playback |
 | `audioDevices` | `() -> String[]` | List devices |
 | `setAudioDevice` | `(String) -> Bool` | Set output device |
-| `isAudioAvailable` | `() -> Bool` | Check audio backend |
+| `isAudioAvailable` | `() -> Bool` | Check backend |
 
-### WAV Export
+### WAV / MIDI I/O
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `exportWav` | `(Buffer, String) -> Void` | Export 16-bit WAV |
-| `exportWav` | `(Buffer, String, Int) -> Void` | Export with bit depth |
+| `exportWav` | `(Buffer, String) -> Void` / `(Buffer, String, Int) -> Void` | Export WAV (optional bit depth) |
+| `writeWav` | `(String, Buffer) -> Void` / `(String, Buffer, Int) -> Void` | Path-first WAV export |
+| `loadWav` | `(String) -> Buffer` | Load WAV file |
+| `writeMidi` | `(String, Song) -> Void` | Export Song to Standard MIDI File |
 
-### Timeline
+### Timeline and Voice
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `setBPM` | `(Double) -> Void` | Set global BPM |
 | `getBPM` | `() -> Double` | Get current BPM |
-| `beatsToFrames` | `(Double, Int) -> Int` | Beats to sample frames |
-| `framesToBeats` | `(Int, Int) -> Double` | Frames to beats |
+| `beatsToFrames` | `(Double, Int) -> Int` | Beats → frames |
+| `framesToBeats` | `(Int, Int) -> Double` | Frames → beats |
+| `createVoice` | `(Buffer, Double) -> Voice` | Voice at beat offset |
+| `setVoiceGain` / `setVoicePan` / `setVoiceOffset` | `(Voice, Double) -> Void` | Voice parameters |
+| `createTrack` | `(Int, Int) -> Track` | Empty track |
+| `addVoice` | `(Track, Voice) -> Void` | Add voice |
+| `setTrackGain` / `setTrackPan` / `setTrackOffset` | `(Track, Double) -> Void` | Track parameters |
+| `renderTrack` | `(Track, Double) -> Buffer` | Render track over N beats |
+| `setMaxVoices` | `(Int) -> Void` | Set polyphonic voice pool size |
+
+### Vocalization
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `sing` | `(String, Note, Double) -> Buffer` | Formant-synthesized vowel / syllable |
+| `tts` | `(String) -> Buffer` | External TTS → buffer |
+| `setTtsCommand` | `(String) -> Void` | Configure TTS command template |
+
+### Visualization
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `visualize` | `(Sequence) -> Void` | ASCII piano-roll |
+| `visualize` | `(Buffer) -> Void` | ASCII waveform |
 
 ## Harmony Functions
 
@@ -220,36 +257,46 @@ Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
 | `chordNotes` | `(Chord) -> String[]` | Notes in chord |
 | `chordRoot` | `(Chord) -> String` | Root note |
 | `chordQuality` | `(Chord) -> String` | Quality string |
-| `arpeggio` | `(Chord, String) -> Sequence` | Arpeggiate (up/down/updown) |
+| `arpeggio` | `(Chord, String) -> Sequence` | Arpeggiate (`"up"`, `"down"`, `"updown"`) |
 | `scaleNotes` | `(String) -> String[]` | Scale note names |
-| `resolveNumeral` | `(String, String) -> Chord` | Roman numeral to chord |
+| `resolveNumeral` | `(String, String) -> Chord` | Roman numeral → chord |
 | `getSections` | `(Song) -> String[]` | Section names |
-| `sectionSequences` | `(Section) -> String[]` | Sequence names |
+| `sectionSequences` | `(Section) -> String[]` | Sequence names within a section |
 
 ## Transform Functions
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `transpose` | `(Sequence, Semitone) -> Sequence` | Shift by semitones |
-| `transpose` | `(Sequence, Cent) -> Sequence` | Shift by cents |
+| `transpose` | `(Sequence, Semitone) -> Sequence` / `(Sequence, Cent) -> Sequence` | Shift pitch |
 | `invert` | `(Sequence) -> Sequence` | Mirror intervals |
 | `retrograde` | `(Sequence) -> Sequence` | Reverse note order |
 | `augment` | `(Sequence) -> Sequence` | Double durations |
 | `diminish` | `(Sequence) -> Sequence` | Halve durations |
-| `up` | `(Sequence, Int) -> Sequence` | Shift up N octaves |
-| `down` | `(Sequence, Int) -> Sequence` | Shift down N octaves |
-| `repeat` | `(Sequence, Int) -> Sequence` | Repeat N times |
-| `repeat` | `(Sequence, Int, Semitone) -> Sequence` | Repeat with transposition |
+| `up` / `down` | `(Sequence, Int) -> Sequence` | Octave shift |
+| `repeat` | `(Sequence, Int) -> Sequence` / `(Sequence, Int, Semitone) -> Sequence` | Repeat (optionally with transposition) |
 | `concat` | `(Sequence, Sequence) -> Sequence` | Join sequences |
 | `crescendo` | `(Sequence, Double, Double) -> Sequence` | Rising velocity |
 | `decrescendo` | `(Sequence, Double, Double) -> Sequence` | Falling velocity |
-| `swell` | `(Sequence, Double, Double) -> Sequence` | Rise-then-fall velocity |
-| `ritardando` | `(Sequence, Double) -> Sequence` | Gradual slowdown |
-| `accelerando` | `(Sequence, Double) -> Sequence` | Gradual speedup |
+| `swell` | `(Sequence, Double, Double) -> Sequence` | Rise-then-fall |
+| `ritardando` / `accelerando` | `(Sequence, Double) -> Sequence` | Slow-/speed-up feel |
 | `fermata` | `(Sequence, Int) -> Sequence` | Hold note at index |
 | `humanize` | `(Sequence, Double) -> Sequence` | Random velocity variation |
 | `trill` | `(Sequence, Semitone) -> Sequence` | Rapid alternation |
 | `tremolo` | `(Sequence, Int) -> Sequence` | Rapid repetition |
+
+## Composition Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `euclidean` | `(Int, Int, Note) -> Sequence` | Euclidean rhythm (hits, steps, pitch) |
+| `vary` | `(Sequence, Double)` + typed / seeded / diatonic overloads | Stochastic mutation |
+| `polyrhythm` | `(Sequence, Sequence) -> Buffer` / `(…, Int) -> Buffer` | Overlay sequences with different time signatures |
+| `tempoRamp` | `(Sequence, Double, Double) -> Buffer` / `(…, String) -> Buffer` | Render with interpolated tempo |
+| `renderSong` | `(Song, String) -> Buffer` / `(Song, Function) -> Buffer` | Render song with synth name or lambda instrument |
+| `renderSequenceToVoices` | `(Sequence, String, Int, Double) -> Voice[]` | Render sequence to voices |
+| `renderBarToVoices` | `(Bar, String, Int, Double) -> Voice[]` | Render bar to voices |
+| `renderBarAtBeat` | `(Bar, Double, String, Int, Double) -> Voice[]` | Render bar at beat offset |
+| `renderBarAtTime` | `(Bar, Double, String, Int, Double) -> Voice[]` | Render bar at time offset |
 
 ## Musical Notation Functions
 
@@ -259,12 +306,14 @@ Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
 | `createRest` | `(NoteValue) -> MusicalNote` | Rest with duration |
 | `createTimeSignature` | `(Int, Int) -> TimeSignature` | Time signature |
 | `createMusicalBar` | `(MusicalNote[], TimeSignature) -> Bar` | Bar from notes |
+| `createEmptyMusicalBar` | `(TimeSignature) -> Bar` | Empty bar |
 | `createSequence` | `() -> Sequence` | Empty sequence |
-| `addBarToSequence` | `(Sequence, Bar) -> Sequence` | Add bar |
-| `renderSequence` | `(Sequence, String, Int, Double) -> Voice[]` | Render sequence |
-| `noteToFrequency` | `(Note) -> Double` | Note to Hz |
-| `euclidean` | `(Int, Int, Note) -> Sequence` | Euclidean rhythm |
-| `renderSong` | `(Song, String) -> Buffer` | Render full song |
+| `addBarToSequence` | `(Sequence, Bar) -> Sequence` | Add bar to sequence |
+| `noteToFrequency` | `(Note) -> Double` | Note → Hz (A4 = 440) |
+| `noteValueToBeats` | `(NoteValue, Int) -> Double` | Duration → beats |
+| `validateBarDuration` | `(Bar, TimeSignature) -> Bool` | Check bar fits time signature |
+| `getRemainingBeats` | `(Bar) -> Double` | Remaining capacity |
+| `wouldFit` | `(Bar, MusicalNote) -> Bool` | Would note fit? |
 
 ## Bar Functions
 
@@ -273,15 +322,28 @@ Note: Binary operators `+`, `-`, `*`, `/` also work for arithmetic expressions.
 | `createBar` | `() -> Bar` | Empty bar |
 | `createBarWithNote` | `(Note) -> Bar` | Bar with one note |
 | `createBarFromNotes` | `(Note[]) -> Bar` | Bar from array |
-| `addNoteToBar` | `(Bar, Note) -> Void` | Add note to bar |
-| `getNoteFromBar` | `(Bar, Int) -> Note` | Get note at index |
+| `addNoteToBar` | `(Bar, Note) -> Void` | Append note |
+| `tryAddNoteToBar` | `(Bar, MusicalNote) -> Bool` | Try append |
+| `getNoteFromBar` | `(Bar, Int) -> Note` | Note at index |
 | `barLength` | `(Bar) -> Int` | Note count |
 | `setTimeSignature` | `(Bar, Int, Int) -> Void` | Set time signature |
 | `getTimeSignature` | `(Bar) -> String` | Get time signature string |
 
+## Song Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `createSong` | `(String) -> Song` | Empty song |
+| `addBarToSong` | `(Song, String) -> Void` / `(Song, String, Int) -> Void` / `(Song, Sequence) -> Void` | Add section reference or ad-hoc sequence |
+
 ## See Also
 
-- [Imports and Modules](Imports-and-Modules.md) - How to import modules
+- [Imports and Modules](Imports-and-Modules.md) - How to import
 - [Collections](Collections.md) - Detailed collection usage
-- [Audio and Synthesis](Audio-and-Synthesis.md) - Audio function details
-- [Effects](Effects.md) - Effect function details
+- [Audio and Synthesis](Audio-and-Synthesis.md) - Audio details
+- [Effects](Effects.md) - Effect details
+- [Pattern Transforms](Pattern-Transforms.md) - Sequence transforms
+- [Generative Music](Generative.md) - `vary`, `euclidean`, random
+- [Voices and Tracks](Voices-and-Tracks.md) - Timeline API
+- [Vocalization](Vocalization.md) - `sing` and `tts`
+- [Visualization](Visualization.md) - `visualize`

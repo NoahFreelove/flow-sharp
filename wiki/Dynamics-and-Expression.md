@@ -288,3 +288,4 @@ tempo 72 {
 - [Note Streams](Note-Streams.md) - Inline dynamics and articulation syntax
 - [Pattern Transforms](Pattern-Transforms.md) - All transform functions
 - [Musical Context](Musical-Context.md) - Dynamics context blocks
+- [Generative Music](Generative.md) - `vary` for stochastic expression

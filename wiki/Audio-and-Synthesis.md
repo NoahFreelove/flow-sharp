@@ -12,104 +12,161 @@ A `Buffer` is a container for audio sample data with frames, channels, and a sam
 use "@std"
 use "@audio"
 
-Note: Create a buffer (frames, channels, sampleRate)
-Buffer buf = (createBuffer 44100 2 44100)  Note: 1 second of stereo audio
+Note: raw buffer (frames, channels, sample rate)
+Buffer buf = (createBuffer 44100 2 44100)    Note: 1 second of stereo
 
-Note: Convenience functions
-Buffer silence = (createSilence 1.0)       Note: 1 second of stereo silence
-Buffer silenceMono = (createSilenceMono 1.0) Note: 1 second of mono silence
+Note: convenience tone generators (duration seconds, frequency Hz, amplitude)
+Buffer sine     = (createSineTone     0.5 440.0 0.5)
+Buffer saw      = (createSawTone      0.5 440.0 0.5)
+Buffer square   = (createSquareTone   0.5 440.0 0.5)
+Buffer triangle = (createTriangleTone 0.5 440.0 0.5)
 ```
 
 ### Buffer Properties
 
 ```flow
-Int frames = (getFrames buf)
+Int sr       = (getSampleRate buf)
+Int frames   = (getFrames buf)
 Int channels = (getChannels buf)
-Int sampleRate = (getSampleRate buf)
-Bool mono = (isMono buf)
-Bool stereo = (isStereo buf)
-Bool compat = (buffersCompatible buf1 buf2)
 ```
 
 ### Sample Access
 
 ```flow
-Float sample = (getSample buf 0 0)     Note: frame 0, channel 0
-(setSample buf 0 0 0.5)                Note: set frame 0, channel 0 to 0.5
-(fillBuffer buf 0.0)                   Note: fill entire buffer with 0.0
+Float s = (getSample buf 0 0)            Note: frame 0, channel 0
+(setSample buf 0 0 0.5)
+(fillBuffer buf 0.0)
 ```
 
 ### Buffer Manipulation
 
 ```flow
-Buffer copy = (copyBuffer buf)              Note: deep copy
-Buffer slice = (sliceBuffer buf 0 22050)    Note: first half-second
-Buffer joined = (appendBuffers buf1 buf2)   Note: concatenate
-(scaleBuffer buf 0.5)                       Note: scale all samples by 0.5 (in-place)
+Buffer c       = (copyBuffer buf)
+Buffer slice   = (sliceBuffer buf 0 22050)
+Buffer joined  = (appendBuffers buf1 buf2)
+Buffer scaled  = (scaleBuffer buf 0.5)
+Buffer mixed   = (mix buf1 buf2)
+Buffer mixed2  = (mixBuffers buf1 buf2 0.7 0.3)
+Buffer fadedIn = buf -> fadeIn 0.5
+Buffer fadedOt = buf -> fadeOut 0.5
 ```
+
+### Loading WAV Files
+
+```flow
+Buffer loaded = (loadWav "sample.wav")
+Int frames = (getFrames loaded)
+```
+
+See [Playback and Export](Playback-and-Export.md) for exporting.
 
 ## Oscillators
 
-Generate basic waveforms using oscillator state:
+Generate basic waveforms by stepping an oscillator through a buffer:
+
+```flow
+use "@audio"
+
+OscillatorState osc = (createOscillatorState 440.0 44100)
+Buffer buf = (createBuffer 44100 1 44100)
+
+(generateSine     buf osc 0.5)
+(generateSaw      buf osc 0.5)
+(generateSquare   buf osc 0.5)
+(generateTriangle buf osc 0.5)
+
+(resetPhase osc)
+```
+
+## Custom Oscillators (Wavetables)
+
+Register your own wavetable-based oscillator and use it by name in `renderSong` and friends:
+
+### From an Array
 
 ```flow
 use "@std"
 use "@audio"
 
-Note: Create oscillator (frequency, sampleRate)
-OscillatorState osc = (createOscillatorState 440.0 44100)
+Int tableSize = 2048
+Double tableSizeD = (intToDouble tableSize)
+Float[] sawTable = []
+Int i = 0
+while (lt i tableSize) {
+    Double id = (intToDouble i)
+    Double sample = (id / tableSizeD) * 2.0 - 1.0
+    sawTable = (append sawTable sample)
+    i = (add i 1)
+}
 
-Note: Generate waveforms into a buffer
-Buffer buf = (createBuffer 44100 1 44100)
-(generateSine buf osc 0.5)       Note: sine wave at amplitude 0.5
-(generateSaw buf osc 0.5)        Note: sawtooth wave
-(generateSquare buf osc 0.5)     Note: square wave
-(generateTriangle buf osc 0.5)   Note: triangle wave
-
-(resetPhase osc)  Note: reset oscillator phase to 0
+(oscillator "customsaw" sawTable)
 ```
 
-### Convenience Tone Functions
+### From a Lambda
 
 ```flow
-use "@audio"
+Function triGen = fn Int sz => (map (range 0 sz)
+    (fn Int idx => ((idx -> intToDouble) / (sz -> intToDouble) * 4.0 - 2.0)))
 
-Note: Create a ready-to-use tone (duration, frequency, amplitude)
-Buffer sine = (createSineTone 0.5 440.0 0.5)
-Buffer saw = (createSawTone 0.5 440.0 0.5)
-Buffer square = (createSquareTone 0.5 440.0 0.5)
-Buffer triangle = (createTriangleTone 0.5 440.0 0.5)
+(oscillator "customtri" triGen)
+```
+
+### Custom Table Size
+
+```flow
+(oscillator "customhighres" triGen 8192)
+```
+
+### Using a Custom Oscillator
+
+Once registered, the name works anywhere a built-in synth name is accepted:
+
+```flow
+Song song = [mySection]
+Buffer buf = (renderSong song "customsaw")
 ```
 
 ## Envelopes
 
-Shape the amplitude of a buffer over time:
+Shape the amplitude of a buffer over time.
 
-### AR Envelope (Attack-Release)
+### AR (Attack-Release)
 
 ```flow
 use "@audio"
 
-Note: (attackSeconds, releaseSeconds, sampleRate)
-Envelope ar = (createAR 0.01 0.5 44100)
+Envelope ar = (createAR 0.01 0.5 44100)     Note: attack, release (s), sample rate
 (applyEnvelope buf ar)
 ```
 
-### ADSR Envelope (Attack-Decay-Sustain-Release)
+### ADSR (Attack-Decay-Sustain-Release)
 
 ```flow
 use "@audio"
 
-Note: (attack, decay, sustainLevel, release, sampleRate)
 Envelope adsr = (createADSR 0.01 0.1 0.7 0.3 44100)
 (applyEnvelope buf adsr)
 ```
 
-`applyEnvelope` modifies the buffer in-place.
+`applyEnvelope` returns a new buffer.
 
 ## Built-in Synthesizers
 
-Flow includes several synthesizers accessible through `renderSong`:
+Pass one of these names to `renderSong`, `renderSequenceToVoices`, or `tempoRamp`:
+
+| Name | Aliases | Character |
+|------|---------|-----------|
+| `"piano"` | — | Percussive hammer-like attack with warm decay |
+| `"brass"` | `"horn"` | Bold, sustained tone with rich harmonics |
+| `"sax"` | `"saxophone"` | Reed-like character with a slightly nasal tone |
+| `"flute"` | — | Pure, breathy tone with soft attack |
+| `"organ"` | — | Sustained, multi-partial timbre |
+| `"strings"` | — | Smooth bowed-instrument-like timbre |
+| `"bell"` | — | Inharmonic bell / chime character |
+| `"drums"` | `"drum"` | Percussive synthesis; pitch maps to drum kit (low=kick, mid=snare, high=hat) |
+| `"sine"` | — | Clean sine wave; useful for testing |
+
+Plus any custom wavetable registered via `oscillator`.
 
 ```flow
 use "@std"
@@ -123,72 +180,50 @@ tempo 120 {
             }
             Song song = [melody]
 
-            Buffer piano = (renderSong song "piano")
-            Buffer brass = (renderSong song "brass")
-            Buffer sax = (renderSong song "sax")
-            Buffer drums = (renderSong song "drums")
-            Buffer sine = (renderSong song "sine")
+            Buffer piano   = (renderSong song "piano")
+            Buffer strings = (renderSong song "strings")
+            Buffer organ   = (renderSong song "organ")
+            Buffer bell    = (renderSong song "bell")
         }
     }
 }
 ```
-
-### Synthesizer Characters
-
-| Synth | Aliases | Character |
-|-------|---------|-----------|
-| **Piano** | `"piano"` | Percussive hammer-like attack with warm, naturally decaying tone. Uses detuned oscillators for richness. |
-| **Brass** | `"brass"`, `"horn"` | Bold, sustained tone with gradual attack. Rich harmonics for a horn-like quality. |
-| **Saxophone** | `"sax"`, `"saxophone"` | Reed-like character with moderate attack and sustain. Slightly nasal harmonic content. |
-| **Flute** | `"flute"` | Pure, breathy tone with soft attack. Minimal harmonics for a clean sound. |
-| **Drums** | `"drums"`, `"drum"` | Percussive synthesis. Note pitch determines drum sound (low=kick, mid=snare, high=hi-hat). |
-| **Sine** | `"sine"` | Clean sine wave. Useful for testing and pure tones. |
 
 ## Rendering Pipeline
 
 The rendering pipeline converts musical structures to audio:
 
 ```
-Song → Sections → Sequences → Bars → MusicalNotes → Synthesizer → Buffer
+Song → Sections → Sequences → Bars → MusicalNotes → Synthesizer → Voices → Track → Buffer
 ```
 
-1. **Song** is split into its section arrangement
-2. Each **Section** provides sequences
-3. Each **Sequence** contains bars
-4. Each **Bar** contains musical notes with pitch, duration, velocity, articulation
-5. The **Synthesizer** renders each note to audio samples
-6. Notes are positioned on a timeline and mixed to a final stereo buffer
+1. A **Song** is split into its section arrangement.
+2. Each **Section** provides sequences.
+3. Each **Sequence** contains bars.
+4. Each **Bar** contains musical notes with pitch, duration, velocity, articulation.
+5. The **Synthesizer** renders each note to audio samples.
+6. Notes are placed on a timeline as voices, gathered into tracks, and mixed.
 
-### Direct Sequence Rendering
+### Direct Sequence → Buffer
 
-You can also render sequences directly without a song structure:
+If you don't need the `Song` layer, you can render a sequence directly:
 
 ```flow
 timesig 4/4 {
     Sequence mel = | C4 D4 E4 F4 |
-    Voice[] voices = (renderSequence mel "piano" 44100 120.0)
+    Voice[] voices = (renderSequenceToVoices mel "piano" 44100 120.0)
 }
 ```
 
-## Voice and Track System
+See [Voices and Tracks](Voices-and-Tracks.md) for assembling voices into a final buffer.
 
-For lower-level control over audio positioning:
+### Custom Instrument Lambdas
+
+`renderSong` accepts a Flow `Function` as the instrument argument, letting you write a custom per-note synthesizer:
 
 ```flow
-use "@audio"
-
-Note: Create a voice (buffer positioned at a beat offset)
-Voice v = (createVoice myBuffer 0.0)
-(setVoiceGain v 0.8)
-(setVoicePan v -0.5)   Note: pan left
-
-Note: Create a track and add voices
-Track t = (createTrack 44100 2)
-(addVoice t v)
-(setTrackGain t 0.9)
-
-Note: Render track to buffer
-Buffer rendered = (renderTrack t 8.0)  Note: 8 beats duration
+Function myInstr = fn Note pitch, Double seconds => (createSineTone seconds (noteToFrequency pitch) 0.5)
+Buffer buf = (renderSong song myInstr)
 ```
 
 ## BPM and Timeline
@@ -199,22 +234,39 @@ use "@audio"
 (setBPM 120.0)
 Double bpm = (getBPM)
 
-Note: Convert between beats and frames
-Int frames = (beatsToFrames 4.0 44100)    Note: 4 beats at 44100 Hz
-Double beats = (framesToBeats 88200 44100) Note: convert frames to beats
+Int frames = (beatsToFrames 4.0 44100)
+Double beats = (framesToBeats 88200 44100)
 ```
 
-## Mixing Buffers
+## Voice and Track System
+
+For lower-level control, Flow exposes a voice/track timeline. See [Voices and Tracks](Voices-and-Tracks.md) for a full walkthrough.
 
 ```flow
-use "@audio"
+Voice v = (createVoice myBuffer 0.0)
+(setVoiceGain v 0.8)
+(setVoicePan v -0.5)
 
-Buffer mixed = (mixBuffers buf1 buf2 0.7 0.3)
-Note: mix buf1 at 70% gain with buf2 at 30% gain
+Track t = (createTrack 44100 2)
+(addVoice t v)
+Buffer rendered = (renderTrack t 8.0)
+```
+
+`setMaxVoices N` caps the polyphonic voice pool used during rendering.
+
+## Vocalization
+
+Synthesize vowels or consonant-vowel syllables via formants, or invoke an external TTS engine. See [Vocalization](Vocalization.md).
+
+```flow
+Buffer vocal = (sing "ah" C4 0.5)
 ```
 
 ## See Also
 
-- [Effects](Effects.md) - Audio effects processing
-- [Playback and Export](Playback-and-Export.md) - Playing and saving audio
-- [Song Structure](Song-Structure.md) - Song rendering
+- [Effects](Effects.md) - Audio effect chains
+- [Playback and Export](Playback-and-Export.md) - Playing, streaming, exporting WAV/MIDI
+- [Song Structure](Song-Structure.md) - Song/section organization
+- [Voices and Tracks](Voices-and-Tracks.md) - Multi-track timeline
+- [Vocalization](Vocalization.md) - Formant synthesis and TTS
+- [Visualization](Visualization.md) - ASCII piano roll and waveform output

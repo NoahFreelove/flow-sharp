@@ -16,10 +16,10 @@ Prefix module names with `@` to import from the standard library directory:
 ```flow
 use "@std"           Note: core + collections + bars
 use "@collections"   Note: list operations
-use "@audio"         Note: audio/synthesis/effects/playback
+use "@audio"         Note: audio/synthesis/effects/playback/WAV/MIDI
 use "@notation"      Note: musical notation helpers
 use "@bars"          Note: bar operations
-use "@composition"   Note: timeline/voice/track helpers
+use "@composition"   Note: timeline/voice/track/polyrhythm/variation helpers
 ```
 
 ### What @std Includes

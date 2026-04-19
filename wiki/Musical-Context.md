@@ -1,6 +1,6 @@
 # Musical Context
 
-Musical context blocks set tempo, time signature, key, swing, and dynamics for the code inside them. They use a scoping model where inner blocks inherit and can override outer settings.
+Musical context blocks set tempo, time signature, key, swing, dynamics, pan, gain, and tempo ramps for the code inside them. They use a scoping model where inner blocks inherit from outer blocks and can override specific settings.
 
 ## Tempo
 
@@ -10,32 +10,31 @@ Sets the beats per minute (BPM):
 use "@std"
 
 tempo 120 {
-    Note: everything in here is at 120 BPM
-    (print "120 BPM")
+    (print "120 BPM context")
 }
 ```
 
-Default tempo when not specified: **120 BPM**.
+Default when not set: **120 BPM**.
 
 ## Time Signature
 
-Sets the meter using `numerator/denominator` syntax:
+Sets the meter as `numerator/denominator`:
 
 ```flow
 timesig 4/4 {
-    Sequence fourFour = | C4 D4 E4 F4 |  Note: 4 quarter-note beats
+    Sequence fourFour = | C4 D4 E4 F4 |
 }
 
 timesig 3/4 {
-    Sequence waltz = | C4 E4 G4 |  Note: 3 quarter-note beats
+    Sequence waltz = | C4 E4 G4 |
 }
 
 timesig 6/8 {
-    Sequence compound = | C4 D4 E4 F4 G4 A4 |  Note: 6 eighth-note beats
+    Sequence compound = | C4 D4 E4 F4 G4 A4 |
 }
 ```
 
-Default time signature: **4/4**.
+Default: **4/4**.
 
 ## Key
 
@@ -43,24 +42,23 @@ Sets the musical key for roman numeral resolution and scale operations:
 
 ```flow
 key Cmajor {
-    Sequence progression = | I IV V I |
-    Note: I=C, IV=F, V=G in C major
+    Sequence prog = | I IV V I |
 }
 
 key Aminor {
-    Sequence progression = | i iv V i |
+    Sequence prog = | i iv V i |
 }
 ```
 
 ### Valid Keys
 
-All 12 major keys: `Cmajor`, `Csharpmajor`/`Dbmajor`, `Dmajor`, `Dsharpmajor`/`Ebmajor`, `Emajor`, `Fmajor`, `Fsharpmajor`/`Gbmajor`, `Gmajor`, `Gsharpmajor`/`Abmajor`, `Amajor`, `Asharpmajor`/`Bbmajor`, `Bmajor`
+All 12 major keys — `Cmajor`, `Csharpmajor` / `Dbmajor`, `Dmajor`, `Dsharpmajor` / `Ebmajor`, `Emajor`, `Fmajor`, `Fsharpmajor` / `Gbmajor`, `Gmajor`, `Gsharpmajor` / `Abmajor`, `Amajor`, `Asharpmajor` / `Bbmajor`, `Bmajor`.
 
-All 12 minor keys: `Cminor`, `Csharpminor`/`Dbminor`, `Dminor`, `Dsharpminor`/`Ebminor`, `Eminor`, `Fminor`, `Fsharpminor`/`Gbminor`, `Gminor`, `Gsharpminor`/`Abminor`, `Aminor`, `Asharpminor`/`Bbminor`, `Bminor`
+All 12 minor keys — same pattern with `minor` (e.g., `Aminor`, `Fsharpminor`).
 
 ## Swing
 
-Adds swing feel to rhythms. Value can be a percentage or a decimal (0.5 = straight, ~0.67 = triplet swing):
+Adds swing feel to rhythms. Value accepts decimals or percentages (`0.5` = straight, ~`0.67` / `66%` = triplet swing):
 
 ```flow
 swing 55% {
@@ -74,7 +72,7 @@ swing 0.6 {
 
 ## Dynamics
 
-Sets the default velocity for notes in scope:
+Sets a default velocity for notes in scope:
 
 ```flow
 dynamics f {
@@ -96,6 +94,68 @@ dynamics f {
 | `f` | ~0.75 |
 | `ff` | ~0.875 |
 | `fff` | ~1.0 |
+
+## Pan
+
+Sets stereo placement for audio rendered inside the block. Range is `-1.0` (hard left) to `+1.0` (hard right):
+
+```flow
+use "@audio"
+
+pan -0.5 {
+    Note: section will be panned left
+    section leftChannel {
+        Sequence mel = | C4 E4 G4 |
+    }
+}
+
+pan 0.5 {
+    Note: section will be panned right
+    section rightChannel {
+        Sequence mel = | G4 B4 D5 |
+    }
+}
+```
+
+`pan` is also a [buffer-level effect](Effects.md) for applying panning to a single `Buffer`.
+
+## Gain
+
+Applies a gain factor to audio rendered inside the block (values in the 0.0 - 1.0 range):
+
+```flow
+use "@audio"
+
+gain 0.3 {
+    section quietPart {
+        Sequence mel = | C4q E4q G4q C5q |
+    }
+}
+```
+
+`gain` is also available as a [buffer-level effect](Effects.md) using decibel values.
+
+## Ritardando / Accelerando
+
+Wrap a passage in a `rit` block to interpolate tempo downward to a target BPM, or `accel` to speed up:
+
+```flow
+tempo 120 {
+    rit 60 {
+        Note: tempo ramps from 120 down to 60 inside this block
+        Sequence ending = | C4h G3h |
+    }
+}
+
+tempo 80 {
+    accel 140 {
+        Note: tempo ramps from 80 up to 140 inside this block
+        Sequence intro = | C4q D4q E4q F4q |
+    }
+}
+```
+
+See also the [`tempoRamp` transform](Pattern-Transforms.md) which produces a rendered buffer directly.
 
 ## Nesting and Inheritance
 
@@ -119,13 +179,12 @@ tempo 120 {
 
 ## Typical Pattern
 
-Most musical code uses all three primary context blocks:
+Most musical code wraps everything in `tempo` → `timesig` → `key`:
 
 ```flow
 tempo 120 {
     timesig 4/4 {
         key Cmajor {
-            Note: Your musical code goes here
             Sequence melody = | C4 E4 G4 C5 |
         }
     }
@@ -150,23 +209,28 @@ tempo 100 {
 
 ## Scoping Rules
 
-- Musical context is **push/pop scoped**: entering a block pushes new settings, exiting pops them
-- `null` fields inherit from the parent scope
-- Code outside any context block uses defaults (120 BPM, 4/4, no key, no swing)
-- Note streams require at minimum a `timesig` context to determine bar duration
+- Musical context is **push/pop scoped**: entering a block pushes new settings, exiting pops them.
+- Unspecified fields inherit from the parent scope.
+- Code outside any context block uses defaults (120 BPM, 4/4, no key, no swing).
+- Note streams require a `timesig` context to determine bar duration.
 
 ## When to Use Each Block
 
 | Block | When Required |
 |-------|---------------|
-| `timesig` | Always, when using note streams (determines beat count per bar) |
+| `timesig` | When using note streams (determines beat count per bar) |
 | `tempo` | When rendering audio (determines actual playback speed) |
-| `key` | When using roman numerals (`I`, `IV`, `V7`, etc.) or `scaleNotes` |
+| `key` | When using roman numerals, progressions, or `scaleNotes` |
 | `swing` | When you want swing feel applied to rhythms |
 | `dynamics` | When you want a default velocity for all notes in scope |
+| `pan` | When you want a section positioned in the stereo field |
+| `gain` | When you want a passage rendered quieter/louder |
+| `rit`, `accel` | When you want tempo interpolation inside the block |
 
 ## See Also
 
 - [Note Streams](Note-Streams.md) - Writing inline notation
 - [Chords and Harmony](Chords-and-Harmony.md) - Roman numerals need `key` context
 - [Song Structure](Song-Structure.md) - Sections with musical context
+- [Effects](Effects.md) - Buffer-level pan and gain
+- [Pattern Transforms](Pattern-Transforms.md) - `tempoRamp` and related transforms

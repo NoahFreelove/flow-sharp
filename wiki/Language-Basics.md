@@ -1,15 +1,19 @@
 # Language Basics
 
-Flow is a statically-typed, interpreted language. Every variable has a type, statements are separated by newlines or semicolons, and comments use the `Note:` keyword.
+Flow is a statically-typed, interpreted language. Every variable has a type, statements are separated by newlines or semicolons, and comments use either `Note:` or `//`.
 
 ## Comments
 
-Comments begin with `Note:` and extend to the end of the line:
+Flow accepts two comment styles. Both run from their marker to the end of the line:
 
 ```flow
 Note: This is a comment
+// This is also a comment
 Int x = 5  Note: inline comment
+Int y = 7  // inline comment
 ```
+
+`Note:` must start at the beginning of a line's content. `//` works anywhere.
 
 ## Variables
 
@@ -22,6 +26,17 @@ String name = "Flow"
 Bool active = true
 ```
 
+### Default Values
+
+A variable declared without an initializer takes a type-appropriate default (`0`, `""`, `false`, empty array, etc.):
+
+```flow
+Int count           Note: count = 0
+String message      Note: message = ""
+Bool flag           Note: flag = false
+Int[] nums          Note: nums = []
+```
+
 ### Reassignment
 
 Variables can be reassigned after declaration:
@@ -30,7 +45,7 @@ Variables can be reassigned after declaration:
 Int x = 10
 x = 20
 x = x + 5
-(print (str x))  Note: prints 25
+(print (str x))     Note: prints 25
 ```
 
 ## Semicolons
@@ -59,7 +74,7 @@ Int a = 1; Int b = 2; Int c = 3
 Flow supports implicit numeric widening:
 
 ```
-Int -> Long -> Float -> Double -> Number
+Int → Long → Float → Double → Number
 ```
 
 An `Int` can be used wherever a `Double` is expected, for example.
@@ -68,7 +83,7 @@ An `Int` can be used wherever a `Double` is expected, for example.
 
 | Type | Description | Example |
 |------|-------------|---------|
-| `Note` | Musical pitch | `C4`, `F#5` |
+| `Note` | Musical pitch | `C4`, `F4+` (F sharp) |
 | `Chord` | Harmonic chord | `Cmaj7`, `Dm` |
 | `Sequence` | Ordered bars | `\| C4 D4 E4 F4 \|` |
 | `Bar` | Musical measure | - |
@@ -79,7 +94,7 @@ An `Int` can be used wherever a `Double` is expected, for example.
 | `Cent` | Microtonal offset | `+50c` |
 | `Millisecond` | Time in ms | `100ms` |
 | `Second` | Time in seconds | `2.5s` |
-| `Decibel` | Gain in dB | `-3dB` |
+| `Decibel` | Gain in dB | `+6dB` |
 | `Beat` | Musical beat | - |
 | `NoteValue` | Note duration | - |
 | `TimeSignature` | Meter | - |
@@ -87,6 +102,21 @@ An `Int` can be used wherever a `Double` is expected, for example.
 | `Voice` | Positioned audio | - |
 | `Track` | Voice collection | - |
 | `Envelope` | Amplitude shape | - |
+| `OscillatorState` | Running oscillator | - |
+
+### Note Literals
+
+Notes use `[A-G][octave][alteration]`:
+
+| Syntax | Meaning |
+|--------|---------|
+| `C4` | C natural, octave 4 (middle C) |
+| `C4+` | C sharp, octave 4 |
+| `C4-` | C flat, octave 4 |
+| `C4++` | C double sharp |
+| `C4--` | C double flat |
+
+Chord-symbol accidentals use `s` and `f` instead (for example, `Csmaj7`, `Bfm`). See [Chords and Harmony](Chords-and-Harmony.md).
 
 ## Arrays
 
@@ -106,6 +136,8 @@ Int first = nums@0
 Int second = nums@1
 ```
 
+Plural type names are shorthand for arrays: `Ints` = `Int[]`, `Notes` = `Note[]`, etc.
+
 See [Collections](Collections.md) for full array operations.
 
 ## Operators
@@ -113,18 +145,20 @@ See [Collections](Collections.md) for full array operations.
 ### Arithmetic (Binary)
 
 ```flow
-Int sum = 3 + 4       Note: 7
+Int sum  = 3 + 4      Note: 7
 Int diff = 10 - 3     Note: 7
 Int prod = 5 * 6      Note: 30
 Int quot = 15 / 4     Note: 3 (integer division)
 ```
+
+Flow has no negative number literal: write `(sub 0 5)` to get `-5`.
 
 ### Arithmetic (Function-style)
 
 ```flow
 use "@std"
 
-Int sum = (add 3 4)
+Int sum  = (add 3 4)
 Int diff = (sub 10 3)
 Int prod = (mul 5 6)
 Int quot = (div 15 4)
@@ -137,12 +171,12 @@ Comparisons are function calls:
 ```flow
 use "@std"
 
-Bool eq = (equals 5 5)      Note: true
-Bool lt = (lt 3 5)           Note: true
-Bool gt = (gt 10 5)          Note: true
+Bool eq  = (equals 5 5)     Note: true
+Bool lt  = (lt 3 5)          Note: true
+Bool gt  = (gt 10 5)         Note: true
 Bool lte = (lte 3 3)         Note: true
 Bool gte = (gte 5 3)         Note: true
-Bool seq = (sequals 5 5)     Note: strict equals (type must match)
+Bool seq = (sequals 5 5)     Note: strict equals (types must match)
 ```
 
 ### Logical
@@ -155,7 +189,7 @@ Bool b = (or true false)     Note: true
 Bool c = (not true)          Note: false
 ```
 
-`and` and `or` support lazy evaluation with `Lazy` arguments.
+`and` and `or` support lazy evaluation with `Lazy` arguments for short-circuiting.
 
 ### String Concatenation
 
@@ -164,6 +198,8 @@ use "@std"
 
 String greeting = (concat "Hello, " "World!")
 ```
+
+For dynamic labels, prefer [string interpolation](String-Interpolation.md): `$"x is {x}"`.
 
 ## Control Flow
 
@@ -176,15 +212,35 @@ use "@std"
 
 Int x = 10
 
-Note: Returning a value from if
+Note: returning a value
 String result = (if (gt x 5) lazy ("big") lazy ("small"))
-(print result)  Note: prints "big"
+(print result)    Note: "big"
 
-Note: Side-effect branches
+Note: side-effect branches
 (if (gt x 5) lazy ((print "big")) lazy ((print "small")))
 ```
 
-Both branches must be provided. The non-taken branch is not evaluated because `lazy ()` defers evaluation until forced. Without `lazy`, arguments are eagerly evaluated and the overload won't match.
+Without `lazy`, arguments are eagerly evaluated and the overload won't match.
+
+### Loops
+
+Flow supports `for` and `while` loops with `break` and `continue`:
+
+```flow
+use "@std"
+
+Int sum = 0
+for Int n in (list 1 2 3 4 5) {
+    sum = sum + n
+}
+
+Int count = 0
+while (lt count 5) {
+    count = count + 1
+}
+```
+
+See [Loops](Loops.md) for the full reference.
 
 ### Lazy Evaluation
 
@@ -195,13 +251,29 @@ use "@std"
 
 Lazy<Void> deferred = lazy ((print "hello"))
 Note: nothing printed yet
-
-(eval deferred)  Note: now prints "hello"
+(eval deferred)    Note: now prints "hello"
 ```
 
-`if`, `and`, and `or` accept `Lazy` parameters to enable short-circuit evaluation. This is why their arguments must be wrapped in `lazy ()`.
+`if`, `and`, and `or` accept `Lazy` parameters to enable short-circuit evaluation.
 
-## Type Annotations
+## String Interpolation
+
+Prefix a string with `$` and wrap expressions in `{ }`:
+
+```flow
+use "@std"
+
+Int x = 42
+(print $"x is {x}")               Note: x is 42
+
+Int a = 3
+Int b = 4
+(print $"sum is {a + b}")         Note: sum is 7
+```
+
+See [String Interpolation](String-Interpolation.md) for details.
+
+## Type Annotations for Functions
 
 Function type annotations use parenthesized arrow syntax:
 
@@ -213,15 +285,17 @@ Function type annotations use parenthesized arrow syntax:
 
 ## Type Aliases
 
-`Strings` is an alias for `String[]`, and `Voids` is an alias for `Void[]` (any array).
+Any type name ending in `s` refers to the array form: `Ints` = `Int[]`, `Strings` = `String[]`, `Voids` = `Void[]`, `Notes` = `Note[]`, etc.
 
 ## Scoping
 
-Variables declared inside blocks (functions, musical context blocks, sections) are scoped to that block. Inner scopes can access variables from outer scopes.
+Variables declared inside blocks (functions, musical context blocks, sections, loops) are scoped to that block. Inner scopes can access variables from outer scopes.
 
 ## See Also
 
 - [Functions](Functions.md) - Procedures and lambdas
 - [Flow Operator](Flow-Operator.md) - The `->` pipe
 - [Collections](Collections.md) - Arrays and list operations
+- [Loops](Loops.md) - `for`, `while`, `break`, `continue`
+- [String Interpolation](String-Interpolation.md) - `$"..."` syntax
 - [Musical Context](Musical-Context.md) - Musical context blocks
