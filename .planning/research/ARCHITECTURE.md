@@ -1,330 +1,263 @@
-# Architecture: v1.1 Integration Analysis
+# Architecture Research — v1.2 Stability & Composer DX
 
-**Project:** Flow Language v1.1
-**Researched:** 2026-04-02
-**Focus:** How each bug fix and new feature integrates with existing architecture
+**Domain:** Flow Language interpreter (C# .NET) — composer DX feature additions + bug fixes
+**Researched:** 2026-04-18
+**Confidence:** HIGH (integration points verified against HEAD); MEDIUM on swing/humanize musical fit
 
-## Classification: Additive vs Modification
+---
 
-| Feature | Classification | Files Touched | Risk |
-|---------|---------------|---------------|------|
-| Sequence overload resolution | **MODIFICATION** -- core type system | `SequenceType.cs`, `ExpressionEvaluator.cs`, `OverloadResolver.cs` | HIGH -- affects all overload resolution |
-| Section bare expressions | **MODIFICATION** -- interpreter core | `Interpreter.cs` (`ExecuteSectionDeclaration`) | MEDIUM -- section-specific, testable |
-| `//` line comments | **MODIFICATION** -- lexer | `SimpleLexer.cs` (`SkipWhitespaceAndComments`) | LOW -- isolated lexer change |
-| Math functions | **ADDITIVE** -- new built-ins | New `MathFunctions.cs`, `BuiltInFunctions.cs` (one call) | LOW -- pure addition |
-| `exportWav` rename to `writeWav` | **MODIFICATION** -- rename + alias | `BuiltInFunctions.cs`, test files, `.flow` stdlib | LOW -- mechanical |
-| `mix()` buffer layering | **ADDITIVE** -- new built-in | New function in `Audio/` area | LOW -- pure addition |
-| Per-section volume/gain | **MODIFICATION** -- song renderer | `SongRenderer.cs` | LOW -- leverages existing `MusicalContext.Velocity` |
-| Synth presets (strings, organ, bell) | **ADDITIVE** -- new synthesizers | New files in `Audio/Synthesizers/`, `SynthesizerFactory.Create()` | LOW -- follows established pattern |
-| Tempo ramps | **MODIFICATION** -- musical context + renderer | `MusicalContext.cs`, `SongRenderer.cs`, `SequenceRenderer`, parser | HIGH -- fundamental timing change |
-| REPL auto-imports | **MODIFICATION** -- REPL startup | `Repl.cs` or `FlowEngine.cs` | LOW -- one-time init |
-| `--verbose` flag | **ADDITIVE** -- CLI + diagnostics | `Program.cs`, `FlowEngine` | LOW -- opt-in output |
-| Better error reporting | **MODIFICATION** -- diagnostics | `ErrorReporter.cs`, scattered call sites | MEDIUM -- many small changes |
+## ⚠️ Audit Re-Verification (CRITICAL — conflicts with Pitfalls agent)
 
-## Detailed Integration Analysis
+The architecture researcher verified each C1–C7 claim against actual source. Four may be false positives. **The pitfalls researcher disagrees on C1 and C5** — treat this section as a hypothesis requiring human verification, not ground truth.
 
-### 1. Sequence Overload Resolution Bug (CRITICAL)
+| # | Audit Claim | Arch researcher | Pitfalls researcher | Evidence |
+|---|-------------|-----------------|----------------------|----------|
+| C1 | `ExecuteMusicalContext` leaks frames on early-return | Likely false (try/finally pops) | Real bug — early returns skip block body | Both agents read the same file and disagree |
+| C2 | `_returnValue` short-circuits | Partial; guard exists, behavior unclear | Real (pairs with C1 fix) | Needs repro |
+| C3 | `EnvelopeProcessor` div-by-zero | Likely false (loop body gated on N≥1) | `Math.Max(1, frames)` is wrong fix; skip zero-length segments | Agents agree fix is not trivial |
+| C4 | `BufferHelpers` div-by-zero | Likely false (same pattern) | Same as C3 | Needs repro |
+| C5 | `augment`/`diminish` swapped | Likely false (correct semantics) | Confirmed swapped at TransformFunctions.cs:247,268 | **Needs human verification** |
+| C6 | `init([])` silent empty | CONFIRMED | CONFIRMED | Real bug |
+| C7 | `Thunk` cache corruption | CONFIRMED | Refined: `_isEvaluated` NOT set on exception; re-evaluation loops | Real bug, different mechanism |
 
-**Problem:** `transpose(Sequence, Semitone)` and `vary(Sequence, Double)` fail at overload resolution. The functions are registered with correct signatures but the resolver cannot match them.
+**Action required before planning:** Phase A must include an explicit "reproduce or close" spike for C1/C2/C3/C4/C5 before fixing anything. Changing working code risks regressions.
 
-**Root Cause Analysis:**
-- `SequenceType` is a sealed singleton extending `FlowType`
-- `FlowType.IsCompatibleWith()` defaults to `Equals(target)` -- exact reference equality
-- Since `SequenceType.Instance` is a singleton, `Equals()` should always succeed when both sides are `SequenceType`
-- The transform functions register with `SequenceType.Instance` as their first parameter
-- `FunctionSignature.Matches()` checks 4-way compatibility: `argType.IsCompatibleWith(paramType)`, `argType.CanConvertTo(paramType)`, `paramType.IsCompatibleWith(argType)`, `paramType.CanConvertTo(argType)`
+---
 
-**Likely actual root cause options (investigate in order):**
-1. The `Value` produced by `NoteStreamCompiler` or pipe expression carries a wrong type tag (e.g., wrapping SequenceData in a Value with ArrayType instead of SequenceType)
-2. The second argument (e.g., `+2st` for Semitone) is being typed incorrectly by the lexer/evaluator, causing the 2-arg signature to not match
-3. The pipe transform `seq -> transpose(+2st)` is producing `transpose(seq, +2st)` at parse time but the arguments evaluate in unexpected order
-
-**What Changes:**
-- **Diagnosis first**: Add verbose logging to `OverloadResolver.Resolve()` to print candidate signatures vs actual arg types
-- `ExpressionEvaluator.cs` -- verify Value types at pipe resolution boundaries
-- `NoteStreamCompiler.cs` -- verify the Value type tag on compiled sequences
-- Possibly `SequenceType.cs` or the Value factory -- fix the type tag
-
-**Integration Points:**
-- `FunctionSignature.Matches()` lines 93-111 -- the 4-way compatibility check
-- `OverloadResolver.Resolve()` lines 39-45 -- the "no matching overload" error path
-- All transform registrations in `TransformFunctions.cs` and `VariationFunctions.cs`
-
-**Risk:** If the fix touches `FlowType.IsCompatibleWith`, it affects every function call. Must be surgical -- likely a fix to a specific Value factory or type tag, not the compatibility logic itself.
-
-### 2. Section Bare Expressions Bug (CRITICAL)
-
-**Problem:** Sections silently drop bare expressions, producing 0-frame renders:
-
-```flow
-section intro {
-    | C4 D4 E4 F4 |
-}
-```
-
-**Root Cause:** `ExecuteSectionDeclaration` (Interpreter.cs:336-377) only collects Sequence values from *named variables* declared in the section scope. It iterates `_context.CurrentFrame.GetLocalVariables()` and checks for `SequenceData`. A bare note stream expression evaluates via `ExpressionStatement` and stores the result in `_lastExpressionValue`, but it is never assigned to a variable, so the collection loop at lines 360-368 never sees it.
-
-**What Changes:**
-- `Interpreter.cs` `ExecuteSectionDeclaration` -- after executing each statement, check if the result is a SequenceData and collect it:
-  - Track a counter for auto-naming: `"_expr_0"`, `"_expr_1"`, etc.
-  - After the execution loop, also scan expression results (not just local variables)
-  - **Recommended approach:** Modify the loop to intercept `ExpressionStatement` results whose value is SequenceData and auto-assign them to the current frame before the collection pass
-
-**Integration Points:**
-- `ExecuteSectionDeclaration` collection loop (lines 360-368)
-- `SectionData` constructor -- already accepts `Dictionary<string, SequenceData>`, auto-named keys fit
-- `SongRenderer.RenderSection` -- iterates `section.Sequences`, picks up auto-named entries automatically
-- No parser changes needed
-
-**Risk:** Medium. Must ensure: (a) auto-named keys don't collide with user variable names (use `_` prefix), (b) non-Sequence bare expressions are harmlessly ignored, (c) ordering of auto-collected sequences is deterministic.
-
-### 3. `//` Line Comments (LOW RISK)
-
-**Current State:** `SkipWhitespaceAndComments()` in SimpleLexer handles whitespace, line continuations (`\` + newline), and `Note:` comments (start-of-line only). No `//` support exists.
-
-**What Changes:**
-- `SimpleLexer.cs` line ~809, add before the `else break`:
-  ```csharp
-  else if (c == '/' && PeekNext() == '/')
-  {
-      while (!IsAtEnd() && Peek() != '\n')
-          Advance();
-  }
-  ```
-
-**Conflict Check:** The `/` division operator is handled in `NextToken()` as a single-character operator. Since `SkipWhitespaceAndComments()` runs BEFORE `NextToken()`, the two-char `//` is consumed before the single `/` path is reached. The `->` arrow uses the same pre-check pattern successfully. No conflict.
-
-### 4. Math Functions (ADDITIVE)
-
-**What to Add:** `sin`, `cos`, `abs`, `sqrt`, `min`, `max`, `floor`, `ceil`, `round`, `pow`
-
-**Where:** New file `StandardLibrary/MathFunctions.cs` following `TransformFunctions.cs` pattern:
-- Static class with `Register(InternalFunctionRegistry registry)` method
-- Multiple overloads per function (Int and Float/Double)
-- Called from `BuiltInFunctions.RegisterAllImplementations()`
-
-**Overload Strategy:**
-- `sin(Float) -> Float`, `cos(Float) -> Float`, `sqrt(Float) -> Float` -- single overload each
-- `abs(Int) -> Int`, `abs(Float) -> Float` -- two overloads
-- `min(Int, Int) -> Int`, `min(Float, Float) -> Float` -- two overloads each
-- `pow(Float, Float) -> Float`
-
-**Name Collision Check:** None of these names are currently used as function names or keywords.
-
-### 5. `exportWav` Rename to `writeWav`
-
-**Current State:** `exportWav` registered in `BuiltInFunctions.cs` lines 387-397 with two overloads (default 16-bit and custom bit depth).
-
-**Approach:** Register both `"writeWav"` (primary) and `"exportWav"` (deprecated alias) pointing to the same lambda implementations. Update `.flow` stdlib files and tests.
-
-**Files:** `BuiltInFunctions.cs`, `audio.flow`, test files referencing `exportWav`.
-
-### 6. `mix()` Buffer Layering (ADDITIVE)
-
-**What:** Additive mixing of multiple audio buffers.
-
-**Signature options:**
-- `mix(Buffer, Buffer) -> Buffer` -- two-buffer mix
-- `mix(Buffer, Buffer, Float) -> Buffer` -- with gain
-- `mix(Buffer...) -> Buffer` -- varargs for N buffers
-
-**Algorithm:** Sample-by-sample addition with soft clipping or normalization. Handle mismatched lengths (pad shorter) and channel counts (upmix mono to stereo).
-
-**Where:** Register in `BuiltInFunctions.RegisterAudio()` or new `MixingFunctions.cs`. Uses existing `AudioBuffer` API.
-
-**Note:** `SongRenderer.MixVoicesToStereoBuffer` already does voice mixing internally. `mix()` is the user-facing equivalent for raw buffers.
-
-### 7. Per-Section Volume/Gain in Songs
-
-**Simplest path:** `MusicalContext` already has a `Velocity` field (0.0 to 1.0). Sections already snapshot musical context via `_context.GetMusicalContext()`. `SongRenderer.RenderSection` already reads `section.Context?.Tempo`.
-
-**What Changes:** In `SongRenderer.RenderSection()`, after `MixVoicesToStereoBuffer`, apply `section.Context?.Velocity` as a gain multiplier to the buffer samples. This is a 5-line addition.
-
-**User syntax (already works):**
-```flow
-section verse {
-    velocity 0.6 {
-        Sequence melody = | C4 D4 E4 |
-    }
-}
-```
-
-The existing velocity context block already sets `MusicalContext.Velocity`. The only missing piece is that `SongRenderer` doesn't read it for overall section gain.
-
-### 8. Synth Presets: Strings, Organ, Bell (ADDITIVE)
-
-**Pattern:** Follow existing `PianoSynthesizer.cs`, `BrassSynthesizer.cs`. Each implements `INoteSynthesizer`.
-
-**New files:**
-- `Audio/Synthesizers/StringsSynthesizer.cs` -- multi-oscillator with slow attack, vibrato, Karplus-Strong or additive
-- `Audio/Synthesizers/OrganSynthesizer.cs` -- additive synthesis (drawbar model: fundamental + harmonics at octave intervals)
-- `Audio/Synthesizers/BellSynthesizer.cs` -- FM synthesis (carrier + modulator with inharmonic frequency ratio)
-
-**Integration:** Add to `SynthesizerFactory.Create()` switch:
-```csharp
-"strings" or "string" => new StringsSynthesizer(),
-"organ" => new OrganSynthesizer(),
-"bell" or "bells" => new BellSynthesizer(),
-```
-
-No other changes. Existing `BarRenderer`, `SequenceRenderer`, and `SongRenderer` all use `SynthesizerFactory.Create(synthType)`.
-
-### 9. Tempo Ramps (HIGH COMPLEXITY)
-
-**Problem:** The entire rendering pipeline assumes constant tempo. `MusicalContext.Tempo` is a single `double`. The conversion `60.0 / bpm` appears throughout renderers.
-
-**What Must Change:**
-
-1. **MusicalContext.cs** -- add tempo curve support:
-   - New field: `TempoEnd` (double?) for ramp target
-   - Or a `TempoMap` class that maps beat positions to BPM values
-
-2. **New concept: TempoMap** -- converts beat positions to time (seconds):
-   ```
-   double BeatsToSeconds(double beatPosition)  // integrates tempo curve
-   double SecondsTotalForBeats(double totalBeats)  // total duration
-   ```
-
-3. **Parser** -- new syntax, options:
-   - `temporamp 120 140 { ... }` -- ramp from start to end BPM
-   - Or extend existing `tempo` block: `tempo 120..140 { ... }`
-
-4. **SequenceRenderer / BarRenderer** -- replace `double secondsPerBeat = 60.0 / bpm` with TempoMap queries
-
-5. **SongRenderer.RenderSection** -- pass TempoMap instead of flat `bpm`
-
-6. **SongRenderer.MixVoicesToStereoBuffer** -- voice positioning must use TempoMap for beat-to-sample conversion
-
-**Note on existing accelerando/ritardando:** These exist in `DynamicsFunctions` but operate on note velocity/duration as discrete per-note transforms, not as continuous tempo changes. Tempo ramps are a fundamentally different feature.
-
-**Risk:** HIGH. Touches the core timing model across 6+ files. Every audio rendering path must be updated.
-
-### 10. REPL Auto-Imports (LOW RISK)
-
-**Implementation:** In `Repl.cs`, after creating the FlowEngine, execute a bootstrap:
-```csharp
-_engine.Execute("use \"@std\"", "<repl-init>");
-```
-
-This loads `std.flow` which already imports `@collections` and `@bars`. Single-line change.
-
-### 11. `--verbose` Flag (ADDITIVE)
-
-**Implementation:**
-- `flow-interpreter/Program.cs` -- parse `--verbose` from command-line args
-- Thread a `verbose` flag through to `FlowEngine` or `ErrorReporter`
-- Add optional diagnostic output at key points: after lexing (token count), after parsing (AST size), during overload resolution (candidates and scores)
-
-**Especially valuable for:** Diagnosing the Sequence overload bug (feature 1).
-
-### 12. Better Error Reporting
-
-**Scattered changes:**
-- Ensure all error paths include `SourceLocation` from AST nodes
-- Add warnings (not just errors) to `ErrorReporter`
-- Specifically: when overload resolution fails, show the actual arg types vs expected parameter types (currently only shows function name)
-- When sections produce 0 sequences, warn rather than silently rendering nothing
-
-## Component Boundary Map
+## System Overview
 
 ```
-+------------------+     +------------------+     +------------------+
-|    SimpleLexer   |---->|     Parser       |---->|   Interpreter    |
-| // comments [3]  |     | tempo ramp [9]   |     | section fix [2]  |
-+------------------+     +------------------+     +------------------+
-                                                         |
-                    +------------------------------------+
-                    |                    |                |
-            +------v------+    +--------v------+  +------v--------+
-            | MusicalCtx  |    | ExprEvaluator |  | StdLib/Audio  |
-            | tempo ramp  |    | overload [1]  |  | mix() [6]     |
-            | [9]         |    +---------------+  | writeWav [5]  |
-            +-------------+           |           | math [4]      |
-                                      v           +---------------+
-                              +---------------+          |
-                              | OverloadRes.  |   +------v--------+
-                              | seq fix [1]   |   | Synthesizers  |
-                              | verbose [11]  |   | strings [8]   |
-                              +---------------+   | organ [8]     |
-                                                  | bell [8]      |
-                                                  +---------------+
-                                                         |
-                                                  +------v--------+
-                                                  | SongRenderer  |
-                                                  | section gain  |
-                                                  |   [7]         |
-                                                  | tempo ramp [9]|
-                                                  +---------------+
+┌─────────────────────────────────────────────────────────────────────┐
+│                       SOURCE (.flow)                                 │
+│   reverbTime 0.6 { | C4 D4 E4 |h }                                   │
+│   slice(seq, 0, 4)          Cb4  (enharmonic)                        │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+┌──────────────────────────┴──────────────────────────────────────────┐
+│  LEXER (SimpleLexer.cs)                                              │
+│   - Keyword table ~580  [+reverbTime, +Cb/Bs enharmonics]            │
+│   - Note detection ~676 [+flat/double-flat alterations]              │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ Token[]
+┌──────────────────────────┴──────────────────────────────────────────┐
+│  PARSER (Parser.cs)                                                  │
+│   - Stmt dispatch ~101-132  [+if Match(TokenType.ReverbTime)]        │
+│   - ParseMusicalContextStmt ~420-540 [+case ReverbTime]              │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ AST
+┌──────────────────────────┴──────────────────────────────────────────┐
+│  INTERPRETER (Interpreter.cs)                                        │
+│   - ExecuteMusicalContext ~130-290  [+case ReverbTime]               │
+│   - ExecuteStatement ~71-128 (C2 guard lives here)                   │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+┌──────────────────────────┴──────────────────────────────────────────┐
+│  RUNTIME                                                             │
+│   MusicalContext.cs     [+double? ReverbTime; Clone()+ToString()]    │
+│   ExecutionContext.cs   [GetMusicalContext resolution update]        │
+│   Thunk.cs              [C7 fix: exception caching]                  │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │
+┌──────────────────────────┴──────────────────────────────────────────┐
+│  STANDARD LIBRARY                                                    │
+│   BuiltInFunctions.cs   [+slice, +euclidean humanize/swing]          │
+│   Collections.cs        [C6: init([]) error]                         │
+│   Transforms/           (dynamic transforms already write Velocity)  │
+│   Audio/DSP/Reverb.cs   [+reverbTimeSeconds parameter]               │
+│   Audio/MidiExport.cs   (already reads note.Velocity line 192)       │
+│   Audio/SongRenderer.cs [reads resolved ctx.ReverbTime]              │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Recommended Build Order
+---
 
-Based on dependency analysis and risk (fix bugs first, then additive, then complex):
+## Feature-by-Feature Integration
 
-### Wave 1: Bug Fixes + Diagnostics (unblocks everything)
+### Feature 1 — `slice(seq, start, end)`
+**Files MODIFIED:** `BuiltInFunctions.cs`, optionally `audio.flow`. **NEW:** None.
+**Signatures:** `slice(Sequence, Int, Int) → Sequence` and `slice(Array[T], Int, Int) → Array[T]`.
+**Data flow:** Pure function; uses `sequence.Bars.Skip/Take` + `AddBar()` to preserve `TotalBeats`.
 
-1. **`--verbose` flag** -- implement first, aids debugging all other changes
-2. **Sequence overload resolution** -- CRITICAL bug blocking transforms. Verbose logging helps diagnose
-3. **Section bare expressions** -- CRITICAL bug blocking simple section usage
-4. **Better error reporting** -- improves DX for all subsequent work
+### Feature 2 — Enharmonic helpers (`H` = B, `Db` ↔ `C#`)
+**Files MODIFIED:** `NoteType.cs` (Parse line 21), `SimpleLexer.cs` (~676, ~580), `BuiltInFunctions.cs` (add `enharmonic()`). **NEW:** None.
+**Design:** Parse-time normalization — `Db4` → `(D, 4, -1)` triple. No parallel alteration system.
+**Collision risk (Pitfalls):** `H` as global alias breaks `Int H` variables. Scope the alias to note-stream (`| ... |`) context only.
+**Coupling:** `ChordParser.cs:173-175` also calls `NoteType.Parse` — retest after broadening alterations.
 
-**Rationale:** Verbose logging aids Sequence bug diagnosis. Both bugs block real user scripts. Error reporting improves the feedback loop for all subsequent features.
+### Feature 3 — `reverbTime { ... }` context
+**Files MODIFIED (ordered):**
+1. `TokenType.cs` — add `ReverbTime`
+2. `SimpleLexer.cs` — keyword switch (~580)
+3. `MusicalContextStatement.cs` — add enum case
+4. `Parser.cs` — dispatch (~101-132), switch case (~420). Use `Pan`/`Gain` lookahead guard (function-name conflict)
+5. `MusicalContext.cs` — `public double? ReverbTime`; extend `Clone()` + `ToString()`
+6. `ExecutionContext.cs:186` — `resolved.ReverbTime ??= frame.MusicalContext.ReverbTime;` **update early-break predicate at 201-205** (adding 8th property)
+7. `Interpreter.cs:~137` — new `case MusicalContextType.ReverbTime` mirroring `Gain`/`Pan` validation
+8. `Audio/DSP/Reverb.cs:26` — add `reverbTimeSeconds` param (RT60 formula `feedback = 10^(−3 × delaySeconds / rt60)`) OR compute `roomSize` from `reverbTime` at call site
+9. `Audio/SongRenderer.cs` or voice render site — read `ctx.ReverbTime`, thread into reverb call
 
-### Wave 2: Quick Wins (additive, no core changes)
+**Collision risk (Pitfalls):** grep `examples/`, `tests/`, stdlib `.flow` for `reverbTime` identifier before adding keyword.
+**Coupling with C1:** No hard dependency (even if C1 real, fixes are orthogonal). Still, do ExecuteMusicalContext hardening first.
 
-5. **`//` line comments** -- ~5-line lexer change, huge DX improvement
-6. **Math functions** -- new file, pure addition, no risk
-7. **`exportWav` rename** -- mechanical, alias preserves backward compat
-8. **REPL auto-imports** -- ~2-line change
+### Feature 4 — MIDI velocity from dynamics
+**Major finding: partially already implemented.**
+- `MusicalNoteData.Velocity` exists (NoteType.cs:184, 0–1 range)
+- `crescendo`/`decrescendo`/`swell` write to `Velocity` via `ApplyVelocityGradient` (TransformFunctions.cs:395-474)
+- `MidiExport.cs:192` reads `note.Velocity`, maps to MIDI 1–127
 
-**Rationale:** All isolated, additive, fast to implement, immediately useful. Can be done in any order or parallel.
+**Open questions (Pitfalls agent flags as 1-hour vs 1-day deciding):**
+1. Does `dynamics { }` context propagate to `MusicalNoteData.Velocity` at compile time in `NoteStreamCompiler`?
+2. Should MIDI `Velocity` floor of 1 (vs 0) be a rest threshold?
 
-### Wave 3: Audio Features (additive, moderate scope)
+**Files MODIFIED (if gaps):** `NoteStreamCompiler.cs` (verify), `MidiExport.cs:192` (optional). **NEW:** None.
 
-9. **`mix()` buffer layering** -- new function using existing AudioBuffer API
-10. **Synth presets** -- new files following INoteSynthesizer pattern, independent of each other
-11. **Per-section volume/gain** -- small SongRenderer modification using existing Velocity context
+### Feature 5 — Euclidean swing/humanize
+**Files MODIFIED:** `BuiltInFunctions.cs` (extend `euclidean` line 1013-1054). **NEW:** None.
+**Constraint:** `MusicalNoteData` has no timing-offset field. Real micro-timing requires data-model change.
+**Recommendation:** v1.2 = swing-as-velocity-accent + velocity humanize (uses existing `Velocity`). Defer micro-timing jitter to v1.3.
+**Determinism (Pitfalls):** `euclidean` with humanize MUST take a required `seed` param; `System.Random` isn't stable across .NET patch versions. "Code is the score" reproducibility is a core value.
 
-**Rationale:** All use existing audio infrastructure. Synth presets are independent and parallelizable.
+### Bug C6 — `init([])`
+**File:** `Collections.cs:84-92`. Throw to match `head`/`last`. Breaking change risk LOW.
 
-### Wave 4: Complex Feature (last, highest risk)
+### Bug C7 — `Thunk.Force`
+**File:** `Thunk.cs:27-46`. Cache exception, re-throw on retry. Matches `Lazy<T>` semantics.
 
-12. **Tempo ramps** -- touches timing model across 6+ files. Do last when everything else is stable.
+---
 
-**Rationale:** Only feature requiring a core assumption change (constant tempo). If it destabilizes the audio pipeline, all other features are already locked in and testable.
+## Data Flow Changes
 
-## Anti-Patterns to Avoid
+### MIDI Velocity End-to-End
 
-### Anti-Pattern: Fixing Overloads by Widening Type Compatibility
-**What:** Making SequenceType "compatible with" other types to force matches
-**Why bad:** Breaks specificity scoring for ALL Sequence functions, could cause wrong overload selection
-**Instead:** Find the actual type mismatch -- likely a Value factory producing the wrong type tag
+```
+  [Source .flow]
+  dynamics mf { | C4 D4 E4 F4 | } -> crescendo(0.3, 0.9)
+        ↓
+  [Parser] MusicalContextStatement(Dynamics, 0.63, body)
+        ↓
+  [Interpreter.ExecuteMusicalContext]
+      CurrentFrame.MusicalContext.Velocity = 0.63
+        ↓
+  [NoteStreamCompiler] ← CRITICAL PATH, needs verification
+      MusicalNoteData(…, velocity: ctx.Velocity ?? 0.63)
+        ↓
+  [crescendo transform]
+      rewrites Velocity start→end gradient
+        ↓
+  [MidiExport.cs:192]
+      byte velocity = Clamp((int)(note.Velocity * 127), 1, 127)
+        ↓
+  [MIDI file]
+```
 
-### Anti-Pattern: Section Fix via Forced Variable Assignment
-**What:** Requiring users to assign bare expressions to variables in sections
-**Why bad:** Changes the language semantics; bare expressions should work like they do everywhere else
-**Instead:** Fix the interpreter's collection logic to capture expression results alongside variables
+**Uncertain hop:** NoteStreamCompiler → MusicalNoteData. If NoteStreamCompiler uses default 0.63 and ignores active `MusicalContext.Velocity`, context silently doesn't propagate. Roadmap must include explicit verification task.
 
-### Anti-Pattern: Tempo Ramps via Post-Render Time-Stretching
-**What:** Render at constant tempo, then stretch the audio buffer
-**Why bad:** Introduces pitch artifacts or requires complex phase vocoder
-**Instead:** Use a TempoMap that converts beat positions to sample positions during rendering
+### reverbTime End-to-End
 
-### Anti-Pattern: Special-Casing Functions in OverloadResolver
-**What:** Adding `if (name == "transpose")` branches in the resolver
-**Why bad:** Hides the real type system issue; other functions will hit the same bug
-**Instead:** Fix at the type/Value level so all functions benefit
+```
+  [Source] reverbTime 0.6 { …voices… }
+        ↓
+  MusicalContextStatement(ReverbTime, 0.6, body)
+        ↓
+  CurrentFrame.MusicalContext.ReverbTime = 0.6
+        ↓
+  Voice render: ctx = GetMusicalContext(); if ctx.ReverbTime: Reverb.Apply(…)
+        ↓
+  Mixed buffer with reverb tail
+```
 
-## Sources
+---
 
-- `flow-lang/TypeSystem/OverloadResolver.cs` -- overload resolution logic
-- `flow-lang/TypeSystem/FunctionSignature.cs` -- Matches() and CalculateSpecificity()
-- `flow-lang/TypeSystem/FlowType.cs` -- IsCompatibleWith/CanConvertTo defaults
-- `flow-lang/Interpreter/Interpreter.cs:336-377` -- ExecuteSectionDeclaration
-- `flow-lang/Interpreter/ExpressionEvaluator.cs:160` -- EvaluateFunctionCall
-- `flow-lang/Lexing/SimpleLexer.cs:777-813` -- SkipWhitespaceAndComments
-- `flow-lang/StandardLibrary/Audio/NoteSynthesizer.cs:182-216` -- SynthesizerFactory
-- `flow-lang/StandardLibrary/Audio/SongRenderer.cs` -- rendering pipeline
-- `flow-lang/Runtime/MusicalContext.cs` -- context fields
-- `flow-lang/StandardLibrary/Transforms/TransformFunctions.cs` -- transpose registration
-- `flow-lang/StandardLibrary/Composition/VariationFunctions.cs` -- vary registration
+## Build Order
+
+### Phase A — Stability (independent; can run parallel within phase)
+1. **Audit spike** — reproduce or close C1/C2/C3/C4/C5 (<1hr each).
+2. **C6 + C7** — both real bugs, independent files.
+3. **Test unblocking** — `range(Int, Int)`, `break`/`continue`, `bpm`/`createStereoTrack`/`renderBars`.
+4. **Nyquist validation** — v1.1 phases 6-9 retroactive.
+
+### Phase B — Composer DX (ordered by surface area)
+5. **Feature 4: MIDI velocity** (verification first) — smallest if already works.
+6. **Feature 1: slice()** — pure addition.
+7. **Feature 5: Euclidean swing/humanize** — reuses velocity infra.
+8. **Feature 2: Enharmonic helpers** — NoteType.Parse touch.
+9. **Feature 3: reverbTime** — widest blast radius (9 files). LAST.
+
+### Phase C — Tutorial refresh
+10. `examples/tutorial.flow` demonstrating v1.1 + v1.2.
+
+### Rationale
+- Stability first → clean validation bar for DX work.
+- Within Phase B: smallest surface before largest.
+- (4) → (5) reuses velocity mechanism.
+- (3) last so earlier DX work stabilizes.
+
+---
+
+## Integration Points Summary
+
+| Feature/Bug | NEW files | MODIFIED files | Blocks? | Blocked by? |
+|-------------|-----------|----------------|---------|-------------|
+| `slice()` | none | BuiltInFunctions.cs, audio.flow | none | none |
+| Enharmonics | none | NoteType.cs, SimpleLexer.cs, BuiltInFunctions.cs | none | none |
+| `reverbTime` | none | 9 files across lexer/parser/AST/runtime/stdlib | none | none |
+| MIDI velocity | none | NoteStreamCompiler.cs (verify), MidiExport.cs (opt) | feature 5 | none |
+| Euclidean swing | none | BuiltInFunctions.cs | none | (4) if shared |
+| C6 init([]) | none | Collections.cs | none | none |
+| C7 Thunk | none | Thunk.cs | none | none |
+| Audit spike (C1–C5) | none | TBD (only real bugs) | Phase B start? | none |
+| Tutorial | — | examples/tutorial.flow | none | all features |
+
+---
+
+## Architectural Patterns To Reuse
+
+1. **Musical context as scoped stack** — add `ReverbTime` mirroring `Gain`/`Pan`.
+2. **Built-in registration via `FunctionSignature` + lambda** — `slice` and euclidean fit directly.
+3. **Immutable AST records + interpreter switch-dispatch** — `MusicalContextType.ReverbTime` uses existing dispatch.
+4. **Error accumulation via `ErrorReporter.ReportError()`** — all new validation reports, doesn't throw.
+5. **Value factory methods** — `slice` returns `Value.Sequence(...)`.
+
+## Anti-Patterns To Avoid
+
+1. Mutating `SequenceData.Bars` directly — use `AddBar()`.
+2. Parallel alteration system for flats — reuse `(char, int, int)` triple.
+3. `reverbTime` as function — use context block for consistency with `gain`/`pan`.
+4. "Fixing" C1–C5 without reproducing first.
+5. Baking micro-timing swing into note position in v1.2 — defer.
+
+---
+
+## Key File Paths (absolute)
+
+- `flow-lang/Interpreter/Interpreter.cs` (71-128 C2, 130-290 reverbTime)
+- `flow-lang/Runtime/MusicalContext.cs` (add ReverbTime)
+- `flow-lang/Runtime/ExecutionContext.cs` (186-212 resolution + early-break)
+- `flow-lang/Runtime/Thunk.cs` (C7)
+- `flow-lang/Runtime/NoteStreamCompiler.cs` (verify velocity propagation)
+- `flow-lang/Lexing/TokenType.cs`, `flow-lang/Lexing/SimpleLexer.cs` (570-605, 670-701)
+- `flow-lang/Parsing/Parser.cs` (100-132, 420-540)
+- `flow-lang/Ast/Statements/MusicalContextStatement.cs`
+- `flow-lang/TypeSystem/SpecialTypes/NoteType.cs` (21-73, 174-211)
+- `flow-lang/StandardLibrary/Collections.cs` (84-92)
+- `flow-lang/StandardLibrary/BuiltInFunctions.cs` (1013-1054)
+- `flow-lang/StandardLibrary/Transforms/TransformFunctions.cs` (239-279, 395-474)
+- `flow-lang/StandardLibrary/Audio/EnvelopeProcessor.cs` (100-172 — C3 re-audit)
+- `flow-lang/StandardLibrary/Audio/BufferHelpers.cs` (115-168 — C4 re-audit)
+- `flow-lang/StandardLibrary/Audio/MidiExport.cs` (192)
+- `flow-lang/StandardLibrary/Audio/DSP/Reverb.cs` (26)
+- `flow-lang/StandardLibrary/Audio/SequenceRenderer.cs`
+
+---
+
+## Confidence & Gaps
+
+- **HIGH:** Integration points for reverbTime, slice, MIDI velocity current state, C6/C7 real.
+- **MEDIUM:** Euclidean swing-via-velocity musical acceptability (prototype first).
+- **UNKNOWN — requires human verification:** C1, C2, C3, C4, C5 (agents disagree; audit was self-declared speculative).
+- **LOW — explicit task in Feature 4:** Whether `NoteStreamCompiler` (647 lines) reads `MusicalContext.Velocity`.
+
+---
+
+*Architecture research for: Flow Language v1.2*
+*Researched: 2026-04-18*

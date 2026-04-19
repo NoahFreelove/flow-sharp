@@ -1,0 +1,55 @@
+use "@std"
+
+Note: ===== SPIKE C2: _returnValue != null short-circuit =====
+Note: Reference: Interpreter.cs:73-74 -- `if (_returnValue != null) return;` at top of ExecuteStatement
+Note: Audit hypothesis (C2): an error path sets _returnValue, causing all remaining
+Note: statements to be silently skipped -- defeating the soft-failure "accumulate errors" promise.
+Note: Architecture hypothesis: _returnValue is set ONLY by ExecuteReturn (Interpreter.cs:570);
+Note: no error path touches it, so the guard only fires for explicit user `return` -- correct semantics.
+
+Note: --- Probe 1: explicit return inside proc does NOT leak to top-level ---
+proc c2Probe1 ()
+    return 42
+end proc
+Int result1 = (c2Probe1)
+(print "c2-probe1-after-call")
+(print (str result1))
+
+Note: --- Probe 2: TWO statements after a proc call both execute (guard must clear on proc exit) ---
+proc c2Probe2 ()
+    return 7
+end proc
+Int r2 = (c2Probe2)
+(print "c2-probe2-stmt-A")
+(print "c2-probe2-stmt-B")
+
+Note: --- Probe 3: error in an expression does NOT set _returnValue ---
+Note: (nonExistentFn 99) matches the test_error_masking.flow pattern -- reported via ErrorReporter,
+Note: not via _returnValue. If C2 were real, the statements AFTER this would be skipped.
+(nonExistentFn 99)
+(print "c2-probe3-after-error-stmt-A")
+(print "c2-probe3-after-error-stmt-B")
+
+Note: --- Probe 4: after probe 3's error, a fresh proc with explicit return still works ---
+proc c2Probe4 ()
+    return 100
+end proc
+Int r4 = (c2Probe4)
+(print "c2-probe4-after-call")
+(print (str r4))
+
+Note: --- Expected output under hypothesis "C2 is Dismissed" (architecture agent) ---
+Note:   c2-probe1-after-call
+Note:   42
+Note:   c2-probe2-stmt-A
+Note:   c2-probe2-stmt-B
+Note:   <error about nonExistentFn reported via ErrorReporter>
+Note:   c2-probe3-after-error-stmt-A
+Note:   c2-probe3-after-error-stmt-B
+Note:   c2-probe4-after-call
+Note:   100
+
+Note: --- Expected output under hypothesis "C2 is Confirmed" (pitfalls agent) ---
+Note:   Any of c2-probe1-after-call / stmt-B / stmt-A / probe4-after-call MISSING implies
+Note:   _returnValue leaks. Most diagnostic: probe-3 after-error prints absent means the error
+Note:   path set _returnValue and short-circuited subsequent top-level statements.

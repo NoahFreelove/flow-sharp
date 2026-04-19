@@ -72,6 +72,7 @@ public class Interpreter : IFunctionInvoker
     {
         if (_returnValue != null)
             return; // Already returned
+        // AUDIT-VERIFIED 2026-04-18: C2 — Dismissed: _returnValue only set by ReturnStatement; guard is correct (tests/spike/c2-return-value-short-circuit.flow)
 
         switch (stmt)
         {
@@ -288,6 +289,7 @@ public class Interpreter : IFunctionInvoker
             _context.PopFrame();
         }
     }
+    // AUDIT-VERIFIED 2026-04-18: C1 — Confirmed: body skipped after validation error (tests/spike/c1-musical-context-body.flow)
 
     private void ExecuteForStatement(ForStatement stmt)
     {

@@ -1,0 +1,93 @@
+use "@std"
+use "@audio"
+
+Note: ===== SPIKE C5: augment/diminish semantic swap =====
+Note: Reference: flow-lang/StandardLibrary/Transforms/TransformFunctions.cs
+Note:   line 247: augment uses `newDur = DurationValue - 1` (toward WHOLE=0, i.e. LONGER)
+Note:   line 268: diminish uses `newDur = DurationValue + 1` (toward THIRTYSECOND=5, i.e. SHORTER)
+Note:
+Note: NoteValueType.Value enum ordering (flow-lang/TypeSystem/SpecialTypes/NoteValueType.cs:22-30):
+Note:   WHOLE=0, HALF=1, QUARTER=2, EIGHTH=3, SIXTEENTH=4, THIRTYSECOND=5
+Note:
+Note: Musical convention: `augment` LENGTHENS durations, `diminish` SHORTENS them.
+Note:
+Note: Researcher disagreement (the hardest in this milestone):
+Note:   - ARCHITECTURE agent: code is correct — `-1` in augment moves toward WHOLE, lengthening.
+Note:   - PITFALLS agent:     code is swapped at 247/268; claims directions are reversed.
+Note:
+Note: Per CONTEXT.md D-06 this test is MANDATORY regardless of code reading. Runtime observation
+Note: is the tiebreaker.
+Note:
+Note: ===== Observability strategy =====
+Note: PRIMARY:  `visualize` renders an ASCII piano-roll at 2 columns/beat. Each note's visible
+Note:           width reflects its actual duration within the bar, so a quarter note prints as
+Note:           2 `#` columns, a half note as 4, an eighth note as 1. This is granular enough to
+Note:           distinguish every NoteValueType step that matters for this claim.
+Note: SECONDARY:`renderSong ... "piano" -> getFrames` confirms the pipeline is non-broken. Frame
+Note:           counts will be padded to the bar's time-signature boundary (2 s at 120 BPM/4:4
+Note:           = 88200 frames), so they are NOT sensitive to per-note duration — they exist to
+Note:           verify the audio renderer does not reject augmented/diminished sequences.
+
+(print "=== C5: augment/diminish empirical probe ===")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: ----- Control: quarter-note sequence, no transform -----
+            Sequence sQuarter = | C4q |
+            (print "c5-quarter-viz:")
+            (visualize sQuarter)
+            section quartSec {
+                Sequence qCopy = | C4q |
+            }
+            Song songQ = [quartSec]
+            Buffer bQuarter = (renderSong songQ "piano")
+            Int framesQ = (getFrames bQuarter)
+            (print (concat "c5-quarter-frames: " (str framesQ)))
+
+            Note: ----- Augment: expected LONGER duration if semantics correct -----
+            Sequence sAugmented = (augment sQuarter)
+            (print "c5-augmented-viz:")
+            (visualize sAugmented)
+            section augSec {
+                Sequence aCopy = (augment | C4q |)
+            }
+            Song songA = [augSec]
+            Buffer bAugmented = (renderSong songA "piano")
+            Int framesA = (getFrames bAugmented)
+            (print (concat "c5-augmented-frames: " (str framesA)))
+
+            Note: ----- Diminish: expected SHORTER duration if semantics correct -----
+            Sequence sDiminished = (diminish sQuarter)
+            (print "c5-diminished-viz:")
+            (visualize sDiminished)
+            section dimSec {
+                Sequence dCopy = (diminish | C4q |)
+            }
+            Song songD = [dimSec]
+            Buffer bDiminished = (renderSong songD "piano")
+            Int framesD = (getFrames bDiminished)
+            (print (concat "c5-diminished-frames: " (str framesD)))
+        }
+    }
+}
+
+(print "c5-probe-complete")
+
+Note: ===== VERDICT TABLE (read from visualize output, not frame counts) =====
+Note: Let W_Q = width of # bar for quarter control,
+Note:     W_A = width for augmented,
+Note:     W_D = width for diminished.
+Note:
+Note:   If W_A > W_Q > W_D   -> augment lengthens, diminish shortens (MUSICALLY CORRECT)
+Note:                         -> C5 Dismissed (architecture agent correct)
+Note:   If W_A < W_Q < W_D   -> augment shortens, diminish lengthens (SWAPPED)
+Note:                         -> C5 Confirmed (pitfalls agent correct)
+Note:                         -> Phase 12 FIX-07e + BREAKING CHANGE migration comms
+Note:   If W_A == W_Q == W_D -> transforms are no-ops
+Note:                         -> C5 Confirmed (broken) -> Phase 12 FIX-07e (different mechanism)
+Note:   Anything else        -> partial / asymmetric; see 11-05-SUMMARY.md for analysis
+Note:
+Note: NOTE: Frame counts are padded to bar boundaries (88200 frames @ 44.1k for a 4/4 bar at
+Note: 120 BPM) so frames alone cannot distinguish durations. They are reported as a pipeline
+Note: health check; a change in the frame count would indicate a renderer-level regression.

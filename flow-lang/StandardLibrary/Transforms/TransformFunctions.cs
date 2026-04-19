@@ -236,6 +236,7 @@ public static class TransformFunctions
         registry.Register("diminish", diminishSig, Diminish);
     }
 
+    // AUDIT-VERIFIED 2026-04-18: C5 — augment correct (lengthens); observed A=#### vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
     private static Value Augment(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
@@ -257,6 +258,7 @@ public static class TransformFunctions
         return Value.Sequence(result);
     }
 
+    // AUDIT-VERIFIED 2026-04-18: C5 — diminish correct (shortens); observed D=# vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
     private static Value Diminish(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();

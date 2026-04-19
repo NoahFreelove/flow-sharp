@@ -4,7 +4,7 @@
 
 - ~~**v1.0 MVP**~~ — Phases 1-5 (shipped 2026-04-03)
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
-- 📋 **v1.2** — to be planned via `/gsd-new-milestone`
+- 🚧 **v1.2 Stability & Composer DX** — Phases 11-16 (started 2026-04-18)
 
 ## Phases
 
@@ -84,6 +84,93 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 
 </details>
 
+### v1.2 Stability & Composer DX (Phases 11-16) — in progress
+
+- [x] **Phase 11: Audit Spike** — Reproduce or close C1–C5 audit claims with failing tests or documented dismissals (completed 2026-04-19; 1 Confirmed C1, 4 Dismissed C2–C5)
+- [ ] **Phase 12: Stability** — Ship confirmed bug fixes (C6, C7), contingent fixes surviving the spike (including C5 migration comms if real), and unblock the failing test suite
+- [ ] **Phase 13: Nyquist Validation Backfill** — Retroactive VALIDATION.md for v1.1 phases 6-9, authored against requirements to avoid confirmation bias
+- [ ] **Phase 14: Composer DX Part 1** — `slice`, enharmonic helpers (`Db`/`H`), MIDI velocity verification end-to-end (smallest-surface DX first)
+- [ ] **Phase 15: Composer DX Part 2** — Euclidean swing/humanize (reuses velocity infra), then `reverbTime` context block (widest blast radius, shipped last)
+- [ ] **Phase 16: Tutorial Refresh** — `examples/tutorial.flow` demonstrates v1.1 + v1.2 features end-to-end, produces audible WAV + MIDI
+
+## Phase Details
+
+### Phase 11: Audit Spike
+**Goal**: The v1.2 team has decisive evidence — failing tests or written dismissals — for each of the 2026-04-18 audit's disputed critical findings (C1–C5), so no code is edited while researchers disagree about whether the bug exists.
+**Depends on**: v1.1 close (Phase 10)
+**Requirements**: SPIKE-01, SPIKE-02, SPIKE-03, SPIKE-04, SPIKE-05
+**Success Criteria** (what must be TRUE):
+  1. For each of C1–C5, a `.flow` script in `tests/spike/` either reproduces the bug with a failing assertion OR a short written dismissal (file + line + reasoning) sits alongside the audit entry.
+  2. The verified-2026-04-18 marker appears in the source for every dismissed claim so future audits don't re-raise closed items.
+  3. The outcome determines FIX-07's scope: each surviving C1–C5 item becomes a fix task in Phase 12 with its failing test already committed.
+  4. No production source under `flow-lang/` is modified during this phase — the spike is pure investigation and test authoring.
+**Plans**: 6 plans
+
+Plans:
+- [x] 11-01-PLAN.md — C1: musical-context body skip — **CONFIRMED** (→ FIX-07a)
+- [x] 11-02-PLAN.md — C2: _returnValue short-circuit — **DISMISSED**
+- [x] 11-03-PLAN.md — C3: EnvelopeProcessor div-by-zero — **DISMISSED**
+- [x] 11-04-PLAN.md — C4: BufferHelpers fade div-by-zero — **DISMISSED**
+- [x] 11-05-PLAN.md — C5: augment/diminish swap — **DISMISSED** (empirical via visualize)
+- [x] 11-06-PLAN.md — Aggregate verdicts, write 11-VERIFICATION.md, split FIX-07 in REQUIREMENTS.md
+
+### Phase 12: Stability
+**Goal**: Users who upgrade to v1.2 get an interpreter that errors cleanly on `init([])`, caches failed lazy expressions, runs the `test_custom_oscillator` / `test_while_loop` / `test_full_song` suites green, and behaves correctly wherever the audit spike confirmed a real bug (with user-visible semantic changes communicated via release notes and migration aliases).
+**Depends on**: Phase 11 (spike outcome determines FIX-07 scope; C5 confirmation determines whether migration comms are required)
+**Requirements**: FIX-05, FIX-06, FIX-07, TEST-01, TEST-02, TEST-03
+**Success Criteria** (what must be TRUE):
+  1. `init([])` raises an error matching `head([])` / `last([])` semantics, and `Thunk.Force()` on a failed expression re-throws the cached exception instead of silently returning null.
+  2. `tests/test_custom_oscillator.flow`, `tests/test_while_loop.flow`, and `tests/test_full_song.flow` execute to completion without errors (either via new `range(Int,Int)` + `break`/`continue` + `bpm`/`createStereoTrack`/`renderBars` implementations, or via documented test rewrites that still exercise the intended paths).
+  3. Every C1–C5 item the spike confirmed real ships with a numeric (not behavioral) regression test and its fix in a separate commit, preserving bisectability.
+  4. If C5 (`augment`/`diminish` swap) was confirmed real, the correct-semantics fix ships with release-notes BREAKING CHANGE entry, `augmentV1`/`diminishV1` transitional aliases, and updated `examples/*.flow` call sites — all in the same release.
+  5. The v1.1 soft-failure contract is preserved: validation errors inside musical-context blocks accumulate in `ErrorReporter` and execution continues, and explicit/implicit `return` from procs still works.
+**Plans**: TBD
+
+### Phase 13: Nyquist Validation Backfill
+**Goal**: v1.1 phases 6–9 each carry a requirements-derived `VALIDATION.md` that would fail if the phase's feature were removed, closing the documentation-lag tech debt carried from v1.1 close.
+**Depends on**: Phase 12 (validation targets the post-fix behavior, not the pre-fix behavior)
+**Requirements**: TEST-04
+**Success Criteria** (what must be TRUE):
+  1. `.planning/phases/06-diagnostics-bug-fixes/VALIDATION.md`, `07-developer-experience/VALIDATION.md`, `08-audio-production/VALIDATION.md`, and `09-advanced-features/VALIDATION.md` each satisfy the Nyquist checklist with tests authored against the requirement doc first and the implementation second.
+  2. Phase 10 (`10-vocalization`) draft validation is either promoted to `nyquist_compliant: true` or carries an explicit written waiver describing what could not be validated and why.
+  3. At least one validation test per phase pins a specific observable value (error message text, buffer byte hash, numeric duration, etc.) rather than asserting "no exception thrown" or "buffer is non-null".
+**Plans**: TBD
+
+### Phase 14: Composer DX Part 1
+**Goal**: Composers get three Tier-A building blocks that add no new keyword surface and sit on top of already-shipped infrastructure: bar-level sequence slicing, enharmonic note spellings (`Db`, `Eb`, `H`, …), and a verified end-to-end MIDI-velocity chain driven by `dynamics` / `crescendo` / `decrescendo` / `swell`.
+**Depends on**: Phase 12 (stability must land before new surface is added on top of the same files)
+**Requirements**: DX-05, DX-06, DX-08
+**Success Criteria** (what must be TRUE):
+  1. `slice(seq, start, end)` returns a bar-level sub-sequence with start inclusive and end exclusive, clamps out-of-range indices like `take`/`drop`, and the analogous `slice(Array[T], Int, Int)` overload works for arrays.
+  2. `Db4`, `Eb4`, `Gb4`, `Ab4`, `Bb4`, `Cb4`, `Fb4` parse as notes inside note-stream context (`| … |`), `H` is accepted as a `B` alias **only inside note streams**, and `Int H = 5;` / `proc H () { … }` / existing identifier uses continue to compile unchanged.
+  3. `enharmonic(Note) → Note` returns a pitch-equivalent spelling, round-trippable with existing `NoteType` code.
+  4. A `.flow` script that uses a `dynamics` context with `crescendo`/`decrescendo`/`swell` exports a MIDI file whose velocity bytes land in the 1–127 range with the expected gradient; a regression test asserts the velocity byte sequence.
+  5. A pre-landing grep of `examples/`, `tests/`, and stdlib `.flow` files for `Db`, `Eb`, `Fb`, `Cb`, `Bb`, `Gb`, `Ab`, `H`, `enharmonic` shows zero ordinary-code identifier collisions (or each collision is renamed before landing).
+**Plans**: TBD
+
+### Phase 15: Composer DX Part 2
+**Goal**: Composers get humanized euclidean grooves with deterministic output and per-voice reverb-tail control via a new musical-context block — the two widest-surface DX features of the milestone, shipped after smaller-surface work has bedded in.
+**Depends on**: Phase 14 (DX-09 reuses the MIDI-velocity infrastructure verified in DX-08; DX-07 is the widest blast radius and ships last)
+**Requirements**: DX-07, DX-09
+**Success Criteria** (what must be TRUE):
+  1. `euclidean(hits, steps, note, swing)` applies swing as a velocity accent on on-beats (no timing-offset field change); `euclidean(hits, steps, note, swing, humanize, seed)` perturbs velocity within `±humanize` using a pinned PRNG seeded by the required `seed` parameter.
+  2. Rendering the same `euclidean(…, humanize, seed)` call twice produces byte-identical MIDI and WAV output — the "code is the score" contract holds across runs and across .NET patch versions.
+  3. A `reverbTime <seconds> { … }` musical-context block sets per-voice RT60 that propagates through `Audio/DSP/Reverb.cs` via the RT60→feedback mapping, mirrors the `gain` / `pan` / `swing` context pattern, and rejects negative or zero values with a clear error.
+  4. Nested `reverbTime` blocks (inside `tempo` / `key` / other contexts) resolve correctly through `ExecutionContext.GetMusicalContext`, with the early-break predicate updated to account for the 8th scoped property.
+  5. A pre-landing grep of `examples/`, `tests/`, and stdlib `.flow` files for `reverbTime` shows zero identifier collisions (or each collision is renamed before landing).
+**Plans**: TBD
+
+### Phase 16: Tutorial Refresh
+**Goal**: A new user running `examples/tutorial.flow` against v1.2 can experience every v1.1 + v1.2 composer-visible feature end-to-end, producing audible WAV and MIDI output, so features added since v1.0 stop atrophying unused.
+**Depends on**: Phase 15 (tutorial documents shipped reality; writing it before features land means rewriting it when features shift)
+**Requirements**: QOL-03
+**Success Criteria** (what must be TRUE):
+  1. `examples/tutorial.flow` demonstrates `//` line comments, `writeWav`, `mix`, per-section `gain`, the `strings` / `organ` / `bell` synth presets, `tempoRamp`, `sing` / `tts`, `slice`, enharmonic helpers, `reverbTime`, MIDI velocity export via dynamics, and `euclidean` swing/humanize — at least one runnable snippet per feature.
+  2. Running `dotnet run --project flow-interpreter examples/tutorial.flow` produces a non-empty WAV file, a non-empty MIDI file, and exits with status 0.
+  3. Each tutorial snippet is traceable to a requirement — every v1.1 Validated requirement and every v1.2 Tier A feature is referenced in at least one tutorial comment.
+  4. If C5 shipped as a breaking change in Phase 12, the tutorial's `augment`/`diminish` usages reflect the new (correct) semantics and link back to the migration notes.
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -98,3 +185,9 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 | 8. Audio Production | v1.1 | 2/2 | Complete | 2026-04-04 |
 | 9. Advanced Features | v1.1 | 2/2 | Complete | 2026-04-04 |
 | 10. Vocalization | v1.1 | 2/2 | Complete | 2026-04-04 |
+| 11. Audit Spike | v1.2 | 6/6 | Complete | 2026-04-19 |
+| 12. Stability | v1.2 | 0/? | Not started | - |
+| 13. Nyquist Validation Backfill | v1.2 | 0/? | Not started | - |
+| 14. Composer DX Part 1 | v1.2 | 0/? | Not started | - |
+| 15. Composer DX Part 2 | v1.2 | 0/? | Not started | - |
+| 16. Tutorial Refresh | v1.2 | 0/? | Not started | - |

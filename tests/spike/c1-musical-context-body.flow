@@ -1,0 +1,47 @@
+use "@std"
+
+Note: ===== SPIKE C1: ExecuteMusicalContext early-return body skip =====
+Note: Reference: Interpreter.cs lines 130-290; returns at 151, 164, 178, 224, 240, 255, 263
+Note: Hypothesis A (pitfalls agent): early `return` skips `foreach (var stmt in ctx.Body)` at 270-284
+Note: Hypothesis B (architecture agent): finally block at 286-289 pops frame; behavior is correct
+
+Note: --- Probe 1: top-level statement AFTER a bad tempo block still runs ---
+tempo -5 {
+    (print "c1-probe1-body-ran")
+}
+(print "c1-probe1-after-block")
+
+Note: --- Probe 2: two statements inside a bad swing block ---
+swing 2.0 {
+    (print "c1-probe2-stmt1")
+    (print "c1-probe2-stmt2")
+}
+(print "c1-probe2-after-block")
+
+Note: --- Probe 3: bad key block ---
+Note: Parser requires key as identifier (not string literal); NotAKey is an unknown identifier
+Note: that reaches IsValidKey(keyName) == false and triggers the early return at line 255.
+key NotAKey {
+    (print "c1-probe3-body-ran")
+}
+(print "c1-probe3-after-block")
+
+Note: --- Probe 4: good tempo block (control -- body MUST run) ---
+tempo 120 {
+    (print "c1-probe4-body-ran")
+}
+(print "c1-probe4-after-block")
+
+Note: --- Expected output under hypothesis A (pitfalls agent / real bug) ---
+Note:   <error: Tempo must be positive, got -5>
+Note:   c1-probe1-after-block
+Note:   <error: Swing must be between 0.0 and 1.0, got 2>
+Note:   c1-probe2-after-block
+Note:   <error: Unrecognized key 'NotAKey'...>
+Note:   c1-probe3-after-block
+Note:   c1-probe4-body-ran
+Note:   c1-probe4-after-block
+Note: (Note the absence of c1-probe1-body-ran, c1-probe2-stmt1/stmt2, c1-probe3-body-ran.)
+Note:
+Note: --- Expected output under hypothesis B (architecture agent / no bug) ---
+Note:   same as above PLUS c1-probe1-body-ran, c1-probe2-stmt1, c1-probe2-stmt2, c1-probe3-body-ran.

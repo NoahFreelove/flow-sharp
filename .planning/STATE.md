@@ -1,42 +1,42 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Polish & Foundations
-status: shipped
-stopped_at: Milestone v1.1 archived
-last_updated: "2026-04-18T00:00:00Z"
-last_activity: 2026-04-18
+milestone: v1.2
+milestone_name: Stability & Composer DX
+status: phase-complete
+stopped_at: Phase 11 (Audit Spike) complete — C1 Confirmed, C2-C5 Dismissed; Phase 12 pending
+last_updated: "2026-04-19T00:00:00Z"
+last_activity: 2026-04-19
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_phases: 6
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 6
+  percent: 17
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-01)
+See: .planning/PROJECT.md (updated 2026-04-18)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Planning next milestone (run `/gsd-new-milestone`)
+**Current focus:** Milestone v1.2 Stability & Composer DX — Phase 11 complete; Phase 12 (Stability) next
 
 ## Current Position
 
-Phase: —
+Phase: 11 — Audit Spike (complete)
 Plan: —
-Status: v1.1 Polish & Foundations shipped 2026-04-18 (git tag v1.1)
-Last activity: 2026-04-18
+Status: Phase 11 shipped — 1 Confirmed (C1 body-skip → FIX-07a), 4 Dismissed (C2-C5)
+Last activity: 2026-04-19 — Phase 11 verified and closed; FIX-07 split per D-04
 
-Progress: [██████████] 100%
+Progress: [█▋        ] 17% (1/6 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 0 (v1.2 milestone)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -71,39 +71,27 @@ Progress: [██████████] 100%
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Roadmap]: Loops/string interpolation in Phase 1 to unblock iteration patterns for later phases
-- [Roadmap]: Beat-synced live reload deferred to Phase 5 (highest risk, needs solid foundation)
-- [Roadmap]: Custom oscillators use wavetable approach to avoid per-sample interpreter overhead
-- [Phase 01]: Visualization uses 2 cols/beat and # chars for terminal compatibility
-- [Phase 01]: Loop control flow uses exception-based BreakSignal/ContinueSignal caught per-loop
-- [Phase 01]: Used queue-based multi-token approach in lexer for interpolated strings
-- [Phase 02]: Sidechain arg order is (source, trigger) so pipe composability works naturally
-- [Phase 02]: WAV loader resamples to 44100 Hz using linear interpolation
-- [Phase 02]: Voice allocation at SequenceRenderer level only to avoid double-limiting
-- [Phase 02]: Batch steal-quietest: sort by peak amplitude, keep loudest N voices
-- [Phase 02]: Constant-power pan law (cos/sin) for natural stereo imaging
-- [Phase 02]: Pan keyword dual-use: works as both musical context block and function name
-- [Phase 02]: Constant-power pan law (cos/sin) for natural stereo imaging
-- [Phase 02]: Pan keyword dual-use: works as both musical context block and function name
-- [Phase 04]: Voice leading uses greedy nearest-neighbor: bass follows root, upper voices minimize semitone movement
-- [Phase 04]: Progression compiler pattern: keyword -> AST -> resolve chords -> voice lead -> build SequenceData
-- [Phase 09]: Used Note: comments in tutorial (// not supported by lexer)
-- [Phase 09]: Tutorial uses exportWav (actual registered name) not writeWav
-- [Phase 10]: Combined Task 1+2 commit due to FormantSynthesizer->ConsonantSynthesizer compile dependency
-- [Phase 10]: TtsHook uses Process with 30s timeout and WAV stream parsing for external TTS
+- [Roadmap v1.2]: Audit Spike must be Phase 11 (own phase) because architecture and pitfalls researchers disagreed on C1-C5 reality; fixing-without-reproducing risks regressions
+- [Roadmap v1.2]: FIX-07 scope is contingent on SPIKE outcome; migration-comms work for C5 (if confirmed) bundles into Phase 12, not a separate phase
+- [Roadmap v1.2]: Nyquist validation backfill is own phase (13) to avoid bundling with bug-fix confirmation bias
+- [Roadmap v1.2]: DX split across Phases 14/15 by blast radius — DX-05/DX-06/DX-08 first, DX-07/DX-09 last; DX-07 (reverbTime, 9 files) ships last
+- [Roadmap v1.2]: DX-08 (MIDI velocity) precedes DX-09 (euclidean humanize) because euclidean reuses the velocity infrastructure
+- [Roadmap v1.2]: Tutorial refresh (Phase 16) is last because it documents shipped reality
 
 ### Pending Todos
 
-None yet.
+None yet for v1.2 execution.
 
 ### Blockers/Concerns
 
-- Phase 3: Custom oscillator wavetable size needs profiling (512? 1024? 4096?)
-- Phase 4: Chord DSL voice leading algorithm needs music theory research
-- Phase 5: Thread-safe section swapping architecture needs spike
+- Phase 11: Researcher disagreement on C1-C5 — cannot proceed to FIX-07 until spike resolves
+- Phase 12: C5 (augment/diminish swap) confirmation determines whether BREAKING CHANGE migration artifacts (release notes, transitional aliases, example audit) are required for v1.2 release
+- Phase 14 (DX-08): NoteStreamCompiler velocity propagation (647-line file) may be complete already — verification pass may obviate new-code work
+- Phase 14 (DX-06) / Phase 15 (DX-07): Identifier collision grep required before landing (`H`, `Db`, `Eb`, `Fb`, `Cb`, `Bb`, `Gb`, `Ab`, `enharmonic`, `reverbTime`)
+- Phase 15 (DX-09): Pinned PRNG (xorshift64* / splitmix64) required — `System.Random` is not stable across .NET patch versions and would violate "code is the score" reproducibility
 
 ## Session Continuity
 
-Last session: 2026-04-04T03:24:23.647Z
-Stopped at: Completed 10-02-PLAN.md
-Resume file: None
+Last session: 2026-04-18
+Stopped at: Roadmap created for v1.2; Phase 11 pending
+Resume file: .planning/ROADMAP.md (v1.2 Stability & Composer DX section)

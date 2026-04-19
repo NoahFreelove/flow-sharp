@@ -102,6 +102,7 @@ public static class EnvelopeProcessor
 
         int frame = 0;
 
+        // AUDIT-VERIFIED 2026-04-18: C3 — Dismissed: loop body only runs when frames > 0; see tests/spike/c3-envelope-short-segments.flow
         // Attack phase: 0 to 1
         for (int i = 0; i < attackFrames; i++, frame++)
         {

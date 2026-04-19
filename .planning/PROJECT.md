@@ -12,7 +12,18 @@ Users can write musical ideas as code and hear them immediately — the language
 
 **Shipped:** v1.1 Polish & Foundations (2026-04-18)
 
-**Next milestone:** to be planned. Run `/gsd-new-milestone`.
+**Active:** v1.2 Stability & Composer DX (started 2026-04-18)
+
+## Current Milestone: v1.2 Stability & Composer DX
+
+**Goal:** Fix the 7 critical bugs surfaced by the 2026-04-18 audit, unblock the failing test suite, then ship the Tier A composer DX bundle and refresh the tutorial so v1.1 + v1.2 capabilities are discoverable.
+
+**Target features:**
+- Critical bug fixes (C1–C7 from `CODEBASE-AUDIT-2026-04-18.md`)
+- Test unblocking (`range(Int, Int)`, `break`/`continue`, `bpm`/`createStereoTrack`/`renderBars`)
+- Retroactive Nyquist validation for v1.1 phases 6–9
+- Tier A DX bundle (sequence slicing, enharmonic helpers, `reverbTime` context, MIDI velocity from dynamics, euclidean swing/humanize)
+- Tutorial refresh demonstrating v1.1 + v1.2 features
 
 <details>
 <summary>v1.1 Polish & Foundations (shipped 2026-04-18)</summary>
@@ -80,9 +91,9 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 
 ### Active
 
-(To be populated by next milestone planning — `/gsd-new-milestone`. Candidate directions:)
-- Tutorial refresh to showcase v1.1 features (// comments, writeWav, mix, gain, strings/organ/bell, tempoRamp, sing/tts)
-- Retroactive Nyquist validation for phases 6–9
+**v1.2 Stability & Composer DX (in progress):** see `.planning/REQUIREMENTS.md` for REQ-IDs.
+
+**Deferred candidates (post-v1.2):**
 - Extended audio formats (FLAC, OGG) — see v2 Requirements in archive
 - Per-voice effects chains
 - Real-time MIDI output to external devices
@@ -154,4 +165,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 — v1.1 Polish & Foundations milestone shipped*
+*Last updated: 2026-04-18 — v1.2 Stability & Composer DX milestone started*
