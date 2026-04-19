@@ -8,23 +8,21 @@ Flow is an interpreted, statically-typed programming language designed for music
 
 Users can write musical ideas as code and hear them immediately — the language must faithfully translate musical notation into correct, playable audio.
 
-## Current Milestone: v1.1 Polish & Foundations
+## Current State
 
-**Goal:** Fix critical bugs that break user scripts, improve developer experience with missing language features, then expand music production capabilities.
+**Shipped:** v1.1 Polish & Foundations (2026-04-18)
 
-**Target features:**
-- Fix Sequence type overload resolution (transpose, vary fail)
-- Fix sections silently dropping bare expressions (0-frame renders)
-- Better error reporting (don't mask real failures)
-- `//` line comments
-- Math functions (sin, cos, abs, sqrt, min, max)
-- Rename `exportWav` → `writeWav` for consistency
-- `mix()` for layering buffers
-- Per-section volume/gain in songs
-- More synth presets (strings, organ, bell)
-- Tempo ramps (gradual BPM change)
-- REPL auto-imports
-- `--verbose` flag for debugging
+**Next milestone:** to be planned. Run `/gsd-new-milestone`.
+
+<details>
+<summary>v1.1 Polish & Foundations (shipped 2026-04-18)</summary>
+
+Delivered: diagnostics (--verbose), overload-resolution fixes, honest error reporting, // line comments, math stdlib, writeWav/REPL auto-imports, mix() + per-section gain, three synth presets (strings/organ/bell), tempoRamp, formant-based sing() + external TTS.
+
+- 15 of 16 requirements Complete, 1 Invalid (FIX-04 — premise did not hold in current architecture)
+- See: `.planning/MILESTONES.md` and `.planning/milestones/v1.1-*.md`
+
+</details>
 
 ## Requirements
 
@@ -52,25 +50,47 @@ Users can write musical ideas as code and hear them immediately — the language
 - ✓ Ornaments (trill, tremolo) and articulations — existing
 - ✓ Generative features (euclidean rhythms, random choice) — existing
 - ✓ Basic editor with live highlighting — existing
-- ✓ Vocal synthesis (formant-based sing(), external TTS hook) — Validated in Phase 10: Vocalization
+- ✓ Vocal synthesis (formant-based sing(), external TTS hook) — v1.1 Phase 10
+- ✓ Polyphonic voice allocation — v1.0 Phase 2
+- ✓ Custom oscillator definitions — v1.0 Phase 3
+- ✓ Sidechain compression — v1.0 Phase 2
+- ✓ Spatial audio / per-voice panning — v1.0 Phase 2
+- ✓ Sample import (loadWav) — v1.0 Phase 2
+- ✓ Pattern variation / probabilistic generation — v1.0 Phase 4
+- ✓ Polyrhythm support — v1.0 Phase 4
+- ✓ Chord progression DSL with auto-voicing — v1.0 Phase 4
+- ✓ Beat-synced live reload — v1.0 Phase 5
+- ✓ MIDI output/export — v1.0 Phase 3
+- ✓ Sequence visualization (piano-roll ASCII) — v1.0 Phase 1
+- ✓ Loop constructs (for/while) — v1.0 Phase 1
+- ✓ String interpolation — v1.0 Phase 1
+- ✓ `--verbose` diagnostic flag — v1.1 Phase 6
+- ✓ Sequence/Semitone/Cent overload widening — v1.1 Phase 6
+- ✓ Bare-expression capture in sections (incl. nested context blocks) — v1.1 Phase 6 + audit-driven fix
+- ✓ Honest error reporting (no more function-not-found masking) — v1.1 Phase 6
+- ✓ `//` line comments — v1.1 Phase 7
+- ✓ Math stdlib (sin/cos/tan/abs/sqrt/min/max/floor/ceil/round/pow/log/pi/tau) — v1.1 Phase 7
+- ✓ `writeWav` primary + `exportWav` alias — v1.1 Phase 7
+- ✓ REPL auto-imports (@std, @audio, @collections) — v1.1 Phase 7
+- ✓ `mix(Buffer, Buffer)` — v1.1 Phase 8
+- ✓ Per-section gain musical context — v1.1 Phase 8
+- ✓ Synth presets: strings, organ, bell — v1.1 Phase 8
+- ✓ `tempoRamp(seq, startBPM, endBPM)` — v1.1 Phase 9
+- ✓ Interactive tutorial script — v1.1 Phase 9
 
 ### Active
 
-- [ ] Fix remaining audio rendering bugs (envelope edge cases, sample rate validation)
-- [ ] Fix interpreter edge cases (parser flow expression handling, type system gaps)
-- [ ] Add polyphonic voice allocation for richer arrangements
-- [ ] Add custom oscillator definitions via user functions
-- [ ] Add sidechain compression effect
-- [ ] Add spatial audio / per-voice panning
-- [ ] Add sample import (loadWav)
-- [ ] Add pattern variation / probabilistic generation
-- [ ] Add polyrhythm support (overlapping time signatures)
-- [ ] Add chord progression DSL with auto-voicing
-- [ ] Add beat-synced live reload for hot coding
-- [ ] Add MIDI output/export
-- [ ] Add sequence visualization (piano-roll ASCII)
-- [ ] Add loop constructs (for/while)
-- [ ] Add string interpolation
+(To be populated by next milestone planning — `/gsd-new-milestone`. Candidate directions:)
+- Tutorial refresh to showcase v1.1 features (// comments, writeWav, mix, gain, strings/organ/bell, tempoRamp, sing/tts)
+- Retroactive Nyquist validation for phases 6–9
+- Extended audio formats (FLAC, OGG) — see v2 Requirements in archive
+- Per-voice effects chains
+- Real-time MIDI output to external devices
+- Type inference for `var` declarations
+- Pattern matching / switch expressions
+- User-defined types / structs
+- Cross-platform audio backend (WASAPI, CoreAudio)
+- LSP for IDE integration
 
 ### Out of Scope
 
@@ -84,9 +104,9 @@ Users can write musical ideas as code and hear them immediately — the language
 - Brownfield project with 70+ test files, comprehensive standard library
 - Audio backend is PulseAudio (Linux); abstracted via IAudioBackend for future portability
 - Parser is hand-written recursive descent (not generated)
-- Recent work focused on MIDI conversion, expressive notation (dynamics, articulations, ghost/grace notes), and editor integration
-- Known bug areas: envelope division by zero on zero-length phases, some tests fail due to missing `use "@std"` imports, parser edge cases with flow expressions
-- 5 bugs were just fixed: decrescendo velocity, retrograde bar order, division by zero crash, swell edge case, MIDI key signature mapping
+- As of v1.1 close (2026-04-18): 10 shipped phases, full audio pipeline from composition → WAV export → playback, MIDI round-trip, vocal synthesis, and live-coding hot reload
+- v1.1 close identified and fixed a section + nested-context + bare-expression composition bug (commit 2156690); `--verbose` diagnostics available via the CLI for future debugging sessions
+- Carried tech debt: tutorial does not yet showcase v1.1 features; phases 6–9 lack individual VERIFICATION.md files; Nyquist validation incomplete across v1.1 phases
 
 ## Constraints
 
@@ -107,6 +127,14 @@ Users can write musical ideas as code and hear them immediately — the language
 | Musical context as scoped stack | Natural nesting (tempo inside key inside timesig) | ✓ Good |
 | PulseAudio via P/Invoke | Direct, low-latency; but Linux-only | ⚠️ Revisit for portability |
 | Soft-failure error model | Programs continue after errors; better REPL experience | ✓ Good |
+| TextWriter? null-object for opt-in diagnostics | Zero cost when off; extensible to file output later | ✓ Good (v1.1) |
+| IsCompatibleWith widening on music types (Semitone ← Int, Cent ← Double) | Unblocks natural transform calls like transpose(seq, 2) | ✓ Good (v1.1) |
+| Bare-expression capture via sink field through ExecuteMusicalContext | Supports arbitrarily nested musical-context blocks inside sections | ✓ Good (v1.1 audit fix) |
+| Path-first arg convention for file exports | Matches common stdlib conventions | ✓ Good (v1.1) |
+| Mono-to-stereo promotion in buffer ops | Simplifies mix() for heterogeneous buffers | ✓ Good (v1.1) |
+| Bar-midpoint BPM interpolation for tempo ramps | Single-bar sequences get averaged BPM, avoids edge cases | ✓ Good (v1.1) |
+| Parallel bandpass formant synthesis | Uses Csound tenor tables; recognizable vowel output | ✓ Good (v1.1) |
+| External process + 30s timeout for TTS | Keeps interpreter resilient when engine missing | ✓ Good (v1.1) |
 
 ## Evolution
 
@@ -126,4 +154,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-04 — Phase 10 (Vocalization) complete*
+*Last updated: 2026-04-18 — v1.1 Polish & Foundations milestone shipped*
