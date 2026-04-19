@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Stability & Composer DX
-status: phase-complete
-stopped_at: Phase 11 (Audit Spike) complete — C1 Confirmed, C2-C5 Dismissed; Phase 12 pending
-last_updated: "2026-04-19T00:00:00Z"
-last_activity: 2026-04-19
+status: Phase 11 shipped — 1 Confirmed (C1 body-skip → FIX-07a), 4 Dismissed (C2-C5)
+stopped_at: Phase 12 context gathered
+last_updated: "2026-04-19T13:21:50.468Z"
+last_activity: 2026-04-19 — Phase 11 verified and closed; FIX-07 split per D-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 6
   completed_plans: 6
-  percent: 17
+  percent: 100
 ---
 
 # Project State
@@ -92,6 +92,6 @@ None yet for v1.2 execution.
 
 ## Session Continuity
 
-Last session: 2026-04-18
-Stopped at: Roadmap created for v1.2; Phase 11 pending
-Resume file: .planning/ROADMAP.md (v1.2 Stability & Composer DX section)
+Last session: 2026-04-19T13:21:50.465Z
+Stopped at: Phase 12 context gathered
+Resume file: .planning/phases/12-stability/12-CONTEXT.md
