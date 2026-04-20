@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Stability & Composer DX
-status: "Phase 13 closed; TEST-04 shipped (Phase 6–10 VALIDATION.md all at nyquist_compliant: true; 16 observable-value pins; 68+ test baseline + 13 new Facts/sentinels across 13-01..13-05; 81/81 suite green). Ready for Phase 14 (Composer DX Part 1 — DX-05, DX-06, DX-08)."
-stopped_at: "Phase 13 Nyquist Validation Backfill closed (13-05 completed 2026-04-20; Phase 10 VALIDATION.md promoted to nyquist_compliant: true; 4 new Facts under flow-lang.Tests/Unit/Phase10/ (FormantSynthesizer 88200-pin, FormantData unknown-vowel, TtsHook round-trip + empty-command); test_vocalization.flow Theory row sentinel-tightened; TEST-04 marked Shipped 21e773d; 81/81 suite green)"
-last_updated: "2026-04-20T03:54:56.615Z"
+status: "Phase 14 context gathered — 14-CONTEXT.md + 14-DISCUSSION-LOG.md written (commit 03b4fff). Key decisions: slice silent-clamp atomic · enharmonic key-context-aware · H alias deferred to future pragma phase (candidate keyword `enable`) · DX-06 flat surface extended to arbitrary b/#/+/- composition · DX-08 two-pass strict regression · 4-plan structure with wave-1 parallel. Ready for /gsd-plan-phase 14."
+stopped_at: "Phase 14 context captured (03b4fff). Next: /gsd-plan-phase 14"
+last_updated: "2026-04-20T04:30:00.000Z"
 last_activity: 2026-04-20
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 3
   total_plans: 17
   completed_plans: 17
-  percent: 100
+  percent: 43
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-18)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 13 — nyquist-validation-backfill
+**Current focus:** Phase 14 — composer-dx-part-1 (context gathered)
 
 ## Current Position
 
 Phase: 14
-Plan: Not started
-Status: Phase 13 closed; TEST-04 shipped (Phase 6–10 VALIDATION.md all at nyquist_compliant: true; 16 observable-value pins; 68+ test baseline + 13 new Facts/sentinels across 13-01..13-05; 81/81 suite green). Ready for Phase 14 (Composer DX Part 1 — DX-05, DX-06, DX-08).
-Last activity: 2026-04-20
+Plan: Not started (context captured, ready to plan)
+Status: Phase 14 context gathered (03b4fff). DX-05/06/08 decisions locked; DX-06 H alias deferred to future pragma phase. 4-plan structure (14-01 slice · 14-02 flats+enharmonic · 14-03 DX-08 regression · 14-04 closure) with 14-01/02/03 wave-1 parallel. Ready for /gsd-plan-phase 14.
+Last activity: 2026-04-20 - Phase 14 context gathered (14-CONTEXT.md + 14-DISCUSSION-LOG.md)
 
-Progress: [████████████] 50% (3/6 v1.2 phases complete — 11, 12, 13)
+Progress: [█████████░░░] 43% (3/7 v1.2 phases complete — 11, 12, 13; phase 17 Language Server added to roadmap)
 
 ## Performance Metrics
 
@@ -130,6 +130,10 @@ Recent decisions affecting current work:
 - [Plan 13-04]: `examples/tutorial.flow` runs GREEN under HEAD (post-Phase-12) with exit 0, empty stderr, `/tmp/flow_tutorial_output.wav` produced. Defensive `[Fact(Skip=…)]` + `## Ultra-Important Finding` branch documented in plan was NOT triggered. Phase 16 QOL-03 remains scoped to tutorial feature-refresh (v1.1+v1.2 feature demonstration), independent of this correctness pin.
 - [Plan 13-04]: Boolean-result-concat sentinel pattern documented — .flow scripts that `(concat "Test N - …: " (str bool))` their in-script invariants make backfill-friendly regression tests trivial (Bool `str` → "true"/"false"). Recommended idiom for future test-script authoring.
 
+### Roadmap Evolution
+
+- Phase 17 added (2026-04-20): Flow Language Server — LSP + VSCode extension for syntax highlighting, diagnostics, and intelligent completion/hover suggestions on .flow files
+
 ### Pending Todos
 
 None yet for v1.2 execution.
@@ -141,6 +145,12 @@ None yet for v1.2 execution.
 - Phase 14 (DX-08): NoteStreamCompiler velocity propagation (647-line file) may be complete already — verification pass may obviate new-code work
 - Phase 14 (DX-06) / Phase 15 (DX-07): Identifier collision grep required before landing (`H`, `Db`, `Eb`, `Fb`, `Cb`, `Bb`, `Gb`, `Ab`, `enharmonic`, `reverbTime`)
 - Phase 15 (DX-09): Pinned PRNG (xorshift64* / splitmix64) required — `System.Random` is not stable across .NET patch versions and would violate "code is the score" reproducibility
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260420-0c0 | Add pure-Flow test library (flow-lang/test.flow + tests/test_test_library.flow) | 2026-04-20 | c8731d2 | [260420-0c0-write-a-pure-flow-test-library-at-flow-l](./quick/260420-0c0-write-a-pure-flow-test-library-at-flow-l/) |
 
 ## Session Continuity
 
