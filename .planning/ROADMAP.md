@@ -4,7 +4,7 @@
 
 - ~~**v1.0 MVP**~~ — Phases 1-5 (shipped 2026-04-03)
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
-- 🚧 **v1.2 Stability & Composer DX** — Phases 11-16 (started 2026-04-18)
+- 🚧 **v1.2 Stability & Composer DX** — Phases 11-17 (started 2026-04-18)
 
 ## Phases
 
@@ -84,7 +84,7 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 
 </details>
 
-### v1.2 Stability & Composer DX (Phases 11-16) — in progress
+### v1.2 Stability & Composer DX (Phases 11-17) — in progress
 
 - [x] **Phase 11: Audit Spike** — Reproduce or close C1–C5 audit claims with failing tests or documented dismissals (completed 2026-04-19; 1 Confirmed C1, 4 Dismissed C2–C5)
 - [x] **Phase 12: Stability** — Ship confirmed bug fixes (C6 → FIX-05, C7 → FIX-06, C1 → FIX-07a), reframe TEST-03 around real failures (if-overload + auto-mkdir), and unblock the failing test suite (completed 2026-04-19; 4 Shipped + 2 Closed as audit false positives; 68/68 suite green; C5 BREAKING CHANGE bundle NOT TRIGGERED per F-02)
@@ -92,6 +92,7 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 - [ ] **Phase 14: Composer DX Part 1** — `slice`, enharmonic helpers (`Db`/`H`), MIDI velocity verification end-to-end (smallest-surface DX first)
 - [ ] **Phase 15: Composer DX Part 2** — Euclidean swing/humanize (reuses velocity infra), then `reverbTime` context block (widest blast radius, shipped last)
 - [ ] **Phase 16: Tutorial Refresh** — `examples/tutorial.flow` demonstrates v1.1 + v1.2 features end-to-end, produces audible WAV + MIDI
+- [ ] **Phase 17: Flow Language Server** — Build a language server for Flow (LSP) plus a VSCode extension delivering syntax highlighting, diagnostics, and intelligent completion/hover suggestions for .flow files
 
 ## Phase Details
 
@@ -187,6 +188,13 @@ Plans:
   4. If C5 shipped as a breaking change in Phase 12, the tutorial's `augment`/`diminish` usages reflect the new (correct) semantics and link back to the migration notes.
 **Plans**: TBD
 
+### Phase 17: Flow Language Server
+**Goal**: Flow users editing `.flow` files in VSCode get syntax highlighting, live diagnostics from the interpreter's parser/type-checker, and intelligent completions/hover suggestions for built-in functions, musical types, chord symbols, and imported stdlib modules — delivered as an LSP server (reusing flow-lang) and a VSCode extension that ships the server binary.
+**Depends on**: Phase 12 (stable interpreter required; parser/evaluator surface must not churn while the LSP consumes it)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE): TBD
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -207,3 +215,4 @@ Plans:
 | 14. Composer DX Part 1 | v1.2 | 0/? | Not started | - |
 | 15. Composer DX Part 2 | v1.2 | 0/? | Not started | - |
 | 16. Tutorial Refresh | v1.2 | 0/? | Not started | - |
+| 17. Flow Language Server | v1.2 | 0/? | Not started | - |
