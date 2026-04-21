@@ -1,6 +1,7 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.StandardLibrary;
@@ -144,6 +145,61 @@ public static class Collections
         var count = n.As<int>();
         if (count < 0) count = 0;
         return Value.Array(elements.Skip(count).ToArray(), arrayType.ElementType);
+    }
+
+    /// <summary>
+    /// DX-05: Returns a sub-array from start (inclusive) to end (exclusive).
+    /// Silent two-sided clamping per Phase 14 CONTEXT D-01:
+    /// - Negative start clamps to 0
+    /// - end > count clamps to count
+    /// - start >= end (post-clamp) returns an empty array (preserving ElementType)
+    /// </summary>
+    public static Value SliceArray(IReadOnlyList<Value> args)
+    {
+        var arr = args[0];
+        var startVal = args[1];
+        var endVal = args[2];
+
+        if (arr.Type is not ArrayType arrayType)
+            throw new InvalidOperationException($"Expected Array, got {arr.Type}");
+        if (startVal.Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {startVal.Type}");
+        if (endVal.Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {endVal.Type}");
+
+        var elements = arr.As<IReadOnlyList<Value>>();
+        int count = elements.Count;
+        int s = Math.Max(0, startVal.As<int>());
+        int e = Math.Min(count, endVal.As<int>());
+        if (s >= e)
+            return Value.Array(Array.Empty<Value>(), arrayType.ElementType);
+        return Value.Array(elements.Skip(s).Take(e - s).ToArray(), arrayType.ElementType);
+    }
+
+    /// <summary>
+    /// DX-05: Returns a sub-sequence containing bars [start, end).
+    /// Silent two-sided clamping per Phase 14 CONTEXT D-01 (mirrors SliceArray).
+    /// Each retained bar is appended via SequenceData.AddBar, preserving the
+    /// musical-bar invariant (Mode == Musical, TimeSignature != null).
+    /// </summary>
+    public static Value SliceSequence(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        if (args[1].Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {args[1].Type}");
+        if (args[2].Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {args[2].Type}");
+
+        int count = seq.Bars.Count;
+        int s = Math.Max(0, args[1].As<int>());
+        int e = Math.Min(count, args[2].As<int>());
+        if (s >= e)
+            return Value.Sequence(new SequenceData());
+
+        var result = new SequenceData();
+        for (int i = s; i < e; i++)
+            result.AddBar(seq.Bars[i]);
+        return Value.Sequence(result);
     }
 
     public static Value Append(IReadOnlyList<Value> args)

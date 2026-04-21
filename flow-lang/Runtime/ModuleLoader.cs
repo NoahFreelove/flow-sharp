@@ -110,20 +110,25 @@ public class ModuleLoader
         }
     }
 
+    /// <summary>
+    /// Resolve a stdlib module name ("@std" / "@audio" / bare "std" / "audio.flow") to an absolute file path.
+    /// Mirrors the `@`-prefix branch of the private <see cref="ResolvePath"/>; exposed so the LSP
+    /// (flow-lsp) and future callers can share one resolver. Phase 17 (17-05).
+    /// </summary>
+    public static string ResolveStdlibPath(string moduleName)
+    {
+        var libraryName = moduleName.StartsWith("@") ? moduleName.Substring(1) : moduleName;
+        if (!libraryName.EndsWith(".flow")) libraryName += ".flow";
+        var assemblyDir = Path.GetDirectoryName(typeof(ModuleLoader).Assembly.Location) ?? Environment.CurrentDirectory;
+        return Path.GetFullPath(Path.Combine(assemblyDir, libraryName));
+    }
+
     private string ResolvePath(string path, string? currentFile)
     {
         // Handle internal library imports (e.g., "@std" or "@std.flow")
         if (path.StartsWith("@"))
         {
-            var libraryName = path.Substring(1); // Remove '@' prefix
-
-            // Add .flow extension if not present
-            if (!libraryName.EndsWith(".flow"))
-                libraryName += ".flow";
-
-            // Resolve to the standard library directory (same directory as the executing assembly)
-            var assemblyDir = Path.GetDirectoryName(typeof(ModuleLoader).Assembly.Location) ?? Environment.CurrentDirectory;
-            return Path.GetFullPath(Path.Combine(assemblyDir, libraryName));
+            return ResolveStdlibPath(path);
         }
 
         // If path is absolute, return as-is

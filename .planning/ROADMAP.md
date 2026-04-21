@@ -89,10 +89,10 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 - [x] **Phase 11: Audit Spike** — Reproduce or close C1–C5 audit claims with failing tests or documented dismissals (completed 2026-04-19; 1 Confirmed C1, 4 Dismissed C2–C5)
 - [x] **Phase 12: Stability** — Ship confirmed bug fixes (C6 → FIX-05, C7 → FIX-06, C1 → FIX-07a), reframe TEST-03 around real failures (if-overload + auto-mkdir), and unblock the failing test suite (completed 2026-04-19; 4 Shipped + 2 Closed as audit false positives; 68/68 suite green; C5 BREAKING CHANGE bundle NOT TRIGGERED per F-02)
 - [x] **Phase 13: Nyquist Validation Backfill** — Retroactive VALIDATION.md for v1.1 phases 6-9 shipped + Phase 10 promoted to nyquist_compliant (completed 2026-04-20)
-- [ ] **Phase 14: Composer DX Part 1** — `slice`, enharmonic helpers (`Db`/`H`), MIDI velocity verification end-to-end (smallest-surface DX first)
+- [x] **Phase 14: Composer DX Part 1** — `slice`, flat-literal surface + `enharmonic()`, MIDI velocity regression end-to-end (completed 2026-04-20; DX-05/06/08 shipped, H-alias deferred to future pragma phase via deferred-items.md)
 - [ ] **Phase 15: Composer DX Part 2** — Euclidean swing/humanize (reuses velocity infra), then `reverbTime` context block (widest blast radius, shipped last)
 - [ ] **Phase 16: Tutorial Refresh** — `examples/tutorial.flow` demonstrates v1.1 + v1.2 features end-to-end, produces audible WAV + MIDI
-- [ ] **Phase 17: Flow Language Server** — Build a language server for Flow (LSP) plus a VSCode extension delivering syntax highlighting, diagnostics, and intelligent completion/hover suggestions for .flow files
+- [x] **Phase 17: Flow Language Server** — Build a language server for Flow (LSP) plus a VSCode extension delivering syntax highlighting, diagnostics, and intelligent completion/hover suggestions for .flow files (completed 2026-04-20; 8/8 plans shipped, 117/117 Phase17 Facts green after code-review fix pass, 3 manual-smoke rows tracked as pending HUMAN-UAT in 17-HUMAN-UAT.md, rows 4-5 deferred to first release tag)
 
 ## Phase Details
 
@@ -163,7 +163,13 @@ Plans:
   3. `enharmonic(Note) → Note` returns a pitch-equivalent spelling, round-trippable with existing `NoteType` code.
   4. A `.flow` script that uses a `dynamics` context with `crescendo`/`decrescendo`/`swell` exports a MIDI file whose velocity bytes land in the 1–127 range with the expected gradient; a regression test asserts the velocity byte sequence.
   5. A pre-landing grep of `examples/`, `tests/`, and stdlib `.flow` files for `Db`, `Eb`, `Fb`, `Cb`, `Bb`, `Gb`, `Ab`, `H`, `enharmonic` shows zero ordinary-code identifier collisions (or each collision is renamed before landing).
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [x] 14-01-PLAN.md — DX-05 slice(Sequence + Array[T]) atomic with silent two-sided clamp (D-01/D-02)
+- [x] 14-02-PLAN.md — DX-06 reduced scope: flat-literal Parse/Format + SimpleLexer dispatch reorder + enharmonic() (H-alias deferred)
+- [x] 14-03-PLAN.md — DX-08 MIDI velocity regression via two-pass strict, DryWetMidi byte-array pin
+- [x] 14-04-PLAN.md — Phase 14 closure: REQUIREMENTS.md reframe + deferred-items.md + 14-VERIFICATION.md + nyquist promotion (completed 2026-04-20)
 
 ### Phase 15: Composer DX Part 2
 **Goal**: Composers get humanized euclidean grooves with deterministic output and per-voice reverb-tail control via a new musical-context block — the two widest-surface DX features of the milestone, shipped after smaller-surface work has bedded in.
@@ -175,7 +181,14 @@ Plans:
   3. A `reverbTime <seconds> { … }` musical-context block sets per-voice RT60 that propagates through `Audio/DSP/Reverb.cs` via the RT60→feedback mapping, mirrors the `gain` / `pan` / `swing` context pattern, and rejects negative or zero values with a clear error.
   4. Nested `reverbTime` blocks (inside `tempo` / `key` / other contexts) resolve correctly through `ExecutionContext.GetMusicalContext`, with the early-break predicate updated to account for the 8th scoped property.
   5. A pre-landing grep of `examples/`, `tests/`, and stdlib `.flow` files for `reverbTime` shows zero identifier collisions (or each collision is renamed before landing).
-**Plans**: TBD
+**Plans**: 7 plans across 4 waves (planned 2026-04-20)
+  - [ ] 15-01-PLAN.md — Wave 0 scaffolding: Phase15 test subtree + MidiReadHelpers promotion (closes DEFER-05) + tests/output/.gitignore + 3 placeholder .flow scripts wired to FlowScriptData
+  - [ ] 15-02-PLAN.md — DX-07 grammar + runtime: MusicalContextType.ReverbTime, lexer keyword, Parser case (parse-time negative reject), Interpreter case (silent clamp at 30s, 0.0 dry sentinel), GetMusicalContext 8-clause early-break update, ReverbTimeContextTests (F-01, F-03, F-04, F-05, F-22, F-23 + Parse_Zero_ProducesDry)
+  - [ ] 15-03-PLAN.md — DX-07 audio path: ProcessChannel refactor + new Reverb.Apply(rt60) Schroeder overload (feedback cap 0.99) + SongRenderer per-voice reverb with exact-0 short-circuit + test_reverb_time.flow body + ReverbApplyRt60Tests + ReverbTimeRenderTests (F-02, F-06, F-07, F-08)
+  - [ ] 15-04-PLAN.md — DX-09 euclidean overloads: 4-arg swing-only + 6-arg swing/humanize/seed via RegisterContextDependentFunctions (base velocity = MusicalContext.Velocity ?? 0.63); std.flow declarations; steps>1024 guard; EuclideanSwingTests + EuclideanHumanizeTests (F-09..F-18, F-21 + SameSeed_ProducesIdenticalVelocities)
+  - [ ] 15-05-PLAN.md — DX-09 byte-identical MIDI + WAV regression via two-pass strict empirical byte capture (F-19, F-20)
+  - [ ] 15-06-PLAN.md — DX-09 end-to-end .flow scripts replace Plan 01 placeholders (test_euclidean_swing.flow + test_euclidean_humanize.flow)
+  - [ ] 15-07-PLAN.md — Phase closure: ROADMAP criterion #3 reframe per D-02 + REQUIREMENTS Shipped markers + F-24 collision grep transcript + 15-VERIFICATION.md + 15-VALIDATION.md promotion to nyquist_compliant: true + 15-SUMMARY.md + STATE advance
 
 ### Phase 16: Tutorial Refresh
 **Goal**: A new user running `examples/tutorial.flow` against v1.2 can experience every v1.1 + v1.2 composer-visible feature end-to-end, producing audible WAV and MIDI output, so features added since v1.0 stop atrophying unused.
@@ -191,9 +204,29 @@ Plans:
 ### Phase 17: Flow Language Server
 **Goal**: Flow users editing `.flow` files in VSCode get syntax highlighting, live diagnostics from the interpreter's parser/type-checker, and intelligent completions/hover suggestions for built-in functions, musical types, chord symbols, and imported stdlib modules — delivered as an LSP server (reusing flow-lang) and a VSCode extension that ships the server binary.
 **Depends on**: Phase 12 (stable interpreter required; parser/evaluator surface must not churn while the LSP consumes it)
-**Requirements**: TBD
-**Success Criteria** (what must be TRUE): TBD
-**Plans**: TBD
+**Requirements**: D-01..D-15 (locked decisions in 17-CONTEXT.md substitute for REQ-IDs per RESEARCH §"Phase Requirements")
+**Success Criteria** (what must be TRUE):
+  1. `flow-lsp/` project builds under net10.0, references only `flow-lang` (no audio deps), boots OmniSharp over stdio and accepts initialize+shutdown (Wave 0 gate — D-01, D-02).
+  2. Every `ErrorReporter` error surfaces as an LSP Diagnostic with correct severity + 0-based range; empty diagnostic arrays still publish to clear stale markers (D-06).
+  3. Semantic tokens emit valid 5-tuple delta-encoded LSP output mapping every SimpleLexer TokenType that `FlowSyntaxHighlighter` colored; standard VSCode scopes only, no invented `*.flow` sub-scopes (D-04, D-05).
+  4. Completion delivers built-ins + stdlib procs + user symbols + keywords + 5 snippet templates in default context; `use "@"` context returns only the 6 stdlib module paths; `| ... |` note-stream context returns roman numerals (in key block) or note letters/durations/rests (otherwise); never proc names inside streams (D-07, D-11).
+  5. Hover shows signature + `BuiltInDocs` summary for built-ins; user symbol kind for locals; stdlib-proc signature for imports (D-08, D-12).
+  6. Go-to-definition jumps to declaration for user procs/vars and to stdlib `.flow` file for imports; built-ins return null (D-09).
+  7. Signature help reports the correct active parameter by comma-count for built-ins and user procs (D-10).
+  8. Per-platform self-contained VSIXs (linux-x64, win32-x64, darwin-x64, darwin-arm64) build via CI matrix; each VSIX contains the platform-native `flow-lsp` binary AND the 6 stdlib `.flow` files (Pitfall 6 gate) (D-14).
+  9. Dual-marketplace publish (VSCode Marketplace + OpenVSX) via tag push; OpenVSX namespace claimed before first publish (Pitfall 8) (D-15).
+  10. Non-VSCode editor users have `docs/editor-setup/nvim-lspconfig.lua` + `helix-languages.toml` starter snippets + README with build-from-source instructions (D-13 second clause).
+**Plans**: 8 plans
+
+Plans:
+- [x] 17-01-PLAN.md — flow-lsp scaffold + ParseSession + BuiltInDocs + OmniSharp boot smoke (Wave 1) — completed 2026-04-20 (commits 8aeba9e, fadd371)
+- [ ] 17-02-PLAN.md — VSCode extension scaffold + TextMate grammar + snippets + grammar fixtures (Wave 1)
+- [x] 17-03-PLAN.md — DocumentManager + TextDocumentSyncHandler + DiagnosticsPublisher + LspMappings (Wave 2) — completed 2026-04-20 (commits 86a4364, 04e8cda)
+- [x] 17-04-PLAN.md — SemanticTokensHandler: SimpleLexer to LSP semantic tokens (Wave 3) — completed 2026-04-20 (commit 5d010d7)
+- [x] 17-05-PLAN.md — Symbol indices + BuiltInDocs population + CompletionHandler (Wave 4) — completed 2026-04-20 (commits 8bc29a8, 34147cf)
+- [x] 17-06-PLAN.md — HoverHandler + SignatureHelpHandler + DefinitionHandler + NoteStreamContext (Wave 5) — completed 2026-04-20 (commits d6dcc89, c8a4678)
+- [x] 17-07-PLAN.md — LSP smoke script + per-platform CI matrix + TM grammar snapshots (Wave 6) — completed 2026-04-21 (commits 53cea82, 2f90408, a831035)
+- [x] 17-08-PLAN.md — Non-VSCode editor docs + Marketplace/OpenVSX setup + manual smoke + phase closure (Wave 7) — completed 2026-04-20 (commits ec8e18f, 888f432, 9d33c90, 7026982; Task 3 deferred to HUMAN-UAT per user direction — 3 pending tests in 17-HUMAN-UAT.md, rows 4-5 deferred to first release tag)
 
 ## Progress
 
@@ -212,7 +245,7 @@ Plans:
 | 11. Audit Spike | v1.2 | 6/6 | Complete | 2026-04-19 |
 | 12. Stability | v1.2 | 6/6 | Complete    | 2026-04-19 |
 | 13. Nyquist Validation Backfill | v1.2 | 5/5 | Complete    | 2026-04-20 |
-| 14. Composer DX Part 1 | v1.2 | 0/? | Not started | - |
+| 14. Composer DX Part 1 | v1.2 | 4/4 | Complete    | 2026-04-20 |
 | 15. Composer DX Part 2 | v1.2 | 0/? | Not started | - |
 | 16. Tutorial Refresh | v1.2 | 0/? | Not started | - |
-| 17. Flow Language Server | v1.2 | 0/? | Not started | - |
+| 17. Flow Language Server | v1.2 | 8/8 | Complete (HUMAN-UAT deferred) | 2026-04-20 |

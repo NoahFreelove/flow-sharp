@@ -1,0 +1,19 @@
+// Sample .flow fixture exercising every grammar category.
+use "@std";
+use "@audio";
+
+proc main () {
+    Int x = 42;
+    Float bpm = 120.0;
+    String msg = "hello";
+    Bool flag = true;
+
+    tempo 140 {
+        key Cmajor {
+            | C4 Db5q F#3 Bb7 |
+            | Cmaj7 Dm Bdim Am7 |
+        }
+    }
+
+    x -> print;
+}

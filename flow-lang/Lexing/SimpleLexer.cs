@@ -540,27 +540,36 @@ public class SimpleLexer
 
         var text = sb.ToString();
 
-        // Special case: Check if this looks like a note (A-G + digits) followed by alteration (+/-)
-        // We need to peek ahead for alterations because +/- are token boundaries
-        if (text.Length >= 2)
+        // Phase 14 DX-06 (CONTEXT D-07): Pick up any unbounded run of +/- chars
+        // following an identifier that begins with a note letter (A-G). 'b' and '#' are
+        // already absorbed as part of the identifier scan above; +/- are token boundaries,
+        // so they must be peeked explicitly here.
+        //
+        // Drop the legacy IsDigit(text[1]) gate — bare flats like "Bb" (length 2, no octave
+        // digit) must also trigger pickup so later +/- suffixes get glued on.
+        // Drop the "double alteration only" bound — the loop is unbounded to support
+        // arbitrary compositions like "B+++++".
+        //
+        // Phase 14 WR-01 fix: Gate the pickup to only note-like shapes so ordinary
+        // identifiers beginning with A-G (e.g., foo, attack, bar, decay, enable, flag,
+        // gain) do NOT silently glue trailing +/- onto themselves. Note-like shapes are:
+        // a single A-G letter, any text containing a digit (octave), or text whose second
+        // char is 'b' or '#' (accidental). TryParseNote only accepts these shapes anyway.
+        if (text.Length >= 1)
         {
             char firstChar = char.ToUpper(text[0]);
-            if (firstChar >= 'A' && firstChar <= 'G' && char.IsDigit(text[1]))
+            bool looksNoteLike = firstChar >= 'A' && firstChar <= 'G'
+                && (text.Length == 1
+                    || text.Any(char.IsDigit)
+                    || text[1] == 'b'
+                    || text[1] == '#');
+            if (looksNoteLike)
             {
-                // This could be a note like A3, check for alteration
-                if (!IsAtEnd() && (Peek() == '+' || Peek() == '-'))
+                while (!IsAtEnd() && (Peek() == '+' || Peek() == '-'))
                 {
-                    char alterationChar = Peek();
-                    sb.Append(Advance()); // Consume first +/-
-
-                    // Check for double alteration (++ or --)
-                    if (!IsAtEnd() && Peek() == alterationChar)
-                    {
-                        sb.Append(Advance()); // Consume second +/-
-                    }
-
-                    text = sb.ToString();
+                    sb.Append(Advance());
                 }
+                text = sb.ToString();
             }
         }
 
@@ -587,6 +596,7 @@ public class SimpleLexer
             "accel" => TokenType.Accel,
             "pan" => TokenType.Pan,
             "gain" => TokenType.Gain,
+            "reverbTime" => TokenType.ReverbTime,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
@@ -613,6 +623,22 @@ public class SimpleLexer
         // If it's an identifier, check if it's a special literal
         if (type == TokenType.Identifier)
         {
+            // Phase 14 DX-06 (CONTEXT D-21 + RESEARCH §Regression Risk Analysis):
+            // Under the extended NoteType.Parse surface (sum-based alteration scan), inputs
+            // that used to error out of TryParseNote may now succeed. Dispatch chord-before-note
+            // as defence-in-depth so existing ChordParser symbols always win.
+            //
+            // ChordParser.IsChordSymbol uses the 's'/'f' accidental convention (Cs, Bf, Fs),
+            // NOT 'b'/'#'. Matches include: Dm, Cmaj7, Am7, Bdim, Csmaj, Bfm, Asus4, Gdom7.
+            // Plain note literals ("Db4", "Bb", "C4", "F#", "F##4") fail IsChordSymbol and
+            // fall through to TryParseNote below.
+            // Identifiers like "Bb7" (b-accidental-style, which ChordParser doesn't accept)
+            // fall through the chord check and are picked up by TryParseNote as NoteLiteral(B,7,-1).
+            if (ChordParser.IsChordSymbol(text))
+            {
+                return new Token(TokenType.ChordLiteral, text, start, text);
+            }
+
             // Try to parse as Note (A-G followed by optional octave and alteration)
             if (TryParseNote(text, out var noteValue))
             {
@@ -654,12 +680,6 @@ public class SimpleLexer
             if (TryParseDecibel(text, out var decibelValue))
             {
                 return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
-            }
-
-            // Try to parse as Chord (Cmaj7, Dm, Gsus4, etc.)
-            if (ChordParser.IsChordSymbol(text))
-            {
-                return new Token(TokenType.ChordLiteral, text, start, text);
             }
         }
 

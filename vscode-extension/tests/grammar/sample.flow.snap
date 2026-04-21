@@ -1,0 +1,103 @@
+>// Sample .flow fixture exercising every grammar category.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>use "@std";
+#^^^ source.flow keyword.control.flow
+#   ^ source.flow
+#    ^ source.flow string.quoted.double.flow
+#     ^^^^ source.flow string.quoted.double.flow
+#         ^ source.flow string.quoted.double.flow
+#          ^^ source.flow
+>use "@audio";
+#^^^ source.flow keyword.control.flow
+#   ^ source.flow
+#    ^ source.flow string.quoted.double.flow
+#     ^^^^^^ source.flow string.quoted.double.flow
+#           ^ source.flow string.quoted.double.flow
+#            ^^ source.flow
+>
+>proc main () {
+#^^^^ source.flow keyword.control.flow
+#    ^^^^^^^^^^^ source.flow
+>    Int x = 42;
+#^^^^ source.flow
+#    ^^^ source.flow storage.type.flow
+#       ^^^ source.flow
+#          ^ source.flow keyword.operator.flow
+#           ^ source.flow
+#            ^^ source.flow constant.numeric.flow
+#              ^^ source.flow
+>    Float bpm = 120.0;
+#^^^^ source.flow
+#    ^^^^^ source.flow storage.type.flow
+#         ^^^^^ source.flow
+#              ^ source.flow keyword.operator.flow
+#               ^ source.flow
+#                ^^^^^ source.flow constant.numeric.flow
+#                     ^^ source.flow
+>    String msg = "hello";
+#^^^^ source.flow
+#    ^^^^^^ source.flow storage.type.flow
+#          ^^^^^ source.flow
+#               ^ source.flow keyword.operator.flow
+#                ^ source.flow
+#                 ^ source.flow string.quoted.double.flow
+#                  ^^^^^ source.flow string.quoted.double.flow
+#                       ^ source.flow string.quoted.double.flow
+#                        ^^ source.flow
+>    Bool flag = true;
+#^^^^ source.flow
+#    ^^^^ source.flow storage.type.flow
+#        ^^^^^^ source.flow
+#              ^ source.flow keyword.operator.flow
+#               ^ source.flow
+#                ^^^^ source.flow constant.language.flow
+#                    ^^ source.flow
+>
+>    tempo 140 {
+#^^^^ source.flow
+#    ^^^^^ source.flow keyword.control.flow
+#         ^ source.flow
+#          ^^^ source.flow constant.numeric.flow
+#             ^^^ source.flow
+>        key Cmajor {
+#^^^^^^^^ source.flow
+#        ^^^ source.flow keyword.control.flow
+#           ^^^^^^^^^^ source.flow
+>            | C4 Db5q F#3 Bb7 |
+#^^^^^^^^^^^^ source.flow
+#            ^ source.flow punctuation.section.flow
+#             ^ source.flow
+#              ^^ source.flow variable.other.note.flow
+#                ^ source.flow
+#                 ^^^^ source.flow variable.other.note.flow
+#                     ^ source.flow
+#                      ^^^ source.flow variable.other.note.flow
+#                         ^ source.flow
+#                          ^^^ source.flow entity.name.function.flow
+#                             ^ source.flow
+#                              ^ source.flow punctuation.section.flow
+>            | Cmaj7 Dm Bdim Am7 |
+#^^^^^^^^^^^^ source.flow
+#            ^ source.flow punctuation.section.flow
+#             ^ source.flow
+#              ^^^^^ source.flow entity.name.function.flow
+#                   ^ source.flow
+#                    ^^ source.flow entity.name.function.flow
+#                      ^ source.flow
+#                       ^^^^ source.flow entity.name.function.flow
+#                           ^ source.flow
+#                            ^^^ source.flow entity.name.function.flow
+#                               ^ source.flow
+#                                ^ source.flow punctuation.section.flow
+>        }
+#^^^^^^^^^^ source.flow
+>    }
+#^^^^^^ source.flow
+>
+>    x -> print;
+#^^^^^^ source.flow
+#      ^^ source.flow keyword.operator.flow
+#        ^^^^^^^^ source.flow
+>}
+#^^ source.flow
+>

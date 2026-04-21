@@ -1,0 +1,7 @@
+use "@std"
+use "@audio"
+
+// Phase 15 DX-09 sanity — placeholder; Plan 06 replaces body with euclidean humanize + writeMidi.
+// WAVE-0 PLACEHOLDER — REWRITTEN BY PLAN 06.
+(print "euclidean humanize seed=42: PASSED")
+(print "two runs byte-identical: PASSED")

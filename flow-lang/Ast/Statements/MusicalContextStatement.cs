@@ -5,7 +5,7 @@ namespace FlowLang.Ast.Statements;
 /// <summary>
 /// The type of musical context being set.
 /// </summary>
-public enum MusicalContextType { Timesig, Tempo, Swing, Key, Dynamics, Rit, Accel, Pan, Gain }
+public enum MusicalContextType { Timesig, Tempo, Swing, Key, Dynamics, Rit, Accel, Pan, Gain, ReverbTime }
 
 /// <summary>
 /// A musical context block statement that sets tempo, time signature, swing, or key

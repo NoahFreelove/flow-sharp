@@ -1,0 +1,27 @@
+{
+  "Tempo block": {
+    "prefix": "tempo",
+    "body": ["tempo ${1:120} {", "\t$0", "}"],
+    "description": "Insert a tempo musical context block"
+  },
+  "Key block": {
+    "prefix": "key",
+    "body": ["key ${1:Cmajor} {", "\t$0", "}"],
+    "description": "Insert a key musical context block"
+  },
+  "Timesig block": {
+    "prefix": "timesig",
+    "body": ["timesig ${1:4}/${2:4} {", "\t$0", "}"],
+    "description": "Insert a timesig musical context block"
+  },
+  "Proc declaration": {
+    "prefix": "proc",
+    "body": ["proc ${1:name} (${2})", "\t$0", "end proc"],
+    "description": "Declare a proc"
+  },
+  "Section declaration": {
+    "prefix": "section",
+    "body": ["section ${1:name} {", "\t$0", "}"],
+    "description": "Declare a section"
+  }
+}

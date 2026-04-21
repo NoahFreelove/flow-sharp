@@ -1,0 +1,109 @@
+>// Chord fixture distilled from tests/test_chords.flow covering
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>// major, minor, 7th, diminished, augmented, sus, and sharp/flat chords.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>use "@std";
+#^^^ source.flow keyword.control.flow
+#   ^ source.flow
+#    ^ source.flow string.quoted.double.flow
+#     ^^^^ source.flow string.quoted.double.flow
+#         ^ source.flow string.quoted.double.flow
+#          ^^ source.flow
+>
+>Chord c1 = Cmaj;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^ source.flow entity.name.function.flow
+#               ^^ source.flow
+>Chord c2 = Dm;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^ source.flow entity.name.function.flow
+#             ^^ source.flow
+>Chord c3 = Cmaj7;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^^ source.flow entity.name.function.flow
+#                ^^ source.flow
+>Chord c4 = Am7;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^ source.flow entity.name.function.flow
+#              ^^ source.flow
+>Chord c5 = Bdim;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^ source.flow entity.name.function.flow
+#               ^^ source.flow
+>Chord c6 = Caug;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^ source.flow entity.name.function.flow
+#               ^^ source.flow
+>Chord c7 = Dsus2;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^^ source.flow entity.name.function.flow
+#                ^^ source.flow
+>Chord c8 = Asus4;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^^ source.flow entity.name.function.flow
+#                ^^ source.flow
+>Chord c9 = Csmaj;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^ source.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow
+#           ^^^^^ source.flow entity.name.function.flow
+#                ^^ source.flow
+>Chord c10 = Bfm;
+#^^^^^ source.flow storage.type.flow
+#     ^^^^^ source.flow
+#          ^ source.flow keyword.operator.flow
+#           ^ source.flow
+#            ^^^ source.flow entity.name.function.flow
+#               ^^ source.flow
+>
+>timesig 4/4 {
+#^^^^^^^ source.flow keyword.control.flow
+#       ^ source.flow
+#        ^ source.flow constant.numeric.flow
+#         ^ source.flow keyword.operator.flow
+#          ^ source.flow constant.numeric.flow
+#           ^^^ source.flow
+>    Sequence seq = | Cmaj7 Am7 Dm |;
+#^^^^ source.flow
+#    ^^^^^^^^ source.flow storage.type.flow
+#            ^^^^^ source.flow
+#                 ^ source.flow keyword.operator.flow
+#                  ^ source.flow
+#                   ^ source.flow punctuation.section.flow
+#                    ^ source.flow
+#                     ^^^^^ source.flow entity.name.function.flow
+#                          ^ source.flow
+#                           ^^^ source.flow entity.name.function.flow
+#                              ^ source.flow
+#                               ^^ source.flow entity.name.function.flow
+#                                 ^ source.flow
+#                                  ^ source.flow punctuation.section.flow
+#                                   ^^ source.flow
+>}
+#^^ source.flow
+>

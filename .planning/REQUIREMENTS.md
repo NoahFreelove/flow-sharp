@@ -45,10 +45,12 @@ Dismissed claims (closed by inline AUDIT-VERIFIED markers; no Phase 12 action re
 
 ### Composer DX — Tier A
 
-- [ ] **DX-05**: `slice(Sequence, Int, Int) → Sequence` and `slice(Array[T], Int, Int) → Array[T]`. Start inclusive, end exclusive. Bar-level for Sequence; out-of-range clamps (not throws) to match `take`/`drop`. No new files required.
-- [ ] **DX-06**: Enharmonic helpers — `Db`, `Eb`, `Gb`, `Ab`, `Bb`, `Cb`, `Fb` flat literals accepted by `NoteType.Parse` and normalized to existing `(letter, octave, alteration)` triples; `H` accepted as `B` alias **only within note-stream context** (`| … |`); `enharmonic(Note) → Note` built-in returns pitch-equivalent spelling. Must NOT break existing identifier `H` as a variable name in ordinary code.
+- [x] **DX-05** (Shipped 4528407, 2026-04-20): `slice(Sequence, Int, Int) → Sequence` and `slice(Array[T], Int, Int) → Array[T]`. Start inclusive, end exclusive. Bar-level for Sequence. Silent two-sided clamping matching `take`/`drop` (CONTEXT D-01 — both overloads atomic per D-02). Regression: `flow-lang.Tests/Unit/Phase14/SliceTests.cs` (Array + Sequence Facts) + `tests/test_slice.flow` Theory row. Phase 14 Plan 01.
+- [x] **DX-06** (REFRAMED 2026-04-20): Original audit-trail wording preserved below; shipped scope covers **extended flat-literal surface** (arbitrary `b`/`#`/`+`/`-` composition with any int net alteration, on either side of octave digits — CONTEXT D-07/D-08/D-09) + **`enharmonic(Note) → Note`** key-context-aware respelling (CONTEXT D-03/D-04/D-05/D-06). The `H` alias clause is **deferred to a future pragma phase** (CONTEXT D-10/D-11/D-12); see `.planning/phases/14-composer-dx-part-1/deferred-items.md` for the H-alias requirement, pragma system design sketch, and candidate `enable` keyword. Chord-vs-note lexer dispatch reordered to keep `Bb7` tokenizing as ChordLiteral under the extended Parse surface (regression gate `LexerTests.Bb7_NewBehavior_IsNote` pins the new Bb7-as-Note behavior; existing chord literals `Dm`/`Cmaj7`/`Am7`/`Bdim`/`Csmaj`/`Bfm` remain ChordLiterals, regression gated by `LexerTests.*_IsChord` Facts). Pre-landing collision grep empty across `*.flow` files (ROADMAP criterion 5 — transcript in 14-VERIFICATION.md). **Shipped d2edc90** (flat literals + lexer reorder) + **Shipped 2490c9c** (enharmonic) — Phase 14 Plan 02.
+
+  *Original audit-trail:* Enharmonic helpers — `Db`, `Eb`, `Gb`, `Ab`, `Bb`, `Cb`, `Fb` flat literals accepted by `NoteType.Parse` and normalized to existing `(letter, octave, alteration)` triples; `H` accepted as `B` alias **only within note-stream context** (`| … |`); `enharmonic(Note) → Note` built-in returns pitch-equivalent spelling. Must NOT break existing identifier `H` as a variable name in ordinary code.
 - [ ] **DX-07**: `reverbTime <seconds> { … }` musical context block — sets per-voice reverb RT60; applied during voice rendering via `Reverb.Apply` with RT60→feedback mapping. Mirrors existing `gain`/`pan` context pattern. Pre-landing identifier audit: no collision with existing `reverbTime` usage in `examples/`, `tests/`, stdlib `.flow` files.
-- [ ] **DX-08**: MIDI velocity from dynamic transforms preserved end-to-end — `dynamics { }` musical context propagates to `MusicalNoteData.Velocity` at compile time in `NoteStreamCompiler`; `crescendo`/`decrescendo`/`swell` envelope values (already written to `Velocity`) reach `MidiExport.cs:192` and map to MIDI velocity 1–127 without loss. Regression test: write a `.flow` script with `dynamics`, export MIDI, assert velocity bytes.
+- [x] **DX-08** (Shipped 152e593, 2026-04-20): MIDI velocity from dynamic transforms preserved end-to-end. Regression Fact `DynamicsMidiVelocityTests.Crescendo_EmitsExpectedVelocityGradient` reads MIDI via DryWetMidi 8.0.3 `MidiFile.Read` + `NotesManagingUtilities.GetNotes` and asserts the velocity byte array `[31, 47, 63, 79, 95]` for `crescendo(0.25, 0.75)` over 5 notes (observable-value pin per Phase 13 D-11). Chain verified via two-pass strict authorship (CONTEXT D-13); Pass 2 outcome recorded in 14-03-SUMMARY.md (Outcome A — GREEN on first run, zero-divergence). Phase 14 Plan 03.
 - [ ] **DX-09**: `euclidean(hits, steps, note, swing)` and `euclidean(hits, steps, note, swing, humanize, seed)` overloads — swing applied as velocity accent on on-beats; humanize perturbs velocity within `±humanize`; required `seed: Int` parameter for deterministic output; no new `MusicalNoteData` timing field (micro-timing deferred to v1.3).
 
 ### Quality of Life
@@ -91,13 +93,13 @@ Dismissed claims (closed by inline AUDIT-VERIFIED markers; no Phase 12 action re
 | TEST-02 | Phase 12 | Closed (audit false positive — already implemented at Interpreter.cs:120-124) |
 | TEST-03 | Phase 12 | Shipped 9afbe7a + c09cd82 (reframed per CONTEXT D-01) |
 | TEST-04 | Phase 13 | Shipped 21e773d (closed 2026-04-19) |
-| DX-05 | Phase 14 | Pending |
-| DX-06 | Phase 14 | Pending |
-| DX-08 | Phase 14 | Pending |
+| DX-05 | Phase 14 | Shipped 4528407 |
+| DX-06 | Phase 14 | Shipped d2edc90 + 2490c9c (reframed per CONTEXT D-19; H-alias deferred — see deferred-items.md DEFER-02/03) |
+| DX-08 | Phase 14 | Shipped 152e593 (two-pass strict per CONTEXT D-13, Outcome A — GREEN on first run) |
 | DX-07 | Phase 15 | Pending |
 | DX-09 | Phase 15 | Pending |
 | QOL-03 | Phase 16 | Pending |
 
 ---
 
-*Last updated: 2026-04-19 — Phase 13 Nyquist Validation Backfill closed; TEST-04 shipped (Phase 6–10 VALIDATION.md authored + promoted).*
+*Last updated: 2026-04-20 — Phase 14 Composer DX Part 1 closed; DX-05 / DX-06 / DX-08 shipped. DX-06 H-alias clause deferred to future pragma phase (see `.planning/phases/14-composer-dx-part-1/deferred-items.md` + 14-04-PLAN.md).*

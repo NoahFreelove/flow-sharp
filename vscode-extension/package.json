@@ -1,0 +1,60 @@
+{
+  "name": "flow-language",
+  "displayName": "Flow Language",
+  "description": "Syntax highlighting, diagnostics, and IntelliSense for the Flow music-production language.",
+  "version": "0.1.0",
+  "publisher": "flow-lang",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages"],
+  "activationEvents": ["onLanguage:flow"],
+  "main": "./out/extension.js",
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test:grammar": "vscode-tmgrammar-snap -g syntaxes/flow.tmLanguage.json 'tests/grammar/**/*.flow'",
+    "test:grammar:update": "vscode-tmgrammar-snap -g syntaxes/flow.tmLanguage.json 'tests/grammar/**/*.flow' --updateSnapshot"
+  },
+  "contributes": {
+    "languages": [{
+      "id": "flow",
+      "aliases": ["Flow", "flow"],
+      "extensions": [".flow"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "flow",
+      "scopeName": "source.flow",
+      "path": "./syntaxes/flow.tmLanguage.json"
+    }],
+    "snippets": [{
+      "language": "flow",
+      "path": "./snippets/flow.code-snippets"
+    }],
+    "configuration": {
+      "type": "object",
+      "title": "Flow",
+      "properties": {
+        "flow.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "Optional override for the bundled flow-lsp binary path."
+        },
+        "flow.trace.server": {
+          "type": "string",
+          "enum": ["off", "messages", "verbose"],
+          "default": "off",
+          "description": "Trace LSP communication."
+        }
+      }
+    }
+  },
+  "dependencies": { "vscode-languageclient": "^9.0.1" },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.9.1",
+    "ovsx": "^0.10.11",
+    "typescript": "^5.0.0",
+    "vscode-tmgrammar-test": "^0.1.3"
+  }
+}

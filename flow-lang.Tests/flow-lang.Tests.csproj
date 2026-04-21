@@ -17,5 +17,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
+    <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
   </ItemGroup>
 </Project>

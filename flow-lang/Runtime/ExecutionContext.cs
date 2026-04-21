@@ -197,11 +197,12 @@ public class ExecutionContext
                 resolved.Velocity ??= frame.MusicalContext.Velocity;
                 resolved.Pan ??= frame.MusicalContext.Pan;
                 resolved.Gain ??= frame.MusicalContext.Gain;
+                resolved.ReverbTime ??= frame.MusicalContext.ReverbTime;
             }
             if (resolved.TimeSignature != null && resolved.Tempo != null
                 && resolved.Swing != null && resolved.Key != null
                 && resolved.Velocity != null && resolved.Pan != null
-                && resolved.Gain != null)
+                && resolved.Gain != null && resolved.ReverbTime != null)
                 break;
         }
         // Defaults

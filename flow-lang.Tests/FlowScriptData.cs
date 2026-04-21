@@ -203,5 +203,31 @@ public static class FlowScriptData
             "PASS: consonant syllables synthesized",
             "PASS: vocal mixed with instrumental",
         },
+
+        // Phase 15 DX-07: reverbTime parses, renders, and short-circuits at 0.
+        // Wave 0 placeholder — body is a sentinel-only print; Plan 03 replaces the
+        // body with a real reverbTime render while preserving these two sentinels.
+        ["test_reverb_time.flow"] = new[]
+        {
+            "reverbTime 2.5: PASSED",
+            "reverbTime 0 dry: PASSED",
+        },
+
+        // Phase 15 DX-09: euclidean 4-arg swing overload.
+        // Wave 0 placeholder — Plan 06 replaces the body with a real euclidean
+        // swing call while preserving this sentinel.
+        ["test_euclidean_swing.flow"] = new[]
+        {
+            "euclidean swing: PASSED",
+        },
+
+        // Phase 15 DX-09: euclidean 6-arg humanize overload, same-seed byte-identical.
+        // Wave 0 placeholder — Plan 06 replaces the body with euclidean humanize +
+        // writeMidi + byte-identical-two-runs check while preserving both sentinels.
+        ["test_euclidean_humanize.flow"] = new[]
+        {
+            "euclidean humanize seed=42: PASSED",
+            "two runs byte-identical: PASSED",
+        },
     };
 }

@@ -244,6 +244,17 @@ public class Interpreter : IFunctionInvoker
                     break;
                 }
 
+                case MusicalContextType.ReverbTime:
+                {
+                    var rtVal = _evaluator.Evaluate(ctx.Value);
+                    double rt60 = rtVal.Type is IntType ? (double)rtVal.As<int>() : rtVal.As<double>();
+                    // D-03: silent clamp to 30s (negative already rejected at parse time)
+                    rt60 = Math.Min(rt60, 30.0);
+                    // D-02: 0.0 preserved as sentinel for "dry" — no error, no clamp-up
+                    musicalCtx.ReverbTime = rt60;
+                    break;
+                }
+
                 case MusicalContextType.Key:
                     if (ctx.Value is LiteralExpression keyExpr)
                     {

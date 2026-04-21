@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Flow is an interpreted, statically-typed language designed for music production. It features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax (`| C4 D4 E4 |`), musical context blocks (tempo, key, time signature), and a full audio pipeline from composition to WAV export to real-time playback. The interpreter is written in C# targeting .NET 9.
+Flow is an interpreted, statically-typed language designed for music production. It features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax (`| C4 D4 E4 |`), musical context blocks (tempo, key, time signature), and a full audio pipeline from composition to WAV export to real-time playback. The interpreter is written in C# targeting .NET 10.
 
 ## Build & Run Commands
 
@@ -244,7 +244,7 @@ These live in `flow-lang/` and are loaded via `use "@name"`:
 
 ## C# Conventions
 
-- .NET 9, nullable reference types enabled, implicit usings
+- .NET 10, nullable reference types enabled, implicit usings
 - File-scoped namespaces throughout
 - All namespaces under `FlowLang.*` (library) or `FlowInterpreter` (console app)
 - AST nodes are `record` types for immutability
@@ -256,13 +256,13 @@ These live in `flow-lang/` and are loaded via `use "@name"`:
 
 **Flow Language**
 
-Flow is an interpreted, statically-typed programming language designed for music production. Written in C# (.NET 9), it features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax, musical context blocks, a full audio pipeline from composition to WAV export, real-time playback via PulseAudio, and MIDI import. It targets composers, producers, and creative coders who want a textual, scriptable approach to music creation.
+Flow is an interpreted, statically-typed programming language designed for music production. Written in C# (.NET 10), it features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax, musical context blocks, a full audio pipeline from composition to WAV export, real-time playback via PulseAudio, and MIDI import. It targets composers, producers, and creative coders who want a textual, scriptable approach to music creation.
 
 **Core Value:** Users can write musical ideas as code and hear them immediately — the language must faithfully translate musical notation into correct, playable audio.
 
 ### Constraints
 
-- **Runtime**: .NET 9 — all code must target net9.0
+- **Runtime**: .NET 10 — all code must target net10.0
 - **Platform**: Linux primary (PulseAudio dependency), but IAudioBackend abstraction exists for portability
 - **Dependencies**: Minimal — only Pidgin parser combinator (referenced but not used for main parser)
 - **Performance**: Real-time audio playback requires efficient buffer operations; no GC pressure in hot paths
@@ -277,13 +277,13 @@ Flow is an interpreted, statically-typed programming language designed for music
 ### Core Runtime (Existing -- No Changes)
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| .NET 9 | net9.0 | Runtime | Already in use; LTS not required for a personal/dev tool |
+| .NET 10 | net10.0 | Runtime | Already in use; LTS not required for a personal/dev tool |
 | C# 13 | Latest | Language | Record types, pattern matching, file-scoped namespaces already used throughout |
 | PulseAudio (P/Invoke) | System | Audio playback | Already implemented via `PulseAudioSimpleBackend`; stereo support exists |
 ### New External Dependency: MIDI Export
 | Technology | Version | Purpose | Why |
 |------------|---------|---------|-----|
-| Melanchall.DryWetMidi | 8.0.3 | MIDI file writing/export | The only feature that justifies an external library. Writing correct SMF (Standard MIDI Format) files requires handling variable-length encoding, delta times, track chunks, tempo maps, and channel assignments. Hand-rolling this is error-prone. DryWetMidi targets .NET Standard 2.0 (compatible with .NET 9), is actively maintained (v9.0.0-prerelease1 exists), has 198K+ downloads, and provides both low-level event access and high-level note/pattern APIs. |
+| Melanchall.DryWetMidi | 8.0.3 | MIDI file writing/export | The only feature that justifies an external library. Writing correct SMF (Standard MIDI Format) files requires handling variable-length encoding, delta times, track chunks, tempo maps, and channel assignments. Hand-rolling this is error-prone. DryWetMidi targets .NET Standard 2.0 (compatible with .NET 10), is actively maintained (v9.0.0-prerelease1 exists), has 198K+ downloads, and provides both low-level event access and high-level note/pattern APIs. |
 ### Features Requiring NO New Dependencies (Hand-Roll)
 | Feature | Implementation Approach | Why No Library Needed |
 |---------|------------------------|----------------------|
@@ -327,7 +327,7 @@ Flow is an interpreted, statically-typed programming language designed for music
 | MIDI Export | DryWetMidi library | YES -- Melanchall.DryWetMidi 8.0.3 |
 | All other features | Hand-rolled C# in flow-lang | NO |
 ## Sources
-- [DryWetMidi NuGet](https://www.nuget.org/packages/Melanchall.DryWetMidi) -- v8.0.3, .NET Standard 2.0, confirmed .NET 9 compatible
+- [DryWetMidi NuGet](https://www.nuget.org/packages/Melanchall.DryWetMidi) -- v8.0.3, .NET Standard 2.0, confirmed .NET 10 compatible
 - [DryWetMidi GitHub](https://github.com/melanchall/drywetmidi) -- active maintenance, comprehensive MIDI file R/W API
 - [NWaves GitHub](https://github.com/ar1st0crat/NWaves) -- v0.9.6, last updated Oct 2021 (NOT recommended)
 - [NAudio GitHub](https://github.com/naudio/NAudio) -- Windows-centric (NOT recommended)

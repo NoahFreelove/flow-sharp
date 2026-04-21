@@ -24,6 +24,7 @@ public enum TokenType
     Accel,
     Pan,
     Gain,
+    ReverbTime,
     Pickup,
     For,
     While,

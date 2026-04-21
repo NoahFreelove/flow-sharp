@@ -1,0 +1,10 @@
+// Multi-bar note-stream fixture covering chords, rests, dotted notes,
+// ties, random choice, and cent offsets across bar boundaries.
+tempo 120 {
+    key Cmajor {
+        | C4q D4q E4q F4q | G4q A4q B4q C5q |
+        | Cmaj7h Dm7h | G7w |
+        | (? C4 E4 G4) D4q |
+        | C4+50c D4-25c |
+    }
+}

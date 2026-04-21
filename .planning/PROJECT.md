@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Flow is an interpreted, statically-typed programming language designed for music production. Written in C# (.NET 9), it features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax, musical context blocks, a full audio pipeline from composition to WAV export, real-time playback via PulseAudio, and MIDI import. It targets composers, producers, and creative coders who want a textual, scriptable approach to music creation.
+Flow is an interpreted, statically-typed programming language designed for music production. Written in C# (.NET 10), it features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax, musical context blocks, a full audio pipeline from composition to WAV export, real-time playback via PulseAudio, and MIDI import. It targets composers, producers, and creative coders who want a textual, scriptable approach to music creation.
 
 ## Core Value
 
@@ -88,6 +88,10 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - ✓ Synth presets: strings, organ, bell — v1.1 Phase 8
 - ✓ `tempoRamp(seq, startBPM, endBPM)` — v1.1 Phase 9
 - ✓ Interactive tutorial script — v1.1 Phase 9
+- ✓ `slice(Sequence, Int, Int)` + `slice(Array[T], Int, Int)` with silent two-sided clamping — v1.2 Phase 14 (DX-05)
+- ✓ Flat-letter note literals (`Db4`, `Eb4`, `Gb4`, `Ab4`, `Bb4`, `Cb4`, `Fb4`) + `enharmonic(Note) → Note` — v1.2 Phase 14 (DX-06, H-alias deferred)
+- ✓ MIDI velocity regression for `dynamics`/`crescendo`/`decrescendo`/`swell` (byte-pinned gradient) — v1.2 Phase 14 (DX-08)
+- ✓ Language Server + VSCode extension (syntax highlighting, live diagnostics, completion, hover, signature help, go-to-def, note-stream-aware roman-numeral completion) — v1.2 Phase 17 (D-01..D-15; rows 4-5 of manual smoke deferred to first release tag)
 
 ### Active
 
@@ -101,7 +105,6 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - Pattern matching / switch expressions
 - User-defined types / structs
 - Cross-platform audio backend (WASAPI, CoreAudio)
-- LSP for IDE integration
 
 ### Out of Scope
 
@@ -165,4 +168,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 — v1.2 Stability & Composer DX milestone started*
+*Last updated: 2026-04-20 — Phase 14 complete (DX-05 slice, DX-06 flat literals + enharmonic, DX-08 MIDI velocity regression); H-alias deferred to future pragma phase*

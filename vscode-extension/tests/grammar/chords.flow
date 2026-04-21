@@ -1,0 +1,18 @@
+// Chord fixture distilled from tests/test_chords.flow covering
+// major, minor, 7th, diminished, augmented, sus, and sharp/flat chords.
+use "@std";
+
+Chord c1 = Cmaj;
+Chord c2 = Dm;
+Chord c3 = Cmaj7;
+Chord c4 = Am7;
+Chord c5 = Bdim;
+Chord c6 = Caug;
+Chord c7 = Dsus2;
+Chord c8 = Asus4;
+Chord c9 = Csmaj;
+Chord c10 = Bfm;
+
+timesig 4/4 {
+    Sequence seq = | Cmaj7 Am7 Dm |;
+}

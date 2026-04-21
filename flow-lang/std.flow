@@ -111,6 +111,7 @@ internal proc scaleNotes (String: keyName)
 internal proc resolveNumeral (String: numeral, String: keyName)
 internal proc getSections (Song: s)
 internal proc sectionSequences (Section: s)
+internal proc enharmonic (Note: n)
 
 Note: Tempo expression transforms
 internal proc ritardando (Sequence: seq, Double: amount)
@@ -130,6 +131,8 @@ internal proc visualize (Buffer: b)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)
+internal proc euclidean (Int: hits, Int: steps, Note: pitch, Double: swing)
+internal proc euclidean (Int: hits, Int: steps, Note: pitch, Double: swing, Double: humanize, Int: seed)
 
 Note: Iteration guard
 internal proc setMaxIterations (Int: limit)

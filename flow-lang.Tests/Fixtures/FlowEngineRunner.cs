@@ -1,4 +1,5 @@
 using FlowLang.Core;
+using FlowLang.Runtime;
 
 namespace FlowLang.Tests.Fixtures;
 
@@ -33,6 +34,15 @@ public sealed class FlowEngineRunner : IDisposable
         FlushErrorsToStderr();
         return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.Errors.Count);
     }
+
+    /// <summary>
+    /// Returns the <see cref="Value"/> of a top-level variable by name from the global frame
+    /// after <see cref="RunSource"/> completes. Throws if the variable is not declared.
+    /// Phase 15 Plan 04: added for per-variable Fact probing (see EuclideanSwingTests,
+    /// EuclideanHumanizeTests) — prior Phase 14 Facts used stdout substring assertions
+    /// exclusively, but velocity observation requires structured Value access.
+    /// </summary>
+    public Value GetVariable(string name) => _engine.Context.GlobalFrame.GetVariable(name);
 
     /// <summary>
     /// Mirrors flow-interpreter/Program.cs:78 behavior: after Execute, format the

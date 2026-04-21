@@ -1,0 +1,23 @@
+use "@std"
+
+Note: DX-06 flat-letter family inside note streams (extended NoteType.Parse surface)
+Sequence flats = | Db4 Eb4 Gb4 Ab4 Bb4 Cb4 Fb4 |
+(print (str flats))
+
+Note: DX-06 bare flats default to octave 4 (no octave digit required)
+Sequence bare = | Bb Db Eb |
+(print (str bare))
+
+Note: DX-06 sharp-hash equivalence in note streams
+Sequence sharps = | C#4 F##4 G#5 |
+(print (str sharps))
+
+Note: DX-06 post-octave alteration runs (absorbed by SimpleLexer alteration pickup)
+Note: Full mixed pre+post composition like "Bb-+bbb" and "C+5++" is covered by unit
+Note: Facts (NoteTypeTests.Parse_MixedAlteration / Parse_PreOctaveAndPostOctave). In
+Note: note-stream syntax, '+' and '-' are token boundaries, so the end-to-end surface
+Note: is: letter + (b|#)* + digits + (+|-)* within a single identifier.
+Sequence posts = | Bb4-- F#4+ D4- |
+(print (str posts))
+
+(print "test_flat_literals: PASSED")
