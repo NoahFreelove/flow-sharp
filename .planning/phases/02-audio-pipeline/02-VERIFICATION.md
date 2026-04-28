@@ -1,8 +1,9 @@
 ---
 phase: 02-audio-pipeline
 verified: 2026-04-02T07:30:00Z
-status: human_needed
+status: passed
 score: 4/4 must-haves verified
+human_verification_resolved: 2026-04-25 (programmatic harness — see 02-HUMAN-UAT.md)
 re_verification:
   previous_status: gaps_found
   previous_score: 3/4

@@ -1,3 +1,4 @@
+using System.Linq;
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
@@ -15,6 +16,64 @@ namespace FlowLang.StandardLibrary.Audio;
 public static class MidiExport
 {
     private const int TicksPerQuarterNote = 480;
+
+    /// <summary>
+    /// TUP-06 / CONTEXT D-05 / D-USER-E: maximum TPQN supported by Flow's MIDI export.
+    /// Songs whose tuplet denominator LCM forces TPQN above this cap raise a clear
+    /// composer-facing error — no DAW imports correctly above this in field testing
+    /// (per .planning/research/SUMMARY.md). 32767 is the SMF spec hard limit.
+    /// </summary>
+    private const int MaxTpqn = 9600;
+
+    /// <summary>
+    /// Recursive Euclidean GCD. Mirrors Phase 18 Fraction.cs idiom for stylistic
+    /// consistency. Used by Lcm to compute requiredTPQN.
+    /// </summary>
+    private static int Gcd(int a, int b) => b == 0 ? a : Gcd(b, a % b);
+
+    /// <summary>
+    /// Lcm(a, b) = a × b / Gcd(a, b). Two-line helper next to its sole caller.
+    /// </summary>
+    private static int Lcm(int a, int b) => a / Gcd(a, b) * b;
+
+    /// <summary>
+    /// TUP-06: pre-export pass over the Song collecting tuplet denominators from
+    /// MusicalNoteData.DurationFraction values. Computes requiredTPQN = LCM(480,
+    /// 2 × union(denoms)) per CONTEXT D-05. When zero tuplets are present (no
+    /// note has DurationFraction), returns 480 unchanged (CONTEXT D-07 structural
+    /// preservation of Phase 18 byte-identical contract for non-tuplet songs).
+    ///
+    /// When requiredTPQN exceeds MaxTpqn (9600), raises an InvalidOperationException
+    /// with the LOCKED message format from CONTEXT D-06. The error fires BEFORE
+    /// any DryWetMidi MidiFile allocation or disk I/O — atomic, no partial export.
+    /// </summary>
+    private static int ComputeRequiredTpqn(SongData song)
+    {
+        var denominators = new HashSet<int>();
+        foreach (var section in song.SectionRegistry.Values)
+            foreach (var sequence in section.Sequences.Values)
+                foreach (var bar in sequence.Bars)
+                    foreach (var note in bar.MusicalNotes)
+                        if (note.DurationFraction.HasValue)
+                            denominators.Add(note.DurationFraction.Value.Denom);
+
+        // CONTEXT D-07: zero tuplets → TPQN stays at 480 (Phase 18 byte-identical contract)
+        if (denominators.Count == 0)
+            return TicksPerQuarterNote;
+
+        int requiredTpqn = TicksPerQuarterNote;
+        foreach (var d in denominators)
+            requiredTpqn = Lcm(requiredTpqn, 2 * d);
+
+        if (requiredTpqn > MaxTpqn)
+        {
+            var sortedDenoms = denominators.OrderBy(x => x).ToArray();
+            throw new InvalidOperationException(
+                $"MIDI export requires TPQN={requiredTpqn}, exceeds cap {MaxTpqn} (locked v1.3 D-05). " +
+                $"Tuplet ratios in this song: [{string.Join(", ", sortedDenoms)}]");
+        }
+        return requiredTpqn;
+    }
 
     /// <summary>
     /// Key signature lookup: Flow key string -> (sharps/flats, minor flag).
@@ -84,8 +143,14 @@ public static class MidiExport
     /// </summary>
     private static void ExportMidiInternal(string filepath, SongData song)
     {
+        // TUP-06: pre-export pass — auto-elevate TPQN if tuplets demand it,
+        // raise cap error before any allocation if requiredTPQN > 9600.
+        // Songs with zero tuplets short-circuit to 480 (Phase 18 byte-identical preserved).
+        int ticksPerQuarter = ComputeRequiredTpqn(song);
+
         var midiFile = new MidiFile();
-        midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision(TicksPerQuarterNote);
+        // ticksPerQuarter is bounded by MaxTpqn (9600) which fits short.MaxValue (32767).
+        midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision((short)ticksPerQuarter);
 
         // Determine global context from the first section
         double bpm = 120.0;
@@ -160,7 +225,9 @@ public static class MidiExport
                 sectionTimeSigDenom = sectionData.Context.TimeSignature.Denominator;
 
             // Calculate section length in ticks for repeat offset
-            long sectionLengthTicks = CalculateSectionLengthTicks(sectionData, sectionTimeSigDenom);
+            // TUP-06: thread the per-export ticksPerQuarter through so repeat
+            // offsets stay aligned when TPQN auto-elevates above 480.
+            long sectionLengthTicks = CalculateSectionLengthTicks(sectionData, sectionTimeSigDenom, ticksPerQuarter);
 
             for (int repeat = 0; repeat < sectionRef.RepeatCount; repeat++)
             {
@@ -181,7 +248,7 @@ public static class MidiExport
                             {
                                 // Rests advance position but produce no MIDI events
                                 double restBeats = note.GetBeats(barTimeSigDenom);
-                                barTick += (long)(restBeats * TicksPerQuarterNote);
+                                barTick += (long)(restBeats * ticksPerQuarter);
                                 continue;
                             }
 
@@ -192,7 +259,7 @@ public static class MidiExport
                             byte velocity = (byte)Math.Clamp((int)(note.Velocity * 127), 1, 127);
 
                             double beats = note.GetBeats(barTimeSigDenom);
-                            long durationTicks = (long)(beats * TicksPerQuarterNote);
+                            long durationTicks = (long)(beats * ticksPerQuarter);
 
                             // NoteOn at current position
                             noteEvents.Add(new TimedEvent(
@@ -213,7 +280,7 @@ public static class MidiExport
                             double barBeats = bar.IsPickup
                                 ? bar.GetActualBeats()
                                 : bar.TimeSignature.Numerator;
-                            seqTick += (long)(barBeats * TicksPerQuarterNote);
+                            seqTick += (long)(barBeats * ticksPerQuarter);
                         }
                     }
                 }
@@ -234,9 +301,11 @@ public static class MidiExport
 
     /// <summary>
     /// Calculates the total length of a section in MIDI ticks by summing
-    /// the longest sequence's duration.
+    /// the longest sequence's duration. The ticksPerQuarter parameter (TUP-06)
+    /// is passed in from ExportMidiInternal so repeat offsets honour the
+    /// per-export auto-elevated TPQN rather than the const baseline.
     /// </summary>
-    private static long CalculateSectionLengthTicks(SectionData section, int timeSigDenominator)
+    private static long CalculateSectionLengthTicks(SectionData section, int timeSigDenominator, int ticksPerQuarter)
     {
         double maxBeats = 0;
 
@@ -256,6 +325,6 @@ public static class MidiExport
                 maxBeats = seqBeats;
         }
 
-        return (long)(maxBeats * TicksPerQuarterNote);
+        return (long)(maxBeats * ticksPerQuarter);
     }
 }

@@ -148,11 +148,52 @@ public static class Collections
     }
 
     /// <summary>
-    /// DX-05: Returns a sub-array from start (inclusive) to end (exclusive).
-    /// Silent two-sided clamping per Phase 14 CONTEXT D-01:
-    /// - Negative start clamps to 0
-    /// - end > count clamps to count
-    /// - start >= end (post-clamp) returns an empty array (preserving ElementType)
+    /// DEFER-01 (Phase 20): range(start, end) and range(start, end, step) -> Array[Int].
+    /// Standard Pythonic semantics — start inclusive, end exclusive, default step=1, negative
+    /// step iterates backward, empty array when range is unsatisfiable. step==0 is undefined
+    /// and throws.
+    /// </summary>
+    public static Value Range(IReadOnlyList<Value> args)
+    {
+        if (args[0].Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {args[0].Type}");
+        if (args[1].Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {args[1].Type}");
+
+        int start = args[0].As<int>();
+        int end = args[1].As<int>();
+        int step = 1;
+        if (args.Count >= 3)
+        {
+            if (args[2].Type is not IntType)
+                throw new InvalidOperationException($"Expected Int, got {args[2].Type}");
+            step = args[2].As<int>();
+        }
+
+        if (step == 0)
+            throw new InvalidOperationException("range step cannot be zero");
+
+        var result = new List<Value>();
+        if (step > 0)
+        {
+            for (int i = start; i < end; i += step)
+                result.Add(Value.Int(i));
+        }
+        else
+        {
+            for (int i = start; i > end; i += step)
+                result.Add(Value.Int(i));
+        }
+        return Value.Array(result, IntType.Instance);
+    }
+
+    /// <summary>
+    /// DX-05 (Phase 14) + DEFER-05 (Phase 20 plan 20-03): returns a sub-array from start
+    /// (inclusive) to end (exclusive). Negative indices are interpreted Python-style as
+    /// from-end (-1 means last, -2 means second-to-last, etc.). Out-of-range indices
+    /// (still negative or > count after normalization) clamp silently per Phase 14 D-01
+    /// tradition AND D-USER-D extreme-negative clamp policy. start >= end (post-clamp)
+    /// returns an empty array (preserving ElementType).
     /// </summary>
     public static Value SliceArray(IReadOnlyList<Value> args)
     {
@@ -169,17 +210,25 @@ public static class Collections
 
         var elements = arr.As<IReadOnlyList<Value>>();
         int count = elements.Count;
-        int s = Math.Max(0, startVal.As<int>());
-        int e = Math.Min(count, endVal.As<int>());
+        // DEFER-05: normalize negative indices Python-style (count + idx) BEFORE clamp.
+        int rawStart = startVal.As<int>();
+        int rawEnd   = endVal.As<int>();
+        int normStart = rawStart < 0 ? rawStart + count : rawStart;
+        int normEnd   = rawEnd   < 0 ? rawEnd   + count : rawEnd;
+        // Phase 14 D-01 silent-clamp tradition preserved post-normalization (D-USER-D).
+        int s = Math.Clamp(normStart, 0, count);
+        int e = Math.Clamp(normEnd,   0, count);
         if (s >= e)
             return Value.Array(Array.Empty<Value>(), arrayType.ElementType);
         return Value.Array(elements.Skip(s).Take(e - s).ToArray(), arrayType.ElementType);
     }
 
     /// <summary>
-    /// DX-05: Returns a sub-sequence containing bars [start, end).
-    /// Silent two-sided clamping per Phase 14 CONTEXT D-01 (mirrors SliceArray).
-    /// Each retained bar is appended via SequenceData.AddBar, preserving the
+    /// DX-05 (Phase 14) + DEFER-05 (Phase 20 plan 20-03): returns a sub-sequence
+    /// containing bars [start, end). Negative indices are interpreted Python-style
+    /// as from-end (mirrors SliceArray normalization shape). Out-of-range indices
+    /// clamp silently per Phase 14 D-01 + D-USER-D extreme-negative policy. Each
+    /// retained bar is appended via SequenceData.AddBar, preserving the
     /// musical-bar invariant (Mode == Musical, TimeSignature != null).
     /// </summary>
     public static Value SliceSequence(IReadOnlyList<Value> args)
@@ -191,8 +240,14 @@ public static class Collections
             throw new InvalidOperationException($"Expected Int, got {args[2].Type}");
 
         int count = seq.Bars.Count;
-        int s = Math.Max(0, args[1].As<int>());
-        int e = Math.Min(count, args[2].As<int>());
+        // DEFER-05: normalize negative indices Python-style (count + idx) BEFORE clamp.
+        int rawStart = args[1].As<int>();
+        int rawEnd   = args[2].As<int>();
+        int normStart = rawStart < 0 ? rawStart + count : rawStart;
+        int normEnd   = rawEnd   < 0 ? rawEnd   + count : rawEnd;
+        // Phase 14 D-01 silent-clamp tradition preserved post-normalization (D-USER-D).
+        int s = Math.Clamp(normStart, 0, count);
+        int e = Math.Clamp(normEnd,   0, count);
         if (s >= e)
             return Value.Sequence(new SequenceData());
 

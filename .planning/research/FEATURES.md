@@ -1,263 +1,305 @@
-# Feature Research — v1.2 Stability & Composer DX
+# Feature Research — v1.3 Composer DX Tier B/C
 
-**Domain:** Music-production DSL / live-coding language (brownfield, extending Flow)
-**Researched:** 2026-04-18
-**Confidence:** HIGH for composer mental-models; MEDIUM for exact behavioral defaults
+**Domain:** Music DSL / live-coding language (Flow v1.3 — subsequent milestone)
+**Researched:** 2026-04-26
+**Confidence:** HIGH (lead capability + DEFER closures backed by primary docs); MEDIUM (Tier B/C DAW conventions backed by industry sources)
 
-## Scope
+## Scope Note
 
-This document covers the five Tier A composer-DX features identified in `CODEBASE-AUDIT-2026-04-18.md` Section 5, researched against how music-coding environments (SuperCollider, TidalCycles, Sonic Pi, Strudel, LilyPond, notation/DAW software) implement equivalent primitives. Bug-fix scope (C1–C7) is covered separately in PITFALLS.md — this file exists to inform requirements writing for the new features only.
+This is a **subsequent-milestone** research pass. v1.0–v1.2 already shipped the foundational note-stream / chord / Sequence / SongRender / MIDI export / audio DSP stack. Existing surfaces touched by v1.3:
 
-The older v1.1 version of this file (math stdlib, `//` comments, etc.) was replaced because those features are now shipped; v1.2 research supersedes it.
+- `Lexing/SimpleLexer.cs` (883 LOC) — note literal + duration suffix tokens
+- `Parsing/Parser.NoteStream.cs` (352 LOC) — `TryParseDurationSuffix` returns one of `w/h/q/e/s/t`
+- `Runtime/NoteStreamCompiler.cs` (647 LOC) — `DurationSuffixMap` + `ToFraction()` + auto-fit (`FindClosestNoteValue`)
+- `StandardLibrary/Harmony/HarmonyFunctions.cs` — `arpeggio(Chord, String)`, `enharmonic`, `chordNotes`, `chordRoot`
+- `StandardLibrary/Audio/DSP/Delay.cs` (96 LOC) — `delay(buf, ms, fb, mix)` (ms-only API today)
+- `StandardLibrary/Audio/FileIO.cs` (466 LOC) — `loadWav` already exists (no pitch-shift overload yet)
+- `StandardLibrary/Transforms/TransformFunctions.cs:660-697` — `humanize(Sequence, Double)` is **uniform** today (`HumanizeRng.NextDouble() * 2.0 - 1.0`); DEFER-06 swaps in Gaussian
+- `StandardLibrary/BuiltInFunctions.cs:1190-1280` — `euclidean` swing/humanize is uniform-distribution-byte-pinned (must remain so)
+- `Runtime/MusicalContext.cs` — push/pop stack for tempo/timesig/key/swing (extension target for `tuplet { }` block + `enable` pragma)
+- `Runtime/ExecutionContext.cs` — owns musical-context stack
+- `std.flow:114` — already declares `internal proc enharmonic` (DEFER-04 closes the natural-letter edges left as TODO)
+
+This shapes what is "table stakes" vs "differentiator" — Flow already has the surrounding pipeline. The v1.3 features are **incremental refinements** to a credible product, not v1.0 must-haves.
 
 ---
 
 ## Feature Landscape
 
-### Table Stakes (Composers expect these in any modern music-coding environment)
+### Table Stakes (Users Expect These for v1.3 to Be Credible)
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| **Sequence slicing** `slice(seq, start, end)` | TidalCycles has `slice` + `bite` + `chunk`; Strudel has `slice` + `chunk`; SuperCollider `Pseq` has an `offset` arg; Sonic Pi live-loops rely on `ring.take`/`drop`. Composers expect to pull phrases out of a longer sequence to reuse, transform, or loop. | LOW | Existing `take`/`drop` collections ops give the template. Unit must match the seq's own unit (bars or note-indices — pick one and document). |
-| **Note-name aliases for B/H (German)** | LilyPond ships `english.ly`, `deutsch.ly`, `nederlands.ly`, `espanol.ly`, `svenska.ly` etc. Users with a classical/European background reach for `H` naturally. Missing it makes the language feel Anglocentric. | LOW | Lexer change + test. `H` → `B4` (natural), `B` stays `B4` flat only if `deutsch` mode is opt-in — otherwise `B` stays English (Bb would be ambiguous). **Recommend: additive only — `H` accepted as alias for `B`; do NOT redefine `B` as `Bb`.** |
-| **Enharmonic helpers** (`Db` ↔ `C#`, `enharmonic(note)`) | Standard notation software (Finale, Sibelius, MuseScore, Dorico) all provide respell-enharmonic. Users writing in a flat-heavy key (Db major, Ab minor) want `Db E F Ab` not `C# E F G#`. | LOW | `Db`, `Eb`, `Gb`, `Ab`, `Bb` already parse today. Missing: an `enharmonic(note)` function that returns the alternate spelling, plus a policy for roman-numeral / scale output spelling in flat keys (currently `ScaleDatabase.cs:33-42` is brittle here — audit item). |
-| **Per-voice/per-section reverb** | Every DAW provides per-channel reverb send levels. SuperCollider has `PbindFx` + orbits, Strudel has `.room()` + `.roomsize()` per-pattern, TidalCycles uses orbit-per-pattern. Composers hear reverb as a *voice attribute*, not a global render pass. | LOW | Mirrors shipped `gain`/`pan` context pattern. Add `ReverbTime` field to `MusicalContext`, validation, and Reverb.cs integration to pick up the per-voice value. |
-| **MIDI velocity reflects dynamics** | MuseScore's "Single Note Dynamics" feature, Dorico's CC11/velocity mapping, and every notation→MIDI exporter handle this. Without it, a crescendo-decorated phrase exports as a flat-velocity MIDI file and sounds wrong in external DAWs. | LOW-MED | Dynamics envelope already computed for audio rendering (crescendo/decrescendo/swell). Need to sample it at note-onset time during MIDI export and write to the `NoteOnEvent.velocity` byte (`MidiExport.cs:191-192`). |
-| **Swing on euclidean patterns** | TidalCycles `swingBy`, Ableton's Rotating Rhythm Generator `Swing` knob, Strudel `.swing()`, Sonic Pi `:swing` opt. Euclidean + swing is the de facto modern beat-design combo. | LOW | `MusicalContext.Swing` already exists and is validated [0.0, 1.0]. Extend `euclidean()` to accept an optional swing arg, or have it consult ambient context. **Recommend: both — explicit arg overrides context.** |
+Without these, v1.3 reads as "we shipped tuplets but couldn't be bothered with the obvious extensions."
 
-### Differentiators (What Flow does that stands out)
+| Feature | Why Expected | Complexity | Dependencies |
+|---------|--------------|------------|--------------|
+| **Tuplet brackets `(3:2 C4 D4 E4)` or `{3 C4 D4 E4}`** | Triplets are universal — can't do swing eighth-triplet feel, can't do "3 against 2", can't write any jazz/Latin/classical music without them. Lilypond `\tuplet 3/2 { c8 d e }`, ABC `(3abc`, music21 `Tuplet(3,2)` all converge on a ratio + group form. Shipping v1.3 "Tuplets" without triplet bracket syntax is incoherent. | **HIGH — lexer + parser + interpreter triple-touch.** New token paths (or reuse LParen+IntLiteral+Colon), new note-stream parser branch (recursive: tuplets contain elements), new `TupletElement` AST record, new `MusicalNoteData.TupletRatio` field (Q,P), `NoteStreamCompiler.ComputeBeats` must scale by Q/P inside tuplet, `SongRenderer` duration math (samples = seconds × sampleRate; seconds derives from beats × 60/BPM — if beats are pre-scaled, downstream is free), MIDI export must track tuplet for tick math. **Affects:** `Parser.NoteStream.cs`, `NoteStreamCompiler.cs`, `MusicalNoteData` record, `MidiExport.cs`. | None — purely additive; existing `w/h/q/e/s/t` keep working as the "outer" duration |
+| **Arbitrary fractional note durations `C4/3`, `C4/5`, `C4/12`** | Users will type these the moment they see triplets work. Lilypond `c8*2/3`, music21 `Duration(1/3)`, Csound's fractional durations all support direct division. Without `/N`, users hit a cliff: "I can do 3:2 but not write a single 1/12 note in isolation." Functionally equivalent to `(N:M C4)` but syntactically pithier for one-off oddities. | **MEDIUM — lexer + parser duo-touch.** Lexer must recognize `/Int` after a note literal as a duration token (currently `/` is the divide operator only in expression context — note streams are a separate parse mode where this is unambiguous). Parser produces a `FractionalDuration { Denominator: int }` discriminator on `NoteElement`. NoteStreamCompiler converts to beats: `beats = (1.0 / N) × timeSig.Denominator`. **Affects:** `Parser.NoteStream.cs:TryParseDurationSuffix`, `NoteStreamCompiler.CompileNoteElement`, `MusicalNoteData.FractionalDenom` field. | Tuplet feature lands first — `C4/3` semantically = `(3:2 C4 [auto-fit])` of a single note; both must agree on resulting beat count |
+| **`range(Int, Int) → Array[Int]`** (DEFER-01) | Every script that writes "transpose by 1, 2, 3, 4 semitones" wants `range(1,5)`. Already-deferred from v1.2; users have already filed it. Trivially addable. | **LOW — single function add.** One signature in `BuiltInFunctions.cs`, ten lines, exclusive-stop semantics following Python convention. | None |
+| **`range(Int, Int, Int) → Array[Int]` (with step)** (DEFER-01) | Once `range(a,b)` exists, "I want every other note" or `range(0, 24, 3)` is the obvious follow-on. Python, JavaScript, Rust step-by all have this. | **LOW — second overload of same function.** Reject step=0 with charitable error. Negative step iterates downward (Python convention). | DEFER-01 base form |
+| **DEFER-04 multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)** | The `enharmonic()` function exists; it's documented to handle these; it currently doesn't. Users in flat keys writing F major naturally want B♭ and won't blink, but anyone writing chromatic music in C# major or Cb major will hit "wait, why doesn't enharmonic(B4) round-trip in C-flat major?". Music-theory expectation: B↔Cb and E↔Fb are valid spellings (they appear in Cb major and Gb major scales); F↔E# and C↔B# only appear in deep-sharp keys (F# major, C# major). Round-trip should work in those contexts. | **LOW — bug fix in `Enharmonic`.** Currently `if (alteration == 0) return unchanged` (lines 44-47) is too aggressive. Refine: in a key context where the natural is the enharmonic of a scale tone (C# major contains B# as scale tone 7), respell to that. **Affects:** `HarmonyFunctions.cs:Enharmonic` ~30 LOC, no AST change. | None |
+| **DEFER-05 slice negative-from-end** | `slice(seq, -1, 0)` for "last bar", `slice(arr, 0, -1)` for "all but last", `slice(arr, -3, 0)` for "last 3" are the **first thing every Python-trained user tries**. Existing `slice` already silent-clamps, so making negatives mean "from end" is a natural extension. Must follow Python convention: negative index = `length + index`; trailing 0 or omitted = "to end" (already the case in current behavior). | **LOW — input transform in slice helper.** Pre-process indices: `if (i < 0) i = length + i; if (i < 0) i = 0;`. **Affects:** `Collections.SliceArray`, `Collections.SliceSequence` in `BuiltInFunctions.cs`. ~8 LOC each. | Existing slice (v1.2 DX-05) |
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| **`loopEdit(...)`** — surgical phrase replacement | None of the surveyed environments have a single-call "replace bars N-M in this sequence with that phrase" primitive. Tidal users do it via `mask` + `stitch`, SuperCollider via `Pseq` concatenation. A first-class `loopEdit(seq, startBar, endBar, replacement)` is a composer-workflow win that matches how DAW users think ("select region → paste"). | LOW-MED | Implement as `concat(slice(seq, 0, start), replacement, slice(seq, end, length(seq)))`. I.e., derived from `slice`. |
-| **Humanize on euclidean** (timing jitter) | Ableton's RRG has swing but not per-hit humanize; SuperCollider requires hand-rolling `Pwhite` on `\timingOffset`. Adding `humanize: 0..1` to `euclidean()` in one call is a clear DX improvement. | LOW | Multiply a small random offset by beat-duration; bounds: `±humanize * 0.05 * beat` is a reasonable starting range. Should be deterministic if a seed is supplied (matches existing `(?? ...)` pattern). |
-| **`reverbTime` as a context block** (not a plugin send) | DAWs need aux-bus wiring; code-based tools usually require plugging together UGens. A pure declarative `reverbTime 2.5 { | C4 D4 E4 |}` is idiomatic Flow. Mental model: "notes in this block decay for 2.5s". | LOW | Natural fit given the shipped context-block machinery. |
-| **MIDI-velocity envelope from Flow dynamics** | Closes the export-parity loop: audio and MIDI produce the same musical result. MuseScore/Dorico struggle with this; Flow can do it cleanly because dynamics are already first-class sequence-level state. | LOW-MED | Must handle overlapping dynamics (crescendo → swell → decrescendo in same bar) — pick last-writer-wins or multiplicative. Recommend: **sample the envelope at note onset, map to 1-127 with a floor ≥ 8** (avoid the whisper-quiet-still-triggers issue flagged in audit §3 note about `MidiExport.cs:195`). |
+### Differentiators (Worth Shipping in v1.3, Composer DX)
 
-### Anti-Features (Seem useful, explicitly exclude)
+These set Flow apart from "code-as-music" peers (Sonic Pi, Tidal, Strudel, Alda) and from the textual-only (Lilypond, ABC). They are **not table stakes** — Flow without them is still credible — but each is a meaningful step up on composer DX.
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Slice by sub-beat time (e.g., `slice(seq, 2.35, 3.7)` in beats)** | "More flexible" than whole-bar slicing. | Opens a can of worms for partial-note handling: what happens when a slice cuts mid-note? Requires new tied-note-split logic. Not worth it for v1.2. | `slice` takes **integer bar indices** (or sequence-step indices — pick one, document, enforce). Sub-beat editing can wait for v2 if users ask. |
-| **Full MIDI CC11 (expression) emission alongside velocity** | More faithful to how orchestral sample libraries read dynamics. | CC11 semantics vary wildly by instrument — sending CC11 to a piano preset does nothing; sending it to strings can conflict with user's existing automation. Doubles export complexity. | v1.2 = velocity only. A "MIDI expression mode" flag can be added later if users request CC11. |
-| **German mode that remaps `B` to `Bb`** | "Authentic German notation." | Destructive and silent-breaking: every existing `B4` in every user's `.flow` file suddenly means a different pitch. | **Additive only** — `H` = `B natural`, `B` stays English. German users who want full remap can write `Bb` explicitly or request an opt-in pragma in a later version. |
-| **Auto-detect "this looks like German notation" and switch modes** | "Just works." | Heuristics-based type-system switching is always wrong. | Explicit is better. Document `H` as an alias, recommend users pick a convention per file. |
-| **`reverbTime` as a live-modulatable UGen parameter** | "More powerful." | Flow's existing `reverb()` processor is offline-batch; live modulation requires a streaming DSP graph, not in scope for v1.2. | `reverbTime` is block-scoped (like `gain`, `pan`) — captured once at render time. Automation within the block can wait. |
-| **Velocity-from-dynamics applied to the audio renderer too (retroactively)** | "Consistency." | Audio renderer already applies the dynamics envelope directly to sample amplitudes — that IS the velocity equivalent in audio. MIDI export is the only place the envelope currently gets lost. | Keep the feature scoped: MIDI export only. Audio path unchanged. |
-| **Humanize that changes pitch (± cents jitter)** | "Even more human-sounding." | Pitch humanization overlaps with `C4+50c` cent-offset syntax already shipped, and with future microtonal work (Tier B #12). Muddies the feature. | v1.2 humanize = timing only. Velocity-humanize is a candidate follow-up if users ask. |
-| **`enharmonic(seq)` auto-rewrite the whole sequence in spelling consistent with current key** | "Smart notation." | Requires a real spelling engine — this is a hard music-theory problem (Bach vs. Debussy pick different enharmonic spellings). | v1.2 `enharmonic(note)` = single-note swap (`C#` → `Db`). Whole-sequence rewrite is v2+ notation-polish work. |
+| Feature | Value Proposition | Complexity | Dependencies |
+|---------|-------------------|------------|--------------|
+| **DEFER-02/03 pragma system + `enable` keyword for `H` alias** | The conversation that drove this was: German notation uses H for B, B for B♭. Hard-coding H as B globally breaks any user who happens to use H as a variable. The `enable germanNotation` (or `enable hAsB`) form scopes the alias to the current file/block, avoiding the trap. **Differentiator:** no other music DSL has a pragma system; Flow gains a **future-proof feature-flag mechanism** for syntax modes — preview features, deprecated-syntax escape hatches, regional notations. Direct analogues: Haskell `{-# LANGUAGE TemplateHaskell #-}`, Python `from __future__ import division`, Rust `#![feature(...)]`. | **MEDIUM — lexer + parser + ExecutionContext touch.** Add `enable` keyword (TokenType.EnableKeyword). Add `EnableStatement(name: string)` AST node. Add `Set<string> EnabledPragmas` to `ExecutionContext` (file-scoped — set on enter, cleared on file end). NoteStream parser checks `context.EnabledPragmas.Contains("hAsB")` before treating `H` as note literal. **Affects:** `TokenType.cs` (+1), `Parser.cs` (+statement), `ExecutionContext.cs` (+set field), `SimpleLexer.cs` (note-literal recognition checks active pragmas — note: lexer doesn't normally have execution context, so the cleanest implementation is **parser-level rewrite** of `H` identifiers in note-stream context when `hAsB` is active, not lexer-level). | None — orthogonal to tuplets |
+| **DEFER-06 Gaussian humanize distribution** | Real human timing/velocity variation is ~normal-distributed, not uniform. Uniform humanize feels "flat" — large deviations are as likely as small ones. Gaussian (mean 0, σ=amount/3, clamped at ±amount) gives the **bell-shape**: mostly small jitter, occasional larger ones, matching how a player actually drifts. The musical difference is audible. **Cost:** the implementation is 8 lines (Box-Muller). | **LOW — isolated function change**, BUT **sensitive**: the v1.2 byte-identical-determinism contract for `euclidean(seed=...)` and `humanize` must be preserved, so this is a **new function** (`humanizeGaussian`) or a **third-arg overload** (`humanize(seq, amount, "gaussian")`), NOT an in-place change to the uniform path. Existing tests pinned to byte-identical output must continue to pass. | None — additive; uniform path stays |
+| **Arpeggio parameters (rate, direction, pattern)** | Current `arpeggio(Chord, String)` accepts `"up" / "down" / "updown"` only. Hardware/plugin arpeggiators (Cthulhu, Riffer, Scaler 2, Logic Arpeggiator, Ableton Arpeggiator) all expose: rate (note value: 1/4, 1/8, 1/16, 1/16T), direction (up, down, up-down, down-up, random, as-played), pattern (linear, chord-tone-only, scale-tone), octave range (1-4 octaves). **Minimal worth-shipping set:** rate (note-value or beats), direction (add `random`, `down-up`), octave range. Pattern presets like "alberti", "chord-tone" are stretch. | **MEDIUM — overload explosion + new options bag.** Cleanest: introduce `arpeggio(Chord, String direction, String rate)` as a 3-arg overload, and `arpeggio(Chord, String direction, String rate, Int octaves)` as 4-arg, leaving the existing 2-arg in place. **Affects:** `HarmonyFunctions.cs` arpeggio body (~80 LOC currently, expand to ~150). MusicalContext aware (default rate inherits from current note-stream resolution if omitted). | Tuplet feature (rate `"1/8t"` triplet rate must compose with tuplet ratio math) |
+| **Chord inversions / voicings (drop-2, drop-3, close, open, spread)** | Jazz/classical voicing is a workflow gap. Today, to get a Cmaj7 drop-2 voicing in Flow, the user has to manually write `[E4 G4 B4 C5]`. With `voicing(Cmaj7, "drop2")` they write the chord symbol once. **Reference:** drop-2 = take 4-note close-position chord, drop the 2nd-from-top down an octave; drop-3 = drop the 3rd-from-top; close = within an octave; open/spread = larger than octave. These are **textbook operations**, well-defined, every jazz pianist knows them. Strong DX win. | **MEDIUM — pure function on Chord.** New `voicing(Chord, String) → Chord` (or `→ Sequence` for an arpeggiated form). Mode strings: `"close"`, `"open"`, `"drop2"`, `"drop3"`, `"drop2-4"`, `"spread"`. Algorithm is well-defined: re-order notes, octave-shift specific positions. New `inversion(Chord, Int) → Chord` (0=root, 1=first, 2=second, 3=third) for inversions specifically — orthogonal to voicing. **Affects:** new `VoicingFunctions.cs` in `StandardLibrary/Harmony/`. | Existing `ChordData` |
+| **Delay sync to note values: `delay(buf, "1/8")` / `delay(buf, "1/8d")` / `delay(buf, "1/4t")`** | Today: `delay(buf, 250.0, ...)` — user must compute 250ms = eighth-note-at-120-BPM by hand. Every DAW delay (Ableton Echo, Logic Stereo Delay, Valhalla) defaults to **note-sync mode** and exposes ms-mode as the alternative. With the active `tempo` block + `timesig` already in `MusicalContext`, Flow has everything to translate `"1/8"` → ms automatically. **Composes with tuplets:** `"1/8t"` (eighth-triplet) = (60000/BPM) × (1/2) × (2/3). | **LOW — string-parser + helper at the call site.** New `delay(Buffer, String, Float, Float)` overload that parses `"1/N"`, `"1/Nd"` (dotted), `"1/Nt"` (triplet), looks up active tempo from `MusicalContext`, computes ms, dispatches to existing `Delay.Apply`. **Affects:** `Audio/EffectsFunctions.cs` (+1 overload, ~25 LOC), no DSP change. | Tuplet ratio knowledge for `"t"` suffix |
+| **Microtonal ratios — just intonation + `tuning(name) { }` block** | Today, only `+50c`-style cent offsets exist (per-note). For 5-limit just intonation (3/2, 5/4, 6/5), Pythagorean (3-limit), or quarter-comma meantone, the user wants to **declare a tuning once** and have all subsequent pitches resolved through it. **Differentiator:** Flow becomes one of a tiny set of textual languages with first-class microtonality (Csound, SuperCollider, Lilypond-with-extensions). **Path of least resistance:** support Scala `.scl` file format (industry standard since 1992) via `loadScala(path) → Tuning` + `tuning(t) { }` musical-context block. .scl format is line-oriented, simple to parse, supports both `5/4` ratios and `386.31` cents inline. Avoids reinventing a notation. | **MEDIUM-HIGH — new type + new block + freq computation rewrite.** New `Tuning` Special Type. New `loadScala(String) → Tuning` (parser is ~50 LOC: skip comments+description, read N, read N pitch lines, distinguish `.` for cents vs `/` for ratios). New `tuning t { ... }` musical-context-block in parser + interpreter. Frequency lookup at synthesis time consults active Tuning instead of standard 12-TET. **Affects:** `TypeSystem/SpecialTypes/TuningType.cs` (new), `Runtime/MusicalContext.cs` (+Tuning field), `StandardLibrary/Audio/Synthesizers/*` (frequency-from-MIDI helper consults tuning), `Parser.cs` (+block keyword), `BuiltInFunctions.cs` (+loadScala). **Risk:** synth code paths that hard-code `440 * 2^((midi-69)/12)` need a single shared helper. | Decide: ship full Scala loader (high cost, high payoff) vs. ship `justIntonation { }` / `pythagorean { }` named tunings as a v1.3 wedge with `.scl` deferred to v1.4 |
+| **Scale linting (warn on out-of-key notes), opt-in via pragma** | When `key Cmajor { ... }` is active, an `F#4` is almost always either (a) intentional chromaticism or (b) a typo. A linting pass that emits a **warning** (not error — see Pitfall: charitable interpretation) when a sounded pitch is not in the active scale catches typos. **Critical design choice:** must be **opt-in** via pragma (`enable scaleLint`). Default-on lint would break every blues piece (b3, b7 are out-of-major-scale by default), every chromatic piece, every modal-mixture piece. Scope: warn only when `key` is set; warn only on accidentals (not on `(? ...)` random output, not on transformed output). | **LOW-MEDIUM — interpreter-side check.** Hook into `NoteStreamCompiler` after note resolution: if pragma is active and note is not in `ScaleDatabase.GetScaleNotes(activeKey)`, emit warning via existing `ErrorReporter` (warning level, not error). **Affects:** `NoteStreamCompiler.cs` (+10 LOC), `ScaleDatabase` (membership check helper). | DEFER-02/03 pragma system |
+| **Legato / portamento articulations (note-stream marker, MIDI CC65/CC5 export)** | Existing articulations (stacc, ten, marc, accent) are stream markers that affect velocity/duration shaping. Adding `legato` and `port` (with optional time `port:200ms`) lets composers indicate connected/sliding articulation. **MIDI export:** legato → overlap consecutive notes by N% (configurable); portamento → emit CC65=127 before note-on, CC5=time, CC65=0 after. **Audio export:** for monophonic synths, render with overlap at sample level (cross-fade); polyphonic synths (most current Flow synths are voice-pool poly) treat legato as duration extension. **Differentiator:** crosses the audio/MIDI boundary cleanly. | **MEDIUM — articulation enum + duration overlap + MIDI CC emission.** Extend `Articulation` enum (+Legato, +Portamento). Parser recognizes `legato` / `port` / `port:Ndur` after note. Renderer overlaps notes when `Legato` flag set. MIDI exporter emits CC65/CC5 messages around portamento notes. **Affects:** `Articulation.cs`, `Parser.NoteStream.TryParseArticulation`, `SongRenderer.cs` (overlap logic), `MidiExport.cs` (+CC emission). | None |
+| **Snap-to-grid `quantize(seq, "1/16", strength, swing)` transform** | Once humanize/euclidean produce off-grid output, the inverse — pull notes back toward a grid with strength 0..1 — closes the loop. **DAW reference:** Logic/Ableton/FL Studio all expose Strength 0–100% (0=no move, 100=full snap), Swing 50–75% (50=straight, 75=heavy swing) on a chosen Resolution. Algorithm: `newOnset = old + strength × (gridPoint - old)`. Trivially defined. | **LOW — pure transform on Sequence.** New `quantize(Sequence, String resolution, Double strength, Double swing) → Sequence`. Resolution string parses same as delay sync (`"1/8"`, `"1/16t"`). **Affects:** `Transforms/TransformFunctions.cs` (+ ~40 LOC). | Tuplet rate-string parser (shared helper with delay-sync) |
+| **`loadWav(path, semitones)` simple resampling pitch-shift overload** | Existing `loadWav(path)` returns the buffer unchanged. Adding `loadWav(path, Int semitones)` for pitch-shift on load is the minimum viable sample-import-with-pitch story. **Critical:** ship the **simple** algorithm (linear-interpolation resampling, also called "varispeed" or "tape speed") — `pitchRatio = 2^(semitones/12)`, then resample at `originalRate × pitchRatio`. This **also changes duration** (length / pitchRatio), which is the **expected behavior for sample chopping/repitching workflows** (every drum machine since the SP-1200 works this way). Phase vocoder / WSOLA / PSOLA preserve duration but require FFT and are **explicitly out of scope** for v1.3 (1000+ LOC, weeks of tuning, no off-the-shelf pure-C# single-file impl found). **Document it as varispeed.** | **LOW — single function add.** Overload `loadWav(String, Int) → Buffer`: load, compute `ratio = pow(2, semitones/12.0)`, resample with linear interpolation (each output sample = lerp of two input samples at fractional position `i × ratio`), return new buffer. ~40 LOC. **Affects:** `FileIO.cs` (+overload), or `BufferHelpers.cs` if a generic resample helper is wanted. | None — varispeed is the simple algorithm |
+
+### Anti-Features (Don't Ship in v1.3)
+
+These look like obvious next-steps but each has a non-obvious cost in v1.3.
+
+| Feature | Why Tempting | Why Problematic in v1.3 | Better Approach |
+|---------|--------------|--------------------------|-----------------|
+| **Time-preserving pitch shift (phase vocoder / WSOLA / PSOLA)** | "Pitch up without speeding up" is what every modern DAW does and what users will assume `loadWav(path, semitones)` means. | (1) No clean single-file pure-C# implementation found in 2026 research — would require porting 1000+ LOC from C++ implementations or vendoring SoundTouch (LGPL, P/Invoke complexity). (2) Phase vocoder has **infamous tuning issues** (transient smearing, formant shift, "phasey" artifacts on percussive material) — wrong setting, wrong sound. (3) Conflicts with Flow's **minimal-dependencies** principle from STACK.md. | Ship varispeed (simple resampling) in v1.3. If users ask for time-preserving, defer to v1.4 with explicit `loadWavTimePreserving(path, semitones)` — gives a clean signal it's a different (slower, lossier) operation, and lets the v1.4 milestone include the dependency-acceptance discussion. |
+| **Default-on scale linting** | Catches typos! Helpful! | Breaks every chromatic, blues, jazz, modal-mixture, atonal piece — i.e. most of the music users will write. Generates noise that trains users to ignore warnings (warning fatigue). Conflicts with Flow's **charitable-interpretation** principle (CLAUDE.md MEMORY: "music > rigid correctness"). | Opt-in via `enable scaleLint`. Warning-only (not error). Document in tutorial as "uncomment the lint pragma when copy-editing your final score." |
+| **`H` as global note literal in lexer** | The DEFER-02/03 conversation tempts a one-line fix: just make `H` parse as B in the lexer. | (1) Breaks every existing user variable named `H`. (2) Silent semantic change — `Int H = 5; print H` would either still print 5 (if lexer is context-aware) or now fail to parse (if not), neither obvious. (3) German notation isn't even universal in Germany — many German composers happily use B internationally. | Pragma-scoped rewrite in note-stream parser only (DEFER-02/03 design). User opts in with `enable germanNotation` per file. Outside note streams, `H` is an identifier as today. |
+| **Negative `range(a, b)` defaulting to "down" automatically** | Python's `range(5, 0)` returns `[]`; users sometimes wish it defaulted to `[5,4,3,2,1]`. | Surprising vs. industry convention. Users coming from Python, JavaScript, Rust, Go, C# will all expect `range(5, 0)` to be empty. Magic auto-direction violates principle of least astonishment. | Empty array when `start ≥ stop` and step is positive (or omitted). User who wants countdown writes `range(5, 0, -1)` explicitly. |
+| **VST/AU plugin hosting for "real" pitch-shift / synth swap** | Once users see varispeed is "tape-style only", they'll ask "can I just use SoundTouch / Ableton Live's algorithm?" | Out of scope per PROJECT.md (line 149): "VST/AU plugin hosting — too complex for interpreter; focus on built-in synthesis". Reaffirmed in v1.3 scope. | Document the limitation. Point to `ffmpeg` / external CLI pipeline as the escape hatch (mirrors v1.1's `tts(text)` external-process precedent). |
+| **`enable` for breaking-change syntax migration** | Once you have a pragma system, the temptation is to use it for every "new vs old syntax" choice — `enable newDurationSyntax`, `enable strictTypes`, etc. | Feature-flag explosion. Each new pragma is a permanent maintenance burden (every test must consider both modes; every parser change is conditional). Haskell's GHC has 100+ language extensions — that's a warning, not an aspiration. | Reserve `enable` for **regional/preference** flags (`hAsB`, `germanNotation`, `scaleLint`) — not for syntax-mode toggles. New language features land unconditionally; old syntax stays supported indefinitely (Flow has explicit-back-compat constraint, CLAUDE.md). |
+| **Fully general N:M:K ABC tuplet form `(p:q:r)`** | ABC notation supports `(p:q:r` where r is "the next r notes get this tuplet" — a counter form. Looks general. | (1) The `r` form is rarely used even in ABC (it's there for awkward edge cases). (2) Bracket form `(N:M element element element)` is unambiguous: tuplet ends at closing paren, no count needed. (3) Counter-form makes nesting harder to read and parse. | Ship bracket form `(N:M elem elem)` only. The `(N elem elem)` shorthand for triplet/quintuplet defaults `M` to "the obvious power-of-2" (3:2, 5:4, 6:4, 7:4, 9:8). The `r`-counter form is **never** worth shipping. |
+| **Scale linting that warns on transformed-output notes** | "Lint everything!" | (1) `transpose(seq, 5)` will routinely move notes out of key — that's the whole point of transposition. (2) `(? ...)` random output is unconstrainable. (3) Linting transformed sequences would emit warnings the user can't fix without disabling the lint. | Lint **only the source `\| ... \|` literal** — what the user actually typed. Transformed/generated notes are exempt. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-slice(seq, start, end)
-    └──enables──> loopEdit(seq, start, end, replacement)
+Tuplet brackets (N:M ...)
+    └──enables──> Arbitrary fractional duration C4/N
+                       (C4/3 == (3:2 C4 [auto]))
+    └──enables──> Delay sync 1/8t / 1/16t
+    └──enables──> Quantize resolution 1/16t
+    └──enables──> Arpeggio rate 1/8t
 
-MIDI velocity from dynamics
-    └──depends on──> (existing) crescendo/decrescendo/swell transforms
-    └──depends on──> (existing) MidiExport pipeline
-    └──independent of──> slice / reverbTime / euclidean swing
-    └──interacts with──> minor-bug MidiExport.cs:195 (velocity floor of 1)
+DEFER-02/03 pragma system (enable keyword)
+    └──enables──> Scale linting (opt-in)
+    └──enables──> H-as-B alias
+    └──enables──> [future preview features]
 
-reverbTime context block
-    └──depends on──> (existing) MusicalContext push/pop machinery
-    └──depends on──> (existing) Reverb.cs DSP implementation
-    └──prerequisite fix──> C1 (ExecuteMusicalContext stack leak) — otherwise any
-                           validation error inside reverbTime leaks the frame
-    └──independent of──> all other v1.2 features
+Existing slice (v1.2)
+    └──extended-by──> DEFER-05 negative indexing
 
-euclidean swing/humanize
-    └──depends on──> (existing) MusicalContext.Swing field (already shipped)
-    └──depends on──> (existing) euclidean() Bjorklund impl
-    └──independent of──> MIDI velocity / reverbTime / slice
+Existing humanize (v1.2 — uniform)
+    └──parallel-to──> DEFER-06 humanizeGaussian (new function, not replacement)
+    └──MUST-NOT-BREAK──> v1.2 byte-identical determinism contract for euclidean+humanize seeds
 
-note-name aliases (H) and enharmonic()
-    └──depends on──> SimpleLexer note-vs-identifier lookahead (audit §2 note:
-                     lexer bug at 543-564 is a prerequisite fix, same file touched)
-    └──recommended ordering──> fix that lexer bug FIRST, then add alias in same patch
-    └──independent of──> all other v1.2 features
+Existing arpeggio(Chord, String) [v1.0]
+    └──extended-by──> arpeggio(Chord, String, String rate, Int octaves)
+
+Existing delay(buf, ms, fb, mix) [v1.0]
+    └──parallel-to──> delay(buf, "1/8", fb, mix)  (new overload)
+
+Existing loadWav(path) [v1.0]
+    └──parallel-to──> loadWav(path, Int semitones)  (new overload — varispeed)
+
+Existing enharmonic [v1.2]
+    └──refined-by──> DEFER-04 multi-letter edges (in-place fix)
+
+Tuning + Scala loader [if shipped]
+    └──requires──> Centralized "midi-to-frequency" helper across all synthesizers
+                       (today each synth hard-codes 440 * 2^((m-69)/12))
 ```
 
 ### Dependency Notes
 
-- **`loopEdit` is a thin wrapper over `slice`:** do both in the same requirement/phase; `slice` is the primitive, `loopEdit` is the ergonomics layer.
-- **MIDI velocity from dynamics is independent** of the other DX features and can ship first if the team wants visible progress. It also fixes the "MIDI export loses musicality" complaint which is a frequent real-user pain-point in equivalent tools (MuseScore forum threads confirm this).
-- **`reverbTime` lands cleanly** atop shipped context-block machinery (`gain`, `pan`, `swing`) — but the whole context-block system is hosting critical bug C1 (stack-leak on validation error). Fix C1 before (or in the same PR as) adding `reverbTime`, otherwise a bad `reverbTime -1 { ... }` will permanently corrupt the context stack for the rest of the program.
-- **Euclidean swing/humanize is trivially small** if `MusicalContext.Swing` is reused; humanize needs a small RNG (existing `(?? ...)` seeding convention should be followed).
-- **Note-name aliases share a file with the audit-flagged lexer bug** (`SimpleLexer.cs:543-564`). The aliases are additive *only* if that bug is fixed first — otherwise `H4w` might tokenize wrong.
-- **All five features are otherwise independent** of one another except the `slice` → `loopEdit` relationship. They can ship in any order.
+- **Tuplets land first** — every other rhythm-aware feature (delay sync, quantize, arpeggio rate) wants to refer to "1/8t" and that string-parser is shared.
+- **Pragma system lands before scale lint and `H`-as-B** — both consume `enable`.
+- **DEFER-06 must not touch v1.2 byte-identical-determinism contract** — implement as new function or new overload, not in-place change to `Humanize` lambda.
+- **Microtonal tuning is the heaviest single feature** — it touches every synthesizer. If shipped, it should be its own phase. If deferred, every other v1.3 feature lands cheaply.
+- **Per-note overlap math (legato/portamento)** is independent of all other features but couples to `SongRenderer` mixing — schedule mid-milestone after stability is confirmed.
 
 ---
 
-## MVP Definition for v1.2
+## MVP Definition
 
-### Launch With (Required — minimum viable scope per feature)
+### Launch With (v1.3 must-ship)
 
-**These define "v1.2 Tier A is done":**
+The minimum that makes "v1.3 Composer DX Tier B/C — Tuplets + DEFER closures + DX bundle" credible:
 
-- [ ] **`slice(Sequence, Int, Int) → Sequence`** — integer bar indices (0-based, exclusive end). Returns a new Sequence containing bars `[start, end)`. Errors (not silent-clamps) on out-of-range indices.
-- [ ] **`loopEdit(Sequence, Int, Int, Sequence) → Sequence`** — integer bar indices. Returns a new Sequence with bars `[start, end)` replaced by the replacement sequence. Length of replacement may differ from `end - start`.
-- [ ] **`H` as a lexer-level alias for `B`** in note literals and note streams. Documented as "optional German notation." `B` remains English (natural = B, flat = `Bb`). Aliasing is purely token-level; downstream Value/MusicalNoteData stores the canonical English form.
-- [ ] **`enharmonic(Note) → Note`** — returns the enharmonic spelling (`C#` → `Db`, `D#` → `Eb`, `F#` → `Gb`, `G#` → `Ab`, `A#` → `Bb`, and the reverse). Naturals (`C`, `D`, `E`, `F`, `G`, `A`, `B`) are passthrough (unchanged). Double-sharps/flats not in scope.
-- [ ] **`reverbTime Double { ... }` context block** — value is decay time in seconds (RT60 convention, consistent with industry standard). Validated `> 0`. Pushes onto the MusicalContext stack; block-scoped; inherits to nested scopes; picked up by the Reverb DSP at render time for voices rendered within the block.
-- [ ] **MIDI velocity reflects active dynamics envelope** — for each note exported to MIDI, sample the dynamics envelope (crescendo/decrescendo/swell) at the note's onset time and map the resulting 0.0–1.0 value to MIDI velocity 8–127 (floor of 8 prevents whisper-silent triggers; ceiling of 127 is the MIDI spec maximum). Must be default-on for existing export calls (no new flag required) — but document it loudly as a behavior change in v1.2 release notes.
-- [ ] **`euclidean(hits, steps, note, swing?, humanize?)` overload** — two new optional parameters. `swing` in [0.0, 1.0] (reusing `MusicalContext.IsValidSwing`); delays odd-indexed hits by `swing * beatDuration / 2` (matches TidalCycles `swingBy` semantics). `humanize` in [0.0, 1.0]; applies `±humanize * 0.05 * beatDuration` random timing offset per hit. Both default to 0.0 when absent (preserves current behavior — backward compatible).
+- [x] **Tuplet brackets `(N:M element element)`** — lead capability, must work for triplets/quintuplets/septuplets, must nest, must compose with existing duration suffixes outside the bracket. AC: `\| (3:2 C4 D4 E4) F4q \|` plays as triplet eighth + quarter, total = 1 quarter + 1 quarter = 2 beats.
+- [x] **Arbitrary fractional duration `C4/N`** — direct division form. AC: `C4/3` plays as triplet eighth (same MIDI ticks as one element of a `(3:2 C4 _ _)`).
+- [x] **`range(Int, Int)` and `range(Int, Int, Int)`** (DEFER-01) — Python-style exclusive-stop, optional step.
+- [x] **DEFER-04** multi-letter enharmonic edges — `enharmonic(B4)` in C# major returns `B#3`.
+- [x] **DEFER-05** slice negative-from-end — `slice(arr, -3, 0)` returns last 3 elements.
+- [x] **`enable` pragma system** — at minimum, parses and stores active pragmas in ExecutionContext per-file. Implements **one** consumer (`enable hAsB` for DEFER-02/03 H-alias). Other consumers (scaleLint, etc.) light up if their feature ships in v1.3.
 
-### Add After Validation (defer within v1.2 if scope pressures arise)
+### Add When Possible (v1.3 stretch — Tier B/C bundle)
 
-- [ ] **`slice` by beat indices (not just bars)** — add `sliceBeats(seq, startBeat, endBeat)` if users ask. Integer beats only, still avoids mid-note splits.
-- [ ] **`loopEdit` with auto-transition blending** (crossfade between spliced regions) — useful for audio buffers but not for symbolic sequences; revisit if users request.
-- [ ] **`enharmonic` spelling-aware (picks flats in flat keys)** — currently only a 1-to-1 swap; upgrade to context-aware once Harmony `ScaleDatabase.cs:33-42` is cleaned up (audit §2).
-- [ ] **`reverbTime` with separate `earlyReflections` / `damping` knobs** — right now `Reverb.cs` has these as constants; exposing them is a follow-up.
-- [ ] **Humanize velocity jitter** (in addition to timing) — small extension.
-- [ ] **Seeded humanize** (`humanizeSeed` parameter) — matches the `(??)` determinism convention.
+Each is independently shippable. Each closes a clear DX gap. Pick based on phase budget:
 
-### Future Consideration (v2+ — explicitly NOT in v1.2)
+- [ ] **DEFER-06 Gaussian humanize** — `humanizeGaussian(seq, amount)` or `humanize(seq, amount, "gaussian")`. Low cost, audible difference, closes a v1.2 deferred item.
+- [ ] **Arpeggio params** — `arpeggio(Chord, direction, rate, octaves)`. Medium cost, big composer-flow win.
+- [ ] **Chord voicings** — `voicing(Chord, mode)` + `inversion(Chord, n)`. Pure functions, low risk, big jazz/classical workflow win.
+- [ ] **Delay sync to note values** — `delay(buf, "1/8", fb, mix)`. Trivially additive, high daily-use frequency.
+- [ ] **Snap-to-grid quantize** — `quantize(seq, "1/16", strength, swing)`. Pure transform, low risk.
+- [ ] **Legato / portamento articulations** — adds expressivity at audio + MIDI level.
+- [ ] **`loadWav(path, semitones)` varispeed** — closes the "I have a sample, want it a fifth up" workflow. Document as tape-style.
+- [ ] **Scale linting** — opt-in, warning-level. Cheap once pragma system is in.
 
-- [ ] **`bite` / `chunk` functions** (TidalCycles-style pattern subdivision + rotation) — separate feature family.
-- [ ] **Full multilingual note-name mode** (LilyPond-style `\language "deutsch"` directive) — redesign if users ask.
-- [ ] **MIDI CC11 expression export** alongside velocity — only if orchestral-sample-library users complain.
-- [ ] **Per-voice reverb type** (plate vs. hall vs. spring presets) — beyond scoped reverb time.
-- [ ] **`enharmonic` whole-sequence re-spelling engine** — real music-theory problem.
-- [ ] **Groove templates / swing curves** (non-linear swing, MPC-style) — beyond a single scalar swing parameter.
+### Defer to v1.4+ (out of scope for v1.3)
+
+- [ ] **Microtonal Scala-file tuning system** — high cost (synthesizer rewrite), high payoff, deserves its own milestone or its own phase with a researcher pass on `.scl` parsing edge cases. **Wedge alternative:** ship `enable justIntonation` / `enable pythagorean` named-tuning pragmas in v1.3 if the team wants the differentiator without the full Scala loader.
+- [ ] **Time-preserving pitch shift (phase vocoder)** — explicitly anti-feature in v1.3 per dependency-minimalism. Revisit when a credible single-file pure-C# implementation surfaces or the user pain is high enough to accept SoundTouch / external CLI dependency.
+- [ ] **Groove templates** (DAW-style external rhythmic feels) — niche, large UX surface.
+- [ ] **Per-voice effects chains** — already on PROJECT.md deferred list.
+- [ ] **Pattern presets in arpeggio** (alberti, scale-tone, walking-bass) — composable from existing transforms, doesn't need a single function.
 
 ---
 
 ## Feature Prioritization Matrix
 
-| Feature | User Value | Implementation Cost | Priority | Rationale |
-|---------|------------|---------------------|----------|-----------|
-| MIDI velocity from dynamics | HIGH | LOW | P1 | Closes a broken export loop; affects every user doing MIDI export. |
-| Euclidean swing/humanize | HIGH | LOW | P1 | Modern beat-design ergonomics; reuses shipped swing/seed infrastructure. |
-| `slice` + `loopEdit` | HIGH | LOW | P1 | Fills an obvious composition-workflow gap; enables phrase editing. |
-| `reverbTime` context | MEDIUM | LOW | P1 | Consistent with shipped context-block pattern; satisfies "per-voice reverb" expectation. Blocked on C1 fix. |
-| `H` alias + `enharmonic()` | MEDIUM | LOW | P2 | Pedagogical / international-user win; pure additive. Can ship late in v1.2 without blocking others. |
+| Feature | User Value | Implementation Cost | Priority | Notes |
+|---------|------------|---------------------|----------|-------|
+| Tuplet brackets `(N:M ...)` | HIGH | HIGH | **P1** | Lead capability — milestone is named after this |
+| Fractional `C4/N` durations | HIGH | MEDIUM | **P1** | Lands free once tuplet math is in |
+| `range(Int, Int)` (DEFER-01) | MEDIUM | LOW | **P1** | Tiny, deferred, expected |
+| `range(Int, Int, Int)` step (DEFER-01) | MEDIUM | LOW | **P1** | Same patch as above |
+| DEFER-04 enharmonic edges | LOW | LOW | **P1** | Closes deferred item; bug-fix-class |
+| DEFER-05 slice negative indexing | HIGH | LOW | **P1** | Python-trained-user expectation |
+| `enable` pragma system + H-alias | MEDIUM | MEDIUM | **P1** | Foundation for DEFER-02/03 and scale lint |
+| DEFER-06 Gaussian humanize | MEDIUM | LOW | **P2** | Audible improvement; closes deferred |
+| Chord voicings (drop-2/3/close/open) | HIGH | MEDIUM | **P2** | Big jazz workflow win, low risk |
+| Delay sync to note values | HIGH | LOW | **P2** | Daily-use feature, trivial code |
+| Arpeggio params (rate/dir/octaves) | MEDIUM | MEDIUM | **P2** | Existing function expands |
+| Snap-to-grid quantize | MEDIUM | LOW | **P2** | Closes humanize → re-tighten loop |
+| Legato/portamento articulations | MEDIUM | MEDIUM | **P2** | Audio + MIDI surface, well-scoped |
+| `loadWav(path, semitones)` varispeed | MEDIUM | LOW | **P2** | Sample-chop workflow; document as tape-style |
+| Scale linting (opt-in) | LOW | LOW | **P3** | Nice-to-have once pragma system exists |
+| Microtonal `tuning { }` block + Scala loader | HIGH | HIGH | **P3** | Differentiator; consider deferring to v1.4 unless it's a milestone goal |
 
-All five Tier A features are P1 or P2 — none should be cut from v1.2. None rises to P3 because the whole bundle was already pre-filtered via the audit's impact × fit ÷ effort ranking.
-
----
-
-## Cross-Environment Feature Comparison
-
-| Feature | SuperCollider | TidalCycles | Sonic Pi | Strudel | Notation software | Flow (v1.2 target) |
-|---------|---------------|-------------|----------|---------|-------------------|---------------------|
-| **Slice sequence** | `Pseq` with `offset`; `Pchain` composition | `slice`, `chop`, `bite`, `chunk`, `ur` | `ring.take` / `ring.drop`; `live_loop` re-slicing | `slice`, `chunk`, `chunkBack`, stepwise | Region select/paste in DAW | `slice(seq, start, end)`, `loopEdit(...)` |
-| **German/enharmonic names** | No built-in | No (sample names) | No (symbols) | No | LilyPond `\language "deutsch"`; Finale/Sibelius spelling menus | `H` alias (additive); `enharmonic(note)` function |
-| **Per-voice reverb** | `PbindFx`, orbit assignment | Orbit `d1`/`d2` → separate reverbs in SuperDirt; `room`, `size` | FX `with_fx :reverb do…end` block | `.room(x).size(y)` per-pattern | Aux bus + send level | `reverbTime { ... }` context block |
-| **Dynamics → MIDI velocity** | Manual (`\amp`, `\velocity` patterns) | Manual (`# gain`, `# velocity`) | Manual (`amp:` arg, `sleep`-based swells) | Manual (`.gain()`, `.velocity()`) | MuseScore single-note dynamics (recent); Dorico CC11+velocity; generally imperfect | Automatic — sample dynamics envelope at note onset |
-| **Euclidean + swing** | `Pwrand` + `Pkey`; hand-rolled Bjorklund | `euclid`, `euclidInv`, `euclidFull`; `swingBy` | `spread` function; `:swing` opt on some samplers | `euclid(...)`, `.swing()` time modifier | N/A (MIDI sequencers only) | `euclidean(h, s, n, swing, humanize)` |
-| **Humanize (timing)** | Hand-rolled with `Pwhite` on `\timingOffset` | Via `nudge` or manual offset pattern | `rand` on `sleep` arg | No direct; hand-roll with `.late(rand(...))` | Per-DAW: Ableton Humanize, Logic Humanize, Reaper Humanize Notes | `humanize` parameter on `euclidean()` |
-
----
-
-## Expected User Mental Models
-
-What a user will *guess* the feature does before reading docs. Requirements should honor these.
-
-### `slice(seq, start, end)`
-- **Mental model:** "Give me bars 2 through 5 of this sequence." (Array-slice intuition from every programming language.)
-- **Expected:** 0-based start, exclusive end (Python/JS convention).
-- **Surprise to avoid:** Don't make indices 1-based (confuses programmers) or inclusive-inclusive (confuses both).
-
-### `loopEdit(seq, start, end, replacement)`
-- **Mental model:** "Splice in this new phrase over bars 3–5." (Copy-paste region DAW intuition.)
-- **Expected:** Replacement can be longer or shorter than the replaced region; total length adjusts.
-- **Surprise to avoid:** Don't force replacement to match length — that's just assignment, not editing.
-
-### `H` alias
-- **Mental model:** "I'm a German/Nordic classical musician; H is B natural, always has been since Bach." (Every source confirms this is the single universal interpretation in those notation traditions.)
-- **Expected:** Writing `H4q` behaves identically to `B4q`.
-- **Surprise to avoid:** Don't redefine `B` — that breaks every existing Flow script.
-
-### `enharmonic(note)`
-- **Mental model:** "Respell this note." (Notation-software Respell-Enharmonic menu item.)
-- **Expected:** `C#4` → `Db4`, and vice versa. Naturals pass through.
-- **Surprise to avoid:** Don't change the pitch (only the spelling). Don't fail on naturals (return them unchanged).
-
-### `reverbTime 2.5 { | C4 D4 E4 | }`
-- **Mental model:** "These notes ring out for 2.5 seconds after they stop." (DAW reverb-decay knob intuition.)
-- **Expected:** Value in seconds (RT60 convention). Larger = longer tail.
-- **Surprise to avoid:** Don't make the unit "milliseconds" or a normalized 0-1 — composers think in seconds.
-
-### MIDI velocity from dynamics
-- **Mental model:** "If I write `crescendo (| C4 D4 E4 F4 |)`, the MIDI file should have notes getting louder, same as the audio does." (Notation-software export intuition.)
-- **Expected:** The MIDI velocity contour matches what they hear.
-- **Surprise to avoid:** Don't require a separate flag (`writeMidi(..., preserveDynamics=true)`) — it should just work, with a release-note callout for the behavior change.
-
-### `euclidean(3, 8, C4, swing=0.6, humanize=0.3)`
-- **Mental model:** "Tresillo pattern, with MPC-style swing and a bit of human timing wobble." (Ableton Groove Pool / MPC intuition.)
-- **Expected:** `swing=0.5` is straight (no swing — matches `MusicalContext.Swing` shipped convention). `humanize=0` is perfectly quantized; `humanize=1` is maximum wobble (still musical, not chaos).
-- **Surprise to avoid:** Don't make swing=0 be "extreme swing" and swing=1 be "no swing" — the shipped convention already uses 0.5=straight.
+**Priority key:**
+- **P1** — Must ship in v1.3. Without these, the milestone scope is unmet.
+- **P2** — Should ship if phase budget allows. Each is independently valuable.
+- **P3** — Stretch. Defer to v1.4 unless a phase falls short and budget reallocates.
 
 ---
 
-## Integration Notes (for Requirements phase)
+## Conventions Reference (How Other DSLs / DAWs Do It)
 
-Pointers into the existing codebase that requirements can reference:
+### Tuplet syntax across notation systems
 
-| Feature | Primary touch-points | Supporting references |
-|---------|----------------------|-----------------------|
-| `slice` / `loopEdit` | `StandardLibrary/BuiltInFunctions.cs` (register), `flow-lang/audio.flow` (optional convenience wrapper) | Existing `take`/`drop`/`concat` templates; `Sequence` type in `TypeSystem/SpecialTypes/` |
-| `H` alias | `Lexing/SimpleLexer.cs` (~543-564 — also has the note-vs-identifier lookahead audit bug; fix together) | `NoteType.Parse` in `TypeSystem/SpecialTypes/NoteType.cs` |
-| `enharmonic()` function | `StandardLibrary/BuiltInFunctions.cs` or new `StandardLibrary/Harmony/EnharmonicFunctions.cs` | `PitchConversion.cs`; ScaleDatabase for key-aware v2 follow-up |
-| `reverbTime` context | `Runtime/MusicalContext.cs` (add field), `Interpreter/Interpreter.cs` (`ExecuteMusicalContext` — but **block on C1 fix first** per audit), `Parsing/Parser.cs` (recognize keyword), `Audio/DSP/Reverb.cs` (read from context) | Existing `Gain`/`Pan`/`Swing` validator methods are the template |
-| MIDI velocity from dynamics | `StandardLibrary/Audio/MidiExport.cs:191-192` (velocity byte), `StandardLibrary/Audio/SequenceRenderer.cs` (dynamics envelope sampling path) | Existing dynamics transforms in `StandardLibrary/Transforms/` |
-| Euclidean swing/humanize | `StandardLibrary/BuiltInFunctions.cs:1011-1060` (existing `euclidean` registration) | `MusicalContext.Swing` field + `IsValidSwing`; existing RNG conventions from `(? ...)`/`(?? ...)` |
+| System | Triplet syntax | Quintuplet syntax | Nesting | Notes |
+|--------|---------------|-------------------|---------|-------|
+| **Lilypond** (modern) | `\tuplet 3/2 { c8 d e }` | `\tuplet 5/4 { c16 d e f g }` | Yes (well-documented) | "3/2" = "3 in time of 2 of next-larger value" |
+| **Lilypond** (legacy) | `\times 2/3 { c8 d e }` | `\times 4/5 { c16 d e f g }` | Yes | Inverse of modern: "scale duration by 2/3" |
+| **ABC notation** | `(3abc` | `(5abcde` (defaults to 5:n:5 by time-sig) | Implicit only | Full form `(p:q:r` available; rarely used |
+| **music21** (Python) | `Tuplet(3, 2)` | `Tuplet(5, 4)` | Yes via Duration objects | `numberNotesActual` / `numberNotesNormal` pair |
+| **MusicXML** | `<time-modification>3/2</time-modification>` | `<time-modification>5/4</time-modification>` | Yes (tracked per note) | Verbose; designed for round-trip not authoring |
+| **SuperCollider** | `Pseq([...]).stutter(...)` patterns; explicit duration arrays | Same | N/A — no rhythm grammar | SC composes durations as data; no special syntax |
+| **Flow v1.3 proposal** | `(3:2 C4 D4 E4)` or `(3 C4 D4 E4)` (M defaults to 2) | `(5:4 C4 D4 E4 F4 G4)` or `(5 ...)` | Yes (recursive parse) | Bracket form, no `r`-counter — see Anti-Features |
 
----
+### Pragma / language-extension systems across languages
 
-## Open Questions for Requirements Phase
+| Language | Syntax | Scope | Use cases |
+|----------|--------|-------|-----------|
+| **Haskell (GHC)** | `{-# LANGUAGE TemplateHaskell #-}` at file top | File | 100+ extensions, preview features, opt-in syntax |
+| **Python** | `from __future__ import division` at file top | File | Migration to forward-compat semantics |
+| **Rust** | `#![feature(let_chains)]` at crate top (nightly only) | Crate | Unstable feature gates |
+| **Scala** | `import scala.language.implicitConversions` or `-language:implicitConversions` | File or compiler-flag | Capability-style opt-in |
+| **OCaml** | `[@@@warning ...]` attribute at file top | File or block | Warning-level toggles |
+| **Flow v1.3 proposal** | `enable hAsB` at file top (or any statement position) | File (after the statement, until end) | Regional notation, opt-in lints |
 
-These are implementation details that spec'ing should nail down; research has surfaced but not resolved them:
+### DAW humanize conventions
 
-1. **`slice` unit: bars or note-indices?** Bars feel more musical; indices are more predictable. Recommend: **bars**, consistent with how Sequence is rendered bar-by-bar. Confirm with user before coding.
-2. **Does `H` require a pragma (`use "@deutsch"`) or is it always available?** Recommend: **always available**, documented as an alias. If someone genuinely doesn't want it, they simply don't write `H`.
-3. **Velocity floor value for MIDI export:** Recommend **8** (per audit §3 feedback — 1 is too quiet, 0 is note-off). Nail in spec.
-4. **`reverbTime` default when block absent:** Recommend **don't change current reverb behavior** — block is opt-in; absence = existing Reverb.cs defaults apply. Do NOT apply a global default reverb-time if someone hasn't asked for one.
-5. **Humanize determinism:** Recommend **seeded** via an optional `seed:` param, matching `(?? ...)` convention. Without seed, timing varies per run (like DAW "Humanize" buttons).
-6. **Swing curve shape on euclidean:** Recommend **linear delay of odd-indexed hits** (matches TidalCycles `swingBy`). A curved / MPC-style swing is v2+.
+| DAW | Velocity humanize | Timing humanize | Distribution |
+|-----|-------------------|-----------------|--------------|
+| **Logic Pro** | "Humanize" parameter, ± value | Position randomization | Documentation does not specify; likely uniform |
+| **Ableton Live** | Velocity randomize ± | Groove engine (sample-based, not random) | Per-note jitter typically uniform within ± range |
+| **FL Studio** | Velocity randomize | Note position randomize | Uniform within ± range |
+| **Native plugins (Humanizer Pro et al.)** | Programmable, often Gaussian | Programmable | Higher-end tools expose Gaussian as "natural" preset |
+
+**Takeaway for DEFER-06:** built-in DAW humanizers are typically uniform (matching v1.2 Flow). Premium tools and academic-grade humanizers prefer Gaussian. Flow shipping **both** (uniform = current; gaussian = new) gives users the choice — the Gaussian path is the differentiator over default-DAW behavior.
+
+### Quantize parameter conventions
+
+All major DAWs converge on:
+- **Resolution** — note value (1/4, 1/8, 1/16, 1/16T, 1/32, etc.)
+- **Strength** — 0–100% (0 = no move, 100 = full snap to grid)
+- **Swing** — 50–75% (50 = straight, >50 = delay every 2nd grid point)
+
+Flow v1.3 quantize signature aligns: `quantize(seq, resolution: String, strength: Double, swing: Double)`.
+
+### Microtonal tuning file format (Scala .scl)
+
+- Plain ASCII, line-oriented
+- Lines starting with `!` are comments
+- First non-comment, non-blank line = description string
+- Second = note count `N`
+- Next `N` lines = pitch values, one per line:
+  - Contains `.` → cents value (e.g. `386.31`)
+  - Contains `/` → ratio (e.g. `5/4`)
+  - Plain integer → ratio with denominator 1 (`2` → `2/1`)
+- The implicit 1/1 root is **not** in the file
+- Octave/repeat is the last entry (typically `2/1` for octave-based scales)
+
+This format is **the** industry standard for microtonal tunings since 1992; supported by Csound, SuperCollider (via TuningLib), Surge XT, Pianoteq, every modern microtonal-aware tool. Flow adopting it as the v1.3 microtonal entry point inherits a 30-year ecosystem of free downloadable scales.
 
 ---
 
 ## Sources
 
-**Ecosystem research (HIGH → MEDIUM confidence):**
+### Tuplet syntax
+- [Tuplets — LilyPond Notation Reference](https://lilypond.org/doc/v2.25/Documentation/notation/tuplets) — `\tuplet 3/2 { c8 d e }` form, nesting via `\tweak`
+- [LilyPond Learning Manual: Advanced rhythmic commands](https://lilypond.org/doc/v2.23/Documentation/learning/advanced-rhythmic-commands)
+- [ABC standard v2.1](https://abcnotation.com/wiki/abc:standard:v2.1) — `(p:q:r` general form
+- [music21 Duration documentation, Chapter 19: Advanced Durations](https://music21.org/music21docs/usersGuide/usersGuide_19_duration2.html) — `Tuplet(numberNotesActual, numberNotesNormal)` ratio model, `tupletMultiplier()`
+- [Tuplet — Wikipedia](https://en.wikipedia.org/wiki/Tuplet) — universal music-theory definition
 
-- [TidalCycles — slice reference](https://userbase.tidalcycles.org/slice.html) — confirms `slice n pat $ sound s` semantics (MEDIUM — userbase wiki)
-- [TidalCycles — sampling reference](https://tidalcycles.org/docs/reference/sampling/) — official (HIGH)
-- [Strudel — Pattern effects](https://strudel.cc/workshop/pattern-effects/) — `slice`, `chop`, chunk (HIGH, current)
-- [Strudel — Audio effects `room`/`size`/`dry`](https://strudel.cc/learn/effects/) — reverb per-pattern model (HIGH)
-- [SuperCollider Pseq docs](https://doc.sccode.org/Classes/Pseq.html) — offset param (HIGH)
-- [SuperCollider Pdef docs](https://doc.sccode.org/Classes/Pdef.html) — live pattern replacement semantics (HIGH)
-- [SuperCollider PbindFx documentation](https://pustota.basislager.org/_/sc-help/Help/Classes/PbindFx.html) — per-pattern effects incl. reverb (MEDIUM — third-party mirror)
-- [Sonic Pi — sample slicing walkthrough](https://www.raspberrypi.org/magpi/sonic-pi-sample-slicing/) — idiomatic live-loop slicing (MEDIUM)
-- [Tidal Cycles — week 3 slice & splice lesson](https://club.tidalcycles.org/t/week-3-lesson-3-slice-and-splice/519) — community walkthrough (MEDIUM)
-- [Tidal Cycles — swingBy generalizing swing](https://club.tidalcycles.org/t/generalizing-swing-and-rotating-uneven-rhythms-by-mapping-integers-from-a-latent-space-to-time/4991) — swing semantics (MEDIUM)
-- [Ableton CV Tools — Rotating Rhythm Generator](https://www.ableton.com/en/blog/geometric-sequencing/) — Euclid + swing in a mainstream DAW (HIGH, official)
-- [LilyPond — note names in other languages](https://lilypond.org/doc/v2.25/Documentation/notation/note-names-in-other-languages) — confirms German `deutsch.ly` + `H` convention (HIGH)
-- [Wikipedia — B (musical note)](https://en.wikipedia.org/wiki/B_(musical_note)) — historical origin of H/B split (HIGH)
-- [Tonalsoft — German H nomenclature](http://www.tonalsoft.com/enc/g/german-h.aspx) — theory reference (MEDIUM)
-- [Tunable — German notation H/B + -is/-es system](https://tunableapp.com/notations/german/) — practical reference (MEDIUM)
-- [MuseScore forum — MIDI export of crescendo dynamics](https://musescore.org/en/node/322137) — confirms existing notation software struggles with this exact problem (HIGH — canonical source for the pain point)
-- [MuseScore — automatic dynamics from MIDI file volume](https://new.musescore.org/en/node/373933) — motivates the feature (MEDIUM)
-- [MuseScore — single note dynamics implementation notes](https://musescore.org/en/node/280281) — CC11 vs. velocity tradeoffs (HIGH)
-- [Dorico forums — CC11 vs velocity interpretation](https://forums.steinberg.net/t/interpretation-of-cc11-expression-velocity-midi/977375) — industry-standard discussion (HIGH)
-- [Splice — advanced MIDI velocity techniques](https://splice.com/blog/advanced-midi-velocity-techniques/) — humanize technique context (MEDIUM)
-- [Black Ghost Audio — humanizing productions](https://www.blackghostaudio.com/blog/5-ways-to-humanize-your-productions) — 3-5% timing/velocity starting guidance (MEDIUM)
-- [MIDI Drum Files — humanizing MIDI](https://mididrumfiles.com/2024/10/humanize-it-making-it-feel-real/) — ±10 ticks as subtle-life threshold (MEDIUM)
-- [Rational Acoustics — RT60 reverberation time](https://support.rationalacoustics.com/support/solutions/articles/150000190451-reverberation-time-spilling-the-t-on-rt60) — confirms RT60 as industry-standard "reverb time" unit (HIGH)
+### Microtonal tunings
+- [Scala scale file (.scl) format — Huygens-Fokker](https://www.huygens-fokker.org/scala/scl_format.html) — canonical spec since 1992
+- [Scala for dummies — Huygens-Fokker](https://www.huygens-fokker.org/scala/dummies.txt)
+- [TuningLib/Scala.sc — SuperCollider Quarks](https://github.com/supercollider-quarks/TuningLib/blob/master/Scala.sc) — reference implementation in another music DSL
 
-**Codebase-internal references (HIGH — verified in-repo at this session):**
+### DAW conventions (humanize, quantize)
+- [Quantize parameters in Logic Pro for iPad](https://support.apple.com/guide/logicpro-ipad/quantize-parameters-lpip70c8d20d/ipados) — Q-Strength + Q-Swing percentages
+- [Master Quantizing MIDI in Your DAW — DepartureMusic](https://www.departuremusic.com/master-quantizing-midi-daw-tips/) — strength/resolution/swing semantics
+- [Guide: Humanizing MIDI Drums in Ableton — Production Music Live](https://www.productionmusiclive.com/blogs/news/humanizing-midi-drums)
+- [How to Make Your MIDI Drums Sound Human — zZounds](https://blog.zzounds.com/2020/05/27/how-to-make-your-midi-drums-sound-human/)
 
-- `flow-lang/Runtime/MusicalContext.cs:35-106` — existing Swing/Gain/Pan/Velocity fields, validators, Clone()
-- `flow-lang/StandardLibrary/BuiltInFunctions.cs:1011-1060` — existing `euclidean` registration (Bjorklund)
-- `flow-lang/StandardLibrary/Audio/MidiExport.cs:191-199` — existing note-on velocity byte construction
-- `.planning/CODEBASE-AUDIT-2026-04-18.md` §5 Tier A — source of the v1.2 feature bundle
-- `.planning/PROJECT.md` — Core Value ("faithfully translate musical notation into correct, playable audio") is the evaluation criterion for every feature above; `H` / dynamics→velocity / reverbTime all *directly* advance this.
+### Pitch shifting algorithms
+- [Phase vocoder — Wikipedia](https://en.wikipedia.org/wiki/Phase_vocoder) — algorithm overview, complexity profile
+- [Time and pitch scaling in audio processing — surina.net](https://www.surina.net/article/time-and-pitch-scaling.html)
+- [Vari-Speed pitch formula — HomeRecording forum](https://homerecording.com/bbs/threads/vari-speed-calculating-speed-percentage-relative-to-semi-tone.367674/) — `2^(semitones/12)` ratio derivation
+- [Use Varispeed — Logic Pro Help](https://logicpro.skydocu.com/en/edit-the-timing-and-pitch-of-audio/use-varispeed-to-alter-the-speed-and-pitch-of-audio/) — DAW reference for tape-style behavior
+
+### Chord voicings
+- [Drop 2 Chords — Theory & Exercises (jazzguitar.be)](https://www.jazzguitar.be/blog/drop-2-chords/) — drop-2 algorithm
+- [Drop 2 Piano Voicings: The Complete Guide — Piano With Jonny](https://pianowithjonny.com/piano-lessons/drop-2-piano-voicings-the-complete-guide/) — close vs. drop-2 vs. open
+- [What To Know About Drop 2 / Drop 3 Voicings — Jazz Guitar Today](https://jazzguitartoday.com/2023/05/what-to-know-about-the-elusive-double-drop-2-drop-3-voicings/) — drop-3 + double-drop semantics
+
+### MIDI portamento
+- [How To Use Portamento (Glide) MIDI Commands — Sweetwater](https://www.sweetwater.com/insync/how-to-use-portamento-glide-midi-commands/) — CC65 / CC5 protocol
+- [MIDI CC List — Nick Fever](https://nickfever.com/music/midi-cc-list)
+
+### Pragma / language-extension systems
+- [GHC Pragmas reference](https://ghc.gitlab.haskell.org/ghc/doc/users_guide/exts/pragmas.html) — `{-# LANGUAGE ... #-}` design
+- [Rust feature gates — RFC pattern](https://rust-lang.github.io/rfcs/1192-inclusive-ranges.html) — `#![feature(...)]` semantics
+
+### Range function semantics
+- [Python range() — w3schools](https://www.w3schools.com/python/python_range.asp) — exclusive-stop, optional step
+- [Rust ranges — for and range](https://doc.rust-lang.org/rust-by-example/flow_control/for.html) — `a..b` vs `a..=b` distinction
+
+### Existing Flow code (verified)
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/NoteStreamCompiler.cs` — `DurationSuffixMap`, `ToFraction`, auto-fit `FindClosestNoteValue`
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/Parsing/Parser.NoteStream.cs:258-270` — `TryParseDurationSuffix` accepts `w/h/q/e/s/t` only
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:309-347` — current 2-arg `arpeggio` implementation
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/Delay.cs` — current ms-only delay API
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/FileIO.cs:290-310` — existing `loadWav` (no semitones overload)
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:660-697` — current uniform-distribution `humanize`
+- `/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:37-67` — current `enharmonic` with the `alteration == 0` early-return that DEFER-04 must refine
 
 ---
-
-*Feature research for: Flow v1.2 Stability & Composer DX milestone*
-*Researched: 2026-04-18*
+*Feature research for: Flow v1.3 Composer DX Tier B/C — Tuplets + DEFER closures + DX bundle*
+*Researched: 2026-04-26*

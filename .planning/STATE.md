@@ -1,47 +1,43 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Stability & Composer DX
-status: executing
-stopped_at: "Phase 15 Wave 2 complete (2026-04-20; Wave 3+4 pending). Plans 15-01 (scaffolding: Phase15 test subtree + MidiReadHelpers promotion closing DEFER-05 + tests/output/.gitignore + 3 placeholder .flow scripts), 15-02 (DX-07 grammar/runtime: reverbTime keyword, MusicalContext.ReverbTime nullable field + Clone/ToString, ExecutionContext 8-field walk with updated early-break per Pitfall 1, parse-time negative rejection, interpret-time silent clamp at 30, 7 ReverbTimeContextTests Facts), 15-04 (DX-09 euclidean core: two new overloads euclidean(Int,Int,Note,Double) + euclidean(Int,Int,Note,Double,Double,Int), local new Random(seed) per D-17, steps>1024 DoS guard, 12 Facts across EuclideanSwingTests/EuclideanHumanizeTests), and 15-03 (DX-07 audio path: Reverb.Apply(rt60) overload with Schroeder feedback=10^(-3*delay/rt60) capped at 0.99, strict ProcessChannel refactor, per-voice SongRenderer insertion with exact rt60==0.0 short-circuit, 4 new Facts F-02/F-06/F-07/F-08 plus 2 supporting). Full suite 285/285 green (260 baseline + 25 Phase 15 Facts, zero regressions). Phase 14 regression preserved 54/54. Phase 15 NOT yet complete — Wave 3 (15-05 byte-identical regression, 15-06 end-to-end .flow scripts) and Wave 4 (15-07 closure: ROADMAP #3 or-zero doc reframe + collision grep F-24 + REQUIREMENTS Shipped markers + 15-VERIFICATION.md + 15-SUMMARY.md) still pending. Phase 17 also complete (8/8 plans) with 3 pending HUMAN-UAT items scoped to F5 smoke session. Session paused for PC transfer — commits squashed into one for clean handoff."
-last_updated: "2026-04-21T04:45:00.000Z"
-last_activity: 2026-04-20 -- Phase 15 Waves 0-2 complete (plans 01/02/03/04); Waves 3-4 (plans 05/06/07) pending
+milestone: v1.3
+milestone_name: Composer DX Tier B/C
+status: verifying
+stopped_at: Phase 21 context gathered
+last_updated: "2026-04-27T02:25:28.214Z"
+last_activity: 2026-04-27
 progress:
-  total_phases: 7
-  completed_phases: 5
-  total_plans: 36
-  completed_plans: 32
-  percent: 89
+  total_phases: 10
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-18)
+See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 15 — composer-dx-part-2
+**Current focus:** Phase 20 — Cheap DEFER Closures + Multi-letter Enharmonic Edges
 
 ## Current Position
 
-Phase: 15 (mid-execution, 4/7 plans; Waves 0-2 complete, Waves 3-4 pending)
-Plan: 15-03 complete (DX-07 audio path); 15-05 next (Wave 3 byte-identical MIDI/WAV regression — depends_on: [15-01, 15-04])
-Status: Executing (mid-phase; session paused for PC transfer)
-Last activity: 2026-04-20 -- Phase 15 Waves 0-2 complete (plans 01/02/03/04); Waves 3-4 (plans 05/06/07) pending
+Milestone: v1.3 Composer DX Tier B/C
+Phase: 20 (Cheap DEFER Closures + Multi-letter Enharmonic Edges) — CLOSED 2026-04-26
+Plan: 4 of 4 complete
+Status: Phase complete — ready for verification
+Last activity: 2026-04-27 - Completed quick task 260426-v5s: examples/long_demo.flow ~10-minute showcase
 
-Progress: [█████████░] 89% plans-complete (32/36); Phase 15 at 4/7 plans — 25 Phase 15 Facts green, full suite 285/285
+Progress: [██████████] 100%
 
-## Resume Instructions (next PC)
+## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-After pulling the squashed commit:
-1. `/gsd-progress` — confirm Phase 15 at 4/7 plans
-2. `/gsd-execute-phase 15` — resumes at Wave 3 automatically (15-01..15-04 have SUMMARY.md; 15-05/06/07 do not)
-3. Wave 3 spawns 15-05 + 15-06 in parallel (disjoint files: byte-identical regression vs .flow scripts)
-4. Wave 4 runs 15-07 (phase closure) after Wave 3
-5. Phase verifier + ROADMAP Shipped markers complete the phase
+Phase 20 closed 2026-04-26. v1.3 milestone now 3/10 phases complete (Phases 18, 19, 20). Phase 21 (Pragma System + H-Alias) is the next ROADMAP target — depends on Phase 20 DEFER-04 (now shipped per binding pre-ordering #3); closes PRAG-01, PRAG-02, DEFER-02/03 (H-as-B alias inside note streams).
 
-Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md — orthogonal to Phase 15, resolve at first release tag.
+Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
 ## Performance Metrics
 
@@ -98,6 +94,25 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md — orthogonal to Phas
 | Phase 17 P06 | 11min | 2 tasks | 11 files |
 | Phase 17 P07 | 7min | 2 tasks | 8 files |
 | Phase 17 P08 | ~9min | 3 tasks (1 deferred to HUMAN-UAT) | 12 files |
+| Phase 15 P05 | 8min | 2 tasks | 4 files |
+| Phase 15 P06 | 3min | 2 tasks | 2 files |
+| Phase 15 P07 | ~10min | 2 tasks (docs-only closure) | 6 files |
+| Phase 16 P01 | 3min | 2 tasks | 2 files (1 created examples/output/.gitignore + 1 modified examples/tutorial.flow) |
+| Phase 16 P02 | 50min | 1 task | 1 file (examples/tutorial.flow +159/-10 lines; 467→616) |
+| Phase 16 P03 | 2min | 1 task | 1 file (examples/tutorial.flow +35/-16 lines, graduation refactor) |
+| Phase 16 P04 | 2min | 1 task | 1 file (examples/showcase.flow rewrite 84→44 lines) |
+| Phase 16 P05 | ~15min | 2 tasks (docs-only closure) | 5 files (REQUIREMENTS, ROADMAP, STATE, 16-VERIFICATION, 16-SUMMARY) |
+| Phase 18 P01 | 2min | 2 tasks | 2 files |
+| Phase 18 P02 | 4min | 2 tasks tasks | 4 files files |
+| Phase 19 P01 | 12min | 3 tasks tasks | 4 files files |
+| Phase 19 P02 | 10min | 2 tasks | 3 files |
+| Phase 19 P03 | 5min | 2 tasks | 3 files |
+| Phase 19 P04 | 7m | 2 tasks | 2 files |
+| Phase 19 P05 | ~10m | 3 tasks (TUP-07 + closure docs) | 6 files (TransformFunctions, TupletAugmentDiminishTests, 19-VERIFICATION, REQUIREMENTS, ROADMAP, STATE) |
+| Phase 20 P01 | 8min | 2 tasks tasks | 6 files files |
+| Phase 20 P02 | 5min | 2 tasks tasks | 5 files files |
+| Phase 20 P03 | 13min | 2 tasks tasks | 4 files files |
+| Phase 20 P04 | ~10min | 4 tasks (docs-only closure) | 7 files (REQUIREMENTS, ROADMAP, STATE, 20-VERIFICATION, 20-04-SUMMARY, 14-deferred-items, 12-deferred-items) |
 
 ## Accumulated Context
 
@@ -190,12 +205,36 @@ Recent decisions affecting current work:
 - [Plan 17-08]: Azure DevOps PAT scope vocabulary — Marketplace.Manage (Azure DevOps UI label) vs Marketplace (Publish) (VSCE documentation vocabulary). Runbook documents BOTH vocabularies to avoid confusion at Step 1.3. Rotation calendar: VSCE_PAT 1y max expiry with 2-month advance reminder (lets replacement PAT go through one real tag push before old one revoked); OVSX_PAT no documented expiry but rotate annually for hygiene.
 - [Plan 17-08]: HUMAN-UAT deferral pattern for final manual-verify checkpoint — Task 3 declared checkpoint:human-verify but user directed "close the phase now without blocking on F5". Authored .planning/phases/17-flow-language-server/17-HUMAN-UAT.md using GSD UAT template (status: partial, 3 pending tests for manual-smoke.md rows 1-3, note explaining rows 4-5 deferred to first release tag). NOT faked as pass — result: [pending] preserves audit trail. Tests surface in /gsd-progress and /gsd-audit-uat and resolve asynchronously via /gsd-verify-work. Pattern reusable for any future phase with a UI/UX verification checkpoint that must not block on synchronous human session.
 - [Plan 17-08]: Deferred-to-first-tag pattern for marketplace-verification events (rows 4 non-dev OS + 5 Marketplace/OpenVSX publish) — circular dependency (phase closure awaiting tag push awaiting phase closure) resolved by explicitly scoping these rows to the release-tag milestone, NOT to phase closure. manual-smoke.md documents as deferred; 17-HUMAN-UAT.md excludes them with explanatory note; 17-MARKETPLACE-SETUP.md Step 4 tracks them via runbook status-checklist row.
+- [Plan 15-05]: ROADMAP criterion #2 closed (byte-identical MIDI + WAV) — required reseeding two pre-existing static unseeded Random instances at the renderSong/writeWav boundary (SynthUtils.Rng + FileIO.Random). Plan 15-03 had documented the dither RNG; the synth-noise RNG was discovered fresh by F-20 Pass-1 RED. Both reseeded with fixed values + reset hooks at public-boundary entry; audible quality unchanged, cross-render reproducibility gained. Pass-2 empirical velocity bytes for euclidean(3,8,C4,0.3,0.1,42): [122, 70, 108] on net10.0.107.
+- [Plan 15-06]: Wave 0 placeholder rewrite protocol validated end-to-end — WAVE-0 PLACEHOLDER marker grep precedes overwrite (T-15-14 mitigation), sentinel lines preserved verbatim, FlowScriptData unchanged. Two-layer DX-09 determinism gating now closed: Plan 04 in-process Value Fact + Plan 05 cross-file xUnit byte-equality (F-19) + this plan's script-level (print 'two runs byte-identical: PASSED') sentinel form three independent independence-checks. In-script cmp smoke confirms byte-identity held during smoke run (Plan 04 local PRNG + Plan 05 audio-RNG seeding both honored).
+- [Plan 15-02]: DX-07 grammar nullable-field inheritance rail (4 atomic touchpoints — field + Clone + ToString + ExecutionContext walk + early-break predicate) shipped without breaking existing Pan/Gain/Velocity inheritance. Probe-pattern adopted: direct InternalRegistry.Register + GlobalFrame.DeclareFunction in test-only code (no production-code change, doesn't touch concurrently-edited std.flow). Probe identifier camelCase (no underscore prefix) because `_` is reserved as TokenType.Underscore (rest marker in note streams). Parser rejects negative RT60 at parse-time per D-03; Interpreter silently clamps positive overflow at 30s; 0.0 preserved as dry sentinel per D-02 (overrides ROADMAP #3 wording — Plan 15-07 reframes the doc).
+- [Plan 15-03]: DX-07 audio path uses NEW Reverb.Apply(rt60) overload (D-13) — non-breaking; Schroeder feedback closed-form `feedback = 10^(-3 · avgDelay/rt60)` clamped [0, 0.99] (Open Q 3 locked at 0.99 not 0.98). ProcessChannel strict refactor pinned via SHA-256 byte-equivalence Fact for the existing roomSize Apply path. Per-voice reverb in SongRenderer.RenderSection voice loop with EXACT-zero short-circuit (no epsilon). Four observable refinements during Pass-2: F-06 calibrated at rt60=1.0s + 10ms RMS window (single-sample probes fluctuate); F-02 switched to trailing-RMS-within-10% (FileIO TPDF dither was unseeded); F-07/F-08 switched to CountDivergentPcmSamples > 50% (per-voice reverb truncates at voice-buffer length); `Buffer buf` → `rendered1`/`rendered2` (`buf` is reserved TokenType.Buf). buf is reserved as a type keyword in Flow.
+- [Plan 15-04]: DX-09 base velocity reads MusicalContext.Velocity ?? 0.63 (Open Q 1) — composers shape via `dynamics ff/p` contexts naturally. Local new Random(seed) per call (D-17) — does not touch ExecutionContext.GetRand. Both new overloads registered via RegisterContextDependentFunctions so they read active MusicalContext. Swing clamped [-1, 1]; humanize clamped [0, 1]; uniform distribution per D-11 (Gaussian deferred to DEFER-03 pragma). steps > 1024 InvalidOperationException guard (T-15-08 mitigation). dynamics ff base velocity empirically pinned at 0.875 (per Parser.NoteStream.TryParseDynamicMarking:344, NOT the speculated 0.98); F-16 humanize narrowed 0.5 → 0.3 to keep perturbed range inside [0, 1] without D-12 clamp confound.
+- [Plan 15-07]: Closure plan applied Phase 12 TEST-03 + Phase 14 DX-06 reframe pattern to ROADMAP criterion #3 (zero is dry-render sentinel per D-02, not rejected). Original "rejects negative or zero" wording preserved inside the reframe note for audit trail (mirrors Phase 14 DX-06 `*Original audit-trail:*` preamble). Plans 01-04 commits squashed into 302f950 checkpoint commit (PC-transfer hand-off); per-plan worktree commits (893534f, dc825d4, ad3a0f9, 8a0a868, 89dea8d, 9886dc5, 0b15647, 7b71adc, 1437376b, db5576fb) live in squashed ancestor history; mainline reference is 302f950. Plans 05-06 land as discrete commits (10c9557, af09ce5, bc331f6, 116aad8). Plan 07 lands as the final closure commit. DEFER-05 strikethrough applied to 14-deferred-items.md preserving original requirement + appending closure note (handling protocol §3).
+- [Plan 16-01]: Per-section gain demonstrated inside Synth Presets chapter (chapter 11) via `gain 0.5 { section quietPad { ... } }` context block — gain wraps section declaration; renderSong reads section.Gain at render time. Plan 16-03 integrates into the graduation piece audibly. Voice Synthesis (sing) placed as standalone chapter 14 between Pattern Transforms and Graduation Piece — voice timbre is distinct from instrumental graduation song. tts mentioned in prose Note: only — never invoked (charitable interpretation D-16: tutorial must run clean on stock dev machine without espeak-ng).
+- [Plan 16-02]: Path inlining vs variables in export block — plan's `<interfaces>` EXAMPLE used `String wavPath = "..."; (writeWav wavPath finalMix)` form, but `<verify><automated>` regex `writeWav.*examples/output/flow_tutorial\.wav` requires path on the same line as the call. Resolved by inlining (Rule 3 deviation) — both demonstrative AND verifiable. Pedagogical order within v1.2 cluster: Slicing → Enharmonic → ReverbTime → Dynamics MIDI → Euclidean (data → notation → audio post → note metadata → rhythm + accent + jitter + seed). Charitable interpretation D-16 followed throughout — DEFER-04 enharmonic edges (E↔Fb, B↔Cb) deliberately avoided; DEFER-06 negative-from-end slice indices not used.
+- [Plan 16-03]: Plan A (mix-in tempoRamp tail) chosen over Plan B (per-section tempo-aware rendering) — minimum-churn integration. tempoRamp Buffer mixes onto finalMix from frame 0 via `mix`; documented WAV/MIDI asymmetry in Note: comment so reader understands MIDI captures notation only (no audible ritardando). Per-section gain gradient: intro=0.6, verse=unwrapped (default ~1.0), chorus=1.0 — demonstrates that gain context is OPTIONAL while satisfying CONTEXT D-07 dynamic structure. euclidean 5/16 with C3 + swing 0.2 + humanize 0.1 + seed=42 (denser groove than ch.18's 3/8 for variety; matches chapter 18 + tests/test_euclidean_humanize.flow seed for cross-tutorial determinism alignment). Two-run cmp byte-identical for both WAV (5,503,724 B) and MIDI (814 B) — Phase 15 ROADMAP criterion #2 contract held end-to-end.
+- [Plan 16-04]: Inline `mp` velocity marker chosen over `dynamics mp { ... }` block form — block-form leaks Sequence scope (declared inside dynamics block, not visible at section/reverbTime scope). Inline form satisfies dynamics requirement without scope barrier (Rule 1 auto-fix). Combined crescendo + inline mp marker (exceeds OR constraint) for richer velocity contour. Aminor 72 BPM with i/VI/iv/v whole-note pad (A3→F3→D3→E3) for ambient bed; "strings" preset over organ/bell because sustained string timbre lets reverbTime 3.2 tail bloom most audibly.
+- [Plan 16-05]: ROADMAP criterion #4 marked moot per CONTEXT D-14 — fourth criterion-moot/reframe in v1.2 (after Phase 12 TEST-03 + Phase 14 DX-06 + Phase 15 #3). Pattern formalized: when CONTEXT resolves a roadmap criterion to moot/reframe, closure plan documents moot-note in VERIFICATION.md so the unchecked checkbox in ROADMAP reads as audit-trail-preserved, not forgotten. Worktree-base 284/284 vs mainline 287/287 test-count drift documented in 16-SUMMARY — provenance, not regression (Phase 15 closed at 287; Phase 16 added no test surface; mainline at this commit is still 287). Documentation-only atomic closure commit (5 files: REQUIREMENTS.md + ROADMAP.md + STATE.md + 16-VERIFICATION.md + 16-SUMMARY.md) executed on master per worktree:false plan frontmatter (orchestrator-owned files force-restored after worktree merge per Phase 15 Plan 07 precedent).
+- [Plan 18-01]: Fraction shipped as readonly record struct sibling of ArrayType.cs (helper, NOT FlowType per ARCHITECTURE.md §3) with GCD-normalizing ctor + + * < > operators + free record-struct ==/GetHashCode + Num/Denom ToString. RED+GREEN bundled into atomic commit 2092f32 per Phase 12-02 6e5a960 precedent — bisectable but HEAD never broken. 9 Facts GREEN; full suite 296/296 (287 baseline + 9 new); zero consumer wired (Plan 18-02 territory). Zero deviations — RESEARCH+PLAN cascade was unusually high-fidelity for foundation-tier primitive.
+- [Plan 18-02]: FRAC-02 wired Fraction? DurationFraction into MusicalNoteData via defaulted-parameter pattern at END of 12-param ctor (zero call-site edits across 30+ existing sites — Pitfall 2 avoided structurally). GetBeats branches on HasValue: rational override path returns (double)f.Num × timeSigDenominator / (f.Denom × 4.0); existing power-of-2 path preserved verbatim when null. ToString unchanged (Pitfall 5). Two-runner byte-identical Facts on tutorial.flow + showcase.flow (WAV + MIDI each) per D-USER-02 (no committed binary baseline). DurationFraction stays DORMANT — 0 production-code paths set it; sole non-null callers are 3 Phase18 unit Facts. Atomic commit ba8534a lands NoteType.cs edit + 3 test files. Full suite 306/306 GREEN (287 pre-Phase-18 + 19 Phase18). Phase 18 closes.
+- [Plan 19-01]: TupletElement (10th NoteStreamElement subtype) shipped with recursive children + Numerator/Denominator + REQUIRED DurationSuffix. NoteElement extended with defaulted (int Num, int Denom)? TupletRatio at end of ctor (Phase 18 18-02 defaulted-parameter migration precedent — zero existing call-site edits structurally). Music21 shorthand table covers counts 2-11 (5 SPEC-LOCKED + 5 discretion). NoteStreamCompiler.CompileTupletElement uses Fraction outerScale recursion: bracketSpan = suffix × outerScale; perChildSlot = bracketSpan / Numerator; nestedOuterScale = perChildSlot. Pin verified against SPEC TUP-03 [2/3, 2/9, 2/9, 2/9, 2/3] quarter-units. Atomic commit a7f94ef. 8/8 Phase19 Facts + 19/19 Phase18 byte-identical regression all GREEN; full suite 306→314.
+- [Plan 19-02]: TUP-04 (C4/N) encoded as TupletRatio=(N,1) sentinel inside the existing NoteElement.TupletRatio field added by Plan 19-01 — Y=1 is musically meaningless for a real tuplet (would mean X notes in time of 1) so collides with no real user-visible ratio; compiler distinguishes via 'if (y == 1)'. TUP-08 (C4/X:Y[suffix]) populates (X,Y) directly. Both arms (main ParseNoteStream loop + ParseTupletChildren helper) get identical /N + /X:Y dispatch — per-note shorthand legal inside tuplet brackets too. NO lexer changes (existing Slash + IntLiteral + Colon tokens reused per RESEARCH Pattern 3). Random-choice colon-collision pinned via structural disambiguation: '(?' outer-paren gates random choice BEFORE Slash arm fires; '/X:Y' happens AFTER Slash. Atomic commit 9aae23c. 9/9 Phase19 FractionalDurationTests + 19/19 Phase18 byte-identical regression all GREEN; full suite 314→323.
+- TUP-05 charitable D-03 refinement: zero-remaining boundary drops instead of truncate-to-zero (CLAUDE.md memory: music > rigid correctness)
+- TUP-06 MIDI TPQN auto-elevation: pre-export single-pass collects DurationFraction.Denom from SongData.SectionRegistry walk; requiredTPQN = LCM(480, 2 × union); cap-error fires before any disk I/O for atomic export contract
+- TPQN auto-elevation cap hard-coded at 9600 (CONTEXT D-USER-E LOCKED). Songs with zero tuplets short-circuit to 480 preserving Phase 18 byte-identical contract structurally
+- [Plan 19-05]: TUP-07 augment/diminish gain `if (note.DurationFraction.HasValue)` branch performing rational doubling (Fraction(2,1) × f) and halving (Fraction(1,2) × f) via Phase 18 primitive. AUDIT-VERIFIED comment markers at TransformFunctions.cs:239 + 261 refreshed with `2026-04-26: re-validated against tuplet sequences (Phase 19 TUP-07)` preserving the original 2026-04-18 audit trail. Two-pass strict (CONTEXT D-15) Outcome A — REQUIREMENTS-as-drafted matched reality verbatim, all 5 Facts GREEN on first run. Public test wrappers `AugmentForTesting` / `DiminishForTesting` expose private dispatch (no InternalsVisibleTo plumbing required — minor divergence from plan's `internal` direction). Phase 19 closes: 5/5 plans, 8/8 TUP requirements Shipped, 34/34 Phase19 + 19/19 Phase18 + 340/340 full suite GREEN. Atomic commits e2cdbe5 (production) + closure docs commit. v1.3 milestone now 2/9 phases complete (Phase 18 + Phase 19); Phase 20 (DEFER closures + multi-letter enharmonics) is the next ROADMAP target.
+- [Plan 20-01]: DEFER-01 closure — Collections.Range with Pythonic semantics (start inclusive, end exclusive, default step=1, negative step backward, empty on unsatisfiable, step==0 throws). Single C# method dispatches both 2-arg and 3-arg overloads via args.Count branch. Rule 1 deviation: collections.flow proc params renamed start/end → s/e/step because 'end' is reserved EndProc keyword (Phase 14 plan 14-01 lesson re-applied). Rule 3 deviation: ExpectedErrorScripts entry for test_custom_oscillator.flow REMOVED in this plan despite plan's explicit DO NOT instruction — registering range structurally flips the script from error to clean-pass, invalidating the pin's substring assertion. Plan 20-04 loses one tracked migration item but its other closure items unaffected. Atomic commit d0d17db; 349/349 full suite GREEN; 19/19 Phase18 byte-identical regression gate GREEN.
+- [Plan 20-02]: DEFER-04 closure — HarmonyFunctions.Enharmonic naturals branch gains 5-line letter-edge switch (E↔Fb, F↔E#, B↔Cb octave+1, C↔B# octave-1); D/G/A unchanged. In-key branch reordered to fire BEFORE the alteration==0 fast path so diatonic preservation wins for naturals AND accidentals (D-USER-B / Phase 14 D-04 extension). Phase14 NoKey_NaturalUnchanged_C4/E4/B4/F4 Facts MIGRATED to NoKey_NaturalEdgeRespells_* with inverted assertions (rename + re-pin shape (a) per Pitfall 1; docstring breadcrumbs preserve audit trail). EnharmonicEdgesTests.cs ships 11 [Fact] + 13 InlineData Theory rows = 24 total (plan said 12, but xUnit counts each InlineData row separately — over-coverage, not divergence). Atomic commit d835336; 374/374 full suite + 19/19 Phase18 byte-identical regression GREEN. Phase 21 H-alias dependency now unblocked.
+- [Plan 20-03]: DEFER-05 closure — Collections.SliceArray + Collections.SliceSequence pre-clamp Pythonic normalization (count + idx) before existing Phase 14 D-01 silent two-sided clamp. Verification matrix coincidence proven: 9/9 Phase14/SliceTests Facts stay GREEN unchanged (cases coincide between old silent-clamp and new Python normalization). 10 SliceNegativeTests Facts pin new behavior; 5/10 RED before edit, 10/10 GREEN after. tests/test_slice_negative.flow new file (Phase 14 file untouched per Pitfall 2). D-USER-D extreme-negative clamp policy honored post-normalization. Atomic commit edd20b1; 385/385 full suite + 19/19 Phase18 byte-identical regression GREEN; collision grep slice.*,.*,.*- over tests/ remains EMPTY.
+- [Plan 20-04]: Phase 20 closure — REQUIREMENTS DEFER-01/04/05 rows flipped to Shipped (d0d17db / d835336 / edd20b1); ROADMAP Phase 20 marked complete with 4/4 plans; STATE milestone progress 2/9 → 3/10 phases for v1.3; 14-deferred-items.md DEFER-04 + DEFER-06 (slice neg-from-end origin) strikethrough applied per handling protocol §3 (audit trail preserved); 12-stability/deferred-items.md DEFER-01 strikethrough applied; FlowScriptData.cs:57 ExpectedErrorScripts stale pin removal already absorbed in 20-01 d0d17db (Rule 3 deviation per 20-01-SUMMARY.md, confirmed via grep). Single atomic docs-only closure commit (6 files: REQUIREMENTS, ROADMAP, STATE, 20-VERIFICATION, 14-deferred-items, 12-deferred-items). Phase 21 (Pragma System + H-Alias) now unblocked per binding pre-ordering #3.
 
 ### Roadmap Evolution
 
 - Phase 17 added (2026-04-20): Flow Language Server — LSP + VSCode extension for syntax highlighting, diagnostics, and intelligent completion/hover suggestions on .flow files
 - Phase 17 context gathered (2026-04-20): 17-CONTEXT.md + 17-DISCUSSION-LOG.md written. Decisions locked: C# `flow-lsp` project reusing flow-lang (OmniSharp.Extensions.LanguageServer) · full re-lex+re-parse on ~150ms debounce · TextMate grammar + LSP semantic tokens (standard VSCode scopes, no bundled theme) · forward everything ErrorReporter produces · completion covers built-ins + stdlib imports + keywords + user-defined symbols + snippets · context-aware roman-numeral completion inside note streams · signature help for built-ins AND user procs · go-to-def for user procs/vars + stdlib · `flow-lang/StandardLibrary/BuiltInDocs.cs` lookup table · self-contained per-platform VSIX (linux-x64, win-x64, osx-x64, osx-arm64) · publish to Marketplace + OpenVSX. Ready for /gsd-plan-phase 17.
 - Phase 15 planned (2026-04-20): 7 plans across 5 waves (commit 7acff55); research + validation + pattern-map produced; checker PASSED with 0 blockers, 6 non-blocking warnings (doc/scope notes). Wave 0: 15-01 scaffolding (Phase15 test subtree + MidiReadHelpers promotion closing DEFER-05). Wave 1 parallel: 15-02 DX-07 grammar/runtime, 15-04 DX-09 euclidean core. Wave 2: 15-03 DX-07 audio path (ReverbApply RT60 overload + per-voice SongRenderer insert, feedback cap 0.99). Wave 3 parallel: 15-05 byte-identical MIDI/WAV regression (two-pass strict), 15-06 end-to-end .flow scripts. Wave 4: 15-07 closure (ROADMAP criterion #3 "or zero" doc-only reframe per D-02 dry-short-circuit, collision grep transcript F-24, REQUIREMENTS Shipped markers). 23 automated Facts + 1 manual (F-24) wired to plans; all 18 decisions D-01..D-18 covered.
+- Phase 16 closed (2026-04-25): Tutorial + showcase refreshed; QOL-03 shipped (Plans 01-04 commits 94d20fb + 5bf93c9 + be18d5c + 1c3b723); Plan 05 closure docs; criterion #4 marked moot per CONTEXT D-14 (4th criterion-moot/reframe in v1.2). Full suite 287/287 GREEN. v1.2 milestone (Phases 11-17) ready for closure via /gsd-complete-milestone v1.2.
 
 ### Pending Todos
 
@@ -214,9 +253,35 @@ None yet for Phase 15.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260420-0c0 | Add pure-Flow test library (flow-lang/test.flow + tests/test_test_library.flow) | 2026-04-20 | c8731d2 | [260420-0c0-write-a-pure-flow-test-library-at-flow-l](./quick/260420-0c0-write-a-pure-flow-test-library-at-flow-l/) |
+| 260426-v5s | examples/long_demo.flow — ~10 min Flow feature showcase (46 spotlights) | 2026-04-27 | 9d8e8b2 | [260426-v5s-create-examples-long-demo-flow-10-minute](./quick/260426-v5s-create-examples-long-demo-flow-10-minute/) |
+
+## Deferred Items
+
+Items acknowledged and deferred at v1.2 milestone close on 2026-04-26:
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | function-overload-resolution-failures | awaiting_human_verify |
+| quick_task | 260420-0c0-write-a-pure-flow-test-library-at-flow-l | missing |
+| uat | Phase 17: 17-HUMAN-UAT.md (3 pending scenarios — manual-smoke.md rows 1-3) | partial |
+| verification | Phase 04: 04-VERIFICATION.md | gaps_found |
+
+These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs audit-open` during the next milestone or address ad-hoc.
 
 ## Session Continuity
 
-Last session: 2026-04-20T18:00:00Z
-Stopped at: Phase 17 plan 08 complete (2026-04-20; HUMAN-UAT deferred). Wave 7 docs + marketplace closure: docs/editor-setup/ (README, nvim-lspconfig.lua, helix-languages.toml, neovim.md, helix.md, generic-lsp.md, manual-smoke.md) closes D-13 non-VSCode clause; .planning/phases/17-flow-language-server/17-MARKETPLACE-SETUP.md is a 200+-line one-time runbook covering VSCode Marketplace publisher creation + VSCE_PAT (Marketplace.Manage scope) + OpenVSX publisher + namespace claim (Pitfall 8 via npx ovsx create-namespace) + OVSX_PAT + GitHub Actions secret wiring + workflow_dispatch dry-run + first tag push procedure + rotation calendar + 7-row troubleshooting table + 17-row status-checklist for audit-trail; vscode-extension/README.md expanded 32→108 lines with features mapped to D-04..D-11, Marketplace + OpenVSX install guidance (explicit Cursor/VSCodium/Windsurf callout), VSCode >= 1.85.0 + no-.NET-runtime requirements, flow.server.path + flow.trace.server configuration reference table, Pitfall-6-aware manual-binary-override subsection, publisher placeholder disclosure; top-level README.md gained Editor support section announcing VSCode extension; .gitignore extended with !docs/ + !docs/**/*.md + !README.md allowlist (docs-prose tracking pattern reusable). Task 3 checkpoint resolved by explicit user direction ("Defer to HUMAN-UAT. Close the phase now without blocking on F5"): 3 rows of manual-smoke.md (row 1 D-04/D-05 syntax highlighting 11-item tick list, row 2 D-04 TM→semantic transition, row 3 D-13 extension activation + 7 embedded feature sanity checks D-06/D-07/D-08/D-09/D-10/D-11/snippet) tracked as pending tests in 17-HUMAN-UAT.md using GSD UAT template — surface in /gsd-progress and /gsd-audit-uat, NOT faked as pass. Rows 4-5 (non-dev OS binary, Marketplace+OpenVSX publish verification) deferred to first release tag milestone with explanatory in-file note (circular-dependency avoidance). Phase 17 closes at 8/8 plans with 96/96 Phase17 Facts green (docs-only plan, regression unchanged from 17-07).
-Resume file: None — Phase 17 complete. Next v1.2 phase per ROADMAP is Phase 15 (Composer DX Part 2: DX-07 reverbTime + DX-09 euclidean swing/humanize). Phase 15 plans already drafted (15-01 through 15-07, 7 plans across 4 waves) and ready for execution.
+Last session: --stopped-at
+Stopped at: Phase 21 context gathered
+Resume file: --resume-file
+
+**Completed Phase:** 20 (cheap-defer-closures-multi-letter-enharmonic-edges) — 4 plans across 4 waves — closed 2026-04-26
+
+**Planned Phase:** 21 (Pragma System + H-Alias) — TBD plans — pending /gsd-plan-phase 21
+
+## Resume Instructions (next PC)
+
+Phase 20 closed 2026-04-26. v1.3 milestone now 3/10 phases complete (Phases 18, 19, 20). Phase 21 (Pragma System + H-Alias) is the next ROADMAP target — depends on Phase 20 DEFER-04 (now shipped per binding pre-ordering #3); closes PRAG-01, PRAG-02, DEFER-02/03 (H-as-B alias inside note streams).
+
+1. `/gsd-progress` — confirm Phase 20 at 4/4 plans, milestone v1.3 at 3/10 phases
+2. `/gsd-plan-phase 21` — plan Phase 21: file-scope `enable <pragma>;` infrastructure (PRAG-01), no-propagation-across-`use`-imports (PRAG-02), `enable hAsB;` H-as-B alias inside note streams (DEFER-02/03). Phase 21 (Pragma System + H-Alias) depends on Phase 20 DEFER-04 (now shipped) per binding pre-ordering #3.
+3. After Phase 21: Phase 22 (Tier B/C Composer DX Bundle: arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento, varispeed loadWav) depends on Phase 18 Fraction (DX-12 + DX-13 use Fraction for sync math). Phase 23 (Microtonal wedge) depends on Phase 21 pragma system.

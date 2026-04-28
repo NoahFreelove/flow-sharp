@@ -231,7 +231,19 @@ public class MusicalNoteData
     /// </summary>
     public int SourceLength { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0)
+    /// <summary>
+    /// Optional rational duration override (FRAC-02). When set, OVERRIDES the DurationValue
+    /// enum + IsDotted multiplier in GetBeats. When null, the existing power-of-2 enum path
+    /// runs unchanged. Phase 18 ships this field DORMANT — no lexer/parser code path produces
+    /// a non-null value yet (Phase 19 tuplets feed it). Per D-USER-04, all existing .flow
+    /// scripts must remain byte-identical because every call site leaves this null.
+    ///
+    /// Units: quarter-note units (matches music21 DurationTuple convention). To convert to
+    /// beats for a time signature with denominator D: beats = quarterNotes × (D / 4).
+    /// </summary>
+    public FlowLang.TypeSystem.Fraction? DurationFraction { get; }
+
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0, FlowLang.TypeSystem.Fraction? durationFraction = null)
     {
         NoteName = noteName;
         Octave = octave;
@@ -245,6 +257,7 @@ public class MusicalNoteData
         Articulation = articulation;
         SourceLocation = sourceLocation;
         SourceLength = sourceLength;
+        DurationFraction = durationFraction;
     }
 
     /// <summary>
@@ -252,6 +265,20 @@ public class MusicalNoteData
     /// </summary>
     public double GetBeats(int timeSigDenominator)
     {
+        if (DurationFraction.HasValue)
+        {
+            // FRAC-02 rational override path. DurationFraction is in quarter-note units
+            // (music21 convention). Convert to beats for the active time signature:
+            //   beats = quarterNotes × (timeSigDenominator / 4)
+            // Per D-USER-01: keep existing GetBeats signature (double); sibling
+            // GetBeatsFraction deferred to Phase 19 if needed.
+            // Per D-USER-04: this branch is DORMANT in Phase 18 (no code path sets
+            // DurationFraction yet). Wired-but-unreached.
+            var f = DurationFraction.Value;
+            return (double)f.Num * timeSigDenominator / (f.Denom * 4.0);
+        }
+
+        // Existing power-of-2 path — UNCHANGED from pre-Phase-18.
         if (!DurationValue.HasValue)
             return 1.0; // Default to 1 beat if no duration specified
 

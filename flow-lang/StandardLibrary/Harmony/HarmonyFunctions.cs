@@ -26,11 +26,14 @@ public static class HarmonyFunctions
 
     /// <summary>
     /// Key-context-aware enharmonic respelling.
-    /// - Naturals (alteration == 0) always return unchanged (D-05: no E↔Fb, F↔E#, B↔Cb, C↔B# edges).
+    /// - Naturals at edges (E/F/B/C) respell to multi-letter neighbor (DEFER-04 / Phase 20);
+    ///   D/G/A naturals return unchanged (no enharmonic edge — they sit between two whole-step
+    ///   letters, so there is no adjacent-letter spelling at the same pitch).
     /// - In-key (active <c>MusicalContext.Key</c>): if input pitch matches a scale tone by MIDI,
     ///   return the diatonic spelling whose key-affinity (flat key → flat letter, sharp key →
     ///   sharp letter) matches. Implementation is MIDI-based (not string-echo) to bypass Pitfall 3
-    ///   — ScaleDatabase.GetScaleNotes returns sharp-spelled tones even for flat keys.
+    ///   — ScaleDatabase.GetScaleNotes returns sharp-spelled tones even for flat keys. The in-key
+    ///   branch fires before the natural-edge switch so diatonic preservation wins (D-USER-B).
     /// - Chromatic-in-key or no-key: flip sharp ↔ flat (Db4 ↔ C#4, F#3 ↔ Gb3). Double-sharps
     ///   and double-flats may collapse to naturals (F##4 → G4) — documented non-involutive.
     /// </summary>
@@ -40,24 +43,39 @@ public static class HarmonyFunctions
         string noteStr = args[0].As<string>();
         var (letter, octave, alteration) = NoteType.Parse(noteStr);
 
-        // D-05: naturals return unchanged, full stop — no edge respelling.
-        if (alteration == 0)
-        {
-            return Value.Note(NoteType.Format(letter, octave, 0));
-        }
-
         int inputMidi = NoteType.ToMidiNote(letter, octave, alteration);
         var musicalCtx = context.GetMusicalContext();
         string? key = musicalCtx?.Key;
 
-        // D-04: in-key branch. Try to find a diatonic spelling that matches the input MIDI.
+        // D-04 / D-USER-B: in-key branch fires FIRST so diatonic spelling wins for both naturals
+        // and accidentals. If the input pitch matches a scale tone, we return that scale spelling
+        // rather than the no-key edge respelling. e.g. (key Fmajor) (enharmonic E4) → "E4" because
+        // E is diatonic in F major; only chromatic-in-key inputs fall through to the no-key edge.
         if (key != null)
         {
             if (TryEnharmonicInKey(inputMidi, key, out Value? inKeyResult) && inKeyResult != null)
             {
                 return inKeyResult;
             }
-            // chromatic-not-in-scale → fall through to no-key flip
+            // chromatic-not-in-scale → fall through to natural-edge / sharp-flat flip
+        }
+
+        // DEFER-04 (Phase 20 plan 20-02): naturals at letter-boundary edges (E/F/B/C) respell
+        // to their multi-letter neighbor. D/G/A naturals remain unchanged (no enharmonic edge).
+        // E ↔ Fb (same octave): E4 (MIDI 64) → Fb4 (F=65, alt=-1, MIDI 64)
+        // F ↔ E# (same octave): F4 (MIDI 65) → E#4 (E=64, alt=+1, MIDI 65)
+        // B ↔ Cb (octave +1):   B4 (MIDI 71) → Cb5 (C5=72, alt=-1, MIDI 71)
+        // C ↔ B# (octave -1):   C4 (MIDI 60) → B#3 (B3=59, alt=+1, MIDI 60)
+        if (alteration == 0)
+        {
+            return letter switch
+            {
+                'E' => Value.Note(NoteType.Format('F', octave,     -1)),
+                'F' => Value.Note(NoteType.Format('E', octave,     +1)),
+                'B' => Value.Note(NoteType.Format('C', octave + 1, -1)),
+                'C' => Value.Note(NoteType.Format('B', octave - 1, +1)),
+                _   => Value.Note(NoteType.Format(letter, octave, 0)),  // D/G/A unchanged
+            };
         }
 
         // D-05: no-key flip. Sharp → letter up (alt = inputMidi - naturalMidi(up)).

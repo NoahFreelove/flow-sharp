@@ -4,7 +4,8 @@
 
 - ~~**v1.0 MVP**~~ — Phases 1-5 (shipped 2026-04-03)
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
-- 🚧 **v1.2 Stability & Composer DX** — Phases 11-17 (started 2026-04-18)
+- ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
+- 🚧 **v1.3 Composer DX Tier B/C** — Phases 18-27 (in progress)
 
 ## Phases
 
@@ -16,58 +17,6 @@
 - [x] **Phase 3: Synthesis & MIDI Export** — Add custom oscillator definitions and MIDI file export (completed 2026-04-02)
 - [x] **Phase 4: Composition Tools** — Add chord progression DSL, polyrhythm support, and probabilistic pattern variation (completed 2026-04-02)
 - [x] **Phase 5: Live Coding** — Add beat-synced live reload with playback state preservation (completed 2026-04-03)
-
-### Phase 1: Language Foundations
-**Goal**: Users can write iterative, debuggable Flow scripts with loop constructs, formatted output, and visual feedback on their sequences
-**Depends on**: Nothing (first phase)
-**Requirements**: LANG-01, LANG-02, LANG-03, LANG-04, VIS-01
-**Plans**: 3 plans
-
-Plans:
-- [x] 01-01-PLAN.md -- Add for/while loops, break/continue, and iteration guards
-- [x] 01-02-PLAN.md -- Add string interpolation with $"...{expr}..." syntax
-- [x] 01-03-PLAN.md -- Add ASCII piano-roll sequence visualization
-
-### Phase 2: Audio Pipeline
-**Goal**: Users can load audio samples, position sounds in the stereo field, apply sidechain compression, and play polyphonic arrangements without voice clipping
-**Depends on**: Phase 1
-**Requirements**: AUDIO-01, AUDIO-02, AUDIO-03, AUDIO-04
-**Plans**: 3 plans
-
-Plans:
-- [x] 02-01-PLAN.md -- WAV file loading (loadWav) and sidechain compression
-- [x] 02-02-PLAN.md -- Stereo panning (pan function, Voice.Pan bug fix, pan context block)
-- [x] 02-03-PLAN.md -- Polyphonic voice allocation with configurable limits and stealing
-
-### Phase 3: Synthesis & MIDI Export
-**Goal**: Users can define their own oscillator waveforms in Flow code and export compositions as standard MIDI files
-**Depends on**: Phase 2
-**Requirements**: SYNTH-01, SYNTH-02, MIDI-01, MIDI-02
-**Plans**: 2 plans
-
-Plans:
-- [x] 03-01-PLAN.md -- Custom oscillator definitions (WavetableSynthesizer + oscillator() built-in)
-- [x] 03-02-PLAN.md -- MIDI file export (DryWetMidi + writeMidi built-in)
-
-### Phase 4: Composition Tools
-**Goal**: Users can write chord progressions with automatic voicing, layer polyrhythmic patterns, and generate probabilistic variations of sequences
-**Depends on**: Phase 3
-**Requirements**: COMP-01, COMP-02, COMP-03, COMP-04
-**Plans**: 2 plans
-
-Plans:
-- [x] 04-01-PLAN.md -- Chord progression DSL with voice leading (progression keyword, parser, ProgressionCompiler)
-- [x] 04-02-PLAN.md -- Polyrhythm layering and probabilistic pattern variation (polyrhythm, vary built-ins)
-
-### Phase 5: Live Coding
-**Goal**: Users can edit Flow scripts during playback and hear changes take effect at musically appropriate moments without interruption
-**Depends on**: Phase 4
-**Requirements**: LIVE-01, LIVE-02
-**Plans**: 2 plans
-
-Plans:
-- [x] 05-01-PLAN.md -- Streaming playback infrastructure, capture mode, and LiveReloadManager
-- [x] 05-02-PLAN.md -- Wire LiveReloadManager into Program.cs and end-to-end verification
 
 </details>
 
@@ -84,149 +33,176 @@ Full details: `milestones/v1.1-ROADMAP.md` · Audit: `milestones/v1.1-MILESTONE-
 
 </details>
 
-### v1.2 Stability & Composer DX (Phases 11-17) — in progress
+<details>
+<summary>✅ v1.2 Stability & Composer DX (Phases 11-17) — SHIPPED 2026-04-26</summary>
 
 - [x] **Phase 11: Audit Spike** — Reproduce or close C1–C5 audit claims with failing tests or documented dismissals (completed 2026-04-19; 1 Confirmed C1, 4 Dismissed C2–C5)
-- [x] **Phase 12: Stability** — Ship confirmed bug fixes (C6 → FIX-05, C7 → FIX-06, C1 → FIX-07a), reframe TEST-03 around real failures (if-overload + auto-mkdir), and unblock the failing test suite (completed 2026-04-19; 4 Shipped + 2 Closed as audit false positives; 68/68 suite green; C5 BREAKING CHANGE bundle NOT TRIGGERED per F-02)
-- [x] **Phase 13: Nyquist Validation Backfill** — Retroactive VALIDATION.md for v1.1 phases 6-9 shipped + Phase 10 promoted to nyquist_compliant (completed 2026-04-20)
-- [x] **Phase 14: Composer DX Part 1** — `slice`, flat-literal surface + `enharmonic()`, MIDI velocity regression end-to-end (completed 2026-04-20; DX-05/06/08 shipped, H-alias deferred to future pragma phase via deferred-items.md)
-- [ ] **Phase 15: Composer DX Part 2** — Euclidean swing/humanize (reuses velocity infra), then `reverbTime` context block (widest blast radius, shipped last)
-- [ ] **Phase 16: Tutorial Refresh** — `examples/tutorial.flow` demonstrates v1.1 + v1.2 features end-to-end, produces audible WAV + MIDI
-- [x] **Phase 17: Flow Language Server** — Build a language server for Flow (LSP) plus a VSCode extension delivering syntax highlighting, diagnostics, and intelligent completion/hover suggestions for .flow files (completed 2026-04-20; 8/8 plans shipped, 117/117 Phase17 Facts green after code-review fix pass, 3 manual-smoke rows tracked as pending HUMAN-UAT in 17-HUMAN-UAT.md, rows 4-5 deferred to first release tag)
+- [x] **Phase 12: Stability** — Ship confirmed bug fixes (C6 → FIX-05, C7 → FIX-06, C1 → FIX-07a), reframe TEST-03 around real failures (if-overload + auto-mkdir), and unblock the failing test suite (completed 2026-04-19)
+- [x] **Phase 13: Nyquist Validation Backfill** — Retroactive VALIDATION.md for v1.1 phases 6-9 + Phase 10 promoted to nyquist_compliant (completed 2026-04-20)
+- [x] **Phase 14: Composer DX Part 1** — `slice`, flat-literal surface + `enharmonic()`, MIDI velocity regression end-to-end (completed 2026-04-20)
+- [x] **Phase 15: Composer DX Part 2** — Euclidean swing/humanize + `reverbTime` context block (completed 2026-04-25; full suite 287/287)
+- [x] **Phase 16: Tutorial Refresh** — `examples/tutorial.flow` + `examples/showcase.flow` demonstrate v1.1 + v1.2 features end-to-end with byte-identical determinism (completed 2026-04-25)
+- [x] **Phase 17: Flow Language Server** — LSP + VSCode extension delivering syntax highlighting, diagnostics, and intelligent completion/hover suggestions (completed 2026-04-20; 3 manual-smoke rows tracked as pending HUMAN-UAT, marketplace publish deferred to first release tag)
 
-## Phase Details
+Full details: `milestones/v1.2-ROADMAP.md`
 
-### Phase 11: Audit Spike
-**Goal**: The v1.2 team has decisive evidence — failing tests or written dismissals — for each of the 2026-04-18 audit's disputed critical findings (C1–C5), so no code is edited while researchers disagree about whether the bug exists.
-**Depends on**: v1.1 close (Phase 10)
-**Requirements**: SPIKE-01, SPIKE-02, SPIKE-03, SPIKE-04, SPIKE-05
+</details>
+
+## v1.3 Composer DX Tier B/C (Phases 18-27) — in progress
+
+Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), and adds dictionary support (`(dict ...)` + `(get ...)` etc.). 32 requirements across 10 phases.
+
+**Locked decisions** (from `/gsd-new-milestone` discussion):
+- D-01: Tuplet bracket syntax is `{N:M ...}` (braces)
+- D-02: Pragmas are file-scope only, top-of-file only, NOT propagated via `use`
+- D-03: Microtonal scope is named-tunings wedge; full Scala loader deferred to v1.4
+- D-04: Gaussian humanize ships as separate `humanizeGaussian()` (preserves byte-identical determinism)
+- D-05: MIDI TPQN cap when tuplets force auto-elevation is 9600
+
+### Phase Summary
+
+- [x] **Phase 18: Foundation — Rational Duration Arithmetic** — `Fraction` struct + `MusicalNoteData.DurationFraction`; foundation for tuplets and fractional durations — Shipped 2026-04-26 (commits 2092f32 + ba8534a)
+- [x] **Phase 19: Tuplets & Arbitrary Fractional Durations** — `{N:M ...}` brackets + `C4/N` syntax + `C4/X:Y[suffix]` per-note shorthand, nested tuplets, bar-fit validator, auto-elevated MIDI TPQN (cap 9600) — Shipped 2026-04-26 (commits a7f94ef + 9aae23c + 3679ab4 + dbc6f30 + e2cdbe5)
+- [x] **Phase 20: Cheap DEFER Closures + Multi-letter Enharmonic Edges** — `range(Int, Int[, Int])`, slice negative-from-end, multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#) — Shipped 2026-04-26 (commits d0d17db + d835336 + edd20b1 + closure)
+- [ ] **Phase 21: Pragma System + H-Alias** — `enable <pragma>;` file-scope pragma infrastructure (Haskell-precedent), DEFER-02/03 H-as-B alias inside note streams
+- [ ] **Phase 22: Tier B/C Composer DX Bundle** — arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento articulations, varispeed loadWav
+- [ ] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`), `ITuningSystem` at `PitchConversion.NoteToFrequency` seam
+- [ ] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts
+- [ ] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()`
+- [ ] **Phase 26: Dictionary Support** — `(dict "k" v ...)` constructor + `(get d "k")` / `(set d "k" v)` / `(keys d)` / `(values d)` / `(has d "k")` / `(remove d "k")` / `(size d)` operations; `Dict[T]` type with String keys; S-expression style per memory (no infix `{...}` literal — collides with Phase 19 tuplet braces)
+- [ ] **Phase 27: Tutorial + Showcase Refresh** — `examples/tutorial.flow` + `examples/showcase.flow` exercise every v1.3 feature end-to-end (including dicts); byte-identical determinism re-pinned
+
+### Phase Details
+
+### Phase 18: Foundation — Rational Duration Arithmetic
+**Goal**: Rational arithmetic primitive lands so all subsequent tuplet / fractional / delay-sync / quantize math is drift-free
+**Depends on**: Nothing (first v1.3 phase)
+**Requirements**: FRAC-01, FRAC-02
 **Success Criteria** (what must be TRUE):
-  1. For each of C1–C5, a `.flow` script in `tests/spike/` either reproduces the bug with a failing assertion OR a short written dismissal (file + line + reasoning) sits alongside the audit entry.
-  2. The verified-2026-04-18 marker appears in the source for every dismissed claim so future audits don't re-raise closed items.
-  3. The outcome determines FIX-07's scope: each surviving C1–C5 item becomes a fix task in Phase 12 with its failing test already committed.
-  4. No production source under `flow-lang/` is modified during this phase — the spike is pure investigation and test authoring.
-**Plans**: 6 plans
+  1. A new `Fraction(int Num, int Denom)` value type exists in `flow-lang/TypeSystem/`, normalizes via GCD on construction, and supports `+ / × / == / <` without ever using `double` arithmetic (FRAC-01)
+  2. Unit Facts pin canonical examples: `1/3 + 1/3 + 1/3 == 1`, `2/4 == 1/2`, `3/12 == 1/4` (FRAC-01)
+  3. `MusicalNoteData` exposes optional `Fraction? DurationFraction` that overrides the existing `DurationValue` enum when set; null leaves the existing power-of-2 path unchanged (FRAC-02)
+  4. All ~70 existing `.flow` test scripts continue to pass with byte-identical output; `tutorial.flow` + `showcase.flow` regression gate via `cmp` is clean (FRAC-02)
+**Plans**: 2 plans
+- [x] 18-01-PLAN.md — Ship Fraction rational-arithmetic primitive (FRAC-01) + 9 unit Facts; Fraction.cs at flow-lang/TypeSystem/ (helper, not a FlowType) — Shipped 2092f32
+- [x] 18-02-PLAN.md — Wire Fraction? DurationFraction into MusicalNoteData via defaulted-parameter pattern + GetBeats branch (FRAC-02); 6 unit Facts + 4 byte-identical integration Facts (tutorial.flow + showcase.flow WAV+MIDI two-runner) — Shipped ba8534a
 
-Plans:
-- [x] 11-01-PLAN.md — C1: musical-context body skip — **CONFIRMED** (→ FIX-07a)
-- [x] 11-02-PLAN.md — C2: _returnValue short-circuit — **DISMISSED**
-- [x] 11-03-PLAN.md — C3: EnvelopeProcessor div-by-zero — **DISMISSED**
-- [x] 11-04-PLAN.md — C4: BufferHelpers fade div-by-zero — **DISMISSED**
-- [x] 11-05-PLAN.md — C5: augment/diminish swap — **DISMISSED** (empirical via visualize)
-- [x] 11-06-PLAN.md — Aggregate verdicts, write 11-VERIFICATION.md, split FIX-07 in REQUIREMENTS.md
-
-### Phase 12: Stability
-**Goal**: Users who upgrade to v1.2 get an interpreter that errors cleanly on `init([])`, caches failed lazy expressions, runs the `test_custom_oscillator` / `test_while_loop` / `test_full_song` suites green, and behaves correctly wherever the audit spike confirmed a real bug (with user-visible semantic changes communicated via release notes and migration aliases).
-**Depends on**: Phase 11 (spike outcome determines FIX-07 scope; C5 confirmation determines whether migration comms are required)
-**Requirements**: FIX-05, FIX-06, FIX-07, TEST-01, TEST-02, TEST-03
+### Phase 19: Tuplets & Arbitrary Fractional Durations
+**Goal**: Lead capability — composers can write triplets, quintuplets, septuplets, nested tuplets, and arbitrary fractional durations like `C4/12`, with correct WAV + MIDI output
+**Depends on**: Phase 18 (rational arithmetic — binding pre-ordering #1)
+**Requirements**: TUP-01, TUP-02, TUP-03, TUP-04, TUP-05, TUP-06, TUP-07, TUP-08
 **Success Criteria** (what must be TRUE):
-  1. `init([])` raises an error matching `head([])` / `last([])` semantics, and `Thunk.Force()` on a failed expression re-throws the cached exception instead of silently returning null.
-  2. `tests/test_custom_oscillator.flow`, `tests/test_while_loop.flow`, and `tests/test_full_song.flow` execute to completion without errors (either via new `range(Int,Int)` + `break`/`continue` + `bpm`/`createStereoTrack`/`renderBars` implementations, or via documented test rewrites that still exercise the intended paths).
-  3. Every C1–C5 item the spike confirmed real ships with a numeric (not behavioral) regression test and its fix in a separate commit, preserving bisectability.
-  4. If C5 (`augment`/`diminish` swap) was confirmed real, the correct-semantics fix ships with release-notes BREAKING CHANGE entry, `augmentV1`/`diminishV1` transitional aliases, and updated `examples/*.flow` call sites — all in the same release.
-  5. The v1.1 soft-failure contract is preserved: validation errors inside musical-context blocks accumulate in `ErrorReporter` and execution continues, and explicit/implicit `return` from procs still works.
-**Plans**: 6 plans
-
-Plans:
-- [x] 12-01-PLAN.md — xUnit harness scaffold (flow-lang.Tests) + wrap-as-Theory migration of all 55 .flow scripts (completed 2026-04-19; 54/55 green, spike/c1 RED per D-11)
-- [x] 12-02-PLAN.md — FIX-05 init([]) raises InvalidOperationException matching head/last semantics + native unit tests (completed 2026-04-19; commit 6e5a960; 3/3 CollectionsTests green)
-- [x] 12-03-PLAN.md — FIX-06 Thunk uses Lazy<Value> with ExecutionAndPublication for failure caching + native unit tests (completed 2026-04-19; commit 557923a; 4/4 ThunkTests green; ExpressionEvaluator.Evaluate promoted to virtual for test-double enablement)
-- [x] 12-04-PLAN.md — FIX-07a ExecuteMusicalContext returns→breaks + spike/c1 RED→GREEN flip + soft-failure unit tests (completed 2026-04-19; commits 327aa3c + fd9d801; 6/6 ExecuteMusicalContextTests green; spike/c1 GREEN; AUDIT-VERIFIED C1 Confirmed→Fixed)
-- [x] 12-05-PLAN.md — if(Bool, Void, Void) wildcard overload + exportWav/writeWav auto-mkdir in shared ExportWavInternal (completed 2026-04-19; commits 9afbe7a + c09cd82; 68/68 suite green; test_full_song RED→GREEN; test_custom_oscillator Tests 1/2/3 RED→GREEN — Test 4 deferred to plan 12-06 via DEFER-01 for missing `range` stdlib)
-- [x] 12-06-PLAN.md — REQUIREMENTS.md closure + 12-VERIFICATION.md rollup with FIX-* commit hashes (completed 2026-04-19; commits c94c379 + b5a8702; FIX-05/06/07a Shipped, TEST-01/02 Closed as audit false positives, TEST-03 Shipped/Reframed; DEFER-01 `range` forward-referenced to future phase)
-
-
-### Phase 13: Nyquist Validation Backfill
-**Goal**: v1.1 phases 6–9 each carry a requirements-derived `VALIDATION.md` that would fail if the phase's feature were removed, closing the documentation-lag tech debt carried from v1.1 close.
-**Depends on**: Phase 12 (validation targets the post-fix behavior, not the pre-fix behavior)
-**Requirements**: TEST-04
-**Success Criteria** (what must be TRUE):
-  1. `.planning/phases/06-diagnostics-bug-fixes/VALIDATION.md`, `07-developer-experience/VALIDATION.md`, `08-audio-production/VALIDATION.md`, and `09-advanced-features/VALIDATION.md` each satisfy the Nyquist checklist with tests authored against the requirement doc first and the implementation second.
-  2. Phase 10 (`10-vocalization`) draft validation is either promoted to `nyquist_compliant: true` or carries an explicit written waiver describing what could not be validated and why.
-  3. At least one validation test per phase pins a specific observable value (error message text, buffer byte hash, numeric duration, etc.) rather than asserting "no exception thrown" or "buffer is non-null".
+  1. Composer can write `| {3:2 C4 D4 E4}q |` and three notes render summing to one quarter note (TUP-01)
+  2. Composer can write `{3 C4 D4 E4}q` shorthand and it is equivalent to `{3:2 C4 D4 E4}q` per music21 convention (TUP-02)
+  3. Composer can nest tuplets like `| {3:2 C4 {3:2 D4 E4 F4}q G4}h |` and inner durations multiply through both ratios correctly (TUP-03)
+  4. Composer can write `| C4/12 D4/12 E4/12 |` arbitrary-denominator fractional durations inside note streams; bar-fit validator accepts rational-fraction tuplet bars (TUP-04, TUP-05)
+  5. MIDI export auto-elevates TPQN to `LCM(480, tuplet_denoms)` capped at 9600; `{7:8}` exports at TPQN=3360, `{11:13}` raises a clear cap error (TUP-06)
+  6. `augment(tupletSeq)` doubles rational durations and `diminish(tupletSeq)` halves them; AUDIT-VERIFIED C5 marker re-validated against tuplet-aware sequences (TUP-07)
 **Plans**: 5 plans
+- [x] 19-01-PLAN.md — TupletElement AST + parser + compiler (TUP-01/02/03) — Shipped a7f94ef
+- [x] 19-02-PLAN.md — Per-note `/N` + `/X:Y[suffix]` (TUP-04 + TUP-08) — Shipped 9aae23c
+- [x] 19-03-PLAN.md — Bar-fit validator + charitable overflow (TUP-05) — Shipped 3679ab4
+- [x] 19-04-PLAN.md — MIDI TPQN auto-elevation (TUP-06) — Shipped dbc6f30
+- [x] 19-05-PLAN.md — TUP-07 augment/diminish + Phase 19 closure — Shipped e2cdbe5
 
-Plans:
-- [x] 13-01-PLAN.md — Phase 6 VALIDATION.md (QOL-01, FIX-01, FIX-02 incl. gain-nested, FIX-03) + VerboseFlag + SectionGainBareExpression Facts (completed 2026-04-20; commits ff901fa + 4cf0ccd + 39d53f3; 71/71 suite green; 06-VALIDATION.md at nyquist_compliant: true)
-- [x] 13-02-PLAN.md — Phase 7 VALIDATION.md (DX-01..04) + RepLAutoImport Fact + tightened sentinels for test_comments/test_math/test_writewav (completed 2026-04-20; commits fb1a1ae + ed64dec + 9d7575f; 72/72 suite green; 07-VALIDATION.md at nyquist_compliant: true; DX-02 Double format drift documented per Pitfall 5)
-- [x] 13-03-PLAN.md — Phase 8 VALIDATION.md (AUDIO-05/06/07) + Mix + SynthesizerFactory Unit Facts + tightened sentinels (completed 2026-04-20; commits ea1d95a + 511085f + b077491; 76/76 suite green; 08-VALIDATION.md at nyquist_compliant: true; AudioCore.Mix IReadOnlyList<Value> signature + SynthesizerFactory outer-namespace + stereo channel-count drift documented under two-pass strict)
-- [x] 13-04-PLAN.md — Phase 9 VALIDATION.md (AUDIO-08, QOL-02) + Tutorial Integration Fact + test_tempo_ramp sentinel (completed 2026-04-20; commits ade6fbd + 1a41ada + 1cb508d; 77/77 suite green; 09-VALIDATION.md at nyquist_compliant: true; zero Divergences — AUDIO-08 + QOL-02 both literally testable as drafted; tutorial.flow GREEN under HEAD so no Skip/deferral needed)
-- [x] 13-05-PLAN.md — Phase 10 VALIDATION.md promotion (VOC-01 88200 pin + unknown-vowel + VOC-02 round-trip + empty-command Facts) + TEST-04 closure (completed 2026-04-20; commits 331d059 + 81f348c + 21e773d; 81/81 suite green; 10-VALIDATION.md promoted to nyquist_compliant: true; 4 new Facts under flow-lang.Tests/Unit/Phase10/; VOC-02 empty-command assertion shifted from Assert.Equal to Assert.Contains per 2-arg ArgumentException ctor; syllable sample-count Pitfall 8 documented)
-
-### Phase 14: Composer DX Part 1
-**Goal**: Composers get three Tier-A building blocks that add no new keyword surface and sit on top of already-shipped infrastructure: bar-level sequence slicing, enharmonic note spellings (`Db`, `Eb`, `H`, …), and a verified end-to-end MIDI-velocity chain driven by `dynamics` / `crescendo` / `decrescendo` / `swell`.
-**Depends on**: Phase 12 (stability must land before new surface is added on top of the same files)
-**Requirements**: DX-05, DX-06, DX-08
+### Phase 20: Cheap DEFER Closures + Multi-letter Enharmonic Edges
+**Goal**: Three v1.2-deferred items land cleanly: range stdlib, slice negative-from-end indexing, and multi-letter enharmonic edges (DEFER-04 must precede DEFER-02/03 per binding pre-ordering #3)
+**Depends on**: Nothing (independent of Phase 18/19; runs in parallel candidate)
+**Requirements**: DEFER-01, DEFER-04, DEFER-05
 **Success Criteria** (what must be TRUE):
-  1. `slice(seq, start, end)` returns a bar-level sub-sequence with start inclusive and end exclusive, clamps out-of-range indices like `take`/`drop`, and the analogous `slice(Array[T], Int, Int)` overload works for arrays.
-  2. `Db4`, `Eb4`, `Gb4`, `Ab4`, `Bb4`, `Cb4`, `Fb4` parse as notes inside note-stream context (`| … |`), `H` is accepted as a `B` alias **only inside note streams**, and `Int H = 5;` / `proc H () { … }` / existing identifier uses continue to compile unchanged.
-  3. `enharmonic(Note) → Note` returns a pitch-equivalent spelling, round-trippable with existing `NoteType` code.
-  4. A `.flow` script that uses a `dynamics` context with `crescendo`/`decrescendo`/`swell` exports a MIDI file whose velocity bytes land in the 1–127 range with the expected gradient; a regression test asserts the velocity byte sequence.
-  5. A pre-landing grep of `examples/`, `tests/`, and stdlib `.flow` files for `Db`, `Eb`, `Fb`, `Cb`, `Bb`, `Gb`, `Ab`, `H`, `enharmonic` shows zero ordinary-code identifier collisions (or each collision is renamed before landing).
+  1. Composer can call `(range 0 5)` → `[0, 1, 2, 3, 4]` and `(range 0 10 2)` → `[0, 2, 4, 6, 8]`; negative step iterates backward (DEFER-01)
+  2. `enharmonic(E4)` → `Fb4`, `enharmonic(F4)` → `E#4`, `enharmonic(B4)` → `Cb5`, `enharmonic(C4)` → `B#3` round-trip correctly for every chromatic note (DEFER-04)
+  3. Composer can call `(slice [1, 2, 3, 4, 5] -3 5)` → `[3, 4, 5]` and `(slice [1, 2, 3, 4, 5] 0 -1)` → `[1, 2, 3, 4]` Python-style negative-from-end (DEFER-05)
+  4. v1.2 silent two-sided clamp behavior is replaced by negative-from-end semantics; existing positive-index call sites continue to work; collision grep over `tests/` empty for `slice(.*, .*, -.*)` patterns (DEFER-05)
 **Plans**: 4 plans
+- [x] 20-01-PLAN.md — DEFER-01 range(Int, Int[, Int]) stdlib registration + 8 RangeTests Facts + test_range.flow (shipped d0d17db)
+- [x] 20-02-PLAN.md — DEFER-04 multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#) + Phase14 NoKey_NaturalEdgeRespells migration + 24 EnharmonicEdgesTests Facts + test_enharmonic_edges.flow (shipped d835336)
+- [x] 20-03-PLAN.md — DEFER-05 slice negative-from-end Python normalization + 10 SliceNegativeTests Facts + test_slice_negative.flow (shipped edd20b1)
+- [x] 20-04-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION + 14-deferred-items DEFER-04/06 strikethrough + 12-deferred-items DEFER-01 strikethrough; FlowScriptData.cs:57 stale pin removal already absorbed in 20-01 d0d17db per Rule 3 deviation)
 
-Plans:
-- [x] 14-01-PLAN.md — DX-05 slice(Sequence + Array[T]) atomic with silent two-sided clamp (D-01/D-02)
-- [x] 14-02-PLAN.md — DX-06 reduced scope: flat-literal Parse/Format + SimpleLexer dispatch reorder + enharmonic() (H-alias deferred)
-- [x] 14-03-PLAN.md — DX-08 MIDI velocity regression via two-pass strict, DryWetMidi byte-array pin
-- [x] 14-04-PLAN.md — Phase 14 closure: REQUIREMENTS.md reframe + deferred-items.md + 14-VERIFICATION.md + nyquist promotion (completed 2026-04-20)
-
-### Phase 15: Composer DX Part 2
-**Goal**: Composers get humanized euclidean grooves with deterministic output and per-voice reverb-tail control via a new musical-context block — the two widest-surface DX features of the milestone, shipped after smaller-surface work has bedded in.
-**Depends on**: Phase 14 (DX-09 reuses the MIDI-velocity infrastructure verified in DX-08; DX-07 is the widest blast radius and ships last)
-**Requirements**: DX-07, DX-09
+### Phase 21: Pragma System + H-Alias
+**Goal**: File-scope `enable <pragma>;` infrastructure lands per Haskell precedent (D-02), unblocking H-as-B alias and (in later phases) microtonal tunings + scale linting
+**Depends on**: Phase 20 (DEFER-04 multi-letter enharmonics — H♯ resolves through B# = C natural; binding pre-ordering #3)
+**Requirements**: PRAG-01, PRAG-02, DEFER-02/03
 **Success Criteria** (what must be TRUE):
-  1. `euclidean(hits, steps, note, swing)` applies swing as a velocity accent on on-beats (no timing-offset field change); `euclidean(hits, steps, note, swing, humanize, seed)` perturbs velocity within `±humanize` using a pinned PRNG seeded by the required `seed` parameter.
-  2. Rendering the same `euclidean(…, humanize, seed)` call twice produces byte-identical MIDI and WAV output — the "code is the score" contract holds across runs and across .NET patch versions.
-  3. A `reverbTime <seconds> { … }` musical-context block sets per-voice RT60 that propagates through `Audio/DSP/Reverb.cs` via the RT60→feedback mapping, mirrors the `gain` / `pan` / `swing` context pattern, and rejects negative or zero values with a clear error.
-  4. Nested `reverbTime` blocks (inside `tempo` / `key` / other contexts) resolve correctly through `ExecutionContext.GetMusicalContext`, with the early-break predicate updated to account for the 8th scoped property.
-  5. A pre-landing grep of `examples/`, `tests/`, and stdlib `.flow` files for `reverbTime` shows zero identifier collisions (or each collision is renamed before landing).
-**Plans**: 7 plans across 4 waves (planned 2026-04-20)
-  - [ ] 15-01-PLAN.md — Wave 0 scaffolding: Phase15 test subtree + MidiReadHelpers promotion (closes DEFER-05) + tests/output/.gitignore + 3 placeholder .flow scripts wired to FlowScriptData
-  - [ ] 15-02-PLAN.md — DX-07 grammar + runtime: MusicalContextType.ReverbTime, lexer keyword, Parser case (parse-time negative reject), Interpreter case (silent clamp at 30s, 0.0 dry sentinel), GetMusicalContext 8-clause early-break update, ReverbTimeContextTests (F-01, F-03, F-04, F-05, F-22, F-23 + Parse_Zero_ProducesDry)
-  - [ ] 15-03-PLAN.md — DX-07 audio path: ProcessChannel refactor + new Reverb.Apply(rt60) Schroeder overload (feedback cap 0.99) + SongRenderer per-voice reverb with exact-0 short-circuit + test_reverb_time.flow body + ReverbApplyRt60Tests + ReverbTimeRenderTests (F-02, F-06, F-07, F-08)
-  - [ ] 15-04-PLAN.md — DX-09 euclidean overloads: 4-arg swing-only + 6-arg swing/humanize/seed via RegisterContextDependentFunctions (base velocity = MusicalContext.Velocity ?? 0.63); std.flow declarations; steps>1024 guard; EuclideanSwingTests + EuclideanHumanizeTests (F-09..F-18, F-21 + SameSeed_ProducesIdenticalVelocities)
-  - [ ] 15-05-PLAN.md — DX-09 byte-identical MIDI + WAV regression via two-pass strict empirical byte capture (F-19, F-20)
-  - [ ] 15-06-PLAN.md — DX-09 end-to-end .flow scripts replace Plan 01 placeholders (test_euclidean_swing.flow + test_euclidean_humanize.flow)
-  - [ ] 15-07-PLAN.md — Phase closure: ROADMAP criterion #3 reframe per D-02 + REQUIREMENTS Shipped markers + F-24 collision grep transcript + 15-VERIFICATION.md + 15-VALIDATION.md promotion to nyquist_compliant: true + 15-SUMMARY.md + STATE advance
+  1. Composer can declare `enable <featureName>;` at top of `.flow` files only; pragmas after the first non-pragma statement raise a parse error; lexer pre-scan extracts pragmas before main lexing (PRAG-01)
+  2. `PragmaRegistry` is a closed set — unknown pragma names raise a clear error citing the known list (PRAG-01)
+  3. `use` imports do NOT propagate pragmas — importing a module that declares `enable hAsB;` does NOT enable `hAsB` in the importing file (PRAG-02)
+  4. With `enable hAsB;` declared, `H4q` parses identically to `B4q` inside note streams; outside note streams `Int H = 5;` continues to compile as an identifier (DEFER-02/03)
+**Plans**: 3 plans
+- [ ] 21-01-PLAN.md — Pragma plumbing (PRAG-01 + PRAG-02): PragmaScanner + PragmaSet + PragmaRegistry + Parser/SimpleLexer/Program/FlowEngine/ModuleLoader integration + 15+ unit/integration Facts
+- [ ] 21-02-PLAN.md — H-alias substitution (DEFER-02/03): Token.OriginalText (D-15) + SimpleLexer.TryParseNote H→B gated on enable hAsB; (D-13/D-14) + 9 HAliasFacts + tightened PragmaIsolationFacts + test_h_alias.flow + test_h_identifier.flow
+- [ ] 21-03-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION + 14-deferred-items DEFER-02/DEFER-03 strikethrough)
+**UI hint**: yes
 
-### Phase 16: Tutorial Refresh
-**Goal**: A new user running `examples/tutorial.flow` against v1.2 can experience every v1.1 + v1.2 composer-visible feature end-to-end, producing audible WAV and MIDI output, so features added since v1.0 stop atrophying unused.
-**Depends on**: Phase 15 (tutorial documents shipped reality; writing it before features land means rewriting it when features shift)
-**Requirements**: QOL-03
+### Phase 22: Tier B/C Composer DX Bundle
+**Goal**: Six independently shippable Tier B/C composer DX features land — arpeggio parameters, chord voicings, delay sync, snap-to-grid quantize, legato/portamento, and varispeed WAV pitch-shift
+**Depends on**: Phase 18 (DX-12 delay sync uses `Fraction` for tempo math; DX-13 quantize uses Fraction grid resolution)
+**Requirements**: DX-10, DX-11, DX-12, DX-13, DX-14, DX-15
 **Success Criteria** (what must be TRUE):
-  1. `examples/tutorial.flow` demonstrates `//` line comments, `writeWav`, `mix`, per-section `gain`, the `strings` / `organ` / `bell` synth presets, `tempoRamp`, `sing` / `tts`, `slice`, enharmonic helpers, `reverbTime`, MIDI velocity export via dynamics, and `euclidean` swing/humanize — at least one runnable snippet per feature.
-  2. Running `dotnet run --project flow-interpreter examples/tutorial.flow` produces a non-empty WAV file, a non-empty MIDI file, and exits with status 0.
-  3. Each tutorial snippet is traceable to a requirement — every v1.1 Validated requirement and every v1.2 Tier A feature is referenced in at least one tutorial comment.
-  4. If C5 shipped as a breaking change in Phase 12, the tutorial's `augment`/`diminish` usages reflect the new (correct) semantics and link back to the migration notes.
+  1. Composer can call `(arpeggio Cmaj7 q "up" "linear")` and get the expected 4-note ascending arpeggio at quarter-note rate; direction (`up`/`down`/`updown`/`downup`/`random`) and pattern (`linear`/`chord-tone`/`scale-tone`) selectable (DX-10)
+  2. Composer can call `inversion(Cmaj, 1)` → `[E4, G4, C5]` and `voicing(Cmaj7, "drop2")` lowers the 2nd-from-top note by an octave (DX-11)
+  3. `tempo 120 { ... delay(buf, e, 0.5, 0.4) ... }` produces an eighth-note-synced delay (250ms at 120 BPM); existing ms-rate overload unchanged (DX-12)
+  4. Pre-humanized euclidean output snaps cleanly to a 1/16 grid via `quantize(seq, e, 1.0, 0.0)` at strength=1; swing parameter -1..1 applied (DX-13)
+  5. MIDI export of `portamento(seq, 100ms)` includes CC65=127 + CC5 events per Sweetwater MIDI spec; `legato(seq, overlap)` extends note durations by overlap factor (DX-14)
+  6. `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`; default `loadWav(path)` unchanged (DX-15)
 **Plans**: TBD
 
-### Phase 17: Flow Language Server
-**Goal**: Flow users editing `.flow` files in VSCode get syntax highlighting, live diagnostics from the interpreter's parser/type-checker, and intelligent completions/hover suggestions for built-in functions, musical types, chord symbols, and imported stdlib modules — delivered as an LSP server (reusing flow-lang) and a VSCode extension that ships the server binary.
-**Depends on**: Phase 12 (stable interpreter required; parser/evaluator surface must not churn while the LSP consumes it)
-**Requirements**: D-01..D-15 (locked decisions in 17-CONTEXT.md substitute for REQ-IDs per RESEARCH §"Phase Requirements")
+### Phase 23: Microtonal Tuning (Wedge)
+**Goal**: Named-tunings wedge ships per D-03 — `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` change `Note → frequency` lookup; transforms remain pitch-class agnostic (binding pre-ordering #4 — own phase, highest blast radius)
+**Depends on**: Phase 21 (microtonal activates via the Phase 21 pragma system)
+**Requirements**: MICR-01, MICR-02, MICR-03
 **Success Criteria** (what must be TRUE):
-  1. `flow-lsp/` project builds under net10.0, references only `flow-lang` (no audio deps), boots OmniSharp over stdio and accepts initialize+shutdown (Wave 0 gate — D-01, D-02).
-  2. Every `ErrorReporter` error surfaces as an LSP Diagnostic with correct severity + 0-based range; empty diagnostic arrays still publish to clear stale markers (D-06).
-  3. Semantic tokens emit valid 5-tuple delta-encoded LSP output mapping every SimpleLexer TokenType that `FlowSyntaxHighlighter` colored; standard VSCode scopes only, no invented `*.flow` sub-scopes (D-04, D-05).
-  4. Completion delivers built-ins + stdlib procs + user symbols + keywords + 5 snippet templates in default context; `use "@"` context returns only the 6 stdlib module paths; `| ... |` note-stream context returns roman numerals (in key block) or note letters/durations/rests (otherwise); never proc names inside streams (D-07, D-11).
-  5. Hover shows signature + `BuiltInDocs` summary for built-ins; user symbol kind for locals; stdlib-proc signature for imports (D-08, D-12).
-  6. Go-to-definition jumps to declaration for user procs/vars and to stdlib `.flow` file for imports; built-ins return null (D-09).
-  7. Signature help reports the correct active parameter by comma-count for built-ins and user procs (D-10).
-  8. Per-platform self-contained VSIXs (linux-x64, win32-x64, darwin-x64, darwin-arm64) build via CI matrix; each VSIX contains the platform-native `flow-lsp` binary AND the 6 stdlib `.flow` files (Pitfall 6 gate) (D-14).
-  9. Dual-marketplace publish (VSCode Marketplace + OpenVSX) via tag push; OpenVSX namespace claimed before first publish (Pitfall 8) (D-15).
-  10. Non-VSCode editor users have `docs/editor-setup/nvim-lspconfig.lua` + `helix-languages.toml` starter snippets + README with build-from-source instructions (D-13 second clause).
-**Plans**: 8 plans
+  1. With `enable justIntonation;` declared, `play(C4 E4)` produces frequency ratio 5:4 (1.25) instead of 12-TET `~1.2599`; `pythagorean` and `equalTemperament` named tunings also ship (MICR-01)
+  2. `transpose(seq, 5)` produces the same MIDI pitch numbers under every tuning; only rendered frequencies differ (MICR-02)
+  3. Tuning system applies at render-time only — existing `transpose`, `invert`, `retrograde`, `augment`, `diminish` transforms remain pitch-class-based and tuning-agnostic (MICR-02)
+  4. Unknown tuning names raise a clear error pointing at the documented v1.4 Scala-loader expansion (MICR-03)
+**Plans**: TBD
 
-Plans:
-- [x] 17-01-PLAN.md — flow-lsp scaffold + ParseSession + BuiltInDocs + OmniSharp boot smoke (Wave 1) — completed 2026-04-20 (commits 8aeba9e, fadd371)
-- [ ] 17-02-PLAN.md — VSCode extension scaffold + TextMate grammar + snippets + grammar fixtures (Wave 1)
-- [x] 17-03-PLAN.md — DocumentManager + TextDocumentSyncHandler + DiagnosticsPublisher + LspMappings (Wave 2) — completed 2026-04-20 (commits 86a4364, 04e8cda)
-- [x] 17-04-PLAN.md — SemanticTokensHandler: SimpleLexer to LSP semantic tokens (Wave 3) — completed 2026-04-20 (commit 5d010d7)
-- [x] 17-05-PLAN.md — Symbol indices + BuiltInDocs population + CompletionHandler (Wave 4) — completed 2026-04-20 (commits 8bc29a8, 34147cf)
-- [x] 17-06-PLAN.md — HoverHandler + SignatureHelpHandler + DefinitionHandler + NoteStreamContext (Wave 5) — completed 2026-04-20 (commits d6dcc89, c8a4678)
-- [x] 17-07-PLAN.md — LSP smoke script + per-platform CI matrix + TM grammar snapshots (Wave 6) — completed 2026-04-21 (commits 53cea82, 2f90408, a831035)
-- [x] 17-08-PLAN.md — Non-VSCode editor docs + Marketplace/OpenVSX setup + manual smoke + phase closure (Wave 7) — completed 2026-04-20 (commits ec8e18f, 888f432, 9d33c90, 7026982; Task 3 deferred to HUMAN-UAT per user direction — 3 pending tests in 17-HUMAN-UAT.md, rows 4-5 deferred to first release tag)
+### Phase 24: Scale Linting (flow-lsp)
+**Goal**: Opt-in `enable scaleLint;` pragma activates flow-lsp scale linting that surfaces non-diatonic notes inside `key { ... }` contexts as Information-severity squiggles — zero flow-lang touch
+**Depends on**: Phase 21 (LINT-01 activated via the pragma system; flow-lsp only — can run parallel to Phase 23)
+**Requirements**: LINT-01, LINT-02, LINT-03
+**Success Criteria** (what must be TRUE):
+  1. With `enable scaleLint;` declared, editing `key Cmajor { | C4 D4 E4 F#4 G4 | }` shows an Information-severity squiggle on `F#4` (LINT-01)
+  2. Without `enable scaleLint;`, a key-block with non-diatonic notes produces zero scale-lint diagnostics — opt-in only, never default-on (LINT-02)
+  3. Scale linting respects nested key contexts — innermost active key wins for diagnostic computation (`key Cmajor { key Aminor { | F#4 | } }` does NOT flag F#4 against C major) (LINT-03)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 25: Gaussian Humanize (LAST PRNG phase)
+**Goal**: `humanizeGaussian()` ships as a separate function (D-04) so existing uniform `humanize()` keeps the v1.2 byte-identical determinism contract for tutorial.flow + showcase.flow (binding pre-ordering #5 — must be the LAST PRNG-touching phase)
+**Depends on**: Phases 18-24 (must be the last PRNG-touching phase per Pitfall 6 mitigation)
+**Requirements**: DEFER-06
+**Success Criteria** (what must be TRUE):
+  1. Composer can call `humanizeGaussian(seq, 0.1, 42)` and get Gaussian-distributed velocity perturbation via Box-Muller transform; same seed produces deterministic velocity bytes pinned by Fact (DEFER-06)
+  2. Existing `humanize(seq, 0.1, 42)` produces identical bytes to v1.2 — uniform path UNCHANGED, byte-identical determinism contract preserved across two consecutive runs (DEFER-06)
+  3. Two consecutive runs of `showcase.flow` (now including a Gaussian-humanize call site) produce cmp-clean WAV + MIDI output (DEFER-06)
+**Plans**: TBD
+
+### Phase 26: Dictionary Support
+**Goal**: Composers can store and retrieve key-value data via S-expression style `(dict "k" v ...)` constructor and `(get d "k")` / `(set d "k" v)` operations — adds a new `Dict[T]` type to the type system without colliding with Phase 19 tuplet brace syntax
+**Depends on**: Nothing (independent of Phases 18-25; could run earlier but slotted before tutorial so Phase 27 demos dicts)
+**Requirements**: DICT-01, DICT-02, DICT-03
+**Success Criteria** (what must be TRUE):
+  1. Composer can call `(dict "kick" C2 "snare" D4 "hat" F#5)` and get back a `Dict[Note]` value; `(dict)` returns an empty dict (DICT-01)
+  2. Composer can call `(get d "kick")` to retrieve a value; missing keys return `Nothing` (per CLAUDE.md charitable-interpretation memory) or default value via `(getOr d "kick" defaultValue)` (DICT-02)
+  3. Composer can call `(set d "kick" newValue)` to return a new dict with the key updated; `(remove d "kick")` returns a dict without that key; immutable update semantics matching Flow's record-style data model (DICT-02)
+  4. Composer can introspect via `(keys d)` → `Array[String]`, `(values d)` → `Array[T]`, `(has d "k")` → `Bool`, `(size d)` → `Int` (DICT-03)
+  5. Functional iteration via `(each d (fn String key, T value => ...))` and `(map d (fn String key, T value => ...))` for transforming values (DICT-03)
+  6. Byte-identical determinism contract preserved — dict iteration order is insertion order, NOT hash order; existing tutorial.flow + showcase.flow remain cmp-clean
+**Plans**: TBD
+
+### Phase 27: Tutorial + Showcase Refresh
+**Goal**: `examples/tutorial.flow` and `examples/showcase.flow` demonstrate every v1.3 feature end-to-end with byte-identical determinism; v1.1 + v1.2 chapters preserved (last per v1.2 precedent — Phase 16 was the v1.2 tutorial-refresh closer)
+**Depends on**: Phases 18-26 (every v1.3 feature must be live before tutorial can demonstrate it, including Phase 26 dict support)
+**Requirements**: QOL-04
+**Success Criteria** (what must be TRUE):
+  1. `examples/tutorial.flow` demonstrates tuplets `{3:2 ...}q`, fractional `C4/12`, range, multi-letter enharmonics, negative slice, `enable hAsB;` pragma, arpeggio/voicings/delay-sync/quantize/legato/portamento/varispeed-loadWav, named-tuning microtonal, scale-lint pragma, `humanizeGaussian`, **dict** `(dict "k" v)` + `(get d "k")` (QOL-04)
+  2. Both scripts run to completion (exit 0) producing non-empty WAV + MIDI output to `examples/output/` (QOL-04)
+  3. Byte-identical determinism contract holds across two consecutive runs (cmp-clean) for both `tutorial.flow` and `showcase.flow` (QOL-04)
+  4. Existing v1.1 + v1.2 chapters preserved — no regressions to prior tutorial coverage (QOL-04)
+**Plans**: TBD
 
 ## Progress
 
@@ -243,9 +219,19 @@ Plans:
 | 9. Advanced Features | v1.1 | 2/2 | Complete | 2026-04-04 |
 | 10. Vocalization | v1.1 | 2/2 | Complete | 2026-04-04 |
 | 11. Audit Spike | v1.2 | 6/6 | Complete | 2026-04-19 |
-| 12. Stability | v1.2 | 6/6 | Complete    | 2026-04-19 |
-| 13. Nyquist Validation Backfill | v1.2 | 5/5 | Complete    | 2026-04-20 |
-| 14. Composer DX Part 1 | v1.2 | 4/4 | Complete    | 2026-04-20 |
-| 15. Composer DX Part 2 | v1.2 | 0/? | Not started | - |
-| 16. Tutorial Refresh | v1.2 | 0/? | Not started | - |
+| 12. Stability | v1.2 | 6/6 | Complete | 2026-04-19 |
+| 13. Nyquist Validation Backfill | v1.2 | 5/5 | Complete | 2026-04-20 |
+| 14. Composer DX Part 1 | v1.2 | 4/4 | Complete | 2026-04-20 |
+| 15. Composer DX Part 2 | v1.2 | 7/7 | Complete | 2026-04-25 |
+| 16. Tutorial Refresh | v1.2 | 5/5 | Complete | 2026-04-25 |
 | 17. Flow Language Server | v1.2 | 8/8 | Complete (HUMAN-UAT deferred) | 2026-04-20 |
+| 18. Foundation — Rational Duration Arithmetic | v1.3 | 0/2 | Not started | - |
+| 19. Tuplets & Arbitrary Fractional Durations | v1.3 | 5/5 | Complete | 2026-04-26 |
+| 20. Cheap DEFER Closures + Multi-letter Enharmonic Edges | v1.3 | 4/4 | Complete | 2026-04-26 |
+| 21. Pragma System + H-Alias | v1.3 | 0/N | Not started | - |
+| 22. Tier B/C Composer DX Bundle | v1.3 | 0/N | Not started | - |
+| 23. Microtonal Tuning (Wedge) | v1.3 | 0/N | Not started | - |
+| 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
+| 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |
+| 26. Dictionary Support | v1.3 | 0/N | Not started | - |
+| 27. Tutorial + Showcase Refresh | v1.3 | 0/N | Not started | - |

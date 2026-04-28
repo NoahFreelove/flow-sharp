@@ -1,0 +1,26 @@
+use "@std"
+
+Note: DEFER-04 multi-letter enharmonic edges (Phase 20 plan 20-02)
+
+Note: E ↔ Fb (same octave) — E4 MIDI 64 → Fb4 MIDI 64
+(print (str (enharmonic E4)))
+Note: F ↔ E# (same octave) — F4 MIDI 65 → E#4 MIDI 65
+(print (str (enharmonic F4)))
+Note: B ↔ Cb (octave +1) — B4 MIDI 71 → Cb5 MIDI 71
+(print (str (enharmonic B4)))
+Note: C ↔ B# (octave -1) — C4 MIDI 60 → B#3 MIDI 60
+(print (str (enharmonic C4)))
+
+Note: D/G/A naturals unchanged (no edge respelling per D-USER-C)
+(print (str (enharmonic D4)))
+(print (str (enharmonic G4)))
+(print (str (enharmonic A4)))
+(print "DGA naturals unchanged: ok")
+
+Note: in-key diatonic preservation — Bbmajor scale: Bb C D Eb F G A.
+Note: E is chromatic in Bbmajor → falls through to no-key edge → Fb4 / "F4-"
+key Bbmajor {
+    (print (str (enharmonic E4)))
+}
+
+(print "test_enharmonic_edges: PASSED")

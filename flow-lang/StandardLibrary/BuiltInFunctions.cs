@@ -448,6 +448,14 @@ public static class BuiltInFunctions
         var dropSignature = new FunctionSignature("drop", [new ArrayType(VoidType.Instance), IntType.Instance]);
         registry.Register("drop", dropSignature, Collections.Drop);
 
+        // DEFER-01 (Phase 20 plan 20-01): range(Int, Int) + range(Int, Int, Int) -> Array[Int].
+        // Standard Pythonic semantics. Two arities registered explicitly (overload resolver disambiguates by exact arity match per 20-RESEARCH Pitfall 3).
+        var range2Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance]);
+        registry.Register("range", range2Signature, Collections.Range);
+
+        var range3Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance, IntType.Instance]);
+        registry.Register("range", range3Signature, Collections.Range);
+
         // DX-05 (Phase 14 plan 14-01): slice(Array[T], Int, Int) + slice(Sequence, Int, Int).
         // Silent two-sided clamping per CONTEXT D-01. Both overloads ship atomically per D-02.
         // Overload resolver disambiguates by arg 0 type (Array vs Sequence).

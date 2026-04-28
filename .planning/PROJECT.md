@@ -10,20 +10,48 @@ Users can write musical ideas as code and hear them immediately — the language
 
 ## Current State
 
-**Shipped:** v1.1 Polish & Foundations (2026-04-18)
+**Shipped:** v1.2 Stability & Composer DX (2026-04-26)
 
-**Active:** v1.2 Stability & Composer DX (started 2026-04-18)
+**In progress:** v1.3 Composer DX Tier B/C — Tuplets, DEFER closures, Tier B/C bundle (started 2026-04-26)
 
-## Current Milestone: v1.2 Stability & Composer DX
+## Current Milestone: v1.3 Composer DX Tier B/C
 
-**Goal:** Fix the 7 critical bugs surfaced by the 2026-04-18 audit, unblock the failing test suite, then ship the Tier A composer DX bundle and refresh the tutorial so v1.1 + v1.2 capabilities are discoverable.
+**Goal:** Close every DEFER-01..06 item carried from v1.2 and ship the Tier B/C composer DX bundle, with tuplet + arbitrary-duration note syntax as the lead capability.
 
 **Target features:**
-- Critical bug fixes (C1–C7 from `CODEBASE-AUDIT-2026-04-18.md`)
-- Test unblocking (`range(Int, Int)`, `break`/`continue`, `bpm`/`createStereoTrack`/`renderBars`)
-- Retroactive Nyquist validation for v1.1 phases 6–9
-- Tier A DX bundle (sequence slicing, enharmonic helpers, `reverbTime` context, MIDI velocity from dynamics, euclidean swing/humanize)
-- Tutorial refresh demonstrating v1.1 + v1.2 features
+
+NEW lead capability:
+- Tuplets & arbitrary fractional note durations (3:2, 5:4, 7:8 brackets + `C4/12` etc.)
+
+DEFER closures from v1.2:
+- DEFER-01: `range(Int, Int) → Array[Int]` stdlib
+- DEFER-02/03: `H` as `B` alias inside note streams via pragma system
+- DEFER-04: Multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
+- DEFER-05: Slice negative-from-end indexing
+- DEFER-06: Gaussian humanize distribution
+
+Tier B/C composer DX:
+- Arpeggio parameters (rate, direction, pattern)
+- Chord inversions/voicings
+- Delay sync to note values (vs ms)
+- Microtonal ratios (just intonation, custom temperaments)
+- Scale linting (warn on out-of-key notes)
+- Legato/portamento articulations
+- Snap-to-grid quantize
+- WAV pitch-shift on load
+
+<details>
+<summary>v1.2 Stability & Composer DX (shipped 2026-04-26)</summary>
+
+Delivered: stable interpreter (init/Thunk/musical-context body fixes), Tier A + Tier B composer DX (slice, flat literals + enharmonic, MIDI velocity preservation end-to-end, reverbTime context block, euclidean swing/humanize with byte-identical output), retroactive Nyquist validation for v1.1 phases, tutorial + showcase refresh exercising every v1.1 + v1.2 feature, Flow Language Server + VSCode extension (per-platform self-contained VSIX with bundled stdlib).
+
+- 18 of 18 requirements Complete (5 SPIKE + 13 fix/test/DX/QOL)
+- 41 plans across Phases 11–17
+- 4 deferred items at close (1 debug, 1 quick task, 3 Phase 17 HUMAN-UAT, 1 Phase 04 verification gap) — recorded in STATE.md
+- 6 forward-deferred DX items (DEFER-01..06)
+- See: `.planning/MILESTONES.md` and `.planning/milestones/v1.2-*.md`
+
+</details>
 
 <details>
 <summary>v1.1 Polish & Foundations (shipped 2026-04-18)</summary>
@@ -92,13 +120,23 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - ✓ Flat-letter note literals (`Db4`, `Eb4`, `Gb4`, `Ab4`, `Bb4`, `Cb4`, `Fb4`) + `enharmonic(Note) → Note` — v1.2 Phase 14 (DX-06, H-alias deferred)
 - ✓ MIDI velocity regression for `dynamics`/`crescendo`/`decrescendo`/`swell` (byte-pinned gradient) — v1.2 Phase 14 (DX-08)
 - ✓ Language Server + VSCode extension (syntax highlighting, live diagnostics, completion, hover, signature help, go-to-def, note-stream-aware roman-numeral completion) — v1.2 Phase 17 (D-01..D-15; rows 4-5 of manual smoke deferred to first release tag)
+- ✓ Tutorial + showcase refresh demonstrating v1.1 + v1.2 features end-to-end (`examples/tutorial.flow` 348→635 lines, `examples/showcase.flow` rewritten as ambient mood piece, paired WAV+MIDI export to `examples/output/`) — v1.2 Phase 16 (QOL-03)
 
 ### Active
 
-**v1.2 Stability & Composer DX (in progress):** see `.planning/REQUIREMENTS.md` for REQ-IDs.
+**v1.2 shipped 2026-04-26.** Active requirements list will be repopulated by `/gsd-new-milestone` (v1.3).
 
 **Deferred candidates (post-v1.2):**
-- Extended audio formats (FLAC, OGG) — see v2 Requirements in archive
+- Triplet/tuplet syntax + arbitrary fractional note durations (conversation trigger 2026-04-26)
+- DEFER-01: `range(Int, Int) → Array[Int]` stdlib registration
+- DEFER-02/03: `H` note-stream-only `B` alias via pragma system
+- DEFER-04: Multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
+- DEFER-05: Slice negative-from-end indexing
+- DEFER-06: Gaussian humanize distribution
+- Tier B/C composer DX (arpeggio params, chord inversions, delay sync to note values, microtonal ratios, scale linting, legato/portamento, snap-to-grid)
+- Audit §2 hardening (overload ambiguity, bandpass Q unbounded, stereo voices played as mono, ChordParser sharp formatting, scale database brittleness, OverloadResolver top-2 tie check)
+- Pidgin parser combinator dependency removal (referenced but unused)
+- Extended audio formats (FLAC, OGG)
 - Per-voice effects chains
 - Real-time MIDI output to external devices
 - Type inference for `var` declarations
@@ -120,11 +158,13 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - Parser is hand-written recursive descent (not generated)
 - As of v1.1 close (2026-04-18): 10 shipped phases, full audio pipeline from composition → WAV export → playback, MIDI round-trip, vocal synthesis, and live-coding hot reload
 - v1.1 close identified and fixed a section + nested-context + bare-expression composition bug (commit 2156690); `--verbose` diagnostics available via the CLI for future debugging sessions
-- Carried tech debt: tutorial does not yet showcase v1.1 features; phases 6–9 lack individual VERIFICATION.md files; Nyquist validation incomplete across v1.1 phases
+- v1.2 close (2026-04-26): 41 plans across Phases 11–17 shipped — interpreter stability, Tier A + Tier B composer DX, retroactive Nyquist validation for v1.1 phases, tutorial+showcase exercising every v1.1 + v1.2 feature with byte-identical determinism, and Flow Language Server + VSCode extension
+- Codebase at v1.2 close: ~83K LOC C# + 312 .flow files, 287/287 tests green
+- Open at v1.2 close: 4 deferred items (1 debug session, 1 quick task, 3 Phase 17 HUMAN-UAT rows, 1 Phase 04 verification gap) — recorded in STATE.md Deferred Items
 
 ## Constraints
 
-- **Runtime**: .NET 9 — all code must target net9.0
+- **Runtime**: .NET 10 — all code must target net10.0
 - **Platform**: Linux primary (PulseAudio dependency), but IAudioBackend abstraction exists for portability
 - **Dependencies**: Minimal — only Pidgin parser combinator (referenced but not used for main parser)
 - **Performance**: Real-time audio playback requires efficient buffer operations; no GC pressure in hot paths
@@ -149,6 +189,15 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 | Bar-midpoint BPM interpolation for tempo ramps | Single-bar sequences get averaged BPM, avoids edge cases | ✓ Good (v1.1) |
 | Parallel bandpass formant synthesis | Uses Csound tenor tables; recognizable vowel output | ✓ Good (v1.1) |
 | External process + 30s timeout for TTS | Keeps interpreter resilient when engine missing | ✓ Good (v1.1) |
+| Audit Spike isolated as own phase | Researcher disagreement on C1–C5 — pure investigation before any production code change | ✓ Good (v1.2) |
+| `Thunk` → `Lazy<Value>` with ExecutionAndPublication | Single BCL primitive satisfies failure-cache + thread safety | ✓ Good (v1.2) |
+| Charitable interpretation as load-bearing | `reverbTime 0` is dry sentinel, not error; 4 criterion-moot/reframe events across milestone | ✓ Good (v1.2) |
+| Two-pass strict authorship | Pass 1 from REQUIREMENTS, Pass 2 reality check; format/signature drift caught pre-commit | ✓ Good (v1.2) |
+| Schroeder closed-form `feedback = 10^(-3·avgDelay/RT60)` for reverbTime | Maps user-facing seconds to feedback coefficient with no parameter sweep | ✓ Good (v1.2) |
+| HUMAN-UAT for non-blocking checkpoints | Phase 17 manual-smoke rows 1-3 deferred without faking pass; rows 4-5 explicitly deferred to first release tag | ✓ Good (v1.2) |
+| Determinism contract end-to-end | Synth white-noise + TPDF dither RNGs reseeded at renderSong/writeWav boundaries; byte-identical WAV+MIDI two consecutive runs | ✓ Good (v1.2) |
+| LSP project references flow-lang directly | `flow-lsp` reuses lexer/parser/error reporter; no shadow language model | ✓ Good (v1.2) |
+| Per-platform self-contained VSIX with bundled stdlib | Avoids server-locator complexity; users get one .vsix per platform | ✓ Good (v1.2) |
 
 ## Evolution
 
@@ -168,4 +217,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-20 — Phase 14 complete (DX-05 slice, DX-06 flat literals + enharmonic, DX-08 MIDI velocity regression); H-alias deferred to future pragma phase*
+*Last updated: 2026-04-26 after v1.2 milestone close*

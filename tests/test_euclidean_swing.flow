@@ -1,6 +1,24 @@
 use "@std"
 use "@audio"
 
-// Phase 15 DX-09 sanity — placeholder; Plan 06 replaces the body with real euclidean swing call.
-// WAVE-0 PLACEHOLDER — REWRITTEN BY PLAN 06.
-(print "euclidean swing: PASSED")
+// Phase 15 DX-09 — 4-arg euclidean overload (swing as velocity accent).
+// Positive swing accents on-beats; negative swing accents off-beats (D-08).
+tempo 120 {
+    timesig 4/4 {
+        // Positive swing: 3 hits over 8 steps, on-beats get +0.3 velocity.
+        Sequence pos = (euclidean 3 8 C4 0.3)
+        section sp { pos }
+        Song songPos = [sp]
+        Buffer bufPos = (renderSong songPos "piano")
+        (writeWav "tests/output/phase15_euclidean_swing_pos.wav" bufPos)
+
+        // Negative swing: off-beats get +0.3 velocity instead (anti-accent).
+        Sequence neg = (euclidean 3 8 C4 (sub 0.0 0.3))
+        section sn { neg }
+        Song songNeg = [sn]
+        Buffer bufNeg = (renderSong songNeg "piano")
+        (writeWav "tests/output/phase15_euclidean_swing_neg.wav" bufNeg)
+
+        (print "euclidean swing: PASSED")
+    }
+}

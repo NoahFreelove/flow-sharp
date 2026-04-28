@@ -517,7 +517,10 @@ public class ExpressionEvaluator
     private Value EvaluateNoteStream(NoteStreamExpression noteStream)
     {
         var context = _context.GetMusicalContext();
-        var compiler = new NoteStreamCompiler();
+        // TUP-05: thread the engine's ErrorReporter so ValidateBarFit can emit
+        // Info-severity bar-overflow diagnostics. Backward-compatible defaulted-parameter
+        // pattern — Plan 19-01/19-02 unit Facts continue using the parameterless ctor.
+        var compiler = new NoteStreamCompiler(_errorReporter);
         var sequence = compiler.Compile(noteStream, context, _context);
         return Value.Sequence(sequence);
     }

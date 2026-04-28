@@ -8,7 +8,21 @@ namespace FlowLang.StandardLibrary.Audio;
 /// </summary>
 public static class FileIO
 {
-    private static readonly Random Random = new Random();
+    // TPDF dither RNG. Reseeded at the start of each export with a fixed seed
+    // for cross-export determinism (Phase 15 Plan 05, ROADMAP criterion #2).
+    // Pre-fix: time-based unseeded `new Random()` produced different LSB-level
+    // dither bytes on every export — same audio quality, but raw WAV bytes
+    // never matched between exports.
+    //
+    // Within a single export the RNG advances normally so dither still
+    // decorrelates per sample (the only property TPDF dither requires); across
+    // exports the bytes now reproduce. Plan 15-03 documented the pre-fix
+    // behavior as the reason Facts F-02/F-07/F-08 used trailing-RMS and
+    // CountDivergentPcmSamples observables instead of raw byte comparison;
+    // those observables remain valid but Plan 15-05's byte-identical WAV
+    // Fact requires this fix.
+    private const int DitherSeed = 0xD17E2;
+    private static Random Random = new Random(DitherSeed);
 
     /// <summary>
     /// Exports an AudioBuffer to a WAV file with default 16-bit PCM format.
@@ -58,6 +72,11 @@ public static class FileIO
         var dir = Path.GetDirectoryName(filepath);
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
+
+        // Reset the TPDF dither RNG to its fixed seed at the start of every
+        // export so that two consecutive writes of the same buffer produce
+        // byte-identical files (Plan 05 ROADMAP criterion #2 / D-18).
+        Random = new Random(DitherSeed);
 
         // Write WAV file
         using var fileStream = new FileStream(filepath, FileMode.Create, FileAccess.Write);

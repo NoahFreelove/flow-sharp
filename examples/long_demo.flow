@@ -1,0 +1,461 @@
+Note: ============================================================
+Note:  Flow Long-Form Demo — "Atrium"
+Note:  ~10 minutes of music, one feature spotlight every ~10-20 seconds.
+Note:  Run: dotnet run --project flow-interpreter examples/long_demo.flow
+Note:  Output: examples/output/long_demo.{wav,mid}
+Note: ============================================================
+
+use "@std"
+use "@audio"
+use "@composition"
+
+(print "")
+(print "============================================")
+(print "  Flow Long Demo — 'Atrium'")
+(print "  ~10 minutes of feature spotlights")
+(print "============================================")
+(print "")
+
+String pieceName = "Atrium"
+Int targetMin = 10
+(print $"Generating: {pieceName} ({targetMin} minutes target)")
+(print "")
+
+Note: Helper sequences declared OUTSIDE sections — keeps each section's
+Note: rendered output to a single Sequence variable (the audible one).
+Note: Variables outside the section's scope are not picked up by the
+Note: section's auto-collection of declared Sequences.
+
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+
+            Note: --- 1. gain 0.45 { } context — soft pad intro ---
+            (print "[01] gain 0.45 { }  — soft pad intro (chord whole-notes)")
+            gain 0.45 {
+                section openIntro {
+                    Sequence pad = | [C4 E4 G4]w | [F4 A4 C5]w | [G3 B3 D4]w | [C4 E4 G4]w |
+                }
+            }
+
+            Note: --- 2. Plain note streams — ascending two-octave scale ---
+            (print "[02] plain note streams  — two-octave C major scale")
+            section scaleUp {
+                Sequence mel = | C3q D3q E3q F3q | G3q A3q B3q C4q | D4q E4q F4q G4q | A4q B4q C5q D5q |
+            }
+
+            Note: --- 3. Inline dynamics: pp p mp mf f ff in one stream ---
+            (print "[03] inline dynamics  — pp p mp mf f ff inside a single bar")
+            section dynamicsRamp {
+                Sequence ramp = | pp C4q p D4q mp E4q mf F4q | f G4q ff A4q ff B4q ff C5q | ff C5q f B4q mf A4q mp G4q | mp F4q p E4q p D4q pp C4q |
+            }
+
+            Note: --- 4. dynamics ff { } block context ---
+            (print "[04] dynamics ff { }  — sustained forte block context")
+            dynamics ff {
+                section forteBlock {
+                    Sequence loud = | C5q B4q A4q G4q | F4q E4q D4q C4q | C4q D4q E4q F4q | G4q A4q B4q C5q |
+                }
+            }
+
+            Note: --- 5. crescendo transform ---
+            (print "[05] crescendo  — pp -> ff over 16 sixteenth notes")
+            Sequence crescBase = | C4s D4s E4s F4s G4s A4s B4s C5s | D5s C5s B4s A4s G4s F4s E4s D4s | C4s E4s G4s C5s E5s C5s G4s E4s | C5s G4s E4s C4s G3s E3s C3s G2s |
+            section crescBlock {
+                Sequence rise = crescBase -> crescendo 0.15 0.95
+            }
+
+            Note: --- 6. decrescendo transform ---
+            (print "[06] decrescendo  — ff -> pp over 16 sixteenth notes")
+            Sequence decrescBase = | C5s B4s A4s G4s F4s E4s D4s C4s | C4s D4s E4s F4s G4s A4s B4s C5s | C5s G4s E4s C4s E4s G4s C5s G4s | E4s C4s G3s E3s C3s G3s C4s G3s |
+            section decrescBlock {
+                Sequence fall = decrescBase -> decrescendo 0.95 0.15
+            }
+
+            Note: --- 7. swell transform — diamond shape ---
+            (print "[07] swell  — quiet -> loud -> quiet diamond")
+            Sequence swellBase = | C4q E4q G4q B4q | C5q B4q G4q E4q | E4q G4q B4q C5q | B4q G4q E4q C4q |
+            section swellBlock {
+                Sequence diamond = swellBase -> swell 0.15 0.95
+            }
+
+            Note: --- 8. Articulations: accent (>) ---
+            (print "[08] accents  — > marks four punchy hits per bar")
+            section accentBlock {
+                Sequence accs = | f C4q> E4q> G4q> C5q> | G4q> E4q> C4q> G3q> | C4q> G4q> C5q> G4q> | C5q> G4q> E4q> C4q> |
+            }
+
+            Note: --- 9. Articulations: staccato (stacc) ---
+            (print "[09] staccato  — short detached notes")
+            section staccBlock {
+                Sequence stax = | mf C5q stacc D5q stacc E5q stacc F5q stacc | G5q stacc F5q stacc E5q stacc D5q stacc | C5q stacc B4q stacc A4q stacc G4q stacc | F4q stacc E4q stacc D4q stacc C4q stacc |
+            }
+
+            Note: --- 10. Articulations: tenuto (ten) ---
+            (print "[10] tenuto  — held to full duration, smooth and connected")
+            section tenBlock {
+                Sequence tens = | mp G4q ten A4q ten B4q ten C5q ten | D5q ten C5q ten B4q ten A4q ten | G4q ten F4q ten E4q ten D4q ten | C4q ten D4q ten E4q ten G4q ten |
+            }
+
+            Note: --- 11. Articulations: marcato (marc) ---
+            (print "[11] marcato  — accented and slightly held")
+            section marcBlock {
+                Sequence marcs = | f C4q marc E4q marc G4q marc C5q marc | C5q marc G4q marc E4q marc C4q marc | G3q marc C4q marc E4q marc G4q marc | C5q marc G4q marc E4q marc C4q marc |
+            }
+
+            Note: --- 12. Ghost notes ---
+            (print "[12] ghost notes  — felt-not-heard accents inside a funky line")
+            section ghostBlock {
+                Sequence funky = | f C4q (ghost D4) E4q (ghost F4) | G4q (ghost A4) C5q (ghost B4) | C5q (ghost B4) G4q (ghost F4) | E4q (ghost D4) C4q (ghost B3) |
+            }
+
+            Note: --- 13. Grace notes ---
+            (print "[13] grace notes  — quick ornaments before the main note")
+            section graceBlock {
+                Sequence graceful = | mf (grace B3) C4q (grace D4) E4q | (grace F4) G4q (grace A4) C5q | (grace B4) C5q (grace A4) G4q | (grace F4) E4q (grace D4) C4q |
+            }
+
+            Note: --- 14. Trill transform ---
+            (print "[14] trill +2st  — rapid alternation with the upper neighbor")
+            Sequence trillBase = | mf C4h E4h | G4h C5h | E5h C5h | G4h C4h |
+            section trillBlock {
+                Sequence trilly = trillBase -> trill +2st
+            }
+
+            Note: --- 15. Tremolo transform ---
+            (print "[15] tremolo 4  — each note rapidly repeated")
+            Sequence tremBase = | f C4h G4h | E4h C5h | G4h C5h | E4h C4h |
+            section tremBlock {
+                Sequence tremmy = tremBase -> tremolo 4
+            }
+
+            Note: --- 16. transpose +7st (before -> after via concat) ---
+            (print "[16] transpose +7st  — same melody, then transposed up a fifth")
+            Sequence transFwd = | mf C4q D4q E4q G4q | A4q G4q E4q D4q |
+            Sequence transUp  = transFwd -> transpose +7st
+            section transBlock {
+                Sequence pair = (concat transFwd transUp)
+            }
+
+            Note: --- 17. retrograde transform (before -> backwards) ---
+            (print "[17] retrograde  — same melody, then reversed")
+            Sequence retroFwd  = | mf C4q E4q G4q B4q | C5q B4q G4q E4q |
+            Sequence retroBack = (retrograde retroFwd)
+            section retroBlock {
+                Sequence pair = (concat retroFwd retroBack)
+            }
+
+            Note: --- 18. invert transform (before -> mirrored) ---
+            (print "[18] invert  — same melody, then mirrored around starting pitch")
+            Sequence invFwd     = | mf C4q E4q G4q C5q | B4q G4q E4q C4q |
+            Sequence invFlipped = invFwd -> invert
+            section invertBlock {
+                Sequence pair = (concat invFwd invFlipped)
+            }
+
+            Note: --- 19. up 1 / down 1 octave shifts ---
+            (print "[19] up 1 / down 1  — same motif at three octave registers")
+            Sequence octBase  = | mf C4q E4q G4q C5q |
+            Sequence octHigh  = octBase -> up 1
+            Sequence octLow   = octBase -> down 1
+            Sequence octStep1 = (concat octLow octBase)
+            section octaveBlock {
+                Sequence triple = (concat octStep1 octHigh)
+            }
+
+            Note: --- 20. humanize transform ---
+            (print "[20] humanize 0.25  — natural velocity jitter on a mechanical line")
+            Sequence humanBase = | mf C4e D4e E4e F4e G4e A4e B4e C5e | C5e B4e A4e G4e F4e E4e D4e C4e | C4e D4e E4e F4e G4e A4e B4e C5e | C5e B4e A4e G4e F4e E4e D4e C4e |
+            section humanBlock {
+                Sequence natural = humanBase -> humanize 0.25
+            }
+
+            Note: --- 21. vary — seeded random pitch perturbation ---
+            (print "[21] vary 0.3 seed 42  — reproducible pitch variation on a theme")
+            Sequence varyTheme = | mf C4q E4q G4q C5q | E5q C5q G4q E4q | C4q E4q G4q C5q | E5q C5q G4q E4q |
+            section varyBlock {
+                Sequence varied = (vary varyTheme 0.3 42)
+            }
+
+            Note: --- 22. Tuplet bracket: triplets {3:2 ...}q ---
+            Note: One tuplet per pipe-bar; multi-bar sequences are built via concat.
+            (print "[22] {3:2}q triplets  — three-in-the-time-of-two")
+            Sequence trip1 = | mf {3:2 C4 E4 G4}q F4q G4q A4q |
+            Sequence trip2 = | {3:2 D4 F4 A4}q B4q A4q G4q |
+            Sequence trip3 = | {3:2 E4 G4 B4}q C5q B4q A4q |
+            Sequence trip4 = | {3:2 F4 A4 C5}q D5q C5q B4q |
+            Sequence tripStep1 = (concat trip1 trip2)
+            Sequence tripStep2 = (concat tripStep1 trip3)
+            Sequence tripsAll  = (concat tripStep2 trip4)
+            section tripBlock {
+                Sequence trips = tripsAll
+            }
+
+            Note: --- 23. Tuplet bracket: quintuplets {5:4 ...}q ---
+            (print "[23] {5:4}q quintuplets  — five-in-the-time-of-four")
+            Sequence quint1 = | mf {5:4 C4 D4 E4 F4 G4}q A4q B4q C5q |
+            Sequence quint2 = | {5:4 G4 F4 E4 D4 C4}q B3q A3q G3q |
+            Sequence quint3 = | {5:4 C4 E4 G4 C5 E5}q D5q C5q B4q |
+            Sequence quint4 = | A4q G4q F4q E4q |
+            Sequence quintStep1 = (concat quint1 quint2)
+            Sequence quintStep2 = (concat quintStep1 quint3)
+            Sequence quintsAll  = (concat quintStep2 quint4)
+            section quintBlock {
+                Sequence quints = quintsAll
+            }
+
+            Note: --- 24. Roman numerals in key context ---
+            (print "[24] | I IV V vi |  — roman numerals resolve from key context")
+            section romBlock {
+                Sequence rom = | mf I IV V vi | I IV V vi | ii V I I | IV V I I |
+            }
+
+            Note: --- 25. progression DSL (with bar-count suffix) ---
+            Note: progression takes a single | … | block; numerals can repeat.
+            (print "[25] progression | I:2 vi IV V I IV V I |  — voice-led chord progression")
+            Sequence progSeq = progression | I:2 vi IV V I IV V I |
+            section progBlock {
+                Sequence prog = progSeq
+            }
+
+            Note: --- 26. Flat literals (Bb Eb Ab Db Gb) ---
+            (print "[26] flat literals  — Bb4 Eb4 Ab4 Db4 Gb4 parse natively")
+            section flatBlock {
+                Sequence flats = | mf Bb4q Eb4q Ab4q Db4q | Gb4q Db5q Ab4q Eb4q | Bb4q Ab4q Gb4q Eb4q | Db4q Eb4q Gb4q Bb4q |
+            }
+
+            Note: --- 27. Sharp literals (C# F# G# D# A#) ---
+            (print "[27] sharp literals  — C#4 F#4 G#4 D#5 A#4 parse natively")
+            section sharpBlock {
+                Sequence sharps = | mf C#4q F#4q G#4q D#5q | A#4q F#5q D#5q C#5q | C#5q A#4q G#4q F#4q | D#4q F#4q G#4q C#5q |
+            }
+        }
+
+        Note: --- 28. Enharmonic respelling inside a flat key ---
+        (print "[28] enharmonic in key Dbmajor  — print shows respelling")
+        key Dbmajor {
+            section enhBlock {
+                Sequence enh = | mp Db4q F4q Ab4q Db5q | Ab4q F4q Db4q Ab3q | Bb3q Db4q F4q Ab4q | Db5h Ab4h |
+            }
+            (print $"  enharmonic C#4 in Dbmajor = {(str (enharmonic C#4))}")
+        }
+
+        key Cmajor {
+
+            Note: --- 29. swing 0.55 { } context block ---
+            (print "[29] swing 0.55 { }  — shuffled feel on eighth notes")
+            swing 0.55 {
+                section swingBlock {
+                    Sequence swung = | mf C4e E4e G4e E4e F4e A4e G4e E4e | D4e F4e A4e F4e G4e B4e A4e F4e | C4e E4e G4e E4e F4e A4e G4e E4e | D4e F4e A4e F4e G4e B4e A4e F4e |
+                }
+            }
+
+            Note: --- 30. euclidean rhythm — sparse pulse pattern ---
+            (print "[30] (euclidean 5 16 C3 0.0) -> repeat 4  — sparse low pulse")
+            Sequence eucBase = (euclidean 5 16 C3 0.0)
+            Sequence eucRep  = eucBase -> repeat 4
+            section eucBlock {
+                Sequence euc = eucRep
+            }
+
+            Note: --- 31. euclidean with humanize + seed ---
+            (print "[31] (euclidean 5 16 C3 0.2 0.1 42)  — same pattern, alive")
+            Sequence eucHumanBase = (euclidean 5 16 C3 0.2 0.1 42)
+            Sequence eucHumanRep  = eucHumanBase -> repeat 4
+            section eucHumanBlock {
+                Sequence euch = eucHumanRep
+            }
+        }
+
+        Note: --- 32. timesig 3/4 — waltz feel ---
+        timesig 3/4 {
+            key Cmajor {
+                (print "[32] timesig 3/4 { }  — waltz feel")
+                section waltzBlock {
+                    Sequence waltz = | mf C4q E4q G4q | C5q G4q E4q | D4q F4q A4q | G4q B4q D5q | E5q C5q G4q | C4q E4q G4h |
+                }
+            }
+        }
+    }
+
+    Note: --- 33. Modal shift: key Aminor ---
+    timesig 4/4 {
+        key Aminor {
+            (print "[33] key Aminor  — modal shift to relative minor")
+            section minorBlock {
+                Sequence dark = | mf A3q C4q E4q A4q | G4q E4q C4q A3q | F4q A4q D5q F5q | E5q D5q C5q B4q | A4q F4q E4q C4q | A3h E3h |
+            }
+
+            Note: --- 34. reverbTime 2.5 — long hall reverb tail ---
+            (print "[34] reverbTime 2.5 { }  — long per-section hall reverb")
+            reverbTime 2.5 {
+                section hallBlock {
+                    Sequence hall = | mp A3w | G3w | F3w | E3w | A3w | E3w |
+                }
+            }
+        }
+
+        key Cmajor {
+            Note: --- 35. Chord brackets — | [C4 E4 G4]w … | ---
+            (print "[35] chord brackets  — sustained triads, one per bar")
+            section chordBlock {
+                Sequence chordSeq = | mp [C4 E4 G4]w | [F4 A4 C5]w | [G3 B3 D4]w | [C4 E4 G4]w | [A3 C4 E4]w | [F3 A3 C4]w | [G3 B3 D4]w | [C4 E4 G4]w |
+            }
+        }
+    }
+}
+
+Note: ============================================================
+Note: ASSEMBLE THE 35-SECTION MAIN PIECE (rendered with piano)
+Note: ============================================================
+
+Song mainPiece = [
+    openIntro
+    scaleUp
+    dynamicsRamp
+    forteBlock
+    crescBlock
+    decrescBlock
+    swellBlock
+    accentBlock
+    staccBlock
+    tenBlock
+    marcBlock
+    ghostBlock
+    graceBlock
+    trillBlock
+    tremBlock
+    transBlock
+    retroBlock
+    invertBlock
+    octaveBlock
+    humanBlock
+    varyBlock
+    tripBlock
+    quintBlock
+    romBlock
+    progBlock
+    flatBlock
+    sharpBlock
+    enhBlock
+    swingBlock
+    eucBlock
+    eucHumanBlock
+    waltzBlock
+    minorBlock
+    hallBlock
+    chordBlock
+    openIntro
+    chordBlock
+]
+
+(print "")
+(print "Rendering main piece (piano) ...")
+Buffer mainBuf = (renderSong mainPiece "piano")
+Int mainFrames = (getFrames mainBuf)
+Int mainSec = (div mainFrames 44100)
+(print $"Main piece: {(str mainFrames)} frames (~{(str mainSec)}s)")
+
+Note: --- 36. Buffer-level effect chain ---
+Note: compress(Buffer, threshold_dB, ratio) — negatives via (sub 0.0 N).
+(print "[36] effect chain  — reverb 0.18 -> lowpass 4500 -> compress -12dB 4:1")
+Double compThresh = (sub 0.0 12.0)
+Buffer mainProc = mainBuf -> (reverb 0.18) -> (lowpass 4500.0) -> (compress compThresh 4.0)
+
+Note: ============================================================
+Note: SYNTH GALLERY: render small sub-songs with each preset and
+Note: append them sequentially via appendBuffers.
+Note: ============================================================
+
+tempo 92 {
+    timesig 4/4 {
+        key Cmajor {
+
+            section galStrings {
+                Sequence m = | mp C4w | F4w | G4w | C5w | A4w | F4w | G4w | C5w | E4w | A4w | D5w | G4w | C5w | F4w | G4w | C4w |
+            }
+            section galOrgan {
+                Sequence m = | mf C4h E4h | G4h C5h | E5h C5h | G4h C5h | A4h F4h | G4h E4h | F4h D4h | C4h G3h | E4h G4h | C5h E5h | G4h E4h | C4h E4h | G4h B4h | C5w |
+            }
+            section galBell {
+                Sequence m = | mp C5q E5q G5q C6q | A5q F5q D5q C5q | E5q G5q C6q E6q | C6q G5q E5q C5q | G5q E5q C5q G4q | C5q E5q G5q C6q | E6q G5q C6q E6q | C6q E5q G5q C6q |
+            }
+            section galBrass {
+                Sequence m = | f C4q E4q G4q C5q | G4q E4q C4q G3q | C5q G4q E4q C4q | G3q C4q E4q G4q | C5q E5q G5q C5q | G4q E4q C4q G3q | C4q G4q C5q G4q | E4q C4q G3q C4q | G4q C5q E5q G5q | C5q G4q E4q C4q |
+            }
+            section galSax {
+                Sequence m = | mf C4e D4e Eb4e G4e Bb4e G4e Eb4e D4e | C4e D4e Eb4e G4e Bb4e D5e Bb4e G4e | F4e Ab4e C5e Eb5e G5e Eb5e C5e Ab4e | F4e D4e Bb3e D4e F4e Ab4e C5e Eb5e | C4q (grace D4) Eb4q F4q G4q | Bb4h C5h | C5e Bb4e G4e F4e Eb4e D4e C4e D4e | Eb4e G4e Bb4e C5e Bb4e G4e Eb4e D4e | C4h G3h |
+            }
+            section galDrums {
+                Sequence m = | f C2q F#2q D2q F#2q | C2q F#2q D2q F#2q | C2q C2q D2q F#2q | C2q F#2q D2q D2q | C2q F#2q D2q F#2q | C2e C2e F#2e F#2e D2e D2e F#2e F#2e | C2q F#2q D2q F#2q | C2q F#2q D2q F#2q | C2e D2e C2e D2e F#2e F#2e D2e D2e |
+            }
+        }
+    }
+}
+
+Song gsStrings = [galStrings]
+Song gsOrgan   = [galOrgan]
+Song gsBell    = [galBell]
+Song gsBrass   = [galBrass]
+Song gsSax     = [galSax]
+Song gsDrums   = [galDrums]
+
+(print "[37] strings preset  — sustained pad")
+Buffer bufStrings = (renderSong gsStrings "strings")
+(print "[38] organ preset  — held block harmony")
+Buffer bufOrgan = (renderSong gsOrgan "organ")
+(print "[39] bell preset  — bright percussive arpeggio")
+Buffer bufBell = (renderSong gsBell "bell")
+(print "[40] brass preset  — confident triadic line")
+Buffer bufBrass = (renderSong gsBrass "brass")
+(print "[41] sax preset  — bluesy line with grace note")
+Buffer bufSax = (renderSong gsSax "sax")
+(print "[42] drums preset  — kick (C2) / snare (D2) / hat (F#2) groove")
+Buffer bufDrums = (renderSong gsDrums "drums")
+
+Note: --- 43. appendBuffers — sequential timeline construction ---
+(print "[43] appendBuffers  — paste synth gallery onto main piece")
+Buffer chain1 = (appendBuffers mainProc bufStrings)
+Buffer chain2 = (appendBuffers chain1 bufOrgan)
+Buffer chain3 = (appendBuffers chain2 bufBell)
+Buffer chain4 = (appendBuffers chain3 bufBrass)
+Buffer chain5 = (appendBuffers chain4 bufSax)
+Buffer chain6 = (appendBuffers chain5 bufDrums)
+
+Note: --- 44. tempoRamp — ritardando outro from 100 -> 50 BPM ---
+(print "[44] tempoRamp  — ritardando outro 100 -> 50 BPM")
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence outroSeq = | mp C5h G4h | E4h C4h | G3h E3h | C4q E4q G4q C5q | E5h C5h | G4h E4h | C4h G3h | C3w |
+            Buffer ritBuf = (tempoRamp outroSeq 100.0 50.0)
+            Buffer chain7 = (appendBuffers chain6 ritBuf)
+
+            Note: --- 45. fadeIn / fadeOut ---
+            (print "[45] fadeIn 1.5 / fadeOut 4.0  — smooth bookends")
+            Buffer faded = chain7 -> fadeIn 1.5 -> fadeOut 4.0
+
+            Int totalFrames = (getFrames faded)
+            Int sampleRate  = 44100
+            Int totalSec    = (div totalFrames sampleRate)
+            Int totalMin    = (div totalSec 60)
+            Int remSec      = (sub totalSec (mul totalMin 60))
+            (print "")
+            (print $"Total frames: {(str totalFrames)}")
+            (print $"Total duration: ~{(str totalMin)}m {(str remSec)}s ({(str totalSec)}s)")
+
+            Note: --- 46. Dual export: WAV (audio) + MIDI (notation) ---
+            (print "[46] writeWav + writeMidi  — dual export from one Song")
+            (writeWav  "examples/output/long_demo.wav" faded)
+            (writeMidi "examples/output/long_demo.mid" mainPiece)
+        }
+    }
+}
+
+(print "")
+(print "============================================")
+(print "  Done!")
+(print "    WAV:  examples/output/long_demo.wav")
+(print "    MIDI: examples/output/long_demo.mid")
+(print "  Play with: aplay examples/output/long_demo.wav")
+(print "============================================")

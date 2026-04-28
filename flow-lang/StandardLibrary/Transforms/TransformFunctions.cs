@@ -237,12 +237,27 @@ public static class TransformFunctions
     }
 
     // AUDIT-VERIFIED 2026-04-18: C5 — augment correct (lengthens); observed A=#### vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
+    // AUDIT-VERIFIED 2026-04-26: re-validated against tuplet sequences (Phase 19 TUP-07)
+    //   — see flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs (rational doubling pinned via Fraction(2, 1) × f)
     private static Value Augment(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
 
         var result = TransformNotes(seq, note =>
         {
+            // TUP-07: rational branch — when DurationFraction is set, double it via Phase 18 Fraction(2,1) × f.
+            // Existing enum path runs verbatim when DurationFraction is null (Phase 18 byte-identical contract).
+            if (note.DurationFraction.HasValue)
+            {
+                var doubled = note.DurationFraction.Value * new Fraction(2, 1);
+                return new MusicalNoteData(
+                    note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    note.Velocity, note.Articulation, note.IsDotted,
+                    note.SourceLocation, note.SourceLength,
+                    durationFraction: doubled);
+            }
+
             if (!note.DurationValue.HasValue) return note;
 
             int newDur = note.DurationValue.Value - 1; // toward WHOLE=0
@@ -259,12 +274,27 @@ public static class TransformFunctions
     }
 
     // AUDIT-VERIFIED 2026-04-18: C5 — diminish correct (shortens); observed D=# vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
+    // AUDIT-VERIFIED 2026-04-26: re-validated against tuplet sequences (Phase 19 TUP-07)
+    //   — see flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs (rational halving pinned via Fraction(1, 2) × f)
     private static Value Diminish(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
 
         var result = TransformNotes(seq, note =>
         {
+            // TUP-07: rational branch — when DurationFraction is set, halve it via Phase 18 Fraction(1,2) × f.
+            // Existing enum path runs verbatim when DurationFraction is null (Phase 18 byte-identical contract).
+            if (note.DurationFraction.HasValue)
+            {
+                var halved = note.DurationFraction.Value * new Fraction(1, 2);
+                return new MusicalNoteData(
+                    note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    note.Velocity, note.Articulation, note.IsDotted,
+                    note.SourceLocation, note.SourceLength,
+                    durationFraction: halved);
+            }
+
             if (!note.DurationValue.HasValue) return note;
 
             int newDur = note.DurationValue.Value + 1; // toward THIRTYSECOND=5
@@ -279,6 +309,16 @@ public static class TransformFunctions
 
         return Value.Sequence(result);
     }
+
+    // ===== Test wrappers =====
+    // Public test wrappers expose the private dispatch for direct C# unit tests
+    // (per Phase 19 Plan 19-05 TUP-07 — flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs).
+    // Production callers continue routing through the registry's `augment` / `diminish` signatures.
+    public static SequenceData AugmentForTesting(SequenceData seq) =>
+        Augment(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
+
+    public static SequenceData DiminishForTesting(SequenceData seq) =>
+        Diminish(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
 
     // ===== Octave Shift =====
 

@@ -8,7 +8,22 @@ namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 /// </summary>
 public static class SynthUtils
 {
-    private static readonly Random Rng = new();
+    // Synth white-noise RNG. Seeded with a fixed value for cross-render
+    // determinism (Phase 15 Plan 05, ROADMAP criterion #2 / D-18). Pre-fix:
+    // unseeded `new()` produced different per-render hammer transient and
+    // breath-noise samples on every call — same audio quality, but raw
+    // sample bytes never matched between renders. Decorrelation across
+    // samples within one render still holds; the seed simply pins the
+    // sequence so two renderSong calls produce byte-identical buffers.
+    private const int SynthNoiseSeed = 0x55EED;
+    private static Random Rng = new Random(SynthNoiseSeed);
+
+    /// <summary>
+    /// Resets the white-noise RNG to its fixed seed. Called by SongRenderer at
+    /// the start of every <c>renderSong</c> so that consecutive renders of the
+    /// same Song produce byte-identical buffers (Plan 15-05 ROADMAP #2).
+    /// </summary>
+    public static void ResetNoiseRng() => Rng = new Random(SynthNoiseSeed);
 
     /// <summary>
     /// Converts a beat duration to seconds given a BPM.

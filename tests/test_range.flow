@@ -1,0 +1,23 @@
+use "@std"
+
+Note: DEFER-01 (Phase 20-01) — range(Int, Int) two-arg form
+Int[] r1 = (range 0 5)
+(print (concat "range 0 5 ok len=" (str (len r1))))
+
+Note: DEFER-01 — range(Int, Int, Int) three-arg form, positive step
+Int[] r2 = (range 0 10 2)
+(print (concat "range 0 10 2 ok len=" (str (len r2))))
+
+Note: DEFER-01 — range(Int, Int, Int) three-arg form, negative step.
+Note: 20-RESEARCH Pitfall 4: parser interprets `-1` in arg position as binary
+Note: subtraction (collapses to one arg). Bind via `(sub 0 1)` first, mirrors
+Note: tests/test_slice.flow:6 convention.
+Int negOne = (sub 0 1)
+Int[] r3 = (range 5 0 negOne)
+(print (concat "range 5 0 -1 ok len=" (str (len r3))))
+
+Note: empty range — start equals end
+Int[] r4 = (range 0 0)
+(print (concat "range 0 0 empty len=" (str (len r4))))
+
+(print "test_range: PASSED")

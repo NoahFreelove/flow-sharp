@@ -48,13 +48,14 @@ public static class FlowScriptData
         //   - test_custom_oscillator.flow:42 if(Bool, String, String) overload — FIXED by 12-05
         //   - test_custom_oscillator.flow:57 if(Bool, Double, Double) overload — FIXED by 12-05
         //     (test file updated to avoid `1.0 -1.0` parser-ambiguity which tokenizes as subtraction)
-        //   - test_custom_oscillator.flow:86 `range` stdlib function — PRE-EXISTING, deferred to plan 12-06
-        //     (Test 4 uses `(range 0 sz)` which isn't registered anywhere; documented as separate bug)
+        //   - test_custom_oscillator.flow:86 `range` stdlib function — FIXED by Phase 20 plan 20-01
+        //     (DEFER-01 closure: range(Int, Int) + range(Int, Int, Int) registered in
+        //     BuiltInFunctions.RegisterCollections; entry removed because the script now
+        //     runs to completion with zero errors. Plan 20-01 acknowledged this would
+        //     happen — the 20-04 closure plan loses an item from its tracked migration
+        //     list, but the atomic-commit-zero-regression contract takes priority over
+        //     the "do not touch" instruction. Rule 3 deviation; see 20-01-SUMMARY.md.)
         //   - test_full_song.flow:158 exportWav auto-mkdir — FIXED by 12-05
-        //
-        // test_custom_oscillator stays as an expected-error row until plan 12-06 adds `range`.
-        // test_full_song entry removed: it now runs to completion after the auto-mkdir fix.
-        ["test_custom_oscillator.flow"] = "Function 'range' not found",
     };
 
     public static readonly Dictionary<string, string[]> RequiredSentinels = new()
@@ -228,6 +229,49 @@ public static class FlowScriptData
         {
             "euclidean humanize seed=42: PASSED",
             "two runs byte-identical: PASSED",
+        },
+
+        // Phase 20-01 (DEFER-01): pin range(Int, Int) + range(Int, Int, Int) success sentinels.
+        // 2-arg form, 3-arg positive step, 3-arg negative step (via (sub 0 1) per Pitfall 4),
+        // and the whole-run pass marker. If any range overload misregistered, the corresponding
+        // sentinel does not print and this Theory row goes RED.
+        ["test_range.flow"] = new[]
+        {
+            "range 0 5 ok",
+            "range 0 10 2 ok",
+            "range 5 0 -1 ok",
+            "test_range: PASSED",
+        },
+
+        // Phase 20-02 (DEFER-04): pin multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
+        // and D/G/A naturals unchanged. Format canonical output: Fb4 → "F4-", E#4 → "E4+",
+        // Cb5 → "C5-", B#3 → "B3+". If the natural-edge switch in HarmonyFunctions.Enharmonic
+        // regresses, the corresponding sentinel does not print and this Theory row goes RED.
+        // The Bbmajor block at the end of the script exercises the in-key chromatic
+        // fall-through path: E is chromatic in Bbmajor (scale: Bb C D Eb F G A), so
+        // TryEnharmonicInKey returns false and we drop into the natural-edge — same "F4-"
+        // sentinel (already counted once for the no-key E4 print at the top).
+        ["test_enharmonic_edges.flow"] = new[]
+        {
+            "F4-",
+            "E4+",
+            "C5-",
+            "B3+",
+            "DGA naturals unchanged: ok",
+            "test_enharmonic_edges: PASSED",
+        },
+
+        // Phase 20-03 (DEFER-05): pin slice negative-from-end (Python-style) sentinels.
+        // Negative start, negative end, both-negative, extreme-negative clamp-to-zero
+        // (D-USER-D), whole-run pass marker. If the pre-clamp normalization in
+        // Collections.SliceArray regresses, the sentinels do not match and this row goes RED.
+        ["test_slice_negative.flow"] = new[]
+        {
+            "neg start ok len=3",
+            "neg end ok len=4",
+            "both neg ok len=2",
+            "extreme neg ok len=2",
+            "test_slice_negative: PASSED",
         },
     };
 }

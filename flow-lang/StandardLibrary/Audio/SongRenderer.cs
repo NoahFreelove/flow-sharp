@@ -1,6 +1,7 @@
 using FlowLang.Audio;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.DSP;
+using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -45,6 +46,9 @@ public static class SongRenderer
         var song = args[0].As<SongData>();
         var lambda = args[1].As<FunctionOverload>();
 
+        // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
+        SynthUtils.ResetNoiseRng();
+
         // Create a wrapper for the lambda that matches the INoteSynthesizer requirement
         var synth = new FlowFunctionSynthesizer((note, duration, bpm) =>
         {
@@ -84,6 +88,12 @@ public static class SongRenderer
     {
         var song = args[0].As<SongData>();
         string synthType = (string)args[1].Data!;
+
+        // Reset the synth white-noise RNG to its fixed seed so that two
+        // renderSong calls on the same SongData produce byte-identical
+        // buffers (Plan 15-05 ROADMAP criterion #2 / D-18). Pre-fix the
+        // unseeded SynthUtils.Rng leaked state across renders.
+        SynthUtils.ResetNoiseRng();
 
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
 
@@ -219,6 +229,9 @@ public static class SongRenderer
     /// </summary>
     public static (AudioBuffer Buffer, TimelineMap Timeline) RenderSongWithTimeline(SongData song, string synthType)
     {
+        // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
+        SynthUtils.ResetNoiseRng();
+
         var timelineMap = new TimelineMap();
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
         double accumulatedSeconds = 0;
