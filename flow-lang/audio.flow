@@ -351,6 +351,9 @@ internal proc compress(Buffer: buffer, Double: thresholdDb, Double: ratio, Doubl
 Note: Apply feedback delay with time (ms), feedback (0-1), and wet/dry mix (0-1)
 internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: mix)
 
+Note: DX-12 -- tempo-synced feedback delay; rate is a NoteValue (EIGHTH, QUARTER, ...) read against the active MusicalContext.Tempo
+internal proc delay(Buffer: buffer, NoteValue: rate, Double: feedback, Double: mix)
+
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
 

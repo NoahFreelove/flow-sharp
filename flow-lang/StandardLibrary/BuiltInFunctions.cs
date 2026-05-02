@@ -773,6 +773,7 @@ public static class BuiltInFunctions
         Composition.SongFunctions.Register(registry, context);
         Harmony.HarmonyFunctions.RegisterContextDependent(registry, context);
         RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
+        Audio.EffectsFunctions.RegisterContextDependent(registry, context);  // Phase 22-04 DX-12 (NoteValue-rate delay synced to MusicalContext.Tempo)
         // ===== Random Generator Functions =====
 
         var randSignature = new FunctionSignature("?", []);

@@ -303,5 +303,15 @@ public static class FlowScriptData
         {
             "DX-11 voicings: PASSED",
         },
+
+        // Phase 22-04 (DX-12): pin the NoteValue-rate delay smoke script. Script exercises
+        // (delay src EIGHTH 0.5 0.4) inside `tempo 120 { ... }` (250ms) and `tempo 240 { ... }`
+        // (125ms), plus the existing ms-rate (delay src 250.0 0.5 0.4) regression gate. If
+        // the new RegisterContextDependent wiring regresses or the existing Double overload
+        // diverges, the sentinel does not print and this Theory row goes RED.
+        ["test_dx_delay_sync.flow"] = new[]
+        {
+            "DX-12 delay sync: PASSED",
+        },
     };
 }

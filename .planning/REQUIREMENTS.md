@@ -63,7 +63,7 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 
 - [x] **DX-10**: `arpeggio(chord, rate, direction, pattern)` extends existing `arpeggio` with rate (NoteValue or Fraction) + direction (`"up" / "down" / "updown" / "downup" / "random"`) + pattern (`"linear" / "chord-tone" / "scale-tone"`). Acceptance: `(arpeggio Cmaj7 q "up" "linear")` produces the expected 4-note ascending arpeggio at quarter-note rate.
 - [x] **DX-11**: Chord inversions and voicings via `inversion(chord, n)` and `voicing(chord, "drop2" | "drop3" | "open" | "close" | "spread")`. Acceptance: `inversion(Cmaj, 1)` returns `[E4, G4, C5]` (first inversion); `voicing(Cmaj7, "drop2")` lowers the 2nd-from-top note by an octave.
-- [ ] **DX-12**: `delay(buffer, noteValueRate, feedback, mix)` overload accepts a NoteValue (or Fraction) as the delay time, computed from active tempo (Pitfall 1 — uses Fraction for sync math). Existing ms-rate overload stays unchanged. Acceptance: `tempo 120 { ... delay(buf, e, 0.5, 0.4) ... }` produces an eighth-note-synced delay (250ms at 120 BPM).
+- [x] **DX-12**: `delay(buffer, noteValueRate, feedback, mix)` overload accepts a NoteValue (or Fraction) as the delay time, computed from active tempo (Pitfall 1 — uses Fraction for sync math). Existing ms-rate overload stays unchanged. Acceptance: `tempo 120 { ... delay(buf, e, 0.5, 0.4) ... }` produces an eighth-note-synced delay (250ms at 120 BPM).
 - [ ] **DX-13**: `quantize(sequence, resolution, strength, swing)` snaps note onsets to a grid. Resolution is a NoteValue or Fraction; strength is 0–1 (0=no quantize, 1=hard quantize); swing is -1 to 1. Acceptance: pre-humanized euclidean output snaps cleanly to a 1/16 grid at strength=1.
 - [ ] **DX-14**: Legato and portamento articulations: `legato(sequence, overlap)` extends note durations by overlap factor; `portamento(sequence, glideTime)` emits MIDI CC65 (portamento on/off) + CC5 (portamento time) per Sweetwater MIDI spec. Acceptance: MIDI export of `portamento(seq, 100ms)` includes CC65=127 + CC5=64-ish events.
 - [x] **DX-15**: `loadWav(path, semitones)` and `loadWav(path, ratio)` overloads varispeed-pitch-shift the loaded buffer via OLA + linear/sinc resample. Existing `loadWav(path)` unchanged (defaults to 0 semitones / ratio 1.0). Acceptance: `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`.
@@ -141,7 +141,7 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 | DEFER-02/03 | Phase 21 | Shipped 05c2174 |
 | DX-10 | Phase 22 | Complete |
 | DX-11 | Phase 22 | Complete |
-| DX-12 | Phase 22 | Pending |
+| DX-12 | Phase 22 | Complete |
 | DX-13 | Phase 22 | Pending |
 | DX-14 | Phase 22 | Pending |
 | DX-15 | Phase 22 | Complete |

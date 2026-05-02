@@ -1,6 +1,7 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 using FlowLang.StandardLibrary.Audio.DSP;
 
 namespace FlowLang.StandardLibrary.Audio;
@@ -213,6 +214,70 @@ public static class EffectsFunctions
 
         var result = Delay.Apply(buffer, delayMs, feedback, mix);
         return Value.Buffer(result);
+    }
+
+    /// <summary>
+    /// DX-12 (Phase 22 plan 22-04): convert a NoteValue enum + BPM into milliseconds.
+    /// QUARTER at 120 BPM = 60_000/120 = 500ms; EIGHTH = 250ms; SIXTEENTH = 125ms;
+    /// WHOLE = 4 × quarter; HALF = 2 × quarter; THIRTYSECOND = quarter / 8.
+    /// Out-of-range enum values fall through to the quarter fallback (charitable D-07,
+    /// matches threat T-22-V5-14 mitigation: no exception, no crash).
+    /// Public visibility required for cross-assembly Facts (no InternalsVisibleTo configured).
+    /// </summary>
+    public static double NoteValueToMs(NoteValueType.Value nv, double bpm)
+    {
+        double quarterMs = 60_000.0 / bpm;
+        return nv switch
+        {
+            NoteValueType.Value.WHOLE        => quarterMs * 4,
+            NoteValueType.Value.HALF         => quarterMs * 2,
+            NoteValueType.Value.QUARTER      => quarterMs,
+            NoteValueType.Value.EIGHTH       => quarterMs / 2,
+            NoteValueType.Value.SIXTEENTH    => quarterMs / 4,
+            NoteValueType.Value.THIRTYSECOND => quarterMs / 8,
+            _                                 => quarterMs,
+        };
+    }
+
+    /// <summary>
+    /// DX-12 (Phase 22 plan 22-04): registers the NoteValue-rate delay overload that reads
+    /// MusicalContext.Tempo at call time. Existing ms-rate delay (Register/RegisterDelay)
+    /// stays byte-identical — this method only ADDS a new signature, never mutates the
+    /// existing one.
+    ///
+    /// Called from <see cref="BuiltInFunctions.RegisterContextDependentFunctions"/> alongside
+    /// <c>RegisterEuclideanOverloads</c>. The closure captures <paramref name="context"/> so
+    /// that the active tempo is read fresh at each call (inside or outside a tempo block).
+    /// </summary>
+    public static void RegisterContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        // delay(Buffer, NoteValue, Double, Double) -> Buffer — rate (NoteValue), feedback, mix
+        var delaySyncedSig = new FunctionSignature("delay",
+            [BufferType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("delay", delaySyncedSig, args =>
+        {
+            var buffer = args[0].As<AudioBuffer>();
+            int noteValueEnum = args[1].As<int>();
+            float feedback = (float)args[2].As<double>();
+            float mix = (float)args[3].As<double>();
+
+            // Read tempo fresh from the active MusicalContext (inside a tempo block) or
+            // fall back to 120 BPM when no tempo is active. Matches the
+            // `context.GetMusicalContext().Tempo ?? 120.0` pattern used throughout the
+            // interpreter (Interpreter.cs:200, Interpreter.cs:210).
+            double bpm = context.GetMusicalContext().Tempo ?? 120.0;
+            double delayMs = NoteValueToMs((NoteValueType.Value)noteValueEnum, bpm);
+
+            if (buffer.Frames == 0)
+                return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+
+            // Delegate to the same DSP routine as the ms-rate path — both overloads converge
+            // at Delay.Apply, which is the regression-stable boundary.
+            var result = Delay.Apply(buffer, (float)delayMs, feedback, mix);
+            return Value.Buffer(result);
+        });
     }
 
     // ===== Gain =====
