@@ -273,5 +273,15 @@ public static class FlowScriptData
             "extreme neg ok len=2",
             "test_slice_negative: PASSED",
         },
+
+        // Phase 22-01 (DX-10): pin the 4-arg arpeggio(Chord, NoteValue, String, String)
+        // smoke script's PASSED sentinel. Script exercises up/down/updown directions over
+        // Cmaj7 at QUARTER and EIGHTH rates. If the 4-arg overload regresses (signature
+        // missing, ApplyDirection broken, or pattern arg fails type-dispatch), the sentinel
+        // does not print and this Theory row goes RED.
+        ["test_dx_arpeggio.flow"] = new[]
+        {
+            "DX-10 arpeggio: PASSED",
+        },
     };
 }

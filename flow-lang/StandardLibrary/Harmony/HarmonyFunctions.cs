@@ -289,6 +289,27 @@ public static class HarmonyFunctions
         _ => 0
     };
 
+    /// <summary>
+    /// DX-10 direction reordering helper for the 4-arg <c>arpeggio</c> overload. Per Phase 22
+    /// CONTEXT and RESEARCH Pitfall 7, <c>"random"</c> falls back to <c>"up"</c> in v1.3
+    /// (seeded random arpeggio deferred to v1.4 to preserve byte-identical determinism).
+    /// Unknown direction strings also fall through to <c>"up"</c> per the project's charitable
+    /// interpretation memory — no error path on unknown input. <c>"chord-tone"</c> /
+    /// <c>"scale-tone"</c> patterns are accepted at the outer signature but the v1.3
+    /// implementation routes them to linear ordering.
+    /// </summary>
+    private static List<string> ApplyDirection(List<string> notes, string direction)
+    {
+        return direction.ToLowerInvariant() switch
+        {
+            "down"   => notes.AsEnumerable().Reverse().ToList(),
+            "updown" => notes.Concat(notes.AsEnumerable().Reverse().Skip(1)).ToList(),
+            "downup" => notes.AsEnumerable().Reverse().Concat(notes.Skip(1)).ToList(),
+            // "random" deferred to v1.4 — falls back to "up" per RESEARCH Pitfall 7
+            _        => notes,
+        };
+    }
+
     public static void Register(InternalFunctionRegistry registry)
     {
         // str(Chord) -> String
@@ -362,6 +383,42 @@ public static class HarmonyFunctions
             sequence.AddBar(bar);
 
             return Value.Sequence(sequence);
+        });
+
+        // DX-10: 4-arg arpeggio(Chord, NoteValue, direction, pattern) -> Sequence
+        // Phase 22 plan 22-01. Existing 2-arg overload above stays byte-identical.
+        // - rate: NoteValue (int-backed enum) drives MusicalNoteData.DurationValue
+        // - direction: "up" | "down" | "updown" | "downup" | "random" (random falls back to "up"
+        //   in v1.3 per RESEARCH Pitfall 7 / charitable-interpretation memory; seeded random
+        //   arpeggio deferred to v1.4 to preserve byte-identical determinism)
+        // - pattern: "linear" | "chord-tone" | "scale-tone" (chord-tone / scale-tone route to
+        //   linear in v1.3 per RESEARCH §Future Requirements / Assumption A8)
+        var arpeggioFullSig = new FunctionSignature("arpeggio",
+            [ChordType.Instance, NoteValueType.Instance, StringType.Instance, StringType.Instance]);
+        registry.Register("arpeggio", arpeggioFullSig, args =>
+        {
+            var chord = args[0].As<ChordData>();
+            int rateEnum = args[1].As<int>();   // NoteValue is int-backed
+            var direction = args[2].As<string>();
+            var pattern = args[3].As<string>(); // accepted for future expansion; v1.3 unused
+            _ = pattern;
+
+            var noteNames = ApplyDirection(chord.NoteNames.ToList(), direction);
+
+            var musicalNotes = new List<MusicalNoteData>();
+            foreach (var noteName in noteNames)
+            {
+                var (name, octave, alteration) = NoteType.Parse(noteName);
+                musicalNotes.Add(new MusicalNoteData(name, octave, alteration,
+                    rateEnum, isRest: false));
+            }
+
+            var timeSigFull = new TimeSignatureData(4, 4);
+            var barFull = new BarData(musicalNotes, timeSigFull);
+            var sequenceFull = new SequenceData();
+            sequenceFull.AddBar(barFull);
+
+            return Value.Sequence(sequenceFull);
         });
 
         // scaleNotes(String) -> Strings
