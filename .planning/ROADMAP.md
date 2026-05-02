@@ -146,7 +146,14 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   4. Pre-humanized euclidean output snaps cleanly to a 1/16 grid via `quantize(seq, e, 1.0, 0.0)` at strength=1; swing parameter -1..1 applied (DX-13)
   5. MIDI export of `portamento(seq, 100ms)` includes CC65=127 + CC5 events per Sweetwater MIDI spec; `legato(seq, overlap)` extends note durations by overlap factor (DX-14)
   6. `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`; default `loadWav(path)` unchanged (DX-15)
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 22-01-PLAN.md — DX-10 4-arg arpeggio (rate + direction + pattern)
+- [ ] 22-02-PLAN.md — DX-15 varispeed loadWav (Int semitones + Double ratio)
+- [ ] 22-03-PLAN.md — DX-11 inversion + drop2/drop3/open/close/spread voicings
+- [ ] 22-04-PLAN.md — DX-12 NoteValue delay overload synced to MusicalContext.Tempo
+- [ ] 22-05-PLAN.md — DX-13 quantize with OnsetOffset onset-shift mechanism
+- [ ] 22-06-PLAN.md — DX-14 legato + portamento via DurationOverlap/PortamentoMs fields
+- [ ] 22-07-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION docs-only)
 
 ### Phase 23: Microtonal Tuning (Wedge)
 **Goal**: Named-tunings wedge ships per D-03 — `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` change `Note → frequency` lookup; transforms remain pitch-class agnostic (binding pre-ordering #4 — own phase, highest blast radius)

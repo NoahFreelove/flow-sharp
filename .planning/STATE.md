@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: planning
-stopped_at: Completed 21-03-PLAN.md (Phase 21 closes — PRAG-01/PRAG-02/DEFER-02/03 shipped; commits 60f7f18 + 05c2174 + closure)
-last_updated: "2026-05-01T19:48:59.397Z"
-last_activity: 2026-05-01 -- Phase 21 closed (PRAG-01/PRAG-02/DEFER-02/03 shipped)
+status: executing
+stopped_at: Phase 22 context gathered
+last_updated: "2026-05-01T21:45:08.588Z"
+last_activity: 2026-05-01 -- Phase 22 planning complete
 progress:
   total_phases: 10
   completed_phases: 4
-  total_plans: 14
+  total_plans: 21
   completed_plans: 14
-  percent: 100
+  percent: 67
 ---
 
 # Project State
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 Milestone: v1.3 Composer DX Tier B/C
 Phase: 21 (pragma-system-h-alias) — CLOSED 2026-04-26
 Plan: 3 of 3 complete
-Status: Phase 21 closed; ready to plan Phase 22 / 23 / 24
-Last activity: 2026-05-01 -- Phase 21 closed (PRAG-01/PRAG-02/DEFER-02/03 shipped)
+Status: Ready to execute
+Last activity: 2026-05-01 -- Phase 22 planning complete
 
 Progress: [██████████] 100%
 
@@ -277,9 +277,9 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-01
-Stopped at: Completed 21-03-PLAN.md (Phase 21 closes — PRAG-01/PRAG-02/DEFER-02/03 shipped; commits 60f7f18 + 05c2174 + closure)
-Resume file: --resume-file
+Last session: 2026-05-01T20:29:31.539Z
+Stopped at: Phase 22 context gathered
+Resume file: .planning/phases/22-tier-b-c-composer-dx-bundle/22-CONTEXT.md
 
 **Completed Phase:** 21 (pragma-system-h-alias) — 3 plans across 3 waves — closed 2026-04-26
 
