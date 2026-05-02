@@ -63,9 +63,24 @@ public class ModuleLoader
             // 2. Read file contents
             var source = File.ReadAllText(resolvedPath);
 
-            // 3. Lex and parse with an isolated reporter
+            // Phase 21 D-06: each imported file gets its OWN PragmaSet computed
+            // from THIS file's source. Pragmas declared inside the module do NOT
+            // leak into the importer's parse session — PRAG-02 isolation is
+            // enforced structurally by lexical scoping (pragmaSet is a local
+            // variable, only passed to the lexer + parser of THIS module).
             var localReporter = new Diagnostics.ErrorReporter();
-            var lexer = new Lexing.SimpleLexer(source, localReporter, resolvedPath);
+            var (pragmaSet, transformedSource) =
+                Lexing.PragmaScanner.Scan(source, resolvedPath, localReporter);
+            if (localReporter.HasErrors)
+            {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to pre-scan module: {resolvedPath}");
+                _errorReporter.ReportError(
+                    $"Module '{resolvedPath}' has invalid pragma declarations.", errorLocation);
+                return ModuleLoadResult.Error;
+            }
+
+            // 3. Lex and parse with the module's own pragmaSet + isolated reporter.
+            var lexer = new Lexing.SimpleLexer(transformedSource, localReporter, resolvedPath, pragmaSet);
             var tokens = lexer.Tokenize();
 
             if (localReporter.HasErrors)
@@ -75,7 +90,7 @@ public class ModuleLoader
                 return ModuleLoadResult.Error;
             }
 
-            var parser = new Parsing.Parser(tokens, localReporter);
+            var parser = new Parsing.Parser(tokens, localReporter, pragmaSet);
             var program = parser.Parse();
 
             if (localReporter.HasErrors)

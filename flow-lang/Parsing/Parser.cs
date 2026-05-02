@@ -19,20 +19,22 @@ public partial class Parser
 {
     private readonly List<Token> _tokens;
     private readonly ErrorReporter _errorReporter;
+    private readonly PragmaSet _pragmaSet;
     private int _current = 0;
     // When true, disables the "identifier followed by literal = function call"
     // heuristic in ParsePrimary. Set while parsing arguments inside (func arg1 arg2).
     private bool _inFuncCallArgs = false;
     private bool _inLoop = false;
-    
+
     // Bounds for syntax tree depth
     private int _parseDepth = 0;
     private const int MaxParseDepth = 500;
 
-    public Parser(List<Token> tokens, ErrorReporter errorReporter)
+    public Parser(List<Token> tokens, ErrorReporter errorReporter, PragmaSet? pragmaSet = null)
     {
         _tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
+        _pragmaSet = pragmaSet ?? PragmaSet.Empty;
     }
 
     /// <summary>
@@ -67,7 +69,7 @@ public partial class Parser
             }
         }
 
-        return new Program(SourceLocation.Unknown, statements);
+        return new Program(SourceLocation.Unknown, statements, _pragmaSet);
     }
 
     private Statement? ParseStatement()

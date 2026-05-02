@@ -14,16 +14,21 @@ public class SimpleLexer
     private readonly string _source;
     private readonly ErrorReporter _errorReporter;
     private readonly string? _fileName;
+    private readonly PragmaSet _pragmaSet;
     private int _position = 0;
     private int _line = 1;
     private int _column = 1;
     private readonly Queue<Token> _pendingTokens = new();
 
-    public SimpleLexer(string source, ErrorReporter errorReporter, string? fileName = null)
+    public SimpleLexer(string source, ErrorReporter errorReporter, string? fileName = null,
+                       PragmaSet? pragmaSet = null)
     {
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
         _fileName = fileName;
+        // Phase 21 Plan 21-01: field is wired for Plan 21-02's TryParseNote H→B substitution.
+        // TryParseNote does NOT yet read _pragmaSet in this plan.
+        _pragmaSet = pragmaSet ?? PragmaSet.Empty;
     }
 
     public List<Token> Tokenize()

@@ -62,15 +62,23 @@ public class FlowEngine : IDisposable
 
         try
         {
-            // 1. Lex source into tokens
-            var lexer = new SimpleLexer(source, _errorReporter, fileName);
+            // 0. Pre-lex: extract file-scope pragmas (Phase 21 D-01).
+            //    Fast path returns the original string reference unchanged when
+            //    no `enable` substring is present — preserves Phase 18 byte-identical
+            //    determinism for legacy .flow files (Pitfall F mitigation).
+            var (pragmaSet, transformedSource) = PragmaScanner.Scan(source, fileName, _errorReporter);
+            if (_errorReporter.HasErrors)
+                return false;
+
+            // 1. Lex transformed source into tokens (pragmaSet wired for Plan 21-02).
+            var lexer = new SimpleLexer(transformedSource, _errorReporter, fileName, pragmaSet);
             var tokens = lexer.Tokenize();
 
             if (_errorReporter.HasErrors)
                 return false;
 
-            // 2. Parse tokens into AST
-            var parser = new Parser(tokens, _errorReporter);
+            // 2. Parse tokens into AST (pragmaSet attached to Program per D-08).
+            var parser = new Parser(tokens, _errorReporter, pragmaSet);
             var program = parser.Parse();
 
             if (_errorReporter.HasErrors)

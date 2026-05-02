@@ -130,7 +130,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   3. `use` imports do NOT propagate pragmas — importing a module that declares `enable hAsB;` does NOT enable `hAsB` in the importing file (PRAG-02)
   4. With `enable hAsB;` declared, `H4q` parses identically to `B4q` inside note streams; outside note streams `Int H = 5;` continues to compile as an identifier (DEFER-02/03)
 **Plans**: 3 plans
-- [ ] 21-01-PLAN.md — Pragma plumbing (PRAG-01 + PRAG-02): PragmaScanner + PragmaSet + PragmaRegistry + Parser/SimpleLexer/Program/FlowEngine/ModuleLoader integration + 15+ unit/integration Facts
+- [x] 21-01-PLAN.md — Pragma plumbing (PRAG-01 + PRAG-02): PragmaScanner + PragmaSet + PragmaRegistry + Parser/SimpleLexer/Program/FlowEngine/ModuleLoader integration + 15+ unit/integration Facts
 - [ ] 21-02-PLAN.md — H-alias substitution (DEFER-02/03): Token.OriginalText (D-15) + SimpleLexer.TryParseNote H→B gated on enable hAsB; (D-13/D-14) + 9 HAliasFacts + tightened PragmaIsolationFacts + test_h_alias.flow + test_h_identifier.flow
 - [ ] 21-03-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION + 14-deferred-items DEFER-02/DEFER-03 strikethrough)
 **UI hint**: yes
@@ -228,7 +228,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 18. Foundation — Rational Duration Arithmetic | v1.3 | 0/2 | Not started | - |
 | 19. Tuplets & Arbitrary Fractional Durations | v1.3 | 5/5 | Complete | 2026-04-26 |
 | 20. Cheap DEFER Closures + Multi-letter Enharmonic Edges | v1.3 | 4/4 | Complete | 2026-04-26 |
-| 21. Pragma System + H-Alias | v1.3 | 0/N | Not started | - |
+| 21. Pragma System + H-Alias | v1.3 | 1/3 | In Progress|  |
 | 22. Tier B/C Composer DX Bundle | v1.3 | 0/N | Not started | - |
 | 23. Microtonal Tuning (Wedge) | v1.3 | 0/N | Not started | - |
 | 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
