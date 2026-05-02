@@ -293,5 +293,15 @@ public static class FlowScriptData
         {
             "DX-15 varispeed: PASSED",
         },
+
+        // Phase 22-03 (DX-11): pin the inversion(Chord, Int) + voicing(Chord, String) smoke
+        // script. Script exercises (inversion Cmaj 1), (voicing Cmaj7 "drop2"), and the D-07
+        // charitable path (voicing Cmaj "drop2") returning the input chord unchanged. If the
+        // Voicings.Register wiring regresses, the sentinel does not print and this Theory
+        // row goes RED.
+        ["test_dx_voicings.flow"] = new[]
+        {
+            "DX-11 voicings: PASSED",
+        },
     };
 }

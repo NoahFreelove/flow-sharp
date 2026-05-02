@@ -312,6 +312,12 @@ public static class HarmonyFunctions
 
     public static void Register(InternalFunctionRegistry registry)
     {
+        // DX-11 (Phase 22 plan 22-03): inversion(Chord, Int) + voicing(Chord, String).
+        // Registered first so the chord-shape transforms are visible to subsequent
+        // chord-using harmony helpers in the same registration pass. Charitable D-07
+        // (incomplete chord -> input unchanged) lives inside the Voicings static class.
+        Voicings.Register(registry);
+
         // str(Chord) -> String
         var strChordSignature = new FunctionSignature("str", [ChordType.Instance]);
         registry.Register("str", strChordSignature, args =>

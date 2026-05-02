@@ -4,14 +4,14 @@ milestone: v1.3
 milestone_name: Composer DX Tier B/C
 status: executing
 stopped_at: Phase 22 context gathered
-last_updated: "2026-05-02T18:59:19.257Z"
+last_updated: "2026-05-02T19:07:51.662Z"
 last_activity: 2026-05-02
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 21
-  completed_plans: 16
-  percent: 76
+  completed_plans: 17
+  percent: 81
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 
 Milestone: v1.3 Composer DX Tier B/C
 Phase: 22 (tier-b-c-composer-dx-bundle) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-05-02
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 81%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
@@ -119,6 +119,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 21 P03 | ~10min | 3 tasks (docs-only closure) | 5 files (REQUIREMENTS, ROADMAP, STATE, 21-VERIFICATION, 14-deferred-items) |
 | Phase 22 P01 | 5min | 3 tasks | 5 files |
 | Phase Phase 22 PP02 | 5min | 3 tasks tasks | 6 files files |
+| Phase 22-tier-b-c-composer-dx-bundle P22-03 | 4min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -241,6 +242,9 @@ Recent decisions affecting current work:
 - [Phase ?]: [Plan 22-01]: random direction maps to up in v1.3 (RESEARCH Pitfall 7); chord-tone/scale-tone patterns route to linear (Assumption A8 / REQUIREMENTS line 105). Both deferred to v1.4 to preserve byte-identical determinism — no Random instantiation in v1.3 arpeggio path.
 - [Phase ?]: Plan 22-02: VarispeedResample uses Math.Round(Frames/ratio) — at ratio 2.0 yields exactly 22050 from 44100 (zero margin against Pitfall 8 ±1); identity short-circuits at semitones=0 and ratio=1.0 preserve byte-identity for no-shift case; ratio<=0.0 OR NaN throws ArgumentException (T-22-V5-09)
 - [Phase ?]: Plan 22-02: Sibling-overload registration mirrors 22-01 — new (String,Int) and (String,Double) loadWav signatures register after the existing 1-arg signature; LoadWav, LoadWavInternal, and Resample untouched. Pure linear interpolation per CONTEXT D-15; OLA/sinc deferred to v1.4.
+- [Phase ?]: DX-11 chord-shape transforms ship in a NEW Voicings.cs (sibling to ChordParser.cs) rather than extending HarmonyFunctions.cs in place
+- [Phase ?]: Charitable D-07 implemented as switch-default in Voicings.Voicing(name) — unknown name returns input unchanged
+- [Phase ?]: D-08 doc-comment grep gate — every voicing helper cites See Phase 22 CONTEXT D-07 (7 occurrences in Voicings.cs)
 
 ### Roadmap Evolution
 
@@ -283,7 +287,7 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-02T18:59:14.350Z
+Last session: 2026-05-02T19:07:51.657Z
 Stopped at: Phase 22 context gathered
 Resume file: None
 
