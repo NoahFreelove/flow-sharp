@@ -66,7 +66,7 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 - [ ] **DX-12**: `delay(buffer, noteValueRate, feedback, mix)` overload accepts a NoteValue (or Fraction) as the delay time, computed from active tempo (Pitfall 1 — uses Fraction for sync math). Existing ms-rate overload stays unchanged. Acceptance: `tempo 120 { ... delay(buf, e, 0.5, 0.4) ... }` produces an eighth-note-synced delay (250ms at 120 BPM).
 - [ ] **DX-13**: `quantize(sequence, resolution, strength, swing)` snaps note onsets to a grid. Resolution is a NoteValue or Fraction; strength is 0–1 (0=no quantize, 1=hard quantize); swing is -1 to 1. Acceptance: pre-humanized euclidean output snaps cleanly to a 1/16 grid at strength=1.
 - [ ] **DX-14**: Legato and portamento articulations: `legato(sequence, overlap)` extends note durations by overlap factor; `portamento(sequence, glideTime)` emits MIDI CC65 (portamento on/off) + CC5 (portamento time) per Sweetwater MIDI spec. Acceptance: MIDI export of `portamento(seq, 100ms)` includes CC65=127 + CC5=64-ish events.
-- [ ] **DX-15**: `loadWav(path, semitones)` and `loadWav(path, ratio)` overloads varispeed-pitch-shift the loaded buffer via OLA + linear/sinc resample. Existing `loadWav(path)` unchanged (defaults to 0 semitones / ratio 1.0). Acceptance: `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`.
+- [x] **DX-15**: `loadWav(path, semitones)` and `loadWav(path, ratio)` overloads varispeed-pitch-shift the loaded buffer via OLA + linear/sinc resample. Existing `loadWav(path)` unchanged (defaults to 0 semitones / ratio 1.0). Acceptance: `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`.
 
 ### Microtonal Tuning (Wedge)
 
@@ -144,7 +144,7 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 | DX-12 | Phase 22 | Pending |
 | DX-13 | Phase 22 | Pending |
 | DX-14 | Phase 22 | Pending |
-| DX-15 | Phase 22 | Pending |
+| DX-15 | Phase 22 | Complete |
 | MICR-01 | Phase 23 | Pending |
 | MICR-02 | Phase 23 | Pending |
 | MICR-03 | Phase 23 | Pending |

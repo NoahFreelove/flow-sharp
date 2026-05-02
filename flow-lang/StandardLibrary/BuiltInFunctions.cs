@@ -553,6 +553,16 @@ public static class BuiltInFunctions
         var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance]);
         registry.Register("loadWav", loadWavSignature, Audio.FileIO.LoadWav);
 
+        // DX-15: loadWav(String, Int) -> Buffer — varispeed by semitones (Phase 22 plan 22-02)
+        var loadWavSemiSig = new FunctionSignature("loadWav",
+            [StringType.Instance, IntType.Instance]);
+        registry.Register("loadWav", loadWavSemiSig, Audio.FileIO.LoadWavSemitones);
+
+        // DX-15: loadWav(String, Double) -> Buffer — varispeed by ratio (Phase 22 plan 22-02)
+        var loadWavRatioSig = new FunctionSignature("loadWav",
+            [StringType.Instance, DoubleType.Instance]);
+        registry.Register("loadWav", loadWavRatioSig, Audio.FileIO.LoadWavRatio);
+
         // writeMidi(String, Song) -> Void - export Song to MIDI file
         var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
         registry.Register("writeMidi", writeMidiSignature, Audio.MidiExport.WriteMidi);

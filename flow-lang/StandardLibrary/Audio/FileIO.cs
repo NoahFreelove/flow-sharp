@@ -295,6 +295,66 @@ public static class FileIO
     }
 
     /// <summary>
+    /// DX-15: loadWav(path, semitones) — varispeed pitch shift via linear-interpolation resample.
+    /// Positive semitones raise pitch; negative lower. semitones=0 short-circuits to identity.
+    /// 12 semitones = ratio 2.0 (one octave up), -12 semitones = ratio 0.5 (one octave down).
+    /// Per RESEARCH §Resampler choice: linear interpolation is the v1.3 default; OLA/sinc deferred.
+    /// </summary>
+    public static Value LoadWavSemitones(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        int semitones = args[1].As<int>();
+        var buffer = LoadWavInternal(filepath);
+        if (semitones == 0) return Value.Buffer(buffer);   // identity short-circuit
+        double ratio = Math.Pow(2.0, semitones / 12.0);
+        return Value.Buffer(VarispeedResample(buffer, ratio));
+    }
+
+    /// <summary>
+    /// DX-15: loadWav(path, ratio) — varispeed pitch shift via linear-interpolation resample.
+    /// ratio &gt; 1.0 raises pitch (fewer output frames); ratio &lt; 1.0 lowers pitch (more frames).
+    /// ratio == 1.0 short-circuits to identity. ratio &lt;= 0.0 or NaN throws ArgumentException
+    /// (threat T-22-V5-09 DoS guard against infinite/NaN frame counts).
+    /// </summary>
+    public static Value LoadWavRatio(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        double ratio = args[1].As<double>();
+        var buffer = LoadWavInternal(filepath);
+        if (ratio == 1.0) return Value.Buffer(buffer);     // identity short-circuit
+        if (ratio <= 0.0 || double.IsNaN(ratio))
+            throw new ArgumentException(
+                $"loadWav ratio must be positive and finite (got {ratio})");
+        return Value.Buffer(VarispeedResample(buffer, ratio));
+    }
+
+    /// <summary>
+    /// Linear-interpolation varispeed resample. Output frame count = round(source.Frames / ratio).
+    /// ratio &gt; 1.0 produces fewer frames (pitch up); ratio &lt; 1.0 produces more (pitch down).
+    /// SampleRate and Channels are preserved (only frame count changes). Algorithm mirrors the
+    /// existing <see cref="Resample"/> sample-rate converter; DX-15 reuses the math with an
+    /// arbitrary user-supplied ratio instead of srcRate/targetRate.
+    /// </summary>
+    public static AudioBuffer VarispeedResample(AudioBuffer source, double ratio)
+    {
+        int newFrames = (int)Math.Round(source.Frames / ratio);
+        var result = new AudioBuffer(newFrames, source.Channels, source.SampleRate);
+        for (int frame = 0; frame < newFrames; frame++)
+        {
+            double srcPos = frame * ratio;
+            int srcFrame = (int)srcPos;
+            float frac = (float)(srcPos - srcFrame);
+            for (int ch = 0; ch < source.Channels; ch++)
+            {
+                float s0 = source.GetSample(Math.Min(srcFrame, source.Frames - 1), ch);
+                float s1 = source.GetSample(Math.Min(srcFrame + 1, source.Frames - 1), ch);
+                result.SetSample(frame, ch, s0 + frac * (s1 - s0));
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Loads a WAV file from disk and returns an AudioBuffer.
     /// Supports 16-bit, 24-bit, and 32-bit PCM formats.
     /// Resamples to 44100 Hz if the source sample rate differs.

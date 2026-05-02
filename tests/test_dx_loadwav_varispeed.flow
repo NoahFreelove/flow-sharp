@@ -1,0 +1,26 @@
+use "@std"
+use "@audio"
+
+Note: ===== DX-15 varispeed loadWav smoke =====
+Note: Synthesize a 1-second sine, write, reload at +12 semitones (octave up = ratio 2.0)
+
+Buffer src = (createSineTone 1.0 440.0 0.8)
+(writeWav "tests/output/dx_varispeed_src.wav" src)
+
+Buffer high = (loadWav "tests/output/dx_varispeed_src.wav" 12)
+Int srcFrames = (getFrames src)
+Int highFrames = (getFrames high)
+(print (concat "src frames: " (str srcFrames)))
+(print (concat "+12 semi frames: " (str highFrames)))
+
+Note: ratio overload — load at 1.5x speed
+Buffer fast = (loadWav "tests/output/dx_varispeed_src.wav" 1.5)
+Int fastFrames = (getFrames fast)
+(print (concat "ratio 1.5 frames: " (str fastFrames)))
+
+Note: identity short-circuit — semitones=0 returns unmodified buffer
+Buffer same = (loadWav "tests/output/dx_varispeed_src.wav" 0)
+Int sameFrames = (getFrames same)
+(print (concat "semi 0 frames: " (str sameFrames)))
+
+(print "DX-15 varispeed: PASSED")

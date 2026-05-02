@@ -47,6 +47,14 @@ internal proc writeWav(String: filepath, Buffer: buffer, Int: bitDepth)
 Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
 internal proc loadWav(String: filepath)
 
+Note: DX-15 varispeed: load a WAV and pitch-shift by semitones via linear-interpolation resample
+Note: 12 semitones = octave up = ratio 2.0 = sample count halved; semitones=0 short-circuits.
+internal proc loadWav(String: filepath, Int: semitones)
+
+Note: DX-15 varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample
+Note: ratio > 1.0 raises pitch (fewer frames); ratio == 1.0 short-circuits; ratio <= 0 errors.
+internal proc loadWav(String: filepath, Double: ratio)
+
 Note: ===== USER CONVENIENCE LAYER =====
 
 Note: ===== Global Configuration =====

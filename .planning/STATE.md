@@ -4,14 +4,14 @@ milestone: v1.3
 milestone_name: Composer DX Tier B/C
 status: executing
 stopped_at: Phase 22 context gathered
-last_updated: "2026-05-02T18:49:53.198Z"
+last_updated: "2026-05-02T18:59:19.257Z"
 last_activity: 2026-05-02
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 21
-  completed_plans: 15
-  percent: 71
+  completed_plans: 16
+  percent: 76
 ---
 
 # Project State
@@ -27,11 +27,11 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 
 Milestone: v1.3 Composer DX Tier B/C
 Phase: 22 (tier-b-c-composer-dx-bundle) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-05-02
 
-Progress: [███████░░░] 71%
+Progress: [████████░░] 76%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
@@ -118,6 +118,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 21 P02 | 22min | 3 tasks | 8 files (Token + SimpleLexer.TryParseNote + HAliasFacts + tightened PragmaIsolationFacts + 2 new .flow fixtures + 2 modified .flow fixtures) |
 | Phase 21 P03 | ~10min | 3 tasks (docs-only closure) | 5 files (REQUIREMENTS, ROADMAP, STATE, 21-VERIFICATION, 14-deferred-items) |
 | Phase 22 P01 | 5min | 3 tasks | 5 files |
+| Phase Phase 22 PP02 | 5min | 3 tasks tasks | 6 files files |
 
 ## Accumulated Context
 
@@ -238,6 +239,8 @@ Recent decisions affecting current work:
 - [Plan 21-03]: Closure — REQUIREMENTS PRAG-01/PRAG-02/DEFER-02/03 rows flipped to Shipped (60f7f18 / 60f7f18 / 05c2174); ROADMAP Phase 21 marked complete with 3/3 plans; STATE milestone progress 3/10 → 4/10 phases for v1.3; 14-deferred-items.md DEFER-02 + DEFER-03 strikethrough applied per handling protocol §3 (audit trail preserved). Single atomic docs-only closure commit (5 files: REQUIREMENTS, ROADMAP, STATE, 21-VERIFICATION, 14-deferred-items). Full xUnit suite 414/414 GREEN at close; Phase 18 byte-identical regression gate (19/19) GREEN. Phase 22 (Tier B/C Composer DX Bundle) is the next ROADMAP target; Phase 23 (Microtonal Tuning) and Phase 24 (Scale Linting) specifically use the Phase 21 pragma registry to register their pragma names — both unblocked.
 - [Phase ?]: [Plan 22-01]: DX-10 4-arg arpeggio extends 2-arg in place — sibling-overload registration in HarmonyFunctions.Register preserves byte-identical regression for the existing 2-arg path. ApplyDirection switch default arm returns input unchanged (charitable interpretation per CLAUDE.md memory).
 - [Phase ?]: [Plan 22-01]: random direction maps to up in v1.3 (RESEARCH Pitfall 7); chord-tone/scale-tone patterns route to linear (Assumption A8 / REQUIREMENTS line 105). Both deferred to v1.4 to preserve byte-identical determinism — no Random instantiation in v1.3 arpeggio path.
+- [Phase ?]: Plan 22-02: VarispeedResample uses Math.Round(Frames/ratio) — at ratio 2.0 yields exactly 22050 from 44100 (zero margin against Pitfall 8 ±1); identity short-circuits at semitones=0 and ratio=1.0 preserve byte-identity for no-shift case; ratio<=0.0 OR NaN throws ArgumentException (T-22-V5-09)
+- [Phase ?]: Plan 22-02: Sibling-overload registration mirrors 22-01 — new (String,Int) and (String,Double) loadWav signatures register after the existing 1-arg signature; LoadWav, LoadWavInternal, and Resample untouched. Pure linear interpolation per CONTEXT D-15; OLA/sinc deferred to v1.4.
 
 ### Roadmap Evolution
 
@@ -280,7 +283,7 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-02T18:49:48.441Z
+Last session: 2026-05-02T18:59:14.350Z
 Stopped at: Phase 22 context gathered
 Resume file: None
 

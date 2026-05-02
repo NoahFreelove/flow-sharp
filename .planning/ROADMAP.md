@@ -148,7 +148,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   6. `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`; default `loadWav(path)` unchanged (DX-15)
 **Plans**: 7 plans
 - [x] 22-01-PLAN.md — DX-10 4-arg arpeggio (rate + direction + pattern)
-- [ ] 22-02-PLAN.md — DX-15 varispeed loadWav (Int semitones + Double ratio)
+- [x] 22-02-PLAN.md — DX-15 varispeed loadWav (Int semitones + Double ratio)
 - [ ] 22-03-PLAN.md — DX-11 inversion + drop2/drop3/open/close/spread voicings
 - [ ] 22-04-PLAN.md — DX-12 NoteValue delay overload synced to MusicalContext.Tempo
 - [ ] 22-05-PLAN.md — DX-13 quantize with OnsetOffset onset-shift mechanism
@@ -236,7 +236,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 19. Tuplets & Arbitrary Fractional Durations | v1.3 | 5/5 | Complete | 2026-04-26 |
 | 20. Cheap DEFER Closures + Multi-letter Enharmonic Edges | v1.3 | 4/4 | Complete | 2026-04-26 |
 | 21. Pragma System + H-Alias | v1.3 | 3/3 | Complete   | 2026-05-01 |
-| 22. Tier B/C Composer DX Bundle | v1.3 | 1/7 | In Progress|  |
+| 22. Tier B/C Composer DX Bundle | v1.3 | 2/7 | In Progress|  |
 | 23. Microtonal Tuning (Wedge) | v1.3 | 0/N | Not started | - |
 | 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |

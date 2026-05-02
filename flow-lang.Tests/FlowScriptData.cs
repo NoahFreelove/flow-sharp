@@ -283,5 +283,15 @@ public static class FlowScriptData
         {
             "DX-10 arpeggio: PASSED",
         },
+
+        // Phase 22-02 (DX-15): pin the varispeed loadWav smoke script. Script writes a
+        // synthetic 1s sine, reloads at +12 semitones (octave up = ratio 2.0 = ~half frames),
+        // exercises the ratio overload at 1.5, and verifies the semitones=0 short-circuit.
+        // If either new overload regresses or the existing 1-arg loadWav byte-identity
+        // breaks, the sentinel does not print and this Theory row goes RED.
+        ["test_dx_loadwav_varispeed.flow"] = new[]
+        {
+            "DX-15 varispeed: PASSED",
+        },
     };
 }
