@@ -4,7 +4,7 @@ milestone: v1.3
 milestone_name: Composer DX Tier B/C
 status: executing
 stopped_at: Phase 22 context gathered
-last_updated: "2026-05-02T19:18:11.404Z"
+last_updated: "2026-05-02T19:35:00.000Z"
 last_activity: 2026-05-02
 progress:
   total_phases: 10
@@ -29,7 +29,7 @@ Milestone: v1.3 Composer DX Tier B/C
 Phase: 22 (tier-b-c-composer-dx-bundle) — EXECUTING
 Plan: 5 of 7
 Status: Ready to execute
-Last activity: 2026-05-02
+Last activity: 2026-05-02 - Completed quick task 260502-lhm: Setup GitHub wiki sync workflow
 
 Progress: [█████████░] 86%
 
@@ -273,6 +273,7 @@ None yet for Phase 15.
 |---|-------------|------|--------|-----------|
 | 260420-0c0 | Add pure-Flow test library (flow-lang/test.flow + tests/test_test_library.flow) | 2026-04-20 | c8731d2 | [260420-0c0-write-a-pure-flow-test-library-at-flow-l](./quick/260420-0c0-write-a-pure-flow-test-library-at-flow-l/) |
 | 260426-v5s | examples/long_demo.flow — ~10 min Flow feature showcase (46 spotlights) | 2026-04-27 | 9d8e8b2 | [260426-v5s-create-examples-long-demo-flow-10-minute](./quick/260426-v5s-create-examples-long-demo-flow-10-minute/) |
+| 260502-lhm | Setup GitHub wiki sync workflow (manual workflow_dispatch → ./wiki/ mirrors to <repo>.wiki.git) | 2026-05-02 | 771bd2d | [260502-lhm-setup-github-wiki-sync-workflow](./quick/260502-lhm-setup-github-wiki-sync-workflow/) |
 
 ## Deferred Items
 

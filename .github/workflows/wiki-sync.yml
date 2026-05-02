@@ -1,0 +1,26 @@
+name: Sync wiki/ to GitHub Wiki
+
+# Manual trigger only. Per user decision, no push or schedule triggers.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    name: Push ./wiki to <repo>.wiki.git
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main repo
+        uses: actions/checkout@v4
+
+      - name: Sync wiki/ to GitHub Wiki
+        # NOTE: The GitHub wiki for this repo MUST be enabled in
+        # Settings -> Features -> Wikis AND have at least one page created
+        # via the web UI before this workflow can succeed. The
+        # <repo>.wiki.git remote does not exist until then.
+        uses: Andrew-Chen-Wang/github-wiki-action@v4
+        with:
+          path: wiki/
+          token: ${{ secrets.GITHUB_TOKEN }}
