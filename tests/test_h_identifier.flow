@@ -1,0 +1,11 @@
+use "@std"
+
+Note: Pitfall C regression gate — bare H stays an Identifier when pragma is absent
+Note: Plan 21-02 ships H-as-B alias inside note streams; OUTSIDE note streams,
+Note: H must continue to compile as a regular identifier per DEFER-02/03 acceptance.
+
+Int H = 5
+(print (str H))
+Note: expected: 5
+
+(print "test_h_identifier: PASSED")

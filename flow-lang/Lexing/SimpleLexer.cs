@@ -647,7 +647,13 @@ public class SimpleLexer
             // Try to parse as Note (A-G followed by optional octave and alteration)
             if (TryParseNote(text, out var noteValue))
             {
-                return new Token(TokenType.NoteLiteral, text, start, noteValue);
+                // Phase 21 D-15: when canonicalization happened (text != noteValue —
+                // e.g. H4q canonicalized to B4q under enable hAsB;), preserve the
+                // composer's original text in OriginalText so diagnostics surface
+                // the authored shape. Token.Text always carries the canonical form
+                // so renderer/MIDI export consume B-rooted notes unchanged.
+                string? originalText = (text != noteValue) ? text : null;
+                return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText);
             }
 
             // Check for note + duration suffix (e.g., C4h, D5q, E3w)
@@ -664,7 +670,11 @@ public class SimpleLexer
                         // Rewind position by 1 so the duration suffix becomes a separate token
                         _position--;
                         _column--;
-                        return new Token(TokenType.NoteLiteral, notePartText, start, notePartValue);
+                        // Phase 21 D-15 (Pitfall D): inner-call canonicalization path —
+                        // when notePartText ("H4") canonicalizes to notePartValue ("B4"),
+                        // preserve the original.
+                        string? originalText = (notePartText != notePartValue) ? notePartText : null;
+                        return new Token(TokenType.NoteLiteral, notePartValue, start, notePartValue, originalText);
                     }
                 }
             }
@@ -698,9 +708,33 @@ public class SimpleLexer
         if (text.Length == 0)
             return false;
 
+        char firstChar = text[0];
+
+        // === Phase 21 D-13: H→B substitution under hAsB pragma ===
+        // Pitfall C: bare 'H' (length==1) MUST stay an Identifier so `Int H = 5;`
+        // keeps compiling. The standard A-G branch below also rejects 'H' (it's
+        // outside the [A,G] range), so this is the only acceptance path for an
+        // H-prefixed token.
+        if (firstChar == 'H' && _pragmaSet.Has("hAsB") && text.Length > 1)
+        {
+            var probe = "B" + text[1..];   // canonical
+            try
+            {
+                var (note, octave, alteration) = NoteType.Parse(probe);
+                noteValue = probe;          // canonical text returned (B4q etc.)
+                return true;
+            }
+            catch
+            {
+                // Pitfall E: NoteType.Parse rejects shapes that aren't valid notes
+                // (e.g. probe="Bmaj7"). Fall through to return false — Hmaj7 stays
+                // an Identifier per D-16.
+            }
+            return false;
+        }
+
         // Only recognize uppercase note names as note literals (A-G)
         // Lowercase names like c4, d4 are treated as identifiers (variable names)
-        char firstChar = text[0];
         if (firstChar < 'A' || firstChar > 'G')
             return false;
 

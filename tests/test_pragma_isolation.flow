@@ -2,11 +2,11 @@ use "@std"
 
 use "./test_pragma_isolation_module.flow"
 
-Note: PRAG-02 isolation fixture — IMPORTER does NOT declare enable hAsB;
-Note: Even though the imported module declares the pragma, this file MUST NOT
-Note: see H-as-B aliasing. Plan 21-02 will add a `(print | H4q |)` line that
-Note: triggers the parse error this Fact asserts. For Plan 21-01, the file must
-Note: at minimum import the module successfully (proving the pragma scan in
-Note: ModuleLoader works without polluting the importer reporter).
+Note: PRAG-02 isolation fixture (Plan 21-02 baseline — passes integration loop)
+Note: The actual H4q-rejection assertion lives in PragmaIsolationFacts.cs which
+Note: uses RunSource(...) with an inline source that exercises the importer's
+Note: H4q rejection. This file proves the module loads cleanly when the importer
+Note: does NOT declare the pragma — and that the importer NEVER inherits the
+Note: module's enable hAsB; declaration.
 
 (print "test_pragma_isolation: PASSED")

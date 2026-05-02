@@ -1,0 +1,20 @@
+enable hAsB;
+
+use "@std"
+
+Note: DEFER-02/03 acceptance — H-as-B alias inside note streams (Phase 21 plan 21-02)
+Note: With `enable hAsB;` declared, every B-shape works with H per D-14.
+
+Note: Basic alias — H4q parses identically to B4q
+Sequence basic = | H4q B4q |
+(print (str basic))
+
+Note: D-14 full coverage — flats, sharps, dotted, tied, cent offsets
+Sequence full = | Hb4q H#4q H4q. H4h~ Hb4+50c |
+(print (str full))
+
+Note: D-14 final clause — chord brackets pull inner notes through TryParseNote
+Sequence chord = | [H4 D#5 F#5]q |
+(print (str chord))
+
+(print "test_h_alias: PASSED")
