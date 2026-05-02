@@ -13,88 +13,119 @@ up cleanly later.
 
 ## DEFER-02: `H` = `B` note-stream alias
 
-**Origin:** Original DX-06 clause per REQUIREMENTS.md (preserved as audit-trail
-in the reframed DX-06 row). CONTEXT D-10/D-11 — scope-reduce decision during
-Phase 14 planning.
+> ~~**Origin:** Original DX-06 clause per REQUIREMENTS.md (preserved as audit-trail~~
+> ~~in the reframed DX-06 row). CONTEXT D-10/D-11 — scope-reduce decision during~~
+> ~~Phase 14 planning.~~
+>
+> ~~**Full requirement** (verbatim from the original audit-trail):~~
+>
+> > ~~`H` accepted as `B` alias **only within note-stream context** (`| … |`).~~
+> > ~~Must NOT break existing identifier `H` as a variable name in ordinary code.~~
+>
+> ~~**Intended family** (beyond the single-letter clause, inferred from the~~
+> ~~extended alteration surface shipped in Phase 14 Plan 02):~~
+>
+> ~~- `H` → `B`~~
+> ~~- `H4`, `H5`, etc. → `B4`, `B5` (with octave)~~
+> ~~- `H+`, `H++` → `B+`, `B++` (with alteration)~~
+> ~~- `H4+`, `Hb`, `H-`, `H#` etc. — consistent with the D-07/D-08 alteration~~
+> ~~  encoding~~
+>
+> ~~**Why deferred** (CONTEXT D-10/D-11):~~
+>
+> ~~A global alias pollutes the namespace. `Int H = 5;` today compiles cleanly~~
+> ~~and would silently change meaning if `H` were aliased, because the lexer~~
+> ~~cannot distinguish "note letter" from "identifier" without additional~~
+> ~~context. The user's decision is to redesign around a **pragma /~~
+> ~~feature-flag language construct** (DEFER-03) that makes the alias opt-in~~
+> ~~per file or per block.~~
+>
+> ~~**Dependencies blocking implementation:**~~
+>
+> ~~- DEFER-03 (pragma system) must ship first — the H alias is the first user~~
+> ~~  of that system.~~
+>
+> ~~**Acceptance criterion (for the future phase that picks this up):**~~
+>
+> ~~- A locale/config pragma that, when active in a file or block, makes the~~
+> ~~  lexer treat `H` as the English `B` and `B` as the English `Bb` (full~~
+> ~~  German-notation swap), or the simpler H→B-only variant if the user~~
+> ~~  decides the full swap is too aggressive.~~
+> ~~- Round-trip tests that confirm English and German spellings of the same~~
+> ~~  piece render identical audio.~~
+> ~~- Docs entry under the note-name ergonomics guide explaining which alias~~
+> ~~  set is active and how to switch.~~
+> ~~- Clear error (via the diagnostic catalogue) when `H` is used outside a~~
+> ~~  German-locale context, pointing the user at the pragma.~~
 
-**Full requirement** (verbatim from the original audit-trail):
-
-> `H` accepted as `B` alias **only within note-stream context** (`| … |`).
-> Must NOT break existing identifier `H` as a variable name in ordinary code.
-
-**Intended family** (beyond the single-letter clause, inferred from the
-extended alteration surface shipped in Phase 14 Plan 02):
-
-- `H` → `B`
-- `H4`, `H5`, etc. → `B4`, `B5` (with octave)
-- `H+`, `H++` → `B+`, `B++` (with alteration)
-- `H4+`, `Hb`, `H-`, `H#` etc. — consistent with the D-07/D-08 alteration
-  encoding
-
-**Why deferred** (CONTEXT D-10/D-11):
-
-A global alias pollutes the namespace. `Int H = 5;` today compiles cleanly
-and would silently change meaning if `H` were aliased, because the lexer
-cannot distinguish "note letter" from "identifier" without additional
-context. The user's decision is to redesign around a **pragma /
-feature-flag language construct** (DEFER-03) that makes the alias opt-in
-per file or per block.
-
-**Dependencies blocking implementation:**
-
-- DEFER-03 (pragma system) must ship first — the H alias is the first user
-  of that system.
-
-**Acceptance criterion (for the future phase that picks this up):**
-
-- A locale/config pragma that, when active in a file or block, makes the
-  lexer treat `H` as the English `B` and `B` as the English `Bb` (full
-  German-notation swap), or the simpler H→B-only variant if the user
-  decides the full swap is too aggressive.
-- Round-trip tests that confirm English and German spellings of the same
-  piece render identical audio.
-- Docs entry under the note-name ergonomics guide explaining which alias
-  set is active and how to switch.
-- Clear error (via the diagnostic catalogue) when `H` is used outside a
-  German-locale context, pointing the user at the pragma.
+**CLOSED 2026-04-26 by Phase 21 plan 21-02 (DEFER-02/03).** Implementation: file-scope
+`enable hAsB;` pragma extracted by new pre-lex `PragmaScanner` stage (Plan 21-01 plumbing);
+`SimpleLexer.TryParseNote` gated on `_pragmaSet.Has("hAsB")` substitutes H-prefixed strings
+via probe `"B" + text[1..]` then re-runs `NoteType.Parse` (Plan 21-02). Bare `H` (length==1)
+continues to scan as Identifier per Pitfall C — `Int H = 5;` keeps compiling. Outside note
+streams, `Hmaj7` does NOT parse as a chord literal — `ChordParser.cs` is unchanged per
+D-16; `NoteType.Parse("Bmaj7")` fails (Assumption A1 verified by Fact). Token retains
+composer's original H-rooted text via additive `OriginalText` field; renderer + MIDI export
+consume canonical `Token.Text` (B-rooted) unchanged. PRAG-02 isolation enforced
+structurally in `ModuleLoader.LoadModule` — each imported file gets its own PragmaSet.
+Commit hashes: `60f7f18` (plumbing) + `05c2174` (H-substitution). See
+`.planning/phases/21-pragma-system-h-alias/21-02-SUMMARY.md` for full divergences and
+verification matrix.
 
 ---
 
 ## DEFER-03: Pragma / feature-flag language construct
 
-**Origin:** CONTEXT D-11 — future-phase redirect to support DEFER-02 (H
-alias) and other locale-specific grammar variants without polluting the
-global namespace.
+> ~~**Origin:** CONTEXT D-11 — future-phase redirect to support DEFER-02 (H~~
+> ~~alias) and other locale-specific grammar variants without polluting the~~
+> ~~global namespace.~~
+>
+> ~~**Candidate keyword** (non-binding — the future phase finalizes):~~
+>
+> ~~```~~
+> ~~enable "german-notation"              // file-scoped~~
+> ~~enable "german-notation" { … }        // block-scoped~~
+> ~~```~~
+>
+> ~~**First user:** German-notation addon, enabling the H/B alias family from~~
+> ~~DEFER-02 within the enabled scope.~~
+>
+> ~~**Design open questions for the future phase** (CONTEXT §Deferred Ideas):~~
+>
+> ~~- File-scoped vs block-scoped semantics — or both, layered?~~
+> ~~- Do enable blocks stack (multiple enables active simultaneously)?~~
+> ~~- Interaction with `use` imports — are pragmas imported?~~
+> ~~- Do pragma-aware tokens also propagate into chord literals / key blocks?~~
+> ~~- Pragma registry: hard-coded list vs discoverable/extensible?~~
+> ~~- Does the pragma affect lexer dispatch at token production, or at the~~
+> ~~  parser's token-consumption stage?~~
+> ~~- Error message when a disabled pragma is referenced outside its scope?~~
+>
+> ~~**Why this is the right shape** (CONTEXT §Specifics):~~
+>
+> ~~Niche syntactic variants should be **opt-in**, not global. Pragmas scope~~
+> ~~the change to users who request it, preserving the default grammar~~
+> ~~stability that solo-composer users rely on.~~
+>
+> ~~**Candidate future phase location:** Between Phase 17 (Language Server)~~
+> ~~and any new milestone, OR as part of a v1.3 language-extension milestone.~~
 
-**Candidate keyword** (non-binding — the future phase finalizes):
-
-```
-enable "german-notation"              // file-scoped
-enable "german-notation" { … }        // block-scoped
-```
-
-**First user:** German-notation addon, enabling the H/B alias family from
-DEFER-02 within the enabled scope.
-
-**Design open questions for the future phase** (CONTEXT §Deferred Ideas):
-
-- File-scoped vs block-scoped semantics — or both, layered?
-- Do enable blocks stack (multiple enables active simultaneously)?
-- Interaction with `use` imports — are pragmas imported?
-- Do pragma-aware tokens also propagate into chord literals / key blocks?
-- Pragma registry: hard-coded list vs discoverable/extensible?
-- Does the pragma affect lexer dispatch at token production, or at the
-  parser's token-consumption stage?
-- Error message when a disabled pragma is referenced outside its scope?
-
-**Why this is the right shape** (CONTEXT §Specifics):
-
-Niche syntactic variants should be **opt-in**, not global. Pragmas scope
-the change to users who request it, preserving the default grammar
-stability that solo-composer users rely on.
-
-**Candidate future phase location:** Between Phase 17 (Language Server)
-and any new milestone, OR as part of a v1.3 language-extension milestone.
+**CLOSED 2026-04-26 by Phase 21 plan 21-02 (DEFER-02/03).** Implementation: file-scope
+`enable hAsB;` pragma extracted by new pre-lex `PragmaScanner` stage (Plan 21-01 plumbing);
+`SimpleLexer.TryParseNote` gated on `_pragmaSet.Has("hAsB")` substitutes H-prefixed strings
+via probe `"B" + text[1..]` then re-runs `NoteType.Parse` (Plan 21-02). Bare `H` (length==1)
+continues to scan as Identifier per Pitfall C — `Int H = 5;` keeps compiling. Outside note
+streams, `Hmaj7` does NOT parse as a chord literal — `ChordParser.cs` is unchanged per
+D-16; `NoteType.Parse("Bmaj7")` fails (Assumption A1 verified by Fact). Token retains
+composer's original H-rooted text via additive `OriginalText` field; renderer + MIDI export
+consume canonical `Token.Text` (B-rooted) unchanged. PRAG-02 isolation enforced
+structurally in `ModuleLoader.LoadModule` — each imported file gets its own PragmaSet.
+Per-file scope (D-02): pragmas do NOT propagate across `use` imports — verified by
+`PragmaIsolationFacts.Importer_WithoutHAsB_RejectsHNote_EvenWhenModuleEnablesIt`.
+Closed-set registry with Levenshtein did-you-mean errors for unknown pragma names (D-12 +
+D-17). Commit hashes: `60f7f18` (plumbing) + `05c2174` (H-substitution). See
+`.planning/phases/21-pragma-system-h-alias/21-02-SUMMARY.md` for full divergences and
+verification matrix.
 
 ---
 

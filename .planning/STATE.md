@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: executing
-stopped_at: Phase 21 context gathered
-last_updated: "2026-05-01T18:59:31.876Z"
-last_activity: 2026-05-01 -- Phase 21 execution started
+status: planning
+stopped_at: Completed 21-03-PLAN.md (Phase 21 closes — PRAG-01/PRAG-02/DEFER-02/03 shipped; commits 60f7f18 + 05c2174 + closure)
+last_updated: "2026-05-01T19:48:59.397Z"
+last_activity: 2026-05-01 -- Phase 21 closed (PRAG-01/PRAG-02/DEFER-02/03 shipped)
 progress:
   total_phases: 10
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 11
-  percent: 79
+  completed_plans: 14
+  percent: 100
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 21 — pragma-system-h-alias
+**Current focus:** Phase 22 — tier-b-c-composer-dx-bundle (next ROADMAP target)
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 21 (pragma-system-h-alias) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 21
-Last activity: 2026-05-01 -- Phase 21 execution started
+Phase: 21 (pragma-system-h-alias) — CLOSED 2026-04-26
+Plan: 3 of 3 complete
+Status: Phase 21 closed; ready to plan Phase 22 / 23 / 24
+Last activity: 2026-05-01 -- Phase 21 closed (PRAG-01/PRAG-02/DEFER-02/03 shipped)
 
 Progress: [██████████] 100%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 20 closed 2026-04-26. v1.3 milestone now 3/10 phases complete (Phases 18, 19, 20). Phase 21 (Pragma System + H-Alias) is the next ROADMAP target — depends on Phase 20 DEFER-04 (now shipped per binding pre-ordering #3); closes PRAG-01, PRAG-02, DEFER-02/03 (H-as-B alias inside note streams).
+Phase 21 closed 2026-04-26. v1.3 milestone now 4/10 phases complete (Phases 18, 19, 20, 21). Phase 22 (Tier B/C Composer DX Bundle) is the next ROADMAP target. Phase 23 (Microtonal Tuning) and Phase 24 (Scale Linting) are also unblocked — both depend on the Phase 21 pragma infrastructure shipped today and can be planned in any order after Phase 22.
 
 Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
@@ -54,6 +54,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 12 | 6 | - | - |
 | 13 | 5 | - | - |
 | 14 | 4 | - | - |
+| 21 | 3 | - | - |
 
 **Recent Trend:**
 
@@ -113,6 +114,9 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 20 P02 | 5min | 2 tasks tasks | 5 files files |
 | Phase 20 P03 | 13min | 2 tasks tasks | 4 files files |
 | Phase 20 P04 | ~10min | 4 tasks (docs-only closure) | 7 files (REQUIREMENTS, ROADMAP, STATE, 20-VERIFICATION, 20-04-SUMMARY, 14-deferred-items, 12-deferred-items) |
+| Phase 21 P01 | 35min | 5 tasks | 13 files (PragmaSet/PragmaRegistry/PragmaScanner + Parser/SimpleLexer/Program/FlowEngine/ModuleLoader + 3 Fact files + 2 .flow fixtures) |
+| Phase 21 P02 | 22min | 3 tasks | 8 files (Token + SimpleLexer.TryParseNote + HAliasFacts + tightened PragmaIsolationFacts + 2 new .flow fixtures + 2 modified .flow fixtures) |
+| Phase 21 P03 | ~10min | 3 tasks (docs-only closure) | 5 files (REQUIREMENTS, ROADMAP, STATE, 21-VERIFICATION, 14-deferred-items) |
 
 ## Accumulated Context
 
@@ -228,6 +232,9 @@ Recent decisions affecting current work:
 - [Plan 20-02]: DEFER-04 closure — HarmonyFunctions.Enharmonic naturals branch gains 5-line letter-edge switch (E↔Fb, F↔E#, B↔Cb octave+1, C↔B# octave-1); D/G/A unchanged. In-key branch reordered to fire BEFORE the alteration==0 fast path so diatonic preservation wins for naturals AND accidentals (D-USER-B / Phase 14 D-04 extension). Phase14 NoKey_NaturalUnchanged_C4/E4/B4/F4 Facts MIGRATED to NoKey_NaturalEdgeRespells_* with inverted assertions (rename + re-pin shape (a) per Pitfall 1; docstring breadcrumbs preserve audit trail). EnharmonicEdgesTests.cs ships 11 [Fact] + 13 InlineData Theory rows = 24 total (plan said 12, but xUnit counts each InlineData row separately — over-coverage, not divergence). Atomic commit d835336; 374/374 full suite + 19/19 Phase18 byte-identical regression GREEN. Phase 21 H-alias dependency now unblocked.
 - [Plan 20-03]: DEFER-05 closure — Collections.SliceArray + Collections.SliceSequence pre-clamp Pythonic normalization (count + idx) before existing Phase 14 D-01 silent two-sided clamp. Verification matrix coincidence proven: 9/9 Phase14/SliceTests Facts stay GREEN unchanged (cases coincide between old silent-clamp and new Python normalization). 10 SliceNegativeTests Facts pin new behavior; 5/10 RED before edit, 10/10 GREEN after. tests/test_slice_negative.flow new file (Phase 14 file untouched per Pitfall 2). D-USER-D extreme-negative clamp policy honored post-normalization. Atomic commit edd20b1; 385/385 full suite + 19/19 Phase18 byte-identical regression GREEN; collision grep slice.*,.*,.*- over tests/ remains EMPTY.
 - [Plan 20-04]: Phase 20 closure — REQUIREMENTS DEFER-01/04/05 rows flipped to Shipped (d0d17db / d835336 / edd20b1); ROADMAP Phase 20 marked complete with 4/4 plans; STATE milestone progress 2/9 → 3/10 phases for v1.3; 14-deferred-items.md DEFER-04 + DEFER-06 (slice neg-from-end origin) strikethrough applied per handling protocol §3 (audit trail preserved); 12-stability/deferred-items.md DEFER-01 strikethrough applied; FlowScriptData.cs:57 ExpectedErrorScripts stale pin removal already absorbed in 20-01 d0d17db (Rule 3 deviation per 20-01-SUMMARY.md, confirmed via grep). Single atomic docs-only closure commit (6 files: REQUIREMENTS, ROADMAP, STATE, 20-VERIFICATION, 14-deferred-items, 12-deferred-items). Phase 21 (Pragma System + H-Alias) now unblocked per binding pre-ordering #3.
+- [Plan 21-01]: PRAG-01 + PRAG-02 — pragma plumbing landed. New flow-lang/Lexing/PragmaScanner.cs (line-by-line state machine, IndexOf("enable") fast path returns original source reference for legacy files preserving Phase 18 byte-identical determinism), PragmaSet.cs (immutable record + static Empty default), PragmaRegistry.cs (closed set with hAsB only per D-17, Wagner-Fischer Levenshtein for did-you-mean errors). Parser + SimpleLexer ctors gain optional PragmaSet param (default null → PragmaSet.Empty preserves all 16 existing call sites). Program AST gains PragmaSet field with backward-compat 2-arg ctor. FlowEngine.Execute inserts PragmaScanner.Scan as step 0; ModuleLoader.LoadModule mirrors the wiring per-imported-file enforcing PRAG-02 isolation structurally via lexical scoping. 15+ unit/integration Facts under flow-lang.Tests/{Unit,Integration}/Phase21/. Atomic commits c378c20 (Wave 0) + f2a48d0 (PragmaSet/Registry/Scanner) + 19d7dc8 (Parser/SimpleLexer/Program wiring) + 95c8c71 (FlowEngine integration) + 60f7f18 (ModuleLoader integration). Phase 18 byte-identical regression gate (19/19) GREEN throughout.
+- [Plan 21-02]: DEFER-02/03 — H-alias substitution landed. Token record gained optional 5th positional OriginalText field (D-15) + DiagnosticText helper. SimpleLexer.TryParseNote gates H-prefix substitution on _pragmaSet.Has("hAsB") AND text.Length > 1 (Pitfall C bare-H guard). Probe "B" + text[1..] runs NoteType.Parse; failure falls through to Identifier (Pitfall E covers Hmaj7 outside note streams via Assumption A1 verified by direct Fact). Both Token construction sites in ScanIdentifierOrKeyword (direct-note + duration-suffix-stripping per Pitfall D) wire OriginalText additively. Renderer + MIDI export consume Token.Text (canonical B-rooted) unchanged — zero edits to render path. ChordParser.cs unchanged per D-16. 9 HAliasFacts + tightened PragmaIsolationFacts (2 Facts) + test_h_alias.flow + test_h_identifier.flow. Atomic commits e25edbd (Wave 0 RED) + 352efac (Token.OriginalText) + 05c2174 (TryParseNote H→B). Phase 21 Facts: 25/25 GREEN; Phase 18 byte-identical regression gate: 19/19 GREEN.
+- [Plan 21-03]: Closure — REQUIREMENTS PRAG-01/PRAG-02/DEFER-02/03 rows flipped to Shipped (60f7f18 / 60f7f18 / 05c2174); ROADMAP Phase 21 marked complete with 3/3 plans; STATE milestone progress 3/10 → 4/10 phases for v1.3; 14-deferred-items.md DEFER-02 + DEFER-03 strikethrough applied per handling protocol §3 (audit trail preserved). Single atomic docs-only closure commit (5 files: REQUIREMENTS, ROADMAP, STATE, 21-VERIFICATION, 14-deferred-items). Full xUnit suite 414/414 GREEN at close; Phase 18 byte-identical regression gate (19/19) GREEN. Phase 22 (Tier B/C Composer DX Bundle) is the next ROADMAP target; Phase 23 (Microtonal Tuning) and Phase 24 (Scale Linting) specifically use the Phase 21 pragma registry to register their pragma names — both unblocked.
 
 ### Roadmap Evolution
 
@@ -270,18 +277,18 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: --stopped-at
-Stopped at: Phase 21 context gathered
+Last session: 2026-05-01
+Stopped at: Completed 21-03-PLAN.md (Phase 21 closes — PRAG-01/PRAG-02/DEFER-02/03 shipped; commits 60f7f18 + 05c2174 + closure)
 Resume file: --resume-file
 
-**Completed Phase:** 20 (cheap-defer-closures-multi-letter-enharmonic-edges) — 4 plans across 4 waves — closed 2026-04-26
+**Completed Phase:** 21 (pragma-system-h-alias) — 3 plans across 3 waves — closed 2026-04-26
 
-**Planned Phase:** 21 (Pragma System + H-Alias) — TBD plans — pending /gsd-plan-phase 21
+**Planned Phase:** 22 (Tier B/C Composer DX Bundle) — TBD plans — pending /gsd-plan-phase 22
 
 ## Resume Instructions (next PC)
 
-Phase 20 closed 2026-04-26. v1.3 milestone now 3/10 phases complete (Phases 18, 19, 20). Phase 21 (Pragma System + H-Alias) is the next ROADMAP target — depends on Phase 20 DEFER-04 (now shipped per binding pre-ordering #3); closes PRAG-01, PRAG-02, DEFER-02/03 (H-as-B alias inside note streams).
+Phase 21 closed 2026-04-26. v1.3 milestone now 4/10 phases complete (Phases 18, 19, 20, 21). Phase 22 (Tier B/C Composer DX Bundle) is the next ROADMAP target. Phase 23 (Microtonal Tuning) and Phase 24 (Scale Linting) are also unblocked — both depend on the Phase 21 pragma infrastructure shipped today and can be planned in any order after Phase 22.
 
-1. `/gsd-progress` — confirm Phase 20 at 4/4 plans, milestone v1.3 at 3/10 phases
-2. `/gsd-plan-phase 21` — plan Phase 21: file-scope `enable <pragma>;` infrastructure (PRAG-01), no-propagation-across-`use`-imports (PRAG-02), `enable hAsB;` H-as-B alias inside note streams (DEFER-02/03). Phase 21 (Pragma System + H-Alias) depends on Phase 20 DEFER-04 (now shipped) per binding pre-ordering #3.
-3. After Phase 21: Phase 22 (Tier B/C Composer DX Bundle: arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento, varispeed loadWav) depends on Phase 18 Fraction (DX-12 + DX-13 use Fraction for sync math). Phase 23 (Microtonal wedge) depends on Phase 21 pragma system.
+1. `/gsd-progress` — confirm Phase 21 at 3/3 plans, milestone v1.3 at 4/10 phases
+2. `/gsd-plan-phase 22` — plan Phase 22: arpeggio params (DX-10), chord inversions/voicings (DX-11), delay sync to NoteValue (DX-12), snap-to-grid quantize (DX-13), legato/portamento (DX-14), varispeed loadWav (DX-15). Depends on Phase 18 Fraction (DX-12 + DX-13 use Fraction for sync math).
+3. After Phase 22: Phase 23 (Microtonal Tuning, MICR-01..03) — `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` register their pragma names in PragmaRegistry.KnownPragmas (one-line addition each per D-17 closed-set design); the rest of the pragma plumbing works as-is. Phase 24 (Scale Linting, LINT-01..03) — `enable scaleLint;` registers in PragmaRegistry; flow-lsp consumes the resulting PragmaSet via the existing diagnostic pipeline. Phase 25 (Gaussian Humanize) must be the LAST PRNG-touching phase per binding pre-ordering #5.

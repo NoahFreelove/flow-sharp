@@ -55,9 +55,9 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 
 ### Pragma System & H-Alias
 
-- [ ] **PRAG-01**: A pragma system accepts `enable <featureName>;` declarations at the top of `.flow` files only (per D-02; lines after the first non-pragma statement raise a parse error). Lexer pre-scan extracts pragmas before main lexing (Pitfall 4 mitigation). `PragmaRegistry` is a closed set — unknown pragma names raise a clear error citing the known list.
-- [ ] **PRAG-02**: Pragmas do NOT propagate across `use` imports (per D-02; Pitfall 4 mitigation). Acceptance Fact: importing a module that uses `enable hAsB;` does NOT enable `hAsB` in the importing file unless the importing file also declares it.
-- [ ] **DEFER-02/03**: `enable hAsB;` pragma activates `H` as a `B` alias inside note-stream context (`| ... |`) only. `H4q` parses identically to `B4q`. Outside note streams, `H` remains a usable identifier (`Int H = 5;` continues to compile). Acceptance: `enable hAsB; ... | H4q B4q |` produces two identical notes; `Int H = 5;` continues to compile.
+- [x] **PRAG-01**: A pragma system accepts `enable <featureName>;` declarations at the top of `.flow` files only (per D-02; lines after the first non-pragma statement raise a parse error). Lexer pre-scan extracts pragmas before main lexing (Pitfall 4 mitigation). `PragmaRegistry` is a closed set — unknown pragma names raise a clear error citing the known list.
+- [x] **PRAG-02**: Pragmas do NOT propagate across `use` imports (per D-02; Pitfall 4 mitigation). Acceptance Fact: importing a module that uses `enable hAsB;` does NOT enable `hAsB` in the importing file unless the importing file also declares it.
+- [x] **DEFER-02/03**: `enable hAsB;` pragma activates `H` as a `B` alias inside note-stream context (`| ... |`) only. `H4q` parses identically to `B4q`. Outside note streams, `H` remains a usable identifier (`Int H = 5;` continues to compile). Acceptance: `enable hAsB; ... | H4q B4q |` produces two identical notes; `Int H = 5;` continues to compile.
 
 ### Tier B/C Composer DX
 
@@ -136,9 +136,9 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 | DEFER-01 | Phase 20 | Shipped d0d17db |
 | DEFER-04 | Phase 20 | Shipped d835336 |
 | DEFER-05 | Phase 20 | Shipped edd20b1 |
-| PRAG-01 | Phase 21 | Pending |
-| PRAG-02 | Phase 21 | Pending |
-| DEFER-02/03 | Phase 21 | Pending |
+| PRAG-01 | Phase 21 | Shipped 60f7f18 |
+| PRAG-02 | Phase 21 | Shipped 60f7f18 |
+| DEFER-02/03 | Phase 21 | Shipped 05c2174 |
 | DX-10 | Phase 22 | Pending |
 | DX-11 | Phase 22 | Pending |
 | DX-12 | Phase 22 | Pending |
