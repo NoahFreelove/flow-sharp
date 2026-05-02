@@ -29,6 +29,120 @@ public static class TransformFunctions
         RegisterOrnamentTransforms(registry);
     }
 
+    /// <summary>
+    /// Phase 22 DX-13: registers <c>quantize(Sequence, NoteValue, strength, swing)</c> which
+    /// reads <see cref="MusicalContext.TimeSignature"/> from the active context for grid alignment.
+    ///
+    /// Per Pitfall 9 (CRITICAL byte-identical regression gate): <c>strength=0</c> + <c>swing=0</c>
+    /// short-circuits to identity (returns the input <c>SequenceData</c> unchanged) BEFORE any
+    /// allocation. A single byte difference at strength=0 would break the ByteIdenticalTutorial /
+    /// ByteIdenticalShowcase / EuclideanByteIdentical regression gate.
+    ///
+    /// Per V5 input validation (T-22-V5-17, T-22-V5-18) and CLAUDE.md charitable interpretation
+    /// memory: strength is clamped to [0, 1] and swing is clamped to [-1, 1]. Out-of-range inputs
+    /// are silently corrected — no exception, no error.
+    ///
+    /// Per CONTEXT D-04..D-06: linear swing offset = swing × (subdivBeats / 2), signed
+    /// (positive = drag offbeat later, negative = push earlier), applied to every other
+    /// subdivision at the requested resolution.
+    /// </summary>
+    public static void RegisterContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var quantizeSig = new FunctionSignature("quantize",
+            [SequenceType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("quantize", quantizeSig, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            int resEnum = args[1].As<int>();
+            // V5: clamp out-of-range inputs (charitable D-07; threats T-22-V5-17, T-22-V5-18).
+            double strength = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
+            double swing = Math.Clamp(args[3].As<double>(), -1.0, 1.0);
+
+            // Pitfall 9 — byte-identical regression gate. strength=0 + swing=0 MUST return the
+            // input sequence object reference unchanged, or the ByteIdentical gate breaks.
+            if (strength == 0.0 && swing == 0.0) return Value.Sequence(seq);
+
+            var timesig = context.GetMusicalContext().TimeSignature
+                ?? new TimeSignatureData(4, 4);
+            return Value.Sequence(QuantizeSequence(seq, (NoteValueType.Value)resEnum,
+                strength, swing, timesig));
+        });
+    }
+
+    /// <summary>
+    /// DX-13 implementation: walks each bar's notes sequentially, computes the nearest grid
+    /// target at the requested resolution (with optional swing shift on every other
+    /// subdivision), and stores the per-note onset displacement in <c>note.OnsetOffset</c>
+    /// via the <c>With(...)</c> builder helper. <c>BarType.ToTimeline</c> later adds this
+    /// offset to the emitted onset position so audio renderer + MIDI export both honor
+    /// quantization without parallel rebuild paths.
+    ///
+    /// Uses <c>note.With(onsetOffset: …)</c> rather than the full ctor — this is intentional
+    /// per Phase 22 CONTEXT line 18 (independent shippability): future Phase 22 plans
+    /// (e.g. 22-06 legato/portamento) will append more defaulted fields, and this transform
+    /// must not enumerate fields it doesn't own.
+    /// </summary>
+    private static SequenceData QuantizeSequence(
+        SequenceData seq, NoteValueType.Value resolution,
+        double strength, double swing, TimeSignatureData timesig)
+    {
+        // resolution → subdivision length in beats (where 1 beat == 1/timesig.Denominator whole).
+        // QUARTER at 4/4 = 1 beat per subdivision; EIGHTH at 4/4 = 0.5 beats; SIXTEENTH = 0.25 beats.
+        double subdivBeats = NoteValueToBeats(resolution, timesig.Denominator);
+        // CONTEXT D-04: linear swing offset = swing × (subdivBeats / 2).
+        double swingOffset = swing * (subdivBeats / 2.0);
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            double currentBeat = 0.0;
+            int subdivIdx = 0;
+            foreach (var note in bar.MusicalNotes)
+            {
+                double targetGrid = Math.Round(currentBeat / subdivBeats) * subdivBeats;
+                // CONTEXT D-06: every other subdivision (the offbeat) receives the swing shift.
+                if (subdivIdx % 2 == 1) targetGrid += swingOffset;
+
+                // strength=1 hard-snap; strength=0 no shift; linear interpolation between.
+                double snappedBeat = currentBeat + strength * (targetGrid - currentBeat);
+                double onsetShift = snappedBeat - currentBeat;
+
+                // Builder-helper rebuild — preserves all other fields, even ones added by
+                // future Phase 22 plans, without naming them here. Rollback-independent.
+                newNotes.Add(note.With(onsetOffset: onsetShift));
+
+                currentBeat += note.GetBeats(timesig.Denominator);
+                subdivIdx++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature ?? timesig));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// DX-13: converts a NoteValue resolution into beats per subdivision for the active
+    /// time signature. Charitable D-07: out-of-range enum values fall through to the
+    /// default arm and are treated as a quarter note (no exception, no crash).
+    /// </summary>
+    private static double NoteValueToBeats(NoteValueType.Value nv, int denom)
+    {
+        // 1 beat == 1/denom whole. So WHOLE = denom beats; QUARTER = denom/4 beats.
+        double whole = denom;
+        return nv switch
+        {
+            NoteValueType.Value.WHOLE        => whole,
+            NoteValueType.Value.HALF         => whole / 2,
+            NoteValueType.Value.QUARTER      => whole / 4,
+            NoteValueType.Value.EIGHTH       => whole / 8,
+            NoteValueType.Value.SIXTEENTH    => whole / 16,
+            NoteValueType.Value.THIRTYSECOND => whole / 32,
+            _                                => whole / 4,
+        };
+    }
+
     // ===== MIDI Helpers =====
 
     private static int ToMidi(char noteName, int octave, int alteration)

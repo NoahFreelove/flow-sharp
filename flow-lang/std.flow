@@ -89,6 +89,10 @@ internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
 internal proc concat (Sequence: a, Sequence: b)
 
+Note: Quantize (Phase 22 DX-13) — snaps note onsets to a grid at the requested resolution.
+Note: strength=0 short-circuits to identity (Pitfall 9); swing -1..1 signed offbeat shift.
+internal proc quantize (Sequence: seq, NoteValue: resolution, Double: strength, Double: swing)
+
 Note: Probabilistic variation
 internal proc vary(Sequence: seq, Double: probability)
 internal proc vary(Sequence: seq, Double: probability, String: mutationType)

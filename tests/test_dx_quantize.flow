@@ -1,0 +1,30 @@
+use "@std"
+use "@audio"
+use "@notation"
+
+Note: humanize -> quantize roundtrip
+tempo 120 {
+    timesig 4/4 {
+        Sequence eu = (euclidean 5 16 C4)
+        Sequence hum = (humanize eu 0.05)
+        Sequence snap = (quantize hum SIXTEENTH 1.0 0.0)
+        section sp { snap }
+        Song s = [sp]
+        Buffer audio = (renderSong s "piano")
+        (writeWav "tests/output/dx_quantize.wav" audio)
+    }
+}
+
+Note: strength=0 is identity (byte-identical regression gate)
+tempo 120 {
+    timesig 4/4 {
+        Sequence eu2 = (euclidean 5 16 C4)
+        Sequence ident = (quantize eu2 SIXTEENTH 0.0 0.0)
+        section sp2 { ident }
+        Song s2 = [sp2]
+        Buffer audio2 = (renderSong s2 "piano")
+        (writeWav "tests/output/dx_quantize_identity.wav" audio2)
+    }
+}
+
+(print "DX-13 quantize: PASSED")

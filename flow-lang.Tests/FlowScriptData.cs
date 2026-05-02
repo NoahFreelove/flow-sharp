@@ -313,5 +313,16 @@ public static class FlowScriptData
         {
             "DX-12 delay sync: PASSED",
         },
+
+        // Phase 22-05 (DX-13): pin the quantize(Sequence, NoteValue, strength, swing) smoke
+        // script. Script exercises a humanize→quantize roundtrip at SIXTEENTH+strength=1.0,
+        // plus the strength=0 identity short-circuit (Pitfall 9 byte-identical regression
+        // gate). If the new RegisterContextDependent wiring regresses, OnsetOffset migration
+        // breaks, or strength=0 stops short-circuiting, the sentinel does not print and this
+        // Theory row goes RED.
+        ["test_dx_quantize.flow"] = new[]
+        {
+            "DX-13 quantize: PASSED",
+        },
     };
 }

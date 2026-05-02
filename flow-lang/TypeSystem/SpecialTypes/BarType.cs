@@ -155,6 +155,12 @@ public class BarData
 
     /// <summary>
     /// Converts the bar to a timeline with each note's offset in beats.
+    ///
+    /// Phase 22 DX-13 quantize: <see cref="MusicalNoteData.OnsetOffset"/> is added to the
+    /// emitted onset position only. It does NOT advance currentBeat — that would shift
+    /// every subsequent note as well, which is not what quantize means. The default
+    /// OnsetOffset (0.0) makes this addition a no-op for all pre-Phase-22 callers, so the
+    /// byte-identical regression gate stays GREEN.
     /// </summary>
     public List<(MusicalNoteData note, double offsetBeats)> ToTimeline()
     {
@@ -163,7 +169,8 @@ public class BarData
 
         foreach (var note in MusicalNotes)
         {
-            result.Add((note, currentBeat));
+            // DX-13: OnsetOffset shifts ONLY the emitted onset; sequential currentBeat is untouched.
+            result.Add((note, currentBeat + note.OnsetOffset));
             if (TimeSignature != null)
             {
                 currentBeat += note.GetBeats(TimeSignature.Denominator);

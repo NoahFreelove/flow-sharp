@@ -243,7 +243,14 @@ public class MusicalNoteData
     /// </summary>
     public FlowLang.TypeSystem.Fraction? DurationFraction { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0, FlowLang.TypeSystem.Fraction? durationFraction = null)
+    /// <summary>
+    /// Phase 22 DX-13 quantize: per-note onset shift in beats, added by bar.ToTimeline()
+    /// to the accumulated onset position. Default 0.0 = onset stays at sequential position.
+    /// Used by quantize() to snap onsets to a grid without rebuilding the bar list.
+    /// </summary>
+    public double OnsetOffset { get; }
+
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0, FlowLang.TypeSystem.Fraction? durationFraction = null, double onsetOffset = 0.0)
     {
         NoteName = noteName;
         Octave = octave;
@@ -258,6 +265,26 @@ public class MusicalNoteData
         SourceLocation = sourceLocation;
         SourceLength = sourceLength;
         DurationFraction = durationFraction;
+        OnsetOffset = onsetOffset;
+    }
+
+    /// <summary>
+    /// Phase 22 DX-13/DX-14 builder helper: returns a copy of this note with selected fields
+    /// overridden. Each Phase 22 plan that adds a defaulted-parameter field also extends this
+    /// helper with a matching nullable optional parameter. Transforms (quantize/legato/portamento)
+    /// rebuild notes via With(...) instead of the full ctor so they don't enumerate fields they
+    /// don't own — preserves rollback-independence per Phase 22 CONTEXT line 18.
+    ///
+    /// Plan 22-05 owns the <c>onsetOffset</c> slot; future Phase 22 plans (e.g. 22-06 legato/portamento)
+    /// will append additional nullable optional parameters here.
+    /// </summary>
+    public MusicalNoteData With(double? onsetOffset = null)
+    {
+        return new MusicalNoteData(
+            NoteName, Octave, Alteration, DurationValue, IsRest,
+            CentOffset, IsTied, Velocity, Articulation, IsDotted,
+            SourceLocation, SourceLength, DurationFraction,
+            onsetOffset: onsetOffset ?? OnsetOffset);
     }
 
     /// <summary>
