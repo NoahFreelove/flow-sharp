@@ -374,29 +374,68 @@ static class Quantizer
             // Group simultaneous notes (chords)
             var groups = GroupSimultaneous(barSpans, tpqn);
 
-            foreach (var group in groups)
+            // Bar-fit clamp (bar-overflow-rh-desync, 2026-05-03):
+            // The Quantizer used to emit each note/chord with its FULL MIDI
+            // duration. When the source track contains overlapping but not
+            // simultaneous-onset notes (a held melody pitch with an inner
+            // ornament happening DURING the held note), the cursor would
+            // advance past barEnd — producing bars where the sum of
+            // non-chord-tone durations exceeded the time-signature numerator.
+            // The renderer then silently dropped voices whose absolute frame
+            // exceeded the nominal-beats-derived buffer length, causing the
+            // RH to "go mute" in dense passages.
+            //
+            // Fix: each emitted note/chord is shortened so that the running
+            // sum of snapped durations within the bar never exceeds barTicks.
+            // For each group: the available room is `min(nextEventTick - cursor,
+            // barEnd - cursor)`. After emission, the cursor advances by the
+            // SNAPPED duration (which is bounded above by available). If the
+            // MIDI source over-densifies a bar (more notes than the bar can
+            // hold), the trailing notes are silently dropped — preferable to
+            // overflowing into the next bar's slot. The IsTied flag still
+            // tracks cross-bar continuity (span.EndTick > barEnd), unrelated
+            // to within-bar truncation.
+            for (int gi = 0; gi < groups.Count; gi++)
             {
+                if (cursor >= barEnd)
+                    break; // No room left in this bar; drop remaining groups.
+
+                var group = groups[gi];
                 long groupStart = group[0].StartTick;
 
-                // Insert rest if there's a gap
+                // Insert rest if there is a gap between cursor and the group's
+                // ideal onset. If a previous emission has already advanced past
+                // groupStart, do NOT realign backward — emit the note immediately
+                // at cursor (effectively "behind schedule" within the bar text,
+                // but the bar will still fit in nominal time).
                 if (groupStart > cursor)
                 {
-                    long gap = groupStart - cursor;
+                    long gap = Math.Min(groupStart - cursor, barEnd - cursor);
                     AddRests(elements, gap, tpqn);
-                    cursor = groupStart;
+                    cursor += gap;
+                    if (cursor >= barEnd)
+                        break;
                 }
+
+                // Available room from cursor to either the next group's start
+                // or to barEnd. Both bounds matter — using cursor (not groupStart)
+                // ensures the running snap-tick total never exceeds barTicks.
+                long nextEventTick = (gi + 1 < groups.Count) ? groups[gi + 1][0].StartTick : barEnd;
+                long availableTicks = Math.Min(nextEventTick, barEnd) - cursor;
+                if (availableTicks <= 0)
+                    continue;
 
                 if (group.Count == 1)
                 {
                     // Single note
                     var span = group[0];
-                    long duration = span.EndTick - span.StartTick;
-
-                    // Clamp notes that extend past bar boundary
+                    long rawDuration = span.EndTick - span.StartTick;
                     bool tied = span.EndTick > barEnd;
-                    if (tied) duration = barEnd - span.StartTick;
 
-                    var (suffix, isDotted) = SnapDuration(duration, tpqn);
+                    // Clamp to fit the available room (bar-fit invariant).
+                    long capped = Math.Min(rawDuration, availableTicks);
+
+                    var (suffix, isDotted) = SnapDurationCapped(capped, availableTicks, tpqn);
                     long snappedDuration = SuffixToTicks(suffix, isDotted, tpqn);
                     string noteName = MidiPitchToFlowNote(span.Pitch, useFlats);
                     elements.Add(new NoteElement(noteName, suffix, isDotted, tied, span.Velocity));
@@ -404,12 +443,15 @@ static class Quantizer
                 }
                 else
                 {
-                    // Chord — use the duration of the longest note in the group
+                    // Chord — use the duration of the longest note in the group,
+                    // but clamp to the available room so it does not overflow
+                    // into the next group's slot.
                     long maxDuration = group.Max(s => s.EndTick - s.StartTick);
                     bool tied = group.Any(s => s.EndTick > barEnd);
-                    if (tied) maxDuration = barEnd - groupStart;
 
-                    var (suffix, isDotted) = SnapDuration(maxDuration, tpqn);
+                    long capped = Math.Min(maxDuration, availableTicks);
+
+                    var (suffix, isDotted) = SnapDurationCapped(capped, availableTicks, tpqn);
                     long snappedDuration = SuffixToTicks(suffix, isDotted, tpqn);
                     var noteNames = group.Select(s => MidiPitchToFlowNote(s.Pitch, useFlats)).ToList();
                     int avgVelocity = (int)group.Average(s => s.Velocity);
@@ -502,6 +544,57 @@ static class Quantizer
                     bestSuffix = suffix;
                     bestDotted = isDotted;
                 }
+            }
+        }
+
+        return (bestSuffix, bestDotted);
+    }
+
+    /// <summary>
+    /// Snaps <paramref name="ticks"/> to the closest grid duration whose
+    /// snapped tick count does NOT exceed <paramref name="capTicks"/>.
+    /// Used by the bar-fit logic in <see cref="QuantizeSpans"/> so that the
+    /// emitted note/chord cannot push the cursor past the next event's start
+    /// (or past the bar boundary).
+    ///
+    /// Strategy: among all grid entries with gridTicks &lt;= capTicks
+    /// (STRICT — no tolerance band, see bar-overflow-rh-desync), pick the
+    /// one closest to <paramref name="ticks"/>. If no grid value fits under
+    /// the cap (cap smaller than a 32nd), fall back to the smallest grid
+    /// value ("t"); the caller has the `cursor >= barEnd` guard so any
+    /// such overshoot is one fractional tick that the trailing rest fill
+    /// absorbs.
+    /// </summary>
+    static (string Suffix, bool IsDotted) SnapDurationCapped(long ticks, long capTicks, int tpqn)
+    {
+        // Tiny safety: if the cap is so small that even a 32nd doesn't fit
+        // cleanly, still emit a 32nd — the caller has already inserted the
+        // rest gap and the cursor will simply over-step a fraction of a tick,
+        // which the bar-end fill rest will absorb.
+        if (capTicks <= 0)
+            return ("t", false);
+
+        // STRICT cap — no tolerance band. The bar-fit invariant requires
+        // sum(snappedTicks) <= barTicks, so we must NEVER pick a grid value
+        // larger than the cap. If even a 32nd does not fit, fall back to
+        // returning ("t", false) — the caller has the cursor >= barEnd guard
+        // and any tiny overshoot is absorbed by the trailing rest fill.
+        double bestDistance = double.MaxValue;
+        string bestSuffix = "t";
+        bool bestDotted = false;
+
+        foreach (var (mult, suffix, isDotted) in DurationGrid)
+        {
+            double gridTicks = mult * tpqn;
+            if (gridTicks > capTicks)
+                continue; // would overflow the cap
+
+            double distance = Math.Abs(ticks - gridTicks);
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestSuffix = suffix;
+                bestDotted = isDotted;
             }
         }
 
