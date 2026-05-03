@@ -219,6 +219,12 @@ public class NoteStreamCompiler
 
         for (int i = 0; i < musicalNotes.Count; i++)
         {
+            // Chord-tones share the leading tone's slot; they must not contribute
+            // to the running sum (otherwise a tuplet bar containing a chord would
+            // false-overflow and be truncated). See MusicalNoteData.IsChordTone.
+            if (musicalNotes[i].IsChordTone)
+                continue;
+
             Fraction noteFrac = NoteAsBarFraction(musicalNotes[i], timeSig);
             Fraction nextSum = sum + noteFrac;
             // Strictly greater check (== bar capacity is exact-fit; preserve all elements).
@@ -517,6 +523,8 @@ public class NoteStreamCompiler
                 case NamedChordElement namedChord:
                 {
                     // Each chord-tone gets the same per-slot duration (chord plays simultaneously).
+                    // The IsChordTone flag set by CompileNamedChordElement must propagate through
+                    // this re-wrap so BarType.ToTimeline() stacks tones on the lead onset.
                     foreach (var chordNote in CompileNamedChordElement(namedChord, NoteValueType.Value.QUARTER))
                     {
                         output.Add(new MusicalNoteData(
@@ -525,7 +533,8 @@ public class NoteStreamCompiler
                             chordNote.CentOffset, chordNote.IsTied, chordNote.Velocity,
                             chordNote.Articulation, chordNote.IsDotted,
                             chordNote.SourceLocation, chordNote.SourceLength,
-                            durationFraction: perChildSlot));
+                            durationFraction: perChildSlot,
+                            isChordTone: chordNote.IsChordTone));
                     }
                     break;
                 }
@@ -717,10 +726,16 @@ public class NoteStreamCompiler
         }
 
         int chordLen = CalcSourceLength(chord);
+        bool first = true;
         foreach (var noteName in chord.Notes)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen));
+            // First chord-tone is the "lead" — it advances the bar's beat cursor.
+            // Remaining tones share its onset (IsChordTone=true) so the chord
+            // plays as one polyphonic strike, not as an arpeggio across bar
+            // beats. See MusicalNoteData.IsChordTone and BarType.ToTimeline.
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen, isChordTone: !first));
+            first = false;
         }
 
         return notes;
@@ -742,10 +757,13 @@ public class NoteStreamCompiler
         }
 
         int ncLen = CalcSourceLength(namedChord);
+        bool firstNamed = true;
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen));
+            // See CompileChordElement above: first tone leads, rest stack on its onset.
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
+            firstNamed = false;
         }
 
         return notes;
@@ -775,10 +793,13 @@ public class NoteStreamCompiler
             return notes;
         }
 
+        bool firstRoman = true;
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
+            // See CompileChordElement above: first tone leads, rest stack on its onset.
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen, isChordTone: !firstRoman));
+            firstRoman = false;
         }
 
         return notes;

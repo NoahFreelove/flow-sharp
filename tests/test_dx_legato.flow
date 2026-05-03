@@ -1,0 +1,19 @@
+use "@std"
+use "@audio"
+use "@notation"
+
+Note: DX-14 legato — extends note durations by overlap factor without moving onsets.
+Note: 0.5 overlap means each note plays for 1.5x its notated duration; mix sums them.
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence seq = | C4q D4q E4q F4q |
+        Sequence smooth = (legato seq 0.5)
+        section sp { smooth }
+        Song s = [sp]
+        Buffer audio = (renderSong s "piano")
+        (writeWav "tests/output/dx_legato.wav" audio)
+    }
+}
+
+(print "DX-14 legato: PASSED")

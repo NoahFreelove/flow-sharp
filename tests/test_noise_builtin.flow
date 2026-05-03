@@ -1,0 +1,42 @@
+use "@audio"
+use "@std"
+
+Note: Test 1 -- 1-arity defaults: 1s mono 44100Hz, amplitude 1.0
+Buffer b1 = (noise 1.0)
+(print "Test 1 (1-arity defaults):")
+(print (concat "  frames=" (concat (str (getFrames b1)) " (expected 44100)")))
+(print (concat "  channels=" (concat (str (getChannels b1)) " (expected 1)")))
+(print (concat "  sampleRate=" (concat (str (getSampleRate b1)) " (expected 44100)")))
+
+Note: Test 2 -- 2-arity custom amplitude
+Buffer b2 = (noise 0.5 0.25)
+(print "Test 2 (2-arity, amp=0.25):")
+(print (concat "  frames=" (concat (str (getFrames b2)) " (expected 22050)")))
+(print (concat "  channels=" (concat (str (getChannels b2)) " (expected 1)")))
+
+Note: Test 3 -- 3-arity stereo
+Buffer b3 = (noise 0.1 0.5 2)
+(print "Test 3 (3-arity, stereo):")
+(print (concat "  frames=" (concat (str (getFrames b3)) " (expected 4410)")))
+(print (concat "  channels=" (concat (str (getChannels b3)) " (expected 2)")))
+
+Note: Test 4 -- 4-arity custom sample rate
+Buffer b4 = (noise 0.1 0.5 1 22050)
+(print "Test 4 (4-arity, sr=22050):")
+(print (concat "  frames=" (concat (str (getFrames b4)) " (expected 2205)")))
+(print (concat "  sampleRate=" (concat (str (getSampleRate b4)) " (expected 22050)")))
+
+Note: Test 5 -- charitable clamping (per user memory: silently handle edge cases)
+Buffer bNeg = (noise -1.0)
+(print (concat "Test 5a (noise -1.0): frames=" (concat (str (getFrames bNeg)) " (expected 0)")))
+Buffer bZeroCh = (noise 0.1 0.5 0)
+(print (concat "Test 5b (channels=0): channels=" (concat (str (getChannels bZeroCh)) " (expected 1)")))
+Buffer bZeroSr = (noise 0.1 0.5 1 0)
+(print (concat "Test 5c (sampleRate=0): sampleRate=" (concat (str (getSampleRate bZeroSr)) " (expected 44100)")))
+
+Note: Exercise prettyBuffer on the smallest sane noise buffer to prove samples were actually written
+Buffer bShort = (noise 0.001 0.5 1 44100)
+(print "Pretty-printed short noise buffer (should show ~44 non-zero samples):")
+(prettyBuffer bShort)
+
+(print "All noise-builtin tests passed.")

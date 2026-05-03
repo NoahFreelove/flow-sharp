@@ -138,7 +138,12 @@ public class BarData
         if (Mode != BarMode.Musical || TimeSignature == null)
             return TimeSignature?.Numerator ?? 4;
 
-        return MusicalNotes.Sum(n => n.GetBeats(TimeSignature.Denominator));
+        // Chord-tones share the leading tone's slot — they must not
+        // contribute again to the bar's actual beat count. See
+        // MusicalNoteData.IsChordTone.
+        return MusicalNotes
+            .Where(n => !n.IsChordTone)
+            .Sum(n => n.GetBeats(TimeSignature.Denominator));
     }
 
     /// <summary>
@@ -149,7 +154,10 @@ public class BarData
         if (Mode != BarMode.Musical || TimeSignature == null)
             return true;
 
-        double totalBeats = MusicalNotes.Sum(n => n.GetBeats(TimeSignature.Denominator));
+        // Chord-tones share the leading tone's slot — see GetActualBeats above.
+        double totalBeats = MusicalNotes
+            .Where(n => !n.IsChordTone)
+            .Sum(n => n.GetBeats(TimeSignature.Denominator));
         return totalBeats <= TimeSignature.Numerator;
     }
 
@@ -166,11 +174,29 @@ public class BarData
     {
         var result = new List<(MusicalNoteData, double)>();
         double currentBeat = 0;
+        // Lead-onset of the most recent chord group. Chord-tones (IsChordTone=true)
+        // share this onset and do NOT advance currentBeat — fixing the long-standing
+        // chord-arpeggiation bug where [C E G]q rendered as a sequential C-E-G
+        // arpeggio instead of a simultaneous strike. See MusicalNoteData.IsChordTone.
+        double lastLeadOnset = 0;
 
         foreach (var note in MusicalNotes)
         {
-            // DX-13: OnsetOffset shifts ONLY the emitted onset; sequential currentBeat is untouched.
-            result.Add((note, currentBeat + note.OnsetOffset));
+            if (note.IsChordTone)
+            {
+                // Stack on the leading tone's onset. Do NOT advance currentBeat —
+                // the leading tone already did. OnsetOffset still applies per-note
+                // so quantize() can dither chord-tones independently if desired.
+                result.Add((note, lastLeadOnset + note.OnsetOffset));
+                continue;
+            }
+
+            // Leading tone (or plain non-chord note): emit at currentBeat (+ DX-13 offset),
+            // record this onset as the chord-group lead, then advance the cursor.
+            double onset = currentBeat + note.OnsetOffset;
+            result.Add((note, onset));
+            lastLeadOnset = currentBeat;  // raw lead position WITHOUT OnsetOffset, so
+                                          // a chord-tone's own OnsetOffset stacks cleanly
             if (TimeSignature != null)
             {
                 currentBeat += note.GetBeats(TimeSignature.Denominator);

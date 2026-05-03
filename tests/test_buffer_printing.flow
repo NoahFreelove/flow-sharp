@@ -1,0 +1,47 @@
+Note: Test prettyBuffer + bufferHex builtins (260502-lum)
+use "@std"
+use "@audio"
+
+(print "=== Test prettyBuffer + bufferHex ===")
+
+Note: Build a small mono buffer at 48 kHz, 64 frames (256 bytes when encoded as float32)
+Buffer ramp = (createBuffer 64 1 48000)
+
+Note: Fill the first six samples with a recognizable ramp so the encoded bytes
+Note: are non-trivial. The first four (0.0, 0.25, 0.5, 0.75) have memorable
+Note: little-endian IEEE-754 encodings (00 00 00 00 / 00 00 80 3e / 00 00 00 3f /
+Note: 00 00 40 3f) which makes manual eyeballing of the hex dump easy.
+(setSample ramp 0 0 0.0)
+(setSample ramp 1 0 0.25)
+(setSample ramp 2 0 0.5)
+(setSample ramp 3 0 0.75)
+(setSample ramp 4 0 1.0)
+Double negHalf = (sub 0.0 0.5)
+(setSample ramp 5 0 negHalf)
+
+(print "--- prettyBuffer (ramp) ---")
+(prettyBuffer ramp)
+
+(print "--- bufferHex (full) ---")
+(bufferHex ramp)
+
+(print "--- bufferHex (offset 16, length 32) ---")
+(bufferHex ramp 16 32)
+
+Note: Out-of-range slice should not throw (charitable interpretation)
+(print "--- bufferHex (offset 9999, length 16) — silent empty slice ---")
+(bufferHex ramp 9999 16)
+
+Note: Negative offset should be silently clamped to 0, not throw
+Int negOffset = (sub 0 8)
+(print "--- bufferHex (offset -8, length 16) — silent clamp to 0 ---")
+(bufferHex ramp negOffset 16)
+
+Note: Empty buffer should print (empty buffer) and not throw
+Buffer empty = (createBuffer 0 1 48000)
+(print "--- prettyBuffer (empty) ---")
+(prettyBuffer empty)
+(print "--- bufferHex (empty) ---")
+(bufferHex empty)
+
+(print "=== Done ===")

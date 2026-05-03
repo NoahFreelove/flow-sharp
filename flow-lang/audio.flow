@@ -222,6 +222,18 @@ internal proc noteToFrequency(Note: n)
 internal proc createSineTone(Double: duration, Double: freq, Double: amp)
 internal proc createClip(Double: duration, Double: amp)
 
+Note: White noise -- 1s mono buffer at 44100 Hz, amplitude 1.0
+internal proc noise(Double: seconds)
+
+Note: White noise -- mono 44100 Hz, custom amplitude
+internal proc noise(Double: seconds, Double: amplitude)
+
+Note: White noise -- 44100 Hz, custom amplitude and channels
+internal proc noise(Double: seconds, Double: amplitude, Int: channels)
+
+Note: White noise -- fully parameterized
+internal proc noise(Double: seconds, Double: amplitude, Int: channels, Int: sampleRate)
+
 Note: ===== Basic Generators =====
 
 Note: Fills buffer with sine wave, maintaining phase continuity

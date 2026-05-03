@@ -93,6 +93,13 @@ Note: Quantize (Phase 22 DX-13) — snaps note onsets to a grid at the requested
 Note: strength=0 short-circuits to identity (Pitfall 9); swing -1..1 signed offbeat shift.
 internal proc quantize (Sequence: seq, NoteValue: resolution, Double: strength, Double: swing)
 
+Note: Articulation transforms (Phase 22 DX-14)
+Note: legato extends each note's rendered duration by overlap factor (1 + overlap), without
+Note: moving onsets — polyphonic mix in the renderer handles the additive overlap (CONTEXT D-01..D-03).
+Note: portamento emits MIDI CC65/CC5 bracket per note (audio renderer ignores; MIDI-only in v1.3).
+internal proc legato (Sequence: seq, Double: overlap)
+internal proc portamento (Sequence: seq, Millisecond: glideTime)
+
 Note: Probabilistic variation
 internal proc vary(Sequence: seq, Double: probability)
 internal proc vary(Sequence: seq, Double: probability, String: mutationType)
@@ -135,6 +142,11 @@ internal proc tremolo (Sequence: seq, Int: repetitions)
 Note: Visualization
 internal proc visualize (Sequence: seq)
 internal proc visualize (Buffer: b)
+
+Note: Buffer pretty-printing + hex dump (260502-lum)
+internal proc prettyBuffer (Buffer: b)
+internal proc bufferHex (Buffer: b)
+internal proc bufferHex (Buffer: b, Int: offset, Int: length)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)

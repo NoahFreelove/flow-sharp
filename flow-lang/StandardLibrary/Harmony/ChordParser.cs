@@ -59,6 +59,19 @@ public static class ChordParser
     /// and remaining text must match a known quality.
     /// Note: The lexer calls TryParseNote first, so anything reaching this method
     /// has already failed note parsing (e.g., C4 is caught as a note before this runs).
+    ///
+    /// note-vs-chord-lexer fix (2026-05-02): on the no-accidental branch, reject
+    /// quality suffixes that consist of digits only (e.g., "D6", "G7", "D9"). These
+    /// shapes are ambiguous with note literals (D in octave 6, G in octave 7, etc.),
+    /// and the project's documented convention (tests/test_chords.flow:13) already
+    /// assigns them to notes ("G7 is parsed as note G at octave 7, use dom7 for chord").
+    /// Falling through here lets the lexer's TryParseNote pick them up as NoteLiteral.
+    /// The with-accidental branch (Cs6, Df7) is unchanged since "Cs6" cannot be a
+    /// valid note (NoteType.Parse rejects 's' as a non-alteration character) and
+    /// keeping it as a chord preserves the existing chord-symbol grammar surface.
+    /// ChordParser.TryParse (called from ScaleDatabase.ResolveRomanNumeral with
+    /// symbols like "D7" derived from V7 numerals) is unchanged — only the
+    /// lexer-side recognizer narrows.
     /// </summary>
     public static bool IsChordSymbol(string text)
     {
@@ -71,8 +84,12 @@ public static class ChordParser
 
         // Try without accidental first (e.g., "Dsus2" = D + sus2, not Ds + us2)
         string qualityNoAcc = text[1..];
-        if (qualityNoAcc.Length > 0 && QualityIntervals.ContainsKey(qualityNoAcc))
+        if (qualityNoAcc.Length > 0
+            && QualityIntervals.ContainsKey(qualityNoAcc)
+            && !IsAllDigits(qualityNoAcc))
+        {
             return true;
+        }
 
         // Try with accidental (e.g., "Csmaj7" = Cs + maj7)
         if (text.Length >= 2 && (text[1] == 's' || text[1] == 'f'))
@@ -88,6 +105,21 @@ public static class ChordParser
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Returns true iff <paramref name="s"/> is non-empty and every char is a digit 0-9.
+    /// Used by IsChordSymbol to reject ambiguous bare-digit quality suffixes that
+    /// collide with note octaves (e.g., "6" in "D6", "7" in "G7").
+    /// </summary>
+    private static bool IsAllDigits(string s)
+    {
+        if (s.Length == 0) return false;
+        foreach (char c in s)
+        {
+            if (c < '0' || c > '9') return false;
+        }
+        return true;
     }
 
     /// <summary>

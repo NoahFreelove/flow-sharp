@@ -250,7 +250,38 @@ public class MusicalNoteData
     /// </summary>
     public double OnsetOffset { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0, FlowLang.TypeSystem.Fraction? durationFraction = null, double onsetOffset = 0.0)
+    /// <summary>
+    /// Phase 22 DX-14 legato: render-time duration extension factor. 0.0 = no extension;
+    /// 0.5 = play 1.5× longer; 1.0 = play 2× longer. Read by BarRenderer + MidiExport
+    /// AFTER bar.ToTimeline() produces onsets, so onsets are NOT moved (CONTEXT D-02).
+    /// Polyphonic mix in SongRenderer handles overlapping voices automatically.
+    /// </summary>
+    public double DurationOverlap { get; }
+
+    /// <summary>
+    /// Phase 22 DX-14 portamento: glide time in milliseconds for MIDI CC5 mapping. 0.0 = no
+    /// portamento. MidiExport emits CC65=127 + CC5=mappedValue at note start, CC65=0 at note
+    /// end (per-note bracket). Linear ms→CC5: 0→0, 100→64, 200→127 clamped (CONTEXT Claude's
+    /// Discretion). Audio renderer ignores this field — portamento is MIDI-only in v1.3.
+    /// </summary>
+    public double PortamentoMs { get; }
+
+    /// <summary>
+    /// True when this note is a non-leading tone of a polyphonic chord literal
+    /// (e.g. the E and G of <c>[C E G]q</c>) emitted by NoteStreamCompiler.
+    /// The leading tone of a chord (the first one in source order) keeps
+    /// IsChordTone = false — it advances the bar's beat cursor and the
+    /// remaining tones share its onset offset.
+    ///
+    /// Why this exists: chord literals expand to a flat <c>List&lt;MusicalNoteData&gt;</c>,
+    /// and BarType.ToTimeline() / BarType.GetActualBeats() / MidiExport need
+    /// to know which entries are stacked-at-the-same-offset (no cursor advance)
+    /// vs. sequential. Default false preserves all non-chord paths
+    /// (arpeggio() builtin, transforms, plain note streams).
+    /// </summary>
+    public bool IsChordTone { get; }
+
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0, FlowLang.TypeSystem.Fraction? durationFraction = null, double onsetOffset = 0.0, double durationOverlap = 0.0, double portamentoMs = 0.0, bool isChordTone = false)
     {
         NoteName = noteName;
         Octave = octave;
@@ -266,6 +297,9 @@ public class MusicalNoteData
         SourceLength = sourceLength;
         DurationFraction = durationFraction;
         OnsetOffset = onsetOffset;
+        DurationOverlap = durationOverlap;
+        PortamentoMs = portamentoMs;
+        IsChordTone = isChordTone;
     }
 
     /// <summary>
@@ -275,16 +309,24 @@ public class MusicalNoteData
     /// rebuild notes via With(...) instead of the full ctor so they don't enumerate fields they
     /// don't own — preserves rollback-independence per Phase 22 CONTEXT line 18.
     ///
-    /// Plan 22-05 owns the <c>onsetOffset</c> slot; future Phase 22 plans (e.g. 22-06 legato/portamento)
-    /// will append additional nullable optional parameters here.
+    /// Plan 22-05 owns the <c>onsetOffset</c> slot; plan 22-06 (DX-14) appends
+    /// <c>durationOverlap</c> and <c>portamentoMs</c> slots. Each plan's transforms name only
+    /// the fields they own — null-coalesce passes existing values through unchanged so any
+    /// single plan can roll back without breaking siblings.
     /// </summary>
-    public MusicalNoteData With(double? onsetOffset = null)
+    public MusicalNoteData With(
+        double? onsetOffset = null,
+        double? durationOverlap = null,
+        double? portamentoMs = null)
     {
         return new MusicalNoteData(
             NoteName, Octave, Alteration, DurationValue, IsRest,
             CentOffset, IsTied, Velocity, Articulation, IsDotted,
             SourceLocation, SourceLength, DurationFraction,
-            onsetOffset: onsetOffset ?? OnsetOffset);
+            onsetOffset: onsetOffset ?? OnsetOffset,
+            durationOverlap: durationOverlap ?? DurationOverlap,
+            portamentoMs: portamentoMs ?? PortamentoMs,
+            isChordTone: IsChordTone);
     }
 
     /// <summary>

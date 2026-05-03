@@ -42,8 +42,10 @@ public static class BuiltInFunctions
         Audio.SongRenderer.Register(registry);
         Audio.TempoRampRenderer.Register(registry);
         Transforms.TransformFunctions.Register(registry);
+        Transforms.TransformFunctions.RegisterArticulationTransforms(registry);  // Phase 22-06 DX-14 (legato + portamento)
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
+        BufferPrinter.Register(registry);
         Composition.PolyrhythmFunctions.Register(registry);
         Composition.VariationFunctions.Register(registry);
         Audio.Vocalization.VocalizationFunctions.Register(registry);
@@ -579,6 +581,19 @@ public static class BuiltInFunctions
         
         var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance]);
         registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
+
+        // White noise -- wraps SynthUtils.GenerateWhiteNoise. Four arities; resolver disambiguates by arg count.
+        var noise1Sig = new FunctionSignature("noise", [DoubleType.Instance]);
+        registry.Register("noise", noise1Sig, Audio.SignalGeneration.Noise1);
+
+        var noise2Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("noise", noise2Sig, Audio.SignalGeneration.Noise2);
+
+        var noise3Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+        registry.Register("noise", noise3Sig, Audio.SignalGeneration.Noise3);
+
+        var noise4Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance, IntType.Instance]);
+        registry.Register("noise", noise4Sig, Audio.SignalGeneration.Noise);
 
         var resetPhaseSignature = new FunctionSignature(
             "resetPhase",

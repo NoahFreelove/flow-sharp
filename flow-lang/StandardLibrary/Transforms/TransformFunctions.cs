@@ -30,6 +30,48 @@ public static class TransformFunctions
     }
 
     /// <summary>
+    /// Phase 22 DX-14 (plan 22-06): registers <c>legato(Sequence, Double)</c> and
+    /// <c>portamento(Sequence, Millisecond)</c> articulation transforms. Both set per-note
+    /// defaulted-parameter fields (<see cref="MusicalNoteData.DurationOverlap"/>,
+    /// <see cref="MusicalNoteData.PortamentoMs"/>) consumed by <c>BarRenderer</c> and
+    /// <c>MidiExport</c> at render time.
+    ///
+    /// Per CONTEXT D-02 + Pitfall 3: onsets are NOT moved. The transforms only stamp
+    /// fields onto each note; <c>bar.ToTimeline()</c> already produced the onset positions
+    /// before render time. The audio renderer extends durationBeats; MIDI export emits
+    /// extended NoteOff + CC65/CC5 bracket events.
+    ///
+    /// Per CONTEXT line 18 (rollback-independence): each transform calls
+    /// <c>note.With(...)</c> naming ONLY the field this plan owns. Sibling 22-05's
+    /// <c>OnsetOffset</c> and the other 22-06 slot are preserved by the builder helper's
+    /// null-coalesce, so neither transform enumerates fields it doesn't own.
+    /// </summary>
+    public static void RegisterArticulationTransforms(InternalFunctionRegistry registry)
+    {
+        // legato(Sequence, Double) -> Sequence
+        var legatoSig = new FunctionSignature("legato",
+            [SequenceType.Instance, DoubleType.Instance]);
+        registry.Register("legato", legatoSig, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            double overlap = args[1].As<double>();
+            return Value.Sequence(TransformNotes(seq, note =>
+                note.With(durationOverlap: overlap)));
+        });
+
+        // portamento(Sequence, Millisecond) -> Sequence
+        var portamentoSig = new FunctionSignature("portamento",
+            [SequenceType.Instance, MillisecondType.Instance]);
+        registry.Register("portamento", portamentoSig, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            double ms = args[1].As<double>();   // Millisecond is backed by double
+            return Value.Sequence(TransformNotes(seq, note =>
+                note.With(portamentoMs: ms)));
+        });
+    }
+
+    /// <summary>
     /// Phase 22 DX-13: registers <c>quantize(Sequence, NoteValue, strength, swing)</c> which
     /// reads <see cref="MusicalContext.TimeSignature"/> from the active context for grid alignment.
     ///

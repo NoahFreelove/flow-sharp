@@ -93,30 +93,32 @@ static class FlowGenerator
             sb.AppendLine();
         }
 
-        // Use sections + Song for all cases (renderSong is the standard API)
-        var trackNames = new List<string>();
+        // Emit ONE section containing one Sequence per MIDI track. SongRenderer
+        // mixes sequences within a section in parallel (additive), but
+        // concatenates sections sequentially. To preserve the original
+        // multi-track layering, all tracks must live inside a single section.
+        sb.AppendLine($"{indent}section song_part {{");
+        string sectionIndent = indent + "    ";
 
+        var seqNames = new List<string>();
         foreach (var track in playableTracks)
         {
-            string sectionName = SanitizeVarName(track.Name);
-            // Deduplicate section names
-            string uniqueName = sectionName;
+            string baseName = SanitizeVarName(track.Name);
+            string uniqueName = baseName;
             int suffix = 2;
-            while (trackNames.Contains(uniqueName))
-                uniqueName = $"{sectionName}_{suffix++}";
-            trackNames.Add(uniqueName);
+            while (seqNames.Contains(uniqueName))
+                uniqueName = $"{baseName}_{suffix++}";
+            seqNames.Add(uniqueName);
 
-            sb.AppendLine($"{indent}section {uniqueName} {{");
-            string sectionIndent = indent + "    ";
             string seqVar = uniqueName + "_seq";
             WriteSequence(sb, sectionIndent, seqVar, track);
-            sb.AppendLine($"{indent}}}");
-            sb.AppendLine();
         }
 
-        // Song expression
-        string songSections = string.Join(" ", trackNames);
-        sb.AppendLine($"{indent}Song song = [{songSections}]");
+        sb.AppendLine($"{indent}}}");
+        sb.AppendLine();
+
+        // Song expression — single section holds all parallel parts.
+        sb.AppendLine($"{indent}Song song = [song_part]");
         sb.AppendLine($"{indent}Buffer output = (renderSong song \"piano\")");
         sb.AppendLine($"{indent}(play output)");
 

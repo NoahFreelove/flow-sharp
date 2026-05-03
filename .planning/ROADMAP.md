@@ -65,7 +65,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 - [x] **Phase 19: Tuplets & Arbitrary Fractional Durations** — `{N:M ...}` brackets + `C4/N` syntax + `C4/X:Y[suffix]` per-note shorthand, nested tuplets, bar-fit validator, auto-elevated MIDI TPQN (cap 9600) — Shipped 2026-04-26 (commits a7f94ef + 9aae23c + 3679ab4 + dbc6f30 + e2cdbe5)
 - [x] **Phase 20: Cheap DEFER Closures + Multi-letter Enharmonic Edges** — `range(Int, Int[, Int])`, slice negative-from-end, multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#) — Shipped 2026-04-26 (commits d0d17db + d835336 + edd20b1 + closure)
 - [x] **Phase 21: Pragma System + H-Alias** — `enable <pragma>;` file-scope pragma infrastructure (Haskell-precedent), DEFER-02/03 H-as-B alias inside note streams — Shipped 2026-04-26 (commits 60f7f18 + 05c2174 + closure)
-- [ ] **Phase 22: Tier B/C Composer DX Bundle** — arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento articulations, varispeed loadWav
+- [x] **Phase 22: Tier B/C Composer DX Bundle** — arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento articulations, varispeed loadWav — Shipped 2026-05-02 (commits 6500412, 95582e7, 5fba059, 98da48e, d3f5350, d2bde5d)
 - [ ] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`), `ITuningSystem` at `PitchConversion.NoteToFrequency` seam
 - [ ] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts
 - [ ] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()`
@@ -147,13 +147,13 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   5. MIDI export of `portamento(seq, 100ms)` includes CC65=127 + CC5 events per Sweetwater MIDI spec; `legato(seq, overlap)` extends note durations by overlap factor (DX-14)
   6. `loadWav("kick.wav", 12)` returns a buffer one octave higher (sample count halved, frequency doubled) compared to `loadWav("kick.wav")`; default `loadWav(path)` unchanged (DX-15)
 **Plans**: 7 plans
-- [x] 22-01-PLAN.md — DX-10 4-arg arpeggio (rate + direction + pattern)
-- [x] 22-02-PLAN.md — DX-15 varispeed loadWav (Int semitones + Double ratio)
-- [x] 22-03-PLAN.md — DX-11 inversion + drop2/drop3/open/close/spread voicings
-- [x] 22-04-PLAN.md — DX-12 NoteValue delay overload synced to MusicalContext.Tempo
-- [ ] 22-05-PLAN.md — DX-13 quantize with OnsetOffset onset-shift mechanism
-- [ ] 22-06-PLAN.md — DX-14 legato + portamento via DurationOverlap/PortamentoMs fields
-- [ ] 22-07-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION docs-only)
+- [x] 22-01-PLAN.md — DX-10 4-arg arpeggio (rate + direction + pattern) — Shipped 6500412
+- [x] 22-02-PLAN.md — DX-15 varispeed loadWav (Int semitones + Double ratio) — Shipped 95582e7
+- [x] 22-03-PLAN.md — DX-11 inversion + drop2/drop3/open/close/spread voicings — Shipped 5fba059
+- [x] 22-04-PLAN.md — DX-12 NoteValue delay overload synced to MusicalContext.Tempo — Shipped 98da48e
+- [x] 22-05-PLAN.md — DX-13 quantize with OnsetOffset onset-shift mechanism (Pitfall 9 identity) — Shipped d3f5350
+- [x] 22-06-PLAN.md — DX-14 legato + portamento via DurationOverlap/PortamentoMs fields — Shipped d2bde5d
+- [x] 22-07-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION) — Shipped + closure
 
 ### Phase 23: Microtonal Tuning (Wedge)
 **Goal**: Named-tunings wedge ships per D-03 — `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` change `Note → frequency` lookup; transforms remain pitch-class agnostic (binding pre-ordering #4 — own phase, highest blast radius)
@@ -236,7 +236,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 19. Tuplets & Arbitrary Fractional Durations | v1.3 | 5/5 | Complete | 2026-04-26 |
 | 20. Cheap DEFER Closures + Multi-letter Enharmonic Edges | v1.3 | 4/4 | Complete | 2026-04-26 |
 | 21. Pragma System + H-Alias | v1.3 | 3/3 | Complete   | 2026-05-01 |
-| 22. Tier B/C Composer DX Bundle | v1.3 | 4/7 | In Progress|  |
+| 22. Tier B/C Composer DX Bundle | v1.3 | 7/7 | Complete   | 2026-05-02 |
 | 23. Microtonal Tuning (Wedge) | v1.3 | 0/N | Not started | - |
 | 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |

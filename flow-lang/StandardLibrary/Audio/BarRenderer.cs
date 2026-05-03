@@ -71,6 +71,16 @@ namespace FlowLang.StandardLibrary.Audio
                     durationBeats += overlapBeats;
                 }
 
+                // DX-14 legato: extend rendered duration by overlap factor BEFORE rendering audio buffer.
+                // Per CONTEXT D-01: durationOverlap=0.5 -> durationBeats x 1.5.
+                // Per CONTEXT D-02 + Pitfall 3: bar.ToTimeline() already produced offsetBeats; we ONLY
+                // change how long this note's audio buffer plays. Onset is NOT moved here. Polyphonic
+                // mix in SongRenderer sums overlapping voices automatically.
+                if (note.DurationOverlap > 0.0)
+                {
+                    durationBeats *= (1.0 + note.DurationOverlap);
+                }
+
                 // Render note to audio buffer
                 AudioBuffer buffer = synthesizer.RenderNote(note, sampleRate, durationBeats, bpm);
 

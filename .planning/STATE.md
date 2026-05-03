@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: executing
-stopped_at: Phase 22 context gathered
-last_updated: "2026-05-02T19:35:00.000Z"
-last_activity: 2026-05-02
+status: completed
+stopped_at: Completed 22-07-PLAN.md (Phase 22 closure)
+last_updated: "2026-05-02T20:29:19.955Z"
+last_activity: 2026-05-02 -- Phase 22 marked complete
 progress:
   total_phases: 10
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 21
-  completed_plans: 18
-  percent: 86
+  completed_plans: 21
+  percent: 100
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 22 — tier-b-c-composer-dx-bundle
+**Current focus:** Phase 23 — Microtonal Tuning (Wedge) — next ROADMAP target
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 22 (tier-b-c-composer-dx-bundle) — EXECUTING
-Plan: 5 of 7
-Status: Ready to execute
-Last activity: 2026-05-02 - Completed quick task 260502-lhm: Setup GitHub wiki sync workflow
+Phase: 22 — COMPLETE
+Plan: 7 of 7 — closure shipped
+Status: Phase 22 complete
+Last activity: 2026-05-02 -- Completed quick task 260502-oib: noise builtin
 
-Progress: [█████████░] 86%
+Progress: [██████████] 100%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 21 closed 2026-04-26. v1.3 milestone now 4/10 phases complete (Phases 18, 19, 20, 21). Phase 22 (Tier B/C Composer DX Bundle) is the next ROADMAP target. Phase 23 (Microtonal Tuning) and Phase 24 (Scale Linting) are also unblocked — both depend on the Phase 21 pragma infrastructure shipped today and can be planned in any order after Phase 22.
+Phase 22 closed 2026-05-02. v1.3 milestone now 5/10 phases complete (Phases 18, 19, 20, 21, 22). Phase 23 (Microtonal Tuning, MICR-01..03) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`). Phase 24 (Scale Linting) and Phase 26 (Dictionary Support) are also unblocked.
 
 Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
@@ -55,6 +55,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 13 | 5 | - | - |
 | 14 | 4 | - | - |
 | 21 | 3 | - | - |
+| 22 | 7 | ~73min | ~10min |
 
 **Recent Trend:**
 
@@ -121,6 +122,10 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase Phase 22 PP02 | 5min | 3 tasks tasks | 6 files files |
 | Phase 22-tier-b-c-composer-dx-bundle P22-03 | 4min | 3 tasks | 6 files |
 | Phase 22 P22-04 | 6min | 3 tasks | 6 files |
+| Phase 22 P05 | 35min | 3 tasks | 8 files |
+| Phase 22 P06 | 8min | 3 tasks | 11 files |
+| Phase 22 P07 | ~10min | 3 tasks (docs-only closure) | 5 files (REQUIREMENTS, ROADMAP, STATE, 22-VERIFICATION, 22-07-SUMMARY) |
+| Phase 22 P07 | 6min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -247,6 +252,66 @@ Recent decisions affecting current work:
 - [Phase ?]: Charitable D-07 implemented as switch-default in Voicings.Voicing(name) — unknown name returns input unchanged
 - [Phase ?]: D-08 doc-comment grep gate — every voicing helper cites See Phase 22 CONTEXT D-07 (7 occurrences in Voicings.cs)
 - [Phase ?]: DX-12 NoteValue delay overload registered context-dependently; existing ms-rate overload byte-identical via DSP convergence (verified by cmp on WAV bytes)
+- [Phase ?]: 22-05 OnsetOffset is a defaulted-parameter field on MusicalNoteData (Phase 18 migration shape) — 30+ existing positional call sites compile unchanged, byte-identical regression gate stays GREEN by construction.
+- [Phase ?]: 22-05 MusicalNoteData.With(double? onsetOffset) builder helper introduced alongside the field for rollback-independent composition (CONTEXT line 18); 22-06 will append nullable optional params.
+- [Phase ?]: 22-05 Pitfall 9 identity short-circuit: strength=0 + swing=0 returns input sequence reference BEFORE any allocation; pinned by ReferenceEquals Fact, ByteIdentical 6/6 GREEN.
+- [Phase ?]: 22-05 BarType.ToTimeline adds OnsetOffset to emitted onset position only; currentBeat untouched (quantize snaps THIS onset, not cascade-shift).
+- [Plan 22-06]: DX-14 legato + portamento — DurationOverlap and PortamentoMs appended at END of MusicalNoteData ctor (third Phase 22 defaulted-parameter migration after 22-05 OnsetOffset). With(...) builder helper extended in lockstep with each plan's owned slot — null-coalesce preserves siblings; rollback-independent per CONTEXT line 18. BarRenderer reads DurationOverlap AFTER bar.ToTimeline emits onsets (Pitfall 3 — onset position untouched). MidiExport NoteOff lands at extendedBeats × ticksPerQuarter, but `barTick += (long)(beats * ticksPerQuarter)` advances by ORIGINAL beats — this is the precise mechanism that makes legato OVERLAP rather than slow the song down. Audio renderer ignores PortamentoMs in v1.3 (MIDI-only articulation; audio-side glide deferred to v1.4). Linear ms→CC5 mapping curve (0→0, 100→64, 200→127 clamped). Atomic commits 2f860f8 (RED) + d2bde5d (GREEN) + 332154c (verify). Full suite 499/499 GREEN; ByteIdentical 6/6 GREEN.
+- [Plan 22-07]: Phase 22 closure — REQUIREMENTS DX-10..DX-15 rows flipped to Shipped (6500412 / 5fba059 / 98da48e / d3f5350 / d2bde5d / 95582e7); ROADMAP Phase 22 marked complete with 7/7 plans; STATE milestone progress 4/10 → 5/10 phases for v1.3; 22-VERIFICATION.md produced as final phase rollup with 77/77 Phase22 Facts + 6/6 ByteIdentical + 7 DX smoke scripts + 499/499 full suite GREEN. Single atomic docs-only closure commit (per Phase 19-05 / 20-04 / 21-03 precedent) bundles the docs files. Phase 22 closes; v1.3 milestone is 50% complete (5/10 phases). Phase 23 (Microtonal Tuning) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (one-line addition in PragmaRegistry.KnownPragmas per pragma name).
+- [Plan 22-07]: Cross-cutting truth verified — MusicalNoteData ctor migration accepted THREE new defaulted-parameter fields (OnsetOffset from 22-05, DurationOverlap + PortamentoMs from 22-06) without breaking 30+ existing positional call sites. Phase 18 defaulted-parameter migration shape (DurationFraction precedent) generalizes cleanly. Each plan's transforms call `note.With(...)` naming only the slot it owns; null-coalesce preserves sibling fields. Rollback of any single plan removes its slot+field+helper-overload without breaking siblings. ByteIdentical 6/6 GREEN at every Phase 22 commit confirms the dormant-default contract.
+- [Plan 22-07]: Two new architectural patterns established — (1) `EffectsFunctions.RegisterContextDependent` + `TransformFunctions.RegisterContextDependent` (sibling pattern wired from `BuiltInFunctions.RegisterContextDependentFunctions` next to `RegisterEuclideanOverloads`) for any audio effect or transform that needs `MusicalContext.Tempo` / `TimeSignature` at call time; (2) new file `Voicings.cs` (sibling to `ChordParser.cs`) for the chord-shape transform tier — keeps D-07 charitable contract greppable. Both patterns are ready for downstream Phase 22+ extensions (e.g., a hypothetical v1.4 progression DSL, groove-template transform).
+- [Phase ?]: [Plan 22-07]: Phase 22 closes — DX-10..DX-15 Shipped; v1.3 milestone 5/10 phases (50%); Phase 23 (Microtonal Tuning) next ROADMAP target
+
+### Phase 22 Closure Anchor (2026-05-02)
+
+Phase 22 — Tier B/C Composer DX Bundle — CLOSED 2026-05-02. Six independently shippable composer-DX features delivered across six implementation plans + one closure plan; v1.3 milestone advances **4/10 → 5/10 phases complete** (50%).
+
+**Shipped DX features** (one line each):
+
+- **DX-10** — `arpeggio(Chord, NoteValue, String, String)` 4-arg overload with rate + direction (up/down/updown/downup/random) + pattern (linear/chord-tone/scale-tone). Charitable random→up fallback (RESEARCH Pitfall 7) preserves byte-identical determinism. Shipped 6500412 (Plan 22-01).
+- **DX-11** — `inversion(Chord, Int)` rotates n lowest notes; `voicing(Chord, String)` dispatches to drop2/drop3/open/close/spread named voicings. New `Voicings.cs` sibling to `ChordParser.cs`. Charitable D-07 fallback (incomplete chord OR unknown name returns input unchanged). Shipped 5fba059 (Plan 22-03).
+- **DX-12** — `delay(Buffer, NoteValue, Double, Double)` overload reads `MusicalContext.Tempo` at call time — EIGHTH at 120 BPM == 250ms; existing ms-rate overload byte-identical via convergence at `DSP.Delay.Apply`. Shipped 98da48e (Plan 22-04).
+- **DX-13** — `quantize(Sequence, NoteValue, Double, Double)` snaps onsets via per-note `OnsetOffset` field. Pitfall 9 identity short-circuit (strength=0 + swing=0 returns input ReferenceEqual). Shipped d3f5350 (Plan 22-05).
+- **DX-14** — `legato(Sequence, Double)` extends durations via `DurationOverlap` field; `portamento(Sequence, Millisecond)` emits MIDI CC65/CC5 bracket via `PortamentoMs` field. Pitfall 3 honored on both audio and MIDI paths (extend, never move). Shipped d2bde5d (Plan 22-06).
+- **DX-15** — `loadWav(path, Int semitones)` and `loadWav(path, Double ratio)` via linear-interpolation `VarispeedResample` helper. Identity short-circuits at semitones=0 / ratio=1.0; ratio<=0 or NaN throws ArgumentException (T-22-V5-09). Shipped 95582e7 (Plan 22-02).
+
+**Key technical artifacts:**
+
+- `MusicalNoteData` migration accepted THREE new defaulted-parameter fields without breaking 30+ existing positional call sites: `OnsetOffset` (22-05), `DurationOverlap` (22-06), `PortamentoMs` (22-06)
+- `MusicalNoteData.With(...)` builder helper grew with each plan's owned slot (rollback-independent composition per CONTEXT line 18)
+- New file `Voicings.cs` sibling to `ChordParser.cs` (chord-shape transform tier)
+- `EffectsFunctions.RegisterContextDependent` + `TransformFunctions.RegisterContextDependent` patterns (context-dependent registration for effects/transforms needing MusicalContext)
+- `FileIO.VarispeedResample(buffer, ratio)` linear-interpolation pitch-shift helper
+- `EffectsFunctions.NoteValueToMs` + `TransformFunctions.NoteValueToBeats` (NoteValue ↔ ms / beats math at active tempo / time signature)
+- 7 new sentinel-pinned `.flow` smoke scripts (one per DX feature) in `tests/`
+- 77 new Phase 22 xUnit Facts (8 ArpeggioFacts + 17 VoicingFacts + 9 DelaySyncFacts + 14 QuantizeFacts + 8 LegatoFacts + 9 PortamentoMidiFacts + 12 LoadWavVarispeedFacts)
+
+**Cross-cutting truths verified at closure:**
+
+- Existing function signatures byte-identical (every `feat` commit preserved the previous overload's bytes via sibling-overload registration / convergence at DSP layer)
+- All new functions registered via `InternalFunctionRegistry.Register` (no new AST nodes; pure stdlib + transforms)
+- Phase 18 defaulted-parameter migration shape generalizes (3 new fields appended without churn)
+- No new NuGet packages; DryWetMidi 8.0.3 stays as the only external dep
+- All acceptance examples use S-expression style (no infix operators introduced) per CLAUDE.md memory
+- Charitable interpretation honored throughout (D-07 voicings, Pitfall 7 random arpeggio, Pitfall 9 quantize identity)
+
+**Test gates at closure:**
+
+- `dotnet test flow-sharp.sln`: **499/499 GREEN, 0 failed**
+- `dotnet test --filter "FullyQualifiedName~Phase22"` (project-scoped): **77/77 GREEN**
+- `dotnet test --filter "ByteIdentical"`: **6/6 GREEN** (Tutorial WAV+MIDI, Showcase WAV+MIDI, Euclidean WAV+MIDI — confirms three consecutive `MusicalNoteData` ctor migrations stayed dormant on default)
+- 7 DX smoke scripts: all exit 0 with their `DX-NN ... PASSED` sentinel
+
+**Reference Phase 22 SUMMARY anchors:**
+
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-01-SUMMARY.md` (DX-10)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-02-SUMMARY.md` (DX-15)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-03-SUMMARY.md` (DX-11)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-04-SUMMARY.md` (DX-12)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-05-SUMMARY.md` (DX-13)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-06-SUMMARY.md` (DX-14)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-07-SUMMARY.md` (closure)
+- `.planning/phases/22-tier-b-c-composer-dx-bundle/22-VERIFICATION.md` (final phase verification)
 
 ### Roadmap Evolution
 
@@ -274,6 +339,8 @@ None yet for Phase 15.
 | 260420-0c0 | Add pure-Flow test library (flow-lang/test.flow + tests/test_test_library.flow) | 2026-04-20 | c8731d2 | [260420-0c0-write-a-pure-flow-test-library-at-flow-l](./quick/260420-0c0-write-a-pure-flow-test-library-at-flow-l/) |
 | 260426-v5s | examples/long_demo.flow — ~10 min Flow feature showcase (46 spotlights) | 2026-04-27 | 9d8e8b2 | [260426-v5s-create-examples-long-demo-flow-10-minute](./quick/260426-v5s-create-examples-long-demo-flow-10-minute/) |
 | 260502-lhm | Setup GitHub wiki sync workflow (manual workflow_dispatch → ./wiki/ mirrors to <repo>.wiki.git) | 2026-05-02 | 771bd2d | [260502-lhm-setup-github-wiki-sync-workflow](./quick/260502-lhm-setup-github-wiki-sync-workflow/) |
+| 260502-lum | Buffer pretty-print + hex-dump builtins (prettyBuffer, bufferHex) | 2026-05-02 | 94620a7 | [260502-lum-add-pretty-printing-for-printing-out-buf](./quick/260502-lum-add-pretty-printing-for-printing-out-buf/) |
+| 260502-oib | `noise` builtin — 4 arity overloads wrapping SynthUtils.GenerateWhiteNoise | 2026-05-02 | 08d505a | [260502-oib-add-noise-builtin-noise-seconds-overload](./quick/260502-oib-add-noise-builtin-noise-seconds-overload/) |
 
 ## Deferred Items
 
@@ -290,18 +357,18 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-02T19:17:28.899Z
-Stopped at: Phase 22 context gathered
+Last session: 2026-05-02T20:24:51.610Z
+Stopped at: Completed 22-07-PLAN.md (Phase 22 closure)
 Resume file: None
 
-**Completed Phase:** 21 (pragma-system-h-alias) — 3 plans across 3 waves — closed 2026-04-26
+**Completed Phase:** 22 (tier-b-c-composer-dx-bundle) — 7 plans across 6 waves — closed 2026-05-02
 
-**Planned Phase:** 22 (Tier B/C Composer DX Bundle) — TBD plans — pending /gsd-plan-phase 22
+**Planned Phase:** 23 (Microtonal Tuning, Wedge) — TBD plans — pending /gsd-plan-phase 23
 
 ## Resume Instructions (next PC)
 
-Phase 21 closed 2026-04-26. v1.3 milestone now 4/10 phases complete (Phases 18, 19, 20, 21). Phase 22 (Tier B/C Composer DX Bundle) is the next ROADMAP target. Phase 23 (Microtonal Tuning) and Phase 24 (Scale Linting) are also unblocked — both depend on the Phase 21 pragma infrastructure shipped today and can be planned in any order after Phase 22.
+Phase 22 closed 2026-05-02. v1.3 milestone now 5/10 phases complete (Phases 18, 19, 20, 21, 22). Phase 23 (Microtonal Tuning) is the next ROADMAP target. Phase 24 (Scale Linting) and Phase 26 (Dictionary Support) are also unblocked.
 
-1. `/gsd-progress` — confirm Phase 21 at 3/3 plans, milestone v1.3 at 4/10 phases
-2. `/gsd-plan-phase 22` — plan Phase 22: arpeggio params (DX-10), chord inversions/voicings (DX-11), delay sync to NoteValue (DX-12), snap-to-grid quantize (DX-13), legato/portamento (DX-14), varispeed loadWav (DX-15). Depends on Phase 18 Fraction (DX-12 + DX-13 use Fraction for sync math).
-3. After Phase 22: Phase 23 (Microtonal Tuning, MICR-01..03) — `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` register their pragma names in PragmaRegistry.KnownPragmas (one-line addition each per D-17 closed-set design); the rest of the pragma plumbing works as-is. Phase 24 (Scale Linting, LINT-01..03) — `enable scaleLint;` registers in PragmaRegistry; flow-lsp consumes the resulting PragmaSet via the existing diagnostic pipeline. Phase 25 (Gaussian Humanize) must be the LAST PRNG-touching phase per binding pre-ordering #5.
+1. `/gsd-progress` — confirm Phase 22 at 7/7 plans, milestone v1.3 at 5/10 phases
+2. `/gsd-plan-phase 23` — plan Phase 23: named-tunings wedge (MICR-01..03). `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` change `Note → frequency` lookup at `PitchConversion.NoteToFrequency`; transforms remain pitch-class-based and tuning-agnostic per D-03. Depends on Phase 21 pragma system (one-line addition in `PragmaRegistry.KnownPragmas` per pragma name).
+3. After Phase 23: Phase 24 (Scale Linting, LINT-01..03) — `enable scaleLint;` activates flow-lsp Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts. Phase 25 (Gaussian Humanize) must be the LAST PRNG-touching phase per binding pre-ordering #5. Phase 26 (Dictionary Support) is independent — could run earlier if scheduling priority shifts. Phase 27 (Tutorial + Showcase Refresh) closes the milestone after every v1.3 feature is live.

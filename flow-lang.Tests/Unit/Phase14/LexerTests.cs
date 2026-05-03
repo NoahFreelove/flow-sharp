@@ -91,4 +91,57 @@ public class LexerTests
         // the extended surface. Verifies the duration-suffix branch still works.
         Assert.Equal(TokenType.NoteLiteral, FirstNonEof("Cb4h").Type);
     }
+
+    // ---------- note-vs-chord-lexer fix (2026-05-02) ----------
+    //
+    // Bug: tokens like "D6", "G7", "A6", "C6", "F6" were misclassified as ChordLiteral
+    // because ChordParser.IsChordSymbol matched the digit-only quality suffixes "6", "7",
+    // "9" present in QualityIntervals. This contradicted the project's documented
+    // convention (tests/test_chords.flow:13: "G7 is parsed as note G at octave 7, use
+    // dom7 for chord") and broke chord-bracket parsing in real-world MIDI imports
+    // (Chopin Nocturne Op. 9 No. 2 in Eb).
+    //
+    // Fix: IsChordSymbol now rejects digit-only quality suffixes on the no-accidental
+    // branch, so these tokens fall through to TryParseNote and become NoteLiterals.
+    // The Phase 14 D-21 chord-before-note dispatch in SimpleLexer.cs is preserved.
+
+    [Fact] public void D6_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("D6").Type);
+    [Fact] public void G6_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("G6").Type);
+    [Fact] public void A6_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("A6").Type);
+    [Fact] public void C6_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("C6").Type);
+    [Fact] public void F6_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("F6").Type);
+    [Fact] public void G7_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("G7").Type);
+    [Fact] public void D7_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("D7").Type);
+    [Fact] public void A9_IsNote() => Assert.Equal(TokenType.NoteLiteral, FirstNonEof("A9").Type);
+
+    [Fact]
+    public void Gdom7_StillIsChord()
+    {
+        // Regression gate: the documented convention from tests/test_chords.flow:13
+        // recommends "Gdom7" for the G dominant 7th chord. Multi-char "dom7" quality
+        // is still accepted by IsChordSymbol after the digit-only narrowing.
+        Assert.Equal(TokenType.ChordLiteral, FirstNonEof("Gdom7").Type);
+    }
+
+    [Fact]
+    public void Cm6_StillIsChord()
+    {
+        // Regression gate: "Cm6" has a multi-char "m6" quality, NOT digit-only,
+        // so it remains a ChordLiteral. Distinguishes the narrowing scope.
+        Assert.Equal(TokenType.ChordLiteral, FirstNonEof("Cm6").Type);
+    }
+
+    [Fact]
+    public void Cadd9_StillIsChord()
+    {
+        // Regression gate: "Cadd9" has a multi-char "add9" quality, still a chord.
+        Assert.Equal(TokenType.ChordLiteral, FirstNonEof("Cadd9").Type);
+    }
+
+    [Fact]
+    public void Cm7_StillIsChord()
+    {
+        // Regression gate: "Cm7" has multi-char "m7" quality, still a chord.
+        Assert.Equal(TokenType.ChordLiteral, FirstNonEof("Cm7").Type);
+    }
 }

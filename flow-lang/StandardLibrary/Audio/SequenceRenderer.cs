@@ -31,7 +31,7 @@ namespace FlowLang.StandardLibrary.Audio
             string synthType,
             int sampleRate,
             double bpm,
-            int maxVoices = 32)
+            int maxVoices = 1024)
         {
             return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, maxVoices);
         }
@@ -41,7 +41,7 @@ namespace FlowLang.StandardLibrary.Audio
             INoteSynthesizer synthesizer,
             int sampleRate,
             double bpm,
-            int maxVoices = 32)
+            int maxVoices = 1024)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
@@ -72,7 +72,7 @@ namespace FlowLang.StandardLibrary.Audio
             double bpm,
             TimelineMap timelineMap,
             string scopeName = "top-level",
-            int maxVoices = 32)
+            int maxVoices = 1024)
         {
             return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, timelineMap, scopeName, maxVoices);
         }
@@ -84,7 +84,7 @@ namespace FlowLang.StandardLibrary.Audio
             double bpm,
             TimelineMap timelineMap,
             string scopeName = "top-level",
-            int maxVoices = 32)
+            int maxVoices = 1024)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();

@@ -324,5 +324,26 @@ public static class FlowScriptData
         {
             "DX-13 quantize: PASSED",
         },
+
+        // Phase 22-06 (DX-14 legato): pin the legato(Sequence, Double) smoke script. Script
+        // exercises (legato seq 0.5) over a QUARTER-note phrase under tempo 120 / 4/4 and
+        // writes a WAV via renderSong. If the DurationOverlap migration regresses (field
+        // missing, BarRenderer not reading it, or onsets accidentally moved), the sentinel
+        // does not print and this Theory row goes RED.
+        ["test_dx_legato.flow"] = new[]
+        {
+            "DX-14 legato: PASSED",
+        },
+
+        // Phase 22-06 (DX-14 portamento): pin the portamento(Sequence, Millisecond) smoke
+        // script. Script exercises (portamento seq 100ms) and writes a MIDI file via
+        // writeMidi. If the PortamentoMs migration regresses (field missing, MidiExport not
+        // emitting CC65/CC5, or the linear ms→CC5 curve diverges), the sentinel does not
+        // print and this Theory row goes RED. The accompanying PortamentoMidiFacts read the
+        // generated .mid back via DryWetMidi to assert CC events present.
+        ["test_dx_portamento.flow"] = new[]
+        {
+            "DX-14 portamento: PASSED",
+        },
     };
 }

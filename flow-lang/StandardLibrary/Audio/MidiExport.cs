@@ -241,6 +241,13 @@ public static class MidiExport
                     {
                         int barTimeSigDenom = bar.TimeSignature?.Denominator ?? sectionTimeSigDenom;
                         long barTick = seqTick;
+                        // Chord-tone support (mirrors BarType.ToTimeline): the leading note of
+                        // a chord group advances barTick for the whole slot; subsequent
+                        // chord-tones (IsChordTone=true) emit their NoteOn/NoteOff at the
+                        // SAVED leadBarTick and do NOT advance barTick. Without this, a chord
+                        // [C E G]q would export as a sequential MIDI arpeggio instead of a
+                        // simultaneous polyphonic strike.
+                        long leadBarTick = barTick;
 
                         foreach (var note in bar.MusicalNotes)
                         {
@@ -252,6 +259,20 @@ public static class MidiExport
                                 continue;
                             }
 
+                            // Choose the tick at which this note's events land.
+                            // Chord-tone: stack on the leading tone's tick.
+                            // Leading/standalone note: use barTick AND record it as the new lead.
+                            long effectiveTick;
+                            if (note.IsChordTone)
+                            {
+                                effectiveTick = leadBarTick;
+                            }
+                            else
+                            {
+                                effectiveTick = barTick;
+                                leadBarTick = barTick;
+                            }
+
                             int midiNote = PitchConversion.GetMidiNote(
                                 note.NoteName, note.Octave, note.Alteration);
 
@@ -259,19 +280,51 @@ public static class MidiExport
                             byte velocity = (byte)Math.Clamp((int)(note.Velocity * 127), 1, 127);
 
                             double beats = note.GetBeats(barTimeSigDenom);
-                            long durationTicks = (long)(beats * ticksPerQuarter);
+                            // DX-14 legato: NoteOff lands at extended duration (CONTEXT D-03 — overlapping
+                            // events are valid SMF and the receiving DAW mixes them). When DurationOverlap=0
+                            // (default) extendedBeats == beats and the export is byte-identical to pre-22-06.
+                            double extendedBeats = note.DurationOverlap > 0
+                                ? beats * (1.0 + note.DurationOverlap)
+                                : beats;
+                            long durationTicks = (long)(extendedBeats * ticksPerQuarter);
+
+                            // DX-14 portamento: emit CC65=127 + CC5=mappedValue at note start
+                            // (CONTEXT Claude's Discretion). Linear ms->CC5: 0->0, 100->64, 200->127 clamped.
+                            // V5 (T-22-V5-22, T-22-V5-23): clamp before SevenBitNumber cast — guards both
+                            // upper overflow and negative input.
+                            if (note.PortamentoMs > 0.0)
+                            {
+                                byte cc5Value = (byte)Math.Clamp(
+                                    (int)Math.Round(note.PortamentoMs * 127.0 / 200.0), 0, 127);
+                                noteEvents.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)127), effectiveTick));
+                                noteEvents.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)5, (SevenBitNumber)cc5Value), effectiveTick));
+                            }
 
                             // NoteOn at current position
                             noteEvents.Add(new TimedEvent(
                                 new NoteOnEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)velocity),
-                                barTick));
+                                effectiveTick));
 
-                            // NoteOff at position + duration
+                            // NoteOff at position + extended duration (for legato — overlap with next note)
                             noteEvents.Add(new TimedEvent(
                                 new NoteOffEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)0),
-                                barTick + durationTicks));
+                                effectiveTick + durationTicks));
 
-                            barTick += durationTicks;
+                            // DX-14 portamento: bracket-close at note end (CC65=0).
+                            if (note.PortamentoMs > 0.0)
+                            {
+                                noteEvents.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)0),
+                                    effectiveTick + durationTicks));
+                            }
+
+                            // CRITICAL (Pitfall 3): advance by ORIGINAL beats, NOT extendedBeats.
+                            // This is what makes legato OVERLAP rather than slow the song down.
+                            // Chord-tones do NOT advance — the lead already advanced for the slot.
+                            if (!note.IsChordTone)
+                                barTick += (long)(beats * ticksPerQuarter);
                         }
 
                         // Advance sequence position by bar duration
