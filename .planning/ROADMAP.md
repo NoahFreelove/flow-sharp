@@ -50,7 +50,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 
 ## v1.3 Composer DX Tier B/C (Phases 18-27) — in progress
 
-Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), and adds dictionary support (`(dict ...)` + `(get ...)` etc.). 32 requirements across 10 phases.
+Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), and lands a foundational language consistency pass: prefix-only arithmetic standardization (Phase 26) followed by symbols + tuples + generic dicts (Phase 26.1). 38 requirements across 11 phases.
 
 **Locked decisions** (from `/gsd-new-milestone` discussion):
 - D-01: Tuplet bracket syntax is `{N:M ...}` (braces)
@@ -69,8 +69,9 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 - [ ] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`), `ITuningSystem` at `PitchConversion.NoteToFrequency` seam
 - [ ] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts
 - [ ] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()`
-- [ ] **Phase 26: Dictionary Support** — `(dict "k" v ...)` constructor + `(get d "k")` / `(set d "k" v)` / `(keys d)` / `(values d)` / `(has d "k")` / `(remove d "k")` / `(size d)` operations; `Dict[T]` type with String keys; S-expression style per memory (no infix `{...}` literal — collides with Phase 19 tuplet braces)
-- [ ] **Phase 27: Tutorial + Showcase Refresh** — `examples/tutorial.flow` + `examples/showcase.flow` exercise every v1.3 feature end-to-end (including dicts); byte-identical determinism re-pinned
+- [ ] **Phase 26: Op Standardization (Prefix-Only)** — Eliminate infix `+ - * /`; add `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering numeric widening chain; remove `BinaryExpression`/`BinaryOperator` AST nodes; migrate stdlib + ~70 .flow tests; foundation for Phase 26.1
+- [ ] **Phase 26.1: Symbols + Tuples + Dicts (INSERTED)** — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op, destructuring, `@N` indexing, per-position types), generic `Dict<K, V>` with hashable keys (Int/Long/Float/String/Symbol/Note/Chord/Tuple); dicts via `(dict K V ...)` + `(dictTuple <<K,V>> ...)` builtins (no literal syntax)
+- [ ] **Phase 27: Tutorial + Showcase Refresh** — `examples/tutorial.flow` + `examples/showcase.flow` exercise every v1.3 feature end-to-end (including prefix-only arithmetic, symbols, tuples, dicts); byte-identical determinism re-pinned
 
 ### Phase Details
 
@@ -187,25 +188,38 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   3. Two consecutive runs of `showcase.flow` (now including a Gaussian-humanize call site) produce cmp-clean WAV + MIDI output (DEFER-06)
 **Plans**: TBD
 
-### Phase 26: Dictionary Support
-**Goal**: Composers can store and retrieve key-value data via S-expression style `(dict "k" v ...)` constructor and `(get d "k")` / `(set d "k" v)` operations — adds a new `Dict[T]` type to the type system without colliding with Phase 19 tuplet brace syntax
-**Depends on**: Nothing (independent of Phases 18-25; could run earlier but slotted before tutorial so Phase 27 demos dicts)
-**Requirements**: DICT-01, DICT-02, DICT-03
+### Phase 26: Op Standardization (Prefix-Only)
+**Goal**: Eliminate infix arithmetic operators in favor of S-expression prefix builtins, aligning the entire language with the no-infix-operators philosophy (MEMORY: feedback_language_philosophy). Removes `BinaryExpression`/`BinaryOperator` AST nodes; adds `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering the full numeric widening chain (Int → Long → Float → Double → Number); migrates all stdlib + ~70 .flow tests.
+**Depends on**: Nothing (foundation — must precede Phase 26.1 so the new dict/tuple/symbol features inherit the prefix-only base)
+**Requirements**: STD-01, STD-02, STD-03
 **Success Criteria** (what must be TRUE):
-  1. Composer can call `(dict "kick" C2 "snare" D4 "hat" F#5)` and get back a `Dict[Note]` value; `(dict)` returns an empty dict (DICT-01)
-  2. Composer can call `(get d "kick")` to retrieve a value; missing keys return `Nothing` (per CLAUDE.md charitable-interpretation memory) or default value via `(getOr d "kick" defaultValue)` (DICT-02)
-  3. Composer can call `(set d "kick" newValue)` to return a new dict with the key updated; `(remove d "kick")` returns a dict without that key; immutable update semantics matching Flow's record-style data model (DICT-02)
-  4. Composer can introspect via `(keys d)` → `Array[String]`, `(values d)` → `Array[T]`, `(has d "k")` → `Bool`, `(size d)` → `Int` (DICT-03)
-  5. Functional iteration via `(each d (fn String key, T value => ...))` and `(map d (fn String key, T value => ...))` for transforming values (DICT-03)
-  6. Byte-identical determinism contract preserved — dict iteration order is insertion order, NOT hash order; existing tutorial.flow + showcase.flow remain cmp-clean
+  1. Parser no longer accepts infix `+ - * /` outside negative number literals; `ParseAdditive` and `ParseMultiplicative` removed; `BinaryExpression` + `BinaryOperator` deleted (STD-01)
+  2. Builtins `(add)`, `(sub)`, `(mul)`, `(div)` ship with overloads for Int, Long, Float, Double, Number; `(neg x)` for runtime negation; `(concat String String)` for string concatenation (STD-02)
+  3. Negative number literals (`-5`, `-3.14`) lex as single tokens at expression-start, after `(`, after `,` — mirroring existing `-3dB`/`+50c`/`-5st` precedent (STD-02)
+  4. All ~70 existing `test_*.flow` scripts migrated to prefix form and pass with byte-identical output; `tutorial.flow` + `showcase.flow` cmp-clean across two consecutive runs (STD-03)
+  5. CLAUDE.md updated to remove the stale "==, !=, <, >" claim and document prefix-only rule (STD-03)
+**Plans**: TBD
+
+### Phase 26.1: Symbols + Tuples + Dicts (INSERTED)
+**Goal**: Three tightly-coupled language additions land together — Symbol primitive type (`#foo` syntax, interned), Tuple type (`<<a, b, c>>` literal with per-position types and arity, `~>` unpack flow operator, destructuring assignment, `@N` indexing), and generic `Dict<K, V>` with hashable keys (Int, Long, Float, String, Symbol, Note, Chord, Tuple-of-hashables). Dicts surface via builtins only (no literal syntax — preserves S-expr style and avoids `{...}` collision with Phase 19 tuplets).
+**Depends on**: Phase 26 (must inherit prefix-only philosophy from Op Standardization)
+**Requirements**: SYM-01, TUP-09, TUP-10, DICT-01, DICT-02, DICT-03
+**Success Criteria** (what must be TRUE):
+  1. Symbols: `#foo` lexes as `SymbolLiteral`; `Symbol` type registered; equality is pointer-compare (interned); usable as `Dict` key (SYM-01)
+  2. Tuples: `<<C4, q>>` literal; `<<>>` empty + `<<x>>` singleton valid; type annotation `<<Note, Beat>>` mirrors literal; `tup@0`/`@1` indexing; `<<a, b>> = foo()` destructure; immutable (TUP-09)
+  3. Flow ops: `~>` unpacks tuple into multi-arg call; on non-tuple LHS, `~>` behaves identically to `->` (charitable interpretation per memory) (TUP-10)
+  4. Dicts: `Dict<K, V>` Java-generic style; `(dict K V K V ...)` flat constructor; `(dictTuple <<K,V>> <<K,V>> ...)` tuple-pair constructor; immutable; allowed key types: Int/Long/Float/String/Symbol/Note/Chord/Tuple-of-hashables (DICT-01)
+  5. Dict ops: `(get d k)`, `(set d k v)`, `(has d k)`, `(keys d)`, `(values d)`, `(size d)`, `(merge d1 d2)`, `(remove d k)`; all mutations return new dicts (DICT-02)
+  6. Iteration: `(each d callback)` yields `<<key, value>>` tuples, callable via `~>` for multi-arg lambda dispatch (DICT-03)
+  7. Existing `tutorial.flow` + `showcase.flow` remain cmp-clean (no regression to byte-identical determinism)
 **Plans**: TBD
 
 ### Phase 27: Tutorial + Showcase Refresh
 **Goal**: `examples/tutorial.flow` and `examples/showcase.flow` demonstrate every v1.3 feature end-to-end with byte-identical determinism; v1.1 + v1.2 chapters preserved (last per v1.2 precedent — Phase 16 was the v1.2 tutorial-refresh closer)
-**Depends on**: Phases 18-26 (every v1.3 feature must be live before tutorial can demonstrate it, including Phase 26 dict support)
+**Depends on**: Phases 18-26.1 (every v1.3 feature must be live before tutorial can demonstrate it, including Phase 26 prefix-op standardization and Phase 26.1 symbols/tuples/dicts)
 **Requirements**: QOL-04
 **Success Criteria** (what must be TRUE):
-  1. `examples/tutorial.flow` demonstrates tuplets `{3:2 ...}q`, fractional `C4/12`, range, multi-letter enharmonics, negative slice, `enable hAsB;` pragma, arpeggio/voicings/delay-sync/quantize/legato/portamento/varispeed-loadWav, named-tuning microtonal, scale-lint pragma, `humanizeGaussian`, **dict** `(dict "k" v)` + `(get d "k")` (QOL-04)
+  1. `examples/tutorial.flow` demonstrates tuplets `{3:2 ...}q`, fractional `C4/12`, range, multi-letter enharmonics, negative slice, `enable hAsB;` pragma, arpeggio/voicings/delay-sync/quantize/legato/portamento/varispeed-loadWav, named-tuning microtonal, scale-lint pragma, `humanizeGaussian`, prefix-only arithmetic via `(add)`/`(sub)`/`(mul)`/`(div)`, symbol `#foo`, tuple `<<a, b>>` with `~>` unpack, generic `Dict<K, V>` keyed by `Note` and `Symbol` via `(dict K V ...)` + `(get d k)` (QOL-04)
   2. Both scripts run to completion (exit 0) producing non-empty WAV + MIDI output to `examples/output/` (QOL-04)
   3. Byte-identical determinism contract holds across two consecutive runs (cmp-clean) for both `tutorial.flow` and `showcase.flow` (QOL-04)
   4. Existing v1.1 + v1.2 chapters preserved — no regressions to prior tutorial coverage (QOL-04)
@@ -240,5 +254,6 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 23. Microtonal Tuning (Wedge) | v1.3 | 0/N | Not started | - |
 | 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |
-| 26. Dictionary Support | v1.3 | 0/N | Not started | - |
+| 26. Op Standardization (Prefix-Only) | v1.3 | 0/N | Not started | - |
+| 26.1. Symbols + Tuples + Dicts | v1.3 | 0/N | Not started | - |
 | 27. Tutorial + Showcase Refresh | v1.3 | 0/N | Not started | - |

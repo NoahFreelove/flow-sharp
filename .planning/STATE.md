@@ -4,10 +4,10 @@ milestone: v1.3
 milestone_name: Composer DX Tier B/C
 status: completed
 stopped_at: Completed 22-07-PLAN.md (Phase 22 closure)
-last_updated: "2026-05-02T20:29:19.955Z"
-last_activity: 2026-05-02 -- Phase 22 marked complete
+last_updated: "2026-05-03T04:27:53.223Z"
+last_activity: "2026-05-02 -- Completed quick task 260502-oib: noise builtin"
 progress:
-  total_phases: 10
+  total_phases: 11
   completed_phases: 5
   total_plans: 21
   completed_plans: 21
@@ -319,6 +319,9 @@ Phase 22 — Tier B/C Composer DX Bundle — CLOSED 2026-05-02. Six independentl
 - Phase 17 context gathered (2026-04-20): 17-CONTEXT.md + 17-DISCUSSION-LOG.md written. Decisions locked: C# `flow-lsp` project reusing flow-lang (OmniSharp.Extensions.LanguageServer) · full re-lex+re-parse on ~150ms debounce · TextMate grammar + LSP semantic tokens (standard VSCode scopes, no bundled theme) · forward everything ErrorReporter produces · completion covers built-ins + stdlib imports + keywords + user-defined symbols + snippets · context-aware roman-numeral completion inside note streams · signature help for built-ins AND user procs · go-to-def for user procs/vars + stdlib · `flow-lang/StandardLibrary/BuiltInDocs.cs` lookup table · self-contained per-platform VSIX (linux-x64, win-x64, osx-x64, osx-arm64) · publish to Marketplace + OpenVSX. Ready for /gsd-plan-phase 17.
 - Phase 15 planned (2026-04-20): 7 plans across 5 waves (commit 7acff55); research + validation + pattern-map produced; checker PASSED with 0 blockers, 6 non-blocking warnings (doc/scope notes). Wave 0: 15-01 scaffolding (Phase15 test subtree + MidiReadHelpers promotion closing DEFER-05). Wave 1 parallel: 15-02 DX-07 grammar/runtime, 15-04 DX-09 euclidean core. Wave 2: 15-03 DX-07 audio path (ReverbApply RT60 overload + per-voice SongRenderer insert, feedback cap 0.99). Wave 3 parallel: 15-05 byte-identical MIDI/WAV regression (two-pass strict), 15-06 end-to-end .flow scripts. Wave 4: 15-07 closure (ROADMAP criterion #3 "or zero" doc-only reframe per D-02 dry-short-circuit, collision grep transcript F-24, REQUIREMENTS Shipped markers). 23 automated Facts + 1 manual (F-24) wired to plans; all 18 decisions D-01..D-18 covered.
 - Phase 16 closed (2026-04-25): Tutorial + showcase refreshed; QOL-03 shipped (Plans 01-04 commits 94d20fb + 5bf93c9 + be18d5c + 1c3b723); Plan 05 closure docs; criterion #4 marked moot per CONTEXT D-14 (4th criterion-moot/reframe in v1.2). Full suite 287/287 GREEN. v1.2 milestone (Phases 11-17) ready for closure via /gsd-complete-milestone v1.2.
+- Phase 26 edited: rewrote scope: Dictionary Support → Op Standardization (Prefix-Only) — kill infix arithmetic, add (add)/(sub)/(mul)/(div)/(neg)/(concat) builtins; foundation for Phase 26.1
+- Phase 26.1 inserted after Phase 26: Symbols + Tuples + Dicts bundle — #foo symbols, <<a,b,c>> tuples with ~> unpack op, generic Dict<K,V> with hashable keys (Int/Symbol/Note/Chord/Tuple); dicts via builtins only, no literal syntax
+- Phase 27 edited: expanded scope to cover prefix-only arithmetic, symbols, tuples, and generic dicts from Phases 26 + 26.1; updated depends_on to 18-26.1
 
 ### Pending Todos
 
