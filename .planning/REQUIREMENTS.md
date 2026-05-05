@@ -76,9 +76,9 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 
 ### Scale Linting (flow-lsp only)
 
-- [ ] **LINT-01**: Per D-02, `enable scaleLint;` pragma activates flow-lsp scale linting. When active, flow-lsp emits `Diagnostic { Severity = Information }` for any note in a `key Cmajor { ... }` context that is non-diatonic. Existing diagnostic plumbing reused — zero flow-lang touch. Acceptance: editing `key Cmajor { | C4 D4 E4 F#4 G4 | }` shows an Information-severity squiggle on `F#4`.
-- [ ] **LINT-02**: Scale linting is opt-in (Pitfall 8 mitigation — never default-on). Without `enable scaleLint;`, flow-lsp emits zero scale-lint diagnostics. Acceptance Fact: a key-block with non-diatonic notes produces zero scale-lint diagnostics when the pragma is absent.
-- [ ] **LINT-03**: Scale linting respects nested key contexts (key inside key inside section). Innermost active key wins for diagnostic computation. Acceptance: `key Cmajor { key Aminor { | F#4 | } }` does NOT flag F#4 (Aminor is the innermost active key, F# is non-diatonic in C major but... actually F is diatonic in Aminor; replace with realistic example in plan time).
+- [x] **LINT-01**: Per D-02, `enable scaleLint;` pragma activates flow-lsp scale linting. When active, flow-lsp emits `Diagnostic { Severity = Information }` for any note in a `key Cmajor { ... }` context that is non-diatonic. Existing diagnostic plumbing reused — zero flow-lang touch. Acceptance: editing `key Cmajor { | C4 D4 E4 F#4 G4 | }` shows an Information-severity squiggle on `F#4`. — Shipped Phase 24 plans 24-00..24-04
+- [x] **LINT-02**: Scale linting is opt-in (Pitfall 8 mitigation — never default-on). Without `enable scaleLint;`, flow-lsp emits zero scale-lint diagnostics. Acceptance Fact: a key-block with non-diatonic notes produces zero scale-lint diagnostics when the pragma is absent. — Shipped Phase 24 plans 24-00..24-04
+- [x] **LINT-03**: Scale linting respects nested key contexts (key inside key inside section). Innermost active key wins for diagnostic computation. Acceptance: `key Cmajor { key Gmajor { | F#4 | } }` does NOT flag F#4 (Gmajor is the innermost active key, F# is diatonic in Gmajor). — Shipped Phase 24 plans 24-00..24-04
 
 ### Gaussian Humanize (LAST PRNG phase)
 
@@ -148,9 +148,9 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 | MICR-01 | Phase 23 | Shipped f6b00ba |
 | MICR-02 | Phase 23 | Shipped 8190fb2 |
 | MICR-03 | Phase 23 | Shipped 47d7718 |
-| LINT-01 | Phase 24 | Pending |
-| LINT-02 | Phase 24 | Pending |
-| LINT-03 | Phase 24 | Pending |
+| LINT-01 | Phase 24 | Shipped Phase 24 plans 24-00..24-04 |
+| LINT-02 | Phase 24 | Shipped Phase 24 plans 24-00..24-04 |
+| LINT-03 | Phase 24 | Shipped Phase 24 plans 24-00..24-04 |
 | DEFER-06 | Phase 25 | Pending |
 | DICT-01 | Phase 26 | Pending |
 | DICT-02 | Phase 26 | Pending |

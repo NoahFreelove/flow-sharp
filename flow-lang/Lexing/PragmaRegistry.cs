@@ -19,7 +19,8 @@ public static class PragmaRegistry
             ["hAsB"] = "Inside note streams, accept 'H' as a synonym for 'B' (German notation).",
             ["justIntonation"] = "5-limit just-intonation render-time tuning rooted at active key tonic (default C major).",
             ["pythagorean"] = "3-limit Pythagorean (chain-of-fifths) render-time tuning rooted at active key tonic.",
-            ["equalTemperament"] = "12-tone equal temperament (default). Explicit form for tooling-visible intent."
+            ["equalTemperament"] = "12-tone equal temperament (default). Explicit form for tooling-visible intent.",
+            ["scaleLint"] = "Inside `key { ... }` blocks, surface non-diatonic notes as Information-severity LSP diagnostics."
         };
 
     /// <summary>True iff <paramref name="name"/> is a recognized pragma.</summary>

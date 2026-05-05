@@ -67,7 +67,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 - [x] **Phase 21: Pragma System + H-Alias** — `enable <pragma>;` file-scope pragma infrastructure (Haskell-precedent), DEFER-02/03 H-as-B alias inside note streams — Shipped 2026-04-26 (commits 60f7f18 + 05c2174 + closure)
 - [x] **Phase 22: Tier B/C Composer DX Bundle** — arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento articulations, varispeed loadWav — Shipped 2026-05-02 (commits 6500412, 95582e7, 5fba059, 98da48e, d3f5350, d2bde5d)
 - [x] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`); Pattern A `RenderTuning` value object threaded through `PitchConversion.NoteToFrequency` + 13 synthesizers; 7 JI + 7 Pythagorean mode-keyed ratio tables; `ScaleDatabase.TryParseKeyWithMode` 5-church-mode extension; `RenderingDiagnostics` one-shot warnings for D-11/D-13; transforms remain MIDI-pitch invariant per MICR-02 — Shipped 2026-05-03 (commits b6b916b + 39ef570 + 47d7718 + f6b00ba + 470c3cb + 8190fb2 + 4ea0927 + 3e6a3ba + ba27282 + 4f85eaf + closure)
-- [ ] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts
+- [x] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts — Shipped 2026-05-04 (zero flow-lang touch beyond one PragmaRegistry line)
 - [ ] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()`
 - [ ] **Phase 26: Op Standardization (Prefix-Only)** — Eliminate infix `+ - * /`; add `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering numeric widening chain; remove `BinaryExpression`/`BinaryOperator` AST nodes; migrate stdlib + ~70 .flow tests; foundation for Phase 26.1
 - [ ] **Phase 26.1: Symbols + Tuples + Dicts (INSERTED)** — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op, destructuring, `@N` indexing, per-position types), generic `Dict<K, V>` with hashable keys (Int/Long/Float/String/Symbol/Note/Chord/Tuple); dicts via `(dict K V ...)` + `(dictTuple <<K,V>> ...)` builtins (no literal syntax)
@@ -180,7 +180,13 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   1. With `enable scaleLint;` declared, editing `key Cmajor { | C4 D4 E4 F#4 G4 | }` shows an Information-severity squiggle on `F#4` (LINT-01)
   2. Without `enable scaleLint;`, a key-block with non-diatonic notes produces zero scale-lint diagnostics — opt-in only, never default-on (LINT-02)
   3. Scale linting respects nested key contexts — innermost active key wins for diagnostic computation (`key Cmajor { key Aminor { | F#4 | } }` does NOT flag F#4 against C major) (LINT-03)
-**Plans**: TBD
+**Plans**: 6 plans
+- [x] 24-00-PLAN.md — Wave 0 ParseSession pragma-scan widen + ParseSessionPragmaFacts (closes Phase 17/21 latent hAsB-in-LSP bug) — Shipped 6bcc697
+- [x] 24-01-PLAN.md — PragmaRegistry one-line add + Phase 21 fact migration + PragmaRegistryScaleLintFacts — Shipped 354a4de + 52a3dff
+- [x] 24-02-PLAN.md — DiatonicSpellings 119-entry hardcoded map + DiatonicSpellingsFacts (12 Theory rows + 5 Facts) — Shipped 94ccdaf + 9eae7ae
+- [x] 24-03-PLAN.md — ScaleLintAnalyzer + 14 Facts + 7-row mode Theory pinning LINT-01/02/03 + D-01..D-23 — Shipped 3c18795 + 3d9233a
+- [x] 24-04-PLAN.md — IScaleLintPublisher + ScaleLintPublisher + CombinedDiagnosticsPublisher + Program.cs DI wiring + 5 Facts — Shipped 0dc9a99 + b0b9971 + 96ab39c
+- [x] 24-05-PLAN.md — tests/test_scale_lint.flow + REQUIREMENTS/ROADMAP/STATE/VERIFICATION closure
 **UI hint**: yes
 
 ### Phase 25: Gaussian Humanize (LAST PRNG phase)
@@ -257,7 +263,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 21. Pragma System + H-Alias | v1.3 | 3/3 | Complete   | 2026-05-01 |
 | 22. Tier B/C Composer DX Bundle | v1.3 | 7/7 | Complete   | 2026-05-02 |
 | 23. Microtonal Tuning (Wedge) | v1.3 | 5/5 | Complete   | 2026-05-04 |
-| 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
+| 24. Scale Linting (flow-lsp) | v1.3 | 6/6 | Complete   | 2026-05-04 |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |
 | 26. Op Standardization (Prefix-Only) | v1.3 | 0/N | Not started | - |
 | 26.1. Symbols + Tuples + Dicts | v1.3 | 0/N | Not started | - |

@@ -18,8 +18,18 @@ public sealed class ParseSession
     public ParseResult Parse(string source, string? path)
     {
         var er = new ErrorReporter();
-        var tokens = new SimpleLexer(source, er, path).Tokenize();
-        var ast = new Parser(tokens, er).Parse();
+        // Phase 24 Wave 0 (Plan 24-00): mirror FlowEngine.Run() pragma-scan-then-parse
+        // pipeline so Program.Pragmas reflects file-scope `enable <pragma>;` declarations.
+        // Required precondition for D-19 activation gate (`Ast.Pragmas.Has("scaleLint")`).
+        // Side-effect: closes Phase 21 latent bug — `enable hAsB;` now takes effect in
+        // LSP-edited files (lexer sees pragmaSet for H→B substitution).
+        //
+        // Soft-failure: deliberately do NOT short-circuit on er.HasErrors between stages
+        // (Phase 17 D-06 soft-failure model). Downstream stages still run on a partial
+        // AST so the analyzer / completion / hover continue to work mid-edit.
+        var (pragmaSet, transformedSource) = PragmaScanner.Scan(source, path, er);
+        var tokens = new SimpleLexer(transformedSource, er, path, pragmaSet).Tokenize();
+        var ast = new Parser(tokens, er, pragmaSet).Parse();
         return new ParseResult(ast, tokens, er.Errors.ToList());
     }
 }

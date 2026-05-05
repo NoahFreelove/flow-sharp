@@ -1,4 +1,5 @@
 using FlowLsp;
+using FlowLsp.Diagnostics;
 using FlowLsp.Handlers;
 using FlowLsp.Symbols;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,12 @@ var server = await LanguageServer.From(options => options
         .AddSingleton<ParseSession>()
         .AddSingleton<DiagnosticsPublisher>()
         .AddSingleton<IDiagnosticsPublisher>(sp => sp.GetRequiredService<DiagnosticsPublisher>())
+        // Phase 24 Plan 24-04: scale-lint sibling-publisher + combined orchestrator.
+        // Sibling pattern (NOT replacement): the existing IDiagnosticsPublisher stays
+        // registered because CombinedDiagnosticsPublisher.BuildAll reuses
+        // DiagnosticsPublisher.BuildDiagnostics for parse-error → Diagnostic mapping.
+        .AddSingleton<IScaleLintPublisher, ScaleLintPublisher>()
+        .AddSingleton<CombinedDiagnosticsPublisher>()
         .AddSingleton<FlowLang.StandardLibrary.InternalFunctionRegistry>(_ =>
         {
             var r = new FlowLang.StandardLibrary.InternalFunctionRegistry();
@@ -34,7 +41,7 @@ var server = await LanguageServer.From(options => options
         .AddSingleton<DocumentManager>(sp =>
         {
             var parser = sp.GetRequiredService<ParseSession>();
-            var diag = sp.GetRequiredService<IDiagnosticsPublisher>();
+            var combined = sp.GetRequiredService<CombinedDiagnosticsPublisher>();
             var users = sp.GetRequiredService<UserSymbolIndex>();
             DocumentManager? dm = null;
             dm = new DocumentManager((uri, text, ct) =>
@@ -46,7 +53,11 @@ var server = await LanguageServer.From(options => options
                 if (dm!.HasDocument(uri))
                 {
                     users.Update(uri, result.Ast);
-                    diag.Publish(uri, result.Errors);
+                    // Phase 24 Plan 24-04: combined publish merges parse errors and
+                    // scale-lint diagnostics into a SINGLE PublishDiagnostics call so
+                    // LSP REPLACE semantics don't clobber either. Empty-publish-clears
+                    // invariant preserved (DiagnosticsPublisher.cs:52 contract).
+                    combined.Publish(uri, result, text);
                 }
                 return Task.CompletedTask;
             });

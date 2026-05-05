@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: verifying
-stopped_at: Completed 23-microtonal-tuning-wedge/23-05-PLAN.md
-last_updated: "2026-05-04T02:26:22.832Z"
-last_activity: 2026-05-04
+status: executing
+stopped_at: Phase 24 shipped — Phase 25 ready
+last_updated: "2026-05-04T18:00:00.000Z"
+last_activity: 2026-05-04 -- Phase 24 shipped (LINT-01/02/03)
+phase: 25
 progress:
   total_phases: 11
-  completed_phases: 6
-  total_plans: 26
-  completed_plans: 26
+  completed_phases: 7
+  total_plans: 32
+  completed_plans: 32
   percent: 100
 ---
 
@@ -21,21 +22,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 24 — scale-linting (next ROADMAP target)
+**Current focus:** Phase 25 — Gaussian Humanize (LAST PRNG phase)
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 23 — COMPLETE
-Plan: 5 of 5 — closure shipped
-Status: Phase complete — ready for verification
-Last activity: 2026-05-04
+Phase: 25 (Gaussian Humanize) — READY TO PLAN
+Plan: 0 of TBD
+Status: Phase 24 shipped (LINT-01/02/03); Phase 25 unblocked
+Last activity: 2026-05-04 -- Phase 24 shipped (LINT-01/02/03)
 
 Progress: [██████████] 100%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 23 closed 2026-05-04. v1.3 milestone now 6/10 phases complete (Phases 18, 19, 20, 21, 22, 23). Phase 24 (Scale Linting, LINT-01..03) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (`enable scaleLint;`) and Phase 23 `ScaleDatabase.TryParseKeyWithMode` (canonical 7-mode entry shipped 23-03 via Plan 23-02 + 23-03). Phase 25 (Gaussian Humanize) and Phase 26 (Op Standardization, Prefix-Only) also unblocked.
+Phase 24 closed 2026-05-04. v1.3 milestone now 7/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24). Phase 25 (Gaussian Humanize, DEFER-06) is the next ROADMAP target — must be the LAST PRNG-touching phase per binding pre-ordering #5 (Pitfall 6 byte-identical determinism). Existing uniform `humanize()` UNCHANGED; new `humanizeGaussian()` ships as separate function via Box-Muller transform. Phase 26 (Op Standardization, Prefix-Only) also unblocked; Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
 
 Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
@@ -57,6 +58,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 21 | 3 | - | - |
 | 22 | 7 | ~73min | ~10min |
 | 23 | 5 | ~76min | ~15min |
+| 24 | 6 | ~30min | ~5min |
 
 **Recent Trend:**
 
@@ -132,6 +134,12 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 23 P03 | 7m 17s | 2 tasks | 10 files (1 new diagnostic + 5 modified prod + 4 new test) |
 | Phase 23 P04 | 9m 46s | 2 tasks | 6 files (5 .flow scripts + 1 Integration Fact class) |
 | Phase 23 P05 | 15min | 2 tasks (docs-only closure) | 6 files (REQUIREMENTS, ROADMAP, STATE, 14-deferred-items, 23-VERIFICATION, 23-05-SUMMARY) |
+| Phase 24 P00 | ~3min | 2 tasks | 3 files (ParseSession.Parse widen + ParseSessionPragmaFacts) |
+| Phase 24 P01 | ~3min | 2 tasks | 3 files (PragmaRegistry.cs +1 line + Phase 21 fact migration + PragmaRegistryScaleLintFacts) |
+| Phase 24 P02 | ~3min | 2 tasks | 2 files (DiatonicSpellings 119-entry helper + DiatonicSpellingsFacts) |
+| Phase 24 P03 | ~6min | 2 tasks | 2 files (ScaleLintAnalyzer + ScaleLintAnalyzerFacts) |
+| Phase 24 P04 | 4min | 3 tasks | 5 files (IScaleLintPublisher + ScaleLintPublisher + CombinedDiagnosticsPublisher + Program.cs DI + 5 Facts) |
+| Phase 24 P05 | ~10min | 5 tasks (closure) | 5 files (test_scale_lint.flow + REQUIREMENTS, ROADMAP, STATE, 24-VERIFICATION, 24-05-SUMMARY) |
 
 ## Accumulated Context
 
@@ -287,6 +295,62 @@ Recent decisions affecting current work:
 - [Plan 23-03]: ScaleDatabase.TryParseKeyWithMode added as NEW additive method per WARNING-8; original TryParseKey(out bool isMajor) UNCHANGED to preserve ResolveRomanNumeral / GetScaleNotes callers. Suffix length-ordering required: mixolydian (10) before lydian (6) to avoid false-suffix-match. MusicalContext.ValidKeys grew from 34 entries (17 roots × 2 modes) to 119 entries (17 roots × 7 modes) via programmatic BuildValidKeys helper. RenderingDiagnostics.WarnOnce establishes one-shot stderr advisory channel (process-static HashSet dedup + lock); ResetForTesting public for cross-assembly Fact isolation. writeMidi migrated to context-dependent registration (1-arg overload preserved for LSP proxy / test direct invocation; 2-arg overload reads tuning + delegates). WARNING-4 between-runs ResetForTesting in WriteMidi_BytesUnchanged_UnderJI defends against future warning-gates-export changes leaking dedup state.
 - [Plan 23-04]: tutorial.flow + showcase.flow byte-identical contract intentionally preserved at 12-TET (Phase 18 pin) per CONTEXT.md Claude's Discretion recommendation; tests/test_tuning_determinism.flow + TuningDeterminismTests independently pin JI/Pythagorean determinism. WARNING-5 isolation: TuningDeterminismTests xUnit Facts use Fact-controlled inline sources + per-Fact unique /tmp paths (/tmp/flow_test_tuning_determinism_xunit_*.wav) disjoint from on-disk script paths. WARNING-7 scaffold: tests/test_tuning_determinism.flow places Section inside key Cmajor block (note-stream resolution at section-capture) with renderSong+writeWav at top level outside all musical-context blocks. renderSong over renderSequence chosen because renderSequence returns Voice[] (notation.flow:201); buf is reserved keyword (TokenType.Buf), variable named `audio` instead.
 - [Plan 23-05]: Phase 23 closure — REQUIREMENTS MICR-01/02/03 rows flipped to Shipped (f6b00ba / 8190fb2 / 47d7718); ROADMAP Phase 23 marked complete with 5/5 plans; STATE milestone progress 5/10 → 6/10 phases for v1.3; 14-deferred-items.md augmented with Phase 23 closure-of-D-13 / D-USER-tuning rows; 23-VERIFICATION.md produced as final phase rollup with 91 Phase23 Facts + 8/8 ByteIdentical + 5 .flow tuning smokes + 608/608 full suite GREEN. Single atomic docs-only closure commit per Phase 19-05 / 20-04 / 21-03 / 22-07 precedent. Phase 24 (Scale Linting) is the next ROADMAP target; depends on Phase 21 pragma infrastructure AND Phase 23 ScaleDatabase.TryParseKeyWithMode (canonical 7-mode entry).
+- [Plan 24-00]: Wave 0 ParseSession.Parse widened to mirror FlowEngine pragma-scan pipeline — `Program.Pragmas` now populated in LSP context; closes the latent Phase 17/21 "enable hAsB; not honored in LSP" bug. ParseSessionPragmaFacts pin the regression. Foundation for Phase 24 D-19 activation gate (`parseResult.Ast.Pragmas.Has("scaleLint")`). Shipped 6bcc697.
+- [Plan 24-01]: One-line addition to `flow-lang/Lexing/PragmaRegistry.KnownPragmas` registering `"scaleLint"` per Phase 21 D-17 reservation — the only flow-lang touch in Phase 24. Phase 21 PragmaRegistryFacts migrated for closed-set growth (count: 1 → 4 → 5 across Phases 21 → 23 → 24); negative assertion updated with sentinel `futureUnknownPragma`. Shipped 354a4de + 52a3dff.
+- [Plan 24-02]: `flow-lsp/Diagnostics/DiatonicSpellings.cs` 119-entry hardcoded map (17 roots × 7 modes) per CONTEXT D-04/D-05 — explicit-beats-clever for a closed set this small. DiatonicSpellingsFacts pin: 12 Theory rows + 5 Facts. Spelling-aware D-01 invariant: Eb in Cmajor flagged AND E# in Cmajor flagged (pitch-class IS diatonic but spelling is not). Shipped 94ccdaf + 9eae7ae.
+- [Plan 24-03]: `flow-lsp/Diagnostics/ScaleLintAnalyzer.cs` AST-walking analyzer dispatching D-01..D-23 — per-element type classification (NoteElement checked, ChordElement recursed, RestElement skip, RomanNumeralElement skip, NamedChordElement skip, VariableReferenceElement skip, RandomChoiceElement recursed, TupletElement recursed). 14 Facts + 7-row mode Theory pin LINT-01/02/03 + D-01..D-23. D-19 short-circuit lives inside the analyzer (`Ast.Pragmas.Has("scaleLint")`). D-21 reuses `NoteStreamContext.FindEnclosingKey` verbatim (innermost-key-wins). Shipped 3c18795 + 3d9233a.
+- [Plan 24-04]: Sibling-publisher orchestration: `IScaleLintPublisher` analyzer-as-source interface returning `IReadOnlyList<Diagnostic>` (NOT publishing — orchestrator owns the wire-level call), `ScaleLintPublisher` thin DI-mockable adapter, `CombinedDiagnosticsPublisher` orchestrator owning the single `_server.TextDocument.PublishDiagnostics` call per parse cycle (Pitfall 6 source-level pin: no Count/Any guard around publish). Source-tag separation pass-through: parse errors keep "flow", scale-lint keeps "flow.scaleLint". Existing `IDiagnosticsPublisher`/`DiagnosticsPublisher` kept registered (sibling, NOT replacement). 5 Facts pin merge invariant + LINT-01/02 wire-level acceptance. Shipped 0dc9a99 + b0b9971 + 96ab39c.
+- [Plan 24-05]: Phase 24 closure — REQUIREMENTS LINT-01/02/03 rows flipped to Shipped Phase 24 plans 24-00..24-04; LINT-03 acceptance text wording bug closed (Aminor → Gmajor — F# is diatonic in Gmajor, not Aminor); ROADMAP Phase 24 marked complete with 6/6 plans; STATE milestone progress 6/10 → 7/10 phases for v1.3; 24-VERIFICATION.md produced as final phase rollup with 24 Phase24 Facts + 8/8 ByteIdentical + tests/test_scale_lint.flow integration smoke + 677/677 full suite GREEN; Phase 18 byte-identical regression confirmed (examples/tutorial.flow + examples/showcase.flow SHA256 unchanged vs pre-Phase-24 base a5bab72). Phase 25 (Gaussian Humanize, DEFER-06) is the next ROADMAP target.
+
+### Phase 24 Closure Anchor (2026-05-04)
+
+Phase 24 — Scale Linting (flow-lsp) — CLOSED 2026-05-04. Opt-in `enable scaleLint;` pragma activates flow-lsp scale linting that surfaces non-diatonic notes inside `key { ... }` contexts as Information-severity LSP diagnostics. Zero flow-lang touch goal achieved at the maximally-conservative interpretation: the entire flow-lang change is one line in `PragmaRegistry.KnownPragmas`. v1.3 milestone advances **6/10 → 7/10 phases complete** (70%).
+
+**Shipped REQ-IDs** (one line each):
+
+- **LINT-01** — `enable scaleLint;` declared + `key Cmajor { | C4 D4 E4 F#4 G4 | }` produces exactly one Information-severity Diagnostic on `F#4` with Source `flow.scaleLint`. Pinned by `ScaleLintAnalyzerFacts.NonDiatonic_FsharpInCmajor_FlagsOneDiagnostic` (Plan 24-03) + `CombinedDiagnosticsPublisherFacts.CombinedPublish_ScaleLintTagged_FlowScaleLint` (Plan 24-04) + `tests/test_scale_lint.flow` smoke (Plan 24-05).
+- **LINT-02** — Pragma absent → zero scale-lint diagnostics regardless of key-block content (opt-in only, never default-on per Pitfall 8). Pinned by `ScaleLintAnalyzerFacts.PragmaAbsent_NeverFlags_LINT02` + `CombinedDiagnosticsPublisherFacts.BuildAll_PragmaAbsent_NoLintDiagnostics`.
+- **LINT-03** — Nested key contexts: innermost active key wins. `key Cmajor { key Gmajor { | F#4 | } }` does NOT flag F#4 (F# IS diatonic in Gmajor — innermost key wins). D-21 reuses `NoteStreamContext.FindEnclosingKey` verbatim from Phase 17. Pinned by `ScaleLintAnalyzerFacts.NestedKeys_InnermostWins_NoFlag`.
+
+**Key technical artifacts:**
+
+- `flow-lang/Lexing/PragmaRegistry.cs` — ONE LINE TOUCH: `["scaleLint"] = "..."` registration honoring Phase 21 D-17 reservation. The only flow-lang change in Phase 24.
+- `flow-lsp/ParseSession.cs` — Wave 0 widen mirroring FlowEngine pragma-scan pipeline; `Program.Pragmas` now populated in LSP context (closes latent hAsB-in-LSP bug).
+- `flow-lsp/Diagnostics/DiatonicSpellings.cs` — 119-entry hardcoded map (17 roots × 7 modes); spelling-aware membership check per D-01 (Eb in Cmajor AND E# in Cmajor both flagged — pitch-class match insufficient).
+- `flow-lsp/Diagnostics/ScaleLintAnalyzer.cs` — AST-walking analyzer; D-19 short-circuit at entry (`Ast.Pragmas.Has("scaleLint")`); D-01..D-23 dispatch per element type (NoteElement / ChordElement / RestElement / RomanNumeralElement / NamedChordElement / VariableReferenceElement / RandomChoiceElement / TupletElement / cent-offset / nested keys); D-17 token-wide squiggle range from `Token.Text.Length`; D-18 Source = `"flow.scaleLint"`.
+- `flow-lsp/Diagnostics/IScaleLintPublisher.cs` + `ScaleLintPublisher.cs` + `CombinedDiagnosticsPublisher.cs` — sibling-publisher orchestration; orchestrator owns the single `PublishDiagnostics` call per parse cycle; source-tag separation pass-through; Pitfall 6 source-level pin (no Count/Any guard around publish).
+- `flow-lsp/Program.cs` — DI registrations added (sibling, NOT replacement); `combined.Publish(uri, result, text)` replaces `diag.Publish(uri, result.Errors)` in DocumentManager onParse closure; close-race guard preserved.
+- `tests/test_scale_lint.flow` — End-to-end .flow integration smoke pinning LINT-01 / LINT-03 acceptance patterns; closed-set membership integration check (would fail parse with D-12 unknown-pragma if PragmaRegistry add was missed).
+- 24+ new Phase 24 xUnit Facts: ParseSessionPragmaFacts (Wave 0) + PragmaRegistryScaleLintFacts (Wave 1) + DiatonicSpellingsFacts (12 Theory + 5 Facts, Wave 2) + ScaleLintAnalyzerFacts (14 Facts + 7 Theory, Wave 3) + CombinedDiagnosticsPublisherFacts (5 Facts, Wave 4).
+
+**Cross-cutting concerns resolved:**
+
+- Phase 17/21 latent bug — `enable hAsB;` was never honored in LSP because `ParseSession.Parse` did not run the pragma-scan stage. Closed by Plan 24-00 ParseSession widen. ParseSessionPragmaFacts pin the regression.
+- Phase 21 PragmaRegistryFacts migration — closed-set growth from 1 → 4 → 5 across Phases 21 → 23 → 24. Negative assertion now uses sentinel `futureUnknownPragma` (vs. the original `scaleLint` which is now a known pragma). Alphabetized known-pragma CSV: `equalTemperament, hAsB, justIntonation, pythagorean, scaleLint`.
+- Phase 18 byte-identical regression contract — STRUCTURALLY preserved: `examples/tutorial.flow` + `examples/showcase.flow` SHA256 unchanged vs pre-Phase-24 base a5bab72 (verified at closure). The PragmaRegistry add is unreachable for files that don't declare `enable scaleLint;`, and neither tutorial nor showcase declares it. ByteIdenticalFacts: 8/8 GREEN.
+- Closed-set growth pattern — KnownPragmas count incrementally extends across milestones; Phase 23's lower-bound Fact (`>= 4`) still passes after Phase 24's add.
+
+**Test gates at closure:**
+
+- `dotnet test`: **677/677 GREEN, 0 failed**
+- `dotnet test --filter "FullyQualifiedName~ByteIdentical"`: **8/8 GREEN**
+- Phase 18 byte-identical SHA256 regression: GREEN — examples/tutorial.flow (e39d5db4...) + examples/showcase.flow (97100948...) unchanged vs pre-Phase-24 base
+- `tests/test_scale_lint.flow`: exit 0 with `test_scale_lint: PASSED` sentinel; `/tmp/flow_test_scale_lint.wav` produced (~705 KB)
+- All non-error .flow integration scripts continue to behave as expected (3 pre-existing exit-1 negative-error fixtures unchanged: test_error_masking.flow, test_iteration_guard.flow, test_musical_context_errors.flow)
+
+**Reference Phase 24 SUMMARY anchors:**
+
+- `.planning/phases/24-scale-linting-flow-lsp/24-00-SUMMARY.md` (Wave 0 — ParseSession pragma-scan widen)
+- `.planning/phases/24-scale-linting-flow-lsp/24-01-SUMMARY.md` (Wave 1 — PragmaRegistry one-line add)
+- `.planning/phases/24-scale-linting-flow-lsp/24-02-SUMMARY.md` (Wave 2 — DiatonicSpellings 119-entry helper)
+- `.planning/phases/24-scale-linting-flow-lsp/24-03-SUMMARY.md` (Wave 3 — ScaleLintAnalyzer)
+- `.planning/phases/24-scale-linting-flow-lsp/24-04-SUMMARY.md` (Wave 4 — CombinedDiagnosticsPublisher + DI)
+- `.planning/phases/24-scale-linting-flow-lsp/24-05-SUMMARY.md` (closure)
+- `.planning/phases/24-scale-linting-flow-lsp/24-VERIFICATION.md` (final phase verification)
+
+**Manual UAT (outstanding, non-blocking):**
+
+- Information-severity squiggle visual rendering in editor under `Source: flow.scaleLint` filter — wire format pinned via xUnit but actual rendering varies by editor (VS Code / Neovim / Helix). Tracked alongside v1.2-era Phase 17 HUMAN-UAT items; not blocking phase closure.
 
 ### Phase 23 Closure Anchor (2026-05-04)
 
@@ -437,18 +501,18 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-04T02:26:10.246Z
-Stopped at: Completed 23-microtonal-tuning-wedge/23-05-PLAN.md
-Resume file: None
+Last session: 2026-05-04T18:00:00.000Z
+Stopped at: Phase 24 shipped — Phase 25 ready
+Resume file: .planning/phases/24-scale-linting-flow-lsp/24-VERIFICATION.md
 
-**Completed Phase:** 23 (microtonal-tuning-wedge) — 5 plans across 5 waves — closed 2026-05-04
+**Completed Phase:** 24 (Scale Linting, flow-lsp) — 6 plans across 4 waves — closed 2026-05-04
 
-**Planned Phase:** 24 (Scale Linting, flow-lsp) — TBD plans — pending /gsd-plan-phase 24
+**Planned Phase:** 25 (Gaussian Humanize, DEFER-06) — TBD plans — pending /gsd-plan-phase 25
 
 ## Resume Instructions (next PC)
 
-Phase 23 closed 2026-05-04. v1.3 milestone now 6/10 phases complete (Phases 18, 19, 20, 21, 22, 23). Phase 24 (Scale Linting, LINT-01..03) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (`enable scaleLint;`) AND Phase 23 `ScaleDatabase.TryParseKeyWithMode` (canonical 7-mode entry) for LINT-03 nested-key semantics. Phase 25 (Gaussian Humanize) and Phase 26 (Op Standardization, Prefix-Only) are also unblocked.
+Phase 24 closed 2026-05-04. v1.3 milestone now 7/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24). Phase 25 (Gaussian Humanize, DEFER-06) is the next ROADMAP target — must be the LAST PRNG-touching phase per binding pre-ordering #5 (Pitfall 6 byte-identical determinism). Existing uniform `humanize()` UNCHANGED; new `humanizeGaussian()` ships as separate function via Box-Muller transform. Phase 26 (Op Standardization, Prefix-Only) and Phase 26.1 (Symbols + Tuples + Dicts) also unblocked; Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
 
-1. `/gsd-progress` — confirm Phase 23 at 5/5 plans, milestone v1.3 at 6/10 phases
-2. `/gsd-plan-phase 24` — plan Phase 24: opt-in flow-lsp scale linting (LINT-01..03). `enable scaleLint;` activates Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts; flow-lsp consumes `Program.Pragmas` via existing diagnostic pipeline; LINT-03 nested-key resolution uses `ScaleDatabase.TryParseKeyWithMode` (innermost active key wins). Zero flow-lang touch — flow-lsp diagnostic-rule addition only.
-3. After Phase 24: Phase 25 (Gaussian Humanize, DEFER-06) — must be the LAST PRNG-touching phase per binding pre-ordering #5; preserves byte-identical determinism for existing uniform `humanize()`. Phase 26 (Op Standardization, Prefix-Only) — eliminates infix `+ - * /` in favor of `(add)` / `(sub)` / `(mul)` / `(div)` builtins; foundation for Phase 26.1 (Symbols + Tuples + Dicts). Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature is live.
+1. `/gsd-progress` — confirm Phase 24 at 6/6 plans, milestone v1.3 at 7/10 phases
+2. `/gsd-plan-phase 25` — plan Phase 25: Gaussian humanize (DEFER-06). `humanizeGaussian(seq, amount, seed)` ships as a separate built-in (Box-Muller transform); existing `humanize(seq, amount, seed)` uniform path UNCHANGED to preserve v1.2 byte-identical determinism contract for tutorial.flow + showcase.flow (Pitfall 6).
+3. After Phase 25: Phase 26 (Op Standardization, Prefix-Only) — eliminates infix `+ - * /` in favor of `(add)` / `(sub)` / `(mul)` / `(div)` builtins; foundation for Phase 26.1 (Symbols + Tuples + Dicts). Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature is live.

@@ -22,21 +22,21 @@ public class PragmaRegistryFacts
     [Fact]
     public void IsKnown_UnknownName_ReturnsFalse()
     {
-        // Phase 23 closed-set growth: justIntonation now IS known (Phase 23 D-08); the
-        // Wave 2 plan migrated the original "justIntonation will land in Phase 23"
-        // negative assertion. scaleLint remains a Phase 24 future entry — still unknown.
-        Assert.False(PragmaRegistry.IsKnown("scaleLint"));
+        // Phase 23 closed-set growth: justIntonation now IS known. Phase 24 closed-set
+        // growth: scaleLint now IS known. The negative assertion intent is preserved
+        // via the sentinel "futureUnknownPragma" — mirrors the prior justIntonation
+        // migration documented at this Fact's comment in earlier phases.
+        Assert.False(PragmaRegistry.IsKnown("futureUnknownPragma"));
         Assert.False(PragmaRegistry.IsKnown(""));
     }
 
     [Fact]
     public void AlphabetizedKnownNames_ReturnsCsvSorted()
     {
-        // Phase 23 closed-set growth: 4 entries — equalTemperament, hAsB,
-        // justIntonation, pythagorean (ordinal-sorted: uppercase 'h' < lowercase 'h'
-        // and 'e' < 'h' < 'j' < 'p').
+        // Phase 24 closed-set growth: 5 entries — equalTemperament, hAsB,
+        // justIntonation, pythagorean, scaleLint (ordinal-sorted: e < h < j < p < s).
         var csv = PragmaRegistry.AlphabetizedKnownNames();
-        Assert.Equal("equalTemperament, hAsB, justIntonation, pythagorean", csv);
+        Assert.Equal("equalTemperament, hAsB, justIntonation, pythagorean, scaleLint", csv);
     }
 
     [Fact]
