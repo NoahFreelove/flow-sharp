@@ -70,9 +70,9 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 
 ### Microtonal Tuning (Wedge)
 
-- [ ] **MICR-01**: Per D-03, three named tunings ship via pragma: `enable justIntonation;` (5-limit JI), `enable pythagorean;` (3-limit), `enable equalTemperament;` (12-TET, default — explicit form for clarity). When active, `Note → frequency` lookup at `PitchConversion.NoteToFrequency` consults the active tuning system instead of the hard-coded `2^((n-69)/12)·440Hz`. Pragma is file-scope per D-02. Acceptance: `enable justIntonation; ...` followed by `play(C4 E4)` produces frequency ratio 5:4 (1.25) instead of 12-TET ~1.2599 (`Math.Pow(2, 4/12)`).
-- [ ] **MICR-02**: Tuning system applies at render-time only (Pitfall 5 mitigation). Existing `transpose`, `invert`, `retrograde`, `augment`, `diminish` transforms remain pitch-class-based and tuning-agnostic. Acceptance: `transpose(seq, 5)` produces the same MIDI pitch numbers under every tuning; only the rendered frequencies differ.
-- [ ] **MICR-03**: Full Scala (`.scl`) loader documented as deferred to v1.4. Pragma registry rejects unknown tunings with a clear error pointing at the documented future expansion.
+- [x] **MICR-01**: Per D-03, three named tunings ship via pragma: `enable justIntonation;` (5-limit JI), `enable pythagorean;` (3-limit), `enable equalTemperament;` (12-TET, default — explicit form for clarity). When active, `Note → frequency` lookup at `PitchConversion.NoteToFrequency` consults the active tuning system instead of the hard-coded `2^((n-69)/12)·440Hz`. Pragma is file-scope per D-02. Acceptance: `enable justIntonation; ...` followed by `play(C4 E4)` produces frequency ratio 5:4 (1.25) instead of 12-TET ~1.2599 (`Math.Pow(2, 4/12)`). — Shipped f6b00ba
+- [x] **MICR-02**: Tuning system applies at render-time only (Pitfall 5 mitigation). Existing `transpose`, `invert`, `retrograde`, `augment`, `diminish` transforms remain pitch-class-based and tuning-agnostic. Acceptance: `transpose(seq, 5)` produces the same MIDI pitch numbers under every tuning; only the rendered frequencies differ. — Shipped 8190fb2
+- [x] **MICR-03**: Full Scala (`.scl`) loader documented as deferred to v1.4. Pragma registry rejects unknown tunings with a clear error pointing at the documented future expansion. — Shipped 47d7718
 
 ### Scale Linting (flow-lsp only)
 
@@ -145,9 +145,9 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 | DX-13 | Phase 22 | Shipped d3f5350 |
 | DX-14 | Phase 22 | Shipped d2bde5d |
 | DX-15 | Phase 22 | Shipped 95582e7 |
-| MICR-01 | Phase 23 | Pending |
-| MICR-02 | Phase 23 | Pending |
-| MICR-03 | Phase 23 | Pending |
+| MICR-01 | Phase 23 | Shipped f6b00ba |
+| MICR-02 | Phase 23 | Shipped 8190fb2 |
+| MICR-03 | Phase 23 | Shipped 47d7718 |
 | LINT-01 | Phase 24 | Pending |
 | LINT-02 | Phase 24 | Pending |
 | LINT-03 | Phase 24 | Pending |

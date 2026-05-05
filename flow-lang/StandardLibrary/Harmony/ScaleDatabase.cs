@@ -191,6 +191,51 @@ public static class ScaleDatabase
     }
 
     /// <summary>
+    /// Phase 23 D-04 / WARNING-8: canonical key parser entry returning a
+    /// <see cref="FlowLang.StandardLibrary.Audio.Tuning.Mode"/> rather than the
+    /// legacy bool isMajor. Wave 2 ships only the major/minor branch — Wave 3
+    /// (Plan 23-03 Task 1) will widen the same method's mode-detection branch
+    /// to recognize the 5 additional church-mode suffixes (dorian, phrygian,
+    /// lydian, mixolydian, locrian), with longer-suffix-first ordering to
+    /// avoid false-suffix-match (e.g. "lydian" is a substring of "mixolydian").
+    ///
+    /// Existing <see cref="TryParseKey"/> stays unchanged (per WARNING-6) — its
+    /// callers in <see cref="ResolveRomanNumeral"/> and <see cref="GetScaleNotes"/>
+    /// continue to work with the bool isMajor protocol; this method is the
+    /// canonical entry for Phase 23+ tuning-aware code paths.
+    /// </summary>
+    public static bool TryParseKeyWithMode(string keyName, out string? rootNote, out FlowLang.StandardLibrary.Audio.Tuning.Mode mode)
+    {
+        rootNote = null;
+        mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Major;
+
+        if (string.IsNullOrEmpty(keyName)) return false;
+        string lower = keyName.ToLowerInvariant();
+
+        // Wave 3 (Plan 23-03 Task 1): widened to recognize the 5 church-mode suffixes
+        // alongside the Wave 2 major/minor branch. Longer-suffix-first ordering is mandatory
+        // to avoid false-prefix-match — `lydian` is a substring of `mixolydian`, so
+        // `mixolydian` MUST be tested before `lydian`. Similarly `phrygian` (8) and
+        // `locrian` (7) come before `dorian` (6) and `lydian` (6) to keep the chain
+        // monotonically descending in suffix length.
+        int suffixLen;
+        if      (lower.EndsWith("mixolydian")) { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Mixolydian; suffixLen = 10; }
+        else if (lower.EndsWith("phrygian"))   { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Phrygian;   suffixLen = 8; }
+        else if (lower.EndsWith("locrian"))    { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Locrian;    suffixLen = 7; }
+        else if (lower.EndsWith("dorian"))     { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Dorian;     suffixLen = 6; }
+        else if (lower.EndsWith("lydian"))     { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Lydian;     suffixLen = 6; }
+        else if (lower.EndsWith("major"))      { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Major;      suffixLen = 5; }
+        else if (lower.EndsWith("minor"))      { mode = FlowLang.StandardLibrary.Audio.Tuning.Mode.Minor;      suffixLen = 5; }
+        else return false;
+
+        rootNote = keyName[..^suffixLen];
+        if (rootNote.Length == 0) { rootNote = null; return false; }
+        rootNote = char.ToUpper(rootNote[0]) + rootNote[1..].ToLower();
+        if (!NoteToSemitone.ContainsKey(rootNote)) { rootNote = null; return false; }
+        return true;
+    }
+
+    /// <summary>
     /// Returns the scale notes for a given key.
     /// </summary>
     public static string[]? GetScaleNotes(string keyName)

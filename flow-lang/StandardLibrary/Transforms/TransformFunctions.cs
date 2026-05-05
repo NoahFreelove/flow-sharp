@@ -259,6 +259,16 @@ public static class TransformFunctions
         registry.Register("transpose", transposeCentSig, TransposeCent);
     }
 
+    /// <remarks>
+    /// Phase 23 D-12 / MICR-02 caveat: under non-12-TET tunings (justIntonation,
+    /// pythagorean), transpose may silently respell notes at enharmonic junctions
+    /// (e.g., F#4 → Gb4 round-trip), producing an audible ~21 cent shift in the
+    /// rendered output even though the MIDI number is preserved. Transforms remain
+    /// MIDI-based by design (MICR-02): same MIDI numbers under all 3 tunings; only
+    /// the rendered Hz differ. A strict-mode <c>transposePreserveSpelling</c> escape
+    /// hatch is documented as a v1.4 candidate — see CONTEXT.md D-12 +
+    /// REQUIREMENTS.md "Future Requirements".
+    /// </remarks>
     private static Value TransposeSemitone(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();

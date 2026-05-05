@@ -1,48 +1,35 @@
-# Flow Language (flow-lang)
-A music production language.
+# Flow Language
 
-### AI Disclaimer
-This entire repo was vibecoded with the help of the [GSD Framework](https://github.com/gsd-build/get-shit-done) and Claude Opus.
-I did direct the features and testing so it was mainly supervised - but expect bugs to appear.
+A Vibecoded music production language.
 
 
-# What is flow-lang?
-Flow-lang is a statically moderately-strongly typed functional interpreted language. The goal of flow-lang is to make a tool for code-minded folk like myself to create music in a fun way. The goal is also to not prefer one genre over another. You should be able to make rock, pop, jazz, or a symphony, all in one place - and all in the same buffer.
+Called flow-sharp because original implementation was in ansi c and unmaintainable.
 
-Flow-lang prioritizes ergonomics over almost everything. This language is interpreted, its not fast, and its not trying to be fast (though it takes the easy wins where possible). 
+Wanted to make it maintainable so I vibecoded the language translation from C to C#.
 
-Many operations that would be errors in some languages are not in flow-lang because it always takes the most cheritable interpretation of your code. You could call this the JavaScript approach though I don't think we're as vulgar as JavaScript's type coercion. For example:
-```
-  Buffer wet = reverb(input, 5.0, 5.0, 5.0)      
-  //                          ^    ^    ^ 
-  //                       roomSize, damping, mix. flow-lang clamps all to [0, 1.0]
-```
-Flow-lang will silently fix this stuff for you. So you can use variables in position of arguments pretty freely without worrying about adjusting one variable means it being out of domain for some other function where you use it.
+Then I realized I could have many more features if I kept vibecoding. So I did.
 
-## What ISN'T flow-lang?
-Flow-lang is not AI generated music. Flow lang is just a way to generate music. You still have to place the notes and make the samples, just how you would in a standard DAW except you use code. This is completely different to how AI generated music is created.
+This is the product of it.
 
-You could use AI to create `.flow` files but this still isn't really AI generated music, its more *vibecoded music* I suppose. As much as I love claude, it cannot generate anything super pleasant sounding in flow-lang yet (sorry claude!).
+Flow-lang is probably not intuitive, but its meant for programmer-musicians.
 
-Flow-lang is also not trying to do some crazy GPU accelerated parallel rendering pipeline stuff. I'm not trying to optimize the hell out of flow-lang.
-
-I hope my direction on where I want flow-lang to go was clear. If it has to be one sentence: `Flow-lang prioritizes the development experience and the artist regardless of the performance of the program.`
-
-## Features
-See [FEATURES.md](./FEATURES.md) for a complete list of features.
-
-
-## Bugs?
-This tool is just for fun, not any serious professional work. Bug reports may or may not be addressed.
+Its fairly extensible, the builtin instruments don't sound too good. Very old MIDI sounding, but has a nice charm.
 
 ## Editor support
-Flow ships with a **Language Server (`flow-lsp`)**:
+
+Flow ships with a **Language Server (`flow-lsp`)** and a **VSCode extension**
+that together provide live diagnostics, completion, hover, go-to-definition,
+signature help, and context-aware roman-numeral completion inside `key { }`
+note streams.
 
 ### VSCode / Cursor / VSCodium / Windsurf
 
-Install the **Flow Language** extension which is bundled with this repo. Its not on the marketplace as of now.
+Install the **Flow Language** extension from the VSCode Marketplace or
+OpenVSX (listings go live after the first release tag). The extension
+bundles per-platform `flow-lsp` binaries for Linux, Windows, macOS x64,
+and macOS arm64 — no .NET SDK required at runtime.
 
-### Emacs, Neovim, and other LSP editors
+### Neovim, Helix, Emacs, Zed, and other LSP editors
 
 The `flow-lsp` server speaks plain LSP 3.17 over stdio, so any editor
 with an LSP client can drive it. See

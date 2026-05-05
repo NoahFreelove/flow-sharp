@@ -16,7 +16,10 @@ public static class PragmaRegistry
     public static readonly IReadOnlyDictionary<string, string> KnownPragmas =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["hAsB"] = "Inside note streams, accept 'H' as a synonym for 'B' (German notation)."
+            ["hAsB"] = "Inside note streams, accept 'H' as a synonym for 'B' (German notation).",
+            ["justIntonation"] = "5-limit just-intonation render-time tuning rooted at active key tonic (default C major).",
+            ["pythagorean"] = "3-limit Pythagorean (chain-of-fifths) render-time tuning rooted at active key tonic.",
+            ["equalTemperament"] = "12-tone equal temperament (default). Explicit form for tooling-visible intent."
         };
 
     /// <summary>True iff <paramref name="name"/> is a recognized pragma.</summary>

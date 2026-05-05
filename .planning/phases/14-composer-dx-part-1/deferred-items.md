@@ -223,6 +223,51 @@ relied on the old clamp. Commit hash: `edd20b1`. See
 
 ---
 
+## Phase 23 (Microtonal Tuning, Wedge) — closure cross-reference
+
+**Closed 2026-05-04 by Phase 23 plan 23-05.** MICR-01 / MICR-02 / MICR-03 shipped
+as the named-tunings wedge per REQUIREMENTS.md D-03. Phase 23 explicitly preserved
+the following items as v1.4 candidates (NOT closed by this phase — recorded here
+so future authors picking them up can reference the Phase 23 audit trail):
+
+- **Full Scala (`.scl`) tuning loader** — `tuning loadScala("path.scl") { ... }`
+  block-style; deferred to v1.4 per REQUIREMENTS.md D-03 + Phase 23 CONTEXT.md
+  `<deferred>`. MICR-03 unknown-tuning error message points users at this future
+  expansion via the canonical pointer string `Full Scala (.scl) loader is
+  documented as deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.` (single
+  source of truth in `PragmaScanner.cs`).
+- **Faithful microtonal MIDI export** — per-channel pitch-bend events per Pitfall 5
+  #2; deferred to v1.4 per Phase 23 CONTEXT D-13. Phase 23 emits a one-time
+  stderr warning when `writeMidi` is called under non-12-TET; MIDI bytes stay
+  12-TET. See `flow-lang/StandardLibrary/Audio/MidiExport.cs` 2-arg overload
+  + `RenderingDiagnostics.WarnOnce`.
+- **Spelling-preserving transforms** (`transposePreserveSpelling`, etc.) —
+  opt-in strict-mode escape hatch for transforms under non-12-TET to avoid the
+  ~21 cent shift at enharmonic junctions per CONTEXT D-12. v1.4 candidate;
+  documented in `TransformFunctions.TransposeSemitone` XML `<remarks>` so
+  composers searching the doc can find it.
+- **Block-scope `tuning JustIntonation { ... }` syntax** — would let composers
+  swap tunings mid-piece. Deferred per Phase 21 D-02 (file-scope only in v1.3).
+- **Configurable A4 reference frequency** (e.g., 432 Hz, 442 Hz) — Phase 23
+  hard-codes A4 = 440 Hz inherited from existing `PitchConversion`. v1.4+
+  candidate if composer feedback requests it.
+- **Mode-aware tuning tables for harmonic minor / melodic minor / blues** —
+  Phase 23 ships major + natural minor + 5 standard church modes only. Other
+  modes follow the Scala loader.
+- **Pre-resolution `enharmonic()` LSP squiggle warning under non-12-TET** —
+  Phase 23 ships post-call stderr warning per D-11 (RenderingDiagnostics).
+  A pre-call LSP diagnostic belongs in flow-lsp work post-v1.3.
+- **REPL meta-command `:tuning ji`** — discussed and rejected during Phase 23
+  planning in favor of D-07 (resolved tuning persists across REPL lines until
+  another tuning pragma replaces it). If users find the persisted-tuning
+  behavior confusing, revisit with a meta-command.
+
+Closure plan: `.planning/phases/23-microtonal-tuning-wedge/23-05-PLAN.md`.
+Phase rollup: `.planning/phases/23-microtonal-tuning-wedge/23-VERIFICATION.md`.
+Closure summary: `.planning/phases/23-microtonal-tuning-wedge/23-05-SUMMARY.md`.
+
+---
+
 ## Cross-reference
 
 - Project-level deferred-items roll-up: `.planning/deferred-items.md`

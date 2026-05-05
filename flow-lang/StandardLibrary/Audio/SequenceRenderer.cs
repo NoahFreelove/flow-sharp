@@ -1,4 +1,5 @@
 using FlowLang.Audio;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
@@ -43,6 +44,24 @@ namespace FlowLang.StandardLibrary.Audio
             double bpm,
             int maxVoices = 1024)
         {
+            return RenderSequenceToVoices(sequence, synthesizer, sampleRate, bpm, RenderTuning.Default, maxVoices);
+        }
+
+        /// <summary>
+        /// Phase 23: tuning-aware overload threads <see cref="RenderTuning"/> from the
+        /// SongRenderer per-section resolution down through BarRenderer to each
+        /// synthesizer.RenderNote invocation. Callers passing
+        /// <see cref="RenderTuning.Default"/> trigger the byte-identical 12-TET path
+        /// (Pitfall 6 short-circuit).
+        /// </summary>
+        public static List<Voice> RenderSequenceToVoices(
+            SequenceData sequence,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            RenderTuning tuning,
+            int maxVoices = 1024)
+        {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
 
@@ -54,7 +73,8 @@ namespace FlowLang.StandardLibrary.Audio
                     offsetBeats,
                     synthesizer,
                     sampleRate,
-                    bpm);
+                    bpm,
+                    tuning);
 
                 allVoices.AddRange(barVoices);
             }

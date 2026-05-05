@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
@@ -25,6 +27,69 @@ namespace FlowLang.StandardLibrary.Audio
                 return 0.0; // Rests have no frequency
 
             return NoteToFrequency(note.NoteName, note.Octave, note.Alteration);
+        }
+
+        /// <summary>
+        /// Phase 23 tuning-aware overload. Renders a note's frequency under the active
+        /// <see cref="RenderTuning"/> per the live runtime pipeline. The byte-identical
+        /// 12-TET fast path is the load-bearing mechanism: when
+        /// <c>tuning.System == TuningSystem.EqualTemperament</c> this overload literally
+        /// delegates to the 1-arg <see cref="NoteToFrequency(MusicalNoteData)"/> body
+        /// (Pitfall 6 contract). Default-pragma + explicit-equalTemperament + no-pragma
+        /// must all produce byte-identical output.
+        ///
+        /// Non-12-TET path (CONTEXT D-10):
+        ///   freq = TonicHzFromKey(tuning.tonic, note.Octave) × LookupRatio(...) × CentOffsetMultiplier(cents)
+        /// Cents are applied AFTER the ratio multiply per D-10 cent-additive math.
+        ///
+        /// D-02 silent C-major default: when no <c>key</c> block is in scope, the caller
+        /// (SongRenderer.ResolveRenderTuning) silently roots at C major (tonic = ('C', 0),
+        /// mode = Major) so the rendered output is musically meaningful even without an
+        /// explicit key declaration — aligns with charitable-interpretation memory.
+        ///
+        /// D-09 spelling-aware: the chromatic ratio table keys on (Letter, Alteration) so
+        /// Eb (E, -1) and D# (D, +1) produce distinct ratios under JI / Pythagorean.
+        ///
+        /// Pitfall 3 chromatic fallback: non-diatonic spellings absent from the mode-
+        /// specific table fall back to the Major (Ionian) table for the same tuning
+        /// system.
+        /// </summary>
+        public static double NoteToFrequency(MusicalNoteData note, RenderTuning tuning)
+        {
+            if (note.IsRest) return 0.0;
+
+            // Pitfall 6: EqualTemperament short-circuits to literally the existing 1-arg
+            // overload body so default-pragma + explicit-equalTemperament + no-pragma all
+            // produce byte-identical output. This guards the ByteIdentical regression
+            // suite across tutorial.flow + showcase.flow + Phase 18-22 byte-identical
+            // Facts after Pattern A threading lands.
+            if (tuning.System == TuningSystem.EqualTemperament)
+            {
+                double eqFreq = NoteToFrequency(note); // delegates to existing 1-arg overload — UNCHANGED body
+                if (note.CentOffset.HasValue && note.CentOffset.Value != 0.0)
+                    eqFreq *= RatioMath.CentOffsetMultiplier(note.CentOffset.Value);
+                return eqFreq;
+            }
+
+            // Non-12-TET path: tonic Hz × ratio × cent multiplier (D-10).
+            double tonicHz = RatioMath.TonicHzFromKey(tuning.TonicLetter, tuning.TonicAlteration, note.Octave);
+            double ratio;
+            try
+            {
+                ratio = TuningTables.LookupRatio(tuning.System, tuning.Mode, note.NoteName, note.Alteration);
+            }
+            catch (KeyNotFoundException)
+            {
+                // Pitfall 3 chromatic fallback: non-diatonic chromatic spellings in mode
+                // tables fall back to the Major (Ionian) table for the same tuning
+                // system. Charitable interpretation: rather than throw on an obscure
+                // chromatic spelling, route it through the closest authoritative table.
+                ratio = TuningTables.LookupRatio(tuning.System, Mode.Major, note.NoteName, note.Alteration);
+            }
+            double freq = tonicHz * ratio;
+            if (note.CentOffset.HasValue && note.CentOffset.Value != 0.0)
+                freq *= RatioMath.CentOffsetMultiplier(note.CentOffset.Value);
+            return freq;
         }
 
         /// <summary>

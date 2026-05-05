@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: completed
-stopped_at: Completed 22-07-PLAN.md (Phase 22 closure)
-last_updated: "2026-05-03T04:27:53.223Z"
-last_activity: "2026-05-02 -- Completed quick task 260502-oib: noise builtin"
+status: verifying
+stopped_at: Completed 23-microtonal-tuning-wedge/23-05-PLAN.md
+last_updated: "2026-05-04T02:26:22.832Z"
+last_activity: 2026-05-04
 progress:
   total_phases: 11
-  completed_phases: 5
-  total_plans: 21
-  completed_plans: 21
+  completed_phases: 6
+  total_plans: 26
+  completed_plans: 26
   percent: 100
 ---
 
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 23 — Microtonal Tuning (Wedge) — next ROADMAP target
+**Current focus:** Phase 24 — scale-linting (next ROADMAP target)
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 22 — COMPLETE
-Plan: 7 of 7 — closure shipped
-Status: Phase 22 complete
-Last activity: 2026-05-02 -- Completed quick task 260502-oib: noise builtin
+Phase: 23 — COMPLETE
+Plan: 5 of 5 — closure shipped
+Status: Phase complete — ready for verification
+Last activity: 2026-05-04
 
 Progress: [██████████] 100%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 22 closed 2026-05-02. v1.3 milestone now 5/10 phases complete (Phases 18, 19, 20, 21, 22). Phase 23 (Microtonal Tuning, MICR-01..03) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`). Phase 24 (Scale Linting) and Phase 26 (Dictionary Support) are also unblocked.
+Phase 23 closed 2026-05-04. v1.3 milestone now 6/10 phases complete (Phases 18, 19, 20, 21, 22, 23). Phase 24 (Scale Linting, LINT-01..03) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (`enable scaleLint;`) and Phase 23 `ScaleDatabase.TryParseKeyWithMode` (canonical 7-mode entry shipped 23-03 via Plan 23-02 + 23-03). Phase 25 (Gaussian Humanize) and Phase 26 (Op Standardization, Prefix-Only) also unblocked.
 
 Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
@@ -56,6 +56,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 14 | 4 | - | - |
 | 21 | 3 | - | - |
 | 22 | 7 | ~73min | ~10min |
+| 23 | 5 | ~76min | ~15min |
 
 **Recent Trend:**
 
@@ -126,6 +127,11 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 22 P06 | 8min | 3 tasks | 11 files |
 | Phase 22 P07 | ~10min | 3 tasks (docs-only closure) | 5 files (REQUIREMENTS, ROADMAP, STATE, 22-VERIFICATION, 22-07-SUMMARY) |
 | Phase 22 P07 | 6min | 3 tasks | 5 files |
+| Phase 23 P01 | 5m 22s | 2 tasks | 10 files (6 production + 4 test) |
+| Phase 23 P02 | 48m 46s | 4 tasks | 30 files (22 production + 6 new test + 2 Phase21 Facts updated) |
+| Phase 23 P03 | 7m 17s | 2 tasks | 10 files (1 new diagnostic + 5 modified prod + 4 new test) |
+| Phase 23 P04 | 9m 46s | 2 tasks | 6 files (5 .flow scripts + 1 Integration Fact class) |
+| Phase 23 P05 | 15min | 2 tasks (docs-only closure) | 6 files (REQUIREMENTS, ROADMAP, STATE, 14-deferred-items, 23-VERIFICATION, 23-05-SUMMARY) |
 
 ## Accumulated Context
 
@@ -261,6 +267,77 @@ Recent decisions affecting current work:
 - [Plan 22-07]: Cross-cutting truth verified — MusicalNoteData ctor migration accepted THREE new defaulted-parameter fields (OnsetOffset from 22-05, DurationOverlap + PortamentoMs from 22-06) without breaking 30+ existing positional call sites. Phase 18 defaulted-parameter migration shape (DurationFraction precedent) generalizes cleanly. Each plan's transforms call `note.With(...)` naming only the slot it owns; null-coalesce preserves sibling fields. Rollback of any single plan removes its slot+field+helper-overload without breaking siblings. ByteIdentical 6/6 GREEN at every Phase 22 commit confirms the dormant-default contract.
 - [Plan 22-07]: Two new architectural patterns established — (1) `EffectsFunctions.RegisterContextDependent` + `TransformFunctions.RegisterContextDependent` (sibling pattern wired from `BuiltInFunctions.RegisterContextDependentFunctions` next to `RegisterEuclideanOverloads`) for any audio effect or transform that needs `MusicalContext.Tempo` / `TimeSignature` at call time; (2) new file `Voicings.cs` (sibling to `ChordParser.cs`) for the chord-shape transform tier — keeps D-07 charitable contract greppable. Both patterns are ready for downstream Phase 22+ extensions (e.g., a hypothetical v1.4 progression DSL, groove-template transform).
 - [Phase ?]: [Plan 22-07]: Phase 22 closes — DX-10..DX-15 Shipped; v1.3 milestone 5/10 phases (50%); Phase 23 (Microtonal Tuning) next ROADMAP target
+- [Phase ?]: Pattern A locked over Pattern B — RenderTuning value object threads through synthesizer signatures (Pattern B's MusicalContext.Current static accessor has zero codebase analogs)
+- [Phase ?]: TuningSystem and Mode default members place EqualTemperament/Major first so default(enum) matches byte-identical 12-TET / silent C-major fallback (D-08 + D-02)
+- [Phase ?]: ChromaticRatioTable is spelling-aware (D-09) — keyed on (Letter, Alteration) so Eb=6/5 and D#=75/64 are stored as distinct entries
+- [Phase ?]: TuningTables.Tables built via static constructor (not field initializer) to avoid static-init forward-reference race against per-table fields
+- [Phase ?]: Phase 23-02: Pitfall 6 byte-identical short-circuit verified at 3 levels (leaf overload + render pipeline + tutorial.flow/showcase.flow end-to-end)
+- [Phase ?]: Phase 23-02: Pattern A interface change rolls forward via RenderTuning.Default placeholders so build stays green between Task 2 and Task 3 commits
+- [Phase ?]: Phase 23-02: VocalizationFunctions migrated context-FREE to context-DEPENDENT for per-section MusicalContext.Tuning resolution
+- [Phase ?]: TryParseKeyWithMode mode-detection branch widened in-place from 2 to 7 modes — additive, longer-suffix-first ordering avoids lydian/mixolydian prefix collision (Phase 23 Plan 03 Task 1)
+- [Phase ?]: ValidKeys grows from 34 entries to 119 (17 roots × 7 modes) via BuildValidKeys() programmatic helper — Phase 24 mode additions extend modes[] only
+- [Phase ?]: RenderingDiagnostics.WarnOnce establishes one-shot stderr advisory channel; ResetForTesting public for cross-assembly Fact isolation
+- [Phase ?]: writeMidi migrated to context-dependent registration; both 1-arg and 2-arg overloads kept (1-arg preserved for LSP proxy / test direct invocation)
+- [Phase ?]: WARNING-4 between-runs ResetForTesting in WriteMidi_BytesUnchanged_UnderJI Fact — defensive against future warning-gates-export changes leaking dedup state across sequential runs
+- [Phase ?]: Plan 23-04 used renderSong over renderSequence for Sequence-to-Buffer pipeline (renderSequence returns Voice[] per notation.flow:201; renderSong is the canonical Buffer producer)
+- [Phase ?]: Plan 23-04 WARNING-5 isolation: TuningDeterminismTests xUnit Facts use Fact-controlled inline sources + per-Fact unique /tmp paths (/tmp/flow_test_tuning_determinism_xunit_*.wav) disjoint from on-disk script paths
+- [Phase ?]: Plan 23-04 WARNING-7 scaffold: tests/test_tuning_determinism.flow places Section inside key Cmajor block (note-stream resolution) with renderSong+writeWav at top level outside all musical-context blocks
+- [Plan 23-01]: Pattern A locked (thread RenderTuning through INoteSynthesizer.RenderNote) per RESEARCH §Pitfall 1 — MusicalContext.Current static accessor described in CONTEXT.md <canonical_refs> line 96 does NOT exist in codebase (verified by grep returning 0); Pattern B genuinely net-new while Pattern A mirrors SongRenderer.RenderSection per-section bpm/pan/gain/rt60 resolution. Closed-enum TuningSystem + Mode + RenderTuning record-struct shape matches Phase 21 D-17 / TokenType / DurationValue house style. ITuning interface refactor explicitly deferred to v1.4 (when full Scala loader provides a real second extensibility point). Wikipedia 5-limit JI table + Mudcat Olson mode tables + Wikipedia Pythagorean chain-of-fifths pinned as canonical references; 25/24 chromatic semitone construction for raised non-diatonic JI tones per Pitfall 3.
+- [Plan 23-02]: D-08 explicit `enable equalTemperament;` produces byte-identical output to no-pragma — Pitfall 6 short-circuit in PitchConversion.NoteToFrequency(MusicalNoteData, RenderTuning) literally calls existing 1-arg path when tuning.System == EqualTemperament. D-14 unknown-tuning error extension lives in PragmaScanner.cs (Phase 21 D-12 path) not PragmaRegistry.cs; ScalaLoaderDeferralPointer is single-source-of-truth const; LooksLikeTuningName uses Levenshtein <=3 + substring fallback. writeMidi migration from RegisterAllImplementations to RegisterContextDependentFunctions follows HarmonyFunctions.RegisterContextDependent pattern; LSP proxy at BuiltInFunctions.cs:111 verified non-warning-firing under dummyContext. Pitfall 6 byte-identical short-circuit verified at 3 levels (leaf overload + render pipeline + tutorial.flow/showcase.flow end-to-end). VocalizationFunctions migrated context-FREE → context-DEPENDENT for per-section MusicalContext.Tuning resolution. Pattern A interface change rolls forward via RenderTuning.Default placeholders so build stays green between Task 2 and Task 3 commits.
+- [Plan 23-03]: ScaleDatabase.TryParseKeyWithMode added as NEW additive method per WARNING-8; original TryParseKey(out bool isMajor) UNCHANGED to preserve ResolveRomanNumeral / GetScaleNotes callers. Suffix length-ordering required: mixolydian (10) before lydian (6) to avoid false-suffix-match. MusicalContext.ValidKeys grew from 34 entries (17 roots × 2 modes) to 119 entries (17 roots × 7 modes) via programmatic BuildValidKeys helper. RenderingDiagnostics.WarnOnce establishes one-shot stderr advisory channel (process-static HashSet dedup + lock); ResetForTesting public for cross-assembly Fact isolation. writeMidi migrated to context-dependent registration (1-arg overload preserved for LSP proxy / test direct invocation; 2-arg overload reads tuning + delegates). WARNING-4 between-runs ResetForTesting in WriteMidi_BytesUnchanged_UnderJI defends against future warning-gates-export changes leaking dedup state.
+- [Plan 23-04]: tutorial.flow + showcase.flow byte-identical contract intentionally preserved at 12-TET (Phase 18 pin) per CONTEXT.md Claude's Discretion recommendation; tests/test_tuning_determinism.flow + TuningDeterminismTests independently pin JI/Pythagorean determinism. WARNING-5 isolation: TuningDeterminismTests xUnit Facts use Fact-controlled inline sources + per-Fact unique /tmp paths (/tmp/flow_test_tuning_determinism_xunit_*.wav) disjoint from on-disk script paths. WARNING-7 scaffold: tests/test_tuning_determinism.flow places Section inside key Cmajor block (note-stream resolution at section-capture) with renderSong+writeWav at top level outside all musical-context blocks. renderSong over renderSequence chosen because renderSequence returns Voice[] (notation.flow:201); buf is reserved keyword (TokenType.Buf), variable named `audio` instead.
+- [Plan 23-05]: Phase 23 closure — REQUIREMENTS MICR-01/02/03 rows flipped to Shipped (f6b00ba / 8190fb2 / 47d7718); ROADMAP Phase 23 marked complete with 5/5 plans; STATE milestone progress 5/10 → 6/10 phases for v1.3; 14-deferred-items.md augmented with Phase 23 closure-of-D-13 / D-USER-tuning rows; 23-VERIFICATION.md produced as final phase rollup with 91 Phase23 Facts + 8/8 ByteIdentical + 5 .flow tuning smokes + 608/608 full suite GREEN. Single atomic docs-only closure commit per Phase 19-05 / 20-04 / 21-03 / 22-07 precedent. Phase 24 (Scale Linting) is the next ROADMAP target; depends on Phase 21 pragma infrastructure AND Phase 23 ScaleDatabase.TryParseKeyWithMode (canonical 7-mode entry).
+
+### Phase 23 Closure Anchor (2026-05-04)
+
+Phase 23 — Microtonal Tuning (Wedge) — CLOSED 2026-05-04. Three named-tuning pragmas (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`) ship as render-time wedge per D-03; Pattern A `RenderTuning` value object threads through `INoteSynthesizer.RenderNote` into 13 synthesizer call sites + the migrated Vocalization path; transforms remain MIDI-pitch invariant per MICR-02; v1.3 milestone advances **5/10 → 6/10 phases complete** (60%).
+
+**Shipped REQ-IDs** (one line each):
+
+- **MICR-01** — Three named tunings register in `PragmaRegistry.KnownPragmas`; `PitchConversion.NoteToFrequency(MusicalNoteData, RenderTuning)` consults the active tuning at the render boundary; `enable justIntonation; ... play(C4 E4)` produces 5:4 ratio (1.25); Pythagorean produces 3:2 perfect fifth and 81:64 third. Shipped f6b00ba (Plan 23-02 Task 2).
+- **MICR-02** — Tuning is render-time only — `transpose`, `invert`, `retrograde`, `augment`, `diminish` produce identical MIDI pitch numbers under every tuning. TransformInvarianceFacts (5 Facts × transforms) pin the contract end-to-end. Shipped 8190fb2 (Plan 23-02 Task 4).
+- **MICR-03** — Unknown tuning names route via Phase 21 D-12 unknown-pragma path with the appended `Full Scala (.scl) loader is documented as deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.` pointer when typed name resembles a tuning pragma. Shipped 47d7718 (Plan 23-02 Task 1).
+
+**Key technical artifacts:**
+
+- `flow-lang/StandardLibrary/Audio/Tuning/` — 6 production types: `TuningSystem` (closed enum, EqualTemperament default), `Mode` (closed enum, Major default + 6 church modes), `RenderTuning` (Pattern A readonly record struct), `ChromaticRatioTable` (spelling-aware (Letter, Alteration) keyed), `TuningTables` (14 mode-keyed ratio tables — 7 JI + 7 Pythagorean), `RatioMath` (TonicHzFromKey + CentOffsetMultiplier helpers)
+- `flow-lang/Diagnostics/RenderingDiagnostics.cs` — one-shot stderr warning channel with per-process per-sentinel HashSet dedup; ResetForTesting public for cross-assembly Fact isolation
+- `MusicalContext.Tuning` — 9th top-level non-stacked field per D-05; FlowEngine.ApplyTuningPragma writes once between parse and interpret; D-07 REPL persistence (passing null is no-op)
+- `INoteSynthesizer.RenderNote` interface gains 5th `RenderTuning` parameter (Pattern A); 13 implementations updated mechanically
+- `SongRenderer.ResolveRenderTuning` per-section helper at the canonical entry; `ScaleDatabase.TryParseKeyWithMode` 7-mode parser additive to `TryParseKey` (callers in `ResolveRomanNumeral` + `GetScaleNotes` UNCHANGED per WARNING-6)
+- `MusicalContext.ValidKeys` grew from 34 entries (17 roots × 2 modes) to 119 entries (17 roots × 7 modes) via `BuildValidKeys()` programmatic helper — Phase 24 mode additions extend modes[] only
+- `MidiExport.WriteMidi` migrated to context-dependent registration; D-13 one-shot warning under non-12-TET; MIDI bytes unchanged (faithful microtonal MIDI deferred to v1.4)
+- `HarmonyFunctions.Enharmonic` D-11 one-shot warning at top under non-12-TET; conversion body bit-identical
+- `TransformFunctions.TransposeSemitone` D-12 doc-only caveat (~21 cent shift at enharmonic junctions, `transposePreserveSpelling` v1.4 pointer); method body bit-identical
+- 5 .flow tuning smoke scripts under `tests/`: `test_tuning_ji.flow`, `test_tuning_pythagorean.flow`, `test_tuning_equal.flow`, `test_tuning_transpose_invariant.flow`, `test_tuning_determinism.flow`
+- 91 new Phase 23 xUnit Facts: 14 TuningRatioFacts + 14 TuningModeShiftFacts + 4 SpellingAwareTuningFacts + 4 CentOffsetAdditivityFacts + 6 PragmaTuningFacts + 4 UnknownTuningPragmaFacts + 5 PitchConversionTuningFacts + 5 TransformInvarianceFacts + 1 VocalizationTuningFacts + 2 ByteIdenticalDefaultTuningTests + 12 ChurchModeParseFacts (8 Theory + 4 Facts) + 5 RenderingDiagnosticsFacts + 5 EnharmonicWarningFacts + 5 WriteMidiWarningFacts + 3 TuningDeterminismTests + sentinel theory rows for 5 .flow scripts
+
+**Cross-cutting truths verified at closure:**
+
+- Pattern A locked over Pattern B at every level — `grep -c "MusicalContext\.Current" flow-lang/` returns 0 (Pattern B never introduced)
+- Pitfall 6 byte-identical short-circuit verified at 3 levels — leaf overload (EqualTemperamentShortCircuit_BitIdentical_To1ArgOverload), render pipeline (ByteIdenticalDefaultTuning_NoPragma_StillBitIdentical_AfterPattern_A_Threading), end-to-end .flow (ByteIdenticalTutorialTests + ByteIdenticalShowcaseTests preserved 4/4 GREEN)
+- ScaleDatabase original TryParseKey UNCHANGED per WARNING-6 — `grep -c "TryParseKey(" ScaleDatabase.cs == 3` (1 def + 2 caller sites) confirms ResolveRomanNumeral + GetScaleNotes still routed via the legacy 2-mode entry
+- ScaleDatabase TryParseKeyWithMode at canonical entry from Wave 2 per WARNING-8 — `grep -c "TryParseKeyWithMode" ScaleDatabase.cs == 1` (single source of truth, no inline write-then-delete helper); Wave 3 widened the same method's mode-detection branch in-place
+- TransformFunctions body bit-identical per MICR-02 / WARNING-1 — `grep -c "transpose would put" TransformFunctions.cs == 1` confirms the existing Console.Error.WriteLine warning is preserved verbatim; only XML <remarks> updated
+- No new NuGet packages; DryWetMidi 8.0.3 stays as the only external dep
+- All acceptance examples use S-expression style (no infix introduced) per CLAUDE.md memory `feedback_language_philosophy.md`
+- Charitable interpretation honored throughout (D-02 silent C-major default when no key block under non-12-TET; D-08 explicit equalTemperament == no-pragma byte-identical; D-10 cents always defined additively in cent-space; D-11 + D-13 advisory warnings rather than hard errors)
+
+**Test gates at closure:**
+
+- `dotnet test flow-sharp.sln`: **608/608 GREEN, 0 failed**
+- `dotnet test --filter "FullyQualifiedName~Phase23"`: **91/91 GREEN**
+- `dotnet test --filter "ByteIdentical"`: **8/8 GREEN** (Tutorial WAV+MIDI, Showcase WAV+MIDI, Euclidean WAV+MIDI, ByteIdenticalDefaultTuning ExplicitEqualTemperament + NoPragma_AfterPattern_A_Threading)
+- 5 tuning .flow smoke scripts: all exit 0 with their `: PASSED` sentinel; 72/75 .flow integration loop pass (3 pre-existing exit-1 negative-error fixtures unchanged)
+
+**Reference Phase 23 SUMMARY anchors:**
+
+- `.planning/phases/23-microtonal-tuning-wedge/23-01-SUMMARY.md` (Wave 1 — math foundation + Pattern A locked)
+- `.planning/phases/23-microtonal-tuning-wedge/23-02-SUMMARY.md` (Wave 2 — pragma → PitchConversion → synth pipeline)
+- `.planning/phases/23-microtonal-tuning-wedge/23-03-SUMMARY.md` (Wave 3 — RenderingDiagnostics + 5 church modes + D-11/D-13 warnings)
+- `.planning/phases/23-microtonal-tuning-wedge/23-04-SUMMARY.md` (Wave 4 — .flow smokes + JI/Pythagorean determinism Integration)
+- `.planning/phases/23-microtonal-tuning-wedge/23-05-SUMMARY.md` (Wave 5 — closure)
+- `.planning/phases/23-microtonal-tuning-wedge/23-VERIFICATION.md` (final phase verification)
 
 ### Phase 22 Closure Anchor (2026-05-02)
 
@@ -360,18 +437,18 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-02T20:24:51.610Z
-Stopped at: Completed 22-07-PLAN.md (Phase 22 closure)
+Last session: 2026-05-04T02:26:10.246Z
+Stopped at: Completed 23-microtonal-tuning-wedge/23-05-PLAN.md
 Resume file: None
 
-**Completed Phase:** 22 (tier-b-c-composer-dx-bundle) — 7 plans across 6 waves — closed 2026-05-02
+**Completed Phase:** 23 (microtonal-tuning-wedge) — 5 plans across 5 waves — closed 2026-05-04
 
-**Planned Phase:** 23 (Microtonal Tuning, Wedge) — TBD plans — pending /gsd-plan-phase 23
+**Planned Phase:** 24 (Scale Linting, flow-lsp) — TBD plans — pending /gsd-plan-phase 24
 
 ## Resume Instructions (next PC)
 
-Phase 22 closed 2026-05-02. v1.3 milestone now 5/10 phases complete (Phases 18, 19, 20, 21, 22). Phase 23 (Microtonal Tuning) is the next ROADMAP target. Phase 24 (Scale Linting) and Phase 26 (Dictionary Support) are also unblocked.
+Phase 23 closed 2026-05-04. v1.3 milestone now 6/10 phases complete (Phases 18, 19, 20, 21, 22, 23). Phase 24 (Scale Linting, LINT-01..03) is the next ROADMAP target — depends on Phase 21 pragma infrastructure (`enable scaleLint;`) AND Phase 23 `ScaleDatabase.TryParseKeyWithMode` (canonical 7-mode entry) for LINT-03 nested-key semantics. Phase 25 (Gaussian Humanize) and Phase 26 (Op Standardization, Prefix-Only) are also unblocked.
 
-1. `/gsd-progress` — confirm Phase 22 at 7/7 plans, milestone v1.3 at 5/10 phases
-2. `/gsd-plan-phase 23` — plan Phase 23: named-tunings wedge (MICR-01..03). `enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;` change `Note → frequency` lookup at `PitchConversion.NoteToFrequency`; transforms remain pitch-class-based and tuning-agnostic per D-03. Depends on Phase 21 pragma system (one-line addition in `PragmaRegistry.KnownPragmas` per pragma name).
-3. After Phase 23: Phase 24 (Scale Linting, LINT-01..03) — `enable scaleLint;` activates flow-lsp Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts. Phase 25 (Gaussian Humanize) must be the LAST PRNG-touching phase per binding pre-ordering #5. Phase 26 (Dictionary Support) is independent — could run earlier if scheduling priority shifts. Phase 27 (Tutorial + Showcase Refresh) closes the milestone after every v1.3 feature is live.
+1. `/gsd-progress` — confirm Phase 23 at 5/5 plans, milestone v1.3 at 6/10 phases
+2. `/gsd-plan-phase 24` — plan Phase 24: opt-in flow-lsp scale linting (LINT-01..03). `enable scaleLint;` activates Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts; flow-lsp consumes `Program.Pragmas` via existing diagnostic pipeline; LINT-03 nested-key resolution uses `ScaleDatabase.TryParseKeyWithMode` (innermost active key wins). Zero flow-lang touch — flow-lsp diagnostic-rule addition only.
+3. After Phase 24: Phase 25 (Gaussian Humanize, DEFER-06) — must be the LAST PRNG-touching phase per binding pre-ordering #5; preserves byte-identical determinism for existing uniform `humanize()`. Phase 26 (Op Standardization, Prefix-Only) — eliminates infix `+ - * /` in favor of `(add)` / `(sub)` / `(mul)` / `(div)` builtins; foundation for Phase 26.1 (Symbols + Tuples + Dicts). Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature is live.

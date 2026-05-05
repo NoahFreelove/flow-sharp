@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FlowLang.Audio;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
@@ -10,6 +11,9 @@ namespace FlowLang.StandardLibrary.Audio
         /// <summary>
         /// Renders a musical bar to a collection of positioned voices.
         /// Each note becomes a Voice positioned on the timeline.
+        /// Phase 23: existing call sites pass <see cref="RenderTuning.Default"/> so the
+        /// byte-identical 12-TET path is taken via Pitfall 6 short-circuit. Task 3 wires
+        /// the real per-section RenderTuning resolution at the SongRenderer entry.
         /// </summary>
         public static List<Voice> RenderBarToVoices(
             BarData bar,
@@ -17,7 +21,7 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm)
         {
-            return RenderBarToVoices(bar, SynthesizerFactory.Create(synthType), sampleRate, bpm);
+            return RenderBarToVoices(bar, SynthesizerFactory.Create(synthType), sampleRate, bpm, RenderTuning.Default);
         }
 
         public static List<Voice> RenderBarToVoices(
@@ -25,6 +29,16 @@ namespace FlowLang.StandardLibrary.Audio
             INoteSynthesizer synthesizer,
             int sampleRate,
             double bpm)
+        {
+            return RenderBarToVoices(bar, synthesizer, sampleRate, bpm, RenderTuning.Default);
+        }
+
+        public static List<Voice> RenderBarToVoices(
+            BarData bar,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            RenderTuning tuning)
         {
             if (bar.Mode != BarMode.Musical)
             {
@@ -81,8 +95,11 @@ namespace FlowLang.StandardLibrary.Audio
                     durationBeats *= (1.0 + note.DurationOverlap);
                 }
 
-                // Render note to audio buffer
-                AudioBuffer buffer = synthesizer.RenderNote(note, sampleRate, durationBeats, bpm);
+                // Render note to audio buffer.
+                // Phase 23 Pattern A: tuning threaded from SongRenderer per-section
+                // resolution. RenderTuning.Default short-circuits to byte-identical
+                // 12-TET via PitchConversion.NoteToFrequency Pitfall 6 mitigation.
+                AudioBuffer buffer = synthesizer.RenderNote(note, sampleRate, durationBeats, bpm, tuning);
 
                 // Create voice at the appropriate position
                 Voice voice = new Voice(buffer, offsetBeats);
@@ -166,7 +183,18 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm)
         {
-            var voices = RenderBarToVoices(bar, synthesizer, sampleRate, bpm);
+            return RenderBarAtBeat(bar, beatOffset, synthesizer, sampleRate, bpm, RenderTuning.Default);
+        }
+
+        public static List<Voice> RenderBarAtBeat(
+            BarData bar,
+            double beatOffset,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            RenderTuning tuning)
+        {
+            var voices = RenderBarToVoices(bar, synthesizer, sampleRate, bpm, tuning);
 
             // Add beat offset to all voices
             foreach (var voice in voices)

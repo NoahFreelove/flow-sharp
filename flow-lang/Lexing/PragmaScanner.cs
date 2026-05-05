@@ -24,6 +24,59 @@ namespace FlowLang.Lexing;
 public static class PragmaScanner
 {
     /// <summary>
+    /// Phase 23 D-14 / MICR-03: single source-of-truth string appended to the unknown-pragma
+    /// error when the typed name resembles a tuning pragma. Pointer documents that the full
+    /// Scala (.scl) loader is deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.
+    /// </summary>
+    private const string ScalaLoaderDeferralPointer =
+        "Full Scala (.scl) loader is documented as deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.";
+
+    /// <summary>
+    /// Phase 23 D-14: returns true if <paramref name="typed"/> looks like a tuning pragma
+    /// either via Levenshtein distance ≤ 3 from any of the three known tuning names, or via
+    /// substring whitelist (tun, scal, temp, just, pyth, micro, intone). Used to gate the
+    /// Scala-loader deferral pointer on the unknown-pragma error path so non-tuning typos
+    /// (e.g. <c>verbose</c>) don't get the irrelevant pointer.
+    /// </summary>
+    private static bool LooksLikeTuningName(string typed)
+    {
+        var tuningNames = new[] { "justIntonation", "pythagorean", "equalTemperament" };
+        foreach (var t in tuningNames)
+            if (LevenshteinSmall(typed, t) <= 3) return true;
+        var lower = typed.ToLowerInvariant();
+        foreach (var sub in new[] { "tun", "scal", "temp", "just", "pyth", "micro", "intone" })
+            if (lower.Contains(sub, System.StringComparison.Ordinal)) return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Wagner-Fischer Levenshtein, sized for closed-set pragma names. Same shape as
+    /// <see cref="PragmaRegistry"/>'s private helper — the closed-set max name length
+    /// bounds the inner loop regardless of caller-supplied input length (T-23-02-05
+    /// mitigation in the threat register).
+    /// </summary>
+    private static int LevenshteinSmall(string a, string b)
+    {
+        int n = a.Length, m = b.Length;
+        if (n == 0) return m;
+        if (m == 0) return n;
+        var prev = new int[m + 1];
+        var curr = new int[m + 1];
+        for (int j = 0; j <= m; j++) prev[j] = j;
+        for (int i = 1; i <= n; i++)
+        {
+            curr[0] = i;
+            for (int j = 1; j <= m; j++)
+            {
+                int cost = a[i - 1] == b[j - 1] ? 0 : 1;
+                curr[j] = System.Math.Min(System.Math.Min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
+            }
+            (prev, curr) = (curr, prev);
+        }
+        return prev[m];
+    }
+
+    /// <summary>
     /// Pre-scan <paramref name="source"/> for file-scope pragma declarations.
     /// Errors (D-11 pragma-after-statement, D-12 unknown-pragma) are accumulated
     /// in <paramref name="errors"/>; this method never throws.
@@ -88,6 +141,11 @@ public static class PragmaScanner
                     var msg = $"unknown pragma '{name}' at line {line}. " +
                               (sugg != null ? $"Did you mean '{sugg}'? " : "") +
                               $"Known pragmas: {PragmaRegistry.AlphabetizedKnownNames()}.";
+                    // Phase 23 D-14 / MICR-03: when the typed name resembles a tuning pragma,
+                    // append a pointer to the deferred Scala (.scl) loader so users searching
+                    // for microtonal extension paths land on the v1.4 deferral note.
+                    if (LooksLikeTuningName(name))
+                        msg += "\n" + ScalaLoaderDeferralPointer;
                     errors.ReportError(msg, nameLoc);
                     // Continue scanning per CLAUDE.md error-accumulation principle.
                 }

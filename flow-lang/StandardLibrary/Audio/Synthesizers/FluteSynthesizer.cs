@@ -1,5 +1,6 @@
 using System;
 using FlowLang.StandardLibrary.Audio.DSP;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
@@ -14,12 +15,12 @@ public class FluteSynthesizer : INoteSynthesizer
     private const double VibratoRate = 5.0;   // Hz
     private const double VibratoDepth = 0.003464; // ~6 cents: 2^(6/1200) - 1
 
-    public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+    public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
         if (note.IsRest)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
-        double frequency = PitchConversion.NoteToFrequency(note);
+        double frequency = PitchConversion.NoteToFrequency(note, tuning);
         double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
         int numSamples = (int)(durationSeconds * sampleRate);
         if (numSamples <= 0)

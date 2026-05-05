@@ -1,0 +1,25 @@
+enable pythagorean;
+
+use "@std"
+use "@audio"
+
+Note: MICR-01 acceptance — 81:64 Pythagorean third (Phase 23 plan 23-04)
+Note: With `enable pythagorean;` declared, the C-E interval renders at the
+Note: 3-limit chain-of-fifths ratio 81/64 (= 1.265625), not 12-TET ~1.2599.
+Note: Wolf fifth lands at G#-Eb when C is tonic (CONTEXT D-09 + Pitfall 2).
+Note: Pinned by PythagMajor_CtoE_Is81to64 Fact (Wave 1).
+
+tempo 120 {
+    timesig 4/4 {
+        section pyth_triad {
+            | C4q E4q G4q |
+        }
+    }
+}
+
+Song song = [pyth_triad]
+Buffer audio = (renderSong song "piano")
+(writeWav "/tmp/flow_test_tuning_pythagorean.wav" audio)
+(print "Pythagorean ratio applied")
+
+(print "test_tuning_pythagorean: PASSED")

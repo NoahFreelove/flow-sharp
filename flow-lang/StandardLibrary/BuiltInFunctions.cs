@@ -565,9 +565,10 @@ public static class BuiltInFunctions
             [StringType.Instance, DoubleType.Instance]);
         registry.Register("loadWav", loadWavRatioSig, Audio.FileIO.LoadWavRatio);
 
-        // writeMidi(String, Song) -> Void - export Song to MIDI file
-        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
-        registry.Register("writeMidi", writeMidiSignature, Audio.MidiExport.WriteMidi);
+        // writeMidi(String, Song) -> Void migrated to RegisterContextDependentFunctions
+        // (Phase 23 Plan 23-03 Task 2). The context-dependent registration lets writeMidi
+        // read MusicalContext.Tuning and emit the D-13 advisory warning under non-12-TET.
+        // MIDI bytes are unchanged — still 12-TET — so the migration is non-breaking.
 
         // ===== Signal Generation Operations =====
 
@@ -790,6 +791,8 @@ public static class BuiltInFunctions
         RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
         Audio.EffectsFunctions.RegisterContextDependent(registry, context);  // Phase 22-04 DX-12 (NoteValue-rate delay synced to MusicalContext.Tempo)
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
+        Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
+        Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
         // ===== Random Generator Functions =====
 
         var randSignature = new FunctionSignature("?", []);

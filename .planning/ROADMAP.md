@@ -66,7 +66,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 - [x] **Phase 20: Cheap DEFER Closures + Multi-letter Enharmonic Edges** — `range(Int, Int[, Int])`, slice negative-from-end, multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#) — Shipped 2026-04-26 (commits d0d17db + d835336 + edd20b1 + closure)
 - [x] **Phase 21: Pragma System + H-Alias** — `enable <pragma>;` file-scope pragma infrastructure (Haskell-precedent), DEFER-02/03 H-as-B alias inside note streams — Shipped 2026-04-26 (commits 60f7f18 + 05c2174 + closure)
 - [x] **Phase 22: Tier B/C Composer DX Bundle** — arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento articulations, varispeed loadWav — Shipped 2026-05-02 (commits 6500412, 95582e7, 5fba059, 98da48e, d3f5350, d2bde5d)
-- [ ] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`), `ITuningSystem` at `PitchConversion.NoteToFrequency` seam
+- [x] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`); Pattern A `RenderTuning` value object threaded through `PitchConversion.NoteToFrequency` + 13 synthesizers; 7 JI + 7 Pythagorean mode-keyed ratio tables; `ScaleDatabase.TryParseKeyWithMode` 5-church-mode extension; `RenderingDiagnostics` one-shot warnings for D-11/D-13; transforms remain MIDI-pitch invariant per MICR-02 — Shipped 2026-05-03 (commits b6b916b + 39ef570 + 47d7718 + f6b00ba + 470c3cb + 8190fb2 + 4ea0927 + 3e6a3ba + ba27282 + 4f85eaf + closure)
 - [ ] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts
 - [ ] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()`
 - [ ] **Phase 26: Op Standardization (Prefix-Only)** — Eliminate infix `+ - * /`; add `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering numeric widening chain; remove `BinaryExpression`/`BinaryOperator` AST nodes; migrate stdlib + ~70 .flow tests; foundation for Phase 26.1
@@ -165,7 +165,12 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   2. `transpose(seq, 5)` produces the same MIDI pitch numbers under every tuning; only rendered frequencies differ (MICR-02)
   3. Tuning system applies at render-time only — existing `transpose`, `invert`, `retrograde`, `augment`, `diminish` transforms remain pitch-class-based and tuning-agnostic (MICR-02)
   4. Unknown tuning names raise a clear error pointing at the documented v1.4 Scala-loader expansion (MICR-03)
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 23-01-PLAN.md — Closed enums (TuningSystem, Mode) + RenderTuning value object (Pattern A locked) + 14 ratio tables (7 JI + 7 Pythagorean modes) + Wave 1 canonical Facts (5/4 JI third, 81/64 Pythagorean third, Eb≠D# spelling, cent additivity) — Shipped b6b916b + 39ef570
+- [x] 23-02-PLAN.md — Pragma registration + MusicalContext.Tuning + FlowEngine bridge + tuning-aware PitchConversion overload + Pattern A threading through 13 synthesizers + ByteIdenticalDefaultTuning regression + MICR-01/02/03 end-to-end acceptance Facts — Shipped 47d7718 + f6b00ba + 470c3cb + 8190fb2
+- [x] 23-03-PLAN.md — RenderingDiagnostics one-shot warning channel + ScaleDatabase 5-church-mode extension (D-04, ValidKeys 34→119) + D-11 enharmonic + D-13 writeMidi non-12-TET warnings + writeMidi context-dependent registration migration — Shipped 4ea0927 + 3e6a3ba
+- [x] 23-04-PLAN.md — Five .flow tuning smoke scripts (test_tuning_ji/pythagorean/equal/transpose_invariant/determinism) + TuningDeterminismTests Integration Facts (JI/explicit-EqualTemperament/Pythagorean two-run byte-identical pin via WARNING-5 inline sources) — Shipped ba27282 + 4f85eaf
+- [x] 23-05-PLAN.md — Closure (REQUIREMENTS/ROADMAP/STATE/VERIFICATION + 14-deferred-items D-11/D-13 strikethrough) — Shipped + closure
 
 ### Phase 24: Scale Linting (flow-lsp)
 **Goal**: Opt-in `enable scaleLint;` pragma activates flow-lsp scale linting that surfaces non-diatonic notes inside `key { ... }` contexts as Information-severity squiggles — zero flow-lang touch
@@ -251,7 +256,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 20. Cheap DEFER Closures + Multi-letter Enharmonic Edges | v1.3 | 4/4 | Complete | 2026-04-26 |
 | 21. Pragma System + H-Alias | v1.3 | 3/3 | Complete   | 2026-05-01 |
 | 22. Tier B/C Composer DX Bundle | v1.3 | 7/7 | Complete   | 2026-05-02 |
-| 23. Microtonal Tuning (Wedge) | v1.3 | 0/N | Not started | - |
+| 23. Microtonal Tuning (Wedge) | v1.3 | 5/5 | Complete   | 2026-05-04 |
 | 24. Scale Linting (flow-lsp) | v1.3 | 0/N | Not started | - |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |
 | 26. Op Standardization (Prefix-Only) | v1.3 | 0/N | Not started | - |

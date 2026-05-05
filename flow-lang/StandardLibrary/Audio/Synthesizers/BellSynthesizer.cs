@@ -1,3 +1,4 @@
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
@@ -21,12 +22,12 @@ public class BellSynthesizer : INoteSynthesizer
     // Short attack ramp length in samples to avoid click
     private const int AttackSamples = 50;
 
-    public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+    public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
         if (note.IsRest)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
-        double frequency = PitchConversion.NoteToFrequency(note);
+        double frequency = PitchConversion.NoteToFrequency(note, tuning);
         double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
         int numSamples = (int)(durationSeconds * sampleRate);
         if (numSamples <= 0)

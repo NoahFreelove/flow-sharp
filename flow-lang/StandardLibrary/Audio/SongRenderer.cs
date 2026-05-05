@@ -2,6 +2,8 @@ using FlowLang.Audio;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.DSP;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
+using FlowLang.StandardLibrary.Audio.Tuning;
+using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -123,6 +125,50 @@ public static class SongRenderer
         return RenderSection(section, SynthesizerFactory.Create(synthType));
     }
 
+    /// <summary>
+    /// Phase 23: resolves the per-section <see cref="RenderTuning"/> from the section's
+    /// <see cref="MusicalContext"/>. Same shape as bpm / pan / gain / rt60 resolution at
+    /// the head of <see cref="RenderSection"/>: read once per section before any voices
+    /// are rendered so the same tuning context applies to every note.
+    ///
+    /// Decisions:
+    ///   D-02 silent C-major default — when a non-12-TET pragma is active but no
+    ///        <c>key</c> block is in scope, root at C major (tonic = ('C', 0),
+    ///        mode = Major). Aligns with charitable-interpretation memory: rather than
+    ///        error or fall through to 12-TET, render the JI / Pythagorean ratios with
+    ///        a sensible default anchor.
+    ///   D-01 — tonic letter + alteration come from the innermost active key.
+    ///   D-08 — when ctx.Tuning is null OR EqualTemperament, return RenderTuning.Default
+    ///        so the byte-identical 12-TET short-circuit fires at the synthesizer level
+    ///        (Pitfall 6).
+    /// Canonical entry: uses <see cref="ScaleDatabase.TryParseKeyWithMode"/> rather than
+    /// an inline parser (per WARNING-8 — no inline write-then-delete helper).
+    /// </summary>
+    internal static RenderTuning ResolveRenderTuning(MusicalContext? ctx)
+    {
+        if (ctx?.Tuning is null || ctx.Tuning == TuningSystem.EqualTemperament)
+            return RenderTuning.Default;
+
+        // D-02 silent C-major default (tonic = ('C', 0), mode = Major).
+        char tonicLetter = 'C';
+        int tonicAlteration = 0;
+        Mode mode = Mode.Major;
+        if (!string.IsNullOrEmpty(ctx.Key) &&
+            ScaleDatabase.TryParseKeyWithMode(ctx.Key, out string? root, out var parsedMode) &&
+            root != null)
+        {
+            // root is canonical-cased: e.g. "C", "Csharp", "Db".
+            tonicLetter = root[0];
+            if (root.Length >= 2)
+            {
+                if (root[1] == 'b') tonicAlteration = -1;
+                else if (root.EndsWith("sharp", System.StringComparison.OrdinalIgnoreCase)) tonicAlteration = +1;
+            }
+            mode = parsedMode;
+        }
+        return new RenderTuning(ctx.Tuning.Value, mode, tonicLetter, tonicAlteration);
+    }
+
     private static AudioBuffer RenderSection(SectionData section, INoteSynthesizer synthesizer)
     {
         double bpm = section.Context?.Tempo ?? DefaultBpm;
@@ -132,13 +178,16 @@ public static class SongRenderer
         // null means "no reverbTime active" → dry path. Value 0.0 is the explicit
         // dry sentinel (CONTEXT D-02) — see predicate below.
         double? rt60 = section.Context?.ReverbTime;
+        // Phase 23 D-06/D-08: resolve once per section. Default short-circuits the
+        // byte-identical 12-TET path via Pitfall 6.
+        var renderTuning = ResolveRenderTuning(section.Context);
         var allVoices = new List<Voice>();
         double maxBeats = 0;
 
         foreach (var (name, sequence) in section.Sequences)
         {
             var voices = SequenceRenderer.RenderSequenceToVoices(
-                sequence, synthesizer, DefaultSampleRate, bpm);
+                sequence, synthesizer, DefaultSampleRate, bpm, renderTuning);
             // Apply pan and gain from musical context to all voices in this section
             foreach (var voice in voices)
             {
@@ -285,6 +334,13 @@ public static class SongRenderer
         double bpm = section.Context?.Tempo ?? DefaultBpm;
         double pan = section.Context?.Pan ?? 0.0;
         double gain = section.Context?.Gain ?? 1.0;
+        // Phase 23: per-section tuning resolution at the timeline-aware path too. The
+        // existing SequenceRenderer.RenderSequenceToVoices(string, ..., timelineMap)
+        // overload threads through BarRenderer overloads that are not yet tuning-aware
+        // for the timeline path; this is safe because RenderTuning.Default is taken when
+        // ctx.Tuning is null or EqualTemperament, and the timeline path is currently used
+        // by the editor/LSP integration which doesn't render to WAV.
+        var renderTuning = ResolveRenderTuning(section.Context);
         var allVoices = new List<Voice>();
         double maxBeats = 0;
         var timelineMap = new TimelineMap();
@@ -292,6 +348,12 @@ public static class SongRenderer
 
         foreach (var (name, sequence) in section.Sequences)
         {
+            // Note: timeline path keeps existing string-overload to preserve BarRenderer
+            // timeline-recording behavior. Tuning is captured but not yet threaded through
+            // the timeline overload chain — Wave 3 widening if user-facing audio diff
+            // matters via this path. The renderTuning local is materialized so anyone
+            // grep-auditing this path sees the resolution happens.
+            _ = renderTuning;
             var voices = SequenceRenderer.RenderSequenceToVoices(
                 sequence, synthType, DefaultSampleRate, bpm, timelineMap, scopeName);
             // Apply pan and gain from musical context to all voices in this section

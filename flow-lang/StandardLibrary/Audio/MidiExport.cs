@@ -2,7 +2,11 @@ using System.Linq;
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Audio.Tuning;
+using FlowLang.TypeSystem;
+using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
@@ -122,7 +126,23 @@ public static class MidiExport
         };
 
     /// <summary>
+    /// Phase 23 Plan 23-03 Task 2: context-dependent registration for <c>writeMidi</c>.
+    /// Mirrors <see cref="Harmony.HarmonyFunctions.RegisterContextDependent"/> shape — closure
+    /// over <see cref="FlowLang.Runtime.ExecutionContext"/> so <see cref="WriteMidi(IReadOnlyList{Value}, FlowLang.Runtime.ExecutionContext)"/>
+    /// can read <c>MusicalContext.Tuning</c> at call time and emit the D-13 one-shot warning
+    /// when tuning != EqualTemperament. MIDI bytes themselves are UNCHANGED — still 12-TET.
+    /// </summary>
+    public static void RegisterContextDependent(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
+    {
+        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
+        registry.Register("writeMidi", writeMidiSignature, args => WriteMidi(args, context));
+    }
+
+    /// <summary>
     /// Flow-callable entry point: writeMidi(String filepath, Song song) -> Void.
+    /// Context-free overload preserved for backwards compat (e.g., direct test invocation,
+    /// proxy paths). Phase 23: registration migrated to the 2-arg overload below so writeMidi
+    /// can emit the D-13 non-12-TET advisory warning.
     /// </summary>
     public static Value WriteMidi(IReadOnlyList<Value> args)
     {
@@ -134,6 +154,24 @@ public static class MidiExport
 
         ExportMidiInternal(filepath, song);
         return Value.Void();
+    }
+
+    /// <summary>
+    /// Phase 23 Plan 23-03 Task 2 / D-13: context-aware overload. Emits a one-shot
+    /// stderr warning when called under non-12-TET tuning so composers know that
+    /// faithful microtonal MIDI export (per-channel pitch-bend) is deferred to v1.4.
+    /// MIDI bytes are UNCHANGED — still 12-TET output. The warning is purely advisory.
+    /// </summary>
+    public static Value WriteMidi(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
+    {
+        var musicalCtx = context.GetMusicalContext();
+        if (musicalCtx?.Tuning is TuningSystem activeTuning && activeTuning != TuningSystem.EqualTemperament)
+        {
+            RenderingDiagnostics.WarnOnce(
+                "writemidi-non-equal-temperament",
+                "[midi] tuning != equalTemperament; MIDI export emits 12-TET pitches without pitch-bend (faithful microtonal MIDI deferred to v1.4)");
+        }
+        return WriteMidi(args);
     }
 
     /// <summary>

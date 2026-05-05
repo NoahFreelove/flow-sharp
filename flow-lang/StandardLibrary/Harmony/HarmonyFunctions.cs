@@ -1,4 +1,6 @@
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -46,6 +48,17 @@ public static class HarmonyFunctions
         int inputMidi = NoteType.ToMidiNote(letter, octave, alteration);
         var musicalCtx = context.GetMusicalContext();
         string? key = musicalCtx?.Key;
+
+        // Phase 23 Plan 23-03 Task 2 / D-11: under non-12-TET tuning, enharmonic respelling is
+        // destructive (~21 cent shift at enharmonic junctions) — emit a one-shot stderr warning
+        // so composers know the silent regression is happening. Conversion still happens; warning
+        // is purely advisory. Pitfall 5 #3 / AUDIT-VERIFIED. EqualTemperament + no-pragma silent.
+        if (musicalCtx?.Tuning is TuningSystem activeTuning && activeTuning != TuningSystem.EqualTemperament)
+        {
+            RenderingDiagnostics.WarnOnce(
+                "enharmonic-non-equal-temperament",
+                "[enharmonic] called inside tuning != equalTemperament; conversion is destructive (≈ 21 cent shift)");
+        }
 
         // D-04 / D-USER-B: in-key branch fires FIRST so diatonic spelling wins for both naturals
         // and accidentals. If the input pitch matches a scale tone, we return that scale spelling

@@ -1,3 +1,4 @@
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Runtime;
@@ -9,28 +10,34 @@ namespace FlowLang.Runtime;
 public class MusicalContext
 {
     /// <summary>
-    /// Set of all recognized key strings (12 major + 12 minor).
+    /// Set of all recognized key strings: 17 roots × 7 modes = 119 entries.
+    /// Phase 23 Plan 23-03 Task 1 (D-04) extends this from the original 34 entries
+    /// (17 roots × {major, minor}) to the full 119 covering the 5 church modes
+    /// (dorian, phrygian, lydian, mixolydian, locrian). Without this extension,
+    /// <c>key Cdorian { ... }</c> fails the existing <see cref="IsValidKey"/> check
+    /// before tuning math sees it.
     /// </summary>
-    public static readonly HashSet<string> ValidKeys = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly HashSet<string> ValidKeys = BuildValidKeys();
+
+    private static HashSet<string> BuildValidKeys()
     {
-        "Cmajor", "Cminor",
-        "Csharpmajor", "Csharpminor",
-        "Dbmajor", "Dbminor",
-        "Dmajor", "Dminor",
-        "Dsharpmajor", "Dsharpminor",
-        "Ebmajor", "Ebminor",
-        "Emajor", "Eminor",
-        "Fmajor", "Fminor",
-        "Fsharpmajor", "Fsharpminor",
-        "Gbmajor", "Gbminor",
-        "Gmajor", "Gminor",
-        "Gsharpmajor", "Gsharpminor",
-        "Abmajor", "Abminor",
-        "Amajor", "Aminor",
-        "Asharpmajor", "Asharpminor",
-        "Bbmajor", "Bbminor",
-        "Bmajor", "Bminor"
-    };
+        var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        string[] roots =
+        {
+            "C", "Csharp", "Db",
+            "D", "Dsharp", "Eb",
+            "E",
+            "F", "Fsharp", "Gb",
+            "G", "Gsharp", "Ab",
+            "A", "Asharp", "Bb",
+            "B",
+        };
+        string[] modes = { "major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian" };
+        foreach (var root in roots)
+            foreach (var mode in modes)
+                set.Add(root + mode);
+        return set;
+    }
 
     public TimeSignatureData? TimeSignature { get; set; }
     public double? Tempo { get; set; }
@@ -40,6 +47,16 @@ public class MusicalContext
     public double? Pan { get; set; }  // -1.0 (left) to 1.0 (right), null = inherit
     public double? Gain { get; set; }  // 0.0 to 2.0 (null = inherit, default 1.0 at usage site)
     public double? ReverbTime { get; set; }  // 0.0 (dry) to 30.0 (clamped ceiling), null = inherit; seconds
+
+    /// <summary>
+    /// Phase 23 D-05/D-08: render-time tuning system (top-level non-stacked field). When null,
+    /// rendering uses the byte-identical 12-TET path per Pitfall 6 short-circuit. The
+    /// FlowEngine bridge resolves the active <c>enable justIntonation;</c> /
+    /// <c>enable pythagorean;</c> / <c>enable equalTemperament;</c> pragma into this field
+    /// ONCE before <c>_interpreter.Execute(program)</c>. D-07 REPL persistence: pragma absence
+    /// does NOT reset previous tuning across REPL evaluations.
+    /// </summary>
+    public TuningSystem? Tuning { get; set; }
 
     /// <summary>
     /// Creates a new context with all values inherited (null).
@@ -58,7 +75,8 @@ public class MusicalContext
         Velocity = Velocity,
         Pan = Pan,
         Gain = Gain,
-        ReverbTime = ReverbTime
+        ReverbTime = ReverbTime,
+        Tuning = Tuning
     };
 
     /// <summary>
@@ -105,6 +123,7 @@ public class MusicalContext
         if (Pan != null) parts.Add($"pan={Pan}");
         if (Gain != null) parts.Add($"gain={Gain}");
         if (ReverbTime != null) parts.Add($"reverbTime={ReverbTime}");
+        if (Tuning != null) parts.Add($"tuning={Tuning}");
         return $"MusicalContext({string.Join(", ", parts)})";
     }
 }

@@ -119,13 +119,17 @@ public class PragmaScannerFacts
     public void UnknownPragma_RaisesError_WithSuggestion()
     {
         // D-12 — unknown pragma name cites alphabetized known list + did-you-mean.
+        // Phase 23 closed-set growth: the alphabetized list now contains 4 entries; the
+        // assertion checks for the prefix and the canonical hAsB entry rather than
+        // hard-coding the full list (so Phase 24 scaleLint addition won't re-break this).
         var source = "enable hasb;\n";
         var (_, _, reporter) = Scan(source);
         Assert.True(reporter.HasErrors);
         var msg = reporter.FormatErrors();
         Assert.Contains("unknown pragma 'hasb'", msg);
         Assert.Contains("Did you mean 'hAsB'?", msg);
-        Assert.Contains("Known pragmas: hAsB", msg);
+        Assert.Contains("Known pragmas: ", msg);
+        Assert.Contains("hAsB", msg);
     }
 
     [Fact]

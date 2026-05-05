@@ -1,0 +1,35 @@
+enable justIntonation;
+
+use "@std"
+use "@audio"
+
+Note: Phase 23 byte-identical determinism pin for the JI/Pythagorean rendering
+Note: paths. Per CONTEXT.md Claude's Discretion: tutorial.flow + showcase.flow
+Note: stay 12-TET (preserve v1.2 pin); this script independently pins JI/Pyth.
+Note: Pitfall 5: rendering must not depend on warning emission ordering.
+Note: TuningDeterminismTests xUnit Integration runs its OWN inline-source build
+Note: twice (per WARNING-5) — does NOT reuse this on-disk script's WAV path.
+
+Note: WARNING-7 fix — writeWav lives at TOP LEVEL outside the key block.
+Note: The `key Cmajor { ... }` block sets tonic context for Section/Sequence
+Note: note-stream `| C4 D4 ... |` resolution. Section captures Sequence at
+Note: declaration time inside the key block; Buffer + writeWav happen at top
+Note: level so we never mix musical-context blocks with audio I/O syntax.
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section ji_scale {
+                | C4q D4q E4q F4q G4q A4q B4q C5q |
+            }
+        }
+    }
+}
+
+Note: renderSong + writeWav at TOP LEVEL — outside the key block per WARNING-7.
+Song song = [ji_scale]
+Buffer audio = (renderSong song "piano")
+(writeWav "/tmp/flow_test_tuning_determinism.wav" audio)
+
+(print "JI deterministic render complete")
+(print "test_tuning_determinism: PASSED")
