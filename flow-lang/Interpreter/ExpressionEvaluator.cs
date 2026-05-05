@@ -36,7 +36,6 @@ public class ExpressionEvaluator
             VariableExpression var => EvaluateVariable(var),
             FunctionCallExpression call => EvaluateFunctionCall(call),
             ArrayIndexExpression idx => EvaluateArrayIndex(idx),
-            BinaryExpression bin => EvaluateBinary(bin),
             ArrayLiteralExpression arrLit => EvaluateArrayLiteral(arrLit),
             ChordLiteralExpression chordLit => EvaluateChordLiteral(chordLit),
             LambdaExpression lambda => EvaluateLambda(lambda),
@@ -56,6 +55,8 @@ public class ExpressionEvaluator
         return lit.Value switch
         {
             int i => Value.Int(i),
+            long l => Value.Long(l),                      // Phase 26: int-overflow lex path
+            System.Numerics.BigInteger n => Value.Number(n),  // Phase 26: long-overflow lex path
             double d => Value.Double(d),
             bool b => Value.Bool(b),
             string s => TryParseSpecialLiteral(s) ?? Value.String(s),
@@ -203,6 +204,23 @@ public class ExpressionEvaluator
         // Execute function
         if (overload.IsInternal)
         {
+            // Phase 26 D-05/D-06 (RESEARCH Pitfall 2): coerce arguments at the
+            // implementation boundary. Without this, mixed-type calls that resolved
+            // via OverloadResolver convertible-scoring (+100) reach the impl with
+            // the caller's original CLR primitive types — e.g., `(add 5 3.0)` resolves
+            // to (add Double Double) but argValues[0] is still int, throwing
+            // InvalidCastException inside StdLib.AddDouble's args[0].As<double>().
+            // VoidType.IsCompatibleWith returns false → CanConvertTo returns false →
+            // Void-wildcard params (e.g. equals/lt/gt) short-circuit and never coerce.
+            var sig = overload.Signature;
+            for (int i = 0; i < argValues.Count && i < sig.InputTypes.Count; i++)
+            {
+                if (!argValues[i].Type.Equals(sig.InputTypes[i])
+                    && argValues[i].Type.CanConvertTo(sig.InputTypes[i]))
+                {
+                    argValues[i] = argValues[i].ConvertTo(sig.InputTypes[i]);
+                }
+            }
             // Call internal implementation
             return overload.Implementation!(argValues);
         }
@@ -245,93 +263,6 @@ public class ExpressionEvaluator
         }
 
         return arr[indexValue];
-    }
-
-    private Value EvaluateBinary(BinaryExpression bin)
-    {
-        var left = Evaluate(bin.Left);
-        var right = Evaluate(bin.Right);
-        
-        if (left.Type is StringType || right.Type is StringType)
-        {
-            if (bin.Operator == BinaryOperator.Add)
-                return Value.String((left.Data?.ToString() ?? "") + (right.Data?.ToString() ?? ""));
-        }
-
-        bool lNum = left.Type is IntType or LongType or FloatType or DoubleType or NumberType;
-        bool rNum = right.Type is IntType or LongType or FloatType or DoubleType or NumberType;
-
-        if (lNum && rNum)
-        {
-            if (left.Type is NumberType || right.Type is NumberType)
-            {
-                BigInteger l = left.Data is BigInteger bl ? bl : new BigInteger(Convert.ToInt64(left.Data));
-                BigInteger r = right.Data is BigInteger br ? br : new BigInteger(Convert.ToInt64(right.Data));
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Number(l + r),
-                    BinaryOperator.Subtract => Value.Number(l - r),
-                    BinaryOperator.Multiply => Value.Number(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Number(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            if (left.Type is DoubleType || right.Type is DoubleType)
-            {
-                double l = Convert.ToDouble(left.Data);
-                double r = Convert.ToDouble(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Double(l + r),
-                    BinaryOperator.Subtract => Value.Double(l - r),
-                    BinaryOperator.Multiply => Value.Double(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Double(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            if (left.Type is FloatType || right.Type is FloatType)
-            {
-                float l = Convert.ToSingle(left.Data);
-                float r = Convert.ToSingle(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Float(l + r),
-                    BinaryOperator.Subtract => Value.Float(l - r),
-                    BinaryOperator.Multiply => Value.Float(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Float(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            if (left.Type is LongType || right.Type is LongType)
-            {
-                long l = Convert.ToInt64(left.Data);
-                long r = Convert.ToInt64(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Long(l + r),
-                    BinaryOperator.Subtract => Value.Long(l - r),
-                    BinaryOperator.Multiply => Value.Long(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Long(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            else
-            {
-                int l = Convert.ToInt32(left.Data);
-                int r = Convert.ToInt32(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Int(l + r),
-                    BinaryOperator.Subtract => Value.Int(l - r),
-                    BinaryOperator.Multiply => Value.Int(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Int(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-        }
-
-        _errorReporter.ReportError($"Cannot apply operator {bin.Operator} to {left.Type} and {right.Type}", bin.Location);
-        return Value.Void();
     }
 
     private Value EvaluateFlowExpression(FlowExpression flowEx)

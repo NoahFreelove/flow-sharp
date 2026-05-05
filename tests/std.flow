@@ -29,6 +29,8 @@ internal proc str (Chord: value)
 internal proc concat (String: a, String: b)
 internal proc len (String: s)
 
+internal proc chord (String: symbol)
+internal proc chord (Note: noteShapedSymbol)
 internal proc chordNotes (Chord: c)
 internal proc chordRoot (Chord: c)
 internal proc chordQuality (Chord: c)

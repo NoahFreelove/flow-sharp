@@ -331,6 +331,49 @@ public static class HarmonyFunctions
         // (incomplete chord -> input unchanged) lives inside the Voicings static class.
         Voicings.Register(registry);
 
+        // chord(String) -> Chord
+        // QUICK-260504-cks: runtime constructor from a chord-symbol string. Wraps
+        // ChordParser.TryParseFlexible — accepts both Flow's `s`/`f` accidentals and
+        // common-practice `#`/`b`, supports slash bass (`C/G`), bare-digit qualities
+        // (`C5`/`G7`/`D9`/`C13`), and the full QualityIntervals vocabulary
+        // (triads, 6/7/9/11/13 family, sus, add, alterations). Charitable on
+        // unparseable input — returns Void instead of throwing, matching
+        // resolveNumeral's pattern below.
+        var chordFromStringSignature = new FunctionSignature("chord", [StringType.Instance]);
+        registry.Register("chord", chordFromStringSignature, args =>
+        {
+            var symbol = args[0].As<string>();
+            if (ChordParser.TryParseFlexible(symbol, out var chordData) && chordData != null)
+                return Value.Chord(chordData);
+            return Value.Void();
+        });
+
+        // chord(Note) -> Chord
+        // QUICK-260504-cks: Flow's literal evaluator (`TryParseSpecialLiteral`) auto-coerces
+        // any quoted string that *parses* as a Note into a `Note` value at evaluation time
+        // (e.g. `"C"`, `"C5"`, `"G7"`, `"Bb"` all become Notes, not Strings). Without this
+        // overload, the most natural composer spelling — `(chord "C7")` — would die with
+        // "No matching overload for function 'chord' with argument types (Note)". This
+        // overload re-routes the Note's stored text back through `TryParseFlexible` so the
+        // string-form vocabulary (power chords, dom7, slash bass embedded in note-shaped
+        // tokens) reaches the same parser as the explicit String overload.
+        var chordFromNoteSignature = new FunctionSignature("chord", [NoteType.Instance]);
+        registry.Register("chord", chordFromNoteSignature, args =>
+        {
+            var noteText = args[0].As<string>();
+            if (ChordParser.TryParseFlexible(noteText, out var chordData) && chordData != null)
+                return Value.Chord(chordData);
+            // Fallback: bare root letter (e.g. Note "C4" → C major triad on the root letter).
+            // This keeps `(chord <Note variable>)` charitable when the note text isn't itself
+            // a recognized chord symbol — pull the leading A-G as the root and build a major.
+            if (!string.IsNullOrEmpty(noteText) && noteText[0] >= 'A' && noteText[0] <= 'G')
+            {
+                if (ChordParser.TryParseFlexible(noteText[0] + "maj", out var fallback) && fallback != null)
+                    return Value.Chord(fallback);
+            }
+            return Value.Void();
+        });
+
         // str(Chord) -> String
         var strChordSignature = new FunctionSignature("str", [ChordType.Instance]);
         registry.Register("str", strChordSignature, args =>

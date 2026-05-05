@@ -159,6 +159,14 @@ public static class BuiltInFunctions
         var strDoubleSignature = new FunctionSignature("str", [DoubleType.Instance]);
         registry.Register("str", strDoubleSignature, StdLib.StrDouble);
 
+        // Phase 26 (STD-02): str overloads for Long + Number — without these,
+        // (str Long) is ambiguous (widens to both Float and Double) and (str Number)
+        // has no candidate (Number doesn't widen on the str chain).
+        var strLongSignature = new FunctionSignature("str", [LongType.Instance]);
+        registry.Register("str", strLongSignature, StdLib.StrLong);
+        var strNumberSignature = new FunctionSignature("str", [NumberType.Instance]);
+        registry.Register("str", strNumberSignature, StdLib.StrNumber);
+
         var strStringSignature = new FunctionSignature("str", [StringType.Instance]);
         registry.Register("str", strStringSignature, StdLib.StrString);
 
@@ -247,7 +255,7 @@ public static class BuiltInFunctions
         var divSignature = new FunctionSignature(
             "div",
             [IntType.Instance, IntType.Instance]);
-        registry.Register("div", divSignature, StdLib.DivInt);
+        registry.Register("div", divSignature, StdLib.DivIntPromote);   // Phase 26 D-08: now returns Double
 
         // Double overloads for arithmetic
         var addDoubleSignature = new FunctionSignature(
@@ -269,6 +277,42 @@ public static class BuiltInFunctions
             "div",
             [DoubleType.Instance, DoubleType.Instance]);
         registry.Register("div", divDoubleSignature, StdLib.DivDouble);
+
+        // ===== Phase 26 (STD-02): Long + Number same-type fast paths =====
+
+        var addLongSignature = new FunctionSignature("add", [LongType.Instance, LongType.Instance]);
+        registry.Register("add", addLongSignature, StdLib.AddLong);
+        var subLongSignature = new FunctionSignature("sub", [LongType.Instance, LongType.Instance]);
+        registry.Register("sub", subLongSignature, StdLib.SubLong);
+        var mulLongSignature = new FunctionSignature("mul", [LongType.Instance, LongType.Instance]);
+        registry.Register("mul", mulLongSignature, StdLib.MulLong);
+        var divLongSignature = new FunctionSignature("div", [LongType.Instance, LongType.Instance]);
+        registry.Register("div", divLongSignature, StdLib.DivLong);
+
+        var addNumberSignature = new FunctionSignature("add", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("add", addNumberSignature, StdLib.AddNumber);
+        var subNumberSignature = new FunctionSignature("sub", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("sub", subNumberSignature, StdLib.SubNumber);
+        var mulNumberSignature = new FunctionSignature("mul", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("mul", mulNumberSignature, StdLib.MulNumber);
+        var divNumberSignature = new FunctionSignature("div", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("div", divNumberSignature, StdLib.DivNumber);
+
+        // ===== Phase 26 (STD-02): (neg) 5-pack (D-07) =====
+        var negIntSignature    = new FunctionSignature("neg", [IntType.Instance]);
+        registry.Register("neg", negIntSignature, StdLib.NegInt);
+        var negLongSignature   = new FunctionSignature("neg", [LongType.Instance]);
+        registry.Register("neg", negLongSignature, StdLib.NegLong);
+        var negFloatSignature  = new FunctionSignature("neg", [FloatType.Instance]);
+        registry.Register("neg", negFloatSignature, StdLib.NegFloat);
+        var negDoubleSignature = new FunctionSignature("neg", [DoubleType.Instance]);
+        registry.Register("neg", negDoubleSignature, StdLib.NegDouble);
+        var negNumberSignature = new FunctionSignature("neg", [NumberType.Instance]);
+        registry.Register("neg", negNumberSignature, StdLib.NegNumber);
+
+        // ===== Phase 26 (STD-02): (idiv Int Int) → Int (D-08) =====
+        var idivIntSignature = new FunctionSignature("idiv", [IntType.Instance, IntType.Instance]);
+        registry.Register("idiv", idivIntSignature, StdLib.IDivInt);
 
         // String-to-number conversions
         var stringToIntSignature = new FunctionSignature("stringToInt", [StringType.Instance]);

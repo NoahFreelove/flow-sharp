@@ -1,6 +1,7 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
+using System.Numerics;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.StandardLibrary;
@@ -52,6 +53,24 @@ public static class StdLib
     /// Converts a Double to string.
     /// </summary>
     public static Value StrDouble(IReadOnlyList<Value> args)
+    {
+        return Value.String(args[0].ToString());
+    }
+
+    /// <summary>
+    /// Converts a Long to string. Phase 26 — without this, (str Long) is ambiguous
+    /// because Long widens to both Float and Double.
+    /// </summary>
+    public static Value StrLong(IReadOnlyList<Value> args)
+    {
+        return Value.String(args[0].ToString());
+    }
+
+    /// <summary>
+    /// Converts a Number (BigInteger) to string. Phase 26 — without this, (str Number)
+    /// has no candidate (Number doesn't widen anywhere on the str chain).
+    /// </summary>
+    public static Value StrNumber(IReadOnlyList<Value> args)
     {
         return Value.String(args[0].ToString());
     }
@@ -291,6 +310,70 @@ public static class StdLib
         var b = args[1].As<double>();
         if (b == 0) throw new InvalidOperationException("Division by zero");
         return Value.Double(a / b);
+    }
+
+    // ===== Phase 26 Long arithmetic (D-05 fast path) =====
+    public static Value AddLong(IReadOnlyList<Value> args)
+        => Value.Long(args[0].As<long>() + args[1].As<long>());
+    public static Value SubLong(IReadOnlyList<Value> args)
+        => Value.Long(args[0].As<long>() - args[1].As<long>());
+    public static Value MulLong(IReadOnlyList<Value> args)
+        => Value.Long(args[0].As<long>() * args[1].As<long>());
+    public static Value DivLong(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<long>();
+        var b = args[1].As<long>();
+        if (b == 0L) throw new InvalidOperationException("Division by zero");
+        return Value.Long(a / b);
+    }
+
+    // ===== Phase 26 Number arithmetic (BigInteger; D-05 fast path) =====
+    public static Value AddNumber(IReadOnlyList<Value> args)
+        => Value.Number(args[0].As<BigInteger>() + args[1].As<BigInteger>());
+    public static Value SubNumber(IReadOnlyList<Value> args)
+        => Value.Number(args[0].As<BigInteger>() - args[1].As<BigInteger>());
+    public static Value MulNumber(IReadOnlyList<Value> args)
+        => Value.Number(args[0].As<BigInteger>() * args[1].As<BigInteger>());
+    public static Value DivNumber(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<BigInteger>();
+        var b = args[1].As<BigInteger>();
+        if (b.IsZero) throw new InvalidOperationException("Division by zero");
+        return Value.Number(a / b);
+    }
+
+    // ===== Phase 26 (neg) 5-pack (D-07) =====
+    public static Value NegInt(IReadOnlyList<Value> args)
+        => Value.Int(-args[0].As<int>());
+    public static Value NegLong(IReadOnlyList<Value> args)
+        => Value.Long(-args[0].As<long>());
+    public static Value NegFloat(IReadOnlyList<Value> args)
+        => Value.Float(-args[0].As<double>());   // FloatType is double-backed in Value.Float
+    public static Value NegDouble(IReadOnlyList<Value> args)
+        => Value.Double(-args[0].As<double>());
+    public static Value NegNumber(IReadOnlyList<Value> args)
+        => Value.Number(-args[0].As<BigInteger>());
+
+    // ===== Phase 26 integer-division (D-08) =====
+    /// <summary>
+    /// Truncating integer division: (idiv 1 2) -> 0. D-08.
+    /// </summary>
+    public static Value IDivInt(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<int>();
+        var b = args[1].As<int>();
+        if (b == 0) throw new InvalidOperationException("Integer division by zero");
+        return Value.Int(a / b);
+    }
+    /// <summary>
+    /// Auto-promoting Int/Int division returning Double: (div 1 2) -> 0.5. D-08.
+    /// </summary>
+    public static Value DivIntPromote(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<int>();
+        var b = args[1].As<int>();
+        if (b == 0) throw new InvalidOperationException("Division by zero");
+        return Value.Double((double)a / b);
     }
 
     /// <summary>

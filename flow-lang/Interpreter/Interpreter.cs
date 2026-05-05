@@ -490,10 +490,34 @@ public class Interpreter : IFunctionInvoker
         }
         else
         {
+            // Phase 26: variable initialization may need to narrow Double→Float
+            // (e.g., `Float a = 1.5` where 1.5 lexes as Double). Value.ConvertTo
+            // already implements Int→Long→Float→Double→Number widening AND the
+            // narrowing direction Double→Float (line 114). The Type-level
+            // CanConvertTo only declares the widening side to keep OverloadResolver
+            // unambiguous; here at the assignment boundary we additionally try a
+            // direct Value.ConvertTo for the narrow numeric cases.
+            bool typeCompatible = value.Type.IsCompatibleWith(varDecl.Type)
+                || value.Type.CanConvertTo(varDecl.Type);
+
+            // Try direct Value-level coercion for numeric narrowing (Double→Float, etc.)
+            if (!typeCompatible && IsNumericNarrowing(value.Type, varDecl.Type))
+            {
+                try
+                {
+                    var coerced = value.ConvertTo(varDecl.Type);
+                    if (coerced.Type.Equals(varDecl.Type))
+                    {
+                        value = coerced;
+                        typeCompatible = true;
+                    }
+                }
+                catch { /* fall through to error */ }
+            }
+
             // Type checking (simplified - just check if compatible)
             // Skip type check for function values (lambdas assigned to variables with return-type annotations)
-            if (value.Type is not TypeSystem.PrimitiveTypes.FunctionType
-                && !value.Type.IsCompatibleWith(varDecl.Type) && !value.Type.CanConvertTo(varDecl.Type))
+            if (value.Type is not TypeSystem.PrimitiveTypes.FunctionType && !typeCompatible)
             {
                 _errorReporter.ReportError(
                     $"Cannot assign {value.Type} to variable of type {varDecl.Type}",
@@ -509,6 +533,17 @@ public class Interpreter : IFunctionInvoker
         }
 
         _context.DeclareVariable(varDecl.Name, value);
+    }
+
+    /// <summary>
+    /// Phase 26: detects numeric-narrowing initialization like `Float a = 1.5`
+    /// where Value.ConvertTo can produce the narrower type but the FlowType-level
+    /// CanConvertTo doesn't (intentionally — to keep OverloadResolver unambiguous).
+    /// </summary>
+    private static bool IsNumericNarrowing(FlowType from, FlowType to)
+    {
+        return (from is TypeSystem.PrimitiveTypes.DoubleType && to is TypeSystem.PrimitiveTypes.FloatType)
+            || (from is TypeSystem.PrimitiveTypes.LongType && to is TypeSystem.PrimitiveTypes.IntType);
     }
 
     private Value CreateDefaultValue(FlowType type)

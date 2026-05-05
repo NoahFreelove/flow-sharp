@@ -6,6 +6,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Flow is an interpreted, statically-typed language designed for music production. It features a flow operator (`->`) for function chaining, music-specific types (Note, Chord, Song, etc.), inline note stream syntax (`| C4 D4 E4 |`), musical context blocks (tempo, key, time signature), and a full audio pipeline from composition to WAV export to real-time playback. The interpreter is written in C# targeting .NET 10.
 
+## Goals & Non-Goals
+
+**Goals**
+- **Ergonomics first.** Music production is historically slow and demands beefy
+  computers. Flow prioritizes composer ergonomics over everything else — runtime
+  efficiency, type strictness, and generality all yield to it.
+- **Genre-agnostic.** Flow should let you write a classical symphony, an EDM
+  track, jazzy blues, modern pop, and death metal in one place. We support MIDI,
+  instrument generation, and plan to add vocaloid-style voices.
+- **Make the easy cases fast.** The common, well-typed paths should be as fast
+  as we can reasonably make them.
+
+**Non-Goals**
+- **General-purpose computation.** Flow *can* compute, but that's not what it's
+  for. Don't bend the language to serve non-musical use cases.
+- **Maximum runtime efficiency.** Flow is interpreted — it isn't trying to be C.
+- **Type strictness for its own sake.** If a user wants to multiply a `Float` by
+  a `Double`, let them. The flexible path doesn't have to match the speed of the
+  strict-typed equivalent — flexibility is the point.
+- **A language for one kind of music.** No genre is privileged in the design.
+
 ## Build & Run Commands
 
 ```bash

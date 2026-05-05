@@ -19,6 +19,7 @@ public class SimpleLexer
     private int _line = 1;
     private int _column = 1;
     private readonly Queue<Token> _pendingTokens = new();
+    private TokenType? _lastEmittedType = null;   // Phase 26 D-04
 
     public SimpleLexer(string source, ErrorReporter errorReporter, string? fileName = null,
                        PragmaSet? pragmaSet = null)
@@ -42,7 +43,10 @@ public class SimpleLexer
 
             var token = NextToken();
             if (token != null)
+            {
                 tokens.Add(token);
+                _lastEmittedType = token.Type;   // Phase 26 D-04
+            }
         }
 
         tokens.Add(new Token(TokenType.Eof, "", new SourceLocation(_line, _column, _fileName)));
@@ -80,9 +84,17 @@ public class SimpleLexer
         // Decibels: +/-NdB (e.g., +6dB, -3dB)
         if ((c == '+' || c == '-') && char.IsDigit(PeekNext()))
         {
+            // Step 1: typed literals (existing — preserves -3dB/-5st/+50c)
             var lookahead = TryLookAheadSpecialLiteral();
             if (lookahead != null)
                 return lookahead;
+
+            // Step 2 (Phase 26 D-04): plain signed number at expression-start
+            var signed = TryLexSignedNumber(start);
+            if (signed != null) return signed;
+
+            // Step 3: fall through to SingleChar(Plus/Minus) preserves musical-context
+            // sign consumption + parser shorthand `-IDENT`.
         }
 
         // Interpolated string: $"..."
@@ -308,12 +320,87 @@ public class SimpleLexer
                 sb.Append(Advance());
             }
 
-            var floatValue = double.Parse(sb.ToString());
+            var floatValue = double.Parse(sb.ToString(), System.Globalization.CultureInfo.InvariantCulture);
             return new Token(TokenType.FloatLiteral, sb.ToString(), start, floatValue);
         }
 
-        var intValue = int.Parse(sb.ToString());
-        return new Token(TokenType.IntLiteral, sb.ToString(), start, intValue);
+        // Phase 26: int-overflow → long-overflow → BigInteger fallthrough.
+        string text = sb.ToString();
+        if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int intValue))
+            return new Token(TokenType.IntLiteral, text, start, intValue);
+        if (long.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long longValue))
+            return new Token(TokenType.IntLiteral, text, start, longValue);
+        return new Token(TokenType.IntLiteral, text, start,
+            System.Numerics.BigInteger.Parse(text, System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    private Token? TryLexSignedNumber(SourceLocation start)
+    {
+        // Phase 26 D-04: expression-start positions only.
+        // Music-context keywords (Tempo/Swing/Pan/Gain/ReverbTime) are NOT in this set —
+        // their parsers at Parser.cs:450/465/527/542/556 consume Match(TokenType.Minus)
+        // directly. RESEARCH Pitfall 1 mitigation.
+        // NOTE: Colon is intentionally NOT in this set — proc params (Int: x) are
+        // followed by an identifier, never a literal.
+        bool isExprStart = _lastEmittedType is null
+            or TokenType.LParen
+            or TokenType.Comma
+            or TokenType.LBracket
+            or TokenType.Arrow
+            or TokenType.Assign
+            or TokenType.Pipe
+            or TokenType.Semicolon
+            // Phase 26 Wave 0 fact NegativeLiteralLexFacts "after Arrow" position
+            // (`5 -> add -3`) places `-3` after Identifier(add) — argument-start
+            // position. Including Identifier here lets `func -3` lex as a single
+            // signed token so it can flow through ParsePrimary's optional-paren-args.
+            or TokenType.Identifier;
+        if (!isExprStart) return null;
+
+        int savePos = _position;
+        int saveLine = _line;
+        int saveCol = _column;
+
+        char sign = Peek();
+        if (sign != '+' && sign != '-') return null;
+        if (!char.IsDigit(PeekNext())) return null;
+
+        // D-03: '+' at expression-start is silently absorbed — return positive literal.
+        bool negative = (sign == '-');
+        Advance();   // consume sign
+
+        var sb = new StringBuilder();
+        if (negative) sb.Append('-');
+        while (!IsAtEnd() && char.IsDigit(Peek()))
+            sb.Append(Advance());
+
+        bool isFloat = false;
+        if (!IsAtEnd() && Peek() == '.' && char.IsDigit(PeekNext()))
+        {
+            isFloat = true;
+            sb.Append(Advance());                 // consume '.'
+            while (!IsAtEnd() && char.IsDigit(Peek()))
+                sb.Append(Advance());
+        }
+
+        string text = sb.ToString();
+        if (isFloat && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dval))
+            return new Token(TokenType.FloatLiteral, text, start, dval);
+        if (!isFloat)
+        {
+            if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int ival))
+                return new Token(TokenType.IntLiteral, text, start, ival);
+            if (long.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long lval))
+                return new Token(TokenType.IntLiteral, text, start, lval);
+            if (System.Numerics.BigInteger.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bival))
+                return new Token(TokenType.IntLiteral, text, start, bival);
+        }
+
+        // Parse failure — rewind so SingleChar(Plus/Minus) gets the chance.
+        _position = savePos;
+        _line = saveLine;
+        _column = saveCol;
+        return null;
     }
 
     private Token? TryLookAheadSpecialLiteral()
@@ -518,13 +605,28 @@ public class SimpleLexer
         // Regular number (int or float)
         if (numberText.Contains('.'))
         {
-            var floatValue = double.Parse(numberText);
+            var floatValue = double.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture);
             return new Token(TokenType.FloatLiteral, numberText, start, floatValue);
         }
         else
         {
-            var intValue = int.Parse(numberText);
-            return new Token(TokenType.IntLiteral, numberText, start, intValue);
+            // Phase 26: int literals that overflow Int32 fall through to IntLiteral
+            // with a long-typed Value so the variable-declaration coercion path can
+            // widen them to Long/Number. Without this, `Long m = 1000000000000`
+            // throws OverflowException at lex time.
+            if (int.TryParse(numberText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int intValue))
+            {
+                return new Token(TokenType.IntLiteral, numberText, start, intValue);
+            }
+            if (long.TryParse(numberText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long longValue))
+            {
+                // Lex as IntLiteral with a long Value; the parser/evaluator treats
+                // it as a literal whose runtime Value type matches Data's CLR type.
+                return new Token(TokenType.IntLiteral, numberText, start, longValue);
+            }
+            // Fall back to BigInteger for truly huge literals.
+            return new Token(TokenType.IntLiteral, numberText, start,
+                System.Numerics.BigInteger.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture));
         }
     }
 

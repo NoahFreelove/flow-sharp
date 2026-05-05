@@ -86,6 +86,18 @@ public class Value
         if (Type.Equals(targetType))
             return this;
 
+        // Phase 26: Float-typed values are double-backed (Value.Float stores a double).
+        // Without this fast-path, the `Data is double doubleVal` branch below treats
+        // Float values as Doubles and never produces a real Double widening output.
+        // Tests assert that `(add Float Double)` widens to Double, which requires this.
+        if (Type is FloatType && Data is double floatBackedDouble)
+        {
+            if (targetType is DoubleType) return Double(floatBackedDouble);
+            if (targetType is NumberType) return Number(new BigInteger(floatBackedDouble));
+            if (targetType is IntType) return Int((int)floatBackedDouble);   // Lossy
+            if (targetType is LongType) return Long((long)floatBackedDouble); // Lossy
+        }
+
         // Numeric conversions
         if (Data is int intVal)
         {

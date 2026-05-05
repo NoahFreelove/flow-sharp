@@ -5,7 +5,7 @@
 - ~~**v1.0 MVP**~~ — Phases 1-5 (shipped 2026-04-03)
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
-- 🚧 **v1.3 Composer DX Tier B/C** — Phases 18-27 (in progress)
+- 🚧 **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, in progress)
 
 ## Phases
 
@@ -50,7 +50,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 
 ## v1.3 Composer DX Tier B/C (Phases 18-27) — in progress
 
-Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), and lands a foundational language consistency pass: prefix-only arithmetic standardization (Phase 26) followed by symbols + tuples + generic dicts (Phase 26.1). 38 requirements across 11 phases.
+Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), lands a foundational language consistency pass — prefix-only arithmetic standardization (Phase 26) followed by symbols + tuples + generic dicts (Phase 26.1) — and resolves the music-type ergonomics gap surfaced after Phase 25 (Phase 26.2). 41 requirements across 12 phases.
 
 **Locked decisions** (from `/gsd-new-milestone` discussion):
 - D-01: Tuplet bracket syntax is `{N:M ...}` (braces)
@@ -214,7 +214,12 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   3. Negative number literals (`-5`, `-3.14`) lex as single tokens at expression-start, after `(`, after `,` — mirroring existing `-3dB`/`+50c`/`-5st` precedent (STD-02)
   4. All ~70 existing `test_*.flow` scripts migrated to prefix form and pass with byte-identical output; `tutorial.flow` + `showcase.flow` cmp-clean across two consecutive runs (STD-03)
   5. CLAUDE.md updated to remove the stale "==, !=, <, >" claim and document prefix-only rule (STD-03)
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 26-01-PLAN.md — Wave 0 RED: 7 Phase26 fact files (NewOverloadFacts, NegOverloadFacts, IntegerDivisionFacts, MixedTypeArithmeticFacts, NegativeLiteralLexFacts, UnaryMinusShorthandFacts, InfixRejectedFacts) + Migrate26 csproj scaffold
+- [x] 26-02-PLAN.md — Wave 1 GREEN mega-commit (D-13): delete BinaryExpression.cs + ParseAdditive/ParseMultiplicative/ParseUnary arithmetic; add ParseUnaryShorthand; lexer _lastEmittedType + TryLexSignedNumber (music-context excluded); EvaluateBinary delete + EvaluateFunctionCall coercion fix; 14 new builtin registrations + 12 StdLib helpers + std.flow Long/Number/neg/idiv decls
+- [x] 26-03-PLAN.md — Wave 2: scripts/Migrate26 walker implementation (token-stream rewrite, precedence climber, note-stream skip, defensive concat) + idempotence smoke test
+- [ ] 26-04-PLAN.md — Wave 3: mass migration of all .flow files + SHA256 byte-identical hash gate (pre/post examples/output/flow_{tutorial,showcase}.{wav,mid}) + persistent xUnit guard verification
+- [ ] 26-05-PLAN.md — Wave 4: CLAUDE.md prefix-only rule (line 148 lambda + line 175 AST row delete + Core bullet) + REQUIREMENTS/ROADMAP/STATE closure + 26-VERIFICATION.md final report
 
 ### Phase 26.1: Symbols + Tuples + Dicts (INSERTED)
 **Goal**: Three tightly-coupled language additions land together — Symbol primitive type (`#foo` syntax, interned), Tuple type (`<<a, b, c>>` literal with per-position types and arity, `~>` unpack flow operator, destructuring assignment, `@N` indexing), and generic `Dict<K, V>` with hashable keys (Int, Long, Float, String, Symbol, Note, Chord, Tuple-of-hashables). Dicts surface via builtins only (no literal syntax — preserves S-expr style and avoids `{...}` collision with Phase 19 tuplets).
@@ -230,9 +235,22 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   7. Existing `tutorial.flow` + `showcase.flow` remain cmp-clean (no regression to byte-identical determinism)
 **Plans**: TBD
 
+### Phase 26.2: Music Type Ergonomics + FX Overloads (INSERTED)
+**Goal**: Special music types (Decibel, Beat, Cent, Semitone, Millisecond, Second) are currently a documentation lie — they read nicely in code but can't be passed to the audio FX functions that should accept them (Decibel + Beat have ZERO numeric compatibility; Millisecond/Second only convert to each other; only Cent is fully functional). Phase normalizes type compatibility (Cent precedent), registers music-type overloads on every FX builtin where the parameter is conceptually musical, and decides the `gain` dB-vs-linear policy (charitable interpretation per memory — likely splits into `gain(Buffer, Decibel)` for dB and `volume(Buffer, Float)` for linear). Surfaced from quick task 260504-v6j follow-up: a user typed `(gain rendered -12dB)` and got "No matching overload for function 'gain' with argument types (Buffer, Decibel)" — the special types are useless if they can't reach the functions named after them.
+**Depends on**: Nothing (orthogonal to 26 / 26.1; can ship in parallel)
+**Requirements**: ERG-01, ERG-02, ERG-03 (+ optional ERG-04 Hertz type)
+**Success Criteria** (what must be TRUE):
+  1. All six music types implement `IsCompatibleWith` / `CanConvertTo` against their primitive numeric counterpart (CentType precedent); Decibel + Beat accept Double / Float; Millisecond / Second / Semitone reach Double / Float / Int sites consistently (ERG-01)
+  2. Music-type overloads registered for `gain(Buffer, Decibel)`, `delay(Buffer, Millisecond, ...)`, `compress(Buffer, ..., Millisecond, Millisecond)`, `sidechain(..., Millisecond, Millisecond)` and any other FX site where a music type is the natural read (ERG-02)
+  3. `gain` dB-vs-linear policy decided and documented in CLAUDE.md; if the split path is chosen, `volume(Buffer, Float)` ships alongside `gain(Buffer, Decibel)` and the bare-`Double` overload's behavior is locked down (ERG-03)
+  4. Optional: `Hertz` type with `440Hz` / `1.5kHz` literal syntax + lowpass/highpass/bandpass music-type overloads (ERG-04)
+  5. New facts cover every overload + compatibility path (TDD discipline; mirrors existing music-type fact files)
+  6. Existing flow-lang.Tests pass; `tutorial.flow` + `showcase.flow` remain cmp-clean (byte-identical determinism preserved)
+**Plans**: TBD
+
 ### Phase 27: Tutorial + Showcase Refresh
 **Goal**: `examples/tutorial.flow` and `examples/showcase.flow` demonstrate every v1.3 feature end-to-end with byte-identical determinism; v1.1 + v1.2 chapters preserved (last per v1.2 precedent — Phase 16 was the v1.2 tutorial-refresh closer)
-**Depends on**: Phases 18-26.1 (every v1.3 feature must be live before tutorial can demonstrate it, including Phase 26 prefix-op standardization and Phase 26.1 symbols/tuples/dicts)
+**Depends on**: Phases 18-26.2 (every v1.3 feature must be live before tutorial can demonstrate it, including Phase 26 prefix-op standardization, Phase 26.1 symbols/tuples/dicts, and Phase 26.2 music-type FX overloads)
 **Requirements**: QOL-04
 **Success Criteria** (what must be TRUE):
   1. `examples/tutorial.flow` demonstrates tuplets `{3:2 ...}q`, fractional `C4/12`, range, multi-letter enharmonics, negative slice, `enable hAsB;` pragma, arpeggio/voicings/delay-sync/quantize/legato/portamento/varispeed-loadWav, named-tuning microtonal, scale-lint pragma, `humanizeGaussian`, prefix-only arithmetic via `(add)`/`(sub)`/`(mul)`/`(div)`, symbol `#foo`, tuple `<<a, b>>` with `~>` unpack, generic `Dict<K, V>` keyed by `Note` and `Symbol` via `(dict K V ...)` + `(get d k)` (QOL-04)
@@ -270,6 +288,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 23. Microtonal Tuning (Wedge) | v1.3 | 5/5 | Complete   | 2026-05-04 |
 | 24. Scale Linting (flow-lsp) | v1.3 | 6/6 | Complete   | 2026-05-04 |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 5/5 | Complete   | 2026-05-04 |
-| 26. Op Standardization (Prefix-Only) | v1.3 | 0/N | Not started | - |
+| 26. Op Standardization (Prefix-Only) | v1.3 | 3/5 | In Progress|  |
 | 26.1. Symbols + Tuples + Dicts | v1.3 | 0/N | Not started | - |
+| 26.2. Music Type Ergonomics + FX Overloads | v1.3 | 0/N | Not started | - |
 | 27. Tutorial + Showcase Refresh | v1.3 | 0/N | Not started | - |

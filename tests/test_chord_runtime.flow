@@ -1,0 +1,135 @@
+Note: QUICK-260504-cks — runtime (chord String) constructor + expanded vocabulary
+use "std.flow"
+
+Note: === Triads ===
+(print (str (chord "C")))
+(print (str (chord "Cmaj")))
+(print (str (chord "CM")))
+(print (str (chord "Cm")))
+(print (str (chord "Cmin")))
+(print (str (chord "Cdim")))
+(print (str (chord "Caug")))
+
+Note: === Power chord (5) ===
+Note: lexer-form C5 stays as a NOTE; string-form is the power chord
+(print (str (chord "C5")))
+(print (str (chord "G5")))
+
+Note: === Sixths ===
+(print (str (chord "C6")))
+(print (str (chord "Cm6")))
+(print (str (chord "C69")))
+(print (str (chord "C6/9")))
+(print (str (chord "Cm69")))
+
+Note: === Sevenths ===
+(print (str (chord "C7")))
+(print (str (chord "Cdom7")))
+(print (str (chord "Cmaj7")))
+(print (str (chord "CM7")))
+(print (str (chord "Cm7")))
+(print (str (chord "Cmin7")))
+(print (str (chord "Cdim7")))
+(print (str (chord "Cm7b5")))
+(print (str (chord "Cm7f5")))
+(print (str (chord "CmMaj7")))
+
+Note: === Sus + 7 ===
+(print (str (chord "Csus2")))
+(print (str (chord "Csus4")))
+(print (str (chord "Csus")))
+(print (str (chord "C7sus4")))
+(print (str (chord "C7sus2")))
+(print (str (chord "C9sus4")))
+
+Note: === Ninths ===
+(print (str (chord "C9")))
+(print (str (chord "Cmaj9")))
+(print (str (chord "CM9")))
+(print (str (chord "Cm9")))
+(print (str (chord "Cmin9")))
+(print (str (chord "CmMaj9")))
+
+Note: === Elevenths ===
+(print (str (chord "C11")))
+(print (str (chord "Cmaj11")))
+(print (str (chord "CM11")))
+(print (str (chord "Cm11")))
+
+Note: === Thirteenths ===
+(print (str (chord "C13")))
+(print (str (chord "Cmaj13")))
+(print (str (chord "CM13")))
+(print (str (chord "Cm13")))
+
+Note: === Adds ===
+(print (str (chord "Cadd9")))
+(print (str (chord "Cadd11")))
+(print (str (chord "Cadd13")))
+(print (str (chord "Cadd2")))
+(print (str (chord "Cadd4")))
+(print (str (chord "Cmadd9")))
+
+Note: === Altered sevenths (b/# === f/s aliases) ===
+(print (str (chord "C7b5")))
+(print (str (chord "C7f5")))
+(print (str (chord "C7#5")))
+(print (str (chord "C7s5")))
+(print (str (chord "C7b9")))
+(print (str (chord "C7f9")))
+(print (str (chord "C7#9")))
+(print (str (chord "C7s9")))
+(print (str (chord "C7#11")))
+(print (str (chord "C7s11")))
+(print (str (chord "C7b13")))
+(print (str (chord "C7f13")))
+
+Note: === Altered ninths/thirteenths/maj7 ===
+(print (str (chord "C9b5")))
+(print (str (chord "C9#11")))
+(print (str (chord "C13b9")))
+(print (str (chord "C13#11")))
+(print (str (chord "Cmaj7#11")))
+(print (str (chord "Cmaj7b5")))
+(print (str (chord "Cmaj9#11")))
+(print (str (chord "Cm7b9")))
+(print (str (chord "Cm9b5")))
+
+Note: === Sharps and flats in the ROOT (b/# === f/s) ===
+(print (str (chord "C#")))
+(print (str (chord "Cs")))
+(print (str (chord "Db")))
+(print (str (chord "Df")))
+(print (str (chord "Bbm7")))
+(print (str (chord "Bfm7")))
+(print (str (chord "F#maj7")))
+(print (str (chord "Fsmaj7")))
+
+Note: === Slash bass (string-form only — / is a token boundary in literals) ===
+(print (str (chord "C/G")))
+(print (str (chord "C/E")))
+(print (str (chord "Am/E")))
+(print (str (chord "G7/B")))
+(print (str (chord "F/A")))
+
+Note: === Charitable on garbage — TryParseFlexible returns Void, no exception thrown ===
+Note: We just call it (don't bind to a Chord-typed var, since Void→Chord assignment is a separate-concern type error).
+(chord "this-is-not-a-chord")
+(chord "")
+(chord "Z9")
+(print "garbage path survived")
+
+Note: === Cross-check: existing literal forms STILL produce identical results ===
+Note: Literal Cmaj7 vs (chord "Cmaj7")
+String fromLiteral = (str Cmaj7)
+String fromString  = (str (chord "Cmaj7"))
+(print (concat "literal: " fromLiteral))
+(print (concat "string : " fromString))
+
+Note: === Note-stream chord injection (already worked — prove it's unbroken) ===
+timesig 4/4 {
+    Sequence seq = | Cmaj7 Am7 Dm G7 |
+    (print (str seq))
+}
+
+(print "All runtime chord tests passed!")

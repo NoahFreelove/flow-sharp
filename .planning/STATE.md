@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: Phase 25 shipped (DEFER-06); Phase 26 unblocked
-stopped_at: Phase 25 closed; Phase 26 ready to plan
-last_updated: "2026-05-04T23:50:00.000Z"
-last_activity: 2026-05-04 -- Phase 25 shipped (DEFER-06)
+status: executing
+stopped_at: Phase 26 context gathered
+last_updated: "2026-05-05T03:14:11.541Z"
+last_activity: 2026-05-05 -- Phase 26 execution started
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 8
-  total_plans: 37
-  completed_plans: 37
-  percent: 100
+  total_plans: 42
+  completed_plans: 38
+  percent: 90
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 26 — Op Standardization (Prefix-Only)
+**Current focus:** Phase 26 — op-standardization-prefix-only
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 26 (Op Standardization, Prefix-Only) — READY TO PLAN
-Plan: 0 of TBD
-Status: Phase 25 shipped (DEFER-06); Phase 26 unblocked
-Last activity: 2026-05-04 -- Phase 25 shipped (DEFER-06)
+Phase: 26 (op-standardization-prefix-only) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 26
+Last activity: 2026-05-05 - Completed quick task 260504-w24 (Decibel/Beat numeric compat hot fix); Phase 26 execution in progress (1/5 plans complete)
 
 Progress: [██████████] 100%
 
@@ -485,6 +485,9 @@ None yet for Phase 15.
 | 260502-lhm | Setup GitHub wiki sync workflow (manual workflow_dispatch → ./wiki/ mirrors to <repo>.wiki.git) | 2026-05-02 | 771bd2d | [260502-lhm-setup-github-wiki-sync-workflow](./quick/260502-lhm-setup-github-wiki-sync-workflow/) |
 | 260502-lum | Buffer pretty-print + hex-dump builtins (prettyBuffer, bufferHex) | 2026-05-02 | 94620a7 | [260502-lum-add-pretty-printing-for-printing-out-buf](./quick/260502-lum-add-pretty-printing-for-printing-out-buf/) |
 | 260502-oib | `noise` builtin — 4 arity overloads wrapping SynthUtils.GenerateWhiteNoise | 2026-05-02 | 08d505a | [260502-oib-add-noise-builtin-noise-seconds-overload](./quick/260502-oib-add-noise-builtin-noise-seconds-overload/) |
+| 260504-v6j | Scale ADSR envelope to note duration so short staccato notes get attack + decay + brief release instead of mid-decay truncation | 2026-05-05 | ae97f09 | [260504-v6j-scale-adsr-envelope-to-note-duration-in-](./quick/260504-v6j-scale-adsr-envelope-to-note-duration-in-/) |
+| 260504-cks | (chord String\|Note) runtime constructor + ChordParser vocabulary expanded from 18 to ~80 entries (5/6/7/9/11/13 + sus + add + alterations with b/# === f/s aliases + slash bass) | 2026-05-04 | 00d9e2e | [260504-cks-chord-string-constructor-comprehensive-vocab](./quick/260504-cks-chord-string-constructor-comprehensive-vocab/) |
+| 260504-w24 | Hot fix: Decibel + Beat numerically compatible with Double/Float (CentType precedent) + explicit gain(Buffer, Decibel) overload — unblocks `(gain rendered -12dB)` ergonomics; broader cleanup queued as Phase 26.2 | 2026-05-05 | 1960a92 | [260504-w24-hot-fix-make-decibel-and-beat-types-nume](./quick/260504-w24-hot-fix-make-decibel-and-beat-types-nume/) |
 
 ## Deferred Items
 
@@ -501,9 +504,9 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-04T23:50:00.000Z
-Stopped at: Phase 25 closed; Phase 26 ready to plan
-Resume file: .planning/phases/25-gaussian-humanize-last-prng-phase/25-VERIFICATION.md
+Last session: 2026-05-05T02:01:26.944Z
+Stopped at: Phase 26 context gathered
+Resume file: .planning/phases/26-op-standardization-prefix-only/26-CONTEXT.md
 
 **Completed Phase:** 25 (Gaussian Humanize, LAST PRNG phase) — 5 plans across 5 waves — closed 2026-05-04
 

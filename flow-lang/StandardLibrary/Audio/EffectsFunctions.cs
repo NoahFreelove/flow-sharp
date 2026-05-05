@@ -288,6 +288,14 @@ public static class EffectsFunctions
         var gainSig = new FunctionSignature("gain",
             [BufferType.Instance, DoubleType.Instance]);
         registry.Register("gain", gainSig, GainEffect);
+
+        // gain(Buffer, Decibel) -> Buffer — same dB semantics, exact-match score (1000)
+        // beats the compat path's score (500) and gives parity with transpose(Sequence, Cent)
+        // for documentation/discoverability. Delegates to the same GainEffect lambda; the
+        // underlying value's data is already a double (see Value.Decibel in Runtime/Value.cs).
+        var gainDecibelSig = new FunctionSignature("gain",
+            [BufferType.Instance, DecibelType.Instance]);
+        registry.Register("gain", gainDecibelSig, GainEffect);
     }
 
     /// <summary>

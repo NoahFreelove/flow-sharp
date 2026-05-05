@@ -189,6 +189,28 @@ public partial class Parser
                 _current = savedPos;
             }
 
+            // Phase 26 D-15: detect stray arithmetic operators at statement-start.
+            // After Phase 26 there are no infix operators, so a leading +/-/*// at
+            // statement boundary indicates legacy infix that was abandoned mid-rewrite.
+            // ParseUnaryShorthand would otherwise silently absorb the '+' (D-03) or
+            // emit (neg IDENT) for `-x`, which masks `1 + 2` style legacy code as
+            // a no-op success. Generic 'unexpected token' is the contract per D-15.
+            if (Check(TokenType.Star) || Check(TokenType.Slash))
+            {
+                throw new ParseException(
+                    $"Unexpected token '{CurrentToken.Text}' at {CurrentToken.Location} — Phase 26 removed infix arithmetic; use prefix builtins (add)/(sub)/(mul)/(div).");
+            }
+            // For Plus/Minus, only error when not followed by an identifier (D-01 shorthand)
+            // and not followed by a digit (already handled by lexer). The remaining cases
+            // are stray operators between value-producing tokens.
+            if ((Check(TokenType.Plus) || Check(TokenType.Minus))
+                && _current + 1 < _tokens.Count
+                && _tokens[_current + 1].Type != TokenType.Identifier)
+            {
+                throw new ParseException(
+                    $"Unexpected token '{CurrentToken.Text}' at {CurrentToken.Location} — Phase 26 removed infix arithmetic; use prefix builtins (add)/(sub)/(mul)/(div).");
+            }
+
             // Expression statement
             var expr = ParseExpression();
             return new ExpressionStatement(expr.Location, expr);
@@ -662,15 +684,16 @@ public partial class Parser
         }
     }
 
-    // Flow operator has lower precedence than arithmetic
+    // Phase 26: arithmetic is now prefix-only; ParseFlowExpression dispatches directly
+    // to ParseUnaryShorthand (the post-Phase-26 successor of ParseAdditive/ParseUnary).
     private Expression ParseFlowExpression()
     {
-        var left = ParseAdditive();
+        var left = ParseUnaryShorthand();
 
         while (Match(TokenType.Arrow))
         {
             var location = PreviousToken.Location;
-            var right = ParseAdditive();
+            var right = ParseUnaryShorthand();
 
             // Transform right side if it's an identifier or function call
             // x -> func becomes func(x)
@@ -686,7 +709,7 @@ public partial class Parser
                 if (!IsAtEnd() && Check(TokenType.LParen)
                     && CurrentToken.Location.Line == varExpr.Location.Line)
                 {
-                    args.Add(ParseAdditive());
+                    args.Add(ParseUnaryShorthand());
                 }
                 right = new FunctionCallExpression(right.Location, varExpr.Name, args);
             }
@@ -710,55 +733,28 @@ public partial class Parser
         return left;
     }
 
-    private Expression ParseAdditive()
+    // Phase 26 (D-01 + D-03): replaces deleted ParseUnary/ParseAdditive/ParseMultiplicative.
+    // Arithmetic is now prefix-only via (add)/(sub)/(mul)/(div)/(neg)/(idiv) builtins.
+    // The remaining "unary" responsibilities are:
+    //   D-03: silently strip leading '+' at expression-start (no node emitted)
+    //   D-01: leading '-' followed by an identifier lowers to (neg IDENT)
+    private Expression ParseUnaryShorthand()
     {
-        var left = ParseMultiplicative();
-
-        while (Match(TokenType.Plus, TokenType.Minus))
+        // D-03: silently strip '+' at expression-start (no node emitted)
+        if (Match(TokenType.Plus))
         {
-            var op = PreviousToken.Type == TokenType.Plus
-                ? BinaryOperator.Add
-                : BinaryOperator.Subtract;
-            var location = PreviousToken.Location;
-            var right = ParseMultiplicative();
-            left = new BinaryExpression(location, left, op, right);
+            // No-op; just continue
         }
-
-        return left;
-    }
-
-    private Expression ParseMultiplicative()
-    {
-        var left = ParseUnary();
-
-        while (Match(TokenType.Star, TokenType.Slash))
+        // D-01: '-' followed by identifier → (neg IDENT)
+        if (Check(TokenType.Minus) && _current + 1 < _tokens.Count
+            && _tokens[_current + 1].Type == TokenType.Identifier)
         {
-            var op = PreviousToken.Type == TokenType.Star
-                ? BinaryOperator.Multiply
-                : BinaryOperator.Divide;
-            var location = PreviousToken.Location;
-            var right = ParseUnary();
-            left = new BinaryExpression(location, left, op, right);
+            var loc = CurrentToken.Location;
+            Advance(); // consume '-'
+            var name = Advance().Text;
+            return new FunctionCallExpression(loc, "neg",
+                new List<Expression> { new VariableExpression(loc, name) });
         }
-
-        return left;
-    }
-
-    private Expression ParseUnary()
-    {
-        if (Match(TokenType.Minus, TokenType.Plus))
-        {
-            var op = PreviousToken.Type == TokenType.Minus
-                ? BinaryOperator.Subtract
-                : BinaryOperator.Add;
-            var location = PreviousToken.Location;
-            var right = ParseUnary();
-
-            // Unary minus/plus as 0 - x or 0 + x
-            var zero = new LiteralExpression(location, 0);
-            return new BinaryExpression(location, zero, op, right);
-        }
-
         return ParsePostfix();
     }
 
@@ -771,7 +767,7 @@ public partial class Parser
             if (Match(TokenType.At))
             {
                 // Array indexing: arr@index (supports unary minus for negative indices)
-                var index = ParseUnary();
+                var index = ParseUnaryShorthand();
                 expr = new ArrayIndexExpression(expr.Location, expr, index);
             }
             else if (Match(TokenType.Dot))
@@ -802,8 +798,11 @@ public partial class Parser
         }
 
         // Literals
+        // Phase 26: IntLiteral may carry an int, long, or BigInteger payload depending
+        // on whether the literal overflowed Int32. Pass the boxed Value through —
+        // EvaluateLiteral dispatches on the underlying CLR type.
         if (Match(TokenType.IntLiteral))
-            return new LiteralExpression(PreviousToken.Location, (int)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Value!);
 
         if (Match(TokenType.FloatLiteral))
             return new LiteralExpression(PreviousToken.Location, (double)PreviousToken.Value!);
@@ -937,7 +936,7 @@ public partial class Parser
                 while (!IsAtEnd() && IsArgumentStart(CurrentToken.Type)
                        && CurrentToken.Location.Line == location.Line)
                 {
-                    args.Add(ParseUnary()); // Parse argument expression
+                    args.Add(ParseUnaryShorthand()); // Parse argument expression
                 }
 
                 return new FunctionCallExpression(location, name, args);

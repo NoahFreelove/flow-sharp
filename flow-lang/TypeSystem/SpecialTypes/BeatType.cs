@@ -1,3 +1,5 @@
+using FlowLang.TypeSystem.PrimitiveTypes;
+
 namespace FlowLang.TypeSystem.SpecialTypes;
 
 /// <summary>
@@ -14,4 +16,14 @@ public sealed class BeatType : FlowType
     public override string Name => "Beat";
 
     public override int GetSpecificity() => 139;
+
+    /// <summary>
+    /// Beat is compatible with Double and Float — Beat is stored as a fractional double
+    /// (e.g. 1.5 = one and a half beats), so passing a Beat to a Double-typed parameter
+    /// (e.g. arithmetic builtins, user procs) just works. Mirrors CentType.
+    /// </summary>
+    public override bool IsCompatibleWith(FlowType target)
+    {
+        return target is DoubleType or FloatType || base.IsCompatibleWith(target);
+    }
 }

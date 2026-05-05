@@ -12,8 +12,10 @@ internal proc len(String: s)
 
 Note: str overloads for all types
 internal proc str (Int: value)
+internal proc str (Long: value)
 internal proc str (Float: value)
 internal proc str (Double: value)
+internal proc str (Number: value)
 internal proc str (String: value)
 internal proc str (Bool: value)
 internal proc str (Note: value)
@@ -35,18 +37,41 @@ Note: Type conversions
 internal proc intToDouble (Int: value)
 internal proc doubleToInt (Double: value)
 
+Note: Arithmetic — 5-type same-type fast paths per Phase 26 D-05
 internal proc add (Int: a, Int: b)
+internal proc add (Long: a, Long: b)
 internal proc add (Float: a, Float: b)
 internal proc add (Double: a, Double: b)
+internal proc add (Number: a, Number: b)
 
 internal proc sub (Int: a, Int: b)
+internal proc sub (Long: a, Long: b)
+internal proc sub (Float: a, Float: b)
 internal proc sub (Double: a, Double: b)
+internal proc sub (Number: a, Number: b)
 
 internal proc mul (Int: a, Int: b)
+internal proc mul (Long: a, Long: b)
+internal proc mul (Float: a, Float: b)
 internal proc mul (Double: a, Double: b)
+internal proc mul (Number: a, Number: b)
 
+Note: (div Int Int) auto-promotes to Double per D-08; use (idiv) for Int truncation
 internal proc div (Int: a, Int: b)
+internal proc div (Long: a, Long: b)
+internal proc div (Float: a, Float: b)
 internal proc div (Double: a, Double: b)
+internal proc div (Number: a, Number: b)
+
+Note: Negation — 5-pack per Phase 26 D-07
+internal proc neg (Int: x)
+internal proc neg (Long: x)
+internal proc neg (Float: x)
+internal proc neg (Double: x)
+internal proc neg (Number: x)
+
+Note: Integer division (truncating) per Phase 26 D-08
+internal proc idiv (Int: a, Int: b)
 
 Note: String-to-number conversions
 internal proc stringToInt (String: s)
@@ -114,6 +139,8 @@ internal proc decrescendo (Sequence: seq, Double: startVel, Double: endVel)
 internal proc swell (Sequence: seq, Double: edgeVel, Double: peakVel)
 
 Note: Harmony and chord functions
+internal proc chord (String: symbol)
+internal proc chord (Note: noteShapedSymbol)
 internal proc chordNotes (Chord: c)
 internal proc chordRoot (Chord: c)
 internal proc chordQuality (Chord: c)
