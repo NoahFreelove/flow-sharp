@@ -68,7 +68,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 - [x] **Phase 22: Tier B/C Composer DX Bundle** — arpeggio params, chord inversions/voicings, delay sync to NoteValue, snap-to-grid quantize, legato/portamento articulations, varispeed loadWav — Shipped 2026-05-02 (commits 6500412, 95582e7, 5fba059, 98da48e, d3f5350, d2bde5d)
 - [x] **Phase 23: Microtonal Tuning (Wedge)** — Named-tunings via pragma (`enable justIntonation;` / `enable pythagorean;` / `enable equalTemperament;`); Pattern A `RenderTuning` value object threaded through `PitchConversion.NoteToFrequency` + 13 synthesizers; 7 JI + 7 Pythagorean mode-keyed ratio tables; `ScaleDatabase.TryParseKeyWithMode` 5-church-mode extension; `RenderingDiagnostics` one-shot warnings for D-11/D-13; transforms remain MIDI-pitch invariant per MICR-02 — Shipped 2026-05-03 (commits b6b916b + 39ef570 + 47d7718 + f6b00ba + 470c3cb + 8190fb2 + 4ea0927 + 3e6a3ba + ba27282 + 4f85eaf + closure)
 - [x] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts — Shipped 2026-05-04 (zero flow-lang touch beyond one PragmaRegistry line)
-- [ ] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()`
+- [x] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()` — Shipped 2026-05-04 (commits 528cfe1 + b9017fc + 3cc3a11 + 5169db8 + closure)
 - [ ] **Phase 26: Op Standardization (Prefix-Only)** — Eliminate infix `+ - * /`; add `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering numeric widening chain; remove `BinaryExpression`/`BinaryOperator` AST nodes; migrate stdlib + ~70 .flow tests; foundation for Phase 26.1
 - [ ] **Phase 26.1: Symbols + Tuples + Dicts (INSERTED)** — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op, destructuring, `@N` indexing, per-position types), generic `Dict<K, V>` with hashable keys (Int/Long/Float/String/Symbol/Note/Chord/Tuple); dicts via `(dict K V ...)` + `(dictTuple <<K,V>> ...)` builtins (no literal syntax)
 - [ ] **Phase 27: Tutorial + Showcase Refresh** — `examples/tutorial.flow` + `examples/showcase.flow` exercise every v1.3 feature end-to-end (including prefix-only arithmetic, symbols, tuples, dicts); byte-identical determinism re-pinned
@@ -197,7 +197,12 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   1. Composer can call `humanizeGaussian(seq, 0.1, 42)` and get Gaussian-distributed velocity perturbation via Box-Muller transform; same seed produces deterministic velocity bytes pinned by Fact (DEFER-06)
   2. Existing `humanize(seq, 0.1, 42)` produces identical bytes to v1.2 — uniform path UNCHANGED, byte-identical determinism contract preserved across two consecutive runs (DEFER-06)
   3. Two consecutive runs of `showcase.flow` (now including a Gaussian-humanize call site) produce cmp-clean WAV + MIDI output (DEFER-06)
-**Plans**: TBD
+**Plans**: 5 plans
+- [x] 25-00-PLAN.md — Wave 0 test scaffolding (HumanizeGaussianFacts skeleton + ByteIdenticalShowcaseGaussianTests skeleton + smoke .flow + FlowScriptData entry) — Shipped 646425e + bcabebb + 1ae0796 + 528cfe1
+- [x] 25-01-PLAN.md — MusicalNoteData.With(velocity:) helper extension + 4 NoteTypeWithVelocityFacts (RESEARCH critical-bug avoidance precondition) — Shipped 5efb23f + b9017fc
+- [x] 25-02-PLAN.md — humanizeGaussian + RegisterHumanizeGaussian + NextGaussianSample + std.flow declaration + 7 D-23 Facts GREEN — Shipped 9c3553e + a928628 + 3cc3a11
+- [x] 25-03-PLAN.md — Showcase wrap (D-20) + tutorial chapter (D-22) + smoke .flow real body + Phase25 byte-identical Facts GREEN — Shipped 24fd415 + ab08b37 + 8be8c66 + 5169db8
+- [x] 25-04-PLAN.md — Closure: REQUIREMENTS/ROADMAP/STATE/VERIFICATION + Phase 18 byte-identical regression confirmation — Shipped 2026-05-04
 
 ### Phase 26: Op Standardization (Prefix-Only)
 **Goal**: Eliminate infix arithmetic operators in favor of S-expression prefix builtins, aligning the entire language with the no-infix-operators philosophy (MEMORY: feedback_language_philosophy). Removes `BinaryExpression`/`BinaryOperator` AST nodes; adds `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering the full numeric widening chain (Int → Long → Float → Double → Number); migrates all stdlib + ~70 .flow tests.
@@ -264,7 +269,7 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 22. Tier B/C Composer DX Bundle | v1.3 | 7/7 | Complete   | 2026-05-02 |
 | 23. Microtonal Tuning (Wedge) | v1.3 | 5/5 | Complete   | 2026-05-04 |
 | 24. Scale Linting (flow-lsp) | v1.3 | 6/6 | Complete   | 2026-05-04 |
-| 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 0/N | Not started | - |
+| 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 5/5 | Complete   | 2026-05-04 |
 | 26. Op Standardization (Prefix-Only) | v1.3 | 0/N | Not started | - |
 | 26.1. Symbols + Tuples + Dicts | v1.3 | 0/N | Not started | - |
 | 27. Tutorial + Showcase Refresh | v1.3 | 0/N | Not started | - |

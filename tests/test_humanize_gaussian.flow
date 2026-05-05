@@ -1,0 +1,26 @@
+use "@std"
+use "@audio"
+
+// Phase 25 DEFER-06 — humanizeGaussian(Sequence, Double, Int) Box-Muller.
+// amount = 0.1 + seed = 42 pins deterministic Gaussian-perturbed velocities.
+// Run A writes to phase25_humanize_gaussian_a.mid; Run B with identical seed writes to
+// phase25_humanize_gaussian_b.mid. Authoritative byte-level gate is
+// flow-lang.Tests/Integration/Phase25/ByteIdenticalShowcaseGaussianTests.cs.
+tempo 120 {
+    timesig 4/4 {
+        // Run A
+        Sequence baseSeq = | C4q D4q E4q F4q |
+        Sequence a = (humanizeGaussian baseSeq 0.1 42)
+        section sa { a }
+        Song songA = [sa]
+        (writeMidi "tests/output/phase25_humanize_gaussian_a.mid" songA)
+        (print "humanizeGaussian seed=42: PASSED")
+
+        // Run B — identical seed, must produce byte-identical MIDI to run A.
+        Sequence b = (humanizeGaussian baseSeq 0.1 42)
+        section sb { b }
+        Song songB = [sb]
+        (writeMidi "tests/output/phase25_humanize_gaussian_b.mid" songB)
+        (print "two runs byte-identical: PASSED")
+    }
+}

@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: executing
-stopped_at: Phase 24 shipped — Phase 25 ready
-last_updated: "2026-05-04T18:00:00.000Z"
-last_activity: 2026-05-04 -- Phase 24 shipped (LINT-01/02/03)
-phase: 25
+status: Phase 25 shipped (DEFER-06); Phase 26 unblocked
+stopped_at: Phase 25 closed; Phase 26 ready to plan
+last_updated: "2026-05-04T23:50:00.000Z"
+last_activity: 2026-05-04 -- Phase 25 shipped (DEFER-06)
 progress:
   total_phases: 11
-  completed_phases: 7
-  total_plans: 32
-  completed_plans: 32
+  completed_phases: 8
+  total_plans: 37
+  completed_plans: 37
   percent: 100
 ---
 
@@ -22,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 25 — Gaussian Humanize (LAST PRNG phase)
+**Current focus:** Phase 26 — Op Standardization (Prefix-Only)
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 25 (Gaussian Humanize) — READY TO PLAN
+Phase: 26 (Op Standardization, Prefix-Only) — READY TO PLAN
 Plan: 0 of TBD
-Status: Phase 24 shipped (LINT-01/02/03); Phase 25 unblocked
-Last activity: 2026-05-04 -- Phase 24 shipped (LINT-01/02/03)
+Status: Phase 25 shipped (DEFER-06); Phase 26 unblocked
+Last activity: 2026-05-04 -- Phase 25 shipped (DEFER-06)
 
 Progress: [██████████] 100%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 24 closed 2026-05-04. v1.3 milestone now 7/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24). Phase 25 (Gaussian Humanize, DEFER-06) is the next ROADMAP target — must be the LAST PRNG-touching phase per binding pre-ordering #5 (Pitfall 6 byte-identical determinism). Existing uniform `humanize()` UNCHANGED; new `humanizeGaussian()` ships as separate function via Box-Muller transform. Phase 26 (Op Standardization, Prefix-Only) also unblocked; Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
+Phase 25 closed 2026-05-04. v1.3 milestone now 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25). Phase 26 (Op Standardization, Prefix-Only) is the next ROADMAP target — eliminates infix arithmetic operators in favor of S-expression prefix builtins. Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
 
 Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
@@ -59,6 +58,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 22 | 7 | ~73min | ~10min |
 | 23 | 5 | ~76min | ~15min |
 | 24 | 6 | ~30min | ~5min |
+| 25 | 5 | ~17min | ~3.4min |
 
 **Recent Trend:**
 
@@ -501,18 +501,18 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-04T18:00:00.000Z
-Stopped at: Phase 24 shipped — Phase 25 ready
-Resume file: .planning/phases/24-scale-linting-flow-lsp/24-VERIFICATION.md
+Last session: 2026-05-04T23:50:00.000Z
+Stopped at: Phase 25 closed; Phase 26 ready to plan
+Resume file: .planning/phases/25-gaussian-humanize-last-prng-phase/25-VERIFICATION.md
 
-**Completed Phase:** 24 (Scale Linting, flow-lsp) — 6 plans across 4 waves — closed 2026-05-04
+**Completed Phase:** 25 (Gaussian Humanize, LAST PRNG phase) — 5 plans across 5 waves — closed 2026-05-04
 
-**Planned Phase:** 25 (Gaussian Humanize, DEFER-06) — TBD plans — pending /gsd-plan-phase 25
+**Planned Phase:** 26 (Op Standardization, Prefix-Only) — TBD plans — pending /gsd-plan-phase 26
 
 ## Resume Instructions (next PC)
 
-Phase 24 closed 2026-05-04. v1.3 milestone now 7/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24). Phase 25 (Gaussian Humanize, DEFER-06) is the next ROADMAP target — must be the LAST PRNG-touching phase per binding pre-ordering #5 (Pitfall 6 byte-identical determinism). Existing uniform `humanize()` UNCHANGED; new `humanizeGaussian()` ships as separate function via Box-Muller transform. Phase 26 (Op Standardization, Prefix-Only) and Phase 26.1 (Symbols + Tuples + Dicts) also unblocked; Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
+Phase 25 closed 2026-05-04. v1.3 milestone now 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25). Phase 26 (Op Standardization, Prefix-Only) is the next ROADMAP target — eliminates infix arithmetic `+ - * /` in favor of S-expression prefix builtins (`(add)`, `(sub)`, `(mul)`, `(div)`, `(neg)`, `(concat)`). Phase 26.1 (Symbols + Tuples + Dicts) follows; Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
 
-1. `/gsd-progress` — confirm Phase 24 at 6/6 plans, milestone v1.3 at 7/10 phases
-2. `/gsd-plan-phase 25` — plan Phase 25: Gaussian humanize (DEFER-06). `humanizeGaussian(seq, amount, seed)` ships as a separate built-in (Box-Muller transform); existing `humanize(seq, amount, seed)` uniform path UNCHANGED to preserve v1.2 byte-identical determinism contract for tutorial.flow + showcase.flow (Pitfall 6).
-3. After Phase 25: Phase 26 (Op Standardization, Prefix-Only) — eliminates infix `+ - * /` in favor of `(add)` / `(sub)` / `(mul)` / `(div)` builtins; foundation for Phase 26.1 (Symbols + Tuples + Dicts). Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature is live.
+1. `/gsd-progress` — confirm Phase 25 at 5/5 plans, milestone v1.3 at 8/10 phases
+2. `/gsd-plan-phase 26` — plan Phase 26: Op Standardization. Eliminate `BinaryExpression`/`BinaryOperator` AST nodes; ship `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering Int → Long → Float → Double → Number widening chain; migrate stdlib + ~70 .flow tests; tutorial.flow + showcase.flow remain cmp-clean.
+3. After Phase 26: Phase 26.1 (Symbols + Tuples + Dicts) — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op), generic `Dict<K, V>`. Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature is live.

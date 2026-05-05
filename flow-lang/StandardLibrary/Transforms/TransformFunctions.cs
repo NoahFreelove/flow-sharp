@@ -26,6 +26,7 @@ public static class TransformFunctions
         RegisterDynamicTransforms(registry);
         RegisterTempoTransforms(registry);
         RegisterHumanize(registry);
+        RegisterHumanizeGaussian(registry);  // PHASE 25 (DEFER-06)
         RegisterOrnamentTransforms(registry);
     }
 
@@ -900,6 +901,77 @@ public static class TransformFunctions
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }
         return Value.Sequence(result);
+    }
+
+    // ===== Humanize Gaussian =====
+    // PHASE 25 (DEFER-06): humanizeGaussian(Sequence, Double, Int) Box-Muller transform.
+    //
+    // Anchors decisions from .planning/phases/25-gaussian-humanize-last-prng-phase/25-CONTEXT.md:
+    //   D-01  signature (Sequence, Double, Int) order (seq, amount, seed)
+    //   D-03  LOCAL new Random(seed) per call; does NOT read or mutate ExecutionContext.GetRand.
+    //         Mirrors VariationFunctions.VarySeeded at :71-77 and BuiltInFunctions.cs:1258.
+    //   D-05  basic Box-Muller (cos branch); D-06 sin discarded
+    //   D-07  velJitter = z * amount * 0.2 (matches uniform humanize jitter range)
+    //   D-08  amount clamped to [0, 1]; D-09 velocity clamped to [0.05, 1.0]
+    //   D-10  amount==0 short-circuit returns input unchanged
+    //   D-11  rests pass through; D-12/D-13 empty/all-rest sequences pass through
+    //   D-18  existing Humanize is FROZEN — humanizeGaussian uses note.With(velocity:)
+    //         to avoid repeating the 12-arg ctor field-drop bug at :896-898
+    //
+    // NOTE: System.Random is NOT cryptographically secure. humanizeGaussian is for
+    // musical jitter only — never use for security purposes.
+
+    private static void RegisterHumanizeGaussian(InternalFunctionRegistry registry)
+    {
+        var sig = new FunctionSignature("humanizeGaussian",
+            [SequenceType.Instance, DoubleType.Instance, IntType.Instance]);
+        registry.Register("humanizeGaussian", sig, HumanizeGaussian);
+    }
+
+    private static Value HumanizeGaussian(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);  // D-08
+        int seed = args[2].As<int>();                                // D-15
+
+        if (amount == 0.0) return Value.Sequence(seq);               // D-10 short-circuit
+
+        // D-03: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
+        // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
+        var rng = new Random(seed);
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest) { newNotes.Add(note); continue; }   // D-11
+
+                double z = NextGaussianSample(rng);                  // D-05/D-06
+                double velJitter = z * amount * 0.2;                 // D-07
+                double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);  // D-09
+
+                // RESEARCH §Critical Pre-Existing Bug: use With(velocity:) to preserve
+                // all 17 MusicalNoteData fields (Plan 25-01 extended With with velocity slot).
+                newNotes.Add(note.With(velocity: newVelocity));
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    // D-17: extracted helper for testability — basic Box-Muller (cos branch).
+    // Two NextDouble draws produce one N(0, 1) sample. Sin companion DISCARDED per D-06.
+    // Math.Max(u1, 1e-300) guards Math.Log(0) divergence (Pitfall 2: Random.NextDouble
+    // contract is [0, 1) so 0.0 IS a possible output; the 1e-300 floor produces a
+    // worst-case ~37-stddev Gaussian sample, clamped at velocity boundary — benign).
+    private static double NextGaussianSample(Random rng)
+    {
+        double u1 = rng.NextDouble();
+        double u2 = rng.NextDouble();
+        u1 = Math.Max(u1, 1e-300);  // guard log(0); see Pitfall 2 in 25-RESEARCH.md
+        return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
     }
 
     // ===== Ornament Transforms (Trill / Tremolo) =====

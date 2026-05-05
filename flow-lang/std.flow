@@ -134,6 +134,7 @@ internal proc fermata (Sequence: seq, Int: noteIndex)
 
 Note: Humanize
 internal proc humanize (Sequence: seq, Double: amount)
+internal proc humanizeGaussian (Sequence: seq, Double: amount, Int: seed)
 
 Note: Ornament transforms
 internal proc trill (Sequence: seq, Semitone: interval)

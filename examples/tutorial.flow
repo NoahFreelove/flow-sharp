@@ -524,6 +524,31 @@ tempo 120 {
 }
 
 Note: -----------------------------------------------------------
+Note: 18.5 Gaussian Humanize -- Bell-Curve Velocity Perturbation
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 18.5 Gaussian Humanize ---")
+(print "")
+Note: 'humanizeGaussian(seq, amount, seed)' applies bell-curve velocity jitter
+Note: via the Box-Muller transform. Same `amount` parameter as uniform humanize,
+Note: but z ~ N(0, 1) means most jitter clusters near zero with occasional larger
+Note: excursions -- sounds more "human" than uniform humanize's flat distribution.
+Note: The seed parameter makes the output byte-identical across runs.
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence myMelody    = | C4q D4q E4q F4q |
+        Note: Uniform jitter -- flat distribution, non-deterministic (uses static Random)
+        Sequence uniformFeel = (humanize myMelody 0.1)
+        (print $"uniform humanize: {(str uniformFeel)}")
+
+        Note: Gaussian jitter -- bell distribution, deterministic per seed=42
+        Sequence naturalFeel = (humanizeGaussian myMelody 0.1 42)
+        (print $"gaussian humanize seed=42: {(str naturalFeel)}")
+    }
+}
+
+Note: -----------------------------------------------------------
 Note: 19. Voice Synthesis with sing
 Note: -----------------------------------------------------------
 (print "")

@@ -231,6 +231,15 @@ public static class FlowScriptData
             "two runs byte-identical: PASSED",
         },
 
+        // Phase 25 DEFER-06: humanizeGaussian(Sequence, Double, Int) seeded Box-Muller.
+        // Wave 0 placeholder — Plan 25-02 replaces the .flow body with humanizeGaussian +
+        // writeMidi + byte-identical-two-runs check while preserving both sentinels.
+        ["test_humanize_gaussian.flow"] = new[]
+        {
+            "humanizeGaussian seed=42: PASSED",
+            "two runs byte-identical: PASSED",
+        },
+
         // Phase 20-01 (DEFER-01): pin range(Int, Int) + range(Int, Int, Int) success sentinels.
         // 2-arg form, 3-arg positive step, 3-arg negative step (via (sub 0 1) per Pitfall 4),
         // and the whole-run pass marker. If any range overload misregistered, the corresponding

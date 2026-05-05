@@ -82,7 +82,7 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 
 ### Gaussian Humanize (LAST PRNG phase)
 
-- [ ] **DEFER-06**: Per D-04, a new `humanizeGaussian(sequence, amount, seed)` built-in applies Gaussian-distributed velocity perturbation via Box-Muller transform. Existing `humanize(...)` (uniform) UNCHANGED — preserves v1.2 byte-identical determinism contract for tutorial.flow + showcase.flow (Pitfall 6 mitigation). Acceptance: `humanizeGaussian(seq, 0.1, 42)` with seed=42 produces deterministic velocity bytes pinned by Fact; existing `humanize(seq, 0.1, 42)` produces identical bytes to v1.2.
+- [x] **DEFER-06**: Per D-04, a new `humanizeGaussian(sequence, amount, seed)` built-in applies Gaussian-distributed velocity perturbation via Box-Muller transform. Existing `humanize(...)` (uniform) UNCHANGED — preserves v1.2 byte-identical determinism contract for tutorial.flow + showcase.flow (Pitfall 6 mitigation). Acceptance: `humanizeGaussian(seq, 0.1, 42)` with seed=42 produces deterministic velocity bytes pinned by Fact; existing `humanize(seq, 0.1, 42)` produces identical bytes to v1.2. — Shipped Phase 25 plans 25-00..25-04
 
 ### Dictionary Support
 
@@ -151,7 +151,7 @@ REQ-ID numbering continues from v1.2 (last used: SPIKE-05, FIX-07a, TEST-04, DX-
 | LINT-01 | Phase 24 | Shipped Phase 24 plans 24-00..24-04 |
 | LINT-02 | Phase 24 | Shipped Phase 24 plans 24-00..24-04 |
 | LINT-03 | Phase 24 | Shipped Phase 24 plans 24-00..24-04 |
-| DEFER-06 | Phase 25 | Pending |
+| DEFER-06 | Phase 25 | Shipped Phase 25 plans 25-00..25-04 |
 | DICT-01 | Phase 26 | Pending |
 | DICT-02 | Phase 26 | Pending |
 | DICT-03 | Phase 26 | Pending |

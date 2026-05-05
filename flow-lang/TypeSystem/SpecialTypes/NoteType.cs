@@ -317,11 +317,14 @@ public class MusicalNoteData
     public MusicalNoteData With(
         double? onsetOffset = null,
         double? durationOverlap = null,
-        double? portamentoMs = null)
+        double? portamentoMs = null,
+        double? velocity = null)              // PHASE 25 (DEFER-06): velocity slot
     {
         return new MusicalNoteData(
             NoteName, Octave, Alteration, DurationValue, IsRest,
-            CentOffset, IsTied, Velocity, Articulation, IsDotted,
+            CentOffset, IsTied,
+            velocity ?? Velocity,             // PHASE 25 (DEFER-06): velocity override
+            Articulation, IsDotted,
             SourceLocation, SourceLength, DurationFraction,
             onsetOffset: onsetOffset ?? OnsetOffset,
             durationOverlap: durationOverlap ?? DurationOverlap,

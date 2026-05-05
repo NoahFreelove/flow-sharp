@@ -17,7 +17,7 @@ tempo 72 {
             Sequence pulse = (euclidean 5 16 A2 0.18 0.12 7)
 
             // Soft mezzo-piano melody floating above the bed
-            Sequence melody = | mp _ _ E5q G5q | A5h E5h | _ _ G5q B5q | A5w |
+            Sequence melody = (humanizeGaussian | mp _ _ E5q G5q | A5h E5h | _ _ G5q B5q | A5w | 0.08 314)
 
             // Long reverb tail wraps the whole piece
             reverbTime 3.2 {
