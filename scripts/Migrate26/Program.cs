@@ -42,8 +42,14 @@ internal static class Program
             try { after = Migrate(before); }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"ERROR migrating {file}: {ex.Message}");
-                return 2;
+                // File fails to lex — likely a pre-existing broken/aspirational test
+                // (e.g. tests/test_special_identifiers.flow uses `#`, `$`, `?`, `<>`
+                // which the lexer rejects). Skip it: a file that can't lex can't run,
+                // so migrating it has no effect on byte-identical output. Logged so
+                // operators can audit which files were skipped.
+                Console.Error.WriteLine($"SKIP (lex error): {file}: {ex.Message}");
+                skipped++;
+                continue;
             }
             if (before != after)
             {
@@ -127,6 +133,63 @@ internal static class Program
             {
                 // Inside note stream — pass through (Pitfall 3).
                 idx++;
+                continue;
+            }
+
+            // Musical-context keywords (Timesig, Tempo, Key, Pan, Swing) take a
+            // literal value as their argument — NOT a general expression. The
+            // parser hard-codes the shape (e.g., timesig 4/4 expects IntLit Slash
+            // IntLit). If we let the additive walker run on `4/4` it rewrites to
+            // `(div 4 4)`, which the parser then rejects with "Expected integer
+            // numerator". Skip past the keyword + its literal payload so the
+            // walker never sees those tokens.
+            if (t.Type == TokenType.Timesig)
+            {
+                idx++; // past 'timesig'
+                // Optional sign on numerator (defensive — parser allows none, but be safe)
+                if (idx < tokens.Count && (tokens[idx].Type == TokenType.Plus || tokens[idx].Type == TokenType.Minus)) idx++;
+                if (idx < tokens.Count && tokens[idx].Type == TokenType.IntLiteral) idx++;
+                if (idx < tokens.Count && tokens[idx].Type == TokenType.Slash) idx++;
+                if (idx < tokens.Count && tokens[idx].Type == TokenType.IntLiteral) idx++;
+                continue;
+            }
+            if (t.Type == TokenType.Tempo || t.Type == TokenType.Swing || t.Type == TokenType.Pan)
+            {
+                idx++; // past keyword
+                // Single numeric literal (with optional unary sign) per parser.
+                if (idx < tokens.Count && (tokens[idx].Type == TokenType.Plus || tokens[idx].Type == TokenType.Minus)) idx++;
+                if (idx < tokens.Count && (tokens[idx].Type == TokenType.IntLiteral || tokens[idx].Type == TokenType.FloatLiteral)) idx++;
+                continue;
+            }
+            if (t.Type == TokenType.Key)
+            {
+                idx++; // past 'key'
+                // Key value is an Identifier (Cmajor, Fminor, etc.) — atomic.
+                if (idx < tokens.Count && tokens[idx].Type == TokenType.Identifier) idx++;
+                continue;
+            }
+
+            // Square brackets at top level are SONG ARRANGEMENT context (`[intro
+            // verse*2 chorus]`), NOT array literal. The `*` between section name
+            // and repeat count is not arithmetic — it's parser-level repeat
+            // syntax (Parser.ParseSongExpression). The bracket handling inside
+            // TryParsePrimarySpan correctly captures `[...]` verbatim, but only
+            // when the bracket is part of a larger expression span (so its idx
+            // advancement reaches the outer loop). If the bracket sits at the
+            // start of a statement (no preceding value-producing token), the
+            // outer loop falls through and individually visits the inside
+            // tokens, where it would rewrite `verse*2` to `(mul verse 2)`. Skip
+            // past matching `]` here so song arrangements are never visited.
+            if (t.Type == TokenType.LBracket)
+            {
+                int depth = 1;
+                idx++;
+                while (idx < tokens.Count && depth > 0)
+                {
+                    if (tokens[idx].Type == TokenType.LBracket) depth++;
+                    else if (tokens[idx].Type == TokenType.RBracket) depth--;
+                    idx++;
+                }
                 continue;
             }
 
