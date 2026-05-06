@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Composer DX Tier B/C
-status: executing
-stopped_at: Phase 26 context gathered
-last_updated: "2026-05-05T03:14:11.541Z"
-last_activity: 2026-05-05 -- Phase 26 execution started
+status: paused
+stopped_at: Phase 26 Wave 3 — paused before commit; walker fixes salvaged as a5a026e (Wave 2.1)
+last_updated: "2026-05-05T20:30:00.000Z"
+last_activity: 2026-05-05 -- Wave 3 mass-migration aborted before commit (3 architectural blockers); walker fixes salvaged as a5a026e
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 42
-  completed_plans: 38
-  percent: 90
+  completed_plans: 41
+  percent: 92
 ---
 
 # Project State
@@ -21,21 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 26 — op-standardization-prefix-only
+**Current focus:** Phase 26 — op-standardization-prefix-only (Wave 3 paused; fix phase needed)
 
 ## Current Position
 
 Milestone: v1.3 Composer DX Tier B/C
-Phase: 26 (op-standardization-prefix-only) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 26
-Last activity: 2026-05-05 - Completed quick task 260504-w24 (Decibel/Beat numeric compat hot fix); Phase 26 execution in progress (1/5 plans complete)
+Phase: 26 (op-standardization-prefix-only) — PAUSED at Wave 3
+Plan: 3 of 5 complete (26-01, 26-02, 26-03 + Wave 2.1 walker fixes); 26-04 paused, 26-05 deferred
+Status: Wave 3 mass-migration aborted before commit — see `.planning/phases/26-op-standardization-prefix-only/.continue-here.md` for the three architectural blockers (Pitfall 2 str(Int[]), squash-bundled ADSR cross-HEAD shift, D-08 div-Int type mismatch). Three blocking anti-patterns recorded.
+Last activity: 2026-05-05 - Wave 3 attempt aborted before commit; reverted 8 .flow migrations; salvaged Migrate26/Program.cs walker fixes as a5a026e (lex-error skip + musical-context guard + square-bracket guard); .continue-here.md captures full forensics
 
-Progress: [██████████] 100%
+Progress: [█████████░] 92%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 25 closed 2026-05-04. v1.3 milestone now 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25). Phase 26 (Op Standardization, Prefix-Only) is the next ROADMAP target — eliminates infix arithmetic operators in favor of S-expression prefix builtins. Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
+Phase 25 closed 2026-05-04. v1.3 milestone now 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25). Phase 26 (Op Standardization, Prefix-Only) is paused mid-Wave-3 — three architectural blockers prevent the byte-identical SHA256 gate from passing at HEAD `a5a026e` (full forensics in `.planning/phases/26-op-standardization-prefix-only/.continue-here.md`).
+
+**To resume:** plan a fix phase (suggested: Phase 26.A or 26-fix-omissions) addressing Blockers 1 (`(str Int[])` Pitfall 2 coercion in `EvaluateFunctionCall`), 3 (`(div Int Int)` Int-target rewrite — hand-fix or smarter walker), and a planner decision on Blocker 2 (gate semantics: Path A drop cross-HEAD, or Path B re-baseline at HEAD-pre-migration). After that fix phase commits, retry `/gsd-execute-phase 26` — Wave 3 will resume from plan 26-04, then close out via plan 26-05.
+
+Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after Phase 26 lands.
 
 Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
 
