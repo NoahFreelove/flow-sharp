@@ -1,0 +1,19 @@
+use "@std"
+
+Note: DX-06 enharmonic — no key context (sharp↔flat flip; naturals unchanged per D-05)
+(print (str (enharmonic Db4)))
+(print (str (enharmonic F#3)))
+(print (str (enharmonic C4)))
+(print (str (enharmonic E4)))
+
+Note: DX-06 enharmonic — in-key respelling (Dbmajor, Pitfall 3 mitigation gate)
+key Dbmajor {
+    (print (str (enharmonic C#4)))
+}
+
+Note: DX-06 enharmonic — chromatic-not-in-scale falls to no-key flip
+key Cmajor {
+    (print (str (enharmonic F#4)))
+}
+
+(print "test_enharmonic: PASSED")

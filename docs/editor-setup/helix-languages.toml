@@ -1,0 +1,31 @@
+# Flow Language Server configuration for Helix.
+#
+# Append these blocks to: ~/.config/helix/languages.toml
+#
+# Prerequisite: the `flow-lsp` binary on your PATH.
+#   Option A -- Download a release tarball from:
+#     https://github.com/noah-freelove/flow-sharp/releases
+#   Option B -- Build from source:
+#     dotnet publish flow-lsp/flow-lsp.csproj \
+#       -c Release -r linux-x64 --self-contained \
+#       -p:PublishSingleFile=true \
+#       -o ~/.local/bin/flow-lsp-dir
+#     (replace linux-x64 with win-x64, osx-x64, or osx-arm64 as needed)
+#
+# IMPORTANT: the binary requires the six shipped stdlib .flow files
+# (std, collections, audio, bars, notation, composition) to sit in the
+# same directory as flow-lsp. dotnet publish handles this via the
+# flow-lsp csproj's <CopyToOutputDirectory> settings -- do not move
+# the binary alone.
+
+[[language]]
+name = "flow"
+scope = "source.flow"
+file-types = ["flow"]
+roots = [".git", ".flowproject"]
+comment-token = "//"
+indent = { tab-width = 4, unit = "    " }
+language-servers = ["flow-lsp"]
+
+[language-server.flow-lsp]
+command = "flow-lsp"

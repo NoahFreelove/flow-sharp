@@ -343,7 +343,20 @@ public static class StdLib
             return otherwise.Force();
         }
     }
-    
+
+    /// <summary>
+    /// Strict (non-Lazy) if overload. Both branches are eagerly evaluated
+    /// at the call site (the interpreter resolves args before dispatch),
+    /// but only the selected value is returned. Matches the Lazy-if contract
+    /// for concrete (non-Thunk) arguments. Uses Void-wildcard dispatch.
+    /// </summary>
+    public static Value IfStrict(IReadOnlyList<Value> args)
+    {
+        var cond = args[0].As<bool>();
+        return cond ? args[1] : args[2];
+    }
+
+
     public static Value And(IReadOnlyList<Value> args)
     {
         var leftLazy = args[0];                                                                                         

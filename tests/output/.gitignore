@@ -1,0 +1,3 @@
+# Phase 15 regression artifacts — regenerate on each run; do not commit binaries.
+*.wav
+*.mid

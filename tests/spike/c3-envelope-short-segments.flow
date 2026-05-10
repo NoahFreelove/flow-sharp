@@ -1,0 +1,93 @@
+use "@std"
+use "@audio"
+
+Note: ===== SPIKE C3: EnvelopeProcessor div-by-zero on sub-frame durations =====
+Note: Reference: flow-lang/StandardLibrary/Audio/EnvelopeProcessor.cs lines 108, 120, 150, 156, 169
+Note: Audit hypothesis (C3): `(float)i / attackFrames` divides by zero when any envelope
+Note: segment duration rounds to 0 frames (very short attacks/releases or very low sample rates).
+Note: Architecture hypothesis: `for (int i = 0; i < attackFrames; i++)` never runs when
+Note: attackFrames == 0, so the division inside the body is unreachable.
+
+Note: Reachability confirmed by grep:
+Note:   flow-lang/StandardLibrary/BuiltInFunctions.cs:532 registers createAR
+Note:   flow-lang/StandardLibrary/BuiltInFunctions.cs:537 registers createADSR
+Note:   flow-lang/StandardLibrary/BuiltInFunctions.cs:542 registers applyEnvelope
+Note: So user .flow code CAN drive these code paths with arbitrary sample rates.
+
+Note: ===== Probe construction notes =====
+Note: Buffer: 4410 frames of stereo silence at SR=44100 (0.1 sec).
+Note: Attack 0.00001 sec * 44100 = 0.441 -> (int) truncates to 0 attackFrames.
+Note: Decay / release same math.
+Note: If C3 is real (pitfalls agent hypothesis), the probes below will raise a
+Note: DivideByZeroException or write NaN into the output buffer.
+Note: If C3 is false positive (architecture agent hypothesis), every probe prints its
+Note: survived sentinel and the program exits cleanly with code 0.
+
+Int SR = 44100
+Int CHANNELS = 2
+Int FRAMES = 4410
+
+Note: --- Probe 1: AR envelope with sub-frame attack, normal release ---
+Note: Targets line 108: curve[frame] = (float)i / attackFrames with attackFrames == 0.
+Buffer b1 = (createBuffer FRAMES CHANNELS SR)
+Double zero = (intToDouble 0)
+Double one = (intToDouble 1)
+(fillBuffer b1 one)
+Envelope e1 = (createAR 0.00001 0.05 SR)
+(applyEnvelope b1 e1)
+(print "c3-probe1-survived")
+
+Note: --- Probe 2: AR envelope with BOTH sub-frame attack AND sub-frame release ---
+Note: Targets both line 108 AND line 120 in one pass.
+Buffer b2 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b2 one)
+Envelope e2 = (createAR 0.00001 0.00001 SR)
+(applyEnvelope b2 e2)
+(print "c3-probe2-survived")
+
+Note: --- Probe 3: ADSR with every segment sub-frame ---
+Note: Targets lines 150, 156, and 169 simultaneously.
+Buffer b3 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b3 one)
+Envelope e3 = (createADSR 0.00001 0.00001 0.8 0.00001 SR)
+(applyEnvelope b3 e3)
+(print "c3-probe3-survived")
+
+Note: --- Probe 4: low sample rate so that even a 1ms attack truncates to 0 frames ---
+Note: SR=100, 0.001 sec * 100 = 0.1 frames -> truncates to 0.
+Int LOW_SR = 100
+Int LOW_FRAMES = 200
+Buffer b4 = (createBuffer LOW_FRAMES CHANNELS LOW_SR)
+(fillBuffer b4 one)
+Envelope e4 = (createAR 0.001 0.001 LOW_SR)
+(applyEnvelope b4 e4)
+(print "c3-probe4-survived")
+
+Note: --- Probe 5: ADSR at low sample rate, all segments sub-frame ---
+Buffer b5 = (createBuffer LOW_FRAMES CHANNELS LOW_SR)
+(fillBuffer b5 one)
+Envelope e5 = (createADSR 0.001 0.001 0.5 0.001 LOW_SR)
+(applyEnvelope b5 e5)
+(print "c3-probe5-survived")
+
+Note: --- Probe 6: control -- normal durations MUST also work (regression guard) ---
+Buffer b6 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b6 one)
+Envelope e6 = (createAR 0.01 0.02 SR)
+(applyEnvelope b6 e6)
+(print "c3-probe6-survived")
+
+(print "c3-all-probes-complete")
+
+Note: ===== Expected output under hypothesis "C3 is Dismissed" (architecture agent) =====
+Note:   c3-probe1-survived
+Note:   c3-probe2-survived
+Note:   c3-probe3-survived
+Note:   c3-probe4-survived
+Note:   c3-probe5-survived
+Note:   c3-probe6-survived
+Note:   c3-all-probes-complete
+Note:
+Note: ===== Expected output under hypothesis "C3 is Confirmed" (pitfalls agent) =====
+Note:   Any missing "probeN-survived" line plus a DivideByZeroException on stderr.
+Note:   A renderer crash on any of probes 1-5 would confirm the audit claim.

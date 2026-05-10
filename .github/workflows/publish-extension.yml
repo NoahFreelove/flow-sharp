@@ -1,0 +1,160 @@
+name: Publish Flow Extension
+
+# Builds per-platform self-contained flow-lsp binaries (4 RIDs), packages four
+# VSIXs (one per vsce --target, see Pitfall 7: win32-x64 != win-x64, darwin-x64
+# != osx-x64), smoke-tests each binary via scripts/lsp-smoke.sh, and on tag
+# push (v*) publishes all 4 VSIXs to both the VSCode Marketplace and OpenVSX.
+#
+# Gates enforced here per 17-RESEARCH.md Pitfalls:
+# - Pitfall 4: assembly trimming is NEVER set on dotnet publish below;
+#   OmniSharp uses reflection and trimming removes required handler types.
+# - Pitfall 6: stdlib .flow files (std, collections, audio, bars, notation,
+#   composition) MUST land beside the binary so ModuleLoader.ResolveStdlibPath
+#   finds them in the shipped VSIX
+# - Pitfall 7: vsce target names (linux-x64, win32-x64, darwin-x64, darwin-arm64)
+#   are NOT the .NET RIDs (linux-x64, win-x64, osx-x64, osx-arm64)
+#
+# OpenVSX namespace claim (`npx ovsx create-namespace <publisher>`) is a one-time
+# manual action documented in plan 17-08's Marketplace setup runbook -- it is
+# NOT part of this workflow.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-server:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - rid: linux-x64
+            target: linux-x64
+            runner: ubuntu-latest
+            exe: flow-lsp
+          - rid: win-x64
+            target: win32-x64
+            runner: windows-latest
+            exe: flow-lsp.exe
+          - rid: osx-x64
+            target: darwin-x64
+            runner: macos-13
+            exe: flow-lsp
+          - rid: osx-arm64
+            target: darwin-arm64
+            runner: macos-14
+            exe: flow-lsp
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Publish flow-lsp (${{ matrix.rid }} -> ${{ matrix.target }})
+        shell: bash
+        run: |
+          dotnet publish flow-lsp/flow-lsp.csproj \
+            -c Release \
+            -r ${{ matrix.rid }} \
+            --self-contained \
+            -p:PublishSingleFile=true \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:_IsPublishing=true \
+            -o vscode-extension/server/${{ matrix.target }}
+
+      - name: Copy stdlib .flow files beside binary (Pitfall 6)
+        shell: bash
+        run: |
+          cp flow-lang/std.flow vscode-extension/server/${{ matrix.target }}/
+          cp flow-lang/collections.flow vscode-extension/server/${{ matrix.target }}/
+          cp flow-lang/audio.flow vscode-extension/server/${{ matrix.target }}/
+          cp flow-lang/bars.flow vscode-extension/server/${{ matrix.target }}/
+          cp flow-lang/notation.flow vscode-extension/server/${{ matrix.target }}/
+          cp flow-lang/composition.flow vscode-extension/server/${{ matrix.target }}/
+
+      - name: Verify stdlib .flow files present (Pitfall 6 gate)
+        shell: bash
+        run: |
+          test -f vscode-extension/server/${{ matrix.target }}/std.flow
+          test -f vscode-extension/server/${{ matrix.target }}/collections.flow
+          test -f vscode-extension/server/${{ matrix.target }}/audio.flow
+          test -f vscode-extension/server/${{ matrix.target }}/bars.flow
+          test -f vscode-extension/server/${{ matrix.target }}/notation.flow
+          test -f vscode-extension/server/${{ matrix.target }}/composition.flow
+          echo "OK: all 6 stdlib .flow files present beside flow-lsp binary"
+
+      - name: Ensure binary is executable (POSIX)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: chmod +x vscode-extension/server/${{ matrix.target }}/${{ matrix.exe }}
+
+      - name: Smoke-test the LSP binary
+        shell: bash
+        run: |
+          chmod +x scripts/lsp-smoke.sh || true
+          bash scripts/lsp-smoke.sh "vscode-extension/server/${{ matrix.target }}/${{ matrix.exe }}"
+
+      - name: Install VSCode extension dependencies
+        shell: bash
+        working-directory: vscode-extension
+        run: npm ci
+
+      - name: Compile TypeScript
+        shell: bash
+        working-directory: vscode-extension
+        run: npm run compile
+
+      - name: Run TextMate grammar snapshot tests
+        shell: bash
+        working-directory: vscode-extension
+        run: npm run test:grammar
+
+      - name: Package VSIX (${{ matrix.target }})
+        shell: bash
+        working-directory: vscode-extension
+        run: npx --yes @vscode/vsce package --target ${{ matrix.target }} -o ../flow-${{ matrix.target }}.vsix
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ matrix.target }}
+          path: flow-${{ matrix.target }}.vsix
+          if-no-files-found: error
+
+  publish:
+    needs: build-server
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    strategy:
+      # One platform failing must not block the others - partial publish is
+      # preferable to full rollback when one registry hiccups.
+      fail-fast: false
+      matrix:
+        target: [linux-x64, win32-x64, darwin-x64, darwin-arm64]
+    steps:
+      - name: Download VSIX artifact (${{ matrix.target }})
+        uses: actions/download-artifact@v4
+        with:
+          name: vsix-${{ matrix.target }}
+          path: artifacts
+
+      - name: Publish to VSCode Marketplace (${{ matrix.target }})
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.VSCE_PAT }}
+          extensionFile: artifacts/flow-${{ matrix.target }}.vsix
+          registryUrl: https://marketplace.visualstudio.com
+
+      - name: Publish to OpenVSX (${{ matrix.target }})
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.OVSX_PAT }}
+          extensionFile: artifacts/flow-${{ matrix.target }}.vsix

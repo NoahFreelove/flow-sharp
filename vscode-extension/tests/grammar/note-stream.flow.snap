@@ -1,0 +1,73 @@
+>// Multi-bar note-stream fixture covering chords, rests, dotted notes,
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>// ties, random choice, and cent offsets across bar boundaries.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>tempo 120 {
+#^^^^^ source.flow keyword.control.flow
+#     ^ source.flow
+#      ^^^ source.flow constant.numeric.flow
+#         ^^^ source.flow
+>    key Cmajor {
+#^^^^ source.flow
+#    ^^^ source.flow keyword.control.flow
+#       ^^^^^^^^^^ source.flow
+>        | C4q D4q E4q F4q | G4q A4q B4q C5q |
+#^^^^^^^^ source.flow
+#        ^ source.flow punctuation.section.flow
+#         ^ source.flow
+#          ^^^ source.flow variable.other.note.flow
+#             ^ source.flow
+#              ^^^ source.flow variable.other.note.flow
+#                 ^ source.flow
+#                  ^^^ source.flow variable.other.note.flow
+#                     ^ source.flow
+#                      ^^^ source.flow variable.other.note.flow
+#                         ^ source.flow
+#                          ^ source.flow punctuation.section.flow
+#                           ^ source.flow
+#                            ^^^ source.flow variable.other.note.flow
+#                               ^ source.flow
+#                                ^^^ source.flow variable.other.note.flow
+#                                   ^ source.flow
+#                                    ^^^ source.flow variable.other.note.flow
+#                                       ^ source.flow
+#                                        ^^^ source.flow variable.other.note.flow
+#                                           ^ source.flow
+#                                            ^ source.flow punctuation.section.flow
+>        | Cmaj7h Dm7h | G7w |
+#^^^^^^^^ source.flow
+#        ^ source.flow punctuation.section.flow
+#         ^^^^^^^^^^^^^ source.flow
+#                      ^ source.flow punctuation.section.flow
+#                       ^ source.flow
+#                        ^^^ source.flow variable.other.note.flow
+#                           ^ source.flow
+#                            ^ source.flow punctuation.section.flow
+>        | (? C4 E4 G4) D4q |
+#^^^^^^^^ source.flow
+#        ^ source.flow punctuation.section.flow
+#         ^^^^ source.flow
+#             ^^ source.flow variable.other.note.flow
+#               ^ source.flow
+#                ^^ source.flow variable.other.note.flow
+#                  ^ source.flow
+#                   ^^ source.flow variable.other.note.flow
+#                     ^^ source.flow
+#                       ^^^ source.flow variable.other.note.flow
+#                          ^ source.flow
+#                           ^ source.flow punctuation.section.flow
+>        | C4+50c D4-25c |
+#^^^^^^^^ source.flow
+#        ^ source.flow punctuation.section.flow
+#         ^ source.flow
+#          ^^^^^^ source.flow variable.other.note.flow
+#                ^ source.flow
+#                 ^^ source.flow variable.other.note.flow
+#                   ^^^^ source.flow constant.numeric.flow
+#                       ^ source.flow
+#                        ^ source.flow punctuation.section.flow
+>    }
+#^^^^^^ source.flow
+>}
+#^^ source.flow
+>

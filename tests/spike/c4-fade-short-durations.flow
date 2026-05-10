@@ -1,0 +1,105 @@
+use "@std"
+use "@audio"
+
+Note: ===== SPIKE C4: BufferHelpers FadeIn/FadeOut div-by-zero on sub-frame durations =====
+Note: Reference: flow-lang/StandardLibrary/Audio/BufferHelpers.cs lines 130 (FadeIn) and 159 (FadeOut)
+Note: Audit hypothesis (C4): `(float)frame / fadeFrames` (line 130) and
+Note: `(float)(frame - fadeStart) / fadeFrames` (line 159) divide by zero when a fade duration
+Note: rounds to 0 frames (durationSeconds == 0, extremely small durations, or low sample rates).
+Note: Architecture hypothesis: `fadeFrames = Math.Min(fadeSamples, source.Frames)` combined with
+Note: `for (int frame = 0; frame < fadeFrames; frame++)` means the loop body never runs when
+Note: fadeFrames == 0 (FadeIn), and `for (int frame = fadeStart; frame < source.Frames; frame++)`
+Note: with fadeStart == source.Frames never runs when fadeFrames == 0 (FadeOut), so the
+Note: divisions inside the loop bodies are unreachable whenever the denominator is zero.
+
+Note: Reachability confirmed by grep:
+Note:   flow-lang/StandardLibrary/BuiltInFunctions.cs:517-520 registers fadeIn(Buffer, Double)
+Note:   flow-lang/StandardLibrary/BuiltInFunctions.cs:522-525 registers fadeOut(Buffer, Double)
+Note:   flow-lang/audio.flow:246 declares `internal proc fadeIn(Buffer, Double)`
+Note:   flow-lang/audio.flow:249 declares `internal proc fadeOut(Buffer, Double)`
+Note: So user .flow code CAN drive both fade code paths with arbitrary sub-frame durations.
+
+Note: ===== Probe construction notes =====
+Note: Buffer: 4410 frames of stereo content at SR=44100 (0.1 sec). fillBuffer puts 1.0 in every
+Note: sample so that fade multiplication is observable (non-zero input * ramp).
+Note: duration 0.00001 sec * 44100 = 0.441 -> (int) truncates to 0 fadeSamples -> fadeFrames = 0.
+Note: duration 0.0 sec * 44100 = 0 -> fadeFrames = 0 directly.
+Note: If C4 is real (pitfalls agent hypothesis), the probes below raise DivideByZeroException or
+Note: write NaN into the output buffer.
+Note: If C4 is false positive (architecture agent hypothesis), every probe prints its survived
+Note: sentinel and the program exits cleanly with code 0.
+
+Int SR = 44100
+Int CHANNELS = 2
+Int FRAMES = 4410
+
+Note: --- Probe 1: fadeIn with EXACTLY zero duration ---
+Note: Targets line 130: float t = (float)frame / fadeFrames with fadeFrames == 0.
+Buffer b1 = (createBuffer FRAMES CHANNELS SR)
+Double one = (intToDouble 1)
+(fillBuffer b1 one)
+Buffer f1 = (fadeIn b1 0.0)
+(print "c4-probe1-fadeIn-zero-survived")
+
+Note: --- Probe 2: fadeOut with EXACTLY zero duration ---
+Note: Targets line 159: float t = 1.0f - ((float)(frame - fadeStart) / fadeFrames) with fadeFrames == 0.
+Buffer b2 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b2 one)
+Buffer f2 = (fadeOut b2 0.0)
+(print "c4-probe2-fadeOut-zero-survived")
+
+Note: --- Probe 3: fadeIn with sub-frame duration (0.00001s * 44100 = 0.441 -> 0 frames) ---
+Buffer b3 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b3 one)
+Buffer f3 = (fadeIn b3 0.00001)
+(print "c4-probe3-fadeIn-subframe-survived")
+
+Note: --- Probe 4: fadeOut with sub-frame duration ---
+Buffer b4 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b4 one)
+Buffer f4 = (fadeOut b4 0.00001)
+(print "c4-probe4-fadeOut-subframe-survived")
+
+Note: --- Probe 5: low sample rate so even a 1ms fade truncates to 0 frames ---
+Note: SR=100, 0.001 sec * 100 = 0.1 -> truncates to 0.
+Int LOW_SR = 100
+Int LOW_FRAMES = 200
+Buffer b5 = (createBuffer LOW_FRAMES CHANNELS LOW_SR)
+(fillBuffer b5 one)
+Buffer f5 = (fadeIn b5 0.001)
+(print "c4-probe5-fadeIn-lowSR-survived")
+
+Note: --- Probe 6: fadeOut at low sample rate with 1ms duration ---
+Buffer b6 = (createBuffer LOW_FRAMES CHANNELS LOW_SR)
+(fillBuffer b6 one)
+Buffer f6 = (fadeOut b6 0.001)
+(print "c4-probe6-fadeOut-lowSR-survived")
+
+Note: --- Probe 7: control -- normal fadeIn (50ms at 44100 Hz = 2205 frames) ---
+Buffer b7 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b7 one)
+Buffer f7 = (fadeIn b7 0.05)
+(print "c4-probe7-fadeIn-normal-survived")
+
+Note: --- Probe 8: control -- normal fadeOut ---
+Buffer b8 = (createBuffer FRAMES CHANNELS SR)
+(fillBuffer b8 one)
+Buffer f8 = (fadeOut b8 0.05)
+(print "c4-probe8-fadeOut-normal-survived")
+
+(print "c4-all-probes-complete")
+
+Note: ===== Expected output under hypothesis "C4 is Dismissed" (architecture agent) =====
+Note:   c4-probe1-fadeIn-zero-survived
+Note:   c4-probe2-fadeOut-zero-survived
+Note:   c4-probe3-fadeIn-subframe-survived
+Note:   c4-probe4-fadeOut-subframe-survived
+Note:   c4-probe5-fadeIn-lowSR-survived
+Note:   c4-probe6-fadeOut-lowSR-survived
+Note:   c4-probe7-fadeIn-normal-survived
+Note:   c4-probe8-fadeOut-normal-survived
+Note:   c4-all-probes-complete
+Note:
+Note: ===== Expected output under hypothesis "C4 is Confirmed" (pitfalls agent) =====
+Note:   Any missing "probeN-survived" line plus a DivideByZeroException on stderr.
+Note:   A crash on any of probes 1-6 would confirm the audit claim at either line 130 or 159.

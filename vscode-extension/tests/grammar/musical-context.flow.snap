@@ -1,0 +1,53 @@
+>// Nested musical-context fixture exercising scope layering of
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>// tempo, timesig, key, and dynamics blocks.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>tempo 140 {
+#^^^^^ source.flow keyword.control.flow
+#     ^ source.flow
+#      ^^^ source.flow constant.numeric.flow
+#         ^^^ source.flow
+>    timesig 6/8 {
+#^^^^ source.flow
+#    ^^^^^^^ source.flow keyword.control.flow
+#           ^ source.flow
+#            ^ source.flow constant.numeric.flow
+#             ^ source.flow keyword.operator.flow
+#              ^ source.flow constant.numeric.flow
+#               ^^^ source.flow
+>        key Dminor {
+#^^^^^^^^ source.flow
+#        ^^^ source.flow keyword.control.flow
+#           ^^^^^^^^^^ source.flow
+>            dynamics p {
+#^^^^^^^^^^^^ source.flow
+#            ^^^^^^^^ source.flow keyword.control.flow
+#                    ^^^^^ source.flow
+>                | D4e D4e F4e | A4e F4e D4e |
+#^^^^^^^^^^^^^^^^ source.flow
+#                ^ source.flow punctuation.section.flow
+#                 ^ source.flow
+#                  ^^^ source.flow variable.other.note.flow
+#                     ^ source.flow
+#                      ^^^ source.flow variable.other.note.flow
+#                         ^ source.flow
+#                          ^^^ source.flow variable.other.note.flow
+#                             ^ source.flow
+#                              ^ source.flow punctuation.section.flow
+#                               ^ source.flow
+#                                ^^^ source.flow variable.other.note.flow
+#                                   ^ source.flow
+#                                    ^^^ source.flow variable.other.note.flow
+#                                       ^ source.flow
+#                                        ^^^ source.flow variable.other.note.flow
+#                                           ^ source.flow
+#                                            ^ source.flow punctuation.section.flow
+>            }
+#^^^^^^^^^^^^^^ source.flow
+>        }
+#^^^^^^^^^^ source.flow
+>    }
+#^^^^^^ source.flow
+>}
+#^^ source.flow
+>

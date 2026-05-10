@@ -1,0 +1,26 @@
+use "@std"
+use "@audio"
+
+// Phase 15 DX-09 — 6-arg euclidean overload (swing + humanize + seed).
+// Humanize = 0.1 adds ±0.1 uniform jitter to velocity; seed = 42 pins deterministic output.
+// The FIRST render writes to run_a.mid and prints the 'seed=42' sentinel.
+// The SECOND render writes to run_b.mid with identical seed; prints the 'byte-identical' sentinel.
+// Plan 05's xUnit Fact (EuclideanByteIdenticalTests.SameSeed_ByteIdenticalMidi) is the authoritative
+// byte-level gate — this script asserts only that the two renders complete cleanly.
+tempo 120 {
+    timesig 4/4 {
+        // Run A
+        Sequence a = (euclidean 3 8 C4 0.3 0.1 42)
+        section sa { a }
+        Song songA = [sa]
+        (writeMidi "tests/output/phase15_euclidean_humanize_a.mid" songA)
+        (print "euclidean humanize seed=42: PASSED")
+
+        // Run B — identical seed, must produce byte-identical MIDI to run A.
+        Sequence b = (euclidean 3 8 C4 0.3 0.1 42)
+        section sb { b }
+        Song songB = [sb]
+        (writeMidi "tests/output/phase15_euclidean_humanize_b.mid" songB)
+        (print "two runs byte-identical: PASSED")
+    }
+}

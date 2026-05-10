@@ -1,0 +1,3 @@
+# Phase 16 tutorial + showcase artifacts — regenerate on each run; do not commit binaries.
+*.wav
+*.mid

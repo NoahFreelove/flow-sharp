@@ -10,6 +10,41 @@ use "@std"
 (print "Hello, Flow!")
 ```
 
+## String Interpolation
+
+```flow
+use "@std"
+
+String name = "Flow"
+Int bpm = 120
+String key = "Cmajor"
+(print $"playing at {bpm} bpm in {key} on {name}")
+```
+
+## For Loop: Summing a Range
+
+```flow
+use "@std"
+
+Int total = 0
+for Int n in (range 1 11) {
+    total = total + n
+}
+(print $"sum 1..10 = {total}")    Note: 55
+```
+
+## While Loop with break
+
+```flow
+use "@std"
+
+Int i = 0
+while true {
+    i = i + 1
+    if (equals i 5) lazy (break) lazy (0)
+}
+(print $"stopped at {i}")
+
 ## Variables and Arithmetic
 
 ```flow
@@ -367,20 +402,92 @@ tempo 120 {
             }
             Song song = [melody]
 
-            Note: Same melody with different instruments
-            Buffer piano = (renderSong song "piano")
-            Buffer brass = (renderSong song "brass")
-            Buffer sax = (renderSong song "sax")
-            Buffer drums = (renderSong song "drums")
+            Note: same melody with different instruments
+            Buffer piano   = (renderSong song "piano")
+            Buffer brass   = (renderSong song "brass")
+            Buffer sax     = (renderSong song "sax")
+            Buffer flute   = (renderSong song "flute")
+            Buffer organ   = (renderSong song "organ")
+            Buffer strings = (renderSong song "strings")
+            Buffer bell    = (renderSong song "bell")
+            Buffer drums   = (renderSong song "drums")
 
-            (exportWav piano "piano.wav")
-            (exportWav brass "brass.wav")
-            (exportWav sax "sax.wav")
-            (exportWav drums "drums.wav")
-            (print "Exported all instruments!")
+            (exportWav piano   "piano.wav")
+            (exportWav strings "strings.wav")
+            (exportWav bell    "bell.wav")
+            (print "exported all instruments")
         }
     }
 }
+```
+
+## Chord Progression with Voice Leading
+
+```flow
+use "@std"
+use "@audio"
+
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+            section hook {
+                Sequence chords = progression voices 4 | I:2 vi IV V:2 |
+            }
+            Song song = [hook*4]
+            Buffer rendered = (renderSong song "piano")
+            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
+            (exportWav final "progression.wav")
+        }
+    }
+}
+```
+
+## MIDI Export
+
+```flow
+use "@std"
+use "@audio"
+
+tempo 140 {
+    timesig 3/4 {
+        key Gmajor {
+            section waltz {
+                | G4q B4q D5q |
+                | D5h G4q |
+            }
+            section ending { | G4h. | }
+
+            Song song = [waltz waltz ending]
+            (writeMidi "waltz.mid" song)
+            (print "wrote waltz.mid")
+        }
+    }
+}
+```
+
+## Loading a WAV Sample
+
+```flow
+use "@std"
+use "@audio"
+
+Buffer sample = (loadWav "kick.wav")
+Buffer processed = sample -> (pan 0.0) -> gain 0.0 -> reverb 0.2
+(exportWav processed "kick_processed.wav")
+```
+
+## Vocalization
+
+```flow
+use "@std"
+use "@audio"
+
+Buffer ah = (sing "ah" C4 0.5)
+Buffer ee = (sing "ee" E4 0.5)
+Buffer oh = (sing "oh" G4 0.5)
+
+Buffer melody = ah -> appendBuffers ee -> appendBuffers oh
+(exportWav melody "vocal_line.wav")
 ```
 
 ## Waltz in 3/4
@@ -447,3 +554,7 @@ tempo 120 {
 - [Quick Start](Quick-Start.md) - Getting started
 - [Tips and Tricks](Tips-and-Tricks.md) - Common idioms and pitfalls
 - [Standard Library](Standard-Library.md) - Complete function reference
+- [Chord Progressions](Chord-Progressions.md) - Voice-led chord DSL
+- [Generative Music](Generative.md) - Euclidean rhythms, variation, polyrhythms
+- [Voices and Tracks](Voices-and-Tracks.md) - Multi-track timeline
+- [Vocalization](Vocalization.md) - Formant synthesis

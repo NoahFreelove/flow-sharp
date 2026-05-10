@@ -125,6 +125,7 @@ public static class BufferHelpers
         var result = new AudioBuffer(source.Frames, source.Channels, source.SampleRate);
         Array.Copy(source.Data, result.Data, source.Data.Length);
 
+        // AUDIT-VERIFIED 2026-04-18: C4 — Dismissed: loop body only runs when fadeFrames > 0; same guard covers FadeOut line 159; see tests/spike/c4-fade-short-durations.flow
         for (int frame = 0; frame < fadeFrames; frame++)
         {
             float t = (float)frame / fadeFrames;

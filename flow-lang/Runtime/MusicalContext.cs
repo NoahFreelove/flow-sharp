@@ -39,6 +39,7 @@ public class MusicalContext
     public double? Velocity { get; set; }  // 0.0 to 1.0 (null = inherit, default mf = 0.63)
     public double? Pan { get; set; }  // -1.0 (left) to 1.0 (right), null = inherit
     public double? Gain { get; set; }  // 0.0 to 2.0 (null = inherit, default 1.0 at usage site)
+    public double? ReverbTime { get; set; }  // 0.0 (dry) to 30.0 (clamped ceiling), null = inherit; seconds
 
     /// <summary>
     /// Creates a new context with all values inherited (null).
@@ -56,7 +57,8 @@ public class MusicalContext
         Key = Key,
         Velocity = Velocity,
         Pan = Pan,
-        Gain = Gain
+        Gain = Gain,
+        ReverbTime = ReverbTime
     };
 
     /// <summary>
@@ -102,6 +104,7 @@ public class MusicalContext
         if (Velocity != null) parts.Add($"velocity={Velocity}");
         if (Pan != null) parts.Add($"pan={Pan}");
         if (Gain != null) parts.Add($"gain={Gain}");
+        if (ReverbTime != null) parts.Add($"reverbTime={ReverbTime}");
         return $"MusicalContext({string.Join(", ", parts)})";
     }
 }

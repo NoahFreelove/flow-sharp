@@ -1,84 +1,44 @@
-Note: ============================================================
-Note:  Flow Language Showcase — Features from Phases 1-4
-Note: ============================================================
-
 use "@std"
 use "@audio"
-use "@collections"
 use "@composition"
 
-(print $"=== Flow Showcase ===")
-(print $"Generating an ambient piece...")
+(print "Flow Showcase — v1.2 Ambient Piece")
+(print "Generating examples/output/flow_showcase.{wav,mid} ...")
 
-Note: --- Phase 3: Custom oscillator via wavetable ---
-Int tableSize = 2048
-Double tableSizeD = (intToDouble tableSize)
-Float[] padTable = []
-Int i = 0
-while (lt i tableSize) {
-    Double id = (intToDouble i)
-    Double phase = (div id tableSizeD)
-    Double sample = (mul (sub (mul phase 2.0) 1.0) 0.5)
-    padTable = (append padTable sample)
-    i = (add i 1)
-}
-(oscillator "pad" padTable)
-(print $"Custom 'pad' oscillator registered (2048 samples)")
-
-Note: --- Phase 1: Loop + string interpolation ---
-(print $"")
-(print $"Scale in A minor:")
-Int[] scale = [69, 71, 72, 74, 76, 77, 79, 81]
-for Int midi in scale {
-    (print $"  MIDI note {(str midi)}")
-}
-
-Note: --- Phase 4: Chord progression DSL with voice leading ---
-tempo 90 {
+tempo 72 {
     timesig 4/4 {
         key Aminor {
-            Sequence chords = progression | i iv VI V |
-            (print $"")
-            (print $"Chord progression: i -> iv -> VI -> V in A minor")
-            (print $"Voice leading visualization:")
-            (print $"")
-            chords -> visualize
 
-            Note: A melody
-            Sequence melody = | A4q E5q C5q B4q A4h |
+            // Slow pad bed — long whole notes outline the i / VI / iv / v shape
+            Sequence padBase = | A3w | F3w | D3w | E3w |
+            Sequence pad = padBase -> crescendo 0.18 0.6
 
-            Note: --- Phase 4: Pattern variation ---
-            Sequence varied = (vary melody 0.4)
-            (print $"Original melody:")
-            (visualize melody)
-            (print $"Varied melody (40% mutation):")
-            (visualize varied)
+            // Sparse euclidean pulse on the low A — humanized, fixed seed for byte-identical reruns
+            Sequence pulse = (euclidean 5 16 A2 0.18 0.12 7)
 
-            Note: Build and render — both sequences in one section = layered
-            section fullMix {
-                Sequence pad = chords
-                Sequence mel = melody
+            // Soft mezzo-piano melody floating above the bed
+            Sequence melody = | mp _ _ E5q G5q | A5h E5h | _ _ G5q B5q | A5w |
+
+            // Long reverb tail wraps the whole piece
+            reverbTime 3.2 {
+                section atmosphere {
+                    Sequence layerPad = pad
+                    Sequence layerPulse = pulse
+                    Sequence layerMelody = melody
+                }
+
+                Song showcase = [atmosphere]
+
+                Buffer rendered = (renderSong showcase "strings")
+                Double trim = (sub 0.0 4.0)
+                Buffer finalMix = rendered -> (lowpass 2800.0) -> (gain trim)
+
+                (writeWav "examples/output/flow_showcase.wav" finalMix)
+                (writeMidi "examples/output/flow_showcase.mid" showcase)
             }
-            Song song = [fullMix]
-            Buffer mix = (renderSong song "piano")
-
-            Note: --- Phase 2: Stereo panning + export ---
-            Double negPan = (sub 0.0 0.3)
-            Buffer stereoMix = mix -> (pan negPan)
-            (print $"Rendered: {(str (getFrames stereoMix))} frames, {(str (getChannels stereoMix))} ch")
-
-            Note: --- Phase 3: MIDI export ---
-            (writeMidi "/tmp/flow_showcase.mid" song)
-            (print $"MIDI exported -> /tmp/flow_showcase.mid")
-
-            Note: --- Phase 2: WAV export ---
-            (exportWav stereoMix "/tmp/flow_showcase.wav")
-            (print $"WAV exported  -> /tmp/flow_showcase.wav")
         }
     }
 }
 
-(print $"")
-(print $"=== Showcase Complete ===")
-(print $"Play: aplay /tmp/flow_showcase.wav")
-(print $"DAW:  open /tmp/flow_showcase.mid")
+(print "WAV:  examples/output/flow_showcase.wav")
+(print "MIDI: examples/output/flow_showcase.mid")

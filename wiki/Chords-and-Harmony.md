@@ -1,6 +1,6 @@
 # Chords and Harmony
 
-Flow has built-in support for chord literals, chord analysis functions, roman numeral resolution, arpeggios, and scale operations.
+Flow has built-in support for chord literals, chord analysis functions, roman numeral resolution, arpeggios, scale operations, and voice-led chord progressions.
 
 ## Chord Literals
 
@@ -23,12 +23,14 @@ Chord c9 = Asus4     Note: A sus4
 | Suffix | Quality | Intervals |
 |--------|---------|-----------|
 | `maj` | Major | 1-3-5 |
-| `m` | Minor | 1-b3-5 |
+| `m` / `min` | Minor | 1-b3-5 |
 | `dim` | Diminished | 1-b3-b5 |
 | `aug` | Augmented | 1-3-#5 |
-| `dom7` | Dominant 7th | 1-3-5-b7 |
+| `7` / `dom7` | Dominant 7th | 1-3-5-b7 |
 | `maj7` | Major 7th | 1-3-5-7 |
-| `m7` | Minor 7th | 1-b3-5-b7 |
+| `m7` / `min7` | Minor 7th | 1-b3-5-b7 |
+| `dim7` | Diminished 7th | 1-b3-b5-bb7 |
+| `m7f5` | Half-diminished (m7♭5) | 1-b3-b5-b7 |
 | `sus2` | Suspended 2nd | 1-2-5 |
 | `sus4` | Suspended 4th | 1-4-5 |
 | `add9` | Add 9th | 1-3-5-9 |
@@ -36,17 +38,19 @@ Chord c9 = Asus4     Note: A sus4
 | `6` | Major 6th | 1-3-5-6 |
 | `m6` | Minor 6th | 1-b3-5-6 |
 
-### Sharp and Flat Notation
+### Sharp and Flat Notation in Chord Symbols
 
-Use `s` for sharp and `f` for flat in chord roots:
+Chord roots use `s` for sharp and `f` for flat:
 
 ```flow
-Chord cs = Csmaj    Note: C# major
-Chord bf = Bfm      Note: Bb minor
-Chord fs = Fsmaj7   Note: F# major 7th
+Chord cs = Csmaj     Note: C# major
+Chord bf = Bfm       Note: Bb minor
+Chord fs = Fsmaj7    Note: F# major 7th
 ```
 
-> **Important**: `G7` is parsed as the note G at octave 7, not a G dominant 7th chord. Use `Gdom7` for the chord.
+> This is **different** from note literal accidentals, which use `+` and `-` (e.g., `C4+` = C# at octave 4). See [Note Streams](Note-Streams.md).
+
+> `G7` is parsed as the note G at octave 7, not a G dominant 7th chord. Use `Gdom7` (or `G7` in a context where a chord is explicit, like inside a note stream) for the chord.
 
 ## Chord Functions
 
@@ -55,31 +59,22 @@ use "@std"
 
 Chord c = Cmaj7
 
-Note: Get the root note
-String root = (chordRoot c)
-(print (concat "Root: " root))  Note: C
-
-Note: Get the quality
-String quality = (chordQuality c)
-(print (concat "Quality: " quality))  Note: maj7
-
-Note: Get all notes
-Strings notes = (chordNotes c)
-(print (concat "Notes: " (str (len notes))))  Note: 4
+String root = (chordRoot c)                 Note: "C"
+String quality = (chordQuality c)           Note: "maj7"
+String[] notes = (chordNotes c)             Note: ["C", "E", "G", "B"]
+(print $"root: {root}, quality: {quality}, count: {notes -> length}")
 ```
 
 ## Chords in Note Streams
 
-Chord symbols can be used directly in note streams:
+Chord symbols can be used directly in note streams. Each chord expands to its component notes played simultaneously, with auto-fit duration:
 
 ```flow
 timesig 4/4 {
-    Sequence progression = | Cmaj7 Am7 Dm Gdom7 |
-    (print (str progression))
+    Sequence prog = | Cmaj7 Am7 Dm7 G7 |
+    (print (str prog))
 }
 ```
-
-Each chord expands to its component notes played simultaneously, with auto-fit duration.
 
 ## Roman Numerals
 
@@ -88,11 +83,11 @@ Within a `key` context, roman numerals represent scale-degree chords:
 ```flow
 key Cmajor {
     timesig 4/4 {
-        Note: In C major: I=C, IV=F, V=G
-        Sequence progression = | I IV V I |
+        Note: in C major: I=C, IV=F, V=G
+        Sequence mjr = | I IV V I |
 
-        Note: Lowercase = minor chords: ii=Dm, vi=Am
-        Sequence minor = | ii V7 I |
+        Note: lowercase = minor: ii=Dm, vi=Am
+        Sequence mix = | ii V7 I |
     }
 }
 ```
@@ -109,19 +104,34 @@ key Cmajor {
 | `VI` / `vi` | 6th (submediant) | Major / minor |
 | `VII` / `vii` | 7th (leading) | Major / minor |
 
-Uppercase = major, lowercase = minor. Extensions like `V7` add dominant 7th.
+Uppercase = major, lowercase = minor. Extensions like `V7` add a dominant 7th.
 
 ### Resolving Numerals Programmatically
 
 ```flow
 use "@std"
 
-Chord resolved = (resolveNumeral "V" "Cmajor")
-(print (str resolved))  Note: G major
+Chord v = (resolveNumeral "V" "Cmajor")
+(print (str v))      Note: G major
 
-Chord dominant7 = (resolveNumeral "V7" "Cmajor")
-(print (str dominant7))  Note: G dominant 7th
+Chord v7 = (resolveNumeral "V7" "Cmajor")
+(print (str v7))     Note: G dominant 7th
 ```
+
+## Chord Progressions with Voice Leading
+
+For smoother voice leading between chords, use the dedicated `progression` expression:
+
+```flow
+use "@std"
+
+key Cmajor {
+    Sequence chords = progression | I IV V I |
+    Sequence thick  = progression voices 4 | I:2 IV vi V:2 |
+}
+```
+
+See [Chord Progressions](Chord-Progressions.md) for the full reference, including bar-count suffixes, voice counts, and voice-leading behavior.
 
 ## Arpeggios
 
@@ -130,32 +140,37 @@ Generate arpeggiated sequences from chords:
 ```flow
 use "@std"
 
-Sequence arpUp = (arpeggio Cmaj "up")
-Sequence arpDown = (arpeggio Cmaj "down")
-Sequence arpUpDown = (arpeggio Cmaj "updown")
+Sequence up     = (arpeggio Cmaj "up")
+Sequence down   = (arpeggio Cmaj "down")
+Sequence updown = (arpeggio Cmaj "updown")
 ```
 
 ## Scale Operations
 
-Get the notes of any scale:
+Get the note names of any scale:
 
 ```flow
 use "@std"
 
-Strings cMajor = (scaleNotes "Cmajor")
-(print (concat "C major: " (str (len cMajor))))  Note: 7 notes
-
-Strings aMinor = (scaleNotes "Aminor")
-(print (concat "A minor: " (str (len aMinor))))  Note: 7 notes
+String[] cMajor = (scaleNotes "Cmajor")      Note: 7 notes
+String[] aMinor = (scaleNotes "Aminor")      Note: 7 notes
+(print (str cMajor))
 ```
 
-## Chord Bracket Notation
+Scales are useful for constraining diatonic mutation with `vary`:
 
-For custom voicings, use bracket notation in note streams:
+```flow
+Sequence varied = (vary mel 0.3 "pitch" "Cmajor")
+```
+
+See [Generative Music](Generative.md).
+
+## Chord Bracket Notation (Custom Voicings)
+
+For custom voicings not limited to standard shapes, use bracket notation in a note stream:
 
 ```flow
 timesig 4/4 {
-    Note: Custom voicing - not limited to standard chord shapes
     Sequence custom = | [C4 E4 G4]q [D4 F4 A4]q [E4 G4 B4]q [C4 E4 G4]q |
 }
 ```
@@ -170,14 +185,18 @@ section verse { Sequence mel = | E4 F4 G4 A4 | }
 
 Song mySong = [intro verse]
 
-Note: Get section names from a song
-Strings sections = (getSections mySong)
-(print (str sections))
+String[] sections = (getSections mySong)
+(print (str sections))               Note: ["intro", "verse"]
+
+String[] seqs = (sectionSequences intro)
+(print (str seqs))                   Note: ["mel"]
 ```
 
 ## See Also
 
 - [Note Streams](Note-Streams.md) - Using chords in note streams
+- [Chord Progressions](Chord-Progressions.md) - Voice-led `progression | ... |`
 - [Musical Context](Musical-Context.md) - Key context for roman numerals
 - [Song Structure](Song-Structure.md) - Sections with chord progressions
 - [Pattern Transforms](Pattern-Transforms.md) - Transposing chord sequences
+- [Generative Music](Generative.md) - Diatonic variation

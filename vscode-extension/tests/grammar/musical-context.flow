@@ -1,0 +1,11 @@
+// Nested musical-context fixture exercising scope layering of
+// tempo, timesig, key, and dynamics blocks.
+tempo 140 {
+    timesig 6/8 {
+        key Dminor {
+            dynamics p {
+                | D4e D4e F4e | A4e F4e D4e |
+            }
+        }
+    }
+}

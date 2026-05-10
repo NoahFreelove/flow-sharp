@@ -142,8 +142,13 @@ The second argument to `renderSong` selects the synthesizer:
 | Brass | `"brass"`, `"horn"` | Bold, sustained tone |
 | Saxophone | `"sax"`, `"saxophone"` | Reed-like character |
 | Flute | `"flute"` | Pure, breathy tone |
+| Organ | `"organ"` | Sustained, multi-partial timbre |
+| Strings | `"strings"` | Smooth bowed-instrument-like timbre |
+| Bell | `"bell"` | Inharmonic bell / chime character |
 | Drums | `"drums"`, `"drum"` | Percussive, pitched drums |
 | Sine | `"sine"` | Clean sine wave |
+
+Custom wavetables registered via `oscillator(name, ...)` also work here. You can also pass a Flow `Function` as a custom instrument — see [Audio and Synthesis](Audio-and-Synthesis.md).
 
 ## Complete Example
 
@@ -191,9 +196,21 @@ tempo 120 {
 - **Reuse**: Reference the same section multiple times with `*N` repeats
 - **Clarity**: Named sections make the arrangement readable at a glance
 
+## Exporting to MIDI
+
+A `Song` can also be exported to a Standard MIDI File, preserving tempo, time signature, and key:
+
+```flow
+(writeMidi "my_song.mid" fullSong)
+```
+
+See [Playback and Export](Playback-and-Export.md).
+
 ## See Also
 
 - [Note Streams](Note-Streams.md) - Writing sequences within sections
 - [Musical Context](Musical-Context.md) - Context blocks around sections
 - [Audio and Synthesis](Audio-and-Synthesis.md) - Rendering and synthesizers
+- [Voices and Tracks](Voices-and-Tracks.md) - Lower-level multi-track rendering
+- [Chord Progressions](Chord-Progressions.md) - Voice-led chord sequences
 - [Playback and Export](Playback-and-Export.md) - Playing and exporting songs

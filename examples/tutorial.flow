@@ -120,10 +120,24 @@ Int total = (reduce numbers 0 (fn Int acc, Int n => acc + n))
 (print $"sum = {(str total)}")
 
 Note: -----------------------------------------------------------
-Note: 5. Note Streams -- Where the Music Begins
+Note: 5. Comments -- // and 'Note:'
 Note: -----------------------------------------------------------
 (print "")
-(print "--- 5. Note Streams ---")
+(print "--- 5. Comments ---")
+(print "")
+
+Note: This file uses two comment styles. // appears inline like this:
+Int x = 7    // x is the number we'll square
+Int xSq = (mul x x)
+(print $"x squared = {(str xSq)}")    // and like this -- a small nudge near the line
+Note: 'Note:' appears at the start of a line as a chapter divider or a longer
+Note: prose paragraph, like this one. Both styles are valid Flow comments.
+
+Note: -----------------------------------------------------------
+Note: 6. Note Streams -- Where the Music Begins
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 6. Note Streams ---")
 (print "")
 (print "Notes use letter + octave: C4, D4, E4, F4, G4, A4, B4")
 (print "Durations: w=whole, h=half, q=quarter, e=eighth, s=sixteenth")
@@ -148,10 +162,10 @@ timesig 4/4 {
 }
 
 Note: -----------------------------------------------------------
-Note: 6. Musical Context
+Note: 7. Musical Context
 Note: -----------------------------------------------------------
 (print "")
-(print "--- 6. Musical Context ---")
+(print "--- 7. Musical Context ---")
 (print "")
 (print "Musical context blocks set tempo, time signature, and key.")
 (print "They nest naturally -- inner blocks inherit from outer ones.")
@@ -176,10 +190,10 @@ tempo 120 {
 }
 
 Note: -----------------------------------------------------------
-Note: 7. Sections and Songs
+Note: 8. Sections and Songs
 Note: -----------------------------------------------------------
 (print "")
-(print "--- 7. Sections and Songs ---")
+(print "--- 8. Sections and Songs ---")
 (print "")
 (print "Sections group musical phrases. Songs arrange sections.")
 
@@ -216,10 +230,10 @@ tempo 110 {
 }
 
 Note: -----------------------------------------------------------
-Note: 8. Effects and the Audio Pipeline
+Note: 9. Effects and the Audio Pipeline
 Note: -----------------------------------------------------------
 (print "")
-(print "--- 8. Effects and the Audio Pipeline ---")
+(print "--- 9. Effects and the Audio Pipeline ---")
 (print "")
 (print "Chain effects with the flow operator for a natural signal flow.")
 
@@ -244,10 +258,89 @@ tempo 120 {
 }
 
 Note: -----------------------------------------------------------
-Note: 9. Pattern Transforms
+Note: 10. Mixing Multiple Buffers
 Note: -----------------------------------------------------------
 (print "")
-(print "--- 9. Pattern Transforms ---")
+(print "--- 10. Mixing Multiple Buffers ---")
+(print "")
+
+Note: 'mix' combines two buffers into one -- sum the samples, output stereo.
+Buffer toneA = (createSineTone 0.5 440.0 0.4)    // A4 = 440 Hz
+Buffer toneB = (createSineTone 0.5 660.0 0.4)    // E5 = 660 Hz, a 5th up
+Buffer combined = (mix toneA toneB)              // Mix two buffers into one
+(print $"toneA frames:    {(str (getFrames toneA))}")
+(print $"toneB frames:    {(str (getFrames toneB))}")
+(print $"mixed frames:    {(str (getFrames combined))}")
+
+Note: The flow operator works with mix too -- pipe one buffer through it.
+Buffer piped = toneA -> (mix toneB)
+(print $"piped mix frames: {(str (getFrames piped))}")
+
+Note: -----------------------------------------------------------
+Note: 11. Synth Presets -- strings, organ, bell
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 11. Synth Presets ---")
+(print "")
+
+Note: Flow ships with several instrument presets. Pass the name as the
+Note: second argument to renderSong: "piano" "strings" "organ" "bell" "brass" "sax" "drums".
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section pad {
+                Sequence padMel = | C4q E4q G4q C5q |
+            }
+            Song presetSong = [pad]
+            Buffer pianoBuf  = (renderSong presetSong "piano")
+            Buffer stringBuf = (renderSong presetSong "strings")  // lush, sustained
+            Buffer organBuf  = (renderSong presetSong "organ")    // continuous, breath-of-the-room
+            Buffer bellBuf   = (renderSong presetSong "bell")     // short, percussive, decay-rich
+            (print $"piano frames:   {(str (getFrames pianoBuf))}")
+            (print $"strings frames: {(str (getFrames stringBuf))}")
+            (print $"organ frames:   {(str (getFrames organBuf))}")
+            (print $"bell frames:    {(str (getFrames bellBuf))}")
+
+            Note: Per-section gain shapes a section's loudness. Wrap the
+            Note: section declaration in a gain context block:
+            gain 0.5 {
+                section quietPad {
+                    Sequence quietMel = | C4q E4q G4q C5q |
+                }
+                Song quietSong = [quietPad]
+                Buffer halfPad = (renderSong quietSong "strings")    // half-volume strings
+                (print $"half-volume strings: {(str (getFrames halfPad))} frames")
+            }
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 12. Tempo Ramps -- Ritardando & Accelerando
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 12. Tempo Ramps ---")
+(print "")
+
+Note: 'tempoRamp' eases between two BPMs over a sequence -- ritardando (slowing
+Note: down) and accelerando (speeding up) without rewriting the rhythm.
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence rampMel = | C4q E4q G4q C5q |
+            Buffer slowing  = (tempoRamp rampMel 120.0 60.0)    // ritardando: 120 -> 60 BPM
+            Buffer speeding = (tempoRamp rampMel 60.0 120.0)    // accelerando: 60 -> 120 BPM
+            (print $"ritardando frames:  {(str (getFrames slowing))}")
+            (print $"accelerando frames: {(str (getFrames speeding))}")
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 13. Pattern Transforms
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 13. Pattern Transforms ---")
 (print "")
 (print "Transform melodies with transpose, retrograde, invert, and more.")
 
@@ -269,7 +362,189 @@ timesig 4/4 {
 }
 
 Note: -----------------------------------------------------------
-Note: 10. Graduation Piece -- Putting It All Together
+Note: 14. Slicing -- slice for Arrays and Sequences
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 14. Slicing ---")
+(print "")
+Note: 'slice' takes a starting index (inclusive) and an ending index (exclusive).
+Note: Indices outside the array are clamped silently -- no errors thrown.
+
+Int[] xs = [10, 20, 30, 40, 50]
+Int[] middle = (slice xs 1 4)        // → [20, 30, 40]
+Int[] tailPart = (slice xs 3 100)    // → [40, 50] (end clamped to length)
+Int[] none = (slice xs 3 2)          // → [] (end < start)
+(print $"middle = {(str middle)}")
+(print $"tail   = {(str tailPart)}")
+(print $"none   = {(str none)}")
+
+Note: For Sequences, slice operates on bars (each '|...|' is one bar).
+timesig 4/4 {
+    Sequence threeBars = | C4 D4 | E4 F4 | G4 A4 |
+    Sequence justOne = (slice threeBars 1 2)    // just the middle bar
+    (print $"middle bar: {(str justOne)}")
+}
+
+Note: -----------------------------------------------------------
+Note: 15. Enharmonic and Flat Spellings
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 15. Enharmonic and Flat Spellings ---")
+(print "")
+Note: Flow accepts flat letters inside note streams: Db, Eb, Gb, Ab, Bb (and Cb, Fb).
+Note: Sharps work too: C#, F#, G#. The 'enharmonic' built-in flips between them.
+
+timesig 4/4 {
+    Note: Flat literals -- Bb, Db, Eb, Gb, Ab spellings parse natively
+    Sequence flats = | Db4 Eb4 Gb4 Ab4 Bb4 |
+    (print $"flats:  {(str flats)}")
+
+    Note: Sharp literals
+    Sequence sharps = | C#4 F#4 G#5 |
+    (print $"sharps: {(str sharps)}")
+
+    Note: Bare flats default to octave 4 (no octave digit required)
+    Sequence bare = | Bb Db Eb |
+    (print $"bare:   {(str bare)}")
+}
+
+Note: enharmonic(Note) flips a Note's internal letter-spelling between sharp
+Note: and flat. The MIDI pitch is preserved -- Db4 and C#4 are the same key on
+Note: a piano. Naturals pass through unchanged.
+Note:
+Note: Heads-up about the printed form: when you (str ...) a Note, Flow uses a
+Note: canonical 'letter + cents-marker' form (e.g. 'C4+' or 'G3-'). Both Db4
+Note: and C#4 print as 'C4+' because both sit one semitone above C4, and the
+Note: printer doesn't try to guess your preferred spelling. So the lines below
+Note: prove the call works (no error, MIDI preserved); the *visible* respelling
+Note: is internal to the Note value and surfaces in MIDI export, not in (str).
+(print $"enharmonic Db4 = {(str (enharmonic Db4))}")    // C4+ (same pitch as Db4 / C#4)
+(print $"enharmonic F#3 = {(str (enharmonic F#3))}")    // G3- (same pitch as F#3 / Gb3)
+(print $"enharmonic C4  = {(str (enharmonic C4))}")     // C4  (natural, unchanged)
+
+Note: Inside a key context, enharmonic respells to fit the key. Again, the
+Note: printed form shows the cents-marker, not the sharp/flat letter.
+key Dbmajor {
+    (print $"in Dbmajor, enharmonic C#4 = {(str (enharmonic C#4))}")    // D4- (same pitch as C#4 / Db4)
+}
+
+Note: -----------------------------------------------------------
+Note: 16. Reverb Time -- Per-Voice RT60
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 16. Reverb Time ---")
+(print "")
+Note: 'reverbTime <seconds> { ... }' wraps a section in a per-voice reverb tail.
+Note: The number is RT60 -- how long the tail takes to decay 60 dB.
+Note: reverbTime 0 means "no reverb for this block" -- useful when nesting.
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            reverbTime 2.0 {
+                section hall {
+                    Sequence hallMel = | C4q E4q G4q C5q |
+                }
+                Song hallSong = [hall]
+                Buffer wet = (renderSong hallSong "piano")
+                (print $"reverbTime 2.0s render: {(str (getFrames wet))} frames")
+            }
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 17. MIDI Velocity with Dynamics
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 17. MIDI Velocity with Dynamics ---")
+(print "")
+Note: 'crescendo', 'decrescendo', and 'swell' shape MIDI velocity across a sequence.
+Note: 'dynamics ff { ... }' / 'dynamics p { ... }' set a base velocity for a block.
+Note: When the song is exported with writeMidi, the velocity gradient rides in the byte stream.
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: Linear crescendo from 0.25 to 0.75 across 5 notes
+            Sequence baseLine = | C4 D4 E4 F4 G4 |
+            Sequence cresc = baseLine -> crescendo 0.25 0.75
+            (print $"crescendo seq: {(str cresc)}")
+            Note: The print form shows the structural sequence only -- the
+            Note: per-note velocity gradient (0.25 -> 0.75) rides in the WAV
+            Note: and MIDI bytes when a Song containing this kind of sequence
+            Note: is exported via writeWav / writeMidi (see the graduation
+            Note: piece below for end-to-end MIDI export).
+
+            Note: Block form -- wrap the section in an explicit dynamic
+            dynamics ff {
+                Sequence forte = | C4 D4 E4 F4 |
+                (print $"forte block: {(str forte)}")
+            }
+
+            Note: Inline form -- `mp` (or pp/p/mp/mf/f/ff) at the start of a stream
+            Note: applies to all notes that follow until the next marker or barline.
+            Sequence soft = | mp C4q D4q E4q F4q |
+            (print $"inline mp: {(str soft)}")
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 18. Euclidean Rhythms -- Swing and Humanize
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 18. Euclidean Rhythms ---")
+(print "")
+Note: 'euclidean(hits, steps, note, swing)' distributes 'hits' evenly across 'steps'.
+Note: 3 hits over 8 steps is a tresillo; positive swing accents on-beats,
+Note: negative swing accents off-beats (use the (sub 0.0 N) idiom for negatives).
+Note: The 6-arg form adds humanize (uniform velocity jitter) and a required seed
+Note: for byte-identical output across runs.
+
+tempo 120 {
+    timesig 4/4 {
+        Note: 4-arg form: simple swing accent
+        Sequence groove4 = (euclidean 3 8 C4 0.3)
+        (print $"euclidean 3/8 swing 0.3: {(str groove4)}")
+
+        Note: 6-arg form: humanize + seed (seed=42 -> reproducible jitter)
+        Sequence groove6 = (euclidean 3 8 C4 0.3 0.1 42)
+        (print $"euclidean 3/8 humanize 0.1 seed 42: {(str groove6)}")
+
+        Note: Negative swing (off-beat accent) via the (sub 0.0 N) idiom.
+        Note: Bare `-0.2` would parse as binary subtraction (the lexer sees the
+        Note: minus as an operator, not a sign), so for negative double literals
+        Note: Flow uses the (sub 0.0 N) idiom: subtract from zero. The same
+        Note: idiom recurs in chapter 9 (gain) and the graduation piece below.
+        Double negSwing = (sub 0.0 0.2)
+        Sequence backbeat = (euclidean 5 16 C4 negSwing)
+        (print $"euclidean 5/16 backbeat: {(str backbeat)}")
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 19. Voice Synthesis with sing
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 19. Voice Synthesis ---")
+(print "")
+
+Note: 'sing' generates a sung vowel or simple syllable at a given pitch and duration.
+Note: Vowels: ah, ee, eh, oh, oo. Syllables: na, ta, sa, etc.
+Buffer ahNote = (sing "ah" C4 0.5)    // sing synthesizes vowels and simple syllables
+Buffer naNote = (sing "na" E4 0.4)
+Buffer eeNote = (sing "ee" G4 0.4)
+(print $"sung 'ah' on C4: {(str (getFrames ahNote))} frames")
+(print $"sung 'na' on E4: {(str (getFrames naNote))} frames")
+(print $"sung 'ee' on G4: {(str (getFrames eeNote))} frames")
+
+Note: Flow also ships a 'tts' built-in that calls espeak-ng for full text-to-speech.
+Note: It needs espeak-ng installed on the system; we won't run it from the tutorial,
+Note: but you can try (tts "hello world") in your own scripts if you have it.
+
+Note: -----------------------------------------------------------
+Note: 20. Graduation Piece -- Putting It All Together
 Note: -----------------------------------------------------------
 (print "")
 (print "========================================")
@@ -281,10 +556,17 @@ Note: -----------------------------------------------------------
 tempo 100 {
     timesig 4/4 {
         key Cmajor {
-            Note: A gentle chord progression for the intro
-            section sunriseIntro {
-                Sequence chords = | [C4 E4 G4]h [F4 A4 C5]h |
-                Sequence bass = | C3h F3h |
+            // Quiet intro -- per-section gain shapes the dynamic arc
+            gain 0.6 {
+                section sunriseIntro {
+                    Sequence chords = | [C4 E4 G4]h [F4 A4 C5]h |
+                    Sequence bass = | C3h F3h |
+                }
+            }
+
+            // Euclidean groove with humanize + seed=42 (byte-identical across runs)
+            section sunriseGroove {
+                Sequence drums = (euclidean 5 16 C3 0.2 0.1 42)
             }
 
             Note: A melodic verse
@@ -293,21 +575,25 @@ tempo 100 {
                 Sequence bass = | C3h G3h | A3h E3h |
             }
 
-            Note: A bright chorus that lifts
-            section sunriseChorus {
-                Sequence mel = | C5q D5q E5q D5q | C5q A4q G4q E4q |
-                Sequence chords = | [C4 E4 G4]h [G4 B4 D5]h |
-                Sequence bass = | C3q E3q G3q C4q |
+            // Bright chorus wrapped in explicit gain 1.0 -- visible dynamic structure
+            gain 1.0 {
+                section sunriseChorus {
+                    Sequence mel = | C5q D5q E5q D5q | C5q A4q G4q E4q |
+                    Sequence chords = | [C4 E4 G4]h [G4 B4 D5]h |
+                    Sequence bass = | C3q E3q G3q C4q |
+                }
             }
 
-            Note: A quiet outro
-            section sunriseOutro {
-                Sequence mel = | E4h C4h |
-                Sequence bass = | C3w |
+            // Outro wrapped in reverbTime 2.5s -- long hall tail closes the piece
+            reverbTime 2.5 {
+                section sunriseOutro {
+                    Sequence mel = | E4h C4h |
+                    Sequence bass = | C3w |
+                }
             }
 
-            Note: Arrange the full song
-            Song sunrise = [sunriseIntro sunriseVerse*2 sunriseChorus sunriseVerse sunriseChorus sunriseOutro]
+            Note: Arrange the full song -- groove sits between intro and first verse
+            Song sunrise = [sunriseIntro sunriseGroove sunriseVerse*2 sunriseChorus sunriseVerse sunriseChorus sunriseOutro]
             (print $"Song: {(str sunrise)}")
 
             Note: Render to audio
@@ -319,10 +605,20 @@ tempo 100 {
             Buffer finalMix = rawMix -> (reverb 0.25) -> (lowpass 4000.0) -> (gain negTwo)
             (print $"After effects: {(str (getFrames finalMix))} frames")
 
-            Note: Export to WAV
-            String outPath = "/tmp/flow_tutorial_output.wav"
-            (exportWav finalMix outPath)
-            (print $"Exported to: {outPath}")
+            // tempoRamp slows the tail from 100 BPM to 60 BPM -- a ritardando ending
+            Note: tempoRamp produces a Buffer; we mix it into the final WAV.
+            Note: (writeMidi captures notation only -- no audible ritardando in the MIDI.)
+            Sequence tail = | C4h G3h C3w |
+            Buffer ritBuf = (tempoRamp tail 100.0 60.0)
+            Buffer finalWithTail = (mix finalMix ritBuf)
+            (print $"With ritardando tail: {(str (getFrames finalWithTail))} frames")
+
+            Note: Export to BOTH WAV and MIDI from the same Song value
+            Note: Demonstrates writeWav (audio) and writeMidi (notation) side by side
+            (writeWav "examples/output/flow_tutorial.wav" finalWithTail)
+            (writeMidi "examples/output/flow_tutorial.mid" sunrise)
+            (print "WAV exported to: examples/output/flow_tutorial.wav")
+            (print "MIDI exported to: examples/output/flow_tutorial.mid")
         }
     }
 }
@@ -341,8 +637,23 @@ tempo 100 {
 (print "  - Sections and song arrangement")
 (print "  - Effects processing and audio export")
 (print "  - Pattern transforms")
+(print "  - Inline // and Note: comment styles")
+(print "  - Mixing buffers with mix")
+(print "  - Per-section gain for dynamic shaping")
+(print "  - Synth presets: strings, organ, bell")
+(print "  - Tempo ramps with tempoRamp (ritardando, accelerando)")
+(print "  - Voice synthesis with sing (and tts for full text-to-speech)")
+(print "  - Slicing arrays and sequences with `slice`")
+(print "  - Enharmonic spellings: flat literals (`Bb`, `Db`, `Eb`...) and `enharmonic`")
+(print "  - Per-voice reverb tails with `reverbTime`")
+(print "  - MIDI velocity from `dynamics` and `crescendo`")
+(print "  - Euclidean rhythms with `euclidean` (swing, humanize)")
+(print "  - Dual export: `writeWav` (audio) + `writeMidi` (notation) from the same Song")
 (print "")
-(print "Your graduation piece is at /tmp/flow_tutorial_output.wav")
-(print "Play it with: aplay /tmp/flow_tutorial_output.wav")
+(print "Your graduation piece:")
+(print "  - WAV:  examples/output/flow_tutorial.wav")
+(print "  - MIDI: examples/output/flow_tutorial.mid")
+(print "Play the WAV with: aplay examples/output/flow_tutorial.wav")
+(print "Open the MIDI in any DAW that imports SMF.")
 (print "")
 (print "Now go make some music! Happy composing.")

@@ -130,6 +130,16 @@ public partial class Parser
                 Advance(); // consume `gain`
                 return ParseMusicalContextStatement(MusicalContextType.Gain);
             }
+            // Only parse `reverbTime` as a context block when followed by a numeric literal or sign
+            // (e.g., `reverbTime 2.5 { ... }`). Per D-03, negative rejection happens INSIDE the case body
+            // so the error points at the '-' rather than at '{'.
+            if (Check(TokenType.ReverbTime) && _current + 1 < _tokens.Count
+                && (_tokens[_current + 1].Type is TokenType.IntLiteral or TokenType.FloatLiteral
+                    or TokenType.Minus or TokenType.Plus))
+            {
+                Advance(); // consume `reverbTime`
+                return ParseMusicalContextStatement(MusicalContextType.ReverbTime);
+            }
 
             // Section declaration: section name { ... }
             if (Match(TokenType.Section))
@@ -535,6 +545,23 @@ public partial class Parser
                     value = new LiteralExpression(gainLoc, gainSign * (double)Advance().Value!);
                 else
                     throw new ParseException($"Expected numeric gain value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+                break;
+            }
+
+            case MusicalContextType.ReverbTime:
+            {
+                var rtLoc = CurrentToken.Location;
+                if (Match(TokenType.Minus))
+                    throw new ParseException(
+                        $"reverbTime cannot be negative (RT60 is a time in seconds); got '-' at {rtLoc}");
+                if (Match(TokenType.Plus)) { /* silent sign noise, accept */ }
+                if (Check(TokenType.IntLiteral))
+                    value = new LiteralExpression(rtLoc, (double)(int)Advance().Value!);
+                else if (Check(TokenType.FloatLiteral))
+                    value = new LiteralExpression(rtLoc, (double)Advance().Value!);
+                else
+                    throw new ParseException(
+                        $"Expected numeric reverbTime value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
                 break;
             }
 

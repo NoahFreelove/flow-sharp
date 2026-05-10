@@ -11,7 +11,7 @@ public class InternalFunctionRegistry
 {
     private readonly Dictionary<string, List<(FunctionSignature Signature, Func<IReadOnlyList<Value>, Value> Implementation)>> _implementations = new();
 
-    public void Register(string name, FunctionSignature signature, Func<IReadOnlyList<Value>, Value> implementation)
+    public virtual void Register(string name, FunctionSignature signature, Func<IReadOnlyList<Value>, Value> implementation)
     {
         if (!_implementations.ContainsKey(name))
             _implementations[name] = [];
@@ -88,8 +88,13 @@ public class InternalFunctionRegistry
         if (registered.Equals(requested))
             return true;
 
-        // VoidType mathematically represents 'Any'
-        if (registered is TypeSystem.PrimitiveTypes.VoidType || requested is TypeSystem.PrimitiveTypes.VoidType)
+        // VoidType mathematically represents 'Any' — but NOT a match against LazyType.
+        // Lazy is not interchangeable with concrete types at the C# implementation level
+        // (Lazy impls expect Thunks, strict impls expect concrete values). Excluding Lazy
+        // here disambiguates the Lazy/strict `if` overloads (plan 12-05, TEST-03).
+        if (registered is TypeSystem.PrimitiveTypes.VoidType && requested is not TypeSystem.PrimitiveTypes.LazyType)
+            return true;
+        if (requested is TypeSystem.PrimitiveTypes.VoidType && registered is not TypeSystem.PrimitiveTypes.LazyType)
             return true;
 
         // Special case: ArrayType(Void) matches any ArrayType
@@ -102,6 +107,20 @@ public class InternalFunctionRegistry
     }
 
     public bool HasImplementation(string name) => _implementations.ContainsKey(name);
+
+    /// <summary>
+    /// Read-only enumerator over registered (name, signatures) pairs.
+    /// Added for Phase 17 LSP BuiltInIndex (17-05). Does NOT expose the implementation
+    /// delegates — only signatures are needed for completion/hover/signature-help.
+    /// </summary>
+    public IEnumerable<KeyValuePair<string, IReadOnlyList<FunctionSignature>>> EnumerateSignatures()
+    {
+        foreach (var kvp in _implementations)
+        {
+            var sigs = kvp.Value.Select(tuple => tuple.Signature).ToList();
+            yield return new KeyValuePair<string, IReadOnlyList<FunctionSignature>>(kvp.Key, sigs);
+        }
+    }
 
     /// <summary>
     /// Replaces all implementations for a given function name with a single new one.

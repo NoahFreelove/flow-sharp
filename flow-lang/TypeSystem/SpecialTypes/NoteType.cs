@@ -16,7 +16,20 @@ public sealed class NoteType : FlowType
 
     /// <summary>
     /// Parses a note string like "A4", "C3", "G" (defaults to octave 4) into a note value.
-    /// Valid range: E0 to E10.
+    ///
+    /// Phase 14 DX-06 (CONTEXT D-07/D-08/D-09): accepts arbitrary composition of
+    /// <c>b</c>/<c>#</c>/<c>+</c>/<c>-</c> on either side of octave digits. Net alteration =
+    /// (count of sharps <c>#</c>+<c>+</c>) − (count of flats <c>b</c>+<c>-</c>). Alteration
+    /// is any int (not bounded to ±2). Range validation uses post-alteration MIDI value.
+    ///
+    /// Examples:
+    ///   <c>"Db4"</c>   → (D, 4, -1)
+    ///   <c>"Bb"</c>    → (B, 4, -1) (default octave 4)
+    ///   <c>"C#5"</c>   → (C, 5, +1)
+    ///   <c>"F##4"</c>  → (F, 4, +2)
+    ///   <c>"Bb-+bbb"</c> → (B, 4, -4)
+    ///   <c>"Cb4"</c>   → (C, 4, -1) MIDI 59 = B3, in range
+    ///   <c>"Cb0"</c>   → throws ArgumentException (post-alt MIDI 11, below E0=16)
     /// </summary>
     public static (char note, int octave, int alteration) Parse(string noteStr)
     {
@@ -27,70 +40,85 @@ public sealed class NoteType : FlowType
         if (note < 'A' || note > 'G')
             throw new ArgumentException($"Invalid note: {note}. Must be A-G.");
 
-        // Parse remaining part (could be octave and/or alteration)
-        string remaining = noteStr.Length > 1 ? noteStr[1..] : "";
+        // Sum-based scan across the remaining chars (D-07). Three phases:
+        //   1. Pre-octave alteration chars (b/#/+/-)
+        //   2. Octave digits (contiguous)
+        //   3. Post-octave alteration chars (b/#/+/-)
+        int sharpCount = 0;
+        int flatCount = 0;
+        int octave = 4; // Default octave (no digits)
+        int i = 1;
 
-        int octave = 4; // Default octave
-        int alteration = 0;
-
-        if (remaining.Length > 0)
+        // Phase 1: pre-octave alterations
+        while (i < noteStr.Length && !char.IsDigit(noteStr[i]))
         {
-            // Check if it starts with a digit (octave)
-            int octaveEndIndex = 0;
-            while (octaveEndIndex < remaining.Length && char.IsDigit(remaining[octaveEndIndex]))
+            switch (noteStr[i])
             {
-                octaveEndIndex++;
+                case '+':
+                case '#':
+                    sharpCount++;
+                    break;
+                case '-':
+                case 'b':
+                    flatCount++;
+                    break;
+                default:
+                    throw new ArgumentException($"Invalid note character '{noteStr[i]}' in {noteStr}");
             }
-
-            if (octaveEndIndex > 0)
-            {
-                string octaveStr = remaining.Substring(0, octaveEndIndex);
-                octave = int.Parse(octaveStr);
-                remaining = remaining.Substring(octaveEndIndex);
-            }
-
-            // Parse alteration if any
-            if (remaining.Length > 0)
-            {
-                alteration = remaining switch
-                {
-                    "++" => 2,
-                    "+" => 1,
-                    "-" => -1,
-                    "--" => -2,
-                    _ => throw new ArgumentException($"Invalid alteration: {remaining}")
-                };
-            }
+            i++;
         }
 
-        // Validate range: E0 to E10
-        if (!IsValidNoteRange(note, octave))
+        // Phase 2: octave digits
+        int octStart = i;
+        while (i < noteStr.Length && char.IsDigit(noteStr[i]))
         {
-            throw new ArgumentException($"Note {note}{octave} is out of valid range (E0 to E10)");
+            i++;
+        }
+        if (i > octStart)
+        {
+            octave = int.Parse(noteStr[octStart..i]);
+        }
+
+        // Phase 3: post-octave alterations
+        while (i < noteStr.Length)
+        {
+            switch (noteStr[i])
+            {
+                case '+':
+                case '#':
+                    sharpCount++;
+                    break;
+                case '-':
+                case 'b':
+                    flatCount++;
+                    break;
+                default:
+                    throw new ArgumentException($"Invalid note character '{noteStr[i]}' in {noteStr}");
+            }
+            i++;
+        }
+
+        int alteration = sharpCount - flatCount;
+
+        // Post-alteration MIDI range check (D-09): replaces letter+octave-only IsValidNoteRange.
+        // Cb4 (MIDI 59 = B3) is in range; Cb0 (MIDI 11) is below E0 (MIDI 16) and throws.
+        int midi = GetNoteValue(note, octave) + alteration;
+        int minMidi = GetNoteValue('E', 0);
+        int maxMidi = GetNoteValue('E', 10);
+        if (midi < minMidi || midi > maxMidi)
+        {
+            throw new ArgumentException($"Note {noteStr} is out of valid range (E0 to E10)");
         }
 
         return (note, octave, alteration);
     }
 
     /// <summary>
-    /// Checks if a note and octave combination is within the valid range (E0 to E10).
-    /// </summary>
-    private static bool IsValidNoteRange(char note, int octave)
-    {
-        // Calculate MIDI-like note number (C0 = 12, C4 = 60)
-        int noteValue = GetNoteValue(note, octave);
-
-        // E0 = 16, E10 = 136
-        int minNote = GetNoteValue('E', 0);  // E0
-        int maxNote = GetNoteValue('E', 10); // E10
-
-        return noteValue >= minNote && noteValue <= maxNote;
-    }
-
-    /// <summary>
     /// Converts a note and octave to a MIDI-like note number for range validation.
+    /// Public so tests and helpers outside NoteType can compute ranges without duplicating
+    /// the chromatic mapping.
     /// </summary>
-    private static int GetNoteValue(char note, int octave)
+    public static int GetNoteValue(char note, int octave)
     {
         int noteOffset = note switch
         {
@@ -138,20 +166,29 @@ public sealed class NoteType : FlowType
 
     /// <summary>
     /// Formats a note value back to string representation.
+    ///
+    /// Phase 14 DX-06 (CONTEXT D-08): run-based emission for any int alteration.
+    /// Canonical shape: <c>{letter}{octave}{'+' * n | '-' * |n|}</c>. Round-trip invariant
+    /// <c>Parse(Format(x)) == x</c> holds for every integer alteration (bounded only by the
+    /// post-alteration MIDI range check in Parse).
     /// </summary>
     public static string Format(char note, int octave, int alteration)
     {
-        string alterationStr = alteration switch
+        string altStr;
+        if (alteration == 0)
         {
-            2 => "++",
-            1 => "+",
-            0 => "",
-            -1 => "-",
-            -2 => "--",
-            _ => throw new ArgumentException($"Invalid alteration: {alteration}")
-        };
+            altStr = "";
+        }
+        else if (alteration > 0)
+        {
+            altStr = new string('+', alteration);
+        }
+        else
+        {
+            altStr = new string('-', -alteration);
+        }
 
-        return $"{note}{octave}{alterationStr}";
+        return $"{note}{octave}{altStr}";
     }
 }
 

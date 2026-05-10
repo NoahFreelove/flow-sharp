@@ -26,7 +26,7 @@ use "@std"
 Int x = 5
 Int y = 10
 Int sum = x + y
-(print (concat "Sum: " (str sum)))
+(print $"Sum: {sum}")
 ```
 
 Run it:
@@ -87,6 +87,16 @@ dotnet run --project flow-interpreter melody.flow
 
 This renders a simple C major arpeggio using the piano synthesizer and exports it as a WAV file.
 
+## Standalone Flow Editor (Optional)
+
+A desktop GUI for editing and running Flow scripts is included in the repo as `flow-editor`:
+
+```bash
+dotnet run --project flow-editor
+```
+
+This is optional — everything in the language is usable from the CLI.
+
 ## Important: The Standard Library
 
 Most Flow programs need to start with:
@@ -121,4 +131,6 @@ for test in tests/test_*.flow; do dotnet run --project flow-interpreter "$test";
 
 - [Language Basics](Language-Basics.md) - Learn the fundamentals
 - [Note Streams](Note-Streams.md) - Write music inline
+- [Loops](Loops.md) - `for`, `while`, `break`, `continue`
+- [String Interpolation](String-Interpolation.md) - `$"..."` syntax
 - [Examples](Examples.md) - Complete working programs

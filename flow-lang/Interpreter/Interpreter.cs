@@ -72,6 +72,7 @@ public class Interpreter : IFunctionInvoker
     {
         if (_returnValue != null)
             return; // Already returned
+        // AUDIT-VERIFIED 2026-04-18: C2 — Dismissed: _returnValue only set by ReturnStatement; guard is correct (tests/spike/c2-return-value-short-circuit.flow)
 
         switch (stmt)
         {
@@ -148,7 +149,7 @@ public class Interpreter : IFunctionInvoker
                     catch (ArgumentException ex)
                     {
                         _errorReporter.ReportError(ex.Message, ctx.Location);
-                        return;
+                        break;
                     }
                     break;
 
@@ -161,7 +162,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Tempo must be positive, got {tempo}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Tempo = tempo;
                     break;
@@ -175,7 +176,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Swing must be between 0.0 and 1.0, got {swing}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Swing = swing;
                     break;
@@ -221,7 +222,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Pan value must be between -1.0 and 1.0, got {pan}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Pan = pan;
                     break;
@@ -237,9 +238,20 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             $"Gain must be between 0.0 and 2.0, got {gain}", ctx.Location);
-                        return;
+                        break;
                     }
                     musicalCtx.Gain = gain;
+                    break;
+                }
+
+                case MusicalContextType.ReverbTime:
+                {
+                    var rtVal = _evaluator.Evaluate(ctx.Value);
+                    double rt60 = rtVal.Type is IntType ? (double)rtVal.As<int>() : rtVal.As<double>();
+                    // D-03: silent clamp to 30s (negative already rejected at parse time)
+                    rt60 = Math.Min(rt60, 30.0);
+                    // D-02: 0.0 preserved as sentinel for "dry" — no error, no clamp-up
+                    musicalCtx.ReverbTime = rt60;
                     break;
                 }
 
@@ -252,7 +264,7 @@ public class Interpreter : IFunctionInvoker
                             _errorReporter.ReportError(
                                 $"Unrecognized key '{keyName}'. Valid keys include: Cmajor, Aminor, Fsharpmajor, etc.",
                                 ctx.Location);
-                            return;
+                            break;
                         }
                         musicalCtx.Key = keyName;
                     }
@@ -260,7 +272,7 @@ public class Interpreter : IFunctionInvoker
                     {
                         _errorReporter.ReportError(
                             "Expected a key name literal (e.g., Cmajor, Aminor)", ctx.Location);
-                        return;
+                        break;
                     }
                     break;
             }
@@ -288,6 +300,7 @@ public class Interpreter : IFunctionInvoker
             _context.PopFrame();
         }
     }
+    // AUDIT-VERIFIED 2026-04-19: C1 — Fixed (returns→breaks); body now runs under partial/default context (tests/spike/c1-musical-context-body.flow GREEN)
 
     private void ExecuteForStatement(ForStatement stmt)
     {

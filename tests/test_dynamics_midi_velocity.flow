@@ -1,0 +1,18 @@
+use "@std"
+use "@audio"
+
+Note: DX-08 — deterministic 5-note crescendo for MIDI velocity regression
+Note: crescendo(0.25, 0.75) over 5 notes produces a linear gradient;
+Note:   byte[i] = (int)(v_i * 127), v_i = 0.25 + i * 0.125
+Note:   Expected bytes at emit: 31, 47, 63, 79, 95
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence base = | C4 D4 E4 F4 G4 |
+        Sequence curve = base -> crescendo 0.25 0.75
+        section s { curve }
+        Song song = [s]
+        (writeMidi "tests/output/dynamics_velocity.mid" song)
+        (print "dynamics_velocity: PASSED")
+    }
+}

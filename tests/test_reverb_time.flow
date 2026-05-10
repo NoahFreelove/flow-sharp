@@ -1,0 +1,28 @@
+use "@std"
+use "@audio"
+
+// Phase 15 DX-07 — reverbTime end-to-end render sanity.
+// Positive value writes a WAV with audible reverb tail.
+tempo 120 {
+    timesig 4/4 {
+        reverbTime 2.5 {
+            Sequence a = | C4 D4 E4 F4 |
+            section hall { a }
+            Song song1 = [hall]
+            Buffer rendered1 = (renderSong song1 "piano")
+            (writeWav "tests/output/phase15_reverbtime_25.wav" rendered1)
+            (print "reverbTime 2.5: PASSED")
+        }
+
+        // D-02: reverbTime 0 is the dry sentinel — output should be byte-identical
+        // to the same render without a reverbTime wrapper.
+        reverbTime 0 {
+            Sequence b = | C4 D4 E4 F4 |
+            section dry { b }
+            Song song2 = [dry]
+            Buffer rendered2 = (renderSong song2 "piano")
+            (writeWav "tests/output/phase15_reverbtime_0.wav" rendered2)
+            (print "reverbTime 0 dry: PASSED")
+        }
+    }
+}

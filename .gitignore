@@ -12,3 +12,24 @@ tests/
 flow-interpreter/flow-interpreter
 *.wav
 .claude/plugins/*
+
+# VSCode extension build artifacts
+vscode-extension/node_modules/
+vscode-extension/out/
+vscode-extension/server/
+*.vsix
+
+# VSCode extension sources must be tracked even though tests/ and *.flow
+# are globally ignored above.
+!vscode-extension/tests/
+!vscode-extension/tests/**
+!vscode-extension/tests/**/*.flow
+!vscode-extension/README.md
+
+# Editor-setup documentation (docs/editor-setup/) is user-facing prose and
+# MUST be tracked even though *.md is globally ignored above. Raw snippets
+# (.lua, .toml) are not matched by the globs, so they track automatically.
+!docs/
+!docs/**
+!docs/**/*.md
+!README.md

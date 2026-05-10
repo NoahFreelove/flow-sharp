@@ -35,11 +35,16 @@ public static class Reverb
         // Scale delay times for the actual sample rate
         double rateScale = input.SampleRate / 44100.0;
 
+        // Map room size to feedback range [0.7, 0.98]. Moved out of ProcessChannel
+        // (Phase 15 Plan 03 strict refactor) so the new RT60 overload can share
+        // ProcessChannel by passing a pre-computed Schroeder feedback coefficient.
+        float feedback = 0.7f + roomSize * 0.28f;
+
         // Process each channel independently
         for (int ch = 0; ch < input.Channels; ch++)
         {
             var dry = ExtractChannel(input, ch);
-            var wet = ProcessChannel(dry, roomSize, damping, rateScale);
+            var wet = ProcessChannel(dry, feedback, damping, rateScale);
 
             // Mix wet/dry into result
             for (int frame = 0; frame < input.Frames; frame++)
@@ -53,12 +58,63 @@ public static class Reverb
     }
 
     /// <summary>
-    /// Processes a single channel through the Schroeder reverb network.
+    /// Applies Schroeder reverb with an RT60 (decay-time) parameter instead of room
+    /// size. The target decay time maps to the comb-filter feedback coefficient via
+    /// Schroeder's closed-form: <c>feedback = 10^(-3 · D/fs / RT60)</c> where D is
+    /// the mean comb-delay length in samples and fs is the sample rate. The result
+    /// is feedback clamped to [0, 0.99] — an upper cap prevents runaway amplification
+    /// for pathologically large RT60 (CONTEXT D-13, RESEARCH Open Q 3 locked at 0.99).
     /// </summary>
-    private static float[] ProcessChannel(float[] input, float roomSize, float damping, double rateScale)
+    /// <param name="input">Source audio buffer (not modified).</param>
+    /// <param name="rt60Seconds">
+    /// Desired decay time to -60dB in seconds. Values &lt;= 0 are coerced to 0.001
+    /// internally to avoid div-by-zero; the SongRenderer owns the "rt60 == 0 = dry"
+    /// short-circuit per CONTEXT D-02 (DSP stays pure).
+    /// </param>
+    /// <param name="damping">Damping in [0, 1]. Higher values attenuate highs faster.</param>
+    /// <param name="mix">Wet/dry mix in [0, 1]. 0 = fully dry, 1 = fully wet.</param>
+    /// <returns>A new buffer with reverb applied.</returns>
+    public static AudioBuffer Apply(AudioBuffer input, double rt60Seconds, float damping, float mix)
+    {
+        // Guard against div-by-zero; dry short-circuit lives in SongRenderer per D-02.
+        if (rt60Seconds <= 0.0) rt60Seconds = 0.001;
+
+        // Scale delay times for the actual sample rate (mirrors roomSize overload).
+        double rateScale = input.SampleRate / 44100.0;
+        double avgDelaySamples = (CombDelays[0] + CombDelays[1] + CombDelays[2] + CombDelays[3]) / 4.0 * rateScale;
+        double avgDelaySeconds = avgDelaySamples / input.SampleRate;
+
+        // Schroeder RT60 → feedback: feedback^N = 10^-3 where N = RT60 / (D/fs).
+        // Cap at 0.99 per RESEARCH Open Question 3 — pre-empts pathological feedback
+        // when rt60 is orders-of-magnitude larger than the comb-delay period.
+        float feedback = (float)Math.Clamp(
+            Math.Pow(10.0, -3.0 * avgDelaySeconds / rt60Seconds), 0.0, 0.99);
+
+        damping = Math.Clamp(damping, 0f, 1f);
+        mix = Math.Clamp(mix, 0f, 1f);
+
+        var result = new AudioBuffer(input.Frames, input.Channels, input.SampleRate);
+        for (int ch = 0; ch < input.Channels; ch++)
+        {
+            var dry = ExtractChannel(input, ch);
+            var wet = ProcessChannel(dry, feedback, damping, rateScale);
+            for (int frame = 0; frame < input.Frames; frame++)
+            {
+                float mixed = dry[frame] * (1f - mix) + wet[frame] * mix;
+                result.SetSample(frame, ch, mixed);
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Processes a single channel through the Schroeder reverb network. Accepts a
+    /// pre-computed feedback coefficient so both Apply overloads (roomSize + rt60)
+    /// can share the implementation without duplicating the comb-filter network.
+    /// </summary>
+    private static float[] ProcessChannel(float[] input, float feedback, float damping, double rateScale)
     {
         int length = input.Length;
-        float feedback = 0.7f + roomSize * 0.28f; // Map room size to feedback range [0.7, 0.98]
 
         // 4 parallel comb filters
         var combOutputs = new float[4][];

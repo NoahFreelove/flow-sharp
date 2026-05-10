@@ -1,0 +1,21 @@
+use "@std"
+
+Note: DX-05 slice — Array overload (silent clamping per D-01)
+Int[] arr = [1, 2, 3, 4, 5]
+Int[] mid = (slice arr 1 4)
+Int negFive = (sub 0 5)
+Int[] neg = (slice arr negFive 2)
+Int[] over = (slice arr 3 100)
+Int[] emp = (slice arr 3 2)
+
+(print (str (len mid)))
+(print (str (len neg)))
+(print (str (len over)))
+(print (str (len emp)))
+
+Note: DX-05 slice — Sequence overload (bar-level)
+Sequence seq = | C4 D4 | E4 F4 | G4 A4 |
+Sequence middle = (slice seq 1 2)
+(print (str middle))
+
+(print "test_slice: PASSED")

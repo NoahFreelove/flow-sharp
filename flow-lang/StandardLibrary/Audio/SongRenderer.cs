@@ -1,5 +1,7 @@
 using FlowLang.Audio;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Audio.DSP;
+using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -44,6 +46,9 @@ public static class SongRenderer
         var song = args[0].As<SongData>();
         var lambda = args[1].As<FunctionOverload>();
 
+        // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
+        SynthUtils.ResetNoiseRng();
+
         // Create a wrapper for the lambda that matches the INoteSynthesizer requirement
         var synth = new FlowFunctionSynthesizer((note, duration, bpm) =>
         {
@@ -84,6 +89,12 @@ public static class SongRenderer
         var song = args[0].As<SongData>();
         string synthType = (string)args[1].Data!;
 
+        // Reset the synth white-noise RNG to its fixed seed so that two
+        // renderSong calls on the same SongData produce byte-identical
+        // buffers (Plan 15-05 ROADMAP criterion #2 / D-18). Pre-fix the
+        // unseeded SynthUtils.Rng leaked state across renders.
+        SynthUtils.ResetNoiseRng();
+
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
 
         foreach (var sectionRef in song.Sections)
@@ -117,6 +128,10 @@ public static class SongRenderer
         double bpm = section.Context?.Tempo ?? DefaultBpm;
         double pan = section.Context?.Pan ?? 0.0;
         double gain = section.Context?.Gain ?? 1.0;
+        // DX-07 / D-14: per-voice reverb reads from the section's musical context.
+        // null means "no reverbTime active" → dry path. Value 0.0 is the explicit
+        // dry sentinel (CONTEXT D-02) — see predicate below.
+        double? rt60 = section.Context?.ReverbTime;
         var allVoices = new List<Voice>();
         double maxBeats = 0;
 
@@ -135,6 +150,26 @@ public static class SongRenderer
 
             if (sequence.TotalBeats > maxBeats)
                 maxBeats = sequence.TotalBeats;
+        }
+
+        // D-02, D-14: per-voice reverb when reverbTime context is active AND non-zero.
+        // Exact `!= 0.0` comparison (no epsilon) per RESEARCH Pitfall 3 — the parser
+        // produces the literal value unchanged, so `reverbTime 0` stores exactly 0.0
+        // and short-circuits here, while `reverbTime 0.0001` passes through as a
+        // near-dry-but-not-dry reverb (D-03 pass-through band).
+        if (rt60.HasValue && rt60.Value != 0.0)
+        {
+            for (int i = 0; i < allVoices.Count; i++)
+            {
+                var v = allVoices[i];
+                // Voice.Buffer is get-only (see Voice.cs:11), so we construct a new
+                // Voice with the reverb-wetted buffer and copy OffsetBeats/Gain/Pan.
+                var wetBuffer = Reverb.Apply(v.Buffer, rt60.Value, damping: 0.5f, mix: 0.3f);  // D-15 defaults
+                var replaced = new Voice(wetBuffer, v.OffsetBeats);
+                replaced.Gain = v.Gain;
+                replaced.Pan = v.Pan;
+                allVoices[i] = replaced;
+            }
         }
 
         if (allVoices.Count == 0 || maxBeats <= 0)
@@ -194,6 +229,9 @@ public static class SongRenderer
     /// </summary>
     public static (AudioBuffer Buffer, TimelineMap Timeline) RenderSongWithTimeline(SongData song, string synthType)
     {
+        // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
+        SynthUtils.ResetNoiseRng();
+
         var timelineMap = new TimelineMap();
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
         double accumulatedSeconds = 0;

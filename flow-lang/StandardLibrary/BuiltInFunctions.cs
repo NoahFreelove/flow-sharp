@@ -59,6 +59,82 @@ public static class BuiltInFunctions
         Audio.PlaybackFunctions.Register(registry, audioManager);
     }
 
+    /// <summary>
+    /// Registers EVERY built-in's name + signature against a stub delegate. For the LSP
+    /// (flow-lsp), which only introspects signatures for completion / hover / signature-help
+    /// and NEVER invokes the delegate.
+    ///
+    /// Delivers CONTEXT D-07 "every built-in in InternalFunctionRegistry" in full — no
+    /// audio-free carve-out — because it mirrors the signature side of every Register* method
+    /// (core + audio core + effects + panning + harmony + transforms + visualization +
+    /// composition + vocalization + playback). The AudioPlaybackManager used internally is
+    /// never invoked (the stub replaces every real delegate), so this path does not load
+    /// PulseAudio native libraries.
+    ///
+    /// Phase 17 (17-05). Do NOT call from flow-interpreter or FlowEngine — they use
+    /// RegisterAllImplementations which supplies real delegates.
+    /// </summary>
+    public static void RegisterSignaturesOnly(InternalFunctionRegistry registry)
+    {
+        // Shared stub — every signature registered via this path gets the SAME delegate.
+        // Invoking it is always a bug; the LSP only enumerates signatures via EnumerateSignatures.
+        Func<IReadOnlyList<Value>, Value> stub = args =>
+            throw new NotSupportedException(
+                "signatures-only — the LSP does not execute built-ins. " +
+                "Use RegisterAllImplementations(registry[, audioManager]) in flow-interpreter.");
+
+        // Proxy forwards every Register call to the target registry but substitutes the
+        // real delegate with the shared stub. This lets us reuse EVERY existing Register*
+        // body without duplicating signature declarations — a single source of truth.
+        var proxy = new StubbingRegistryProxy(registry, stub);
+
+        // Audio-manager-free paths (RegisterAllImplementations no-arg).
+        RegisterAllImplementations(proxy);
+
+        // Manager-bound paths. The manager is constructed to satisfy the method signatures
+        // of RegisterAudio/PlaybackFunctions.Register, but its real delegates are replaced
+        // by the proxy's stub substitution before they reach `registry`. The manager is
+        // never invoked and never loads a backend (PulseAudio p/invoke only fires on
+        // manager.GetBackend(), which no stub ever calls).
+        var dummyAudio = new AudioPlaybackManager();
+        RegisterAudio(proxy, dummyAudio);
+        Audio.PlaybackFunctions.Register(proxy, dummyAudio);
+
+        // Context-dependent paths (map, filter, reduce, each, random, renderSong-with-lambda,
+        // enharmonic, custom oscillator). These require an ExecutionContext to construct
+        // their closures; we allocate one bound to the proxy — since the closures are never
+        // invoked (the proxy replaces every delegate with the stub), the context is inert.
+        var dummyReporter = new FlowLang.Diagnostics.ErrorReporter();
+        var dummyContext = new FlowLang.Runtime.ExecutionContext(dummyReporter, proxy);
+        RegisterContextDependentFunctions(proxy, dummyContext);
+        RegisterIterationGuard(proxy, dummyContext);
+    }
+
+    /// <summary>
+    /// Registry proxy used by <see cref="RegisterSignaturesOnly"/>. Overrides Register so
+    /// every call forwards to the target registry with the impl replaced by a shared stub.
+    /// Keeps signature declarations single-sourced in the existing Register* methods.
+    /// </summary>
+    private sealed class StubbingRegistryProxy : InternalFunctionRegistry
+    {
+        private readonly InternalFunctionRegistry _target;
+        private readonly Func<IReadOnlyList<Value>, Value> _stub;
+
+        public StubbingRegistryProxy(InternalFunctionRegistry target, Func<IReadOnlyList<Value>, Value> stub)
+        {
+            _target = target;
+            _stub = stub;
+        }
+
+        public override void Register(string name, FunctionSignature signature, Func<IReadOnlyList<Value>, Value> implementation)
+        {
+            // Drop `implementation` on the floor — route (name, signature) to the target
+            // with the stub instead. The original lambda is constructed and captured (closure
+            // over audioManager, context, etc.) but never stored and never invoked.
+            _target.Register(name, signature, _stub);
+        }
+    }
+
     private static void RegisterStdLib(InternalFunctionRegistry registry)
     {
         var lenStrSignature = new FunctionSignature("len", [StringType.Instance]);
@@ -211,7 +287,15 @@ public static class BuiltInFunctions
         var ifSignature = new FunctionSignature(
             "if", [BoolType.Instance, new LazyType(VoidType.Instance), new LazyType(VoidType.Instance)]);
         registry.Register("if", ifSignature, StdLib.If);
-        
+
+        // Strict (non-Lazy) if overload — Void-wildcard covers all Bool-T-T concrete shapes
+        // (String/String, Double/Double, Int/Int, etc.). The Lazy overload above has higher
+        // specificity for Lazy<Void> args, so it wins when args are lazy-wrapped.
+        var ifStrictSignature = new FunctionSignature(
+            "if", [BoolType.Instance, VoidType.Instance, VoidType.Instance]);
+        registry.Register("if", ifStrictSignature, StdLib.IfStrict);
+
+
         var andSignature = new FunctionSignature(
             "and", [new LazyType(BoolType.Instance), new LazyType(BoolType.Instance)]);
         registry.Register("and", andSignature, StdLib.And);
@@ -363,6 +447,17 @@ public static class BuiltInFunctions
 
         var dropSignature = new FunctionSignature("drop", [new ArrayType(VoidType.Instance), IntType.Instance]);
         registry.Register("drop", dropSignature, Collections.Drop);
+
+        // DX-05 (Phase 14 plan 14-01): slice(Array[T], Int, Int) + slice(Sequence, Int, Int).
+        // Silent two-sided clamping per CONTEXT D-01. Both overloads ship atomically per D-02.
+        // Overload resolver disambiguates by arg 0 type (Array vs Sequence).
+        var sliceArraySignature = new FunctionSignature("slice",
+            [new ArrayType(VoidType.Instance), IntType.Instance, IntType.Instance]);
+        registry.Register("slice", sliceArraySignature, Collections.SliceArray);
+
+        var sliceSeqSignature = new FunctionSignature("slice",
+            [SequenceType.Instance, IntType.Instance, IntType.Instance]);
+        registry.Register("slice", sliceSeqSignature, Collections.SliceSequence);
 
         var appendSignature = new FunctionSignature("append", [new ArrayType(VoidType.Instance), VoidType.Instance]);
         registry.Register("append", appendSignature, Collections.Append);
@@ -658,6 +753,8 @@ public static class BuiltInFunctions
     {
         Audio.SongRenderer.RegisterContextDependent(registry, context);
         Composition.SongFunctions.Register(registry, context);
+        Harmony.HarmonyFunctions.RegisterContextDependent(registry, context);
+        RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
         // ===== Random Generator Functions =====
 
         var randSignature = new FunctionSignature("?", []);
@@ -1052,6 +1149,140 @@ public static class BuiltInFunctions
             sequence.AddBar(bar);
             return Value.Sequence(sequence);
         });
+    }
+
+    // ===== Phase 15 DX-09: euclidean swing + humanize + seed overloads =====
+    //
+    // Two additional euclidean overloads that accent hit velocities based on swing
+    // and optionally perturb them with a seeded uniform-random humanize factor.
+    //
+    // Semantics (from 15-CONTEXT.md):
+    //   D-05  swing clamped to [-1.0, 1.0]
+    //   D-06  on-beat = step index divisible by gridStep = max(1, steps / hits)
+    //   D-07  accent is a raw velocity delta (no multiplier)
+    //   D-08  asymmetric accent: only the accented set moves; the other set stays at base
+    //         (positive swing accents on-beats; negative swing accents off-beats)
+    //   D-09  humanize unit = fractional velocity on [0, 1] scale
+    //   D-10  humanize clamped to [0, 1]
+    //   D-11  uniform distribution over [-humanize, +humanize]
+    //   D-12  perturbed velocity clamped to [0, 1] (NOT reflected)
+    //   D-17  seed constructs a LOCAL new Random(seed) per-call; does NOT touch
+    //         ExecutionContext.GetRand — isolates the PRNG from global seeded state.
+    //
+    // Security: steps > 1024 raises InvalidOperationException (15-RESEARCH §Security Domain).
+    //
+    // Base velocity: reads MusicalContext.Velocity ?? 0.63 (matches
+    // NoteStreamCompiler.cs:341 default-mf semantics).
+    private static void RegisterEuclideanOverloads(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        // euclidean(Int, Int, Note, Double) -> Sequence
+        var euclideanSwingSig = new FunctionSignature(
+            "euclidean",
+            [IntType.Instance, IntType.Instance, NoteType.Instance, DoubleType.Instance]);
+        registry.Register("euclidean", euclideanSwingSig, args =>
+        {
+            int hits = (int)args[0].Data!;
+            int steps = (int)args[1].Data!;
+            string noteStr = (string)args[2].Data!;
+            double swing = (double)args[3].Data!;
+
+            if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
+            if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
+            if (steps > 1024) throw new InvalidOperationException("euclidean: steps exceeds safety limit of 1024");
+            if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
+
+            return BuildEuclideanSequence(hits, steps, noteStr, swing, humanize: 0.0, rng: null, context);
+        });
+
+        // euclidean(Int, Int, Note, Double, Double, Int) -> Sequence
+        var euclideanHumanSig = new FunctionSignature(
+            "euclidean",
+            [IntType.Instance, IntType.Instance, NoteType.Instance,
+             DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+        registry.Register("euclidean", euclideanHumanSig, args =>
+        {
+            int hits = (int)args[0].Data!;
+            int steps = (int)args[1].Data!;
+            string noteStr = (string)args[2].Data!;
+            double swing = (double)args[3].Data!;
+            double humanize = (double)args[4].Data!;
+            int seed = (int)args[5].Data!;
+
+            if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
+            if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
+            if (steps > 1024) throw new InvalidOperationException("euclidean: steps exceeds safety limit of 1024");
+            if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
+
+            // D-17: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
+            // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
+            var rng = new Random(seed);
+            return BuildEuclideanSequence(hits, steps, noteStr, swing, humanize, rng, context);
+        });
+    }
+
+    private static Value BuildEuclideanSequence(
+        int hits, int steps, string noteStr,
+        double swing, double humanize, Random? rng,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var (noteName, octave, alteration) = NoteType.Parse(noteStr);
+        var pattern = Bjorklund(hits, steps);
+
+        var duration = steps switch
+        {
+            <= 4 => NoteValueType.Value.QUARTER,
+            <= 8 => NoteValueType.Value.EIGHTH,
+            <= 16 => NoteValueType.Value.SIXTEENTH,
+            _ => NoteValueType.Value.THIRTYSECOND
+        };
+
+        // Base velocity: MusicalContext.Velocity ?? 0.63 (matches NoteStreamCompiler.cs:341).
+        double baseVelocity = context.GetMusicalContext().Velocity ?? 0.63;
+
+        // D-05..D-08: swing clamp + on-beat detection + asymmetric accent.
+        int gridStep = Math.Max(1, steps / hits);
+        double swingClamped = Math.Clamp(swing, -1.0, 1.0);
+        double accentAmount = Math.Abs(swingClamped);
+        bool accentOnBeats = swingClamped >= 0.0;
+
+        // D-10: humanize clamp.
+        double humanizeClamped = Math.Clamp(humanize, 0.0, 1.0);
+
+        var notes = new List<MusicalNoteData>();
+        for (int i = 0; i < pattern.Length; i++)
+        {
+            bool isHit = pattern[i];
+            if (!isHit)
+            {
+                notes.Add(new MusicalNoteData(' ', 0, 0, (int)duration, isRest: true));
+                continue;
+            }
+
+            double v = baseVelocity;
+            bool onBeat = (i % gridStep) == 0;
+            bool accented = accentOnBeats == onBeat;
+            if (accented) v += accentAmount;
+
+            // D-11: uniform perturbation in [-humanize, +humanize].
+            if (rng != null && humanizeClamped > 0.0)
+            {
+                double jitter = (rng.NextDouble() * 2.0 - 1.0) * humanizeClamped;
+                v += jitter;
+                // D-12: clamp, not reflect. MusicalNoteData ctor also clamps — belt-and-braces.
+                v = Math.Max(0.0, Math.Min(1.0, v));
+            }
+
+            notes.Add(new MusicalNoteData(noteName, octave, alteration, (int)duration,
+                isRest: false, velocity: v));
+        }
+
+        var timeSig = new TimeSignatureData(4, 4);
+        var bar = new BarData(notes, timeSig);
+        var sequence = new SequenceData();
+        sequence.AddBar(bar);
+        return Value.Sequence(sequence);
     }
 
     /// <summary>
