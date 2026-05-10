@@ -23,7 +23,7 @@ class Program
             // No arguments - check if stdin has data
             if (Console.IsInputRedirected)
             {
-                return RunFromStdin(flags.DeviceName);
+                return RunFromStdin(flags.DeviceName, flags.Verbose);
             }
 
             // No input - start REPL
@@ -34,12 +34,12 @@ class Program
 
         if (flags.EvalCode != null)
         {
-            return RunFromString(flags.EvalCode, flags.DeviceName);
+            return RunFromString(flags.EvalCode, flags.DeviceName, flags.Verbose);
         }
 
         if (flags.ReadStdin)
         {
-            return RunFromStdin(flags.DeviceName);
+            return RunFromStdin(flags.DeviceName, flags.Verbose);
         }
 
         // Execute script file
@@ -53,22 +53,22 @@ class Program
 
             if (flags.Watch)
             {
-                return RunWithWatch(flags.ScriptPath, flags.DeviceName);
+                return RunWithWatch(flags.ScriptPath, flags.DeviceName, flags.Verbose);
             }
 
             var runner = new ScriptRunner();
-            return runner.RunScript(flags.ScriptPath, flags.DeviceName);
+            return runner.RunScript(flags.ScriptPath, flags.DeviceName, flags.Verbose);
         }
 
         PrintUsage();
         return 1;
     }
 
-    static int RunFromString(string code, string? deviceName)
+    static int RunFromString(string code, string? deviceName, bool verbose = false)
     {
         try
         {
-            using var engine = new FlowEngine();
+            using var engine = new FlowEngine(verbose: verbose);
             ConfigureDevice(engine, deviceName);
             var success = engine.Execute(code, "<eval>");
 
@@ -91,12 +91,12 @@ class Program
         }
     }
 
-    static int RunFromStdin(string? deviceName)
+    static int RunFromStdin(string? deviceName, bool verbose = false)
     {
         try
         {
             var code = Console.In.ReadToEnd();
-            using var engine = new FlowEngine();
+            using var engine = new FlowEngine(verbose: verbose);
             ConfigureDevice(engine, deviceName);
             var success = engine.Execute(code, "<stdin>");
 
@@ -120,102 +120,15 @@ class Program
     }
 
     /// <summary>
-    /// Runs a script with file watching. Re-executes on file changes.
-    /// Ctrl+C stops playback and exits cleanly.
+    /// Runs a script with file watching and live-coding support.
+    /// Delegates to LiveReloadManager for streaming playback with bar-boundary buffer swapping.
     /// </summary>
-    static int RunWithWatch(string filePath, string? deviceName)
+    static int RunWithWatch(string filePath, string? deviceName, bool verbose = false)
     {
         var fullPath = Path.GetFullPath(filePath);
-        var directory = Path.GetDirectoryName(fullPath)!;
-        var fileName = Path.GetFileName(fullPath);
-
-        using var engine = new FlowEngine();
-        ConfigureDevice(engine, deviceName);
-
-        // Handle Ctrl+C: stop audio, then exit
-        var exitRequested = false;
-        Console.CancelKeyPress += (_, e) =>
-        {
-            if (!exitRequested)
-            {
-                // First Ctrl+C: stop audio, stay in watch mode
-                e.Cancel = true;
-                engine.StopAudio();
-                Console.WriteLine();
-                Console.WriteLine("Audio stopped. Press Ctrl+C again to exit.");
-                exitRequested = true;
-            }
-            // Second Ctrl+C: default behavior (exit)
-        };
-
-        // Initial execution
-        ExecuteScript(engine, fullPath);
-
-        Console.WriteLine($"Watching {fileName} for changes... (Ctrl+C to stop)");
-
-        // Set up file watcher
-        using var watcher = new FileSystemWatcher(directory, fileName);
-        watcher.NotifyFilter = NotifyFilters.LastWrite;
-
-        // Debounce: editors may trigger multiple write events
-        DateTime lastChange = DateTime.MinValue;
-        watcher.Changed += (_, e) =>
-        {
-            var now = DateTime.Now;
-            if ((now - lastChange).TotalMilliseconds < 500)
-                return;
-            lastChange = now;
-
-            Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"Change detected in {fileName}, re-executing...");
-            Console.ResetColor();
-
-            // Stop any current playback before re-executing
-            engine.StopAudio();
-
-            // Small delay to ensure file write is complete
-            Thread.Sleep(100);
-
-            ExecuteScript(engine, fullPath);
-        };
-
-        watcher.EnableRaisingEvents = true;
-
-        // Block until exit is requested
-        while (!exitRequested)
-        {
-            Thread.Sleep(200);
-        }
-
-        engine.StopAudio();
-        Console.WriteLine("Watch mode ended.");
+        using var manager = new LiveReloadManager(fullPath, deviceName);
+        manager.Run();
         return 0;
-    }
-
-    /// <summary>
-    /// Executes a script file with error reporting.
-    /// </summary>
-    static void ExecuteScript(FlowEngine engine, string filePath)
-    {
-        try
-        {
-            var source = File.ReadAllText(filePath);
-            var success = engine.Execute(source, filePath);
-
-            if (!success)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
-                Console.ResetColor();
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            Console.ResetColor();
-        }
     }
 
     /// <summary>
@@ -248,6 +161,7 @@ class Program
         bool watch = false;
         bool showHelp = false;
         bool readStdin = false;
+        bool verbose = false;
 
         int i = 0;
         while (i < args.Length)
@@ -283,6 +197,11 @@ class Program
                     i++;
                     break;
 
+                case "--verbose" or "-v":
+                    verbose = true;
+                    i++;
+                    break;
+
                 case "--device":
                     if (i + 1 < args.Length)
                     {
@@ -305,7 +224,7 @@ class Program
             }
         }
 
-        return new CliFlags(scriptPath, evalCode, deviceName, watch, showHelp, readStdin);
+        return new CliFlags(scriptPath, evalCode, deviceName, watch, showHelp, readStdin, verbose);
     }
 
     static void PrintUsage()
@@ -323,6 +242,7 @@ class Program
         Console.WriteLine();
         Console.WriteLine("Options:");
         Console.WriteLine("  --watch, -w     Watch script file for changes and re-execute");
+        Console.WriteLine("  --verbose, -v   Show diagnostic output (module loads, resolution failures)");
         Console.WriteLine("  --device <name> Set the audio output device");
     }
 }
@@ -336,5 +256,6 @@ record CliFlags(
     string? DeviceName,
     bool Watch,
     bool ShowHelp,
-    bool ReadStdin
+    bool ReadStdin,
+    bool Verbose
 );

@@ -38,6 +38,7 @@ public class MusicalContext
     public string? Key { get; set; }    // e.g., "Cmajor", "Aminor"
     public double? Velocity { get; set; }  // 0.0 to 1.0 (null = inherit, default mf = 0.63)
     public double? Pan { get; set; }  // -1.0 (left) to 1.0 (right), null = inherit
+    public double? Gain { get; set; }  // 0.0 to 2.0 (null = inherit, default 1.0 at usage site)
 
     /// <summary>
     /// Creates a new context with all values inherited (null).
@@ -54,7 +55,8 @@ public class MusicalContext
         Swing = Swing,
         Key = Key,
         Velocity = Velocity,
-        Pan = Pan
+        Pan = Pan,
+        Gain = Gain
     };
 
     /// <summary>
@@ -82,6 +84,14 @@ public class MusicalContext
         return swing >= 0.0 && swing <= 1.0;
     }
 
+    /// <summary>
+    /// Validates that a gain value is in [0.0, 2.0].
+    /// </summary>
+    public static bool IsValidGain(double gain)
+    {
+        return gain >= 0.0 && gain <= 2.0;
+    }
+
     public override string ToString()
     {
         var parts = new List<string>();
@@ -91,6 +101,7 @@ public class MusicalContext
         if (Key != null) parts.Add($"key={Key}");
         if (Velocity != null) parts.Add($"velocity={Velocity}");
         if (Pan != null) parts.Add($"pan={Pan}");
+        if (Gain != null) parts.Add($"gain={Gain}");
         return $"MusicalContext({string.Join(", ", parts)})";
     }
 }

@@ -233,6 +233,30 @@ public static class FileIO
         return Math.Clamp(sample, -1.0f, 1.0f);
     }
 
+    /// <summary>
+    /// Writes an AudioBuffer to a WAV file. Primary export function with path-first arg order.
+    /// Matches writeMidi convention: writeWav(path, buffer).
+    /// </summary>
+    public static Value WriteWav(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var buffer = args[1].As<AudioBuffer>();
+        ExportWavInternal(buffer, filepath, 16);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Writes an AudioBuffer to a WAV file with specified bit depth. Path-first arg order.
+    /// </summary>
+    public static Value WriteWavWithBitDepth(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var buffer = args[1].As<AudioBuffer>();
+        int bitDepth = args[2].As<int>();
+        ExportWavInternal(buffer, filepath, bitDepth);
+        return Value.Void();
+    }
+
     // ===== WAV Loading =====
 
     /// <summary>

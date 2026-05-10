@@ -1,3 +1,5 @@
+using FlowLang.TypeSystem.PrimitiveTypes;
+
 namespace FlowLang.TypeSystem.SpecialTypes;
 
 /// <summary>
@@ -12,6 +14,15 @@ public sealed class SemitoneType : FlowType
     public override string Name => "Semitone";
 
     public override int GetSpecificity() => 125;
+
+    /// <summary>
+    /// Semitone is compatible with Int, allowing transpose(seq, 2) to match
+    /// the transpose(Sequence, Semitone) overload without requiring a literal like +2st.
+    /// </summary>
+    public override bool IsCompatibleWith(FlowType target)
+    {
+        return target is IntType || base.IsCompatibleWith(target);
+    }
 
     /// <summary>
     /// Parses a semitone string like "+1st", "-5st" into an integer value.

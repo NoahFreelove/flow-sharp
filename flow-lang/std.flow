@@ -88,6 +88,14 @@ internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
 internal proc concat (Sequence: a, Sequence: b)
 
+Note: Probabilistic variation
+internal proc vary(Sequence: seq, Double: probability)
+internal proc vary(Sequence: seq, Double: probability, String: mutationType)
+internal proc vary(Sequence: seq, Double: probability, Int: seed)
+internal proc vary(Sequence: seq, Double: probability, String: mutationType, Int: seed)
+internal proc vary(Sequence: seq, Double: probability, String: mutationType, String: keyName)
+internal proc vary(Sequence: seq, Double: probability, String: mutationType, String: keyName, Int: seed)
+
 Note: Dynamic transforms
 internal proc crescendo (Sequence: seq, Double: startVel, Double: endVel)
 internal proc decrescendo (Sequence: seq, Double: startVel, Double: endVel)
@@ -117,9 +125,29 @@ internal proc tremolo (Sequence: seq, Int: repetitions)
 
 Note: Visualization
 internal proc visualize (Sequence: seq)
+internal proc visualize (Buffer: b)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)
 
 Note: Iteration guard
 internal proc setMaxIterations (Int: limit)
+
+// Math functions
+internal proc sin (Double: x)
+internal proc cos (Double: x)
+internal proc tan (Double: x)
+internal proc abs (Double: x)
+internal proc abs (Int: x)
+internal proc sqrt (Double: x)
+internal proc min (Double: a, Double: b)
+internal proc min (Int: a, Int: b)
+internal proc max (Double: a, Double: b)
+internal proc max (Int: a, Int: b)
+internal proc floor (Double: x)
+internal proc ceil (Double: x)
+internal proc round (Double: x)
+internal proc pow (Double: base, Double: exponent)
+internal proc log (Double: x)
+internal proc pi ()
+internal proc tau ()

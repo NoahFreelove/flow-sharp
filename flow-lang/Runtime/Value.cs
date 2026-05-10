@@ -94,18 +94,78 @@ public class Value
             if (targetType is DoubleType) return Double(intVal);
             if (targetType is NumberType) return Number(new BigInteger(intVal));
             if (targetType is NoteValueType) return NoteValue(intVal);
+            if (targetType is BoolType) return Bool(intVal != 0);
+            if (targetType is SemitoneType) return Semitone(intVal); // e.g. 5st
         }
 
         if (Data is long longVal)
         {
+            if (targetType is IntType) return Int((int)longVal); // Lossy
             if (targetType is FloatType) return Float(longVal);
             if (targetType is DoubleType) return Double(longVal);
             if (targetType is NumberType) return Number(new BigInteger(longVal));
+            if (targetType is BoolType) return Bool(longVal != 0);
         }
 
         if (Data is double doubleVal)
         {
+            if (targetType is IntType) return Int((int)doubleVal); // Lossy
+            if (targetType is LongType) return Long((long)doubleVal); // Lossy
+            if (targetType is FloatType) return Float((float)doubleVal); // Lossy
             if (targetType is NumberType) return Number(new BigInteger(doubleVal));
+        }
+
+        if (Data is float floatVal)
+        {
+            if (targetType is IntType) return Int((int)floatVal); // Lossy
+            if (targetType is LongType) return Long((long)floatVal); // Lossy
+            if (targetType is DoubleType) return Double(floatVal);
+            if (targetType is NumberType) return Number(new BigInteger(floatVal));
+        }
+
+        // Boxed BigInteger
+        if (Data is BigInteger bigVal)
+        {
+            if (targetType is IntType) return Int((int)bigVal); // Lossy
+            if (targetType is LongType) return Long((long)bigVal); // Lossy
+            if (targetType is FloatType) return Float((float)bigVal); // Lossy
+            if (targetType is DoubleType) return Double((double)bigVal); // Lossy
+        }
+
+        if (Data is bool boolVal)
+        {
+            if (targetType is IntType) return Int(boolVal ? 1 : 0);
+            if (targetType is LongType) return Long(boolVal ? 1L : 0L);
+            if (targetType is DoubleType) return Double(boolVal ? 1.0 : 0.0);
+        }
+
+        if (Data is string str)
+        {
+            // Simple casts
+            if (targetType is NoteType) return Note(str);
+            if (targetType is StringType) return String(str);
+        }
+
+        if (Type is NoteType && targetType is SemitoneType && Data is string noteStr)
+        {
+            // Try convert Note to Semitone
+            try
+            {
+                var parsed = NoteType.Parse(noteStr);
+                int midi = NoteType.ToMidiNote(parsed.note, parsed.octave, parsed.alteration);
+                return Semitone(midi);
+            }
+            catch
+            {
+                throw new InvalidCastException($"Cannot convert Note '{noteStr}' to Semitone");
+            }
+        }
+
+        if (Type is SemitoneType && targetType is NoteType && Data is int semiVal)
+        {
+            // Convert Semitone to Note
+            var parsed = NoteType.FromMidiNote(semiVal);
+            return Note(NoteType.Format(parsed.note, parsed.octave, parsed.alteration));
         }
 
         // Time conversions
@@ -125,18 +185,29 @@ public class Value
             if (sourceArray.ElementType is TypeSystem.PrimitiveTypes.VoidType)
             {
                 // Convert Void[] to T[] by returning a new array with the target element type
-                var arrayData = Data as IReadOnlyList<Value> ?? throw new InvalidCastException("Expected array data");
+                var arrayData = Data as IReadOnlyList<Value> ?? throw new InvalidCastException($"Expected array data, got {Data?.GetType()}");
                 return Array(arrayData, targetArray.ElementType);
             }
         }
 
-        throw new InvalidCastException($"Cannot convert {Type} to {targetType}");
+        // Explicit Type Name error
+        throw new InvalidCastException($"Cannot convert Flow type '{Type.Name}' with underlying CLR type '{(Data != null ? Data.GetType().Name : "null")}' to Flow target type '{targetType.Name}'");
     }
 
     /// <summary>
-    /// Gets the CLR value as a specific type.
+    /// Gets the CLR value as a specific type safely.
     /// </summary>
-    public T As<T>() => (T)Data!;
+    public T As<T>()
+    {
+        if (Data is T t)
+        {
+            return t;
+        }
+
+        // Add detailed InvalidCastException log per Bug 6, C2
+        string actualType = Data?.GetType().Name ?? "null";
+        throw new InvalidCastException($"Type cast failure. Expected underlying CLR type '{typeof(T).Name}' from Flow value of type '{Type.Name}', but found '{actualType}'.");
+    }
 
     /// <summary>
     /// Gets the CLR value as a specific type, or default if null or wrong type.

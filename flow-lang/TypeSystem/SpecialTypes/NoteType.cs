@@ -107,6 +107,35 @@ public sealed class NoteType : FlowType
         return (octave + 1) * 12 + noteOffset; // C0 = 12
     }
 
+    public static int ToMidiNote(char note, int octave, int alteration)
+    {
+        return GetNoteValue(note, octave) + alteration;
+    }
+
+    public static (char note, int octave, int alteration) FromMidiNote(int midiNote)
+    {
+        if (midiNote < 12 || midiNote > 127) throw new ArgumentOutOfRangeException(nameof(midiNote));
+        int octave = (midiNote / 12) - 1;
+        int noteNum = midiNote % 12;
+
+        return noteNum switch
+        {
+            0 => ('C', octave, 0),
+            1 => ('C', octave, 1),
+            2 => ('D', octave, 0),
+            3 => ('D', octave, 1),
+            4 => ('E', octave, 0),
+            5 => ('F', octave, 0),
+            6 => ('F', octave, 1),
+            7 => ('G', octave, 0),
+            8 => ('G', octave, 1),
+            9 => ('A', octave, 0),
+            10 => ('A', octave, 1),
+            11 => ('B', octave, 0),
+            _ => throw new InvalidOperationException()
+        };
+    }
+
     /// <summary>
     /// Formats a note value back to string representation.
     /// </summary>

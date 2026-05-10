@@ -1,17 +1,12 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.StandardLibrary;
 
-public static class collections
+public static class Collections
 {
-    /// <summary>
-    /// Invoker delegate for calling function overloads from within the standard library.
-    /// Set by the Interpreter at startup.
-    /// </summary>
-    internal static Func<FunctionOverload, IReadOnlyList<Value>, Value>? Invoker { get; set; }
-
     // ===== Array Functions =====
 
     /// <summary>
@@ -210,20 +205,26 @@ public static class collections
 
     // ===== Higher-Order Functions =====
 
-    public static Value Each(IReadOnlyList<Value> args)
+    private static Value InvokeCallback(ExecutionContext context, FunctionOverload callback, List<Value> args)
+    {
+        if (callback.IsInternal) return callback.Implementation!(args);
+        return context.Invoker!.ExecuteUserFunctionWithCaptures(callback.Declaration!, args, callback.CapturedVariables);
+    }
+
+    public static Value Each(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var arr = args[0].As<IReadOnlyList<Value>>();
         var callback = args[1].As<FunctionOverload>();
 
         foreach (var element in arr)
         {
-            Invoker!(callback, new List<Value> { element });
+            InvokeCallback(context, callback, new List<Value> { element });
         }
 
         return Value.Void();
     }
 
-    public static Value Map(IReadOnlyList<Value> args)
+    public static Value Map(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var arr = args[0].As<IReadOnlyList<Value>>();
         var callback = args[1].As<FunctionOverload>();
@@ -231,7 +232,7 @@ public static class collections
         var results = new List<Value>();
         foreach (var element in arr)
         {
-            results.Add(Invoker!(callback, new List<Value> { element }));
+            results.Add(InvokeCallback(context, callback, new List<Value> { element }));
         }
 
         if (results.Count == 0)
@@ -244,7 +245,7 @@ public static class collections
         return Value.Array(results, elementType);
     }
 
-    public static Value Filter(IReadOnlyList<Value> args)
+    public static Value Filter(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var arr = args[0].As<IReadOnlyList<Value>>();
         var callback = args[1].As<FunctionOverload>();
@@ -252,7 +253,7 @@ public static class collections
         var results = new List<Value>();
         foreach (var element in arr)
         {
-            var result = Invoker!(callback, new List<Value> { element });
+            var result = InvokeCallback(context, callback, new List<Value> { element });
             if (result.As<bool>())
                 results.Add(element);
         }
@@ -264,7 +265,7 @@ public static class collections
         return Value.Array(results, elementType);
     }
 
-    public static Value Reduce(IReadOnlyList<Value> args)
+    public static Value Reduce(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var arr = args[0].As<IReadOnlyList<Value>>();
         var initial = args[1];
@@ -273,7 +274,7 @@ public static class collections
         var accumulator = initial;
         foreach (var element in arr)
         {
-            accumulator = Invoker!(callback, new List<Value> { accumulator, element });
+            accumulator = InvokeCallback(context, callback, new List<Value> { accumulator, element });
         }
 
         return accumulator;

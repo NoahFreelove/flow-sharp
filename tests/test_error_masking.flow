@@ -1,0 +1,7 @@
+Note: This script intentionally calls a non-existent function
+Note: The interpreter should report an error, not silently succeed
+Note: Run with: dotnet run --project flow-interpreter tests/test_error_masking.flow; echo "exit: $?"
+Note: Expected: error message + exit code 1
+
+(nonExistentFunction 42)
+(print "ERROR: this line should not execute if errors are fatal")

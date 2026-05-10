@@ -18,12 +18,16 @@ public enum ModuleLoadResult
 public class ModuleLoader
 {
     private readonly ErrorReporter _errorReporter;
+    private readonly TextWriter? _diagnosticOutput;
     private readonly HashSet<string> _loadedModules = new();
     private readonly HashSet<string> _currentlyLoading = new();
 
-    public ModuleLoader(ErrorReporter errorReporter)
+    public Interpreter.Interpreter? ParentInterpreter { get; set; }
+
+    public ModuleLoader(ErrorReporter errorReporter, TextWriter? diagnosticOutput = null)
     {
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
+        _diagnosticOutput = diagnosticOutput;
     }
 
     /// <summary>
@@ -51,6 +55,7 @@ public class ModuleLoader
             // 1. Check file exists
             if (!File.Exists(resolvedPath))
             {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - file not found");
                 _errorReporter.ReportError($"Import file not found: {resolvedPath}", errorLocation);
                 return ModuleLoadResult.Error;
             }
@@ -58,28 +63,44 @@ public class ModuleLoader
             // 2. Read file contents
             var source = File.ReadAllText(resolvedPath);
 
-            // 3. Lex and parse
-            var lexer = new Lexing.SimpleLexer(source, _errorReporter, resolvedPath);
+            // 3. Lex and parse with an isolated reporter
+            var localReporter = new Diagnostics.ErrorReporter();
+            var lexer = new Lexing.SimpleLexer(source, localReporter, resolvedPath);
             var tokens = lexer.Tokenize();
 
-            if (_errorReporter.HasErrors)
+            if (localReporter.HasErrors)
+            {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to lex module: {resolvedPath}");
+                _errorReporter.ReportError($"Module '{resolvedPath}' failed to parse due to syntax errors.", errorLocation);
                 return ModuleLoadResult.Error;
+            }
 
-            var parser = new Parsing.Parser(tokens, _errorReporter);
+            var parser = new Parsing.Parser(tokens, localReporter);
             var program = parser.Parse();
 
-            if (_errorReporter.HasErrors)
+            if (localReporter.HasErrors)
+            {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to parse module: {resolvedPath}");
+                _errorReporter.ReportError($"Module '{resolvedPath}' contains structural syntax errors and cannot be imported.", errorLocation);
                 return ModuleLoadResult.Error;
+            }
 
             // 4. Execute in current context (no new frame - imports add to current scope)
-            var interpreter = new Interpreter.Interpreter(context, _errorReporter, this);
+            var interpreter = ParentInterpreter ?? new Interpreter.Interpreter(context, _errorReporter, this);
             interpreter.Execute(program);
 
             _loadedModules.Add(resolvedPath);
-            return _errorReporter.HasErrors ? ModuleLoadResult.Error : ModuleLoadResult.Loaded;
+            if (_errorReporter.HasErrors)
+            {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - errors during execution");
+                return ModuleLoadResult.Error;
+            }
+            _diagnosticOutput?.WriteLine($"[verbose] Loaded module: {resolvedPath}");
+            return ModuleLoadResult.Loaded;
         }
         catch (Exception ex)
         {
+            _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - {ex.Message}");
             _errorReporter.ReportError($"Error loading module {resolvedPath}: {ex.Message}", errorLocation);
             return ModuleLoadResult.Error;
         }

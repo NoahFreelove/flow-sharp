@@ -19,6 +19,7 @@ public class FlowEngine : IDisposable
     private readonly RuntimeContext _context;
     private readonly Interpreter.Interpreter _interpreter;
     private readonly AudioPlaybackManager _audioManager;
+    private readonly TextWriter? _diagnosticOutput;
     private bool _disposed;
 
     public ErrorReporter ErrorReporter => _errorReporter;
@@ -30,32 +31,26 @@ public class FlowEngine : IDisposable
     /// </summary>
     public AudioPlaybackManager AudioManager => _audioManager;
 
-    public FlowEngine()
+    public FlowEngine(bool verbose = false) : this(new ErrorReporter(), verbose)
     {
-        _errorReporter = new ErrorReporter();
-        _audioManager = new AudioPlaybackManager();
-
-        // Create internal function registry and register C# implementations
-        var internalRegistry = new InternalFunctionRegistry();
-        BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
-
-        _context = new RuntimeContext(_errorReporter, internalRegistry);
-        BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
-        _interpreter = new Interpreter.Interpreter(_context, _errorReporter);
     }
 
-    public FlowEngine(ErrorReporter errorReporter)
+    public FlowEngine(ErrorReporter errorReporter, bool verbose = false)
     {
         _errorReporter = errorReporter;
         _audioManager = new AudioPlaybackManager();
+        _diagnosticOutput = verbose ? Console.Error : null;
 
         // Create internal function registry and register C# implementations
         var internalRegistry = new InternalFunctionRegistry();
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
 
-        _context = new RuntimeContext(_errorReporter, internalRegistry);
+        _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
-        _interpreter = new Interpreter.Interpreter(_context, _errorReporter);
+        BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
+        var moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
+        _interpreter = new Interpreter.Interpreter(_context, _errorReporter, moduleLoader);
+        moduleLoader.ParentInterpreter = _interpreter;
     }
 
     /// <summary>
@@ -83,6 +78,8 @@ public class FlowEngine : IDisposable
 
             // 3. Type check AST (skipped for now - types checked at runtime)
 
+            _diagnosticOutput?.WriteLine($"[verbose] Executing {fileName ?? "<eval>"}");
+
             // 4. Interpret AST
             _interpreter.Execute(program);
 
@@ -96,9 +93,14 @@ public class FlowEngine : IDisposable
     }
 
     /// <summary>
-    /// Executes source code and returns the result of the last expression.
+    /// Returns the result of the last evaluated expression from the previous script execution.
     /// </summary>
-    public Value? ExecuteExpression(string source, string? fileName = null)
+    public Value? GetLastExpressionResult() => _interpreter.GetLastExpressionValue();
+
+    /// <summary>
+    /// Executes entire source code script and returns the result of the last expression.
+    /// </summary>
+    public Value? ExecuteScriptAndGetResult(string source, string? fileName = null)
     {
         var success = Execute(source, fileName);
 

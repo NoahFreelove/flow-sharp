@@ -155,6 +155,68 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
         }
     }
 
+    public void EnsureInitialized(int sampleRate, int channels)
+    {
+        lock (_lock)
+        {
+            if (IsInitialized && sampleRate == _sampleRate && channels == _channels)
+                return;
+        }
+
+        if (!Initialize(sampleRate, channels))
+            throw new InvalidOperationException(
+                "No audio output available. Install PipeWire or PulseAudio.");
+    }
+
+    public void WriteChunk(float[] samples, int offset, int count, int sampleRate, int channels)
+    {
+        if (count <= 0)
+            return;
+
+        EnsureInitialized(sampleRate, channels);
+
+        // Clamp samples in-place check; write from a clamped sub-buffer
+        // to avoid allocating a full copy of the source array.
+        var chunk = new float[count];
+        for (int i = 0; i < count; i++)
+        {
+            int srcIdx = offset + i;
+            if (srcIdx >= samples.Length) break;
+            float s = samples[srcIdx];
+            if (float.IsNaN(s) || float.IsInfinity(s))
+                chunk[i] = 0f;
+            else
+                chunk[i] = Math.Clamp(s, -1.0f, 1.0f);
+        }
+
+        var handle = GCHandle.Alloc(chunk, GCHandleType.Pinned);
+        try
+        {
+            int writeBytes = count * sizeof(float);
+
+            lock (_lock)
+            {
+                if (!IsInitialized)
+                    return;
+
+                int error;
+                var ptr = handle.AddrOfPinnedObject();
+                int result = pa_simple_write(_connection, ptr, (nuint)writeBytes, out error);
+
+                if (result < 0)
+                {
+                    var errorMsg = Marshal.PtrToStringAnsi(pa_strerror(error));
+                    throw new InvalidOperationException($"PulseAudio write error: {errorMsg}");
+                }
+            }
+            // Note: No pa_simple_drain -- streaming loop feeds continuously.
+        }
+        finally
+        {
+            handle.Free();
+        }
+    }
+
     public void Stop()
     {
         lock (_lock)
@@ -204,35 +266,9 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
 
     /// <summary>
     /// Clamp all samples to the valid range [-1.0, 1.0] and handle NaN/Infinity.
-    /// Returns a new array if clamping was needed, otherwise returns the original.
+    /// Delegates to the shared AudioUtils implementation.
     /// </summary>
-    private static float[] ClampSamples(float[] samples)
-    {
-        bool needsClamp = false;
-        for (int i = 0; i < samples.Length; i++)
-        {
-            if (float.IsNaN(samples[i]) || float.IsInfinity(samples[i]) ||
-                samples[i] > 1.0f || samples[i] < -1.0f)
-            {
-                needsClamp = true;
-                break;
-            }
-        }
-
-        if (!needsClamp)
-            return samples;
-
-        var clamped = new float[samples.Length];
-        for (int i = 0; i < samples.Length; i++)
-        {
-            float s = samples[i];
-            if (float.IsNaN(s) || float.IsInfinity(s))
-                clamped[i] = 0f;
-            else
-                clamped[i] = Math.Clamp(s, -1.0f, 1.0f);
-        }
-        return clamped;
-    }
+    private static float[] ClampSamples(float[] samples) => AudioUtils.ClampSamples(samples);
 
     // --- PulseAudio Simple API P/Invoke bindings ---
 

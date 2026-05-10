@@ -1,13 +1,14 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
+using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.StandardLibrary;
 
 /// <summary>
 /// Standard library implementations for Flow built-in functions.
 /// </summary>
-public static class stdlib
+public static class StdLib
 {
     /// <summary>
     /// Returns the length of a string.
@@ -457,29 +458,29 @@ public static class stdlib
     /// <summary>
     /// Returns a random Float between 0.0 and 1.0.
     /// </summary>
-    public static Value Rand(IReadOnlyList<Value> args)
+    public static Value Rand(IReadOnlyList<Value> args, ExecutionContext context)
     {
-        return Value.Float(Utils.FRand());
+        return Value.Float(context.GetRand().NextSingle());
     }
     
-    public static Value FixedRand(IReadOnlyList<Value> args)
+    public static Value FixedRand(IReadOnlyList<Value> args, ExecutionContext context)
     {
-        return Value.Float(Utils.FRand(true));
+        return Value.Float(context.GetRand(true).NextSingle());
     }
     
-    public static Value FixedRandReset(IReadOnlyList<Value> args)
+    public static Value FixedRandReset(IReadOnlyList<Value> args, ExecutionContext context)
     {
-        Utils.ResetGen();
+        context.ResetGen();
         return Value.Void();
     }
     
-    public static Value FixedRandSet(IReadOnlyList<Value> args)
+    public static Value FixedRandSet(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var val = args[0];
         if (val.Type is not IntType)                                                      
             throw new InvalidOperationException($"Expected Int, got {val.Type}"); 
         
-        Utils.SetSeed(val.As<int>());
+        context.SetSeed(val.As<int>());
         return Value.Void();
     }
 }

@@ -43,56 +43,62 @@ public class InternalFunctionRegistry
 
     private bool SignaturesMatch(FunctionSignature registered, FunctionSignature requested)
     {
-        // Special case: if registered is varargs with Void type,
-        // it accepts any requested signature (even non-varargs)
-        if (registered.IsVarArgs &&
-            registered.InputTypes.Count == 1 &&
-            registered.InputTypes[0] is TypeSystem.PrimitiveTypes.VoidType)
+        if (registered.IsVarArgs)
         {
-            // This handles cases like list(Void...: items) which accepts any arguments
-            return requested.InputTypes.Count == 1 &&
-                   requested.InputTypes[0] is TypeSystem.PrimitiveTypes.VoidType;
+            // A varargs function requires at least (N - 1) arguments to match the fixed part
+            int fixedCount = registered.InputTypes.Count - 1;
+            if (requested.InputTypes.Count < fixedCount) return false;
+
+            // Check fixed arguments
+            for (int i = 0; i < fixedCount; i++)
+            {
+                if (!TypesEqual(registered.InputTypes[i], requested.InputTypes[i]))
+                    return false;
+            }
+
+            // Check varargs
+            var varArgType = registered.InputTypes[fixedCount];
+            for (int i = fixedCount; i < requested.InputTypes.Count; i++)
+            {
+                if (!TypesEqual(varArgType, requested.InputTypes[i]))
+                    return false;
+            }
+
+            return true;
         }
-
-        // Check varargs flag - both must agree
-        if (registered.IsVarArgs != requested.IsVarArgs)
-            return false;
-
-        // Check parameter count
-        if (registered.InputTypes.Count != requested.InputTypes.Count)
-            return false;
-
-        // Check each parameter type
-        for (int i = 0; i < registered.InputTypes.Count; i++)
+        else
         {
-            if (!TypesEqual(registered.InputTypes[i], requested.InputTypes[i]))
+            // Non-varargs: count must match exactly
+            if (registered.InputTypes.Count != requested.InputTypes.Count)
                 return false;
-        }
 
-        return true;
+            for (int i = 0; i < registered.InputTypes.Count; i++)
+            {
+                if (!TypesEqual(registered.InputTypes[i], requested.InputTypes[i]))
+                    return false;
+            }
+
+            return true;
+        }
     }
 
-    private bool TypesEqual(FlowType a, FlowType b)
+    private bool TypesEqual(FlowType registered, FlowType requested)
     {
         // Check if types are exactly equal
-        if (a.Equals(b))
+        if (registered.Equals(requested))
+            return true;
+
+        // VoidType mathematically represents 'Any'
+        if (registered is TypeSystem.PrimitiveTypes.VoidType || requested is TypeSystem.PrimitiveTypes.VoidType)
             return true;
 
         // Special case: ArrayType(Void) matches any ArrayType
-        if (a is ArrayType aArray && b is ArrayType bArray)
+        if (registered is ArrayType rArray && requested is ArrayType reqArray)
         {
-            // If either element type is Void, consider them compatible
-            if (aArray.ElementType is TypeSystem.PrimitiveTypes.VoidType ||
-                bArray.ElementType is TypeSystem.PrimitiveTypes.VoidType)
-            {
-                return true;
-            }
-
-            return TypesEqual(aArray.ElementType, bArray.ElementType);
+            return TypesEqual(rArray.ElementType, reqArray.ElementType);
         }
 
-        // Check if they're the same type class
-        return a.GetType() == b.GetType();
+        return false;
     }
 
     public bool HasImplementation(string name) => _implementations.ContainsKey(name);

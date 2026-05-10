@@ -6,6 +6,7 @@ using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
+using System.Numerics;
 using FlowLang.Diagnostics;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
@@ -18,13 +19,13 @@ public class ExpressionEvaluator
 {
     private readonly RuntimeContext _context;
     private readonly ErrorReporter _errorReporter;
-    private readonly Interpreter _interpreter;
+    private readonly IFunctionInvoker _invoker;
 
-    public ExpressionEvaluator(RuntimeContext context, ErrorReporter errorReporter, Interpreter interpreter)
+    public ExpressionEvaluator(RuntimeContext context, ErrorReporter errorReporter, IFunctionInvoker invoker)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
-        _interpreter = interpreter ?? throw new ArgumentNullException(nameof(interpreter));
+        _invoker = invoker ?? throw new ArgumentNullException(nameof(invoker));
     }
 
     public Value Evaluate(Expression expr)
@@ -45,6 +46,7 @@ public class ExpressionEvaluator
             SongExpression song => EvaluateSong(song),
             ProgressionExpression progression => EvaluateProgression(progression),
             InterpolatedStringExpression interp => EvaluateInterpolatedString(interp),
+            FlowExpression flowEx => EvaluateFlowExpression(flowEx),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -135,20 +137,28 @@ public class ExpressionEvaluator
         }
         catch (InvalidOperationException)
         {
-            // Variable not found - check if it's a zero-argument function
-            var overload = _context.TryResolveFunction(var.Name, Array.Empty<FlowType>());
+            // Variable not found - check if it's a zero-argument function or a function reference
+            var overloads = _context.CurrentFrame.GetFunctionOverloads(var.Name);
 
-            if (overload != null)
+            if (overloads.Count > 0)
             {
-                // Call the zero-argument function
-                if (overload.IsInternal)
+                // Try resolving with 0 args first (for backwards compatibility with existing 0-arg function shortcuts)
+                var zeroArgOverload = _context.TryResolveFunction(var.Name, Array.Empty<FlowType>());
+                if (zeroArgOverload != null)
                 {
-                    return overload.Implementation!(new List<Value>());
+                    if (zeroArgOverload.IsInternal)
+                    {
+                        return zeroArgOverload.Implementation!(new List<Value>());
+                    }
+                    else
+                    {
+                        return _invoker.ExecuteUserFunction(zeroArgOverload.Declaration!, new List<Value>());
+                    }
                 }
-                else
-                {
-                    return _interpreter.ExecuteUserFunction(overload.Declaration!, new List<Value>());
-                }
+
+                // If not a 0-arg function, return it as a Function Value (the first available overload for now)
+                // In Flow, Function types are structurally compatible.
+                return Value.Function(overloads[0]);
             }
 
             // Not a variable or function
@@ -199,7 +209,7 @@ public class ExpressionEvaluator
         else
         {
             // Execute user-defined function (with closure captures if present)
-            return _interpreter.ExecuteUserFunctionWithCaptures(
+            return _invoker.ExecuteUserFunctionWithCaptures(
                 overload.Declaration!, argValues, overload.CapturedVariables);
         }
     }
@@ -241,40 +251,109 @@ public class ExpressionEvaluator
     {
         var left = Evaluate(bin.Left);
         var right = Evaluate(bin.Right);
-
-        // Handle integer arithmetic
-        if (left.Type is IntType && right.Type is IntType)
+        
+        if (left.Type is StringType || right.Type is StringType)
         {
-            int l = left.As<int>();
-            int r = right.As<int>();
-
-            return bin.Operator switch
-            {
-                BinaryOperator.Add => Value.Int(l + r),
-                BinaryOperator.Subtract => Value.Int(l - r),
-                BinaryOperator.Multiply => Value.Int(l * r),
-                BinaryOperator.Divide => r != 0 ? Value.Int(l / r) : ReportDivisionByZero(bin.Location),
-                _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-            };
+            if (bin.Operator == BinaryOperator.Add)
+                return Value.String((left.Data?.ToString() ?? "") + (right.Data?.ToString() ?? ""));
         }
 
-        // Handle float/double arithmetic
-        if ((left.Type is FloatType or DoubleType) && (right.Type is FloatType or DoubleType))
-        {
-            double l = left.As<double>();
-            double r = right.As<double>();
+        bool lNum = left.Type is IntType or LongType or FloatType or DoubleType or NumberType;
+        bool rNum = right.Type is IntType or LongType or FloatType or DoubleType or NumberType;
 
-            return bin.Operator switch
+        if (lNum && rNum)
+        {
+            if (left.Type is NumberType || right.Type is NumberType)
             {
-                BinaryOperator.Add => Value.Double(l + r),
-                BinaryOperator.Subtract => Value.Double(l - r),
-                BinaryOperator.Multiply => Value.Double(l * r),
-                BinaryOperator.Divide => r != 0 ? Value.Double(l / r) : ReportDivisionByZero(bin.Location),
-                _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-            };
+                BigInteger l = left.Data is BigInteger bl ? bl : new BigInteger(Convert.ToInt64(left.Data));
+                BigInteger r = right.Data is BigInteger br ? br : new BigInteger(Convert.ToInt64(right.Data));
+                return bin.Operator switch
+                {
+                    BinaryOperator.Add => Value.Number(l + r),
+                    BinaryOperator.Subtract => Value.Number(l - r),
+                    BinaryOperator.Multiply => Value.Number(l * r),
+                    BinaryOperator.Divide => r != 0 ? Value.Number(l / r) : ReportDivisionByZero(bin.Location),
+                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
+                };
+            }
+            if (left.Type is DoubleType || right.Type is DoubleType)
+            {
+                double l = Convert.ToDouble(left.Data);
+                double r = Convert.ToDouble(right.Data);
+                return bin.Operator switch
+                {
+                    BinaryOperator.Add => Value.Double(l + r),
+                    BinaryOperator.Subtract => Value.Double(l - r),
+                    BinaryOperator.Multiply => Value.Double(l * r),
+                    BinaryOperator.Divide => r != 0 ? Value.Double(l / r) : ReportDivisionByZero(bin.Location),
+                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
+                };
+            }
+            if (left.Type is FloatType || right.Type is FloatType)
+            {
+                float l = Convert.ToSingle(left.Data);
+                float r = Convert.ToSingle(right.Data);
+                return bin.Operator switch
+                {
+                    BinaryOperator.Add => Value.Float(l + r),
+                    BinaryOperator.Subtract => Value.Float(l - r),
+                    BinaryOperator.Multiply => Value.Float(l * r),
+                    BinaryOperator.Divide => r != 0 ? Value.Float(l / r) : ReportDivisionByZero(bin.Location),
+                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
+                };
+            }
+            if (left.Type is LongType || right.Type is LongType)
+            {
+                long l = Convert.ToInt64(left.Data);
+                long r = Convert.ToInt64(right.Data);
+                return bin.Operator switch
+                {
+                    BinaryOperator.Add => Value.Long(l + r),
+                    BinaryOperator.Subtract => Value.Long(l - r),
+                    BinaryOperator.Multiply => Value.Long(l * r),
+                    BinaryOperator.Divide => r != 0 ? Value.Long(l / r) : ReportDivisionByZero(bin.Location),
+                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
+                };
+            }
+            else
+            {
+                int l = Convert.ToInt32(left.Data);
+                int r = Convert.ToInt32(right.Data);
+                return bin.Operator switch
+                {
+                    BinaryOperator.Add => Value.Int(l + r),
+                    BinaryOperator.Subtract => Value.Int(l - r),
+                    BinaryOperator.Multiply => Value.Int(l * r),
+                    BinaryOperator.Divide => r != 0 ? Value.Int(l / r) : ReportDivisionByZero(bin.Location),
+                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
+                };
+            }
         }
 
         _errorReporter.ReportError($"Cannot apply operator {bin.Operator} to {left.Type} and {right.Type}", bin.Location);
+        return Value.Void();
+    }
+
+    private Value EvaluateFlowExpression(FlowExpression flowEx)
+    {
+        var leftVal = Evaluate(flowEx.Left);
+        var rightVal = Evaluate(flowEx.Right);
+
+        if (rightVal.Type is FunctionType || rightVal.Data is FunctionOverload)
+        {
+            var overload = rightVal.Data as FunctionOverload;
+            if (overload == null)
+            {
+                _errorReporter.ReportError($"Right side of -> must be a function, got {rightVal.Type}", flowEx.Location);
+                return Value.Void();
+            }
+
+            var args = new List<Value> { leftVal };
+            if (overload.IsInternal) return overload.Implementation!(args);
+            else return _invoker.ExecuteUserFunctionWithCaptures(overload.Declaration!, args, overload.CapturedVariables);
+        }
+
+        _errorReporter.ReportError($"Cannot apply pipe operator -> to non-function type {rightVal.Type}", flowEx.Location);
         return Value.Void();
     }
 

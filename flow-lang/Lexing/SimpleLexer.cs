@@ -586,6 +586,7 @@ public class SimpleLexer
             "rit" => TokenType.Rit,
             "accel" => TokenType.Accel,
             "pan" => TokenType.Pan,
+            "gain" => TokenType.Gain,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
@@ -789,7 +790,10 @@ public class SimpleLexer
                 // Line continuation: backslash followed by newline
                 Advance(); // Skip backslash
                 Advance(); // Skip newline
-                // Continue processing (whitespace will be skipped in next iteration)
+                // Keep the logical line number so the parser's same-line checks
+                // treat continued tokens as part of the original line.
+                _line--;
+                _column = 1;
             }
             else if (c == '\\' && PeekNext() == '\r' && _position + 2 < _source.Length && _source[_position + 2] == '\n')
             {
@@ -797,6 +801,16 @@ public class SimpleLexer
                 Advance(); // Skip backslash
                 Advance(); // Skip \r
                 Advance(); // Skip \n
+                _line--;
+                _column = 1;
+            }
+            else if (c == '/' && PeekNext() == '/')
+            {
+                // Line comment: skip to end of line
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
             }
             else if (c == 'N' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("Note:"))
             {

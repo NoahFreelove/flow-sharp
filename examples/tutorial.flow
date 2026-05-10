@@ -1,0 +1,348 @@
+Note: ============================================================
+Note:  Flow Language Tutorial
+Note:  Run: dotnet run --project flow-interpreter examples/tutorial.flow
+Note: ============================================================
+
+use "@std"
+use "@audio"
+use "@composition"
+use "@collections"
+
+(print "")
+(print "========================================")
+(print "  Welcome to Flow!")
+(print "  A programming language for music.")
+(print "========================================")
+(print "")
+(print "This tutorial will walk you through Flow's features,")
+(print "from basic expressions all the way to composing a full song.")
+(print "Let's get started!")
+
+Note: -----------------------------------------------------------
+Note: 1. Variables and Basic Types
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 1. Variables and Basic Types ---")
+(print "")
+
+Int age = 42
+Double ratio = 3.14
+Double precise = 2.718281828
+String greeting = "Hello, musician"
+Bool ready = true
+
+(print $"Int:    age = {(str age)}")
+(print $"Double: ratio = {(str ratio)}")
+(print $"Double: precise = {(str precise)}")
+(print $"String: greeting = {greeting}")
+(print $"Bool:   ready = {(str ready)}")
+
+Note: -----------------------------------------------------------
+Note: 2. Arithmetic and String Interpolation
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 2. Arithmetic and String Interpolation ---")
+(print "")
+
+Int sum = (add 10 25)
+Double product = (mul 3.0 4.5)
+Int difference = (sub 100 37)
+
+(print $"10 + 25 = {(str sum)}")
+(print $"3.0 * 4.5 = {(str product)}")
+(print $"100 - 37 = {(str difference)}")
+
+Note: Flow uses S-expression style: (functionName arg1 arg2)
+Note: You can also use operators: 10 + 25
+Int quick = 10 + 25
+(print $"Operator style: 10 + 25 = {(str quick)}")
+
+Note: -----------------------------------------------------------
+Note: 3. Functions (procs) and the Flow Operator
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 3. Functions (procs) and the Flow Operator ---")
+(print "")
+
+Note: Define a function with 'proc' ... 'end'
+proc doubleIt(Int: n)
+    n * 2
+end proc
+
+proc square(Int: n)
+    n * n
+end proc
+
+Int result = (doubleIt 7)
+(print $"doubleIt(7) = {(str result)}")
+
+Note: The flow operator -> pipes a value through functions
+Note: x -> func(arg) becomes func(x, arg)
+Int chained = 3 -> doubleIt -> square
+String chainMsg = $"3 -> doubleIt -> square = {(str chained)}"
+(print chainMsg)
+(print "  (3 doubled is 6, squared is 36)")
+
+Note: -----------------------------------------------------------
+Note: 4. Collections and Loops
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 4. Collections and Loops ---")
+(print "")
+
+Note: Array literals
+Int[] numbers = [1, 2, 3, 4, 5]
+(print $"numbers = {(str numbers)}")
+
+Note: For loop
+(print "Counting with for:")
+for Int n in numbers {
+    (print $"  {(str n)}")
+}
+
+Note: While loop
+Int countdown = 5
+(print "Countdown with while:")
+while (gt countdown 0) {
+    (print $"  {(str countdown)}...")
+    countdown = countdown - 1
+}
+(print "  Liftoff!")
+
+Note: Map and filter with lambdas
+Int[] doubled = (map numbers (fn Int n => n * 2))
+(print $"doubled = {(str doubled)}")
+
+Int[] big = (filter numbers (fn Int n => (gt n 3)))
+(print $"bigger than 3 = {(str big)}")
+
+Int total = (reduce numbers 0 (fn Int acc, Int n => acc + n))
+(print $"sum = {(str total)}")
+
+Note: -----------------------------------------------------------
+Note: 5. Note Streams -- Where the Music Begins
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 5. Note Streams ---")
+(print "")
+(print "Notes use letter + octave: C4, D4, E4, F4, G4, A4, B4")
+(print "Durations: w=whole, h=half, q=quarter, e=eighth, s=sixteenth")
+(print "Rests: _ (underscore)")
+
+timesig 4/4 {
+    Note: A simple four-note melody (quarter notes by default)
+    Sequence scaleUp = | C4q D4q E4q F4q |
+    (print $"Simple scale: {(str scaleUp)}")
+
+    Note: Mix of durations: half + two quarters
+    Sequence rhythm = | C4h E4q G4q |
+    (print $"Mixed rhythm: {(str rhythm)}")
+
+    Note: Rests create space
+    Sequence withRest = | C4q _ E4q G4q |
+    (print $"With rest: {(str withRest)}")
+
+    Note: Chords use brackets
+    Sequence chordSeq = | [C4 E4 G4]h [F4 A4 C5]h |
+    (print $"Chords: {(str chordSeq)}")
+}
+
+Note: -----------------------------------------------------------
+Note: 6. Musical Context
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 6. Musical Context ---")
+(print "")
+(print "Musical context blocks set tempo, time signature, and key.")
+(print "They nest naturally -- inner blocks inherit from outer ones.")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence melody = | C4q E4q G4q C5q |
+            (print $"In C major at 120 BPM: {(str melody)}")
+        }
+
+        key Aminor {
+            Sequence dark = | A3q C4q E4q A4q |
+            (print $"In A minor at 120 BPM: {(str dark)}")
+        }
+    }
+
+    timesig 3/4 {
+        Sequence waltz = | C4q E4q G4q |
+        (print $"Waltz in 3/4 time: {(str waltz)}")
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 7. Sections and Songs
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 7. Sections and Songs ---")
+(print "")
+(print "Sections group musical phrases. Songs arrange sections.")
+
+tempo 110 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: Define sections with named Sequence variables
+            section tutIntro {
+                Sequence mel = | C4q E4q G4q C5q |
+            }
+
+            section tutVerse {
+                Sequence mel = | E4q E4q F4q G4q |
+                Sequence bass = | C3h G3h |
+            }
+
+            section tutChorus {
+                Sequence mel = | G4q A4q G4q E4q |
+                Sequence bass = | C3q E3q G3q C4q |
+            }
+
+            Note: Build a Song from sections (with repeats!)
+            Song mySong = [tutIntro tutVerse*2 tutChorus]
+            (print $"Song structure: {(str mySong)}")
+
+            Strings secs = (getSections mySong)
+            (print $"Sections in order: {(str secs)}")
+
+            Note: Render the song to audio
+            Buffer songBuf = (renderSong mySong "piano")
+            (print $"Rendered: {(str (getFrames songBuf))} frames")
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 8. Effects and the Audio Pipeline
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 8. Effects and the Audio Pipeline ---")
+(print "")
+(print "Chain effects with the flow operator for a natural signal flow.")
+
+tempo 120 {
+    timesig 4/4 {
+        section effectDemo {
+            Sequence mel = | C4q E4q G4q C5q |
+        }
+        Song effectSong = [effectDemo]
+        Buffer dry = (renderSong effectSong "piano")
+
+        Note: Apply effects with the flow operator
+        Double negThree = (sub 0.0 3.0)
+        Buffer processed = dry -> (reverb 0.3) -> (lowpass 3000.0) -> (gain negThree)
+
+        Int dryFrames = (getFrames dry)
+        Int wetFrames = (getFrames processed)
+        (print $"Dry signal:  {(str dryFrames)} frames")
+        (print $"With reverb + lowpass + gain: {(str wetFrames)} frames")
+        (print "Effects available: reverb, lowpass, highpass, bandpass, compress, delay, gain")
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 9. Pattern Transforms
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 9. Pattern Transforms ---")
+(print "")
+(print "Transform melodies with transpose, retrograde, invert, and more.")
+
+timesig 4/4 {
+    Sequence original = | C4q D4q E4q G4q |
+    (print $"Original:    {(str original)}")
+
+    Sequence higher = original -> transpose +7st
+    (print $"Up 5th (+7): {(str higher)}")
+
+    Sequence backwards = (retrograde original)
+    (print $"Retrograde:  {(str backwards)}")
+
+    Sequence twice = original -> repeat 2
+    (print $"Repeated 2x: {(str twice)}")
+
+    Sequence octaveUp = original -> up 1
+    (print $"Up 1 octave: {(str octaveUp)}")
+}
+
+Note: -----------------------------------------------------------
+Note: 10. Graduation Piece -- Putting It All Together
+Note: -----------------------------------------------------------
+(print "")
+(print "========================================")
+(print "  Graduation Piece: Sunrise")
+(print "========================================")
+(print "")
+(print "Let's compose a complete mini-piece using everything we learned.")
+
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: A gentle chord progression for the intro
+            section sunriseIntro {
+                Sequence chords = | [C4 E4 G4]h [F4 A4 C5]h |
+                Sequence bass = | C3h F3h |
+            }
+
+            Note: A melodic verse
+            section sunriseVerse {
+                Sequence mel = | E4q G4q A4q G4q | C5q B4q A4q G4q |
+                Sequence bass = | C3h G3h | A3h E3h |
+            }
+
+            Note: A bright chorus that lifts
+            section sunriseChorus {
+                Sequence mel = | C5q D5q E5q D5q | C5q A4q G4q E4q |
+                Sequence chords = | [C4 E4 G4]h [G4 B4 D5]h |
+                Sequence bass = | C3q E3q G3q C4q |
+            }
+
+            Note: A quiet outro
+            section sunriseOutro {
+                Sequence mel = | E4h C4h |
+                Sequence bass = | C3w |
+            }
+
+            Note: Arrange the full song
+            Song sunrise = [sunriseIntro sunriseVerse*2 sunriseChorus sunriseVerse sunriseChorus sunriseOutro]
+            (print $"Song: {(str sunrise)}")
+
+            Note: Render to audio
+            Buffer rawMix = (renderSong sunrise "piano")
+            (print $"Raw render: {(str (getFrames rawMix))} frames")
+
+            Note: Apply a polished effects chain
+            Double negTwo = (sub 0.0 2.0)
+            Buffer finalMix = rawMix -> (reverb 0.25) -> (lowpass 4000.0) -> (gain negTwo)
+            (print $"After effects: {(str (getFrames finalMix))} frames")
+
+            Note: Export to WAV
+            String outPath = "/tmp/flow_tutorial_output.wav"
+            (exportWav finalMix outPath)
+            (print $"Exported to: {outPath}")
+        }
+    }
+}
+
+(print "")
+(print "========================================")
+(print "  Congratulations!")
+(print "========================================")
+(print "")
+(print "You've learned:")
+(print "  - Variables, types, and arithmetic")
+(print "  - Functions (procs) and the flow operator ->")
+(print "  - Collections, loops, map/filter/reduce")
+(print "  - Note streams with durations, rests, and chords")
+(print "  - Musical context (tempo, time signature, key)")
+(print "  - Sections and song arrangement")
+(print "  - Effects processing and audio export")
+(print "  - Pattern transforms")
+(print "")
+(print "Your graduation piece is at /tmp/flow_tutorial_output.wav")
+(print "Play it with: aplay /tmp/flow_tutorial_output.wav")
+(print "")
+(print "Now go make some music! Happy composing.")

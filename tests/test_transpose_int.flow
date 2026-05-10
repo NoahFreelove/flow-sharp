@@ -1,0 +1,13 @@
+use "@std"
+
+Sequence s = | C4 D4 E4 |
+
+Note: transpose with Int (should work like Semitone)
+Sequence t = s -> transpose(2)
+(print "transpose with int: ok")
+
+Note: transpose with Semitone literal (existing behavior)
+Sequence t2 = s -> transpose(+2st)
+(print "transpose with semitone: ok")
+
+(print "test_transpose_int: PASSED")

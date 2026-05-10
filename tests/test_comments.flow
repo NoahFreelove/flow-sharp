@@ -1,0 +1,43 @@
+// Test: Line comments in Flow
+// This entire line should be ignored
+
+use "@std"
+
+// Test 1: Full line comment (no error means it works)
+Int x = 5 // inline comment after code
+(print (str x))
+
+// Test 2: Comment before code
+// this sets y
+Int y = 10
+(print (str y))
+
+// Test 3: Multiple consecutive comments
+// line one
+// line two
+// line three
+Int z = 15
+(print (str z))
+
+// Test 4: Comment inside a proc body
+proc addOne (Int: n)
+    // add one to n
+    Int result = (add n 1)
+    result
+end proc
+(print (str (addOne 7)))
+
+// Test 5: Comment after note stream
+Sequence s = | C4 D4 E4 | // melody line
+(print "note stream ok")
+
+// Test 6: Division still works alongside comments
+Int d = (div 10 2) // this divides
+(print (str d))
+
+// Test 7: Empty comment
+//
+Int w = 42
+(print (str w))
+
+(print "All comment tests passed")

@@ -1,0 +1,37 @@
+use "@std"
+use "@audio"
+
+Note: Regression test for section+gain+bare-expression composition
+Note: Before fix, bare note streams nested inside a gain/tempo/timesig/key
+Note: block inside a section rendered as 0 frames (FIX-02 x AUDIO-06 bug).
+
+section with_gain {
+  gain 0.5 {
+    | C4 D4 E4 F4 |
+  }
+}
+
+section with_nested_context {
+  tempo 100 {
+    timesig 4/4 {
+      | G4 A4 B4 C5 |
+    }
+  }
+}
+
+Song song1 = [with_gain]
+Buffer rendered1 = (renderSong song1 "sine")
+Int frames1 = (getFrames rendered1)
+(print $"with_gain frames: {(str frames1)}")
+
+Song song2 = [with_nested_context]
+Buffer rendered2 = (renderSong song2 "sine")
+Int frames2 = (getFrames rendered2)
+(print $"with_nested_context frames: {(str frames2)}")
+
+Note: Both must be > 0 frames -- if either is 0, the bare expression
+Note: inside the nested context was not captured and the fix regressed.
+(exportWav rendered1 "/tmp/test_section_gain_bare_expr_1.wav")
+(exportWav rendered2 "/tmp/test_section_gain_bare_expr_2.wav")
+
+(print "test_section_gain_bare_expr: PASSED")

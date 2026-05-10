@@ -6,14 +6,28 @@ namespace FlowLang.Diagnostics;
 public class ErrorReporter
 {
     private readonly List<FlowError> _errors = [];
+    private bool _hasErrors = false;
+    private const int MaxErrorCount = 50;
 
     public IReadOnlyList<FlowError> Errors => _errors;
 
-    public bool HasErrors => _errors.Any(e => e.Level == DiagnosticLevel.Error);
+    public bool HasErrors => _hasErrors;
 
     public void Report(FlowError error)
     {
-        _errors.Add(error);
+        if (error.Level == DiagnosticLevel.Error)
+        {
+            _hasErrors = true;
+        }
+
+        if (_errors.Count < MaxErrorCount)
+        {
+            _errors.Add(error);
+        }
+        else if (_errors.Count == MaxErrorCount)
+        {
+            _errors.Add(FlowError.Warning("Maximum error limit reached. Further errors will be suppressed.", null));
+        }
     }
 
     public void ReportError(string message, Core.SourceLocation? location = null)
@@ -34,6 +48,7 @@ public class ErrorReporter
     public void Clear()
     {
         _errors.Clear();
+        _hasErrors = false;
     }
 
     public string FormatErrors()

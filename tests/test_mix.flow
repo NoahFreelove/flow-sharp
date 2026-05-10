@@ -1,0 +1,21 @@
+use "@std"
+use "@audio"
+
+Note: Test basic mix of two mono buffers
+Buffer a = (createSineTone 0.5 440.0 0.5)
+Buffer b = (createSineTone 0.5 880.0 0.5)
+Buffer mixed = (mix a b)
+(print $"mix frames: {(str (getFrames mixed))}")
+(print $"mix channels: {(str (getChannels mixed))}")
+
+Note: Test mix via pipe
+Buffer piped = a -> (mix b)
+(print $"piped mix frames: {(str (getFrames piped))}")
+
+Note: Test different length buffers
+Buffer short_buf = (createSineTone 0.25 440.0 0.3)
+Buffer long_buf = (createSineTone 0.5 880.0 0.3)
+Buffer diff_len = (mix short_buf long_buf)
+(print $"diff length frames: {(str (getFrames diff_len))}")
+
+(print "mix tests passed")

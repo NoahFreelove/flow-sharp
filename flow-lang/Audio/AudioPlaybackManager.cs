@@ -1,3 +1,5 @@
+using FlowLang.StandardLibrary.Audio;
+
 namespace FlowLang.Audio;
 
 /// <summary>
@@ -11,6 +13,35 @@ public sealed class AudioPlaybackManager : IDisposable
     private CancellationTokenSource? _playbackCts;
     private readonly object _lock = new();
     private bool _disposed;
+    private AudioBuffer? _capturedBuffer;
+
+    /// <summary>
+    /// When true, play()/loop() store the buffer instead of playing through PulseAudio.
+    /// Used by background FlowEngine instances during live reload.
+    /// </summary>
+    public bool CaptureMode { get; set; }
+
+    /// <summary>
+    /// Maximum number of simultaneous voices allowed. Default is 32.
+    /// Can be changed at runtime via the setMaxVoices() built-in function.
+    /// </summary>
+    public int MaxVoices { get; set; } = 32;
+
+    /// <summary>
+    /// Retrieves the buffer captured during CaptureMode execution. Returns null if none captured.
+    /// Clears the captured buffer after retrieval.
+    /// </summary>
+    public AudioBuffer? GetCapturedBuffer()
+    {
+        var buf = _capturedBuffer;
+        _capturedBuffer = null;
+        return buf;
+    }
+
+    /// <summary>
+    /// Stores a buffer for capture mode (called by PlaybackFunctions when CaptureMode is true).
+    /// </summary>
+    public void SetCapturedBuffer(AudioBuffer buffer) => _capturedBuffer = buffer;
 
     /// <summary>
     /// Gets the active audio backend, auto-detecting if needed.

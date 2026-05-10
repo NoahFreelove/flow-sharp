@@ -62,8 +62,7 @@ public record FunctionSignature(
             {
                 if (!argTypes[i].IsCompatibleWith(InputTypes[i])
                     && !argTypes[i].CanConvertTo(InputTypes[i])
-                    && !InputTypes[i].IsCompatibleWith(argTypes[i])
-                    && !InputTypes[i].CanConvertTo(argTypes[i]))
+                    && !InputTypes[i].IsCompatibleWith(argTypes[i]))
                 {
                     return false;
                 }
@@ -79,8 +78,7 @@ public record FunctionSignature(
                     {
                         if (!argTypes[i].IsCompatibleWith(arrayType.ElementType)
                             && !argTypes[i].CanConvertTo(arrayType.ElementType)
-                            && !arrayType.ElementType.IsCompatibleWith(argTypes[i])
-                            && !arrayType.ElementType.CanConvertTo(argTypes[i]))
+                            && !arrayType.ElementType.IsCompatibleWith(argTypes[i]))
                         {
                             return false;
                         }
@@ -100,8 +98,7 @@ public record FunctionSignature(
             {
                 if (!argTypes[i].IsCompatibleWith(InputTypes[i])
                     && !argTypes[i].CanConvertTo(InputTypes[i])
-                    && !InputTypes[i].IsCompatibleWith(argTypes[i])
-                    && !InputTypes[i].CanConvertTo(argTypes[i]))
+                    && !InputTypes[i].IsCompatibleWith(argTypes[i]))
                 {
                     return false;
                 }

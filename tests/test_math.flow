@@ -1,0 +1,66 @@
+// Test: Math built-in functions
+use "@std"
+
+// Test trigonometric functions
+Double sinZero = (sin 0.0)
+(print (str sinZero))
+
+Double cosZero = (cos 0.0)
+(print (str cosZero))
+
+Double tanZero = (tan 0.0)
+(print (str tanZero))
+
+// Test abs - Double overload
+Double negVal = (sub 0.0 3.14)
+Double absDouble = (abs negVal)
+(print (str absDouble))
+
+// Test abs - Int overload
+Int negInt = (sub 0 5)
+Int absInt = (abs negInt)
+(print (str absInt))
+
+// Test sqrt
+Double sqrtResult = (sqrt 16.0)
+(print (str sqrtResult))
+
+// Test min/max - Int overloads
+Int minInt = (min 3 7)
+(print (str minInt))
+
+Int maxInt = (max 3 7)
+(print (str maxInt))
+
+// Test min/max - Double overloads
+Double minDouble = (min 3.5 7.2)
+(print (str minDouble))
+
+Double maxDouble = (max 3.5 7.2)
+(print (str maxDouble))
+
+// Test floor/ceil/round
+Int floorResult = (floor 3.7)
+(print (str floorResult))
+
+Int ceilResult = (ceil 3.2)
+(print (str ceilResult))
+
+Int roundResult = (round 3.5)
+(print (str roundResult))
+
+// Test pi and tau constants
+Double piVal = (pi)
+(print (str piVal))
+
+Double tauVal = (tau)
+(print (str tauVal))
+
+// Test pow and log
+Double powResult = (pow 2.0 10.0)
+(print (str powResult))
+
+Double logResult = (log 1.0)
+(print (str logResult))
+
+(print "All math tests passed")

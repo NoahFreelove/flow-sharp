@@ -30,7 +30,18 @@ namespace FlowLang.StandardLibrary.Audio
             SequenceData sequence,
             string synthType,
             int sampleRate,
-            double bpm)
+            double bpm,
+            int maxVoices = 32)
+        {
+            return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, maxVoices);
+        }
+
+        public static List<Voice> RenderSequenceToVoices(
+            SequenceData sequence,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            int maxVoices = 32)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
@@ -41,14 +52,14 @@ namespace FlowLang.StandardLibrary.Audio
                 var barVoices = BarRenderer.RenderBarAtBeat(
                     bar,
                     offsetBeats,
-                    synthType,
+                    synthesizer,
                     sampleRate,
                     bpm);
 
                 allVoices.AddRange(barVoices);
             }
 
-            return VoiceAllocator.Allocate(allVoices, sampleRate);
+            return VoiceAllocator.Allocate(allVoices, sampleRate, maxVoices);
         }
 
         /// <summary>
@@ -60,7 +71,20 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm,
             TimelineMap timelineMap,
-            string scopeName = "top-level")
+            string scopeName = "top-level",
+            int maxVoices = 32)
+        {
+            return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, timelineMap, scopeName, maxVoices);
+        }
+
+        public static List<Voice> RenderSequenceToVoices(
+            SequenceData sequence,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            TimelineMap timelineMap,
+            string scopeName = "top-level",
+            int maxVoices = 32)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
@@ -70,7 +94,7 @@ namespace FlowLang.StandardLibrary.Audio
                 var barVoices = BarRenderer.RenderBarAtBeat(
                     bar,
                     offsetBeats,
-                    synthType,
+                    synthesizer,
                     sampleRate,
                     bpm,
                     timelineMap,
@@ -79,7 +103,7 @@ namespace FlowLang.StandardLibrary.Audio
                 allVoices.AddRange(barVoices);
             }
 
-            return VoiceAllocator.Allocate(allVoices, sampleRate);
+            return VoiceAllocator.Allocate(allVoices, sampleRate, maxVoices);
         }
     }
 }

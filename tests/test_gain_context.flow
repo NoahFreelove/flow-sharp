@@ -1,0 +1,39 @@
+use "@std"
+use "@audio"
+use "@notation"
+
+Note: Test gain context block parsing and scoping
+gain 0.5 {
+  (print "gain 0.5 block executed")
+}
+
+Note: Test nested gain context
+tempo 120 {
+  key Cmajor {
+    gain 0.8 {
+      (print "nested gain context executed")
+    }
+  }
+}
+
+Note: Test gain with section in song
+tempo 120 {
+  key Cmajor {
+    gain 0.3 {
+      section quiet_part {
+        Sequence mel = | C4q E4q G4q C5q |
+      }
+      Song song1 = [quiet_part]
+      Buffer result1 = (renderSong song1 "sine")
+      (print $"quiet section frames: {(str (getFrames result1))}")
+    }
+  }
+}
+
+Note: Test that gain function still works via pipe (DSP effect)
+Buffer tone = (createSineTone 0.25 440.0 0.5)
+Double negThree = (sub 0.0 3.0)
+Buffer gained = tone -> gain negThree
+(print $"gain effect frames: {(str (getFrames gained))}")
+
+(print "gain context tests passed")

@@ -51,4 +51,22 @@ public interface IAudioBackend : IDisposable
     /// Whether this backend is currently initialized and ready to play audio.
     /// </summary>
     bool IsInitialized { get; }
+
+    /// <summary>
+    /// Write a chunk of samples to the audio output. Blocks until the audio server accepts the data.
+    /// Used for streaming playback where the caller controls the loop.
+    /// Does not drain after writing -- the caller is responsible for continuous feeding.
+    /// </summary>
+    /// <param name="samples">Source sample buffer (interleaved float data).</param>
+    /// <param name="offset">Offset in samples (not bytes) into the source buffer.</param>
+    /// <param name="count">Number of samples to write.</param>
+    /// <param name="sampleRate">Sample rate in Hz.</param>
+    /// <param name="channels">Number of channels.</param>
+    void WriteChunk(float[] samples, int offset, int count, int sampleRate, int channels);
+
+    /// <summary>
+    /// Ensures the backend is initialized with the given parameters.
+    /// If already initialized with matching parameters, this is a no-op.
+    /// </summary>
+    void EnsureInitialized(int sampleRate, int channels);
 }

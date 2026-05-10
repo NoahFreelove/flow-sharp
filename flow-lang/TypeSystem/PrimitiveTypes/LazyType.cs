@@ -26,9 +26,9 @@ public class LazyType : FlowType
         return InnerType.IsCompatibleWith(lazyOther.InnerType);
     }
 
-    public override bool Equals(object? obj)
+    public override bool Equals(FlowType? other)
     {
-        return obj is LazyType other && InnerType.Equals(other.InnerType);
+        return other is LazyType lazyOther && InnerType.Equals(lazyOther.InnerType);
     }
 
     public override int GetHashCode()

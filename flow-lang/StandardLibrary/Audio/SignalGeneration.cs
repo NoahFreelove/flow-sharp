@@ -138,4 +138,47 @@ public static class SignalGeneration
 
         return Value.Void();
     }
+
+    /// <summary>
+    /// Creates a buffer with a generated sine tone.
+    /// </summary>
+    public static Value CreateSineTone(IReadOnlyList<Value> args)
+    {
+        double duration = args[0].As<double>();
+        double frequency = args[1].As<double>();
+        double amplitude = args[2].As<double>();
+        
+        int sampleRate = 44100;
+        int frames = (int)(duration * sampleRate);
+        var buffer = new AudioBuffer(frames, 1, sampleRate);
+        var state = new OscillatorState(frequency, sampleRate);
+        
+        for (int frame = 0; frame < frames; frame++)
+        {
+            float sample = (float)(Math.Sin(2 * Math.PI * state.Phase) * amplitude);
+            buffer.SetSample(frame, 0, sample);
+            state.AdvancePhase();
+        }
+        return Value.Buffer(buffer);
+    }
+
+    /// <summary>
+    /// Creates a buffer with a basic noise clip.
+    /// </summary>
+    public static Value CreateClip(IReadOnlyList<Value> args)
+    {
+        double duration = args[0].As<double>();
+        double amplitude = args[1].As<double>();
+        
+        int sampleRate = 44100;
+        int frames = (int)(duration * sampleRate);
+        var buffer = new AudioBuffer(frames, 1, sampleRate);
+        
+        for (int frame = 0; frame < frames; frame++)
+        {
+            float sample = frame < (frames / 10) ? (float)((Random.Shared.NextDouble() * 2 - 1) * amplitude) : 0f;
+            buffer.SetSample(frame, 0, sample);
+        }
+        return Value.Buffer(buffer);
+    }
 }

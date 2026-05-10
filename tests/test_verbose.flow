@@ -1,0 +1,3 @@
+use "@std"
+Sequence s = | C4 D4 E4 |
+(print "verbose test ok")

@@ -1,0 +1,15 @@
+use "@std"
+
+Sequence s = | C4 D4 E4 F4 G4 |
+
+Note: vary with just @std imported (no @composition needed)
+Sequence v = s -> vary(0.3)
+(print "vary basic: ok")
+
+Sequence v2 = (vary s 0.5 "pitch")
+(print "vary typed: ok")
+
+Sequence v3 = (vary s 0.5 42)
+(print "vary seeded: ok")
+
+(print "test_vary: PASSED")

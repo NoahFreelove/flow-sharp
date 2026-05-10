@@ -1,0 +1,57 @@
+// Test new synthesizer presets: strings, organ, bell
+
+use "@std"
+use "@audio"
+
+(print "=== Synth Preset Tests ===")
+
+// Test strings synthesizer via renderSequenceToVoices
+tempo 120 {
+  key Cmajor {
+    Sequence strings_seq = | C4q E4q G4q C5q |
+    Voice[] strings_voices = (renderSequenceToVoices strings_seq "strings" 44100 120.0)
+    (print "strings: rendered voices OK")
+  }
+}
+
+// Test organ synthesizer via renderSequenceToVoices
+tempo 120 {
+  key Cmajor {
+    Sequence organ_seq = | C4q E4q G4q C5q |
+    Voice[] organ_voices = (renderSequenceToVoices organ_seq "organ" 44100 120.0)
+    (print "organ: rendered voices OK")
+  }
+}
+
+// Test bell synthesizer via renderSequenceToVoices
+tempo 120 {
+  key Cmajor {
+    Sequence bell_seq = | C4q E4q G4q |
+    Voice[] bell_voices = (renderSequenceToVoices bell_seq "bell" 44100 120.0)
+    (print "bell: rendered voices OK")
+  }
+}
+
+// Test in song context with sections and renderSong
+tempo 120 {
+  key Cmajor {
+    section pad {
+      | C4h E4h |
+    }
+    section keys {
+      | C4q E4q G4q C5q |
+    }
+    section chime {
+      | C5q E5q G5q |
+    }
+    Song song = [pad keys chime]
+    Buffer song_strings = (renderSong song "strings")
+    Buffer song_organ = (renderSong song "organ")
+    Buffer song_bell = (renderSong song "bell")
+    (print (concat "song strings frames: " (str (getFrames song_strings))))
+    (print (concat "song organ frames: " (str (getFrames song_organ))))
+    (print (concat "song bell frames: " (str (getFrames song_bell))))
+  }
+}
+
+(print "synth preset tests passed")

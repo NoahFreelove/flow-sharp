@@ -23,6 +23,10 @@ public class Repl
         Console.WriteLine("Multi-line input: end a line with \\ to continue on next line");
         Console.WriteLine();
 
+        // Auto-import standard modules for REPL convenience
+        // Script mode requires explicit imports for reproducibility
+        AutoImportStandardModules();
+
         // Handle Ctrl+C: stop audio playback, don't exit REPL
         Console.CancelKeyPress += (_, e) =>
         {
@@ -53,7 +57,7 @@ public class Repl
                 }
 
                 // Execute input and get result
-                var result = _engine.ExecuteExpression(input, "<repl>");
+                var result = _engine.ExecuteScriptAndGetResult(input, "<repl>");
 
                 if (_engine.ErrorReporter.HasErrors)
                 {
@@ -75,6 +79,23 @@ public class Repl
         }
 
         Console.WriteLine("Goodbye!");
+    }
+
+    private void AutoImportStandardModules()
+    {
+        var imports = new[]
+        {
+            "use \"@std\"",
+            "use \"@audio\"",
+            "use \"@collections\""
+        };
+
+        foreach (var import in imports)
+        {
+            _engine.Execute(import, "<repl-init>");
+            // Clear any errors from auto-import (e.g., if audio not available)
+            _engine.ErrorReporter.Clear();
+        }
     }
 
     private string? ReadCompleteInput()
@@ -151,45 +172,35 @@ public class Repl
 
     private bool NeedsMoreLines(string line)
     {
-        // Start multi-line mode for these keywords
-        return line.StartsWith("proc ") ||
-               line.StartsWith("internal proc");
+        return !IsInputComplete(line);
     }
 
     private bool IsInputComplete(string input)
     {
+        if (string.IsNullOrWhiteSpace(input))
+            return true;
+
         // For internal procs, they don't have bodies
         if (input.TrimStart().StartsWith("internal proc"))
             return true;
 
-        // Count proc declarations vs end markers
-        // We need to be smarter about this - count actual tokens, not substrings
-        var lines = input.Split('\n');
-        int procCount = 0;
-        int endCount = 0;
+        // Use the actual lexer to tokenize and count block depths
+        var reporter = new FlowLang.Diagnostics.ErrorReporter();
+        var lexer = new FlowLang.Lexing.SimpleLexer(input, reporter, "<repl>");
+        var tokens = lexer.Tokenize();
 
-        foreach (var line in lines)
+        int blockDepth = 0;
+        int procDepth = 0;
+
+        foreach (var token in tokens)
         {
-            var trimmed = line.Trim();
-
-            // Count proc declarations (but not "end proc")
-            if (trimmed.StartsWith("proc ") && !trimmed.StartsWith("end proc"))
-            {
-                procCount++;
-            }
-            else if (trimmed.StartsWith("internal proc"))
-            {
-                procCount++;
-            }
-
-            // Count end markers (both "end proc" and "end" alone)
-            if (trimmed == "end" || trimmed == "end proc" || trimmed.StartsWith("end proc "))
-            {
-                endCount++;
-            }
+            if (token.Type == FlowLang.Lexing.TokenType.LBrace) blockDepth++;
+            else if (token.Type == FlowLang.Lexing.TokenType.RBrace) blockDepth--;
+            else if (token.Type == FlowLang.Lexing.TokenType.Proc) procDepth++;
+            else if (token.Type == FlowLang.Lexing.TokenType.EndProc) procDepth--;
         }
 
-        return procCount <= endCount;
+        return blockDepth <= 0 && procDepth <= 0;
     }
 
     private bool HandleCommand(string command)

@@ -1,0 +1,10 @@
+Note: This tests that explicit imports still work in script mode
+Note: REPL auto-import must be tested interactively:
+Note:   Start the REPL (no args), then type (print "hello") - should work without use statements
+use "@std"
+use "@audio"
+use "@collections"
+(print "Script mode: explicit imports work")
+Int[] nums = (list 1 2 3)
+(print (concat "List length: " (str (len nums))))
+(print "PASS: script mode with explicit imports")

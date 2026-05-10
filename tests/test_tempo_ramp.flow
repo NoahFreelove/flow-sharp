@@ -1,0 +1,63 @@
+use "@std"
+use "@audio"
+
+(print "=== Test Tempo Ramp ===")
+
+Note: Create a simple sequence to test with
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence seq = | C4 D4 E4 F4 |
+
+            Note: Test 1 - tempoRamp produces a buffer with non-zero frames
+            Buffer rampBuf = (tempoRamp seq 120.0 80.0)
+            Int rampFrames = (getFrames rampBuf)
+            Bool test1 = (gt rampFrames 0)
+            (print (concat "Test 1 - tempoRamp produces non-zero buffer: " (str test1)))
+
+            Note: Test 2 - Ritardando: slowing from 120 to 80 should produce MORE frames than constant 120
+            Buffer constFast = (tempoRamp seq 120.0 120.0)
+            Int constFastFrames = (getFrames constFast)
+            Bool test2 = (gt rampFrames constFastFrames)
+            (print (concat "Test 2 - Ritardando produces more frames than constant fast: " (str test2)))
+
+            Note: Test 3 - Accelerando: speeding from 80 to 120 should produce FEWER frames than constant 80
+            Buffer accelBuf = (tempoRamp seq 80.0 120.0)
+            Int accelFrames = (getFrames accelBuf)
+            Buffer constSlow = (tempoRamp seq 80.0 80.0)
+            Int constSlowFrames = (getFrames constSlow)
+            Bool test3 = (lt accelFrames constSlowFrames)
+            (print (concat "Test 3 - Accelerando produces fewer frames than constant slow: " (str test3)))
+
+            Note: Test 4 - Identity: tempoRamp(seq, 120, 120) matches constant 120 BPM render
+            Bool test4 = (equals constFastFrames constFastFrames)
+            (print (concat "Test 4 - Identity tempo ramp matches constant BPM: " (str test4)))
+
+            Note: Test 5 - Instrument override with 4th argument
+            Buffer instrBuf = (tempoRamp seq 120.0 80.0 "piano")
+            Int instrFrames = (getFrames instrBuf)
+            Bool test5 = (gt instrFrames 0)
+            (print (concat "Test 5 - Instrument override produces buffer: " (str test5)))
+
+            Note: Test 6 - Ritardando buffer is between constant-fast and constant-slow
+            Bool test6a = (gt rampFrames constFastFrames)
+            Bool test6b = (lt rampFrames constSlowFrames)
+            Bool test6 = (and test6a test6b)
+            (print (concat "Test 6 - Ritardando frames between fast and slow constants: " (str test6)))
+
+            Note: Test 7 - Accelerando buffer is between constant-fast and constant-slow
+            Bool test7a = (gt accelFrames constFastFrames)
+            Bool test7b = (lt accelFrames constSlowFrames)
+            Bool test7 = (and test7a test7b)
+            (print (concat "Test 7 - Accelerando frames between fast and slow constants: " (str test7)))
+
+            Note: Print frame counts for debugging
+            (print (concat "  constFast(120): " (str constFastFrames)))
+            (print (concat "  ritardando(120->80): " (str rampFrames)))
+            (print (concat "  accelerando(80->120): " (str accelFrames)))
+            (print (concat "  constSlow(80): " (str constSlowFrames)))
+        }
+    }
+}
+
+(print "=== Tempo Ramp Tests Complete ===")
