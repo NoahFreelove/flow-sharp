@@ -1,0 +1,132 @@
+using FlowLang.Core;
+using FlowLang.TypeSystem.SpecialTypes;
+
+namespace FlowLang.Ast.Expressions;
+
+/// <summary>
+/// A single element in a note stream — a note, rest, or chord.
+/// </summary>
+public abstract record NoteStreamElement(SourceLocation Location);
+
+/// <summary>
+/// A single note with optional duration suffix and modifiers.
+/// e.g., C4, C4q, C4q., C4+50c
+/// </summary>
+public record NoteElement(
+    SourceLocation Location,
+    string NoteName,          // e.g., "C4", "D#5", "Ebb3"
+    string? DurationSuffix,   // w, h, q, e, s, t (null = auto-fit)
+    bool IsDotted,            // e.g., C4q.
+    bool IsTied,              // e.g., C4h~
+    double? CentOffset,       // e.g., +50c, -25c (null = none)
+    double? Velocity,         // 0.0–1.0 dynamic level (null = default)
+    Articulation? ArticulationMark // staccato, legato, accent, etc. (null = normal)
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A rest with optional duration.
+/// e.g., _, _h, _q
+/// </summary>
+public record RestElement(
+    SourceLocation Location,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// Simultaneous notes (chord bracket notation).
+/// e.g., [C4 E4 G4]q
+/// </summary>
+public record ChordElement(
+    SourceLocation Location,
+    IReadOnlyList<string> Notes,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A named chord symbol in a note stream (e.g., Cmaj7, Dm7).
+/// Parsed at compile time via ChordParser.
+/// </summary>
+public record NamedChordElement(
+    SourceLocation Location,
+    string ChordSymbol,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A roman numeral chord reference in a note stream (e.g., I, iv, V7).
+/// Resolved at compile time via ScaleDatabase using the active key context.
+/// </summary>
+public record RomanNumeralElement(
+    SourceLocation Location,
+    string Numeral,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A variable reference in a note stream (e.g., root, myNote).
+/// Resolved at evaluation time from the execution context.
+/// Supports the same modifiers as NoteElement: duration, dot, tie, cent offset.
+/// </summary>
+public record VariableReferenceElement(
+    SourceLocation Location,
+    string VariableName,
+    string? DurationSuffix,
+    bool IsDotted,
+    bool IsTied,
+    double? CentOffset
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// Random choice from a set of notes: (? C4 E4 G4) or (?? C4 E4 G4)
+/// Optional weights: (? C4:50 E4:30 G4:20)
+/// </summary>
+public record RandomChoiceElement(
+    SourceLocation Location,
+    IReadOnlyList<(string Note, int? Weight)> Choices,
+    bool IsSeeded,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A ghost note - played very softly (velocity ~0.15).
+/// Syntax: (ghost C4)
+/// </summary>
+public record GhostNoteElement(
+    SourceLocation Location,
+    string NoteName,
+    string? DurationSuffix,
+    bool IsDotted
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A grace note - a quick ornamental note before the main note.
+/// Rendered as a very short note (32nd) at moderate velocity.
+/// Syntax: (grace B3)
+/// </summary>
+public record GraceNoteElement(
+    SourceLocation Location,
+    string NoteName
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// A bar within a note stream, delimited by | ... |
+/// </summary>
+public record NoteStreamBar(
+    SourceLocation Location,
+    IReadOnlyList<NoteStreamElement> Elements,
+    bool IsPickup = false
+);
+
+/// <summary>
+/// A complete note stream expression: | C4 D4 | E4 F4 |
+/// Evaluates to a Sequence.
+/// </summary>
+public record NoteStreamExpression(
+    SourceLocation Location,
+    IReadOnlyList<NoteStreamBar> Bars
+) : Expression(Location);

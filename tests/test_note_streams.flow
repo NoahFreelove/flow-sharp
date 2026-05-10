@@ -1,0 +1,23 @@
+use "@std"
+
+timesig 4/4 {
+    Sequence mel = | C4 D4 E4 F4 |
+    (print (str mel))
+}
+
+timesig 3/4 {
+    Sequence waltz = | C4 E4 G4 |
+    (print (str waltz))
+}
+
+timesig 4/4 {
+    Sequence multi = | C4 D4 E4 F4 | G4 A4 B4 C5 |
+    (print (str multi))
+}
+
+timesig 4/4 {
+    Sequence withRest = | C4 _ E4 F4 |
+    (print (str withRest))
+}
+
+(print "note stream tests complete")

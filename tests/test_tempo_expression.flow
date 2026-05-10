@@ -1,0 +1,42 @@
+use "@std"
+use "@audio"
+
+(print "=== Test Tempo Expression ===")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            rit 80 {
+                section ritSec {
+                    Sequence mel = | C4 D4 E4 F4 |
+                }
+            }
+            Song ritSong = [ritSec]
+            Buffer ritBuf = (renderSong ritSong "piano")
+            Int ritFrames = (getFrames ritBuf)
+            (print (concat "rit frames: " (str ritFrames)))
+
+            accel 160 {
+                section accelSec {
+                    Sequence mel = | C4 D4 E4 F4 |
+                }
+            }
+            Song accelSong = [accelSec]
+            Buffer accelBuf = (renderSong accelSong "piano")
+            Int accelFrames = (getFrames accelBuf)
+            (print (concat "accel frames: " (str accelFrames)))
+
+            Sequence mel2 = | C4 D4 E4 F4 |
+            Sequence slowing = mel2 -> ritardando 0.5
+            (print (str slowing))
+
+            Sequence speeding = mel2 -> accelerando 0.5
+            (print (str speeding))
+
+            Sequence held = mel2 -> fermata 2
+            (print (str held))
+        }
+    }
+}
+
+(print "tempo expression tests complete")

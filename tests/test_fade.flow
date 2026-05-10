@@ -1,0 +1,24 @@
+use "@std"
+use "@audio"
+
+(print "=== Test Fade In/Out ===")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section fadeSec {
+                Sequence mel = | C4 D4 E4 F4 |
+            }
+            Song fadeSong = [fadeSec]
+            Buffer fadeBuf = (renderSong fadeSong "piano")
+            Buffer faded = fadeBuf -> fadeIn 0.5
+            Buffer fadedOut = fadeBuf -> fadeOut 0.5
+            Int frames1 = (getFrames faded)
+            Int frames2 = (getFrames fadedOut)
+            (print (concat "fadeIn frames: " (str frames1)))
+            (print (concat "fadeOut frames: " (str frames2)))
+        }
+    }
+}
+
+(print "fade tests complete")

@@ -1,0 +1,128 @@
+use "@std"
+use "@audio"
+
+(print "=== Expression Integration Test ===")
+
+Note: Phase 1 - Per-note velocity and articulation
+timesig 4/4 {
+    Sequence dynSeq = | pp C4 mf D4 f E4 ff F4 |
+    (print (concat "dynamics: " (str dynSeq)))
+
+    Sequence artSeq = | C4q> D4q stacc E4q ten F4q marc |
+    (print (concat "articulation: " (str artSeq)))
+}
+
+Note: Phase 2 - Dynamics context block
+dynamics f {
+    timesig 4/4 {
+        Sequence ctxSeq = | C4 D4 E4 F4 |
+        (print (concat "dynamics ctx: " (str ctxSeq)))
+    }
+}
+
+Note: Phase 3 - Crescendo/decrescendo transforms and inline
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence mel = | C4 D4 E4 F4 |
+            Sequence cresc = mel -> crescendo 0.2 0.9
+            (print (concat "crescendo: " (str cresc)))
+
+            Sequence decresc = mel -> decrescendo 0.9 0.2
+            (print (concat "decrescendo: " (str decresc)))
+
+            Sequence sw = | C4 D4 E4 F4 G4 A4 B4 C5 | -> swell 0.2 0.9
+            (print (concat "swell: " (str sw)))
+        }
+    }
+}
+
+Note: Phase 3b - Inline cresc/decresc
+timesig 4/4 {
+    Sequence inlineCr = | pp C4 cresc D4 E4 ff F4 |
+    (print (concat "inline cresc: " (str inlineCr)))
+}
+
+Note: Phase 4 - Tempo expression transforms
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence tmel = | C4 D4 E4 F4 |
+            Sequence slowing = tmel -> ritardando 0.5
+            (print (concat "ritardando: " (str slowing)))
+
+            Sequence speeding = tmel -> accelerando 0.5
+            (print (concat "accelerando: " (str speeding)))
+
+            Sequence held = tmel -> fermata 2
+            (print (concat "fermata: " (str held)))
+        }
+    }
+}
+
+Note: Phase 5 - Humanize
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence hmel = | C4 D4 E4 F4 |
+            Sequence human = hmel -> humanize 0.3
+            (print (concat "humanize: " (str human)))
+        }
+    }
+}
+
+Note: Phase 6 - Ornaments
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence omel = | C4h E4h |
+            Sequence trilled = omel -> trill +2st
+            (print (concat "trill: " (str trilled)))
+
+            Sequence tremmed = omel -> tremolo 4
+            (print (concat "tremolo: " (str tremmed)))
+
+            Sequence ghostSeq = | C4 (ghost D4) E4 F4 |
+            (print (concat "ghost: " (str ghostSeq)))
+
+            Sequence graceSeq = | (grace B3) C4 D4 E4 F4 |
+            (print (concat "grace: " (str graceSeq)))
+        }
+    }
+}
+
+Note: Phase 7 - Combined: render with dynamics then fade
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section combined {
+                Sequence cmel = | pp C4 cresc D4 E4 ff F4 |
+            }
+            Song cSong = [combined]
+            Buffer cBuf = (renderSong cSong "piano")
+            Buffer faded = cBuf -> fadeIn 0.25
+            Buffer fadedBoth = faded -> fadeOut 0.25
+            Int fFrames = (getFrames fadedBoth)
+            (print (concat "combined render frames: " (str fFrames)))
+        }
+    }
+}
+
+Note: Phase 8 - Velocity preserved through transforms
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence loud = | ff C4 D4 E4 F4 |
+            Sequence transposed = loud -> transpose +2st
+            (print (concat "transposed loud: " (str transposed)))
+
+            Sequence inverted = (invert loud)
+            (print (concat "inverted loud: " (str inverted)))
+
+            Sequence retro = (retrograde loud)
+            (print (concat "retrograde loud: " (str retro)))
+        }
+    }
+}
+
+(print "=== All integration tests passed ===")

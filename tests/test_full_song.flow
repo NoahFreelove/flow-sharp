@@ -1,0 +1,168 @@
+Note: Task 17 - End-to-End Integration Test
+Note: Exercises ALL new DAW features together in a single script:
+Note:   Musical context (timesig, tempo, swing, key)
+Note:   Note streams with auto-fit
+Note:   Chords and roman numerals
+Note:   Pattern transforms (transpose, retrograde, repeat)
+Note:   Generative features (random choice, euclidean)
+Note:   Song structure (sections, Song arrangement)
+Note:   Lambda functions
+Note:   Effects chain (reverb, lowpass, compress, gain)
+Note:   Rendering to buffer and WAV export
+
+use "@std"
+use "@audio"
+use "@composition"
+use "@collections"
+
+(print "=== Task 17: Full Song Integration Test ===")
+
+Note: ===== 1. Musical context stack =====
+(print "1. Musical context stack")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            swing 0.55 {
+
+Note: ===== 2. Note streams with auto-fit =====
+(print "2. Note streams with auto-fit")
+
+Sequence melody = | C4 E4 G4 C5 |
+(print (concat "  melody: " (str melody)))
+
+Sequence bassLine = | C3 G3 C3 G3 |
+(print (concat "  bassLine: " (str bassLine)))
+
+Note: ===== 3. Chords and roman numerals =====
+(print "3. Chords and roman numerals")
+
+Sequence chordProg = | Cmaj Am Dm Gdom7 |
+(print (concat "  chordProg: " (str chordProg)))
+
+Sequence romanProg = | I vi ii V |
+(print (concat "  romanProg: " (str romanProg)))
+
+Note: ===== 4. Pattern transforms =====
+(print "4. Pattern transforms")
+
+Sequence transposed = melody -> transpose +7st
+(print (concat "  transposed +7st: " (str transposed)))
+
+Sequence reversed = (retrograde melody)
+(print (concat "  retrograde: " (str reversed)))
+
+Sequence repeated = melody -> repeat 2
+(print (concat "  repeated 2x: " (str repeated)))
+
+Sequence shifted = melody -> up 1
+(print (concat "  up 1 octave: " (str shifted)))
+
+Note: ===== 5. Generative features =====
+(print "5. Generative features")
+
+Sequence randMel = | (? C4 E4 G4) (? D4 F4 A4) (? E4 G4 B4) (? C4 E4 G4) |
+(print (concat "  random melody: " (str randMel)))
+
+Sequence euclid = (euclidean 3 8 C4)
+(print (concat "  euclidean 3/8: " (str euclid)))
+
+Note: ===== 6. Song structure =====
+(print "6. Song structure (sections and arrangement)")
+
+section intro {
+    Sequence lead = | C4 E4 G4 C5 |
+}
+
+section verse {
+    Sequence lead = | E4 E4 F4 G4 |
+    Sequence bass = | C3 C3 G3 G3 |
+}
+
+section chorus {
+    Sequence lead = | I IV V I |
+}
+
+Song mySong = [intro verse*2 chorus verse chorus*2]
+(print (concat "  song: " (str mySong)))
+
+Strings sections = (getSections mySong)
+(print (concat "  sections: " (str sections)))
+
+Note: ===== 7. Lambda functions =====
+(print "7. Lambda functions")
+
+Function doubler = fn Int n => (mul n 2)
+Int doubled = (doubler 21)
+(print (concat "  doubler(21) = " (str doubled)))
+
+Int[] nums = (list 1 2 3 4 5)
+Int[] mapped = (map nums (fn Int n => (mul n 3)))
+(print (concat "  map *3: " (str mapped)))
+
+Int total = (reduce nums 0 (fn Int acc, Int n => (add acc n)))
+(print (concat "  reduce sum: " (str total)))
+
+Note: ===== 8. Render sequence to audio via voices + track =====
+(print "8. Rendering sequences to audio")
+
+Note: Set BPM for composition layer
+Double songBpm = 120.0
+(bpm songBpm)
+
+Note: Render the melody sequence to voices
+Voice[] melVoices = (renderSequenceToVoices melody "sine" 44100 120.0)
+(print (concat "  melody voices: " (str (len melVoices))))
+
+Note: Create a track and add all melody voices via lambda
+Track melTrack = (createStereoTrack)
+(each melVoices (fn Voice v => (addVoice melTrack v)))
+
+Note: Render 1 bar (4 beats in 4/4)
+Int bars = 1
+Buffer melBuf = melTrack -> renderBars bars
+Int melFrames = (getFrames melBuf)
+(print (concat "  melody buffer frames: " (str melFrames)))
+
+Note: Also render bass
+Voice[] bassVoices = (renderSequenceToVoices bassLine "sine" 44100 120.0)
+Track bassTrack = (createStereoTrack)
+(each bassVoices (fn Voice v => (addVoice bassTrack v)))
+Buffer bassBuf = bassTrack -> renderBars bars
+Int bassFrames = (getFrames bassBuf)
+(print (concat "  bass buffer frames: " (str bassFrames)))
+
+Note: ===== 9. Effects chain =====
+(print "9. Effects chain")
+
+Double negSix = (sub 0.0 6.0)
+Double negThree = (sub 0.0 3.0)
+Buffer lp = melBuf -> lowpass 2000.0
+Buffer rev = lp -> reverb 0.3
+Buffer comp = (compress rev negSix 4.0)
+Buffer processed = comp -> gain negThree
+Int procFrames = (getFrames processed)
+(print (concat "  processed frames: " (str procFrames)))
+
+Note: ===== 10. Mix and export =====
+(print "10. Mix and export to WAV")
+
+Note: Mix melody and bass
+Double melGain = 0.6
+Double bassGain = 0.4
+Buffer mixed = (mixBuffers processed bassBuf melGain bassGain)
+Int mixFrames = (getFrames mixed)
+(print (concat "  mixed frames: " (str mixFrames)))
+
+Note: Export final mix
+String outPath = "tests/output/test_full_song.wav"
+(exportWav mixed outPath)
+(print (concat "  exported to: " outPath))
+
+Note: Close all musical context blocks
+            }
+        }
+    }
+}
+
+(print "=== All integration tests passed! ===")

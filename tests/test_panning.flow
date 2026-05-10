@@ -1,0 +1,46 @@
+use "@std"
+use "@audio"
+
+(print "=== Panning Test ===")
+
+Note: Generate a test tone (stereo)
+Buffer tone = (createSineTone 0.5 440.0 0.8)
+
+Note: Test center pan (default)
+Buffer center = (pan tone 0.0)
+Int centerCh = (getChannels center)
+(print (concat "Center channels: " (str centerCh)))
+
+Note: Test hard left (pan = -1.0)
+Double negOne = (sub 0.0 1.0)
+Buffer leftBuf = (pan tone negOne)
+Int leftCh = (getChannels leftBuf)
+(print (concat "Left pan channels: " (str leftCh)))
+
+Note: Test hard right
+Buffer rightBuf = (pan tone 1.0)
+Int rightCh = (getChannels rightBuf)
+(print (concat "Right pan channels: " (str rightCh)))
+
+Note: Test flow operator composability (D-17)
+Buffer piped = tone -> (pan 0.3)
+Int pipedCh = (getChannels piped)
+(print (concat "Piped channels: " (str pipedCh)))
+
+Note: Verify all outputs are stereo (Pitfall 2: mono promoted to stereo)
+(print (concat "All stereo: " (str (and (equals centerCh 2) (and (equals leftCh 2) (equals rightCh 2))))))
+
+Note: Test pan context block (D-07)
+pan 0.5 {
+  Buffer contextPanned = (createSineTone 0.1 440.0 0.5)
+  (print "Context pan block executed")
+}
+
+Note: Test pan context block with negative value
+pan -0.5 {
+  Buffer contextPannedLeft = (createSineTone 0.1 440.0 0.5)
+  (print "Negative pan context block executed")
+}
+
+(print "Pan context block test passed")
+(print "Panning test passed")

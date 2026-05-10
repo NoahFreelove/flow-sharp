@@ -1,0 +1,72 @@
+Note: Test chords and harmony
+use "std.flow"
+
+Note: === Basic Chord Parsing ===
+Note: Major chord
+Chord c1 = Cmaj
+(print (str c1))
+
+Note: Minor chord
+Chord c2 = Dm
+(print (str c2))
+
+Note: Dominant 7th - G7 is parsed as note G at octave 7, use dom7 for chord
+Chord c3 = Gdom7
+(print (str c3))
+
+Note: Major 7th
+Chord c4 = Cmaj7
+(print (str c4))
+
+Note: Minor 7th
+Chord c5 = Am7
+(print (str c5))
+
+Note: Diminished
+Chord c6 = Bdim
+(print (str c6))
+
+Note: Augmented
+Chord c7 = Caug
+(print (str c7))
+
+Note: Sus2
+Chord c8 = Dsus2
+(print (str c8))
+
+Note: Sus4
+Chord c9 = Asus4
+(print (str c9))
+
+Note: === Chord Functions ===
+String root = (chordRoot Cmaj7)
+(print (concat "Root: " root))
+
+String quality = (chordQuality Cmaj7)
+(print (concat "Quality: " quality))
+
+Strings notes = (chordNotes Cmaj7)
+(print (concat "Note count: " (str (len notes))))
+
+Note: === Sharp/flat chords ===
+Chord cs1 = Csmaj
+(print (str cs1))
+
+Chord bf1 = Bfm
+(print (str bf1))
+
+Note: === Chord in note stream ===
+timesig 4/4 {
+    Sequence seq = | Cmaj7 Am7 Dm |
+    (print (str seq))
+}
+
+Note: === Scale notes ===
+Strings scale = (scaleNotes "Cmajor")
+(print (concat "C major scale notes: " (str (len scale))))
+
+Note: === Resolve roman numeral ===
+Chord resolved = (resolveNumeral "V" "Cmajor")
+(print (str resolved))
+
+(print "All chord tests passed!")

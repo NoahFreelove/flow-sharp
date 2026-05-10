@@ -1,0 +1,103 @@
+Note: Test custom oscillator definitions via wavetable synthesis
+use "@std"
+use "@audio"
+use "@collections"
+
+Note: === Test 1: Define and register a custom sawtooth oscillator ===
+(print "Test 1: Define custom sawtooth oscillator via array")
+
+Note: Build a sawtooth wavetable (2048 samples, ramp from -1 to +1)
+Int tableSize = 2048
+Double tableSizeD = (intToDouble tableSize)
+Float[] sawTable = []
+Int i = 0
+while (lt i tableSize) {
+    Double id = (intToDouble i)
+    Double phase = id / tableSizeD
+    Double sample = phase * 2.0 - 1.0
+    sawTable = (append sawTable sample)
+    i = (add i 1)
+}
+(print (concat "Built sawtooth table with " (concat (str (len sawTable)) " samples")))
+
+Note: Register it as a custom oscillator
+(oscillator "customsaw" sawTable)
+(print "PASS: Custom sawtooth oscillator registered")
+
+Note: === Test 2: Use custom oscillator in renderSong ===
+(print "Test 2: Render song with custom oscillator")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section test1 {
+                | C4q D4q E4q F4q |
+            }
+
+            Song song1 = [test1]
+            Buffer result1 = (renderSong song1 "customsaw")
+
+            Int frames1 = (getFrames result1)
+            (print (concat "Rendered " (concat (str frames1) " frames with custom sawtooth")))
+            (print (if (gt frames1 0) "PASS: Custom oscillator produced audio" "FAIL: Empty buffer"))
+        }
+    }
+}
+
+Note: === Test 3: Register oscillator with a square-ish waveform ===
+(print "Test 3: Custom square oscillator")
+
+Int sqSize = 4096
+Double sqSizeD = (intToDouble sqSize)
+Float[] sqTable = []
+Int j = 0
+while (lt j sqSize) {
+    Double jd = (intToDouble j)
+    Double phase2 = jd / sqSizeD
+    Double sample2 = (if (lt phase2 0.5) 1.0 -1.0)
+    sqTable = (append sqTable sample2)
+    j = (add j 1)
+}
+
+(oscillator "customsquare" sqTable)
+(print "PASS: Custom square oscillator registered with 4096 samples")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section test2 {
+                | C4q E4q G4q C5q |
+            }
+            Song song2 = [test2]
+            Buffer result2 = (renderSong song2 "customsquare")
+            Int frames2 = (getFrames result2)
+            (print (concat "Rendered " (concat (str frames2) " frames with custom square")))
+            (print (if (gt frames2 0) "PASS: Custom square oscillator produced audio" "FAIL: Empty buffer"))
+        }
+    }
+}
+
+Note: === Test 4: Lambda-based oscillator registration ===
+(print "Test 4: Lambda-based oscillator via Function")
+
+Note: Use map with range to build a simple triangle wave table via lambda
+Function triGen = fn Int sz => (map (range 0 sz) (fn Int idx => (sub (mul (div (intToDouble idx) (intToDouble sz)) 4.0) 2.0)))
+(oscillator "customtri" triGen)
+(print "PASS: Custom triangle oscillator registered via lambda")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section test3 {
+                | C4q E4q G4q C5q |
+            }
+            Song song3 = [test3]
+            Buffer result3 = (renderSong song3 "customtri")
+            Int frames3 = (getFrames result3)
+            (print (concat "Rendered " (concat (str frames3) " frames with custom triangle")))
+            (print (if (gt frames3 0) "PASS: Lambda-based oscillator produced audio" "FAIL: Empty buffer"))
+        }
+    }
+}
+
+(print "All custom oscillator tests passed")

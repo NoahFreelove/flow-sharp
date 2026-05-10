@@ -1,0 +1,30 @@
+use "@std"
+use "@audio"
+
+Note: Create a "kick" trigger -- short burst
+Buffer kick = (createSineTone 0.1 60.0 0.9)
+
+Note: Create a sustained "bass" source
+Buffer bass = (createSineTone 1.0 80.0 0.8)
+
+Note: Negative threshold (Flow needs sub for negative literals)
+Double negTwelve = (sub 0.0 12.0)
+
+Note: Apply sidechain: bass ducks under kick
+Buffer ducked = (sidechain bass kick negTwelve 4.0)
+
+(print "Sidechain Test")
+(print (str (getFrames bass)))
+(print (str (getFrames ducked)))
+
+Note: Ducked buffer should have same frame count as source
+Note: (not truncated to trigger length)
+
+Note: Test with optional attack/release args
+Buffer ducked2 = (sidechain bass kick negTwelve 4.0 5.0 200.0)
+(print (str (getFrames ducked2)))
+
+Note: Test flow operator composability
+Buffer piped = bass -> (sidechain kick negTwelve 4.0)
+(print (str (getFrames piped)))
+(print "Sidechain test passed")

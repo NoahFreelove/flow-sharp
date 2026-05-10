@@ -1,0 +1,49 @@
+Note: Test string interpolation
+use "@std"
+
+Note: === Basic variable interpolation ===
+Int x = 42
+(print $"x is {x}")
+
+Note: === Expression inside interpolation ===
+Int a = 3
+Int b = 4
+(print $"sum is {a + b}")
+
+Note: === String variable interpolation ===
+String name = "Flow"
+(print $"hello {name}!")
+
+Note: === Multiple interpolations ===
+Int bpm = 120
+String mykey = "Cmajor"
+(print $"playing at {bpm} bpm in {mykey}")
+
+Note: === Expression-only (no surrounding text) ===
+Int val = 99
+(print $"{val}")
+
+Note: === No interpolation (plain text in $"...") ===
+(print $"no interpolation here")
+
+Note: === Bool interpolation ===
+Bool flag = true
+(print $"flag is {flag}")
+
+Note: === Float interpolation ===
+Double pi = 3.14
+(print $"pi is {pi}")
+
+Note: === Regular strings with braces are unaffected ===
+(print "regular {braces} ok")
+
+Note: === Interpolation with flow operator ===
+Int y = 10
+$"y doubled is {y * 2}" -> print
+
+Note: === Interpolation in variable assignment ===
+Int score = 100
+String msg = $"score: {score}"
+(print msg)
+
+(print "ALL STRING INTERPOLATION TESTS PASSED")

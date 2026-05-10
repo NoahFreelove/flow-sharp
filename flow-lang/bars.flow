@@ -1,0 +1,28 @@
+Note: Bar (Musical Measure) Standard Library
+Note: Provides functions for creating and manipulating musical bars
+
+Note: ===== Core Bar Operations =====
+
+Note: Creates an empty bar
+internal proc createBar()
+
+Note: Creates a bar with a single note
+internal proc createBarWithNote(Note: note)
+
+Note: Creates a bar from an array of notes
+internal proc createBarFromNotes(Notes: notes)
+
+Note: Adds a note to an existing bar (mutates the bar)
+internal proc addNoteToBar(Bar: bar, Note: note)
+
+Note: Gets a note from a bar at the specified index
+internal proc getNoteFromBar(Bar: bar, Int: index)
+
+Note: Gets the number of notes in a bar
+internal proc barLength(Bar: bar)
+
+Note: Sets the time signature for a bar
+internal proc setTimeSignature(Bar: bar, Int: numerator, Int: denominator)
+
+Note: Gets the time signature of a bar as a string (e.g., "4/4")
+internal proc getTimeSignature(Bar: bar)
