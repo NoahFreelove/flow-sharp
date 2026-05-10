@@ -1,0 +1,29 @@
+Note: DX-12 NoteValue-rate delay smoke test
+Note: Phase 22 plan 22-04 -- exercise delay(Buffer, NoteValue, Double, Double) synced to MusicalContext.Tempo
+Note: At 120 BPM, EIGHTH = 250ms; at 240 BPM, EIGHTH = 125ms
+Note: Existing ms-rate overload (delay buf 250.0 0.5 0.4) must remain unchanged
+
+use "@std"
+use "@audio"
+use "@notation"
+
+Note: createSineTone(duration, frequency, amplitude) -- 0.5s @ 440Hz at amp 0.8 (44100 stereo)
+Buffer src = (createSineTone 0.5 440.0 0.8)
+
+Note: At 120 BPM, EIGHTH note delay = 250ms
+tempo 120 {
+    Buffer wet = (delay src EIGHTH 0.5 0.4)
+    (writeWav "tests/output/dx_delay_eighth_120.wav" wet)
+}
+
+Note: At 240 BPM, EIGHTH note delay = 125ms (tempo doubles, time halves)
+tempo 240 {
+    Buffer wet2 = (delay src EIGHTH 0.5 0.4)
+    (writeWav "tests/output/dx_delay_eighth_240.wav" wet2)
+}
+
+Note: Existing ms-rate overload still works (regression gate)
+Buffer wet3 = (delay src 250.0 0.5 0.4)
+(writeWav "tests/output/dx_delay_msrate.wav" wet3)
+
+(print "DX-12 delay sync: PASSED")

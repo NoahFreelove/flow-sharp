@@ -1,4 +1,5 @@
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.PrimitiveTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
@@ -169,11 +170,11 @@ public static class SignalGeneration
     {
         double duration = args[0].As<double>();
         double amplitude = args[1].As<double>();
-        
+
         int sampleRate = 44100;
         int frames = (int)(duration * sampleRate);
         var buffer = new AudioBuffer(frames, 1, sampleRate);
-        
+
         for (int frame = 0; frame < frames; frame++)
         {
             float sample = frame < (frames / 10) ? (float)((Random.Shared.NextDouble() * 2 - 1) * amplitude) : 0f;
@@ -181,4 +182,42 @@ public static class SignalGeneration
         }
         return Value.Buffer(buffer);
     }
+
+    /// <summary>
+    /// Creates a white-noise AudioBuffer. Core 4-arity overload; the 1/2/3-arity
+    /// variants delegate here with defaults (amplitude=1.0, channels=1, sampleRate=44100).
+    /// Per project memory feedback: charitably clamp invalid args silently
+    /// (negative seconds → 0 frames, channels &lt; 1 → 1, sampleRate &lt;= 0 → 44100)
+    /// rather than throwing.
+    /// </summary>
+    public static Value Noise(IReadOnlyList<Value> args)
+    {
+        double seconds   = args[0].As<double>();
+        double amplitude = args[1].As<double>();
+        int    channels  = args[2].As<int>();
+        int    sampleRate = args[3].As<int>();
+
+        if (seconds < 0) seconds = 0;
+        if (channels < 1) channels = 1;
+        if (sampleRate <= 0) sampleRate = 44100;
+
+        int frames = (int)(seconds * sampleRate);
+        var buffer = new AudioBuffer(frames, channels, sampleRate);
+        // GenerateWhiteNoise is additive (+=) but a fresh AudioBuffer's .Data is
+        // zero-initialized, so this acts as a write.
+        SynthUtils.GenerateWhiteNoise(buffer.Data, amplitude);
+        return Value.Buffer(buffer);
+    }
+
+    /// <summary>1-arity noise: 1s mono 44100Hz amplitude=1.0.</summary>
+    public static Value Noise1(IReadOnlyList<Value> args)
+        => Noise(new List<Value> { args[0], Value.Double(1.0), Value.Int(1), Value.Int(44100) });
+
+    /// <summary>2-arity noise: mono 44100Hz custom amplitude.</summary>
+    public static Value Noise2(IReadOnlyList<Value> args)
+        => Noise(new List<Value> { args[0], args[1], Value.Int(1), Value.Int(44100) });
+
+    /// <summary>3-arity noise: 44100Hz custom amplitude and channels.</summary>
+    public static Value Noise3(IReadOnlyList<Value> args)
+        => Noise(new List<Value> { args[0], args[1], args[2], Value.Int(44100) });
 }

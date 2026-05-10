@@ -1,0 +1,32 @@
+Note: ~> flow operator — multi-arg unpack + non-tuple fallthrough (TUP-10)
+Note: Tests: tup ~> func calls func(tup@0, tup@1, ...); non-tuple LHS uses -> semantics
+Note: Beat substitution per Wave 2 deviation note — `q` has no user-source binding,
+Note: so we use Note+Note pairs (`<<C4, D4>>`) instead of the original CONTEXT block's
+Note: <<C4, q>>. Same code path through the evaluator.
+
+use "@std"
+
+Note: ===== Test 1: 2-element tuple unpack (Note + Note) =====
+proc renderHit (Note: pitch, Note: dur)
+    (print (concat "hit: " (str pitch)))
+end proc
+Tuple<<Note, Note>> entry = <<C4, D4>>
+entry ~> renderHit
+
+Note: ===== Test 2: non-tuple fallthrough =====
+proc doubleIt (Int: n)
+    (mul n 2)
+end proc
+Int x = 5
+Int r = x ~> doubleIt
+(print (str r))
+
+Note: ===== Test 3: 3-element tuple unpack =====
+proc add3 (Int: a, Int: b, Int: c)
+    (add a (add b c))
+end proc
+Tuple<<Int, Int, Int>> trip = <<1, 2, 3>>
+Int sum = trip ~> add3
+(print (str sum))
+
+(print "test_unpack_flow: PASSED")

@@ -1,0 +1,32 @@
+Note: Dict key types: Symbol/Note/Chord/Tuple-of-hashables + NaN-key special case (DICT-01/03)
+Note: REVISION 2: Tests 4-5 use (nanFloat) -- Flow has no `nan` literal,
+Note:   and (div 0.0 0.0) throws "Division by zero" (StdLib.cs:239).
+
+use "@std"
+
+Note: ===== Test 1: Symbol key =====
+Dict<Symbol, Int> sd = (dict #kick 90)
+Int sv = (get sd #kick)
+(print (str sv))
+
+Note: ===== Test 2: Note key =====
+Dict<Note, Int> nd = (dict C4 1)
+Int nv = (get nd C4)
+(print (str nv))
+
+Note: ===== Test 3: Tuple-of-hashables key =====
+Dict<Tuple<<Note, Beat>>, Int> beatMap = (dict <<C4, (beat 0.25)>> 1 <<D4, (beat 0.5)>> 2)
+Int bv = (get beatMap <<C4, (beat 0.25)>>)
+(print (str bv))
+
+Note: ===== Test 4: NaN key -- Dict-internal special case (REVISION 2: (nanFloat)) =====
+Float nanVal = (nanFloat)
+Dict<Float, Int> nanD = (dict nanVal 42)
+Int nanFound = (get nanD nanVal)
+(print (str nanFound))
+
+Note: ===== Test 5: General (equals nan nan) UNCHANGED -- IEEE 754 still applies =====
+Bool ieee = (equals nanVal nanVal)
+(print (str ieee))
+
+(print "test_dict_keys: PASSED")

@@ -20,4 +20,6 @@ public sealed class IntType : FlowType
     }
 
     public override int GetSpecificity() => 110;
+
+    public override bool IsHashable() => true;
 }

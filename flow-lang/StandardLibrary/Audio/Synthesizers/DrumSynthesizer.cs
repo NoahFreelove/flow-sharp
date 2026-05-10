@@ -1,4 +1,5 @@
 using System;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
@@ -6,10 +7,13 @@ namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 /// <summary>
 /// MIDI-style drum synthesizer. Maps note pitch to drum sounds via MIDI note number.
 /// Uses fixed natural durations (ignoring beat duration) with pitch sweeps and noise.
+/// Phase 23: tuning param accepted for interface conformance but unused — drums map
+/// to fixed acoustic drum samples via MIDI note number, not pitch frequency, so
+/// microtonal tuning is musically irrelevant for this voice.
 /// </summary>
 public class DrumSynthesizer : INoteSynthesizer
 {
-    public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+    public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
         if (note.IsRest)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);

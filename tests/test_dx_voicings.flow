@@ -1,0 +1,16 @@
+use "@std"
+use "@audio"
+
+Note: First inversion of C major
+Chord ic = (inversion Cmaj 1)
+(print (str ic))
+
+Note: Drop-2 voicing on Cmaj7
+Chord d2 = (voicing Cmaj7 "drop2")
+(print (str d2))
+
+Note: Charitable D-07 -- drop2 on triad returns unchanged
+Chord d2tri = (voicing Cmaj "drop2")
+(print (str d2tri))
+
+(print "DX-11 voicings: PASSED")

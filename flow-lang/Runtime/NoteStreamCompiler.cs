@@ -1,6 +1,7 @@
 using FlowLang.Ast.Expressions;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Harmony;
+using FlowLang.TypeSystem;  // for Fraction (Phase 18)
 using FlowLang.TypeSystem.SpecialTypes;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 
@@ -35,6 +36,32 @@ public class NoteStreamCompiler
         { "s", NoteValueType.Value.SIXTEENTH },
         { "t", NoteValueType.Value.THIRTYSECOND }
     };
+
+    /// <summary>
+    /// TUP-05: optional ErrorReporter for emitting Info-severity bar-overflow diagnostics.
+    /// When null (e.g., parameterless ctor used by Plan 19-01/19-02 unit Facts), the
+    /// validator silently skips diagnostic emission. Per CONTEXT D-17, ReportInfo is
+    /// already in the ErrorReporter API (no API change needed).
+    /// </summary>
+    private readonly FlowLang.Diagnostics.ErrorReporter? _errorReporter;
+
+    /// <summary>
+    /// Default ctor — preserves backward compatibility for Plan 19-01/19-02 unit Facts
+    /// that construct NoteStreamCompiler with no args. The TUP-05 bar-overflow Info
+    /// diagnostic is emitted only when an ErrorReporter is wired via the overload.
+    /// </summary>
+    public NoteStreamCompiler() : this(null) { }
+
+    /// <summary>
+    /// TUP-05 ctor: takes an ErrorReporter for emitting Info-severity bar-overflow
+    /// diagnostics. Production-path construction sites (ExpressionEvaluator) pass the
+    /// engine's reporter; unit Facts use the parameterless ctor and silently skip
+    /// diagnostic emission.
+    /// </summary>
+    public NoteStreamCompiler(FlowLang.Diagnostics.ErrorReporter? errorReporter)
+    {
+        _errorReporter = errorReporter;
+    }
 
     /// <summary>
     /// Compiles a NoteStreamExpression into a SequenceData using the given musical context.
@@ -134,6 +161,10 @@ public class NoteStreamCompiler
                         sourceLocation: grace.Location, sourceLength: CalcSourceLength(grace)));
                     break;
                 }
+
+                case TupletElement tuplet:
+                    CompileTupletElement(tuplet, context, executionContext, musicalNotes, new Fraction(1, 1));
+                    break;
             }
         }
 
@@ -142,7 +173,134 @@ public class NoteStreamCompiler
         // where D4 and E4 should get interpolated velocities
         InterpolateVelocities(musicalNotes);
 
+        // TUP-05: bar-fit validator runs only when at least one note has non-null
+        // DurationFraction (i.e. bar contains a tuplet or per-note /N or /X:Y).
+        // Existing CalculateAutoFitDuration path runs on the input element list above;
+        // this validator runs on the OUTPUT MusicalNoteData list and is purely additive —
+        // preserves Phase 18 byte-identical contract for non-tuplet bars (Pitfall 2 mitigation).
+        if (musicalNotes.Any(n => n.DurationFraction.HasValue))
+        {
+            ValidateBarFit(musicalNotes, timeSig, bar.Location);
+        }
+
         return new BarData(musicalNotes, timeSig);
+    }
+
+    /// <summary>
+    /// TUP-05 bar-fit validator. Walks emitted MusicalNoteData accumulating a
+    /// Fraction running sum (in quarter-units). On overflow, truncates the
+    /// boundary-crossing element to fit the remaining slot AND drops all
+    /// subsequent emitted notes from the bar. Emits one Info-severity
+    /// diagnostic per overflowing bar via ErrorReporter (CONTEXT D-17).
+    ///
+    /// Per CONTEXT D-03 (locked algorithm + charitable-interpretation memory):
+    /// "music > rigid correctness" — overflow is silent-truncate-with-Info,
+    /// NOT a hard error. Preserves byte-identical determinism (same input
+    /// always yields same truncation).
+    ///
+    /// Refinement of D-03's literal "truncate-to-zero" edge case: when
+    /// remaining capacity is exactly zero (boundary lands on the last
+    /// fitting note), DROP the overflowing element instead of emitting a
+    /// zero-duration note. The Info diagnostic still fires — composer
+    /// gets the same feedback, output stays clean.
+    /// </summary>
+    private void ValidateBarFit(
+        List<MusicalNoteData> musicalNotes,
+        TimeSignatureData timeSig,
+        FlowLang.Core.SourceLocation? barLocation)
+    {
+        // Bar capacity in quarter-units: numerator × 4 / denominator.
+        // 4/4 → 4/1 = 4 quarters; 6/8 → 24/8 = 3 quarters; 3/4 → 12/4 = 3 quarters.
+        Fraction barCapacity = new Fraction(timeSig.Numerator * 4, timeSig.Denominator);
+
+        Fraction sum = new Fraction(0, 1);
+        int? truncateAt = null;
+        Fraction overflowSum = sum;  // for diagnostic message
+
+        for (int i = 0; i < musicalNotes.Count; i++)
+        {
+            // Chord-tones share the leading tone's slot; they must not contribute
+            // to the running sum (otherwise a tuplet bar containing a chord would
+            // false-overflow and be truncated). See MusicalNoteData.IsChordTone.
+            if (musicalNotes[i].IsChordTone)
+                continue;
+
+            Fraction noteFrac = NoteAsBarFraction(musicalNotes[i], timeSig);
+            Fraction nextSum = sum + noteFrac;
+            // Strictly greater check (== bar capacity is exact-fit; preserve all elements).
+            if (nextSum > barCapacity)
+            {
+                truncateAt = i;
+                overflowSum = nextSum;
+                break;
+            }
+            sum = nextSum;
+        }
+
+        if (truncateAt is null)
+            return;  // exact fit OR underflow — no diagnostic
+
+        int boundaryIdx = truncateAt.Value;
+
+        // Compute remaining capacity = barCapacity - sum.
+        // Phase 18 Fraction has no operator-, but +(...) handles negation via sign-on-numerator.
+        Fraction remaining = barCapacity + new Fraction(-sum.Num, sum.Denom);
+
+        // Refinement: zero remaining → drop the boundary element + everything after.
+        // Non-zero remaining → truncate boundary element to `remaining` + drop everything after.
+        if (remaining.Num == 0)
+        {
+            // Drop boundary element + tail
+            musicalNotes.RemoveRange(boundaryIdx, musicalNotes.Count - boundaryIdx);
+        }
+        else
+        {
+            // Truncate boundary element: replace with same-fields copy + new DurationFraction
+            var b = musicalNotes[boundaryIdx];
+            musicalNotes[boundaryIdx] = new MusicalNoteData(
+                b.NoteName, b.Octave, b.Alteration, b.DurationValue, b.IsRest,
+                b.CentOffset, b.IsTied, b.Velocity, b.Articulation, b.IsDotted,
+                b.SourceLocation, b.SourceLength,
+                durationFraction: remaining);
+
+            // Drop everything after the boundary
+            int dropCount = musicalNotes.Count - (boundaryIdx + 1);
+            if (dropCount > 0)
+                musicalNotes.RemoveRange(boundaryIdx + 1, dropCount);
+        }
+
+        // Emit Info diagnostic naming the overflow ratio
+        _errorReporter?.ReportInfo(
+            $"Bar overflow: sum {overflowSum} exceeds time-signature {barCapacity}; truncated to fit",
+            barLocation);
+    }
+
+    /// <summary>
+    /// Helper for ValidateBarFit. Computes a transient Fraction representation of a note's
+    /// duration in quarter-units. Uses DurationFraction directly when set; otherwise converts
+    /// the enum DurationValue + IsDotted multiplier to a Fraction WITHOUT mutating the note.
+    /// Phase 18 byte-identical contract preserved — this helper is read-only.
+    /// </summary>
+    private static Fraction NoteAsBarFraction(MusicalNoteData note, TimeSignatureData timeSig)
+    {
+        if (note.DurationFraction.HasValue)
+            return note.DurationFraction.Value;
+
+        if (!note.DurationValue.HasValue)
+            return new Fraction(0, 1);
+
+        var enumVal = (NoteValueType.Value)note.DurationValue.Value;
+        Fraction baseFrac = enumVal switch
+        {
+            NoteValueType.Value.WHOLE        => new Fraction(4, 1),
+            NoteValueType.Value.HALF         => new Fraction(2, 1),
+            NoteValueType.Value.QUARTER      => new Fraction(1, 1),
+            NoteValueType.Value.EIGHTH       => new Fraction(1, 2),
+            NoteValueType.Value.SIXTEENTH    => new Fraction(1, 4),
+            NoteValueType.Value.THIRTYSECOND => new Fraction(1, 8),
+            _ => new Fraction(1, 1),
+        };
+        return note.IsDotted ? baseFrac * new Fraction(3, 2) : baseFrac;
     }
 
     /// <summary>
@@ -282,6 +440,148 @@ public class NoteStreamCompiler
     }
 
     /// <summary>
+    /// TUP-01/02/03 — recursively compile a TupletElement into MusicalNoteData with
+    /// rational DurationFraction values. Multiplies outerScale through nested ratios
+    /// using Phase 18 Fraction arithmetic (no double drift — Pitfall 1).
+    ///
+    /// DurationFraction is in quarter-note units (music21 convention; matches Phase 18
+    /// 18-02 SUMMARY pin).
+    ///
+    /// Math (verified against SPEC TUP-03 acceptance):
+    ///   bracketSpan    = suffixFrac × outerScale          // total quarter-units this bracket spans
+    ///   perChildSlot   = bracketSpan × (1 / Numerator)    // per-leaf-child duration
+    ///   nestedOuterScale = perChildSlot                   // ONE outer slot's quarter-size,
+    ///                                                     //   passed to nested tuplet as its outerScale
+    ///
+    /// Worked example for | {3:2 C4 {3:2 D4 E4 F4}q G4}h |:
+    ///   outer call: outerScale=1/1, suffix=h (2/1 quarter), bracketSpan=2/1, perChildSlot=2/3
+    ///     C4 → 2/3 quarter (= 1/6 whole)  ✓
+    ///     G4 → 2/3 quarter (= 1/6 whole)  ✓
+    ///   nested call (middle outer slot): outerScale=2/3, suffix=q (1/1), bracketSpan=2/3,
+    ///                                    perChildSlot=2/9
+    ///     D4/E4/F4 → 2/9 quarter each (= 1/18 whole)  ✓
+    ///   sum = 2/3 + 2/9 + 2/9 + 2/9 + 2/3 = 6/9 + 6/9 = 12/9... wait: 2·(2/3) + 3·(2/9)
+    ///       = 4/3 + 6/9 = 12/9 + 6/9 = 18/9 = 2 quarters = one half ✓ matches outer h suffix.
+    /// </summary>
+    private void CompileTupletElement(
+        TupletElement tuplet,
+        MusicalContext context,
+        ExecutionContext? executionContext,
+        List<MusicalNoteData> output,
+        Fraction outerScale)
+    {
+        // Outer suffix → fraction-of-quarter-note for this entire bracket.
+        Fraction suffixFrac = SuffixToQuarterFraction(tuplet.DurationSuffix, tuplet.IsDotted);
+
+        // Total span this bracket covers (in quarter-units), AFTER any outer ratios.
+        Fraction bracketSpan = suffixFrac * outerScale;
+
+        // Per-leaf-child slot: bracketSpan / Numerator.
+        Fraction perChildSlot = bracketSpan * new Fraction(1, tuplet.Numerator);
+
+        // Outer-scale passed DOWN to a nested TupletElement child = the quarter-size of
+        // ONE OUTER SLOT (= perChildSlot). The nested SuffixToQuarterFraction is then sized
+        // correctly relative to ONE slot of THIS bracket.
+        Fraction nestedOuterScale = perChildSlot;
+
+        foreach (var child in tuplet.Children)
+        {
+            switch (child)
+            {
+                case TupletElement nestedTuplet:
+                    CompileTupletElement(nestedTuplet, context, executionContext, output, nestedOuterScale);
+                    break;
+
+                case NoteElement note:
+                {
+                    var (name, octave, alteration) = NoteType.Parse(note.NoteName);
+                    output.Add(new MusicalNoteData(
+                        name, octave, alteration,
+                        durationValue: (int)NoteValueType.Value.QUARTER,  // best-effort enum mirror; rational override applies
+                        isRest: false,
+                        centOffset: note.CentOffset,
+                        isTied: note.IsTied,
+                        velocity: note.Velocity ?? 0.63,
+                        articulation: note.ArticulationMark ?? Articulation.Normal,
+                        isDotted: note.IsDotted,
+                        sourceLocation: note.Location,
+                        sourceLength: 0,
+                        durationFraction: perChildSlot));
+                    break;
+                }
+
+                case RestElement rest:
+                {
+                    output.Add(new MusicalNoteData(
+                        ' ', 0, 0,
+                        durationValue: (int)NoteValueType.Value.QUARTER,
+                        isRest: true,
+                        durationFraction: perChildSlot));
+                    break;
+                }
+
+                case NamedChordElement namedChord:
+                {
+                    // Each chord-tone gets the same per-slot duration (chord plays simultaneously).
+                    // The IsChordTone flag set by CompileNamedChordElement must propagate through
+                    // this re-wrap so BarType.ToTimeline() stacks tones on the lead onset.
+                    foreach (var chordNote in CompileNamedChordElement(namedChord, NoteValueType.Value.QUARTER))
+                    {
+                        output.Add(new MusicalNoteData(
+                            chordNote.NoteName, chordNote.Octave, chordNote.Alteration,
+                            chordNote.DurationValue, chordNote.IsRest,
+                            chordNote.CentOffset, chordNote.IsTied, chordNote.Velocity,
+                            chordNote.Articulation, chordNote.IsDotted,
+                            chordNote.SourceLocation, chordNote.SourceLength,
+                            durationFraction: perChildSlot,
+                            isChordTone: chordNote.IsChordTone));
+                    }
+                    break;
+                }
+
+                default:
+                    // Fallback: treat any other element as a rest with the per-slot duration.
+                    // ParseTupletChildren currently restricts children to TupletElement / NoteElement /
+                    // RestElement / NamedChordElement; this default branch defensively handles future
+                    // expansion without dropping content silently.
+                    output.Add(new MusicalNoteData(
+                        ' ', 0, 0,
+                        durationValue: (int)NoteValueType.Value.QUARTER,
+                        isRest: true,
+                        durationFraction: perChildSlot));
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Maps a duration suffix to its Fraction value in quarter-note units.
+    /// w=4q, h=2q, q=1q, e=1/2q, s=1/4q, t=1/8q. Dotted multiplier × 3/2.
+    /// Mirrors DurationSuffixMap layout (line 29) — same vocabulary.
+    /// </summary>
+    private static Fraction SuffixToQuarterFraction(string suffix, bool isDotted)
+    {
+        Fraction f = suffix switch
+        {
+            "w" => new Fraction(4, 1),
+            "h" => new Fraction(2, 1),
+            "q" => new Fraction(1, 1),
+            "e" => new Fraction(1, 2),
+            "s" => new Fraction(1, 4),
+            "t" => new Fraction(1, 8),
+            _ => new Fraction(1, 1),  // fallback: quarter (matches recovery path in parser)
+        };
+        return isDotted ? f * new Fraction(3, 2) : f;
+    }
+
+    /// <summary>
+    /// Helper overload: dispatch a NamedChordElement using a NoteValueType.Value? (the auto-fit shape).
+    /// Bridges the existing CompileNamedChordElement signature that takes NoteValueType.Value? (optional).
+    /// </summary>
+    private List<MusicalNoteData> CompileNamedChordElement(NamedChordElement namedChord, NoteValueType.Value defaultValue)
+        => CompileNamedChordElement(namedChord, (NoteValueType.Value?)defaultValue);
+
+    /// <summary>
     /// Finds the closest NoteValue enum for a given number of beats.
     /// </summary>
     private NoteValueType.Value FindClosestNoteValue(double beats, int timeSigDenominator)
@@ -318,6 +618,11 @@ public class NoteStreamCompiler
 
     /// <summary>
     /// Compiles a NoteElement into a MusicalNoteData.
+    /// TUP-04 / TUP-08: when note.TupletRatio.HasValue, computes a rational DurationFraction
+    /// override in quarter-note units (music21 convention).
+    ///   y == 1 sentinel  → TUP-04 (C4/N): DurationFraction = Fraction(4, X) quarter (= 1/N whole)
+    ///   y != 1           → TUP-08 (C4/X:Y[suffix]): DurationFraction =
+    ///                       SuffixToQuarterFraction(suffix or "q") × Fraction(1, X) quarter
     /// </summary>
     private MusicalNoteData CompileNoteElement(NoteElement note, NoteValueType.Value? autoFitDuration, MusicalContext context)
     {
@@ -337,6 +642,26 @@ public class NoteStreamCompiler
             durationValue = (int)NoteValueType.Value.QUARTER; // Default to quarter note
         }
 
+        // === TUP-04 / TUP-08 per-note rational duration ===
+        Fraction? durationFraction = null;
+        if (note.TupletRatio.HasValue)
+        {
+            var (x, y) = note.TupletRatio.Value;
+            if (y == 1)
+            {
+                // TUP-04: C4/N — DurationFraction = 1/N whole = 4/N quarter
+                durationFraction = new Fraction(4, x);
+            }
+            else
+            {
+                // TUP-08: C4/X:Y[suffix] — DurationFraction = SuffixToQuarterFraction(suffix) × 1/X
+                // suffix defaults to "q" when absent (per SPEC TUP-08 "default level: quarter").
+                string suffixForFraction = note.DurationSuffix ?? "q";
+                Fraction suffixFrac = SuffixToQuarterFraction(suffixForFraction, note.IsDotted);
+                durationFraction = suffixFrac * new Fraction(1, x);
+            }
+        }
+
         // Determine velocity: note-level override > context velocity > default mf
         double velocity = note.Velocity ?? context.Velocity ?? 0.63;
 
@@ -352,7 +677,8 @@ public class NoteStreamCompiler
         return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
             centOffset: note.CentOffset, isTied: note.IsTied,
             velocity: velocity, articulation: articulation,
-            isDotted: note.IsDotted, sourceLocation: note.Location, sourceLength: CalcSourceLength(note));
+            isDotted: note.IsDotted, sourceLocation: note.Location, sourceLength: CalcSourceLength(note),
+            durationFraction: durationFraction);
     }
 
     /// <summary>
@@ -400,10 +726,16 @@ public class NoteStreamCompiler
         }
 
         int chordLen = CalcSourceLength(chord);
+        bool first = true;
         foreach (var noteName in chord.Notes)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen));
+            // First chord-tone is the "lead" — it advances the bar's beat cursor.
+            // Remaining tones share its onset (IsChordTone=true) so the chord
+            // plays as one polyphonic strike, not as an arpeggio across bar
+            // beats. See MusicalNoteData.IsChordTone and BarType.ToTimeline.
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen, isChordTone: !first));
+            first = false;
         }
 
         return notes;
@@ -425,10 +757,13 @@ public class NoteStreamCompiler
         }
 
         int ncLen = CalcSourceLength(namedChord);
+        bool firstNamed = true;
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen));
+            // See CompileChordElement above: first tone leads, rest stack on its onset.
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
+            firstNamed = false;
         }
 
         return notes;
@@ -458,10 +793,13 @@ public class NoteStreamCompiler
             return notes;
         }
 
+        bool firstRoman = true;
         foreach (var noteName in chordData.NoteNames)
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
+            // See CompileChordElement above: first tone leads, rest stack on its onset.
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen, isChordTone: !firstRoman));
+            firstRoman = false;
         }
 
         return notes;

@@ -1,0 +1,27 @@
+use "@std"
+
+Note: DEFER-05 slice — negative-from-end indexing (Python-style normalization)
+Note: Negative literals must be bound via (sub 0 N) due to parser binary-subtraction precedence (Pitfall 4).
+
+Int[] arr = [1, 2, 3, 4, 5]
+
+Note: negative start: -3 + 5 = 2; slice arr 2 5 = [3, 4, 5]
+Int negThree = (sub 0 3)
+Int[] r1 = (slice arr negThree 5)
+(print (concat "neg start ok len=" (str (len r1))))
+
+Note: negative end: -1 + 5 = 4; slice arr 0 4 = [1, 2, 3, 4]
+Int negOne = (sub 0 1)
+Int[] r2 = (slice arr 0 negOne)
+(print (concat "neg end ok len=" (str (len r2))))
+
+Note: both negative: -3..-1 = [3, 4]
+Int[] r3 = (slice arr negThree negOne)
+(print (concat "both neg ok len=" (str (len r3))))
+
+Note: extreme negative start (D-USER-D) — clamps to 0 post-normalization. -100 + 5 = -95, clamp -> 0. slice arr 0 2 = [1, 2]
+Int negHundred = (sub 0 100)
+Int[] r4 = (slice arr negHundred 2)
+(print (concat "extreme neg ok len=" (str (len r4))))
+
+(print "test_slice_negative: PASSED")

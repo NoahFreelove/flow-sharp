@@ -1,0 +1,26 @@
+enable equalTemperament;
+
+use "@std"
+use "@audio"
+
+Note: MICR-01 D-08 explicit no-op — `enable equalTemperament;` produces byte-identical
+Note: output to a no-pragma file. The pragma IS registered (visible to Phase 24
+Note: scaleLint tooling) but rendering is unchanged.
+Note: Pitfall 6 byte-identical short-circuit: PitchConversion fast-path delegates
+Note: to existing 1-arg overload when tuning.System == EqualTemperament.
+Note: Pinned by ExplicitEqualTemperament_ProducesIdenticalOutput Fact (Wave 2).
+
+tempo 120 {
+    timesig 4/4 {
+        section eq_triad {
+            | C4q E4q G4q |
+        }
+    }
+}
+
+Song song = [eq_triad]
+Buffer audio = (renderSong song "piano")
+(writeWav "/tmp/flow_test_tuning_equal.wav" audio)
+(print "EqualTemperament explicit no-op")
+
+(print "test_tuning_equal: PASSED")

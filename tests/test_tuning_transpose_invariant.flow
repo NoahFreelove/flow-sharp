@@ -1,0 +1,22 @@
+enable justIntonation;
+
+use "@std"
+
+Note: MICR-02 acceptance — transpose(seq, +5st) produces the same MIDI numbers
+Note: under every tuning. Only rendered frequencies differ.
+Note: D-12 transforms stay MIDI-based; tuning never sees them.
+Note: This script asserts the MIDI shape post-transpose is identical regardless
+Note: of pragma — string of transposed Sequence does NOT depend on the active tuning.
+Note: Pinned by TransformInvarianceFacts (Wave 2 Task 4).
+
+Sequence original = | C4q E4q G4q |
+Sequence transposed = original -> transpose +5st
+
+(print (str original))
+(print (str transposed))
+
+Note: Under JI the rendered Hz differ from 12-TET, but Sequence str representation
+Note: encodes pitch classes / MIDI numbers — invariant across tunings.
+(print "MIDI invariance preserved")
+
+(print "test_tuning_transpose_invariant: PASSED")

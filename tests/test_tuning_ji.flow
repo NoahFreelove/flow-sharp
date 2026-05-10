@@ -1,0 +1,29 @@
+enable justIntonation;
+
+use "@std"
+use "@audio"
+
+Note: MICR-01 acceptance — 5:4 just-intonation third (Phase 23 plan 23-04)
+Note: With `enable justIntonation;` declared, the C-E interval renders at
+Note: ratio 5/4 (= 1.25) instead of 12-TET ~1.2599 (Math.Pow(2, 4/12)).
+Note: D-01 tonic = innermost active key; D-02 silent C-major default when no key block.
+Note: Pinned numerically by JustMajor_CtoE_Is5to4 Fact (Wave 1) +
+Note: PitchConversionEndToEnd_JI_CtoE_FrequencyRatio_Is5to4 Fact (Wave 2).
+
+Note: Build a basic C-major triad sequence under justIntonation
+tempo 120 {
+    timesig 4/4 {
+        section ji_triad {
+            | C4q E4q G4q |
+        }
+    }
+}
+
+Note: Render path Sequence -> Section -> Song -> Buffer (renderSequence returns Voice[]
+Note: per flow-lang/notation.flow:201 — renderSong is the Buffer entry point).
+Song song = [ji_triad]
+Buffer audio = (renderSong song "piano")
+(writeWav "/tmp/flow_test_tuning_ji.wav" audio)
+(print "JI ratio applied")
+
+(print "test_tuning_ji: PASSED")

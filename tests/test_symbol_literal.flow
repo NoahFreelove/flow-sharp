@@ -1,0 +1,30 @@
+Note: Symbol literal interning + strict separation from String (SYM-01)
+Note: Tests: pointer-equality on same intern slot, (equals Symbol Symbol) true, (equals Symbol String) false
+Note: Phase 26.1 Wave 1 — see plan 26.1-02 / CONTEXT § Specifics block 1
+
+use "@std"
+
+Note: ===== Test 1: Symbol literal lexes + evaluates =====
+Symbol kick = #kick
+(print (str kick))
+
+Note: ===== Test 2: Same-name interning gives pointer equality via (equals) =====
+Symbol kickAgain = #kick
+Bool sameKick = (equals kick kickAgain)
+(print (str sameKick))
+
+Note: ===== Test 3: Different names compare unequal =====
+Symbol snare = #snare
+Bool diffSym = (equals kick snare)
+(print (str diffSym))
+
+Note: ===== Test 4: Strict separation from String =====
+String kickStr = "kick"
+Bool symVsStr = (equals kick kickStr)
+(print (str symVsStr))
+
+Note: ===== Test 5: Two distinct symbols still distinct via (equals) =====
+Bool snareVsKick = (equals snare #kick)
+(print (str snareVsKick))
+
+(print "test_symbol_literal: PASSED")

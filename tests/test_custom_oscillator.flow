@@ -13,8 +13,8 @@ Float[] sawTable = []
 Int i = 0
 while (lt i tableSize) {
     Double id = (intToDouble i)
-    Double phase = id / tableSizeD
-    Double sample = phase * 2.0 - 1.0
+    Double phase = (div id tableSizeD)
+    Double sample = (sub (mul phase 2.0) 1.0)
     sawTable = (append sawTable sample)
     i = (add i 1)
 }
@@ -55,7 +55,7 @@ Double posOne = 1.0
 Double negOne = (sub 0.0 1.0)
 while (lt j sqSize) {
     Double jd = (intToDouble j)
-    Double phase2 = jd / sqSizeD
+    Double phase2 = (div jd sqSizeD)
     Double sample2 = (if (lt phase2 0.5) posOne negOne)
     sqTable = (append sqTable sample2)
     j = (add j 1)

@@ -228,7 +228,7 @@ tempo 100 {
 
             Int totalFrames = (getFrames final)
             Int sampleRate = 44100
-            Int durationSec = (div totalFrames sampleRate)
+            Int durationSec = (idiv totalFrames sampleRate)
 
             (print "")
             (print (concat "Total frames: " (str totalFrames)))

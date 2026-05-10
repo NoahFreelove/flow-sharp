@@ -1,0 +1,42 @@
+enable justIntonation;
+
+use "@std"
+use "@audio"
+use "@composition"
+
+Note: ============================================================
+Note:  Pragma demo: enable justIntonation; -- 5-limit Just Intonation
+Note: ============================================================
+
+(print "Flow Pragma Demo -- enable justIntonation;")
+(print "Generating examples/output/microtonal_ji.{wav,mid} ...")
+
+Note: With `enable justIntonation;` at line 1, the C-major triad renders with
+Note: PURE just-intonation ratios:
+Note:   C-E (major third) -> ratio 5/4 = 1.25       (12-TET ~1.2599)
+Note:   C-G (perfect fifth) -> ratio 3/2 = 1.5      (12-TET ~1.4983)
+Note: The audible difference is the major third -- JI sounds "pure", 12-TET sounds "narrow".
+
+(print "JI major third (C-E):  ratio 5/4 = 1.25")
+(print "12-TET major third:    ratio 2^(4/12) ~ 1.2599")
+(print "JI fifth (C-G):        ratio 3/2 = 1.5")
+(print "12-TET fifth:          ratio 2^(7/12) ~ 1.4983")
+
+Note: Render a Cmaj triad arpeggio + sustained chord under JI.
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section ji_triad {
+                Sequence arp = | C4q E4q G4q C5q |
+                Sequence held = | [C4 E4 G4 C5]w |
+            }
+            Song song = [ji_triad]
+            Buffer audio = (renderSong song "piano")
+            (writeWav "examples/output/microtonal_ji.wav" audio)
+            (writeMidi "examples/output/microtonal_ji.mid" song)
+        }
+    }
+}
+(print "WAV:  examples/output/microtonal_ji.wav")
+(print "MIDI: examples/output/microtonal_ji.mid")
+(print "JI Cmaj triad rendered -- major third at 5:4 ratio")

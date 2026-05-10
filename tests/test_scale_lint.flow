@@ -1,0 +1,47 @@
+enable scaleLint;
+
+use "@std"
+use "@audio"
+
+Note: LINT-01/LINT-02/LINT-03 integration smoke (Phase 24 Plan 24-05)
+Note:
+Note: flow-interpreter does NOT run an LSP frontend, so this smoke verifies:
+Note:   1. `enable scaleLint;` is accepted by PragmaRegistry.KnownPragmas (Plan 24-01)
+Note:   2. The file parses + renders without error end-to-end
+Note:   3. The pragma is closed-set integration-checked
+Note:
+Note: Per-diagnostic assertions (LINT-01 F#4 flagged, LINT-02 pragma-absent silent,
+Note: LINT-03 inner key Gmajor wins) live in flow-lang.Tests/Unit/Phase24/
+Note: ScaleLintAnalyzerFacts.cs:
+Note:   - NonDiatonic_FsharpInCmajor_FlagsOneDiagnostic   (LINT-01)
+Note:   - PragmaAbsent_NeverFlags_LINT02                  (LINT-02)
+Note:   - NestedKeys_InnermostWins_NoFlag                 (LINT-03 — inner Gmajor wins)
+
+Note: LINT-01 canary — F#4 inside `key Cmajor { ... }` would surface a squiggle
+Note: in an LSP-aware editor; flow-interpreter just renders silently.
+tempo 120 {
+    key Cmajor {
+        section lint_canary {
+            | C4q D4q E4q F#4q G4q |
+        }
+    }
+}
+
+Note: LINT-03 invariant — innermost key wins. F#4 is non-diatonic in Cmajor
+Note: but IS diatonic in Gmajor; the squiggle would NOT appear in an LSP editor.
+Note: Replaced REQUIREMENTS.md's Aminor example per CONTEXT specifics line 171.
+tempo 120 {
+    key Cmajor {
+        key Gmajor {
+            section nested_inner_wins {
+                | F#4q |
+            }
+        }
+    }
+}
+
+Song song = [lint_canary nested_inner_wins]
+Buffer audio = (renderSong song "piano")
+(writeWav "/tmp/flow_test_scale_lint.wav" audio)
+
+(print "test_scale_lint: PASSED")

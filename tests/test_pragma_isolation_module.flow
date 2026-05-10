@@ -1,0 +1,12 @@
+enable hAsB;
+
+use "@std"
+
+Note: PRAG-02 isolation fixture — module declares enable hAsB; INTERNALLY.
+Note: Plan 21-02 tightens this to actually exercise H-as-B within the module scope.
+
+Note: H4q B4q both parse cleanly because the pragma is active for THIS file.
+Sequence seq = | H4q B4q |
+(print (str seq))
+
+(print "test_pragma_isolation_module: PASSED")

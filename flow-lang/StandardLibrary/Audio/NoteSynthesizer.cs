@@ -1,15 +1,21 @@
 using System;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio
 {
     /// <summary>
     /// Interface for synthesizers that can render musical notes to audio buffers.
+    /// Phase 23 Pattern A: <paramref name="tuning"/> threads the resolved render-time
+    /// tuning context through to <see cref="PitchConversion.NoteToFrequency(MusicalNoteData, RenderTuning)"/>.
+    /// When <c>tuning</c> equals <see cref="RenderTuning.Default"/> (or its System is
+    /// <see cref="TuningSystem.EqualTemperament"/>), the byte-identical 12-TET path
+    /// is taken via Pitfall 6 short-circuit.
     /// </summary>
     public interface INoteSynthesizer
     {
-        AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm);
+        AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning);
     }
 
     /// <summary>
@@ -17,12 +23,12 @@ namespace FlowLang.StandardLibrary.Audio
     /// </summary>
     public class SineSynthesizer : INoteSynthesizer
     {
-        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
                 return CreateSilence(sampleRate, durationBeats, bpm);
 
-            double frequency = PitchConversion.NoteToFrequency(note);
+            double frequency = PitchConversion.NoteToFrequency(note, tuning);
             double durationSeconds = BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
@@ -57,12 +63,12 @@ namespace FlowLang.StandardLibrary.Audio
     /// </summary>
     public class SawSynthesizer : INoteSynthesizer
     {
-        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
                 return CreateSilence(sampleRate, durationBeats, bpm);
 
-            double frequency = PitchConversion.NoteToFrequency(note);
+            double frequency = PitchConversion.NoteToFrequency(note, tuning);
             double durationSeconds = BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
@@ -98,12 +104,12 @@ namespace FlowLang.StandardLibrary.Audio
     /// </summary>
     public class SquareSynthesizer : INoteSynthesizer
     {
-        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
                 return CreateSilence(sampleRate, durationBeats, bpm);
 
-            double frequency = PitchConversion.NoteToFrequency(note);
+            double frequency = PitchConversion.NoteToFrequency(note, tuning);
             double durationSeconds = BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
@@ -139,12 +145,12 @@ namespace FlowLang.StandardLibrary.Audio
     /// </summary>
     public class TriangleSynthesizer : INoteSynthesizer
     {
-        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
                 return CreateSilence(sampleRate, durationBeats, bpm);
 
-            double frequency = PitchConversion.NoteToFrequency(note);
+            double frequency = PitchConversion.NoteToFrequency(note, tuning);
             double durationSeconds = BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
@@ -188,8 +194,15 @@ namespace FlowLang.StandardLibrary.Audio
             _renderFunc = renderFunc ?? throw new ArgumentNullException(nameof(renderFunc));
         }
 
-        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm)
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
+            // Phase 23: lambda synthesizers receive the resolved RenderTuning indirectly via
+            // the Flow function's frequency-computing logic. The user lambda contract
+            // (MusicalNote, Double duration, Double bpm) -> Buffer remains stable; per
+            // CONTEXT D-08 a future expansion may surface the active tuning to user
+            // lambdas, but Wave 2 keeps the lambda signature unchanged so existing
+            // composer scripts continue to work. The lambda call path only sees 12-TET
+            // semantics today.
             return _renderFunc(note, durationBeats, bpm);
         }
     }

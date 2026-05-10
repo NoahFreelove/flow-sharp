@@ -19,20 +19,22 @@ public partial class Parser
 {
     private readonly List<Token> _tokens;
     private readonly ErrorReporter _errorReporter;
+    private readonly PragmaSet _pragmaSet;
     private int _current = 0;
     // When true, disables the "identifier followed by literal = function call"
     // heuristic in ParsePrimary. Set while parsing arguments inside (func arg1 arg2).
     private bool _inFuncCallArgs = false;
     private bool _inLoop = false;
-    
+
     // Bounds for syntax tree depth
     private int _parseDepth = 0;
     private const int MaxParseDepth = 500;
 
-    public Parser(List<Token> tokens, ErrorReporter errorReporter)
+    public Parser(List<Token> tokens, ErrorReporter errorReporter, PragmaSet? pragmaSet = null)
     {
         _tokens = tokens ?? throw new ArgumentNullException(nameof(tokens));
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
+        _pragmaSet = pragmaSet ?? PragmaSet.Empty;
     }
 
     /// <summary>
@@ -67,7 +69,7 @@ public partial class Parser
             }
         }
 
-        return new Program(SourceLocation.Unknown, statements);
+        return new Program(SourceLocation.Unknown, statements, _pragmaSet);
     }
 
     private Statement? ParseStatement()
@@ -163,6 +165,15 @@ public partial class Parser
                 return new ContinueStatement(PreviousToken.Location);
             }
 
+            // Phase 26.1 TUP-09: Tuple destructuring assignment statement
+            // `<<Type? name, Type? name, ...>> = expr`. Must come BEFORE the IsTypeKeyword
+            // check because `<<` is not a type-keyword token but is the only
+            // statement-start position where LessLess can occur.
+            if (Check(TokenType.LessLess))
+            {
+                return ParseTupleDestructureStatement();
+            }
+
             // Check for variable declaration: Type identifier =
             if (IsTypeKeyword(CurrentToken.Type))
             {
@@ -185,6 +196,28 @@ public partial class Parser
 
                 // Not assignment - reset and parse as expression
                 _current = savedPos;
+            }
+
+            // Phase 26 D-15: detect stray arithmetic operators at statement-start.
+            // After Phase 26 there are no infix operators, so a leading +/-/*// at
+            // statement boundary indicates legacy infix that was abandoned mid-rewrite.
+            // ParseUnaryShorthand would otherwise silently absorb the '+' (D-03) or
+            // emit (neg IDENT) for `-x`, which masks `1 + 2` style legacy code as
+            // a no-op success. Generic 'unexpected token' is the contract per D-15.
+            if (Check(TokenType.Star) || Check(TokenType.Slash))
+            {
+                throw new ParseException(
+                    $"Unexpected token '{CurrentToken.Text}' at {CurrentToken.Location} — Phase 26 removed infix arithmetic; use prefix builtins (add)/(sub)/(mul)/(div).");
+            }
+            // For Plus/Minus, only error when not followed by an identifier (D-01 shorthand)
+            // and not followed by a digit (already handled by lexer). The remaining cases
+            // are stray operators between value-producing tokens.
+            if ((Check(TokenType.Plus) || Check(TokenType.Minus))
+                && _current + 1 < _tokens.Count
+                && _tokens[_current + 1].Type != TokenType.Identifier)
+            {
+                throw new ParseException(
+                    $"Unexpected token '{CurrentToken.Text}' at {CurrentToken.Location} — Phase 26 removed infix arithmetic; use prefix builtins (add)/(sub)/(mul)/(div).");
             }
 
             // Expression statement
@@ -308,6 +341,42 @@ public partial class Parser
         }
 
         return new VariableDeclaration(value.Location, varType, name, value);
+    }
+
+    /// <summary>
+    /// Phase 26.1 TUP-09: parses <c>&lt;&lt;Type? name, Type? name, ...&gt;&gt; = expr</c>
+    /// destructuring assignment. Each slot supports an optional type annotation followed
+    /// by an identifier name (CONTEXT § Specifics block 2 — composers can use bare names
+    /// when the RHS type is known).
+    /// </summary>
+    private TupleDestructureStatement ParseTupleDestructureStatement()
+    {
+        Expect(TokenType.LessLess, "Expected '<<' to start destructure pattern");
+        var location = PreviousToken.Location;
+        var patterns = new List<TupleDestructurePattern>();
+        while (!Check(TokenType.GreaterGreater) && !IsAtEnd())
+        {
+            FlowType? slotType = null;
+            // Optional per-slot type annotation. IsTypeKeyword honors the same allowlist
+            // as ParseVariableDeclaration, so any annotation accepted there works here.
+            if (IsTypeKeyword(CurrentToken.Type))
+            {
+                var (parsedType, nextIdx, _) = TypeParser.ParseType(_tokens, _current);
+                slotType = parsedType;
+                _current = nextIdx;
+            }
+            if (CurrentToken.Type != TokenType.Identifier)
+                throw new ParseException(
+                    $"Expected identifier in destructure pattern at {CurrentToken.Location}");
+            var name = Advance().Text;
+            patterns.Add(new TupleDestructurePattern(slotType, name));
+            if (!Check(TokenType.GreaterGreater) && Check(TokenType.Comma))
+                Advance();
+        }
+        Expect(TokenType.GreaterGreater, "Expected '>>' after destructure pattern");
+        Expect(TokenType.Assign, "Expected '=' after destructure pattern");
+        var value = ParseExpression();
+        return new TupleDestructureStatement(location, patterns, value);
     }
 
     private Expression CreateDefaultValueExpression(FlowType type, SourceLocation location)
@@ -660,16 +729,35 @@ public partial class Parser
         }
     }
 
-    // Flow operator has lower precedence than arithmetic
+    // Phase 26: arithmetic is now prefix-only; ParseFlowExpression dispatches directly
+    // to ParseUnaryShorthand (the post-Phase-26 successor of ParseAdditive/ParseUnary).
     private Expression ParseFlowExpression()
     {
-        var left = ParseAdditive();
+        var left = ParseUnaryShorthand();
 
-        while (Match(TokenType.Arrow))
+        // Phase 26.1 TUP-10: also match TildeArrow `~>`. Unlike `->` (which does
+        // a parse-time transform when RHS is a recognizable call shape), `~>`
+        // ALWAYS emits TupleUnpackFlowExpression because tuple arity is unknown
+        // at parse time (RESEARCH Q5 / Pitfall 2). The evaluator does the unpack
+        // at runtime when the tuple's IReadOnlyList<Value> is in hand.
+        while (true)
         {
-            var location = PreviousToken.Location;
-            var right = ParseAdditive();
+            bool isTildeArrow;
+            if (Match(TokenType.Arrow)) { isTildeArrow = false; }
+            else if (Match(TokenType.TildeArrow)) { isTildeArrow = true; }
+            else break;
 
+            var location = PreviousToken.Location;
+            var right = ParseUnaryShorthand();
+
+            if (isTildeArrow)
+            {
+                // Always defer to runtime — arity unknown at parse time (RESEARCH Q5)
+                left = new TupleUnpackFlowExpression(location, left, right);
+                continue;
+            }
+
+            // Existing -> behavior unchanged below.
             // Transform right side if it's an identifier or function call
             // x -> func becomes func(x)
             // x -> func(arg) becomes func(x, arg)
@@ -684,7 +772,7 @@ public partial class Parser
                 if (!IsAtEnd() && Check(TokenType.LParen)
                     && CurrentToken.Location.Line == varExpr.Location.Line)
                 {
-                    args.Add(ParseAdditive());
+                    args.Add(ParseUnaryShorthand());
                 }
                 right = new FunctionCallExpression(right.Location, varExpr.Name, args);
             }
@@ -708,55 +796,28 @@ public partial class Parser
         return left;
     }
 
-    private Expression ParseAdditive()
+    // Phase 26 (D-01 + D-03): replaces deleted ParseUnary/ParseAdditive/ParseMultiplicative.
+    // Arithmetic is now prefix-only via (add)/(sub)/(mul)/(div)/(neg)/(idiv) builtins.
+    // The remaining "unary" responsibilities are:
+    //   D-03: silently strip leading '+' at expression-start (no node emitted)
+    //   D-01: leading '-' followed by an identifier lowers to (neg IDENT)
+    private Expression ParseUnaryShorthand()
     {
-        var left = ParseMultiplicative();
-
-        while (Match(TokenType.Plus, TokenType.Minus))
+        // D-03: silently strip '+' at expression-start (no node emitted)
+        if (Match(TokenType.Plus))
         {
-            var op = PreviousToken.Type == TokenType.Plus
-                ? BinaryOperator.Add
-                : BinaryOperator.Subtract;
-            var location = PreviousToken.Location;
-            var right = ParseMultiplicative();
-            left = new BinaryExpression(location, left, op, right);
+            // No-op; just continue
         }
-
-        return left;
-    }
-
-    private Expression ParseMultiplicative()
-    {
-        var left = ParseUnary();
-
-        while (Match(TokenType.Star, TokenType.Slash))
+        // D-01: '-' followed by identifier → (neg IDENT)
+        if (Check(TokenType.Minus) && _current + 1 < _tokens.Count
+            && _tokens[_current + 1].Type == TokenType.Identifier)
         {
-            var op = PreviousToken.Type == TokenType.Star
-                ? BinaryOperator.Multiply
-                : BinaryOperator.Divide;
-            var location = PreviousToken.Location;
-            var right = ParseUnary();
-            left = new BinaryExpression(location, left, op, right);
+            var loc = CurrentToken.Location;
+            Advance(); // consume '-'
+            var name = Advance().Text;
+            return new FunctionCallExpression(loc, "neg",
+                new List<Expression> { new VariableExpression(loc, name) });
         }
-
-        return left;
-    }
-
-    private Expression ParseUnary()
-    {
-        if (Match(TokenType.Minus, TokenType.Plus))
-        {
-            var op = PreviousToken.Type == TokenType.Minus
-                ? BinaryOperator.Subtract
-                : BinaryOperator.Add;
-            var location = PreviousToken.Location;
-            var right = ParseUnary();
-
-            // Unary minus/plus as 0 - x or 0 + x
-            var zero = new LiteralExpression(location, 0);
-            return new BinaryExpression(location, zero, op, right);
-        }
-
         return ParsePostfix();
     }
 
@@ -769,7 +830,7 @@ public partial class Parser
             if (Match(TokenType.At))
             {
                 // Array indexing: arr@index (supports unary minus for negative indices)
-                var index = ParseUnary();
+                var index = ParseUnaryShorthand();
                 expr = new ArrayIndexExpression(expr.Location, expr, index);
             }
             else if (Match(TokenType.Dot))
@@ -800,8 +861,11 @@ public partial class Parser
         }
 
         // Literals
+        // Phase 26: IntLiteral may carry an int, long, or BigInteger payload depending
+        // on whether the literal overflowed Int32. Pass the boxed Value through —
+        // EvaluateLiteral dispatches on the underlying CLR type.
         if (Match(TokenType.IntLiteral))
-            return new LiteralExpression(PreviousToken.Location, (int)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Value!);
 
         if (Match(TokenType.FloatLiteral))
             return new LiteralExpression(PreviousToken.Location, (double)PreviousToken.Value!);
@@ -830,8 +894,16 @@ public partial class Parser
         if (Match(TokenType.DecibelLiteral))
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
+        // Phase 26.2 ERG-04 — HertzLiteral routes to LiteralExpression with raw text;
+        // ExpressionEvaluator.TryParseSpecialLiteral resolves "800Hz" / "1.5kHz" to Value.Hertz(canonical-Hz double).
+        if (Match(TokenType.HertzLiteral))
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+
         if (Match(TokenType.ChordLiteral))
             return new ChordLiteralExpression(PreviousToken.Location, PreviousToken.Text);
+
+        if (Match(TokenType.SymbolLiteral))
+            return new SymbolLiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
         // Lambda expression: fn Type name, Type name => body
         if (Match(TokenType.Fn))
@@ -877,6 +949,24 @@ public partial class Parser
 
             Expect(TokenType.RBracket, "Expected ']' after array literal");
             return new ArrayLiteralExpression(location, elements);
+        }
+
+        // Phase 26.1 TUP-09: tuple literal <<elem1, elem2, ...>>. Empty <<>> and singleton
+        // <<x>> are valid arities (CONTEXT § Specifics block 2 — `<<>>` empty + `<<x>>` singleton).
+        if (Match(TokenType.LessLess))
+        {
+            var location = PreviousToken.Location;
+            var elements = new List<Expression>();
+
+            while (!Check(TokenType.GreaterGreater) && !IsAtEnd())
+            {
+                elements.Add(ParseExpression());
+                if (!Check(TokenType.GreaterGreater) && Check(TokenType.Comma))
+                    Advance();
+            }
+
+            Expect(TokenType.GreaterGreater, "Expected '>>' after tuple literal");
+            return new TupleLiteralExpression(location, elements);
         }
 
         // Parenthesized expression or function call
@@ -935,7 +1025,7 @@ public partial class Parser
                 while (!IsAtEnd() && IsArgumentStart(CurrentToken.Type)
                        && CurrentToken.Location.Line == location.Line)
                 {
-                    args.Add(ParseUnary()); // Parse argument expression
+                    args.Add(ParseUnaryShorthand()); // Parse argument expression
                 }
 
                 return new FunctionCallExpression(location, name, args);
@@ -1114,10 +1204,12 @@ public partial class Parser
 
             // Special types
             if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent"
-                or "Millisecond" or "Second" or "Decibel" or "Lazy"
+                or "Millisecond" or "Second" or "Decibel" or "Hertz" or "Lazy"
                 or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
                 or "OscillatorState" or "Envelope" or "Beat" or "Voice"
-                or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
+                or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
+                or "Symbol" or "Tuple"  // Phase 26.1 TUP-09 — `Tuple<<T1, T2>>` annotation gate
+                or "Dict")  // Phase 26.1 DICT-01 — `Dict<K, V>` annotation gate
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)
@@ -1127,9 +1219,11 @@ public partial class Parser
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
                     or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel"
+                    or "Hertz"
                     or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
                     or "OscillatorState" or "Envelope" or "Beat" or "Voice"
-                    or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
+                    or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
+                    or "Symbol")
                     return true;
             }
         }
@@ -1153,7 +1247,9 @@ public partial class Parser
             or TokenType.CentLiteral
             or TokenType.TimeLiteral
             or TokenType.DecibelLiteral
+            or TokenType.HertzLiteral
             or TokenType.ChordLiteral
+            or TokenType.SymbolLiteral
             or TokenType.InterpolatedStringStart
             or TokenType.Identifier;
     }

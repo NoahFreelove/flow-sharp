@@ -35,6 +35,14 @@ public abstract class FlowType : IEquatable<FlowType>
         return 100; // Base specificity
     }
 
+    /// <summary>
+    /// Whether values of this type are usable as Dict keys (Phase 26.1).
+    /// Default <c>false</c> — covers Buffer/Voice/Lazy/Function/Sequence/Track/Section/Song/Envelope/OscillatorState/Bar/etc.
+    /// without per-class edits. Hashable types (Int, Long, Float, String, Symbol, Note, Chord — and recursively Tuple-of-hashables)
+    /// override to <c>true</c>. Wave 4 (Dict) consumes this predicate at the type-annotation site.
+    /// </summary>
+    public virtual bool IsHashable() => false;
+
     public virtual bool Equals(FlowType? other)
     {
         if (other is null) return false;

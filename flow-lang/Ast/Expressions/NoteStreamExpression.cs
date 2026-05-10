@@ -10,7 +10,7 @@ public abstract record NoteStreamElement(SourceLocation Location);
 
 /// <summary>
 /// A single note with optional duration suffix and modifiers.
-/// e.g., C4, C4q, C4q., C4+50c
+/// e.g., C4, C4q, C4q., C4+50c, C4/12 (TUP-04), C4/3:2q (TUP-08)
 /// </summary>
 public record NoteElement(
     SourceLocation Location,
@@ -20,7 +20,8 @@ public record NoteElement(
     bool IsTied,              // e.g., C4h~
     double? CentOffset,       // e.g., +50c, -25c (null = none)
     double? Velocity,         // 0.0–1.0 dynamic level (null = default)
-    Articulation? ArticulationMark // staccato, legato, accent, etc. (null = normal)
+    Articulation? ArticulationMark, // staccato, legato, accent, etc. (null = normal)
+    (int Num, int Denom)? TupletRatio = null  // TUP-08 per-note tuplet ratio (Plan 19-02 populates; null in Plan 19-01)
 ) : NoteStreamElement(Location);
 
 /// <summary>
@@ -111,6 +112,24 @@ public record GhostNoteElement(
 public record GraceNoteElement(
     SourceLocation Location,
     string NoteName
+) : NoteStreamElement(Location);
+
+/// <summary>
+/// Tuplet bracket: {N:M element element ...}q (TUP-01) or shorthand {N elem elem ...}q (TUP-02).
+/// Children are heterogeneous NoteStreamElements — including nested TupletElements (TUP-03).
+/// Numerator (N) is the count played; Denominator (M) is the count of normal notes the
+/// tuplet replaces (e.g., 3:2 = play 3 in the time of 2). Per CONTEXT D-04 / SPEC D-USER-04,
+/// DurationSuffix is REQUIRED — auto-fit inside tuplets is not supported in v1.3.
+/// Compiled by NoteStreamCompiler.CompileTupletElement with accumulating Fraction outerScale
+/// so nested ratios multiply through cleanly without floating-point drift (Pitfall 1).
+/// </summary>
+public record TupletElement(
+    SourceLocation Location,
+    int Numerator,                              // "3" in 3:2, or "3" in shorthand {3 ...}
+    int Denominator,                            // "2" in 3:2 (or resolved from music21 lookup for shorthand)
+    IReadOnlyList<NoteStreamElement> Children,  // recursive; can contain TupletElement
+    string DurationSuffix,                      // w/h/q/e/s/t — REQUIRED per CONTEXT D-04
+    bool IsDotted                               // outer dot ({3:2 ...}q.)
 ) : NoteStreamElement(Location);
 
 /// <summary>

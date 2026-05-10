@@ -1,0 +1,38 @@
+enable hAsB;
+
+use "@std"
+use "@audio"
+use "@composition"
+
+Note: ============================================================
+Note:  Pragma demo: enable hAsB; -- German B notation alias
+Note: ============================================================
+
+(print "Flow Pragma Demo -- enable hAsB;")
+(print "Generating examples/output/h_alias.{wav,mid} ...")
+
+Note: With `enable hAsB;` activated at line 1, H aliases B inside note streams.
+Note: H4 and B4 are the SAME MIDI pitch (German notation -- in Bach's land, B was historically Bb).
+
+Sequence basic = | H4q B4q C5q |
+(print $"basic sequence | H4q B4q C5q | parses identically to | B4q B4q C5q |: {(str basic)}")
+
+Note: Outside note streams, H stays a usable identifier -- pragma is note-stream-only.
+Int H = 5
+(print $"outside note streams: Int H = {(str H)}")
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section h_demo {
+                Sequence layered = | H4q B4q C5q D5h |
+            }
+            Song demo = [h_demo]
+            Buffer audio = (renderSong demo "piano")
+            (writeWav "examples/output/h_alias.wav" audio)
+            (writeMidi "examples/output/h_alias.mid" demo)
+        }
+    }
+}
+(print "WAV:  examples/output/h_alias.wav")
+(print "MIDI: examples/output/h_alias.mid")

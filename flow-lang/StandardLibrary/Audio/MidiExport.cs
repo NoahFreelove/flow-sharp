@@ -1,7 +1,12 @@
+using System.Linq;
 using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Interaction;
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Audio.Tuning;
+using FlowLang.TypeSystem;
+using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
@@ -15,6 +20,64 @@ namespace FlowLang.StandardLibrary.Audio;
 public static class MidiExport
 {
     private const int TicksPerQuarterNote = 480;
+
+    /// <summary>
+    /// TUP-06 / CONTEXT D-05 / D-USER-E: maximum TPQN supported by Flow's MIDI export.
+    /// Songs whose tuplet denominator LCM forces TPQN above this cap raise a clear
+    /// composer-facing error — no DAW imports correctly above this in field testing
+    /// (per .planning/research/SUMMARY.md). 32767 is the SMF spec hard limit.
+    /// </summary>
+    private const int MaxTpqn = 9600;
+
+    /// <summary>
+    /// Recursive Euclidean GCD. Mirrors Phase 18 Fraction.cs idiom for stylistic
+    /// consistency. Used by Lcm to compute requiredTPQN.
+    /// </summary>
+    private static int Gcd(int a, int b) => b == 0 ? a : Gcd(b, a % b);
+
+    /// <summary>
+    /// Lcm(a, b) = a × b / Gcd(a, b). Two-line helper next to its sole caller.
+    /// </summary>
+    private static int Lcm(int a, int b) => a / Gcd(a, b) * b;
+
+    /// <summary>
+    /// TUP-06: pre-export pass over the Song collecting tuplet denominators from
+    /// MusicalNoteData.DurationFraction values. Computes requiredTPQN = LCM(480,
+    /// 2 × union(denoms)) per CONTEXT D-05. When zero tuplets are present (no
+    /// note has DurationFraction), returns 480 unchanged (CONTEXT D-07 structural
+    /// preservation of Phase 18 byte-identical contract for non-tuplet songs).
+    ///
+    /// When requiredTPQN exceeds MaxTpqn (9600), raises an InvalidOperationException
+    /// with the LOCKED message format from CONTEXT D-06. The error fires BEFORE
+    /// any DryWetMidi MidiFile allocation or disk I/O — atomic, no partial export.
+    /// </summary>
+    private static int ComputeRequiredTpqn(SongData song)
+    {
+        var denominators = new HashSet<int>();
+        foreach (var section in song.SectionRegistry.Values)
+            foreach (var sequence in section.Sequences.Values)
+                foreach (var bar in sequence.Bars)
+                    foreach (var note in bar.MusicalNotes)
+                        if (note.DurationFraction.HasValue)
+                            denominators.Add(note.DurationFraction.Value.Denom);
+
+        // CONTEXT D-07: zero tuplets → TPQN stays at 480 (Phase 18 byte-identical contract)
+        if (denominators.Count == 0)
+            return TicksPerQuarterNote;
+
+        int requiredTpqn = TicksPerQuarterNote;
+        foreach (var d in denominators)
+            requiredTpqn = Lcm(requiredTpqn, 2 * d);
+
+        if (requiredTpqn > MaxTpqn)
+        {
+            var sortedDenoms = denominators.OrderBy(x => x).ToArray();
+            throw new InvalidOperationException(
+                $"MIDI export requires TPQN={requiredTpqn}, exceeds cap {MaxTpqn} (locked v1.3 D-05). " +
+                $"Tuplet ratios in this song: [{string.Join(", ", sortedDenoms)}]");
+        }
+        return requiredTpqn;
+    }
 
     /// <summary>
     /// Key signature lookup: Flow key string -> (sharps/flats, minor flag).
@@ -63,7 +126,23 @@ public static class MidiExport
         };
 
     /// <summary>
+    /// Phase 23 Plan 23-03 Task 2: context-dependent registration for <c>writeMidi</c>.
+    /// Mirrors <see cref="Harmony.HarmonyFunctions.RegisterContextDependent"/> shape — closure
+    /// over <see cref="FlowLang.Runtime.ExecutionContext"/> so <see cref="WriteMidi(IReadOnlyList{Value}, FlowLang.Runtime.ExecutionContext)"/>
+    /// can read <c>MusicalContext.Tuning</c> at call time and emit the D-13 one-shot warning
+    /// when tuning != EqualTemperament. MIDI bytes themselves are UNCHANGED — still 12-TET.
+    /// </summary>
+    public static void RegisterContextDependent(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
+    {
+        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
+        registry.Register("writeMidi", writeMidiSignature, args => WriteMidi(args, context));
+    }
+
+    /// <summary>
     /// Flow-callable entry point: writeMidi(String filepath, Song song) -> Void.
+    /// Context-free overload preserved for backwards compat (e.g., direct test invocation,
+    /// proxy paths). Phase 23: registration migrated to the 2-arg overload below so writeMidi
+    /// can emit the D-13 non-12-TET advisory warning.
     /// </summary>
     public static Value WriteMidi(IReadOnlyList<Value> args)
     {
@@ -78,14 +157,38 @@ public static class MidiExport
     }
 
     /// <summary>
+    /// Phase 23 Plan 23-03 Task 2 / D-13: context-aware overload. Emits a one-shot
+    /// stderr warning when called under non-12-TET tuning so composers know that
+    /// faithful microtonal MIDI export (per-channel pitch-bend) is deferred to v1.4.
+    /// MIDI bytes are UNCHANGED — still 12-TET output. The warning is purely advisory.
+    /// </summary>
+    public static Value WriteMidi(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
+    {
+        var musicalCtx = context.GetMusicalContext();
+        if (musicalCtx?.Tuning is TuningSystem activeTuning && activeTuning != TuningSystem.EqualTemperament)
+        {
+            RenderingDiagnostics.WarnOnce(
+                "writemidi-non-equal-temperament",
+                "[midi] tuning != equalTemperament; MIDI export emits 12-TET pitches without pitch-bend (faithful microtonal MIDI deferred to v1.4)");
+        }
+        return WriteMidi(args);
+    }
+
+    /// <summary>
     /// Core MIDI export implementation. Creates a multi-track MIDI file:
     /// Track 0 = conductor (tempo, time sig, key sig meta events),
     /// Track 1 = note data from all sections in arrangement order.
     /// </summary>
     private static void ExportMidiInternal(string filepath, SongData song)
     {
+        // TUP-06: pre-export pass — auto-elevate TPQN if tuplets demand it,
+        // raise cap error before any allocation if requiredTPQN > 9600.
+        // Songs with zero tuplets short-circuit to 480 (Phase 18 byte-identical preserved).
+        int ticksPerQuarter = ComputeRequiredTpqn(song);
+
         var midiFile = new MidiFile();
-        midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision(TicksPerQuarterNote);
+        // ticksPerQuarter is bounded by MaxTpqn (9600) which fits short.MaxValue (32767).
+        midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision((short)ticksPerQuarter);
 
         // Determine global context from the first section
         double bpm = 120.0;
@@ -160,7 +263,9 @@ public static class MidiExport
                 sectionTimeSigDenom = sectionData.Context.TimeSignature.Denominator;
 
             // Calculate section length in ticks for repeat offset
-            long sectionLengthTicks = CalculateSectionLengthTicks(sectionData, sectionTimeSigDenom);
+            // TUP-06: thread the per-export ticksPerQuarter through so repeat
+            // offsets stay aligned when TPQN auto-elevates above 480.
+            long sectionLengthTicks = CalculateSectionLengthTicks(sectionData, sectionTimeSigDenom, ticksPerQuarter);
 
             for (int repeat = 0; repeat < sectionRef.RepeatCount; repeat++)
             {
@@ -174,6 +279,13 @@ public static class MidiExport
                     {
                         int barTimeSigDenom = bar.TimeSignature?.Denominator ?? sectionTimeSigDenom;
                         long barTick = seqTick;
+                        // Chord-tone support (mirrors BarType.ToTimeline): the leading note of
+                        // a chord group advances barTick for the whole slot; subsequent
+                        // chord-tones (IsChordTone=true) emit their NoteOn/NoteOff at the
+                        // SAVED leadBarTick and do NOT advance barTick. Without this, a chord
+                        // [C E G]q would export as a sequential MIDI arpeggio instead of a
+                        // simultaneous polyphonic strike.
+                        long leadBarTick = barTick;
 
                         foreach (var note in bar.MusicalNotes)
                         {
@@ -181,8 +293,22 @@ public static class MidiExport
                             {
                                 // Rests advance position but produce no MIDI events
                                 double restBeats = note.GetBeats(barTimeSigDenom);
-                                barTick += (long)(restBeats * TicksPerQuarterNote);
+                                barTick += (long)(restBeats * ticksPerQuarter);
                                 continue;
+                            }
+
+                            // Choose the tick at which this note's events land.
+                            // Chord-tone: stack on the leading tone's tick.
+                            // Leading/standalone note: use barTick AND record it as the new lead.
+                            long effectiveTick;
+                            if (note.IsChordTone)
+                            {
+                                effectiveTick = leadBarTick;
+                            }
+                            else
+                            {
+                                effectiveTick = barTick;
+                                leadBarTick = barTick;
                             }
 
                             int midiNote = PitchConversion.GetMidiNote(
@@ -192,19 +318,51 @@ public static class MidiExport
                             byte velocity = (byte)Math.Clamp((int)(note.Velocity * 127), 1, 127);
 
                             double beats = note.GetBeats(barTimeSigDenom);
-                            long durationTicks = (long)(beats * TicksPerQuarterNote);
+                            // DX-14 legato: NoteOff lands at extended duration (CONTEXT D-03 — overlapping
+                            // events are valid SMF and the receiving DAW mixes them). When DurationOverlap=0
+                            // (default) extendedBeats == beats and the export is byte-identical to pre-22-06.
+                            double extendedBeats = note.DurationOverlap > 0
+                                ? beats * (1.0 + note.DurationOverlap)
+                                : beats;
+                            long durationTicks = (long)(extendedBeats * ticksPerQuarter);
+
+                            // DX-14 portamento: emit CC65=127 + CC5=mappedValue at note start
+                            // (CONTEXT Claude's Discretion). Linear ms->CC5: 0->0, 100->64, 200->127 clamped.
+                            // V5 (T-22-V5-22, T-22-V5-23): clamp before SevenBitNumber cast — guards both
+                            // upper overflow and negative input.
+                            if (note.PortamentoMs > 0.0)
+                            {
+                                byte cc5Value = (byte)Math.Clamp(
+                                    (int)Math.Round(note.PortamentoMs * 127.0 / 200.0), 0, 127);
+                                noteEvents.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)127), effectiveTick));
+                                noteEvents.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)5, (SevenBitNumber)cc5Value), effectiveTick));
+                            }
 
                             // NoteOn at current position
                             noteEvents.Add(new TimedEvent(
                                 new NoteOnEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)velocity),
-                                barTick));
+                                effectiveTick));
 
-                            // NoteOff at position + duration
+                            // NoteOff at position + extended duration (for legato — overlap with next note)
                             noteEvents.Add(new TimedEvent(
                                 new NoteOffEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)0),
-                                barTick + durationTicks));
+                                effectiveTick + durationTicks));
 
-                            barTick += durationTicks;
+                            // DX-14 portamento: bracket-close at note end (CC65=0).
+                            if (note.PortamentoMs > 0.0)
+                            {
+                                noteEvents.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)0),
+                                    effectiveTick + durationTicks));
+                            }
+
+                            // CRITICAL (Pitfall 3): advance by ORIGINAL beats, NOT extendedBeats.
+                            // This is what makes legato OVERLAP rather than slow the song down.
+                            // Chord-tones do NOT advance — the lead already advanced for the slot.
+                            if (!note.IsChordTone)
+                                barTick += (long)(beats * ticksPerQuarter);
                         }
 
                         // Advance sequence position by bar duration
@@ -213,7 +371,7 @@ public static class MidiExport
                             double barBeats = bar.IsPickup
                                 ? bar.GetActualBeats()
                                 : bar.TimeSignature.Numerator;
-                            seqTick += (long)(barBeats * TicksPerQuarterNote);
+                            seqTick += (long)(barBeats * ticksPerQuarter);
                         }
                     }
                 }
@@ -234,9 +392,11 @@ public static class MidiExport
 
     /// <summary>
     /// Calculates the total length of a section in MIDI ticks by summing
-    /// the longest sequence's duration.
+    /// the longest sequence's duration. The ticksPerQuarter parameter (TUP-06)
+    /// is passed in from ExportMidiInternal so repeat offsets honour the
+    /// per-export auto-elevated TPQN rather than the const baseline.
     /// </summary>
-    private static long CalculateSectionLengthTicks(SectionData section, int timeSigDenominator)
+    private static long CalculateSectionLengthTicks(SectionData section, int timeSigDenominator, int ticksPerQuarter)
     {
         double maxBeats = 0;
 
@@ -256,6 +416,6 @@ public static class MidiExport
                 maxBeats = seqBeats;
         }
 
-        return (long)(maxBeats * TicksPerQuarterNote);
+        return (long)(maxBeats * ticksPerQuarter);
     }
 }

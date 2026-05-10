@@ -26,6 +26,12 @@ vscode-extension/server/
 !vscode-extension/tests/**/*.flow
 !vscode-extension/README.md
 
+# Pragma companion files for Phase 27 byte-identical determinism gates
+# must be tracked despite the global *.flow ignore.
+!examples/pragmas/
+!examples/pragmas/**
+!examples/pragmas/**/*.flow
+
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets
 # (.lua, .toml) are not matched by the globs, so they track automatically.
@@ -33,3 +39,4 @@ vscode-extension/server/
 !docs/**
 !docs/**/*.md
 !README.md
+midi-to-wav.sh

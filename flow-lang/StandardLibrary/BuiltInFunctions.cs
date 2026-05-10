@@ -1,5 +1,6 @@
 using FlowLang.Audio;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Dict;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -42,8 +43,10 @@ public static class BuiltInFunctions
         Audio.SongRenderer.Register(registry);
         Audio.TempoRampRenderer.Register(registry);
         Transforms.TransformFunctions.Register(registry);
+        Transforms.TransformFunctions.RegisterArticulationTransforms(registry);  // Phase 22-06 DX-14 (legato + portamento)
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
+        BufferPrinter.Register(registry);
         Composition.PolyrhythmFunctions.Register(registry);
         Composition.VariationFunctions.Register(registry);
         Audio.Vocalization.VocalizationFunctions.Register(registry);
@@ -157,6 +160,14 @@ public static class BuiltInFunctions
         var strDoubleSignature = new FunctionSignature("str", [DoubleType.Instance]);
         registry.Register("str", strDoubleSignature, StdLib.StrDouble);
 
+        // Phase 26 (STD-02): str overloads for Long + Number — without these,
+        // (str Long) is ambiguous (widens to both Float and Double) and (str Number)
+        // has no candidate (Number doesn't widen on the str chain).
+        var strLongSignature = new FunctionSignature("str", [LongType.Instance]);
+        registry.Register("str", strLongSignature, StdLib.StrLong);
+        var strNumberSignature = new FunctionSignature("str", [NumberType.Instance]);
+        registry.Register("str", strNumberSignature, StdLib.StrNumber);
+
         var strStringSignature = new FunctionSignature("str", [StringType.Instance]);
         registry.Register("str", strStringSignature, StdLib.StrString);
 
@@ -165,6 +176,10 @@ public static class BuiltInFunctions
 
         var strNoteSignature = new FunctionSignature("str", [NoteType.Instance]);
         registry.Register("str", strNoteSignature, StdLib.StrNote);
+
+        // Phase 26.1 SYM-01: (str Symbol) → "#name"
+        var strSymbolSignature = new FunctionSignature("str", [SymbolType.Instance]);
+        registry.Register("str", strSymbolSignature, StdLib.StrSymbol);
 
         var strBarSignature = new FunctionSignature("str", [BarType.Instance]);
         registry.Register("str", strBarSignature, StdLib.StrBar);
@@ -245,7 +260,7 @@ public static class BuiltInFunctions
         var divSignature = new FunctionSignature(
             "div",
             [IntType.Instance, IntType.Instance]);
-        registry.Register("div", divSignature, StdLib.DivInt);
+        registry.Register("div", divSignature, StdLib.DivIntPromote);   // Phase 26 D-08: now returns Double
 
         // Double overloads for arithmetic
         var addDoubleSignature = new FunctionSignature(
@@ -267,6 +282,42 @@ public static class BuiltInFunctions
             "div",
             [DoubleType.Instance, DoubleType.Instance]);
         registry.Register("div", divDoubleSignature, StdLib.DivDouble);
+
+        // ===== Phase 26 (STD-02): Long + Number same-type fast paths =====
+
+        var addLongSignature = new FunctionSignature("add", [LongType.Instance, LongType.Instance]);
+        registry.Register("add", addLongSignature, StdLib.AddLong);
+        var subLongSignature = new FunctionSignature("sub", [LongType.Instance, LongType.Instance]);
+        registry.Register("sub", subLongSignature, StdLib.SubLong);
+        var mulLongSignature = new FunctionSignature("mul", [LongType.Instance, LongType.Instance]);
+        registry.Register("mul", mulLongSignature, StdLib.MulLong);
+        var divLongSignature = new FunctionSignature("div", [LongType.Instance, LongType.Instance]);
+        registry.Register("div", divLongSignature, StdLib.DivLong);
+
+        var addNumberSignature = new FunctionSignature("add", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("add", addNumberSignature, StdLib.AddNumber);
+        var subNumberSignature = new FunctionSignature("sub", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("sub", subNumberSignature, StdLib.SubNumber);
+        var mulNumberSignature = new FunctionSignature("mul", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("mul", mulNumberSignature, StdLib.MulNumber);
+        var divNumberSignature = new FunctionSignature("div", [NumberType.Instance, NumberType.Instance]);
+        registry.Register("div", divNumberSignature, StdLib.DivNumber);
+
+        // ===== Phase 26 (STD-02): (neg) 5-pack (D-07) =====
+        var negIntSignature    = new FunctionSignature("neg", [IntType.Instance]);
+        registry.Register("neg", negIntSignature, StdLib.NegInt);
+        var negLongSignature   = new FunctionSignature("neg", [LongType.Instance]);
+        registry.Register("neg", negLongSignature, StdLib.NegLong);
+        var negFloatSignature  = new FunctionSignature("neg", [FloatType.Instance]);
+        registry.Register("neg", negFloatSignature, StdLib.NegFloat);
+        var negDoubleSignature = new FunctionSignature("neg", [DoubleType.Instance]);
+        registry.Register("neg", negDoubleSignature, StdLib.NegDouble);
+        var negNumberSignature = new FunctionSignature("neg", [NumberType.Instance]);
+        registry.Register("neg", negNumberSignature, StdLib.NegNumber);
+
+        // ===== Phase 26 (STD-02): (idiv Int Int) → Int (D-08) =====
+        var idivIntSignature = new FunctionSignature("idiv", [IntType.Instance, IntType.Instance]);
+        registry.Register("idiv", idivIntSignature, StdLib.IDivInt);
 
         // String-to-number conversions
         var stringToIntSignature = new FunctionSignature("stringToInt", [StringType.Instance]);
@@ -409,6 +460,24 @@ public static class BuiltInFunctions
 
         registry.Register("tau", new FunctionSignature("tau", []),
             args => Value.Double(Math.Tau));
+
+        // ===== Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance) =====
+        // Flow has no `Beat` literal at top level — durations like `q`, `h`, `e`, `s`, `w`
+        // exist only as note-stream suffixes (inside `| C4q D4h |`). DICT-01's
+        // Tuple-of-hashables key acceptance needs to construct Beat values in user source.
+        // (beat Double) wraps a fractional-beat double in a Beat-typed Value so that
+        // `<<C4, (beat 0.25)>>` produces a Tuple<<Note, Beat>> usable as a Dict key.
+        registry.Register("beat", new FunctionSignature("beat", [DoubleType.Instance]),
+            args => Value.Beat(args[0].As<double>()));
+
+        // ===== Phase 26.1 NaN production primitive (REVISION 2) =====
+        // Flow has no `nan` literal. (div 0.0 0.0) throws "Division by zero"
+        // (see StdLib.DivFloat/DivInt/DivLong/DivDouble — all guard b == 0).
+        // (nanFloat) is the canonical IEEE 754 NaN producer for the DICT-03
+        // NaN-as-key acceptance shape and any future float-edge-case work.
+        // Returns Float (double-backed per Value.Float definition).
+        registry.Register("nanFloat", new FunctionSignature("nanFloat", []),
+            args => Value.Float(double.NaN));
     }
 
     private static void RegisterCollections(InternalFunctionRegistry registry)
@@ -447,6 +516,14 @@ public static class BuiltInFunctions
 
         var dropSignature = new FunctionSignature("drop", [new ArrayType(VoidType.Instance), IntType.Instance]);
         registry.Register("drop", dropSignature, Collections.Drop);
+
+        // DEFER-01 (Phase 20 plan 20-01): range(Int, Int) + range(Int, Int, Int) -> Array[Int].
+        // Standard Pythonic semantics. Two arities registered explicitly (overload resolver disambiguates by exact arity match per 20-RESEARCH Pitfall 3).
+        var range2Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance]);
+        registry.Register("range", range2Signature, Collections.Range);
+
+        var range3Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance, IntType.Instance]);
+        registry.Register("range", range3Signature, Collections.Range);
 
         // DX-05 (Phase 14 plan 14-01): slice(Array[T], Int, Int) + slice(Sequence, Int, Int).
         // Silent two-sided clamping per CONTEXT D-01. Both overloads ship atomically per D-02.
@@ -545,9 +622,20 @@ public static class BuiltInFunctions
         var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance]);
         registry.Register("loadWav", loadWavSignature, Audio.FileIO.LoadWav);
 
-        // writeMidi(String, Song) -> Void - export Song to MIDI file
-        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
-        registry.Register("writeMidi", writeMidiSignature, Audio.MidiExport.WriteMidi);
+        // DX-15: loadWav(String, Int) -> Buffer — varispeed by semitones (Phase 22 plan 22-02)
+        var loadWavSemiSig = new FunctionSignature("loadWav",
+            [StringType.Instance, IntType.Instance]);
+        registry.Register("loadWav", loadWavSemiSig, Audio.FileIO.LoadWavSemitones);
+
+        // DX-15: loadWav(String, Double) -> Buffer — varispeed by ratio (Phase 22 plan 22-02)
+        var loadWavRatioSig = new FunctionSignature("loadWav",
+            [StringType.Instance, DoubleType.Instance]);
+        registry.Register("loadWav", loadWavRatioSig, Audio.FileIO.LoadWavRatio);
+
+        // writeMidi(String, Song) -> Void migrated to RegisterContextDependentFunctions
+        // (Phase 23 Plan 23-03 Task 2). The context-dependent registration lets writeMidi
+        // read MusicalContext.Tuning and emit the D-13 advisory warning under non-12-TET.
+        // MIDI bytes are unchanged — still 12-TET — so the migration is non-breaking.
 
         // ===== Signal Generation Operations =====
 
@@ -558,9 +646,29 @@ public static class BuiltInFunctions
 
         var createSineToneSig = new FunctionSignature("createSineTone", [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
         registry.Register("createSineTone", createSineToneSig, Audio.SignalGeneration.CreateSineTone);
-        
+
+        // Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics.
+        // Delegates to the same CreateSineTone lambda; Hertz's CLR backing IS double
+        // (Value.Hertz factory wraps a double), so args[1].As<double>() reads it
+        // directly without per-overload coercion.
+        var createSineToneHzSig = new FunctionSignature("createSineTone", [DoubleType.Instance, HertzType.Instance, DoubleType.Instance]);
+        registry.Register("createSineTone", createSineToneHzSig, Audio.SignalGeneration.CreateSineTone);
+
         var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance]);
         registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
+
+        // White noise -- wraps SynthUtils.GenerateWhiteNoise. Four arities; resolver disambiguates by arg count.
+        var noise1Sig = new FunctionSignature("noise", [DoubleType.Instance]);
+        registry.Register("noise", noise1Sig, Audio.SignalGeneration.Noise1);
+
+        var noise2Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("noise", noise2Sig, Audio.SignalGeneration.Noise2);
+
+        var noise3Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+        registry.Register("noise", noise3Sig, Audio.SignalGeneration.Noise3);
+
+        var noise4Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance, IntType.Instance]);
+        registry.Register("noise", noise4Sig, Audio.SignalGeneration.Noise);
 
         var resetPhaseSignature = new FunctionSignature(
             "resetPhase",
@@ -755,6 +863,10 @@ public static class BuiltInFunctions
         Composition.SongFunctions.Register(registry, context);
         Harmony.HarmonyFunctions.RegisterContextDependent(registry, context);
         RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
+        Audio.EffectsFunctions.RegisterContextDependent(registry, context);  // Phase 22-04 DX-12 (NoteValue-rate delay synced to MusicalContext.Tempo)
+        Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
+        Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
+        Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
         // ===== Random Generator Functions =====
 
         var randSignature = new FunctionSignature("?", []);
@@ -809,6 +921,92 @@ public static class BuiltInFunctions
             Audio.SynthesizerFactory.RegisterWavetable(name, ExtractWavetable(floatArray));
             return Value.Void();
         });
+
+        // Phase 26.1 dict + tuple-unpack runtime functions (TUP-11 + DICT-01/02/03)
+        RegisterDict(registry, context);
+    }
+
+    private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
+    {
+        // ===== (unpack) — runtime first-class apply (TUP-11) — Wave 3 =====
+        var unpackSig = new FunctionSignature(
+            "unpack",
+            new FlowType[] { TupleType.AnyArity, FunctionType.Instance });
+        registry.Register("unpack", unpackSig,
+            args => DictFunctions.Unpack(args, context));
+
+        // ===== Dict ops (DICT-01/02/03) — Wave 4 =====
+
+        // Wildcard Dict<Void, Void> for overload-resolution dispatch — VoidType key
+        // is exempted from DictType's defensive IsHashable check.
+        var dictWildcard = new DictType(VoidType.Instance, VoidType.Instance);
+
+        // (dict K V K V ...) — flat varargs constructor
+        var dictSig = new FunctionSignature("dict",
+            new FlowType[] { VoidType.Instance }, IsVarArgs: true);
+        registry.Register("dict", dictSig, args => DictFunctions.Dict(args, context));
+
+        // (dictTuple <<K,V>> ...) — tuple-pair varargs constructor
+        var dictTupleSig = new FunctionSignature("dictTuple",
+            new FlowType[] { TupleType.AnyArity }, IsVarArgs: true);
+        registry.Register("dictTuple", dictTupleSig, args => DictFunctions.DictTuple(args, context));
+
+        // (get d k)
+        var getSig = new FunctionSignature("get",
+            new FlowType[] { dictWildcard, VoidType.Instance });
+        registry.Register("get", getSig, args => DictFunctions.Get(args, context));
+
+        // (getOr d k default)
+        var getOrSig = new FunctionSignature("getOr",
+            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance });
+        registry.Register("getOr", getOrSig, args => DictFunctions.GetOr(args, context));
+
+        // (set d k v)
+        var setSig = new FunctionSignature("set",
+            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance });
+        registry.Register("set", setSig, args => DictFunctions.Set(args, context));
+
+        // (remove d k)
+        var removeSig = new FunctionSignature("remove",
+            new FlowType[] { dictWildcard, VoidType.Instance });
+        registry.Register("remove", removeSig, args => DictFunctions.Remove(args, context));
+
+        // (has d k)
+        var hasSig = new FunctionSignature("has",
+            new FlowType[] { dictWildcard, VoidType.Instance });
+        registry.Register("has", hasSig, args => DictFunctions.Has(args, context));
+
+        // (keys d)
+        var keysSig = new FunctionSignature("keys", new FlowType[] { dictWildcard });
+        registry.Register("keys", keysSig, args => DictFunctions.Keys(args, context));
+
+        // (values d)
+        var valuesSig = new FunctionSignature("values", new FlowType[] { dictWildcard });
+        registry.Register("values", valuesSig, args => DictFunctions.Values(args, context));
+
+        // (size d) — Int
+        var sizeSig = new FunctionSignature("size", new FlowType[] { dictWildcard });
+        registry.Register("size", sizeSig, args => DictFunctions.Size(args, context));
+
+        // (merge d1 d2) — last-write-wins
+        var mergeSig = new FunctionSignature("merge",
+            new FlowType[] { dictWildcard, dictWildcard });
+        registry.Register("merge", mergeSig, args => DictFunctions.Merge(args, context));
+
+        // (each Dict Function) — SEPARATE overload from existing (each Array Function); Pitfall 6
+        var eachDictSig = new FunctionSignature("each",
+            new FlowType[] { dictWildcard, FunctionType.Instance });
+        registry.Register("each", eachDictSig, args => DictFunctions.Each(args, context));
+
+        // (map Dict Function) — SEPARATE overload from existing (map Array Function)
+        var mapDictSig = new FunctionSignature("map",
+            new FlowType[] { dictWildcard, FunctionType.Instance });
+        registry.Register("map", mapDictSig, args => DictFunctions.Map(args, context));
+
+        // (filter Dict Function) — SEPARATE overload from existing (filter Array Function)
+        var filterDictSig = new FunctionSignature("filter",
+            new FlowType[] { dictWildcard, FunctionType.Instance });
+        registry.Register("filter", filterDictSig, args => DictFunctions.Filter(args, context));
     }
 
     private static void RegisterBars(InternalFunctionRegistry registry)

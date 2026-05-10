@@ -29,6 +29,105 @@ public static class TypeParser
             return ParseFunctionType(tokens, index);
         }
 
+        // Phase 26.1 TUP-09: Tuple<<T1, T2, ...>> generic type. Empty <<>> and singleton <<T>>
+        // are valid arities. Place BEFORE the Lazy<T> generic so a future Lazy<Tuple<<...>>>
+        // recurses correctly (RESEARCH § Pitfall 5 — Lazy<Dict<...>> ordering).
+        //
+        // Dual-form delimiter handling: `<<` and `>>` may lex as either a single
+        // LessLess/GreaterGreater token (the common case — when prev-emitted is in the
+        // expression-start gate) OR as two adjacent LessThan/GreaterThan tokens (in nested
+        // contexts like `Dict<Tuple<<K, V>>, Int>` where the lexer's gate fires differently
+        // for the inner `<<`). Accept BOTH forms here so all sites parse correctly.
+        if (token.Type == TokenType.Identifier && token.Text == "Tuple")
+        {
+            index++; // past "Tuple"
+
+            if (index < tokens.Count && tokens[index].Type == TokenType.LessLess)
+            {
+                index++; // consumed single `<<` token
+            }
+            else
+            {
+                if (index >= tokens.Count || tokens[index].Type != TokenType.LessThan)
+                    throw new ParseException($"Expected '<<' after Tuple at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+                index++;
+                if (index >= tokens.Count || tokens[index].Type != TokenType.LessThan)
+                    throw new ParseException($"Expected '<<' after Tuple (second '<') at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+                index++;
+            }
+
+            var elementTypes = new List<FlowType>();
+            bool first = true;
+            while (index < tokens.Count
+                   && tokens[index].Type != TokenType.GreaterThan
+                   && tokens[index].Type != TokenType.GreaterGreater)
+            {
+                if (!first)
+                {
+                    if (tokens[index].Type != TokenType.Comma)
+                        throw new ParseException($"Expected ',' between Tuple element types at {tokens[index].Location}");
+                    index++;
+                }
+                var (elemType, next, _) = ParseType(tokens, index);
+                elementTypes.Add(elemType);
+                index = next;
+                first = false;
+            }
+
+            if (index < tokens.Count && tokens[index].Type == TokenType.GreaterGreater)
+            {
+                index++; // single `>>` token
+            }
+            else
+            {
+                if (index >= tokens.Count || tokens[index].Type != TokenType.GreaterThan)
+                    throw new ParseException($"Expected '>>' after Tuple element types at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+                index++;
+                if (index >= tokens.Count || tokens[index].Type != TokenType.GreaterThan)
+                    throw new ParseException($"Expected '>>' after Tuple element types (second '>') at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+                index++;
+            }
+
+            return (new TupleType(elementTypes), index, isVarArgs: false);
+        }
+
+        // Phase 26.1 DICT-01: Dict<K, V> generic type. Place BEFORE the plural-form check
+        // (RESEARCH § Pitfall 5 ordering). K must satisfy IsHashable() — enforced HERE
+        // at parse time with the "is not hashable" allowlist message that
+        // DictTypeRejectionFacts pins.
+        if (token.Type == TokenType.Identifier && token.Text == "Dict")
+        {
+            index++; // past "Dict"
+            if (index >= tokens.Count || tokens[index].Type != TokenType.LessThan)
+                throw new ParseException($"Expected '<' after Dict at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+            index++; // skip <
+
+            var keyTokenLoc = tokens[Math.Min(index, tokens.Count - 1)].Location;
+            var (keyType, nextK, _) = ParseType(tokens, index);
+            // VoidType key is the wildcard used by std.flow proc declarations
+            // for the Dict-side (each)/(map)/(filter)/(get)/(set)/etc. overloads —
+            // exempted from IsHashable enforcement (Dict<Void, Void> is not user-facing
+            // for storage; it's the dispatch shape).
+            if (!keyType.IsHashable() && !(keyType is VoidType))
+                throw new ParseException(
+                    $"Dict key type '{keyType.Name}' is not hashable. Allowed: Int, Long, Float, " +
+                    $"String, Symbol, Note, Chord, Tuple-of-hashables. At {keyTokenLoc}");
+            index = nextK;
+
+            if (index >= tokens.Count || tokens[index].Type != TokenType.Comma)
+                throw new ParseException($"Expected ',' between Dict K and V at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+            index++; // skip ,
+
+            var (valueType, nextV, _) = ParseType(tokens, index);
+            index = nextV;
+
+            if (index >= tokens.Count || tokens[index].Type != TokenType.GreaterThan)
+                throw new ParseException($"Expected '>' after Dict<K, V> at {tokens[Math.Min(index, tokens.Count - 1)].Location}");
+            index++; // skip >
+
+            return (new DictType(keyType, valueType), index, isVarArgs: false);
+        }
+
         // Check for generic Lazy<T> type FIRST
         if (token.Type == TokenType.Identifier && token.Text == "Lazy")
         {
@@ -88,6 +187,7 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "Millisecond" => MillisecondType.Instance,
             TokenType.Identifier when token.Text == "Second" => SecondType.Instance,
             TokenType.Identifier when token.Text == "Decibel" => DecibelType.Instance,
+            TokenType.Identifier when token.Text == "Hertz" => HertzType.Instance,
             TokenType.Identifier when token.Text == "OscillatorState" => OscillatorStateType.Instance,
             TokenType.Identifier when token.Text == "Envelope" => EnvelopeType.Instance,
             TokenType.Identifier when token.Text == "Beat" => BeatType.Instance,
@@ -98,6 +198,7 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "Sequence" => SequenceType.Instance,
             TokenType.Identifier when token.Text == "MusicalNote" => MusicalNoteType.Instance,
             TokenType.Identifier when token.Text == "Chord" => ChordType.Instance,
+            TokenType.Identifier when token.Text == "Symbol" => SymbolType.Instance,
             TokenType.Identifier when token.Text == "Section" => SectionType.Instance,
             TokenType.Identifier when token.Text == "Song" => SongType.Instance,
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
@@ -200,6 +301,7 @@ public static class TypeParser
             "Millisecond" => MillisecondType.Instance,
             "Second" => SecondType.Instance,
             "Decibel" => DecibelType.Instance,
+            "Hertz" => HertzType.Instance,
             "OscillatorState" => OscillatorStateType.Instance,
             "Envelope" => EnvelopeType.Instance,
             "Beat" => BeatType.Instance,
@@ -210,6 +312,7 @@ public static class TypeParser
             "Sequence" => SequenceType.Instance,
             "MusicalNote" => MusicalNoteType.Instance,
             "Chord" => ChordType.Instance,
+            "Symbol" => SymbolType.Instance,
             "Section" => SectionType.Instance,
             "Song" => SongType.Instance,
             "Function" => FunctionType.Instance,

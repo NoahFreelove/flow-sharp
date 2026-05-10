@@ -8,7 +8,7 @@ Int x = 42
 Note: === Expression inside interpolation ===
 Int a = 3
 Int b = 4
-(print $"sum is {a + b}")
+(print $"sum is {(add a b)}")
 
 Note: === String variable interpolation ===
 String name = "Flow"
@@ -39,7 +39,7 @@ Note: === Regular strings with braces are unaffected ===
 
 Note: === Interpolation with flow operator ===
 Int y = 10
-$"y doubled is {y * 2}" -> print
+$"y doubled is {(mul y 2)}" -> print
 
 Note: === Interpolation in variable assignment ===
 Int score = 100

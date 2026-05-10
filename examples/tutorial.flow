@@ -7,6 +7,7 @@ use "@std"
 use "@audio"
 use "@composition"
 use "@collections"
+use "@notation"
 
 (print "")
 (print "========================================")
@@ -38,6 +39,22 @@ Bool ready = true
 (print $"Bool:   ready = {(str ready)}")
 
 Note: -----------------------------------------------------------
+Note: 1.5 Symbols -- #foo interned literals
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 1.5 Symbols ---")
+(print "")
+Note: A Symbol is an interned literal -- two `#foo` references share identity.
+Note: Symbols are STRICTLY separate from Strings -- (eq #foo "foo") is false.
+Symbol kick = #kick
+Symbol same = #kick
+Bool symEq = (equals kick same)
+Bool strEq = (equals #foo "foo")
+(print $"#kick == #kick: {(str symEq)}")
+(print $"#foo  == \"foo\": {(str strEq)}")
+Note: Symbols make great Dict keys -- see chapter 4.6 below.
+
+Note: -----------------------------------------------------------
 Note: 2. Arithmetic and String Interpolation
 Note: -----------------------------------------------------------
 (print "")
@@ -52,10 +69,18 @@ Int difference = (sub 100 37)
 (print $"3.0 * 4.5 = {(str product)}")
 (print $"100 - 37 = {(str difference)}")
 
-Note: Flow uses S-expression style: (functionName arg1 arg2)
-Note: You can also use operators: 10 + 25
-Int quick = 10 + 25
-(print $"Operator style: 10 + 25 = {(str quick)}")
+Note: Flow uses S-expression style: (functionName arg1 arg2). There is NO infix
+Note: arithmetic -- `10 + 25` is a parse error. Use the prefix builtins:
+Note:   (add a b) (sub a b) (mul a b) (div a b)        -- Int / Float / Double / Long widening
+Note:   (idiv a b)                                     -- Int integer division (truncating)
+Note:   (neg x)                                        -- unary negation
+Note:   (concat s1 s2)                                 -- explicit string concatenation
+Int truncated = (idiv 10 3)                            // 3 -- integer division
+Double negated = (neg 3.14)                            // -3.14 via unary (neg)
+String greet = (concat "Hello, " "musician")           // explicit concat
+(print $"(idiv 10 3) = {(str truncated)}")
+(print $"(neg 3.14)  = {(str negated)}")
+(print $"(concat ...) = {greet}")
 
 Note: -----------------------------------------------------------
 Note: 3. Functions (procs) and the Flow Operator
@@ -66,11 +91,11 @@ Note: -----------------------------------------------------------
 
 Note: Define a function with 'proc' ... 'end'
 proc doubleIt(Int: n)
-    n * 2
+    (mul n 2)
 end proc
 
 proc square(Int: n)
-    n * n
+    (mul n n)
 end proc
 
 Int result = (doubleIt 7)
@@ -105,19 +130,85 @@ Int countdown = 5
 (print "Countdown with while:")
 while (gt countdown 0) {
     (print $"  {(str countdown)}...")
-    countdown = countdown - 1
+    countdown = (sub countdown 1)
 }
 (print "  Liftoff!")
 
 Note: Map and filter with lambdas
-Int[] doubled = (map numbers (fn Int n => n * 2))
+Int[] doubled = (map numbers (fn Int n => (mul n 2)))
 (print $"doubled = {(str doubled)}")
 
 Int[] big = (filter numbers (fn Int n => (gt n 3)))
 (print $"bigger than 3 = {(str big)}")
 
-Int total = (reduce numbers 0 (fn Int acc, Int n => acc + n))
+Int total = (reduce numbers 0 (fn Int acc, Int n => (add acc n)))
 (print $"sum = {(str total)}")
+
+Note: -----------------------------------------------------------
+Note: 4.5 Tuples and the ~> Unpack Operator
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 4.5 Tuples and ~> ---")
+(print "")
+Note: A Tuple holds positionally-typed values: <<a, b, c>>. Empty <<>> + singleton <<x>> are legal.
+Tuple<<Int, Int>> pair = <<10, 20>>
+Int firstVal = pair@0
+Int secondVal = pair@1
+(print $"pair = <<{(str firstVal)}, {(str secondVal)}>>")
+
+Note: Destructuring assignment unpacks a tuple into named variables.
+<<Int a, Int b>> = pair
+(print $"destructured: a={(str a)}, b={(str b)}")
+
+Note: ~> is the parse-time tuple-unpack operator: <<x, y, z>> ~> f becomes (f x y z).
+proc add3(Int: x, Int: y, Int: z)
+    (add (add x y) z)
+end proc
+Int summed = <<1, 2, 3>> ~> add3
+(print $"<<1, 2, 3>> ~> add3 = {(str summed)}")
+
+Note: On a non-tuple LHS, ~> falls through to -> semantics (charitable interpretation).
+Int doubledOnce = 5 ~> doubleIt
+(print $"5 ~> doubleIt = {(str doubledOnce)}")
+
+Note: (unpack tup f) is the runtime first-class equivalent of ~> -- like Lisp's (apply f args).
+Int viaUnpack = (unpack <<3, 4, 5>> add3)
+(print $"(unpack <<3,4,5>> add3) = {(str viaUnpack)}")
+
+Note: -----------------------------------------------------------
+Note: 4.6 Dict<K, V> -- generic dictionaries
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 4.6 Dict<K, V> ---")
+(print "")
+Note: Dict<K, V> is a generic dictionary with insertion-order iteration.
+Note: Allowed key types: Int, Long, Float, String, Symbol, Note, Chord, hashable Tuples.
+Note: Two constructor forms -- flat (dict K V K V) or tuple-pair (dictTuple <<K,V>> ...).
+Dict<Symbol, Int> velocities = (dict #kick 90 #snare 70 #hihat 50)
+Dict<Symbol, Int> sameDict = (dictTuple <<#kick, 90>> <<#snare, 70>> <<#hihat, 50>>)
+(print $"velocities size = {(str (size velocities))}")
+(print $"#kick = {(str (get velocities #kick))}")
+
+Note: 14-op surface -- get / getOr / set / remove / has / keys / values / size /
+Note:   merge / each / map / filter, plus the two constructors above.
+Bool hasKick = (has velocities #kick)
+Int defaulted = (getOr velocities #cowbell 0)
+Dict<Symbol, Int> updated = (set velocities #ride 60)
+Dict<Symbol, Int> shrunk = (remove velocities #hihat)
+(print $"has #kick: {(str hasKick)}, getOr #cowbell 0: {(str defaulted)}")
+(print $"updated size: {(str (size updated))}, shrunk size: {(str (size shrunk))}")
+
+Note: Iteration in INSERTION ORDER (DICT-03 contract).
+(each velocities (fn Symbol k, Int v => (print $"  {(str k)} = {(str v)}")))
+
+Note: (map) transforms values, keys preserved.
+Dict<Symbol, Int> dictDoubled = (map velocities (fn Symbol k, Int v => (mul v 2)))
+(print $"dictDoubled #kick = {(str (get dictDoubled #kick))}")
+
+Note: (merge) is last-write-wins -- d2 keys override d1.
+Dict<Symbol, Int> overlap = (dict #kick 99)
+Dict<Symbol, Int> merged = (merge velocities overlap)
+(print $"merged #kick (last-write-wins) = {(str (get merged #kick))}")
 
 Note: -----------------------------------------------------------
 Note: 5. Comments -- // and 'Note:'
@@ -247,13 +338,53 @@ tempo 120 {
 
         Note: Apply effects with the flow operator
         Double negThree = (sub 0.0 3.0)
-        Buffer processed = dry -> (reverb 0.3) -> (lowpass 3000.0) -> (gain negThree)
+        Buffer processed = dry -> (reverb 0.3) -> (lowpass 1.2kHz) -> (gain negThree)
+        Buffer delayed = dry -> (delay 250ms 0.5 0.4)
 
         Int dryFrames = (getFrames dry)
         Int wetFrames = (getFrames processed)
         (print $"Dry signal:  {(str dryFrames)} frames")
         (print $"With reverb + lowpass + gain: {(str wetFrames)} frames")
         (print "Effects available: reverb, lowpass, highpass, bandpass, compress, delay, gain")
+        Note: Phase 26.2 ergonomics: filter cutoffs accept Hertz literals (440Hz / 1.5kHz),
+        Note: delay/compress/sidechain accept Millisecond literals (10ms / 250ms),
+        Note: and reverb's third arg accepts Second literals (1.5s -- see chapter 16).
+        (print $"delayed (Ms-typed): {(str (getFrames delayed))} frames")
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 9.5 gain vs volume -- decibels vs linear multiplier
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 9.5 gain vs volume ---")
+(print "")
+Note: Two ways to scale a Buffer's amplitude. The function name documents the unit.
+Note:   (gain buf Xdb)    -- second arg is DECIBELS.   (gain buf -6.0) = -6dB attenuation.
+Note:   (volume buf k)    -- second arg is LINEAR multiplier. (volume buf 0.5) = half-amplitude.
+Note: FOOTGUN: (gain buf 0.5) is 0.5dB attenuation (~5.9% softer), NOT 50% volume!
+
+tempo 120 {
+    timesig 4/4 {
+        section gainVolDemo {
+            Sequence gvMel = | C4q E4q G4q C5q |
+        }
+        Song gvSong = [gainVolDemo]
+        Buffer signal = (renderSong gvSong "piano")
+
+        Note: gain interprets the second arg as decibels.
+        Double minusSix = (sub 0.0 6.0)
+        Buffer attenuated = (gain signal minusSix)              // -6 dB attenuation
+        Buffer dbLiteral  = (gain signal -6dB)                  // identical, explicit Decibel literal
+
+        Note: volume interprets the second arg as a linear multiplier (0.5 = half, 2.0 = double).
+        Buffer halfVol = (volume signal 0.5)                    // 0.5x amplitude (~ -6.02 dB)
+        Note: volume rejects negatives -- (volume signal -0.5) raises InvalidOperationException.
+        Note: volume warns to stderr if any sample > 1.0 after multiply (clipping risk).
+
+        (print $"gain -6dB:        {(str (getFrames attenuated))} frames")
+        (print $"gain -6dB literal: {(str (getFrames dbLiteral))} frames")
+        (print $"volume 0.5:       {(str (getFrames halfVol))} frames")
     }
 }
 
@@ -453,6 +584,22 @@ tempo 120 {
     }
 }
 
+Note: Phase 26.2 also adds a Second-decay reverb form: (reverb buf mix decaySec)
+Note: where decaySec is a Second literal -- semantically separate from reverbTime { ... }.
+Note: reverbTime is a per-section musical-context block; (reverb buf mix decay) is a
+Note: post-render Buffer effect. They live at different tiers in the pipeline.
+tempo 120 {
+    timesig 4/4 {
+        section secondDecayDemo {
+            Sequence sdMel = | C4q E4q G4q C5q |
+        }
+        Song sdSong = [secondDecayDemo]
+        Buffer rawSd = (renderSong sdSong "piano")
+        Buffer secondDecayWet = (reverb rawSd 0.5 1.8s)         // mix=0.5, decay=1.8 seconds
+        (print $"(reverb buf 0.5 1.8s): {(str (getFrames secondDecayWet))} frames")
+    }
+}
+
 Note: -----------------------------------------------------------
 Note: 17. MIDI Velocity with Dynamics
 Note: -----------------------------------------------------------
@@ -524,6 +671,31 @@ tempo 120 {
 }
 
 Note: -----------------------------------------------------------
+Note: 18.5 Gaussian Humanize -- Bell-Curve Velocity Perturbation
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 18.5 Gaussian Humanize ---")
+(print "")
+Note: 'humanizeGaussian(seq, amount, seed)' applies bell-curve velocity jitter
+Note: via the Box-Muller transform. Same `amount` parameter as uniform humanize,
+Note: but z ~ N(0, 1) means most jitter clusters near zero with occasional larger
+Note: excursions -- sounds more "human" than uniform humanize's flat distribution.
+Note: The seed parameter makes the output byte-identical across runs.
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence myMelody    = | C4q D4q E4q F4q |
+        Note: Uniform jitter -- flat distribution, non-deterministic (uses static Random)
+        Sequence uniformFeel = (humanize myMelody 0.1)
+        (print $"uniform humanize: {(str uniformFeel)}")
+
+        Note: Gaussian jitter -- bell distribution, deterministic per seed=42
+        Sequence naturalFeel = (humanizeGaussian myMelody 0.1 42)
+        (print $"gaussian humanize seed=42: {(str naturalFeel)}")
+    }
+}
+
+Note: -----------------------------------------------------------
 Note: 19. Voice Synthesis with sing
 Note: -----------------------------------------------------------
 (print "")
@@ -542,6 +714,183 @@ Buffer eeNote = (sing "ee" G4 0.4)
 Note: Flow also ships a 'tts' built-in that calls espeak-ng for full text-to-speech.
 Note: It needs espeak-ng installed on the system; we won't run it from the tutorial,
 Note: but you can try (tts "hello world") in your own scripts if you have it.
+
+Note: ===========================================================
+Note: 19.5 v1.3 Music Capabilities
+Note: ===========================================================
+(print "")
+(print "========================================")
+(print "  v1.3 Music Capabilities")
+(print "========================================")
+(print "")
+Note: This chapter consolidates the v1.3 music-side additions: tuplets +
+Note: fractional durations, microtonal + scale-lint pragmas (companion-file
+Note: demos), the composer DX bundle (DX-10..15), and misc small wins
+Note: (range, multi-letter enharmonics, negative slice, humanizeGaussian).
+
+Note: -----------------------------------------------------------
+Note: 19.5.A Tuplets and Fractional Durations
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 19.5.A Tuplets ---")
+(print "")
+Note: Bracket form {N:M ...}q -- N notes in the time of M of the suffix duration.
+Note: {3:2 ...}q is a triplet (3 notes in the time of 2 quarters).
+tempo 120 {
+    timesig 4/4 {
+        Sequence triplets = | {3:2 C4 D4 E4}q |
+        (print $"triplets: {(str triplets)}")
+
+        Note: Shorthand {N ...}q -- N=3 implies 3:2 (music21 convention).
+        Sequence shorthand = | {3 C4 D4 E4}q |
+        (print (concat "shorthand {3 ...}: " (str shorthand)))
+
+        Note: Per-note fractional duration C4/N -- N is the whole-note divisor.
+        Note: C4/12 = 1/12 of a whole note = identical duration to a triplet member.
+        Sequence frac = | C4/12 D4/12 E4/12 |
+        (print $"fractional /12: {(str frac)}")
+
+        Note: Per-note tuplet shorthand C4/X:Y[suffix] -- single note in tuplet ratio.
+        Sequence pernote = | C4/3:2 D4/3:2 E4/3:2 |
+        (print $"per-note 3:2: {(str pernote)}")
+
+        Note: Nested tuplets -- inner durations multiply through the outer ratio.
+        Sequence nested = | {3:2 C4 {3:2 D4 E4 F4}q G4}h |
+        (print $"nested: {(str nested)}")
+
+        Note: Tied-note crossing back from tuplet to straight time -- safe form.
+        Note: AVOID ties INSIDE a {N:M ...}q bracket -- the render-time 100ms
+        Note: tied-overlap can over-extend short tuplet members.
+        Sequence tiedOut = | {3:2 C4 D4 E4~}q E4q |
+        (print $"tied out of tuplet: {(str tiedOut)}")
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 19.5.B Microtonal + Scale-Lint Pragmas
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 19.5.B Pragmas (microtonal + scale-lint) ---")
+(print "")
+Note: Flow ships three named tunings, activated via top-of-file pragma:
+Note:   enable justIntonation;     // 5-limit JI -- Cmaj third = 5/4 = 1.25
+Note:   enable pythagorean;        // 3-limit  -- Cmaj third = 81/64 ~ 1.2656
+Note:   enable equalTemperament;   // 12-TET  -- Cmaj third = 2^(4/12) ~ 1.2599  (default)
+Note:
+Note: Pragmas are FILE-SCOPED -- they apply to the WHOLE file. Tutorial.flow stays
+Note: in 12-TET so all chapters render consistently. To hear JI in action, run:
+Note:   dotnet run --project flow-interpreter examples/pragmas/microtonal_ji.flow
+Note: That file activates `enable justIntonation;` at line 1 and renders a Cmaj
+Note: triad with JI's pure 5:4 major third to examples/output/microtonal_ji.{wav,mid}.
+Note:
+Note: enable hAsB; aliases H to B inside note streams (German notation).
+Note: Outside note streams, H stays a normal identifier (e.g. Int H = 5; works).
+Note: To hear it: dotnet run --project flow-interpreter examples/pragmas/h_alias.flow
+Note:
+Note: enable scaleLint; surfaces non-diatonic note diagnostics in flow-lsp.
+Note: flow-interpreter (this runtime) does NOT print lint diagnostics -- the surface
+Note: lives in the language server. Install flow-lsp to see them in your editor.
+(print "Pragma demos live under examples/pragmas/ -- run them standalone.")
+
+Note: -----------------------------------------------------------
+Note: 19.5.C Composer DX Bundle (DX-10..15)
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 19.5.C Composer DX ---")
+(print "")
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: DX-10 -- arpeggio with rate + direction + pattern (rate is a NoteValue keyword)
+            Sequence arp = (arpeggio Cmaj7 QUARTER "up" "linear")
+            (print $"arpeggio Cmaj7 up linear: {(str arp)}")
+
+            Note: DX-11 -- chord inversions / voicings via (inversion Chord Int)
+            Chord inv = (inversion Cmaj7 1)                         // first inversion: E G B C
+            (print $"Cmaj7 first inversion: {(str inv)}")
+
+            Note: DX-12 -- NoteValue-rate delay overload (delay Buffer NoteValue Double Double).
+            Note: Reads tempo from the active musical context to compute Ms internally.
+            section dxDemo {
+                Sequence dxMel = | C4q E4q G4q C5q |
+            }
+            Song dxSong = [dxDemo]
+            Buffer dxBuf = (renderSong dxSong "piano")
+            Buffer noteRateDelay = (delay dxBuf QUARTER 0.5 0.4)
+            (print $"delay QUARTER (note-synced): {(str (getFrames noteRateDelay))} frames")
+
+            Note: DX-13 -- quantize a sequence to a NoteValue grid with strength + swing.
+            Sequence loose = | C4q. D4e E4q F4q G4h |
+            Sequence tight = (quantize loose EIGHTH 1.0 0.0)        // full strength, no swing
+            (print $"quantized (1/8 grid): {(str tight)}")
+
+            Note: DX-14a -- legato (overlap between successive notes).
+            Sequence legSeq = | C4q D4q E4q F4q |
+            Sequence smooth = (legato legSeq 0.9)                   // 90% overlap between notes
+            (print $"legato 0.9: {(str smooth)}")
+
+            Note: DX-14b -- portamento (glide-time per note in milliseconds).
+            Sequence portaSeq = (portamento legSeq 50ms)            // 50ms glide each note
+            (print $"portamento 50ms: {(str portaSeq)}")
+
+            Note: DX-15 -- varispeed: sample-rate-style pitch+tempo shift via loadWav.
+            Note: The varispeed surface is the second arg of loadWav -- (loadWav path Int)
+            Note: shifts by N semitones, (loadWav path Double) shifts by ratio (1.5 = +7
+            Note: semitones). Tutorial.flow does NOT ship a sample file, so this demo is
+            Note: prose-only -- in your own scripts, write something like:
+            Note:     Buffer kick = (loadWav "samples/kick.wav" 0)         // unchanged
+            Note:     Buffer pitched = (loadWav "samples/kick.wav" 1.5)    // +7 semitones
+            Note:
+            Note: The Hertz literal 440Hz IS demoed here via createSineTone -- the same
+            Note: Hertz overload pattern applies to createSawTone / createSquareTone /
+            Note: createTriangleTone (mechanically equivalent, not separately demoed).
+            Buffer src = (createSineTone 0.5 440Hz 0.3)              // 0.5s sine at 440Hz, amp=0.3
+            (print $"createSineTone 0.5s @ 440Hz: {(str (getFrames src))} frames")
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 19.5.D Misc Small Wins
+Note: -----------------------------------------------------------
+(print "")
+(print "--- 19.5.D Misc Small Wins ---")
+(print "")
+Note: (range start end) -- exclusive end, like Python.
+Int[] forwards = (range 0 5)                            // [0, 1, 2, 3, 4]
+Int[] stepped = (range 0 10 2)                          // [0, 2, 4, 6, 8]
+Int negOne = (neg 1)
+Int[] reversed = (range 5 0 negOne)                      // [5, 4, 3, 2, 1] — negative step
+(print $"(range 0 5):     {(str forwards)}")
+(print $"(range 0 10 2):  {(str stepped)}")
+(print $"(range 5 0 (neg 1)): {(str reversed)}")
+
+Note: Multi-letter enharmonic edges -- Phase 20 DEFER-04.
+Note: E and Fb are the same MIDI pitch; F and E# share a pitch; B and Cb share; C and B#.
+Note: Useful when a key signature wants the spelling that fits its sharps/flats.
+Note: One runnable v1.3 edge-case demo: B3 respelled in Abmajor (the Cb edge).
+key Abmajor {
+    Note cbSpelled = (enharmonic B3)
+    (print $"In Abmajor, B3 spells as: {(str cbSpelled)} (Cb edge)")
+}
+
+Note: Negative slice -- Python-style from-end indexing (Phase 20 DEFER-05).
+Note: `sliceDemo` is uniquely named to avoid collisions with any other identifier in tutorial.flow.
+Int[] sliceDemo = [1, 2, 3, 4, 5]
+Int negThree = (neg 3)
+Int negOneIdx = (neg 1)
+Int[] tail3 = (slice sliceDemo negThree 5)              // [3, 4, 5]
+Int[] dropLast = (slice sliceDemo 0 negOneIdx)          // [1, 2, 3, 4]
+Int last = sliceDemo@negOneIdx                          // 5 -- negative index from-end
+(print $"(slice sliceDemo (neg 3) 5):  {(str tail3)}")
+(print $"(slice sliceDemo 0 (neg 1)):  {(str dropLast)}")
+(print $"sliceDemo@negOneIdx (= -1):    {(str last)}")
+
+Note: humanizeGaussian -- Gaussian-bell velocity perturbation (Phase 25 DEFER-06).
+Note: SEEDED for byte-identical reruns; fixed seed -> identical output across runs.
+Sequence rawMel = | mp _ _ E5q G5q | A5h E5h |
+Sequence humanized = (humanizeGaussian rawMel 0.08 314)
+(print $"humanizeGaussian (seed=314): {(str humanized)}")
 
 Note: -----------------------------------------------------------
 Note: 20. Graduation Piece -- Putting It All Together
@@ -600,10 +949,16 @@ tempo 100 {
             Buffer rawMix = (renderSong sunrise "piano")
             (print $"Raw render: {(str (getFrames rawMix))} frames")
 
-            Note: Apply a polished effects chain
-            Double negTwo = (sub 0.0 2.0)
-            Buffer finalMix = rawMix -> (reverb 0.25) -> (lowpass 4000.0) -> (gain negTwo)
-            (print $"After effects: {(str (getFrames finalMix))} frames")
+            Note: Apply a polished effects chain that exercises Phase 26.2 ergonomics:
+            Note:   - Hertz literal cutoff for lowpass         (1.2kHz instead of 1200.0)
+            Note:   - Ms-typed delay overload                  (250ms instead of bare 250.0)
+            Note:   - Second-decay reverb                      (1.8s instead of bare 1.8 damping double)
+            Note:   - volume(buf, linear) post-render trim     (0.85 = ~-1.4 dB) -- NOT gain (which is dB)
+            Buffer filtered = rawMix -> (lowpass 1.2kHz)       // Hertz literal -> filter cutoff
+            Buffer delayed  = filtered -> (delay 250ms 0.5 0.4)  // Ms-typed delay 250ms feedback=0.5 mix=0.4
+            Buffer reverbed = delayed -> (reverb 0.5 1.8s)      // Second-decay reverb mix=0.5 decay=1.8s
+            Buffer finalMix = (volume reverbed 0.85)            // linear post-render trim (NOT gain)
+            (print $"After Phase 26.2 fx chain: {(str (getFrames finalMix))} frames")
 
             // tempoRamp slows the tail from 100 BPM to 60 BPM -- a ritardando ending
             Note: tempoRamp produces a Buffer; we mix it into the final WAV.
@@ -649,6 +1004,19 @@ tempo 100 {
 (print "  - MIDI velocity from `dynamics` and `crescendo`")
 (print "  - Euclidean rhythms with `euclidean` (swing, humanize)")
 (print "  - Dual export: `writeWav` (audio) + `writeMidi` (notation) from the same Song")
+(print "  - Symbols (#foo) and Tuples (<<a, b, c>>) with the ~> unpack operator")
+(print "  - Generic Dict<K, V> with insertion-order iteration and a 14-op surface")
+(print "  - Prefix-only arithmetic via (add) (sub) (mul) (div) (idiv) (neg) (concat)")
+(print "  - Tuplets {3:2 ...}q + fractional durations C4/12 + nested tuplets")
+(print "  - Hertz literals (440Hz, 1.5kHz) for filter cutoffs and signal generators")
+(print "  - Ms-typed FX overloads (delay 250ms, compress 5ms 100ms, sidechain attack/release)")
+(print "  - Second-decay reverb (reverb buf 0.5 1.8s) -- distinct tier from reverbTime { ... }")
+(print "  - gain (decibels) vs volume (linear multiplier) -- function name documents the unit")
+(print "  - Composer DX bundle: arpeggio, chord inversions, delaySync, quantize, legato, portamento, varispeed-loadWav")
+(print "  - Microtonal pragmas (justIntonation / pythagorean / equalTemperament) and enable hAsB; -- companion files under examples/pragmas/")
+(print "  - Scale-lint pragma (enable scaleLint;) surfaced by flow-lsp -- editor integration")
+(print "  - humanizeGaussian seeded velocity perturbation for byte-identical determinism")
+(print "  - range / multi-letter enharmonics (E<->Fb / B<->Cb) / negative slice (arr@-1)")
 (print "")
 (print "Your graduation piece:")
 (print "  - WAV:  examples/output/flow_tutorial.wav")

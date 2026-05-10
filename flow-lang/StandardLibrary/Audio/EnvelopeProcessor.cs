@@ -136,10 +136,28 @@ public static class EnvelopeProcessor
         int decayFrames = (int)(decaySec * envelope.SampleRate);
         int releaseFrames = (int)(releaseSec * envelope.SampleRate);
 
-        // Ensure phases fit within buffer
-        attackFrames = Math.Min(attackFrames, totalFrames);
-        decayFrames = Math.Min(decayFrames, totalFrames - attackFrames);
-        releaseFrames = Math.Min(releaseFrames, totalFrames - attackFrames - decayFrames);
+        // QUICK-260504-v6j: when attack + decay + release exceeds totalFrames,
+        // scale all three down proportionally so the envelope SHAPE is preserved
+        // (just compressed in time) and the release phase is guaranteed to remain
+        // > 0 for any reasonable totalFrames. The previous logic clamped release
+        // to totalFrames - attack - decay, which collapsed release to 0 frames
+        // for short notes (32nd-note staccato, MIDI-imported quick passages) and
+        // produced an audible click at the final sample because the envelope
+        // ended on the sustain level instead of ramping to 0.
+        int requestedAdr = attackFrames + decayFrames + releaseFrames;
+        if (requestedAdr > totalFrames)
+        {
+            double scale = (double)totalFrames / requestedAdr;
+            attackFrames = (int)(attackFrames * scale);
+            decayFrames = (int)(decayFrames * scale);
+            releaseFrames = (int)(releaseFrames * scale);
+
+            // Floor-rounding can leave 1-3 frames unallocated; give them to release
+            // so the envelope ends at exactly 0 on the final sample (no cliff).
+            int leftover = totalFrames - (attackFrames + decayFrames + releaseFrames);
+            releaseFrames += leftover;
+        }
+        // (No clamps needed in the else branch — sustain absorbs the remainder.)
 
         int sustainFrames = totalFrames - attackFrames - decayFrames - releaseFrames;
 
@@ -164,10 +182,15 @@ public static class EnvelopeProcessor
             curve[frame] = (float)sustainLevel;
         }
 
-        // Release phase: sustain level to 0
+        // Release phase: sustain level to 0.
+        // Use t = (i+1)/N so the final sample (i = N-1) writes exactly 0 instead
+        // of sustain/N. Without this, even with a non-zero release frame budget
+        // the curve ends on a small but non-zero value, which contradicts the
+        // QUICK-260504-v6j must_have ("ends on amplitude 0.0 — no abrupt non-zero
+        // cutoff") and is a half-sample-shaped residue at the end of every note.
         for (int i = 0; i < releaseFrames; i++, frame++)
         {
-            float t = (float)i / releaseFrames;
+            float t = (float)(i + 1) / releaseFrames;
             curve[frame] = (float)sustainLevel * (1.0f - t);
         }
     }

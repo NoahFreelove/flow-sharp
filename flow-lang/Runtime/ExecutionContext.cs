@@ -1,5 +1,6 @@
 using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.SpecialTypes;
 
@@ -74,6 +75,14 @@ public class ExecutionContext
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
     public Dictionary<string, SectionData> SectionRegistry { get; } = new();
+
+    /// <summary>
+    /// Per-context Symbol intern table — guarantees pointer equality for <c>#foo</c> literals
+    /// (Phase 26.1 SYM-01). All <c>Value.Symbol(name, ctx)</c> calls with the same name and the
+    /// same context return the same <see cref="Value"/> instance, so reference-equality of the
+    /// Value wrappers is the canonical Symbol equality check.
+    /// </summary>
+    public Dictionary<string, Value> SymbolInternTable { get; } = new();
     
     /// <summary>
     /// Invoker used to execute userspace functions/lambdas from standard library or engine.
@@ -198,11 +207,16 @@ public class ExecutionContext
                 resolved.Pan ??= frame.MusicalContext.Pan;
                 resolved.Gain ??= frame.MusicalContext.Gain;
                 resolved.ReverbTime ??= frame.MusicalContext.ReverbTime;
+                // Phase 23 D-05: Tuning is a top-level non-stacked field. Inherit via the
+                // same ??= merge pattern; D-07 REPL persistence is preserved because
+                // FlowEngine.SetTuning writes to GlobalFrame and never clears on null.
+                resolved.Tuning ??= frame.MusicalContext.Tuning;
             }
             if (resolved.TimeSignature != null && resolved.Tempo != null
                 && resolved.Swing != null && resolved.Key != null
                 && resolved.Velocity != null && resolved.Pan != null
-                && resolved.Gain != null && resolved.ReverbTime != null)
+                && resolved.Gain != null && resolved.ReverbTime != null
+                && resolved.Tuning != null)
                 break;
         }
         // Defaults
@@ -210,6 +224,21 @@ public class ExecutionContext
         resolved.Tempo ??= 120.0;
         resolved.Swing ??= 0.5;
         return resolved;
+    }
+
+    /// <summary>
+    /// Phase 23 D-06/D-07: writes the resolved tuning system into the global (root) frame's
+    /// <see cref="MusicalContext"/>. D-07 REPL persistence: passing <c>null</c> is a no-op
+    /// (does NOT clear). Only an explicit value mutates the GlobalFrame's
+    /// <see cref="MusicalContext.Tuning"/>. Called by <see cref="FlowLang.Core.FlowEngine"/>'s
+    /// pragma bridge once between parse and interpret.
+    /// </summary>
+    public void SetTuning(TuningSystem? tuning)
+    {
+        if (tuning is null) return; // D-07: no-op on null — preserve previous REPL state.
+        if (GlobalFrame.MusicalContext == null)
+            GlobalFrame.MusicalContext = new MusicalContext();
+        GlobalFrame.MusicalContext.Tuning = tuning;
     }
 
     /// <summary>

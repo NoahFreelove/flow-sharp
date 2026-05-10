@@ -11,6 +11,27 @@ using System.Collections.Generic;
 public partial class Parser
 {
     /// <summary>
+    /// TUP-02 music21 shorthand convention: {N ...}q resolves to {N:M ...}q
+    /// where M is looked up from this table. SPEC TUP-02 LOCKS entries 3, 5, 6, 7, 9.
+    /// Counts 2, 4, 8, 10, 11 are music21-aligned per RESEARCH §"Code Examples" §1.
+    /// Counts ≥ 12 raise a parse error citing the lookup-table bounds.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<int, int> MusicTwentyOneShorthand =
+        new Dictionary<int, int>
+        {
+            { 2, 3 },   // duplet
+            { 3, 2 },   // triplet (LOCKED by SPEC TUP-02)
+            { 4, 6 },   // quadruplet
+            { 5, 4 },   // quintuplet (LOCKED)
+            { 6, 4 },   // sextuplet (LOCKED)
+            { 7, 4 },   // septuplet (LOCKED)
+            { 8, 6 },
+            { 9, 8 },   // nonuplet (LOCKED)
+            { 10, 8 },
+            { 11, 8 },
+        };
+
+    /// <summary>
     /// Parses a note stream: | element element ... | element element ... |
     /// The opening | has already been consumed.
     /// </summary>
@@ -128,6 +149,56 @@ public partial class Parser
                 }
             }
 
+            // Tuplet bracket: {N:M ...}q  or  {N ...}q  (shorthand) — TUP-01 / TUP-02 / TUP-03
+            if (Check(TokenType.LBrace))
+            {
+                var elemLoc = CurrentToken.Location;
+                Advance(); // consume {
+
+                var nToken = Expect(TokenType.IntLiteral, "Expected integer N in tuplet bracket");
+                int n = (int)nToken.Value!;
+                int denominator;
+
+                if (Match(TokenType.Colon))
+                {
+                    var mToken = Expect(TokenType.IntLiteral, "Expected integer M after ':' in tuplet ratio");
+                    denominator = (int)mToken.Value!;
+                }
+                else
+                {
+                    // TUP-02 music21 shorthand
+                    if (!MusicTwentyOneShorthand.TryGetValue(n, out var lookup))
+                    {
+                        _errorReporter.ReportError(
+                            $"Tuplet shorthand {{N}} only supports counts 2-11 (got {n}); use explicit {{N:M}} form",
+                            elemLoc);
+                        denominator = n; // best-effort recovery
+                    }
+                    else
+                    {
+                        denominator = lookup;
+                    }
+                }
+
+                // Recursively parse children (note-stream elements until RBrace)
+                var children = ParseTupletChildren();
+                Expect(TokenType.RBrace, "Expected '}' to close tuplet bracket");
+
+                // CONTEXT D-04 / SPEC D-USER-04: tuplet bracket REQUIRES explicit duration suffix
+                string? durSuffix = TryParseDurationSuffix();
+                if (durSuffix == null)
+                {
+                    _errorReporter.ReportError(
+                        "Tuplet bracket requires explicit duration suffix",
+                        elemLoc);
+                    durSuffix = "q"; // best-effort recovery for downstream compile path
+                }
+                bool isDottedTuplet = Match(TokenType.Dot);
+
+                currentBarElements.Add(new TupletElement(elemLoc, n, denominator, children, durSuffix, isDottedTuplet));
+                continue;
+            }
+
             // Chord bracket: [C4 E4 G4]
             if (Match(TokenType.LBracket))
             {
@@ -181,13 +252,61 @@ public partial class Parser
                 }
             }
 
-            // Note element: C4, C4q, C4q., C4h~
+            // Note element: C4, C4q, C4q., C4h~, C4/12 (TUP-04), C4/3:2q (TUP-08)
             if (Check(TokenType.NoteLiteral))
             {
                 var noteToken = Advance();
                 var elemLoc = noteToken.Location;
                 string noteName = noteToken.Text;
-                string? durSuffix = TryParseDurationSuffix();
+
+                // TUP-04 / TUP-08: per-note fractional-duration suffix /N or /X:Y[suffix]
+                (int Num, int Denom)? tupletRatio = null;
+                string? overrideDurSuffix = null;
+
+                if (Match(TokenType.Slash))
+                {
+                    var nToken = Expect(TokenType.IntLiteral, "Expected integer after '/' in note duration");
+                    int n = (int)nToken.Value!;
+
+                    if (Match(TokenType.Colon))
+                    {
+                        // TUP-08: C4/X:Y[suffix]
+                        var yToken = Expect(TokenType.IntLiteral, "Expected integer Y after ':' in per-note tuplet ratio");
+                        int y = (int)yToken.Value!;
+                        if (n < 1)
+                        {
+                            _errorReporter.ReportError(
+                                $"Tuplet ratio numerator X must be ≥ 1; got {n}",
+                                nToken.Location);
+                            n = 1; // best-effort recovery
+                        }
+                        if (y < 1)
+                        {
+                            _errorReporter.ReportError(
+                                $"Tuplet ratio denominator Y must be ≥ 1; got {y}",
+                                yToken.Location);
+                            y = 1;
+                        }
+                        tupletRatio = (n, y);
+                        // Optional level suffix (w/h/q/e/s/t). Default null → compiler treats as quarter.
+                        overrideDurSuffix = TryParseDurationSuffix();
+                    }
+                    else
+                    {
+                        // TUP-04: C4/N — encode as TupletRatio=(N, 1) sentinel for compiler branch
+                        if (n < 1)
+                        {
+                            _errorReporter.ReportError(
+                                $"Duration denominator must be ≥ 1; got {n}",
+                                nToken.Location);
+                            n = 1;
+                        }
+                        tupletRatio = (n, 1);
+                        // No optional suffix for /N form — /N already specifies whole-note fraction.
+                    }
+                }
+
+                string? durSuffix = overrideDurSuffix ?? TryParseDurationSuffix();
                 bool isDotted = durSuffix != null && Match(TokenType.Dot);
                 bool isTied = Match(TokenType.Tilde);
                 double? centOffset = null;
@@ -196,7 +315,8 @@ public partial class Parser
                     centOffset = (double)Advance().Value!;
                 }
                 Articulation? articMark = TryParseArticulation();
-                currentBarElements.Add(new NoteElement(elemLoc, noteName, durSuffix, isDotted, isTied, centOffset, stickyVelocity, articMark));
+                currentBarElements.Add(new NoteElement(elemLoc, noteName, durSuffix, isDotted, isTied,
+                    centOffset, stickyVelocity, articMark, tupletRatio));
                 continue;
             }
 
@@ -347,6 +467,153 @@ public partial class Parser
             "fp"  => 0.75,
             _     => null
         };
+    }
+
+    /// <summary>
+    /// Recursively parses note-stream elements until RBrace is reached.
+    /// Mirrors the dispatch shape of ParseNoteStream's main loop but terminates
+    /// on '}' instead of pipe-or-EOF. Supports nested tuplets (TUP-03) by
+    /// recursing into the LBrace arm via this same loop.
+    /// </summary>
+    private List<NoteStreamElement> ParseTupletChildren()
+    {
+        var children = new List<NoteStreamElement>();
+
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            // Nested tuplet: {N:M ...}q — recursively dispatch through the same shape
+            if (Check(TokenType.LBrace))
+            {
+                var elemLoc = CurrentToken.Location;
+                Advance(); // consume {
+                var nToken = Expect(TokenType.IntLiteral, "Expected integer N in nested tuplet");
+                int n = (int)nToken.Value!;
+                int denominator;
+                if (Match(TokenType.Colon))
+                {
+                    var mToken = Expect(TokenType.IntLiteral, "Expected integer M after ':' in nested tuplet ratio");
+                    denominator = (int)mToken.Value!;
+                }
+                else if (MusicTwentyOneShorthand.TryGetValue(n, out var lookup))
+                {
+                    denominator = lookup;
+                }
+                else
+                {
+                    _errorReporter.ReportError(
+                        $"Tuplet shorthand {{N}} only supports counts 2-11 (got {n}); use explicit {{N:M}} form",
+                        elemLoc);
+                    denominator = n;
+                }
+
+                var nestedChildren = ParseTupletChildren();
+                Expect(TokenType.RBrace, "Expected '}' to close nested tuplet bracket");
+
+                string? nestedSuffix = TryParseDurationSuffix();
+                if (nestedSuffix == null)
+                {
+                    _errorReporter.ReportError(
+                        "Tuplet bracket requires explicit duration suffix",
+                        elemLoc);
+                    nestedSuffix = "q";
+                }
+                bool nestedDotted = Match(TokenType.Dot);
+
+                children.Add(new TupletElement(elemLoc, n, denominator, nestedChildren, nestedSuffix, nestedDotted));
+                continue;
+            }
+
+            // NoteLiteral: C4, D#5, C4/12, C4/3:2q — supports per-note fractional duration inside tuplet brackets too
+            if (Check(TokenType.NoteLiteral))
+            {
+                var noteToken = Advance();
+                var noteLoc = noteToken.Location;
+                string noteName = noteToken.Text;
+
+                (int Num, int Denom)? tupletRatio = null;
+                string? overrideDurSuffix = null;
+
+                if (Match(TokenType.Slash))
+                {
+                    var nToken = Expect(TokenType.IntLiteral, "Expected integer after '/' in note duration");
+                    int n = (int)nToken.Value!;
+
+                    if (Match(TokenType.Colon))
+                    {
+                        var yToken = Expect(TokenType.IntLiteral, "Expected integer Y after ':' in per-note tuplet ratio");
+                        int y = (int)yToken.Value!;
+                        if (n < 1)
+                        {
+                            _errorReporter.ReportError(
+                                $"Tuplet ratio numerator X must be ≥ 1; got {n}",
+                                nToken.Location);
+                            n = 1;
+                        }
+                        if (y < 1)
+                        {
+                            _errorReporter.ReportError(
+                                $"Tuplet ratio denominator Y must be ≥ 1; got {y}",
+                                yToken.Location);
+                            y = 1;
+                        }
+                        tupletRatio = (n, y);
+                        overrideDurSuffix = TryParseDurationSuffix();
+                    }
+                    else
+                    {
+                        if (n < 1)
+                        {
+                            _errorReporter.ReportError(
+                                $"Duration denominator must be ≥ 1; got {n}",
+                                nToken.Location);
+                            n = 1;
+                        }
+                        tupletRatio = (n, 1);
+                    }
+                }
+
+                string? noteSuffix = overrideDurSuffix ?? TryParseDurationSuffix();
+                bool noteDotted = noteSuffix != null && Match(TokenType.Dot);
+                bool noteTied = Match(TokenType.Tilde);
+                double? noteCent = null;
+                if (Check(TokenType.CentLiteral))
+                {
+                    noteCent = (double)Advance().Value!;
+                }
+                Articulation? articMark = TryParseArticulation();
+                children.Add(new NoteElement(noteLoc, noteName, noteSuffix, noteDotted, noteTied,
+                    noteCent, null, articMark, tupletRatio));
+                continue;
+            }
+
+            // Rest: _
+            if (Match(TokenType.Underscore))
+            {
+                var restLoc = PreviousToken.Location;
+                string? restSuffix = TryParseDurationSuffix();
+                bool restDotted = restSuffix != null && Match(TokenType.Dot);
+                children.Add(new RestElement(restLoc, restSuffix, restDotted));
+                continue;
+            }
+
+            // ChordLiteral: Cmaj7, Dm
+            if (Check(TokenType.ChordLiteral))
+            {
+                var chordToken = Advance();
+                string? chordSuffix = TryParseDurationSuffix();
+                bool chordDotted = chordSuffix != null && Match(TokenType.Dot);
+                children.Add(new NamedChordElement(chordToken.Location, chordToken.Text, chordSuffix, chordDotted));
+                continue;
+            }
+
+            // Unknown token inside tuplet — report and recover
+            _errorReporter.ReportError(
+                $"Unexpected token '{CurrentToken.Text}' inside tuplet bracket",
+                CurrentToken.Location);
+            Advance();
+        }
+
+        return children;
     }
 
 }

@@ -1,0 +1,18 @@
+use "@std"
+use "@audio"
+use "@notation"
+
+Note: DX-14 portamento — emits MIDI CC65=127 + CC5=mappedValue at note start,
+Note: CC65=0 at note end (per-note bracket). 100ms maps to CC5=64 per linear curve.
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence seq = | C4q E4q G4q |
+        Sequence glide = (portamento seq 100ms)
+        section sp { glide }
+        Song s = [sp]
+        (writeMidi "tests/output/dx_portamento.mid" s)
+    }
+}
+
+(print "DX-14 portamento: PASSED")

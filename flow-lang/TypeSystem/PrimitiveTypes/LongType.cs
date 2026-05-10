@@ -19,4 +19,6 @@ public sealed class LongType : FlowType
     }
 
     public override int GetSpecificity() => 108;
+
+    public override bool IsHashable() => true;
 }

@@ -14,6 +14,8 @@ public sealed class NoteType : FlowType
 
     public override int GetSpecificity() => 130;
 
+    public override bool IsHashable() => true;
+
     /// <summary>
     /// Parses a note string like "A4", "C3", "G" (defaults to octave 4) into a note value.
     ///
@@ -231,7 +233,57 @@ public class MusicalNoteData
     /// </summary>
     public int SourceLength { get; }
 
-    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0)
+    /// <summary>
+    /// Optional rational duration override (FRAC-02). When set, OVERRIDES the DurationValue
+    /// enum + IsDotted multiplier in GetBeats. When null, the existing power-of-2 enum path
+    /// runs unchanged. Phase 18 ships this field DORMANT — no lexer/parser code path produces
+    /// a non-null value yet (Phase 19 tuplets feed it). Per D-USER-04, all existing .flow
+    /// scripts must remain byte-identical because every call site leaves this null.
+    ///
+    /// Units: quarter-note units (matches music21 DurationTuple convention). To convert to
+    /// beats for a time signature with denominator D: beats = quarterNotes × (D / 4).
+    /// </summary>
+    public FlowLang.TypeSystem.Fraction? DurationFraction { get; }
+
+    /// <summary>
+    /// Phase 22 DX-13 quantize: per-note onset shift in beats, added by bar.ToTimeline()
+    /// to the accumulated onset position. Default 0.0 = onset stays at sequential position.
+    /// Used by quantize() to snap onsets to a grid without rebuilding the bar list.
+    /// </summary>
+    public double OnsetOffset { get; }
+
+    /// <summary>
+    /// Phase 22 DX-14 legato: render-time duration extension factor. 0.0 = no extension;
+    /// 0.5 = play 1.5× longer; 1.0 = play 2× longer. Read by BarRenderer + MidiExport
+    /// AFTER bar.ToTimeline() produces onsets, so onsets are NOT moved (CONTEXT D-02).
+    /// Polyphonic mix in SongRenderer handles overlapping voices automatically.
+    /// </summary>
+    public double DurationOverlap { get; }
+
+    /// <summary>
+    /// Phase 22 DX-14 portamento: glide time in milliseconds for MIDI CC5 mapping. 0.0 = no
+    /// portamento. MidiExport emits CC65=127 + CC5=mappedValue at note start, CC65=0 at note
+    /// end (per-note bracket). Linear ms→CC5: 0→0, 100→64, 200→127 clamped (CONTEXT Claude's
+    /// Discretion). Audio renderer ignores this field — portamento is MIDI-only in v1.3.
+    /// </summary>
+    public double PortamentoMs { get; }
+
+    /// <summary>
+    /// True when this note is a non-leading tone of a polyphonic chord literal
+    /// (e.g. the E and G of <c>[C E G]q</c>) emitted by NoteStreamCompiler.
+    /// The leading tone of a chord (the first one in source order) keeps
+    /// IsChordTone = false — it advances the bar's beat cursor and the
+    /// remaining tones share its onset offset.
+    ///
+    /// Why this exists: chord literals expand to a flat <c>List&lt;MusicalNoteData&gt;</c>,
+    /// and BarType.ToTimeline() / BarType.GetActualBeats() / MidiExport need
+    /// to know which entries are stacked-at-the-same-offset (no cursor advance)
+    /// vs. sequential. Default false preserves all non-chord paths
+    /// (arpeggio() builtin, transforms, plain note streams).
+    /// </summary>
+    public bool IsChordTone { get; }
+
+    public MusicalNoteData(char noteName, int octave, int alteration, int? durationValue, bool isRest, double? centOffset = null, bool isTied = false, double velocity = 0.63, Articulation articulation = Articulation.Normal, bool isDotted = false, FlowLang.Core.SourceLocation? sourceLocation = null, int sourceLength = 0, FlowLang.TypeSystem.Fraction? durationFraction = null, double onsetOffset = 0.0, double durationOverlap = 0.0, double portamentoMs = 0.0, bool isChordTone = false)
     {
         NoteName = noteName;
         Octave = octave;
@@ -245,6 +297,41 @@ public class MusicalNoteData
         Articulation = articulation;
         SourceLocation = sourceLocation;
         SourceLength = sourceLength;
+        DurationFraction = durationFraction;
+        OnsetOffset = onsetOffset;
+        DurationOverlap = durationOverlap;
+        PortamentoMs = portamentoMs;
+        IsChordTone = isChordTone;
+    }
+
+    /// <summary>
+    /// Phase 22 DX-13/DX-14 builder helper: returns a copy of this note with selected fields
+    /// overridden. Each Phase 22 plan that adds a defaulted-parameter field also extends this
+    /// helper with a matching nullable optional parameter. Transforms (quantize/legato/portamento)
+    /// rebuild notes via With(...) instead of the full ctor so they don't enumerate fields they
+    /// don't own — preserves rollback-independence per Phase 22 CONTEXT line 18.
+    ///
+    /// Plan 22-05 owns the <c>onsetOffset</c> slot; plan 22-06 (DX-14) appends
+    /// <c>durationOverlap</c> and <c>portamentoMs</c> slots. Each plan's transforms name only
+    /// the fields they own — null-coalesce passes existing values through unchanged so any
+    /// single plan can roll back without breaking siblings.
+    /// </summary>
+    public MusicalNoteData With(
+        double? onsetOffset = null,
+        double? durationOverlap = null,
+        double? portamentoMs = null,
+        double? velocity = null)              // PHASE 25 (DEFER-06): velocity slot
+    {
+        return new MusicalNoteData(
+            NoteName, Octave, Alteration, DurationValue, IsRest,
+            CentOffset, IsTied,
+            velocity ?? Velocity,             // PHASE 25 (DEFER-06): velocity override
+            Articulation, IsDotted,
+            SourceLocation, SourceLength, DurationFraction,
+            onsetOffset: onsetOffset ?? OnsetOffset,
+            durationOverlap: durationOverlap ?? DurationOverlap,
+            portamentoMs: portamentoMs ?? PortamentoMs,
+            isChordTone: IsChordTone);
     }
 
     /// <summary>
@@ -252,6 +339,20 @@ public class MusicalNoteData
     /// </summary>
     public double GetBeats(int timeSigDenominator)
     {
+        if (DurationFraction.HasValue)
+        {
+            // FRAC-02 rational override path. DurationFraction is in quarter-note units
+            // (music21 convention). Convert to beats for the active time signature:
+            //   beats = quarterNotes × (timeSigDenominator / 4)
+            // Per D-USER-01: keep existing GetBeats signature (double); sibling
+            // GetBeatsFraction deferred to Phase 19 if needed.
+            // Per D-USER-04: this branch is DORMANT in Phase 18 (no code path sets
+            // DurationFraction yet). Wired-but-unreached.
+            var f = DurationFraction.Value;
+            return (double)f.Num * timeSigDenominator / (f.Denom * 4.0);
+        }
+
+        // Existing power-of-2 path — UNCHANGED from pre-Phase-18.
         if (!DurationValue.HasValue)
             return 1.0; // Default to 1 beat if no duration specified
 

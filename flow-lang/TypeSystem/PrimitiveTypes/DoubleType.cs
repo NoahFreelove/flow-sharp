@@ -19,4 +19,9 @@ public sealed class DoubleType : FlowType
     }
 
     public override int GetSpecificity() => 103;
+
+    /// <summary>
+    /// Phase 26.1 DICT-01: Double is value-equal and a natural Dict key (mirrors Float).
+    /// </summary>
+    public override bool IsHashable() => true;
 }

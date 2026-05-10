@@ -1,0 +1,18 @@
+Note: DX-10 4-arg arpeggio smoke test
+Note: Phase 22 plan 22-01 -- exercise arpeggio(Chord, NoteValue, direction, pattern)
+Note: charitable interpretation: random falls back to up; chord-tone/scale-tone route to linear
+
+use "@std"
+use "@audio"
+use "@notation"
+
+Sequence asc = (arpeggio Cmaj7 QUARTER "up" "linear")
+(print (str asc))
+
+Sequence desc = (arpeggio Cmaj7 QUARTER "down" "linear")
+(print (str desc))
+
+Sequence ud = (arpeggio Cmaj7 EIGHTH "updown" "linear")
+(print (str ud))
+
+(print "DX-10 arpeggio: PASSED")

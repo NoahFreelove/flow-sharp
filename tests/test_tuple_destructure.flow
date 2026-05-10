@@ -1,0 +1,24 @@
+Note: Tuple destructuring assignment (TUP-09)
+Note: Tests: <<Type? name, ...>> = expr binds each component
+
+use "@std"
+
+Note: ===== Test 1: typed slots =====
+Tuple<<Int, Int>> pair = <<10, 20>>
+<<Int a, Int b>> = pair
+(print (str a))
+(print (str b))
+
+Note: ===== Test 2: bare names =====
+<<x, y>> = <<100, 200>>
+(print (str x))
+(print (str y))
+
+Note: ===== Test 3: Note + Note slots =====
+Note: Plan named example Note+Beat but Beat has no direct literal in 26.1 — use Note+Note.
+Tuple<<Note, Note>> entry = <<C4, D4>>
+<<Note pitch, Note other>> = entry
+(print (str pitch))
+(print (str other))
+
+(print "test_tuple_destructure: PASSED")

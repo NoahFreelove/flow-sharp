@@ -2,40 +2,54 @@ use "@std"
 use "@audio"
 use "@composition"
 
-(print "Flow Showcase — v1.2 Ambient Piece")
+(print "Flow Showcase -- v1.3 Polyrhythmic Minimal")
 (print "Generating examples/output/flow_showcase.{wav,mid} ...")
 
-tempo 72 {
+tempo 120 {
     timesig 4/4 {
-        key Aminor {
+        key Cmajor {
 
-            // Slow pad bed — long whole notes outline the i / VI / iv / v shape
-            Sequence padBase = | A3w | F3w | D3w | E3w |
-            Sequence pad = padBase -> crescendo 0.18 0.6
+            // Dict-driven drum kit -- Symbol keys with INSERTION-ORDER iteration (DICT-03).
+            // Construct in the order you want iteration to happen: kick -> snare -> hihat.
+            Dict<Symbol, Note> kit = (dict #kick C2 #snare D2 #hihat F#3)
 
-            // Sparse euclidean pulse on the low A — humanized, fixed seed for byte-identical reruns
-            Sequence pulse = (euclidean 5 16 A2 0.18 0.12 7)
+            // Tuplet groove leading the genre -- {3:2 ...}q triplets on beats 1 and 3
+            // against straight kicks on the off-beats. Polyrhythmic feel without losing the downbeat.
+            // No ties INSIDE tuplet brackets (RESEARCH Pitfall 3 -- the 100ms tied-overlap can
+            // over-extend short tuplet members; safest form is plain notes inside the bracket).
+            Sequence drumTriplets = | {3:2 _ C2 _}q C2 {3:2 _ C2 D2}q C2 |
 
-            // Soft mezzo-piano melody floating above the bed
-            Sequence melody = | mp _ _ E5q G5q | A5h E5h | _ _ G5q B5q | A5w |
+            // Sparse euclidean drum on the kick -- humanized, fixed seed for byte-identical reruns.
+            Sequence drums = (euclidean 5 16 (get kit #kick) 0.18 0.12 7)
 
-            // Long reverb tail wraps the whole piece
-            reverbTime 3.2 {
-                section atmosphere {
-                    Sequence layerPad = pad
-                    Sequence layerPulse = pulse
-                    Sequence layerMelody = melody
-                }
+            // Soft mezzo-piano melody humanized via Gaussian -- fixed seed for byte-identical reruns.
+            Sequence melody = (humanizeGaussian | mp _ _ E5q G5q | A5h E5h | _ _ G5q B5q | A5w | 0.08 314)
 
-                Song showcase = [atmosphere]
+            // Ambient pad bed -- long whole notes outline the I / IV / V / I shape
+            Sequence pad = | C4w | F4w | G4w | C4w |
 
-                Buffer rendered = (renderSong showcase "strings")
-                Double trim = (sub 0.0 4.0)
-                Buffer finalMix = rendered -> (lowpass 2800.0) -> (gain trim)
-
-                (writeWav "examples/output/flow_showcase.wav" finalMix)
-                (writeMidi "examples/output/flow_showcase.mid" showcase)
+            section showcase {
+                Sequence groove = drums
+                Sequence triplets = drumTriplets
+                Sequence lead = melody
+                Sequence bed = pad
             }
+
+            Song piece = [showcase]
+            Buffer rawMix = (renderSong piece "strings")
+
+            // Phase 26.2 audible features chained on the rendered Buffer (per D-103):
+            //   1. (lowpass _ 1.2kHz)  Hertz literal -- filter sweep tightens the top
+            //   2. (delay _ 250ms _ _) Ms-typed delay -- adds a quarter-note slap
+            //   3. (reverb _ 0.5 1.8s) Second-decay reverb -- 1.8s tail
+            //   4. (volume _ 0.7)      linear post-render trim (NOT gain -- gain is dB)
+            Buffer filtered = rawMix -> (lowpass 1.2kHz)
+            Buffer delayed = filtered -> (delay 250ms 0.5 0.4)
+            Buffer reverbed = delayed -> (reverb 0.5 1.8s)
+            Buffer finalMix = (volume reverbed 0.7)
+
+            (writeWav "examples/output/flow_showcase.wav" finalMix)
+            (writeMidi "examples/output/flow_showcase.mid" piece)
         }
     }
 }

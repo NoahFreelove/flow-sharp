@@ -12,11 +12,14 @@ internal proc len(String: s)
 
 Note: str overloads for all types
 internal proc str (Int: value)
+internal proc str (Long: value)
 internal proc str (Float: value)
 internal proc str (Double: value)
+internal proc str (Number: value)
 internal proc str (String: value)
 internal proc str (Bool: value)
 internal proc str (Note: value)
+internal proc str (Symbol: value)
 internal proc str (Bar: value)
 internal proc str (Semitone: value)
 internal proc str (Cent: value)
@@ -35,18 +38,41 @@ Note: Type conversions
 internal proc intToDouble (Int: value)
 internal proc doubleToInt (Double: value)
 
+Note: Arithmetic — 5-type same-type fast paths per Phase 26 D-05
 internal proc add (Int: a, Int: b)
+internal proc add (Long: a, Long: b)
 internal proc add (Float: a, Float: b)
 internal proc add (Double: a, Double: b)
+internal proc add (Number: a, Number: b)
 
 internal proc sub (Int: a, Int: b)
+internal proc sub (Long: a, Long: b)
+internal proc sub (Float: a, Float: b)
 internal proc sub (Double: a, Double: b)
+internal proc sub (Number: a, Number: b)
 
 internal proc mul (Int: a, Int: b)
+internal proc mul (Long: a, Long: b)
+internal proc mul (Float: a, Float: b)
 internal proc mul (Double: a, Double: b)
+internal proc mul (Number: a, Number: b)
 
+Note: (div Int Int) auto-promotes to Double per D-08; use (idiv) for Int truncation
 internal proc div (Int: a, Int: b)
+internal proc div (Long: a, Long: b)
+internal proc div (Float: a, Float: b)
 internal proc div (Double: a, Double: b)
+internal proc div (Number: a, Number: b)
+
+Note: Negation — 5-pack per Phase 26 D-07
+internal proc neg (Int: x)
+internal proc neg (Long: x)
+internal proc neg (Float: x)
+internal proc neg (Double: x)
+internal proc neg (Number: x)
+
+Note: Integer division (truncating) per Phase 26 D-08
+internal proc idiv (Int: a, Int: b)
 
 Note: String-to-number conversions
 internal proc stringToInt (String: s)
@@ -71,6 +97,28 @@ internal proc gt (Void: a, Void: b)
 internal proc lte (Void: a, Void: b)
 internal proc gte (Void: a, Void: b)
 
+Note: Tuple unpack runtime apply (Phase 26.1 TUP-11)
+internal proc unpack (Void: tup, Function: f)
+
+Note: Dict ops (Phase 26.1 DICT-01/02/03)
+Note: Use Dict<Void, Void> in proc decls so the parameter type is structurally a DictType
+Note: (matches the runtime impl shape) — distinguishes from the existing Array overloads
+Note: of (each)/(map)/(filter)/(size)/(keys)/(values).
+internal proc dict (Void...: pairs)
+internal proc dictTuple (Void...: tuplePairs)
+internal proc get (Dict<Void, Void>: d, Void: k)
+internal proc getOr (Dict<Void, Void>: d, Void: k, Void: defaultValue)
+internal proc set (Dict<Void, Void>: d, Void: k, Void: v)
+internal proc remove (Dict<Void, Void>: d, Void: k)
+internal proc has (Dict<Void, Void>: d, Void: k)
+internal proc keys (Dict<Void, Void>: d)
+internal proc values (Dict<Void, Void>: d)
+internal proc size (Dict<Void, Void>: d)
+internal proc merge (Dict<Void, Void>: d1, Dict<Void, Void>: d2)
+internal proc each (Dict<Void, Void>: d, Function: cb)
+internal proc map (Dict<Void, Void>: d, Function: cb)
+internal proc filter (Dict<Void, Void>: d, Function: pred)
+
 internal proc ?()
 internal proc ??()
 internal proc ??reset()
@@ -89,6 +137,17 @@ internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
 internal proc concat (Sequence: a, Sequence: b)
 
+Note: Quantize (Phase 22 DX-13) — snaps note onsets to a grid at the requested resolution.
+Note: strength=0 short-circuits to identity (Pitfall 9); swing -1..1 signed offbeat shift.
+internal proc quantize (Sequence: seq, NoteValue: resolution, Double: strength, Double: swing)
+
+Note: Articulation transforms (Phase 22 DX-14)
+Note: legato extends each note's rendered duration by overlap factor (1 + overlap), without
+Note: moving onsets — polyphonic mix in the renderer handles the additive overlap (CONTEXT D-01..D-03).
+Note: portamento emits MIDI CC65/CC5 bracket per note (audio renderer ignores; MIDI-only in v1.3).
+internal proc legato (Sequence: seq, Double: overlap)
+internal proc portamento (Sequence: seq, Millisecond: glideTime)
+
 Note: Probabilistic variation
 internal proc vary(Sequence: seq, Double: probability)
 internal proc vary(Sequence: seq, Double: probability, String: mutationType)
@@ -103,10 +162,15 @@ internal proc decrescendo (Sequence: seq, Double: startVel, Double: endVel)
 internal proc swell (Sequence: seq, Double: edgeVel, Double: peakVel)
 
 Note: Harmony and chord functions
+internal proc chord (String: symbol)
+internal proc chord (Note: noteShapedSymbol)
 internal proc chordNotes (Chord: c)
 internal proc chordRoot (Chord: c)
 internal proc chordQuality (Chord: c)
 internal proc arpeggio (Chord: c, String: direction)
+internal proc arpeggio (Chord: chord, NoteValue: rate, String: direction, String: pattern)
+internal proc inversion (Chord: chord, Int: n)
+internal proc voicing (Chord: chord, String: name)
 internal proc scaleNotes (String: keyName)
 internal proc resolveNumeral (String: numeral, String: keyName)
 internal proc getSections (Song: s)
@@ -120,6 +184,7 @@ internal proc fermata (Sequence: seq, Int: noteIndex)
 
 Note: Humanize
 internal proc humanize (Sequence: seq, Double: amount)
+internal proc humanizeGaussian (Sequence: seq, Double: amount, Int: seed)
 
 Note: Ornament transforms
 internal proc trill (Sequence: seq, Semitone: interval)
@@ -128,6 +193,11 @@ internal proc tremolo (Sequence: seq, Int: repetitions)
 Note: Visualization
 internal proc visualize (Sequence: seq)
 internal proc visualize (Buffer: b)
+
+Note: Buffer pretty-printing + hex dump (260502-lum)
+internal proc prettyBuffer (Buffer: b)
+internal proc bufferHex (Buffer: b)
+internal proc bufferHex (Buffer: b, Int: offset, Int: length)
 
 Note: Generative features
 internal proc euclidean (Int: hits, Int: steps, Note: pitch)
@@ -155,3 +225,9 @@ internal proc pow (Double: base, Double: exponent)
 internal proc log (Double: x)
 internal proc pi ()
 internal proc tau ()
+
+Note: Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance)
+internal proc beat (Double: fractionalBeats)
+
+Note: Phase 26.1 NaN production primitive (REVISION 2 — DICT-03 acceptance)
+internal proc nanFloat ()

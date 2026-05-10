@@ -77,7 +77,7 @@ end proc
 Note: Create voice positioned at specific bar (assumes 4/4 time)
 proc voiceAtBar(Buffer: buffer, Int: bar)
     Int beatsPerBar = 4
-    Double beatPos = (intToDouble bar) * (intToDouble beatsPerBar)
+    Double beatPos = (mul (intToDouble bar) (intToDouble beatsPerBar))
     (createVoice buffer beatPos)
 end proc
 
@@ -108,7 +108,7 @@ end proc
 Note: Set track offset to specific bar (assumes 4/4 time)
 proc startAtBar(Track: track, Int: bar)
     Int beatsPerBar = 4
-    Double beatPos = (intToDouble bar) * (intToDouble beatsPerBar)
+    Double beatPos = (mul (intToDouble bar) (intToDouble beatsPerBar))
     track -> setTrackOffset beatPos
     track
 end proc
@@ -133,7 +133,7 @@ end proc
 Note: Render track for specified number of bars (assumes 4/4 time)
 proc renderBars(Track: track, Int: bars)
     Int beatsPerBar = 4
-    Double beats = (intToDouble bars) * (intToDouble beatsPerBar)
+    Double beats = (mul (intToDouble bars) (intToDouble beatsPerBar))
     (renderTrack track beats)
 end proc
 

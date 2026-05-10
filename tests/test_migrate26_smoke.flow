@@ -1,0 +1,42 @@
+use "@std"
+
+Note: Phase 26 migration smoke test - pre-migration form
+Note: Exercises every walker path before the Wave 3 mass sweep.
+
+Note: Basic infix arithmetic
+Int a = (add 1 2)
+Int b = (sub 5 3)
+Int c = (mul 4 2)
+Note: (div Int Int) auto-promotes to Double per D-08 - declare Double targets
+Double d = (div 10 5)
+
+Note: Precedence - Star/Slash binds tighter than Plus/Minus
+Int e = (add 1 (mul 2 3))
+Double f = (sub 10 (div 4 2))
+
+Note: Parenthesised - outer parens preserved, inner-rewrite recurses
+Int g = (mul ((add 1 2)) 3)
+
+Note: Unary minus on identifier - parser shorthand to (neg IDENT)
+Int x = 5
+Int y = (neg x)
+
+Note: Identifier-on-identifier infix
+Int p = 10
+Int q = 20
+Int r = (add p q)
+
+Note: Mixed Float/Double via existing widening (already prefix-friendly)
+Double pi = 3.14
+Double tau = (mul pi 2.0)
+
+Note: Note-stream - Plus/Minus inside | ... | MUST be pass-through (Pitfall 3)
+Note: Cent offset (+50c) is a known-good note-stream typed literal that round-trips
+Sequence s = | C4q D4q E4+50c F4q |
+
+(print (str a))
+(print (str e))
+(print (str g))
+(print (str y))
+(print (str r))
+(print (str tau))

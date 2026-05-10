@@ -32,7 +32,7 @@ Sequence s = | C4 D4 E4 | // melody line
 (print "note stream ok")
 
 // Test 6: Division still works alongside comments
-Int d = (div 10 2) // this divides
+Int d = (idiv 10 2) // this divides
 (print (str d))
 
 // Test 7: Empty comment

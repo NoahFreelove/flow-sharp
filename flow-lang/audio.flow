@@ -47,6 +47,14 @@ internal proc writeWav(String: filepath, Buffer: buffer, Int: bitDepth)
 Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
 internal proc loadWav(String: filepath)
 
+Note: DX-15 varispeed: load a WAV and pitch-shift by semitones via linear-interpolation resample
+Note: 12 semitones = octave up = ratio 2.0 = sample count halved; semitones=0 short-circuits.
+internal proc loadWav(String: filepath, Int: semitones)
+
+Note: DX-15 varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample
+Note: ratio > 1.0 raises pitch (fewer frames); ratio == 1.0 short-circuits; ratio <= 0 errors.
+internal proc loadWav(String: filepath, Double: ratio)
+
 Note: ===== USER CONVENIENCE LAYER =====
 
 Note: ===== Global Configuration =====
@@ -75,7 +83,7 @@ Note: ===== Time Conversion =====
 Note: Convert seconds to frames
 proc secondsToFrames(Double: seconds, Int: sampleRate)
     Double srDouble = (intToDouble sampleRate)
-    Double framesD = seconds * srDouble
+    Double framesD = (mul seconds srDouble)
     (doubleToInt framesD)
 end proc
 
@@ -83,7 +91,7 @@ Note: Convert frames to seconds
 proc framesToSeconds(Int: frames, Int: sampleRate)
     Double framesD = (intToDouble frames)
     Double srD = (intToDouble sampleRate)
-    framesD / srD
+    (div framesD srD)
 end proc
 
 Note: Get buffer duration in seconds
@@ -212,7 +220,23 @@ Note: ===== Musical Note utilities =====
 internal proc noteToFrequency(Note: n)
 
 internal proc createSineTone(Double: duration, Double: freq, Double: amp)
+
+Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+internal proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
+
 internal proc createClip(Double: duration, Double: amp)
+
+Note: White noise -- 1s mono buffer at 44100 Hz, amplitude 1.0
+internal proc noise(Double: seconds)
+
+Note: White noise -- mono 44100 Hz, custom amplitude
+internal proc noise(Double: seconds, Double: amplitude)
+
+Note: White noise -- 44100 Hz, custom amplitude and channels
+internal proc noise(Double: seconds, Double: amplitude, Int: channels)
+
+Note: White noise -- fully parameterized
+internal proc noise(Double: seconds, Double: amplitude, Int: channels, Int: sampleRate)
 
 Note: ===== Basic Generators =====
 
@@ -273,10 +297,31 @@ proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
+Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: Stereo body matches the bare-Double form above. The C# Hertz overload registered in
+Note: BuiltInFunctions.cs serves as the underlying-primitive surface; this Flow proc shadows
+Note: it for user-facing calls so the resulting buffer matches the bare-Double form's stereo
+Note: layout (the C# CreateSineTone produces a mono buffer; the Flow proc above produces
+Note: stereo via createBufferStereo). Per-sample identity vs the bare-Double form holds by
+Note: construction since both delegate to the same generateSine + createOsc pipeline.
+proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc freqHz) amplitude)
+    b
+end proc
+
 Note: Create sawtooth tone
 proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSaw b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: Phase 26.2 ERG-04: createSawTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompatibleWith(Double) (Wave 1) + Value.ConvertTo Double-arm (Wave 0)
+proc createSawTone(Double: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc freqHz) amplitude)
     b
 end proc
 
@@ -287,10 +332,24 @@ proc createSquareTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
+Note: Phase 26.2 ERG-04: createSquareTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+proc createSquareTone(Double: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc freqHz) amplitude)
+    b
+end proc
+
 Note: Create triangle tone
 proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateTriangle b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: Phase 26.2 ERG-04: createTriangleTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+proc createTriangleTone(Double: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc freqHz) amplitude)
     b
 end proc
 
@@ -343,8 +402,19 @@ internal proc compress(Buffer: buffer, Double: thresholdDb, Double: ratio, Doubl
 Note: Apply feedback delay with time (ms), feedback (0-1), and wet/dry mix (0-1)
 internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: mix)
 
+Note: DX-12 -- tempo-synced feedback delay; rate is a NoteValue (EIGHTH, QUARTER, ...) read against the active MusicalContext.Tempo
+internal proc delay(Buffer: buffer, NoteValue: rate, Double: feedback, Double: mix)
+
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
+
+Note: Phase 26.2 ERG-05 — explicit dB ergonomics; same dB semantics as the bare-Double gain overload above.
+Note: Closes RESEARCH Pitfall 2 (dormant gain(Buffer, Decibel) C# registration since QUICK-260504-w24).
+internal proc gain(Buffer: buffer, Decibel: gainDb)
+
+Note: Phase 26.2 ERG-03 — volume(Buffer, Double linear) — linear-multiplier alternative to gain(dB).
+Note: D-04 split: gain treats arg as decibels, volume treats arg as a bare linear multiplier (0.5 = half).
+internal proc volume(Buffer: buffer, Double: linearMultiplier)
 
 Note: Apply sidechain compression: source ducks under trigger signal
 internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio)
@@ -354,6 +424,28 @@ internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Do
 
 Note: Apply constant-power stereo panning. Pan: -1.0 = left, 0.0 = center, 1.0 = right. Returns stereo buffer.
 internal proc pan(Buffer: buffer, Double: panValue)
+
+Note: ===== Phase 26.2 ERG-02 + ERG-04: music-type FX overloads =====
+Note: Each line below surfaces a C# overload registered in EffectsFunctions.cs. Without
+Note: a matching internal proc forward decl the C# registration is invisible to user
+Note: code (RESEARCH Pitfall 2). Same DSP path as the bare-Double overload above each pair.
+
+Note: delay(Buffer, Millisecond, ...) — explicit ms ergonomics
+internal proc delay(Buffer: buffer, Millisecond: delayMs, Double: feedback, Double: mix)
+
+Note: compress(Buffer, Decibel threshold, ratio, Millisecond attack, Millisecond release) — full music-typed
+internal proc compress(Buffer: buffer, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
+
+Note: sidechain(Buffer source, Buffer trigger, Decibel threshold, ratio, Millisecond attack, Millisecond release)
+internal proc sidechain(Buffer: source, Buffer: trigger, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
+
+Note: reverb(Buffer, Double mix, Second decay) — decay time as Second (typical 0.3s-3.0s)
+internal proc reverb(Buffer: buffer, Double: roomSize, Second: decaySec)
+
+Note: lowpass / highpass / bandpass with Hertz cutoff — explicit frequency-type ergonomics
+internal proc lowpass(Buffer: buffer, Hertz: cutoffHz)
+internal proc highpass(Buffer: buffer, Hertz: cutoffHz)
+internal proc bandpass(Buffer: buffer, Hertz: lowHz, Hertz: highHz)
 
 Note: ===== Phase 6: Playback =====
 

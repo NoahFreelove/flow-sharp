@@ -1,4 +1,6 @@
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -26,11 +28,14 @@ public static class HarmonyFunctions
 
     /// <summary>
     /// Key-context-aware enharmonic respelling.
-    /// - Naturals (alteration == 0) always return unchanged (D-05: no E↔Fb, F↔E#, B↔Cb, C↔B# edges).
+    /// - Naturals at edges (E/F/B/C) respell to multi-letter neighbor (DEFER-04 / Phase 20);
+    ///   D/G/A naturals return unchanged (no enharmonic edge — they sit between two whole-step
+    ///   letters, so there is no adjacent-letter spelling at the same pitch).
     /// - In-key (active <c>MusicalContext.Key</c>): if input pitch matches a scale tone by MIDI,
     ///   return the diatonic spelling whose key-affinity (flat key → flat letter, sharp key →
     ///   sharp letter) matches. Implementation is MIDI-based (not string-echo) to bypass Pitfall 3
-    ///   — ScaleDatabase.GetScaleNotes returns sharp-spelled tones even for flat keys.
+    ///   — ScaleDatabase.GetScaleNotes returns sharp-spelled tones even for flat keys. The in-key
+    ///   branch fires before the natural-edge switch so diatonic preservation wins (D-USER-B).
     /// - Chromatic-in-key or no-key: flip sharp ↔ flat (Db4 ↔ C#4, F#3 ↔ Gb3). Double-sharps
     ///   and double-flats may collapse to naturals (F##4 → G4) — documented non-involutive.
     /// </summary>
@@ -40,24 +45,50 @@ public static class HarmonyFunctions
         string noteStr = args[0].As<string>();
         var (letter, octave, alteration) = NoteType.Parse(noteStr);
 
-        // D-05: naturals return unchanged, full stop — no edge respelling.
-        if (alteration == 0)
-        {
-            return Value.Note(NoteType.Format(letter, octave, 0));
-        }
-
         int inputMidi = NoteType.ToMidiNote(letter, octave, alteration);
         var musicalCtx = context.GetMusicalContext();
         string? key = musicalCtx?.Key;
 
-        // D-04: in-key branch. Try to find a diatonic spelling that matches the input MIDI.
+        // Phase 23 Plan 23-03 Task 2 / D-11: under non-12-TET tuning, enharmonic respelling is
+        // destructive (~21 cent shift at enharmonic junctions) — emit a one-shot stderr warning
+        // so composers know the silent regression is happening. Conversion still happens; warning
+        // is purely advisory. Pitfall 5 #3 / AUDIT-VERIFIED. EqualTemperament + no-pragma silent.
+        if (musicalCtx?.Tuning is TuningSystem activeTuning && activeTuning != TuningSystem.EqualTemperament)
+        {
+            RenderingDiagnostics.WarnOnce(
+                "enharmonic-non-equal-temperament",
+                "[enharmonic] called inside tuning != equalTemperament; conversion is destructive (≈ 21 cent shift)");
+        }
+
+        // D-04 / D-USER-B: in-key branch fires FIRST so diatonic spelling wins for both naturals
+        // and accidentals. If the input pitch matches a scale tone, we return that scale spelling
+        // rather than the no-key edge respelling. e.g. (key Fmajor) (enharmonic E4) → "E4" because
+        // E is diatonic in F major; only chromatic-in-key inputs fall through to the no-key edge.
         if (key != null)
         {
             if (TryEnharmonicInKey(inputMidi, key, out Value? inKeyResult) && inKeyResult != null)
             {
                 return inKeyResult;
             }
-            // chromatic-not-in-scale → fall through to no-key flip
+            // chromatic-not-in-scale → fall through to natural-edge / sharp-flat flip
+        }
+
+        // DEFER-04 (Phase 20 plan 20-02): naturals at letter-boundary edges (E/F/B/C) respell
+        // to their multi-letter neighbor. D/G/A naturals remain unchanged (no enharmonic edge).
+        // E ↔ Fb (same octave): E4 (MIDI 64) → Fb4 (F=65, alt=-1, MIDI 64)
+        // F ↔ E# (same octave): F4 (MIDI 65) → E#4 (E=64, alt=+1, MIDI 65)
+        // B ↔ Cb (octave +1):   B4 (MIDI 71) → Cb5 (C5=72, alt=-1, MIDI 71)
+        // C ↔ B# (octave -1):   C4 (MIDI 60) → B#3 (B3=59, alt=+1, MIDI 60)
+        if (alteration == 0)
+        {
+            return letter switch
+            {
+                'E' => Value.Note(NoteType.Format('F', octave,     -1)),
+                'F' => Value.Note(NoteType.Format('E', octave,     +1)),
+                'B' => Value.Note(NoteType.Format('C', octave + 1, -1)),
+                'C' => Value.Note(NoteType.Format('B', octave - 1, +1)),
+                _   => Value.Note(NoteType.Format(letter, octave, 0)),  // D/G/A unchanged
+            };
         }
 
         // D-05: no-key flip. Sharp → letter up (alt = inputMidi - naturalMidi(up)).
@@ -271,8 +302,78 @@ public static class HarmonyFunctions
         _ => 0
     };
 
+    /// <summary>
+    /// DX-10 direction reordering helper for the 4-arg <c>arpeggio</c> overload. Per Phase 22
+    /// CONTEXT and RESEARCH Pitfall 7, <c>"random"</c> falls back to <c>"up"</c> in v1.3
+    /// (seeded random arpeggio deferred to v1.4 to preserve byte-identical determinism).
+    /// Unknown direction strings also fall through to <c>"up"</c> per the project's charitable
+    /// interpretation memory — no error path on unknown input. <c>"chord-tone"</c> /
+    /// <c>"scale-tone"</c> patterns are accepted at the outer signature but the v1.3
+    /// implementation routes them to linear ordering.
+    /// </summary>
+    private static List<string> ApplyDirection(List<string> notes, string direction)
+    {
+        return direction.ToLowerInvariant() switch
+        {
+            "down"   => notes.AsEnumerable().Reverse().ToList(),
+            "updown" => notes.Concat(notes.AsEnumerable().Reverse().Skip(1)).ToList(),
+            "downup" => notes.AsEnumerable().Reverse().Concat(notes.Skip(1)).ToList(),
+            // "random" deferred to v1.4 — falls back to "up" per RESEARCH Pitfall 7
+            _        => notes,
+        };
+    }
+
     public static void Register(InternalFunctionRegistry registry)
     {
+        // DX-11 (Phase 22 plan 22-03): inversion(Chord, Int) + voicing(Chord, String).
+        // Registered first so the chord-shape transforms are visible to subsequent
+        // chord-using harmony helpers in the same registration pass. Charitable D-07
+        // (incomplete chord -> input unchanged) lives inside the Voicings static class.
+        Voicings.Register(registry);
+
+        // chord(String) -> Chord
+        // QUICK-260504-cks: runtime constructor from a chord-symbol string. Wraps
+        // ChordParser.TryParseFlexible — accepts both Flow's `s`/`f` accidentals and
+        // common-practice `#`/`b`, supports slash bass (`C/G`), bare-digit qualities
+        // (`C5`/`G7`/`D9`/`C13`), and the full QualityIntervals vocabulary
+        // (triads, 6/7/9/11/13 family, sus, add, alterations). Charitable on
+        // unparseable input — returns Void instead of throwing, matching
+        // resolveNumeral's pattern below.
+        var chordFromStringSignature = new FunctionSignature("chord", [StringType.Instance]);
+        registry.Register("chord", chordFromStringSignature, args =>
+        {
+            var symbol = args[0].As<string>();
+            if (ChordParser.TryParseFlexible(symbol, out var chordData) && chordData != null)
+                return Value.Chord(chordData);
+            return Value.Void();
+        });
+
+        // chord(Note) -> Chord
+        // QUICK-260504-cks: Flow's literal evaluator (`TryParseSpecialLiteral`) auto-coerces
+        // any quoted string that *parses* as a Note into a `Note` value at evaluation time
+        // (e.g. `"C"`, `"C5"`, `"G7"`, `"Bb"` all become Notes, not Strings). Without this
+        // overload, the most natural composer spelling — `(chord "C7")` — would die with
+        // "No matching overload for function 'chord' with argument types (Note)". This
+        // overload re-routes the Note's stored text back through `TryParseFlexible` so the
+        // string-form vocabulary (power chords, dom7, slash bass embedded in note-shaped
+        // tokens) reaches the same parser as the explicit String overload.
+        var chordFromNoteSignature = new FunctionSignature("chord", [NoteType.Instance]);
+        registry.Register("chord", chordFromNoteSignature, args =>
+        {
+            var noteText = args[0].As<string>();
+            if (ChordParser.TryParseFlexible(noteText, out var chordData) && chordData != null)
+                return Value.Chord(chordData);
+            // Fallback: bare root letter (e.g. Note "C4" → C major triad on the root letter).
+            // This keeps `(chord <Note variable>)` charitable when the note text isn't itself
+            // a recognized chord symbol — pull the leading A-G as the root and build a major.
+            if (!string.IsNullOrEmpty(noteText) && noteText[0] >= 'A' && noteText[0] <= 'G')
+            {
+                if (ChordParser.TryParseFlexible(noteText[0] + "maj", out var fallback) && fallback != null)
+                    return Value.Chord(fallback);
+            }
+            return Value.Void();
+        });
+
         // str(Chord) -> String
         var strChordSignature = new FunctionSignature("str", [ChordType.Instance]);
         registry.Register("str", strChordSignature, args =>
@@ -344,6 +445,42 @@ public static class HarmonyFunctions
             sequence.AddBar(bar);
 
             return Value.Sequence(sequence);
+        });
+
+        // DX-10: 4-arg arpeggio(Chord, NoteValue, direction, pattern) -> Sequence
+        // Phase 22 plan 22-01. Existing 2-arg overload above stays byte-identical.
+        // - rate: NoteValue (int-backed enum) drives MusicalNoteData.DurationValue
+        // - direction: "up" | "down" | "updown" | "downup" | "random" (random falls back to "up"
+        //   in v1.3 per RESEARCH Pitfall 7 / charitable-interpretation memory; seeded random
+        //   arpeggio deferred to v1.4 to preserve byte-identical determinism)
+        // - pattern: "linear" | "chord-tone" | "scale-tone" (chord-tone / scale-tone route to
+        //   linear in v1.3 per RESEARCH §Future Requirements / Assumption A8)
+        var arpeggioFullSig = new FunctionSignature("arpeggio",
+            [ChordType.Instance, NoteValueType.Instance, StringType.Instance, StringType.Instance]);
+        registry.Register("arpeggio", arpeggioFullSig, args =>
+        {
+            var chord = args[0].As<ChordData>();
+            int rateEnum = args[1].As<int>();   // NoteValue is int-backed
+            var direction = args[2].As<string>();
+            var pattern = args[3].As<string>(); // accepted for future expansion; v1.3 unused
+            _ = pattern;
+
+            var noteNames = ApplyDirection(chord.NoteNames.ToList(), direction);
+
+            var musicalNotes = new List<MusicalNoteData>();
+            foreach (var noteName in noteNames)
+            {
+                var (name, octave, alteration) = NoteType.Parse(noteName);
+                musicalNotes.Add(new MusicalNoteData(name, octave, alteration,
+                    rateEnum, isRest: false));
+            }
+
+            var timeSigFull = new TimeSignatureData(4, 4);
+            var barFull = new BarData(musicalNotes, timeSigFull);
+            var sequenceFull = new SequenceData();
+            sequenceFull.AddBar(barFull);
+
+            return Value.Sequence(sequenceFull);
         });
 
         // scaleNotes(String) -> Strings

@@ -12,4 +12,6 @@ public sealed class StringType : FlowType
     public override string Name => "String";
 
     public override int GetSpecificity() => 120;
+
+    public override bool IsHashable() => true;
 }

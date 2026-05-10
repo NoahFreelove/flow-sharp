@@ -26,7 +26,164 @@ public static class TransformFunctions
         RegisterDynamicTransforms(registry);
         RegisterTempoTransforms(registry);
         RegisterHumanize(registry);
+        RegisterHumanizeGaussian(registry);  // PHASE 25 (DEFER-06)
         RegisterOrnamentTransforms(registry);
+    }
+
+    /// <summary>
+    /// Phase 22 DX-14 (plan 22-06): registers <c>legato(Sequence, Double)</c> and
+    /// <c>portamento(Sequence, Millisecond)</c> articulation transforms. Both set per-note
+    /// defaulted-parameter fields (<see cref="MusicalNoteData.DurationOverlap"/>,
+    /// <see cref="MusicalNoteData.PortamentoMs"/>) consumed by <c>BarRenderer</c> and
+    /// <c>MidiExport</c> at render time.
+    ///
+    /// Per CONTEXT D-02 + Pitfall 3: onsets are NOT moved. The transforms only stamp
+    /// fields onto each note; <c>bar.ToTimeline()</c> already produced the onset positions
+    /// before render time. The audio renderer extends durationBeats; MIDI export emits
+    /// extended NoteOff + CC65/CC5 bracket events.
+    ///
+    /// Per CONTEXT line 18 (rollback-independence): each transform calls
+    /// <c>note.With(...)</c> naming ONLY the field this plan owns. Sibling 22-05's
+    /// <c>OnsetOffset</c> and the other 22-06 slot are preserved by the builder helper's
+    /// null-coalesce, so neither transform enumerates fields it doesn't own.
+    /// </summary>
+    public static void RegisterArticulationTransforms(InternalFunctionRegistry registry)
+    {
+        // legato(Sequence, Double) -> Sequence
+        var legatoSig = new FunctionSignature("legato",
+            [SequenceType.Instance, DoubleType.Instance]);
+        registry.Register("legato", legatoSig, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            double overlap = args[1].As<double>();
+            return Value.Sequence(TransformNotes(seq, note =>
+                note.With(durationOverlap: overlap)));
+        });
+
+        // portamento(Sequence, Millisecond) -> Sequence
+        var portamentoSig = new FunctionSignature("portamento",
+            [SequenceType.Instance, MillisecondType.Instance]);
+        registry.Register("portamento", portamentoSig, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            double ms = args[1].As<double>();   // Millisecond is backed by double
+            return Value.Sequence(TransformNotes(seq, note =>
+                note.With(portamentoMs: ms)));
+        });
+    }
+
+    /// <summary>
+    /// Phase 22 DX-13: registers <c>quantize(Sequence, NoteValue, strength, swing)</c> which
+    /// reads <see cref="MusicalContext.TimeSignature"/> from the active context for grid alignment.
+    ///
+    /// Per Pitfall 9 (CRITICAL byte-identical regression gate): <c>strength=0</c> + <c>swing=0</c>
+    /// short-circuits to identity (returns the input <c>SequenceData</c> unchanged) BEFORE any
+    /// allocation. A single byte difference at strength=0 would break the ByteIdenticalTutorial /
+    /// ByteIdenticalShowcase / EuclideanByteIdentical regression gate.
+    ///
+    /// Per V5 input validation (T-22-V5-17, T-22-V5-18) and CLAUDE.md charitable interpretation
+    /// memory: strength is clamped to [0, 1] and swing is clamped to [-1, 1]. Out-of-range inputs
+    /// are silently corrected — no exception, no error.
+    ///
+    /// Per CONTEXT D-04..D-06: linear swing offset = swing × (subdivBeats / 2), signed
+    /// (positive = drag offbeat later, negative = push earlier), applied to every other
+    /// subdivision at the requested resolution.
+    /// </summary>
+    public static void RegisterContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var quantizeSig = new FunctionSignature("quantize",
+            [SequenceType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("quantize", quantizeSig, args =>
+        {
+            var seq = args[0].As<SequenceData>();
+            int resEnum = args[1].As<int>();
+            // V5: clamp out-of-range inputs (charitable D-07; threats T-22-V5-17, T-22-V5-18).
+            double strength = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
+            double swing = Math.Clamp(args[3].As<double>(), -1.0, 1.0);
+
+            // Pitfall 9 — byte-identical regression gate. strength=0 + swing=0 MUST return the
+            // input sequence object reference unchanged, or the ByteIdentical gate breaks.
+            if (strength == 0.0 && swing == 0.0) return Value.Sequence(seq);
+
+            var timesig = context.GetMusicalContext().TimeSignature
+                ?? new TimeSignatureData(4, 4);
+            return Value.Sequence(QuantizeSequence(seq, (NoteValueType.Value)resEnum,
+                strength, swing, timesig));
+        });
+    }
+
+    /// <summary>
+    /// DX-13 implementation: walks each bar's notes sequentially, computes the nearest grid
+    /// target at the requested resolution (with optional swing shift on every other
+    /// subdivision), and stores the per-note onset displacement in <c>note.OnsetOffset</c>
+    /// via the <c>With(...)</c> builder helper. <c>BarType.ToTimeline</c> later adds this
+    /// offset to the emitted onset position so audio renderer + MIDI export both honor
+    /// quantization without parallel rebuild paths.
+    ///
+    /// Uses <c>note.With(onsetOffset: …)</c> rather than the full ctor — this is intentional
+    /// per Phase 22 CONTEXT line 18 (independent shippability): future Phase 22 plans
+    /// (e.g. 22-06 legato/portamento) will append more defaulted fields, and this transform
+    /// must not enumerate fields it doesn't own.
+    /// </summary>
+    private static SequenceData QuantizeSequence(
+        SequenceData seq, NoteValueType.Value resolution,
+        double strength, double swing, TimeSignatureData timesig)
+    {
+        // resolution → subdivision length in beats (where 1 beat == 1/timesig.Denominator whole).
+        // QUARTER at 4/4 = 1 beat per subdivision; EIGHTH at 4/4 = 0.5 beats; SIXTEENTH = 0.25 beats.
+        double subdivBeats = NoteValueToBeats(resolution, timesig.Denominator);
+        // CONTEXT D-04: linear swing offset = swing × (subdivBeats / 2).
+        double swingOffset = swing * (subdivBeats / 2.0);
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            double currentBeat = 0.0;
+            int subdivIdx = 0;
+            foreach (var note in bar.MusicalNotes)
+            {
+                double targetGrid = Math.Round(currentBeat / subdivBeats) * subdivBeats;
+                // CONTEXT D-06: every other subdivision (the offbeat) receives the swing shift.
+                if (subdivIdx % 2 == 1) targetGrid += swingOffset;
+
+                // strength=1 hard-snap; strength=0 no shift; linear interpolation between.
+                double snappedBeat = currentBeat + strength * (targetGrid - currentBeat);
+                double onsetShift = snappedBeat - currentBeat;
+
+                // Builder-helper rebuild — preserves all other fields, even ones added by
+                // future Phase 22 plans, without naming them here. Rollback-independent.
+                newNotes.Add(note.With(onsetOffset: onsetShift));
+
+                currentBeat += note.GetBeats(timesig.Denominator);
+                subdivIdx++;
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature ?? timesig));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// DX-13: converts a NoteValue resolution into beats per subdivision for the active
+    /// time signature. Charitable D-07: out-of-range enum values fall through to the
+    /// default arm and are treated as a quarter note (no exception, no crash).
+    /// </summary>
+    private static double NoteValueToBeats(NoteValueType.Value nv, int denom)
+    {
+        // 1 beat == 1/denom whole. So WHOLE = denom beats; QUARTER = denom/4 beats.
+        double whole = denom;
+        return nv switch
+        {
+            NoteValueType.Value.WHOLE        => whole,
+            NoteValueType.Value.HALF         => whole / 2,
+            NoteValueType.Value.QUARTER      => whole / 4,
+            NoteValueType.Value.EIGHTH       => whole / 8,
+            NoteValueType.Value.SIXTEENTH    => whole / 16,
+            NoteValueType.Value.THIRTYSECOND => whole / 32,
+            _                                => whole / 4,
+        };
     }
 
     // ===== MIDI Helpers =====
@@ -103,6 +260,16 @@ public static class TransformFunctions
         registry.Register("transpose", transposeCentSig, TransposeCent);
     }
 
+    /// <remarks>
+    /// Phase 23 D-12 / MICR-02 caveat: under non-12-TET tunings (justIntonation,
+    /// pythagorean), transpose may silently respell notes at enharmonic junctions
+    /// (e.g., F#4 → Gb4 round-trip), producing an audible ~21 cent shift in the
+    /// rendered output even though the MIDI number is preserved. Transforms remain
+    /// MIDI-based by design (MICR-02): same MIDI numbers under all 3 tunings; only
+    /// the rendered Hz differ. A strict-mode <c>transposePreserveSpelling</c> escape
+    /// hatch is documented as a v1.4 candidate — see CONTEXT.md D-12 +
+    /// REQUIREMENTS.md "Future Requirements".
+    /// </remarks>
     private static Value TransposeSemitone(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
@@ -237,12 +404,27 @@ public static class TransformFunctions
     }
 
     // AUDIT-VERIFIED 2026-04-18: C5 — augment correct (lengthens); observed A=#### vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
+    // AUDIT-VERIFIED 2026-04-26: re-validated against tuplet sequences (Phase 19 TUP-07)
+    //   — see flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs (rational doubling pinned via Fraction(2, 1) × f)
     private static Value Augment(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
 
         var result = TransformNotes(seq, note =>
         {
+            // TUP-07: rational branch — when DurationFraction is set, double it via Phase 18 Fraction(2,1) × f.
+            // Existing enum path runs verbatim when DurationFraction is null (Phase 18 byte-identical contract).
+            if (note.DurationFraction.HasValue)
+            {
+                var doubled = note.DurationFraction.Value * new Fraction(2, 1);
+                return new MusicalNoteData(
+                    note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    note.Velocity, note.Articulation, note.IsDotted,
+                    note.SourceLocation, note.SourceLength,
+                    durationFraction: doubled);
+            }
+
             if (!note.DurationValue.HasValue) return note;
 
             int newDur = note.DurationValue.Value - 1; // toward WHOLE=0
@@ -259,12 +441,27 @@ public static class TransformFunctions
     }
 
     // AUDIT-VERIFIED 2026-04-18: C5 — diminish correct (shortens); observed D=# vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
+    // AUDIT-VERIFIED 2026-04-26: re-validated against tuplet sequences (Phase 19 TUP-07)
+    //   — see flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs (rational halving pinned via Fraction(1, 2) × f)
     private static Value Diminish(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
 
         var result = TransformNotes(seq, note =>
         {
+            // TUP-07: rational branch — when DurationFraction is set, halve it via Phase 18 Fraction(1,2) × f.
+            // Existing enum path runs verbatim when DurationFraction is null (Phase 18 byte-identical contract).
+            if (note.DurationFraction.HasValue)
+            {
+                var halved = note.DurationFraction.Value * new Fraction(1, 2);
+                return new MusicalNoteData(
+                    note.NoteName, note.Octave, note.Alteration,
+                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
+                    note.Velocity, note.Articulation, note.IsDotted,
+                    note.SourceLocation, note.SourceLength,
+                    durationFraction: halved);
+            }
+
             if (!note.DurationValue.HasValue) return note;
 
             int newDur = note.DurationValue.Value + 1; // toward THIRTYSECOND=5
@@ -279,6 +476,16 @@ public static class TransformFunctions
 
         return Value.Sequence(result);
     }
+
+    // ===== Test wrappers =====
+    // Public test wrappers expose the private dispatch for direct C# unit tests
+    // (per Phase 19 Plan 19-05 TUP-07 — flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs).
+    // Production callers continue routing through the registry's `augment` / `diminish` signatures.
+    public static SequenceData AugmentForTesting(SequenceData seq) =>
+        Augment(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
+
+    public static SequenceData DiminishForTesting(SequenceData seq) =>
+        Diminish(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
 
     // ===== Octave Shift =====
 
@@ -694,6 +901,77 @@ public static class TransformFunctions
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }
         return Value.Sequence(result);
+    }
+
+    // ===== Humanize Gaussian =====
+    // PHASE 25 (DEFER-06): humanizeGaussian(Sequence, Double, Int) Box-Muller transform.
+    //
+    // Anchors decisions from .planning/phases/25-gaussian-humanize-last-prng-phase/25-CONTEXT.md:
+    //   D-01  signature (Sequence, Double, Int) order (seq, amount, seed)
+    //   D-03  LOCAL new Random(seed) per call; does NOT read or mutate ExecutionContext.GetRand.
+    //         Mirrors VariationFunctions.VarySeeded at :71-77 and BuiltInFunctions.cs:1258.
+    //   D-05  basic Box-Muller (cos branch); D-06 sin discarded
+    //   D-07  velJitter = z * amount * 0.2 (matches uniform humanize jitter range)
+    //   D-08  amount clamped to [0, 1]; D-09 velocity clamped to [0.05, 1.0]
+    //   D-10  amount==0 short-circuit returns input unchanged
+    //   D-11  rests pass through; D-12/D-13 empty/all-rest sequences pass through
+    //   D-18  existing Humanize is FROZEN — humanizeGaussian uses note.With(velocity:)
+    //         to avoid repeating the 12-arg ctor field-drop bug at :896-898
+    //
+    // NOTE: System.Random is NOT cryptographically secure. humanizeGaussian is for
+    // musical jitter only — never use for security purposes.
+
+    private static void RegisterHumanizeGaussian(InternalFunctionRegistry registry)
+    {
+        var sig = new FunctionSignature("humanizeGaussian",
+            [SequenceType.Instance, DoubleType.Instance, IntType.Instance]);
+        registry.Register("humanizeGaussian", sig, HumanizeGaussian);
+    }
+
+    private static Value HumanizeGaussian(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);  // D-08
+        int seed = args[2].As<int>();                                // D-15
+
+        if (amount == 0.0) return Value.Sequence(seq);               // D-10 short-circuit
+
+        // D-03: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
+        // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
+        var rng = new Random(seed);
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            var newNotes = new List<MusicalNoteData>();
+            foreach (var note in bar.MusicalNotes)
+            {
+                if (note.IsRest) { newNotes.Add(note); continue; }   // D-11
+
+                double z = NextGaussianSample(rng);                  // D-05/D-06
+                double velJitter = z * amount * 0.2;                 // D-07
+                double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);  // D-09
+
+                // RESEARCH §Critical Pre-Existing Bug: use With(velocity:) to preserve
+                // all 17 MusicalNoteData fields (Plan 25-01 extended With with velocity slot).
+                newNotes.Add(note.With(velocity: newVelocity));
+            }
+            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+        }
+        return Value.Sequence(result);
+    }
+
+    // D-17: extracted helper for testability — basic Box-Muller (cos branch).
+    // Two NextDouble draws produce one N(0, 1) sample. Sin companion DISCARDED per D-06.
+    // Math.Max(u1, 1e-300) guards Math.Log(0) divergence (Pitfall 2: Random.NextDouble
+    // contract is [0, 1) so 0.0 IS a possible output; the 1e-300 floor produces a
+    // worst-case ~37-stddev Gaussian sample, clamped at velocity boundary — benign).
+    private static double NextGaussianSample(Random rng)
+    {
+        double u1 = rng.NextDouble();
+        double u2 = rng.NextDouble();
+        u1 = Math.Max(u1, 1e-300);  // guard log(0); see Pitfall 2 in 25-RESEARCH.md
+        return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2.0 * Math.PI * u2);
     }
 
     // ===== Ornament Transforms (Trill / Tremolo) =====

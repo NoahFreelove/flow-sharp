@@ -36,4 +36,6 @@ public sealed class ChordType : FlowType
     public override string Name => "Chord";
 
     public override int GetSpecificity() => 136;
+
+    public override bool IsHashable() => true;
 }

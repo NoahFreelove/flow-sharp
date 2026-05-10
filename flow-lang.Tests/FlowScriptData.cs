@@ -48,13 +48,20 @@ public static class FlowScriptData
         //   - test_custom_oscillator.flow:42 if(Bool, String, String) overload — FIXED by 12-05
         //   - test_custom_oscillator.flow:57 if(Bool, Double, Double) overload — FIXED by 12-05
         //     (test file updated to avoid `1.0 -1.0` parser-ambiguity which tokenizes as subtraction)
-        //   - test_custom_oscillator.flow:86 `range` stdlib function — PRE-EXISTING, deferred to plan 12-06
-        //     (Test 4 uses `(range 0 sz)` which isn't registered anywhere; documented as separate bug)
+        //   - test_custom_oscillator.flow:86 `range` stdlib function — FIXED by Phase 20 plan 20-01
+        //     (DEFER-01 closure: range(Int, Int) + range(Int, Int, Int) registered in
+        //     BuiltInFunctions.RegisterCollections; entry removed because the script now
+        //     runs to completion with zero errors. Plan 20-01 acknowledged this would
+        //     happen — the 20-04 closure plan loses an item from its tracked migration
+        //     list, but the atomic-commit-zero-regression contract takes priority over
+        //     the "do not touch" instruction. Rule 3 deviation; see 20-01-SUMMARY.md.)
         //   - test_full_song.flow:158 exportWav auto-mkdir — FIXED by 12-05
-        //
-        // test_custom_oscillator stays as an expected-error row until plan 12-06 adds `range`.
-        // test_full_song entry removed: it now runs to completion after the auto-mkdir fix.
-        ["test_custom_oscillator.flow"] = "Function 'range' not found",
+
+        // Phase 26.1 plan 26.1-05 (Wave 4): test_dict_type_errors.flow body is the
+        // intentional-error trigger (Dict<Buffer, Int> bad = (dict)). The runner
+        // expects stderr to contain "Dict key type 'Buffer' is not hashable" at the
+        // ParseException site (TypeParser.ParseType § Dict<K, V> branch).
+        ["test_dict_type_errors.flow"] = "Dict key type 'Buffer' is not hashable",
     };
 
     public static readonly Dictionary<string, string[]> RequiredSentinels = new()
@@ -228,6 +235,130 @@ public static class FlowScriptData
         {
             "euclidean humanize seed=42: PASSED",
             "two runs byte-identical: PASSED",
+        },
+
+        // Phase 25 DEFER-06: humanizeGaussian(Sequence, Double, Int) seeded Box-Muller.
+        // Wave 0 placeholder — Plan 25-02 replaces the .flow body with humanizeGaussian +
+        // writeMidi + byte-identical-two-runs check while preserving both sentinels.
+        ["test_humanize_gaussian.flow"] = new[]
+        {
+            "humanizeGaussian seed=42: PASSED",
+            "two runs byte-identical: PASSED",
+        },
+
+        // Phase 20-01 (DEFER-01): pin range(Int, Int) + range(Int, Int, Int) success sentinels.
+        // 2-arg form, 3-arg positive step, 3-arg negative step (via (sub 0 1) per Pitfall 4),
+        // and the whole-run pass marker. If any range overload misregistered, the corresponding
+        // sentinel does not print and this Theory row goes RED.
+        ["test_range.flow"] = new[]
+        {
+            "range 0 5 ok",
+            "range 0 10 2 ok",
+            "range 5 0 -1 ok",
+            "test_range: PASSED",
+        },
+
+        // Phase 20-02 (DEFER-04): pin multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
+        // and D/G/A naturals unchanged. Format canonical output: Fb4 → "F4-", E#4 → "E4+",
+        // Cb5 → "C5-", B#3 → "B3+". If the natural-edge switch in HarmonyFunctions.Enharmonic
+        // regresses, the corresponding sentinel does not print and this Theory row goes RED.
+        // The Bbmajor block at the end of the script exercises the in-key chromatic
+        // fall-through path: E is chromatic in Bbmajor (scale: Bb C D Eb F G A), so
+        // TryEnharmonicInKey returns false and we drop into the natural-edge — same "F4-"
+        // sentinel (already counted once for the no-key E4 print at the top).
+        ["test_enharmonic_edges.flow"] = new[]
+        {
+            "F4-",
+            "E4+",
+            "C5-",
+            "B3+",
+            "DGA naturals unchanged: ok",
+            "test_enharmonic_edges: PASSED",
+        },
+
+        // Phase 20-03 (DEFER-05): pin slice negative-from-end (Python-style) sentinels.
+        // Negative start, negative end, both-negative, extreme-negative clamp-to-zero
+        // (D-USER-D), whole-run pass marker. If the pre-clamp normalization in
+        // Collections.SliceArray regresses, the sentinels do not match and this row goes RED.
+        ["test_slice_negative.flow"] = new[]
+        {
+            "neg start ok len=3",
+            "neg end ok len=4",
+            "both neg ok len=2",
+            "extreme neg ok len=2",
+            "test_slice_negative: PASSED",
+        },
+
+        // Phase 22-01 (DX-10): pin the 4-arg arpeggio(Chord, NoteValue, String, String)
+        // smoke script's PASSED sentinel. Script exercises up/down/updown directions over
+        // Cmaj7 at QUARTER and EIGHTH rates. If the 4-arg overload regresses (signature
+        // missing, ApplyDirection broken, or pattern arg fails type-dispatch), the sentinel
+        // does not print and this Theory row goes RED.
+        ["test_dx_arpeggio.flow"] = new[]
+        {
+            "DX-10 arpeggio: PASSED",
+        },
+
+        // Phase 22-02 (DX-15): pin the varispeed loadWav smoke script. Script writes a
+        // synthetic 1s sine, reloads at +12 semitones (octave up = ratio 2.0 = ~half frames),
+        // exercises the ratio overload at 1.5, and verifies the semitones=0 short-circuit.
+        // If either new overload regresses or the existing 1-arg loadWav byte-identity
+        // breaks, the sentinel does not print and this Theory row goes RED.
+        ["test_dx_loadwav_varispeed.flow"] = new[]
+        {
+            "DX-15 varispeed: PASSED",
+        },
+
+        // Phase 22-03 (DX-11): pin the inversion(Chord, Int) + voicing(Chord, String) smoke
+        // script. Script exercises (inversion Cmaj 1), (voicing Cmaj7 "drop2"), and the D-07
+        // charitable path (voicing Cmaj "drop2") returning the input chord unchanged. If the
+        // Voicings.Register wiring regresses, the sentinel does not print and this Theory
+        // row goes RED.
+        ["test_dx_voicings.flow"] = new[]
+        {
+            "DX-11 voicings: PASSED",
+        },
+
+        // Phase 22-04 (DX-12): pin the NoteValue-rate delay smoke script. Script exercises
+        // (delay src EIGHTH 0.5 0.4) inside `tempo 120 { ... }` (250ms) and `tempo 240 { ... }`
+        // (125ms), plus the existing ms-rate (delay src 250.0 0.5 0.4) regression gate. If
+        // the new RegisterContextDependent wiring regresses or the existing Double overload
+        // diverges, the sentinel does not print and this Theory row goes RED.
+        ["test_dx_delay_sync.flow"] = new[]
+        {
+            "DX-12 delay sync: PASSED",
+        },
+
+        // Phase 22-05 (DX-13): pin the quantize(Sequence, NoteValue, strength, swing) smoke
+        // script. Script exercises a humanize→quantize roundtrip at SIXTEENTH+strength=1.0,
+        // plus the strength=0 identity short-circuit (Pitfall 9 byte-identical regression
+        // gate). If the new RegisterContextDependent wiring regresses, OnsetOffset migration
+        // breaks, or strength=0 stops short-circuiting, the sentinel does not print and this
+        // Theory row goes RED.
+        ["test_dx_quantize.flow"] = new[]
+        {
+            "DX-13 quantize: PASSED",
+        },
+
+        // Phase 22-06 (DX-14 legato): pin the legato(Sequence, Double) smoke script. Script
+        // exercises (legato seq 0.5) over a QUARTER-note phrase under tempo 120 / 4/4 and
+        // writes a WAV via renderSong. If the DurationOverlap migration regresses (field
+        // missing, BarRenderer not reading it, or onsets accidentally moved), the sentinel
+        // does not print and this Theory row goes RED.
+        ["test_dx_legato.flow"] = new[]
+        {
+            "DX-14 legato: PASSED",
+        },
+
+        // Phase 22-06 (DX-14 portamento): pin the portamento(Sequence, Millisecond) smoke
+        // script. Script exercises (portamento seq 100ms) and writes a MIDI file via
+        // writeMidi. If the PortamentoMs migration regresses (field missing, MidiExport not
+        // emitting CC65/CC5, or the linear ms→CC5 curve diverges), the sentinel does not
+        // print and this Theory row goes RED. The accompanying PortamentoMidiFacts read the
+        // generated .mid back via DryWetMidi to assert CC events present.
+        ["test_dx_portamento.flow"] = new[]
+        {
+            "DX-14 portamento: PASSED",
         },
     };
 }

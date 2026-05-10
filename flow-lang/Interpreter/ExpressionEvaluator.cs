@@ -36,9 +36,10 @@ public class ExpressionEvaluator
             VariableExpression var => EvaluateVariable(var),
             FunctionCallExpression call => EvaluateFunctionCall(call),
             ArrayIndexExpression idx => EvaluateArrayIndex(idx),
-            BinaryExpression bin => EvaluateBinary(bin),
             ArrayLiteralExpression arrLit => EvaluateArrayLiteral(arrLit),
+            TupleLiteralExpression tupLit => EvaluateTupleLiteral(tupLit),
             ChordLiteralExpression chordLit => EvaluateChordLiteral(chordLit),
+            SymbolLiteralExpression symLit => EvaluateSymbolLiteral(symLit),
             LambdaExpression lambda => EvaluateLambda(lambda),
             MemberAccessExpression member => EvaluateMemberAccess(member),
             LazyExpression lazy => EvaluateLazy(lazy),
@@ -47,6 +48,7 @@ public class ExpressionEvaluator
             ProgressionExpression progression => EvaluateProgression(progression),
             InterpolatedStringExpression interp => EvaluateInterpolatedString(interp),
             FlowExpression flowEx => EvaluateFlowExpression(flowEx),
+            TupleUnpackFlowExpression unpackEx => EvaluateTupleUnpackFlow(unpackEx),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -56,6 +58,8 @@ public class ExpressionEvaluator
         return lit.Value switch
         {
             int i => Value.Int(i),
+            long l => Value.Long(l),                      // Phase 26: int-overflow lex path
+            System.Numerics.BigInteger n => Value.Number(n),  // Phase 26: long-overflow lex path
             double d => Value.Double(d),
             bool b => Value.Bool(b),
             string s => TryParseSpecialLiteral(s) ?? Value.String(s),
@@ -121,6 +125,25 @@ public class ExpressionEvaluator
             if (double.TryParse(numberPart, out double dbValue))
             {
                 return Value.Decibel(dbValue);
+            }
+        }
+
+        // Phase 26.2 ERG-04: Try to parse as Hertz (NHz or NkHz). Check kHz BEFORE Hz
+        // because EndsWith("Hz") is also true for "kHz" strings — matches HertzType.Parse ordering.
+        if (text.EndsWith("kHz"))
+        {
+            string numberPart = text.Substring(0, text.Length - 3);
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
+            {
+                return Value.Hertz(kHzValue * 1000.0);  // canonical Hz
+            }
+        }
+        else if (text.EndsWith("Hz"))
+        {
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
+            {
+                return Value.Hertz(hzValue);
             }
         }
 
@@ -203,6 +226,48 @@ public class ExpressionEvaluator
         // Execute function
         if (overload.IsInternal)
         {
+            // Phase 26 D-05/D-06 (RESEARCH Pitfall 2): coerce arguments at the
+            // implementation boundary. Without this, mixed-type calls that resolved
+            // via OverloadResolver convertible-scoring (+100) reach the impl with
+            // the caller's original CLR primitive types — e.g., `(add 5 3.0)` resolves
+            // to (add Double Double) but argValues[0] is still int, throwing
+            // InvalidCastException inside StdLib.AddDouble's args[0].As<double>().
+            // VoidType.IsCompatibleWith returns false → CanConvertTo returns false →
+            // Void-wildcard params (e.g. equals/lt/gt) short-circuit and never coerce.
+            var sig = overload.Signature;
+            for (int i = 0; i < argValues.Count && i < sig.InputTypes.Count; i++)
+            {
+                // Phase 26 fix-omissions Blocker 1: Void[] is a true wildcard array
+                // parameter — typed arrays (Int[], String[], Float[], ...) pass through
+                // to the impl with their original List<Value> storage. ConvertTo has no
+                // Value-level path for typed-array → Void[] and would throw, so skip
+                // coercion entirely when the parameter is ArrayType(Void).
+                // See .planning/phases/26-op-standardization-prefix-only/.continue-here.md
+                // "Blocker 1" and 26-RESEARCH.md "Pitfall 2".
+                if (sig.InputTypes[i] is ArrayType { ElementType: VoidType })
+                {
+                    continue;
+                }
+                // Phase 26.1 DICT-01: Dict<Void, Void> is the wildcard registration shape used
+                // by RegisterDict for (get)/(set)/(each)/(map)/(filter)/etc. — typed Dict<K, V>
+                // values must pass through to the impl with their original DictData storage.
+                // Value.ConvertTo has no path for Dict→Dict and would throw InvalidCastException.
+                if (sig.InputTypes[i] is DictType { KeyType: VoidType, ValueType: VoidType })
+                {
+                    continue;
+                }
+                // Phase 26.1 TUP-09 / TUP-11: TupleType.AnyArity is the wildcard for (unpack)
+                // and (dictTuple) — same skip-coercion rationale as DictType wildcard above.
+                if (sig.InputTypes[i] is TupleType { IsAnyArity: true })
+                {
+                    continue;
+                }
+                if (!argValues[i].Type.Equals(sig.InputTypes[i])
+                    && argValues[i].Type.CanConvertTo(sig.InputTypes[i]))
+                {
+                    argValues[i] = argValues[i].ConvertTo(sig.InputTypes[i]);
+                }
+            }
             // Call internal implementation
             return overload.Implementation!(argValues);
         }
@@ -216,18 +281,26 @@ public class ExpressionEvaluator
 
     private Value EvaluateArrayIndex(ArrayIndexExpression idx)
     {
-        var array = Evaluate(idx.Array);
+        // Phase 26.1 TUP-09 (RESEARCH § Q4): this evaluator handles BOTH array `arr@i`
+        // and tuple `tup@i` indexing — tuples reuse <see cref="ArrayIndexExpression"/>
+        // since their runtime storage shape is the same (<see cref="IReadOnlyList{Value}"/>).
+        // Error messages branch on operand type so diagnostics match user-facing semantics.
+        var operand = Evaluate(idx.Array);
         var index = Evaluate(idx.Index);
 
-        if (array.Data is not IReadOnlyList<Value> arr)
+        bool isTuple = operand.Type is TupleType;
+
+        if (operand.Data is not IReadOnlyList<Value> arr)
         {
-            _errorReporter.ReportError($"Cannot index non-array type {array.Type}", idx.Location);
+            _errorReporter.ReportError(
+                $"Cannot index non-array/non-tuple type {operand.Type}", idx.Location);
             return Value.Void();
         }
 
         if (index.Type is not IntType)
         {
-            _errorReporter.ReportError($"Array index must be Int, not {index.Type}", idx.Location);
+            var label = isTuple ? "Tuple" : "Array";
+            _errorReporter.ReportError($"{label} index must be Int, not {index.Type}", idx.Location);
             return Value.Void();
         }
 
@@ -240,98 +313,13 @@ public class ExpressionEvaluator
         // allowing the program to continue executing after an out-of-bounds access.
         if (indexValue < 0 || indexValue >= arr.Count)
         {
-            _errorReporter.ReportError($"Array index {indexValue} out of bounds (0-{arr.Count - 1})", idx.Location);
+            var label = isTuple ? "Tuple" : "Array";
+            _errorReporter.ReportError(
+                $"{label} index {indexValue} out of bounds (0-{arr.Count - 1})", idx.Location);
             return Value.Void();
         }
 
         return arr[indexValue];
-    }
-
-    private Value EvaluateBinary(BinaryExpression bin)
-    {
-        var left = Evaluate(bin.Left);
-        var right = Evaluate(bin.Right);
-        
-        if (left.Type is StringType || right.Type is StringType)
-        {
-            if (bin.Operator == BinaryOperator.Add)
-                return Value.String((left.Data?.ToString() ?? "") + (right.Data?.ToString() ?? ""));
-        }
-
-        bool lNum = left.Type is IntType or LongType or FloatType or DoubleType or NumberType;
-        bool rNum = right.Type is IntType or LongType or FloatType or DoubleType or NumberType;
-
-        if (lNum && rNum)
-        {
-            if (left.Type is NumberType || right.Type is NumberType)
-            {
-                BigInteger l = left.Data is BigInteger bl ? bl : new BigInteger(Convert.ToInt64(left.Data));
-                BigInteger r = right.Data is BigInteger br ? br : new BigInteger(Convert.ToInt64(right.Data));
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Number(l + r),
-                    BinaryOperator.Subtract => Value.Number(l - r),
-                    BinaryOperator.Multiply => Value.Number(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Number(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            if (left.Type is DoubleType || right.Type is DoubleType)
-            {
-                double l = Convert.ToDouble(left.Data);
-                double r = Convert.ToDouble(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Double(l + r),
-                    BinaryOperator.Subtract => Value.Double(l - r),
-                    BinaryOperator.Multiply => Value.Double(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Double(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            if (left.Type is FloatType || right.Type is FloatType)
-            {
-                float l = Convert.ToSingle(left.Data);
-                float r = Convert.ToSingle(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Float(l + r),
-                    BinaryOperator.Subtract => Value.Float(l - r),
-                    BinaryOperator.Multiply => Value.Float(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Float(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            if (left.Type is LongType || right.Type is LongType)
-            {
-                long l = Convert.ToInt64(left.Data);
-                long r = Convert.ToInt64(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Long(l + r),
-                    BinaryOperator.Subtract => Value.Long(l - r),
-                    BinaryOperator.Multiply => Value.Long(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Long(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-            else
-            {
-                int l = Convert.ToInt32(left.Data);
-                int r = Convert.ToInt32(right.Data);
-                return bin.Operator switch
-                {
-                    BinaryOperator.Add => Value.Int(l + r),
-                    BinaryOperator.Subtract => Value.Int(l - r),
-                    BinaryOperator.Multiply => Value.Int(l * r),
-                    BinaryOperator.Divide => r != 0 ? Value.Int(l / r) : ReportDivisionByZero(bin.Location),
-                    _ => throw new NotSupportedException($"Binary operator {bin.Operator} not supported")
-                };
-            }
-        }
-
-        _errorReporter.ReportError($"Cannot apply operator {bin.Operator} to {left.Type} and {right.Type}", bin.Location);
-        return Value.Void();
     }
 
     private Value EvaluateFlowExpression(FlowExpression flowEx)
@@ -357,6 +345,51 @@ public class ExpressionEvaluator
         return Value.Void();
     }
 
+    /// <summary>
+    /// Phase 26.1 TUP-10: evaluates `tup ~&gt; func`. When LHS is a Tuple, components
+    /// unpack into positional args; on non-tuple LHS, falls through to single-arg
+    /// `-&gt;` semantics (charitable per ROADMAP success criterion 3 — ergonomics).
+    /// </summary>
+    private Value EvaluateTupleUnpackFlow(TupleUnpackFlowExpression unpack)
+    {
+        var leftVal = Evaluate(unpack.Left);
+        var rightVal = Evaluate(unpack.Right);
+
+        if (rightVal.Type is not FunctionType && rightVal.Data is not FunctionOverload)
+        {
+            _errorReporter.ReportError(
+                $"Right side of ~> must be a function, got {rightVal.Type}",
+                unpack.Location);
+            return Value.Void();
+        }
+        var overload = rightVal.Data as FunctionOverload;
+        if (overload == null)
+        {
+            _errorReporter.ReportError(
+                $"Right side of ~> resolved to non-FunctionOverload value",
+                unpack.Location);
+            return Value.Void();
+        }
+
+        // Tuple LHS: unpack components into positional args (CONTEXT spec).
+        if (leftVal.Type is TupleType && leftVal.Data is IReadOnlyList<Value> components)
+        {
+            var args = components.ToList();
+            return overload.IsInternal
+                ? overload.Implementation!(args)
+                : _invoker.ExecuteUserFunctionWithCaptures(
+                    overload.Declaration!, args, overload.CapturedVariables);
+        }
+
+        // Charitable fallthrough: non-tuple LHS uses single-arg `->` semantics
+        // (per ROADMAP success criterion 3, ergonomics-priority memory).
+        var singleArg = new List<Value> { leftVal };
+        return overload.IsInternal
+            ? overload.Implementation!(singleArg)
+            : _invoker.ExecuteUserFunctionWithCaptures(
+                overload.Declaration!, singleArg, overload.CapturedVariables);
+    }
+
     private Value EvaluateArrayLiteral(ArrayLiteralExpression arrLit)
     {
         var elements = arrLit.Elements.Select(Evaluate).ToList();
@@ -369,6 +402,25 @@ public class ExpressionEvaluator
             elementType = VoidType.Instance;
 
         return Value.Array(elements, elementType);
+    }
+
+    /// <summary>
+    /// Phase 26.1 TUP-09: evaluates <c>&lt;&lt;a, b, c&gt;&gt;</c> by evaluating each element
+    /// and recording its FlowType — per-position arity-explicit typing (unlike arrays which
+    /// converge to a single element type or VoidType when heterogeneous). Empty <c>&lt;&lt;&gt;&gt;</c>
+    /// produces a 0-arity Tuple value.
+    /// </summary>
+    private Value EvaluateTupleLiteral(TupleLiteralExpression tupLit)
+    {
+        var components = new List<Value>(tupLit.Elements.Count);
+        var elementTypes = new List<FlowType>(tupLit.Elements.Count);
+        foreach (var elem in tupLit.Elements)
+        {
+            var v = Evaluate(elem);
+            components.Add(v);
+            elementTypes.Add(v.Type);
+        }
+        return Value.Tuple(components, elementTypes);
     }
 
     private Value EvaluateLambda(LambdaExpression lambda)
@@ -514,10 +566,23 @@ public class ExpressionEvaluator
         return Value.Void();
     }
 
+    /// <summary>
+    /// Phase 26.1 SYM-01: evaluates a <c>#foo</c> symbol literal by interning it via
+    /// <see cref="RuntimeContext.SymbolInternTable"/>. Two evaluations of <c>#foo</c> in the
+    /// same context return the SAME <see cref="Value"/> instance (reference-equal).
+    /// </summary>
+    private Value EvaluateSymbolLiteral(SymbolLiteralExpression symLit)
+    {
+        return Value.Symbol(symLit.Name, _context);
+    }
+
     private Value EvaluateNoteStream(NoteStreamExpression noteStream)
     {
         var context = _context.GetMusicalContext();
-        var compiler = new NoteStreamCompiler();
+        // TUP-05: thread the engine's ErrorReporter so ValidateBarFit can emit
+        // Info-severity bar-overflow diagnostics. Backward-compatible defaulted-parameter
+        // pattern — Plan 19-01/19-02 unit Facts continue using the parameterless ctor.
+        var compiler = new NoteStreamCompiler(_errorReporter);
         var sequence = compiler.Compile(noteStream, context, _context);
         return Value.Sequence(sequence);
     }

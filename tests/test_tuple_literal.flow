@@ -1,0 +1,32 @@
+Note: Tuple literal + index + structural equality + empty + singleton (TUP-09)
+Note: Tests: <<a, b, c>> literal, <<>> empty, <<x>> singleton, tup@N indexing, structural eq
+
+use "@std"
+
+Note: ===== Test 1: literal + index =====
+Note: Plan named the example pair Note+Beat but Beat has no direct literal in 26.1
+Note: (see plan 26.1-03 SUMMARY deviation). Use Note+Note instead — same code paths.
+Tuple<<Note, Note>> entry = <<C4, D4>>
+Note pitch = entry@0
+Note other = entry@1
+(print (str pitch))
+(print (str other))
+
+Note: ===== Test 2: empty + singleton =====
+Tuple<<>> nothing = <<>>
+Tuple<<Note>> just = <<C4>>
+(print (str just@0))
+
+Note: ===== Test 3: structural equality =====
+Bool sameAB = (equals <<1, 2>> <<1, 2>>)
+Bool diffAB = (equals <<1, 2>> <<1, 3>>)
+(print (str sameAB))
+(print (str diffAB))
+
+Note: ===== Test 4: heterogeneous types =====
+Tuple<<Int, String, Bool>> mixed = <<42, "hello", true>>
+(print (str mixed@0))
+(print (str mixed@1))
+(print (str mixed@2))
+
+(print "test_tuple_literal: PASSED")

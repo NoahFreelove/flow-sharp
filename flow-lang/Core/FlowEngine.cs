@@ -4,6 +4,7 @@ using FlowLang.Lexing;
 using FlowLang.Parsing;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
+using FlowLang.StandardLibrary.Audio.Tuning;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.Core;
@@ -62,15 +63,23 @@ public class FlowEngine : IDisposable
 
         try
         {
-            // 1. Lex source into tokens
-            var lexer = new SimpleLexer(source, _errorReporter, fileName);
+            // 0. Pre-lex: extract file-scope pragmas (Phase 21 D-01).
+            //    Fast path returns the original string reference unchanged when
+            //    no `enable` substring is present — preserves Phase 18 byte-identical
+            //    determinism for legacy .flow files (Pitfall F mitigation).
+            var (pragmaSet, transformedSource) = PragmaScanner.Scan(source, fileName, _errorReporter);
+            if (_errorReporter.HasErrors)
+                return false;
+
+            // 1. Lex transformed source into tokens (pragmaSet wired for Plan 21-02).
+            var lexer = new SimpleLexer(transformedSource, _errorReporter, fileName, pragmaSet);
             var tokens = lexer.Tokenize();
 
             if (_errorReporter.HasErrors)
                 return false;
 
-            // 2. Parse tokens into AST
-            var parser = new Parser(tokens, _errorReporter);
+            // 2. Parse tokens into AST (pragmaSet attached to Program per D-08).
+            var parser = new Parser(tokens, _errorReporter, pragmaSet);
             var program = parser.Parse();
 
             if (_errorReporter.HasErrors)
@@ -79,6 +88,11 @@ public class FlowEngine : IDisposable
             // 3. Type check AST (skipped for now - types checked at runtime)
 
             _diagnosticOutput?.WriteLine($"[verbose] Executing {fileName ?? "<eval>"}");
+
+            // Phase 23 D-06/D-07: resolve tuning pragmas to MusicalContext.Tuning before
+            // interpretation. D-07 REPL persistence: pragma absence does NOT reset previous
+            // tuning (no-op when no tuning pragma present in this program).
+            ApplyTuningPragma(program);
 
             // 4. Interpret AST
             _interpreter.Execute(program);
@@ -90,6 +104,24 @@ public class FlowEngine : IDisposable
             _errorReporter.ReportError($"Unexpected error: {ex.Message}", SourceLocation.Unknown);
             return false;
         }
+    }
+
+    /// <summary>
+    /// Phase 23 D-06: bridges <c>program.Pragmas</c> -> <c>_context.SetTuning(...)</c> exactly
+    /// once between parse and interpret. Only one of the three tuning pragmas can be active
+    /// per program; the closed-set registry guarantees unknown names errored out at the
+    /// PragmaScanner stage. D-07 REPL persistence: when no tuning pragma is present, this
+    /// method leaves the existing <c>_context.GlobalFrame.MusicalContext.Tuning</c> untouched.
+    /// </summary>
+    private void ApplyTuningPragma(Ast.Program program)
+    {
+        if (program.Pragmas.Has("justIntonation"))
+            _context.SetTuning(TuningSystem.JustIntonation);
+        else if (program.Pragmas.Has("pythagorean"))
+            _context.SetTuning(TuningSystem.Pythagorean);
+        else if (program.Pragmas.Has("equalTemperament"))
+            _context.SetTuning(TuningSystem.EqualTemperament);
+        // else: D-07 persistence — leave previous _context tuning untouched.
     }
 
     /// <summary>
