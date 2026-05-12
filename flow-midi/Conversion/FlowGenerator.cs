@@ -3,6 +3,14 @@ using FlowMidi.Midi;
 
 namespace FlowMidi.Conversion;
 
+// Generate(..., roundTrip: false) — default; preserves existing flow-midi CLI output
+//                                   (with `(play output)` trailer + auto-fit elision +
+//                                   `song_part` section + track.Name-derived sequence names).
+// Generate(..., roundTrip: true)  — Plan 30-08; emits SPEC-5 round-trip-friendly source:
+//                                   no `(play output)`, explicit durations on every note,
+//                                   `trackN_seq` index-derived naming, section `roundtrip`,
+//                                   `Song s = [roundtrip]` marker, no renderSong/play emission.
+
 /// <summary>
 /// Generates idiomatic .flow source code from quantized MIDI data.
 /// </summary>
@@ -30,7 +38,7 @@ static class FlowGenerator
         { (-7, false), "Cbmajor" },   { (-7, true), "Abminor" },
     };
 
-    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName)
+    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false)
     {
         var sb = new StringBuilder();
         var tracks = quantizeResult.Tracks;
@@ -97,30 +105,68 @@ static class FlowGenerator
         // mixes sequences within a section in parallel (additive), but
         // concatenates sections sequentially. To preserve the original
         // multi-track layering, all tracks must live inside a single section.
-        sb.AppendLine($"{indent}section song_part {{");
+        string sectionName;
+        if (roundTrip)
+        {
+            // SPEC-5: round-trip artifact section name (literal "roundtrip").
+            sectionName = "roundtrip";
+        }
+        else
+        {
+            sectionName = "song_part";
+        }
+        sb.AppendLine($"{indent}section {sectionName} {{");
         string sectionIndent = indent + "    ";
 
         var seqNames = new List<string>();
+        int trackIdx = 0;
         foreach (var track in playableTracks)
         {
-            string baseName = SanitizeVarName(track.Name);
-            string uniqueName = baseName;
-            int suffix = 2;
-            while (seqNames.Contains(uniqueName))
-                uniqueName = $"{baseName}_{suffix++}";
-            seqNames.Add(uniqueName);
+            trackIdx++;
+            string seqVar;
+            if (roundTrip)
+            {
+                // SPEC-5: flat track-index naming. Plan 30-09 wires `flow midi2flow`
+                // to this branch — the generated source is a round-trip artifact, so
+                // sequence names must be stable and source-track-order-derived
+                // (not dependent on MIDI track-name strings that may be missing or
+                // sanitize-collide).
+                seqVar = $"track{trackIdx}_seq";
+            }
+            else
+            {
+                // Default path — preserve existing flow-midi CLI behavior:
+                // SanitizeVarName + dedup-via-suffix.
+                string baseName = SanitizeVarName(track.Name);
+                string uniqueName = baseName;
+                int suffix = 2;
+                while (seqNames.Contains(uniqueName))
+                    uniqueName = $"{baseName}_{suffix++}";
+                seqNames.Add(uniqueName);
+                seqVar = uniqueName + "_seq";
+            }
 
-            string seqVar = uniqueName + "_seq";
-            WriteSequence(sb, sectionIndent, seqVar, track);
+            WriteSequence(sb, sectionIndent, seqVar, track, forceExplicitDurations: roundTrip);
         }
 
         sb.AppendLine($"{indent}}}");
         sb.AppendLine();
 
-        // Song expression — single section holds all parallel parts.
-        sb.AppendLine($"{indent}Song song = [song_part]");
-        sb.AppendLine($"{indent}Buffer output = (renderSong song \"piano\")");
-        sb.AppendLine($"{indent}(play output)");
+        if (roundTrip)
+        {
+            // SPEC-5: emit the literal `Song s = [roundtrip]` marker only. Plan 30-09's
+            // `flow midi2flow` CLI splices `(writeMidi ...)` after this marker so the
+            // round-trip artifact stays a pure structural translation — no automatic
+            // renderSong / play / writeWav emission here.
+            sb.AppendLine($"{indent}Song s = [{sectionName}]");
+        }
+        else
+        {
+            // Single section holds all parallel parts.
+            sb.AppendLine($"{indent}Song song = [{sectionName}]");
+            sb.AppendLine($"{indent}Buffer output = (renderSong song \"piano\")");
+            sb.AppendLine($"{indent}(play output)");
+        }
 
         sb.AppendLine();
 
@@ -137,12 +183,15 @@ static class FlowGenerator
         return sb.ToString();
     }
 
-    static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track)
+    static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track, bool forceExplicitDurations = false)
     {
         if (track.Bars.Count == 0) return;
 
-        // Check if all notes in the track share the same duration (enables auto-fit)
-        bool useAutoFit = CanAutoFit(track);
+        // Check if all notes in the track share the same duration (enables auto-fit).
+        // When forceExplicitDurations is true (Plan 30-08 round-trip mode), bypass
+        // auto-fit so every note carries its duration suffix verbatim — auto-fit's
+        // implicit bar-derived duration reconstruction loses round-trip determinism.
+        bool useAutoFit = forceExplicitDurations ? false : CanAutoFit(track);
 
         sb.Append($"{indent}Sequence {varName} = ");
 

@@ -41,6 +41,38 @@ public static class MidiExport
     private static int Lcm(int a, int b) => a / Gcd(a, b) * b;
 
     /// <summary>
+    /// Phase 28 SPEC-6: maps a Sequence's name to a (GM program, MIDI channel) pair
+    /// using case-insensitive prefix matching. Drum sequences route to channel 9
+    /// (GM percussion). All other instrument prefixes default to channel 0.
+    /// Unrecognized names default to GM 0 (acoustic grand piano), channel 0.
+    ///
+    /// Mapping rules (locked):
+    ///   piano*    → (0, 0)
+    ///   brass*, horn* → (56, 0)
+    ///   sax*      → (65, 0)
+    ///   flute*    → (73, 0)
+    ///   string*   → (48, 0)
+    ///   organ*    → (19, 0)
+    ///   bell*     → (14, 0)
+    ///   drum*     → (0, 9)   // channel 9 = GM percussion
+    ///   default   → (0, 0)
+    /// </summary>
+    private static (int gmProgram, int channel) ResolveGmProgram(string seqName)
+    {
+        if (string.IsNullOrEmpty(seqName)) return (0, 0);
+        string lower = seqName.ToLowerInvariant();
+        if (lower.StartsWith("piano")) return (0, 0);
+        if (lower.StartsWith("brass") || lower.StartsWith("horn")) return (56, 0);
+        if (lower.StartsWith("sax")) return (65, 0);
+        if (lower.StartsWith("flute")) return (73, 0);
+        if (lower.StartsWith("string")) return (48, 0);
+        if (lower.StartsWith("organ")) return (19, 0);
+        if (lower.StartsWith("bell")) return (14, 0);
+        if (lower.StartsWith("drum")) return (0, 9);
+        return (0, 0);
+    }
+
+    /// <summary>
     /// TUP-06: pre-export pass over the Song collecting tuplet denominators from
     /// MusicalNoteData.DurationFraction values. Computes requiredTPQN = LCM(480,
     /// 2 × union(denoms)) per CONTEXT D-05. When zero tuplets are present (no
@@ -175,9 +207,44 @@ public static class MidiExport
     }
 
     /// <summary>
-    /// Core MIDI export implementation. Creates a multi-track MIDI file:
-    /// Track 0 = conductor (tempo, time sig, key sig meta events),
-    /// Track 1 = note data from all sections in arrangement order.
+    /// Phase 28 SPEC-6: per-sequence multi-track accumulator. The dictionary value
+    /// holds the chunk, the events list (mutated as bars are walked), and the
+    /// resolved (GM program, MIDI channel) pair derived from the sequence name.
+    /// Cross-section same-name sequences share the same entry — events accumulate
+    /// in chronological order without any merge step.
+    /// </summary>
+    private sealed class SequenceTrackInfo
+    {
+        public TrackChunk Chunk { get; } = new TrackChunk();
+        public List<TimedEvent> Events { get; } = new List<TimedEvent>();
+        public int GmProgram { get; }
+        public int Channel { get; }
+
+        public SequenceTrackInfo(int gmProgram, int channel)
+        {
+            GmProgram = gmProgram;
+            Channel = channel;
+            // SPEC-6: drum sequences route to channel 9 (GM percussion). All
+            // NoteOn/NoteOff for the drum track use Channel = 9 instead of 0;
+            // the ProgramChange below already carries this channel and every
+            // note event built later sets the same channel inline.
+            Events.Add(new TimedEvent(
+                new ProgramChangeEvent((SevenBitNumber)gmProgram)
+                {
+                    Channel = (FourBitNumber)channel
+                },
+                0));
+        }
+    }
+
+    /// <summary>
+    /// Core MIDI export implementation. Phase 28 SPEC-6: emits one TrackChunk per
+    /// uniqueSequenceName plus the conductor track:
+    ///   Track 0 = conductor (tempo, time sig, key sig meta events)
+    ///   Track 1..N = one per uniqueSequenceName (insertion-order across sections)
+    /// Cross-section same-name sequences concatenate onto the same track. Drum
+    /// sequences route to channel 9; all other names default to channel 0 with a
+    /// per-name GM program from <see cref="ResolveGmProgram"/>.
     /// </summary>
     private static void ExportMidiInternal(string filepath, SongData song)
     {
@@ -224,10 +291,12 @@ public static class MidiExport
         conductorEvents.Add(new TimedEvent(
             new SetTempoEvent(microsPerBeat), 0));
 
-        // Set time signature: denominator encoded as power of 2
-        byte midiDenominator = (byte)Math.Log2(timeSigDenominator);
+        // DryWetMidi's TimeSignatureEvent takes the literal denominator
+        // (4 for quarter, 8 for eighth, etc.) and handles the power-of-2
+        // encoding internally. Pre-encoding via Math.Log2 here would
+        // double-encode and produce e.g. "4/2" when "4/4" was authored.
         conductorEvents.Add(new TimedEvent(
-            new TimeSignatureEvent((byte)timeSigNumerator, midiDenominator), 0));
+            new TimeSignatureEvent((byte)timeSigNumerator, (byte)timeSigDenominator), 0));
 
         // Set key signature if available
         if (key != null && KeySignatureMap.TryGetValue(key, out var keySig))
@@ -242,13 +311,11 @@ public static class MidiExport
         }
         midiFile.Chunks.Add(conductorChunk);
 
-        // Track 1: Note events from all sections
-        var noteTrackChunk = new TrackChunk();
-        var noteEvents = new List<TimedEvent>();
-
-        // Default to piano (GM program 0)
-        noteEvents.Add(new TimedEvent(
-            new ProgramChangeEvent((SevenBitNumber)0), 0));
+        // Phase 28 SPEC-6: multi-track — one TrackChunk per uniqueSequenceName.
+        // Insertion-ordered dictionary so the resulting track order matches the
+        // first-occurrence-of-name across the song's section walk.
+        var sequenceTracks = new Dictionary<string, SequenceTrackInfo>(
+            StringComparer.OrdinalIgnoreCase);
 
         long absoluteTick = 0;
 
@@ -273,12 +340,68 @@ public static class MidiExport
 
                 foreach (var (seqName, sequence) in sectionData.Sequences)
                 {
+                    // Phase 28 SPEC-6: lookup-or-create the per-sequence track. Cross-
+                    // section same-name sequences share the same TrackInfo so events
+                    // accumulate sequentially via seqTick = sectionStartTick — the
+                    // outer loop's chronological ordering produces the correct
+                    // tick-sorted SMF without any merge pass.
+                    if (!sequenceTracks.TryGetValue(seqName, out var trackInfo))
+                    {
+                        var (gm, ch) = ResolveGmProgram(seqName);
+                        trackInfo = new SequenceTrackInfo(gm, ch);
+                        sequenceTracks[seqName] = trackInfo;
+                    }
+                    int channel = trackInfo.Channel;
+
                     long seqTick = sectionStartTick;
 
                     foreach (var bar in sequence.Bars)
                     {
                         int barTimeSigDenom = bar.TimeSignature?.Denominator ?? sectionTimeSigDenom;
                         long barTick = seqTick;
+
+                        // Phase 28 (SPEC-1) voice-block MIDI export: when the bar carries
+                        // parallel voices, walk each voice's MusicalNotes in turn — each
+                        // resets to barTick (= seqTick) so all voices share the parent's
+                        // onset, producing overlapping NoteOn/NoteOff events on the same
+                        // track. The parent bar's own MusicalNotes is a placeholder
+                        // whole-bar rest (compiler emits this when only voice blocks were
+                        // present), so the existing per-bar loop below is a no-op for
+                        // that case — only the seqTick advance at the end matters.
+                        if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
+                        {
+                            foreach (var voiceBar in bar.ParallelVoices)
+                            {
+                                long voiceTick = seqTick;
+                                long voiceLeadTick = voiceTick;
+                                int voiceTimeSigDenom = voiceBar.TimeSignature?.Denominator ?? barTimeSigDenom;
+                                foreach (var vnote in voiceBar.MusicalNotes)
+                                {
+                                    if (vnote.IsRest)
+                                    {
+                                        voiceTick += (long)(vnote.GetBeats(voiceTimeSigDenom) * ticksPerQuarter);
+                                        continue;
+                                    }
+                                    long vEffectiveTick = vnote.IsChordTone ? voiceLeadTick : voiceTick;
+                                    if (!vnote.IsChordTone) voiceLeadTick = voiceTick;
+                                    int vMidi = PitchConversion.GetMidiNote(vnote.NoteName, vnote.Octave, vnote.Alteration);
+                                    byte vVel = (byte)Math.Clamp((int)(vnote.Velocity * 127), 1, 127);
+                                    double vBeats = vnote.GetBeats(voiceTimeSigDenom);
+                                    long vDuration = (long)(vBeats * ticksPerQuarter);
+                                    trackInfo.Events.Add(new TimedEvent(
+                                        new NoteOnEvent((SevenBitNumber)(byte)vMidi, (SevenBitNumber)vVel)
+                                        { Channel = (FourBitNumber)channel },
+                                        vEffectiveTick));
+                                    trackInfo.Events.Add(new TimedEvent(
+                                        new NoteOffEvent((SevenBitNumber)(byte)vMidi, (SevenBitNumber)0)
+                                        { Channel = (FourBitNumber)channel },
+                                        vEffectiveTick + vDuration));
+                                    if (!vnote.IsChordTone)
+                                        voiceTick += (long)(vBeats * ticksPerQuarter);
+                                }
+                            }
+                        }
+
                         // Chord-tone support (mirrors BarType.ToTimeline): the leading note of
                         // a chord group advances barTick for the whole slot; subsequent
                         // chord-tones (IsChordTone=true) emit their NoteOn/NoteOff at the
@@ -334,27 +457,34 @@ public static class MidiExport
                             {
                                 byte cc5Value = (byte)Math.Clamp(
                                     (int)Math.Round(note.PortamentoMs * 127.0 / 200.0), 0, 127);
-                                noteEvents.Add(new TimedEvent(
-                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)127), effectiveTick));
-                                noteEvents.Add(new TimedEvent(
-                                    new ControlChangeEvent((SevenBitNumber)5, (SevenBitNumber)cc5Value), effectiveTick));
+                                trackInfo.Events.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)127)
+                                    { Channel = (FourBitNumber)channel },
+                                    effectiveTick));
+                                trackInfo.Events.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)5, (SevenBitNumber)cc5Value)
+                                    { Channel = (FourBitNumber)channel },
+                                    effectiveTick));
                             }
 
                             // NoteOn at current position
-                            noteEvents.Add(new TimedEvent(
-                                new NoteOnEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)velocity),
+                            trackInfo.Events.Add(new TimedEvent(
+                                new NoteOnEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)velocity)
+                                { Channel = (FourBitNumber)channel },
                                 effectiveTick));
 
                             // NoteOff at position + extended duration (for legato — overlap with next note)
-                            noteEvents.Add(new TimedEvent(
-                                new NoteOffEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)0),
+                            trackInfo.Events.Add(new TimedEvent(
+                                new NoteOffEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)0)
+                                { Channel = (FourBitNumber)channel },
                                 effectiveTick + durationTicks));
 
                             // DX-14 portamento: bracket-close at note end (CC65=0).
                             if (note.PortamentoMs > 0.0)
                             {
-                                noteEvents.Add(new TimedEvent(
-                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)0),
+                                trackInfo.Events.Add(new TimedEvent(
+                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)0)
+                                    { Channel = (FourBitNumber)channel },
                                     effectiveTick + durationTicks));
                             }
 
@@ -380,11 +510,15 @@ public static class MidiExport
             }
         }
 
-        using (var manager = noteTrackChunk.ManageTimedEvents())
+        // Phase 28 SPEC-6: append per-sequence tracks in insertion order. Each
+        // track's events were accumulated already; the chunk manager sorts them
+        // by tick within the track.
+        foreach (var info in sequenceTracks.Values)
         {
-            manager.Objects.Add(noteEvents);
+            using var manager = info.Chunk.ManageTimedEvents();
+            manager.Objects.Add(info.Events);
+            midiFile.Chunks.Add(info.Chunk);
         }
-        midiFile.Chunks.Add(noteTrackChunk);
 
         // Write the MIDI file to disk
         midiFile.Write(filepath, overwriteFile: true);

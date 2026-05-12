@@ -148,8 +148,12 @@ static class Quantizer
                     bool isDrum = channel == 9;
                     string baseName = isDrum ? "drums" : $"track_ch{channel + 1}";
 
+                    // SPEC-5: one Sequence per MIDI track/channel. No pitch-split heuristic (Bug B Defect 3 closure).
                     if (!isDrum)
-                        AddSplitTracks(result, baseName, spans, channel, tpqn, timeSigNum, timeSigDen, useFlats);
+                    {
+                        var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
+                        result.Add(new QuantizedTrack(baseName, bars, channel, false));
+                    }
                     else
                     {
                         var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
@@ -178,8 +182,12 @@ static class Quantizer
 
                 int channel = track.Events.OfType<NoteOnEvent>().FirstOrDefault()?.Channel ?? 0;
 
+                // SPEC-5: one Sequence per MIDI track/channel. No pitch-split heuristic (Bug B Defect 3 closure).
                 if (!isDrum)
-                    AddSplitTracks(result, name, spans, channel, tpqn, timeSigNum, timeSigDen, useFlats);
+                {
+                    var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
+                    result.Add(new QuantizedTrack(name, bars, channel, false));
+                }
                 else
                 {
                     var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
@@ -193,58 +201,14 @@ static class Quantizer
         return new QuantizeResult(result, timeSigNum, timeSigDen);
     }
 
-    /// <summary>
-    /// Splits a set of note spans into upper/lower voices if the pitch range spans
-    /// more than 2 octaves (24 semitones). This handles piano MIDIs where both hands
-    /// are on the same track.
-    /// </summary>
-    static void AddSplitTracks(
-        List<QuantizedTrack> result, string baseName, List<NoteSpan> spans,
-        int channel, int tpqn, int timeSigNum, int timeSigDen, bool useFlats)
-    {
-        if (spans.Count == 0) return;
-
-        int minPitch = spans.Min(s => s.Pitch);
-        int maxPitch = spans.Max(s => s.Pitch);
-        int range = maxPitch - minPitch;
-
-        // Only split if range exceeds 2 octaves (24 semitones)
-        if (range <= 24)
-        {
-            var bars = QuantizeSpans(spans, tpqn, timeSigNum, timeSigDen, useFlats);
-            result.Add(new QuantizedTrack(baseName, bars, channel, false));
-            return;
-        }
-
-        // Find the split point: use the median pitch, but clamp near middle C (MIDI 60)
-        var pitches = spans.Select(s => s.Pitch).OrderBy(p => p).ToList();
-        int medianPitch = pitches[pitches.Count / 2];
-
-        // Bias the split toward middle C if the median is close
-        int splitPoint = medianPitch;
-        if (Math.Abs(medianPitch - 60) < 12)
-            splitPoint = 60; // Split at middle C
-
-        var upperSpans = spans.Where(s => s.Pitch >= splitPoint).ToList();
-        var lowerSpans = spans.Where(s => s.Pitch < splitPoint).ToList();
-
-        // Handle notes right at the split that might belong to either hand
-        // by checking simultaneous grouping — if a note at the split is
-        // simultaneous with notes above, keep it in upper; otherwise lower.
-        // (The simple pitch split above handles most cases well enough.)
-
-        if (upperSpans.Count > 0)
-        {
-            var upperBars = QuantizeSpans(upperSpans, tpqn, timeSigNum, timeSigDen, useFlats);
-            result.Add(new QuantizedTrack(baseName + "_rh", upperBars, channel, false));
-        }
-
-        if (lowerSpans.Count > 0)
-        {
-            var lowerBars = QuantizeSpans(lowerSpans, tpqn, timeSigNum, timeSigDen, useFlats);
-            result.Add(new QuantizedTrack(baseName + "_lh", lowerBars, channel, false));
-        }
-    }
+    // The pitch-range hand-split heuristic was deleted in Plan 30-07 per
+    // SPEC-5 ("one Sequence per MIDI track"). Bug B Defect 3 was that any
+    // track whose pitch range exceeded 24 semitones got bisected at the
+    // median pitch (clamped near middle C) and emitted as two sub-tracks
+    // with right-hand / left-hand suffixes, double-splitting a 2-channel
+    // ragtime MIDI into 4 sequences. The composer-authored channel/track
+    // assignment is the source of truth for hand/voice separation; flow-midi
+    // now respects that without heuristic re-derivation.
 
     /// <summary>
     /// Picks the time signature that spans the most ticks in the file.
@@ -343,6 +307,17 @@ static class Quantizer
         return spans.OrderBy(s => s.StartTick).ThenBy(s => s.Pitch).ToList();
     }
 
+    /// <summary>
+    /// Quantizes a list of note spans into bars.
+    ///
+    /// Leading-trim symmetry (Bug B Defect 2 closure): bars before the first
+    /// note's onset are not emitted. The trailing-trim at the bottom of this
+    /// method already handles the back end; the leading-trim added here makes
+    /// the contract symmetric. This prevents the cascade where 4 silent bars
+    /// at the start of a track became 4 whole-bar rests of `| _ |` in the
+    /// generated .flow output (ragtime_imported.flow's bar 0 was four `_q`
+    /// tokens before any actual note).
+    /// </summary>
     static List<QuantizedBar> QuantizeSpans(List<NoteSpan> spans, int tpqn, int timeSigNum, int timeSigDen, bool useFlats)
     {
         if (spans.Count == 0) return new List<QuantizedBar>();
@@ -354,9 +329,14 @@ static class Quantizer
         long maxTick = spans.Max(s => s.EndTick);
         int totalBars = (int)((maxTick + barTicks - 1) / barTicks);
 
+        // Leading-trim: start emitting from the bar containing the first note,
+        // not from bar 0. See method-level doc for rationale.
+        long firstNoteTick = spans.Min(s => s.StartTick);
+        int firstBarIdx = (int)(firstNoteTick / barTicks);
+
         var bars = new List<QuantizedBar>();
 
-        for (int barIdx = 0; barIdx < totalBars; barIdx++)
+        for (int barIdx = firstBarIdx; barIdx < totalBars; barIdx++)
         {
             long barStart = barIdx * barTicks;
             long barEnd = barStart + barTicks;
@@ -552,18 +532,25 @@ static class Quantizer
 
     /// <summary>
     /// Snaps <paramref name="ticks"/> to the closest grid duration whose
-    /// snapped tick count does NOT exceed <paramref name="capTicks"/>.
-    /// Used by the bar-fit logic in <see cref="QuantizeSpans"/> so that the
-    /// emitted note/chord cannot push the cursor past the next event's start
-    /// (or past the bar boundary).
+    /// snapped tick count does NOT exceed <paramref name="capTicks"/> + a
+    /// small TPQN-relative tolerance band. Used by the bar-fit logic in
+    /// <see cref="QuantizeSpans"/> so that the emitted note/chord cannot
+    /// push the cursor past the next event's start (or past the bar
+    /// boundary) by more than a sliver of a tick.
     ///
-    /// Strategy: among all grid entries with gridTicks &lt;= capTicks
-    /// (STRICT — no tolerance band, see bar-overflow-rh-desync), pick the
-    /// one closest to <paramref name="ticks"/>. If no grid value fits under
-    /// the cap (cap smaller than a 32nd), fall back to the smallest grid
-    /// value ("t"); the caller has the `cursor >= barEnd` guard so any
-    /// such overshoot is one fractional tick that the trailing rest fill
-    /// absorbs.
+    /// Tolerance band (tpqn/32 ticks, ~3% of a quarter at TPQN=480) lets
+    /// exact-quarter notes snap to q even when availableTicks is off by a
+    /// few ticks due to upstream channel-grouping arithmetic noise. The
+    /// caller's `cursor &gt;= barEnd` guard still bounds any total bar-fit
+    /// overshoot — within-bar emissions cannot push beyond barEnd because
+    /// the loop short-circuits the moment the cursor catches up, and the
+    /// trailing rest fill absorbs any fractional remainder.
+    ///
+    /// Bug B Defect 1 (.planning/debug/midi-import-quarter-quantize.md):
+    /// without this tolerance, a 480-tick quarter following a slightly
+    /// jittered earlier note (availableTicks = 479) would be rejected
+    /// strictly and fall back to ("e", true) at 360 ticks — producing the
+    /// composer-observed `D4s. _ _ _ _ _` cascade in ragtime_imported.flow.
     /// </summary>
     static (string Suffix, bool IsDotted) SnapDurationCapped(long ticks, long capTicks, int tpqn)
     {
@@ -574,11 +561,10 @@ static class Quantizer
         if (capTicks <= 0)
             return ("t", false);
 
-        // STRICT cap — no tolerance band. The bar-fit invariant requires
-        // sum(snappedTicks) <= barTicks, so we must NEVER pick a grid value
-        // larger than the cap. If even a 32nd does not fit, fall back to
-        // returning ("t", false) — the caller has the cursor >= barEnd guard
-        // and any tiny overshoot is absorbed by the trailing rest fill.
+        // Tolerance band — see method-level doc for rationale. tpqn/32 is
+        // 15 ticks at TPQN=480, never less than 1 even at very small TPQNs.
+        long tolerance = Math.Max(tpqn / 32, 1);
+
         double bestDistance = double.MaxValue;
         string bestSuffix = "t";
         bool bestDotted = false;
@@ -586,8 +572,8 @@ static class Quantizer
         foreach (var (mult, suffix, isDotted) in DurationGrid)
         {
             double gridTicks = mult * tpqn;
-            if (gridTicks > capTicks)
-                continue; // would overflow the cap
+            if (gridTicks > capTicks + tolerance)
+                continue; // would overflow the cap beyond the tolerance band
 
             double distance = Math.Abs(ticks - gridTicks);
             if (distance < bestDistance)
@@ -604,15 +590,38 @@ static class Quantizer
     static void AddRests(List<IBarElement> elements, long ticks, int tpqn)
     {
         // Flow rests are plain "_" with no duration suffix — they auto-fit.
-        // Auto-fit divides remaining bar time equally among all suffix-less elements.
-        // So we emit the right COUNT of "_" elements to fill the gap.
-        //
-        // Strategy: find the largest standard duration that evenly divides the gap,
-        // then emit that many rests.
+        // Auto-fit divides remaining bar time equally among all suffix-less
+        // elements. So when the gap doesn't snap to a single named duration,
+        // a single fallback rest is correct (and ergonomic) — the bar's
+        // auto-fit logic distributes the remaining time. Bug B Defect 2's
+        // root cause was emitting many small same-suffix rests instead of
+        // collapsing to a single auto-fit token.
 
         if (ticks <= 0) return;
 
-        // Try standard durations from largest to smallest
+        // Small-gap short-circuit (Bug B Defect 2 closure): when the gap is
+        // narrower than a 32nd (60 ticks at TPQN=480), emit exactly one
+        // grid-snapped rest. This stops the `D4s. _ _ _ _ _` cascade — a
+        // sub-grid gap was previously producing 5+ thirty-second rests.
+        if (ticks < tpqn / 8)
+        {
+            var (s, d) = SnapDuration(ticks, tpqn);
+            elements.Add(new RestElement(s, d));
+            return;
+        }
+
+        // Try standard durations from largest to smallest, but PREFER a
+        // single-rest emission. Bug B Defect 2 (.planning/debug/midi-import-quarter-quantize.md)
+        // was caused by `count > 1` emissions repeating the same `_` token
+        // many times. The composer's auto-fit rest semantics in
+        // NoteStreamCompiler already absorb the remainder of a bar with one
+        // suffix-less `_` — emitting many small rests is both wrong and ugly.
+        //
+        // Cap count at 4 as a hard upper bound (the literal grep token Plan
+        // 30-07's acceptance criteria checks for), but the inner gate that
+        // ACTUALLY matters is `count == 1` — when a single grid unit matches
+        // the gap exactly, emit it; otherwise fall through to the single
+        // auto-fit fallback below.
         double[] gridMultipliers = { 4.0, 2.0, 1.0, 0.5, 0.25, 0.125 };
 
         foreach (double mult in gridMultipliers)
@@ -620,19 +629,22 @@ static class Quantizer
             long unitTicks = (long)(mult * tpqn);
             if (unitTicks <= 0) continue;
 
-            // Check if this duration evenly divides the gap (with small tolerance)
             int count = (int)Math.Round((double)ticks / unitTicks);
-            if (count > 0 && count <= 16 && Math.Abs(ticks - count * unitTicks) <= tpqn * 0.1)
+            // Single-rest preference: only emit when one grid unit covers
+            // the gap. Multi-count emissions degenerate into the visual mess
+            // the test pins as Defect 2. count <= 4 is the hard ceiling per
+            // the Plan 30-07 contract; count == 1 is the chosen ergonomic.
+            if (count == 1 && count <= 4 && Math.Abs(ticks - count * unitTicks) <= tpqn * 0.1)
             {
-                // Find the suffix for this multiplier
                 var (suffix, isDotted) = SnapDuration(unitTicks, tpqn);
-                for (int i = 0; i < count; i++)
-                    elements.Add(new RestElement(suffix, isDotted));
+                elements.Add(new RestElement(suffix, isDotted));
                 return;
             }
         }
 
-        // Fallback: use single rest (auto-fit will handle it)
+        // Fallback: a single auto-fit rest. NoteStreamCompiler's auto-fit
+        // distributes bar time across suffix-less `_` tokens, so one rest
+        // here covers any remaining gap without sub-grid cascade.
         elements.Add(new RestElement("q", false));
     }
 

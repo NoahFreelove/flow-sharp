@@ -43,7 +43,27 @@ static class Diagnostics
 
             foreach (var ks in keySigs)
                 Console.Error.WriteLine($"    KeySig @{ks.AbsoluteTick}: sharps/flats={ks.SharpsFlats} minor={ks.IsMinor}");
+
+            var noteOffs = track.Events.OfType<NoteOffEvent>().ToList();
+            var pairs = PairNotes(noteOns, noteOffs);
+            Console.Error.WriteLine($"    --- first 60 NoteOn (tick, ch, pitch, vel, duration_ticks) ---");
+            foreach (var p in pairs.Take(60))
+                Console.Error.WriteLine($"    @{p.OnTick,-6} ch={p.Channel} {PitchName(p.Pitch),-4} v={p.Velocity,-3} dur={p.DurationTicks}");
         }
+    }
+
+    record NotePair(long OnTick, int Channel, int Pitch, int Velocity, long DurationTicks);
+
+    static List<NotePair> PairNotes(List<NoteOnEvent> noteOns, List<NoteOffEvent> noteOffs)
+    {
+        var result = new List<NotePair>();
+        foreach (var on in noteOns)
+        {
+            var off = noteOffs.FirstOrDefault(o => o.Channel == on.Channel && o.Pitch == on.Pitch && o.AbsoluteTick >= on.AbsoluteTick);
+            long dur = off != null ? off.AbsoluteTick - on.AbsoluteTick : -1;
+            result.Add(new NotePair(on.AbsoluteTick, on.Channel, on.Pitch, on.Velocity, dur));
+        }
+        return result.OrderBy(p => p.OnTick).ToList();
     }
 
     static readonly string[] NoteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
