@@ -1,0 +1,23 @@
+// Phase 29 A/B fixture: sax
+// Run: dotnet run --project flow-interpreter examples/tests/realism_ab/sax.flow
+// Output: examples/output/realism_ab/sax_rendered.wav
+use "@audio"
+
+tempo 90 {
+    timesig 4/4 {
+        key Fmajor {
+            // 2 bars: legato bluesy / jazzy sax line in F major
+            //   bar 1: F4 → A4 → dotted-C5 with an eighth-note D5 turn
+            //   bar 2: held C5, walking-down via Bb4 → F4 (chromatic blues feel)
+            Sequence melody = | F4q leg A4q leg C5q. D5e | C5h leg Bb4q leg F4q |
+
+            section line {
+                Sequence v = melody
+            }
+
+            Song demo = [line]
+            Buffer rendered = (renderSong demo "sax")
+            (writeWav "examples/output/realism_ab/sax_rendered.wav" rendered)
+        }
+    }
+}

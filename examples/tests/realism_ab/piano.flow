@@ -1,0 +1,26 @@
+// Phase 29 A/B fixture: piano
+// Showcases sample-based timbre + Phase 28 articulation envelopes.
+// Run: dotnet run --project flow-interpreter examples/tests/realism_ab/piano.flow
+// Output: examples/output/realism_ab/piano_rendered.wav
+use "@audio"
+
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+            // 2 bars: ascending arpeggio with mixed articulations
+            //   bar 1: detached staccato run, settling on a tenuto-held high C
+            //   bar 2: dotted-quarter / eighth phrase that ends on a sustained legato E5
+            Sequence right_hand = | C4q stacc E4q stacc G4q stacc C5q ten | E5h leg G5q. F5e stacc D5h |
+            Sequence left_hand = | C2w | C2w |
+
+            section showcase {
+                Sequence rh = right_hand
+                Sequence lh = left_hand
+            }
+
+            Song demo = [showcase]
+            Buffer rendered = (renderSong demo "piano")
+            (writeWav "examples/output/realism_ab/piano_rendered.wav" rendered)
+        }
+    }
+}
