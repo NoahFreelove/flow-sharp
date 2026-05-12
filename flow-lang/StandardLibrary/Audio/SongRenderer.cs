@@ -1,4 +1,5 @@
 using FlowLang.Audio;
+using FlowLang.Core;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.DSP;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
@@ -51,6 +52,13 @@ public static class SongRenderer
         // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
         SynthUtils.ResetNoiseRng();
 
+        // Phase 29 REQ-4 — lambda-instrument calls don't reference the sample bundle
+        // (custom Flow function does its own rendering), but the eager-load call is
+        // harmless: SampleCache.EagerLoad no-ops for unknown instrument names
+        // (lambda has no name → empty string → InstrumentManifest miss → return).
+        // We keep the call for code-path uniformity across the three RenderSong* entries.
+        FlowEngine.CurrentSampleCache?.EagerLoad(song, string.Empty);
+
         // Create a wrapper for the lambda that matches the INoteSynthesizer requirement
         var synth = new FlowFunctionSynthesizer((note, duration, bpm) =>
         {
@@ -96,6 +104,13 @@ public static class SongRenderer
         // buffers (Plan 15-05 ROADMAP criterion #2 / D-18). Pre-fix the
         // unseeded SynthUtils.Rng leaked state across renders.
         SynthUtils.ResetNoiseRng();
+
+        // Phase 29 REQ-4 — eager-load instrument samples for this song. Idempotent
+        // for repeated (song, instrument) within an engine lifetime. No-op for
+        // non-sampled instruments (drums/organ/wavetable) and when no FlowEngine
+        // owns the active cache (e.g. direct-API SongRenderer calls bypassing
+        // FlowEngine — preserves pre-Phase-29 backward compatibility).
+        FlowEngine.CurrentSampleCache?.EagerLoad(song, synthType);
 
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
 
@@ -186,8 +201,13 @@ public static class SongRenderer
 
         foreach (var (name, sequence) in section.Sequences)
         {
-            var voices = SequenceRenderer.RenderSequenceToVoices(
-                sequence, synthesizer, DefaultSampleRate, bpm, renderTuning);
+            // Phase 28 SPEC-7: route through the voice-pool overload — uses the
+            // section's `voicePool N { ... }` override when one is in scope, else
+            // the locked default of 32 voices via steal-oldest. Legacy loudest-N
+            // policy is preserved for direct callers via RenderSequenceToVoices.
+            var voices = SequenceRenderer.RenderSequenceToVoicesWithPool(
+                sequence, synthesizer, DefaultSampleRate, bpm, renderTuning,
+                section.Context?.VoicePoolSize);
             // Apply pan and gain from musical context to all voices in this section
             foreach (var voice in voices)
             {
@@ -280,6 +300,10 @@ public static class SongRenderer
     {
         // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
         SynthUtils.ResetNoiseRng();
+
+        // Phase 29 REQ-4 — eager-load samples for the timeline-aware render path too.
+        // Same idempotency / no-op semantics as RenderSong.
+        FlowEngine.CurrentSampleCache?.EagerLoad(song, synthType);
 
         var timelineMap = new TimelineMap();
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);

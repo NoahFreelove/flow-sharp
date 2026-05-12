@@ -216,6 +216,22 @@ namespace FlowLang.StandardLibrary.Audio
         private static readonly Dictionary<string, float[]> _customWavetables = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
+        /// Phase 29 SPEC D-22 — guards <c>WavetableVariants.RegisterBuiltinVariants()</c>
+        /// so the three built-in variants ("warm", "bright", "buzz") are registered
+        /// on the FIRST Create call. Without this gate the names are only available
+        /// after a FlowEngine instance has been constructed; with it, direct callers
+        /// (unit tests, low-level integrators) get the variants too. Interlocked
+        /// exchange makes the first-call gate thread-safe.
+        /// </summary>
+        private static int _builtinVariantsRegistered;
+
+        private static void EnsureBuiltinVariantsRegistered()
+        {
+            if (System.Threading.Interlocked.Exchange(ref _builtinVariantsRegistered, 1) == 0)
+                WavetableVariants.RegisterBuiltinVariants();
+        }
+
+        /// <summary>
         /// Registers a custom wavetable (single-cycle waveform) under the given name.
         /// Once registered, the name can be used as an instrument in renderSong().
         /// </summary>
@@ -224,8 +240,29 @@ namespace FlowLang.StandardLibrary.Audio
             _customWavetables[name.ToLowerInvariant()] = wavetable;
         }
 
+        /// <summary>
+        /// Backward-compatible factory entry. Delegates to the cache-aware overload
+        /// using <see cref="FlowLang.Core.FlowEngine.CurrentSampleCache"/> so existing
+        /// callers (every pre-Phase-29 site) keep working unchanged. Phase 29 Plan 03
+        /// rewires the tonal synth classes to delegate to <c>SampledInstrumentRenderer</c>
+        /// using the injected cache; the cache argument is accepted now so Plan 03 / 04
+        /// can land without modifying NoteSynthesizer.cs again.
+        /// </summary>
         public static INoteSynthesizer Create(string synthType)
         {
+            return Create(synthType, FlowLang.Core.FlowEngine.CurrentSampleCache);
+        }
+
+        /// <summary>
+        /// Phase 29 — cache-aware factory overload. <paramref name="cache"/> is currently
+        /// accepted but unused; the tonal Synthesizer classes (Piano/Brass/Sax/Strings/Flute/
+        /// Bell) will start using it when Plan 03 / 04 convert them to delegating shells
+        /// over <c>SampledInstrumentRenderer</c>. Drums/Organ/Wavetable continue to ignore
+        /// the cache permanently (they stay synth-based per REQ-6).
+        /// </summary>
+        public static INoteSynthesizer Create(string synthType, SampleCache? cache)
+        {
+            EnsureBuiltinVariantsRegistered();
             string key = synthType.ToLowerInvariant();
 
             if (_customWavetables.TryGetValue(key, out var wavetable))
@@ -237,7 +274,7 @@ namespace FlowLang.StandardLibrary.Audio
                 "saw" or "sawtooth" => new SawSynthesizer(),
                 "square" => new SquareSynthesizer(),
                 "triangle" => new TriangleSynthesizer(),
-                "piano" => new PianoSynthesizer(),
+                "piano" => new PianoSynthesizer(),   // Plan 03 will wire to SampledInstrumentRenderer via cache
                 "brass" or "horn" => new BrassSynthesizer(),
                 "sax" or "saxophone" => new SaxSynthesizer(),
                 "flute" => new FluteSynthesizer(),

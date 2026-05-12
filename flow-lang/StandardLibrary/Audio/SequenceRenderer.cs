@@ -83,6 +83,42 @@ namespace FlowLang.StandardLibrary.Audio
         }
 
         /// <summary>
+        /// Phase 28 SPEC-7: voice-pool-aware overload. Wires the active
+        /// <see cref="MusicalContext.VoicePoolSize"/> (or the SPEC-locked default
+        /// of 32 when the section's context didn't override it) through to
+        /// <see cref="VoiceAllocator.AllocateWithPool"/> for steal-oldest behavior.
+        /// Legacy <see cref="RenderSequenceToVoices"/> overloads (loudest-N policy
+        /// via the existing <see cref="VoiceAllocator.Allocate"/>) are preserved
+        /// for backward compatibility — direct callers (tests, REPL) work unchanged.
+        /// </summary>
+        public static List<Voice> RenderSequenceToVoicesWithPool(
+            SequenceData sequence,
+            INoteSynthesizer synthesizer,
+            int sampleRate,
+            double bpm,
+            RenderTuning tuning,
+            int? voicePoolSize)
+        {
+            var allVoices = new List<Voice>();
+            var timeline = sequence.ToTimeline();
+
+            foreach (var (bar, offsetBeats) in timeline)
+            {
+                var barVoices = BarRenderer.RenderBarAtBeat(
+                    bar,
+                    offsetBeats,
+                    synthesizer,
+                    sampleRate,
+                    bpm,
+                    tuning);
+                allVoices.AddRange(barVoices);
+            }
+
+            int effectivePool = voicePoolSize ?? 32; // SPEC-7 locked default
+            return VoiceAllocator.AllocateWithPool(allVoices, sampleRate, effectivePool, bpm);
+        }
+
+        /// <summary>
         /// Timeline-aware version of RenderSequenceToVoices.
         /// </summary>
         public static List<Voice> RenderSequenceToVoices(

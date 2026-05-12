@@ -353,7 +353,7 @@ Song mainPiece = [
 (print "Rendering main piece (piano) ...")
 Buffer mainBuf = (renderSong mainPiece "piano")
 Int mainFrames = (getFrames mainBuf)
-Int mainSec = (div mainFrames 44100)
+Int mainSec = (idiv mainFrames 44100)
 (print $"Main piece: {(str mainFrames)} frames (~{(str mainSec)}s)")
 
 Note: --- 36. Buffer-level effect chain ---
@@ -437,8 +437,8 @@ tempo 100 {
 
             Int totalFrames = (getFrames faded)
             Int sampleRate  = 44100
-            Int totalSec    = (div totalFrames sampleRate)
-            Int totalMin    = (div totalSec 60)
+            Int totalSec    = (idiv totalFrames sampleRate)
+            Int totalMin    = (idiv totalSec 60)
             Int remSec      = (sub totalSec (mul totalMin 60))
             (print "")
             (print $"Total frames: {(str totalFrames)}")

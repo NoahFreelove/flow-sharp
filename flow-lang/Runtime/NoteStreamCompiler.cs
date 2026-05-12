@@ -87,6 +87,10 @@ public class NoteStreamCompiler
     private BarData CompileBar(NoteStreamBar bar, TimeSignatureData timeSig, MusicalContext context, ExecutionContext? executionContext)
     {
         var musicalNotes = new List<MusicalNoteData>();
+        // Phase 28 (SPEC-1): accumulator for `{voice ...}` blocks encountered in this bar.
+        // Local-only — no compiler instance state, so re-entrant calls (nested compiles, tests)
+        // remain isolated.
+        List<BarData>? parallelVoices = null;
 
         if (bar.Elements.Count == 0)
         {
@@ -165,6 +169,18 @@ public class NoteStreamCompiler
                 case TupletElement tuplet:
                     CompileTupletElement(tuplet, context, executionContext, musicalNotes, new Fraction(1, 1));
                     break;
+
+                case VoiceBlockElement voiceBlock:
+                {
+                    // Phase 28 (SPEC-1): each `{voice ...}` block compiles to a separate
+                    // BarData hung off the parent bar's ParallelVoices. The voice's notes
+                    // share the parent bar's onset (0); BarRenderer / SongRenderer mix the
+                    // resulting buffers additively.
+                    var voiceBar = CompileVoiceBlock(voiceBlock, timeSig, context, executionContext);
+                    parallelVoices ??= new List<BarData>();
+                    parallelVoices.Add(voiceBar);
+                    break;
+                }
             }
         }
 
@@ -181,6 +197,99 @@ public class NoteStreamCompiler
         if (musicalNotes.Any(n => n.DurationFraction.HasValue))
         {
             ValidateBarFit(musicalNotes, timeSig, bar.Location);
+        }
+
+        // Phase 28 (SPEC-1): if a bar had no other elements but only voice blocks, its
+        // musicalNotes list is empty. Insert a whole-bar rest so the lead-bar timeline
+        // still spans the bar's full duration; ParallelVoices carry the actual audible
+        // content. This mirrors the empty-bar path above (BarData expects ≥1 note).
+        if (musicalNotes.Count == 0 && parallelVoices != null && parallelVoices.Count > 0)
+        {
+            musicalNotes.Add(new MusicalNoteData(' ', 0, 0, (int)NoteValueType.Value.WHOLE, isRest: true));
+        }
+
+        var result = new BarData(musicalNotes, timeSig);
+        if (parallelVoices != null)
+        {
+            result.ParallelVoices = parallelVoices;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Phase 28 (SPEC-1): compiles a VoiceBlockElement into its own BarData.
+    /// Mirrors the element loop in CompileBar but drives off pre-parsed children
+    /// rather than NoteStreamBar.Elements. Auto-fit duration is calculated from the
+    /// voice block's own children so each voice fills its own time independently.
+    /// Voice blocks may not contain other voice blocks (rejected at parse time).
+    /// </summary>
+    private BarData CompileVoiceBlock(VoiceBlockElement voiceBlock, TimeSignatureData timeSig, MusicalContext context, ExecutionContext? executionContext)
+    {
+        var musicalNotes = new List<MusicalNoteData>();
+
+        if (voiceBlock.Children.Count == 0)
+        {
+            var restNote = new MusicalNoteData(' ', 0, 0, (int)NoteValueType.Value.WHOLE, isRest: true);
+            musicalNotes.Add(restNote);
+            return new BarData(musicalNotes, timeSig);
+        }
+
+        var autoFitDuration = CalculateAutoFitDuration(voiceBlock.Children, timeSig);
+
+        foreach (var element in voiceBlock.Children)
+        {
+            switch (element)
+            {
+                case NoteElement note:
+                    musicalNotes.Add(CompileNoteElement(note, autoFitDuration, context));
+                    break;
+
+                case RestElement rest:
+                    musicalNotes.Add(CompileRestElement(rest, autoFitDuration));
+                    break;
+
+                case ChordElement chord:
+                    foreach (var chordNote in CompileChordElement(chord, autoFitDuration))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case NamedChordElement namedChord:
+                    foreach (var chordNote in CompileNamedChordElement(namedChord, autoFitDuration))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case RomanNumeralElement romanNumeral:
+                    foreach (var chordNote in CompileRomanNumeralElement(romanNumeral, autoFitDuration, context))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case RandomChoiceElement choice:
+                    musicalNotes.Add(CompileRandomChoiceElement(choice, autoFitDuration, executionContext));
+                    break;
+
+                case VariableReferenceElement varRef:
+                    musicalNotes.Add(CompileVariableReferenceElement(varRef, autoFitDuration, executionContext));
+                    break;
+
+                case TupletElement tuplet:
+                    CompileTupletElement(tuplet, context, executionContext, musicalNotes, new Fraction(1, 1));
+                    break;
+
+                // VoiceBlockElement intentionally not handled — ParseVoiceBlockChildren rejects nesting.
+            }
+        }
+
+        InterpolateVelocities(musicalNotes);
+
+        if (musicalNotes.Any(n => n.DurationFraction.HasValue))
+        {
+            ValidateBarFit(musicalNotes, timeSig, voiceBlock.Location);
         }
 
         return new BarData(musicalNotes, timeSig);
@@ -665,14 +774,24 @@ public class NoteStreamCompiler
         // Determine velocity: note-level override > context velocity > default mf
         double velocity = note.Velocity ?? context.Velocity ?? 0.63;
 
-        // Apply accent articulations as velocity boost
+        // Phase 28 locked velocity adjustments (SPEC-4):
+        //   Accent +0.30, Marcato +0.30, Sforzando handled by envelope shaper (Plan 28-03 —
+        //   no scalar boost here), Legato/Tenuto/Staccato/Normal velocity unchanged.
+        // Behavioral change: prior code set `velocity = 0.95` for Sforzando, which clobbered
+        // the composer's intended velocity. SPEC-4 instead routes Sforzando through a
+        // time-varying envelope spike at the synth layer (GenerateArticulationADSR in Plan
+        // 28-03), so the composer's base velocity passes through here unchanged. The Accent
+        // +0.30 also replaces the previous +0.20 to match the locked SPEC-4 constants.
         var articulation = note.ArticulationMark ?? Articulation.Normal;
-        if (articulation == Articulation.Accent)
-            velocity = Math.Min(velocity + 0.2, 1.0);
-        else if (articulation == Articulation.Marcato)
-            velocity = Math.Min(velocity + 0.3, 1.0);
-        else if (articulation == Articulation.Sforzando)
-            velocity = 0.95;
+        switch (articulation)
+        {
+            case Articulation.Accent:
+            case Articulation.Marcato:
+                velocity = Math.Min(velocity + 0.30, 1.0);
+                break;
+            // Sforzando: NO scalar velocity bump — envelope shaper applies time-varying spike at synth layer.
+            // Legato, Tenuto, Staccato, Normal: velocity unchanged.
+        }
 
         return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
             centOffset: note.CentOffset, isTied: note.IsTied,

@@ -49,6 +49,16 @@ public class MusicalContext
     public double? ReverbTime { get; set; }  // 0.0 (dry) to 30.0 (clamped ceiling), null = inherit; seconds
 
     /// <summary>
+    /// Phase 28 SPEC-7: voice pool size for the current scope. null = inherit
+    /// from parent; when no <c>voicePool</c> block is in scope, the
+    /// SequenceRenderer applies the locked default of 32 voices.
+    /// Range: 1..256. Out-of-range values rejected at interpreter time
+    /// (<see cref="FlowLang.Interpreter.Interpreter"/>) with the message
+    /// "Voice pool size must be between 1 and 256, got N".
+    /// </summary>
+    public int? VoicePoolSize { get; set; }
+
+    /// <summary>
     /// Phase 23 D-05/D-08: render-time tuning system (top-level non-stacked field). When null,
     /// rendering uses the byte-identical 12-TET path per Pitfall 6 short-circuit. The
     /// FlowEngine bridge resolves the active <c>enable justIntonation;</c> /
@@ -76,7 +86,8 @@ public class MusicalContext
         Pan = Pan,
         Gain = Gain,
         ReverbTime = ReverbTime,
-        Tuning = Tuning
+        Tuning = Tuning,
+        VoicePoolSize = VoicePoolSize
     };
 
     /// <summary>

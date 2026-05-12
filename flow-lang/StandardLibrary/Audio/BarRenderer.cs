@@ -50,6 +50,31 @@ namespace FlowLang.StandardLibrary.Audio
                 throw new InvalidOperationException("Bar must have a time signature to render.");
             }
 
+            // Phase 28 (SPEC-1): voice-block rendering. When the bar has parallel
+            // voices (compiled from `| {voice ...} {voice ...} |`), recursively
+            // render each child bar starting at offset 0 (all voices share the
+            // parent bar's onset) and concatenate the resulting voices. The
+            // SongRenderer's mix-to-stereo path then sums them additively → true
+            // polyphony for held + running patterns. The parent bar's own
+            // MusicalNotes list is ignored when ParallelVoices is non-null
+            // (compiler emits a single whole-bar rest as a placeholder so the
+            // bar still spans the full duration for cursor-advance bookkeeping).
+            if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
+            {
+                var combined = new List<Voice>();
+                foreach (var voiceBar in bar.ParallelVoices)
+                {
+                    // Each voice block is its own BarData with its own MusicalNotes
+                    // and shares the parent bar's TimeSignature. Render at offset 0
+                    // (caller provides the bar-level offset via the wrapping
+                    // RenderBarAtBeat overload).
+                    if (voiceBar.TimeSignature == null)
+                        voiceBar.TimeSignature = bar.TimeSignature;
+                    var subVoices = RenderBarToVoices(voiceBar, synthesizer, sampleRate, bpm, tuning);
+                    combined.AddRange(subVoices);
+                }
+                return combined;
+            }
 
             // Convert bar to timeline
             var timeline = bar.ToTimeline();
@@ -64,16 +89,26 @@ namespace FlowLang.StandardLibrary.Audio
                 // Calculate duration in beats
                 double durationBeats = note.GetBeats(bar.TimeSignature.Denominator);
 
-                // Apply articulation to duration
+                // Phase 28 locked articulation duration multipliers (SPEC-4):
+                //   Staccato 25%, Marcato 25% (Staccato-shortened), Legato 110%,
+                //   Tenuto 100%, Accent 100%, Sforzando 100%.
+                // Per-instrument envelope shaping (sustain, release, spike) lands at
+                // the synthesizer in Plan 28-03. Both Legato sources compose: a note
+                // with Articulation.Legato AND DurationOverlap=0.5 ends up rendered
+                // at 1.0 × 1.10 × 1.5 = 1.65 of authored duration (DurationOverlap
+                // multiplier is applied below).
                 switch (note.Articulation)
                 {
                     case Articulation.Staccato:
-                        durationBeats *= 0.5;
+                        durationBeats *= 0.25;
                         break;
                     case Articulation.Marcato:
-                        durationBeats *= 0.8;
+                        durationBeats *= 0.25;
                         break;
-                    // Normal, Tenuto, Accent, Sforzando don't shorten duration
+                    case Articulation.Legato:
+                        durationBeats *= 1.10;
+                        break;
+                    // Tenuto, Accent, Sforzando, Normal — duration unchanged
                 }
 
                 // For tied notes, extend render duration so the audio tail overlaps the next note.

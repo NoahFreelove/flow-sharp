@@ -133,6 +133,19 @@ public record TupletElement(
 ) : NoteStreamElement(Location);
 
 /// <summary>
+/// Voice block — single-sequence polyphony per Phase 28 (SPEC-1).
+/// Syntax: <c>{voice C4w}</c> or <c>{voice C5q D5q E5q F5q}</c> inside a <c>| ... |</c> bar.
+/// Each voice block within the same bar shares the parent bar's onset (0); the compiler
+/// emits a parallel <c>BarData</c> per voice block so the renderer mixes them additively.
+/// Children may contain note/rest/chord/named-chord/random-choice/tuplet elements but
+/// nested voice blocks are rejected at parse time (Phase 28 scope).
+/// </summary>
+public record VoiceBlockElement(
+    SourceLocation Location,
+    IReadOnlyList<NoteStreamElement> Children
+) : NoteStreamElement(Location);
+
+/// <summary>
 /// A bar within a note stream, delimited by | ... |
 /// </summary>
 public record NoteStreamBar(
