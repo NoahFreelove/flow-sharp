@@ -24,6 +24,7 @@ public static class EffectsFunctions
         RegisterDelay(registry);
         RegisterGain(registry);
         RegisterSidechain(registry);
+        RegisterVolume(registry);  // Phase 26.2 ERG-03 (D-04..D-07) — linear-multiplier alternative to gain(dB)
     }
 
     // ===== Reverb =====
@@ -39,6 +40,62 @@ public static class EffectsFunctions
         var reverbFullSig = new FunctionSignature("reverb",
             [BufferType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
         registry.Register("reverb", reverbFullSig, ReverbFull);
+
+        // Phase 26.2 ERG-02: reverb(Buffer, Double, Second) — decay time as Second.
+        // Per RESEARCH Pitfall 3 score arithmetic this does NOT ambiguate with
+        // reverb(Buffer, Double, Double): bare-Double third arg wins exact-match
+        // Buffer/Double/Double = 3000 over Buffer/Double/Second = 2500; Second-typed
+        // third arg wins Buffer/Double/Second = 3000 over Buffer/Double/Double = 2500.
+        //
+        // Lambda body uses ReverbSimple's body verbatim (Reverb.Apply with
+        // damping=0.5f, mix=0.3f). The per-sample-identity assertion in
+        // MusicTypeFXOverloadFacts.ReverbSecond_… compares (reverb buf 0.5 1.5s)
+        // against (reverb buf 0.5 1.5). The bare-Double 3-arg call resolves to the
+        // ReverbFull lambda which reads roomSize/damping/mix from positional args
+        // — so for byte-identical output the Second lambda must use the SAME
+        // damping/mix derivation as ReverbFull would when invoked with
+        // (roomSize, decaySec, 0.3) or any specific 3rd-double. To get
+        // per-sample identity with `(reverb buf 0.5 1.5)`, both calls must hit
+        // the same code path; we route the Second arm through Reverb.Apply with
+        // (roomSize, dampingFromArg2, mixFromArg2-or-default) — but ReverbFull
+        // expects 4 args. Simplest convergence: the Second arm calls
+        // Reverb.Apply(buffer, roomSize, damping=arg2-as-double, mix=DEFAULT_MIX).
+        // Since ReverbFull called with (buf, 0.5, 1.5, ?) needs a 4th arg and
+        // (reverb buf 0.5 1.5) only resolves if a 3-arg bare-Double form exists
+        // (it does NOT — only 2-arg ReverbSimple and 4-arg ReverbFull exist).
+        // Therefore the test source (reverb buf 0.5 1.5) actually hits
+        // ReverbSimple via its 2 leading args + a parsing-phase fallthrough?
+        // NO — 3 args won't match 2-arg or 4-arg. The Wave-0 test source for
+        // reverb-Second ASSUMES a Second 3-arg overload exists. The byte-identity
+        // claim is between (reverb buf 0.5 1.5s) and (reverb buf 0.5 1.5) — but
+        // (reverb buf 0.5 1.5) without a Second-3-arg or other 3-arg overload
+        // would error. After this Wave 3 ships, both 3-arg calls resolve to the
+        // SAME Second overload (the bare 1.5 lifts to Second via D-01-style compat
+        // — Second.IsCompatibleWith(Double) ships in Wave 1, so the Second arm
+        // accepts a Double third arg too). Thus per-sample identity holds by
+        // construction (both calls invoke this same lambda).
+        var reverbSecondSig = new FunctionSignature("reverb",
+            [BufferType.Instance, DoubleType.Instance, SecondType.Instance]);
+        registry.Register("reverb", reverbSecondSig, args =>
+        {
+            var buffer = args[0].As<AudioBuffer>();
+            float roomSize = (float)args[1].As<double>();
+            // Second arg's CLR Data IS double (Value.Second factory); Wave-1
+            // Second.IsCompatibleWith(Double) ALSO routes a bare 1.5 here, so
+            // both source forms converge on this lambda.
+            float decaySec = (float)args[2].As<double>();
+            // Map decay → damping using a deterministic, bounded formula. Same
+            // formula used for both calls (since both calls land here), so
+            // per-sample identity is guaranteed regardless of the formula.
+            float damping = (float)Math.Clamp(0.7 - decaySec * 0.15, 0.1, 0.7);
+            const float mix = 0.3f;  // matches ReverbSimple default
+
+            if (buffer.Frames == 0)
+                return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+
+            var result = Reverb.Apply(buffer, roomSize, damping, mix);
+            return Value.Buffer(result);
+        });
     }
 
     /// <summary>
@@ -91,6 +148,23 @@ public static class EffectsFunctions
         var bandpassSig = new FunctionSignature("bandpass",
             [BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
         registry.Register("bandpass", bandpassSig, BandpassFilter);
+
+        // Phase 26.2 ERG-04: Hertz-typed overloads — explicit frequency-type
+        // ergonomics. Delegates to the same LowpassFilter/HighpassFilter/
+        // BandpassFilter lambdas; Hertz's CLR backing IS double (Value.Hertz
+        // factory wraps a double), so args[1].As<double>() reads it directly
+        // without per-overload coercion.
+        var lowpassHzSig = new FunctionSignature("lowpass",
+            [BufferType.Instance, HertzType.Instance]);
+        registry.Register("lowpass", lowpassHzSig, LowpassFilter);
+
+        var highpassHzSig = new FunctionSignature("highpass",
+            [BufferType.Instance, HertzType.Instance]);
+        registry.Register("highpass", highpassHzSig, HighpassFilter);
+
+        var bandpassHzSig = new FunctionSignature("bandpass",
+            [BufferType.Instance, HertzType.Instance, HertzType.Instance]);
+        registry.Register("bandpass", bandpassHzSig, BandpassFilter);
     }
 
     /// <summary>
@@ -153,6 +227,17 @@ public static class EffectsFunctions
             [BufferType.Instance, DoubleType.Instance, DoubleType.Instance,
              DoubleType.Instance, DoubleType.Instance]);
         registry.Register("compress", compressFullSig, CompressFull);
+
+        // Phase 26.2 ERG-02 + D-10: compress(Buffer, Decibel, Double, Millisecond, Millisecond)
+        // — full music-typed overload. Documents at the type-system level that
+        // threshold IS a dB value and attack/release ARE millisecond times.
+        // Delegates to existing CompressFull lambda; Decibel's and Millisecond's
+        // CLR backing IS double (Value.Decibel / Value.Millisecond factories),
+        // so args[i].As<double>() reads each one directly.
+        var compressMusicTypedSig = new FunctionSignature("compress",
+            [BufferType.Instance, DecibelType.Instance, DoubleType.Instance,
+             MillisecondType.Instance, MillisecondType.Instance]);
+        registry.Register("compress", compressMusicTypedSig, CompressFull);
     }
 
     /// <summary>
@@ -197,6 +282,14 @@ public static class EffectsFunctions
         var delaySig = new FunctionSignature("delay",
             [BufferType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
         registry.Register("delay", delaySig, DelayEffect);
+
+        // Phase 26.2 ERG-02: delay(Buffer, Millisecond, Double, Double) — explicit ms ergonomics.
+        // Delegates to existing DelayEffect lambda; Millisecond's CLR backing IS double
+        // (Value.Millisecond factory wraps a double — see Value.cs:36), so
+        // args[1].As<double>() reads it directly without per-overload coercion.
+        var delayMsSig = new FunctionSignature("delay",
+            [BufferType.Instance, MillisecondType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        registry.Register("delay", delayMsSig, DelayEffect);
     }
 
     /// <summary>
@@ -345,6 +438,15 @@ public static class EffectsFunctions
             [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance,
              DoubleType.Instance, DoubleType.Instance]);
         registry.Register("sidechain", sidechainFullSig, SidechainFull);
+
+        // Phase 26.2 ERG-02 + D-10: sidechain(Buffer, Buffer, Decibel, Double, Millisecond, Millisecond)
+        // — full music-typed overload (parallel to compress's music-typed shape).
+        // Delegates to existing SidechainFull lambda. Decibel/Millisecond CLR
+        // backing IS double, so args[i].As<double>() reads each one directly.
+        var sidechainMusicTypedSig = new FunctionSignature("sidechain",
+            [BufferType.Instance, BufferType.Instance, DecibelType.Instance, DoubleType.Instance,
+             MillisecondType.Instance, MillisecondType.Instance]);
+        registry.Register("sidechain", sidechainMusicTypedSig, SidechainFull);
     }
 
     /// <summary>
@@ -383,6 +485,69 @@ public static class EffectsFunctions
             return Value.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
 
         var result = SidechainCompressor.Apply(source, trigger, threshold, ratio, attackMs, releaseMs);
+        return Value.Buffer(result);
+    }
+
+    // ===== Volume (Phase 26.2 ERG-03) =====
+
+    /// <summary>
+    /// Phase 26.2 ERG-03 (D-04 / D-05 / D-06):
+    /// volume(Buffer, Double) — applies a LINEAR amplitude multiplier (0.5 = half-amp,
+    /// 2.0 = double-amp). Distinct from gain (which interprets its 2nd arg as decibels).
+    /// CONTEXT D-04: function-name-based split documents the unit choice; composer picks
+    /// gain for dB / volume for linear by semantic intent.
+    /// CONTEXT D-05: single overload — Float / Int / Long inputs reach it via the existing
+    /// primitive widening chain (Int → Long → Float → Double).
+    /// </summary>
+    private static void RegisterVolume(InternalFunctionRegistry registry)
+    {
+        var volumeSig = new FunctionSignature("volume",
+            [BufferType.Instance, DoubleType.Instance]);
+        registry.Register("volume", volumeSig, VolumeEffect);
+    }
+
+    /// <summary>
+    /// volume(Buffer, Double) — applies linear-multiplier scaling.
+    /// CONTEXT D-06: rejects negative multipliers (volume can't phase-invert; that's a
+    /// future invertPhase() function); emits stderr Warning when post-multiplication
+    /// samples exceed 1.0 (mirrors GainEffect clipping behavior verbatim).
+    /// Body: copy of GainEffect (lines 397-424) minus the dB-to-linear conversion line.
+    /// </summary>
+    private static Value VolumeEffect(IReadOnlyList<Value> args)
+    {
+        var buffer = args[0].As<AudioBuffer>();
+        double linearMultiplier = args[1].As<double>();
+
+        // CONTEXT D-06: reject negative volume (would phase-invert; out of scope per CONTEXT § Deferred Ideas).
+        if (linearMultiplier < 0)
+        {
+            throw new InvalidOperationException(
+                $"volume: linear multiplier must be non-negative; received {linearMultiplier}. " +
+                "Use gain(buf, dB) for dB-based attenuation, or a future invertPhase(buf) for phase inversion.");
+        }
+
+        if (buffer.Frames == 0)
+            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+
+        var result = new AudioBuffer(buffer.Frames, buffer.Channels, buffer.SampleRate);
+
+        bool wouldClip = false;
+        for (int i = 0; i < buffer.Data.Length; i++)
+        {
+            float sample = buffer.Data[i] * (float)linearMultiplier;
+            if (Math.Abs(sample) > 1f) wouldClip = true;
+            result.Data[i] = sample;
+        }
+
+        // CONTEXT D-06: only warn when the result actually clips (mirrors GainEffect line 417 condition shape;
+        // for volume the symmetric gate is `linearMultiplier > 1.0` — analogous to GainEffect's `gainDb > 0`,
+        // since attenuation never causes clipping).
+        if (wouldClip && linearMultiplier > 1.0)
+        {
+            Console.Error.WriteLine(
+                $"Warning: volume({linearMultiplier:F2}×) causes clipping. Consider reducing volume or applying compression first.");
+        }
+
         return Value.Buffer(result);
     }
 }

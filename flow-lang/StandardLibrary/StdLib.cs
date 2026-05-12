@@ -100,6 +100,15 @@ public static class StdLib
     }
 
     /// <summary>
+    /// Converts a Symbol to string — prints with leading <c>#</c> per Phase 26.1 SYM-01
+    /// (so <c>(str #kick)</c> → <c>"#kick"</c>, matching the literal source form).
+    /// </summary>
+    public static Value StrSymbol(IReadOnlyList<Value> args)
+    {
+        return Value.String("#" + args[0].As<string>());
+    }
+
+    /// <summary>
     /// Converts a Bar to string.
     /// </summary>
     public static Value StrBar(IReadOnlyList<Value> args)

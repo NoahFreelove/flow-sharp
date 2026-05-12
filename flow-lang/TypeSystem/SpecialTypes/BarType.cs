@@ -66,6 +66,15 @@ public class BarData
     /// </summary>
     public bool IsPickup { get; set; }
 
+    /// <summary>
+    /// Phase 28 (SPEC-1) — single-sequence polyphony. When non-null, each entry is a
+    /// parallel mini-bar (compiled from a `{voice ...}` block) whose onsets share the
+    /// parent bar's offset (0). The renderer (BarRenderer / SongRenderer) mixes these
+    /// additively. Default null preserves backward compatibility for every pre-Phase-28
+    /// bar — only voice-block bars set this field.
+    /// </summary>
+    public List<BarData>? ParallelVoices { get; set; }
+
     public BarData()
     {
         Notes = new List<string>();

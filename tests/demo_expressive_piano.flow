@@ -36,7 +36,7 @@ tempo 72 {
             Buffer final = withFadeIn -> fadeOut 0.5
             Int totalFrames = (getFrames final)
             (print (concat "Total frames: " (str totalFrames)))
-            Int duration = (div totalFrames 44100)
+            Int duration = (idiv totalFrames 44100)
             (print (concat "Duration: ~" (concat (str duration) "s")))
         }
     }

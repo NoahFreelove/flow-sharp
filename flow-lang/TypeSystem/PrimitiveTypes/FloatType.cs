@@ -19,4 +19,6 @@ public sealed class FloatType : FlowType
     }
 
     public override int GetSpecificity() => 105;
+
+    public override bool IsHashable() => true;
 }

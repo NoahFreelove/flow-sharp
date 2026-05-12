@@ -56,6 +56,12 @@ public static class FlowScriptData
         //     list, but the atomic-commit-zero-regression contract takes priority over
         //     the "do not touch" instruction. Rule 3 deviation; see 20-01-SUMMARY.md.)
         //   - test_full_song.flow:158 exportWav auto-mkdir — FIXED by 12-05
+
+        // Phase 26.1 plan 26.1-05 (Wave 4): test_dict_type_errors.flow body is the
+        // intentional-error trigger (Dict<Buffer, Int> bad = (dict)). The runner
+        // expects stderr to contain "Dict key type 'Buffer' is not hashable" at the
+        // ParseException site (TypeParser.ParseType § Dict<K, V> branch).
+        ["test_dict_type_errors.flow"] = "Dict key type 'Buffer' is not hashable",
     };
 
     public static readonly Dictionary<string, string[]> RequiredSentinels = new()

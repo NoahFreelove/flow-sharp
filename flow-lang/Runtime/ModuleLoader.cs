@@ -24,6 +24,17 @@ public class ModuleLoader
 
     public Interpreter.Interpreter? ParentInterpreter { get; set; }
 
+    /// <summary>
+    /// REQ-4 (Plan 30-03): additional search paths for module resolution. Consulted
+    /// AFTER the <c>@</c>-prefix stdlib branch and BEFORE the relative-resolution
+    /// fallback in <see cref="ResolvePath"/>. Populated by flow-cli's
+    /// <c>FlowConfigLoader.LoadFromXdg()</c> at process startup (via
+    /// <see cref="FlowEngine"/> reading <c>FlowConfig.ConfiguredStdlibSearchPaths</c>).
+    /// ModuleLoader stays unaware of the config source — paths are externally seeded
+    /// so flow-lang has zero new package dependencies.
+    /// </summary>
+    public List<string> AdditionalSearchPaths { get; } = new();
+
     public ModuleLoader(ErrorReporter errorReporter, TextWriter? diagnosticOutput = null)
     {
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
@@ -134,7 +145,22 @@ public class ModuleLoader
     {
         var libraryName = moduleName.StartsWith("@") ? moduleName.Substring(1) : moduleName;
         if (!libraryName.EndsWith(".flow")) libraryName += ".flow";
-        var assemblyDir = Path.GetDirectoryName(typeof(ModuleLoader).Assembly.Location) ?? Environment.CurrentDirectory;
+        // Use AppContext.BaseDirectory rather than Assembly.Location: under
+        // single-file publish (Phase 30 REQ-2), Assembly.Location returns "" and
+        // resolution falls back to the user's cwd, which breaks 'use "@audio"'
+        // when 'flow' is invoked from a non-publish directory. AppContext.BaseDirectory
+        // always returns the directory of the executing binary (or the
+        // extraction directory for self-extracting single-file apps), so the
+        // stdlib .flow files copied alongside the binary via
+        // CopyToPublishDirectory=PreserveNewest are found correctly.
+        var assemblyDir = AppContext.BaseDirectory;
+        if (string.IsNullOrEmpty(assemblyDir))
+        {
+            // Defensive fallback — AppContext.BaseDirectory is documented to
+            // always be non-empty for a managed app, but keep the same
+            // last-resort behavior as before in case a host scenario differs.
+            assemblyDir = Path.GetDirectoryName(typeof(ModuleLoader).Assembly.Location) ?? Environment.CurrentDirectory;
+        }
         return Path.GetFullPath(Path.Combine(assemblyDir, libraryName));
     }
 
@@ -144,6 +170,18 @@ public class ModuleLoader
         if (path.StartsWith("@"))
         {
             return ResolveStdlibPath(path);
+        }
+
+        // REQ-4 stdlib_search_path: try each configured path before falling back to
+        // relative resolution. Lets composer-installed custom modules live outside
+        // the bundled stdlib directory. Paths are externally seeded so ModuleLoader
+        // does NOT import FlowConfig (one-way dependency: flow-cli -> FlowEngine ->
+        // ModuleLoader). Empty list by default => zero-cost no-op for existing scripts.
+        foreach (var searchPath in AdditionalSearchPaths)
+        {
+            var candidate = Path.GetFullPath(
+                Path.Combine(searchPath, path.EndsWith(".flow") ? path : path + ".flow"));
+            if (File.Exists(candidate)) return candidate;
         }
 
         // If path is absolute, return as-is

@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.3
-milestone_name: Composer DX Tier B/C
-status: paused
-stopped_at: Phase 26 Wave 3 — paused before commit; walker fixes salvaged as a5a026e (Wave 2.1)
-last_updated: "2026-05-05T20:30:00.000Z"
-last_activity: 2026-05-05 -- Wave 3 mass-migration aborted before commit (3 architectural blockers); walker fixes salvaged as a5a026e
+milestone: v1.4
+milestone_name: Audio Fidelity, Distribution & Public Showcase
+status: phase-31-planning-paused
+stopped_at: Phase 31 SPEC + CONTEXT + RESEARCH + PATTERNS landed; planner NOT yet spawned (user paused to squash + push 213 unpushed commits)
+last_updated: "2026-05-12T04:00:00.000Z"
+last_activity: 2026-05-12 -- Phase 31 plan-phase paused after pattern-mapper completed; resume with `/gsd-plan-phase 31 --skip-research` (RESEARCH.md + PATTERNS.md already exist) to dispatch gsd-planner. Phase 29 closed 2026-05-12.
 progress:
-  total_phases: 12
-  completed_phases: 8
-  total_plans: 42
-  completed_plans: 41
-  percent: 92
+  total_phases: 7
+  completed_phases: 2
+  total_plans: 23
+  completed_plans: 22
+  percent: 96
 ---
 
 # Project State
@@ -21,33 +21,42 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 26 — op-standardization-prefix-only (Wave 3 paused; fix phase needed)
+**Current focus:** Phase 29 — instrument-realism
 
 ## Current Position
 
-Milestone: v1.3 Composer DX Tier B/C
-Phase: 26 (op-standardization-prefix-only) — PAUSED at Wave 3
-Plan: 3 of 5 complete (26-01, 26-02, 26-03 + Wave 2.1 walker fixes); 26-04 paused, 26-05 deferred
-Status: Wave 3 mass-migration aborted before commit — see `.planning/phases/26-op-standardization-prefix-only/.continue-here.md` for the three architectural blockers (Pitfall 2 str(Int[]), squash-bundled ADSR cross-HEAD shift, D-08 div-Int type mismatch). Three blocking anti-patterns recorded.
-Last activity: 2026-05-05 - Wave 3 attempt aborted before commit; reverted 8 .flow migrations; salvaged Migrate26/Program.cs walker fixes as a5a026e (lex-error skip + musical-context guard + square-bracket guard); .continue-here.md captures full forensics
+Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — PLAN-PHASE PAUSED (planner not yet spawned)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = SPEC ✓ + CONTEXT ✓ + RESEARCH ✓ + PATTERNS ✓, awaiting `/gsd-plan-phase 31 --skip-research` to dispatch the planner
+Last activity: 2026-05-12 -- Phase 31 pattern-mapper completed; user paused to squash + push 213 unpushed commits before continuing to planner
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 25 closed 2026-05-04. v1.3 milestone now 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25). Phase 26 (Op Standardization, Prefix-Only) is paused mid-Wave-3 — three architectural blockers prevent the byte-identical SHA256 gate from passing at HEAD `a5a026e` (full forensics in `.planning/phases/26-op-standardization-prefix-only/.continue-here.md`).
+Phase 28 SHIPPED 2026-05-10. Phase 30 SHIPPED 2026-05-11 (9 plans, full Bug B closure).
 
-**To resume:** plan a fix phase (suggested: Phase 26.A or 26-fix-omissions) addressing Blockers 1 (`(str Int[])` Pitfall 2 coercion in `EvaluateFunctionCall`), 3 (`(div Int Int)` Int-target rewrite — hand-fix or smarter walker), and a planner decision on Blocker 2 (gate semantics: Path A drop cross-HEAD, or Path B re-baseline at HEAD-pre-migration). After that fix phase commits, retry `/gsd-execute-phase 26` — Wave 3 will resume from plan 26-04, then close out via plan 26-05.
+Phase 30 highlights:
 
-Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after Phase 26 lands.
+- `flow` self-contained Linux x64 binary, 38 MB published (cap was 120 MB)
+- 11 subcommands: run, eval, repl, watch, play, render, flow2midi, midi2flow, check, version, new
+- scripts/install.sh (per-user default, --system flag, idempotent); scripts/test-install.sh runs in 8 s
+- XDG config at ~/.config/flow/config.toml — all 5 keys functional (install_path + default_tempo + default_timesig + default_audio_device + stdlib_search_path)
+- Bug B (flow-midi cluster) closed at Quantizer + FlowGenerator layer; 3 CC0 round-trip fixtures pin SPEC-6 (note-count + pitch + duration ±1 tick); flow-midi.Tests 13/13 GREEN
+- Latent Phase 28 writeMidi denominator double-encoding bug found and fixed during round-trip testing (Math.Log2 was applied to a value DryWetMidi already encodes internally — fixed in flow-lang/StandardLibrary/Audio/MidiExport.cs)
+- Full unit suite: 1003/1003 flow-lang.Tests GREEN + 13/13 flow-midi.Tests GREEN = 1016/1016 GREEN
 
-Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.3 work, resolve at first release tag. Rows 4-5 of manual-smoke.md (non-dev OS + Marketplace/OpenVSX publish verification) are deferred to first release tag per the deferred-to-first-tag pattern documented in 17-08-SUMMARY.
+PHASE 29 STILL GATED on composer-curated CC0 sample library at `flow-lang/Samples/{piano,brass,sax,strings,flute,bell}/`. See Plan 29-01 user_setup block for exact filename schema (21 .wav files, 44.1 kHz 16-bit mono, ≤5 MB total, CC0 LICENSE.md per instrument). After samples land, `/gsd-execute-phase 29` unblocks Plans 29-02..29-07.
+
+Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (orthogonal to v1.4 work, resolve at first release tag).
+
+Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-smoke.md) — orthogonal to v1.4 work, resolve at first release tag.
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 19 (v1.2 milestone)
+- Total plans completed: 24 (v1.2 milestone)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -63,6 +72,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 23 | 5 | ~76min | ~15min |
 | 24 | 6 | ~30min | ~5min |
 | 25 | 5 | ~17min | ~3.4min |
+| 27 | 5 | - | - |
 
 **Recent Trend:**
 
@@ -144,6 +154,23 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 24 P03 | ~6min | 2 tasks | 2 files (ScaleLintAnalyzer + ScaleLintAnalyzerFacts) |
 | Phase 24 P04 | 4min | 3 tasks | 5 files (IScaleLintPublisher + ScaleLintPublisher + CombinedDiagnosticsPublisher + Program.cs DI + 5 Facts) |
 | Phase 24 P05 | ~10min | 5 tasks (closure) | 5 files (test_scale_lint.flow + REQUIREMENTS, ROADMAP, STATE, 24-VERIFICATION, 24-05-SUMMARY) |
+| Phase 26.1 P01 | 7min | 2 tasks | 20 files |
+| Phase 26.1 P02 | 25min | 2 tasks | 21 files |
+| Phase 26.1 P03 | 17min | 2 tasks | 14 files |
+| Phase 26.1 P04 | 28min | 2 tasks | 12 files |
+| Phase 26.1 P05 | ~45min | 3 tasks | 22 files |
+| Phase 26.1 P06 | ~Xmin | 2 tasks (docs-only closure) | 6 files (REQUIREMENTS, ROADMAP, STATE, CLAUDE.md, 26.1-VERIFICATION, 26.1-VALIDATION) |
+| Phase 26.2 P04 | 10 minutes | 2 tasks | 6 files |
+| Phase 26.2 P01 | ~22min | 2 tasks | 7 files (Value.cs + 6 *Facts.cs) |
+| Phase 26.2 P02 | ~6min | 2 tasks | 5 files (Ms/Sec/HertzType + Value.cs + Facts) |
+| Phase 26.2 P03 | ~7min | 2 tasks | 8 files (TokenType/Lexer/Parser/TypeParser/Evaluator/audio.flow + 2 Facts) |
+| Phase 26.2 P05 | ~25min | 1 task | 3 files (EffectsFunctions.cs + audio.flow + VolumeFunctionFacts) |
+| Phase 26.2 P06 | ~Xmin | 2 tasks (docs-only closure) | 6 files (REQUIREMENTS, ROADMAP, STATE, CLAUDE.md, 26.2-VERIFICATION, 26.2-VALIDATION) |
+| Phase 27 P01 | ~10min | 3 tasks | 1 file (examples/tutorial.flow — chapters 1.5/4.5/4.6/9.5 + chapter 2/9/16 inline weaves) |
+| Phase 27 P02 | ~25min | 3 tasks | 1 file (examples/tutorial.flow — chapter 19.5 mega-chapter A/B/C/D + Congratulations bullets + use "@notation") |
+| Phase 27 P03 | ~15min | 3 tasks | 5 files (tutorial.flow graduation refactor + showcase.flow REPLACE + examples/pragmas/{h_alias,microtonal_ji}.flow + .gitignore exception) |
+| Phase 27 P04 | ~5min | 1 task | 1 file (Phase27ByteIdenticalPragmaTests.cs — 4 facts) |
+| Phase 27 P05 | ~Xmin | 5 tasks (docs-only closure) | 7 files (REQUIREMENTS, ROADMAP, STATE, CLAUDE.md, 27-RESEARCH, 27-VERIFICATION, 27-SUMMARY) |
 
 ## Accumulated Context
 
@@ -305,6 +332,20 @@ Recent decisions affecting current work:
 - [Plan 24-03]: `flow-lsp/Diagnostics/ScaleLintAnalyzer.cs` AST-walking analyzer dispatching D-01..D-23 — per-element type classification (NoteElement checked, ChordElement recursed, RestElement skip, RomanNumeralElement skip, NamedChordElement skip, VariableReferenceElement skip, RandomChoiceElement recursed, TupletElement recursed). 14 Facts + 7-row mode Theory pin LINT-01/02/03 + D-01..D-23. D-19 short-circuit lives inside the analyzer (`Ast.Pragmas.Has("scaleLint")`). D-21 reuses `NoteStreamContext.FindEnclosingKey` verbatim (innermost-key-wins). Shipped 3c18795 + 3d9233a.
 - [Plan 24-04]: Sibling-publisher orchestration: `IScaleLintPublisher` analyzer-as-source interface returning `IReadOnlyList<Diagnostic>` (NOT publishing — orchestrator owns the wire-level call), `ScaleLintPublisher` thin DI-mockable adapter, `CombinedDiagnosticsPublisher` orchestrator owning the single `_server.TextDocument.PublishDiagnostics` call per parse cycle (Pitfall 6 source-level pin: no Count/Any guard around publish). Source-tag separation pass-through: parse errors keep "flow", scale-lint keeps "flow.scaleLint". Existing `IDiagnosticsPublisher`/`DiagnosticsPublisher` kept registered (sibling, NOT replacement). 5 Facts pin merge invariant + LINT-01/02 wire-level acceptance. Shipped 0dc9a99 + b0b9971 + 96ab39c.
 - [Plan 24-05]: Phase 24 closure — REQUIREMENTS LINT-01/02/03 rows flipped to Shipped Phase 24 plans 24-00..24-04; LINT-03 acceptance text wording bug closed (Aminor → Gmajor — F# is diatonic in Gmajor, not Aminor); ROADMAP Phase 24 marked complete with 6/6 plans; STATE milestone progress 6/10 → 7/10 phases for v1.3; 24-VERIFICATION.md produced as final phase rollup with 24 Phase24 Facts + 8/8 ByteIdentical + tests/test_scale_lint.flow integration smoke + 677/677 full suite GREEN; Phase 18 byte-identical regression confirmed (examples/tutorial.flow + examples/showcase.flow SHA256 unchanged vs pre-Phase-24 base a5bab72). Phase 25 (Gaussian Humanize, DEFER-06) is the next ROADMAP target.
+- [Phase ?]: Wave 0 RED-via-Skip pattern (26.1-01): scaffolding lands first; subsequent waves un-skip facts atomically with their implementation commit
+- [Phase ?]: Stub-with-PASSED-sentinel + COMMENTED-OUT ExpectedErrorScripts (26.1-01): intentional-error scripts can be created at Wave 0 without flipping the FlowScriptTests theory row RED before implementation lands
+- [Phase ?]: Plan 26.1-02 reverted plan's IsTokenBoundary '#' addition — would break C#4/F#4 sharp note literals; case '#' arm in NextToken is sufficient on its own (Rule 1 deviation)
+- [Phase ?]: Auto-added (str Symbol) overload + std.flow declaration (Rule 2) — required by CONTEXT § Specifics block 1 acceptance shape
+- [Phase ?]: Auto-added Symbol to Parser.IsTypeKeyword (Rule 3) — distinct gate from TypeParser; needed to parse 'Symbol kick = #kick' declarations
+- [Phase ?]: Tuple<<T>> emits LessLess token after Identifier predecessor; lexer gate extended to admit value-end tokens (RParen/RBracket/RBrace/literals/GreaterGreater/LessLess) so destructure-after-prev-statement parses (TUP-09 revision 1)
+- [Phase ?]: TupleType reuses ArrayIndexExpression AST node — EvaluateArrayIndex branches on operand type for diagnostic labels (RESEARCH § Q4)
+- [Phase ?]: TupleType.AnyArity sentinel (mirrors ArrayType(VoidType.Instance) pattern) — required by Wave 3 (unpack) registration; matches any tuple via IsCompatibleWith
+- [Phase ?]: Used FlowLang.StandardLibrary.Dict namespace for DictFunctions to avoid colliding with existing Collections static class (plan 26.1-04, Wave 3)
+- [Phase ?]: Always-emit TupleUnpackFlowExpression from parser (no parse-time arity peek) — RESEARCH Q5/Pitfall 2 (plan 26.1-04, Wave 3)
+- [Phase ?]: Charitable non-tuple LHS fallthrough on ~> per ROADMAP success criterion 3 / ergonomics-priority memory (plan 26.1-04, Wave 3)
+- [Phase ?]: FX music-typed overloads delegate to existing C# lambdas via Decibel/Millisecond/Hertz CLR-backing-is-double pattern (no per-overload coercion)
+- [Phase ?]: reverb-Second lambda handles both Second-typed and bare-Double third arg via Wave-1 IsCompatibleWith — lambda-convergence guarantees per-sample identity
+- [Phase ?]: createSineTone-Hertz needs both C# registration AND Flow-side proc shadow — Flow proc delivers stereo matching the bare-Double Flow proc form
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -491,6 +532,7 @@ None yet for Phase 15.
 | 260502-oib | `noise` builtin — 4 arity overloads wrapping SynthUtils.GenerateWhiteNoise | 2026-05-02 | 08d505a | [260502-oib-add-noise-builtin-noise-seconds-overload](./quick/260502-oib-add-noise-builtin-noise-seconds-overload/) |
 | 260504-v6j | Scale ADSR envelope to note duration so short staccato notes get attack + decay + brief release instead of mid-decay truncation | 2026-05-05 | ae97f09 | [260504-v6j-scale-adsr-envelope-to-note-duration-in-](./quick/260504-v6j-scale-adsr-envelope-to-note-duration-in-/) |
 | 260504-cks | (chord String\|Note) runtime constructor + ChordParser vocabulary expanded from 18 to ~80 entries (5/6/7/9/11/13 + sus + add + alterations with b/# === f/s aliases + slash bass) | 2026-05-04 | 00d9e2e | [260504-cks-chord-string-constructor-comprehensive-vocab](./quick/260504-cks-chord-string-constructor-comprehensive-vocab/) |
+| 260509-qqe | Fix Phase 26 deferred Blockers 1 + 3 — `(str X[])` Void[] wildcard pass-through in EvaluateFunctionCall coercion loop + 6 `(div Int Int)` → `(idiv ...)` site rewrites; ByteIdentical 8/8, smoke 88/0/3, .continue-here.md retired | 2026-05-09 | d88a6ab | [260509-qqe-fix-phase-26-deferred-blockers-str-x-coe](./quick/260509-qqe-fix-phase-26-deferred-blockers-str-x-coe/) |
 | 260504-w24 | Hot fix: Decibel + Beat numerically compatible with Double/Float (CentType precedent) + explicit gain(Buffer, Decibel) overload — unblocks `(gain rendered -12dB)` ergonomics; broader cleanup queued as Phase 26.2 | 2026-05-05 | 1960a92 | [260504-w24-hot-fix-make-decibel-and-beat-types-nume](./quick/260504-w24-hot-fix-make-decibel-and-beat-types-nume/) |
 
 ## Deferred Items
@@ -508,18 +550,28 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-05T02:01:26.944Z
-Stopped at: Phase 26 context gathered
-Resume file: .planning/phases/26-op-standardization-prefix-only/26-CONTEXT.md
+Last session: 2026-05-10T01:30:00.000Z
+Stopped at: Phase 28 closed; Bug B (flow-midi cluster) routed to Phase 30 as planning input
+Resume file: .planning/debug/midi-import-quarter-quantize.md
 
-**Completed Phase:** 25 (Gaussian Humanize, LAST PRNG phase) — 5 plans across 5 waves — closed 2026-05-04
-
-**Planned Phase:** 26 (Op Standardization, Prefix-Only) — TBD plans — pending /gsd-plan-phase 26
+**Planned Phase:** 30 (Flow CLI + Formal Install + MIDI↔Flow) — pending /gsd-plan-phase 30
 
 ## Resume Instructions (next PC)
 
-Phase 25 closed 2026-05-04. v1.3 milestone now 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25). Phase 26 (Op Standardization, Prefix-Only) is the next ROADMAP target — eliminates infix arithmetic `+ - * /` in favor of S-expression prefix builtins (`(add)`, `(sub)`, `(mul)`, `(div)`, `(neg)`, `(concat)`). Phase 26.1 (Symbols + Tuples + Dicts) follows; Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature lands.
+Phase 28 shipped 2026-05-10. Phase 30 SPEC.md already locked (`b4eb395`, 8 requirements). SPEC-5/6 directly target the cluster of flow-midi import defects surfaced during Phase 28 UAT — captured in `.planning/debug/midi-import-quarter-quantize.md`:
 
-1. `/gsd-progress` — confirm Phase 25 at 5/5 plans, milestone v1.3 at 8/10 phases
-2. `/gsd-plan-phase 26` — plan Phase 26: Op Standardization. Eliminate `BinaryExpression`/`BinaryOperator` AST nodes; ship `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering Int → Long → Float → Double → Number widening chain; migrate stdlib + ~70 .flow tests; tutorial.flow + showcase.flow remain cmp-clean.
-3. After Phase 26: Phase 26.1 (Symbols + Tuples + Dicts) — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op), generic `Dict<K, V>`. Phase 27 (Tutorial + Showcase Refresh) closes the v1.3 milestone after every feature is live.
+- 160-tick durations (1/3 quarter at TPQN=480) — characteristic ragtime staccato bass — are quantized to inexact sixteenth-dotted (`s.`) approximations with rest-padding, producing the "Q→E-rest-E" rhythm distortion the composer reported
+- RH/LH split heuristic doesn't reflect actual hand assignment in the source — each channel artificially sub-split by pitch threshold
+- NoteOns dropped / chord notes silently stripped (multiple notes from the source MIDI absent in `examples/output/ragtime_imported.wav`)
+
+The Phase 30 SPEC-6 round-trip acceptance criterion (note-count + pitch + duration equality with ≤±1 tick drift) implicitly requires fixing all of the above. The Phase 30 plan should treat Bug B not as a separate work item but as the load-bearing subset of SPEC-5 + SPEC-6.
+
+Useful inputs for planning:
+
+- `examples/ragtime.mid` — 21 KB Joplin-era ragtime, 2293 NoteOns, channels 0+1, committed for round-trip test fixtures
+- `flow-midi/Diagnostics.cs` `--dump` extension — first 60 NoteOn events with absolute ticks + duration
+- `.planning/debug/midi-import-quarter-quantize.md` — full defect cluster description + suspect locations
+
+1. `/gsd-progress` — confirm Phase 28 shipped, milestone v1.4 at 1/7 phases
+2. `/gsd-plan-phase 30` — Phase 30 SPEC.md already exists; planner reads SPEC + the Bug B debug file as input
+3. Phase 29 (Instrument Realism) plans already exist on disk; can `/gsd-execute-phase 29` in parallel with Phase 30 planning if you want forward progress on both threads

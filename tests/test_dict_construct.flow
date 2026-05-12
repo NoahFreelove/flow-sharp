@@ -1,0 +1,25 @@
+Note: Dict construction -- flat (dict K V K V) + tuple-pair (dictTuple <<K,V>> ...) (DICT-02)
+Note: Tests: both constructor forms produce equivalent dicts; size + get + has
+
+use "@std"
+
+Note: ===== Test 1: flat constructor =====
+Dict<Symbol, Int> velocities = (dict #kick 90 #snare 70 #hihat 50)
+Int n1 = (size velocities)
+Int v1 = (get velocities #kick)
+(print (str n1))
+(print (str v1))
+
+Note: ===== Test 2: tuple-pair constructor =====
+Dict<Symbol, Int> velocitiesT = (dictTuple <<#kick, 90>> <<#snare, 70>> <<#hihat, 50>>)
+Int n2 = (size velocitiesT)
+Int v2 = (get velocitiesT #snare)
+(print (str n2))
+(print (str v2))
+
+Note: ===== Test 3: empty dict =====
+Dict<Symbol, Int> empty = (dict)
+Int n3 = (size empty)
+(print (str n3))
+
+(print "test_dict_construct: PASSED")

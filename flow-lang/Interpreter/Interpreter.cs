@@ -84,6 +84,10 @@ public class Interpreter : IFunctionInvoker
                 ExecuteVariableDeclaration(varDecl);
                 break;
 
+            case TupleDestructureStatement destruct:
+                ExecuteTupleDestructure(destruct);
+                break;
+
             case AssignmentStatement assignment:
                 ExecuteAssignment(assignment);
                 break;
@@ -252,6 +256,23 @@ public class Interpreter : IFunctionInvoker
                     rt60 = Math.Min(rt60, 30.0);
                     // D-02: 0.0 preserved as sentinel for "dry" — no error, no clamp-up
                     musicalCtx.ReverbTime = rt60;
+                    break;
+                }
+
+                case MusicalContextType.VoicePool:
+                {
+                    // Phase 28 SPEC-7: voicePool N { ... } — N must be in [1, 256].
+                    // Out-of-range emits a clear composer-facing error pointing at the
+                    // statement location.
+                    var poolVal = _evaluator.Evaluate(ctx.Value);
+                    int poolSize = poolVal.As<int>();
+                    if (poolSize < 1 || poolSize > 256)
+                    {
+                        _errorReporter.ReportError(
+                            $"Voice pool size must be between 1 and 256, got {poolSize}", ctx.Location);
+                        break;
+                    }
+                    musicalCtx.VoicePoolSize = poolSize;
                     break;
                 }
 
@@ -536,6 +557,53 @@ public class Interpreter : IFunctionInvoker
     }
 
     /// <summary>
+    /// Phase 26.1 TUP-09: executes <c>&lt;&lt;Type? name, Type? name, ...&gt;&gt; = expr</c>.
+    /// Evaluates the RHS once, validates it is a Tuple, runtime-checks arity, then per-slot
+    /// type-checks (when an annotation is provided) before binding each component into the
+    /// current frame. Type-mismatch and arity-mismatch are soft errors (mirrors
+    /// <see cref="ExecuteVariableDeclaration"/> precedent so the rest of the program continues).
+    /// </summary>
+    private void ExecuteTupleDestructure(TupleDestructureStatement stmt)
+    {
+        var rhs = _evaluator.Evaluate(stmt.Value);
+        if (rhs.Type is not TupleType || rhs.Data is not IReadOnlyList<Value> tupArr)
+        {
+            _errorReporter.ReportError(
+                $"Right-hand side of destructure must be a Tuple, got {rhs.Type}",
+                stmt.Location);
+            return;
+        }
+        if (tupArr.Count != stmt.Patterns.Count)
+        {
+            _errorReporter.ReportError(
+                $"Tuple destructure arity mismatch: pattern has {stmt.Patterns.Count} slot(s), value has {tupArr.Count}",
+                stmt.Location);
+            return;
+        }
+        for (int i = 0; i < stmt.Patterns.Count; i++)
+        {
+            var pattern = stmt.Patterns[i];
+            var component = tupArr[i];
+            if (pattern.Type != null
+                && !component.Type.IsCompatibleWith(pattern.Type)
+                && !component.Type.CanConvertTo(pattern.Type))
+            {
+                _errorReporter.ReportError(
+                    $"Cannot bind tuple component {i} of type {component.Type} to {pattern.Type} {pattern.Name}",
+                    stmt.Location);
+                return;
+            }
+            if (pattern.Type != null
+                && !component.Type.Equals(pattern.Type)
+                && component.Type.CanConvertTo(pattern.Type))
+            {
+                component = component.ConvertTo(pattern.Type);
+            }
+            _context.DeclareVariable(pattern.Name, component);
+        }
+    }
+
+    /// <summary>
     /// Phase 26: detects numeric-narrowing initialization like `Float a = 1.5`
     /// where Value.ConvertTo can produce the narrower type but the FlowType-level
     /// CanConvertTo doesn't (intentionally — to keep OverloadResolver unambiguous).
@@ -548,6 +616,18 @@ public class Interpreter : IFunctionInvoker
 
     private Value CreateDefaultValue(FlowType type)
     {
+        // Phase 26.1 TUP-09: Tuple default-init constructs per-position default values
+        // recursively (so `Tuple<<Note, Beat>> entry` produces `<<C4, 0.0>>`).
+        if (type is TupleType tt)
+        {
+            if (tt.IsAnyArity)
+                return Value.Tuple(new List<Value>(), new List<FlowType>());
+            var components = new List<Value>(tt.ElementTypes.Count);
+            foreach (var et in tt.ElementTypes)
+                components.Add(CreateDefaultValue(et));
+            return Value.Tuple(components, tt.ElementTypes);
+        }
+
         return type switch
         {
             IntType => Value.Int(0),

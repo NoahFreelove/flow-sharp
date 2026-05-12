@@ -17,9 +17,12 @@ public sealed class AudioPlaybackManager : IDisposable
 
     /// <summary>
     /// When true, play()/loop() store the buffer instead of playing through PulseAudio.
-    /// Used by background FlowEngine instances during live reload.
+    /// Used by background FlowEngine instances during live reload AND by test runs
+    /// (auto-enabled when FLOW_SUPPRESS_PLAYBACK=1 — set by flow-lang.Tests'
+    /// ModuleInitializer so tests never push audio through PulseAudio).
     /// </summary>
     public bool CaptureMode { get; set; }
+        = Environment.GetEnvironmentVariable("FLOW_SUPPRESS_PLAYBACK") == "1";
 
     /// <summary>
     /// Maximum number of simultaneous voices allowed. Default is 32.

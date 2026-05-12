@@ -3,7 +3,7 @@ use "@std"
 Note: Test basic while loop
 Int count = 0
 while (lt count 5) {
-  count = count + 1
+  count = (add count 1)
 }
 (print (str count))
 Note: Expected: 5
@@ -12,7 +12,7 @@ Note: Test while with condition variable
 Int val2 = 0
 Bool isRunning = true
 while isRunning {
-  val2 = val2 + 1
+  val2 = (add val2 1)
   isRunning = (lt val2 3)
 }
 (print (str val2))
@@ -29,7 +29,7 @@ Note: Expected: 0
 Note: Test while loop countdown
 Int countdown = 10
 while (gt countdown 0) {
-  countdown = countdown - 1
+  countdown = (sub countdown 1)
 }
 (print (str countdown))
 Note: Expected: 0
@@ -47,9 +47,9 @@ Note: Test continue skips rest of body
 Int ctest = 0
 Int ci = 0
 while (lt ci 3) {
-  ci = ci + 1
+  ci = (add ci 1)
   continue
-  ctest = ctest + 1
+  ctest = (add ctest 1)
 }
 (print (str ctest))
 Note: Expected: 0

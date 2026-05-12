@@ -1,6 +1,8 @@
 bin/
 obj/
 /packages/
+# Phase 30: dotnet publish output for flow-cli (scripts/publish.sh).
+/publish/
 riderModule.iml
 /_ReSharper.Caches/
 .idea/
@@ -26,6 +28,58 @@ vscode-extension/server/
 !vscode-extension/tests/**/*.flow
 !vscode-extension/README.md
 
+# Pragma companion files for Phase 27 byte-identical determinism gates
+# must be tracked despite the global *.flow ignore.
+!examples/pragmas/
+!examples/pragmas/**
+!examples/pragmas/**/*.flow
+
+# Phase 28 polyphony / articulation acceptance fixtures — must be tracked
+# despite the global *.flow ignore. Pinned by RagtimeFixtureTests.
+!examples/tests/
+!examples/tests/**
+!examples/tests/**/*.flow
+
+# Phase 30 flow-cli scaffold templates — embedded as resources by flow-cli.csproj
+# and emitted to disk by `flow new`. Must be tracked despite the global *.flow ignore.
+!flow-cli/Scaffold/
+!flow-cli/Scaffold/**
+!flow-cli/Scaffold/**/*.flow
+
+# Phase 30 MIDI round-trip fixture sources (CC0) — hand-authored .flow files
+# whose matching .mid binaries are the regression targets for SPEC-6
+# (Midi2FlowRoundTripTests). Must be tracked despite global *.flow ignore.
+!flow-lang.Tests/Fixtures/midi/
+!flow-lang.Tests/Fixtures/midi/**
+!flow-lang.Tests/Fixtures/midi/**/*.flow
+
+# Phase 28 RMS regression baselines (committed reference WAVs used by
+# RmsRegressionTests.AssertRmsWithinTolerance) — must be tracked despite
+# the global *.wav ignore. The dither RNG is seeded deterministically
+# (Phase 15 Plan 05) so two consecutive writes produce byte-identical
+# baselines, and the committed file IS the regression pin.
+!flow-lang.Tests/baselines/
+!flow-lang.Tests/baselines/**
+!flow-lang.Tests/baselines/**/*.wav
+!flow-lang.Tests/baselines/**/*.mid
+
+# Phase 29 bundled instrument sample library (CC-BY 4.0, University of Iowa
+# MIS) — 21 WAVs across 6 instrument subdirectories must be tracked despite
+# the global *.wav ignore. Per-instrument LICENSE.md + bundle-wide CREDITS.md
+# document attribution. Total bundle ≤ 5 MB.
+!flow-lang/Samples/
+!flow-lang/Samples/**
+!flow-lang/Samples/**/*.wav
+!flow-lang/Samples/**/*.md
+
+# Phase 29 Plan 02 unit-test WAV fixtures (programmatically generated tiny
+# samples, ≤ 100 KB each) — must be tracked despite the global *.wav ignore.
+# SampleCacheTests / SampledInstrumentSmokeTests use these when the full
+# bundle is not necessary for the assertion under test.
+!flow-lang.Tests/Fixtures/Phase29/
+!flow-lang.Tests/Fixtures/Phase29/**
+!flow-lang.Tests/Fixtures/Phase29/**/*.wav
+
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets
 # (.lua, .toml) are not matched by the globs, so they track automatically.
@@ -33,3 +87,5 @@ vscode-extension/server/
 !docs/**
 !docs/**/*.md
 !README.md
+midi-to-wav.sh
+.claude/worktrees/

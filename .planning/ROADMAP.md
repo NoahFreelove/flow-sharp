@@ -6,6 +6,7 @@
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
 - 🚧 **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, in progress)
+- 🚧 **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (in progress; Phase 28 shipped 2026-05-10) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + VSCode marketplace publish + JetBrains stretch, full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and a curated short symphony showcase as the milestone closer (pre-public → public pivot)
 
 ## Phases
 
@@ -70,8 +71,9 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 - [x] **Phase 24: Scale Linting (flow-lsp)** — Opt-in `enable scaleLint;` pragma emits Information-severity diagnostics for non-diatonic notes inside `key { ... }` contexts — Shipped 2026-05-04 (zero flow-lang touch beyond one PragmaRegistry line)
 - [x] **Phase 25: Gaussian Humanize (LAST PRNG phase)** — `humanizeGaussian()` Box-Muller transform; preserves v1.2 byte-identical determinism contract for existing uniform `humanize()` — Shipped 2026-05-04 (commits 528cfe1 + b9017fc + 3cc3a11 + 5169db8 + closure)
 - [ ] **Phase 26: Op Standardization (Prefix-Only)** — Eliminate infix `+ - * /`; add `(add)`/`(sub)`/`(mul)`/`(div)`/`(neg)`/`(concat)` builtins covering numeric widening chain; remove `BinaryExpression`/`BinaryOperator` AST nodes; migrate stdlib + ~70 .flow tests; foundation for Phase 26.1
-- [ ] **Phase 26.1: Symbols + Tuples + Dicts (INSERTED)** — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op, destructuring, `@N` indexing, per-position types), generic `Dict<K, V>` with hashable keys (Int/Long/Float/String/Symbol/Note/Chord/Tuple); dicts via `(dict K V ...)` + `(dictTuple <<K,V>> ...)` builtins (no literal syntax)
-- [ ] **Phase 27: Tutorial + Showcase Refresh** — `examples/tutorial.flow` + `examples/showcase.flow` exercise every v1.3 feature end-to-end (including prefix-only arithmetic, symbols, tuples, dicts); byte-identical determinism re-pinned
+- [x] **Phase 26.1: Symbols + Tuples + Dicts (INSERTED)** — Symbol primitive (`#foo`), Tuple type (`<<a, b, c>>` literal, `~>` unpack op, destructuring, `@N` indexing, per-position types), generic `Dict<K, V>` with hashable keys (Int/Long/Float/String/Symbol/Note/Chord/Tuple); dicts via `(dict K V ...)` + `(dictTuple <<K,V>> ...)` builtins (no literal syntax) — Shipped 2026-05-09 (Waves 0-5: ac3b926 + 35474ed + 6549116 + d628870 + daaa023 + closure)
+- [x] **Phase 26.2: Music Type Ergonomics + FX Overloads (INSERTED)** — Music-type numeric compatibility completion (Ms/Sec/Hertz IsCompatibleWith Double|Float; Semitone stays Int-only); FX music-typed overloads (delay-Ms, compress/sidechain-Decibel-Ms, reverb-Second, lowpass/highpass/bandpass-Hertz, createXxxTone-Hertz family); new Hertz type with `800Hz`/`1.5kHz` literals; new `volume(Buffer, Double)` linear-multiplier function alongside `gain` (which stays dB-only); 2 pre-existing RED DecibelBeatNumericCompatFacts closed via Value.ConvertTo Double-arm + audio.flow gain(Decibel) forward decl — Shipped 2026-05-10 (Waves 0-5: 45b01fb + 4f92c24 + 28158cc + dfbfa1f + 6df301e + 86bdd15)
+- [x] **Phase 27: Tutorial + Showcase Refresh** — examples/tutorial.flow + examples/showcase.flow exercise every v1.3 feature end-to-end (prefix-only arithmetic, symbols, tuples, dicts, tuplets, fractional durations, microtonal/scale-lint pragma documentation, DX-10..15, range/multi-letter enharmonics/negative slice, humanizeGaussian, Phase 26.2 volume/gain split + Hertz literals + Ms-FX overloads + Second-decay reverb); 2 companion files under examples/pragmas/ (h_alias.flow + microtonal_ji.flow); byte-identical determinism preserved (Phase 18/25 sentinels + new Phase 27 ByteIdenticalPragmaTests 4 facts); CLAUDE.md gains Music Types Quick Reference table — Shipped 2026-05-10 (Waves 1-5: 995ff67 + dbffbec + eadbd9f + e15c5be + ace6416)
 
 ### Phase Details
 
@@ -215,30 +217,38 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   4. All ~70 existing `test_*.flow` scripts migrated to prefix form and pass with byte-identical output; `tutorial.flow` + `showcase.flow` cmp-clean across two consecutive runs (STD-03)
   5. CLAUDE.md updated to remove the stale "==, !=, <, >" claim and document prefix-only rule (STD-03)
 **Plans**: 5 plans
-- [x] 26-01-PLAN.md — Wave 0 RED: 7 Phase26 fact files (NewOverloadFacts, NegOverloadFacts, IntegerDivisionFacts, MixedTypeArithmeticFacts, NegativeLiteralLexFacts, UnaryMinusShorthandFacts, InfixRejectedFacts) + Migrate26 csproj scaffold
-- [x] 26-02-PLAN.md — Wave 1 GREEN mega-commit (D-13): delete BinaryExpression.cs + ParseAdditive/ParseMultiplicative/ParseUnary arithmetic; add ParseUnaryShorthand; lexer _lastEmittedType + TryLexSignedNumber (music-context excluded); EvaluateBinary delete + EvaluateFunctionCall coercion fix; 14 new builtin registrations + 12 StdLib helpers + std.flow Long/Number/neg/idiv decls
-- [x] 26-03-PLAN.md — Wave 2: scripts/Migrate26 walker implementation (token-stream rewrite, precedence climber, note-stream skip, defensive concat) + idempotence smoke test
-- [ ] 26-04-PLAN.md — Wave 3: mass migration of all .flow files + SHA256 byte-identical hash gate (pre/post examples/output/flow_{tutorial,showcase}.{wav,mid}) + persistent xUnit guard verification
-- [ ] 26-05-PLAN.md — Wave 4: CLAUDE.md prefix-only rule (line 148 lambda + line 175 AST row delete + Core bullet) + REQUIREMENTS/ROADMAP/STATE closure + 26-VERIFICATION.md final report
+- [x] 26-01-PLAN.md — Wave 0 RED: 7 Phase26 fact files (NewOverloadFacts, NegOverloadFacts, IntegerDivisionFacts, MixedTypeArithmeticFacts, NegativeLiteralLexFacts, UnaryMinusShorthandFacts, InfixRejectedFacts) + Migrate26 csproj scaffold — Shipped 86fa69a
+- [x] 26-02-PLAN.md — Wave 1 GREEN mega-commit (D-13): delete BinaryExpression.cs + ParseAdditive/ParseMultiplicative/ParseUnary arithmetic; add ParseUnaryShorthand; lexer _lastEmittedType + TryLexSignedNumber (music-context excluded); EvaluateBinary delete + EvaluateFunctionCall coercion fix; 14 new builtin registrations + 12 StdLib helpers + std.flow Long/Number/neg/idiv decls — Shipped 86fa69a
+- [x] 26-03-PLAN.md — Wave 2: scripts/Migrate26 walker implementation (token-stream rewrite, precedence climber, note-stream skip, defensive concat) + idempotence smoke test — Shipped 86fa69a + a5a026e (Wave 2.1 walker fix)
+- [x] 26-04-PLAN.md — Wave 3: mass migration of 8 tracked .flow files + in-session byte-identical gate (showcase.wav + .mid identical pre/post) + persistent xUnit guard verification (6 PASS / 2 deferred to fix-omissions phase) — Shipped 2d3efe1
+- [x] 26-05-PLAN.md — Wave 4: CLAUDE.md prefix-only rule (line 148 lambda + line 175 AST row delete + Core bullet) + REQUIREMENTS/ROADMAP/STATE closure + 26-VERIFICATION.md final report — Shipped TBD
 
 ### Phase 26.1: Symbols + Tuples + Dicts (INSERTED)
 **Goal**: Three tightly-coupled language additions land together — Symbol primitive type (`#foo` syntax, interned), Tuple type (`<<a, b, c>>` literal with per-position types and arity, `~>` unpack flow operator, destructuring assignment, `@N` indexing), and generic `Dict<K, V>` with hashable keys (Int, Long, Float, String, Symbol, Note, Chord, Tuple-of-hashables). Dicts surface via builtins only (no literal syntax — preserves S-expr style and avoids `{...}` collision with Phase 19 tuplets).
 **Depends on**: Phase 26 (must inherit prefix-only philosophy from Op Standardization)
-**Requirements**: SYM-01, TUP-09, TUP-10, DICT-01, DICT-02, DICT-03
+**Requirements**: SYM-01, TUP-09, TUP-10, TUP-11, DICT-01, DICT-02, DICT-03
 **Success Criteria** (what must be TRUE):
-  1. Symbols: `#foo` lexes as `SymbolLiteral`; `Symbol` type registered; equality is pointer-compare (interned); usable as `Dict` key (SYM-01)
-  2. Tuples: `<<C4, q>>` literal; `<<>>` empty + `<<x>>` singleton valid; type annotation `<<Note, Beat>>` mirrors literal; `tup@0`/`@1` indexing; `<<a, b>> = foo()` destructure; immutable (TUP-09)
+  1. Symbols: `#foo` lexes as `SymbolLiteral`; `Symbol` type registered; equality is pointer-compare (interned); usable as `Dict` key; strict separation from String (`(eq #foo "foo")` is false) (SYM-01)
+  2. Tuples: `<<C4, q>>` literal; `<<>>` empty + `<<x>>` singleton valid; type annotation `<<Note, Beat>>` mirrors literal; `tup@0`/`@1` indexing; `<<a, b>> = foo()` destructure (assignment only — proc/lambda params deferred); immutable; structural equality (TUP-09)
   3. Flow ops: `~>` unpacks tuple into multi-arg call; on non-tuple LHS, `~>` behaves identically to `->` (charitable interpretation per memory) (TUP-10)
-  4. Dicts: `Dict<K, V>` Java-generic style; `(dict K V K V ...)` flat constructor; `(dictTuple <<K,V>> <<K,V>> ...)` tuple-pair constructor; immutable; allowed key types: Int/Long/Float/String/Symbol/Note/Chord/Tuple-of-hashables (DICT-01)
-  5. Dict ops: `(get d k)`, `(set d k v)`, `(has d k)`, `(keys d)`, `(values d)`, `(size d)`, `(merge d1 d2)`, `(remove d k)`; all mutations return new dicts (DICT-02)
-  6. Iteration: `(each d callback)` yields `<<key, value>>` tuples, callable via `~>` for multi-arg lambda dispatch (DICT-03)
-  7. Existing `tutorial.flow` + `showcase.flow` remain cmp-clean (no regression to byte-identical determinism)
-**Plans**: TBD
+  4. `(unpack tuple func)` runtime builtin — first-class S-expression-style equivalent of `~>` for value-level / dynamic-dispatch / HOF-composition use (mirrors Lisp's `(apply f args)`); ships alongside `~>`, not as a replacement (TUP-11)
+  5. Dicts: `Dict<K, V>` Java-generic style; `(dict K V K V ...)` flat constructor; `(dictTuple <<K,V>> <<K,V>> ...)` tuple-pair constructor; immutable; allowed key types: Int/Long/Float/String/Symbol/Note/Chord/Tuple-of-hashables; disallowed-key annotations rejected at type-check time (DICT-01)
+  6. Dict ops: 14-op surface — `(dict)`, `(dictTuple)`, `(get d k)`, `(getOr d k default)`, `(set d k v)`, `(remove d k)`, `(has d k)`, `(keys d)`, `(values d)`, `(size d)`, `(merge d1 d2)` (last-write-wins), `(each d cb)`, `(map d cb)`, `(filter d pred)`; all mutations return new dicts; insertion order preserved (DICT-02)
+  7. Iteration: `(each d callback)` yields `<<key, value>>` tuples, callable via `~>` for multi-arg lambda dispatch (DICT-03)
+  8. Float NaN keys: NaN-equals-NaN special-case scoped to Dict-internal eq only; Flow's general `(eq nan nan)` continues to follow IEEE 754
+  9. Existing `tutorial.flow` + `showcase.flow` remain cmp-clean (no regression to byte-identical determinism)
+**Plans**: 6 plans
+- [x] 26.1-01-PLAN.md — Wave 0 RED scaffolding (10 Fact stubs + 9 .flow stubs + FlowScriptData entry) — Shipped ac3b926 + d98ed21
+- [x] 26.1-02-PLAN.md — Wave 1: Symbol primitive (SYM-01) + IsHashable() virtual on FlowType — Shipped 35474ed
+- [x] 26.1-03-PLAN.md — Wave 2: Tuple type (TUP-09) literal/index/destructure/AnyArity sentinel — Shipped 6549116
+- [x] 26.1-04-PLAN.md — Wave 3: ~> flow op (TUP-10) + (unpack) runtime (TUP-11) — Shipped d628870
+- [x] 26.1-05-PLAN.md — Wave 4: Dict<K, V> + 14-op surface (DICT-01/02/03) — Shipped daaa023
+- [x] 26.1-06-PLAN.md — Wave 5: Closure (REQUIREMENTS/ROADMAP/STATE/CLAUDE.md/26.1-VERIFICATION.md) — Shipped 2026-05-09
 
 ### Phase 26.2: Music Type Ergonomics + FX Overloads (INSERTED)
 **Goal**: Special music types (Decibel, Beat, Cent, Semitone, Millisecond, Second) are currently a documentation lie — they read nicely in code but can't be passed to the audio FX functions that should accept them (Decibel + Beat have ZERO numeric compatibility; Millisecond/Second only convert to each other; only Cent is fully functional). Phase normalizes type compatibility (Cent precedent), registers music-type overloads on every FX builtin where the parameter is conceptually musical, and decides the `gain` dB-vs-linear policy (charitable interpretation per memory — likely splits into `gain(Buffer, Decibel)` for dB and `volume(Buffer, Float)` for linear). Surfaced from quick task 260504-v6j follow-up: a user typed `(gain rendered -12dB)` and got "No matching overload for function 'gain' with argument types (Buffer, Decibel)" — the special types are useless if they can't reach the functions named after them.
 **Depends on**: Nothing (orthogonal to 26 / 26.1; can ship in parallel)
-**Requirements**: ERG-01, ERG-02, ERG-03 (+ optional ERG-04 Hertz type)
+**Requirements**: ERG-01, ERG-02, ERG-03, ERG-04, ERG-05
 **Success Criteria** (what must be TRUE):
   1. All six music types implement `IsCompatibleWith` / `CanConvertTo` against their primitive numeric counterpart (CentType precedent); Decibel + Beat accept Double / Float; Millisecond / Second / Semitone reach Double / Float / Int sites consistently (ERG-01)
   2. Music-type overloads registered for `gain(Buffer, Decibel)`, `delay(Buffer, Millisecond, ...)`, `compress(Buffer, ..., Millisecond, Millisecond)`, `sidechain(..., Millisecond, Millisecond)` and any other FX site where a music type is the natural read (ERG-02)
@@ -246,17 +256,136 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
   4. Optional: `Hertz` type with `440Hz` / `1.5kHz` literal syntax + lowpass/highpass/bandpass music-type overloads (ERG-04)
   5. New facts cover every overload + compatibility path (TDD discipline; mirrors existing music-type fact files)
   6. Existing flow-lang.Tests pass; `tutorial.flow` + `showcase.flow` remain cmp-clean (byte-identical determinism preserved)
-**Plans**: TBD
+**Plans**: 6 plans
+- [x] 26.2-01-PLAN.md — Wave 0 RED scaffolding (6 *Facts.cs files) + Value.ConvertTo Double-arm patch (closes the 2 RED DecibelBeat facts) — Shipped 45b01fb + 0d61413 + 50add6d
+- [x] 26.2-02-PLAN.md — Wave 1: Ms/Sec/Hertz IsCompatibleWith(Double|Float) + Value.Hertz factory + new HertzType (ERG-01 + ERG-04 type-level) — Shipped 4f92c24 + f12d648 + e4b71f0
+- [x] 26.2-03-PLAN.md — Wave 2: Hz/kHz lexer arms + Parser HertzLiteral route + audio.flow gain(Decibel) forward decl (ERG-04 + ERG-05 closure) — Shipped d655c65 + 28158cc + d3ce16e
+- [x] 26.2-04-PLAN.md — Wave 3: FX music-typed overloads (delay-Ms, compress/sidechain-Decibel-Ms, reverb-Second, lowpass/highpass/bandpass-Hertz, createXxxTone-Hertz family) — ERG-02 + ERG-04 — Shipped dfbfa1f + 821e9d0 + af23658
+- [x] 26.2-05-PLAN.md — Wave 4: volume(Buffer, Double) linear-multiplier alternative to gain(dB) — ERG-03 (D-04..D-07) — Shipped 6df301e + 00a5a41
+- [x] 26.2-06-PLAN.md — Wave 5: Closure (REQUIREMENTS/ROADMAP/STATE/CLAUDE.md/26.2-VERIFICATION.md) — Shipped 86bdd15
 
 ### Phase 27: Tutorial + Showcase Refresh
 **Goal**: `examples/tutorial.flow` and `examples/showcase.flow` demonstrate every v1.3 feature end-to-end with byte-identical determinism; v1.1 + v1.2 chapters preserved (last per v1.2 precedent — Phase 16 was the v1.2 tutorial-refresh closer)
 **Depends on**: Phases 18-26.2 (every v1.3 feature must be live before tutorial can demonstrate it, including Phase 26 prefix-op standardization, Phase 26.1 symbols/tuples/dicts, and Phase 26.2 music-type FX overloads)
 **Requirements**: QOL-04
 **Success Criteria** (what must be TRUE):
-  1. `examples/tutorial.flow` demonstrates tuplets `{3:2 ...}q`, fractional `C4/12`, range, multi-letter enharmonics, negative slice, `enable hAsB;` pragma, arpeggio/voicings/delay-sync/quantize/legato/portamento/varispeed-loadWav, named-tuning microtonal, scale-lint pragma, `humanizeGaussian`, prefix-only arithmetic via `(add)`/`(sub)`/`(mul)`/`(div)`, symbol `#foo`, tuple `<<a, b>>` with `~>` unpack, generic `Dict<K, V>` keyed by `Note` and `Symbol` via `(dict K V ...)` + `(get d k)` (QOL-04)
+  1. examples/tutorial.flow demonstrates EVERY v1.3 feature end-to-end: tuplets `{3:2 ...}q` + fractional `C4/12` + nested tuplets, range, multi-letter enharmonics, negative slice, `enable hAsB;` pragma (companion file demo), arpeggio/voicings/NoteValue-rate-delay/quantize/legato/portamento/varispeed (prose-only since varispeed lives on loadWav and tutorial ships no sample), named-tuning microtonal pragmas (companion file demo), scale-lint pragma (print-only mention; flow-lsp owns surface), humanizeGaussian, prefix-only arithmetic via `(add)`/`(sub)`/`(mul)`/`(div)`/`(idiv)`/`(neg)`/`(concat)`, symbol `#foo`, tuple `<<a, b>>` with `~>` unpack + `(unpack)` runtime, generic `Dict<K, V>` 14-op surface, AND Phase 26.2 surface — `volume(buf, linear)` vs `gain(buf, dB)` split, Hertz literals `440Hz`/`1.5kHz`, Ms-typed FX overloads (`delay`/`compress`/`sidechain`), Second-decay `(reverb buf mix 1.8s)`, Hertz-overloaded filters + Hertz-overloaded `createSineTone` signal-generator demo (saw/square/triangle mechanically equivalent — not separately demoed) (QOL-04)
   2. Both scripts run to completion (exit 0) producing non-empty WAV + MIDI output to `examples/output/` (QOL-04)
   3. Byte-identical determinism contract holds across two consecutive runs (cmp-clean) for both `tutorial.flow` and `showcase.flow` (QOL-04)
   4. Existing v1.1 + v1.2 chapters preserved — no regressions to prior tutorial coverage (QOL-04)
+**Plans**: 5 plans
+- [x] 27-01-PLAN.md — Wave 1: Language-feature weaves (Symbols 1.5, Tuples + ~> 4.5, Dict 4.6, prefix-arithmetic prose ch.2, Hertz + Ms-FX inline ch.9, gain-vs-volume own chapter 9.5, Second-decay reverb append ch.16) — Shipped 995ff67
+- [x] 27-02-PLAN.md — Wave 2: Music-feature batch chapter 19.5 (sub-section A tuplets+fractional, B microtonal+scale-lint pragma prose, C DX-10..15 bundle, D misc small wins) + Congratulations bullet list expansion — Shipped dbffbec
+- [x] 27-03-PLAN.md — Wave 3: Tutorial graduation song refactor with Phase 26.2 audible features (D-103) + showcase.flow REPLACE with v1.3 polyrhythmic-minimal piece + companion files h_alias.flow + microtonal_ji.flow under examples/pragmas/ — Shipped eadbd9f
+- [x] 27-04-PLAN.md — Wave 4: Phase27ByteIdenticalPragmaTests.cs (4 facts mirroring Phase18/ByteIdenticalShowcaseTests verbatim) — Shipped e15c5be
+- [x] 27-05-PLAN.md — Wave 5: Closure (REQUIREMENTS QOL-04 rewrite + CLAUDE.md Music Types Quick Reference + ROADMAP/STATE/VERIFICATION/SUMMARY + Open Questions RESOLVED flip) — Shipped ace6416
+
+## v1.4 Audio Fidelity, Distribution & Public Showcase (Phases 28-34) — in progress
+
+Three intertwined threads close v1.4 and pivot Flow from pre-public to public:
+
+1. **Audio fidelity** (Phases 28, 29, 33) — runtime polyphony rewrite + first-class articulation; modest realism pass on existing synths; full SFZ orchestral sampler for serious composition.
+2. **Distribution + tooling** (Phases 30, 31, 32) — `flow` CLI + formal install + MIDI↔Flow conversion; LSP polish, VSCode marketplace publish, JetBrains plugin (stretch); full Scala (`.scl`) tuning loader.
+3. **Public showcase** (Phase 34, milestone closer) — short symphony rendered entirely from Flow source via the SFZ sampler; the headline artifact of v1.4 and the moment Flow stops being pre-public.
+
+v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-clean) but pinned bytes change because the rendered output legitimately differs.
+
+### Phase 28: MIDI + Audio Polyphony & Articulation Rewrite
+**Goal**: Overlapping notes in dense polyphonic writing (ragtime stride, piano with sustained pedal under inner voices, contrapuntal lines) render at their authored duration in BOTH MIDI export and WAV rendering — no truncation, no cut-off, no inaudible-shortening. Articulation becomes a first-class note attribute (staccato/legato/accent/marcato) with explicit semantic duration + velocity rules, replacing the current implicit duration-only model.
+**Depends on**: Phase 27 closure (v1.3 ships clean before v1.4 architecture work begins)
+**Requirements**: SPEC-1..SPEC-9 (see 28-SPEC.md)
+**Status**: Complete (shipped 2026-05-10; UAT signed off after staccato-grace-note-artifact parser fix — see `.planning/debug/staccato-grace-note-artifact.md`)
+**Success Criteria** (what must be TRUE):
+  1. Ragtime test fixture (stride pattern: whole-note left-hand bass under syncopated right-hand eighth-notes) renders with the bass note audibly sustaining for its full duration in both MIDI and WAV — VERIFIED at xUnit level via HeldNoteRmsTests + VoiceBlockRenderTests; pending composer ear-check
+  2. Staccato note attribute renders shorter than its authored duration with audible separation; legato attribute connects adjacent notes without retrigger; accent boosts velocity; marcato combines accent + staccato — VERIFIED via ArticulationRulesTests + ArticulationVelocityTests + PerSynthArticulationTests (78 facts)
+  3. Existing flow scripts that don't use articulation attributes continue to render identically (or with audibly-better polyphony — content-equivalent, byte-different) — VERIFIED via Phase 22 LegatoFacts + Phase 18/25/27 ByteIdentical two-run determinism (22 facts)
+  4. Voice allocation uses a pool model (round-robin or steal-oldest) rather than one-track-per-note explosion — IMPLEMENTED via VoiceAllocator.AllocateWithPool with steal-oldest policy (Plan 28-05); voicePool 1..256 block; default 32
+  5. Both `flow-midi/` MIDI export and `flow-lang/StandardLibrary/Audio/` WAV rendering share the same articulation/polyphony model — no divergent contracts — VERIFIED via MultiTrackMidiTests + RagtimeFixtureTests reading MIDI back via DryWetMidi
+**Plans**: 7/7 complete (28-01 through 28-07)
+
+### Phase 29: Instrument Realism — ✅ Complete (2026-05-12)
+**Goal**: Built-in instruments (piano, brass, sax, drums) sound noticeably more realistic — closer to a real recording or a high-quality VST than the current synthesizer output. Approach (sample-based library, improved synthesis, hybrid) is decided in /gsd-spec-phase 29.
+**Closure:** see `.planning/phases/29-instrument-realism/29-VERIFICATION.md`. SPEC D-29 Gates A and D shipped as judgment-call passes (documented amendments); B/C/E strict-pass. 5 v1.5 backlog seeds captured: flute sample expansion, sampled-instrument articulation envelopes, three-velocity piano, sampled drums path, PerSynthArticulationTests cleanup.
+**Depends on**: Phase 28 (articulation system + polyphony model must exist before per-sample articulation rendering can hook in)
+**Requirements**: SPEC-1..SPEC-8 (see 29-SPEC.md)
+**Success Criteria** (what must be TRUE):
+  1. Side-by-side audible comparison test: rendering the v1.3 graduation song before vs after Phase 29 demonstrates a clear realism improvement (subjective UAT — manual listening verification per phase precedent)
+  2. All existing instruments (piano, brass, sax, drums) get the realism pass; no instrument is left at v1.3-quality fidelity
+  3. Articulation attributes from Phase 28 render audibly per-instrument (staccato piano sounds like a staccato piano, not just a shortened sustain)
+  4. Build size + repo size impact bounded ≤ 5 MB CC0 sample bundle
+  5. Existing flow scripts continue to render (instrument names + signatures unchanged — internal implementation upgraded)
+**Plans**: 7 plans (29-01 through 29-07) — see `.planning/phases/29-instrument-realism/`
+
+### Phase 30: Flow CLI + Formal Install
+**Goal**: Ship a `flow` binary so Flow becomes installable + usable without cloning the repo. Adds `flow run|eval|repl|watch|play|render|flow2midi|midi2flow|check|version|new` subcommand surface; XDG config; install script targeting `/usr/local/bin/flow`; bundles stdlib alongside the binary so `use "@audio"` etc. resolves post-install. Closes Bug B (flow-midi cluster: 480-tick quarter mis-snap, RH/LH heuristic, leading-empty-bar emission) at the Quantizer + FlowGenerator layer; SPEC-6 round-trip pinned by 3 CC0 fixtures.
+**Depends on**: Phase 28 closure (articulation/polyphony stable; CLI wraps stable runtime)
+**Requirements**: REQ-1, REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8
+**Success Criteria** (what must be TRUE):
+  1. `flow run path/to/script.flow` works after install without cloning the repo or running `dotnet run`
+  2. Install script produces a working binary at `/usr/local/bin/flow` (Linux primary)
+  3. `midi2flow input.mid -o output.flow` round-trips a MIDI file into editable Flow source via the existing `flow-midi` parser
+  4. `flow render input.flow -o out.wav` writes a WAV; `flow flow2midi input.flow -o out.mid` writes MIDI
+  5. Existing `dotnet run --project flow-interpreter ...` invocations continue to work during transition
+**Plans**: 9 plans
+- [x] 30-01-PLAN.md — flow-cli project scaffold + System.CommandLine 2.0.7 root + 11-subcommand stub registry — Shipped fa66c38 + b57a1e8 + ae6acae
+- [x] 30-02-PLAN.md — 10 real subcommand handlers + Midi2FlowStubCommand + embedded scaffold template — Shipped 48761cb + bc9bb8c + 8bcc8c0 + ebb6802 + dac4dad
+- [x] 30-03-PLAN.md — FlowConfig singleton in flow-lang/Runtime + Tomlyn 2.3.2 loader + 4 propagation hooks + 8 Facts — Shipped 475838c + f8ca1ed + a34c904 + 8116b2f + a37b7ab
+- [x] 30-04-PLAN.md — dotnet publish profile + scripts/publish.sh + 38 MB published binary + stdlib CopyToPublishDirectory + AppContext.BaseDirectory fix for single-file — Shipped 675506d + fc6fead + 4481979
+- [x] 30-05-PLAN.md — scripts/install.sh + scripts/test-install.sh (8 s smoke) + scripts/uninstall.sh — Shipped c31f36d + 984fa39 + 07227b4
+- [x] 30-06-PLAN.md — flow-midi.Tests xUnit project + MidiFixtureBuilder + 8 RED-on-HEAD fact classes pinning Bug B Defects 1/2/3 — Shipped a78054a + a6c93bc + 81d2729 + dc6161f
+- [x] 30-07-PLAN.md — Quantizer.cs: SnapDurationCapped tolerance band + AddRests count cap + leading-bar trim + DELETE AddSplitTracks (6 RED facts flip GREEN) — Shipped b79fd87 + 2aed0eb + 63eb787 + 24daaff
+- [x] 30-08-PLAN.md — FlowGenerator.cs: `bool roundTrip` mode (drop (play output), explicit durations, trackN naming, section "roundtrip", `Song s = [roundtrip]` marker) — Shipped a7170dd
+- [x] 30-09-PLAN.md — flow midi2flow real handler + 3 CC0 fixtures + Midi2FlowRoundTripTests + writeMidi denominator double-encoding fix + closure — Shipped 303bddd + 9801b9e + a026afb + (closure)
+
+### Phase 31: LSP Enhancements + JetBrains Stretch
+**Goal**: Close the gaps in `flow-lsp` that hurt music-production and functional-language audiences (context-aware completion filtered by `use`d modules, pragma awareness, varargs in signature help, function-call coloring, multi-form comments like `Note:`/`TODO:`/`;`, expanded warning diagnostics) and finally publish the VSCode extension to the Marketplace + OpenVSX. Stretch: ship a JetBrains plugin via LSP4IJ.
+**Depends on**: Phase 28 closure (articulation tokens like `leg` need LSP completion support); ideally also Phase 30 closure (so the LSP can ship alongside the formal install)
+**Requirements**: TBD (assigned during /gsd-spec-phase 31)
+**Success Criteria** (what must be TRUE):
+  1. Completion suggestions filter by what the current file actually `use`d (no longer suggests `(arpeggio ...)` if `@harmony` is not imported)
+  2. Function calls visually distinguished from identifiers in the VSCode extension grammar
+  3. Varargs functions surface their variadic shape in completions and hovers
+  4. `Note:` / `TODO:` / `FIXME:` / `;` recognized as comments by lexer + grammar
+  5. VSCode extension published to Marketplace + OpenVSX with a v1.4-aligned version tag
+  6. Phase 17 HUMAN-UAT rows 1-5 closed (manual smoke + marketplace publish)
+  7. (Stretch) JetBrains plugin published to JetBrains Marketplace via LSP4IJ
+**Plans**: TBD
+
+### Phase 32: Full Scala (`.scl`) Tuning Loader
+**Goal**: Add `enable customTuning("path/to/tuning.scl");` pragma (or equivalent surface) that loads and parses Scala-format tuning files. Closes the v1.3 D-03 deferral. Enables arbitrary microtonal tuning beyond the 3 named-tunings wedge from Phase 23.
+**Depends on**: Phase 23 closure (named-tunings infrastructure exists; Scala loader extends it)
+**Requirements**: TBD (assigned during /gsd-spec-phase 32)
+**Success Criteria** (what must be TRUE):
+  1. A `.scl` file with N steps loads and produces a `RenderTuning` value compatible with the existing Phase 23 pipeline
+  2. Common public Scala archive files (e.g. partch.scl, slendro.scl, just-intonation.scl) parse without error
+  3. Malformed `.scl` files raise clear errors pointing at the offending line
+  4. Loaded tunings work end-to-end: pitch conversion, MIDI export advisory warning (per Phase 23 D-13), transform invariance per MICR-02
+  5. Phase 23's named-tunings continue to work unchanged (`enable justIntonation;` / `pythagorean;` / `equalTemperament;`)
+**Plans**: TBD
+
+### Phase 33: SFZ Orchestral Sampler
+**Goal**: Multi-sample sampler subsystem capable of consuming real orchestral sample libraries (SFZ format). Region matching by (pitch, velocity), in-zone resample for pitch shifts beyond the nearest sample, sustain looping for held notes, velocity layers via SFZ region selection. Foundation for the symphony showcase (Phase 34). Builds on Phase 22's `loadWav` varispeed primitive and Phase 29's modest sampler infrastructure.
+**Depends on**: Phase 29 closure (modest sampler scaffolding ships first); Phase 28 (articulation system) for per-articulation envelope shaping
+**Requirements**: TBD (assigned during /gsd-spec-phase 33)
+**Success Criteria** (what must be TRUE):
+  1. SFZ parser handles the common subset (`sample`, `lokey`/`hikey`/`pitch_keycenter`, `lovel`/`hivel`, `loop_mode`/`loop_start`/`loop_end`, `ampeg_attack`/`ampeg_release`, `volume`, `pan`, `<region>`/`<group>`/`<global>`)
+  2. At least one free orchestral library (VSCO Community / Versilian / Sonatina) loads + plays correctly
+  3. Held notes loop their sustain region cleanly (no clicks at loop boundaries)
+  4. Velocity layers select the right region per note velocity; out-of-range notes resample from the nearest pitched sample
+  5. Composer surface for sampler instruments is locked (e.g. `loadSfz("path.sfz")` builtin or `"sampler:name"` instrument string)
+  6. Existing synth-based instruments (piano/brass/sax/drums/strings/organ/bell) continue to work unchanged
+**Plans**: TBD
+
+### Phase 34: Symphony Showcase (v1.4 closer — pre-public → public pivot)
+**Goal**: A curated short symphony (30-90 seconds, 3-6 instruments) rendered entirely from Flow source code via the SFZ sampler from Phase 33. Polished mix, code screenshots, README updates pointing at the showcase. The headline artifact of v1.4 and the moment Flow stops being pre-public — once the clip is public, the demonstrated API surface becomes effectively frozen.
+**Depends on**: Phases 28, 29, 30, 31, 32, 33 (every other v1.4 feature must be locked first; the piece may demonstrate any of them)
+**Requirements**: TBD (assigned during /gsd-spec-phase 34)
+**Success Criteria** (what must be TRUE):
+  1. A short symphony renders end-to-end from Flow source (`examples/symphony/`) via the SFZ sampler with no runtime errors
+  2. Composer signs off that the rendered audio is "postable on GitHub" quality — manual UAT, blind evaluation against a reference recording of similar instrumentation
+  3. Code screenshots capture the source paired with audible features (musical context blocks, note streams, transforms, sampler instruments, articulation, polyphony)
+  4. README.md updated with a prominent showcase link + clip embed; `examples/symphony/README.md` documents how to reproduce the render
+  5. v1.4 milestone closure: ROADMAP/STATE/REQUIREMENTS marked complete; public release tag (`v1.4.0`) cut; first public-facing announcement ready
 **Plans**: TBD
 
 ## Progress
@@ -288,7 +417,14 @@ Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/
 | 23. Microtonal Tuning (Wedge) | v1.3 | 5/5 | Complete   | 2026-05-04 |
 | 24. Scale Linting (flow-lsp) | v1.3 | 6/6 | Complete   | 2026-05-04 |
 | 25. Gaussian Humanize (LAST PRNG phase) | v1.3 | 5/5 | Complete   | 2026-05-04 |
-| 26. Op Standardization (Prefix-Only) | v1.3 | 3/5 | In Progress|  |
-| 26.1. Symbols + Tuples + Dicts | v1.3 | 0/N | Not started | - |
-| 26.2. Music Type Ergonomics + FX Overloads | v1.3 | 0/N | Not started | - |
-| 27. Tutorial + Showcase Refresh | v1.3 | 0/N | Not started | - |
+| 26. Op Standardization (Prefix-Only) | v1.3 | 5/5 | Complete   | 2026-05-09 |
+| 26.1. Symbols + Tuples + Dicts | v1.3 | 6/6 | Complete   | 2026-05-09 |
+| 26.2. Music Type Ergonomics + FX Overloads | v1.3 | 6/6 | Complete   | 2026-05-10 |
+| 27. Tutorial + Showcase Refresh | v1.3 | 5/5 | Complete    | 2026-05-10 |
+| 28. MIDI + Audio Polyphony & Articulation Rewrite | v1.4 | 7/7 | Complete   | 2026-05-10 |
+| 29. Instrument Realism | v1.4 | 0/7 | Plans ready (gated on CC0 sample curation) | - |
+| 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
+| 31. LSP Enhancements + JetBrains Stretch | v1.4 | 0/N | Spec pending | - |
+| 32. Full Scala (.scl) Tuning Loader | v1.4 | 0/N | Spec pending | - |
+| 33. SFZ Orchestral Sampler | v1.4 | 0/N | Spec pending | - |
+| 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |

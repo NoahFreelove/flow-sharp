@@ -1,0 +1,60 @@
+Note: Dict 14-op surface -- get/getOr/set/remove/has/keys/values/size/merge/each/map/filter (DICT-02/03)
+Note: Tests: every op + insertion-order preservation + immutability
+
+use "@std"
+
+Dict<Symbol, Int> d = (dict #kick 90 #snare 70 #hihat 50)
+
+Note: ===== Test 1: get + getOr =====
+Int v1 = (get d #kick)
+Int v2 = (getOr d #ghost 0)
+(print (str v1))
+(print (str v2))
+
+Note: ===== Test 2: has + size =====
+Bool h1 = (has d #snare)
+Int n = (size d)
+(print (str h1))
+(print (str n))
+
+Note: ===== Test 3: set returns NEW dict; original untouched =====
+Dict<Symbol, Int> d2 = (set d #clap 60)
+Int origSize = (size d)
+Int newSize = (size d2)
+(print (str origSize))
+(print (str newSize))
+
+Note: ===== Test 4: remove =====
+Dict<Symbol, Int> d3 = (remove d #snare)
+Bool stillHas = (has d3 #snare)
+(print (str stillHas))
+
+Note: ===== Test 5: keys + values insertion order =====
+Symbol[] ks = (keys d)
+Int[] vs = (values d)
+(print (str ks))
+(print (str vs))
+
+Note: ===== Test 6: merge last-write-wins =====
+Dict<Symbol, Int> a = (dict #x 1)
+Dict<Symbol, Int> b = (dict #x 2 #y 3)
+Dict<Symbol, Int> m = (merge a b)
+Int mx = (get m #x)
+Int my = (get m #y)
+(print (str mx))
+(print (str my))
+
+Note: ===== Test 7: each (Pitfall 6 -- dict invokes 2-arg callback) =====
+(each d (fn Symbol k, Int v => (print (str v))))
+
+Note: ===== Test 8: map (transform values) =====
+Dict<Symbol, Int> louder = (map d (fn Symbol k, Int v => (mul v 2)))
+Int loudKick = (get louder #kick)
+(print (str loudKick))
+
+Note: ===== Test 9: filter =====
+Dict<Symbol, Int> hits = (filter d (fn Symbol k, Int v => (gt v 60)))
+Int hitsSize = (size hits)
+(print (str hitsSize))
+
+(print "test_dict_ops: PASSED")

@@ -142,6 +142,15 @@ public partial class Parser
                 Advance(); // consume `reverbTime`
                 return ParseMusicalContextStatement(MusicalContextType.ReverbTime);
             }
+            // Phase 28 SPEC-7: voicePool N { ... } context block. Integer N only (no float).
+            // Range validation (1..256) happens at the interpreter so the error points
+            // at the offending value, not at the '{'.
+            if (Check(TokenType.VoicePool) && _current + 1 < _tokens.Count
+                && _tokens[_current + 1].Type is TokenType.IntLiteral)
+            {
+                Advance(); // consume `voicePool`
+                return ParseMusicalContextStatement(MusicalContextType.VoicePool);
+            }
 
             // Section declaration: section name { ... }
             if (Match(TokenType.Section))
@@ -163,6 +172,15 @@ public partial class Parser
                 if (!_inLoop)
                     throw new ParseException("'continue' can only be used inside a loop");
                 return new ContinueStatement(PreviousToken.Location);
+            }
+
+            // Phase 26.1 TUP-09: Tuple destructuring assignment statement
+            // `<<Type? name, Type? name, ...>> = expr`. Must come BEFORE the IsTypeKeyword
+            // check because `<<` is not a type-keyword token but is the only
+            // statement-start position where LessLess can occur.
+            if (Check(TokenType.LessLess))
+            {
+                return ParseTupleDestructureStatement();
             }
 
             // Check for variable declaration: Type identifier =
@@ -332,6 +350,42 @@ public partial class Parser
         }
 
         return new VariableDeclaration(value.Location, varType, name, value);
+    }
+
+    /// <summary>
+    /// Phase 26.1 TUP-09: parses <c>&lt;&lt;Type? name, Type? name, ...&gt;&gt; = expr</c>
+    /// destructuring assignment. Each slot supports an optional type annotation followed
+    /// by an identifier name (CONTEXT § Specifics block 2 — composers can use bare names
+    /// when the RHS type is known).
+    /// </summary>
+    private TupleDestructureStatement ParseTupleDestructureStatement()
+    {
+        Expect(TokenType.LessLess, "Expected '<<' to start destructure pattern");
+        var location = PreviousToken.Location;
+        var patterns = new List<TupleDestructurePattern>();
+        while (!Check(TokenType.GreaterGreater) && !IsAtEnd())
+        {
+            FlowType? slotType = null;
+            // Optional per-slot type annotation. IsTypeKeyword honors the same allowlist
+            // as ParseVariableDeclaration, so any annotation accepted there works here.
+            if (IsTypeKeyword(CurrentToken.Type))
+            {
+                var (parsedType, nextIdx, _) = TypeParser.ParseType(_tokens, _current);
+                slotType = parsedType;
+                _current = nextIdx;
+            }
+            if (CurrentToken.Type != TokenType.Identifier)
+                throw new ParseException(
+                    $"Expected identifier in destructure pattern at {CurrentToken.Location}");
+            var name = Advance().Text;
+            patterns.Add(new TupleDestructurePattern(slotType, name));
+            if (!Check(TokenType.GreaterGreater) && Check(TokenType.Comma))
+                Advance();
+        }
+        Expect(TokenType.GreaterGreater, "Expected '>>' after destructure pattern");
+        Expect(TokenType.Assign, "Expected '=' after destructure pattern");
+        var value = ParseExpression();
+        return new TupleDestructureStatement(location, patterns, value);
     }
 
     private Expression CreateDefaultValueExpression(FlowType type, SourceLocation location)
@@ -589,6 +643,20 @@ public partial class Parser
                 break;
             }
 
+            case MusicalContextType.VoicePool:
+            {
+                // Phase 28 SPEC-7: voicePool N { ... } — integer literal only.
+                // Range validation (1..256) is done at the interpreter so the error
+                // message points at the offending integer, not at the '{'.
+                var poolLoc = CurrentToken.Location;
+                if (Check(TokenType.IntLiteral))
+                    value = new LiteralExpression(poolLoc, (int)Advance().Value!);
+                else
+                    throw new ParseException(
+                        $"Expected integer voice pool size (1..256), got {CurrentToken.Type} '{CurrentToken.Text}' at {poolLoc}");
+                break;
+            }
+
             default:
                 throw new ParseException($"Unknown musical context type: {contextType}");
         }
@@ -690,11 +758,29 @@ public partial class Parser
     {
         var left = ParseUnaryShorthand();
 
-        while (Match(TokenType.Arrow))
+        // Phase 26.1 TUP-10: also match TildeArrow `~>`. Unlike `->` (which does
+        // a parse-time transform when RHS is a recognizable call shape), `~>`
+        // ALWAYS emits TupleUnpackFlowExpression because tuple arity is unknown
+        // at parse time (RESEARCH Q5 / Pitfall 2). The evaluator does the unpack
+        // at runtime when the tuple's IReadOnlyList<Value> is in hand.
+        while (true)
         {
+            bool isTildeArrow;
+            if (Match(TokenType.Arrow)) { isTildeArrow = false; }
+            else if (Match(TokenType.TildeArrow)) { isTildeArrow = true; }
+            else break;
+
             var location = PreviousToken.Location;
             var right = ParseUnaryShorthand();
 
+            if (isTildeArrow)
+            {
+                // Always defer to runtime — arity unknown at parse time (RESEARCH Q5)
+                left = new TupleUnpackFlowExpression(location, left, right);
+                continue;
+            }
+
+            // Existing -> behavior unchanged below.
             // Transform right side if it's an identifier or function call
             // x -> func becomes func(x)
             // x -> func(arg) becomes func(x, arg)
@@ -831,8 +917,16 @@ public partial class Parser
         if (Match(TokenType.DecibelLiteral))
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
+        // Phase 26.2 ERG-04 — HertzLiteral routes to LiteralExpression with raw text;
+        // ExpressionEvaluator.TryParseSpecialLiteral resolves "800Hz" / "1.5kHz" to Value.Hertz(canonical-Hz double).
+        if (Match(TokenType.HertzLiteral))
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+
         if (Match(TokenType.ChordLiteral))
             return new ChordLiteralExpression(PreviousToken.Location, PreviousToken.Text);
+
+        if (Match(TokenType.SymbolLiteral))
+            return new SymbolLiteralExpression(PreviousToken.Location, PreviousToken.Text);
 
         // Lambda expression: fn Type name, Type name => body
         if (Match(TokenType.Fn))
@@ -878,6 +972,24 @@ public partial class Parser
 
             Expect(TokenType.RBracket, "Expected ']' after array literal");
             return new ArrayLiteralExpression(location, elements);
+        }
+
+        // Phase 26.1 TUP-09: tuple literal <<elem1, elem2, ...>>. Empty <<>> and singleton
+        // <<x>> are valid arities (CONTEXT § Specifics block 2 — `<<>>` empty + `<<x>>` singleton).
+        if (Match(TokenType.LessLess))
+        {
+            var location = PreviousToken.Location;
+            var elements = new List<Expression>();
+
+            while (!Check(TokenType.GreaterGreater) && !IsAtEnd())
+            {
+                elements.Add(ParseExpression());
+                if (!Check(TokenType.GreaterGreater) && Check(TokenType.Comma))
+                    Advance();
+            }
+
+            Expect(TokenType.GreaterGreater, "Expected '>>' after tuple literal");
+            return new TupleLiteralExpression(location, elements);
         }
 
         // Parenthesized expression or function call
@@ -1115,10 +1227,12 @@ public partial class Parser
 
             // Special types
             if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent"
-                or "Millisecond" or "Second" or "Decibel" or "Lazy"
+                or "Millisecond" or "Second" or "Decibel" or "Hertz" or "Lazy"
                 or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
                 or "OscillatorState" or "Envelope" or "Beat" or "Voice"
-                or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
+                or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
+                or "Symbol" or "Tuple"  // Phase 26.1 TUP-09 — `Tuple<<T1, T2>>` annotation gate
+                or "Dict")  // Phase 26.1 DICT-01 — `Dict<K, V>` annotation gate
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)
@@ -1128,9 +1242,11 @@ public partial class Parser
                 if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
                     or "String" or "Bool" or "Number" or "Buf" or "Buffer"
                     or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel"
+                    or "Hertz"
                     or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
                     or "OscillatorState" or "Envelope" or "Beat" or "Voice"
-                    or "Track" or "NoteValue" or "TimeSignature" or "Sequence")
+                    or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
+                    or "Symbol")
                     return true;
             }
         }
@@ -1154,7 +1270,9 @@ public partial class Parser
             or TokenType.CentLiteral
             or TokenType.TimeLiteral
             or TokenType.DecibelLiteral
+            or TokenType.HertzLiteral
             or TokenType.ChordLiteral
+            or TokenType.SymbolLiteral
             or TokenType.InterpolatedStringStart
             or TokenType.Identifier;
     }

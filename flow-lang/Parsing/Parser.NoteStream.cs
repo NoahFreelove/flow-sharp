@@ -48,6 +48,30 @@ public partial class Parser
             // End of bar / end of stream
             if (Match(TokenType.Pipe))
             {
+                // Multi-line bar lists are written as
+                //     | ... |
+                //     | ... |
+                // which produces token sequence: PIPE [bar1] PIPE PIPE [bar2] PIPE.
+                // The two adjacent PIPEs between bars are the closing | of bar1 AND the
+                // opening | of bar2 — they MUST collapse into a single bar boundary.
+                // Pre-fix, every adjacent-PIPE pair silently inserted a whole-bar rest
+                // between the content bars (the second PIPE saw currentBarElements empty
+                // and pushed an empty-content NoteStreamBar). For the Phase 28 polyphony
+                // fixture (4 source bars over 4 lines), this doubled-the-bar-count: 4 →
+                // 7, surfacing as the UAT BLOCKER "grace note pre-attack" report — the
+                // C2w bass voice attack at each rendered staccato-bar onset (offset by an
+                // extra silent rest bar) became the first audible sound after a 2-second
+                // silence, perceptually grafting a grace-note-like thump in front of each
+                // staccato. Charitable-interpretation memory applies: a composer writing
+                // multi-line bars NEVER means "insert silent rest bars between" — they
+                // would write "| _ |" explicitly for that.
+                if (currentBarElements.Count == 0 && bars.Count > 0)
+                {
+                    // Adjacent PIPE after a saved content bar — treat as opening | of the
+                    // next bar, no save. nextBarIsPickup already reset to false.
+                    continue;
+                }
+
                 // Save current bar
                 bars.Add(new NoteStreamBar(location, currentBarElements, nextBarIsPickup));
                 currentBarElements = new List<NoteStreamElement>();
@@ -150,10 +174,29 @@ public partial class Parser
             }
 
             // Tuplet bracket: {N:M ...}q  or  {N ...}q  (shorthand) — TUP-01 / TUP-02 / TUP-03
+            // Phase 28 (SPEC-1): also handles `{voice ...}` voice-block dispatch.
             if (Check(TokenType.LBrace))
             {
                 var elemLoc = CurrentToken.Location;
+                int savedPos = _current;
                 Advance(); // consume {
+
+                // Phase 28 voice-block branch: `{voice ...}` — parallel mini-bar.
+                // Voice-block-inside-tuplet is rejected (Phase 28 scope) by ParseTupletChildren;
+                // voice-block-inside-voice-block is rejected by ParseVoiceBlockChildren below.
+                if (Check(TokenType.Identifier) && CurrentToken.Text == "voice")
+                {
+                    Advance(); // consume "voice"
+                    var voiceChildren = ParseVoiceBlockChildren();
+                    Expect(TokenType.RBrace, "Expected '}' to close voice block");
+                    currentBarElements.Add(new VoiceBlockElement(elemLoc, voiceChildren));
+                    continue;
+                }
+
+                // Not a voice block — fall through to tuplet path; restore position so the
+                // existing tuplet code re-consumes the `{`.
+                _current = savedPos;
+                Advance(); // consume { again for the tuplet path
 
                 var nToken = Expect(TokenType.IntLiteral, "Expected integer N in tuplet bracket");
                 int n = (int)nToken.Value!;
@@ -391,8 +434,12 @@ public partial class Parser
 
     /// <summary>
     /// Tries to parse an articulation mark after a note element.
-    /// Recognizes: > (accent), stacc (staccato), ten (tenuto), marc (marcato).
+    /// Recognizes: > (accent), stacc (staccato), ten (tenuto), marc (marcato), leg (legato).
     /// Returns null if no articulation is found.
+    ///
+    /// Phase 28 (SPEC-3): `leg` produces Articulation.Legato — distinct from the Phase 22
+    /// legato() transform which adjusts DurationOverlap. This is the per-note articulation
+    /// envelope; renderers extend duration ~110% with a soft crossfade.
     /// </summary>
     private Articulation? TryParseArticulation()
     {
@@ -415,6 +462,9 @@ public partial class Parser
                 case "marc":
                     Advance();
                     return Articulation.Marcato;
+                case "leg":
+                    Advance();
+                    return Articulation.Legato;
             }
         }
         return null;
@@ -427,14 +477,16 @@ public partial class Parser
     private bool IsEndOfNoteStream()
     {
         var type = CurrentToken.Type;
-        // Note stream elements are: notes, rests, chord brackets, named chords, pipes
-        // Identifiers can be roman numerals inside note streams
+        // Note stream elements are: notes, rests, chord brackets, named chords, pipes,
+        // tuplet brackets `{N ...}` (TUP-01), and Phase 28 voice blocks `{voice ...}`.
+        // Identifiers can be roman numerals inside note streams.
         if (type is TokenType.NoteLiteral or TokenType.Underscore
             or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral
-            or TokenType.LParen or TokenType.GreaterThan)
+            or TokenType.LParen or TokenType.GreaterThan
+            or TokenType.LBrace)
             return false;
         // Check if identifier is a roman numeral, dynamic marking, articulation mark, or cresc/decresc
-        if (type == TokenType.Identifier && (ScaleDatabase.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc" or "cresc" or "decresc"))
+        if (type == TokenType.Identifier && (ScaleDatabase.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc" or "leg" or "cresc" or "decresc"))
             return false;
         // Lowercase identifiers are variable references — continue the stream
         if (type == TokenType.Identifier)
@@ -609,6 +661,152 @@ public partial class Parser
             // Unknown token inside tuplet — report and recover
             _errorReporter.ReportError(
                 $"Unexpected token '{CurrentToken.Text}' inside tuplet bracket",
+                CurrentToken.Location);
+            Advance();
+        }
+
+        return children;
+    }
+
+    /// <summary>
+    /// Phase 28 (SPEC-1): parses note-stream elements inside a `{voice ...}` block.
+    /// Accepts NoteElement, RestElement, ChordElement, NamedChordElement, RandomChoiceElement,
+    /// and TupletElement. Nested voice blocks are rejected with a clear error
+    /// (Phase 28 scope: voice blocks may not contain other voice blocks).
+    /// Terminates on RBrace; the caller consumes the `}` after this returns.
+    /// </summary>
+    private List<NoteStreamElement> ParseVoiceBlockChildren()
+    {
+        var children = new List<NoteStreamElement>();
+
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            // Brace inside voice block: nested tuplet OK, nested voice block REJECTED.
+            if (Check(TokenType.LBrace))
+            {
+                var innerLoc = CurrentToken.Location;
+                int savedPos = _current;
+                Advance(); // consume {
+
+                if (Check(TokenType.Identifier) && CurrentToken.Text == "voice")
+                {
+                    _errorReporter.ReportError(
+                        "Nested voice blocks are not supported (Phase 28 scope)",
+                        innerLoc);
+                    // Skip past the nested voice block contents to a matching `}`
+                    Advance(); // consume "voice"
+                    int depth = 1;
+                    while (!IsAtEnd() && depth > 0)
+                    {
+                        if (Check(TokenType.LBrace)) depth++;
+                        else if (Check(TokenType.RBrace)) depth--;
+                        if (depth == 0) break;
+                        Advance();
+                    }
+                    if (Check(TokenType.RBrace)) Advance();
+                    continue;
+                }
+
+                // Nested tuplet — rewind and let ParseTupletChildren-style logic handle it
+                _current = savedPos;
+                Advance(); // re-consume {
+                var nToken = Expect(TokenType.IntLiteral, "Expected integer N in nested tuplet");
+                int n = (int)nToken.Value!;
+                int denominator;
+                if (Match(TokenType.Colon))
+                {
+                    var mToken = Expect(TokenType.IntLiteral, "Expected integer M after ':' in nested tuplet ratio");
+                    denominator = (int)mToken.Value!;
+                }
+                else if (MusicTwentyOneShorthand.TryGetValue(n, out var lookup))
+                {
+                    denominator = lookup;
+                }
+                else
+                {
+                    _errorReporter.ReportError(
+                        $"Tuplet shorthand {{N}} only supports counts 2-11 (got {n}); use explicit {{N:M}} form",
+                        innerLoc);
+                    denominator = n;
+                }
+
+                var nestedChildren = ParseTupletChildren();
+                Expect(TokenType.RBrace, "Expected '}' to close nested tuplet bracket");
+
+                string? nestedSuffix = TryParseDurationSuffix();
+                if (nestedSuffix == null)
+                {
+                    _errorReporter.ReportError(
+                        "Tuplet bracket requires explicit duration suffix",
+                        innerLoc);
+                    nestedSuffix = "q";
+                }
+                bool nestedDotted = Match(TokenType.Dot);
+
+                children.Add(new TupletElement(innerLoc, n, denominator, nestedChildren, nestedSuffix, nestedDotted));
+                continue;
+            }
+
+            // NoteLiteral inside voice block: full NoteElement parsing (with articulation).
+            if (Check(TokenType.NoteLiteral))
+            {
+                var noteToken = Advance();
+                var noteLoc = noteToken.Location;
+                string noteName = noteToken.Text;
+                string? noteSuffix = TryParseDurationSuffix();
+                bool noteDotted = noteSuffix != null && Match(TokenType.Dot);
+                bool noteTied = Match(TokenType.Tilde);
+                double? noteCent = null;
+                if (Check(TokenType.CentLiteral))
+                {
+                    noteCent = (double)Advance().Value!;
+                }
+                Articulation? articMark = TryParseArticulation();
+                children.Add(new NoteElement(noteLoc, noteName, noteSuffix, noteDotted, noteTied,
+                    noteCent, null, articMark));
+                continue;
+            }
+
+            // Rest: _
+            if (Match(TokenType.Underscore))
+            {
+                var restLoc = PreviousToken.Location;
+                string? restSuffix = TryParseDurationSuffix();
+                bool restDotted = restSuffix != null && Match(TokenType.Dot);
+                children.Add(new RestElement(restLoc, restSuffix, restDotted));
+                continue;
+            }
+
+            // Chord bracket [C4 E4 G4]q
+            if (Match(TokenType.LBracket))
+            {
+                var elemLoc = PreviousToken.Location;
+                var notes = new List<string>();
+                while (!Check(TokenType.RBracket) && !IsAtEnd())
+                {
+                    var nToken = Expect(TokenType.NoteLiteral, "Expected note literal in chord bracket");
+                    notes.Add(nToken.Text);
+                }
+                Expect(TokenType.RBracket, "Expected ']' after chord bracket");
+                string? durSuffix = TryParseDurationSuffix();
+                bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                children.Add(new ChordElement(elemLoc, notes, durSuffix, isDotted));
+                continue;
+            }
+
+            // Named chord: Cmaj7, Dm
+            if (Check(TokenType.ChordLiteral))
+            {
+                var chordToken = Advance();
+                string? chordSuffix = TryParseDurationSuffix();
+                bool chordDotted = chordSuffix != null && Match(TokenType.Dot);
+                children.Add(new NamedChordElement(chordToken.Location, chordToken.Text, chordSuffix, chordDotted));
+                continue;
+            }
+
+            // Unknown token inside voice block — report and recover
+            _errorReporter.ReportError(
+                $"Unexpected token '{CurrentToken.Text}' inside voice block",
                 CurrentToken.Location);
             Advance();
         }

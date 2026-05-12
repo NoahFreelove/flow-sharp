@@ -18,5 +18,18 @@
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
     <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
+    <ProjectReference Include="..\flow-midi\flow-midi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Fixtures\midi\ragtime_q_ee.mid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Fixtures\midi\two_voice_counterpoint.mid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Fixtures\midi\drum_loop.mid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>

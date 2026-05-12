@@ -75,6 +75,14 @@ public class ExecutionContext
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
     public Dictionary<string, SectionData> SectionRegistry { get; } = new();
+
+    /// <summary>
+    /// Per-context Symbol intern table — guarantees pointer equality for <c>#foo</c> literals
+    /// (Phase 26.1 SYM-01). All <c>Value.Symbol(name, ctx)</c> calls with the same name and the
+    /// same context return the same <see cref="Value"/> instance, so reference-equality of the
+    /// Value wrappers is the canonical Symbol equality check.
+    /// </summary>
+    public Dictionary<string, Value> SymbolInternTable { get; } = new();
     
     /// <summary>
     /// Invoker used to execute userspace functions/lambdas from standard library or engine.
@@ -203,20 +211,71 @@ public class ExecutionContext
                 // same ??= merge pattern; D-07 REPL persistence is preserved because
                 // FlowEngine.SetTuning writes to GlobalFrame and never clears on null.
                 resolved.Tuning ??= frame.MusicalContext.Tuning;
+                // Phase 28 SPEC-7: voice pool size inherits via the same ??= chain.
+                // null means "no override" — SequenceRenderer.RenderSequenceToVoicesWithPool
+                // applies the SPEC-7 locked default of 32 at the render call.
+                resolved.VoicePoolSize ??= frame.MusicalContext.VoicePoolSize;
             }
             if (resolved.TimeSignature != null && resolved.Tempo != null
                 && resolved.Swing != null && resolved.Key != null
                 && resolved.Velocity != null && resolved.Pan != null
                 && resolved.Gain != null && resolved.ReverbTime != null
-                && resolved.Tuning != null)
+                && resolved.Tuning != null && resolved.VoicePoolSize != null)
                 break;
         }
-        // Defaults
-        resolved.TimeSignature ??= new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
-        resolved.Tempo ??= 120.0;
+        // REQ-4 (Plan 30-03): three-tier fallback for Tempo + TimeSignature.
+        //   1. Call-stack-resolved value (active tempo/timesig block) — already
+        //      consumed in the ??= chain above.
+        //   2. FlowConfig.Active (~/.config/flow/config.toml override) — this layer.
+        //   3. Hard-coded baked default (120 BPM / 4/4) — final fallback.
+        // Swing has no config knob in SPEC-4 so it skips tier 2.
+        resolved.Tempo ??= FlowConfig.Active.DefaultTempo.HasValue
+            ? (double)FlowConfig.Active.DefaultTempo.Value
+            : 120.0;
+        resolved.TimeSignature ??= ParseTimesigOrDefault(FlowConfig.Active.DefaultTimesig);
         resolved.Swing ??= 0.5;
         return resolved;
     }
+
+    /// <summary>
+    /// REQ-4 (Plan 30-03): parse the <c>default_timesig</c> config string ("N/M") into
+    /// a <see cref="TypeSystem.SpecialTypes.TimeSignatureData"/>. Charitable per
+    /// CLAUDE.md feedback_charitable_interpretation memory:
+    ///   - null / whitespace -> 4/4 silently
+    ///   - malformed (not "N/M" with positive integers AND power-of-2 denominator)
+    ///     -> 4/4 + single stderr Warning at first encounter. The static guard
+    ///     <see cref="_timesigWarningEmitted"/> avoids spamming the warning on every
+    ///     <see cref="GetMusicalContext"/> call (note streams + bars + songs all hit
+    ///     this code path).
+    /// </summary>
+    private static TypeSystem.SpecialTypes.TimeSignatureData ParseTimesigOrDefault(string? config)
+    {
+        if (string.IsNullOrWhiteSpace(config))
+            return new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
+        var parts = config.Split('/');
+        if (parts.Length == 2
+            && int.TryParse(parts[0], out var num) && num > 0
+            && int.TryParse(parts[1], out var den) && den > 0
+            // TimeSignatureData constructor validates denominator-is-power-of-2;
+            // pre-check here so the throw becomes a charitable fallback instead.
+            && (den & (den - 1)) == 0)
+        {
+            return new TypeSystem.SpecialTypes.TimeSignatureData(num, den);
+        }
+        if (!_timesigWarningEmitted)
+        {
+            Console.Error.WriteLine(
+                $"Warning: malformed default_timesig in config.toml: \"{config}\" — falling back to 4/4.");
+            _timesigWarningEmitted = true;
+        }
+        return new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
+    }
+
+    // Test-only access: reset the one-shot warning latch so successive tests can
+    // each independently assert the malformed-timesig path. Intentionally internal-
+    // scoped through reflection-free static reset — production code never touches it.
+    private static bool _timesigWarningEmitted = false;
+    internal static void ResetTimesigWarningLatchForTests() => _timesigWarningEmitted = false;
 
     /// <summary>
     /// Phase 23 D-06/D-07: writes the resolved tuning system into the global (root) frame's

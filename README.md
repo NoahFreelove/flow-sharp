@@ -32,6 +32,40 @@ I hope my direction on where I want flow-lang to go was clear. If it has to be o
 See [FEATURES.md](./FEATURES.md) for a complete list of features.
 
 
+## Install (Linux x64)
+
+Per-user install (no sudo), from a local checkout:
+
+```bash
+bash scripts/install.sh
+```
+
+System-wide install:
+
+```bash
+sudo bash scripts/install.sh --system
+```
+
+The script copies a self-contained `flow` binary (~38 MB) to either `~/.local/share/flow/` + symlink at `~/.local/bin/flow` (per-user, default) or `/usr/local/share/flow/` + symlink at `/usr/local/bin/flow` (system-wide). Re-running upgrades in place; `scripts/uninstall.sh` removes everything except your `~/.config/flow/config.toml`.
+
+## CLI subcommands
+
+| Subcommand | What it does |
+|---|---|
+| `flow run script.flow` | Run a Flow script |
+| `flow eval "expr"` | Evaluate one expression |
+| `flow repl` | Interactive REPL (auto-imports `@std @audio @collections`) |
+| `flow watch script.flow` | Auto-reload on file change |
+| `flow play script.flow` | Render + play via PulseAudio |
+| `flow render script.flow -o out.wav` | Render to WAV |
+| `flow flow2midi script.flow -o out.mid` | Render to MIDI |
+| `flow midi2flow input.mid -o out.flow` | Convert MIDI → round-trippable Flow source |
+| `flow check script.flow` | Parse + type-check only |
+| `flow new piece-name` | Scaffold a new piece |
+| `flow version` | Print version |
+
+Config lives at `~/.config/flow/config.toml`. Optional keys: `default_tempo`, `default_timesig`, `default_audio_device`, `stdlib_search_path`. See `scripts/install.sh` for the schema.
+
 ## Bugs?
 This tool is just for fun, not any serious professional work. Bug reports may or may not be addressed.
 

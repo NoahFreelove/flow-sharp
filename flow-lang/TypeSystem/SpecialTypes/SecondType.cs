@@ -1,3 +1,5 @@
+using FlowLang.TypeSystem.PrimitiveTypes;
+
 namespace FlowLang.TypeSystem.SpecialTypes;
 
 /// <summary>
@@ -13,9 +15,19 @@ public sealed class SecondType : FlowType
 
     public override bool CanConvertTo(FlowType target)
     {
-        // Seconds can convert to Milliseconds
+        // Seconds can convert to Milliseconds (CONTEXT D-02 — STAYS)
         return target is MillisecondType
             || base.CanConvertTo(target);
+    }
+
+    /// <summary>
+    /// Phase 26.2 ERG-01 — Second is compatible with Double and Float so
+    /// (reverb buf 0.5 1.5) and (reverb buf 0.5 1.5s) both reach the same
+    /// parameter slots. Mirrors CentType.cs:24-27.
+    /// </summary>
+    public override bool IsCompatibleWith(FlowType target)
+    {
+        return target is DoubleType or FloatType || base.IsCompatibleWith(target);
     }
 
     public override int GetSpecificity() => 123;

@@ -1,0 +1,6 @@
+Note: Dict<Buffer, Int> type rejection at parse time (CONTEXT § Hashable enforcement)
+Note: This script is INTENTIONALLY WRONG -- runner expects "Dict key type 'Buffer' is not hashable" in stderr
+
+use "@std"
+
+Dict<Buffer, Int> bad = (dict)

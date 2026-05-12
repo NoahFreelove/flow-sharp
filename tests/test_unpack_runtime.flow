@@ -1,0 +1,36 @@
+Note: (unpack tuple func) — runtime first-class apply (TUP-11)
+Note: Tests: zero-arg, single-arg, multi-arg, dynamic Function-value
+
+use "@std"
+
+Note: ===== Test 1: zero-arg =====
+Note: 0-arg proc identifiers auto-call when referenced (EvaluateVariable line 150);
+Note: pass the function as a value via a Function-typed lambda binding instead.
+Function getFortyTwo = fn => 42
+Tuple<<>> empty = <<>>
+Int r1 = (unpack empty getFortyTwo)
+(print (str r1))
+
+Note: ===== Test 2: single-arg =====
+proc doubler (Int: n)
+    (mul n 2)
+end proc
+Tuple<<Int>> single = <<5>>
+Int r2 = (unpack single doubler)
+(print (str r2))
+
+Note: ===== Test 3: multi-arg =====
+proc addPair (Int: a, Int: b)
+    (add a b)
+end proc
+Tuple<<Int, Int>> pair = <<3, 4>>
+Int r3 = (unpack pair addPair)
+(print (str r3))
+
+Note: ===== Test 4: dynamic Function-value =====
+Function f = fn Int a, Int b => (mul a b)
+Tuple<<Int, Int>> mp = <<6, 7>>
+Int r4 = (unpack mp f)
+(print (str r4))
+
+(print "test_unpack_runtime: PASSED")

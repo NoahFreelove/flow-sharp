@@ -26,4 +26,11 @@ public sealed class BeatType : FlowType
     {
         return target is DoubleType or FloatType || base.IsCompatibleWith(target);
     }
+
+    /// <summary>
+    /// Phase 26.1 DICT-01: Beat is double-backed and has natural value equality —
+    /// usable as a Dict key (CONTEXT § Specifics block 9 acceptance shape
+    /// <c>Dict&lt;Tuple&lt;&lt;Note, Beat&gt;&gt;, Int&gt;</c>).
+    /// </summary>
+    public override bool IsHashable() => true;
 }

@@ -36,6 +36,7 @@ public class Value
     public static Value Millisecond(double value) => new(value, MillisecondType.Instance);
     public static Value Second(double value) => new(value, SecondType.Instance);
     public static Value Decibel(double value) => new(value, DecibelType.Instance);
+    public static Value Hertz(double value) => new(value, HertzType.Instance);
     public static Value OscillatorState(StandardLibrary.Audio.OscillatorState value) => new(value, OscillatorStateType.Instance);
     public static Value Envelope(StandardLibrary.Audio.Envelope value) => new(value, EnvelopeType.Instance);
     public static Value Beat(double value) => new(value, BeatType.Instance);
@@ -49,6 +50,20 @@ public class Value
     public static Value Section(SectionData section) => new(section, SectionType.Instance);
     public static Value Song(SongData song) => new(song, SongType.Instance);
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
+
+    /// <summary>
+    /// Symbol factory (Phase 26.1 SYM-01) — interns the symbol via the per-context
+    /// <see cref="ExecutionContext.SymbolInternTable"/>. Two calls with the same <paramref name="name"/>
+    /// against the same <paramref name="ctx"/> return the SAME Value instance (reference-equal),
+    /// which is the SYM-01 contract: pointer-equality for <c>#foo</c> literals.
+    /// </summary>
+    public static Value Symbol(string name, ExecutionContext ctx)
+    {
+        if (ctx.SymbolInternTable.TryGetValue(name, out var existing)) return existing;
+        var v = new Value(name, SymbolType.Instance);
+        ctx.SymbolInternTable[name] = v;
+        return v;
+    }
 
     /// <summary>
     /// Automatically infers the Flow type from a CLR object and creates a Value.
@@ -72,6 +87,25 @@ public class Value
     {
         return new Value(elements, new ArrayType(elementType));
     }
+
+    /// <summary>
+    /// Tuple factory (Phase 26.1 TUP-09). Storage is the same <see cref="IReadOnlyList{Value}"/>
+    /// shape as arrays so <see cref="ExpressionEvaluator"/>'s <c>EvaluateArrayIndex</c> can dispatch
+    /// on operand type without a separate AST node (see RESEARCH § Q4 — reuse ArrayIndexExpression).
+    /// Per-position <see cref="FlowType"/> annotations live on the constructed <see cref="TupleType"/>;
+    /// <c>elementTypes.Count</c> defines arity (empty list → empty tuple <c>&lt;&lt;&gt;&gt;</c>).
+    /// </summary>
+    public static Value Tuple(IReadOnlyList<Value> components, IReadOnlyList<FlowType> elementTypes)
+    {
+        return new Value(components, new TupleType(elementTypes));
+    }
+
+    /// <summary>
+    /// Dict factory (Phase 26.1 DICT-02). Wraps a <see cref="DictData"/> with the underlying
+    /// <see cref="DictType"/> drawn from the data's recorded type. Insertion-order preserved
+    /// via <see cref="System.Collections.Generic.OrderedDictionary{TKey,TValue}"/> in DictData.
+    /// </summary>
+    public static Value Dict(DictData data) => new(data, data.Type);
 
     public static Value Lazy(Thunk thunk, FlowType innerType)
     {
@@ -121,6 +155,22 @@ public class Value
 
         if (Data is double doubleVal)
         {
+            // Phase 26.2 — RESEARCH Pitfall 1 root-cause fix.
+            // Music types (Decibel/Beat/Cent/Ms/Sec/Hertz) are double-backed but
+            // FlowType.CanConvertTo defaults to IsCompatibleWith. With CentType /
+            // DecibelType / BeatType / (and Wave-1) Ms/Sec/Hertz IsCompatibleWith(Double)
+            // returning true, the function-call coercion path at
+            // ExpressionEvaluator.cs:249 fires ConvertTo(DoubleType) on a music-typed
+            // double-backed Value. Without this arm, the call falls through to
+            // line 252's InvalidCastException ("Cannot convert Flow type 'Decibel' with
+            // underlying CLR type 'Double' to Flow target type 'Double'") — the exact
+            // exception that fails (gain src -12dB) when only the bare-Double overload exists.
+            // This is defence-in-depth; the dedicated music-typed overload (when present
+            // via audio.flow forward-decl) wins resolution at score 1000 (exact match)
+            // and never invokes ConvertTo, but EVERY user-proc with Double params
+            // benefits from this arm.
+            if (targetType is DoubleType) return Double(doubleVal);
+
             if (targetType is IntType) return Int((int)doubleVal); // Lossy
             if (targetType is LongType) return Long((long)doubleVal); // Lossy
             if (targetType is FloatType) return Float((float)doubleVal); // Lossy
@@ -202,6 +252,19 @@ public class Value
             }
         }
 
+        // Phase 26.1 DICT-01: Dict<Void, Void> can convert to any Dict<K, V>
+        // (empty dicts produced by (dict) with no args; mirrors Void[] above).
+        // Re-key the underlying DictData with the target's KeyType comparer so
+        // future (set) calls hash by the user-facing K type rather than VoidType.
+        if (Type is DictType sourceDict && targetType is DictType targetDict
+            && sourceDict.KeyType is TypeSystem.PrimitiveTypes.VoidType
+            && sourceDict.ValueType is TypeSystem.PrimitiveTypes.VoidType
+            && Data is DictData sourceData
+            && sourceData.Entries.Count == 0)
+        {
+            return Dict(DictData.Empty(targetDict));
+        }
+
         // Explicit Type Name error
         throw new InvalidCastException($"Cannot convert Flow type '{Type.Name}' with underlying CLR type '{(Data != null ? Data.GetType().Name : "null")}' to Flow target type '{targetType.Name}'");
     }
@@ -229,8 +292,19 @@ public class Value
     public override string ToString()
     {
         if (Data is null) return "void";
+        // Phase 26.1 SYM-01: print Symbols as `#name` (must precede the generic string branch
+        // since Symbol's underlying CLR Data is a string).
+        if (Type is SymbolType && Data is string symName) return $"#{symName}";
         if (Data is string str) return $"\"{str}\"";
         if (Data is bool b) return b ? "true" : "false";
+        // Phase 26.1 TUP-09: Tuples print `<<a, b, c>>` matching their literal source form.
+        // MUST precede the generic IReadOnlyList<Value> branch since tuple storage is the
+        // same shape as arrays (see Value.Tuple factory comment).
+        if (Type is TupleType && Data is IReadOnlyList<Value> tup)
+            return $"<<{string.Join(", ", tup.Select(v => v.ToString()))}>>";
+        // Phase 26.1 DICT-02: Dicts print `{k: v, ...}` per CONTEXT § Specifics block 6.
+        if (Type is DictType && Data is DictData dd)
+            return "{" + string.Join(", ", dd.Entries.Select(kv => $"{kv.Key}: {kv.Value}")) + "}";
         if (Data is IReadOnlyList<Value> arr)
             return $"[{string.Join(", ", arr.Select(v => v.ToString()))}]";
         if (Data is Thunk thunk)

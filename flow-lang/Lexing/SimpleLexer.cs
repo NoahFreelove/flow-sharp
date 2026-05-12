@@ -79,6 +79,19 @@ public class SimpleLexer
             return new Token(TokenType.Arrow, "->", start);
         }
 
+        // Phase 26.1 TUP-10: TildeArrow `~>` (tuple-unpack flow operator).
+        // CRITICAL placement: this two-char check MUST precede the single-char
+        // `case '~': return SingleChar(TokenType.Tilde);` arm below, otherwise
+        // `~>` lexes as Tilde + GreaterThan and the parser never sees `~>`.
+        // Note-stream tied notes (`C4h~`) are unaffected — they use a bare `~`
+        // not followed by `>`, so the single-char arm continues to fire.
+        if (c == '~' && PeekNext() == '>')
+        {
+            Advance();
+            Advance();
+            return new Token(TokenType.TildeArrow, "~>", start);
+        }
+
         // Check for special literals that start with +/- before treating them as operators
         // Semitones: +/-Nst (e.g., +1st, -5st)
         // Decibels: +/-NdB (e.g., +6dB, -3dB)
@@ -101,6 +114,18 @@ public class SimpleLexer
         if (c == '$' && PeekNext() == '"')
         {
             return ScanInterpolatedString(start);
+        }
+
+        // Phase 26.1 TUP-09: two-char `<<` / `>>` (tuple delimiters) at expression-start positions.
+        // MUST be checked BEFORE the single-char `case '<' / '>':` arms below, otherwise the
+        // single-char arm consumes one `<` or `>` and the second char lexes alone, breaking
+        // tuple parsing. Mirrors the Arrow (`->`) two-char dispatch above (lines 75-80).
+        // Note-stream `>` accent (e.g. `| C4q> D4q |`) is preserved by the PeekNext-equality
+        // gate inside TryLexAngleAngle: when the second char is NOT another `>`, the helper
+        // returns null and control falls through to the single-char `case '>':` arm.
+        {
+            var aa = TryLexAngleAngle(start, c);
+            if (aa is not null) return aa;
         }
 
         // Check for specific single-character tokens
@@ -139,6 +164,21 @@ public class SimpleLexer
             case '<': return SingleChar(TokenType.LessThan);
             case '>': return SingleChar(TokenType.GreaterThan);
             case '"': return ScanString(start);
+            case '#':
+            {
+                // Phase 26.1 SYM-01: `#identifier` lexes as a single SymbolLiteral token.
+                // The leading '#' is a token boundary; the lexeme is the body without '#'.
+                Advance(); // consume '#'
+                var sb = new StringBuilder();
+                while (!IsAtEnd() && (char.IsLetterOrDigit(Peek()) || Peek() == '_'))
+                {
+                    sb.Append(Peek());
+                    Advance();
+                }
+                if (sb.Length == 0)
+                    throw new Exception($"Expected identifier after '#' at {start}");
+                return new Token(TokenType.SymbolLiteral, sb.ToString(), start);
+            }
         }
 
         // Numbers start with digits - could be part of time/decibel literals
@@ -334,6 +374,73 @@ public class SimpleLexer
             System.Numerics.BigInteger.Parse(text, System.Globalization.CultureInfo.InvariantCulture));
     }
 
+    /// <summary>
+    /// Phase 26.1 TUP-09 (revision 1): emit two-char <c>&lt;&lt;</c> / <c>&gt;&gt;</c> at expression-start positions.
+    /// Returns null when the position is not expression-start, when the second char doesn't
+    /// match the first (so note-stream `>` accent at <c>| C4q&gt; D4q |</c> falls through to
+    /// the single-char `case '&gt;':` arm), or when the input doesn't start with `&lt;` or `&gt;`.
+    /// <para>
+    /// The expression-start gate admits all predecessor tokens that can legitimately precede
+    /// a tuple literal or destructure pattern:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item>Phase 26 D-04 set: <see cref="TokenType.LParen"/>, <see cref="TokenType.Comma"/>,
+    ///   <see cref="TokenType.LBracket"/>, <see cref="TokenType.Arrow"/>, <see cref="TokenType.Assign"/>,
+    ///   <see cref="TokenType.Pipe"/>, <see cref="TokenType.Semicolon"/>, <see cref="TokenType.Identifier"/>.</item>
+    ///   <item>Revision-1 closing delimiters that end a previous expression:
+    ///   <see cref="TokenType.RParen"/>, <see cref="TokenType.RBracket"/>, <see cref="TokenType.RBrace"/>.</item>
+    ///   <item>Revision-1 literal-end tokens that end a previous statement (so <c>Int x = 5\n&lt;&lt;Int a&gt;&gt; = ...</c> parses):
+    ///   <see cref="TokenType.IntLiteral"/>, <see cref="TokenType.FloatLiteral"/>,
+    ///   <see cref="TokenType.StringLiteral"/>, <see cref="TokenType.BoolLiteral"/>,
+    ///   <see cref="TokenType.NoteLiteral"/>, <see cref="TokenType.ChordLiteral"/>,
+    ///   <see cref="TokenType.SymbolLiteral"/>.</item>
+    ///   <item>Revision-1 closing tuple from previous expression: <see cref="TokenType.GreaterGreater"/>.</item>
+    /// </list>
+    /// <para>
+    /// LongLiteral/DoubleLiteral are not present in this lexer — large/wide numerics flow
+    /// through <see cref="TokenType.IntLiteral"/> / <see cref="TokenType.FloatLiteral"/> with
+    /// long/BigInteger/double Value payloads (see ScanNumber/ScanNumberOrSpecialLiteral),
+    /// so they're already covered by the IntLiteral/FloatLiteral entries above.
+    /// </para>
+    /// </summary>
+    private Token? TryLexAngleAngle(SourceLocation start, char c)
+    {
+        if (c != '<' && c != '>') return null;
+        if (PeekNext() != c) return null;
+
+        bool isExprStart = _lastEmittedType is null
+            // Original Phase 26 D-04 set:
+            or TokenType.LParen or TokenType.Comma or TokenType.LBracket
+            or TokenType.Arrow or TokenType.Assign or TokenType.Pipe
+            or TokenType.Semicolon or TokenType.Identifier
+            // Revision 1 — closing delimiters that end a previous expression:
+            or TokenType.RParen or TokenType.RBracket or TokenType.RBrace
+            // Revision 1 — literal-end tokens that end a previous statement:
+            or TokenType.IntLiteral or TokenType.FloatLiteral
+            or TokenType.StringLiteral or TokenType.BoolLiteral
+            or TokenType.NoteLiteral or TokenType.ChordLiteral
+            or TokenType.SymbolLiteral
+            // Revision 1 — closing tuple from previous expression:
+            or TokenType.GreaterGreater
+            // Empty-tuple support: `<<>>` literal evaluates to a 0-arity Tuple, so the
+            // closing `>>` immediately following an opening `<<` must lex as a single
+            // GreaterGreater token. Also covers the singleton-empty type annotation
+            // `Tuple<<>>` (the TypeParser additionally accepts the dual-form for safety).
+            or TokenType.LessLess
+            // Phase 26.2 ERG-04 (RESEARCH Pitfall 6) — defensive add for music-literal-end positions:
+            // a tuple literal can legitimately follow any music-typed value-end (e.g. `<<800Hz, 1200Hz>>`).
+            or TokenType.HertzLiteral
+            or TokenType.TimeLiteral or TokenType.DecibelLiteral
+            or TokenType.CentLiteral or TokenType.SemitoneLiteral;
+        if (!isExprStart) return null;
+
+        Advance(); // consume first char
+        Advance(); // consume second char
+        var tt = c == '<' ? TokenType.LessLess : TokenType.GreaterGreater;
+        var lex = c == '<' ? "<<" : ">>";
+        return new Token(tt, lex, start);
+    }
+
     private Token? TryLexSignedNumber(SourceLocation start)
     {
         // Phase 26 D-04: expression-start positions only.
@@ -444,6 +551,35 @@ public class SimpleLexer
         // Check for suffix
         var text = sb.ToString();
 
+        // Phase 26.2 ERG-04: Try "kHz" suffix FIRST (3 chars; must precede Hz to avoid greedy match — RESEARCH Pitfall 4)
+        if (!IsAtEnd() && Peek() == 'k' && PeekNext() == 'H' && _position + 2 < _source.Length && _source[_position + 2] == 'z')
+        {
+            sb.Append(Advance()); // 'k'
+            sb.Append(Advance()); // 'H'
+            sb.Append(Advance()); // 'z'
+            text = sb.ToString();
+
+            string numberPart = text.Substring(0, text.Length - 3);
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
+            {
+                return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0);  // canonical Hz
+            }
+        }
+
+        // Phase 26.2 ERG-04: Try "Hz" suffix (2 chars) AFTER kHz
+        if (!IsAtEnd() && Peek() == 'H' && PeekNext() == 'z')
+        {
+            sb.Append(Advance()); // 'H'
+            sb.Append(Advance()); // 'z'
+            text = sb.ToString();
+
+            string numberPart = text.Substring(0, text.Length - 2);
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
+            {
+                return new Token(TokenType.HertzLiteral, text, start, hzValue);
+            }
+        }
+
         // Try "st" suffix (semitone)
         if (!IsAtEnd() && Peek() == 's' && PeekNext() == 't')
         {
@@ -547,11 +683,36 @@ public class SimpleLexer
 
         var numberText = sb.ToString();
 
-        // Check for special suffixes (ms, s, dB, c) - NOT st because that requires a sign
+        // Check for special suffixes (Hz, kHz, ms, s, dB, c) - NOT st because that requires a sign
         if (!IsAtEnd())
         {
+            // Phase 26.2 ERG-04: Try "kHz" suffix FIRST (3 chars; must precede Hz to avoid greedy match — RESEARCH Pitfall 4)
+            if (Peek() == 'k' && PeekNext() == 'H' && _position + 2 < _source.Length && _source[_position + 2] == 'z')
+            {
+                sb.Append(Advance()); // 'k'
+                sb.Append(Advance()); // 'H'
+                sb.Append(Advance()); // 'z'
+                var text = sb.ToString();
+
+                if (double.TryParse(numberText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
+                {
+                    return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0);  // canonical Hz
+                }
+            }
+            // Phase 26.2 ERG-04: Try "Hz" suffix (2 chars) AFTER kHz
+            else if (Peek() == 'H' && PeekNext() == 'z')
+            {
+                sb.Append(Advance()); // 'H'
+                sb.Append(Advance()); // 'z'
+                var text = sb.ToString();
+
+                if (double.TryParse(numberText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
+                {
+                    return new Token(TokenType.HertzLiteral, text, start, hzValue);
+                }
+            }
             // Try "ms" suffix (milliseconds)
-            if (Peek() == 'm' && PeekNext() == 's')
+            else if (Peek() == 'm' && PeekNext() == 's')
             {
                 sb.Append(Advance());
                 sb.Append(Advance());
@@ -704,6 +865,7 @@ public class SimpleLexer
             "pan" => TokenType.Pan,
             "gain" => TokenType.Gain,
             "reverbTime" => TokenType.ReverbTime,
+            "voicePool" => TokenType.VoicePool,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
@@ -931,6 +1093,12 @@ public class SimpleLexer
 
     private bool IsTokenBoundary(char c)
     {
+        // Phase 26.1 SYM-01: NOTE that '#' is intentionally NOT a token boundary here.
+        // Note literals like `C#4`, `F#4`, chord symbols like `C#m7`, and bare flats like
+        // `Bb` rely on `#` being absorbed mid-identifier in ScanIdentifierOrKeyword. The
+        // `case '#'` branch in NextToken (above) already handles `#identifier` when `#`
+        // is the FIRST character (no preceding identifier text), which is the only context
+        // a Symbol literal can occur in.
         return c is '@' or '=' or ':' or '+' or '-' or '*' or '/' or '.'
             or '(' or ')' or '[' or ']' or '{' or '}' or ',' or ';' or '"'
             or '<' or '>' or '|' or '~' or '$';

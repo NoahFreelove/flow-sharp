@@ -1,5 +1,6 @@
 using FlowLang.Audio;
 using FlowLang.Runtime;
+using FlowLang.StandardLibrary.Dict;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -175,6 +176,10 @@ public static class BuiltInFunctions
 
         var strNoteSignature = new FunctionSignature("str", [NoteType.Instance]);
         registry.Register("str", strNoteSignature, StdLib.StrNote);
+
+        // Phase 26.1 SYM-01: (str Symbol) → "#name"
+        var strSymbolSignature = new FunctionSignature("str", [SymbolType.Instance]);
+        registry.Register("str", strSymbolSignature, StdLib.StrSymbol);
 
         var strBarSignature = new FunctionSignature("str", [BarType.Instance]);
         registry.Register("str", strBarSignature, StdLib.StrBar);
@@ -455,6 +460,29 @@ public static class BuiltInFunctions
 
         registry.Register("tau", new FunctionSignature("tau", []),
             args => Value.Double(Math.Tau));
+
+        // Nothing() -> Void. The explicit-void escape hatch for `return (Nothing)`
+        // when a proc would otherwise collect non-void expressions before its end.
+        registry.Register("Nothing", new FunctionSignature("Nothing", []),
+            args => Value.Void());
+
+        // ===== Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance) =====
+        // Flow has no `Beat` literal at top level — durations like `q`, `h`, `e`, `s`, `w`
+        // exist only as note-stream suffixes (inside `| C4q D4h |`). DICT-01's
+        // Tuple-of-hashables key acceptance needs to construct Beat values in user source.
+        // (beat Double) wraps a fractional-beat double in a Beat-typed Value so that
+        // `<<C4, (beat 0.25)>>` produces a Tuple<<Note, Beat>> usable as a Dict key.
+        registry.Register("beat", new FunctionSignature("beat", [DoubleType.Instance]),
+            args => Value.Beat(args[0].As<double>()));
+
+        // ===== Phase 26.1 NaN production primitive (REVISION 2) =====
+        // Flow has no `nan` literal. (div 0.0 0.0) throws "Division by zero"
+        // (see StdLib.DivFloat/DivInt/DivLong/DivDouble — all guard b == 0).
+        // (nanFloat) is the canonical IEEE 754 NaN producer for the DICT-03
+        // NaN-as-key acceptance shape and any future float-edge-case work.
+        // Returns Float (double-backed per Value.Float definition).
+        registry.Register("nanFloat", new FunctionSignature("nanFloat", []),
+            args => Value.Float(double.NaN));
     }
 
     private static void RegisterCollections(InternalFunctionRegistry registry)
@@ -623,7 +651,14 @@ public static class BuiltInFunctions
 
         var createSineToneSig = new FunctionSignature("createSineTone", [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
         registry.Register("createSineTone", createSineToneSig, Audio.SignalGeneration.CreateSineTone);
-        
+
+        // Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics.
+        // Delegates to the same CreateSineTone lambda; Hertz's CLR backing IS double
+        // (Value.Hertz factory wraps a double), so args[1].As<double>() reads it
+        // directly without per-overload coercion.
+        var createSineToneHzSig = new FunctionSignature("createSineTone", [DoubleType.Instance, HertzType.Instance, DoubleType.Instance]);
+        registry.Register("createSineTone", createSineToneHzSig, Audio.SignalGeneration.CreateSineTone);
+
         var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance]);
         registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
 
@@ -891,6 +926,92 @@ public static class BuiltInFunctions
             Audio.SynthesizerFactory.RegisterWavetable(name, ExtractWavetable(floatArray));
             return Value.Void();
         });
+
+        // Phase 26.1 dict + tuple-unpack runtime functions (TUP-11 + DICT-01/02/03)
+        RegisterDict(registry, context);
+    }
+
+    private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
+    {
+        // ===== (unpack) — runtime first-class apply (TUP-11) — Wave 3 =====
+        var unpackSig = new FunctionSignature(
+            "unpack",
+            new FlowType[] { TupleType.AnyArity, FunctionType.Instance });
+        registry.Register("unpack", unpackSig,
+            args => DictFunctions.Unpack(args, context));
+
+        // ===== Dict ops (DICT-01/02/03) — Wave 4 =====
+
+        // Wildcard Dict<Void, Void> for overload-resolution dispatch — VoidType key
+        // is exempted from DictType's defensive IsHashable check.
+        var dictWildcard = new DictType(VoidType.Instance, VoidType.Instance);
+
+        // (dict K V K V ...) — flat varargs constructor
+        var dictSig = new FunctionSignature("dict",
+            new FlowType[] { VoidType.Instance }, IsVarArgs: true);
+        registry.Register("dict", dictSig, args => DictFunctions.Dict(args, context));
+
+        // (dictTuple <<K,V>> ...) — tuple-pair varargs constructor
+        var dictTupleSig = new FunctionSignature("dictTuple",
+            new FlowType[] { TupleType.AnyArity }, IsVarArgs: true);
+        registry.Register("dictTuple", dictTupleSig, args => DictFunctions.DictTuple(args, context));
+
+        // (get d k)
+        var getSig = new FunctionSignature("get",
+            new FlowType[] { dictWildcard, VoidType.Instance });
+        registry.Register("get", getSig, args => DictFunctions.Get(args, context));
+
+        // (getOr d k default)
+        var getOrSig = new FunctionSignature("getOr",
+            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance });
+        registry.Register("getOr", getOrSig, args => DictFunctions.GetOr(args, context));
+
+        // (set d k v)
+        var setSig = new FunctionSignature("set",
+            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance });
+        registry.Register("set", setSig, args => DictFunctions.Set(args, context));
+
+        // (remove d k)
+        var removeSig = new FunctionSignature("remove",
+            new FlowType[] { dictWildcard, VoidType.Instance });
+        registry.Register("remove", removeSig, args => DictFunctions.Remove(args, context));
+
+        // (has d k)
+        var hasSig = new FunctionSignature("has",
+            new FlowType[] { dictWildcard, VoidType.Instance });
+        registry.Register("has", hasSig, args => DictFunctions.Has(args, context));
+
+        // (keys d)
+        var keysSig = new FunctionSignature("keys", new FlowType[] { dictWildcard });
+        registry.Register("keys", keysSig, args => DictFunctions.Keys(args, context));
+
+        // (values d)
+        var valuesSig = new FunctionSignature("values", new FlowType[] { dictWildcard });
+        registry.Register("values", valuesSig, args => DictFunctions.Values(args, context));
+
+        // (size d) — Int
+        var sizeSig = new FunctionSignature("size", new FlowType[] { dictWildcard });
+        registry.Register("size", sizeSig, args => DictFunctions.Size(args, context));
+
+        // (merge d1 d2) — last-write-wins
+        var mergeSig = new FunctionSignature("merge",
+            new FlowType[] { dictWildcard, dictWildcard });
+        registry.Register("merge", mergeSig, args => DictFunctions.Merge(args, context));
+
+        // (each Dict Function) — SEPARATE overload from existing (each Array Function); Pitfall 6
+        var eachDictSig = new FunctionSignature("each",
+            new FlowType[] { dictWildcard, FunctionType.Instance });
+        registry.Register("each", eachDictSig, args => DictFunctions.Each(args, context));
+
+        // (map Dict Function) — SEPARATE overload from existing (map Array Function)
+        var mapDictSig = new FunctionSignature("map",
+            new FlowType[] { dictWildcard, FunctionType.Instance });
+        registry.Register("map", mapDictSig, args => DictFunctions.Map(args, context));
+
+        // (filter Dict Function) — SEPARATE overload from existing (filter Array Function)
+        var filterDictSig = new FunctionSignature("filter",
+            new FlowType[] { dictWildcard, FunctionType.Instance });
+        registry.Register("filter", filterDictSig, args => DictFunctions.Filter(args, context));
     }
 
     private static void RegisterBars(InternalFunctionRegistry registry)

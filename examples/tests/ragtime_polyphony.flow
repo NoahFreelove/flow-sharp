@@ -1,0 +1,31 @@
+// Phase 28 polyphony + articulation acceptance fixture (synthetic ragtime).
+// Exercises:
+//   Bar 1: held + running (whole-note bass under quarter-note inner voice)
+//   Bar 2: staccato run over held bass
+//   Bar 3: legato run over held bass
+//   Bar 4: mixed-articulation chord (staccato / tenuto / accent / sforzando)
+//
+// Render with: dotnet run --project flow-interpreter examples/tests/ragtime_polyphony.flow
+// Output: examples/output/ragtime_polyphony.wav + .mid
+
+use "@std"
+use "@audio"
+use "@notation"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence stride =
+                | {voice C2w} {voice C5q E5q G5q E5q} |
+                | {voice C2w} {voice C5q stacc D5q stacc E5q stacc F5q stacc} |
+                | {voice C2w} {voice C5q leg D5q leg E5q leg F5q leg} |
+                | C4q stacc D4q ten E4q > F4q marc |
+
+            section ragtime { Sequence v = stride }
+            Song s = [ragtime]
+            Buffer mix = (renderSong s "piano")
+            (writeWav "examples/output/ragtime_polyphony.wav" mix)
+            (writeMidi "examples/output/ragtime_polyphony.mid" s)
+        }
+    }
+}

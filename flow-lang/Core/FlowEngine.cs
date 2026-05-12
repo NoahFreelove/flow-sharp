@@ -4,6 +4,7 @@ using FlowLang.Lexing;
 using FlowLang.Parsing;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
+using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
@@ -20,6 +21,7 @@ public class FlowEngine : IDisposable
     private readonly RuntimeContext _context;
     private readonly Interpreter.Interpreter _interpreter;
     private readonly AudioPlaybackManager _audioManager;
+    private readonly SampleCache _sampleCache;
     private readonly TextWriter? _diagnosticOutput;
     private bool _disposed;
 
@@ -32,6 +34,25 @@ public class FlowEngine : IDisposable
     /// </summary>
     public AudioPlaybackManager AudioManager => _audioManager;
 
+    /// <summary>
+    /// Phase 29 REQ-4 — per-engine cache for bundled instrument samples.
+    /// Lifetime = engine lifetime (SPEC D-15). Eager-loaded on the first
+    /// <c>renderSong</c> call against any given (song, instrument) pair;
+    /// subsequent renders in the same engine reuse the cached buffers.
+    /// </summary>
+    public SampleCache SampleCache => _sampleCache;
+
+    /// <summary>
+    /// Phase 29 — exposes the active engine's SampleCache to static renderer code
+    /// (<c>SongRenderer.RenderSong</c> is a static method). Set by the FlowEngine
+    /// constructor; read by <c>SongRenderer.RenderSong</c> on entry to trigger
+    /// eager-load. Single-engine-per-process is a project convention (per
+    /// <c>SynthUtils.ResetNoiseRng</c>'s identical static-mutable-state precedent);
+    /// if concurrent-engine support is required in v1.5, refactor to thread the
+    /// cache through ExecutionContext.
+    /// </summary>
+    public static SampleCache? CurrentSampleCache { get; private set; }
+
     public FlowEngine(bool verbose = false) : this(new ErrorReporter(), verbose)
     {
     }
@@ -40,6 +61,10 @@ public class FlowEngine : IDisposable
     {
         _errorReporter = errorReporter;
         _audioManager = new AudioPlaybackManager();
+        _sampleCache = new SampleCache();
+        // Publish to the static accessor so SongRenderer (a static class) can find
+        // this engine's cache on renderSong entry. Cleared in Dispose.
+        CurrentSampleCache = _sampleCache;
         _diagnosticOutput = verbose ? Console.Error : null;
 
         // Create internal function registry and register C# implementations
@@ -50,6 +75,13 @@ public class FlowEngine : IDisposable
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
         var moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
+        // REQ-4 (Plan 30-03): seed the loader's AdditionalSearchPaths from the active
+        // config singleton. Empty list when no config.toml is loaded — zero-cost no-op
+        // for existing scripts. flow-cli's FlowConfigLoader.LoadFromXdg() populates
+        // FlowConfig.Active before any FlowEngine is constructed, so the read here
+        // sees the user's configured paths at process startup.
+        foreach (var p in FlowConfig.ConfiguredStdlibSearchPaths)
+            moduleLoader.AdditionalSearchPaths.Add(p);
         _interpreter = new Interpreter.Interpreter(_context, _errorReporter, moduleLoader);
         moduleLoader.ParentInterpreter = _interpreter;
     }
@@ -156,6 +188,11 @@ public class FlowEngine : IDisposable
         {
             _disposed = true;
             _audioManager.Dispose();
+            // Clear the static accessor only if it still points to this engine —
+            // guards against test code that constructs engines back-to-back where
+            // the next engine may already have overwritten CurrentSampleCache.
+            if (ReferenceEquals(CurrentSampleCache, _sampleCache))
+                CurrentSampleCache = null;
         }
     }
 }
