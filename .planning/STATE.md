@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: Executing Phase 32
+status: Ready to plan
 stopped_at: Plan 31-05 SHIPPED — SPEC-3 varargs visibility (U+2026 ellipsis trails type) via LspMappings.FormatSignature + BuildParameters; HoverHandler + SignatureHelpHandler routed through both. Plans 31-06..31-09 remain in Phase 31.
-last_updated: "2026-05-14T13:55:40.284Z"
-last_activity: 2026-05-14 -- Phase 32 execution started
+last_updated: "2026-05-15T03:54:54.197Z"
+last_activity: 2026-05-15
 progress:
   total_phases: 19
-  completed_phases: 15
+  completed_phases: 16
   total_plans: 98
-  completed_plans: 90
-  percent: 79
+  completed_plans: 97
+  percent: 84
 ---
 
 # Project State
@@ -26,10 +26,10 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 32 (full-scala-scl-tuning-loader) — EXECUTING
-Plan: 1 of 7
+Phase: 33
+Plan: Not started
 Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9/9 complete (SHIPPED 2026-05-13). Phase 32 = 0/7 plans complete (all 7 plans written + verified, ready for /gsd-execute-phase 32). 33-34 remain for v1.4 closure.
-Last activity: 2026-05-14 -- Phase 32 execution started
+Last activity: 2026-05-15
 
 Progress: [██████████] 100%
 
@@ -57,7 +57,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 
 **Velocity:**
 
-- Total plans completed: 24 (v1.2 milestone)
+- Total plans completed: 31 (v1.2 milestone)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -74,6 +74,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 24 | 6 | ~30min | ~5min |
 | 25 | 5 | ~17min | ~3.4min |
 | 27 | 5 | - | - |
+| 32 | 7 | - | - |
 
 **Recent Trend:**
 

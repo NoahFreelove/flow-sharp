@@ -121,6 +121,7 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - ✓ MIDI velocity regression for `dynamics`/`crescendo`/`decrescendo`/`swell` (byte-pinned gradient) — v1.2 Phase 14 (DX-08)
 - ✓ Language Server + VSCode extension (syntax highlighting, live diagnostics, completion, hover, signature help, go-to-def, note-stream-aware roman-numeral completion) — v1.2 Phase 17 (D-01..D-15; rows 4-5 of manual smoke deferred to first release tag)
 - ✓ Tutorial + showcase refresh demonstrating v1.1 + v1.2 features end-to-end (`examples/tutorial.flow` 348→635 lines, `examples/showcase.flow` rewritten as ambient mood piece, paired WAV+MIDI export to `examples/output/`) — v1.2 Phase 16 (QOL-03)
+- ✓ Scala (`.scl`) tuning loader with `(loadScala "path")` builtin + `tuning t { ... }` musical-context block, full Scala feature subset (cents + ratio steps, `.kbm` keyboard mapping, non-octave scales, negative cents, `!` line comments), 5 canonical archive fixtures + 3 malformed parser-error fixtures, ±0.1¢ Carlos Alpha / Bohlen-Pierce acceptance, last-wins integration with Phase 23 pragmas, D-13 MIDI-export dual-axis advisory, byte-identical two-run determinism — v1.4 Phase 32 (SPEC-1..SPEC-7)
 
 ### Active
 
