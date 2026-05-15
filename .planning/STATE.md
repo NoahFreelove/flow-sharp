@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: phase-31-in-progress
-stopped_at: Phase 31 Plan 02 SHIPPED -- SPEC-1 closed (3 new analyzers UnusedImport/UnreachableSection/ShadowedVariable + ScaleLint default-on D-03 + 5-source CombinedDiagnosticsPublisher merge). 7 plans remain (03-09). Resume with /gsd-execute-phase 31 (wave 2).
-last_updated: "2026-05-13T01:44:00.000Z"
-last_activity: 2026-05-13 -- Plan 31-02 executed: 3 tasks, 3 commits (161755c feat, e259845 feat, 078a3f7 feat). 4 analyzer diagnostic surfaces ship + ScaleLint default-on; 226/226 Phase 17+21+24+31 unit tests GREEN; 20/20 ByteIdentical determinism gate GREEN. 1 Rule-1 auto-fix (test inputs rewritten from aspirational `{}` proc + @harmony to real Flow syntax + real modules).
+stopped_at: Phase 31 Plan 03 SHIPPED -- SPEC-4 lexer half closed (3 new comment-form arms in SimpleLexer: `;` Lisp-style position-sensitive per D-11 Option A + `TODO:` + `FIXME:`). 6 plans remain (04-09). Resume with /gsd-execute-phase 31 (wave 2).
+last_updated: "2026-05-12T22:51:30.000Z"
+last_activity: 2026-05-12 -- Plan 31-03 executed: 1 task RED→GREEN, 2 atomic commits (fdd1b5e test RED, dd81c87 feat GREEN). 3 new lexer arms in SkipWhitespaceAndComments mirror the existing `Note:` arm at SimpleLexer.cs:1144; 8/8 Phase31LexerCommentForms tests GREEN; 9/9 Phase21 PragmaScanner regression canary GREEN; 20/20 ByteIdentical determinism gate GREEN — zero token-stream change for any valid existing program by construction.
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 24
-  percent: 75
+  completed_plans: 25
+  percent: 78
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 2/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03..31-09 remain)
-Last activity: 2026-05-13 -- Plan 31-02 executed: SPEC-1 closed via 3 new analyzers + ScaleLint default-on + 5-source publisher merge. 3 atomic commits (161755c, e259845, 078a3f7). 226/226 Phase 17+21+24+31 unit tests GREEN; 20/20 ByteIdentical determinism gate GREEN.
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-03 SHIPPED)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 3/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04..31-09 remain)
+Last activity: 2026-05-12 -- Plan 31-03 executed: SPEC-4 lexer half closed via 3 new comment-form arms (`;` Lisp-style position-sensitive D-11 Option A, `TODO:`, `FIXME:`) in SimpleLexer.SkipWhitespaceAndComments. 2 atomic RED→GREEN commits (fdd1b5e test, dd81c87 feat). 8/8 Phase31LexerCommentForms GREEN; 9/9 Phase21 PragmaScanner canary GREEN; 20/20 ByteIdentical determinism gate GREEN.
 
 Progress: [██████████] 100%
 
@@ -173,6 +173,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 27 P05 | ~Xmin | 5 tasks (docs-only closure) | 7 files (REQUIREMENTS, ROADMAP, STATE, CLAUDE.md, 27-RESEARCH, 27-VERIFICATION, 27-SUMMARY) |
 | Phase 31 P01 | ~12min | 3 tasks | 7 files (LspCommand.cs, CommandRegistry.cs, flow-cli.csproj, flow-lsp/Program.cs, StdlibSymbolIndex.cs, LspFixtures.cs, 31-DECISIONS.md) |
 | Phase 31 P02 | ~35min | 3 tasks | 13 files (8 created: 3 analyzers + 4 fact classes + deferred-items.md; 5 modified: ScaleLintAnalyzer/CombinedDiagnosticsPublisher/PragmaRegistry/Phase24 facts × 2) |
+| Phase 31 P03 | ~5min | 1 task (RED→GREEN TDD) | 2 files (1 created: Phase31LexerCommentFormsTests.cs; 1 modified: SimpleLexer.cs +30 lines, 0 deletions) |
 
 ## Accumulated Context
 
@@ -348,6 +349,9 @@ Recent decisions affecting current work:
 - [Phase ?]: FX music-typed overloads delegate to existing C# lambdas via Decibel/Millisecond/Hertz CLR-backing-is-double pattern (no per-overload coercion)
 - [Phase ?]: reverb-Second lambda handles both Second-typed and bare-Double third arg via Wave-1 IsCompatibleWith — lambda-convergence guarantees per-sample identity
 - [Phase ?]: createSineTone-Hertz needs both C# registration AND Flow-side proc shadow — Flow proc delivers stereo matching the bare-Double Flow proc form
+- [Plan 31-03]: D-11 Option A position-sensitive `;` Lisp-style line comment shipped exactly as the planning-phase lock specified — `IsStartOfLineContent()` gates the new `;`/`TODO:`/`FIXME:` arms identically to the existing `Note:` arm at SimpleLexer.cs:1144. Mid-line `;` stays TokenType.Semicolon via the unchanged default lex path, preserving every shipped pragma and typed declaration. Zero token-stream change for any valid existing program → Phase 18/25/27/28 ByteIdentical determinism contracts preserved by construction (20/20 GREEN at HEAD).
+- [Plan 31-03]: `Substring`-not-`AsSpan` chosen for `TODO:`/`FIXME:` lookahead — matches the existing `Note:` arm verbatim. The plan's `<action>` block explicitly forbade introducing a new style mid-file; a future allocation-cleanup pass can sweep all four arms together.
+- [Plan 31-03]: TDD discipline two-commit pattern (`test(...)` RED → `feat(...)` GREEN) used for a single-task plan — 8 [Fact] tests authored first (4 RED for new arms, 4 GREEN canaries), confirmed RED, then arms added in separate commit. Pattern reusable for any future lexer-arm additions; mirrors flow-lang.Tests/Unit/Phase26/NegativeLiteralLexFacts.cs lexer-direct test shape.
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -552,11 +556,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-10T01:30:00.000Z
-Stopped at: Phase 28 closed; Bug B (flow-midi cluster) routed to Phase 30 as planning input
-Resume file: .planning/debug/midi-import-quarter-quantize.md
+Last session: 2026-05-12T22:51:30.000Z
+Stopped at: Plan 31-03 SHIPPED — SPEC-4 lexer half (3 new comment-form arms in SimpleLexer); Plans 31-04..31-09 remain in Phase 31.
+Resume file: None
 
-**Planned Phase:** 30 (Flow CLI + Formal Install + MIDI↔Flow) — pending /gsd-plan-phase 30
+**Planned Phase:** 31 (LSP Enhancements + JetBrains Stretch) — Plan 31-03 done; Wave 2 continues with 31-04..31-09.
 
 ## Resume Instructions (next PC)
 

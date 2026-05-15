@@ -1149,6 +1149,36 @@ public class SimpleLexer
                     Advance();
                 }
             }
+            // Phase 31 REQ-4 (SPEC-4) D-11 Option A: position-sensitive `;` Lisp-style line comment.
+            // `;` at column-0 (with optional leading whitespace per IsStartOfLineContent()) is a comment
+            // to end-of-line. A `;` mid-line stays a TokenType.Semicolon statement-terminator —
+            // every shipping pragma (`enable hAsB;`) and typed declaration (`Int x = 5;`) keeps its
+            // current lex behavior. Verified zero column-0 `;` exist in any in-repo .flow file
+            // (RESEARCH §Migration Audit), so the Phase 18/25/27/28 byte-identical determinism
+            // contracts are preserved by construction.
+            else if (c == ';' && IsStartOfLineContent())
+            {
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
+            }
+            // Phase 31 REQ-4 (SPEC-4): `TODO:` lead-in line comment (mirrors the `Note:` arm above).
+            else if (c == 'T' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("TODO:"))
+            {
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
+            }
+            // Phase 31 REQ-4 (SPEC-4): `FIXME:` lead-in line comment.
+            else if (c == 'F' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("FIXME:"))
+            {
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
+            }
             else
             {
                 break;
