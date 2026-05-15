@@ -29,7 +29,7 @@ public sealed class TextDocumentSyncHandler : TextDocumentSyncHandlerBase
     private readonly UserSymbolIndex _users;
 
     private static readonly TextDocumentSelector Selector =
-        TextDocumentSelector.ForLanguage("flow");
+        TextDocumentSelector.ForPattern("**/*.flow");
 
     public TextDocumentSyncHandler(
         DocumentManager docs,

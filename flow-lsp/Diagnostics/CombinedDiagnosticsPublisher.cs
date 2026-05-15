@@ -68,26 +68,24 @@ public sealed class CombinedDiagnosticsPublisher
     public static IReadOnlyList<Diagnostic> BuildAll(
         ParseResult result, string source, StdlibSymbolIndex stdlib)
     {
-        var parseDiags   = DiagnosticsPublisher.BuildDiagnostics(result.Errors);
-        var lintDiags    = ScaleLintAnalyzer.Analyze(result.Ast, result.Tokens, source);
-        var unusedDiags  = UnusedImportAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib);
-        var unreachDiags = UnreachableSectionAnalyzer.Analyze(result.Ast, result.Tokens, source);
-        var shadowDiags  = ShadowedVariableAnalyzer.Analyze(result.Ast, result.Tokens, source);
+        var parseDiags     = DiagnosticsPublisher.BuildDiagnostics(result.Errors);
+        var lintDiags      = ScaleLintAnalyzer.Analyze(result.Ast, result.Tokens, source);
+        var unusedDiags    = UnusedImportAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib);
+        var unreachDiags   = UnreachableSectionAnalyzer.Analyze(result.Ast, result.Tokens, source);
+        var shadowDiags    = ShadowedVariableAnalyzer.Analyze(result.Ast, result.Tokens, source);
+        var undefinedDiags = UndefinedSymbolAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib);
 
-        // Phase 31 Plan 31-02: removed the pre-Phase-31 short-circuit
-        // `if (parseDiags.Count == 0 && lintDiags.Count == 0) return Array.Empty()`.
-        // The three new analyzers may fire even when parseDiags + lintDiags are
-        // both empty, and the empty-publish-clears-squiggles invariant means the
-        // outer Publish method needs to forward an empty list when nothing fires
-        // anyway. A five-way AddRange is cheap.
+        // Phase 31 Plan 31-08 (scope expansion): six-source merge — adds
+        // UndefinedSymbolAnalyzer to the 5-source Phase 31 Plan 31-02 set.
         var merged = new List<Diagnostic>(
             parseDiags.Count + lintDiags.Count + unusedDiags.Count +
-            unreachDiags.Count + shadowDiags.Count);
+            unreachDiags.Count + shadowDiags.Count + undefinedDiags.Count);
         merged.AddRange(parseDiags);
         merged.AddRange(lintDiags);
         merged.AddRange(unusedDiags);
         merged.AddRange(unreachDiags);
         merged.AddRange(shadowDiags);
+        merged.AddRange(undefinedDiags);
         return merged;
     }
 

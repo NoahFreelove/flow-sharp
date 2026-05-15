@@ -511,9 +511,18 @@ public partial class Parser
         switch (contextType)
         {
             case MusicalContextType.Timesig:
-                // Parse numerator / denominator (e.g., 4/4, 3/4, 7/8)
+                // Parse numerator / denominator (e.g., 4/4, 3/4, 7/8), OR the
+                // common-time shorthand `C` which lowers to 4/4.
+                if (Check(TokenType.Identifier) && CurrentToken.Text == "C")
+                {
+                    var cLoc = CurrentToken.Location;
+                    Advance(); // consume `C`
+                    value = new LiteralExpression(cLoc, 4);
+                    value2 = new LiteralExpression(cLoc, 4);
+                    break;
+                }
                 value = new LiteralExpression(CurrentToken.Location,
-                    (int)Expect(TokenType.IntLiteral, "Expected integer numerator for time signature").Value!);
+                    (int)Expect(TokenType.IntLiteral, "Expected integer numerator for time signature (or 'C' for common time)").Value!);
                 Expect(TokenType.Slash, "Expected '/' separator in time signature (e.g., timesig 4/4)");
                 value2 = new LiteralExpression(CurrentToken.Location,
                     (int)Expect(TokenType.IntLiteral, "Expected integer denominator for time signature").Value!);

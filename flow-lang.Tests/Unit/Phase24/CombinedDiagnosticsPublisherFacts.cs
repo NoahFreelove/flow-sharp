@@ -31,7 +31,12 @@ public class CombinedDiagnosticsPublisherFacts
     [Fact]
     public void BuildAll_NoErrorsNoLint_ReturnsEmpty()
     {
-        var src = "proc greet()\n    (print \"hi\")\nend proc";
+        // Phase 31 Plan 31-08 scope expansion: with UndefinedSymbolAnalyzer wired
+        // through BuildAll, `print` (declared in std.flow as `internal proc`)
+        // would flag without `use "@std"`. The pre-Phase-31 source omitted the
+        // import; we add it to keep the test's intent ("no errors, no lint, no
+        // undefined symbols") satisfied under the six-analyzer pipeline.
+        var src = "use \"@std\"\nproc greet()\n    (print \"hi\")\nend proc";
         var result = LspFixtures.Parse(src);
         var diags = CombinedDiagnosticsPublisher.BuildAll(result, src, LspFixtures.StdlibIndex());
         Assert.Empty(diags);

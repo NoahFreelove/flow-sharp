@@ -1,3 +1,4 @@
+using FlowLang.StandardLibrary;
 using FlowLsp;
 using FlowLsp.Symbols;
 
@@ -23,4 +24,17 @@ public static class LspFixtures
     /// and the <c>CompletionHandler.FilterByImports</c> filter both consume this.
     /// </summary>
     public static StdlibSymbolIndex StdlibIndex() => new(new ParseSession());
+
+    /// <summary>
+    /// Construct a fresh <see cref="BuiltInIndex"/> from an audio-free registry
+    /// (signatures only — Option C / D-07 coverage, no audio backend). Phase 31
+    /// Plan 31-08 scope expansion: <c>UndefinedSymbolAnalyzer</c> + the
+    /// <see cref="CombinedDiagnosticsPublisher.BuildAll"/> tests consume this.
+    /// </summary>
+    public static BuiltInIndex BuiltInIndex()
+    {
+        var registry = new InternalFunctionRegistry();
+        BuiltInFunctions.RegisterSignaturesOnly(registry);
+        return new BuiltInIndex(registry);
+    }
 }

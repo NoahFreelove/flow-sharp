@@ -1,3 +1,4 @@
+using FlowLang.Core;
 using FlowLang.Lexing;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -42,7 +43,13 @@ public static class SemanticTokensEncoder
         SemanticTokenType.Comment,    // 5
         SemanticTokenType.Variable,   // 6 — NoteLiteral (musical notes colored as identifiers/symbols)
         SemanticTokenType.Function,   // 7 — ChordLiteral (chord names render as callable-like)
-        SemanticTokenType.Macro,      // 8 — | pipe delimiters (no standard delimiter scope)
+        SemanticTokenType.Macro,      // 8 — | pipe delimiters AND flow arrows (->, =>, ~>);
+                                      //     no standard "structural delimiter" scope, so we
+                                      //     pile structural / call-composition symbols here
+                                      //     so editors that paint Macro distinctly (most
+                                      //     JetBrains + VSCode themes do) give them visual
+                                      //     prominence comparable to keywords (Phase 31 Plan
+                                      //     31-08 UAT followup — Operator scope is too muted)
     };
 
     /// <summary>
@@ -70,10 +77,15 @@ public static class SemanticTokensEncoder
     }
 
     /// <summary>
-    /// Map a Flow <see cref="TokenType"/> to its legend index, or <c>null</c> if
-    /// the token has no semantic-tokens classification (Identifier, delimiters,
-    /// Eof, etc.). Callers MUST skip unmapped tokens — emitting zero-indexed
-    /// placeholders would corrupt the delta encoding for subsequent tokens.
+    /// Pure per-TokenType mapping. Returns <c>null</c> for tokens whose
+    /// classification depends on context — notably <see cref="TokenType.Identifier"/>,
+    /// which <see cref="ClassifyTokens"/> upgrades to Function or Variable based
+    /// on the preceding token. Callers that want context-aware classification
+    /// MUST use <see cref="ClassifyTokens"/> instead.
+    ///
+    /// Kept as a stable pure function for the per-type unit tests; not used by
+    /// the LSP handler or by <see cref="EncodeTokens"/> directly any more
+    /// (Phase 31 Plan 31-10 contextual upgrade).
     /// </summary>
     public static int? MapTokenType(TokenType t) => t switch
     {
@@ -105,11 +117,19 @@ public static class SemanticTokensEncoder
         TokenType.BoolLiteral
             => (int)LegendIndex.Number,
 
-        // --- Operators ---
-        TokenType.Arrow or TokenType.FatArrow or TokenType.Plus or TokenType.Minus or
-        TokenType.Star or TokenType.Slash or TokenType.LessThan or
-        TokenType.GreaterThan or TokenType.Assign
+        // --- Arithmetic / comparison / assignment operators ---
+        TokenType.Plus or TokenType.Minus or TokenType.Star or TokenType.Slash or
+        TokenType.LessThan or TokenType.GreaterThan or TokenType.Assign
             => (int)LegendIndex.Operator,
+
+        // --- Structural / flow operators ---
+        // Arrow `->` (flow op), FatArrow `=>` (lambda separator), and
+        // TildeArrow `~>` (Phase 26.1 tuple-unpack flow op) are control-flow
+        // / call-composition symbols, not arithmetic. Map to Macro so they
+        // pair visually with the `|` pipe delimiters (note streams) — the
+        // composer's eye reads them as structural in the same way.
+        TokenType.Arrow or TokenType.FatArrow or TokenType.TildeArrow
+            => (int)LegendIndex.Macro,
 
         // --- Comments ---
         TokenType.Comment => (int)LegendIndex.Comment,
@@ -119,14 +139,202 @@ public static class SemanticTokensEncoder
         TokenType.NoteLiteral => (int)LegendIndex.Variable,
         TokenType.ChordLiteral => (int)LegendIndex.Function,
 
-        // --- Pipe delimiters for note streams ---
+        // --- Pipe delimiters for note streams (paired with flow arrows above) ---
         TokenType.Pipe => (int)LegendIndex.Macro,
 
         // Everything else (Identifier, LParen/RParen/LBracket/…, Dot, At, Colon,
         // Comma, Semicolon, Ellipsis, Underscore, Tilde, Eof, interpolated
-        // start/end delimiters) has no semantic-tokens scope. Skip.
+        // start/end delimiters) has no per-TokenType classification. Identifier
+        // is upgraded to Function/Variable contextually by ClassifyTokens.
         _ => null,
     };
+
+    /// <summary>
+    /// Identifier names that should be classified as <see cref="LegendIndex.Type"/>
+    /// even though the lexer emits them as <see cref="TokenType.Identifier"/>.
+    ///
+    /// Flow's primitive types (Int, Float, String, Bool, Note, Buf, etc.) have
+    /// dedicated lexer tokens and are handled by <see cref="MapTokenType"/>. The
+    /// music special types and Phase 26.1 generic-container types are NOT first-
+    /// class lexer keywords — they're regular identifiers everywhere they appear,
+    /// including in type-annotation position (`Beat x = 1.5`). This set restores
+    /// them to Type scope in semantic tokens.
+    ///
+    /// Source of truth: <c>flow-lang/TypeSystem/SpecialTypes/</c> + the Music
+    /// Types Quick Reference table in CLAUDE.md.
+    /// </summary>
+    private static readonly HashSet<string> KnownTypeIdentifiers = new(StringComparer.Ordinal)
+    {
+        // Music special types
+        "Semitone", "Cent", "Millisecond", "Second", "Decibel", "Beat", "Hertz",
+        "Bar", "TimeSignature", "NoteValue", "Sequence", "MusicalNote", "Chord",
+        "Section", "Song",
+        // Phase 26.1 — symbols/tuples/dicts
+        "Symbol", "Tuple", "Dict",
+        // Synthesis/audio runtime types
+        "Buffer", "Lazy", "Function", "Envelope", "OscillatorState", "Voice", "Track",
+    };
+
+    /// <summary>
+    /// Context-aware classifier — like <see cref="MapTokenType"/> but with
+    /// Identifier upgrades based on identifier text + preceding token:
+    /// <list type="bullet">
+    /// <item>Identifier whose text is a <see cref="KnownTypeIdentifiers"/> entry → Type</item>
+    /// <item>Identifier after <c>LParen</c> → Function (S-expression call head)</item>
+    /// <item>Identifier after <c>Proc</c> → Function (proc declaration name)</item>
+    /// <item>Identifier otherwise → Variable</item>
+    /// </list>
+    ///
+    /// Returns an array parallel to <paramref name="tokens"/>; null entries mean
+    /// "skip — no classification" (same contract as <see cref="MapTokenType"/>).
+    /// Used by <see cref="EncodeTokens"/> and by SemanticTokensHandler.Tokenize.
+    ///
+    /// Phase 31 Plan 31-10: previously bare identifiers were unmapped (null), so
+    /// composers saw uncolored function calls in editors that relied only on
+    /// semantic tokens (notably LSP4IJ-based JetBrains plugins where there is
+    /// no TextMate-grammar baseline). This classifier closes that gap WITHOUT
+    /// requiring a full IntelliJ Language class.
+    ///
+    /// Args/parameters note: function-call arguments and proc parameters are
+    /// classified as Variable (same scope as variable reads). The LSP
+    /// <c>SemanticTokenType.Parameter</c> scope is a future refinement
+    /// requiring parameter-list scope tracking — deferred to v1.5.
+    /// </summary>
+    public static int?[] ClassifyTokens(IReadOnlyList<Token> tokens)
+    {
+        var result = new int?[tokens.Count];
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            var t = tokens[i];
+            if (t.Type == TokenType.Identifier)
+            {
+                // Type-identifier check wins regardless of position.
+                if (t.Text != null && KnownTypeIdentifiers.Contains(t.Text))
+                {
+                    result[i] = (int)LegendIndex.Type;
+                    continue;
+                }
+
+                // Find the previous non-Comment token (synthetic Comment tokens
+                // from ScanCommentTokens may be merged in; skip them when
+                // resolving syntactic context).
+                TokenType? prev = null;
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (tokens[j].Type != TokenType.Comment)
+                    {
+                        prev = tokens[j].Type;
+                        break;
+                    }
+                }
+                if (prev == TokenType.LParen || prev == TokenType.Proc)
+                {
+                    result[i] = (int)LegendIndex.Function;
+                }
+                else
+                {
+                    result[i] = (int)LegendIndex.Variable;
+                }
+                continue;
+            }
+            result[i] = MapTokenType(t.Type);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Scan a source buffer for Flow's 5 lexer-recognized comment forms and
+    /// emit synthetic <see cref="Token"/> instances with type
+    /// <see cref="TokenType.Comment"/>. The lexer itself consumes comments as
+    /// whitespace (<c>SimpleLexer.SkipWhitespaceAndComments</c>) without
+    /// producing tokens, so this side-channel scan is needed to surface them
+    /// as semantic tokens for editor coloring.
+    ///
+    /// Recognized forms (mirroring <c>SimpleLexer.SkipWhitespaceAndComments</c>):
+    /// <list type="bullet">
+    /// <item>Mid-line <c>//</c> to end-of-line (outside string literals).</item>
+    /// <item>Line-start <c>;</c> (D-11 Option A, Phase 31 SPEC-4).</item>
+    /// <item>Line-start <c>Note:</c>.</item>
+    /// <item>Line-start <c>TODO:</c> (Phase 31 SPEC-4).</item>
+    /// <item>Line-start <c>FIXME:</c> (Phase 31 SPEC-4).</item>
+    /// </list>
+    ///
+    /// "Line-start" means after optional leading whitespace only (matches the
+    /// lexer's <c>IsStartOfLineContent()</c> predicate).
+    ///
+    /// Returns at most one comment token per line (subsequent comment-starters
+    /// on the same line are inside the first comment's range). String-literal
+    /// recognition is intentionally minimal — tracks <c>"..."</c> and
+    /// backslash-escaped characters; doesn't handle interpolated string
+    /// segments, but those produce <see cref="TokenType.InterpolatedStringText"/>
+    /// tokens already classified as String by the encoder.
+    /// </summary>
+    public static IReadOnlyList<Token> ScanCommentTokens(string text)
+    {
+        var comments = new List<Token>();
+        if (string.IsNullOrEmpty(text)) return comments;
+
+        var lines = text.Split('\n');
+        for (int lineIdx = 0; lineIdx < lines.Length; lineIdx++)
+        {
+            // strip trailing \r for CRLF files so column accounting stays clean
+            var line = lines[lineIdx].TrimEnd('\r');
+            int lineNo = lineIdx + 1;
+
+            // Pass 1: line-start lead-ins (after optional whitespace).
+            int wsEnd = 0;
+            while (wsEnd < line.Length && char.IsWhiteSpace(line[wsEnd])) wsEnd++;
+            if (wsEnd < line.Length)
+            {
+                string? leadIn = null;
+                if (line[wsEnd] == ';') leadIn = ";";
+                else if (StartsWithAt(line, wsEnd, "Note:")) leadIn = "Note:";
+                else if (StartsWithAt(line, wsEnd, "TODO:")) leadIn = "TODO:";
+                else if (StartsWithAt(line, wsEnd, "FIXME:")) leadIn = "FIXME:";
+
+                if (leadIn != null)
+                {
+                    string commentText = line.Substring(wsEnd);
+                    comments.Add(new Token(
+                        TokenType.Comment,
+                        commentText,
+                        new SourceLocation(lineNo, wsEnd + 1)));
+                    continue;
+                }
+            }
+
+            // Pass 2: mid-line `//` outside string literals.
+            bool inString = false;
+            for (int j = 0; j < line.Length - 1; j++)
+            {
+                char ch = line[j];
+                if (ch == '\\' && j + 1 < line.Length)
+                {
+                    j++; // skip escaped character (\", \\, etc.)
+                    continue;
+                }
+                if (ch == '"')
+                {
+                    inString = !inString;
+                    continue;
+                }
+                if (!inString && ch == '/' && line[j + 1] == '/')
+                {
+                    string commentText = line.Substring(j);
+                    comments.Add(new Token(
+                        TokenType.Comment,
+                        commentText,
+                        new SourceLocation(lineNo, j + 1)));
+                    break;
+                }
+            }
+        }
+        return comments;
+    }
+
+    private static bool StartsWithAt(string line, int offset, string pattern) =>
+        offset + pattern.Length <= line.Length &&
+        line.AsSpan(offset, pattern.Length).SequenceEqual(pattern.AsSpan());
 
     /// <summary>
     /// Encode a sorted token list into LSP's 5-tuple delta format:
@@ -146,12 +354,14 @@ public static class SemanticTokensEncoder
     public static int[] EncodeTokens(IReadOnlyList<Token> tokens)
     {
         var data = new List<int>(tokens.Count * 5);
+        var classifications = ClassifyTokens(tokens);
         int prevLine = 0;
         int prevCol = 0;
         bool first = true;
-        foreach (var t in tokens)
+        for (int i = 0; i < tokens.Count; i++)
         {
-            var typeIdx = MapTokenType(t.Type);
+            var t = tokens[i];
+            var typeIdx = classifications[i];
             if (typeIdx is null) continue;
 
             int line = System.Math.Max(0, t.Location.Line - 1);

@@ -102,7 +102,7 @@ public sealed class SignatureHelpHandler : SignatureHelpHandlerBase
         SignatureHelpCapability capability, ClientCapabilities clientCapabilities)
         => new()
         {
-            DocumentSelector = TextDocumentSelector.ForLanguage("flow"),
+            DocumentSelector = TextDocumentSelector.ForPattern("**/*.flow"),
             TriggerCharacters = new Container<string>("(", ","),
         };
 }

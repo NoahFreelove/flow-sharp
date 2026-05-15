@@ -1,0 +1,39 @@
+<idea-plugin>
+    <id>dev.flowlang.jetbrains</id>
+    <name>Flow Language</name>
+    <vendor>Flow Language</vendor>
+    <version>0.1.0</version>
+
+    <!-- IntelliJ Platform 2024.2+ — matches LSP4IJ 0.19.3 since-build per Phase 31 CONTEXT D-09. -->
+    <idea-version since-build="242"/>
+
+    <description><![CDATA[
+        JetBrains IDE support for the Flow language (https://github.com/noah-freelove/flow-sharp).
+        Wraps the flow-lsp language server via LSP4IJ — completions, hovers, signature help,
+        and diagnostics from the same server that powers VSCode (Phase 17).
+        Requires the `flow` binary on PATH (provided by Phase 30's `flow install`); set
+        FLOW_LSP_PATH as a fallback. See README.md for details.
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.redhat.devtools.lsp4ij</depends>
+
+    <!-- Wire the LSP4IJ bridge — server id "flow" served by FlowLanguageServerFactory.
+         File routing is by filename pattern (no custom Language class needed for an
+         LSP-only plugin); a v1.5 follow-up may register a real Flow Language + FileType
+         to enable in-process PSI features, but for now LSP4IJ handles editor-side
+         features on top of any PlainTextFileType-classified *.flow file. -->
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="flow"
+                name="Flow Language Server"
+                factoryClass="dev.flowlang.jetbrains.FlowLanguageServerFactory">
+            <description><![CDATA[
+                Flow LSP via the `flow lsp` subcommand (Phase 31 Plan 01 LspCommand
+                delegates to flow-lsp/Program.cs). Binary discoverability falls back
+                to the FLOW_LSP_PATH env var when `flow` is not on PATH — see
+                FlowLanguageServerFactory.kt and README.md for details.
+            ]]></description>
+        </server>
+        <fileNamePatternMapping patterns="*.flow" serverId="flow"/>
+    </extensions>
+</idea-plugin>

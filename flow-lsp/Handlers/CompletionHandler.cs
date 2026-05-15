@@ -449,7 +449,7 @@ public sealed class CompletionHandler : CompletionHandlerBase
         CompletionCapability capability, ClientCapabilities clientCapabilities)
         => new()
         {
-            DocumentSelector = TextDocumentSelector.ForLanguage("flow"),
+            DocumentSelector = TextDocumentSelector.ForPattern("**/*.flow"),
             TriggerCharacters = new Container<string>(".", "@", "\"", " "),
             ResolveProvider = false,
         };

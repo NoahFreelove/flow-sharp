@@ -191,7 +191,7 @@ Notes:
 - Music-typed literals at expression-start (after `(`, `=`, `,`, etc.) lex as single tokens — see Phase 26.2 ERG-05.
 
 ### Music-Specific
-- **Musical context blocks**: `tempo 120 { ... }`, `timesig 4/4 { ... }`, `key Cmajor { ... }`, `swing 0.6 { ... }`
+- **Musical context blocks**: `tempo 120 { ... }`, `timesig 4/4 { ... }`, `key Cmajor { ... }`, `swing 0.6 { ... }`. Timesig accepts the common-time shorthand `timesig C { ... }` (capital `C` only; lowers to 4/4 at parse time so the renderer / MIDI export / musical-context stack see identical data to the explicit form)
 - **Note stream expressions**: `| C4 D4 E4 F4 |` with duration suffixes (`q`, `h`, `w`, `e`, `s`), rests (`_`), dotted notes (`C4q.`), tied notes (`C4h~`), cent offsets (`C4+50c`), chord brackets (`[C4 E4 G4]q`)
 - **Chord literals**: `Cmaj7`, `Dm`, `F#dim`, `Bb7`
 - **Roman numerals** (in key context): `I`, `ii`, `IV`, `V7`, `vi`

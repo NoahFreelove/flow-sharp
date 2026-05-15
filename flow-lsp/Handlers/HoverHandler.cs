@@ -122,5 +122,5 @@ public sealed class HoverHandler : HoverHandlerBase
 
     protected override HoverRegistrationOptions CreateRegistrationOptions(
         HoverCapability capability, ClientCapabilities clientCapabilities)
-        => new() { DocumentSelector = TextDocumentSelector.ForLanguage("flow") };
+        => new() { DocumentSelector = TextDocumentSelector.ForPattern("**/*.flow") };
 }
