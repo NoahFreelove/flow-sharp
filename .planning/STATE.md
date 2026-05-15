@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: phase-31-planning-paused
-stopped_at: Phase 31 SPEC + CONTEXT + RESEARCH + PATTERNS landed (planner NOT spawned); 213 unpushed commits squashed to 9 by-phase commits and pushed to origin/dev
-last_updated: "2026-05-12T04:30:00.000Z"
-last_activity: 2026-05-12 -- Phase 31 plan-phase paused after pattern-mapper completed; resume with `/gsd-plan-phase 31 --skip-research`. Local dev history squashed (213→9 commits) and pushed to origin/dev. Backup branch `backup-dev-presquash` retained locally for rollback.
+status: phase-31-ready-to-execute
+stopped_at: Phase 31 planning complete -- 9 PLAN.md files + 31-VALIDATION.md written; plan-checker PASSED (iteration 2/3) with all 7 SPEC IDs covered, 2 blockers + 4 warnings resolved, 3 warnings declined with rationale
+last_updated: "2026-05-12T05:30:00.000Z"
+last_activity: 2026-05-12 -- /gsd-plan-phase 31 --skip-research --chain ran end-to-end. Planner output 9 plans in 6 waves; checker found 2 blockers + 7 warnings; revision pass fixed 2 blockers + 4 warnings (declined W5/W7/W9 with rationale); re-check PASSED. Ready for /gsd-execute-phase 31.
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 23
+  total_plans: 32
   completed_plans: 22
-  percent: 96
+  percent: 69
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
 Phase: 31 (lsp-enhancements-jetbrains-stretch) — PLAN-PHASE PAUSED (planner not yet spawned)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = SPEC ✓ + CONTEXT ✓ + RESEARCH ✓ + PATTERNS ✓, awaiting `/gsd-plan-phase 31 --skip-research` to dispatch the planner
-Last activity: 2026-05-12 -- Phase 31 pattern-mapper completed; user paused to squash + push 213 unpushed commits before continuing to planner
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9 PLAN.md ✓ + 31-VALIDATION.md ✓ (planning complete, ready to execute)
+Last activity: 2026-05-12 -- /gsd-plan-phase 31 --skip-research --chain complete: 9 plans in 6 waves, plan-checker PASSED after one revision pass
 
 Progress: [██████████] 100%
 

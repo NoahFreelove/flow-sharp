@@ -894,75 +894,8 @@ public class UnusedImportAnalyzerFacts
 
 ## Validation Architecture
 
-### Test Framework
-| Property | Value |
-|----------|-------|
-| Framework | xUnit 2.x (existing in `flow-lang.Tests/`) |
-| Config file | `flow-lang.Tests/flow-lang.Tests.csproj` |
-| Quick run command | `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase31" --logger "console;verbosity=minimal"` |
-| Full suite command | `dotnet test --logger "console;verbosity=minimal"` |
+See [31-VALIDATION.md](./31-VALIDATION.md) for canonical validation architecture.
 
-For grammar snapshot tests:
-| Property | Value |
-|----------|-------|
-| Framework | vscode-tmgrammar-snap 0.1.3 |
-| Config file | `vscode-extension/package.json` scripts |
-| Quick run command | `cd vscode-extension && npm run test:grammar` |
-| Regenerate command | `cd vscode-extension && npm run test:grammar:update` |
-
-For JetBrains stretch (REQ-7 manual UAT):
-| Property | Value |
-|----------|-------|
-| Build command | `cd flow-jetbrains && ./gradlew buildPlugin` (downloads Gradle 8.6 on first run) |
-| Artifact path | `flow-jetbrains/build/distributions/flow-jetbrains-0.1.0.zip` |
-| Manual UAT | IntelliJ Community 2024.2+ → Settings → Plugins → Install from disk → select the .zip → open `examples/tutorial.flow` → cursor in `proc ...` body → trigger completion → assert flow-lsp items appear |
-
-### Phase Requirements → Test Map
-
-| Req ID | Behavior | Test Type | Automated Command | File Exists? |
-|--------|----------|-----------|-------------------|-------------|
-| REQ-1 | UnusedImport Warning emitted for unreferenced `use "@module"` | unit | `dotnet test --filter "Name~UnusedImportAnalyzer"` | ❌ Wave 0 |
-| REQ-1 | UnreachableSection Information emitted for orphan `section` | unit | `dotnet test --filter "Name~UnreachableSectionAnalyzer"` | ❌ Wave 0 |
-| REQ-1 | ShadowedVariable Warning emitted for nested-scope shadow | unit | `dotnet test --filter "Name~ShadowedVariableAnalyzer"` | ❌ Wave 0 |
-| REQ-1 | scaleLint default-on (no `enable scaleLint;` needed) | unit | `dotnet test --filter "Name~ScaleLintDefault"` | ❌ Wave 0 |
-| REQ-2 | CompletionHandler filters out `arpeggio` when `@harmony` not imported | unit | `dotnet test --filter "Name~FilterByImports"` | ❌ Wave 0 |
-| REQ-2 | CompletionHandler filters `H4` when `enable hAsB;` absent | unit | `dotnet test --filter "Name~FilterByPragmas"` | ❌ Wave 0 |
-| REQ-2 | CompletionHandler boosts roman-numerals inside `key { }` | unit | `dotnet test --filter "Name~BoostByMusicalContext"` | ❌ Wave 0 |
-| REQ-3 | `FormatSignature` renders varargs with U+2026 | unit | `dotnet test --filter "Name~FormatSignature"` | ❌ Wave 0 |
-| REQ-3 | HoverHandler renders `(concat str: String…)` | unit | `dotnet test --filter "Name~HoverHandlerTests" --filter "DisplayName~vararg"` | ✅ (extend `HoverHandlerTests.cs`) |
-| REQ-3 | SignatureHelpHandler renders varargs in Label | unit | `dotnet test --filter "Name~SignatureHelpHandlerTests" --filter "DisplayName~vararg"` | ✅ (extend `SignatureHelpHandlerTests.cs`) |
-| REQ-4 | Lexer skips `;` at column-0 | unit | `dotnet test --filter "Name~Phase31LexerCommentForms"` | ❌ Wave 0 |
-| REQ-4 | Lexer skips `TODO:` / `FIXME:` lead-ins | unit | same as above | ❌ Wave 0 |
-| REQ-4 | String `"TODO: x"` NOT skipped | unit | same as above | ❌ Wave 0 |
-| REQ-4 | Existing `enable hAsB;` still parses (Option A canary) | unit | `dotnet test --filter "Name~PragmaScannerFacts"` (existing) | ✅ |
-| REQ-5 | TextMate grammar function-call vs identifier scope | grammar-snapshot | `cd vscode-extension && npm run test:grammar` | ✅ (extend `tests/grammar/sample.flow.snap` after regeneration) |
-| REQ-5 | TextMate grammar 4 comment forms scope correctly | grammar-snapshot | same as above | ❌ Wave 0 (new fixture: `tests/grammar/comment-forms.flow`) |
-| REQ-6 | All 70+ `tests/test_*.flow` still parse | smoke (existing) | `dotnet run --project flow-interpreter tests/test_h_alias.flow` (manual loop or scripted) | ✅ |
-| REQ-6 | Phase 18/25/27/28 ByteIdentical*Tests stay GREEN | unit (existing) | `dotnet test --filter "Name~ByteIdentical"` | ✅ |
-| REQ-7 | `flow-jetbrains/` scaffolding files exist | structural | `test -f flow-jetbrains/build.gradle.kts && test -f flow-jetbrains/src/main/resources/META-INF/plugin.xml` | ❌ Wave 0 |
-| REQ-7 | `./gradlew buildPlugin` produces a .zip | manual / CI-extension (defer to v1.5) | `cd flow-jetbrains && ./gradlew buildPlugin` | ❌ Wave 0 |
-| REQ-7 | Manual UAT: IntelliJ + plugin .zip + open .flow shows completions | manual-only | (manual checklist in 31-VERIFICATION.md) | — |
-
-### Sampling Rate
-
-- **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase31"` (under 10s budget per SPEC constraint)
-- **Per wave merge:** `dotnet test --logger "console;verbosity=minimal"` (full suite) + `cd vscode-extension && npm run test:grammar`
-- **Phase gate:** Full suite green + grammar snapshot green + manual UAT (REQ-7 stretch + REQ-5 VSCode dev-host smoke) before `/gsd-verify-work`
-
-### Wave 0 Gaps
-
-- [ ] `flow-lang.Tests/Unit/Phase31/Phase31LexerCommentFormsTests.cs` — covers REQ-4 (semicolon, TODO:, FIXME: lead-in detection + string-literal exclusion + `enable hAsB;` canary)
-- [ ] `flow-lang.Tests/Unit/Phase31/UnusedImportAnalyzerFacts.cs` — REQ-1 unused-import
-- [ ] `flow-lang.Tests/Unit/Phase31/UnreachableSectionAnalyzerFacts.cs` — REQ-1 unreachable-section
-- [ ] `flow-lang.Tests/Unit/Phase31/ShadowedVariableAnalyzerFacts.cs` — REQ-1 shadowed-variable
-- [ ] `flow-lang.Tests/Unit/Phase31/ScaleLintDefaultOnFacts.cs` — REQ-1d / D-03 (analyzer activates without pragma; pragma still parses as no-op)
-- [ ] `flow-lang.Tests/Unit/Phase31/CompletionFilterFacts.cs` — REQ-2 (3 filters)
-- [ ] `flow-lang.Tests/Unit/Phase31/VarargsRenderingFacts.cs` — REQ-3 (`FormatSignature` + extend `HoverHandlerTests.cs` + `SignatureHelpHandlerTests.cs`)
-- [ ] `flow-lang.Tests/Unit/Phase31/LspFixtures.cs` shared fixtures (or reuse Phase 17's existing `LspFixtures.cs`)
-- [ ] `vscode-extension/tests/grammar/comment-forms.flow` + regenerated `.snap` — REQ-4/REQ-5
-- [ ] `vscode-extension/tests/grammar/function-calls.flow` + regenerated `.snap` — REQ-5
-
-*Framework install: NONE — xunit / vscode-tmgrammar-snap / Gradle wrapper already wired.*
 
 ## Security Domain
 

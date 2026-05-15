@@ -338,18 +338,28 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 30-09-PLAN.md — flow midi2flow real handler + 3 CC0 fixtures + Midi2FlowRoundTripTests + writeMidi denominator double-encoding fix + closure — Shipped 303bddd + 9801b9e + a026afb + (closure)
 
 ### Phase 31: LSP Enhancements + JetBrains Stretch
-**Goal**: Close the gaps in `flow-lsp` that hurt music-production and functional-language audiences (context-aware completion filtered by `use`d modules, pragma awareness, varargs in signature help, function-call coloring, multi-form comments like `Note:`/`TODO:`/`;`, expanded warning diagnostics) and finally publish the VSCode extension to the Marketplace + OpenVSX. Stretch: ship a JetBrains plugin via LSP4IJ.
-**Depends on**: Phase 28 closure (articulation tokens like `leg` need LSP completion support); ideally also Phase 30 closure (so the LSP can ship alongside the formal install)
-**Requirements**: TBD (assigned during /gsd-spec-phase 31)
+**Goal**: Close four `flow-lsp` gaps (diagnostics severity expansion, context-aware completion filtering, varargs visibility in signature help / hover, grammar enhancements for new comment forms + function-call coloring) and add JetBrains plugin scaffolding via LSP4IJ. VSCode Marketplace + OpenVSX publish deferred to v1.5 per SPEC Round 1 decision. Stretch: built plugin .zip attached to v1.4 release tag if all 6 mandatory areas land green.
+**Depends on**: Phase 28 closure (articulation tokens like `leg` need LSP completion support); Phase 30 closure (LSP ships alongside the formal install; Phase 31 adds the `flow lsp` subcommand)
+**Requirements**: SPEC-1, SPEC-2, SPEC-3, SPEC-4, SPEC-5, SPEC-6, SPEC-7
 **Success Criteria** (what must be TRUE):
-  1. Completion suggestions filter by what the current file actually `use`d (no longer suggests `(arpeggio ...)` if `@harmony` is not imported)
-  2. Function calls visually distinguished from identifiers in the VSCode extension grammar
-  3. Varargs functions surface their variadic shape in completions and hovers
-  4. `Note:` / `TODO:` / `FIXME:` / `;` recognized as comments by lexer + grammar
-  5. VSCode extension published to Marketplace + OpenVSX with a v1.4-aligned version tag
-  6. Phase 17 HUMAN-UAT rows 1-5 closed (manual smoke + marketplace publish)
-  7. (Stretch) JetBrains plugin published to JetBrains Marketplace via LSP4IJ
-**Plans**: TBD
+  1. flow-lsp emits structured-severity diagnostics: Warning (UnusedImport, ShadowedVariable), Information (UnreachableSection, ScaleLint default-on per CONTEXT D-03)
+  2. CompletionHandler filters suggestions by what the current file `use`d (no longer suggests `arpeggio` if `@harmony` is not imported); pragma-filter for note-stream H-aliases; musical-context boost for roman numerals inside `key { }` blocks
+  3. Varargs functions render `name: Type…` with Unicode U+2026 ellipsis in signature help, hovers, and completion tooltips (per CONTEXT D-01/D-02)
+  4. SimpleLexer + TextMate grammar recognize `;` (position-sensitive Option A per D-11) / `Note:` / `TODO:` / `FIXME:` as comments; existing `Note:` already shipping per RESEARCH §Summary finding
+  5. TextMate grammar distinguishes `(funcName ...)` head positions (entity.name.function.flow) from bare identifier references (variable.other.flow)
+  6. All 70+ in-repo `.flow` fixtures parse + render under the new lexer; Phase 18/25/27/28 ByteIdentical contracts preserved; zero source-text migrations required under D-11 Option A (RESEARCH grep audit confirms)
+  7. JetBrains plugin scaffolding lands UNCONDITIONALLY (CONTEXT D-10); if all 6 mandatory areas GREEN, gradlew buildPlugin produces a .zip attached to v1.4 release tag; if not, scaffolding ready for v1.5 follow-up
+**Plans**: 9 plans
+- [ ] 31-01-PLAN.md — Wave-0 scaffolding: `flow lsp` subcommand (Pitfall 7 resolution) + StdlibSymbolIndex.ProcsForModule helper + LspFixtures.StdlibIndex helper + 31-DECISIONS.md (D-11 + D-12)
+- [ ] 31-02-PLAN.md — 3 new analyzers (UnusedImport / UnreachableSection / ShadowedVariable) + ScaleLint default-on per D-03 + CombinedDiagnosticsPublisher wiring (SPEC-1)
+- [ ] 31-03-PLAN.md — SimpleLexer: 3 new arms `;` / `TODO:` / `FIXME:` (Option A position-sensitive per D-11); Phase31LexerCommentFormsTests (SPEC-4 lexer side)
+- [ ] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2)
+- [ ] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3)
+- [ ] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + function-call vs variable-ref split; regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5)
+- [ ] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6)
+- [ ] 31-08-PLAN.md — JetBrains plugin scaffolding (flow-jetbrains/ Gradle + plugin.xml + FlowLanguageServerFactory.kt); manual UAT for stretch verdict (SPEC-7)
+- [ ] 31-09-PLAN.md — Closure: 31-VERIFICATION.md + REQUIREMENTS.md / ROADMAP.md / STATE.md updates + VSCode dev-host manual smoke closes Phase 17 HUMAN-UAT rows 1-3 (rows 4-5 stay DEFERRED to v1.5)
+
 
 ### Phase 32: Full Scala (`.scl`) Tuning Loader
 **Goal**: Add `enable customTuning("path/to/tuning.scl");` pragma (or equivalent surface) that loads and parses Scala-format tuning files. Closes the v1.3 D-03 deferral. Enables arbitrary microtonal tuning beyond the 3 named-tunings wedge from Phase 23.
