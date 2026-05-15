@@ -37,6 +37,8 @@ internal proc str (Sequence: value)
 internal proc str (Chord: value)
 internal proc str (Section: value)
 internal proc str (Song: value)
+Note: Phase 32 Plan 32-04 — Tuning ((loadScala) output) string form per CONTEXT D-04
+internal proc str (Tuning: value)
 
 internal proc concat (String: a, String: b)
 
@@ -237,3 +239,10 @@ internal proc beat (Double: fractionalBeats)
 
 Note: Phase 26.1 NaN production primitive (REVISION 2 — DICT-03 acceptance)
 internal proc nanFloat ()
+
+Note: Phase 32 Plan 32-04 — Scala .scl tuning loader
+Note: (loadScala "path.scl") parses the .scl + synthesizes a default linear KBM (D-05/D-07).
+Note: (loadScala "path.scl" "path.kbm") loads both files together; D-08 fires the unmapped-
+Note: key WarnOnce advisory once per Description if any `x` mapping entries are present.
+internal proc loadScala (String: sclPath)
+internal proc loadScala (String: sclPath, String: kbmPath)

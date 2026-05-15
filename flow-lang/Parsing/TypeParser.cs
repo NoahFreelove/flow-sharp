@@ -201,6 +201,9 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "Symbol" => SymbolType.Instance,
             TokenType.Identifier when token.Text == "Section" => SectionType.Instance,
             TokenType.Identifier when token.Text == "Song" => SongType.Instance,
+            // Phase 32 Plan 32-04: Tuning is the 15th SpecialType. Required so
+            // `Tuning t = (loadScala "...")` declarations parse.
+            TokenType.Identifier when token.Text == "Tuning" => TuningType.Instance,
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -315,6 +318,7 @@ public static class TypeParser
             "Symbol" => SymbolType.Instance,
             "Section" => SectionType.Instance,
             "Song" => SongType.Instance,
+            "Tuning" => TuningType.Instance, // Phase 32 Plan 32-04
             "Function" => FunctionType.Instance,
             _ => null
         };

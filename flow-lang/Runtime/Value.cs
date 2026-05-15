@@ -49,6 +49,16 @@ public class Value
     public static Value Chord(ChordData chord) => new(chord, ChordType.Instance);
     public static Value Section(SectionData section) => new(section, SectionType.Instance);
     public static Value Song(SongData song) => new(song, SongType.Instance);
+
+    /// <summary>
+    /// Phase 32 Plan 32-04 — wraps a <see cref="StandardLibrary.Audio.Tuning.ResolvedTuning"/>
+    /// reference in a Flow <see cref="Value"/> typed as <see cref="TuningType.Instance"/>.
+    /// Identity follows reference equality per CONTEXT D-* / Claude's Discretion: two
+    /// <c>(loadScala "x.scl")</c> calls produce distinct Values even with identical
+    /// content (Phase 32 doesn't cache per SPEC out-of-scope).
+    /// </summary>
+    public static Value Tuning(StandardLibrary.Audio.Tuning.ResolvedTuning resolved)
+        => new(resolved, TuningType.Instance);
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
 
     /// <summary>

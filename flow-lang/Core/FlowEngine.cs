@@ -70,6 +70,8 @@ public class FlowEngine : IDisposable
         // Create internal function registry and register C# implementations
         var internalRegistry = new InternalFunctionRegistry();
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
+        // Phase 32 Plan 32-04: register (loadScala) overloads + (str Tuning).
+        ScalaBuiltins.Register(internalRegistry);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
