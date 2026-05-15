@@ -362,16 +362,25 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 
 
 ### Phase 32: Full Scala (`.scl`) Tuning Loader
-**Goal**: Add `enable customTuning("path/to/tuning.scl");` pragma (or equivalent surface) that loads and parses Scala-format tuning files. Closes the v1.3 D-03 deferral. Enables arbitrary microtonal tuning beyond the 3 named-tunings wedge from Phase 23.
+**Goal**: Ship a `(loadScala "path/to/tuning.scl")` builtin returning a first-class `Tuning` value plus a `tuning t { section ... }` musical-context block (last-wins with Phase 23 pragmas). Full Scala feature subset: cents + ratio steps, `.kbm` keyboard mapping, non-octave-repeating scales (Bohlen-Pierce, Carlos Alpha), negative cents, `!` line comments. Closes the v1.3 D-03 deferral and Phase 23 MICR-03 follow-up.
 **Depends on**: Phase 23 closure (named-tunings infrastructure exists; Scala loader extends it)
-**Requirements**: TBD (assigned during /gsd-spec-phase 32)
+**Requirements**: SPEC-1, SPEC-2, SPEC-3, SPEC-4, SPEC-5, SPEC-6, SPEC-7
 **Success Criteria** (what must be TRUE):
-  1. A `.scl` file with N steps loads and produces a `RenderTuning` value compatible with the existing Phase 23 pipeline
-  2. Common public Scala archive files (e.g. partch.scl, slendro.scl, just-intonation.scl) parse without error
-  3. Malformed `.scl` files raise clear errors pointing at the offending line
-  4. Loaded tunings work end-to-end: pitch conversion, MIDI export advisory warning (per Phase 23 D-13), transform invariance per MICR-02
-  5. Phase 23's named-tunings continue to work unchanged (`enable justIntonation;` / `pythagorean;` / `equalTemperament;`)
-**Plans**: TBD
+  1. `(loadScala "path")` 1-arg + 2-arg `(loadScala "scl" "kbm")` overloads register + callable from `.flow` source; return a first-class `Tuning` value (new `TypeSystem/SpecialTypes/TuningType.cs`)
+  2. `tuning t { section ... }` musical-context block parses + executes; three composer surfaces (identifier, inline call, string-literal sugar) all parse per D-15
+  3. All 5 canonical archive fixtures (`partch_43.scl`, `slendro.scl`, `carlos_alpha.scl`, `pythagorean_12.scl`, `just_5limit.scl`) parse without error and render correctly
+  4. Non-octave-repeating Bohlen-Pierce / Carlos Alpha frequencies within ±0.1 cents of Huygens-Fokker reference values
+  5. Malformed `.scl` / `.kbm` raises errors with `{file}:{line}:{col} — expected X got 'Y'` format; 3 negative-case fixtures committed
+  6. Last-wins: `enable justIntonation; tuning partch { ... }` renders Partch inside the block + JI outside (verified by WAV byte-differ)
+  7. Phase 23 D-13 MIDI-export advisory continues to fire under custom Scala tunings; Phase 23 sub-suite stays 100% GREEN; two-run byte-identical determinism preserved
+**Plans**: 7 plans
+- [ ] 32-01-PLAN.md — Wave 0: vendored Scala archive fixtures + 3 malformed fixtures + LICENSE.md (Huygens-Fokker attribution + rename audit trail per D-16/D-17)
+- [ ] 32-02-PLAN.md — `ScalaParser.cs` + `ScalaKbmParser.cs` + `ScalaParseException`/`ScalaKbmParseException` + Default-KBM factory; per-fixture + per-error-class Facts (SPEC-3 + SPEC-4 + SPEC-7)
+- [ ] 32-03-PLAN.md — `ResolvedTuning` (eager 128-entry MidiToHz precompute per D-02) + `RenderTuning.Custom` field + `PitchConversion` branch + `TuningType` 15th SpecialType; SPEC-5 ±0.1¢ verified at unit level (SPEC-1 + SPEC-5)
+- [ ] 32-04-PLAN.md — `(loadScala)` 1-arg + 2-arg builtins + `Value.Tuning` factory + D-08 unmapped-key WarnOnce advisory; `NonOctavePitchFacts` end-to-end (SPEC-1 + SPEC-4 + SPEC-5)
+- [ ] 32-05-PLAN.md — `MusicalContext.Tuning` (scalar) → `Stack<RenderTuning> TuningStack` refactor per D-12; pragma bridge + Pitfall 6 D-13 predicate update + 5 reader-site migrations (SPEC-2 + SPEC-6, Pitfall 1 + Pitfall 2 + Pitfall 6)
+- [ ] 32-06-PLAN.md — `tuning` keyword + `TuningContextStatement` AST + parser dispatch + interpreter case + last-wins integration tests + two-run determinism Facts (SPEC-2 + SPEC-6)
+- [ ] 32-07-PLAN.md — `examples/scala/intro.flow` tutorial chapter (D-19) + `examples/scala/README.md` + CLAUDE.md doc updates + `TutorialScriptTests` CI gate (SPEC-1 + SPEC-2)
 
 ### Phase 33: SFZ Orchestral Sampler
 **Goal**: Multi-sample sampler subsystem capable of consuming real orchestral sample libraries (SFZ format). Region matching by (pitch, velocity), in-zone resample for pitch shifts beyond the nearest sample, sustain looping for held notes, velocity layers via SFZ region selection. Foundation for the symphony showcase (Phase 34). Builds on Phase 22's `loadWav` varispeed primitive and Phase 29's modest sampler infrastructure.

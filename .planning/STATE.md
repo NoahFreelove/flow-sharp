@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: phase-31-shipped
-stopped_at: Phase 31 SHIPPED 2026-05-13. SPEC-1..SPEC-7 all PASS; SPEC-7 stretch MET via PyCharm 2025.3 UAT (composer-approved). Round 3 SPEC amendments SPEC-8..SPEC-12 also shipped under composer direction during Plan 31-08 UAT loop (LSP semantic-token contextual classification, comment side-channel, UndefinedSymbolAnalyzer, common-time `timesig C` shorthand, structural arrows in Macro scope). 9/9 plans complete; 271/271 LSP regression GREEN; ByteIdentical 20/20 GREEN; 62 pre-existing Phase 28 failures unchanged. Phase 17 HUMAN-UAT rows 1-3 CLOSED via PyCharm UAT trail; rows 4-5 + JetBrains Marketplace publish DEFERRED to v1.5.
-last_updated: "2026-05-13T03:00:00.000Z"
-last_activity: 2026-05-13 -- Plan 31-08 closure: composer approved STRETCH MET. Plan 31-09 closure executed inline -- 31-08-SUMMARY.md + 31-VERIFICATION.md written; REQUIREMENTS / ROADMAP / STATE updated; Phase 17 HUMAN-UAT rows 1-3 closed.
+status: phase-32-planned
+stopped_at: Phase 32 planned 2026-05-13. 7 plans across 5 waves; plan-checker 2 iterations (1 BLOCKER + 3 WARNING + 2 INFO in iter 1, all fixed; PASSED in iter 2). 32-RESEARCH.md (827 lines, codebase map + 9 pitfalls + verified fixture URLs + Hz reference algorithm + Validation Architecture) and 32-VALIDATION.md (Nyquist test plan, ≤62-failure ceiling per Pitfall 7) committed. CONTEXT.md gained D-16..D-19 from 4 research-surfaced user decisions + Claude's Discretion adds tolerance-only baseline, per-description WarnOnce cardinality, fully-reserved `tuning` keyword. Ready for /gsd-execute-phase 32.
+last_updated: "2026-05-13T14:00:00.000Z"
+last_activity: 2026-05-13 -- /gsd-plan-phase 32 completed. 7 plans written. Wave 0 = fixtures; W1 parallel = parser + Tuning/RenderTuning; W2 parallel = builtins + Stack refactor; W3 = tuning block; W4 = tutorial. Threat blocks T-32-FIX/PARSE/IO/AST all present. Two-run determinism gate in 32-06; 62-failure phase-exit gate in 32-07.
 progress:
   total_phases: 7
   completed_phases: 3
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — SHIPPED 2026-05-13
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9/9 complete (SHIPPED 2026-05-13 with Round 3 SPEC amendments under composer direction). 32-34 remain for v1.4 closure.
-Last activity: 2026-05-13 -- Phase 31 SHIPPED. Composer approved STRETCH MET for SPEC-7 after iterating through 4 rounds of scaffolding fixes + visual/diagnostic gap closure. Plan 31-09 closure executed inline (31-08-SUMMARY.md + 31-VERIFICATION.md + REQUIREMENTS / ROADMAP / STATE updates).
+Phase: 32 (full-scala-scl-tuning-loader) — planned 2026-05-13 (7 plans, 5 waves)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9/9 complete (SHIPPED 2026-05-13). Phase 32 = 0/7 plans complete (all 7 plans written + verified, ready for /gsd-execute-phase 32). 33-34 remain for v1.4 closure.
+Last activity: 2026-05-13 -- /gsd-plan-phase 32 completed. 7 plans: 32-01 (Wave 0 fixtures), 32-02/32-03 (Wave 1 parallel — parser + Tuning value layer), 32-04/32-05 (Wave 2 parallel — builtins + Stack refactor), 32-06 (Wave 3 tuning block + last-wins integration), 32-07 (Wave 4 tutorial + 62-failure-ceiling exit gate). Ready for /gsd-execute-phase 32. Resume: .planning/phases/32-full-scala-scl-tuning-loader/32-01-PLAN.md
 
 Progress: [██████████] 100%
 
