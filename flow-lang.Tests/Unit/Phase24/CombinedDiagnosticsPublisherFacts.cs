@@ -6,14 +6,25 @@ using Xunit;
 namespace FlowLang.Tests.Unit.Phase24;
 
 /// <summary>
-/// Phase 24 Plan 24-04: pins the single-publish merge invariant.
-/// LSP publishDiagnostics REPLACES per-URI, so parse errors AND scale-lint
-/// diagnostics MUST be composed into one Container&lt;Diagnostic&gt; per parse cycle.
-/// Source-tag separation is preserved: parse errors keep "flow", scale-lint
-/// keeps "flow.scaleLint" — editors can filter independently.
+/// Phase 24 Plan 24-04 + Phase 31 Plan 31-02: pins the single-publish merge
+/// invariant. LSP publishDiagnostics REPLACES per-URI, so parse errors AND
+/// every analyzer-source diagnostic MUST be composed into one
+/// <see cref="OmniSharp.Extensions.LanguageServer.Protocol.Models.Container{T}"/>
+/// per parse cycle. Source-tag separation is preserved: parse errors keep
+/// "flow", scale-lint keeps "flow.scaleLint", unused-import keeps
+/// "flow.unusedImport", unreachable-section keeps "flow.unreachableSection",
+/// shadowed-variable keeps "flow.shadowedVariable" — editors filter
+/// independently.
 ///
 /// Empty-publish-clears-squiggles invariant (DiagnosticsPublisher.cs:52 comment)
-/// is preserved by always returning a list (possibly empty) and always pushing it.
+/// is preserved by always returning a list (possibly empty) and always pushing
+/// it. Phase 31 Plan 31-02 deleted the pre-Phase-31 short-circuit
+/// (early-return-Array.Empty when parseDiags + lintDiags both empty) because
+/// the three new analyzers may fire even when those two are silent.
+///
+/// Phase 31 Plan 31-02 added the <c>StdlibSymbolIndex</c> parameter to
+/// <see cref="CombinedDiagnosticsPublisher.BuildAll"/> — every test call here
+/// passes <see cref="LspFixtures.StdlibIndex"/> to construct one.
 /// </summary>
 public class CombinedDiagnosticsPublisherFacts
 {
@@ -22,7 +33,7 @@ public class CombinedDiagnosticsPublisherFacts
     {
         var src = "proc greet()\n    (print \"hi\")\nend proc";
         var result = LspFixtures.Parse(src);
-        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src);
+        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src, LspFixtures.StdlibIndex());
         Assert.Empty(diags);
     }
 
@@ -31,7 +42,7 @@ public class CombinedDiagnosticsPublisherFacts
     {
         var src = "proc (";  // intentional parse error
         var result = LspFixtures.Parse(src);
-        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src);
+        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src, LspFixtures.StdlibIndex());
         Assert.NotEmpty(diags);
         // Parse-error diagnostics must be tagged "flow" (not "flow.scaleLint")
         Assert.Contains(diags, d => d.Source == "flow");
@@ -42,21 +53,25 @@ public class CombinedDiagnosticsPublisherFacts
     {
         var src = "enable scaleLint;\nkey Cmajor { | F#4 | }";
         var result = LspFixtures.Parse(src);
-        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src);
+        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src, LspFixtures.StdlibIndex());
         Assert.Contains(diags, d => d.Source == "flow.scaleLint");
         Assert.Contains(diags, d => d.Severity == DiagnosticSeverity.Information);
     }
 
     [Fact]
-    public void BuildAll_PragmaAbsent_NoLintDiagnostics()
+    public void BuildAll_PragmaAbsent_StillEmitsScaleLint_Phase31_D03_DefaultOn()
     {
-        // LINT-02 wire-level: even if the source has a key block + non-diatonic note,
-        // the absence of `enable scaleLint;` means BuildAll emits zero "flow.scaleLint"
-        // tagged diagnostics. Parse errors (if any) still flow through tagged "flow".
+        // Pre-Phase-31 LINT-02 wire-level pin: absence of `enable scaleLint;` was
+        // required to suppress lint diagnostics. SUPERSEDED by Phase 31 D-03 —
+        // the analyzer now runs unconditionally so BuildAll emits a
+        // "flow.scaleLint"-tagged diagnostic for the non-diatonic F#4 in
+        // `key Cmajor { | F#4 | }` even with no pragma declared. The original
+        // fact name is preserved (rename includes the supersession note for
+        // composer-grep-ability).
         var src = "key Cmajor { | F#4 | }";
         var result = LspFixtures.Parse(src);
-        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src);
-        Assert.DoesNotContain(diags, d => d.Source == "flow.scaleLint");
+        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src, LspFixtures.StdlibIndex());
+        Assert.Contains(diags, d => d.Source == "flow.scaleLint");
     }
 
     [Fact]
@@ -70,7 +85,7 @@ public class CombinedDiagnosticsPublisherFacts
         // forwarding half is enforced by the source-grep acceptance criterion in Task 2.
         var src = "key Cmajor { | C4 D4 E4 F4 | }";  // no pragma, all-diatonic, no errors
         var result = LspFixtures.Parse(src);
-        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src);
+        var diags = CombinedDiagnosticsPublisher.BuildAll(result, src, LspFixtures.StdlibIndex());
         Assert.NotNull(diags);
         Assert.Empty(diags);
     }

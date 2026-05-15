@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: phase-31-in-progress
-stopped_at: Phase 31 Plan 01 SHIPPED -- Wave 0 scaffolding complete (flow lsp subcommand, StdlibSymbolIndex.ProcsForModule, 31-DECISIONS.md locking D-11 + D-12). 8 plans remain (02-09). Resume with /gsd-execute-phase 31 (wave 1).
-last_updated: "2026-05-12T22:16:33.000Z"
-last_activity: 2026-05-12 -- Plan 31-01 executed: 3 tasks, 3 commits (c1e0a5d feat, b7202b9 feat, 82e06d5 docs). flow lsp subcommand wired; Phase 17 tests still 117/117 GREEN. 2 Rule-3 auto-fixes (flow-lsp/Program.cs refactor from top-level to public Main; FlowLsp.Program qualifier).
+stopped_at: Phase 31 Plan 02 SHIPPED -- SPEC-1 closed (3 new analyzers UnusedImport/UnreachableSection/ShadowedVariable + ScaleLint default-on D-03 + 5-source CombinedDiagnosticsPublisher merge). 7 plans remain (03-09). Resume with /gsd-execute-phase 31 (wave 2).
+last_updated: "2026-05-13T01:44:00.000Z"
+last_activity: 2026-05-13 -- Plan 31-02 executed: 3 tasks, 3 commits (161755c feat, e259845 feat, 078a3f7 feat). 4 analyzer diagnostic surfaces ship + ScaleLint default-on; 226/226 Phase 17+21+24+31 unit tests GREEN; 20/20 ByteIdentical determinism gate GREEN. 1 Rule-1 auto-fix (test inputs rewritten from aspirational `{}` proc + @harmony to real Flow syntax + real modules).
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 23
-  percent: 72
+  completed_plans: 24
+  percent: 75
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 0 complete)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 1/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02..31-09 remain)
-Last activity: 2026-05-12 -- Plan 31-01 executed: flow lsp subcommand, StdlibSymbolIndex.ProcsForModule, 31-DECISIONS.md. 3 atomic commits (c1e0a5d, b7202b9, 82e06d5).
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 2/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03..31-09 remain)
+Last activity: 2026-05-13 -- Plan 31-02 executed: SPEC-1 closed via 3 new analyzers + ScaleLint default-on + 5-source publisher merge. 3 atomic commits (161755c, e259845, 078a3f7). 226/226 Phase 17+21+24+31 unit tests GREEN; 20/20 ByteIdentical determinism gate GREEN.
 
 Progress: [██████████] 100%
 
@@ -171,6 +171,8 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 27 P03 | ~15min | 3 tasks | 5 files (tutorial.flow graduation refactor + showcase.flow REPLACE + examples/pragmas/{h_alias,microtonal_ji}.flow + .gitignore exception) |
 | Phase 27 P04 | ~5min | 1 task | 1 file (Phase27ByteIdenticalPragmaTests.cs — 4 facts) |
 | Phase 27 P05 | ~Xmin | 5 tasks (docs-only closure) | 7 files (REQUIREMENTS, ROADMAP, STATE, CLAUDE.md, 27-RESEARCH, 27-VERIFICATION, 27-SUMMARY) |
+| Phase 31 P01 | ~12min | 3 tasks | 7 files (LspCommand.cs, CommandRegistry.cs, flow-cli.csproj, flow-lsp/Program.cs, StdlibSymbolIndex.cs, LspFixtures.cs, 31-DECISIONS.md) |
+| Phase 31 P02 | ~35min | 3 tasks | 13 files (8 created: 3 analyzers + 4 fact classes + deferred-items.md; 5 modified: ScaleLintAnalyzer/CombinedDiagnosticsPublisher/PragmaRegistry/Phase24 facts × 2) |
 
 ## Accumulated Context
 

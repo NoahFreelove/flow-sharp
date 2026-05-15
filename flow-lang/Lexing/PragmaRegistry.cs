@@ -20,7 +20,7 @@ public static class PragmaRegistry
             ["justIntonation"] = "5-limit just-intonation render-time tuning rooted at active key tonic (default C major).",
             ["pythagorean"] = "3-limit Pythagorean (chain-of-fifths) render-time tuning rooted at active key tonic.",
             ["equalTemperament"] = "12-tone equal temperament (default). Explicit form for tooling-visible intent.",
-            ["scaleLint"] = "Inside `key { ... }` blocks, surface non-diatonic notes as Information-severity LSP diagnostics."
+            ["scaleLint"] = "Phase 31 D-03: scale-lint is now default-on; this pragma is accepted as a no-op for v1.3 backward compat."
         };
 
     /// <summary>True iff <paramref name="name"/> is a recognized pragma.</summary>
