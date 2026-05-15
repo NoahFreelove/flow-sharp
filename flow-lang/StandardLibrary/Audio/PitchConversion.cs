@@ -58,12 +58,35 @@ namespace FlowLang.StandardLibrary.Audio
         {
             if (note.IsRest) return 0.0;
 
+            // Phase 32 D-03 custom-tuning branch (MUST appear BEFORE the 12-TET
+            // short-circuit per Pitfall 3 mutual-exclusion guard). When a user-supplied
+            // .scl is active, read the precomputed O(1) MidiToHz lookup directly. The
+            // 128-entry table was eagerly populated at ResolvedTuning ctor time per
+            // D-02 — render-time cost is one array index + one cent-offset multiply.
+            if (tuning.Custom is not null)
+            {
+                int midi = GetMidiNote(note.NoteName, note.Octave, note.Alteration);
+                if (midi < 0 || midi > 127) return 0.0;
+                double hz = tuning.Custom.MidiToHz[midi];
+                if (note.CentOffset.HasValue && note.CentOffset.Value != 0.0 && hz > 0.0)
+                    hz *= RatioMath.CentOffsetMultiplier(note.CentOffset.Value);
+                return hz;
+            }
+
             // Pitfall 6: EqualTemperament short-circuits to literally the existing 1-arg
             // overload body so default-pragma + explicit-equalTemperament + no-pragma all
             // produce byte-identical output. This guards the ByteIdentical regression
             // suite across tutorial.flow + showcase.flow + Phase 18-22 byte-identical
             // Facts after Pattern A threading lands.
-            if (tuning.System == TuningSystem.EqualTemperament)
+            //
+            // Pitfall 3 (Phase 32) mutual-exclusion: the predicate ALSO requires
+            // `tuning.Custom is null` so that if someone hand-constructs
+            // `new RenderTuning(EqualTemperament, …, custom: someResolved)`, the EQ
+            // short-circuit does NOT silently swallow the override. The early return
+            // above handles that case correctly; the `Custom is null` requirement here
+            // is defense-in-depth so a future refactor (e.g. dropping the early return,
+            // restructuring the dispatch) doesn't reintroduce the silent-swallow bug.
+            if (tuning.Custom is null && tuning.System == TuningSystem.EqualTemperament)
             {
                 double eqFreq = NoteToFrequency(note); // delegates to existing 1-arg overload — UNCHANGED body
                 if (note.CentOffset.HasValue && note.CentOffset.Value != 0.0)
