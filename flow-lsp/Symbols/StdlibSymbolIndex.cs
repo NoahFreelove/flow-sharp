@@ -63,6 +63,24 @@ public sealed class StdlibSymbolIndex
         _byName.TryGetValue(name, out var p) ? p : null;
 
     /// <summary>
+    /// Returns every stdlib proc declared in <paramref name="moduleName"/>
+    /// (e.g. "harmony", "audio", "std"). Phase 31 reverse-lookup helper consumed
+    /// by <c>UnusedImportAnalyzer</c> (Plan 31-02) to determine whether a
+    /// <c>use "@harmony"</c> actually has any referenced procs, and by
+    /// <c>CompletionHandler.FilterByImports</c> (Plan 31-04) to drop suggestions
+    /// from non-imported modules. Linear walk over the ~100-entry stdlib proc
+    /// table — bounded; no caching needed.
+    /// </summary>
+    public IEnumerable<StdProc> ProcsForModule(string moduleName)
+    {
+        foreach (var p in _byName.Values)
+        {
+            if (p.Module == moduleName)
+                yield return p;
+        }
+    }
+
+    /// <summary>
     /// CompletionItems for every discovered stdlib proc. Used in the default
     /// completion merge alongside BuiltInIndex.Items(), UserSymbolIndex.CompletionsFor(uri),
     /// KeywordIndex.Items(), and the snippet templates.

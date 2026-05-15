@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: phase-31-ready-to-execute
-stopped_at: Phase 31 planning complete -- 9 PLAN.md files + 31-VALIDATION.md written; plan-checker PASSED (iteration 2/3) with all 7 SPEC IDs covered, 2 blockers + 4 warnings resolved, 3 warnings declined with rationale
-last_updated: "2026-05-12T05:30:00.000Z"
-last_activity: 2026-05-12 -- /gsd-plan-phase 31 --skip-research --chain ran end-to-end. Planner output 9 plans in 6 waves; checker found 2 blockers + 7 warnings; revision pass fixed 2 blockers + 4 warnings (declined W5/W7/W9 with rationale); re-check PASSED. Ready for /gsd-execute-phase 31.
+status: phase-31-in-progress
+stopped_at: Phase 31 Plan 01 SHIPPED -- Wave 0 scaffolding complete (flow lsp subcommand, StdlibSymbolIndex.ProcsForModule, 31-DECISIONS.md locking D-11 + D-12). 8 plans remain (02-09). Resume with /gsd-execute-phase 31 (wave 1).
+last_updated: "2026-05-12T22:16:33.000Z"
+last_activity: 2026-05-12 -- Plan 31-01 executed: 3 tasks, 3 commits (c1e0a5d feat, b7202b9 feat, 82e06d5 docs). flow lsp subcommand wired; Phase 17 tests still 117/117 GREEN. 2 Rule-3 auto-fixes (flow-lsp/Program.cs refactor from top-level to public Main; FlowLsp.Program qualifier).
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 22
-  percent: 69
+  completed_plans: 23
+  percent: 72
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — PLAN-PHASE PAUSED (planner not yet spawned)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9 PLAN.md ✓ + 31-VALIDATION.md ✓ (planning complete, ready to execute)
-Last activity: 2026-05-12 -- /gsd-plan-phase 31 --skip-research --chain complete: 9 plans in 6 waves, plan-checker PASSED after one revision pass
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 0 complete)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 1/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02..31-09 remain)
+Last activity: 2026-05-12 -- Plan 31-01 executed: flow lsp subcommand, StdlibSymbolIndex.ProcsForModule, 31-DECISIONS.md. 3 atomic commits (c1e0a5d, b7202b9, 82e06d5).
 
 Progress: [██████████] 100%
 

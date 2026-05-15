@@ -350,7 +350,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
   6. All 70+ in-repo `.flow` fixtures parse + render under the new lexer; Phase 18/25/27/28 ByteIdentical contracts preserved; zero source-text migrations required under D-11 Option A (RESEARCH grep audit confirms)
   7. JetBrains plugin scaffolding lands UNCONDITIONALLY (CONTEXT D-10); if all 6 mandatory areas GREEN, gradlew buildPlugin produces a .zip attached to v1.4 release tag; if not, scaffolding ready for v1.5 follow-up
 **Plans**: 9 plans
-- [ ] 31-01-PLAN.md — Wave-0 scaffolding: `flow lsp` subcommand (Pitfall 7 resolution) + StdlibSymbolIndex.ProcsForModule helper + LspFixtures.StdlibIndex helper + 31-DECISIONS.md (D-11 + D-12)
+- [x] 31-01-PLAN.md — Wave-0 scaffolding: `flow lsp` subcommand (Pitfall 7 resolution) + StdlibSymbolIndex.ProcsForModule helper + LspFixtures.StdlibIndex helper + 31-DECISIONS.md (D-11 + D-12) — Shipped c1e0a5d + b7202b9 + 82e06d5
 - [ ] 31-02-PLAN.md — 3 new analyzers (UnusedImport / UnreachableSection / ShadowedVariable) + ScaleLint default-on per D-03 + CombinedDiagnosticsPublisher wiring (SPEC-1)
 - [ ] 31-03-PLAN.md — SimpleLexer: 3 new arms `;` / `TODO:` / `FIXME:` (Option A position-sensitive per D-11); Phase31LexerCommentFormsTests (SPEC-4 lexer side)
 - [ ] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2)
@@ -434,7 +434,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 28. MIDI + Audio Polyphony & Articulation Rewrite | v1.4 | 7/7 | Complete   | 2026-05-10 |
 | 29. Instrument Realism | v1.4 | 0/7 | Plans ready (gated on CC0 sample curation) | - |
 | 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
-| 31. LSP Enhancements + JetBrains Stretch | v1.4 | 0/N | Spec pending | - |
+| 31. LSP Enhancements + JetBrains Stretch | v1.4 | 1/9 | In progress (Wave 0 complete) | - |
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 0/N | Spec pending | - |
 | 33. SFZ Orchestral Sampler | v1.4 | 0/N | Spec pending | - |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |
