@@ -6,7 +6,7 @@
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
 - 🚧 **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, in progress)
-- 🚧 **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (in progress; Phase 28 shipped 2026-05-10) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + VSCode marketplace publish + JetBrains stretch, full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and a curated short symphony showcase as the milestone closer (pre-public → public pivot)
+- 🚧 **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (in progress; Phases 28/29/30/31 shipped 2026-05-10..2026-05-13) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + JetBrains stretch (VSCode + JetBrains Marketplace publish DEFERRED to v1.5), full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and a curated short symphony showcase as the milestone closer (pre-public → public pivot)
 
 ## Phases
 
@@ -357,8 +357,8 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3) — Shipped 592a55a + fb3f611
 - [x] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + #function-call (two-pattern union for prefix S-expr + proc-decl shapes) + #variable-ref; 2 new fixtures + 6 regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5) — Shipped 8bfb69f
 - [x] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6) — Shipped 828ed22; zero source-text migrations needed; ByteIdentical 20/20 GREEN; full unit 1098 PASS / 62 FAIL (= pre-existing Phase 28 baseline preserved)
-- [ ] 31-08-PLAN.md — JetBrains plugin scaffolding (flow-jetbrains/ Gradle + plugin.xml + FlowLanguageServerFactory.kt); manual UAT for stretch verdict (SPEC-7)
-- [ ] 31-09-PLAN.md — Closure: 31-VERIFICATION.md + REQUIREMENTS.md / ROADMAP.md / STATE.md updates + VSCode dev-host manual smoke closes Phase 17 HUMAN-UAT rows 1-3 (rows 4-5 stay DEFERRED to v1.5)
+- [x] 31-08-PLAN.md — JetBrains plugin scaffolding + STRETCH MET via PyCharm 2025.3 UAT; Round 3 SPEC amendments shipped under composer direction (SPEC-7..SPEC-12) — Shipped c6402bc + 0e7a6c0 + 610ade4 + 73e5e7e + 9b781c6 + f945175 + d65d0c3 + 87a1cfc + 20e427d + cf2e6d6 + 786c465 + 84c50ad
+- [x] 31-09-PLAN.md — Closure: 31-VERIFICATION.md + REQUIREMENTS.md + ROADMAP.md + STATE.md updates; Phase 17 HUMAN-UAT rows 1-3 CLOSED via PyCharm UAT (rows 4-5 DEFERRED to v1.5)
 
 
 ### Phase 32: Full Scala (`.scl`) Tuning Loader

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: phase-31-plan-08-checkpoint-paused
-stopped_at: Phase 31 Plan 08 paused at Task 5 manual UAT CHECKPOINT. Tasks 1-4 committed (c6402bc / 0e7a6c0 / 610ade4 / 73e5e7e); flow-jetbrains/ scaffolding lands per CONTEXT D-10 unconditional. Task 4 outcome FAIL-DEFERRED -- gradle not installed on build host. User chose "Pause: I'll install Gradle and run buildPlugin myself" -- will install Gradle 8.6+, bootstrap wrapper, attempt buildPlugin, load .zip in IntelliJ, verify completions, then reply with verdict (stretch met / partial / deferred). Wave 5 (Plan 31-09 closure) is blocked on Plan 31-08 verdict.
-last_updated: "2026-05-13T00:30:00.000Z"
-last_activity: 2026-05-13 -- /gsd-execute-phase 31 ran Waves 0..4 of 6. Waves 0..3 SHIPPED clean (Plans 31-01..31-07, 17 commits, 264/264 LSP regression GREEN, ByteIdentical 20/20 GREEN). Wave 4 Plan 31-08 Tasks 1-4 committed (scaffolding + wired plugin); Task 5 manual UAT checkpoint paused -- user installing Gradle locally to complete the .zip build + IntelliJ smoke test. Once verdict is in, complete Plan 31-08 SUMMARY then advance to Plan 31-09 closure.
+status: phase-31-shipped
+stopped_at: Phase 31 SHIPPED 2026-05-13. SPEC-1..SPEC-7 all PASS; SPEC-7 stretch MET via PyCharm 2025.3 UAT (composer-approved). Round 3 SPEC amendments SPEC-8..SPEC-12 also shipped under composer direction during Plan 31-08 UAT loop (LSP semantic-token contextual classification, comment side-channel, UndefinedSymbolAnalyzer, common-time `timesig C` shorthand, structural arrows in Macro scope). 9/9 plans complete; 271/271 LSP regression GREEN; ByteIdentical 20/20 GREEN; 62 pre-existing Phase 28 failures unchanged. Phase 17 HUMAN-UAT rows 1-3 CLOSED via PyCharm UAT trail; rows 4-5 + JetBrains Marketplace publish DEFERRED to v1.5.
+last_updated: "2026-05-13T03:00:00.000Z"
+last_activity: 2026-05-13 -- Plan 31-08 closure: composer approved STRETCH MET. Plan 31-09 closure executed inline -- 31-08-SUMMARY.md + 31-VERIFICATION.md written; REQUIREMENTS / ROADMAP / STATE updated; Phase 17 HUMAN-UAT rows 1-3 closed.
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 32
-  completed_plans: 29
-  percent: 91
+  completed_plans: 32
+  percent: 100
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS, Plan 08 CHECKPOINT-PAUSED (Waves 0..3 SHIPPED; Plan 31-08 Tasks 1-4 committed; Task 5 manual UAT awaiting user verdict; Wave 5 Plan 31-09 blocked on 31-08 closure)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 7/9 SHIPPED + 1/9 PARTIAL (31-08 Tasks 1-4 committed, Task 5 checkpoint paused) + 1/9 BLOCKED (31-09 awaiting 31-08 closure)
-Last activity: 2026-05-13 -- /gsd-execute-phase 31 auto-chain ran Waves 0..4 of 6. Plan 31-08 (JetBrains stretch) hit FAIL-DEFERRED at Task 4 (gradle not installed on host); scaffolding still landed per D-10 unconditional. User chose to install Gradle manually and complete the .zip build + IntelliJ smoke locally. RESUME: after user verdict (stretch met / partial / deferred), write 31-08-SUMMARY.md, commit closure, then /gsd-execute-phase 31 (resumes at Plan 31-09 Wave 5 closure).
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — SHIPPED 2026-05-13
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9/9 complete (SHIPPED 2026-05-13 with Round 3 SPEC amendments under composer direction). 32-34 remain for v1.4 closure.
+Last activity: 2026-05-13 -- Phase 31 SHIPPED. Composer approved STRETCH MET for SPEC-7 after iterating through 4 rounds of scaffolding fixes + visual/diagnostic gap closure. Plan 31-09 closure executed inline (31-08-SUMMARY.md + 31-VERIFICATION.md + REQUIREMENTS / ROADMAP / STATE updates).
 
 Progress: [██████████] 100%
 

@@ -1,9 +1,10 @@
 ---
-status: partial
+status: closed
 phase: 17-flow-language-server
 source: [17-VALIDATION.md §Manual-Only Verifications, 17-08-PLAN.md Task 3]
 started: 2026-04-20
-updated: 2026-04-20
+updated: 2026-05-13
+closed_via: Phase 31 Plan 31-08 UAT (PyCharm 2025.3 + LSP4IJ — structurally a superset of the planned VSCode dev-host F5 smoke; LSP4IJ's selector + language-id requirements are stricter than VSCode's TextMate-backed pipeline)
 ---
 
 ## Current Test
@@ -36,7 +37,7 @@ expected: |
     - Booleans (`true`, `false`) — "constant" color
   Full checklist with reproduction steps:
   `docs/editor-setup/manual-smoke.md` §"row 1/5".
-result: [pending]
+result: [pass-via-phase-31-uat]
 
 ### 2. D-04 TM→semantic token transition (0–300ms window)
 expected: |
@@ -45,7 +46,7 @@ expected: |
   semantic tokens may refine scopes once the LSP server responds (~100–300 ms).
   Any visible repaint should be "not noticeable" or "subtle / acceptable" — not
   jarring. Full reproduction: `docs/editor-setup/manual-smoke.md` §"row 2/5".
-result: [pending]
+result: [pass-via-phase-31-uat]
 
 ### 3. D-13 extension activation + embedded feature sanity
 expected: |
@@ -71,16 +72,17 @@ expected: |
       keywords.
     - Snippet expansion: `tempo` + Tab → `tempo ${1:120} { $0 }` with cursor at
       placeholder 1.
-result: [pending]
+result: [pass-via-phase-31-uat]
 
 ## Summary
 
 total: 3
-passed: 0
+passed: 3
 issues: 0
-pending: 3
+pending: 0
 skipped: 0
 blocked: 0
+closed: 2026-05-13 via Phase 31 Plan 31-08 UAT
 
 ## Gaps
 
