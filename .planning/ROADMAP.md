@@ -356,7 +356,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2) — Shipped cb0b30b + cd141c8
 - [x] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3) — Shipped 592a55a + fb3f611
 - [x] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + #function-call (two-pattern union for prefix S-expr + proc-decl shapes) + #variable-ref; 2 new fixtures + 6 regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5) — Shipped 8bfb69f
-- [ ] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6)
+- [x] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6) — Shipped 828ed22; zero source-text migrations needed; ByteIdentical 20/20 GREEN; full unit 1098 PASS / 62 FAIL (= pre-existing Phase 28 baseline preserved)
 - [ ] 31-08-PLAN.md — JetBrains plugin scaffolding (flow-jetbrains/ Gradle + plugin.xml + FlowLanguageServerFactory.kt); manual UAT for stretch verdict (SPEC-7)
 - [ ] 31-09-PLAN.md — Closure: 31-VERIFICATION.md + REQUIREMENTS.md / ROADMAP.md / STATE.md updates + VSCode dev-host manual smoke closes Phase 17 HUMAN-UAT rows 1-3 (rows 4-5 stay DEFERRED to v1.5)
 

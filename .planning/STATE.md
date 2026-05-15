@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: phase-31-in-progress
-stopped_at: Phase 31 Plan 06 SHIPPED -- SPEC-4 grammar half + SPEC-5 function-call coloring. 4 new comment scopes (comment.line.semicolon/todo/fixme/documentation.flow) + entity.name.function.flow on (name args) S-expression heads + variable.other.flow on bare identifier reads. 3 plans remain (07-09). Resume with /gsd-execute-phase 31 (wave 2 continues).
-last_updated: "2026-05-12T23:35:00.000Z"
-last_activity: 2026-05-12 -- Plan 31-06 executed: 2 tasks, 1 atomic commit (8bfb69f). vscode-extension/syntaxes/flow.tmLanguage.json gets 4 new comment patterns + #function-call + #variable-ref repository nodes. 2 new grammar fixtures (comment-forms.flow, function-calls.flow); all 6 grammar snapshots regenerated and pass. Deviation [Rule 1 - Bug]: extended #function-call to a two-pattern union (lookbehind for Flow's prefix S-expression syntax PLUS lookahead for proc-decl shape) — plan's literal lookahead-only regex missed every (name args) call site. language-configuration.json untouched per locked Option-A.
+stopped_at: Phase 31 Plan 07 SHIPPED -- SPEC-6 in-repo migration audit complete. Empirical zero-collision result confirmed: 126 git-tracked .flow files audited, zero source-text migrations required under D-11 Option A. ByteIdentical 20/20 GREEN; Phase 17/21/24/31 252/252 GREEN; full unit suite 1098 PASS / 62 FAIL (= Phase 28 baseline, zero new regressions). 2 plans remain (08-09). Resume with /gsd-execute-phase 31 (wave 3 → JetBrains stretch).
+last_updated: "2026-05-12T23:52:00.000Z"
+last_activity: 2026-05-12 -- Plan 31-07 executed: 1 task (audit), 1 atomic commit (828ed22). New file .planning/phases/31-lsp-enhancements-jetbrains-stretch/31-MIGRATION-AUDIT.md records: grep audit across 126 tracked .flow files (4 hits, all in vscode-extension/tests/grammar/comment-forms.flow — intentional tmGrammar fixture, classified as Upgrades not Regressions); 126/126 smoke-tested end-to-end with the new Phase 31 lexer; 116 PASS + 10 FAIL where every failure pre-dates Plan 31-03 (6 intentional negative-path tests/*.flow probes + 4 pre-existing vscode-extension tmGrammar fixtures w/ C-style brace syntax). RESEARCH grep-audit hypothesis (zero migrations) confirmed empirically.
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 28
-  percent: 87
+  completed_plans: 29
+  percent: 91
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-06 SHIPPED — wave 2 continuing)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 6/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05 SHIPPED 2026-05-12; 31-06 SHIPPED 2026-05-12; 31-07..31-09 remain)
-Last activity: 2026-05-12 -- Plan 31-06 executed: SPEC-4 grammar half + SPEC-5 function-call coloring closed via vscode-extension/syntaxes/flow.tmLanguage.json extension. 4 new comment scopes (semicolon/todo/fixme/documentation .flow) per D-07. Two-pattern union for #function-call covering Flow's prefix S-expression call shape AND proc-decl shape; #variable-ref fallthrough for bare identifier reads per D-08. 2 new fixtures (comment-forms.flow, function-calls.flow); all 6 grammar snapshots regenerated and pass. 1 atomic commit (8bfb69f). language-configuration.json untouched per locked Option-A — no Ctrl+/ promise for new comment forms; grammar coloring sufficient for SPEC-4.
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Waves 1+2 complete; Plan 31-07 SHIPPED — wave 3 next: JetBrains stretch)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 7/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05 SHIPPED 2026-05-12; 31-06 SHIPPED 2026-05-12; 31-07 SHIPPED 2026-05-12; 31-08..31-09 remain)
+Last activity: 2026-05-12 -- Plan 31-07 executed: SPEC-6 in-repo migration audit. Empirical zero-collision result recorded at .planning/phases/31-lsp-enhancements-jetbrains-stretch/31-MIGRATION-AUDIT.md. 126 tracked .flow files audited; zero source-text migrations needed under D-11 Option A. ByteIdentical 20/20 GREEN; Phase 17/21/24/31 252/252 GREEN; full unit suite 1098 PASS / 62 FAIL (= pre-existing Phase 28 baseline, zero new regressions). All 5 Phase 27 fixtures + all 3 Phase 28 ragtime fixtures execute cleanly. 4 column-0 comment-form hits in vscode-extension/tests/grammar/comment-forms.flow classified as intentional fixtures (Upgrades not Regressions per D-11). 1 atomic commit (828ed22).
 
 Progress: [██████████] 100%
 
@@ -177,6 +177,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 31 P04 | ~25min | 1 task (RED→GREEN TDD) | 2 files (1 created: CompletionFilterFacts.cs; 1 modified: CompletionHandler.cs — FilterByImports + FilterByPragmas + BoostByMusicalContext) |
 | Phase 31 P05 | ~40min | 1 task (RED→GREEN TDD) | 4 files (1 created: VarargsRenderingFacts.cs — 8 facts; 3 modified: LspMappings.cs +48 lines, HoverHandler.cs 1-line swap, SignatureHelpHandler.cs Label+Parameters swap) |
 | Phase 31 P06 | ~10min | 2 tasks | 9 files (4 created: comment-forms.flow + .snap, function-calls.flow + .snap; 5 modified: flow.tmLanguage.json + 4 re-snapped existing snapshots — sample/chords/musical-context/note-stream) |
+| Phase 31 P07 | ~9min | 1 task (empirical audit) | 1 file created (31-MIGRATION-AUDIT.md) |
 
 ## Accumulated Context
 
