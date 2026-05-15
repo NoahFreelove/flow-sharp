@@ -80,6 +80,13 @@ vscode-extension/server/
 !flow-lang.Tests/Fixtures/Phase29/**
 !flow-lang.Tests/Fixtures/Phase29/**/*.wav
 
+# Phase 32 Scala tuning archive fixtures — 5 canonical .scl + 3 hand-authored
+# malformed fixtures + LICENSE.md attribution. The LICENSE.md must be tracked
+# despite the global *.md ignore; mirrors the Phase 29 Samples precedent above.
+!flow-lang.Tests/fixtures/scala/
+!flow-lang.Tests/fixtures/scala/**
+!flow-lang.Tests/fixtures/scala/**/*.md
+
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets
 # (.lua, .toml) are not matched by the globs, so they track automatically.

@@ -1,0 +1,8 @@
+! malformed_cents.scl — hand-authored negative-case fixture for SPEC-7
+!
+Malformed: non-numeric step
+ 3
+!
+ 100.0
+foo
+ 2/1

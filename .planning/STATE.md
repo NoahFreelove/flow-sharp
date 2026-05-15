@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: phase-32-planned
-stopped_at: Phase 32 planned 2026-05-13. 7 plans across 5 waves; plan-checker 2 iterations (1 BLOCKER + 3 WARNING + 2 INFO in iter 1, all fixed; PASSED in iter 2). 32-RESEARCH.md (827 lines, codebase map + 9 pitfalls + verified fixture URLs + Hz reference algorithm + Validation Architecture) and 32-VALIDATION.md (Nyquist test plan, ≤62-failure ceiling per Pitfall 7) committed. CONTEXT.md gained D-16..D-19 from 4 research-surfaced user decisions + Claude's Discretion adds tolerance-only baseline, per-description WarnOnce cardinality, fully-reserved `tuning` keyword. Ready for /gsd-execute-phase 32.
-last_updated: "2026-05-13T14:00:00.000Z"
-last_activity: 2026-05-13 -- /gsd-plan-phase 32 completed. 7 plans written. Wave 0 = fixtures; W1 parallel = parser + Tuning/RenderTuning; W2 parallel = builtins + Stack refactor; W3 = tuning block; W4 = tutorial. Threat blocks T-32-FIX/PARSE/IO/AST all present. Two-run determinism gate in 32-06; 62-failure phase-exit gate in 32-07.
+status: Executing Phase 32
+stopped_at: Plan 31-05 SHIPPED — SPEC-3 varargs visibility (U+2026 ellipsis trails type) via LspMappings.FormatSignature + BuildParameters; HoverHandler + SignatureHelpHandler routed through both. Plans 31-06..31-09 remain in Phase 31.
+last_updated: "2026-05-14T13:55:40.284Z"
+last_activity: 2026-05-14 -- Phase 32 execution started
 progress:
-  total_phases: 7
-  completed_phases: 3
-  total_plans: 32
-  completed_plans: 32
-  percent: 100
+  total_phases: 19
+  completed_phases: 15
+  total_plans: 98
+  completed_plans: 90
+  percent: 79
 ---
 
 # Project State
@@ -21,14 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 29 — instrument-realism
+**Current focus:** Phase 32 — full-scala-scl-tuning-loader
 
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 32 (full-scala-scl-tuning-loader) — planned 2026-05-13 (7 plans, 5 waves)
+Phase: 32 (full-scala-scl-tuning-loader) — EXECUTING
+Plan: 1 of 7
 Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9/9 complete (SHIPPED 2026-05-13). Phase 32 = 0/7 plans complete (all 7 plans written + verified, ready for /gsd-execute-phase 32). 33-34 remain for v1.4 closure.
-Last activity: 2026-05-13 -- /gsd-plan-phase 32 completed. 7 plans: 32-01 (Wave 0 fixtures), 32-02/32-03 (Wave 1 parallel — parser + Tuning value layer), 32-04/32-05 (Wave 2 parallel — builtins + Stack refactor), 32-06 (Wave 3 tuning block + last-wins integration), 32-07 (Wave 4 tutorial + 62-failure-ceiling exit gate). Ready for /gsd-execute-phase 32. Resume: .planning/phases/32-full-scala-scl-tuning-loader/32-01-PLAN.md
+Last activity: 2026-05-14 -- Phase 32 execution started
 
 Progress: [██████████] 100%
 
