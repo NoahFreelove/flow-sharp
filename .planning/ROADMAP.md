@@ -354,7 +354,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 31-02-PLAN.md — 3 new analyzers (UnusedImport / UnreachableSection / ShadowedVariable) + ScaleLint default-on per D-03 + CombinedDiagnosticsPublisher wiring (SPEC-1) — Shipped 161755c + e259845 + 078a3f7
 - [x] 31-03-PLAN.md — SimpleLexer: 3 new arms `;` / `TODO:` / `FIXME:` (Option A position-sensitive per D-11); Phase31LexerCommentFormsTests (SPEC-4 lexer side) — Shipped fdd1b5e + dd81c87
 - [x] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2) — Shipped cb0b30b + cd141c8
-- [ ] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3)
+- [x] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3) — Shipped 592a55a + fb3f611
 - [ ] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + function-call vs variable-ref split; regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5)
 - [ ] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6)
 - [ ] 31-08-PLAN.md — JetBrains plugin scaffolding (flow-jetbrains/ Gradle + plugin.xml + FlowLanguageServerFactory.kt); manual UAT for stretch verdict (SPEC-7)

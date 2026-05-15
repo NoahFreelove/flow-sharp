@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: phase-31-in-progress
-stopped_at: Phase 31 Plan 04 SHIPPED -- SPEC-2 context-aware completion filters closed (FilterByImports + FilterByPragmas + BoostByMusicalContext in CompletionHandler.cs). 5 plans remain (05-09). Resume with /gsd-execute-phase 31 (wave 2 continues).
-last_updated: "2026-05-12T23:30:00.000Z"
-last_activity: 2026-05-12 -- Plan 31-04 executed: 1 task RED→GREEN, 2 atomic commits (cb0b30b test RED, cd141c8 feat GREEN). 3 new public-static filters in CompletionHandler wrap the 5-source merge; DefaultNoteStreamItems gains H4/H5 (Rule 2 auto-add); note-stream branch wraps returned items with FilterByPragmas (reversing PATTERNS.md "note-stream branch unchanged"). 10/10 CompletionFilterFacts GREEN; 13/13 Phase17 CompletionHandler regression GREEN; 36/36 Phase31 GREEN; 20/20 ByteIdentical GREEN. Phase 31 D-13 [stdlib-source duplicate-handling] locked.
+stopped_at: Phase 31 Plan 05 SHIPPED -- SPEC-3 varargs visibility (U+2026 ellipsis trails type) in hover + signature help via LspMappings.FormatSignature + BuildParameters. 4 plans remain (06-09). Resume with /gsd-execute-phase 31 (wave 2 continues).
+last_updated: "2026-05-12T23:22:36.000Z"
+last_activity: 2026-05-12 -- Plan 31-05 executed: 1 task RED→GREEN, 2 atomic commits (592a55a test RED, fb3f611 feat GREEN). 2 new public-static helpers in LspMappings (FormatSignature + BuildParameters); HoverHandler + SignatureHelpHandler consume both. flow-lang/TypeSystem/FunctionSignature.cs UNCHANGED — Phase 24 D-04 "zero flow-lang touch" preserved. 8/8 VarargsRenderingFacts GREEN; 10/10 Phase17 HoverHandler+SignatureHelpHandler regression GREEN; 44/44 Phase31 GREEN; 117/117 Phase17 GREEN; 20/20 ByteIdentical GREEN.
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 26
-  percent: 81
+  completed_plans: 27
+  percent: 84
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-04 SHIPPED)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 4/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05..31-09 remain)
-Last activity: 2026-05-12 -- Plan 31-04 executed: SPEC-2 context-aware completion filtering closed via 3 new public-static filters in CompletionHandler.cs (FilterByImports + FilterByPragmas + BoostByMusicalContext) wrapping the 5-source merge. 2 atomic RED→GREEN commits (cb0b30b test, cd141c8 feat). 10/10 CompletionFilterFacts GREEN; 13/13 Phase17 CompletionHandler regression GREEN; 36/36 Phase31 GREEN; 20/20 ByteIdentical GREEN. Phase 31 D-13 [stdlib-source duplicate-handling] locked.
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-05 SHIPPED — wave 2 progressing)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 5/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05 SHIPPED 2026-05-12; 31-06..31-09 remain)
+Last activity: 2026-05-12 -- Plan 31-05 executed: SPEC-3 varargs visibility closed via LspMappings.FormatSignature + BuildParameters helpers (Unicode U+2026 trails type on last varargs param per CONTEXT D-01/D-02). HoverHandler.BuildHover + SignatureHelpHandler.Handle consume both. 2 atomic RED→GREEN commits (592a55a test, fb3f611 feat). 8/8 VarargsRenderingFacts GREEN; 10/10 Phase17 hover+signature-help regression GREEN; 44/44 Phase31 GREEN; 117/117 Phase17 GREEN; 20/20 ByteIdentical GREEN. flow-lang/TypeSystem UNCHANGED (Phase 24 D-04 preserved).
 
 Progress: [██████████] 100%
 
@@ -174,6 +174,8 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 31 P01 | ~12min | 3 tasks | 7 files (LspCommand.cs, CommandRegistry.cs, flow-cli.csproj, flow-lsp/Program.cs, StdlibSymbolIndex.cs, LspFixtures.cs, 31-DECISIONS.md) |
 | Phase 31 P02 | ~35min | 3 tasks | 13 files (8 created: 3 analyzers + 4 fact classes + deferred-items.md; 5 modified: ScaleLintAnalyzer/CombinedDiagnosticsPublisher/PragmaRegistry/Phase24 facts × 2) |
 | Phase 31 P03 | ~5min | 1 task (RED→GREEN TDD) | 2 files (1 created: Phase31LexerCommentFormsTests.cs; 1 modified: SimpleLexer.cs +30 lines, 0 deletions) |
+| Phase 31 P04 | ~25min | 1 task (RED→GREEN TDD) | 2 files (1 created: CompletionFilterFacts.cs; 1 modified: CompletionHandler.cs — FilterByImports + FilterByPragmas + BoostByMusicalContext) |
+| Phase 31 P05 | ~40min | 1 task (RED→GREEN TDD) | 4 files (1 created: VarargsRenderingFacts.cs — 8 facts; 3 modified: LspMappings.cs +48 lines, HoverHandler.cs 1-line swap, SignatureHelpHandler.cs Label+Parameters swap) |
 
 ## Accumulated Context
 
@@ -556,11 +558,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-12T23:30:00.000Z
-Stopped at: Plan 31-04 SHIPPED — SPEC-2 context-aware completion filters (FilterByImports + FilterByPragmas + BoostByMusicalContext); Plans 31-05..31-09 remain in Phase 31.
+Last session: 2026-05-12T23:22:36.000Z
+Stopped at: Plan 31-05 SHIPPED — SPEC-3 varargs visibility (U+2026 ellipsis trails type) via LspMappings.FormatSignature + BuildParameters; HoverHandler + SignatureHelpHandler routed through both. Plans 31-06..31-09 remain in Phase 31.
 Resume file: None
 
-**Planned Phase:** 31 (LSP Enhancements + JetBrains Stretch) — Plan 31-04 done; Wave 2 continues with 31-05..31-09.
+**Planned Phase:** 31 (LSP Enhancements + JetBrains Stretch) — Plan 31-05 done; Wave 2 continues with 31-06..31-09.
 
 ## Resume Instructions (next PC)
 
