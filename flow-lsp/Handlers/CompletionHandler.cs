@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using FlowLang.Ast.Statements;
 using FlowLang.Lexing;
 using FlowLsp.Symbols;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -112,17 +114,33 @@ public sealed class CompletionHandler : CompletionHandlerBase
             var key = tokens is not null
                 ? FlowLsp.NoteStream.NoteStreamContext.FindEnclosingKey(ast, tokens, text, cursor)
                 : null;
-            return key is not null ? RomanNumeralItems(key) : DefaultNoteStreamItems();
+            var streamItems = key is not null ? RomanNumeralItems(key) : DefaultNoteStreamItems();
+            // SPEC-2 (Plan 31-04): the note-stream branch must also honor `enable hAsB;` —
+            // H-prefixed note completions (H4, H5, ...) only surface when the pragma is set.
+            return FilterByPragmas(streamItems, ast.Pragmas);
         }
 
         if (IsInsideUseStringLiteral(text, cursor))
             return stdlib.UseStringPathItems();
 
-        return builtIns.Items()
+        var merged = builtIns.Items()
             .Concat(stdlib.Items())
             .Concat(users.CompletionsFor(uri))
             .Concat(keywords.Items())
             .Concat(SnippetTemplates());
+
+        // SPEC-2 (Plan 31-04): three context-aware filters wrap the default merge.
+        // `if (ast is not null)` preserves the charitable-fail-open contract — without an
+        // AST, no filters run (Phase 24 D-22 precedent mirrored from UnusedImportAnalyzer).
+        if (ast is not null)
+        {
+            merged = FilterByImports(merged, ast, stdlib);
+            merged = FilterByPragmas(merged, ast.Pragmas);
+            if (tokens is not null)
+                merged = BoostByMusicalContext(merged, ast, tokens, text, cursor);
+        }
+
+        return merged;
     }
 
     /// <summary>
@@ -179,6 +197,18 @@ public sealed class CompletionHandler : CompletionHandlerBase
         {
             yield return new CompletionItem { Label = l, Kind = CompletionItemKind.Variable, Detail = "Note (octave 4)" };
         }
+        // Phase 31 SPEC-2: surface German-notation H-prefix notes for discovery; the
+        // downstream FilterByPragmas drops these in files that have not declared
+        // `enable hAsB;` so they only appear in pragma-aware context.
+        foreach (var l in new[] { "H4", "H5" })
+        {
+            yield return new CompletionItem
+            {
+                Label = l,
+                Kind = CompletionItemKind.Variable,
+                Detail = "Note (German notation — requires `enable hAsB;`)",
+            };
+        }
         // Duration suffixes
         foreach (var (d, desc) in new[] {
             ("q","quarter"), ("h","half"), ("w","whole"), ("e","eighth"), ("s","sixteenth") })
@@ -188,6 +218,159 @@ public sealed class CompletionHandler : CompletionHandlerBase
         // Rest
         yield return new CompletionItem { Label = "_", Kind = CompletionItemKind.Value, Detail = "Rest" };
     }
+
+    // ====================================================================================
+    // Phase 31 Plan 04 — Context-aware completion filters (SPEC-2).
+    //
+    // Three pure-static transforms applied to the post-merge completion stream:
+    //   FilterByImports        — drops stdlib procs whose source module isn't `use`d.
+    //   FilterByPragmas        — drops note-stream H-prefix completions sans `enable hAsB;`.
+    //   BoostByMusicalContext  — boosts roman-numeral / chord-builtin SortText inside key { }.
+    //
+    // Each is exposed `public static` so unit tests can exercise it without LSP transport.
+    // ====================================================================================
+
+    /// <summary>
+    /// Drops stdlib proc completions whose source module is not present in the file's
+    /// `use` set. Builtins / keywords / snippets / user symbols pass through unchanged —
+    /// they're not module-tagged in <see cref="StdlibSymbolIndex"/>.
+    ///
+    /// `use "@std"` transitively imports the other stdlib modules (mirrors std.flow's
+    /// `use "@collections"` + `use "@bars"` plus the cross-cutting nature of @std).
+    /// </summary>
+    public static IEnumerable<CompletionItem> FilterByImports(
+        IEnumerable<CompletionItem> items, FlowProgram ast, StdlibSymbolIndex stdlib)
+    {
+        var importedModules = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var stmt in ast.Statements.OfType<ImportStatement>())
+        {
+            var mod = ExtractModuleName(stmt.FilePath);
+            if (mod is not null) importedModules.Add(mod);
+        }
+        if (importedModules.Contains("std"))
+            importedModules.UnionWith(StdlibSymbolIndex.ModuleNames);
+
+        return items.Where(item =>
+        {
+            // Only filter items that originated from the stdlib source. The Detail
+            // prefix `(stdlib: @...)` is the discriminator (see StdlibSymbolIndex.Items()
+            // at StdlibSymbolIndex.cs:92-98) — without this guard, a builtin sharing a
+            // name with a stdlib proc (e.g. `print`, declared in both BuiltInFunctions
+            // and std.flow:8) would be wrongly dropped.
+            if (item.Detail is null || !item.Detail.StartsWith("(stdlib: @", StringComparison.Ordinal))
+                return true;
+            var proc = stdlib.Find(item.Label);
+            if (proc is null) return true;
+            return importedModules.Contains(proc.Module);
+        });
+    }
+
+    /// <summary>
+    /// Drops note-stream completions disabled by pragma absence. Today: H-prefixed
+    /// note completions (H4, H5, ...) require <c>enable hAsB;</c> (Phase 21 D-13).
+    /// Future pragmas extend this filter; the shape is "drop if not enabled".
+    /// </summary>
+    public static IEnumerable<CompletionItem> FilterByPragmas(
+        IEnumerable<CompletionItem> items, PragmaSet pragmas)
+    {
+        if (pragmas.Has("hAsB"))
+            return items;
+        return items.Where(item => !IsHNoteCompletion(item.Label));
+    }
+
+    /// <summary>
+    /// Inside an enclosing <c>key &lt;name&gt; { ... }</c> block (resolved via the
+    /// shared <see cref="FlowLsp.NoteStream.NoteStreamContext.FindEnclosingKey"/> token
+    /// scan), boosts the rank of roman-numeral and chord-builtin completions by prefixing
+    /// their <see cref="CompletionItem.SortText"/> with <c>"0_"</c> — LSP clients sort
+    /// by SortText lexicographically when present, so the boosted items rank first.
+    /// Outside any key block, items pass through unchanged.
+    /// </summary>
+    public static IEnumerable<CompletionItem> BoostByMusicalContext(
+        IEnumerable<CompletionItem> items,
+        FlowProgram ast,
+        IReadOnlyList<Token> tokens,
+        string text,
+        Position cursor)
+    {
+        var key = FlowLsp.NoteStream.NoteStreamContext.FindEnclosingKey(ast, tokens, text, cursor);
+        if (key is null) return items;
+
+        // Boost the SortText of existing chord-builtin / roman-numeral matches in the
+        // post-merge stream so they rank first. Then append any roman numerals not
+        // already present — they're typically reached from inside note streams via
+        // RomanNumeralItems(), but a composer in default context inside a key block
+        // should still see them in the completion list per SPEC-2.
+        var boosted = items.Select(item =>
+            IsRomanNumeralOrChordBuiltin(item.Label)
+                ? CloneWithSortText(item, "0_" + item.Label)
+                : item).ToList();
+
+        var existingLabels = new HashSet<string>(boosted.Select(i => i.Label), StringComparer.Ordinal);
+        foreach (var rn in RomanNumeralItems(key))
+        {
+            if (existingLabels.Add(rn.Label))
+                boosted.Add(CloneWithSortText(rn, "0_" + rn.Label));
+        }
+        return boosted;
+    }
+
+    /// <summary>
+    /// Extracts a stdlib module name from an <c>ImportStatement.FilePath</c>:
+    /// <c>"@harmony"</c> → <c>"harmony"</c>. Non-<c>@</c> paths (relative user modules)
+    /// return null — caller treats them as "not a stdlib module". Mirrors the helper
+    /// in <c>UnusedImportAnalyzer</c> (Plan 31-02).
+    /// </summary>
+    private static string? ExtractModuleName(string filePath)
+    {
+        if (string.IsNullOrEmpty(filePath)) return null;
+        if (filePath.StartsWith('@')) return filePath.Substring(1);
+        return null;
+    }
+
+    // Matches H-prefixed note literals as they appear in completion labels:
+    // bare octave-numbered notes (H4, H5) — duration suffixes are added by typing,
+    // not by completion. Matches H followed by one or more digits, optionally a
+    // single-char duration suffix from the existing Phase 21 D-13 set.
+    private static readonly Regex HNoteCompletionPattern =
+        new(@"^H[0-9]+(?:q|h|w|e|s|t|i)?$", RegexOptions.Compiled);
+
+    private static bool IsHNoteCompletion(string label) =>
+        HNoteCompletionPattern.IsMatch(label);
+
+    // The set of completion labels boosted inside a `key { ... }` block. Roman numerals
+    // (major + minor inflections) + chord-construction builtins composers reach for
+    // when writing harmony inside a keyed scope.
+    private static readonly HashSet<string> RomanOrChordBuiltins = new(StringComparer.Ordinal)
+    {
+        // Major-mode roman numerals
+        "I", "ii", "iii", "IV", "V", "V7", "vi", "vii°",
+        // Minor-mode roman numerals
+        "i", "ii°", "III", "iv", "v", "VI", "VII",
+        // Harmony builtins composers want top-of-list inside a key context
+        "chord", "chordNotes", "chordRoot", "chordQuality", "arpeggio",
+    };
+
+    private static bool IsRomanNumeralOrChordBuiltin(string label) =>
+        RomanOrChordBuiltins.Contains(label);
+
+    /// <summary>
+    /// Returns a new <see cref="CompletionItem"/> with the same fields as
+    /// <paramref name="item"/> but <see cref="CompletionItem.SortText"/> replaced.
+    /// CompletionItem is an OmniSharp class with init-only properties — copy the
+    /// shipping-relevant fields explicitly. Unset fields propagate as null/default.
+    /// </summary>
+    private static CompletionItem CloneWithSortText(CompletionItem item, string sortText) => new()
+    {
+        Label = item.Label,
+        Kind = item.Kind,
+        Detail = item.Detail,
+        Documentation = item.Documentation,
+        InsertText = item.InsertText,
+        InsertTextFormat = item.InsertTextFormat,
+        FilterText = item.FilterText,
+        SortText = sortText,
+    };
 
     /// <summary>
     /// True iff the cursor sits inside an unclosed `"..."` literal preceded by

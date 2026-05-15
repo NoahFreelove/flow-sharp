@@ -353,7 +353,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 31-01-PLAN.md — Wave-0 scaffolding: `flow lsp` subcommand (Pitfall 7 resolution) + StdlibSymbolIndex.ProcsForModule helper + LspFixtures.StdlibIndex helper + 31-DECISIONS.md (D-11 + D-12) — Shipped c1e0a5d + b7202b9 + 82e06d5
 - [x] 31-02-PLAN.md — 3 new analyzers (UnusedImport / UnreachableSection / ShadowedVariable) + ScaleLint default-on per D-03 + CombinedDiagnosticsPublisher wiring (SPEC-1) — Shipped 161755c + e259845 + 078a3f7
 - [x] 31-03-PLAN.md — SimpleLexer: 3 new arms `;` / `TODO:` / `FIXME:` (Option A position-sensitive per D-11); Phase31LexerCommentFormsTests (SPEC-4 lexer side) — Shipped fdd1b5e + dd81c87
-- [ ] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2)
+- [x] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2) — Shipped cb0b30b + cd141c8
 - [ ] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3)
 - [ ] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + function-call vs variable-ref split; regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5)
 - [ ] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6)

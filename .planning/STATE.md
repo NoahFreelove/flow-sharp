@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: phase-31-in-progress
-stopped_at: Phase 31 Plan 03 SHIPPED -- SPEC-4 lexer half closed (3 new comment-form arms in SimpleLexer: `;` Lisp-style position-sensitive per D-11 Option A + `TODO:` + `FIXME:`). 6 plans remain (04-09). Resume with /gsd-execute-phase 31 (wave 2).
-last_updated: "2026-05-12T22:51:30.000Z"
-last_activity: 2026-05-12 -- Plan 31-03 executed: 1 task RED→GREEN, 2 atomic commits (fdd1b5e test RED, dd81c87 feat GREEN). 3 new lexer arms in SkipWhitespaceAndComments mirror the existing `Note:` arm at SimpleLexer.cs:1144; 8/8 Phase31LexerCommentForms tests GREEN; 9/9 Phase21 PragmaScanner regression canary GREEN; 20/20 ByteIdentical determinism gate GREEN — zero token-stream change for any valid existing program by construction.
+stopped_at: Phase 31 Plan 04 SHIPPED -- SPEC-2 context-aware completion filters closed (FilterByImports + FilterByPragmas + BoostByMusicalContext in CompletionHandler.cs). 5 plans remain (05-09). Resume with /gsd-execute-phase 31 (wave 2 continues).
+last_updated: "2026-05-12T23:30:00.000Z"
+last_activity: 2026-05-12 -- Plan 31-04 executed: 1 task RED→GREEN, 2 atomic commits (cb0b30b test RED, cd141c8 feat GREEN). 3 new public-static filters in CompletionHandler wrap the 5-source merge; DefaultNoteStreamItems gains H4/H5 (Rule 2 auto-add); note-stream branch wraps returned items with FilterByPragmas (reversing PATTERNS.md "note-stream branch unchanged"). 10/10 CompletionFilterFacts GREEN; 13/13 Phase17 CompletionHandler regression GREEN; 36/36 Phase31 GREEN; 20/20 ByteIdentical GREEN. Phase 31 D-13 [stdlib-source duplicate-handling] locked.
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 25
-  percent: 78
+  completed_plans: 26
+  percent: 81
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-03 SHIPPED)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 3/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04..31-09 remain)
-Last activity: 2026-05-12 -- Plan 31-03 executed: SPEC-4 lexer half closed via 3 new comment-form arms (`;` Lisp-style position-sensitive D-11 Option A, `TODO:`, `FIXME:`) in SimpleLexer.SkipWhitespaceAndComments. 2 atomic RED→GREEN commits (fdd1b5e test, dd81c87 feat). 8/8 Phase31LexerCommentForms GREEN; 9/9 Phase21 PragmaScanner canary GREEN; 20/20 ByteIdentical determinism gate GREEN.
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-04 SHIPPED)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 4/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05..31-09 remain)
+Last activity: 2026-05-12 -- Plan 31-04 executed: SPEC-2 context-aware completion filtering closed via 3 new public-static filters in CompletionHandler.cs (FilterByImports + FilterByPragmas + BoostByMusicalContext) wrapping the 5-source merge. 2 atomic RED→GREEN commits (cb0b30b test, cd141c8 feat). 10/10 CompletionFilterFacts GREEN; 13/13 Phase17 CompletionHandler regression GREEN; 36/36 Phase31 GREEN; 20/20 ByteIdentical GREEN. Phase 31 D-13 [stdlib-source duplicate-handling] locked.
 
 Progress: [██████████] 100%
 
@@ -556,11 +556,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-12T22:51:30.000Z
-Stopped at: Plan 31-03 SHIPPED — SPEC-4 lexer half (3 new comment-form arms in SimpleLexer); Plans 31-04..31-09 remain in Phase 31.
+Last session: 2026-05-12T23:30:00.000Z
+Stopped at: Plan 31-04 SHIPPED — SPEC-2 context-aware completion filters (FilterByImports + FilterByPragmas + BoostByMusicalContext); Plans 31-05..31-09 remain in Phase 31.
 Resume file: None
 
-**Planned Phase:** 31 (LSP Enhancements + JetBrains Stretch) — Plan 31-03 done; Wave 2 continues with 31-04..31-09.
+**Planned Phase:** 31 (LSP Enhancements + JetBrains Stretch) — Plan 31-04 done; Wave 2 continues with 31-05..31-09.
 
 ## Resume Instructions (next PC)
 
