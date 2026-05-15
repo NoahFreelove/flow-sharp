@@ -59,14 +59,55 @@ public class MusicalContext
     public int? VoicePoolSize { get; set; }
 
     /// <summary>
-    /// Phase 23 D-05/D-08: render-time tuning system (top-level non-stacked field). When null,
-    /// rendering uses the byte-identical 12-TET path per Pitfall 6 short-circuit. The
-    /// FlowEngine bridge resolves the active <c>enable justIntonation;</c> /
-    /// <c>enable pythagorean;</c> / <c>enable equalTemperament;</c> pragma into this field
-    /// ONCE before <c>_interpreter.Execute(program)</c>. D-07 REPL persistence: pragma absence
-    /// does NOT reset previous tuning across REPL evaluations.
+    /// Phase 32 D-12 transitional shim: the Phase 23 scalar field. SUPERSEDED by
+    /// <see cref="TuningStack"/> + <see cref="ActiveTuning"/>. Marked
+    /// <see cref="ObsoleteAttribute"/> so any unmigrated read site surfaces as a
+    /// compile warning; Phase 23 readers (FlowEngine, SongRenderer, MidiExport,
+    /// HarmonyFunctions) are migrated to <see cref="ActiveTuning"/> in Plan 32-05
+    /// Task 2. This field is no longer read by any production code path — kept
+    /// transitionally because direct deletion broke the Phase 23 readers' compile
+    /// step in Task 1 (the migrations live in Task 2 per the plan).
     /// </summary>
+    [Obsolete("Phase 32 D-12: use TuningStack + ActiveTuning. Scheduled for removal after Plan 32-06 lands.")]
     public TuningSystem? Tuning { get; set; }
+
+    /// <summary>
+    /// Phase 32 CONTEXT D-12 (supersedes Phase 23 D-05): render-time tuning context as
+    /// a push/pop stack. Phase 23's scalar <c>TuningSystem? Tuning</c> field is replaced
+    /// by this stack of <see cref="RenderTuning"/> values to support the new
+    /// <c>tuning t { ... }</c> musical-context block (Plan 32-06) layered on top of the
+    /// existing Phase 23 file-scope pragma (<c>enable justIntonation;</c> etc.).
+    ///
+    /// Stack semantics:
+    /// <list type="bullet">
+    ///   <item>File-scope pragmas push EXACTLY ONCE at engine startup via
+    ///   <see cref="ExecutionContext.SetFileScopeTuning"/> — the bottom frame. Never
+    ///   popped at REPL boundary (D-08 sticky pragma carried over from Phase 23).</item>
+    ///   <item>Block forms (Plan 32-06's <c>tuning t { ... }</c>) push above via
+    ///   <see cref="ExecutionContext.PushTuning"/> and pop via
+    ///   <see cref="ExecutionContext.PopTuning"/>. REPL eval boundary force-pops via
+    ///   <see cref="ExecutionContext.ResetBlockTuningStack"/> back to the file-scope
+    ///   frame (D-14 ephemeral blocks). Pitfall 2 coexistence.</item>
+    ///   <item><see cref="ActiveTuning"/> returns the top-of-stack
+    ///   <see cref="RenderTuning"/>, falling back to <see cref="RenderTuning.Default"/>
+    ///   (12-TET) when the stack is empty.</item>
+    /// </list>
+    /// All Phase 23 readers consume <see cref="ActiveTuning"/> per RESEARCH Pitfall 1
+    /// (single resolution accessor; the stack itself is mutation-only via the
+    /// ExecutionContext entry points).
+    /// </summary>
+    public Stack<RenderTuning> TuningStack { get; } = new Stack<RenderTuning>();
+
+    /// <summary>
+    /// Phase 32 D-12 single resolution accessor: returns the top-of-stack
+    /// <see cref="RenderTuning"/>, or <see cref="RenderTuning.Default"/> (12-TET) if
+    /// the stack is empty. This is the SINGLE read path all Phase 23 reader sites
+    /// (SongRenderer.ResolveRenderTuning, MidiExport D-13, HarmonyFunctions enharmonic
+    /// guard, VocalizationFunctions sing) now consume — see RESEARCH §"Readers of
+    /// MusicalContext.Tuning". Inheritance across the call stack is resolved by
+    /// <see cref="ExecutionContext.GetMusicalContext"/> walking frames top-to-bottom.
+    /// </summary>
+    public RenderTuning ActiveTuning => TuningStack.Count > 0 ? TuningStack.Peek() : RenderTuning.Default;
 
     /// <summary>
     /// Creates a new context with all values inherited (null).
@@ -74,21 +115,36 @@ public class MusicalContext
     public MusicalContext() { }
 
     /// <summary>
-    /// Creates a copy of this context.
+    /// Creates a copy of this context. The <see cref="TuningStack"/> is deep-cloned
+    /// (two-reversal trick on <see cref="Stack{T}"/> to preserve order); each frame's
+    /// <see cref="RenderTuning"/> is a struct so reference issues do not apply.
     /// </summary>
-    public MusicalContext Clone() => new()
+    public MusicalContext Clone()
     {
-        TimeSignature = TimeSignature,
-        Tempo = Tempo,
-        Swing = Swing,
-        Key = Key,
-        Velocity = Velocity,
-        Pan = Pan,
-        Gain = Gain,
-        ReverbTime = ReverbTime,
-        Tuning = Tuning,
-        VoicePoolSize = VoicePoolSize
-    };
+        var clone = new MusicalContext
+        {
+            TimeSignature = TimeSignature,
+            Tempo = Tempo,
+            Swing = Swing,
+            Key = Key,
+            Velocity = Velocity,
+            Pan = Pan,
+            Gain = Gain,
+            ReverbTime = ReverbTime,
+            VoicePoolSize = VoicePoolSize
+        };
+        // Stack<T> enumeration order is top-to-bottom; the single-arg ctor preserves
+        // that order, so naive `new Stack<T>(original)` would REVERSE the stack.
+        // Two-reversal trick: copy to a temp Stack (now reversed), then construct
+        // the clone from that temp (reversed again → original order).
+        if (TuningStack.Count > 0)
+        {
+            var reversed = new Stack<RenderTuning>(TuningStack);
+            foreach (var rt in reversed)
+                clone.TuningStack.Push(rt);
+        }
+        return clone;
+    }
 
     /// <summary>
     /// Validates that the key is a recognized key string.
@@ -134,7 +190,7 @@ public class MusicalContext
         if (Pan != null) parts.Add($"pan={Pan}");
         if (Gain != null) parts.Add($"gain={Gain}");
         if (ReverbTime != null) parts.Add($"reverbTime={ReverbTime}");
-        if (Tuning != null) parts.Add($"tuning={Tuning}");
+        if (TuningStack.Count > 0) parts.Add($"tuning={ActiveTuning} (stack depth {TuningStack.Count})");
         return $"MusicalContext({string.Join(", ", parts)})";
     }
 }

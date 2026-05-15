@@ -158,11 +158,14 @@ public static class MidiExport
         };
 
     /// <summary>
-    /// Phase 23 Plan 23-03 Task 2: context-dependent registration for <c>writeMidi</c>.
-    /// Mirrors <see cref="Harmony.HarmonyFunctions.RegisterContextDependent"/> shape — closure
-    /// over <see cref="FlowLang.Runtime.ExecutionContext"/> so <see cref="WriteMidi(IReadOnlyList{Value}, FlowLang.Runtime.ExecutionContext)"/>
-    /// can read <c>MusicalContext.Tuning</c> at call time and emit the D-13 one-shot warning
-    /// when tuning != EqualTemperament. MIDI bytes themselves are UNCHANGED — still 12-TET.
+    /// Phase 23 Plan 23-03 Task 2 + Phase 32 D-12 / Pitfall 6: context-dependent registration
+    /// for <c>writeMidi</c>. Mirrors <see cref="Harmony.HarmonyFunctions.RegisterContextDependent"/>
+    /// shape — closure over <see cref="FlowLang.Runtime.ExecutionContext"/> so
+    /// <see cref="WriteMidi(IReadOnlyList{Value}, FlowLang.Runtime.ExecutionContext)"/>
+    /// can read <see cref="Runtime.MusicalContext.ActiveTuning"/> at call time and emit the
+    /// D-13 one-shot warning when EITHER the resolved <see cref="RenderTuning.System"/> is
+    /// non-EQ OR a custom Scala tuning is active (<c>Custom != null</c>). MIDI bytes
+    /// themselves are UNCHANGED — still 12-TET.
     /// </summary>
     public static void RegisterContextDependent(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
     {
@@ -197,7 +200,12 @@ public static class MidiExport
     public static Value WriteMidi(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
     {
         var musicalCtx = context.GetMusicalContext();
-        if (musicalCtx?.Tuning is TuningSystem activeTuning && activeTuning != TuningSystem.EqualTemperament)
+        // Phase 32 D-12 + Pitfall 6: predicate fires under EITHER a non-EQ Phase 23
+        // system OR a custom Scala tuning (RenderTuning.Custom != null). The MIDI bytes
+        // themselves remain 12-TET — the advisory is purely informational so composers
+        // know microtonal MIDI export with per-channel pitch-bend is a future deliverable.
+        var activeTuning = musicalCtx?.ActiveTuning ?? RenderTuning.Default;
+        if (activeTuning.Custom != null || activeTuning.System != TuningSystem.EqualTemperament)
         {
             RenderingDiagnostics.WarnOnce(
                 "writemidi-non-equal-temperament",

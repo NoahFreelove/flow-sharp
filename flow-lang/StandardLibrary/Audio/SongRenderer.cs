@@ -141,34 +141,47 @@ public static class SongRenderer
     }
 
     /// <summary>
-    /// Phase 23: resolves the per-section <see cref="RenderTuning"/> from the section's
-    /// <see cref="MusicalContext"/>. Same shape as bpm / pan / gain / rt60 resolution at
-    /// the head of <see cref="RenderSection"/>: read once per section before any voices
+    /// Phase 23 + Phase 32 D-12: resolves the per-section <see cref="RenderTuning"/> from the
+    /// section's <see cref="MusicalContext"/>. Same shape as bpm / pan / gain / rt60 resolution
+    /// at the head of <see cref="RenderSection"/>: read once per section before any voices
     /// are rendered so the same tuning context applies to every note.
     ///
     /// Decisions:
-    ///   D-02 silent C-major default — when a non-12-TET pragma is active but no
-    ///        <c>key</c> block is in scope, root at C major (tonic = ('C', 0),
-    ///        mode = Major). Aligns with charitable-interpretation memory: rather than
-    ///        error or fall through to 12-TET, render the JI / Pythagorean ratios with
-    ///        a sensible default anchor.
+    ///   D-12 — reads <see cref="MusicalContext.ActiveTuning"/> (top-of-stack). When the stack
+    ///        is empty, ActiveTuning returns <see cref="RenderTuning.Default"/> (12-TET).
+    ///   Phase 32 D-03 / Pitfall 3 — when <c>activeTuning.Custom != null</c>, the user-supplied
+    ///        Scala tuning wins; we return it verbatim (its tonic/mode are baked into the
+    ///        MidiToHz table and are irrelevant to PitchConversion's lookup path).
+    ///   D-02 silent C-major default — when a non-12-TET system pragma is active but no
+    ///        <c>key</c> block is in scope, root at C major (tonic = ('C', 0), mode = Major).
+    ///        Aligns with charitable-interpretation memory: rather than error or fall through
+    ///        to 12-TET, render the JI / Pythagorean ratios with a sensible default anchor.
     ///   D-01 — tonic letter + alteration come from the innermost active key.
-    ///   D-08 — when ctx.Tuning is null OR EqualTemperament, return RenderTuning.Default
-    ///        so the byte-identical 12-TET short-circuit fires at the synthesizer level
-    ///        (Pitfall 6).
+    ///   D-08 / Pitfall 6 — when ActiveTuning is the default (Custom is null AND
+    ///        System == EqualTemperament), return it as-is so the byte-identical 12-TET
+    ///        short-circuit fires at the synthesizer level.
     /// Canonical entry: uses <see cref="ScaleDatabase.TryParseKeyWithMode"/> rather than
     /// an inline parser (per WARNING-8 — no inline write-then-delete helper).
     /// </summary>
     internal static RenderTuning ResolveRenderTuning(MusicalContext? ctx)
     {
-        if (ctx?.Tuning is null || ctx.Tuning == TuningSystem.EqualTemperament)
-            return RenderTuning.Default;
+        var activeTuning = ctx?.ActiveTuning ?? RenderTuning.Default;
+
+        // Phase 32 D-03 / Pitfall 3: custom Scala tunings win regardless of System enum.
+        // The Custom path's MidiToHz table is fully populated at load time; tonic/mode are
+        // not consulted by PitchConversion when Custom != null.
+        if (activeTuning.Custom is not null)
+            return activeTuning;
+
+        // Default 12-TET fast path: System == EqualTemperament AND no custom → return as-is.
+        if (activeTuning.System == TuningSystem.EqualTemperament)
+            return activeTuning;
 
         // D-02 silent C-major default (tonic = ('C', 0), mode = Major).
         char tonicLetter = 'C';
         int tonicAlteration = 0;
         Mode mode = Mode.Major;
-        if (!string.IsNullOrEmpty(ctx.Key) &&
+        if (!string.IsNullOrEmpty(ctx?.Key) &&
             ScaleDatabase.TryParseKeyWithMode(ctx.Key, out string? root, out var parsedMode) &&
             root != null)
         {
@@ -181,7 +194,7 @@ public static class SongRenderer
             }
             mode = parsedMode;
         }
-        return new RenderTuning(ctx.Tuning.Value, mode, tonicLetter, tonicAlteration);
+        return new RenderTuning(activeTuning.System, mode, tonicLetter, tonicAlteration);
     }
 
     private static AudioBuffer RenderSection(SectionData section, INoteSynthesizer synthesizer)
@@ -358,12 +371,13 @@ public static class SongRenderer
         double bpm = section.Context?.Tempo ?? DefaultBpm;
         double pan = section.Context?.Pan ?? 0.0;
         double gain = section.Context?.Gain ?? 1.0;
-        // Phase 23: per-section tuning resolution at the timeline-aware path too. The
-        // existing SequenceRenderer.RenderSequenceToVoices(string, ..., timelineMap)
-        // overload threads through BarRenderer overloads that are not yet tuning-aware
-        // for the timeline path; this is safe because RenderTuning.Default is taken when
-        // ctx.Tuning is null or EqualTemperament, and the timeline path is currently used
-        // by the editor/LSP integration which doesn't render to WAV.
+        // Phase 23 + Phase 32 D-12: per-section tuning resolution at the timeline-aware
+        // path too. The existing SequenceRenderer.RenderSequenceToVoices(string, ...,
+        // timelineMap) overload threads through BarRenderer overloads that are not yet
+        // tuning-aware for the timeline path; this is safe because RenderTuning.Default
+        // is taken when ActiveTuning has Custom == null AND System == EqualTemperament,
+        // and the timeline path is currently used by the editor/LSP integration which
+        // doesn't render to WAV.
         var renderTuning = ResolveRenderTuning(section.Context);
         var allVoices = new List<Voice>();
         double maxBeats = 0;

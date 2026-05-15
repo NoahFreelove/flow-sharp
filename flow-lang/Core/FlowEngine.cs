@@ -123,9 +123,13 @@ public class FlowEngine : IDisposable
 
             _diagnosticOutput?.WriteLine($"[verbose] Executing {fileName ?? "<eval>"}");
 
-            // Phase 23 D-06/D-07: resolve tuning pragmas to MusicalContext.Tuning before
-            // interpretation. D-07 REPL persistence: pragma absence does NOT reset previous
-            // tuning (no-op when no tuning pragma present in this program).
+            // Phase 23 D-06/D-07 + Phase 32 D-12/D-14 + Pitfall 2: resolve tuning pragmas to
+            // GlobalFrame.MusicalContext.TuningStack (bottom frame) before interpretation.
+            // D-07 / D-08 REPL persistence: pragma absence does NOT reset the file-scope
+            // frame (no-op when no tuning pragma present). Block-form pushes (Plan 32-06)
+            // are popped at REPL eval boundary via ResetBlockTuningStack so a leaked
+            // `tuning t { ...` (unclosed) does not bleed into subsequent REPL inputs.
+            _context.ResetBlockTuningStack();
             ApplyTuningPragma(program);
 
             // 4. Interpret AST
@@ -141,22 +145,37 @@ public class FlowEngine : IDisposable
     }
 
     /// <summary>
-    /// Phase 23 D-06: bridges <c>program.Pragmas</c> -> <c>_context.SetTuning(...)</c> exactly
-    /// once between parse and interpret. Only one of the three tuning pragmas can be active
-    /// per program; the closed-set registry guarantees unknown names errored out at the
-    /// PragmaScanner stage. D-07 REPL persistence: when no tuning pragma is present, this
-    /// method leaves the existing <c>_context.GlobalFrame.MusicalContext.Tuning</c> untouched.
+    /// Phase 23 D-06 + Phase 32 D-12 (Pitfall 2): bridges <c>program.Pragmas</c> →
+    /// <c>_context.SetFileScopeTuning(<see cref="RenderTuning"/>)</c> exactly once between
+    /// parse and interpret. Only one of the three tuning pragmas can be active per program;
+    /// the closed-set registry guarantees unknown names errored out at the PragmaScanner
+    /// stage. D-07 / D-08 REPL persistence: when no tuning pragma is present, this method
+    /// leaves the existing bottom-of-stack file-scope frame untouched (no <c>SetFileScopeTuning</c>
+    /// call). The companion <c>ResetBlockTuningStack</c> call at the start of
+    /// <see cref="Execute"/> pops any leaked block frames from a prior REPL eval (D-14).
     /// </summary>
     private void ApplyTuningPragma(Ast.Program program)
     {
         if (program.Pragmas.Has("justIntonation"))
-            _context.SetTuning(TuningSystem.JustIntonation);
+            _context.SetFileScopeTuning(BuildPragmaTuning(TuningSystem.JustIntonation));
         else if (program.Pragmas.Has("pythagorean"))
-            _context.SetTuning(TuningSystem.Pythagorean);
+            _context.SetFileScopeTuning(BuildPragmaTuning(TuningSystem.Pythagorean));
         else if (program.Pragmas.Has("equalTemperament"))
-            _context.SetTuning(TuningSystem.EqualTemperament);
-        // else: D-07 persistence — leave previous _context tuning untouched.
+            _context.SetFileScopeTuning(BuildPragmaTuning(TuningSystem.EqualTemperament));
+        // else: D-07 / D-08 persistence — leave previous file-scope frame untouched.
     }
+
+    /// <summary>
+    /// Phase 32 Plan 32-05: produces the file-scope <see cref="RenderTuning"/> for a Phase 23
+    /// tuning pragma. File-scope pragmas precede any key context, so the tonic + mode are
+    /// the SongRenderer.ResolveRenderTuning silent-default values (D-02: C major, tonic
+    /// ('C', 0)). Per-section <c>key X { ... }</c> blocks REPLACE this resolution at render
+    /// time via the existing <see cref="StandardLibrary.Audio.SongRenderer.ResolveRenderTuning"/>
+    /// path — this builder just provides a sensible Phase-32-compatible default carrying
+    /// the same Phase 23 TuningSystem enum.
+    /// </summary>
+    private static RenderTuning BuildPragmaTuning(TuningSystem system) =>
+        new RenderTuning(system, Mode.Major, 'C', 0);
 
     /// <summary>
     /// Returns the result of the last evaluated expression from the previous script execution.
