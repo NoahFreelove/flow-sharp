@@ -34,6 +34,14 @@ vscode-extension/server/
 !examples/pragmas/**
 !examples/pragmas/**/*.flow
 
+# Phase 32 Scala tuning tutorial chapter (D-19) — examples/scala/intro.flow
+# + README.md must be tracked despite the global *.flow / *.md ignores.
+# Mirrors the examples/pragmas/ precedent.
+!examples/scala/
+!examples/scala/**
+!examples/scala/**/*.flow
+!examples/scala/**/*.md
+
 # Phase 28 polyphony / articulation acceptance fixtures — must be tracked
 # despite the global *.flow ignore. Pinned by RagtimeFixtureTests.
 !examples/tests/

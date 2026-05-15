@@ -183,6 +183,7 @@ Single source of truth — alongside the Special Types list above.
 | `1.5` (Beat-tagged)  | `Beat`        | `Double`, `Float`        | beat-position arithmetic                                                              |
 | `440Hz` / `1.5kHz`   | `Hertz`       | `Double`, `Float`        | `lowpass`/`highpass`/`bandpass`, `createSineTone`/`createSawTone`/etc.                |
 | `#foo`               | `Symbol`      | strict (no `Double`/`Float`) | `Dict<Symbol, V>` keys, identity-equality usage                                   |
+| `(loadScala "x.scl")` | `Tuning`     | strict (reference identity; no `Double`/`Float`) | `tuning t { ... }` block, `(str t)` description, reference-equality usage (Phase 32)         |
 
 Notes:
 - Decibel and Millisecond/Second use the `CentType.cs:24-27` pattern (sealed singleton with `IsCompatibleWith(Double|Float)`); see `flow-lang/TypeSystem/SpecialTypes/`.
@@ -191,7 +192,8 @@ Notes:
 - Music-typed literals at expression-start (after `(`, `=`, `,`, etc.) lex as single tokens — see Phase 26.2 ERG-05.
 
 ### Music-Specific
-- **Musical context blocks**: `tempo 120 { ... }`, `timesig 4/4 { ... }`, `key Cmajor { ... }`, `swing 0.6 { ... }`. Timesig accepts the common-time shorthand `timesig C { ... }` (capital `C` only; lowers to 4/4 at parse time so the renderer / MIDI export / musical-context stack see identical data to the explicit form)
+- **Musical context blocks**: `tempo 120 { ... }`, `timesig 4/4 { ... }`, `key Cmajor { ... }`, `swing 0.6 { ... }`, `voicePool 32 { ... }` (Phase 28), `tuning t { ... }` (Phase 32). Timesig accepts the common-time shorthand `timesig C { ... }` (capital `C` only; lowers to 4/4 at parse time so the renderer / MIDI export / musical-context stack see identical data to the explicit form). The full set of reserved context-block keywords is `tempo`, `timesig`, `key`, `swing`, `voicePool`, `tuning` — none can be redefined as proc / variable names (Pitfall 9 keyword reservation).
+- **`tuning <expr> { ... }` musical-context block** (canonical shape `tuning { ... }` with a `Tuning`-typed expression preceding the brace): applies a `Tuning` value to its body. Three composer surface forms (D-15): identifier-bound variable (`tuning partch { ... }`), inline call (`tuning (loadScala "x.scl") { ... }`), and string-literal sugar (`tuning "x.scl" { ... }` — desugars at parse time to the inline-call form). Last-wins with the file-scope `enable justIntonation;` / `pythagorean;` / `equalTemperament;` pragmas — the innermost active frame wins. The `tuning` keyword is **fully reserved** (NOT in the keyword-as-proc-name allowlist per CONTEXT D-* + SPEC-2 pre-public lean). Pair with the `(loadScala "path")` builtin to obtain a `Tuning` value from a Scala-format `.scl` file. See `examples/scala/intro.flow` for a runnable tutorial chapter (Phase 32).
 - **Note stream expressions**: `| C4 D4 E4 F4 |` with duration suffixes (`q`, `h`, `w`, `e`, `s`), rests (`_`), dotted notes (`C4q.`), tied notes (`C4h~`), cent offsets (`C4+50c`), chord brackets (`[C4 E4 G4]q`)
 - **Chord literals**: `Cmaj7`, `Dm`, `F#dim`, `Bb7`
 - **Roman numerals** (in key context): `I`, `ii`, `IV`, `V7`, `vi`
@@ -248,7 +250,7 @@ Types are in `TypeSystem/` with two subdirectories. Each type extends `FlowType`
 Void, Int, Float, Long, Double, String, Bool, Number, Buffer, Lazy, Function, Envelope, OscillatorState, Voice, Track
 
 ### Special Types (`TypeSystem/SpecialTypes/`)
-Note, Semitone, Cent, Millisecond, Second, Decibel, Beat, Hertz, Bar, TimeSignature, NoteValue, Sequence, MusicalNote, Chord, Section, Song
+Note, Semitone, Cent, Millisecond, Second, Decibel, Beat, Hertz, Bar, TimeSignature, NoteValue, Sequence, MusicalNote, Chord, Section, Song, Tuning (Phase 32 — Scala `.scl` tuning loader output, reference identity)
 
 ### Array Type
 `ArrayType` in `TypeSystem/` — generic array with element type tracking.
@@ -281,6 +283,13 @@ Musical notes (`musicalNote`, `rest`), bars, sequences, rendering (`renderSequen
 
 ### Pattern Transforms (Transforms/)
 `transpose`, `invert`, `retrograde`, `augment`, `diminish`, `up`, `down`, `repeat`, `concat` (for sequences)
+
+### Tuning (Audio/Tuning/) — Phase 32
+- `(loadScala "path.scl")` — parses a Scala-format `.scl` tuning file and returns a `Tuning` value. Synthesizes the default linear KBM whose period auto-adopts the loaded scale's period (D-07), so non-octave-repeating scales (Carlos Alpha, Bohlen-Pierce) Just Work without an explicit `.kbm`.
+- `(loadScala "scl-path" "kbm-path")` — 2-arg overload accepting an explicit `.kbm` keyboard-mapping file (SPEC-4). The parsed `.kbm`'s period is overlaid with the `.scl`'s period at load time.
+- `(str t)` — returns the D-04 description format `Tuning("<description>", N steps, period X.XX¢)`.
+- Apply via the `tuning t { ... }` musical-context block (see Music-Specific § above).
+- Fires a one-shot stderr advisory `[tuning] unmapped MIDI keys under '<description>' — rendered as rest` per `Tuning.Description` per process when the loaded `.kbm` leaves MIDI keys unmapped (D-08).
 
 ### Generative
 `euclidean` rhythms, random choice in note streams (`(? ...)`, `(?? ...)`)
