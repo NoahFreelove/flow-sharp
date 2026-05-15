@@ -152,6 +152,15 @@ public partial class Parser
                 return ParseMusicalContextStatement(MusicalContextType.VoicePool);
             }
 
+            // Phase 32 D-13: `tuning <expr> { ... }` musical-context block. Unlike the
+            // other musical-context keywords, `tuning` is FULLY RESERVED per CONTEXT
+            // Claude's Discretion (SPEC line 139 pre-public lean — not added to the
+            // keyword-as-proc-name allowlist at line 247). The three D-15 expression
+            // forms (identifier, inline call, string-literal sugar) all dispatch to
+            // ParseTuningContextStatement.
+            if (Match(TokenType.Tuning))
+                return ParseTuningContextStatement();
+
             // Section declaration: section name { ... }
             if (Match(TokenType.Section))
                 return ParseSectionDeclaration();
@@ -691,6 +700,81 @@ public partial class Parser
         Expect(TokenType.RBrace, "Expected '}' to close musical context block");
 
         return new MusicalContextStatement(location, contextType, value, value2, body);
+    }
+
+    /// <summary>
+    /// Phase 32 Plan 32-06 D-13/D-15 — parses a <c>tuning &lt;expr&gt; { ... }</c>
+    /// musical-context block into a <see cref="TuningContextStatement"/>. Called
+    /// AFTER the <see cref="TokenType.Tuning"/> keyword token has been consumed
+    /// by the dispatch at <c>ParseStatement</c>; the keyword's location lives in
+    /// <see cref="PreviousToken"/>.
+    ///
+    /// Three composer surfaces (D-15):
+    /// <list type="number">
+    ///   <item>identifier: <c>tuning partch { }</c> — <see cref="ParseExpression"/>
+    ///   produces a <see cref="VariableExpression"/>.</item>
+    ///   <item>inline call: <c>tuning (loadScala "x.scl") { }</c> —
+    ///   <see cref="ParseExpression"/> produces a <see cref="FunctionCallExpression"/>.</item>
+    ///   <item>string-literal sugar: <c>tuning "x.scl" { }</c> — desugared HERE
+    ///   at parse time into a synthetic <see cref="FunctionCallExpression"/> for
+    ///   <c>loadScala</c>. T-32-AST mitigation: the synthetic call's
+    ///   <see cref="SourceLocation"/> is the <c>tuning</c> keyword's line (NOT
+    ///   <see cref="SourceLocation.Unknown"/> nor a synthetic frame), so runtime
+    ///   errors during the desugared call surface at the composer's typed
+    ///   <c>tuning "x.scl"</c> line.</item>
+    /// </list>
+    /// </summary>
+    private TuningContextStatement ParseTuningContextStatement()
+    {
+        // The `tuning` keyword has already been consumed by the dispatch in
+        // ParseStatement (via Match). PreviousToken is the `tuning` keyword.
+        var tuningLocation = PreviousToken.Location;
+
+        Expression tuningExpr;
+
+        if (Check(TokenType.StringLiteral))
+        {
+            // D-15 string-literal sugar: `tuning "x.scl" { }` desugars at parse
+            // time to a FunctionCallExpression for loadScala. The synthetic call
+            // node's SourceLocation MUST be the `tuning` keyword's location so
+            // runtime errors surface at the user's source line (T-32-AST).
+            var litToken = Advance();
+            string sclPath = (string)litToken.Value!;
+            var literalArg = new LiteralExpression(litToken.Location, sclPath);
+            tuningExpr = new FunctionCallExpression(
+                tuningLocation,
+                "loadScala",
+                new List<Expression> { literalArg });
+        }
+        else
+        {
+            // Identifier or inline-call form. ParseExpression handles both:
+            //   `partch`                  -> VariableExpression
+            //   `(loadScala "x.scl")`     -> FunctionCallExpression
+            tuningExpr = ParseExpression();
+        }
+
+        // Expect body block.
+        Expect(TokenType.LBrace, "Expected '{' to open tuning context block");
+
+        var body = new List<Statement>();
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            while (Match(TokenType.Semicolon)) ; // skip semicolons
+
+            if (Check(TokenType.RBrace) || IsAtEnd())
+                break;
+
+            var stmt = ParseStatement();
+            if (stmt != null)
+                body.Add(stmt);
+
+            Match(TokenType.Semicolon);
+        }
+
+        Expect(TokenType.RBrace, "Expected '}' to close tuning context block");
+
+        return new TuningContextStatement(tuningLocation, tuningExpr, body);
     }
 
     private ForStatement ParseForStatement()

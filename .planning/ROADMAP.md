@@ -379,7 +379,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 32-03-PLAN.md — `ResolvedTuning` (eager 128-entry MidiToHz precompute per D-02) + `RenderTuning.Custom` field + `PitchConversion` branch + `TuningType` 15th SpecialType; SPEC-5 ±0.1¢ verified at unit level (SPEC-1 + SPEC-5)
 - [x] 32-04-PLAN.md — `(loadScala)` 1-arg + 2-arg builtins + `Value.Tuning` factory + D-08 unmapped-key WarnOnce advisory; `NonOctavePitchFacts` end-to-end (SPEC-1 + SPEC-4 + SPEC-5)
 - [x] 32-05-PLAN.md — `MusicalContext.Tuning` (scalar) → `Stack<RenderTuning> TuningStack` refactor per D-12; pragma bridge + Pitfall 6 D-13 predicate update + 5 reader-site migrations (SPEC-2 + SPEC-6, Pitfall 1 + Pitfall 2 + Pitfall 6)
-- [ ] 32-06-PLAN.md — `tuning` keyword + `TuningContextStatement` AST + parser dispatch + interpreter case + last-wins integration tests + two-run determinism Facts (SPEC-2 + SPEC-6)
+- [x] 32-06-PLAN.md — `tuning` keyword + `TuningContextStatement` AST + parser dispatch + interpreter case + last-wins integration tests + two-run determinism Facts (SPEC-2 + SPEC-6)
 - [ ] 32-07-PLAN.md — `examples/scala/intro.flow` tutorial chapter (D-19) + `examples/scala/README.md` + CLAUDE.md doc updates + `TutorialScriptTests` CI gate (SPEC-1 + SPEC-2)
 
 ### Phase 33: SFZ Orchestral Sampler
@@ -444,6 +444,6 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 29. Instrument Realism | v1.4 | 0/7 | Plans ready (gated on CC0 sample curation) | - |
 | 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
 | 31. LSP Enhancements + JetBrains Stretch | v1.4 | 6/9 | In progress (Wave 2 continuing — 31-06 SHIPPED 2026-05-12) | - |
-| 32. Full Scala (.scl) Tuning Loader | v1.4 | 5/7 | In Progress|  |
+| 32. Full Scala (.scl) Tuning Loader | v1.4 | 6/7 | In Progress|  |
 | 33. SFZ Orchestral Sampler | v1.4 | 0/N | Spec pending | - |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |

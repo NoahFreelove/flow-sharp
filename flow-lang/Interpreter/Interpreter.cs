@@ -108,6 +108,10 @@ public class Interpreter : IFunctionInvoker
                 ExecuteMusicalContext(ctx);
                 break;
 
+            case TuningContextStatement tctx:
+                ExecuteTuningContext(tctx);
+                break;
+
             case ExpressionStatement exprStmt:
                 var value = _evaluator.Evaluate(exprStmt.Expression);
                 _lastExpressionValue = value;  // Store for REPL
@@ -322,6 +326,92 @@ public class Interpreter : IFunctionInvoker
         }
     }
     // AUDIT-VERIFIED 2026-04-19: C1 — Fixed (returns→breaks); body now runs under partial/default context (tests/spike/c1-musical-context-body.flow GREEN)
+
+    /// <summary>
+    /// Phase 32 Plan 32-06 D-13/D-14 — executes a <c>tuning &lt;expr&gt; { ... }</c>
+    /// musical-context block. Evaluates the tuning expression (any of the three D-15
+    /// forms: identifier / inline call / desugared string-literal), verifies the
+    /// resulting <see cref="Value"/> carries <see cref="TuningType.Instance"/>,
+    /// wraps the underlying <see cref="StandardLibrary.Audio.Tuning.ResolvedTuning"/>
+    /// in a <see cref="StandardLibrary.Audio.Tuning.RenderTuning"/> with
+    /// <c>Custom != null</c>, and push/pops via the Plan 32-05 stack API.
+    ///
+    /// D-14 graceful unwinding: the body executes inside a try/finally so that
+    /// even if the body throws, <see cref="RuntimeContext.PopTuning"/> still fires
+    /// — preserving the Pitfall 2 contract (blocks force-close at REPL eval
+    /// boundary, never leak across evals). Mirrors the
+    /// <see cref="ExecuteMusicalContext"/> try/finally shape at lines 137-322.
+    ///
+    /// Per Plan 32-03 Pitfall 3 mutual-exclusion: when
+    /// <see cref="StandardLibrary.Audio.Tuning.RenderTuning.Custom"/> is set, the
+    /// System / Mode / Tonic fields are effectively ignored by PitchConversion's
+    /// custom-wins branch (and by SongRenderer.ResolveRenderTuning's three-branch
+    /// resolution at Plan 32-05). We use fixed placeholder defaults
+    /// (EqualTemperament, Major, 'C', 0) here — keeping the wedge fields
+    /// consistent with Phase 23 D-05 defaults but irrelevant to the custom path.
+    /// </summary>
+    private void ExecuteTuningContext(TuningContextStatement tctx)
+    {
+        // Step 1: evaluate the tuning expression. Per D-15 this could be a
+        // VariableExpression (identifier form), a FunctionCallExpression (inline
+        // call OR the synthetic loadScala desugar from string-literal sugar).
+        var tuningValue = _evaluator.Evaluate(tctx.TuningExpr);
+
+        // Step 2: type-check. The value MUST carry TuningType.Instance — any
+        // other type is a composer error.
+        if (tuningValue.Type is not TuningType)
+        {
+            _errorReporter.ReportError(
+                $"tuning block expects a Tuning value, got {tuningValue.Type.Name}",
+                tctx.Location);
+            return;
+        }
+
+        // Step 3: extract the ResolvedTuning. Value.Tuning(ResolvedTuning) is the
+        // Plan 32-04 factory; the unwrap reads the Data slot directly.
+        var resolved = (StandardLibrary.Audio.Tuning.ResolvedTuning)tuningValue.Data!;
+
+        // Step 4: construct the RenderTuning to push. Custom is the active payload;
+        // the (System, Mode, TonicLetter, TonicAlteration) wedge is defensive
+        // defaults — Plan 32-03 Task 2 asserted Custom-takes-priority as
+        // defense-in-depth, so these are irrelevant on the custom path.
+        var renderTuning = new StandardLibrary.Audio.Tuning.RenderTuning(
+            StandardLibrary.Audio.Tuning.TuningSystem.EqualTemperament,
+            StandardLibrary.Audio.Tuning.Mode.Major,
+            'C',
+            0,
+            Custom: resolved);
+
+        // Step 5: push onto the topmost frame's TuningStack (Plan 32-05 API).
+        _context.PushTuning(renderTuning);
+
+        // Step 6: execute the body inside try/finally so the stack frame still
+        // pops if anything throws (D-14 graceful unwinding).
+        try
+        {
+            foreach (var stmt in tctx.Body)
+            {
+                ExecuteStatement(stmt);
+
+                // Mirror ExecuteMusicalContext's bare-expression capture: when nested
+                // inside a section, surface sequence-valued expressions to the
+                // active section bare-expression sink so `section { tuning t {
+                // | C4 D4 | } }` produces audible output.
+                if (_activeSectionBareExpressions != null
+                    && stmt is ExpressionStatement
+                    && _lastExpressionValue?.Data is SequenceData innerSeq)
+                {
+                    _activeSectionBareExpressions.Add(innerSeq);
+                }
+
+                if (_returnValue != null) break;
+            }
+        }
+        finally
+        {
+            _context.PopTuning();
+        }
+    }
 
     private void ExecuteForStatement(ForStatement stmt)
     {

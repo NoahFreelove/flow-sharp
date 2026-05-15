@@ -26,6 +26,7 @@ public enum TokenType
     Gain,
     ReverbTime,
     VoicePool,          // Phase 28 (SPEC-7) — voicePool N { ... } musical-context block
+    Tuning,             // Phase 32 (SPEC-2) — tuning <expr> { ... } musical-context block (D-13)
     Pickup,
     For,
     While,

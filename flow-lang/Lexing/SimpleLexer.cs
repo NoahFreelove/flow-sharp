@@ -866,6 +866,7 @@ public class SimpleLexer
             "gain" => TokenType.Gain,
             "reverbTime" => TokenType.ReverbTime,
             "voicePool" => TokenType.VoicePool,
+            "tuning" => TokenType.Tuning,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
