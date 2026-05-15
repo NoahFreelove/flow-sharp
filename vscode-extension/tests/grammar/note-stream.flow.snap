@@ -10,7 +10,9 @@
 >    key Cmajor {
 #^^^^ source.flow
 #    ^^^ source.flow keyword.control.flow
-#       ^^^^^^^^^^ source.flow
+#       ^ source.flow
+#        ^^^^^^ source.flow variable.other.flow
+#              ^^^ source.flow
 >        | C4q D4q E4q F4q | G4q A4q B4q C5q |
 #^^^^^^^^ source.flow
 #        ^ source.flow punctuation.section.flow
@@ -37,7 +39,11 @@
 >        | Cmaj7h Dm7h | G7w |
 #^^^^^^^^ source.flow
 #        ^ source.flow punctuation.section.flow
-#         ^^^^^^^^^^^^^ source.flow
+#         ^ source.flow
+#          ^^^^^^ source.flow variable.other.flow
+#                ^ source.flow
+#                 ^^^^ source.flow variable.other.flow
+#                     ^ source.flow
 #                      ^ source.flow punctuation.section.flow
 #                       ^ source.flow
 #                        ^^^ source.flow variable.other.note.flow

@@ -18,11 +18,15 @@
 >        key Dminor {
 #^^^^^^^^ source.flow
 #        ^^^ source.flow keyword.control.flow
-#           ^^^^^^^^^^ source.flow
+#           ^ source.flow
+#            ^^^^^^ source.flow variable.other.flow
+#                  ^^^ source.flow
 >            dynamics p {
 #^^^^^^^^^^^^ source.flow
 #            ^^^^^^^^ source.flow keyword.control.flow
-#                    ^^^^^ source.flow
+#                    ^ source.flow
+#                     ^ source.flow variable.other.flow
+#                      ^^^ source.flow
 >                | D4e D4e F4e | A4e F4e D4e |
 #^^^^^^^^^^^^^^^^ source.flow
 #                ^ source.flow punctuation.section.flow

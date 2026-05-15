@@ -1,0 +1,54 @@
+>proc demo () {
+#^^^^ source.flow keyword.control.flow
+#    ^ source.flow
+#     ^^^^ source.flow entity.name.function.flow
+#         ^^^^^^ source.flow
+>    Int x = 5;
+#^^^^ source.flow
+#    ^^^ source.flow storage.type.flow
+#       ^ source.flow
+#        ^ source.flow variable.other.flow
+#         ^ source.flow
+#          ^ source.flow keyword.operator.flow
+#           ^ source.flow
+#            ^ source.flow constant.numeric.flow
+#             ^^ source.flow
+>    (print x);
+#^^^^^ source.flow
+#     ^^^^^ source.flow entity.name.function.flow
+#          ^ source.flow
+#           ^ source.flow variable.other.flow
+#            ^^^ source.flow
+>    (mul x 2);
+#^^^^^ source.flow
+#     ^^^ source.flow entity.name.function.flow
+#        ^ source.flow
+#         ^ source.flow variable.other.flow
+#          ^ source.flow
+#           ^ source.flow constant.numeric.flow
+#            ^^^ source.flow
+>    Int y = (add x 3);
+#^^^^ source.flow
+#    ^^^ source.flow storage.type.flow
+#       ^ source.flow
+#        ^ source.flow variable.other.flow
+#         ^ source.flow
+#          ^ source.flow keyword.operator.flow
+#           ^^ source.flow
+#             ^^^ source.flow entity.name.function.flow
+#                ^ source.flow
+#                 ^ source.flow variable.other.flow
+#                  ^ source.flow
+#                   ^ source.flow constant.numeric.flow
+#                    ^^^ source.flow
+>    x -> doubler;
+#^^^^ source.flow
+#    ^ source.flow variable.other.flow
+#     ^ source.flow
+#      ^^ source.flow keyword.operator.flow
+#        ^ source.flow
+#         ^^^^^^^ source.flow variable.other.flow
+#                ^^ source.flow
+>}
+#^^ source.flow
+>

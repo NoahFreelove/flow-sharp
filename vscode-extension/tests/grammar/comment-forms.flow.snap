@@ -1,0 +1,38 @@
+>// Existing double-slash comment.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.double-slash.flow
+>; Lisp-style line comment at column 0.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.semicolon.flow
+>  ; Indented Lisp-style comment.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.semicolon.flow
+>Note: Documentation comment chapter divider.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.documentation.flow
+>TODO: Fix the foo handling.
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.todo.flow
+>FIXME: This is broken.
+#^^^^^^^^^^^^^^^^^^^^^^ source.flow comment.line.fixme.flow
+>proc main () {
+#^^^^ source.flow keyword.control.flow
+#    ^ source.flow
+#     ^^^^ source.flow entity.name.function.flow
+#         ^^^^^^ source.flow
+>    (print "TODO: this is a string, not a comment");
+#^^^^^ source.flow
+#     ^^^^^ source.flow entity.name.function.flow
+#          ^ source.flow
+#           ^ source.flow string.quoted.double.flow
+#            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.flow string.quoted.double.flow
+#                                                 ^ source.flow string.quoted.double.flow
+#                                                  ^^^ source.flow
+>    Int x = 5;
+#^^^^ source.flow
+#    ^^^ source.flow storage.type.flow
+#       ^ source.flow
+#        ^ source.flow variable.other.flow
+#         ^ source.flow
+#          ^ source.flow keyword.operator.flow
+#           ^ source.flow
+#            ^ source.flow constant.numeric.flow
+#             ^^ source.flow
+>}
+#^^ source.flow
+>

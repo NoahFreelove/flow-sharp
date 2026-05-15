@@ -1,0 +1,7 @@
+proc demo () {
+    Int x = 5;
+    (print x);
+    (mul x 2);
+    Int y = (add x 3);
+    x -> doubler;
+}

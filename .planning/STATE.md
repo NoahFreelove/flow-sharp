@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: phase-31-in-progress
-stopped_at: Phase 31 Plan 05 SHIPPED -- SPEC-3 varargs visibility (U+2026 ellipsis trails type) in hover + signature help via LspMappings.FormatSignature + BuildParameters. 4 plans remain (06-09). Resume with /gsd-execute-phase 31 (wave 2 continues).
-last_updated: "2026-05-12T23:22:36.000Z"
-last_activity: 2026-05-12 -- Plan 31-05 executed: 1 task RED→GREEN, 2 atomic commits (592a55a test RED, fb3f611 feat GREEN). 2 new public-static helpers in LspMappings (FormatSignature + BuildParameters); HoverHandler + SignatureHelpHandler consume both. flow-lang/TypeSystem/FunctionSignature.cs UNCHANGED — Phase 24 D-04 "zero flow-lang touch" preserved. 8/8 VarargsRenderingFacts GREEN; 10/10 Phase17 HoverHandler+SignatureHelpHandler regression GREEN; 44/44 Phase31 GREEN; 117/117 Phase17 GREEN; 20/20 ByteIdentical GREEN.
+stopped_at: Phase 31 Plan 06 SHIPPED -- SPEC-4 grammar half + SPEC-5 function-call coloring. 4 new comment scopes (comment.line.semicolon/todo/fixme/documentation.flow) + entity.name.function.flow on (name args) S-expression heads + variable.other.flow on bare identifier reads. 3 plans remain (07-09). Resume with /gsd-execute-phase 31 (wave 2 continues).
+last_updated: "2026-05-12T23:35:00.000Z"
+last_activity: 2026-05-12 -- Plan 31-06 executed: 2 tasks, 1 atomic commit (8bfb69f). vscode-extension/syntaxes/flow.tmLanguage.json gets 4 new comment patterns + #function-call + #variable-ref repository nodes. 2 new grammar fixtures (comment-forms.flow, function-calls.flow); all 6 grammar snapshots regenerated and pass. Deviation [Rule 1 - Bug]: extended #function-call to a two-pattern union (lookbehind for Flow's prefix S-expression syntax PLUS lookahead for proc-decl shape) — plan's literal lookahead-only regex missed every (name args) call site. language-configuration.json untouched per locked Option-A.
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 32
-  completed_plans: 27
-  percent: 84
+  completed_plans: 28
+  percent: 87
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-05 SHIPPED — wave 2 progressing)
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 5/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05 SHIPPED 2026-05-12; 31-06..31-09 remain)
-Last activity: 2026-05-12 -- Plan 31-05 executed: SPEC-3 varargs visibility closed via LspMappings.FormatSignature + BuildParameters helpers (Unicode U+2026 trails type on last varargs param per CONTEXT D-01/D-02). HoverHandler.BuildHover + SignatureHelpHandler.Handle consume both. 2 atomic RED→GREEN commits (592a55a test, fb3f611 feat). 8/8 VarargsRenderingFacts GREEN; 10/10 Phase17 hover+signature-help regression GREEN; 44/44 Phase31 GREEN; 117/117 Phase17 GREEN; 20/20 ByteIdentical GREEN. flow-lang/TypeSystem UNCHANGED (Phase 24 D-04 preserved).
+Phase: 31 (lsp-enhancements-jetbrains-stretch) — EXECUTION IN PROGRESS (Wave 1 complete; Plan 31-06 SHIPPED — wave 2 continuing)
+Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 6/9 plans complete (31-01 SHIPPED 2026-05-12; 31-02 SHIPPED 2026-05-13; 31-03 SHIPPED 2026-05-12; 31-04 SHIPPED 2026-05-12; 31-05 SHIPPED 2026-05-12; 31-06 SHIPPED 2026-05-12; 31-07..31-09 remain)
+Last activity: 2026-05-12 -- Plan 31-06 executed: SPEC-4 grammar half + SPEC-5 function-call coloring closed via vscode-extension/syntaxes/flow.tmLanguage.json extension. 4 new comment scopes (semicolon/todo/fixme/documentation .flow) per D-07. Two-pattern union for #function-call covering Flow's prefix S-expression call shape AND proc-decl shape; #variable-ref fallthrough for bare identifier reads per D-08. 2 new fixtures (comment-forms.flow, function-calls.flow); all 6 grammar snapshots regenerated and pass. 1 atomic commit (8bfb69f). language-configuration.json untouched per locked Option-A — no Ctrl+/ promise for new comment forms; grammar coloring sufficient for SPEC-4.
 
 Progress: [██████████] 100%
 
@@ -176,6 +176,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 31 P03 | ~5min | 1 task (RED→GREEN TDD) | 2 files (1 created: Phase31LexerCommentFormsTests.cs; 1 modified: SimpleLexer.cs +30 lines, 0 deletions) |
 | Phase 31 P04 | ~25min | 1 task (RED→GREEN TDD) | 2 files (1 created: CompletionFilterFacts.cs; 1 modified: CompletionHandler.cs — FilterByImports + FilterByPragmas + BoostByMusicalContext) |
 | Phase 31 P05 | ~40min | 1 task (RED→GREEN TDD) | 4 files (1 created: VarargsRenderingFacts.cs — 8 facts; 3 modified: LspMappings.cs +48 lines, HoverHandler.cs 1-line swap, SignatureHelpHandler.cs Label+Parameters swap) |
+| Phase 31 P06 | ~10min | 2 tasks | 9 files (4 created: comment-forms.flow + .snap, function-calls.flow + .snap; 5 modified: flow.tmLanguage.json + 4 re-snapped existing snapshots — sample/chords/musical-context/note-stream) |
 
 ## Accumulated Context
 

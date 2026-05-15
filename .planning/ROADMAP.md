@@ -355,7 +355,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 31-03-PLAN.md — SimpleLexer: 3 new arms `;` / `TODO:` / `FIXME:` (Option A position-sensitive per D-11); Phase31LexerCommentFormsTests (SPEC-4 lexer side) — Shipped fdd1b5e + dd81c87
 - [x] 31-04-PLAN.md — CompletionHandler.BuildItems: FilterByImports + FilterByPragmas + BoostByMusicalContext (SPEC-2) — Shipped cb0b30b + cd141c8
 - [x] 31-05-PLAN.md — LspMappings.FormatSignature + BuildParameters using Unicode U+2026 per D-01/D-02; HoverHandler + SignatureHelpHandler wiring (SPEC-3) — Shipped 592a55a + fb3f611
-- [ ] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + function-call vs variable-ref split; regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5)
+- [x] 31-06-PLAN.md — flow.tmLanguage.json: 4 new comment scopes + #function-call (two-pattern union for prefix S-expr + proc-decl shapes) + #variable-ref; 2 new fixtures + 6 regenerated grammar snapshots (SPEC-4 grammar side + SPEC-5) — Shipped 8bfb69f
 - [ ] 31-07-PLAN.md — Empirical migration audit: grep + smoke-run every in-repo .flow + byte-identical regression suite; 31-MIGRATION-AUDIT.md (SPEC-6)
 - [ ] 31-08-PLAN.md — JetBrains plugin scaffolding (flow-jetbrains/ Gradle + plugin.xml + FlowLanguageServerFactory.kt); manual UAT for stretch verdict (SPEC-7)
 - [ ] 31-09-PLAN.md — Closure: 31-VERIFICATION.md + REQUIREMENTS.md / ROADMAP.md / STATE.md updates + VSCode dev-host manual smoke closes Phase 17 HUMAN-UAT rows 1-3 (rows 4-5 stay DEFERRED to v1.5)
@@ -434,7 +434,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 28. MIDI + Audio Polyphony & Articulation Rewrite | v1.4 | 7/7 | Complete   | 2026-05-10 |
 | 29. Instrument Realism | v1.4 | 0/7 | Plans ready (gated on CC0 sample curation) | - |
 | 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
-| 31. LSP Enhancements + JetBrains Stretch | v1.4 | 1/9 | In progress (Wave 0 complete) | - |
+| 31. LSP Enhancements + JetBrains Stretch | v1.4 | 6/9 | In progress (Wave 2 continuing — 31-06 SHIPPED 2026-05-12) | - |
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 0/N | Spec pending | - |
 | 33. SFZ Orchestral Sampler | v1.4 | 0/N | Spec pending | - |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |
