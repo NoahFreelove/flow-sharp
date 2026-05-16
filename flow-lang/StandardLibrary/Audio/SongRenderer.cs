@@ -1,7 +1,9 @@
 using FlowLang.Audio;
 using FlowLang.Core;
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.DSP;
+using FlowLang.StandardLibrary.Audio.Sfz;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.StandardLibrary.Harmony;
@@ -104,6 +106,18 @@ public static class SongRenderer
         // buffers (Plan 15-05 ROADMAP criterion #2 / D-18). Pre-fix the
         // unseeded SynthUtils.Rng leaked state across renders.
         SynthUtils.ResetNoiseRng();
+
+        // Phase 33 D-13: sampler:NAME dispatch — reads ExecutionContext.SfzPatchRegistry;
+        // eager-loads via FlowEngine.CurrentSfzSampleCache; per-note render via
+        // SfzRenderer wrapped in an INoteSynthesizer adapter so the existing
+        // RenderSection / SequenceRenderer / BarRenderer / VoiceAllocator pipeline
+        // is reused unchanged. Phase 29 bundled-sample path below stays untouched
+        // (byte-identical contract — when synthType does NOT start with "sampler:",
+        // execution falls through to the existing Phase 29 dispatch verbatim).
+        if (synthType.StartsWith("sampler:", StringComparison.Ordinal))
+        {
+            return RenderSongWithSfz(song, synthType);
+        }
 
         // Phase 29 REQ-4 — eager-load instrument samples for this song. Idempotent
         // for repeated (song, instrument) within an engine lifetime. No-op for
@@ -411,6 +425,134 @@ public static class SongRenderer
             return (new AudioBuffer(0, StereoChannels, DefaultSampleRate), timelineMap);
 
         return (MixVoicesToStereoBuffer(allVoices, bpm, DefaultSampleRate, maxBeats), timelineMap);
+    }
+
+    /// <summary>
+    /// Phase 33 D-13 — handles the <c>sampler:NAME</c> dispatch branch from
+    /// <see cref="RenderSong"/>. Resolves <paramref name="synthType"/> (which
+    /// must start with <c>"sampler:"</c>) against the active engine's
+    /// <see cref="FlowLang.Runtime.ExecutionContext.SfzPatchRegistry"/>:
+    ///
+    /// <list type="bullet">
+    ///   <item><description>If the engine is not running or the patch name is
+    ///   unknown, throws <see cref="InvalidOperationException"/> with a
+    ///   composer-facing message listing known patch names and the
+    ///   <c>Sfz {name} = (loadSfz #...)</c> hint (D-13).</description></item>
+    ///   <item><description>Otherwise eager-loads the patch's WAVs via
+    ///   <see cref="FlowEngine.CurrentSfzSampleCache"/> and wraps a
+    ///   <see cref="SfzRenderer"/> in <see cref="SfzNoteSynthesizer"/> so the
+    ///   existing <see cref="RenderSection(SectionData, INoteSynthesizer)"/>
+    ///   pipeline (voice pool, per-section reverb, pan / gain context, voice
+    ///   mixing) is reused verbatim.</description></item>
+    /// </list>
+    ///
+    /// Phase 29 byte-identical contract is preserved because this method is
+    /// only entered when <paramref name="synthType"/> starts with
+    /// <c>"sampler:"</c> — every other call falls through to the existing
+    /// Phase 29 dispatch unchanged.
+    /// </summary>
+    private static Value RenderSongWithSfz(SongData song, string synthType)
+    {
+        string patchName = synthType.Substring("sampler:".Length);
+        var ctx = FlowEngine.CurrentExecutionContext;
+
+        // Advisory #2 — sampler:NAME voice routes through SongRenderer when
+        // SfzEnabled=false OR the patch isn't loaded. Emitted BEFORE the
+        // throw so composers see the stderr guidance even when the exception
+        // is caught upstream (mirrors Plan 33-05's ResolveSfzRoot advisory
+        // pattern).
+        SfzData? patch = null;
+        if (ctx is not null && ctx.SfzPatchRegistry.TryGetValue(patchName, out var registered))
+        {
+            patch = registered;
+        }
+
+        if (patch is null)
+        {
+            // Build the known-names list — deterministic ordinal sort so
+            // the error message is reproducible across runs (mirrors
+            // SfzBuiltins' unknown-symbol error ordering).
+            var knownNames = ctx?.SfzPatchRegistry.Keys
+                .OrderBy(k => k, StringComparer.Ordinal)
+                .ToArray() ?? Array.Empty<string>();
+
+            // Advisory #2 — config-disabled OR missing-patch case (one-shot
+            // per process per sentinel key). Composer-facing stderr message
+            // distinguishes the two sub-cases. The throw below remains the
+            // hard failure surface; the advisory is purely additive.
+            if (ctx is null || !ctx.SfzEnabled)
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:dispatch:disabled:{patchName}",
+                    $"[sfz] SFZ patch '{patchName}' not loaded (config-disabled) — sampler:NAME requires 'use \"@sfz\"' before binding");
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:dispatch:missing:{patchName}",
+                    $"[sfz] SFZ patch '{patchName}' not loaded; voice rendered as silence");
+            }
+
+            throw new InvalidOperationException(
+                $"Unknown sampler patch '{patchName}'. " +
+                $"Known: [{string.Join(", ", knownNames)}]. " +
+                $"Did you forget `Sfz {patchName} = (loadSfz #...)`?");
+        }
+
+        var cache = FlowEngine.CurrentSfzSampleCache
+            ?? throw new InvalidOperationException(
+                "sampler:NAME dispatch requires an active FlowEngine — no SfzSampleCache published. " +
+                "Direct SongRenderer.RenderSong calls bypassing FlowEngine are unsupported for SFZ patches.");
+        cache.EagerLoad(song, patch);
+
+        var renderer = new SfzRenderer(cache);
+        var adapter = new SfzNoteSynthesizer(renderer, patch);
+
+        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        foreach (var sectionRef in song.Sections)
+        {
+            if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
+                throw new InvalidOperationException(
+                    $"renderSong: section '{sectionRef.Name}' not found in song registry");
+
+            var sectionBuffer = RenderSection(sectionData, adapter);
+            for (int r = 0; r < sectionRef.RepeatCount; r++)
+            {
+                result = AppendBuffers(result, sectionBuffer);
+            }
+        }
+        return Value.Buffer(result);
+    }
+
+    /// <summary>
+    /// Phase 33 — adapter wrapping <see cref="SfzRenderer"/> in the
+    /// <see cref="INoteSynthesizer"/> interface so the sampler: dispatch can
+    /// reuse the existing rendering pipeline (RenderSection /
+    /// SequenceRenderer / BarRenderer / VoiceAllocator) verbatim. The bound
+    /// <see cref="SfzData"/> patch is captured at construction so per-note
+    /// calls only thread the per-note parameters.
+    /// </summary>
+    private sealed class SfzNoteSynthesizer : INoteSynthesizer
+    {
+        private readonly SfzRenderer _renderer;
+        private readonly SfzData _patch;
+
+        public SfzNoteSynthesizer(SfzRenderer renderer, SfzData patch)
+        {
+            _renderer = renderer;
+            _patch = patch;
+        }
+
+        public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
+        {
+            // RenderTuning is intentionally unused — SFZ patches encode their
+            // own pitch table via sample.pitch_keycenter + varispeed shift,
+            // so the Phase 23 tuning system doesn't apply to the sample path.
+            // The interface signature requires the parameter; document the
+            // discard explicitly so future readers don't think this is a bug.
+            _ = tuning;
+            return _renderer.Render(note, sampleRate, durationBeats, bpm, _patch);
+        }
     }
 
     /// <summary>
