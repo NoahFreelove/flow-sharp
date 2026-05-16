@@ -41,28 +41,95 @@ public static class MidiExport
     private static int Lcm(int a, int b) => a / Gcd(a, b) * b;
 
     /// <summary>
-    /// Phase 28 SPEC-6: maps a Sequence's name to a (GM program, MIDI channel) pair
-    /// using case-insensitive prefix matching. Drum sequences route to channel 9
-    /// (GM percussion). All other instrument prefixes default to channel 0.
-    /// Unrecognized names default to GM 0 (acoustic grand piano), channel 0.
-    ///
-    /// Mapping rules (locked):
-    ///   piano*    → (0, 0)
-    ///   brass*, horn* → (56, 0)
-    ///   sax*      → (65, 0)
-    ///   flute*    → (73, 0)
-    ///   string*   → (48, 0)
-    ///   organ*    → (19, 0)
-    ///   bell*     → (14, 0)
-    ///   drum*     → (0, 9)   // channel 9 = GM percussion
-    ///   default   → (0, 0)
+    /// Phase 33 D-15 — strips the <c>sampler:</c> prefix from a sequence name
+    /// so the GM-program lookup AND the SequenceTrackName meta-event both
+    /// see the canonical instrument name (e.g. <c>"sampler:violin"</c> →
+    /// <c>"violin"</c>). Used at TWO sites: <see cref="ResolveGmProgram"/>
+    /// (FIRST statement after the empty-name check per Pitfall 6 — guards
+    /// against prefix bleeding through to the GM-0 fallback) AND the
+    /// SequenceTrackName meta-event emission (D-17 — composer's bound
+    /// variable name appears verbatim in the receiving DAW).
     /// </summary>
-    private static (int gmProgram, int channel) ResolveGmProgram(string seqName)
+    public static string StripSamplerPrefix(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return name;
+        return name.StartsWith("sampler:", StringComparison.OrdinalIgnoreCase)
+            ? name.Substring("sampler:".Length)
+            : name;
+    }
+
+    /// <summary>
+    /// Phase 28 SPEC-6 + Phase 33 D-15 / D-16: maps a Sequence's name to a
+    /// (GM program, MIDI channel) pair using case-insensitive prefix matching.
+    /// Drum sequences route to channel 9 (GM percussion). All other instrument
+    /// prefixes default to channel 0. Unrecognized names default to GM 0
+    /// (acoustic grand piano), channel 0.
+    ///
+    /// Phase 33 D-15: the <c>sampler:</c> prefix is STRIPPED at the top so
+    /// <c>sampler:violin</c> routes the same as <c>violin</c> — composers who
+    /// use the SFZ pipeline get sensible GM programs in the exported .mid
+    /// file even when the receiving DAW doesn't have the SFZ samples
+    /// installed. Pitfall 6: this strip MUST be the first statement after
+    /// the empty-name check or the prefix would bleed through and route
+    /// every sampler instrument to the GM-0 fallback.
+    ///
+    /// Phase 33 D-16: 12 new entries — violin (40), viola (41), cello (42),
+    /// contrabass (43), oboe (68), clarinet (71), bassoon (70), horn (60),
+    /// trombone (57), tuba (58), timpani (47, ch 9), choir (52), harp (46),
+    /// guitar (24), harpsichord (6), celeste (8). The new <c>horn</c> entry
+    /// MUST come BEFORE the existing <c>brass</c> check because the Phase 28
+    /// brass→56 entry historically also matched <c>horn*</c> sequences;
+    /// Phase 33 reassigns <c>horn → 60</c> (French horn) per D-16.
+    ///
+    /// Mapping rules (Phase 28 + Phase 33 additions, ordering significant):
+    ///   sampler:* → strip prefix, then continue
+    ///   Phase 33 (more-specific-first):
+    ///     violin* → (40, 0), viola* → (41, 0), cello* → (42, 0),
+    ///     contrabass* → (43, 0), oboe* → (68, 0), clarinet* → (71, 0),
+    ///     bassoon* → (70, 0), horn* → (60, 0)  [BEFORE brass],
+    ///     trombone* → (57, 0), tuba* → (58, 0),
+    ///     timpani* → (47, 9)  [channel 9 = percussion],
+    ///     choir* → (52, 0), harp* → (46, 0), guitar* → (24, 0),
+    ///     harpsichord* → (6, 0), celeste* → (8, 0)
+    ///   Phase 28 (UNCHANGED):
+    ///     piano* → (0, 0), brass* → (56, 0), sax* → (65, 0),
+    ///     flute* → (73, 0), string* → (48, 0), organ* → (19, 0),
+    ///     bell* → (14, 0), drum* → (0, 9), default → (0, 0)
+    /// </summary>
+    public static (int gmProgram, int channel) ResolveGmProgram(string seqName)
     {
         if (string.IsNullOrEmpty(seqName)) return (0, 0);
-        string lower = seqName.ToLowerInvariant();
+
+        // Phase 33 D-15: strip the sampler: prefix BEFORE any StartsWith check
+        // so sampler:NAME routes to the same GM program as NAME alone. Pitfall
+        // 6 — this MUST be the first statement after the empty-name check.
+        string stripped = StripSamplerPrefix(seqName);
+        string lower = stripped.ToLowerInvariant();
+
+        // Phase 33 D-16: more-specific names first. `horn` MUST come before
+        // `brass` because the Phase 28 brass entry historically swallowed
+        // horn* sequences; D-16 reassigns horn → 60 (French horn).
+        if (lower.StartsWith("violin"))      return (40, 0);
+        if (lower.StartsWith("viola"))       return (41, 0);
+        if (lower.StartsWith("cello"))       return (42, 0);
+        if (lower.StartsWith("contrabass"))  return (43, 0);
+        if (lower.StartsWith("oboe"))        return (68, 0);
+        if (lower.StartsWith("clarinet"))    return (71, 0);
+        if (lower.StartsWith("bassoon"))     return (70, 0);
+        if (lower.StartsWith("horn"))        return (60, 0);
+        if (lower.StartsWith("trombone"))    return (57, 0);
+        if (lower.StartsWith("tuba"))        return (58, 0);
+        if (lower.StartsWith("timpani"))     return (47, 9);  // channel 9 = percussion
+        if (lower.StartsWith("choir"))       return (52, 0);
+        if (lower.StartsWith("harp"))        return (46, 0);
+        if (lower.StartsWith("guitar"))      return (24, 0);
+        if (lower.StartsWith("harpsichord")) return (6, 0);
+        if (lower.StartsWith("celeste"))     return (8, 0);
+
+        // Phase 28 entries (UNCHANGED ordering — must come AFTER Phase 33
+        // entries so that horn/violin/etc. don't fall through to brass etc.)
         if (lower.StartsWith("piano")) return (0, 0);
-        if (lower.StartsWith("brass") || lower.StartsWith("horn")) return (56, 0);
+        if (lower.StartsWith("brass")) return (56, 0);
         if (lower.StartsWith("sax")) return (65, 0);
         if (lower.StartsWith("flute")) return (73, 0);
         if (lower.StartsWith("string")) return (48, 0);
@@ -215,11 +282,16 @@ public static class MidiExport
     }
 
     /// <summary>
-    /// Phase 28 SPEC-6: per-sequence multi-track accumulator. The dictionary value
-    /// holds the chunk, the events list (mutated as bars are walked), and the
-    /// resolved (GM program, MIDI channel) pair derived from the sequence name.
-    /// Cross-section same-name sequences share the same entry — events accumulate
-    /// in chronological order without any merge step.
+    /// Phase 28 SPEC-6 + Phase 33 D-17: per-sequence multi-track accumulator. The
+    /// dictionary value holds the chunk, the events list (mutated as bars are
+    /// walked), and the resolved (GM program, MIDI channel) pair derived from
+    /// the sequence name. Cross-section same-name sequences share the same
+    /// entry — events accumulate in chronological order without any merge step.
+    ///
+    /// Phase 33 D-17: a SequenceTrackName meta-event carrying the
+    /// PREFIX-STRIPPED sequence name is emitted at tick 0 alongside the
+    /// ProgramChange — receiving DAWs display the canonical instrument name
+    /// (e.g. <c>"violin"</c>, NOT <c>"sampler:violin"</c>).
     /// </summary>
     private sealed class SequenceTrackInfo
     {
@@ -228,10 +300,22 @@ public static class MidiExport
         public int GmProgram { get; }
         public int Channel { get; }
 
-        public SequenceTrackInfo(int gmProgram, int channel)
+        public SequenceTrackInfo(int gmProgram, int channel, string trackName)
         {
             GmProgram = gmProgram;
             Channel = channel;
+            // Phase 33 D-17: name the track with the prefix-stripped sequence name
+            // at tick 0, ahead of the ProgramChange. DryWetMidi's
+            // SequenceTrackNameEvent is a meta-event (no channel — it applies
+            // to the whole track). Empty / null names skip the event entirely
+            // so the Phase 28 byte-level chunk count contract isn't violated
+            // by tracks with no name.
+            if (!string.IsNullOrEmpty(trackName))
+            {
+                Events.Add(new TimedEvent(
+                    new SequenceTrackNameEvent(trackName),
+                    0));
+            }
             // SPEC-6: drum sequences route to channel 9 (GM percussion). All
             // NoteOn/NoteOff for the drum track use Channel = 9 instead of 0;
             // the ProgramChange below already carries this channel and every
@@ -356,7 +440,11 @@ public static class MidiExport
                     if (!sequenceTracks.TryGetValue(seqName, out var trackInfo))
                     {
                         var (gm, ch) = ResolveGmProgram(seqName);
-                        trackInfo = new SequenceTrackInfo(gm, ch);
+                        // Phase 33 D-17: strip the sampler: prefix from the
+                        // track-name meta-event payload (single helper used here
+                        // and at the GM lookup so they cannot drift).
+                        string trackName = StripSamplerPrefix(seqName);
+                        trackInfo = new SequenceTrackInfo(gm, ch, trackName);
                         sequenceTracks[seqName] = trackInfo;
                     }
                     int channel = trackInfo.Channel;
