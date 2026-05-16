@@ -84,3 +84,13 @@ fully reversible without surprise rendering drift.
   comes from the articulation contrast (sharp `stacc` LH under
   longer-duration RH notes) instead — which works out fine, since
   classical ragtime is typically played close to straight anyway.
+
+## See also
+
+- **[`../symphony/README.md`](../symphony/README.md)** — the v1.4
+  headline showcase: *In Five Voices*, a ~60s ABA single-movement
+  symphony for 5 VSCO-CE instruments (violin, cello, flute, horn,
+  timpani) in D minor. Same VSCO-CE setup, same Phase 33 SFZ surface,
+  five times the instrumentation. The pensive orchestral counterpart
+  to this upbeat solo-piano ragtime; together the two pieces
+  demonstrate Flow's genre-agnostic claim inside the v1.4 release.
