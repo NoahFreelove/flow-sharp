@@ -50,6 +50,13 @@ vscode-extension/server/
 !examples/symphony/**/*.flow
 !examples/symphony/**/*.md
 
+# Phase 34 showcase #2 — examples/ragtime/ragtime.flow + README.md must be
+# tracked despite the global *.flow / *.md ignores. Mirrors examples/symphony/.
+!examples/ragtime/
+!examples/ragtime/**
+!examples/ragtime/**/*.flow
+!examples/ragtime/**/*.md
+
 # Phase 28 polyphony / articulation acceptance fixtures — must be tracked
 # despite the global *.flow ignore. Pinned by RagtimeFixtureTests.
 !examples/tests/
