@@ -64,7 +64,7 @@ voicePool 32 {
                 // =====================================================
                 section themeB {
                     Sequence hornLead   = | F4h F4 ten G4q | A4h. G4q | F4w | E4w |
-                    Sequence fluteOrn   = | _ | {3:2 D5 E5 F5}q stacc _ _ | _ | _ |
+                    Sequence fluteOrn   = | _ | {3:2 D5 E5 F5}q D5e stacc _ _ _ | _ | _ |
                     Sequence celloLeg   = | F3w leg | E3w leg | D3w leg | A2w leg |
                 }
 
@@ -93,7 +93,7 @@ voicePool 32 {
                 // =====================================================
                 // Song arrangement -- ABA single-movement (D-102)
                 // =====================================================
-                Song piece = [themeA transitionAB themeB transitionBAPrime themeAPrime]
+                Song piece = [themeA*2 transitionAB themeB*2 transitionBAPrime themeAPrime*2]
 
                 // =====================================================
                 // Per-instrument render via the Phase 33 sampler:NAME
