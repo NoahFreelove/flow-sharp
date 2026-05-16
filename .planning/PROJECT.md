@@ -122,6 +122,7 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - ✓ Language Server + VSCode extension (syntax highlighting, live diagnostics, completion, hover, signature help, go-to-def, note-stream-aware roman-numeral completion) — v1.2 Phase 17 (D-01..D-15; rows 4-5 of manual smoke deferred to first release tag)
 - ✓ Tutorial + showcase refresh demonstrating v1.1 + v1.2 features end-to-end (`examples/tutorial.flow` 348→635 lines, `examples/showcase.flow` rewritten as ambient mood piece, paired WAV+MIDI export to `examples/output/`) — v1.2 Phase 16 (QOL-03)
 - ✓ Scala (`.scl`) tuning loader with `(loadScala "path")` builtin + `tuning t { ... }` musical-context block, full Scala feature subset (cents + ratio steps, `.kbm` keyboard mapping, non-octave scales, negative cents, `!` line comments), 5 canonical archive fixtures + 3 malformed parser-error fixtures, ±0.1¢ Carlos Alpha / Bohlen-Pierce acceptance, last-wins integration with Phase 23 pragmas, D-13 MIDI-export dual-axis advisory, byte-identical two-run determinism — v1.4 Phase 32 (SPEC-1..SPEC-7)
+- ✓ SFZ orchestral sampler: `Sfz` first-class type + `(loadSfz #symbol)` / `(loadSfz "path")` builtins + 19-entry GM dict in `@sfz` opt-in stdlib module + `"sampler:NAME"` instrument string dispatched in SongRenderer + 12 new GM-program entries in MidiExport + SfzParser (14-opcode whitelist with `<control>` + `default_path` cascade) + SfzRenderer (equal-power 441-frame crossfade, Phase 28 articulation envelope hook) + SfzSampleCache (per-engine, ordinal-sorted deterministic eager-load) + synthetic 19 KB smoke fixture for CI + VSCO-CE 1.1.0 path audit — v1.4 Phase 33 (SPEC-1..SPEC-8; HUMAN-UAT pending for real-library playback)
 
 ### Active
 
@@ -218,4 +219,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v1.2 milestone close*
+*Last updated: 2026-05-16 after v1.4 Phase 33 (SFZ orchestral sampler) complete*
