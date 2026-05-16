@@ -3,7 +3,11 @@ status: partial
 phase: 34-symphony-showcase-v1-4-closer-pre-public-public-pivot
 source: [34-VERIFICATION.md, 34-CONTEXT.md D-801..D-803, 34-01-PLAN.md Task 3]
 started: 2026-05-16T17:55:50Z
-updated: 2026-05-16T17:55:50Z
+updated: 2026-05-16T18:20:00Z
+iterations:
+  - id: 1
+    composer_feedback: "mixing issues; melody clobbered in places; flutes should shine more than the super loud bass"
+    response: "boosted flute 0.85→1.0; dropped cello 0.75→0.45 + horn 0.65→0.40 (sustained bass bed was masking the lead); dropped violin doubling 1.0→0.85 to give the flute clearer headroom in A'; trimmed master reverb wet 0.30→0.20 so the 2.5s tail stops smearing whole-note pads into the next bar's melodic onset. Determinism preserved (D-702 holds on iteration #2 render)."
 ---
 
 ## Current Test

@@ -109,13 +109,17 @@ voicePool 32 {
                 // =====================================================
                 // D-401: per-instrument volume balance (linear, NOT
                 // gain -- linear is the intuitive surface for "85% of
-                // full"). Starting balance; composer adjusts during UAT.
+                // full"). UAT iteration #2 (composer feedback: "melody
+                // clobbered, flutes should shine more than the super
+                // loud bass"): flute boosted to lead at 1.0; cello +
+                // horn dropped substantially so the flute melody sits
+                // clear of the sustained bass bed.
                 // =====================================================
-                Buffer balViolin  = (volume rawViolin  1.0)
-                Buffer balCello   = (volume rawCello   0.75)
-                Buffer balFlute   = (volume rawFlute   0.85)
-                Buffer balHorn    = (volume rawHorn    0.65)
-                Buffer balTimpani = (volume rawTimpani 0.40)
+                Buffer balViolin  = (volume rawViolin  0.85)
+                Buffer balCello   = (volume rawCello   0.45)
+                Buffer balFlute   = (volume rawFlute   1.0)
+                Buffer balHorn    = (volume rawHorn    0.40)
+                Buffer balTimpani = (volume rawTimpani 0.35)
 
                 // =====================================================
                 // Mix via the (mix Buffer Buffer) builtin (verified in
@@ -129,12 +133,16 @@ voicePool 32 {
                 Buffer summed = (mix mix3 balTimpani)
 
                 // =====================================================
-                // D-402: master reverb on the summed mix -- 30% wet,
-                // 2.5s decay tail (Phase 26.2 Second literal).
+                // D-402: master reverb on the summed mix. UAT iteration
+                // #2 (composer feedback: melody clobbered): wet level
+                // dropped from 0.30 -> 0.20 so the 2.5s tail stops
+                // smearing each whole-note pad into the next bar's
+                // melodic onset. Hall character preserved (2.5s decay
+                // tail unchanged); just less of it in the mix.
                 // D-403: soft 4:1 compressor above -12dB threshold
                 //   (Phase 26.2 Decibel + Millisecond literals).
                 // =====================================================
-                Buffer wet      = summed -> (reverb 0.3 2.5s)
+                Buffer wet      = summed -> (reverb 0.2 2.5s)
                 Buffer mastered = wet -> (compress -12dB 4 100ms 200ms)
 
                 // =====================================================
