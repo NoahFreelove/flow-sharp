@@ -83,7 +83,65 @@ public class ExecutionContext
     /// Value wrappers is the canonical Symbol equality check.
     /// </summary>
     public Dictionary<string, Value> SymbolInternTable { get; } = new();
-    
+
+    // ===== Phase 33 — SFZ surface =====
+
+    /// <summary>
+    /// Phase 33 — flips <c>true</c> when the <c>__enableSfzModule</c> marker
+    /// builtin runs (triggered by <c>use "@sfz"</c> in a script). Until then,
+    /// <c>loadSfz</c> and the <c>sampler:NAME</c> instrument-string dispatcher
+    /// are gated off and raise <c>UndefinedFunctionError</c> /
+    /// <c>UnknownInstrumentError</c> respectively. Default <c>false</c>.
+    /// </summary>
+    public bool SfzEnabled { get; set; } = false;
+
+    /// <summary>
+    /// Phase 33 — 19-entry GM-orchestral Symbol → relative-path map populated
+    /// from <c>flow-lang/sfz.flow</c> via <c>__enableSfzModule</c> per CONTEXT
+    /// D-09 / D-11 (the dict lives in Flow source, not C#, so composers can
+    /// inspect / extend it without a C# rebuild). Read by <c>loadSfz(Symbol)</c>
+    /// to look up the relative path before joining with <see cref="ResolvedSfzRoot"/>.
+    /// Empty until the module imports.
+    /// </summary>
+    public Dictionary<Value, string> SfzInstruments { get; } = new();
+
+    /// <summary>
+    /// Phase 33 — variable-name → patch registry per CONTEXT D-12. Populated by
+    /// <c>Interpreter.ExecuteVariableDeclaration</c> (Plan 33-07) when the
+    /// declared type is <c>SfzType</c>; the assignment handler writes
+    /// <c>(name, sfzValue.As&lt;SfzData&gt;())</c> into this dict alongside the
+    /// normal <c>CurrentFrame.SetVariable</c> call. Read by
+    /// <c>SongRenderer</c>'s <c>sampler:NAME</c> branch (Plan 33-07) to resolve
+    /// the bound patch.
+    ///
+    /// Per Pitfall 10: last-bound-wins per variable name within an
+    /// ExecutionContext — reassigning a same-name variable overwrites the
+    /// prior registry entry, matching Flow's variable-shadowing semantics.
+    /// </summary>
+    public Dictionary<string, FlowLang.StandardLibrary.Audio.Sfz.SfzData> SfzPatchRegistry { get; } = new();
+
+    /// <summary>
+    /// Phase 33 — one-shot stderr advisory dedup set, keyed by sentinel strings
+    /// of the form <c>sfz:opcode:{patch}:{name}</c>,
+    /// <c>sfz:missing:{patch}:{midi}:{vel}</c>, or
+    /// <c>sfz:config:sfz_root_missing</c>. Used via the Phase 23/32
+    /// <c>RenderingDiagnostics.WarnOnce(key, message)</c> pattern (Plans 33-04 /
+    /// 33-05 / 33-06 add the SFZ-specific overload). The dedup is per-context
+    /// rather than per-process so each FlowEngine instance gets a fresh slate.
+    /// </summary>
+    public HashSet<string> SfzDiagnostics { get; } = new();
+
+    /// <summary>
+    /// Phase 33 — first-read cache for <c>FlowConfig.Active.SfzRoot</c> per
+    /// 33-RESEARCH § Pitfall 2. <see cref="FlowConfig.Active"/> is mutable
+    /// (test isolation pollutes the singleton); reading the value once at the
+    /// first <c>loadSfz</c> call within a given <see cref="ExecutionContext"/>
+    /// and caching here prevents (a) test-order-dependent failures and
+    /// (b) script-time config edits from affecting an in-flight render.
+    /// <c>null</c> until first read (or until first read returns null).
+    /// </summary>
+    public string? ResolvedSfzRoot { get; set; } = null;
+
     /// <summary>
     /// Invoker used to execute userspace functions/lambdas from standard library or engine.
     /// Injected by the interpreter upon creation.

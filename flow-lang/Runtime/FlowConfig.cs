@@ -25,6 +25,20 @@ public record FlowConfigPoco
     public List<string>? StdlibSearchPath { get; init; }
 
     /// <summary>
+    /// Phase 33 SPEC-2: composer-configured root directory for the SFZ
+    /// orchestral library (e.g. VSCO Community CE). The TOML key
+    /// <c>sfz_root</c> auto-maps to this property via the existing
+    /// <c>JsonNamingPolicy.SnakeCaseLower</c> in
+    /// <c>flow-cli/Config/FlowConfigLoader.cs:36</c> — no FlowConfigLoader
+    /// edit needed. Read once on the first <c>loadSfz</c> call per
+    /// <see cref="ExecutionContext"/> and cached in
+    /// <c>ExecutionContext.ResolvedSfzRoot</c> (Pitfall 2). <c>null</c>
+    /// triggers a <c>MissingSfzRootError</c> at the first <c>loadSfz</c>
+    /// call (Plan 33-05).
+    /// </summary>
+    public string? SfzRoot { get; init; }
+
+    /// <summary>
     /// Static instance representing "no config loaded yet" — every key is null,
     /// triggering the baked-in defaults at each read site. The interpreter's
     /// <see cref="FlowConfig.Active"/> property starts pointing at this instance

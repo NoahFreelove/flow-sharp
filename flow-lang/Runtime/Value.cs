@@ -59,6 +59,18 @@ public class Value
     /// </summary>
     public static Value Tuning(StandardLibrary.Audio.Tuning.ResolvedTuning resolved)
         => new(resolved, TuningType.Instance);
+
+    /// <summary>
+    /// Phase 33 Plan 33-02 — wraps a <see cref="StandardLibrary.Audio.Sfz.SfzData"/>
+    /// reference in a Flow <see cref="Value"/> typed as <see cref="SfzType.Instance"/>.
+    /// Identity follows reference equality per CONTEXT § "Claude's Discretion": two
+    /// <c>(loadSfz #violin)</c> calls produce distinct Values even with identical
+    /// resolved paths (Phase 33 doesn't cache at the value layer; mirrors Phase 32's
+    /// <see cref="Value.Tuning"/> contract).
+    /// </summary>
+    public static Value Sfz(StandardLibrary.Audio.Sfz.SfzData data)
+        => new(data, SfzType.Instance);
+
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
 
     /// <summary>
