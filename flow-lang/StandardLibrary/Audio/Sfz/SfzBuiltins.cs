@@ -136,31 +136,138 @@ public static class SfzBuiltins
     }
 
     /// <summary>
-    /// Symbol overload — full body lands in Task 2. For now: error out
-    /// clearly so the registration is callable and the unit-test scaffolding
-    /// can probe the signature.
+    /// Symbol overload — looks up <c>args[0]</c> (a Symbol Value) in
+    /// <see cref="ExecutionContext.SfzInstruments"/>, resolves
+    /// <c>sfz_root</c> via the Pitfall-2 cache, joins, parses, and wraps the
+    /// result with <see cref="Value.Sfz"/>.
+    ///
+    /// Error paths (each is composer-facing and points at the fix):
+    /// <list type="bullet">
+    ///   <item><description>Gate off → "loadSfz requires `use \"@sfz\"`"</description></item>
+    ///   <item><description>Unknown symbol → message listing all 19 supported symbols
+    ///   + a "did you mean?" affordance via the sorted dump.</description></item>
+    ///   <item><description>TBD placeholder (4 rows from the Plan 33-01 audit) → message
+    ///   referencing "VSCO Community Edition" + the absolute-path overload.</description></item>
+    ///   <item><description>sfz_root unconfigured → message naming
+    ///   <c>~/.config/flow/config.toml</c> + the <c>sfz_root</c> key. Also fires
+    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
+    ///   <c>sfz:config:sfz_root_missing</c> before throwing.</description></item>
+    ///   <item><description>File missing on disk → bubbles
+    ///   <see cref="FileNotFoundException"/> from <see cref="File.ReadAllText"/>,
+    ///   matching Phase 32 loadScala's contract.</description></item>
+    /// </list>
     /// </summary>
     private static Value LoadSfzSymbol(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
     {
         if (!ctx.SfzEnabled)
             throw new InvalidOperationException(
                 "loadSfz requires 'use \"@sfz\"' at the top of your script");
-        // TODO Task 2: full body.
-        throw new NotImplementedException(
-            "loadSfz(Symbol) body is shipped in Plan 33-05 Task 2");
+
+        var symbolValue = args[0];
+        string symbolName = symbolValue.As<string>();
+
+        // Symbol lookup — relies on the per-context SymbolInternTable
+        // (Pitfall 1): __enableSfzModule populated ctx.SfzInstruments using the
+        // SAME context's interned Symbol values, so reference equality holds.
+        if (!ctx.SfzInstruments.TryGetValue(symbolValue, out var relativePath))
+        {
+            // Unknown symbol. Dump the entire 19-key supported set so the
+            // composer's typo gets an immediate suggestion. Sort the keys
+            // alphabetically for deterministic + scannable output.
+            var supported = ctx.SfzInstruments.Keys
+                .Select(k => $"#{k.As<string>()}")
+                .OrderBy(s => s, StringComparer.Ordinal);
+            throw new InvalidOperationException(
+                $"Unknown SFZ instrument symbol '#{symbolName}'. Supported symbols (19, " +
+                $"from the @sfz GM orchestral dict): {string.Join(", ", supported)}. " +
+                "See .planning/phases/33-sfz-orchestral-sampler/33-VSCO-PATH-AUDIT.md " +
+                "for the full mapping.");
+        }
+
+        // TBD-placeholder detection — the 4 VSCO-CE-1.1.0 gaps from the audit
+        // (#choir / #guitar / #harpsichord / #celeste). The relative path is
+        // a known-missing _TBD_ filename rather than an empty string so
+        // SymbolInternTable iteration order doesn't matter for the error path.
+        if (relativePath.StartsWith(TbdPathPrefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"SFZ instrument '#{symbolName}' is not bundled with VSCO Community " +
+                $"Edition 1.1.0. Use the absolute-path overload instead: " +
+                $"(loadSfz \"/path/to/your/{symbolName}.sfz\"). " +
+                "See .planning/phases/33-sfz-orchestral-sampler/33-VSCO-PATH-AUDIT.md " +
+                "for the 4 TBD rows.");
+        }
+
+        // Resolve sfz_root with the Pitfall-2 first-read cache. After this
+        // branch ctx.ResolvedSfzRoot is non-null (else we threw).
+        string resolvedRoot = ResolveSfzRoot(ctx);
+
+        // Join the relative path against the resolved root. Path.Combine
+        // canonicalizes path separators per platform — no extra Windows
+        // handling needed because the dict ships forward-slash + backslash
+        // is normalized by SfzParser (Plan 33-04 handles the <control>
+        // default_path cascade for inside-the-.sfz paths).
+        string absolutePath = Path.Combine(resolvedRoot, relativePath);
+
+        // Read + parse. File.ReadAllText throws FileNotFoundException with
+        // a clear message naming the missing path — that bubbles to the
+        // composer naturally.
+        string content = File.ReadAllText(absolutePath);
+        var sfzData = SfzParser.Parse(content, absolutePath,
+            patchDescription: Path.GetFileNameWithoutExtension(absolutePath));
+        return Value.Sfz(sfzData);
     }
 
     /// <summary>
-    /// String overload — full body lands in Task 2. For now: error out
-    /// clearly so the registration is callable.
+    /// String overload — bypass-the-dict literal-path entry point. No
+    /// <c>sfz_root</c> resolution; the caller's path is used as-is (relative
+    /// to the process cwd or absolute as written). Mirrors Phase 32
+    /// <c>loadScala(String)</c>'s posture verbatim.
     /// </summary>
     private static Value LoadSfzString(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
     {
         if (!ctx.SfzEnabled)
             throw new InvalidOperationException(
                 "loadSfz requires 'use \"@sfz\"' at the top of your script");
-        // TODO Task 2: full body.
-        throw new NotImplementedException(
-            "loadSfz(String) body is shipped in Plan 33-05 Task 2");
+
+        string path = args[0].As<string>();
+        string content = File.ReadAllText(path);
+        var sfzData = SfzParser.Parse(content, path,
+            patchDescription: Path.GetFileNameWithoutExtension(path));
+        return Value.Sfz(sfzData);
+    }
+
+    /// <summary>
+    /// Pitfall-2 first-read cache for <see cref="FlowConfig.Active.SfzRoot"/>.
+    /// On the first <c>loadSfz(Symbol)</c> call within a given ExecutionContext,
+    /// reads the singleton, validates non-null, caches on
+    /// <see cref="ExecutionContext.ResolvedSfzRoot"/>, and returns. Subsequent
+    /// calls hit the cache — singleton mutations between calls do NOT affect
+    /// resolution (test-isolation fix; also makes a single render insulated
+    /// from mid-script config edits).
+    /// </summary>
+    private static string ResolveSfzRoot(FlowLang.Runtime.ExecutionContext ctx)
+    {
+        if (ctx.ResolvedSfzRoot is not null) return ctx.ResolvedSfzRoot;
+
+        string? fromConfig = FlowConfig.Active?.SfzRoot;
+        if (string.IsNullOrEmpty(fromConfig))
+        {
+            // One-shot composer-facing advisory + throw. The advisory is
+            // process-global per RenderingDiagnostics convention; the throw
+            // is per-call so each script that forgets sfz_root sees the
+            // error (the advisory just doesn't repeat the prose).
+            RenderingDiagnostics.WarnOnce(
+                sentinelKey: "sfz:config:sfz_root_missing",
+                message: "[sfz] sfz_root not configured — populate ~/.config/flow/config.toml " +
+                         "with a `sfz_root = \"/path/to/your/sfz/library\"` entry");
+            throw new InvalidOperationException(
+                "SFZ root directory not configured. Populate `sfz_root` in " +
+                "~/.config/flow/config.toml — e.g. `sfz_root = \"$HOME/.flow/samples/VSCO-CE\"` — " +
+                "then re-run. See the Phase 30 config docs for the full schema.");
+        }
+
+        ctx.ResolvedSfzRoot = fromConfig;
+        return fromConfig;
     }
 }

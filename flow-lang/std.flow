@@ -246,3 +246,13 @@ Note: (loadScala "path.scl" "path.kbm") loads both files together; D-08 fires th
 Note: key WarnOnce advisory once per Description if any `x` mapping entries are present.
 internal proc loadScala (String: sclPath)
 internal proc loadScala (String: sclPath, String: kbmPath)
+
+Note: Phase 33 Plan 33-05 — SFZ orchestral sampler loader
+Note: Forward-declared in std.flow so the SfzEnabled gate (CONTEXT D-10) fires at the
+Note: runtime call site, not at parse-resolution. WITHOUT `use "@sfz"`, calling
+Note: (loadSfz #violin) reaches the C# builtin and throws "loadSfz requires `use \"@sfz\"`"
+Note: (the gate's whole point — the composer gets a clear "you forgot the import" message,
+Note: not the generic "Function not found"). WITH `use "@sfz"`, the gate flips true and
+Note: the lookup + parse + return path runs normally.
+internal proc loadSfz (Symbol: name)
+internal proc loadSfz (String: path)

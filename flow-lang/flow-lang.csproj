@@ -37,6 +37,10 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>
+      <None Update="sfz.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
       <None Update="test.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

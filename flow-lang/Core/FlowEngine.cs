@@ -5,6 +5,7 @@ using FlowLang.Parsing;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Audio;
+using FlowLang.StandardLibrary.Audio.Sfz;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
@@ -76,6 +77,13 @@ public class FlowEngine : IDisposable
         _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
+        // Phase 33 Plan 33-05: wire the SFZ surface — loadSfz(Symbol) +
+        // loadSfz(String) + __enableSfzModule(Dict) builtins. All three check
+        // ExecutionContext.SfzEnabled at call time, so the registration is
+        // safe even when no script imports @sfz (CONTEXT D-10). The
+        // __enableSfzModule call inside sfz.flow flips the gate during
+        // `use "@sfz"` import.
+        SfzBuiltins.Register(internalRegistry, _context);
         var moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
         // REQ-4 (Plan 30-03): seed the loader's AdditionalSearchPaths from the active
         // config singleton. Empty list when no config.toml is loaded — zero-cost no-op

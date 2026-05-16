@@ -155,8 +155,10 @@ public class SimpleLexer
             case '|': return SingleChar(TokenType.Pipe);
             case '~': return SingleChar(TokenType.Tilde);
             case '_':
-                // Standalone underscore is a rest token; if followed by word characters it's part of an identifier
-                if (IsAtEnd() || !char.IsLetterOrDigit(PeekNext()))
+                // Standalone underscore is a rest token; if followed by word
+                // characters OR another underscore (e.g. `__enableSfzModule` per
+                // Phase 33 internal-marker naming) it's part of an identifier.
+                if (IsAtEnd() || (!char.IsLetterOrDigit(PeekNext()) && PeekNext() != '_'))
                     return SingleChar(TokenType.Underscore);
                 break; // Fall through to identifier scanning
             case ',': return SingleChar(TokenType.Comma);

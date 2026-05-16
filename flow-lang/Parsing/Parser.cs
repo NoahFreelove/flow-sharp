@@ -1326,7 +1326,8 @@ public partial class Parser
                 or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
                 or "Symbol" or "Tuple"  // Phase 26.1 TUP-09 — `Tuple<<T1, T2>>` annotation gate
                 or "Dict"  // Phase 26.1 DICT-01 — `Dict<K, V>` annotation gate
-                or "Tuning")  // Phase 32 Plan 32-04 — `Tuning t = (loadScala ...)` annotation gate
+                or "Tuning"  // Phase 32 Plan 32-04 — `Tuning t = (loadScala ...)` annotation gate
+                or "Sfz")  // Phase 33 Plan 33-05 — `Sfz v = (loadSfz #...)` annotation gate
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)

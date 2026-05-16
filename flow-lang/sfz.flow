@@ -1,5 +1,12 @@
 Note: SFZ Orchestral Sampler — opt-in via `use "@sfz"`
 
+Note: Pull in std so the (dict ...) constructor (Phase 26.1 DICT-01) + the
+Note: shared (loadSfz Symbol) / (loadSfz String) forward-decls are visible
+Note: by the time the trailing (__enableSfzModule ...) call runs. Composers
+Note: who `use "@sfz"` therefore get @std transitively (matching the
+Note: existing composition.flow → @audio precedent).
+use "@std"
+
 Note: ===== Internal C# Function Declarations =====
 
 Note: Marker builtin called once at module load (last expression of this file).
@@ -9,15 +16,11 @@ Note: directly — the trailing (__enableSfzModule __sfzInstruments) line below
 Note: handles it for them when the module is imported.
 internal proc __enableSfzModule (Dict<Symbol, String>: instruments)
 
-Note: Symbol overload — looks up #symbol in the shipped GM dict, joins with
-Note: sfz_root from ~/.config/flow/config.toml, parses the resolved file,
-Note: returns an Sfz value. Errors clearly if the symbol is unknown, the
-Note: dict entry is a TBD placeholder, or sfz_root is not configured.
-internal proc loadSfz (Symbol: name)
-
-Note: String overload — bypasses the dict; parses the literal path directly.
-Note: Use this for non-VSCO libraries or any custom .sfz file.
-internal proc loadSfz (String: path)
+Note: The loadSfz(Symbol) + loadSfz(String) forward-decls live in std.flow
+Note: so the function is always visible at parse-resolution time. The SfzEnabled
+Note: runtime gate (CONTEXT D-10) handles the "called without `use \"@sfz\"`" path
+Note: — composer gets a "loadSfz requires `use \"@sfz\"`" error, not the generic
+Note: "Function not found".
 
 Note: ===== 19-entry GM Orchestral Instrument → VSCO-CE Relative-Path Dict =====
 Note: Single source of truth — composers can `(get __sfzInstruments #violin)`
