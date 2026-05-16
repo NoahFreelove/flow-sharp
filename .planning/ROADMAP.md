@@ -394,8 +394,8 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
   5. Composer surface for sampler instruments is locked (e.g. `loadSfz("path.sfz")` builtin or `"sampler:name"` instrument string)
   6. Existing synth-based instruments (piano/brass/sax/drums/strings/organ/bell) continue to work unchanged
 **Plans**: 7 plans
-- [ ] 33-01-PLAN.md — Wave 0: smoke-fixture battery (synthetic .sfz + 2 sine-burst WAVs + LICENSE) + RepoSizeTests + Phase33FixtureGenerator + VSCO-CE 1.1.0 path audit (SPEC-2 + SPEC-7)
-- [ ] 33-02-PLAN.md — Wave 1 (merged data model + type system + runtime state + compile gate): SfzType (sealed singleton, specificity 150) + ExecutionContext SFZ-surface fields (SfzEnabled/SfzInstruments/SfzPatchRegistry/SfzDiagnostics/ResolvedSfzRoot) + FlowConfigPoco.SfzRoot + Value.Sfz factory + Sfz/ data model (SfzData + SfzRegion + SfzLoopMode + SfzParseException) under new flow-lang/StandardLibrary/Audio/Sfz/ subdirectory + SfzTypeFacts + build-green compile gate (SPEC-2 + SPEC-3 + SPEC-4 + SPEC-5 + SPEC-6)
+- [x] 33-01-PLAN.md — Wave 0: smoke-fixture battery (synthetic .sfz + 2 sine-burst WAVs + LICENSE) + RepoSizeTests + Phase33FixtureGenerator + VSCO-CE 1.1.0 path audit (SPEC-2 + SPEC-7)
+- [x] 33-02-PLAN.md — Wave 1 (merged data model + type system + runtime state + compile gate): SfzType (sealed singleton, specificity 150) + ExecutionContext SFZ-surface fields (SfzEnabled/SfzInstruments/SfzPatchRegistry/SfzDiagnostics/ResolvedSfzRoot) + FlowConfigPoco.SfzRoot + Value.Sfz factory + Sfz/ data model (SfzData + SfzRegion + SfzLoopMode + SfzParseException) under new flow-lang/StandardLibrary/Audio/Sfz/ subdirectory + SfzTypeFacts + build-green compile gate (SPEC-2 + SPEC-3 + SPEC-4 + SPEC-5 + SPEC-6)
 - [ ] 33-04-PLAN.md — Wave 2: SfzParser (hand-rolled INI-style; 13-opcode whitelist + 3 headers + inheritance flatten + MaxRegionCount cap + strict numeric + last-declared-wins grid build) + SfzParserTests (SPEC-3 + SPEC-4 + SPEC-5)
 - [ ] 33-05-PLAN.md — Wave 2: sfz.flow stdlib module (19-entry GM dict + __enableSfzModule marker) + SfzBuiltins (loadSfz Symbol/String + SfzEnabled gating + sfz_root caching per Pitfall 2) + SfzGatingTests + SfzSymbolLookupTests + SfzConfigTests (SPEC-1 + SPEC-2 + SPEC-3)
 - [ ] 33-06-PLAN.md — Wave 3: SfzSampleCache (per-engine; sorted deterministic eager-load per Pitfall 5) + SfzRenderer (grid lookup + nearest-pitch fallback + 441-frame equal-power crossfade + Phase 28 envelope hook) + SfzRegionMatchTests + SfzLoopCrossfadeTests (SPEC-4 + SPEC-5 + SPEC-8)
@@ -452,5 +452,5 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
 | 31. LSP Enhancements + JetBrains Stretch | v1.4 | 6/9 | In progress (Wave 2 continuing — 31-06 SHIPPED 2026-05-12) | - |
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 7/7 | Complete    | 2026-05-15 |
-| 33. SFZ Orchestral Sampler | v1.4 | 0/N | Spec pending | - |
+| 33. SFZ Orchestral Sampler | v1.4 | 2/7 | In Progress|  |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |
