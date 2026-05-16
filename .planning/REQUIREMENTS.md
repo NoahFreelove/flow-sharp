@@ -254,6 +254,68 @@ gate (`Phase29ByteIdenticalTests`) stays 6/6 green across all Phase 33 plans.
 
 ---
 
+## v1.4 Phase 34 — Symphony Showcase (v1.4 closer — pre-public → public pivot)
+
+Phase 34 ships the v1.4 headline artifacts — a curated ~60 s minimalist-orchestral symphony
+("In Five Voices") for 5 VSCO Community CE 1.1.0 instruments rendered through the Phase 33
+SFZ surface, plus a ~58 s solo-piano ragtime companion ("Stride & Stomp") added during
+scope-expand for genre-agnostic demonstration — plus the public-facing release machinery
+(v1.4.0 annotated tag + GitHub Release with 5 labeled assets: symphony.mp3+wav,
+ragtime.mp3+wav, flow-linux-x64.tar.gz; top-level README.md `## Showcase` section with
+user-attachments inline audio embed; docs/announcements/v1.4.0.md announcement draft) and
+v1.4 milestone closure docs (PROJECT/ROADMAP/STATE/REQUIREMENTS/MILESTONES + CLAUDE.md +
+external memory file rewrite).
+
+REQ-IDs map 1:1 to the 5 ROADMAP Phase 34 success criteria, formalized as SYM-01..05 in
+`.planning/phases/34-symphony-showcase-v1-4-closer-pre-public-public-pivot/34-RESEARCH.md`.
+
+| SPEC | Phase | Status |
+|------|-------|--------|
+| SYM-01 (Symphony renders end-to-end via SFZ sampler, two-run cmp-clean) | Phase 34 | Shipped d684086 + 8e4ad6f + 62b16d5 (Plans 34-01 + 34-02) |
+| SYM-02 (Composer "postable on GitHub" sign-off recorded in 34-HUMAN-UAT.md) | Phase 34 | Shipped 7b68647 + 463d240 (Plan 34-01 UAT iterations #2) |
+| SYM-03 (Code paired with audible features: articulation, polyphony, voicePool, tuplets) | Phase 34 | Shipped d684086 + 8e4ad6f (Plan 34-01 — every Phase 28 articulation token + `{voice}` polyphony + `{3:2}` tuplet + voicePool 32) |
+| SYM-04 (README.md showcase + user-attachments audio embed + examples/symphony/README.md reproduction) | Phase 34 | Shipped 62b16d5 + a00820d (Plans 34-02 + 34-03) |
+| SYM-05 (v1.4.0 tag + GitHub Release + announcement draft + milestone closure) | Phase 34 | Shipped 4547204 (Plan 34-04 announcement) + Plan 34-05 (tag 66842d6e + Release on commit 74de69a, no repo-changes) + Plan 34-06 (this closure commit) |
+
+Two-run byte-identical determinism contract (Phase 18/25/27/33 inheritance) preserved
+end-to-end through the real VSCO-CE library — verified manually by composer at release
+time per D-702.
+
+Release: https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0
+
+---
+
+## v1.4 Milestone Closure (2026-05-16)
+
+v1.4 Audio Fidelity, Distribution & Public Showcase shipped 2026-05-16.
+
+**Phases:** 28 (MIDI + Audio Polyphony & Articulation Rewrite), 29 (Instrument Realism),
+30 (Flow CLI + Formal Install), 31 (LSP Enhancements + JetBrains Stretch), 32 (Full Scala
+(.scl) Tuning Loader), 33 (SFZ Orchestral Sampler), 34 (Symphony Showcase — v1.4 closer)
+
+**Plans completed:** 52 across the 7 v1.4 phases (Phase 28 = 7, Phase 29 = 7, Phase 30 = 9,
+Phase 31 = 9, Phase 32 = 7, Phase 33 = 7, Phase 34 = 6).
+
+**Release:** https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0
+
+**Headline artifacts:** examples/symphony/symphony.flow ("In Five Voices", D minor,
+~60s, 5 VSCO-CE instruments) + examples/ragtime/ragtime.flow ("Stride & Stomp",
+F major, ~58s, solo VSCO-CE UprightPiano).
+
+**Pre-public → public pivot:** Flow's demonstrated v1.4 API surface is now effectively
+public. Breaking changes hereafter require a deprecation cycle (see CLAUDE.md § Goals
+"Public as of v1.4" footnote + the external memory file
+`project_pre_public_no_legacy_burden.md` rewritten 2026-05-16 to reflect post-public
+footing).
+
+**v1.5 carryover candidates:** captured in `.planning/MILESTONES.md` v1.4 entry's
+"Forward-deferred items" block + `34-HUMAN-UAT.md` ragtime `closed_with_followup` note
+(warmer-piano timbre / SFZ velocity layers / humanizeGaussian voice-block bug); also
+flute D5 timbre crossover gap, sampled drum transient-preserving pitch shift, stereo
+panning across instruments, second showcase contrasting genre.
+
+---
+
 ## Notes
 
 - Phase numbering continues from v1.2 (last phase: 17). v1.3 starts at Phase 18.

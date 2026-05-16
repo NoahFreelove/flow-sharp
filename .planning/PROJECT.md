@@ -10,35 +10,31 @@ Users can write musical ideas as code and hear them immediately — the language
 
 ## Current State
 
-**Shipped:** v1.2 Stability & Composer DX (2026-04-26)
+**Shipped:** v1.4 Audio Fidelity, Distribution & Public Showcase (2026-05-16)
 
-**In progress:** v1.3 Composer DX Tier B/C — Tuplets, DEFER closures, Tier B/C bundle (started 2026-04-26)
+**Next milestone:** TBD — see `.planning/MILESTONES.md`
 
-## Current Milestone: v1.3 Composer DX Tier B/C
+<details>
+<summary>v1.4 Audio Fidelity, Distribution & Public Showcase (shipped 2026-05-16)</summary>
 
-**Goal:** Close every DEFER-01..06 item carried from v1.2 and ship the Tier B/C composer DX bundle, with tuplet + arbitrary-duration note syntax as the lead capability.
+Delivered: per-voice polyphony + Phase 28 articulation envelopes (staccato/legato/accent/marcato/tenuto), Phase 29 sampled tonal instruments (piano/brass/sax/strings/flute/bell via CC-BY 4.0 University-of-Iowa MIS bundle), Phase 30 self-contained `flow` CLI binary (~40 MB) + install.sh + XDG config + 11-subcommand surface + MIDI↔Flow round-trip ±1 tick, Phase 31 LSP polish (4 closed gaps) + JetBrains plugin scaffolding, Phase 32 full Scala (`.scl`) microtonal tuning loader + `tuning t { ... }` musical-context block, Phase 33 SFZ orchestral sampler (blessed: VSCO Community CE 1.1.0, opt-in via `use "@sfz"`), Phase 34 curated symphony showcase ("In Five Voices") + ragtime companion ("Stride & Stomp") as the v1.4 closer + pre-public → public pivot.
 
-**Target features:**
+- All v1.4 SPEC / REQ / SYM-01..05 requirements Complete (see REQUIREMENTS.md cross-inserts for Phase 30 + Phase 33 + Phase 34)
+- 52 plans across Phases 28-34 (7 phases total)
+- Release: [v1.4.0](https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0) — 5 assets (symphony.mp3+wav, ragtime.mp3+wav, flow-linux-x64.tar.gz)
+- See: `.planning/MILESTONES.md` and the per-phase SUMMARYs under `.planning/phases/`
 
-NEW lead capability:
-- Tuplets & arbitrary fractional note durations (3:2, 5:4, 7:8 brackets + `C4/12` etc.)
+</details>
 
-DEFER closures from v1.2:
-- DEFER-01: `range(Int, Int) → Array[Int]` stdlib
-- DEFER-02/03: `H` as `B` alias inside note streams via pragma system
-- DEFER-04: Multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
-- DEFER-05: Slice negative-from-end indexing
-- DEFER-06: Gaussian humanize distribution
+<details>
+<summary>v1.3 Composer DX Tier B/C (shipped 2026-05-10)</summary>
 
-Tier B/C composer DX:
-- Arpeggio parameters (rate, direction, pattern)
-- Chord inversions/voicings
-- Delay sync to note values (vs ms)
-- Microtonal ratios (just intonation, custom temperaments)
-- Scale linting (warn on out-of-key notes)
-- Legato/portamento articulations
-- Snap-to-grid quantize
-- WAV pitch-shift on load
+Delivered: tuplets `{N:M ...}` + arbitrary fractional durations (`C4/12`), DEFER-01..06 closures (range, H-alias via pragma system, multi-letter enharmonics, slice negative indexing, Gaussian humanize), Tier B/C composer DX bundle (arpeggio params, chord inversions/voicings, delay sync, microtonal wedge via JI/Pythagorean/equal-temperament pragmas, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), foundational language consistency pass (prefix-only arithmetic; symbols + tuples + generic dicts), and music-type ergonomics + FX overloads (Hertz literals, volume/gain split, Ms/Sec/Decibel coercion).
+
+- 41 requirements across 12 phases (Phases 18-27 plus inserted 26.1/26.2)
+- See: `.planning/MILESTONES.md`
+
+</details>
 
 <details>
 <summary>v1.2 Stability & Composer DX (shipped 2026-04-26)</summary>
@@ -219,4 +215,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after v1.4 Phase 33 (SFZ orchestral sampler) complete*
+*Last updated: 2026-05-16 after v1.4 milestone closure (Phase 34 — symphony showcase + public pivot) — v1.4 shipped*

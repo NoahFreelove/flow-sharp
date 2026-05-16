@@ -57,6 +57,20 @@ vscode-extension/server/
 !examples/ragtime/**/*.flow
 !examples/ragtime/**/*.md
 
+# Phase 34 Plan 34-06 D-502 defensive enforcement: the !examples/{symphony,ragtime}/**
+# allow-list above re-includes EVERYTHING under those directories, which silently
+# defeats the global *.wav ignore for rendered audio. Composer's rendered showcase
+# output goes to examples/output/ (already covered) -- but composers running
+# `flow render examples/symphony/symphony.flow` with default output paths can
+# accidentally drop a multi-MB .wav into examples/symphony/. These explicit
+# ignores prevent that footgun. MP3 + MIDI variants also covered for safety.
+examples/symphony/*.wav
+examples/symphony/*.mp3
+examples/symphony/*.mid
+examples/ragtime/*.wav
+examples/ragtime/*.mp3
+examples/ragtime/*.mid
+
 # Phase 28 polyphony / articulation acceptance fixtures — must be tracked
 # despite the global *.flow ignore. Pinned by RagtimeFixtureTests.
 !examples/tests/

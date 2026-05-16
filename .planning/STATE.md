@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: ready_to_plan
-stopped_at: Phase 34 context gathered (auto mode)
-last_updated: "2026-05-16T16:00:42.117Z"
-last_activity: 2026-05-16 -- Phase 34 planning complete
+status: shipped
+stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
+last_updated: "2026-05-16T22:37:40Z"
+last_activity: 2026-05-16 -- v1.4 milestone closure (Phase 34 Plan 34-06)
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 7
   total_plans: 52
-  completed_plans: 45
-  percent: 71
+  completed_plans: 52
+  percent: 100
 ---
 
 # Project State
@@ -21,21 +21,35 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 34 — symphony showcase (v1.4 closer — pre public → public pivot)
+**Current focus:** v1.4 shipped 2026-05-16; next milestone TBD pending `/gsd-new-milestone` invocation.
 
 ## Current Position
 
-Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase
-Phase: 34
-Plan: Not started
-Plans: Phase 30 = 9/9 complete; Phase 29 = 7/7 complete; Phase 31 = 9/9 complete (SHIPPED 2026-05-13). Phase 32 = 0/7 plans complete (all 7 plans written + verified, ready for /gsd-execute-phase 32). 33-34 remain for v1.4 closure.
-Last activity: 2026-05-16 -- Phase 34 planning complete
+Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase -- SHIPPED 2026-05-16
+Phase: 34 (closure)
+Plan: 34-06 (complete)
+Plans: All 7 v1.4 phases complete (52/52 plans). Phase 28 = 7/7; Phase 29 = 7/7; Phase 30 = 9/9; Phase 31 = 9/9; Phase 32 = 7/7; Phase 33 = 7/7; Phase 34 = 6/6.
+Last activity: 2026-05-16 -- v1.4 milestone closure (Phase 34 Plan 34-06)
+Release: https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0
 
 Progress: [██████████] 100%
 
+### Phase 34 highlights
+
+- "In Five Voices" symphony rendered via VSCO Community CE 1.1.0 SFZ sampler (5 instruments: violin, viola, cello, flute, horn) in D minor, ~60s ABA single-movement piece
+- "Stride & Stomp" ragtime companion piece (solo piano via VSCO-CE UprightPiano, F major, ~58s) -- added during scope-expand for genre-agnostic demonstration
+- v1.4.0 annotated tag (66842d6e on commit 74de69a) pushed to origin; GitHub Release published with 5 labeled assets (symphony.mp3+wav, ragtime.mp3+wav, flow-linux-x64.tar.gz)
+- docs/announcements/v1.4.0.md public announcement draft (verbatim release body)
+- Top-level README.md gained `## Showcase` section with both v1.4 pieces and GitHub user-attachments inline audio embed
+- v1.4 milestone closure flip: PROJECT.md "Shipped: v1.4"; ROADMAP.md Phase 34 row 6/6 Complete; this STATE.md frontmatter status=shipped; REQUIREMENTS.md gained `## v1.4 Phase 34 — Symphony Showcase` cross-insert with SYM-01..05 table; MILESTONES.md gained v1.4 entry above v1.2; CLAUDE.md gained "Public as of v1.4" footnote + showcase reference; .gitignore defensively blocks examples/symphony/*.{wav,mp3,mid} + examples/ragtime/*.{wav,mp3,mid}; external memory file `project_pre_public_no_legacy_burden.md` rewritten to reflect Flow's post-public footing.
+
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-Phase 28 SHIPPED 2026-05-10. Phase 30 SHIPPED 2026-05-11 (9 plans, full Bug B closure).
+**v1.4 closed.** Next session starts with `/gsd-new-milestone` to discuss the v1.5+ direction. Carryover candidates (recorded in MILESTONES.md v1.5 backlog block + 34-HUMAN-UAT.md ragtime `closed_with_followup` note): warmer-piano timbre / SFZ velocity layers / humanizeGaussian voice-block bug, stereo panning across instruments, second showcase genre (jazz / EDM / death metal), SFZ round-robin opcode parser extension, per-articulation envelope multipliers for sampled instrument path, sampled drums with transient-preserving pitch shift, more flute samples for D5 timbre crossover gap, GitHub-rendered video screen-recording demo, `flow showcase` CLI subcommand.
+
+---
+
+**Historical (pre-v1.4 close):** Phase 28 SHIPPED 2026-05-10. Phase 30 SHIPPED 2026-05-11 (9 plans, full Bug B closure).
 
 Phase 30 highlights:
 
@@ -563,11 +577,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-16T15:10:00.843Z
-Stopped at: Phase 34 context gathered (auto mode)
-Resume file: .planning/phases/34-symphony-showcase-v1-4-closer-pre-public-public-pivot/34-CONTEXT.md
+Last session: 2026-05-16T22:37:40Z
+Stopped at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
+Resume file: .planning/MILESTONES.md (v1.4 entry) + `/gsd-new-milestone`
 
-**Planned Phase:** 31 (LSP Enhancements + JetBrains Stretch) — Plan 31-05 done; Wave 2 continues with 31-06..31-09.
+**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction.
 
 ## Resume Instructions (next PC)
 

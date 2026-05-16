@@ -6,7 +6,7 @@
 - ✅ **v1.1 Polish & Foundations** — Phases 6-10 (shipped 2026-04-18) — see `milestones/v1.1-ROADMAP.md`
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
 - 🚧 **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, in progress)
-- 🚧 **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (in progress; Phases 28/29/30/31 shipped 2026-05-10..2026-05-13) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + JetBrains stretch (VSCode + JetBrains Marketplace publish DEFERRED to v1.5), full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and a curated short symphony showcase as the milestone closer (pre-public → public pivot)
+- ✅ **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (shipped 2026-05-16) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + JetBrains plugin scaffolding, full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and the curated symphony showcase ("In Five Voices") + ragtime companion ("Stride & Stomp") as the milestone closer (pre-public → public pivot). Release: [v1.4.0](https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0)
 
 ## Phases
 
@@ -413,12 +413,12 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
   4. README.md updated with a prominent showcase link + clip embed; `examples/symphony/README.md` documents how to reproduce the render                                  [SYM-04]
   5. v1.4 milestone closure: ROADMAP/STATE/REQUIREMENTS marked complete; public release tag (`v1.4.0`) cut; first public-facing announcement ready                      [SYM-05]
 **Plans**: 6 plans
-- [ ] 34-01-PLAN.md — Symphony composition + iterative composer UAT (long pole; iterative UAT loop with composer sign-off in 34-HUMAN-UAT.md)
-- [ ] 34-02-PLAN.md — Commit canonical symphony.flow + expand examples/symphony/README.md (D-602: new The Symphony section + demoted Tutorial Chapter)
-- [ ] 34-03-PLAN.md — Top-level README.md ## Showcase section + user-attachments inline player (RESEARCH Pitfall 1 manual drag-drop)
-- [ ] 34-04-PLAN.md — docs/announcements/v1.4.0.md public announcement draft (3 paragraphs Markdown)
-- [ ] 34-05-PLAN.md — v1.4.0 annotated tag + GitHub Release with 3 assets (MP3 + WAV + Linux binary)
-- [ ] 34-06-PLAN.md — v1.4 milestone closure docs (PROJECT/ROADMAP/STATE/REQUIREMENTS/MILESTONES + CLAUDE.md + memory file)
+- [x] 34-01-PLAN.md — Symphony composition + iterative composer UAT (long pole; iterative UAT loop with composer sign-off in 34-HUMAN-UAT.md) — Shipped 2026-05-16
+- [x] 34-02-PLAN.md — Commit canonical symphony.flow + expand examples/symphony/README.md (D-602: new The Symphony section + cross-link ragtime per D-602b) — Shipped 62b16d5
+- [x] 34-03-PLAN.md — Top-level README.md ## Showcase section + user-attachments inline player (RESEARCH Pitfall 1 manual drag-drop) — Shipped a00820d
+- [x] 34-04-PLAN.md — docs/announcements/v1.4.0.md public announcement draft (3 paragraphs Markdown) — Shipped 4547204
+- [x] 34-05-PLAN.md — v1.4.0 annotated tag + GitHub Release with 5 labeled assets (symphony+ragtime MP3+WAV + Linux binary) — Shipped 2026-05-16 (tag 66842d6e on commit 74de69a)
+- [x] 34-06-PLAN.md — v1.4 milestone closure docs (PROJECT/ROADMAP/STATE/REQUIREMENTS/MILESTONES + CLAUDE.md + memory file) — Shipped 2026-05-16
 
 ## Progress
 
@@ -459,4 +459,4 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 31. LSP Enhancements + JetBrains Stretch | v1.4 | 6/9 | In progress (Wave 2 continuing — 31-06 SHIPPED 2026-05-12) | - |
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 7/7 | Complete    | 2026-05-15 |
 | 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete    | 2026-05-16 |
-| 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |
+| 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
