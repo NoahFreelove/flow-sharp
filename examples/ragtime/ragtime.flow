@@ -39,13 +39,22 @@ voicePool 32 {
             key Fmajor {
 
                 // =====================================================
-                // Section A (themeA) -- 4 bars of classic ragtime stride.
+                // Section A (themeA) -- 4 bars of stride-piano texture.
                 // LH plays bass note + mid-range chord + bass note +
                 // chord (one note per beat); RH plays a syncopated
                 // melody with accent (`>`) on off-beat downbeats and
                 // staccato (`stacc`) tightening the bass notes. The
                 // swing feel emerges from the articulation contrast --
                 // sharp staccato bass under a more sustained RH line.
+                //
+                // REGISTER NOTE (iteration #2 fix): the LH lives in F3
+                // (tenor-bass) rather than the F2 (deep-bass) range
+                // notated in classical Joplin. The VSCO-CE UprightPiano
+                // sample below E2 reads dark/rumbly enough to evoke a
+                // horror-film soundtrack rather than a barroom rag
+                // (the composer's iteration #1 feedback). Bumping the
+                // whole LH up an octave puts the stride in the warm
+                // middle-bass register where the sample shines.
                 //
                 // Note: humanizeGaussian is intentionally NOT applied
                 // here. The current interpreter silently produces an
@@ -57,16 +66,16 @@ voicePool 32 {
                 // =====================================================
                 section themeA {
                     Sequence ragA = |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice F4e> C5e F5q. A4q G4q}
                         |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice A4e C5e F5e D5e C5q A4q}
                         |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice {3:2 F4 G4 A4}q C5q A4q F4q}
                         |
-                        {voice F2q stacc [A2 C3 F3]q C3q stacc [E3 G3 Bb3]q}
+                        {voice F3q stacc [A3 C4 F4]q C4q stacc [E4 G4 Bb4]q}
                         {voice E4q F4q C4q A3q}
                         |
                 }
@@ -81,16 +90,16 @@ voicePool 32 {
                 // =====================================================
                 section themeB {
                     Sequence ragB = |
-                        {voice Bb2q stacc [D3 F3 Bb3]q Bb2q stacc [D3 F3 Bb3]q}
+                        {voice Bb3q stacc [D4 F4 Bb4]q Bb3q stacc [D4 F4 Bb4]q}
                         {voice Bb4q marc A4e G4e Bb4q F4q}
                         |
-                        {voice G2q stacc [Bb2 D3 G3]q G2q stacc [Bb2 D3 G3]q}
+                        {voice G3q stacc [Bb3 D4 G4]q G3q stacc [Bb3 D4 G4]q}
                         {voice D5q. C5e Bb4q A4q leg}
                         |
-                        {voice C3q stacc [E3 G3 C4]q C3q stacc [E3 G3 C4]q}
+                        {voice C4q stacc [E4 G4 C5]q C4q stacc [E4 G4 C5]q}
                         {voice G4e A4e Bb4e G4e F4q E4q}
                         |
-                        {voice F2q stacc [A2 C3 F3]q C3q stacc [E3 G3 Bb3]q}
+                        {voice F3q stacc [A3 C4 F4]q C4q stacc [E4 G4 Bb4]q}
                         {voice F4q ten A4q ten C5q ten A4q ten}
                         |
                 }
@@ -104,16 +113,16 @@ voicePool 32 {
                 // =====================================================
                 section themeAPrime {
                     Sequence ragAPrime = |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice F4e> C5e F5q. A4q G4q}
                         |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice A4e C5e F5e D5e C5q A4q}
                         |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice F4q A4q leg C5q F5q leg}
                         |
-                        {voice F2q stacc [A2 C3 F3]q F2q stacc [A2 C3 F3]q}
+                        {voice F3q stacc [A3 C4 F4]q F3q stacc [A3 C4 F4]q}
                         {voice F4h marc A4h marc}
                         |
                 }
@@ -133,13 +142,15 @@ voicePool 32 {
 
                 // =====================================================
                 // Mix: solo piano needs MUCH less processing than the
-                // symphony's 5-instrument mix. A touch of room reverb
-                // (15% wet / 1.5s tail -- "small stage" not "concert
-                // hall") plus a gentler compressor (3:1 above -10dB,
-                // 50ms attack / 100ms release) preserves the percussive
-                // ragtime feel without crushing the dynamics.
+                // symphony's 5-instrument mix. Iteration #2 dialed the
+                // reverb down further (0.15 -> 0.10 wet, 1.5s -> 1.0s
+                // decay) after the composer flagged the iteration #1
+                // mix as "horror film OST" -- the low-register LH
+                // stride was being smeared by the longer tail into a
+                // dark sustained drone. Tightening the room sound
+                // restores the percussive ragtime feel.
                 // =====================================================
-                Buffer wet      = raw -> (reverb 0.15 1.5s)
+                Buffer wet      = raw -> (reverb 0.10 1.0s)
                 Buffer mastered = wet -> (compress -10dB 3 50ms 100ms)
 
                 // =====================================================

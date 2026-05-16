@@ -26,6 +26,9 @@ pieces:
       - id: 1
         composer_feedback: "(scope-expansion request: 'can we make an upbeat melody like a ragtime in addition to this one?' — chose Option B: scope-expand Phase 34 to include a 2nd showcase piece)"
         response: "drafted examples/ragtime/ragtime.flow — solo piano via UprightPiano.sfz SFZ patch, F major, tempo 100, 4/4, ABA single-movement, 57.6s rendered. Stride LH + syncopated RH via voice blocks; all 5 articulation tokens (stacc/>/leg/marc/ten); one tuplet flourish; small-room reverb 15% wet 1.5s decay + soft 3:1 compress -10dB. Removed humanizeGaussian wrap (silent-empty-render bug when wrapping voice-block sequences — captured as v1.5 follow-up). D-702 two-run cmp-clean PASSED on first render. Awaiting composer UAT."
+      - id: 2
+        composer_feedback: "the piano has so much bass it sounds like it's from hell, did we choose a note too low or the wrong sample? It sounds like a horror film OST"
+        response: "diagnosed: LH lived in F2 (octave below middle C) + chord stack [A2 C3 F3] — authentic Joplin range, but the VSCO-CE UprightPiano sample below E2 reads dark/rumbly. Bumped ALL LH notes up exactly one octave across all 12 stride bars (F2→F3, A2→A3, C3→C4, etc.); LH now sits in tenor-bass register where the sample shines. Also reduced master reverb 0.15→0.10 wet + 1.5s→1.0s decay so any remaining low-end stops smearing into a sustained drone. RH melody unchanged. Determinism preserved (D-702 holds on iteration #2 render)."
 ---
 
 ## Current Test
