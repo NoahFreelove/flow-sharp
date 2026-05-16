@@ -518,7 +518,7 @@ The `#"Display Label"` suffix is gh CLI's asset-label syntax. `--verify-tag` abo
 
 **If risk for any assumption rises to MEDIUM/HIGH during planning, surface in plan SUMMARY and ping composer.**
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should plan 34-02 also commit the rendered MP3 + WAV to `examples/symphony/`?**
    - What we know: D-502 + D-503 explicitly say NO (release-asset only, never in repo).
