@@ -42,6 +42,14 @@ vscode-extension/server/
 !examples/scala/**/*.flow
 !examples/scala/**/*.md
 
+# Phase 33 SFZ orchestral sampler tutorial chapter — examples/symphony/sfz_smoke.flow
+# + README.md must be tracked despite the global *.flow / *.md ignores.
+# Mirrors the examples/scala/ precedent.
+!examples/symphony/
+!examples/symphony/**
+!examples/symphony/**/*.flow
+!examples/symphony/**/*.md
+
 # Phase 28 polyphony / articulation acceptance fixtures — must be tracked
 # despite the global *.flow ignore. Pinned by RagtimeFixtureTests.
 !examples/tests/

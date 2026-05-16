@@ -184,6 +184,7 @@ Single source of truth — alongside the Special Types list above.
 | `440Hz` / `1.5kHz`   | `Hertz`       | `Double`, `Float`        | `lowpass`/`highpass`/`bandpass`, `createSineTone`/`createSawTone`/etc.                |
 | `#foo`               | `Symbol`      | strict (no `Double`/`Float`) | `Dict<Symbol, V>` keys, identity-equality usage                                   |
 | `(loadScala "x.scl")` | `Tuning`     | strict (reference identity; no `Double`/`Float`) | `tuning t { ... }` block, `(str t)` description, reference-equality usage (Phase 32)         |
+| `(loadSfz #violin)`  | `Sfz`         | strict (reference identity; no `Double`/`Float`) | `Sfz` variable binding for `renderSong song "sampler:NAME"` dispatch (Phase 33)              |
 
 Notes:
 - Decibel and Millisecond/Second use the `CentType.cs:24-27` pattern (sealed singleton with `IsCompatibleWith(Double|Float)`); see `flow-lang/TypeSystem/SpecialTypes/`.
@@ -194,6 +195,7 @@ Notes:
 ### Music-Specific
 - **Musical context blocks**: `tempo 120 { ... }`, `timesig 4/4 { ... }`, `key Cmajor { ... }`, `swing 0.6 { ... }`, `voicePool 32 { ... }` (Phase 28), `tuning t { ... }` (Phase 32). Timesig accepts the common-time shorthand `timesig C { ... }` (capital `C` only; lowers to 4/4 at parse time so the renderer / MIDI export / musical-context stack see identical data to the explicit form). The full set of reserved context-block keywords is `tempo`, `timesig`, `key`, `swing`, `voicePool`, `tuning` — none can be redefined as proc / variable names (Pitfall 9 keyword reservation).
 - **`tuning <expr> { ... }` musical-context block** (canonical shape `tuning { ... }` with a `Tuning`-typed expression preceding the brace): applies a `Tuning` value to its body. Three composer surface forms (D-15): identifier-bound variable (`tuning partch { ... }`), inline call (`tuning (loadScala "x.scl") { ... }`), and string-literal sugar (`tuning "x.scl" { ... }` — desugars at parse time to the inline-call form). Last-wins with the file-scope `enable justIntonation;` / `pythagorean;` / `equalTemperament;` pragmas — the innermost active frame wins. The `tuning` keyword is **fully reserved** (NOT in the keyword-as-proc-name allowlist per CONTEXT D-* + SPEC-2 pre-public lean). Pair with the `(loadScala "path")` builtin to obtain a `Tuning` value from a Scala-format `.scl` file. See `examples/scala/intro.flow` for a runnable tutorial chapter (Phase 32).
+- **SFZ orchestral sampler (opt-in):** `use "@sfz"` activates the surface. `(loadSfz #violin)` resolves a 19-entry GM symbol dict against `sfz_root` from `~/.config/flow/config.toml` (Phase 30 config); `(loadSfz "/abs/path.sfz")` bypasses the dict. Bind via `Sfz violin = (loadSfz #violin)` and render via `renderSong song "sampler:violin"`. Common-subset SFZ parser (13 opcodes + `<region>`/`<group>`/`<global>`/`<control>`); per-region sustain looping with 441-frame equal-power crossfade; Phase 28 articulation envelope applies on top. Phase 29 bundled-sample path stays byte-identical. Blessed external library: VSCO Community CE 1.1.0 (CC-BY 4.0). See `examples/symphony/sfz_smoke.flow` + `examples/symphony/README.md` for the runnable tutorial chapter; v1.4 Phase 34 symphony showcase is the downstream consumer (Phase 33).
 - **Note stream expressions**: `| C4 D4 E4 F4 |` with duration suffixes (`q`, `h`, `w`, `e`, `s`), rests (`_`), dotted notes (`C4q.`), tied notes (`C4h~`), cent offsets (`C4+50c`), chord brackets (`[C4 E4 G4]q`)
 - **Chord literals**: `Cmaj7`, `Dm`, `F#dim`, `Bb7`
 - **Roman numerals** (in key context): `I`, `ii`, `IV`, `V7`, `vi`
@@ -250,7 +252,7 @@ Types are in `TypeSystem/` with two subdirectories. Each type extends `FlowType`
 Void, Int, Float, Long, Double, String, Bool, Number, Buffer, Lazy, Function, Envelope, OscillatorState, Voice, Track
 
 ### Special Types (`TypeSystem/SpecialTypes/`)
-Note, Semitone, Cent, Millisecond, Second, Decibel, Beat, Hertz, Bar, TimeSignature, NoteValue, Sequence, MusicalNote, Chord, Section, Song, Tuning (Phase 32 — Scala `.scl` tuning loader output, reference identity)
+Note, Semitone, Cent, Millisecond, Second, Decibel, Beat, Hertz, Bar, TimeSignature, NoteValue, Sequence, MusicalNote, Chord, Section, Song, Tuning (Phase 32 — Scala `.scl` tuning loader output, reference identity), Sfz (Phase 33 — SFZ orchestral sampler patch, reference identity)
 
 ### Array Type
 `ArrayType` in `TypeSystem/` — generic array with element type tracking.
