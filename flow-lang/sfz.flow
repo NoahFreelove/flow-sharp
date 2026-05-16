@@ -1,0 +1,69 @@
+Note: SFZ Orchestral Sampler — opt-in via `use "@sfz"`
+
+Note: Pull in std so the (dict ...) constructor (Phase 26.1 DICT-01) + the
+Note: shared (loadSfz Symbol) / (loadSfz String) forward-decls are visible
+Note: by the time the trailing (__enableSfzModule ...) call runs. Composers
+Note: who `use "@sfz"` therefore get @std transitively (matching the
+Note: existing composition.flow → @audio precedent).
+use "@std"
+
+Note: ===== Internal C# Function Declarations =====
+
+Note: Marker builtin called once at module load (last expression of this file).
+Note: Flips ExecutionContext.SfzEnabled = true and copies the 19-entry GM dict
+Note: into ExecutionContext.SfzInstruments. Composers should not call this
+Note: directly — the trailing (__enableSfzModule __sfzInstruments) line below
+Note: handles it for them when the module is imported.
+internal proc __enableSfzModule (Dict<Symbol, String>: instruments)
+
+Note: The loadSfz(Symbol) + loadSfz(String) forward-decls live in std.flow
+Note: so the function is always visible at parse-resolution time. The SfzEnabled
+Note: runtime gate (CONTEXT D-10) handles the "called without `use \"@sfz\"`" path
+Note: — composer gets a "loadSfz requires `use \"@sfz\"`" error, not the generic
+Note: "Function not found".
+
+Note: ===== 19-entry GM Orchestral Instrument → VSCO-CE Relative-Path Dict =====
+Note: Single source of truth — composers can `(get __sfzInstruments #violin)`
+Note: from their own Flow code to inspect/extend. Edits to relative paths
+Note: land here without a C# rebuild (CONTEXT D-11).
+Note:
+Note: 15 of 19 rows are verified against VSCO-CE 1.1.0 (see
+Note: .planning/phases/33-sfz-orchestral-sampler/33-VSCO-PATH-AUDIT.md).
+Note: 4 rows are TBD because VSCO Community Edition does not bundle a patch
+Note: for that GM symbol — the dict ships a known-missing placeholder path
+Note: so `(loadSfz #choir)` errors with a clear "patch not found" message
+Note: pointing the composer at the absolute-path overload.
+
+Dict<Symbol, String> __sfzInstruments = (dict
+    Note: ----- Strings (4 verified) -----
+    #violin       "SViolinVib.sfz"
+    #viola        "ViolaEnsSusVib.sfz"
+    #cello        "CelloEnsSusVib.sfz"
+    #contrabass   "ContrabassSusVB.sfz"
+    Note: ----- Woodwinds (4 verified) -----
+    #flute        "FluteSusVib.sfz"
+    #oboe         "OboeSusVib.sfz"
+    #clarinet     "ClarinetSus.sfz"
+    #bassoon      "BassoonSus.sfz"
+    Note: ----- Brass (4 verified) -----
+    #trumpet      "TrumpetSus.sfz"
+    #horn         "FHornSus.sfz"
+    #trombone     "TromboneSus.sfz"
+    #tuba         "TubaSus.sfz"
+    Note: ----- Keys + Plucked + Percussion (3 verified) -----
+    #piano        "UprightPiano.sfz"
+    #harp         "Harp.sfz"
+    #timpani      "Timpani.sfz"
+    Note: ----- 4 TBD rows (not bundled with VSCO-CE 1.1.0) -----
+    Note: composer downloads externally; absolute-path overload is the workaround
+    #choir        "_TBD_choir_not_in_vsco-ce.sfz"
+    #guitar       "_TBD_guitar_not_in_vsco-ce.sfz"
+    #harpsichord  "_TBD_harpsichord_not_in_vsco-ce.sfz"
+    #celeste      "_TBD_celeste_not_in_vsco-ce.sfz"
+)
+
+Note: ===== Side-effecting init marker =====
+Note: Flips ExecutionContext.SfzEnabled = true and registers the dict for
+Note: loadSfz #symbol lookups. Without this line, the C# builtins remain
+Note: registered but always raise "loadSfz requires `use \"@sfz\"`".
+(__enableSfzModule __sfzInstruments)

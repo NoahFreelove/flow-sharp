@@ -204,6 +204,10 @@ public static class TypeParser
             // Phase 32 Plan 32-04: Tuning is the 15th SpecialType. Required so
             // `Tuning t = (loadScala "...")` declarations parse.
             TokenType.Identifier when token.Text == "Tuning" => TuningType.Instance,
+            // Phase 33 Plan 33-05: Sfz is the 16th SpecialType. Required so
+            // `Sfz v = (loadSfz #violin)` declarations parse. (Plan 33-02 shipped
+            // the type itself; this entry wires it into the type-name parser.)
+            TokenType.Identifier when token.Text == "Sfz" => SfzType.Instance,
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -319,6 +323,7 @@ public static class TypeParser
             "Section" => SectionType.Instance,
             "Song" => SongType.Instance,
             "Tuning" => TuningType.Instance, // Phase 32 Plan 32-04
+            "Sfz" => SfzType.Instance,       // Phase 33 Plan 33-05
             "Function" => FunctionType.Instance,
             _ => null
         };

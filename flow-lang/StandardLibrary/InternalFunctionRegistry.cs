@@ -103,6 +103,23 @@ public class InternalFunctionRegistry
             return TypesEqual(rArray.ElementType, reqArray.ElementType);
         }
 
+        // Phase 33 Plan 33-05 — DictType wildcard symmetric with the ArrayType
+        // case above. The dict ops (`get`/`set`/etc.) registered in
+        // BuiltInFunctions.cs:944-957 use a `DictType(Void, Void)` wildcard, and
+        // Plan 33-05's `__enableSfzModule(Dict<Symbol, String>)` follows the
+        // same convention. Without this recursive wildcard, a concrete-typed
+        // declaration like `internal proc __enableSfzModule (Dict<Symbol, String>: instruments)`
+        // fails to bind even though `DictType(Void, Void).IsCompatibleWith(...)`
+        // returns true at the OverloadResolver layer — the SignaturesMatch /
+        // TypesEqual layer has a stricter equality semantics that needs the
+        // same wildcard handling.
+        if (registered is FlowLang.TypeSystem.SpecialTypes.DictType rDict
+            && requested is FlowLang.TypeSystem.SpecialTypes.DictType reqDict)
+        {
+            return TypesEqual(rDict.KeyType, reqDict.KeyType)
+                && TypesEqual(rDict.ValueType, reqDict.ValueType);
+        }
+
         return false;
     }
 

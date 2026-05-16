@@ -104,6 +104,14 @@ vscode-extension/server/
 !flow-lang.Tests/fixtures/sfz-smoke/**/*.wav
 !flow-lang.Tests/fixtures/sfz-smoke/**/*.md
 
+# Phase 33 SFZ stdlib module (flow-lang/sfz.flow) — opt-in @sfz surface that
+# composers import via `use "@sfz"`. Must be tracked despite the global *.flow
+# ignore. Mirrors the existing flow-lang/audio.flow / notation.flow / std.flow
+# precedent — those were committed before the global *.flow ignore was added
+# (so they remained tracked), but sfz.flow is new and needs an explicit
+# allow-list entry to escape the ignore.
+!flow-lang/sfz.flow
+
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets
 # (.lua, .toml) are not matched by the globs, so they track automatically.
