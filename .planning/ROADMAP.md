@@ -399,7 +399,7 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 - [x] 33-04-PLAN.md — Wave 2: SfzParser (hand-rolled INI-style; 13-opcode whitelist + 3 headers + inheritance flatten + MaxRegionCount cap + strict numeric + last-declared-wins grid build) + SfzParserTests (SPEC-3 + SPEC-4 + SPEC-5)
 - [x] 33-05-PLAN.md — Wave 2: sfz.flow stdlib module (19-entry GM dict + __enableSfzModule marker) + SfzBuiltins (loadSfz Symbol/String + SfzEnabled gating + sfz_root caching per Pitfall 2) + SfzGatingTests + SfzSymbolLookupTests + SfzConfigTests (SPEC-1 + SPEC-2 + SPEC-3)
 - [x] 33-06-PLAN.md — Wave 3: SfzSampleCache (per-engine; sorted deterministic eager-load per Pitfall 5) + SfzRenderer (grid lookup + nearest-pitch fallback + 441-frame equal-power crossfade + Phase 28 envelope hook) + SfzRegionMatchTests + SfzLoopCrossfadeTests (SPEC-4 + SPEC-5 + SPEC-8)
-- [ ] 33-07-PLAN.md — Wave 4: wiring (Interpreter SfzType typed-binding hook + FlowEngine CurrentSfzSampleCache/CurrentExecutionContext statics + SongRenderer sampler: dispatch branch BEFORE Phase 29 path + MidiExport sampler: prefix-strip + 12 new GM entries) + SfzBindingTests + SfzMidiExportTests (SPEC-1 + SPEC-6)
+- [x] 33-07-PLAN.md — Wave 4: wiring (Interpreter SfzType typed-binding hook + FlowEngine CurrentSfzSampleCache/CurrentExecutionContext statics + SongRenderer sampler: dispatch branch BEFORE Phase 29 path + MidiExport sampler: prefix-strip + 12 new GM entries) + SfzBindingTests + SfzMidiExportTests (SPEC-1 + SPEC-6)
 - [ ] 33-08-PLAN.md — Wave 5: integration acceptance (Phase33SfzSmokeTests + SfzArticulationTests + SfzDeterminismTests) + composer-facing examples/symphony/sfz_smoke.flow + README + CLAUDE.md + REQUIREMENTS.md SPEC ingestion (SPEC-1 through SPEC-8)
 
 ### Phase 34: Symphony Showcase (v1.4 closer — pre-public → public pivot)
@@ -452,5 +452,5 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
 | 31. LSP Enhancements + JetBrains Stretch | v1.4 | 6/9 | In progress (Wave 2 continuing — 31-06 SHIPPED 2026-05-12) | - |
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 7/7 | Complete    | 2026-05-15 |
-| 33. SFZ Orchestral Sampler | v1.4 | 5/7 | In Progress|  |
+| 33. SFZ Orchestral Sampler | v1.4 | 6/7 | In Progress|  |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |
