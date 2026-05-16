@@ -23,6 +23,8 @@ public class FlowEngine : IDisposable
     private readonly Interpreter.Interpreter _interpreter;
     private readonly AudioPlaybackManager _audioManager;
     private readonly SampleCache _sampleCache;
+    // Phase 33 Plan 33-07 — per-engine SFZ sample cache, mirrors _sampleCache lifecycle.
+    private readonly SfzSampleCache _sfzSampleCache;
     private readonly TextWriter? _diagnosticOutput;
     private bool _disposed;
 
@@ -54,6 +56,25 @@ public class FlowEngine : IDisposable
     /// </summary>
     public static SampleCache? CurrentSampleCache { get; private set; }
 
+    /// <summary>
+    /// Phase 33 Plan 33-07 — exposes the active engine's SfzSampleCache to static
+    /// renderer code. Mirrors <see cref="CurrentSampleCache"/>'s shape exactly:
+    /// set by the FlowEngine constructor, read by <c>SongRenderer.RenderSong</c>'s
+    /// new <c>sampler:NAME</c> dispatch branch on entry, cleared in Dispose only
+    /// if it still points at this engine's cache instance (back-to-back test
+    /// engines guard).
+    /// </summary>
+    public static SfzSampleCache? CurrentSfzSampleCache { get; private set; }
+
+    /// <summary>
+    /// Phase 33 Plan 33-07 — exposes the active engine's ExecutionContext to
+    /// static renderer code so the <c>sampler:NAME</c> dispatch in
+    /// <c>SongRenderer.RenderSong</c> can read
+    /// <see cref="RuntimeContext.SfzPatchRegistry"/> at render time. Same
+    /// single-engine-per-process project convention as <see cref="CurrentSampleCache"/>.
+    /// </summary>
+    public static RuntimeContext? CurrentExecutionContext { get; private set; }
+
     public FlowEngine(bool verbose = false) : this(new ErrorReporter(), verbose)
     {
     }
@@ -63,9 +84,12 @@ public class FlowEngine : IDisposable
         _errorReporter = errorReporter;
         _audioManager = new AudioPlaybackManager();
         _sampleCache = new SampleCache();
+        // Phase 33 Plan 33-07 — per-engine SFZ sample cache.
+        _sfzSampleCache = new SfzSampleCache();
         // Publish to the static accessor so SongRenderer (a static class) can find
         // this engine's cache on renderSong entry. Cleared in Dispose.
         CurrentSampleCache = _sampleCache;
+        CurrentSfzSampleCache = _sfzSampleCache;
         _diagnosticOutput = verbose ? Console.Error : null;
 
         // Create internal function registry and register C# implementations
@@ -75,6 +99,10 @@ public class FlowEngine : IDisposable
         ScalaBuiltins.Register(internalRegistry);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
+        // Phase 33 Plan 33-07 — publish the ExecutionContext to the static
+        // accessor so SongRenderer's sampler: dispatch branch can read
+        // SfzPatchRegistry at render time. Cleared in Dispose.
+        CurrentExecutionContext = _context;
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
         // Phase 33 Plan 33-05: wire the SFZ surface — loadSfz(Symbol) +
@@ -222,6 +250,12 @@ public class FlowEngine : IDisposable
             // the next engine may already have overwritten CurrentSampleCache.
             if (ReferenceEquals(CurrentSampleCache, _sampleCache))
                 CurrentSampleCache = null;
+            // Phase 33 Plan 33-07 — same back-to-back-engines guard for the
+            // SFZ static accessors.
+            if (ReferenceEquals(CurrentSfzSampleCache, _sfzSampleCache))
+                CurrentSfzSampleCache = null;
+            if (ReferenceEquals(CurrentExecutionContext, _context))
+                CurrentExecutionContext = null;
         }
     }
 }
