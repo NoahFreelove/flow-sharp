@@ -31,6 +31,29 @@ I hope my direction on where I want flow-lang to go was clear. If it has to be o
 ## Features
 See [FEATURES.md](./FEATURES.md) for a complete list of features.
 
+## Showcase
+
+Two pieces shipped in v1.4 (2026-05-16), both rendered entirely from Flow source against the VSCO Community CE 1.1.0 SFZ library via the Phase 33 orchestral sampler. *In Five Voices* is a pensive ~60 s ABA symphony in D minor for 5 orchestral instruments (violin, cello, flute, horn, timpani). *Stride & Stomp* is an upbeat ~58 s solo-piano ragtime in F major. Same interpreter, same SFZ pipeline, opposite moods -- the genre-agnostic claim in one release.
+
+### In Five Voices (orchestral, ~60s, D minor)
+
+<video controls src="https://github.com/user-attachments/files/27862601/symphony.mp3"></video>
+
+- [Source: `examples/symphony/symphony.flow`](./examples/symphony/symphony.flow)
+- [How to reproduce locally](./examples/symphony/README.md)
+- [Download MP3 (1.5 MB)](https://github.com/NoahFreelove/flow-sharp/releases/download/v1.4.0/symphony.mp3)
+- [Download WAV (11 MB)](https://github.com/NoahFreelove/flow-sharp/releases/download/v1.4.0/symphony.wav)
+
+### Stride & Stomp (ragtime, ~58s, F major)
+
+<video controls src="https://github.com/user-attachments/files/27862607/ragtime.mp3"></video>
+
+- [Source: `examples/ragtime/ragtime.flow`](./examples/ragtime/ragtime.flow)
+- [How to reproduce locally](./examples/ragtime/README.md)
+- [Download MP3 (1.4 MB)](https://github.com/NoahFreelove/flow-sharp/releases/download/v1.4.0/ragtime.mp3)
+- [Download WAV (10 MB)](https://github.com/NoahFreelove/flow-sharp/releases/download/v1.4.0/ragtime.wav)
+
+Full v1.4.0 release with all assets: [github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0](https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0).
 
 ## Install (Linux x64)
 
