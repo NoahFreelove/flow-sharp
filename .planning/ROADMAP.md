@@ -405,14 +405,20 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 ### Phase 34: Symphony Showcase (v1.4 closer — pre-public → public pivot)
 **Goal**: A curated short symphony (30-90 seconds, 3-6 instruments) rendered entirely from Flow source code via the SFZ sampler from Phase 33. Polished mix, code screenshots, README updates pointing at the showcase. The headline artifact of v1.4 and the moment Flow stops being pre-public — once the clip is public, the demonstrated API surface becomes effectively frozen.
 **Depends on**: Phases 28, 29, 30, 31, 32, 33 (every other v1.4 feature must be locked first; the piece may demonstrate any of them)
-**Requirements**: TBD (assigned during /gsd-spec-phase 34)
+**Requirements**: SYM-01, SYM-02, SYM-03, SYM-04, SYM-05 (formalized in 34-RESEARCH.md § Phase Requirements; 1:1 with the 5 success criteria below)
 **Success Criteria** (what must be TRUE):
-  1. A short symphony renders end-to-end from Flow source (`examples/symphony/`) via the SFZ sampler with no runtime errors
-  2. Composer signs off that the rendered audio is "postable on GitHub" quality — manual UAT, blind evaluation against a reference recording of similar instrumentation
-  3. Code screenshots capture the source paired with audible features (musical context blocks, note streams, transforms, sampler instruments, articulation, polyphony)
-  4. README.md updated with a prominent showcase link + clip embed; `examples/symphony/README.md` documents how to reproduce the render
-  5. v1.4 milestone closure: ROADMAP/STATE/REQUIREMENTS marked complete; public release tag (`v1.4.0`) cut; first public-facing announcement ready
-**Plans**: TBD
+  1. A short symphony renders end-to-end from Flow source (`examples/symphony/`) via the SFZ sampler with no runtime errors                                            [SYM-01]
+  2. Composer signs off that the rendered audio is "postable on GitHub" quality — manual UAT, blind evaluation against a reference recording of similar instrumentation [SYM-02]
+  3. Code screenshots capture the source paired with audible features (musical context blocks, note streams, transforms, sampler instruments, articulation, polyphony) [SYM-03]
+  4. README.md updated with a prominent showcase link + clip embed; `examples/symphony/README.md` documents how to reproduce the render                                  [SYM-04]
+  5. v1.4 milestone closure: ROADMAP/STATE/REQUIREMENTS marked complete; public release tag (`v1.4.0`) cut; first public-facing announcement ready                      [SYM-05]
+**Plans**: 6 plans
+- [ ] 34-01-PLAN.md — Symphony composition + iterative composer UAT (long pole; iterative UAT loop with composer sign-off in 34-HUMAN-UAT.md)
+- [ ] 34-02-PLAN.md — Commit canonical symphony.flow + expand examples/symphony/README.md (D-602: new The Symphony section + demoted Tutorial Chapter)
+- [ ] 34-03-PLAN.md — Top-level README.md ## Showcase section + user-attachments inline player (RESEARCH Pitfall 1 manual drag-drop)
+- [ ] 34-04-PLAN.md — docs/announcements/v1.4.0.md public announcement draft (3 paragraphs Markdown)
+- [ ] 34-05-PLAN.md — v1.4.0 annotated tag + GitHub Release with 3 assets (MP3 + WAV + Linux binary)
+- [ ] 34-06-PLAN.md — v1.4 milestone closure docs (PROJECT/ROADMAP/STATE/REQUIREMENTS/MILESTONES + CLAUDE.md + memory file)
 
 ## Progress
 
