@@ -1,16 +1,31 @@
 ---
-status: closed
+# This ledger now covers BOTH showcase pieces (post-scope-expansion):
+#   pieces:
+#     symphony: status closed (D-802 conditions 1/2/3 all pass on iteration #2)
+#     ragtime:  status partial (1st render produced; composer UAT pending)
+# Phase 34 advances to plan 34-02 only when BOTH pieces sign off.
+status: partial
 phase: 34-symphony-showcase-v1-4-closer-pre-public-public-pivot
-source: [34-VERIFICATION.md, 34-CONTEXT.md D-801..D-803, 34-01-PLAN.md Task 3]
+source: [34-VERIFICATION.md, 34-CONTEXT.md D-801..D-803 + scope-expansion block, 34-01-PLAN.md Task 3]
 started: 2026-05-16T17:55:50Z
-updated: 2026-05-16T18:35:00Z
-iterations:
-  - id: 1
-    composer_feedback: "mixing issues; melody clobbered in places; flutes should shine more than the super loud bass"
-    response: "boosted flute 0.85→1.0; dropped cello 0.75→0.45 + horn 0.65→0.40 (sustained bass bed was masking the lead); dropped violin doubling 1.0→0.85 to give the flute clearer headroom in A'; trimmed master reverb wet 0.30→0.20 so the 2.5s tail stops smearing whole-note pads into the next bar's melodic onset. Determinism preserved (D-702 holds on iteration #2 render)."
-  - id: 2
-    composer_feedback: "approved"
-    response: "iteration #2 render signed off — flute now reads as a distinct lead, bass bed proportionate, melody intelligible across all three sections. UAT closed."
+updated: 2026-05-16T18:45:00Z
+pieces:
+  symphony:
+    status: closed
+    closed_at: 2026-05-16T18:35:00Z
+    iterations:
+      - id: 1
+        composer_feedback: "mixing issues; melody clobbered in places; flutes should shine more than the super loud bass"
+        response: "boosted flute 0.85→1.0; dropped cello 0.75→0.45 + horn 0.65→0.40 (sustained bass bed was masking the lead); dropped violin doubling 1.0→0.85 to give the flute clearer headroom in A'; trimmed master reverb wet 0.30→0.20 so the 2.5s tail stops smearing whole-note pads into the next bar's melodic onset. Determinism preserved (D-702 holds on iteration #2 render)."
+      - id: 2
+        composer_feedback: "approved"
+        response: "iteration #2 render signed off — flute now reads as a distinct lead, bass bed proportionate, melody intelligible across all three sections. Symphony UAT closed."
+  ragtime:
+    status: partial
+    iterations:
+      - id: 1
+        composer_feedback: "(scope-expansion request: 'can we make an upbeat melody like a ragtime in addition to this one?' — chose Option B: scope-expand Phase 34 to include a 2nd showcase piece)"
+        response: "drafted examples/ragtime/ragtime.flow — solo piano via UprightPiano.sfz SFZ patch, F major, tempo 100, 4/4, ABA single-movement, 57.6s rendered. Stride LH + syncopated RH via voice blocks; all 5 articulation tokens (stacc/>/leg/marc/ten); one tuplet flourish; small-room reverb 15% wet 1.5s decay + soft 3:1 compress -10dB. Removed humanizeGaussian wrap (silent-empty-render bug when wrapping voice-block sequences — captured as v1.5 follow-up). D-702 two-run cmp-clean PASSED on first render. Awaiting composer UAT."
 ---
 
 ## Current Test
@@ -189,14 +204,61 @@ Optional cleanup once signed off:
   condition 2 A/B fixture is a one-shot UAT artifact per Deferred
   Ideas (a permanent stripped example is a v1.5 docs-polish slot).
 
+## Ragtime UAT (post-scope-expansion)
+
+### R-1. Subjective "postable" sign-off (D-802 condition 1 — ragtime)
+
+expected: composer affirms the ragtime piece is publicly-shareable
+  quality. The piece is upbeat F-major solo piano, ~58s, contrasts
+  the symphony's pensive D-minor mood.
+
+setup:
+1. The canonical render is at `examples/output/ragtime.wav` (10.2 MB).
+2. Play via `aplay examples/output/ragtime.wav`.
+3. Listen end-to-end at least once.
+
+expected_outcome: composer affirms in plain English. If unsatisfied,
+  describe the issue ("LH stride too loud", "RH melody too repetitive",
+  "B section harmonic shift feels abrupt", "tempo too slow/fast",
+  etc.) and the executor adjusts `ragtime.flow` and re-renders.
+
+why_human: subjective quality judgement — no automated proxy.
+
+result: pending -- awaiting composer playback
+
+### R-2. Upbeat character + genre-distinct from symphony (D-802 condition 1 expansion for the 2-piece showcase)
+
+expected: composer confirms the ragtime is audibly UPBEAT (composer's
+  literal request word) AND audibly distinct from the symphony in
+  mood/character/instrumentation — together they should demonstrate
+  Flow's genre-agnostic claim within one release.
+
+setup:
+1. Play both in sequence:
+   ```bash
+   aplay examples/output/symphony.wav   # pensive D-minor orchestral
+   aplay examples/output/ragtime.wav    # upbeat F-major solo piano
+   ```
+2. Subjective comparison.
+
+expected_outcome: composer affirms the contrast lands and the two
+  pieces together feel like a curated v1.4 release pair, not a
+  random doubling.
+
+why_human: perceptual + curation judgement.
+
+result: pending -- awaiting composer A/B comparison
+
 ## Summary
 
-total: 3
+total: 5
 passed: 3
 issues: 0
-pending: 0
+pending: 2
 skipped: 0
 blocked: 0
+
+(symphony: 3/3 pass, status closed; ragtime: 2 pending UAT rows, status partial)
 
 ## Gaps
 

@@ -10,8 +10,21 @@ mode: auto
 # Phase 34: Symphony Showcase (v1.4 closer — pre-public → public pivot) — Context
 
 **Gathered:** 2026-05-16
-**Status:** Ready for planning
+**Status:** Plan 34-01 closed; scope expanded by composer to include a 2nd showcase piece (ragtime)
 **Mode:** `/gsd-discuss-phase 34 --auto --chain` — Claude auto-selected every gray area at the recommended option; this CONTEXT.md is the audit trail of those decisions. The composer is the visionary; planner / researcher / executor downstream must treat these decisions as locked unless flagged in `34-DISCUSSION-LOG.md` § "Open for composer review".
+
+**Scope expansion (2026-05-16, after Plan 34-01 symphony sign-off):**
+
+Composer chose Option B from the post-approval recommendation: scope-expand Phase 34 to ship TWO showcase pieces in v1.4.0 — the orchestral symphony (already approved, iteration #2) AND a contrasting upbeat solo-piano ragtime piece. The deferred-to-v1.5 "jazz / EDM follow-up" idea is pulled forward; v1.4 now demonstrates Flow's genre-agnostic claim (orchestral + ragtime) inside a single release. Both pieces share the v1.4.0 release tag, the top-level README `## Showcase` section, and the announcement draft. Downstream plan / file impacts:
+
+- **D-202b [ragtime instrument]:** `#piano` only — solo piano (UprightPiano.sfz at VSCO-CE root). Ragtime is intrinsically piano-forward; one instrument keeps the showcase focused. NOT a 5-instrument arrangement.
+- **D-104b [ragtime tempo + key]:** ~100 BPM (Joplin "not too fast" tradition), F major (warm and bluesy), 4/4. Tempo intentionally matches the symphony to keep the two pieces relatable as a pair (different mood, same time-base).
+- **D-501b [ragtime source location]:** `examples/ragtime/ragtime.flow` (NEW sibling directory to `examples/symphony/`). Self-contained — does NOT reorganize the existing `examples/symphony/` directory or rename `symphony.flow`. Sibling layout keeps each piece's docs scoped to its own directory.
+- **D-602b [ragtime README]:** NEW `examples/ragtime/README.md` (short — composition notes, reproduction step, the single-instrument SFZ pipeline). The existing `examples/symphony/README.md` stays unchanged from plan 34-02's expansion.
+- **D-503b [release assets +2]:** v1.4.0 GitHub Release now ships 5 assets — symphony.mp3 + symphony.wav + ragtime.mp3 + ragtime.wav + flow-linux-x64.tar.gz.
+- **D-601b [top-level README showcase]:** `## Showcase` section embeds BOTH pieces as inline `<video>` players (each via the GitHub user-attachments drag-drop URL per RESEARCH Pitfall 1).
+- **D-901b [plan shape]:** Plan 34-01 now produces TWO pieces — symphony (approved) + ragtime (composing iteration in progress). The remaining plans 34-02..34-06 expand to cover both. No new plan IDs inserted; scope absorbed into the existing plan slots.
+- **No new SPEC requirements:** SYM-01..SYM-05 already cover both pieces (criteria worded as "a short symphony" → reinterpret as "the showcase artifacts"; criterion 2 "composer signs off" applies per-piece; criterion 4 "README updated with a prominent showcase link + clip embed" → plural clips).
 
 <domain>
 ## Phase Boundary
