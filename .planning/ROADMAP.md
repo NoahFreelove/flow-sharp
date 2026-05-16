@@ -452,5 +452,5 @@ v1.3's byte-identical determinism contract is preserved in shape (two-run cmp-cl
 | 30. Flow CLI + Formal Install | v1.4 | 9/9 | Complete   | 2026-05-11 |
 | 31. LSP Enhancements + JetBrains Stretch | v1.4 | 6/9 | In progress (Wave 2 continuing — 31-06 SHIPPED 2026-05-12) | - |
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 7/7 | Complete    | 2026-05-15 |
-| 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete   | 2026-05-16 |
+| 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete    | 2026-05-16 |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |
