@@ -223,6 +223,37 @@ REQ-IDs map 1:1 to `.planning/phases/30-flow-cli-formal-install/30-SPEC.md` requ
 
 ---
 
+## v1.4 Phase 33 — SFZ Orchestral Sampler (cross-milestone insert)
+
+Phase 33 ships an opt-in SFZ-format orchestral sampler gated behind `use "@sfz"`,
+so composers can load CC-licensed external libraries (blessed: VSCO Community CE 1.1.0)
+via `loadSfz #violin` style calls without retrofitting the Phase 29 bundled-sample path.
+Phase 33 is purely additive — Phase 29's `renderSong song "piano"` byte-identical
+contract is preserved.
+
+REQ-IDs map 1:1 to `.planning/phases/33-sfz-orchestral-sampler/33-SPEC.md` requirements 1-8;
+all 8 are locked and ship in this phase. Status `locked` means: spec criterion is closed,
+implementation lands in the cited Phase 33 plan(s), and a passing test gate exists in
+`flow-lang.Tests/{Unit,Integration}/Phase33/`.
+
+| SPEC | Phase | Status |
+|------|-------|--------|
+| SPEC-1 (`use "@sfz"` stdlib import gates the SFZ surface) | Phase 33 | Shipped 37dfea0 + 043d3a3 (Plan 33-05) + 20ee7d3 (Plan 33-07 sampler-side gate) |
+| SPEC-2 (Symbol-keyed instrument lookup via shipped 19-entry GM dict + `sfz_root` config) | Phase 33 | Shipped 0d619fb (Plan 33-02 SfzRoot POCO) + 37dfea0 + 043d3a3 (Plan 33-05) |
+| SPEC-3 (SFZ parser: 13-opcode common subset + 3 header types + `<control>` extension) | Phase 33 | Shipped a3c4150 + ad3d017 (Plan 33-04) |
+| SPEC-4 (Region matching by `(pitch, velocity)` + nearest-pitch varispeed fallback) | Phase 33 | Shipped 718b0fa + afdbfab (Plan 33-06) |
+| SPEC-5 (Equal-power 441-frame loop crossfade prevents audible boundary clicks) | Phase 33 | Shipped afdbfab (Plan 33-06 SfzRenderer + SfzLoopCrossfadeTests) |
+| SPEC-6 (`Sfz` value type + `sampler:NAME` instrument dispatch + binding registry) | Phase 33 | Shipped 671254c + 0d619fb (Plan 33-02 SfzType) + d6681d4 + 20ee7d3 (Plan 33-07) |
+| SPEC-7 (CI smoke renders synthetic fixture; non-empty + RMS > -40 dBFS + discontinuity ≤ 0.05) | Phase 33 | Shipped 9b13681 + 49dbc34 (Plan 33-01 fixture + repo-size gate) + 8772635 (Plan 33-08 SfzSmokeTests) |
+| SPEC-8 (Phase 28 articulation envelope + `ampeg_attack` override apply on top of SFZ render) | Phase 33 | Shipped afdbfab (Plan 33-06 envelope hook) + 8772635 (Plan 33-08 SfzArticulationTests) |
+
+Two-run byte-identical determinism contract (Phase 18/25/27 inheritance) preserved
+end-to-end through the SFZ surface — verified by `Phase33.SfzDeterminismTests`
+(shipped 8772635 in Plan 33-08). Phase 29 bundled-sample byte-identical regression
+gate (`Phase29ByteIdenticalTests`) stays 6/6 green across all Phase 33 plans.
+
+---
+
 ## Notes
 
 - Phase numbering continues from v1.2 (last phase: 17). v1.3 starts at Phase 18.
