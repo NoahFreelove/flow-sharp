@@ -1130,7 +1130,7 @@ for further validation during planning.
 
 **If this table is empty:** N/A — 7 items pending user confirmation.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **VSCO-CE 1.1.0 actual directory structure + canonical .sfz filenames per instrument**
    - What we know: Top-level dirs are Brass / Keys / Miscellania Raw /
@@ -1148,6 +1148,12 @@ for further validation during planning.
      GM instruments. Use those as the canonical paths in the shipped Flow
      dict (`flow-lang/sfz.flow`). Without this, A1 is the highest-risk
      assumption.
+   - **RESOLVED:** Plan 33-01 Task 1 produces `33-VSCO-PATH-AUDIT.md` via a
+     WebFetch probe of `github.com/sgossner/VSCO-2-CE/tree/SFZ`. Plan 33-05
+     consumes the audit to populate `flow-lang/sfz.flow`. Rows that cannot be
+     verified ship a best-effort path with an inline `Note: TBD per audit row`
+     comment; a real-install error message surfaces the unresolvable path.
+     **Disposition:** sourced to Plan 33-01 Task 1 + Plan 33-05 Task 1.
 
 2. **`pitch_keycenter` scientific-notation support**
    - What we know: OpenMPT's SFZ implementation accepts both `pitch_keycenter=60`
@@ -1159,6 +1165,12 @@ for further validation during planning.
      "unrecognized opcode value" advisory + fallback to 60 if a non-integer
      is encountered. Add scientific-notation in a Phase 33.x follow-up if
      Phase 34 needs it.
+   - **RESOLVED:** Integer-only parsing for v1.4 (Plan 33-04 Task 1's strict-
+     numeric posture covers this — `pitch_keycenter=C4` will hit the malformed-
+     numeric advisory + spec default 60). Scientific-notation deferred to v1.5
+     UNLESS Plan 33-01's VSCO-CE probe surfaces actual VSCO 1.1.0 `.sfz` files
+     using `pitch_keycenter=C4` form. **Disposition:** Plan 33-04 (integer-
+     only parser); v1.5 backlog (scientific notation if VSCO probe escalates).
 
 3. **`<control>` header + `default_path=` opcode**
    - What we know: Some SFZ libraries use `<control> default_path=Samples/`
@@ -1172,6 +1184,15 @@ for further validation during planning.
      escalate to a Phase 33.x scope expansion or extend the 13-opcode subset
      to 14 (adding `default_path=`). The opcode itself is trivial; the
      question is whether SPEC-3 needs to be relaxed.
+   - **RESOLVED:** Plan 33-01 Task 1's audit is extended to ALSO probe a
+     representative VSCO-CE `.sfz` for `<control>` / `default_path=` usage.
+     If the audit finds either is in common use, Plan 33-04's opcode whitelist
+     extends to 14 (adding `default_path=`) AND parses `<control>` as a fourth
+     header that cascades its `default_path=` into every region's `sample=`
+     lookup at parse time. If the audit shows VSCO-CE does NOT use the
+     pattern, the v1.4 13-opcode subset stands. **Disposition:** Plan 33-01
+     Task 1 audit deliverable gates the Plan 33-04 opcode-whitelist count;
+     SPEC-3 is conditionally relaxed.
 
 4. **`ExecutionContext` access from `SongRenderer.RenderSong` static method**
    - What we know: `FlowEngine.CurrentSampleCache` is the precedent for
@@ -1184,6 +1205,12 @@ for further validation during planning.
      29's pattern. Document the single-engine-per-process precondition
      explicitly (CLAUDE.md memory: pre-public, no concurrent FlowEngine
      support yet).
+   - **RESOLVED:** Use `FlowEngine.CurrentExecutionContext` static accessor —
+     same shape as Phase 29's `FlowEngine.CurrentSampleCache`. Single-engine-
+     per-process precondition is implicit in the pre-public posture
+     (CLAUDE.md memory: no concurrent FlowEngine support). **Disposition:**
+     Plan 33-07 Task 1 ships `FlowEngine.CurrentExecutionContext` static +
+     Dispose cleanup.
 
 5. **Smoke fixture: synthesized vs committed**
    - What we know: SPEC-7 says total fixture < 100 KB. Two 100ms sine WAVs +
@@ -1195,6 +1222,10 @@ for further validation during planning.
      reproduce identically. Commit + `.gitattributes` flag binary +
      `RepoSizeTests` extension to enforce the < 100 KB cap on the new
      directory.
+   - **RESOLVED:** Commit binary WAV fixtures + `.sfz` + LICENSE under
+     `flow-lang.Tests/fixtures/sfz-smoke/`. Phase33FixtureGenerator (Plan
+     33-01 Task 2) is the deterministic-recipe regenerator. `RepoSizeTests`
+     enforces < 100 KB cap. **Disposition:** Plan 33-01 Task 2 + Task 3.
 
 ## Environment Availability
 
