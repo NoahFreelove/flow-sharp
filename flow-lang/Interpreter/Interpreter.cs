@@ -643,6 +643,16 @@ public class Interpreter : IFunctionInvoker
             }
         }
 
+        // Phase 33 D-12: register typed-Sfz bindings in the patch registry so
+        // renderSong song "sampler:violin" can find the bound patch by name.
+        // Reassignment-overwrite is naturally handled by Dictionary indexer
+        // semantics (Pitfall 10's last-bound-wins contract).
+        if (varDecl.Type is FlowLang.TypeSystem.SpecialTypes.SfzType &&
+            value.Data is FlowLang.StandardLibrary.Audio.Sfz.SfzData sfzData)
+        {
+            _context.SfzPatchRegistry[varDecl.Name] = sfzData;
+        }
+
         _context.DeclareVariable(varDecl.Name, value);
     }
 
