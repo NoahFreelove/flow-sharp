@@ -95,6 +95,15 @@ vscode-extension/server/
 !flow-lang.Tests/fixtures/scala/**
 !flow-lang.Tests/fixtures/scala/**/*.md
 
+# Phase 33 SFZ smoke fixture (synthetic, < 100 KB total per SPEC-7) — 2-region
+# .sfz + 2 sine-burst .wav + LICENSE.md must be tracked despite the global
+# *.wav and *.md ignores. Regenerable via Phase33FixtureGenerator; size cap
+# enforced by Phase33.RepoSizeTests. Mirrors the Phase 29 / 32 precedents.
+!flow-lang.Tests/fixtures/sfz-smoke/
+!flow-lang.Tests/fixtures/sfz-smoke/**
+!flow-lang.Tests/fixtures/sfz-smoke/**/*.wav
+!flow-lang.Tests/fixtures/sfz-smoke/**/*.md
+
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets
 # (.lua, .toml) are not matched by the globs, so they track automatically.
