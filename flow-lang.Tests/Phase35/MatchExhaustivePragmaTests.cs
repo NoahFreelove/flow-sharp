@@ -30,12 +30,10 @@ public class MatchExhaustivePragmaTests
 
         var src = "enable matchExhaustive;\n(match 5 | 1 => \"one\" | 2 => \"two\")";
         using var engine = new FlowEngine(verbose: false);
-        var result = engine.ExecuteScriptAndGetResult(src);
-
-        // Match still returns Void (fall-through behavior preserved) but
-        // ErrorReporter now carries a diagnostic flagged as Error.
-        Assert.NotNull(result);
-        Assert.Equal(TypeSystem.PrimitiveTypes.VoidType.Instance, result!.Type);
+        // Use Execute directly because ExecuteScriptAndGetResult returns null
+        // when Execute reports errors — and the very thing we're testing is
+        // that the engine reports an error here.
+        engine.Execute(src);
 
         Assert.True(engine.ErrorReporter.HasErrors,
             "matchExhaustive pragma must promote non-exhaustive match to error.");

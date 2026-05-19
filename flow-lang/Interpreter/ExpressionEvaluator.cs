@@ -3,6 +3,7 @@ using FlowLang.Ast.Expressions;
 using FlowLang.Ast.Patterns;
 using FlowLang.Ast.Statements;
 using FlowLang.Core;
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
@@ -417,8 +418,32 @@ public class ExpressionEvaluator
             }
         }
 
-        // Plan 35-06: replace silent-Void fall-through with D-v1.5-05 WARN-vs-error policy
-        // (matchExhaustive pragma lookup → either reportError or RenderingDiagnostics.WarnOnce).
+        // Phase 35 Plan 35-06 (D-v1.5-05) — non-exhaustive policy.
+        //
+        // Two paths, selected by the file-scope `enable matchExhaustive;`
+        // pragma captured on the AST node at parse time. Per Pitfall 4 +
+        // Phase 21 D-06 the pragma is PER-FILE (does NOT propagate via
+        // `use` imports), so we consult match.CapturedPragmas — the
+        // PragmaSet that was active when the MATCH expression itself was
+        // parsed — rather than the dynamic context's pragma set.
+        //
+        // STRICT (pragma enabled): report a FlowDiagnostic at Error level.
+        // CHARITABLE (default): emit a one-shot stderr WARN via
+        //   RenderingDiagnostics.WarnOnce keyed on the match Span, then
+        //   fall through to Value.Void().
+        var spanForReport = match.Span ?? Span.At(match.Location);
+        var pragmaSet = match.CapturedPragmas ?? _context.ProgramPragmaSet;
+        if (pragmaSet is not null && pragmaSet.Has("matchExhaustive"))
+        {
+            _errorReporter.Report(FlowDiagnostic.Create(
+                $"match expression non-exhaustive — no arm matched scrutinee of type {scrutinee.Type}",
+                spanForReport));
+            return Value.Void();
+        }
+
+        RenderingDiagnostics.WarnOnce(
+            $"match-non-exhaustive:{spanForReport}",
+            $"warning: match expression at {spanForReport} non-exhaustive — fell through to Void");
         return Value.Void();
     }
 

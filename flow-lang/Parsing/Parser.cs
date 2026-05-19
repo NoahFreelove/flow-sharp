@@ -1371,7 +1371,13 @@ public partial class Parser
             openParenLocation,
             scrutinee,
             arms,
-            Span: new Span(openParenLocation, PreviousToken.Location));
+            Span: new Span(openParenLocation, PreviousToken.Location),
+            // Phase 35 Plan 35-06 (LANG-02 / D-v1.5-05): thread this parse
+            // session's PragmaSet onto the MatchExpression so the evaluator's
+            // non-exhaustive policy is driven by the file the MATCH was
+            // PARSED IN (not the file that's currently evaluating). Pitfall 4
+            // / Phase 21 D-06 — each imported file gets its own PragmaSet.
+            CapturedPragmas: _pragmaSet);
     }
 
     /// <summary>

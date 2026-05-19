@@ -157,6 +157,20 @@ public class ExecutionContext
     /// </summary>
     public Interpreter.IFunctionInvoker? Invoker { get; set; }
 
+    /// <summary>
+    /// Phase 35 Plan 35-06 (D-v1.5-05) — the active program-level
+    /// <see cref="Lexing.PragmaSet"/> exposed as a backup access point. Most
+    /// pragma queries from the evaluator should consult the AST node's own
+    /// captured PragmaSet (see <see cref="Ast.Expressions.MatchExpression.CapturedPragmas"/>)
+    /// because pragmas are PER-FILE (Pitfall 4 / Phase 21 D-06) — an
+    /// imported module's pragma set differs from the importer's, and the
+    /// AST-attached PragmaSet captures that scope at parse time. This
+    /// context-level property is null unless explicitly published by the
+    /// top-level <see cref="FlowEngine"/> driver, and reads the importer's
+    /// (outer) pragma set when set.
+    /// </summary>
+    public Lexing.PragmaSet? ProgramPragmaSet { get; set; }
+
     public ExecutionContext(ErrorReporter errorReporter, InternalFunctionRegistry internalRegistry, TextWriter? diagnosticOutput = null)
     {
         _errorReporter = errorReporter ?? throw new ArgumentNullException(nameof(errorReporter));
