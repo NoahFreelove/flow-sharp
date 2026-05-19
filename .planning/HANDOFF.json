@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-19T03:02:46.896Z",
+  "phase": "35",
+  "phase_name": "Language Foundation",
+  "phase_dir": ".planning/phases/35-language-foundation",
+  "plan": null,
+  "task": null,
+  "total_tasks": 7,
+  "status": "paused",
+  "context": "phase",
+  "milestone": "v1.5 Stage, Studio, Web",
+  "wave_progress": {
+    "completed_waves": [1, 2, 3],
+    "remaining_waves": [4, 5],
+    "wave_in_flight_when_paused": null
+  },
+  "completed_tasks": [
+    {"id": "35-01", "name": "Span migration foundation (LANG-04 prereq)", "status": "done", "wave": 1, "commit": "2bab269", "summary": ".planning/phases/35-language-foundation/35-01-SUMMARY.md"},
+    {"id": "35-02", "name": "v1.4 housekeeping closeout (HK-01..04)", "status": "done", "wave": 1, "commit": "58f10e4", "summary": ".planning/phases/35-language-foundation/35-02-SUMMARY.md"},
+    {"id": "35-03", "name": "Rust-style multi-line diagnostics renderer (LANG-04)", "status": "done", "wave": 2, "commit": "1aaa86c-ish (merge in dev after 25e57a7)", "summary": ".planning/phases/35-language-foundation/35-03-SUMMARY.md"},
+    {"id": "35-04", "name": "Pure-Flow test framework + flow test CLI (TEST-01, TEST-02)", "status": "done", "wave": 2, "commit": "ec032ce", "summary": ".planning/phases/35-language-foundation/35-04-SUMMARY.md"},
+    {"id": "35-05", "name": "Pattern matching foundation (LANG-01, naive linear scan per D-v1.5-11)", "status": "done", "wave": 3, "commit": "0098175 (merge), 99fc449 (SUMMARY)", "summary": ".planning/phases/35-language-foundation/35-05-SUMMARY.md"}
+  ],
+  "remaining_tasks": [
+    {"id": "35-06", "name": "Music-aware extractors + matchExhaustive pragma policy (LANG-02)", "status": "not_started", "wave": 4, "depends_on": ["35-01", "35-03", "35-04", "35-05"], "task_count": 4},
+    {"id": "35-07", "name": "-> as name chain naming (LANG-03)", "status": "not_started", "wave": 5, "depends_on": ["35-01", "35-04", "35-05", "35-06"], "task_count": 4}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "D-v1.5-11: Pattern-matching backend ships as naive linear scan in Phase 35; Jacobs/Peterse decision-tree compile deferred to v1.6", "rationale": "Aligns with 'Ergonomics first / make easy cases fast'; naive backend is surface-equivalent; D-v1.5-01 pre-traction no-deprecation latitude allows v1.6 internal swap with no composer-visible API change", "phase": "35", "recorded_at": "2026-05-18", "lives_in": [".planning/REQUIREMENTS.md (line 20)", ".planning/ROADMAP.md (D-v1.5-11 block)"]},
+    {"decision": "Research Open Questions 1-5 all RESOLVED inline in 35-RESEARCH.md `## Open Questions (RESOLVED)` section", "rationale": "Plan-checker iteration 1 flagged unresolved questions as blocker; orchestrator recorded resolutions from plan actions + D-v1.5-11", "phase": "35", "recorded_at": "2026-05-18"},
+    {"decision": "VALIDATION.md frontmatter flipped to nyquist_compliant: true, wave_0_complete: true, status: approved", "rationale": "All 7 plans carry Wave 0 stub tasks; sampling continuity verified; sign-off checklist populated during plan-checker iteration 1", "phase": "35", "recorded_at": "2026-05-18"}
+  ],
+  "uncommitted_files": [],
+  "current_git_state": {
+    "branch": "dev",
+    "head_commit": "5c393dd",
+    "working_tree": "clean",
+    "remote_status": "not pushed"
+  },
+  "test_status": {
+    "phase_35_xunit_tests_passing": 59,
+    "phase_35_xunit_tests_failing": 0,
+    "preexisting_xunit_failures": 26,
+    "preexisting_failure_note": "26 Phase 28 PerSynthArticulation FFT + Ragtime RMS failures inherited from pre-Phase-35 dev tip — not caused by Phase 35 work, tracked as deferred. Documented in 35-01-SUMMARY and 35-02-SUMMARY.",
+    "two_run_determinism_preserved": true,
+    "byte_identical_sentinel_sha": "f2c3b2b3c2a9a8e7f631bd468444919f66c980f936d1c661895f3fb1ca8d6b39 (examples/tutorial.flow)"
+  },
+  "next_action": "Resume execute-phase orchestration. Run: /gsd:execute-phase 35 --auto --no-transition  — orchestrator will discover 2 incomplete plans (35-06 + 35-07), execute Wave 4 (35-06 alone), merge, post-merge gate, then Wave 5 (35-07 alone), merge, post-merge gate, then verifier pass, then ROADMAP/STATE close-out and PHASE COMPLETE return (no-transition stops the auto-chain there).",
+  "context_notes": "User invoked /gsd:plan-phase 35 --auto which chained into /gsd:execute-phase 35 --auto --no-transition. Plan-checker iter 1 found 4 blockers (research resolution, LANG-01 scope reduction, VALIDATION sign-off, 35-07 depends_on) — all resolved before execution started. User confirmed full 5-wave execution scope when asked, and confirmed D-v1.5-11 naive-scan-now/decision-tree-v1.6 split. Execution has been wave-by-wave with merge + post-merge build/test gate between each. Pattern: post-Wave-3 dev HEAD is 5c393dd; build clean, 59/59 Phase 35 xUnit tests GREEN, smoke-tested 6/6 pattern-matching `.flow` tests via the new `flow test` CLI subcommand. CWD-drift caught at the Wave 2 merge boundary (executor agent's CWD persisted into orchestrator shell) — pinning back to /home/noah/Desktop/projects/flow-sharp before every git op is now part of the routine."
+}
