@@ -113,6 +113,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - D-v1.5-08: MusicXML reference consumer is MuseScore. Articulation decision table locked: Accent→`<accent/>`, Marcato→`<strong-accent/>`, Staccato→`<staccato/>`, Tenuto→`<tenuto/>`, Sforzando→`<dynamics><sfz/></dynamics>`, Legato→slur spans (NOT per-note `<legato/>`).
 - D-v1.5-09: Stereo pan audit gap (PROJECT.md says shipped v1.0 Phase 2; v1.4 backlog says open) — resolve at Phase 37 CONTEXT spawn; likely synth-path shipped + SFZ sampler-path mono-only.
 - D-v1.5-10: Phase 35 is the dependency root — pattern matching used in Phase 36 destructuring + Phase 40 MIDI dispatch + Phase 39 articulation emit. Span migration runs first within Phase 35; test framework runs second.
+- D-v1.5-11: Pattern-matching backend lands as naive linear scan in Phase 35; Jacobs/Peterse decision-tree compile deferred to v1.6 per D-v1.5-01. Backend swap is internal-only (no composer-visible API change).
 
 ### Phase Summary
 
@@ -136,7 +137,14 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
   3. Parse errors and runtime type mismatches render as Rust-style multi-line diagnostics — source-quoted span, caret pointer, label, secondary notes, and "did you mean?" Levenshtein suggestions for unknown identifiers in scope. (LANG-04)
   4. Composer can write `tests/test_foo.flow` containing `(test "name" body)` blocks with `(assert ...)`, `(assertEq a b)`, `(assertNotesMatch seqA seqB)`, `(assertBytesEqual buf1 buf2)`, and `(assertWithinDb buf1 buf2 0.5dB)` primitives; `flow test [path]` discovers and runs them with hermetic isolation (musical context stack + voice pool + PRNG state + ExecutionContext bindings reset between tests in a single FlowEngine process). (TEST-01, TEST-02)
   5. v1.4 housekeeping cleared: humanizeGaussian voice-block bug fixed (HK-01); Phase 17 HUMAN-UAT rows 1-3 closed (HK-02); Phase 04 VERIFICATION.md gaps closed (HK-03); CLAUDE.md "Public as of v1.4" footnote rewritten to match the post-public deprecation framing (HK-04).
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 35-01-PLAN.md — Span migration foundation (LANG-04 prereq)
+- [ ] 35-02-PLAN.md — v1.4 housekeeping closeout (HK-01..04)
+- [ ] 35-03-PLAN.md — Rust-style diagnostics renderer (LANG-04)
+- [ ] 35-04-PLAN.md — Pure-Flow test framework + flow test CLI (TEST-01, TEST-02)
+- [ ] 35-05-PLAN.md — Pattern matching foundation (LANG-01)
+- [ ] 35-06-PLAN.md — Music-aware pattern extractors + exhaustiveness (LANG-02)
+- [ ] 35-07-PLAN.md — -> as name chain naming (LANG-03)
 
 ### Phase 36: Sequence Algebra & Generative
 **Goal**: Composer can write Tidal-style pattern algebra over `Sequence` values (12 combinators that compose via `->`), generate musical material from Markov chains / L-systems / cellular automata / Lorenz attractors as first-class stdlib primitives, parameterize sections with positional args, and improvise chord-aware Markov solos over a progression — all with deterministic seeding routed through the new PrngRegistry.
@@ -254,7 +262,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 7/7 | Complete    | 2026-05-15 |
 | 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete    | 2026-05-16 |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
-| 35. Language Foundation | v1.5 | 0/0 | Not started | - |
+| 35. Language Foundation | v1.5 | 0/7 | Planned | - |
 | 36. Sequence Algebra & Generative | v1.5 | 0/0 | Not started | - |
 | 37. Sound Design + Sampler Polish | v1.5 | 0/0 | Not started | - |
 | 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |

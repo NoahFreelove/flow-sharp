@@ -2,13 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: planning
-last_updated: "2026-05-18T12:00:00.000Z"
-last_activity: 2026-05-18
+status: executing
+stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
+last_updated: "2026-05-18T20:38:48.986Z"
+last_activity: 2026-05-18 -- Phase 35 planning complete
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
+  total_plans: 7
   completed_plans: 0
   percent: 0
 ---
@@ -26,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 
 Phase: 35 (Language Foundation) — not started
 Plan: —
-Status: Roadmap drafted; awaiting Phase 35 planning
-Last activity: 2026-05-18 — Milestone v1.5 roadmap created; 66 REQs mapped across 7 phases (Phase 35-41); two-run cmp-clean determinism contract inherited from v1.4 with `live { ... }` as the single documented opt-out (D-v1.5-07)
+Status: Ready to execute
+Last activity: 2026-05-18 -- Phase 35 planning complete
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
@@ -42,6 +43,7 @@ Last activity: 2026-05-18 — Milestone v1.5 roadmap created; 66 REQs mapped acr
 | 41 | Reach + v1.5 Closer | WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01 | 10 |
 
 **Build-order constraints from research:**
+
 - Phase 35 MUST ship first (pattern matching unblocks Phase 36 destructuring + Phase 40 MIDI dispatch + Phase 39 articulation emit; test framework enables regression coverage)
 - Phase 38 MUST precede Phase 41 (WASM playground IS watch-mode-in-browser)
 - Phase 40 MIDI-RT-01..03 (IMidiBackend) MUST precede Phase 41 Web MIDI
