@@ -1,5 +1,6 @@
 using FlowLang.Ast;
 using FlowLang.Ast.Expressions;
+using FlowLang.Ast.Patterns;
 using FlowLang.Ast.Statements;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
@@ -1103,6 +1104,17 @@ public partial class Parser
         {
             var location = PreviousToken.Location;
 
+            // Phase 35 Plan 35-05 (LANG-01): (match scrutinee | pat => body | ... | _ => default)
+            // The `(match` open paren is the disambiguator vs. note-stream `|` per RESEARCH §D.2 +
+            // Pitfall 2. Detected BEFORE the generic identifier-call branch below so the `match`
+            // keyword is never mistaken for a function name. The `match` keyword has its own
+            // TokenType.Match (Plan 35-05 Task 2 lexer addition).
+            if (Check(TokenType.Match))
+            {
+                Advance(); // consume `match`
+                return ParseMatch(location);
+            }
+
             // Check if this is a function call like (func arg1 arg2)
             // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
             if ((Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)) && _current + 1 < _tokens.Count
@@ -1312,6 +1324,157 @@ public partial class Parser
         }
 
         return new ProgressionExpression(location, chords, voiceCount, Span: new Span(location, PreviousToken.Location));
+    }
+
+    /// <summary>
+    /// Phase 35 Plan 35-05 (LANG-01) — parses the body of a
+    /// <c>(match scrutinee | pat1 => body1 | pat2 => body2 | _ => default)</c>
+    /// expression. The caller (<see cref="ParsePrimary"/>) has already consumed
+    /// the opening <c>(</c> and the <c>match</c> keyword token; the
+    /// <paramref name="openParenLocation"/> argument carries the open-paren
+    /// SourceLocation so the resulting MatchExpression can pin a Span from
+    /// the open paren through the closing paren.
+    ///
+    /// <para>
+    /// Note-stream `|` disambiguation per Phase 35 RESEARCH §D.2 + Pitfall 2:
+    /// inside this method, every <c>|</c> we see introduces an arm — it never
+    /// delegates to <see cref="ParseNoteStream"/>. The disambiguator is the
+    /// <c>(match</c> open paren in the caller, which establishes that we're
+    /// in arm-parsing mode. <see cref="ParseNoteStream"/> only fires from a
+    /// primary-expression-start position (see ParsePrimary's `Match(TokenType.Pipe)`
+    /// branch), which an arm-delimiter `|` is NOT.
+    /// </para>
+    /// </summary>
+    private Expression ParseMatch(SourceLocation openParenLocation)
+    {
+        var scrutinee = ParseExpression();
+
+        var arms = new List<MatchArm>();
+        while (Check(TokenType.Pipe) && !IsAtEnd())
+        {
+            var pipeToken = Advance(); // consume `|`
+            var armLocation = pipeToken.Location;
+
+            var pattern = ParsePattern();
+            Expect(TokenType.FatArrow, "Expected '=>' after pattern in match arm");
+            var body = ParseExpression();
+
+            arms.Add(new MatchArm(
+                pattern,
+                body,
+                Span: new Span(armLocation, PreviousToken.Location)));
+        }
+
+        Expect(TokenType.RParen, "Expected ')' to close match expression");
+
+        return new MatchExpression(
+            openParenLocation,
+            scrutinee,
+            arms,
+            Span: new Span(openParenLocation, PreviousToken.Location));
+    }
+
+    /// <summary>
+    /// Phase 35 Plan 35-05 (LANG-01) — parses a single Pattern node sitting
+    /// between a match arm's leading <c>|</c> and its <c>=&gt;</c>. Recognized
+    /// surface forms:
+    ///
+    /// <list type="bullet">
+    ///   <item><description><c>_</c> — <see cref="WildcardPattern"/></description></item>
+    ///   <item><description>Int / Float / String / Bool / Note literals —
+    ///   <see cref="LiteralPattern"/></description></item>
+    ///   <item><description>Bare identifier — <see cref="BindingPattern"/>.
+    ///   If immediately followed by <c>when (...)</c> the binding is wrapped
+    ///   in a <see cref="GuardPattern"/>.</description></item>
+    ///   <item><description>Chord literal token (Cmaj7 / Dm) —
+    ///   <see cref="ConstructorPattern"/> with <c>IsChordLiteral=true</c>.
+    ///   Plan 35-06's PatternMatcher.MatchConstructor reads the flag and
+    ///   dispatches to <c>ChordParser</c>; Plan 35-05's runtime falls through
+    ///   to silent Void.</description></item>
+    /// </list>
+    ///
+    /// All other token shapes produce a parser-error and a best-effort
+    /// <see cref="WildcardPattern"/> recovery so the surrounding match keeps
+    /// parsing — mirrors the rest of Parser.cs's recovery posture.
+    /// </summary>
+    private Pattern ParsePattern()
+    {
+        var startToken = CurrentToken;
+        var location = startToken.Location;
+
+        Pattern inner;
+
+        if (Match(TokenType.Underscore))
+        {
+            inner = new WildcardPattern(location, Span: PreviousToken.EffectiveSpan);
+        }
+        else if (Match(TokenType.IntLiteral))
+        {
+            inner = new LiteralPattern(location, PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
+        }
+        else if (Match(TokenType.FloatLiteral))
+        {
+            inner = new LiteralPattern(location, (double)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
+        }
+        else if (Match(TokenType.StringLiteral))
+        {
+            inner = new LiteralPattern(location, (string)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
+        }
+        else if (Match(TokenType.BoolLiteral))
+        {
+            inner = new LiteralPattern(location, (bool)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
+        }
+        else if (Match(TokenType.NoteLiteral))
+        {
+            // Note literals store the raw text payload — matches Parser.cs's
+            // existing LiteralExpression treatment so PatternMatcher's
+            // Value.Equals path lines up with the scrutinee's stored string.
+            inner = new LiteralPattern(location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+        }
+        else if (Match(TokenType.ChordLiteral))
+        {
+            // Plan 35-06 consumes IsChordLiteral=true to route through
+            // ChordParser.Parse for chord-quality extraction. Plan 35-05's
+            // PatternMatcher.MatchConstructor falls through to silent Void
+            // until 35-06 lands the music-aware path.
+            inner = new ConstructorPattern(
+                location,
+                PreviousToken.Text,
+                new List<Pattern>(),
+                Span: PreviousToken.EffectiveSpan)
+            {
+                IsChordLiteral = true,
+            };
+        }
+        else if (Match(TokenType.Identifier))
+        {
+            // Bare identifier captures the scrutinee as a binding.
+            inner = new BindingPattern(location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+        }
+        else
+        {
+            _errorReporter.ReportError(
+                $"Unexpected token '{CurrentToken.Text}' in match pattern; expected literal, identifier, '_', or chord",
+                CurrentToken.Location);
+            // Consume the offending token to avoid an infinite loop in the arm.
+            if (!IsAtEnd()) Advance();
+            return new WildcardPattern(location, Span: Span.At(location));
+        }
+
+        // Guard clause: `pattern when (...)` — the guard's GuardExpression runs
+        // in the extended scope produced by `inner`'s bindings (so a sibling
+        // BindingPattern's name is visible to the guard predicate).
+        if (Match(TokenType.When))
+        {
+            var guardExpr = ParseExpression();
+            return new GuardPattern(
+                location,
+                inner,
+                guardExpr,
+                Span: new Span(location, PreviousToken.Location));
+        }
+
+        return inner;
     }
 
     // Helper methods

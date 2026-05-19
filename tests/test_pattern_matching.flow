@@ -1,0 +1,49 @@
+// Phase 35 Plan 35-05 — composer-facing acceptance for pattern matching (LANG-01).
+//
+// Exercises the new `(match scrutinee | pat => body | ... | _ => default)` form
+// across the 4 pattern kinds shipped in this plan:
+//   - LiteralPattern   (Int / String / Bool)
+//   - WildcardPattern  (_)
+//   - BindingPattern   (bare identifier captures the scrutinee)
+//   - GuardPattern     (pattern + `when (predicate ...)`)
+//
+// ConstructorPattern's music-aware extractors (Cmaj7 / V7 / #staccato) ship in
+// Plan 35-06. Non-exhaustive match handling is silent Void here — Plan 35-06
+// layers the matchExhaustive pragma + warn-vs-error policy on top.
+//
+// USAGE (Plan 35-04 framework — bodies deferred via lazy):
+//   $ dotnet run --project flow-cli -- test tests/test_pattern_matching.flow
+//   PASS  ...::literal int arm wins
+//   PASS  ...::wildcard fallthrough
+//   ...
+//   Total: 6; Passed: 6; Failed: 0
+//
+// Legacy `flow run` smoke (no body execution): registers all 6 tests and
+// prints the sentinel string — exits 0.
+
+use "@std"
+use "@test"
+
+(test "literal int arm wins"
+  lazy((assertEq "one" (match 1 | 1 => "one" | 2 => "two" | _ => "other"))))
+
+(test "literal string arm wins"
+  lazy((assertEq "hi" (match "hello" | "hello" => "hi" | _ => "bye"))))
+
+(test "wildcard arm fallthrough"
+  lazy((assertEq "fallback" (match 99 | 1 => "one" | 2 => "two" | _ => "fallback"))))
+
+(test "binding pattern captures scrutinee"
+  lazy((assertEq 84 (match 42 | n => (mul n 2)))))
+
+(test "guard arm fires when predicate true"
+  lazy((assertEq "pos" (match 5
+                          | n when (gt n 0) => "pos"
+                          | _ => "non-pos"))))
+
+(test "guard arm falls through when predicate false"
+  lazy((assertEq "non-pos" (match -3
+                              | n when (gt n 0) => "pos"
+                              | _ => "non-pos"))))
+
+(print "ALL PATTERN-MATCHING TESTS REGISTERED")

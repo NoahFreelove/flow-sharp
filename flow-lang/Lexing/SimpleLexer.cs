@@ -472,7 +472,14 @@ public class SimpleLexer
             // (`5 -> add -3`) places `-3` after Identifier(add) — argument-start
             // position. Including Identifier here lets `func -3` lex as a single
             // signed token so it can flow through ParsePrimary's optional-paren-args.
-            or TokenType.Identifier;
+            or TokenType.Identifier
+            // Phase 35 Plan 35-05 (LANG-01): `(match -5 | ... )` places `-5`
+            // right after the `match` keyword (scrutinee position). Similarly,
+            // `n when -5` could surface a signed literal in a guard, though
+            // less common. Both keywords are added to the expression-start
+            // set so the lexer produces a single signed-IntLiteral token.
+            or TokenType.Match
+            or TokenType.When;
         if (!isExprStart) return null;
 
         int savePos = _position;
@@ -879,6 +886,8 @@ public class SimpleLexer
             "reverbTime" => TokenType.ReverbTime,
             "voicePool" => TokenType.VoicePool,
             "tuning" => TokenType.Tuning,
+            "match" => TokenType.Match,
+            "when" => TokenType.When,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,

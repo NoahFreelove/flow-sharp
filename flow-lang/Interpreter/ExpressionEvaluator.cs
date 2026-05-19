@@ -1,5 +1,6 @@
 using FlowLang.Ast;
 using FlowLang.Ast.Expressions;
+using FlowLang.Ast.Patterns;
 using FlowLang.Ast.Statements;
 using FlowLang.Core;
 using FlowLang.Runtime;
@@ -50,6 +51,7 @@ public class ExpressionEvaluator
             InterpolatedStringExpression interp => EvaluateInterpolatedString(interp),
             FlowExpression flowEx => EvaluateFlowExpression(flowEx),
             TupleUnpackFlowExpression unpackEx => EvaluateTupleUnpackFlow(unpackEx),
+            MatchExpression matchEx => EvaluateMatch(matchEx),
             _ => throw new NotSupportedException($"Expression type {expr.GetType().Name} not supported")
         };
     }
@@ -367,6 +369,56 @@ public class ExpressionEvaluator
         }
 
         _errorReporter.ReportError($"Cannot apply pipe operator -> to non-function type {rightVal.Type}", flowEx.Location);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Phase 35 Plan 35-05 (LANG-01) — evaluates a
+    /// <c>(match scrutinee | pat => body | ... | _ => default)</c> expression.
+    ///
+    /// <para>
+    /// Naive linear scan per D-v1.5-11: tests each arm in source order, the
+    /// first match wins. On match, pushes a fresh <see cref="StackFrame"/>,
+    /// declares each <see cref="BindingPattern"/>-captured value in it,
+    /// evaluates the arm body in that scope, pops the frame, and returns
+    /// the body Value. Per Pitfall 6 the frame lifecycle ensures bindings
+    /// die with the arm body — they DO NOT leak past the match expression
+    /// into enclosing scope.
+    /// </para>
+    ///
+    /// <para>
+    /// Non-exhaustive policy (Plan 35-05 cut): if no arm matches, the method
+    /// silently returns <see cref="Value.Void"/>. Plan 35-06 replaces this
+    /// fall-through with the <c>matchExhaustive</c> pragma lookup +
+    /// WARN-vs-error policy (D-v1.5-05). The marker comment at the
+    /// fall-through site flags the replacement site for Plan 35-06.
+    /// </para>
+    /// </summary>
+    private Value EvaluateMatch(MatchExpression match)
+    {
+        var scrutinee = Evaluate(match.Scrutinee);
+
+        foreach (var arm in match.Arms)
+        {
+            var bindings = new Dictionary<string, Value>();
+            if (PatternMatcher.PatternMatches(arm.Pattern, scrutinee, bindings, this, _context))
+            {
+                _context.PushFrame();
+                try
+                {
+                    foreach (var (name, value) in bindings)
+                        _context.DeclareVariable(name, value);
+                    return Evaluate(arm.Body);
+                }
+                finally
+                {
+                    _context.PopFrame();
+                }
+            }
+        }
+
+        // Plan 35-06: replace silent-Void fall-through with D-v1.5-05 WARN-vs-error policy
+        // (matchExhaustive pragma lookup → either reportError or RenderingDiagnostics.WarnOnce).
         return Value.Void();
     }
 

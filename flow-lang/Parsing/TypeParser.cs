@@ -236,6 +236,16 @@ public static class TypeParser
         if (index >= tokens.Count || tokens[index].Type != TokenType.LParen)
             return false;
 
+        // Phase 35 Plan 35-05 (LANG-01): `(match scrutinee | pat => body | ...)` carries
+        // a `=>` at depth 1 (each arm uses FatArrow) but is NOT a function-type
+        // annotation. Cheap structural disambiguation — when the very next token after
+        // the LParen is the `match` keyword, refuse to claim function-type shape so
+        // ParseStatement falls through to expression-statement parsing where
+        // ParsePrimary's `(match` branch picks it up. Same posture as ParseStatement's
+        // existing keyword sniffs (Pan/Gain/ReverbTime/VoicePool).
+        if (index + 1 < tokens.Count && tokens[index + 1].Type == TokenType.Match)
+            return false;
+
         int depth = 1;
         int pos = index + 1;
         while (pos < tokens.Count && depth > 0)
