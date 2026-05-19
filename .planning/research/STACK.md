@@ -1,363 +1,618 @@
-# Stack Research — Flow v1.3 Composer DX Tier B/C
+# Stack Research — Flow v1.5 Stage, Studio, Web
 
-**Domain:** Brownfield language-runtime + music DSL features (additive milestone)
-**Researched:** 2026-04-26
-**Confidence:** HIGH (existing stack documented in PROJECT.md / CLAUDE.md / csproj inspection; new feature math verified against existing primitives)
+**Domain:** Music-production language interpreter (interpreted, statically-typed, .NET 10 C#) — adding live-coding revamp, notation interop, real-time MIDI / transport sync, WASM playground, and cross-platform distribution
+**Researched:** 2026-05-18
+**Confidence:** HIGH for most surfaces; MEDIUM on WASM-AOT viability (rapidly evolving) and on improvisation-API library choice (no obvious .NET-native option)
+**Researcher orientation:** Flow already ships ~83K LOC C# + 312 .flow files at v1.4 close. The guiding principle inherited from v1.0/v1.4 research is **minimal dependencies — hand-roll wherever the surface fits in a phase scope**. Every recommendation below has been weighed against that bar.
+
+---
 
 ## TL;DR
 
-**Zero new external dependencies are warranted for v1.3.** Every Tier B/C feature plus the six DEFER closures plus tuplets/arbitrary-fraction durations is a hand-roll candidate that fits cleanly inside Flow's existing pipeline (lexer → parser → interpreter → renderer → DryWetMidi/PulseAudio sink). The strict "minimal dependencies" stance from PROJECT.md remains the right answer for v1.3.
+**v1.5 adds 4–6 new external dependencies, all scoped behind interface seams (`IAudioBackend`, new `IMidiBackend`, new `OscModule`).** The majority of phases (35, 36, 37, plus most of 39) ship with hand-rolled C# only — the same rhythm as v1.3. New deps appear at Phase 38 (OSC), Phase 40 (real-time MIDI + JACK), and Phase 41 (Windows/macOS backends + WASM host).
+
+| Phase | New NuGet deps | Hand-rolled surfaces |
+|-------|----------------|---------------------|
+| 35 (language foundation) | none | Pattern matching, `-> as name`, Rust-style diagnostics, pure-Flow test framework |
+| 36 (sequence algebra + generative + improv) | none | Tidal algebra, Markov/L-system/CA/Lorenz, parameterized sections, chord-aware Markov improv |
+| 37 (sound design) | none (optional `FftFlat`) | Granular synthesis, phase vocoder, stereo pan, sampler polish |
+| 38 (live coding 2.0) | `Rug.Osc` 1.2.5 | `live { ... }`, modernized watch, REPL polish, audio input via PulseAudio capture |
+| 39 (notation citizenship) | none (vendor `ABCSharp` + `musicxml-schemas` source) | MusicXML emit, LilyPond emit, ABC import, MML import |
+| 40 (studio sync) | `RtMidi.Core` 1.0.53, `JackSharp` 0.4.0 (optional) | MIDI clock; Ableton Link via P/Invoke if license cleared |
+| 41 (reach + closer) | `NAudio.Wasapi` 2.3.0, `OwnAudioSharp` 1.0.68, `KristofferStrube.Blazor.WebAudio` | `flow doc`, third-genre showcase, JetBrains publish workflow |
+
+**Key reality-check findings from this research:**
+- **DryWetMidi 8.0.3 does NOT support Linux for real-time MIDI device I/O** — only file I/O. The official "Supported OS" docs confirm Windows + macOS only. This forces `RtMidi.Core` for Phase 40.
+- **Magenta is archived read-only since 2026-01-06.** Improvisation API ships as hand-rolled chord-aware Markov; ML-backed improv is post-v1.5.
+- **.NET 10's Native AOT for WASM landed in 2025** — Blazor WASM viability for the Phase 41 playground is materially higher than it was even one year ago (76% reduction in bootstrap JS, AOT compilation to WASM).
+- **RubberBand and Ableton Link are dual-license GPL/commercial** — both flagged. Hand-roll phase vocoder; defer Ableton Link until legal review.
+
+---
+
+## Guiding Principles (inherited from v1.0 / v1.4 stack research)
+
+1. **Minimal dependencies.** Each new NuGet package is a license/maintenance/.NET-10-compat liability. Add one only when hand-rolling would dominate a phase.
+2. **No duplicate stacks.** Flow already has hand-rolled DSP (reverb / filters / compressor / delay / panning), WAV I/O, PulseAudio backend, MIDI export (DryWetMidi 8.0.3), and a custom recursive-descent parser. Do not pull in libraries that duplicate these.
+3. **`IAudioBackend` and the new `IMidiBackend` are abstraction seams.** Platform-specific code lives behind them — the rest of FlowLang remains platform-agnostic.
+4. **License lean = MIT / Apache-2.0 / BSD-3 / public domain.** GPL/LGPL native libs are usable through P/Invoke (we are not statically linking them) but flagged. Reject CC-BY-SA and CC-BY-NC outright (per Phase 29 SPEC-2 precedent).
+5. **Two-run cmp-clean determinism contract holds.** Every new dependency that touches the render path must be auditable for determinism. PRNG-using libraries (Magenta etc.) are extra-suspect.
+
+---
+
+## v1.5 New Dependency Verdict — Summary Table
+
+| # | Surface | Phase | Decision | Library / Approach | License |
+|---|---------|-------|----------|--------------------|---------|
+| 1 | Pattern matching (language) | 35 | **Hand-roll** — AST nodes + decision-tree compile | n/a | n/a |
+| 2 | `-> as name` chain naming | 35 | **Hand-roll** — parser sugar | n/a | n/a |
+| 3 | Rust-style diagnostics | 35 | **Hand-roll** — extend `ErrorReporter` | n/a | n/a |
+| 4 | Pure-Flow test framework | 35 | **Hand-roll** — `.flow` convention + CLI runner subcommand | n/a | n/a |
+| 5 | Tidal pattern algebra (every/fast/slow/chunk/phase/rev) | 36 | **Hand-roll** — extends `Sequence` + new transforms | n/a | n/a |
+| 6 | Markov / L-system / cellular automata / Lorenz | 36 | **Hand-roll** — all small, no library justifies | n/a | n/a |
+| 7 | Parameterized sections | 36 | **Hand-roll** — extend `SectionDeclaration` AST | n/a | n/a |
+| 8 | Improvisation API | 36 | **Hand-roll** baseline (Markov + chord-aware) — defer ML model | n/a | n/a |
+| 9 | Granular synthesis | 37 | **Hand-roll** — new `Granulator` DSP module | n/a | n/a |
+| 10 | Time-stretch + pitch-shift (independent) | 37 | **Hand-roll** phase vocoder, with `FftFlat` as optional FFT helper | MIT (FftFlat) |
+| 11 | Stereo pan across instruments | 37 | **Hand-roll** — constant-power panning already specced in v1.0 stack | n/a | n/a |
+| 12 | Sampler polish (piano warmth, VSCO velocity layers, SFZ `seq_position`/`seq_length`, per-articulation envelope multipliers, flute samples, sampled drums) | 37 | **Hand-roll** — extends existing `SampledInstrumentRenderer` / `SfzRenderer` / `SfzParser` | n/a |
+| 13 | `live { ... }` block + modernized watch mode (cue-quantized swap, ANSI live status, structured stderr) | 38 | **Hand-roll** — extends existing watch-mode + `MusicalContext` | n/a |
+| 14 | REPL LSP-backed tab completion | 38 | **In-process reuse** of existing `flow-lsp` — no IPC | (already in use) |
+| 15 | Inline `?fn` help, pretty piano-roll | 38 | **Hand-roll** — `BuiltInDocs` table + Unicode block-char piano roll | n/a |
+| 16 | Audio input (mic / line-in) | 38 | **Hand-roll** — extend `PulseAudioSimpleBackend` with `PA_STREAM_RECORD` direction | n/a |
+| 17 | OSC server/client | 38 | **NEW DEP** — `Rug.Osc` v1.2.5 | MIT-style |
+| 18 | MusicXML export | 39 | **Hand-roll** with `sightreader/musicxml-schemas` XSD-generated POCOs as scaffolding | (schemas: vendor, verify license) |
+| 19 | LilyPond export | 39 | **Hand-roll** — text emit, no library | n/a |
+| 20 | ABC notation import | 39 | **Vendor** `ABCSharp` source (single-file) — no NuGet package exists | MIT (verify) |
+| 21 | MML notation import | 39 | **Hand-roll** — target one dialect (PMD subset) | n/a |
+| 22 | Real-time MIDI output (`IMidiBackend`) | 40 | **NEW DEP** — `RtMidi.Core` v1.0.53 + native libs for cross-platform | MIT (binding) + MIT (libRtMidi) |
+| 23 | MIDI clock + Ableton Link + JACK transport | 40 | **Mixed**: MIDI clock = hand-roll; Ableton Link = **P/Invoke wrapper** of `libabletonlink` (defer/skip if GPL conflict); JACK = `JackSharp` v0.4.0 (optional Linux-only) | Link: GPLv2+/commercial; JackSharp: LGPL/MIT |
+| 24 | WASM playground | 41 | **NEW APPROACH** — Blazor WebAssembly host (.NET 10) + JSInterop → Web Audio API; consider `KristofferStrube.Blazor.WebAudio` wrapper | MIT |
+| 25 | Cross-platform binaries — Windows WASAPI | 41 | **NEW DEP** — `NAudio.Wasapi` v2.3.0 (scoped to new `WasapiBackend` only) | Microsoft Public License |
+| 26 | Cross-platform binaries — macOS CoreAudio | 41 | **P/Invoke** AudioToolbox/AudioUnit directly; or `OwnAudioSharp` (miniaudio binding) as one-shot cross-platform shortcut | OwnAudioSharp: MIT |
+| 27 | `flow doc` documentation generator | 41 | **Hand-roll** — extract `BuiltInDocs` + proc signatures + `//` comments → Markdown + HTML | n/a |
+| 28 | JetBrains Marketplace publish | 41 | **Workflow only** — Gradle `publishPlugin` task + signing keys; no new code dep | n/a |
 
-The only borderline cases — rational arithmetic for tuplet duration math, and pitch-shift on WAV load — both have hand-roll implementations that are simpler than integrating an external library given Flow's existing primitives (`MusicalNoteData.DurationValue` is already an `int` enum, `PitchConversion.NoteToFrequency` already does the cents→frequency math via `Math.Pow(2, x/12)`).
+**Net new external dependencies introduced in v1.5: 4-6 packages.** All behind interface seams or scoped to new top-level modules.
 
-This document maps each v1.3 feature to its existing-stack integration point and flags the two places where a "look again" decision is justified later.
+---
 
-## Recommended Stack — v1.3 Delta
+## Recommended Stack — Detailed
 
-### Core Technologies (Existing — No Changes)
+### Core Runtime (unchanged from v1.4)
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| .NET 10 | net10.0 | Runtime | Already locked in `flow-lang.csproj`; C# 13 record types + pattern matching already used pervasively |
-| C# 13 | Latest | Language | File-scoped namespaces, switch expressions, records — already idiomatic in flow-lang |
-| Melanchall.DryWetMidi | 8.0.3 | MIDI file write/read | Already integrated for v1.2 velocity regression (`Audio/MidiExport.cs`); covers MIDI output for tuplets and microtonal export via per-channel pitch-bend |
-| PulseAudio (P/Invoke) | System | Real-time playback | Already in `Audio/PulseAudioSimpleBackend.cs`; `IAudioBackend` abstraction unchanged |
-| OmniSharp.Extensions.LanguageServer | 0.19.9 | LSP host (flow-lsp) | Already shipped in v1.2; scale-linting plugs in as a new diagnostic provider, no version bump needed |
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| .NET 10 | net10.0 | Runtime | Already in use; .NET 10 added Native AOT for WASM (Phase 41 unlock) |
+| C# 13 | Latest | Language | Records / pattern matching / file-scoped namespaces / source generators all in active use |
+| PulseAudio (P/Invoke) | System | Linux audio playback + new capture | `PulseAudioSimpleBackend` extends for Phase 38 audio input |
+| DryWetMidi | 8.0.3 (current) | MIDI file R/W (export + flow2midi/midi2flow round-trip) | Confirmed working at v1.4; multi-track export + `Quantizer` already wired in. **Cannot use for real-time MIDI I/O — Windows + macOS only, no ALSA support** (verified at the DryWetMidi "Supported OS" doc page). v1.5 keeps DryWetMidi for *file* work and adds `RtMidi.Core` for *device* work. |
 
-### Supporting Libraries (NEW — None Recommended)
+### NEW: Real-time MIDI Output (Phase 40)
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| *(none)* | — | — | All v1.3 features fit existing primitives |
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `RtMidi.Core` | 1.0.53 | Cross-platform real-time MIDI device I/O | Wraps `librtmidi` (which has ALSA + CoreMIDI + WinMM/WinUWP backends). DryWetMidi 8.0.3 **explicitly does not support Linux** for device I/O — confirmed. RtMidi.Core advertises Windows + macOS officially; Linux ALSA works via the bundled native lib but needs an integration test. Maintenance state: latest release on NuGet is 1.0.53; the only active community-maintained .NET binding for librtmidi. Fits behind the new `IMidiBackend` abstraction so it can be swapped without touching FlowLang core. |
 
-### Development Tools (Existing)
+**Alternatives rejected:**
+- `managed-midi` — explicitly marked "Past project" on its GitHub README; same conclusion as v1.4 stack research.
+- DryWetMidi for device I/O — **technically unavailable on Linux**, which is our primary platform.
+- Hand-roll ALSA / CoreMIDI / WinMM — three platform-specific P/Invoke surfaces is more than one phase's scope; RtMidi.Core gives us all three under one API for one dependency.
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| `dotnet build` / `dotnet run --project flow-interpreter` | Build & test loop | `.flow` test scripts continue to act as the regression suite |
-| flow-lsp + VSCode extension | Author-time validation | Add scale-lint diagnostic; no new tools |
+**Compatibility note:** `RtMidi.Core` targets .NET Standard 2.0, fully compatible with .NET 10. Native librtmidi binaries for linux-x64, win-x64, osx-x64, osx-arm64 ship in the NuGet package.
 
-## Per-Feature Stack Decisions
+### NEW: OSC Server/Client (Phase 38)
 
-For every v1.3 feature: which file/module owns the change, whether existing stack suffices, and what (if anything) would justify a new dependency.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `Rug.Osc` | 1.2.5 | OSC 1.0 protocol — bundles, addresses, UDP send/recv, all argument types | Complete OSC 1.0 implementation; supports the full type tag set including Osc-MIDI and arrays. .NET 2.0 baseline = .NET 10 compatible. Zero dependencies. The package has been stable since 2017 — for a protocol that itself hasn't changed since 2002, "no recent commits" is a feature, not a bug. |
 
-### 1. Tuplets — `(3:2 C4 D4 E4)q` syntax
+**Alternatives rejected:**
+- `OscCore` — exists but smaller surface area; Rug.Osc covers more of the spec out-of-the-box.
+- Hand-roll — OSC's TimeTag NTP-fixed-point, address-pattern matching, and bundle nesting add up to a non-trivial spec; not worth a phase's worth of work when a stable BCL-only library exists.
 
-**Owner:** `Lexing/SimpleLexer.cs` + `Parsing/Parser.cs` + `Ast/Expressions/NoteStreamExpression.cs` + `Runtime/NoteStreamCompiler.cs`
+### NEW: Windows WASAPI Backend (Phase 41)
 
-**Existing stack covers:** YES.
-- Lexer already emits paren-prefixed groups (`(? ...)`, `(?? ...)`, `(ghost ...)`, `(grace ...)`); add a `TUPLET_OPEN` form that recognizes `(N:M ...)`.
-- Parser already has a `NoteStreamElement` discriminated-union pattern (`NoteElement`, `RestElement`, `ChordElement`, `RandomChoiceElement`, `GhostNoteElement`, `GraceNoteElement`); add `TupletElement(int Numerator, int Denominator, IReadOnlyList<NoteStreamElement> Inner, string? DurationSuffix, bool IsDotted)`.
-- `NoteStreamCompiler.CompileBar` already auto-fits durations against `TimeSignatureData` — extend `CalculateAutoFitDuration` to multiply tuplet inner durations by `Denominator/Numerator`.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `NAudio.Wasapi` | 2.3.0 | Windows audio output backend | The single .NET-native, mature, MS-Public-License WASAPI wrapper. Confirmed .NET 10 compatible (NAudio v2.3.0 added `#:package` directive support which is a .NET 10 preview-4 feature). **Important constraint:** isolate to a new `WasapiBackend.cs` implementing `IAudioBackend` — do NOT pull NAudio.Core into the rest of FlowLang. We are using one specific class (`WasapiOut`) and the MMDeviceEnumerator, not duplicating the existing DSP pipeline. |
 
-**No external library.** Tuplet ratios are small integers (2:3, 3:2, 5:4, 7:8) — no arbitrary-precision rational math is required. See "Rational Arithmetic" below for the explicit rationale.
+**Alternatives rejected:**
+- `CSCore` — Windows-only same as NAudio; no compelling advantage and less active.
+- Hand-roll WASAPI via P/Invoke — possible (the existing PulseAudio backend is hand-rolled P/Invoke) but WASAPI's COM-interface surface is materially more complex than PulseAudio Simple; this would dominate Phase 41 scope.
 
-### 2. Arbitrary fractional note durations — `C4/12`, `C4/5`
+### NEW: macOS CoreAudio Backend (Phase 41)
 
-**Owner:** `Lexing/SimpleLexer.cs` (duration-suffix tokenizer) + `Runtime/NoteStreamCompiler.cs` + new `MusicalNoteData.DurationValue` representation
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| **Option A (preferred)**: `OwnAudioSharp` | 1.0.68 | Cross-platform audio I/O backed by miniaudio | Single binding covers Win/macOS/Linux — same API everywhere. If integration testing on macOS shows acceptable latency, this is the simplest path. miniaudio is public domain, OwnAudioSharp is MIT. |
+| **Option B (fallback)**: Hand-roll P/Invoke of AudioToolbox/AudioUnit | n/a | macOS-only audio output backend | Mirrors the existing PulseAudio pattern. More work but zero new deps and full control. .NET MAUI / Xamarin bindings (CoreMidi namespace) exist but only target iOS — they don't ship in a non-MAUI .NET 10 console app. |
 
-**Existing stack covers:** YES, with one schema decision to make.
-- Today `MusicalNoteData.DurationValue` is `int?` interpreted as a `NoteValueType.Value` enum (WHOLE=0, HALF=1, QUARTER=2, EIGHTH=3, SIXTEENTH=4, THIRTYSECOND=5).
-- Adding fractional durations requires either (a) extending the enum to encode `1/N` for arbitrary N, or (b) replacing `int?` with a new struct `NoteDuration(int Numerator, int Denominator)` while keeping the enum-int convention as a fast path.
-- The renderer (`SequenceRenderer`, `BarRenderer`, `Audio/MidiExport.cs`) ultimately converts duration to seconds via `60/BPM × beatsPerNote` — that math is identical for `1/4` and `1/12`; only the source-of-truth representation needs widening.
+**Recommendation:** start with Option A's `OwnAudioSharp` smoke test in Phase 41 Plan 1. If it cleanly handles the existing stereo `IAudioBackend` interface, ship it as the macOS backend AND keep PulseAudio for Linux (don't migrate Linux). If miniaudio's quirks surface, fall back to Option B.
 
-**No external library.** Standard integer division + GCD for normalization; ~30 lines of C#.
+**Alternatives rejected:**
+- `libsoundio-sharp` — atsushieno's binding, less maintained than `OwnAudioSharp`.
+- NAudio's macOS plans — NAudio is Windows-only; CoreAudio support has been on its roadmap for years without landing.
 
-### 3. DEFER-01 — `range(Int, Int) → Array[Int]`
+### NEW: Ableton Link (Phase 40, optional)
 
-**Owner:** `StandardLibrary/BuiltInFunctions.cs` + `StandardLibrary/InternalFunctionRegistry.cs`
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `Ableton/link` (native C++ lib via P/Invoke) | latest from https://github.com/Ableton/link | Cross-application beat/tempo/phase/start-stop sync | No active .NET wrapper exists. **Licensing alert:** Ableton Link is dual-licensed GPLv2+ AND proprietary. Flow is open-source — GPL compatibility check needed before shipping. Existing C# wrapper precedent: `UnityAbletonLink` (P/Invoke pattern) — useful as scaffolding reference. |
 
-**Existing stack covers:** YES — pure stdlib registration. Use `Enumerable.Range(start, count).ToList()` wrapped in `Value.FromArray` against `ArrayType(IntType.Instance)`. Zero new dependencies.
+**Recommendation:** P/Invoke the C++ libabletonlink as the lowest-risk path. Treat as a stretch feature in Phase 40 — if the GPL licensing investigation flags a conflict with Flow's distribution license, downgrade to "Ableton Link compatibility = NOT shipped; document the API surface for community contribution."
 
-### 4. DEFER-02/03 — pragma system + `enable` keyword for `H` alias
+### NEW: JACK Transport Sync (Phase 40, optional, Linux-only)
 
-**Owner:** `Lexing/SimpleLexer.cs` (top-of-file pragma scan) + `Parsing/Parser.cs` (`enable H_AS_B` statement) + `Runtime/ExecutionContext.cs` (pragma flag set on the module's stack frame)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `JackSharp` | 0.4.0 | C# wrapper around libjack | LGPL/MIT mixed; provides `JackSharp.Processor` and `JackSharp.Controller`. The standard .NET binding for JACK; no real competitor. |
 
-**Existing stack covers:** YES.
-- Pragma syntax is a parser-level feature; no runtime cost, no external lib.
-- Note-stream lexing is already a custom path (it already distinguishes flat-letter `Bb4` from regular `B4`); adding a single conditional remap `H` → `B` when the pragma flag is on is trivial.
-- Mirror precedent: existing `swing 0.6 { ... }` block pushes flag-state on `MusicalContext` stack — pragma can use the same scoping primitive (or be module-scoped, lighter).
+**Recommendation:** Gate JACK transport behind a runtime probe (`isJackAvailable()`). Linux composers who don't have a JACK server get a graceful no-op. Don't make JACK a hard dep of the Linux build.
 
-**No external library.**
+### NEW: WASM Playground (Phase 41)
 
-### 5. DEFER-04 — Multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| **Blazor WebAssembly** | .NET 10 SDK | Host the FlowEngine in the browser | .NET 10's WASM/AOT improvements are substantial: blazor.web.js dropped from 183 KB → 43 KB; core assemblies compressed 50–70%; startup feels competitive. The FlowEngine is pure managed C# (modulo PulseAudio P/Invoke, which we exclude from the WASM build via conditional compilation) — should compile cleanly to WASM. |
+| `KristofferStrube.Blazor.WebAudio` | latest | Blazor wrapper around the Web Audio API | Used for playback (replaces PulseAudio in the WASM build). The Phase 38 `live { ... }` block is the headline browser demo — composer edits Flow in the browser, audio plays via Web Audio. Optional: could JSInterop the Web Audio API directly if we want zero deps. |
 
-**Owner:** `TypeSystem/SpecialTypes/NoteType.cs` (Parse) + `StandardLibrary/Harmony/ChordParser.cs` (formatting) + `enharmonic()` builtin
+**Critical constraint for Phase 41:** the FlowEngine's audio path must be retargettable. The existing `IAudioBackend` abstraction was built exactly for this — add a `WebAudioBackend.cs` and the rest of the engine doesn't know it's running in a browser.
 
-**Existing stack covers:** YES — pure note-name table extension. v1.2 Phase 14 already shipped `Db4/Eb4/Gb4/Ab4/Bb4/Cb4/Fb4` Parse + lexer dispatch reorder; this DEFER closes the inverse direction (E# = F natural, B# = C natural one octave up, Fb = E natural, Cb = B natural one octave down). Add the four edge-case rows to the existing alteration table; ~12 lines.
+**Bundle size estimate:** the full Flow stdlib + interpreter + 21 sample WAVs is currently ~40 MB self-contained. For the browser, ship only the interpreter + a curated stdlib subset; samples can lazy-load on first `renderSong`. Target: < 15 MB compressed initial payload.
 
-**No external library.**
+**Alternatives rejected:**
+- Uno Platform's WASM head — heavier than Blazor for our use case (we don't need XAML).
+- NativeAOT-LLVM standalone (running .NET in browser without Blazor) — actively researched approach but documented as experimental; Blazor WASM is the well-trodden path.
 
-### 6. DEFER-05 — Slice negative-from-end indexing
+### NEW (scaffolding only): MusicXML Export (Phase 39)
 
-**Owner:** `StandardLibrary/BuiltInFunctions.cs` `slice()` (already exists for `Sequence` and `Array[T]`)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `sightreader/musicxml-schemas` (vendored) | latest commit | XSD-generated C# POCOs for MusicXML 2.0/3.0/3.1 schema | We don't pull this as a NuGet (no package). Vendor the generated POCOs once, treat them as a code dependency. Then hand-roll the Flow → POCO mapper for the minimum viable export subset. |
 
-**Existing stack covers:** YES. Negative indexing is a lambda over Length: `if (idx < 0) idx = length + idx`. Existing slice already does silent two-sided clamping (per v1.2 charitable-interpretation pattern); adding negative-from-end is a one-line wrap before clamping.
+**Why not `MusicXml.NET` v3.1.0:** it's a *parser*, not a *writer*. The repo only does file-in. We need file-out, so the parser's API doesn't help.
 
-**No external library.**
+**Minimum viable subset for MuseScore round-trip:** `score-partwise` root, `part-list` with `score-part`, `part` containing `measure`s, each with `attributes` (divisions / key / time / clef) + `note` elements (pitch / duration / tied / chord / lyric / dynamics). This is ~30 elements out of MusicXML's ~400+. Hand-roll using the vendored POCOs as types; serialize via `System.Xml.Serialization` or just `StringBuilder`.
 
-### 7. DEFER-06 — Gaussian humanize distribution
+**Integration with existing pipeline:** reuse the same `BarData` / `MusicalNoteData` / `Sequence` structures that feed `MidiExport`. The existing multi-track MIDI export's tick math gives us measure boundaries for free. Lift the per-instrument routing logic from `MidiExport.cs` for the `score-part` instrument names.
 
-**Owner:** `StandardLibrary/BuiltInFunctions.cs` `humanize()` overload + RNG path through `ExecutionContext.GetRand`
+### NEW: ABC Notation Import (Phase 39)
 
-**Existing stack covers:** YES.
-- `Random.Shared.NextSingle()` (uniform) already used; Gaussian is the **Box–Muller transform**: `z = sqrt(-2 ln u1) × cos(2π u2)`. Two uniform draws → one Gaussian sample. Standard textbook ~6 lines.
-- Determinism contract from v1.2 is preserved because the RNG is reseeded at `renderSong/writeWav` boundaries — Box–Muller consumes pairs of uniforms deterministically.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| `matthewcpp/ABCSharp` (vendored as source) | latest from GitHub | ABC notation parser | No NuGet package exists; vendor the source. ABC is a tiny grammar (notes, durations, key, meter, chord symbols) — `ABCSharp` is the only actively-updated C# implementation (last commit 2024). |
 
-**No external library.** `MathNet.Numerics` would provide `Normal.Sample` but is overkill for a single distribution and contradicts the minimal-deps stance.
+**Alternatives rejected:**
+- `danwatford/abc` — Java/Kotlin, not C#.
+- Hand-roll — feasible (ABC is small) but ABCSharp already exists and works; vendoring 1-2 source files is cheaper than re-deriving the grammar.
 
-### 8. Arpeggio parameters (rate, direction, pattern)
+### Hand-Roll: LilyPond Export (Phase 39)
 
-**Owner:** `StandardLibrary/Harmony/HarmonyFunctions.cs` `arpeggio()` overload
+**No library. LilyPond input is plain text — write a `LilyPondWriter` class that walks the same `Section`/`Sequence`/`Bar` structures the WAV+MIDI exporters use.**
 
-**Existing stack covers:** YES. Existing `arpeggio(Chord) → Sequence` is upgraded to `arpeggio(Chord, NoteValue rate, ArpeggioDirection dir, ArpeggioPattern pattern) → Sequence` — pure data manipulation over `ChordData.NoteNames` (reverse for `down`, alternate-then-shift for `updown`, reorder by interval-class for patterns like `1-3-5-7`/`1-5-3-7`). New enum types fit in `TypeSystem/SpecialTypes/`.
-
-**No external library.**
-
-### 9. Chord inversions / voicings
-
-**Owner:** `StandardLibrary/Harmony/ChordParser.cs` + `StandardLibrary/Harmony/HarmonyFunctions.cs`
-
-**Existing stack covers:** YES. `ChordData.NoteNames` is already an ordered list. Inversion = octave-up the bottom N notes (`invert(Chord, Int n)`), close-voicing = collapse all notes into a one-octave window, drop-2 / drop-3 = octave-down the 2nd/3rd-from-top voice. All operations are integer arithmetic on octave numbers + reorder.
-
-**No external library.**
-
-### 10. Delay sync to note values (`delay(buf, 1/8)` vs `delay(buf, 250ms)`)
-
-**Owner:** `StandardLibrary/Audio/DSP/Delay.cs` + new overload `delay(Buffer, NoteValue, Double feedback)` that reads `MusicalContext.Tempo`
-
-**Existing stack covers:** YES. `Delay.cs` already takes ms; new overload converts `NoteValue` × tempo to ms via `(60.0 / bpm) × beatsPerNote × 1000`. The same musical-context stack (`MusicalContext.Tempo`) used by `tempoRamp` and `renderSong` is the source of truth.
-
-**No external library.**
-
-### 11. Microtonal ratios — just intonation, custom temperaments
-
-**Owner:** `Runtime/MusicalContext.cs` (new `Tuning` field) + `StandardLibrary/Audio/PitchConversion.cs` (replace `NoteToFrequency` with tuning-aware version) + new `tuning { ... }` musical-context block
-
-**Existing stack covers:** YES.
-- `PitchConversion.NoteToFrequency` currently hard-codes 12-TET via `440 × 2^((midi-69)/12)`. Generalize to `referenceFreq × tuningTable[scaleDegree] × 2^octaveOffset`, where `tuningTable` is a `double[N]` of frequency ratios (just intonation: `{1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 9/5, 15/8}`; Pythagorean / meantone / user-supplied: same shape).
-- The `CentType` already exists for cent offsets — reuse for per-note microtonal nudges. A custom temperament is **N cent values** keyed off the tonic from `MusicalContext.Key`. Pure C# math; no library.
-- **Scala (.scl) file format support** (optional, post-v1.3): plain ASCII text, one tuning per file, lines = ratios (`3/2`) or cents (`701.955`), comments start with `!`. ~50 lines of parser code; no library exists for C# anyway (only C++ libscala-file). Hand-rolling is the correct call given the format's simplicity and the Huygens-Fokker spec.
-
-**No external library.** The existing `Cent` and `Semitone` types plus `Math.Pow` cover everything microtonal Flow has expressed interest in.
-
-### 12. Scale linting (compile-time warning for out-of-key notes)
-
-**Owner:** `flow-lang/Core/ErrorReporter.cs` (new `Diagnostic` severity = warning) + `flow-lsp` diagnostic publisher
-
-**Existing stack covers:** YES.
-- `ScaleDatabase.cs` already enumerates the active key's diatonic pitch-classes (used for roman-numeral resolution).
-- `NoteStreamCompiler` already walks every `NoteElement` with full key context.
-- Add a single pass after note-stream compilation: for each non-rest note, check `ScaleDatabase.IsInKey(note, MusicalContext.Key)` — if not, emit a `Diagnostic(Severity.Warning, "Note {X} is outside key {Y}", sourceLocation)`.
-- LSP plumbing is identical to existing diagnostics in flow-lsp (publishes via `TextDocumentPublishDiagnostics` already wired to `ErrorReporter`). The `OmniSharp.Extensions.LanguageServer 0.19.9` package already shipped in v1.2 has full diagnostic-severity support — no version bump.
-
-**No external library.** This is purely an additional pass over data the compiler already has.
-
-### 13. Legato / portamento articulations
-
-**Owner:** `Ast/Expressions/NoteStreamExpression.cs` (`Articulation` enum already has `Normal`, `Accent`, `Marcato`, `Sforzando`, `Staccato` — add `Legato`, `Portamento`) + `StandardLibrary/Audio/SequenceRenderer.cs` (envelope/release-overlap behavior) + per-instrument synthesizer release behavior
-
-**Existing stack covers:** YES.
-- Legato = note-overlap rendering: extend each note's release into the next note's attack window. `EnvelopeProcessor.cs` already supports adjustable ADSR per-note; legato is "release time → 0, attack overlaps previous". Pure parameter tweak in render path.
-- Portamento = pitch-glide between notes: linear (or exponential) ramp of the carrier frequency over the first 10–30ms of the second note. Existing per-sample synth loop (`PianoSynthesizer`, `BrassSynthesizer`, etc.) already computes frequency per-sample — add a one-pole pitch lerp at note boundary.
-
-**No external library.**
-
-### 14. Snap-to-grid quantize
-
-**Owner:** New `StandardLibrary/Transforms/QuantizeFunctions.cs` + `quantize(Sequence, NoteValue grid) → Sequence`
-
-**Existing stack covers:** YES. Existing transforms (`transpose`, `invert`, `retrograde`, `augment`, `diminish`) all walk `SequenceData.Bars[].Notes[]` and produce a new sequence — `quantize` is the same shape. Round each `note.StartBeat` to nearest multiple of `grid` (in beats) using `Math.Round`. Strength parameter (0..1) lerps between original and snapped position.
-
-**No external library.**
-
-### 15. WAV pitch-shift on load — sample-rate conversion + pitch transposition
-
-**Owner:** `StandardLibrary/Audio/FileIO.cs` (`loadWav` exists since v1.0 Phase 2) + new helper in `Audio/`
-
-**Existing stack covers:** YES — but this is the only feature where a library deserves a serious second look. See "Pitch-Shift Decision" below.
-
-Recommended hand-roll path:
-- **Sample-rate conversion**: linear interpolation (or windowed-sinc with a precomputed Lanczos kernel — ~40 lines) between source-rate samples and target-rate sample positions. Quality is sufficient for a music DSL where users are loading short samples (drum hits, vocal stabs), not mastering audio.
-- **Pitch-shift via resample-then-stretch**: shift pitch by reading the buffer faster/slower (factor = `2^(semitones/12)`), then time-stretch back to original length using overlap-add (OLA) with a Hann window — classic 200-line implementation, no library required.
-- **Combined `loadWav(path, semitones)` overload**: do the resample-and-stretch in one pass; no intermediate temp buffer.
-
-**Why not SoundTouch.Net 2.3.2:** It's LGPL — even though static linking with .NET assemblies is a less-clear-cut LGPL concern than native code, it conflicts with Flow's existing all-permissive dependency stance (Pidgin: MIT, DryWetMidi: MIT, OmniSharp.Extensions.LanguageServer: MIT). Adding LGPL also forecloses future commercial relicensing without notice. Hand-rolled OLA is well within the project's demonstrated DSP capability (existing `Reverb.cs`, `Compressor.cs`, `Delay.cs` are all hand-written).
-
-**Why not NAudio's WDL resampler:** NAudio is Windows-centric; pulling it in for one resampling routine drags in a Windows-targeted dependency surface that conflicts with the existing PulseAudio Linux-first stance and the `IAudioBackend` abstraction philosophy.
-
-**No external library** — but mark this feature for re-evaluation if user feedback shows audible artifacts in production-grade pitch shifts.
-
-## Rational Arithmetic for Tuplet / Fraction Math
-
-**Question:** `BigRational`, `Fractions 8.3.2`, `Rationals 2.3.0`, hand-rolled, or built-in?
-
-**Answer: Hand-rolled struct.**
-
-```csharp
-public readonly record struct NoteFraction(int Numerator, int Denominator)
-{
-    public static NoteFraction Reduce(int n, int d) { /* Euclid GCD */ }
-    public static NoteFraction operator *(NoteFraction a, NoteFraction b) =>
-        Reduce(a.Numerator * b.Numerator, a.Denominator * b.Denominator);
-    public double ToDouble() => (double)Numerator / Denominator;
+Minimum viable emit:
+```lilypond
+\version "2.24.0"
+\score {
+  \new Staff {
+    \time 4/4
+    \key c \major
+    \tempo 4 = 120
+    c'4 d'4 e'4 f'4 |
+    g'2 c''2 |
+  }
+  \layout { }
+  \midi { }
 }
 ```
 
-**Why a library is overkill:**
-1. **Tuplet ratios are small integers.** A 7:8 quintuplet inside a 64th-note triplet inside a 4/4 bar produces denominators in the low thousands at worst — `int` (or `long` for paranoia) handles this without overflow concerns. `BigInteger`-backed rationals (Fractions 8.3.2, Rationals 2.3.0, ExtendedNumerics.BigRational) are arbitrary-precision; we don't need that.
-2. **Renderer ultimately converts to `double` seconds.** `MusicalNoteData.DurationValue` flows into `60.0 / bpm × beatsPerNote × sampleRate` to compute sample counts — at that point we're in `double` anyway. Carrying exact rationals through the entire pipeline gains nothing audible.
-3. **Existing convention.** `MusicalContext.TimeSignature.Numerator`/`Denominator` are already `int` pairs — a `(int, int)` record is the natural extension and keeps the interpreter's value model homogeneous.
-4. **Minimal-deps stance.** Adding `Fractions` for ~3 operations (×, ÷, equality) when the GCD-based reduce is one Euclid loop violates the explicit "all other features: hand-rolled" rule from PROJECT.md.
+Map: `Sequence` → `\new Staff`; `MusicalContext.TimeSignature` → `\time`; key → `\key`; tempo → `\tempo`; note pitch+duration → LilyPond pitch syntax with `'` octave marks. Chords → `<c' e' g'>4`. Ties → `~`. Slurs/articulations → existing Phase 28 tokens.
 
-**When to revisit:** If/when Flow grows a polyrhythm-vs-polymetric DSL with deeply nested compound tuplets producing pathological denominators, reassess. Not v1.3.
+**Why no library:** lilypond.NET, lily-export-sharp etc. don't exist; the LilyPond ecosystem assumes its own CLI as the toolchain, not third-party emitters. Pure string building is the right level.
 
-## Microtonal Tuning APIs
+### Hand-Roll: MML Import (Phase 39)
 
-**Question:** External tuning libraries vs hand-rolled cents-to-frequency math?
+**Target one MML dialect: a PMD/MUCOM88 subset (the most common "modern chiptune" baseline).** Reject everything else with a parser error — composers who want NRTDRV or NES-style FT can preprocess.
 
-**Answer: Hand-rolled, leveraging existing `CentType` and `PitchConversion`.**
+Minimal grammar:
+- Octave: `O<n>` and `<` / `>` shift
+- Notes: `[a-g][#+\-]?<duration>` with `.` for dot
+- Rest: `r<duration>`
+- Length: `L<n>` default duration
+- Tempo: `T<bpm>`
+- Volume: `V<0-15>`
+- Voice/instrument: `@<n>`
+- Loop: `[ ... ]<n>`
 
-**Why a library is overkill:**
-1. **`PitchConversion.NoteToFrequency` already does the math.** It's six lines: MIDI-note + alteration → `440 × 2^((midi - 69)/12)`. Generalizing to `freq = referenceFreq × tuningRatio[scaleDegree] × 2^octaveOffset` is two extra fields and a table lookup.
-2. **`CentType` already parses `+50c`/`-25c` literals.** Cents-to-ratio is `2^(cents/1200)` — one `Math.Pow` call. The existing pipeline that handles `C4+50c` already routes the cent offset through to the synthesizer; tuning tables piggyback on this exact path.
-3. **No mainstream C# tuning library exists.** Searches for "Scala .scl C# library" surface only C++ implementations (libscala-file). The closest .NET-adjacent option is hand-rolling against the published Huygens-Fokker spec — which is so simple (text format, one ratio or cents value per line, `!` comments) that even a "library" version would be ~50 lines.
-4. **MIDI export already supports microtonality.** DryWetMidi 8.0.3 (already integrated) handles per-channel pitch-bend events, which is the standard MIDI mechanism for non-12-TET pitches. No additional package needed for round-trip microtonal MIDI.
+Hand-roll a recursive-descent parser following the existing `Parser.cs` pattern; emit Flow AST nodes directly (or compile straight to `Sequence` values).
 
-**When to revisit:** If Flow ever wants AnaMark `.tun` (binary) or MTS-ESP runtime tuning protocol support, those are heavier formats and might justify a library. v1.3 needs neither.
+**No library exists for C#** — `mugene-ng` is Kotlin, `mml_parser` is C, `MML-Parser` is JS. Worth keeping the surface small.
 
-## Pitch-Shift / Sample Rate Conversion
+### Hand-Roll: Phase Vocoder (Time-Stretch + Pitch-Shift) (Phase 37)
 
-**Question:** Resampling library vs hand-rolled SoundTouch-like?
+**No P/Invoke RubberBand. No libsamplerate.NET.** Hand-roll the phase vocoder.
 
-**Answer: Hand-rolled — but flag for re-evaluation post-v1.3.**
+| Helper | Optional NuGet | Why |
+|--------|----------------|-----|
+| `FftFlat` 1.0.1 | If profiling shows FFT as bottleneck | Pure C# FFT, 4× faster than Math.NET; MIT; zero native deps |
 
-| Option | Verdict | Rationale |
-|--------|---------|-----------|
-| SoundTouch.Net 2.3.2 | **NO** | LGPL — license inconsistent with existing all-permissive deps; conflicts with implicit "no commercial-foreclosing license" stance |
-| NAudio WDL resampler | **NO** | Windows-centric, pulls in a Windows-targeted dependency surface; contradicts Linux-first PulseAudio stance |
-| r8brain-free-src | **NO** | C++ only; would require P/Invoke wrapper; complexity > benefit for the audio quality target |
-| NWaves | **NO** | Already explicitly NOT recommended by PROJECT.md (abandoned since 2021, would create parallel DSP stack) |
-| Hand-rolled linear interpolation + OLA | **YES** | ~200 LOC; matches existing DSP-authoring style (Reverb.cs, Compressor.cs are similar in scope); good-enough quality for a music DSL's sample-load use case |
+**Rationale:**
+- RubberBand has a CC0/GPL dual license — same legal hazard as Ableton Link. The `breakfastquay/rubberband` repo ships an official .NET interface but it requires C++ build infrastructure. `spoiledtechie/RubberBand.Net` is a community wrapper but appears unmaintained.
+- libsamplerate.NET — last touched many years ago.
+- Phase vocoder algorithm is well-documented (Bernsee, Laroche-Dolson) and fits in ~300 lines of C#. Determinism is preservable (no PRNG).
 
-**Quality budget:** For a music DSL where users load drum samples / vocal stabs / instrument hits and pitch-shift them by ±12 semitones, linear interpolation produces audible artifacts only on extreme stretches; windowed-sinc with a Hann-windowed Lanczos kernel (precomputed table of 64 taps) closes that gap. Both are textbook DSP that fits in `StandardLibrary/Audio/DSP/`.
+**Algorithm sketch:** STFT (Hann window, 75% overlap, 1024–2048 FFT) → phase-unwrap per bin → time-scale by adjusting hop size → optional resample for pitch shift OR scale bin phases for pitch-shift-without-stretch → inverse STFT with overlap-add. Independence of time and pitch comes from doing the two operations in series.
 
-**Re-evaluation trigger:** If post-v1.3 user feedback specifically calls out audible artifacts in pitch-shifted samples — *and only then* — re-evaluate against SoundTouch.Net (with explicit license review) or a hand-rolled phase vocoder.
+**Acceptance bar:** match Sound on Sound's "pitch shifter perceptual tolerance" baseline at modest stretch factors (0.5×–2.0×). Heroic stretches (10×) are not in scope.
 
-## Scale-Linting / Static-Analysis Infrastructure
+### Hand-Roll: Granular Synthesis (Phase 37)
 
-**Question:** Does flow-lsp already have what's needed?
+Standard surface (from the Output / Native Instruments / Sound on Sound consensus):
+- `grainDuration` (Ms, typical 5–500ms)
+- `density` (grains/sec, 1–1000)
+- `position` (offset into source buffer, 0–1 or absolute samples)
+- `positionJitter` (random spread around position)
+- `pitch` (semitones or ratio)
+- `pitchJitter`
+- `pan` + `panJitter`
+- `windowShape` (`hann` / `triangle` / `gaussian` / `rectangular`)
+- `seed` (deterministic randomness — required for Flow's determinism contract)
 
-**Answer: YES — full plumbing exists.**
+Surface in Flow:
+```
+Buffer cloud = (granulate sourceBuffer
+                  grainDuration: 50ms
+                  density: 100
+                  position: 0.3
+                  positionJitter: 0.1
+                  pitch: 0
+                  pitchJitter: 50
+                  pan: 0.0
+                  panJitter: 0.5
+                  windowShape: #hann
+                  seed: 42)
+```
 
-What v1.2 already shipped (per MILESTONES.md Phase 17):
-- `flow-lsp` project references `flow-lang` directly (no shadow language model)
-- Live diagnostics via `OmniSharp.Extensions.LanguageServer` 0.19.9
-- `ErrorReporter` with severity levels
-- Per-platform self-contained VSIX with bundled stdlib
-- Roman-numeral context inside note streams (proves that the LSP already understands the active musical context — exactly what scale-linting needs)
+Implementation: `Granulator.cs` in `StandardLibrary/Audio/DSP/` — schedule grain events on a deterministic timeline, render each by windowing+resampling the source buffer, accumulate into an output `AudioBuffer`. Reuse existing stereo handling.
 
-Adding scale linting is therefore **one new diagnostic publisher** that:
-1. Walks the AST after parse.
-2. For each `NoteStreamExpression`, traverses bars × elements.
-3. Looks up the active `Key` from the surrounding `MusicalContextStatement` (or the nearest enclosing one — the LSP already does this for roman numerals).
-4. Calls `ScaleDatabase.IsInKey(noteName, octave, alteration, key)` (a new method, ~10 lines, on existing class).
-5. Emits `Diagnostic(Warning, "Note D# is outside Cmajor", sourceLocation)` for each non-conforming note.
+### Hand-Roll: Markov / L-system / CA / Lorenz (Phase 36)
 
-`MusicalNoteData` already has `SourceLocation` and `SourceLength` (per `NoteStreamCompiler.cs:124-135`) — diagnostic squiggles render correctly out of the box.
+All four fit in ~50–150 lines of C# each. None justify a library.
 
-**No external library, no LSP version bump, no VSIX rebuild infrastructure changes.**
+| Generator | Surface |
+|-----------|---------|
+| **Markov chain** | `(markovTrain corpusSequence order: 2)` returns a `MarkovModel`; `(markovGenerate model lengthBars: 4 seed: 42)` returns a `Sequence` |
+| **L-system** | `(lsystem axiom: "F" rules: <<"F" "F+F-F">> iterations: 4)` returns a `String` of tokens; companion `(lsystemToSequence tokens scale: cmajor)` maps tokens → notes (Wikipedia/McCormack mapping, well-documented) |
+| **Cellular automata** | `(elementaryCa rule: 30 width: 16 generations: 32 seed: 42)` returns an `Array[Bool]` grid; map onto pitches in a scale via `(caToSequence grid scale: cmajor)` |
+| **Lorenz attractor** | `(lorenzAttractor sigma: 10.0 rho: 28.0 beta: 2.667 steps: 200 dt: 0.01)` returns three `Array[Double]` axes; `(lorenzToSequence x scale: cmajor)` quantizes to scale |
+
+All four route their RNGs through the existing `ExecutionContext.SeededRandom` infrastructure (the same one that backs `(?? ...)` seeded random in note streams) — preserves the determinism contract automatically.
+
+### Hand-Roll: Improvisation API (Phase 36)
+
+**Recommendation: ship a chord-aware Markov baseline. Defer ML model integration to v1.6+ if at all.**
+
+Why no Magenta:
+- **Magenta is Python TensorFlow** — the GitHub repo (https://github.com/magenta/magenta) was **archived read-only on 2026-01-06**. It is no longer maintained.
+- Magenta.js exists for the browser but adds a heavyweight JS dep that conflicts with Flow's "minimal deps" principle.
+- Magenta RealTime (2025) is impressive but requires a TPU/Colab runtime — orthogonal to a desktop CLI.
+
+The chord-aware Markov baseline:
+- Input: a chord progression (`<<Cmaj7, Am7, Dm7, G7>>`), a scale (`cmajor`), a Markov order (1 or 2), a rhythm profile (Tidal pattern), a seed
+- Output: a `Sequence` of melodic notes where transitions respect (a) chord tones on strong beats, (b) scale tones elsewhere, (c) trained transition probabilities from optional corpus
+
+Bias toward chord tones on downbeats is the cheap way to get "musical" output without ML. This is `BachBot`-style on a budget — solves 80% of "I want a passable lead line over my chord progression" use cases.
+
+Surface:
+```
+Sequence solo = (improvise chordProgression: progression
+                            scale: cmajor
+                            rhythm: tidalPattern
+                            order: 2
+                            corpus: trainingSeq
+                            seed: 42)
+```
+
+ML-backed improvisation can be added later as a separate `(improviseML ...)` function that shells out to a Python service (`flow-improv-server`) — the same pattern as the existing TTS hook.
+
+### Hand-Roll: Pattern Matching (Phase 35)
+
+**Compile to a decision tree.** Yorick Peterse's Rust implementation (https://github.com/yorickpeterse/pattern-matching-in-rust) is the reference for the algorithm; Jules Jacobs' 2021 paper ("How to compile pattern matching") is the textbook source.
+
+For Flow's interpreter:
+- Add `MatchExpression` and `PatternExpression` AST nodes
+- Patterns: literal, variable binding, wildcard `_`, tuple `<<a, b>>`, list `[head, ...tail]`, chord/note destructure, guards (`when <bool-expr>`)
+- Compiler: at parse time, build a decision tree (test most-discriminating column first); interpreter walks the tree against the scrutinee
+- Exhaustiveness checking: nice-to-have, defer if scope-bloating
+- No library — every part is < 500 LOC
+
+**Syntax to specify** in Phase 35 plan (sketch):
+```
+match note {
+  C4 => "do",
+  D4 => "re",
+  E4 => "mi",
+  _  => "other"
+}
+
+match seq {
+  | C4 E4 G4 | => "C major arpeggio",
+  | <<head, ...tail>> => (str "starts with " head)
+}
+```
+
+### Hand-Roll: Pure-Flow Test Framework (Phase 35)
+
+**File-convention discovery, not attribute-based.** Rationale: Flow already has implicit-return semantics and no concept of attributes/decorators; the path of least friction is `tests/test_*.flow` convention + a new CLI subcommand.
+
+| Surface | Behavior |
+|---------|----------|
+| `proc testFoo() { ... }` in any `.flow` file | Discovered as a test if name starts with `test` and proc takes 0 args |
+| `(assert <bool> "message")` | New stdlib builtin |
+| `(assertEqual <a> <b>)` | Builtin |
+| `(assertNear <a> <b> tolerance)` | Builtin (already need for RMS regression) |
+| `flow test [path]` | New CLI subcommand; runs every `testXxx` proc, prints pass/fail summary |
+
+No new external dep. Builds on the existing CLI binary's 11-subcommand surface (becomes 12).
+
+### Hand-Roll: Documentation Generator `flow doc` (Phase 41)
+
+**Reject DocFX.** DocFX is for C# triple-slash comments + assemblies — it's designed for documenting the *Flow interpreter source*, not Flow programs. We want a tool that documents `.flow` files.
+
+| Component | Behavior |
+|-----------|----------|
+| Source: `BuiltInDocs` table (already exists in `flow-lsp` for hover/SignatureHelp) | Built-in reference page |
+| Source: `proc` declarations in user `.flow` files with optional `// doc:` comments above | User-defined function reference |
+| Source: `examples/*.flow` | Tutorial pages with rendered audio links |
+| Output: Markdown by default; HTML via a templated converter (use `Markdig` if any rendering needed) | |
+
+Surface:
+```
+flow doc <path> [--format html|md] [--output <dir>]
+```
+
+This is a hand-rolled walker over the same AST the interpreter uses. ~500-1000 LOC. Markdig is the only candidate library and only if HTML rendering is in scope — pure Markdown emit needs nothing.
+
+---
+
+## Existing Stack (No Changes)
+
+| Technology | Version | Purpose | Status |
+|------------|---------|---------|--------|
+| .NET 10 | net10.0 | Runtime | Unchanged |
+| C# 13 | Latest | Language | Unchanged |
+| PulseAudio (P/Invoke) | System | Linux audio playback | Will be extended in Phase 38 for capture (`PA_STREAM_RECORD` direction) |
+| Melanchall.DryWetMidi | 8.0.3 | MIDI file R/W | Unchanged; remains the file-export library |
+| OmniSharp.Extensions.LanguageServer | 0.19.x (existing in flow-lsp) | LSP server framework | Reused in Phase 38 for REPL completion via in-process embedding |
+| Pidgin | (referenced, unused) | Parser combinator | Should be removed as a v1.5 housekeeping item (it's flagged in v1.0 stack research as removable) |
+
+---
+
+## Alternatives Considered
+
+| Recommended | Alternative | When Alternative Wins |
+|-------------|-------------|------------------------|
+| `RtMidi.Core` 1.0.53 | `managed-midi` | Never — archived as "past project" |
+| `RtMidi.Core` 1.0.53 | Hand-roll ALSA + CoreMIDI + WinMM P/Invoke | If we only needed one platform; we need three |
+| Hand-roll phase vocoder | RubberBand via P/Invoke | If a Flow user files an RFC for studio-grade ±12-st pitch shift quality |
+| Hand-roll Markov improv | Magenta RealTime | Never — Python-only, archived, no offline runtime |
+| Vendored ABCSharp source | Hand-roll ABC parser | If ABCSharp turns out to be broken on a fixture (low risk; small grammar) |
+| `OwnAudioSharp` (miniaudio) for macOS | Hand-roll CoreAudio P/Invoke | If miniaudio has unacceptable latency on macOS hardware (run Phase 41 Plan 1 smoke test first) |
+| `NAudio.Wasapi` for Windows | Hand-roll WASAPI P/Invoke | If we want zero deps and have Phase 41 budget to burn — unlikely |
+| `Rug.Osc` 1.2.5 | `OscCore` | If a feature gap in Rug.Osc emerges (unlikely; it covers full 1.0 spec) |
+| `JackSharp` 0.4.0 | Hand-roll libjack P/Invoke | If JackSharp's API model conflicts with Flow's render path (low risk; the surface we need is small) |
+| Blazor WASM | Uno Platform WASM | If we need cross-target XAML (we don't) |
+| Hand-roll MusicXML emit (using vendored schemas) | A full `MusicXML.Writer` NuGet | None exists |
+
+---
+
+## What NOT to Use
+
+| Avoid | Specific Problem | Use Instead |
+|-------|------------------|-------------|
+| **NAudio (full, not just NAudio.Wasapi)** | Windows-centric, would duplicate the hand-built audio pipeline — same conclusion as v1.0 stack research | NAudio.Wasapi only (one class, scoped to a single backend file) |
+| **CSCore** | Windows-only; same overlap problem as NAudio | NAudio.Wasapi |
+| **NWaves** | At v0.9.6 (Oct 2021), abandonment-flagged; would duplicate existing hand-rolled DSP | Hand-roll the phase vocoder + granulator on top of existing DSP primitives |
+| **managed-midi** | Marked "Past project" on GitHub | RtMidi.Core 1.0.53 |
+| **DryWetMidi for real-time MIDI device I/O** | Confirmed: Windows + macOS only, NO Linux/ALSA support | RtMidi.Core |
+| **Magenta (Python)** | Archived read-only since 2026-01-06; Python-only | Hand-rolled chord-aware Markov baseline; reconsider Magenta.js or a successor in v1.6 if browser-side ML is desired |
+| **Pidgin parser combinator** | Already in csproj, not used by the actual parser | Remove during a v1.5 housekeeping cleanup |
+| **DocFX for `flow doc`** | Documents C# source, not Flow source | Hand-rolled Markdown emitter |
+| **MusicXml.NET** | Parser only — does not write MusicXML | Vendored `sightreader/musicxml-schemas` POCOs + hand-rolled writer |
+| **Ableton Link in proprietary distribution context** | GPLv2+ / commercial dual-license — needs legal review if Flow ships under MIT/Apache | Document the API surface; defer if license cleared with the Ableton team |
+| **CC-BY-SA / CC-BY-NC native libraries** | Rejected per Phase 29 SPEC-2 precedent | MIT / Apache / BSD / CC-BY 4.0 only |
+
+---
+
+## Stack Patterns by Variant
+
+**If shipping only the Linux build first (Phase 41 partial):**
+- Use PulseAudio (existing); no Windows/macOS backends yet
+- Use JackSharp (optional) for transport
+- Use RtMidi.Core's ALSA backend for MIDI I/O
+- Skip OwnAudioSharp + NAudio.Wasapi entirely
+
+**If shipping a "Linux-only studio profile" forever:**
+- All v1.5 phases ship; Phase 41 narrows to "Linux self-contained binary refresh + WASM playground only"
+- Save ~3-5 days vs. cross-platform binaries
+
+**If the WASM playground proves harder than budgeted:**
+- Move it to v1.6
+- Phase 41 still closes the milestone with cross-platform binaries + `flow doc` + JetBrains publish + third-genre showcase
+
+**If `RtMidi.Core` Linux ALSA support has bugs (untested by upstream):**
+- Build a thin ALSA-direct backend behind `IMidiBackend`
+- Use RtMidi.Core for Windows + macOS only
+- Mirrors the IAudioBackend pattern exactly
+
+---
+
+## Version Compatibility Matrix
+
+| Package | Version | .NET 10 Compatible | Notes |
+|---------|---------|---------------------|-------|
+| Melanchall.DryWetMidi | 8.0.3 | YES | Confirmed in production at v1.4; v9.0.0-prerelease exists |
+| RtMidi.Core | 1.0.53 | YES (via .NET Standard 2.0) | Native libs bundled |
+| Rug.Osc | 1.2.5 | YES (via .NET Standard 2.0) | Zero deps |
+| NAudio.Wasapi | 2.3.0 | YES | NAudio v2.3 explicitly added .NET 10 preview-4 feature support |
+| JackSharp | 0.4.0 | YES (via .NET Standard 2.0) | Native libjack required at runtime |
+| OwnAudioSharp | 1.0.68 | YES | Bundles miniaudio natives |
+| KristofferStrube.Blazor.WebAudio | latest | YES | Blazor WASM target |
+| FftFlat | 1.0.1 (if used) | YES | Pure C# |
+| ABCSharp | vendored from GitHub | YES | Single .cs file dependency |
+| sightreader/musicxml-schemas | vendored | YES | Pure POCO classes |
+
+---
 
 ## Installation
 
 ```bash
-# No new packages — existing flow-lang.csproj is sufficient:
-#   <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
-#   <PackageReference Include="Pidgin" Version="3.5.1" />        # still unused; candidate for removal
-# flow-lsp.csproj likewise unchanged:
-#   <PackageReference Include="OmniSharp.Extensions.LanguageServer" Version="0.19.9" />
+# Already in flow-lang.csproj — no change
+# <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
+
+# Phase 38 (OSC + audio input)
+dotnet add flow-lang package Rug.Osc --version 1.2.5
+
+# Phase 40 (real-time MIDI; JACK optional)
+dotnet add flow-lang package RtMidi.Core --version 1.0.53
+dotnet add flow-lang package JackSharp --version 0.4.0      # optional, Linux-only feature
+
+# Phase 41 (Windows backend; macOS backend; WASM playground)
+dotnet add flow-lang package NAudio.Wasapi --version 2.3.0  # Windows backend only
+dotnet add flow-lang package OwnAudioSharp --version 1.0.68 # macOS (and optionally cross-platform)
+dotnet add flow-wasm package KristofferStrube.Blazor.WebAudio  # new flow-wasm project
+
+# Optional (only if profiling demands)
+dotnet add flow-lang package FftFlat --version 1.0.1        # Phase 37 phase vocoder
+
+# Vendored sources (no NuGet)
+# Drop into flow-lang/External/:
+#   - musicxml-schemas/*.cs (Phase 39 MusicXML export scaffolding)
+#   - ABCSharp/*.cs (Phase 39 ABC import)
 ```
 
-**Optional housekeeping during v1.3:** Pidgin 3.5.1 is still referenced but unused (per PROJECT.md "Libraries Explicitly NOT Recommended" and the deferred candidates list). If a quick task is desired, dropping it is one csproj edit + a `dotnet restore`. Not required by any v1.3 feature, but the milestone is a natural moment to do it.
+---
 
-## Alternatives Considered
+## Phase-by-Phase Dependency Introduction Plan
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Hand-rolled `NoteFraction(int, int)` struct | `Fractions 8.3.2` NuGet | Only if Flow grows arbitrary-precision tuplet math (not v1.3 scope) |
-| Hand-rolled tuning table in `PitchConversion` | `MathNet.Numerics` + a tuning library | If Flow ever needs spectral analysis / FFT (separate problem) |
-| Hand-rolled OLA pitch-shift | `SoundTouch.Net 2.3.2` | Only after explicit license review and audible-artifact user feedback |
-| Hand-rolled linear/sinc resampler | `NAudio` WDL | Never — NAudio's Windows-centric dependency surface is wrong for Flow |
-| Existing `OmniSharp.Extensions.LanguageServer 0.19.9` | Roslyn-based analyzers | Roslyn analyzers target C# source — irrelevant for `.flow` files |
-| Hand-rolled Box–Muller for Gaussian humanize | `MathNet.Numerics.Distributions.Normal.Sample` | If Flow grows ≥3 distributions (Poisson, Pareto, etc.) — not v1.3 |
-| Hand-rolled `.scl` parser (post-v1.3, optional) | None on NuGet | n/a — no C# .scl library exists; hand-roll is the only option |
+| Phase | New NuGet | New native dep | New vendored source | Removed deps |
+|-------|-----------|----------------|---------------------|---------------|
+| 35 (language foundation) | — | — | — | (optional) Pidgin cleanup |
+| 36 (sequence algebra + generative + improv) | — | — | — | — |
+| 37 (sound design) | — | — | — | — |
+| 38 (live coding 2.0) | `Rug.Osc` | (extends existing PulseAudio P/Invoke for capture) | — | — |
+| 39 (notation citizenship) | — | — | `ABCSharp/*.cs`, `musicxml-schemas/*.cs` | — |
+| 40 (studio sync) | `RtMidi.Core`, `JackSharp` (optional) | `librtmidi` (bundled by NuGet); `libabletonlink` (optional P/Invoke) | — | — |
+| 41 (reach + closer) | `NAudio.Wasapi`, `OwnAudioSharp`, `KristofferStrube.Blazor.WebAudio` | `miniaudio` (bundled by OwnAudioSharp) | — | (optional) Pidgin cleanup if not done in 35 |
 
-## What NOT to Use
+**Phase 35–37 add zero new dependencies.** Phase 38 onward begins the dep-add cycle, each scoped behind an interface seam (`Rug.Osc` behind a new `OscModule`; `RtMidi.Core` behind `IMidiBackend`; `NAudio.Wasapi` / `OwnAudioSharp` behind `IAudioBackend`; Blazor.WebAudio inside a new `flow-wasm` project that doesn't compile on desktop).
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `SoundTouch.Net 2.3.2` | LGPL; inconsistent with existing all-permissive deps | Hand-rolled OLA pitch-shift in `Audio/DSP/` |
-| `NAudio` (any version) | Windows-centric; would pull in WASAPI/MME COM dependencies | Existing PulseAudio backend + hand-rolled resampler |
-| `NWaves` (any version) | Abandoned since Oct 2021 (per PROJECT.md); parallel DSP stack | Existing hand-rolled DSP in `Audio/DSP/` |
-| `Fractions 8.3.2` for tuplet math | Arbitrary-precision overkill; `int`-pair denominators max out in low thousands | Hand-rolled `NoteFraction(int, int)` record struct |
-| `MathNet.Numerics` for one Gaussian | One distribution doesn't justify a 5MB+ scientific-computing dep | Box–Muller transform (~6 lines) |
-| `managed-midi` | Marked "past project" on GitHub | DryWetMidi 8.0.3 (already integrated) |
-| `Pidgin 3.5.1` | Referenced in csproj but unused by hand-written parser | Remove during v1.3 housekeeping (optional) |
+---
 
-## Stack Patterns by Variant
+## Integration Points with Existing Codebase
 
-**If a v1.3 feature needs to walk the AST (tuplets, scale linting, quantize):**
-- Use the existing `NoteStreamElement` discriminated union and the `switch (element)` dispatch pattern in `NoteStreamCompiler.CompileBar`.
-- Add new element types as records in `Ast/Expressions/`.
+### Reuses existing `BarData` / `MusicalNoteData` / `Sequence` / `Section` / `Song`
+- MusicXML emit (Phase 39)
+- LilyPond emit (Phase 39)
+- ABC import (Phase 39) → produces these structures
+- MML import (Phase 39) → produces these structures
+- Multi-track real-time MIDI output (Phase 40) reuses the same per-instrument routing logic as the existing `MidiExport`
 
-**If a v1.3 feature needs to read musical context (delay sync, microtonal, scale lint):**
-- Read from `MusicalContext.Tempo / TimeSignature / Key / Tuning` in the compiler/renderer.
-- Push/pop on the context stack via existing `ExecuteMusicalContext` pattern (matches v1.1 audit-fix pattern).
+### Reuses existing `IAudioBackend` abstraction
+- `WasapiBackend.cs` (Phase 41 — Windows)
+- `CoreAudioBackend.cs` or `MiniAudioBackend.cs` (Phase 41 — macOS)
+- `WebAudioBackend.cs` (Phase 41 — Blazor WASM)
+- `PulseAudioCaptureBackend` extension (Phase 38 — audio input via `PA_STREAM_RECORD`)
 
-**If a v1.3 feature needs to emit diagnostics (scale linting):**
-- Use `ErrorReporter.Add(Diagnostic)` with severity = warning.
-- LSP picks it up automatically via the existing publish pipeline.
+### Adds new `IMidiBackend` abstraction (mirrors `IAudioBackend` pattern)
+- `RtMidiBackend.cs` (Phase 40 — primary cross-platform impl)
+- Future: `AlsaMidiBackend.cs` if RtMidi.Core's ALSA proves flaky
 
-**If a v1.3 feature needs RNG (Gaussian humanize):**
-- Route through `ExecutionContext.GetRand(isSeeded)` — preserves the v1.2 byte-identical determinism contract.
+### Adds new `ITransportSync` abstraction
+- `MidiClockSync.cs` (Phase 40 — hand-rolled)
+- `AbletonLinkSync.cs` (Phase 40 optional — P/Invoke wrapper)
+- `JackTransportSync.cs` (Phase 40 optional — `JackSharp`)
 
-## Version Compatibility
+### Reuses existing `MusicalContext` stack
+- `live { ... }` block (Phase 38) pushes/pops onto the same stack — same lifecycle pattern as `tempo` / `key` / `tuning`
+- New `voicePool` interaction with the live-mode hot-swap
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| Melanchall.DryWetMidi 8.0.3 | net10.0 | Targets .NET Standard 2.0 — works on net10.0; v9.0.0-prerelease1 exists but not needed for v1.3 features |
-| OmniSharp.Extensions.LanguageServer 0.19.9 | net10.0 | Reflection-heavy — trimming must stay disabled (per flow-lsp.csproj comment) |
-| Pidgin 3.5.1 | net10.0 (unused) | Candidate for removal during v1.3 — already flagged in PROJECT.md deferred list |
+### Reuses existing `BuiltInDocs` lookup table
+- REPL `?fn` inline help (Phase 38)
+- `flow doc` documentation generator (Phase 41)
+- LSP-backed REPL completion (Phase 38)
 
-## Confidence Assessment
+### Reuses existing seeded-RNG infrastructure (`ExecutionContext.SeededRandom`)
+- Markov / L-system / CA / Lorenz / Granulator / improvise — all route through the same seeded RNG path to preserve the two-run cmp-clean determinism contract
 
-| Decision Area | Confidence | Reason |
-|---------------|-----------|--------|
-| No new deps for tuplets / fractions | HIGH | Existing `NoteValueType` + parser dispatch shown in `NoteStreamCompiler.cs`; tuplet math is small-integer GCD |
-| No new deps for microtonal | HIGH | `PitchConversion.NoteToFrequency` already does `Math.Pow(2, x/12)`; CentType already exists; no C# Scala library exists anyway |
-| No new deps for scale lint | HIGH | flow-lsp 0.19.9 already has full diagnostic plumbing; ScaleDatabase already enumerates key pitches |
-| Hand-roll over SoundTouch | MEDIUM | License + dep-philosophy match well; quality budget for a music DSL's sample-load is met by linear/sinc resample, but real audio quality ultimately depends on user feedback — flagged for re-evaluation |
-| Hand-roll Gaussian humanize | HIGH | Box–Muller is textbook; no library needed for one distribution |
-| DEFER-01..06 are pure stdlib | HIGH | All map to existing builtin-registration or NoteType/Parser extensions |
+---
+
+## Licensing Summary
+
+| Dependency | License | Compatible with Flow's distribution? |
+|------------|---------|--------------------------------------|
+| .NET 10, C# 13 | MIT | YES |
+| DryWetMidi 8.0.3 | MIT | YES (already in v1.4) |
+| RtMidi.Core 1.0.53 | MIT (wrapper) + MIT (librtmidi) | YES |
+| Rug.Osc 1.2.5 | MIT-style permissive | YES |
+| NAudio.Wasapi 2.3.0 | Microsoft Public License (Ms-PL) | YES (permissive; commercial-friendly) |
+| JackSharp 0.4.0 | LGPL/MIT (wrapper); libjack itself LGPL | YES (dynamic linking) |
+| OwnAudioSharp 1.0.68 | MIT (wrapper); miniaudio public domain | YES |
+| Blazor.WebAudio | MIT | YES |
+| FftFlat | MIT | YES |
+| ABCSharp (vendored) | License needs verification — flag for Phase 39 plan | TBD |
+| musicxml-schemas (vendored) | License needs verification — flag for Phase 39 plan | TBD |
+| **Ableton Link** | GPLv2+ OR proprietary | **NEEDS LEGAL REVIEW** — gating dep for Phase 40 stretch |
+| **RubberBand** (rejected) | GPL OR commercial | Rejection avoids the legal hazard |
+| **Magenta** (rejected) | Apache-2.0 — but Python-only and archived | Moot |
+
+**Action item for v1.5 kickoff:** verify ABCSharp + musicxml-schemas licenses before Phase 39; verify Ableton Link's license posture before Phase 40 (consider treating Link as a "post-v1.5 community-contributable stretch").
+
+---
 
 ## Sources
 
-- /home/noah/Desktop/projects/flow-sharp/.planning/PROJECT.md — minimal-deps stance, "Libraries Explicitly NOT Recommended" table, current package list
-- /home/noah/Desktop/projects/flow-sharp/.planning/MILESTONES.md — v1.2 close inventory (LSP, DryWetMidi, Schroeder reverb, determinism contract, DEFER-01..06)
-- /home/noah/Desktop/projects/flow-sharp/CLAUDE.md — architecture map, file ownership for each module
-- /home/noah/Desktop/projects/flow-sharp/flow-lang/flow-lang.csproj — current packages: DryWetMidi 8.0.3, Pidgin 3.5.1; net10.0
-- /home/noah/Desktop/projects/flow-sharp/flow-lsp/flow-lsp.csproj — OmniSharp.Extensions.LanguageServer 0.19.9; net10.0
-- /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/NoteStreamCompiler.cs — existing element-dispatch pattern; auto-fit duration calculation; SourceLocation propagation
-- /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/PitchConversion.cs — existing 12-TET frequency conversion; generalization point for microtonal tuning
-- /home/noah/Desktop/projects/flow-sharp/flow-lang/TypeSystem/SpecialTypes/CentType.cs — existing cent literal parser
-- /home/noah/Desktop/projects/flow-sharp/flow-lang/TypeSystem/SpecialTypes/NoteValueType.cs — current power-of-2 enum representation; extension point for fractional durations
-- [Fractions 8.3.2 on NuGet](https://www.nuget.org/packages/fractions/) — verified current version (Apr 2026); HIGH confidence: not needed for v1.3 scope
-- [Rationals 2.3.0 on NuGet](https://www.nuget.org/packages/Rationals/) — alternative considered; same conclusion — overkill
-- [SoundTouch.Net 2.3.2 on NuGet](https://www.nuget.org/packages/SoundTouch.Net) — verified current version, LGPL license confirmed; rejected for license/philosophy mismatch
-- [Scala .scl format spec](https://www.huygens-fokker.org/scala/scl_format.html) — confirms format simplicity; no C# library exists, hand-roll is correct call
-- [DryWetMidi NuGet](https://www.nuget.org/packages/Melanchall.DryWetMidi) — confirms 8.0.3 still current; v9.0.0-prerelease1 noted but not required
-- [r8brain-free-src](https://github.com/avaneev/r8brain-free-src) — MIT C++ resampler; rejected for P/Invoke complexity vs benefit
+- Existing v1.0 / v1.4 Flow stack research (`.planning/research/STACK.md` superseded sections; `flow-lang/flow-lang.csproj` for current deps)
+- [Melanchall.DryWetMidi 8.0.3 NuGet](https://www.nuget.org/packages/Melanchall.DryWetMidi) — confirmed current; .NET 10 compatible
+- [DryWetMidi Supported OS doc](https://melanchall.github.io/drywetmidi/articles/dev/Supported-OS.html) — **confirmed: Windows + macOS only for device I/O; NO Linux/ALSA**
+- [DryWetMidi Output device doc](https://melanchall.github.io/drywetmidi/articles/devices/Output-device.html)
+- [RtMidi.Core 1.0.53 NuGet](https://www.nuget.org/packages/RtMidi.Core) — cross-platform MIDI; .NET Standard 2.0
+- [RtMidi.Core GitHub](https://github.com/micdah/RtMidi.Core) — last GitHub release v1.0.51 was Oct 2020 (NuGet shows 1.0.53 published since)
+- [Rug.Osc 1.2.5 NuGet](https://www.nuget.org/packages/Rug.Osc) — stable, zero deps, OSC 1.0 complete
+- [NAudio.Wasapi 2.3.0 NuGet](https://www.nuget.org/packages/NAudio.Wasapi/) — .NET 10 preview-4 supported
+- [NAudio GitHub](https://github.com/naudio/NAudio) — Windows audio library
+- [NAudio WasapiOut docs](https://github.com/naudio/NAudio/blob/master/Docs/WasapiOut.md)
+- [JackSharp 0.4.0 NuGet](https://www.nuget.org/packages/JackSharp) — .NET binding for libjack
+- [JackSharp GitHub](https://github.com/residuum/JackSharp) — provides Processor + Controller
+- [OwnAudioSharp 1.0.68 NuGet](https://www.nuget.org/packages/OwnAudioSharp/1.0.68) — miniaudio C# binding
+- [libsoundio GitHub](https://github.com/andrewrk/libsoundio) — alternative cross-platform audio
+- [Blazor.WebAudio GitHub](https://github.com/KristofferStrube/Blazor.WebAudio) — Blazor Web Audio API wrapper
+- [Blazor in .NET 10 release notes](https://learn.microsoft.com/en-us/aspnet/core/blazor/webassembly-build-tools-and-aot?view=aspnetcore-10.0) — Native AOT for WASM compilation
+- [.NET 10 WebAssembly improvements](https://darthpedro.net/2025/10/02/blazor-wasm-in-net-10-has-faster-startup/) — 76% js bundle reduction; AOT for WASM
+- [FftFlat NuGet](https://www.nuget.org/packages/FftFlat) — fast pure-C# FFT (4× Math.NET)
+- [Magenta GitHub archive notice](https://github.com/magenta/magenta) — archived read-only as of 2026-01-06
+- [Magenta RealTime](https://magenta.withgoogle.com/magenta-realtime) — 2025 model; requires TPU
+- [MusicXml.NET 3.1.0 NuGet](https://www.nuget.org/packages/MusicXml.NET) — parser only; insufficient for export
+- [sightreader/musicxml-schemas](https://github.com/sightreader/musicxml-schemas) — XSD-generated C# POCOs (MusicXML 2.0/3.0/3.1)
+- [matthewcpp/ABCSharp](https://github.com/matthewcpp/ABCSharp) — C# ABC notation parser; vendor as source
+- [Wikipedia: L-system](https://en.wikipedia.org/wiki/L-system) — algorithm reference
+- [Manousakis "Musical L-Systems" 2006 thesis](https://modularbrains.net/wp-content/uploads/Stelios-Manousakis-Musical-L-systems.pdf) — musical L-system mapping reference
+- [Tidal Cycles `every` / `fast` / `slow` / `chunk` docs](https://tidalcycles.org/docs/reference/alteration/) — pattern algebra reference for Phase 36
+- [Granular synthesis parameter consensus (Output)](https://output.com/blog/granular-synthesis) — grain / density / jitter / windowing surface
+- [Granular synthesis (Native Instruments)](https://blog.native-instruments.com/granular-synthesis/) — supporting reference
+- [Sound on Sound: Granular Synthesis](https://www.soundonsound.com/techniques/granular-synthesis) — definitive parameter set
+- [Phase vocoder tutorial (CMU)](https://www.cs.cmu.edu/~music/nyquist/extensions/pvoc/phasevocoder.html) — algorithm reference
+- [Laroche-Dolson 1999 phase vocoder paper](https://www.ee.columbia.edu/~dpwe/papers/LaroD99-pvoc.pdf) — pitch shift technique
+- [Jules Jacobs "How to compile pattern matching" 2021](https://julesjacobs.com/notes/patternmatching/patternmatching.pdf) — decision tree compilation
+- [yorickpeterse/pattern-matching-in-rust](https://github.com/yorickpeterse/pattern-matching-in-rust) — reference implementation
+- [JetBrains Marketplace publishing docs](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html) — Gradle publishPlugin workflow
+- [JetBrains plugin signing docs](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html) — required since 2021.2
+- [PulseAudio Simple API](https://freedesktop.org/software/pulseaudio/doxygen/simple.html) — `pa_simple_new` with `PA_STREAM_RECORD` for capture
+- [Ableton Link GitHub](https://github.com/Ableton/link) — GPLv2+ / proprietary dual license
+- [RubberBand library](https://breakfastquay.com/rubberband/) — GPL / commercial dual license (rejected)
+- [DocFX docs](https://dotnet.github.io/docfx/) — rejected for `flow doc`; documents C# not Flow
 
 ---
-*Stack research for: Flow v1.3 Composer DX Tier B/C — tuplets, fractional durations, DEFER-01..06, Tier B/C bundle*
-*Researched: 2026-04-26*
+*Stack research for: Flow Language v1.5 Stage, Studio, Web*
+*Researched: 2026-05-18*
+*Confidence: HIGH (4-6 new deps, all scoped behind interface seams; majority of phases ship with hand-rolled C# only)*

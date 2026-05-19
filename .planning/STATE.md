@@ -1,40 +1,54 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: Audio Fidelity, Distribution & Public Showcase
-status: shipped
-stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
-last_updated: "2026-05-16T22:37:40Z"
-last_activity: 2026-05-16 -- v1.4 milestone closure (Phase 34 Plan 34-06)
+milestone: v1.5
+milestone_name: Stage, Studio, Web
+status: planning
+last_updated: "2026-05-18T12:00:00.000Z"
+last_activity: 2026-05-18
 progress:
   total_phases: 7
-  completed_phases: 7
-  total_plans: 52
-  completed_plans: 52
-  percent: 100
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-26)
+See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** v1.4 shipped 2026-05-16; next milestone TBD pending `/gsd-new-milestone` invocation.
+**Current focus:** v1.5 Stage, Studio, Web roadmapped 2026-05-18 — 7 phases (35-41), 66 requirements. Next: `/gsd:plan-phase 35` (Language Foundation — pattern matching + diagnostics + test framework + `-> as name` + v1.4 housekeeping).
 
 ## Current Position
 
-Milestone: v1.4 Audio Fidelity, Distribution & Public Showcase -- SHIPPED 2026-05-16
-Phase: 34 (closure)
-Plan: 34-06 (complete)
-Plans: All 7 v1.4 phases complete (52/52 plans). Phase 28 = 7/7; Phase 29 = 7/7; Phase 30 = 9/9; Phase 31 = 9/9; Phase 32 = 7/7; Phase 33 = 7/7; Phase 34 = 6/6.
-Last activity: 2026-05-16 -- v1.4 milestone closure (Phase 34 Plan 34-06)
-Release: https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0
+Phase: 35 (Language Foundation) — not started
+Plan: —
+Status: Roadmap drafted; awaiting Phase 35 planning
+Last activity: 2026-05-18 — Milestone v1.5 roadmap created; 66 REQs mapped across 7 phases (Phase 35-41); two-run cmp-clean determinism contract inherited from v1.4 with `live { ... }` as the single documented opt-out (D-v1.5-07)
 
-Progress: [██████████] 100%
+### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
-### Phase 34 highlights
+| Phase | Name | REQs | Count |
+|-------|------|------|-------|
+| 35 | Language Foundation | LANG-01..04, TEST-01..02, HK-01..04 | 10 |
+| 36 | Sequence Algebra & Generative | PAT-01..02, GEN-01..05, SECT-01, IMPROV-01 | 9 |
+| 37 | Sound Design + Sampler Polish | DSP-01..03, MIX-01..02, SAMP-01..03, PIANO-01, FLUTE-01, DRUM-01 | 11 |
+| 38 | Live Coding 2.0 | LIVE-01..03, REPL-01..04, AUDIO-IN-01..02, OSC-01..02 | 11 |
+| 39 | Notation Citizenship | XML-01..02, LILY-01, ABC-01..02, MML-01 | 6 |
+| 40 | Studio Sync | MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01 | 9 |
+| 41 | Reach + v1.5 Closer | WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01 | 10 |
+
+**Build-order constraints from research:**
+- Phase 35 MUST ship first (pattern matching unblocks Phase 36 destructuring + Phase 40 MIDI dispatch + Phase 39 articulation emit; test framework enables regression coverage)
+- Phase 38 MUST precede Phase 41 (WASM playground IS watch-mode-in-browser)
+- Phase 40 MIDI-RT-01..03 (IMidiBackend) MUST precede Phase 41 Web MIDI
+- Phase 36 ↔ Phase 37 are commutative; milestone orders 36 first per PROJECT.md
+- Phase 41 last by construction (closer + third-genre showcase consumes everything)
+
+### v1.4 carryover highlights (Phase 34 closure, 2026-05-16)
 
 - "In Five Voices" symphony rendered via VSCO Community CE 1.1.0 SFZ sampler (5 instruments: violin, viola, cello, flute, horn) in D minor, ~60s ABA single-movement piece
 - "Stride & Stomp" ragtime companion piece (solo piano via VSCO-CE UprightPiano, F major, ~58s) -- added during scope-expand for genre-agnostic demonstration

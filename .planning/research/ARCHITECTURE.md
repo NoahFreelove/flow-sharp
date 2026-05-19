@@ -1,688 +1,600 @@
-# Architecture Research — Flow v1.3 Integration
+# Architecture Research — v1.5 Stage, Studio, Web
 
-**Domain:** Music DSL interpreter — adding tuplets, arbitrary fractional durations, DEFER closures, Tier B/C composer DX
-**Researched:** 2026-04-26
-**Confidence:** HIGH (codebase fully read; canonical-music-engine reference verified via music21 docs)
+**Domain:** Brownfield additive integration into Flow interpreter (C# .NET 10) — language extensions, multi-platform backends, generative subsystems, web reach.
+**Researched:** 2026-05-18
+**Confidence:** HIGH (architecture is grounded in actual file inspection of `flow-lang/`, `flow-interpreter/`, `flow-lsp/`, `flow-cli/`, `flow-midi/`; speculative items — WASM playground, Ableton Link — clearly flagged MEDIUM/LOW where ground truth is external).
 
----
-
-## 1. Existing Pipeline (Recap, Annotated for v1.3 Touch Points)
+## System Overview
 
 ```
-.flow source
-   │
-   ▼
-SimpleLexer ────────────────────────► Token[]   ← (1) duration suffix tokenization
-   │                                              ← (2) "/12" arbitrary-duration lexeme
-   │                                              ← (3) `enable` keyword (pragma)
-   │                                              ← (4) `H` letter (becomes BLetter under pragma)
-   ▼
-Parser  ────────────────────────────► AST       ← (5) ParseNoteStream → TupletElement
-   │  (Parser.NoteStream.cs)                    ← (6) ParsePragmaStatement
-   │                                            ← (7) chord inversion suffix /3, /5
-   ▼
-Interpreter / ExecutionContext                  ← (8) PragmaTable on ExecutionContext
-   │                                            ← (9) MusicalContext.Tuning (new field)
-   ▼
-NoteStreamCompiler  ─────────────────► SequenceData
-   │                                            ← (10) tuplet duration scaling (rational)
-   │                                            ← (11) arbitrary fractional durations
-   ▼
-SongRenderer / SequenceRenderer                 ← (12) microtonal Tuning lookup site
-   │
-   ▼
-Synthesizers  → AudioBuffer  → WAV / Playback / MIDI
-   ↑                                            ← (13) PitchConversion.NoteToFrequency
-                                                       (microtonal pluggability lives here)
-
-flow-lsp  (parser-only consumer of flow-lang)   ← (14) scale linting walks AST + key-context
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  Surface Projects (consumers of flow-lang)                                   │
+│  ┌──────────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐ ┌────────────┐  │
+│  │ flow-cli     │ │ flow-    │ │ flow-lsp │ │ flow-midi    │ │ flow-doc   │  │
+│  │ (11 cmds +   │ │ interp   │ │ (LSP svr)│ │ (MIDI⇄Flow)  │ │ (NEW v1.5) │  │
+│  │ live, doc,   │ │ (REPL +  │ │          │ │              │ │            │  │
+│  │ test NEW)    │ │ watch +  │ │          │ │              │ │ Phase 41   │  │
+│  │              │ │ live NEW)│ │          │ │              │ │            │  │
+│  └──────┬───────┘ └────┬─────┘ └────┬─────┘ └──────┬───────┘ └─────┬──────┘  │
+│         │              │            │              │                │         │
+├─────────┴──────────────┴────────────┴──────────────┴────────────────┴─────────┤
+│  flow-lang  (Core/FlowEngine — pipeline orchestrator)                        │
+│  ┌─────────────────────────────────────────────────────────────────────────┐ │
+│  │  Source → Lexer → Parser → AST → Interpreter → Value                    │ │
+│  │                                                                          │ │
+│  │  Lexing/SimpleLexer ── adds: `match`/`live`/`as`/`test` keywords         │ │
+│  │  Parsing/Parser     ── adds: match-expr, live-block, -> as name,        │ │
+│  │                              parameterized-section args, ABC/MML import│ │
+│  │  Ast/{Expr,Stmt}    ── NEW: MatchExpression, LiveBlockStatement,        │ │
+│  │                              (FlowExpression extended w/ Binding?),    │ │
+│  │                              (SectionDeclaration extended w/ Params)  │ │
+│  │  Interpreter/ExprEval ── adds: match dispatch (irrefutable + guards),   │ │
+│  │                                  granular/timestretch DSP evaluation   │ │
+│  │  Runtime              ── extends: ExecutionContext (Link/JACK ticker,  │ │
+│  │                          OSC server hook, AudioInputStream)            │ │
+│  │  Diagnostics          ── Rust-style snippet renderer (span + caret)   │ │
+│  │  TypeSystem           ── NEW: Pattern (compiled) — no new music type   │ │
+│  │  StandardLibrary      ── NEW modules: @pattern, @generative, @osc,     │ │
+│  │                          @midi-rt, @test, @audio-input, @musicxml,    │ │
+│  │                          @lilypond, @abc, @mml                          │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  I/O Abstractions (Backend layer — Phase 41 cross-platform crunch)           │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────┐        │
+│  │ IAudioBackend    │  │ IMidiBackend NEW │  │ IFileSystem NEW      │        │
+│  │ (extend: Capture │  │ (parallel shape  │  │ (sample / .scl / .sfz│        │
+│  │  + WebAudio impl │  │  to IAudioBacknd)│  │  reads abstracted    │        │
+│  │  + WASAPI/CoreAud│  │                  │  │  for WASM)           │        │
+│  └─────────┬────────┘  └─────────┬────────┘  └──────────┬───────────┘        │
+│            │                     │                       │                    │
+│   ┌────────┼─────────┐  ┌────────┼─────────┐   ┌─────────┼─────────┐         │
+│   │ Pulse  │ WASAPI  │  │ ALSA-  │ WinMM   │   │ Disk    │ Browser │         │
+│   │ Audio  │ Core-   │  │ Seq    │ CoreMIDI│   │ FS      │ FS / IDB│         │
+│   │ Web-   │ Audio   │  │ Jack-  │ Web-    │   │ (existing)│ (WASM) │         │
+│   │ Audio  │         │  │ MIDI   │ MIDI-API│   │         │         │         │
+│   └────────┴─────────┘  └────────┴─────────┘   └─────────┴─────────┘         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  Network / Real-Time Transport (Phase 38 + Phase 40)                         │
+│  ┌──────────────────┐  ┌──────────────────────────────────────────────────┐  │
+│  │ OSC svr/client    │  │ Transport sync clock sources                     │  │
+│  │ (UDP loopback +  │  │  - MIDI clock (24 PPQ; via IMidiBackend events) │  │
+│  │  hot-bind, msg   │  │  - Ableton Link (UDP discovery + libabl_link)   │  │
+│  │  pump → Flow CB) │  │  - JACK transport (libjack — Linux primary)     │  │
+│  └──────────────────┘  └──────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Component Inventory — NEW vs MODIFIED vs UNTOUCHED
 
-## 2. Question 1 — AST Strategy for Tuplets
+| Component | Status | What changes |
+|-----------|--------|--------------|
+| `Lexing/SimpleLexer` | **MODIFIED** | New keywords: `match` `live` `test` `as`; ABC/MML triggered via stdlib only (no lex change); span tracking already present via `SourceLocation` |
+| `Parsing/Parser` | **MODIFIED** | `ParseMatchExpression`, `ParseLiveBlock`, `ParseSectionDeclaration` (add optional `(args)`), `ParseFlowChain` (extend `->` with optional `as name`) |
+| `Ast/Expressions/MatchExpression.cs` | **NEW** | `record MatchExpression(Expression Scrutinee, List<MatchArm> Arms)` + `MatchArm(Pattern, Expression? Guard, Statement[] Body)` |
+| `Ast/Expressions/FlowExpression.cs` | **MODIFIED** | Add `string? BindingName` for `expr -> func() as x` chain naming |
+| `Ast/Statements/LiveBlockStatement.cs` | **NEW** | `record LiveBlockStatement(Expression QuantizeUnit, Statement[] Body)` — the auto-loop construct |
+| `Ast/Statements/SectionDeclaration.cs` | **MODIFIED** | Add `List<Parameter>? Parameters` for `section verse(Int key) { ... }`; existing zero-arg form keeps backward compat |
+| `Ast/Patterns/*.cs` | **NEW** | `Pattern` base + `LiteralPattern`, `IdentifierPattern` (binds), `WildcardPattern` (`_`), `ChordPattern` (`Cmaj7`), `NotePattern`, `TuplePattern`, `RangePattern` |
+| `Interpreter/ExpressionEvaluator` | **MODIFIED** | New `EvaluateMatch` switch arm; pattern matching dispatch table; granular/time-stretch builtin hooks |
+| `Diagnostics/ErrorReporter` | **MODIFIED** | Add `RenderSnippet(SourceLocation span, string source, int contextLines)` Rust-style renderer; existing `SourceLocation` already carries line+column |
+| `Audio/IAudioBackend.cs` | **MODIFIED** | Add `StartCapture(...)`, `StopCapture()`, `OnSampleBlock` event for mic/line input |
+| `Audio/PulseAudioSimpleBackend` | **MODIFIED** | Implement capture via `pa_simple_new(STREAM_RECORD, ...)` (mirror playback shape) |
+| `Audio/WasapiBackend.cs` | **NEW** (Phase 41) | Windows playback+capture via `Windows.Media.Audio` or low-level COM |
+| `Audio/CoreAudioBackend.cs` | **NEW** (Phase 41) | macOS playback+capture via `AVAudioEngine` P/Invoke or `AudioUnit` |
+| `Audio/WebAudioBackend.cs` | **NEW** (Phase 41) | WASM JS-interop to `AudioWorklet`; capture via `getUserMedia` |
+| `Audio/IMidiBackend.cs` | **NEW** (Phase 40) | `OpenPort`, `SendNoteOn`, `SendNoteOff`, `SendCC`, `SendClock`, `OnHotPlug` event |
+| `Audio/AlsaSeqMidiBackend.cs`, `CoreMidiBackend.cs`, `WinMmMidiBackend.cs`, `WebMidiBackend.cs` | **NEW** (Phase 40 + 41) | Per-platform IMidiBackend impls |
+| `Audio/AudioInputManager.cs` | **NEW** (Phase 38) | Wraps `IAudioBackend.StartCapture`; exposes ring-buffer + analysis (level, FFT) for Flow callbacks |
+| `Audio/DSP/GranularSynth.cs` | **NEW** (Phase 37) | Sliding-window grain extraction + pitch/rate decoupling |
+| `Audio/DSP/TimeStretchPitchShift.cs` | **NEW** (Phase 37) | Phase-vocoder OR WSOLA — independent time + pitch axes |
+| `Audio/SongRenderer.cs` | **MODIFIED** | Voice gains `Pan` attribute (range -1.0..1.0); per-voice constant-power pan applied before mix; integrates Phase 37 stereo spread |
+| `Audio/Sfz/SfzParser.cs` | **MODIFIED** (Phase 37) | Extend whitelist: `seq_position`, `seq_length` (round-robin), `lovel/hivel` velocity layers (already present — extend if not), `ampeg_*` per-articulation envelopes |
+| `Audio/Sfz/SfzRenderer.cs` | **MODIFIED** (Phase 37) | Round-robin region selection; per-articulation envelope multiplier dict |
+| `Audio/SampledInstrumentRenderer.cs` | **MODIFIED** (Phase 37) | Bundle: more flute samples (D5 timbre-crossover); ragtime piano warmth (eq/lpf chain); per-articulation envelope multipliers |
+| `Runtime/ExecutionContext.cs` | **MODIFIED** | New: `IMidiBackend? MidiBackend`, `LinkTransport? Link`, `OscServer? OscServer`, `AudioInputManager? AudioInput`; passed through to stdlib callbacks |
+| `Runtime/MusicalContext.cs` | **MODIFIED** | Phase 40: `Tempo` becomes Link-pollable (delegate or atomic-backed) when Link is active; cleanly degrades to local value when not |
+| `Runtime/ParameterizedSectionCache.cs` | **NEW** (Phase 36) | Memoize section invocations keyed by `(name, ordered-arg-values)` to keep two-run determinism contract clean |
+| `Runtime/PrngRegistry.cs` | **NEW** (Phase 36) | Seedable RNG pool keyed by `(call-site-id, generator-name)` so markov/lsystem/cellular/lorenz stay determinism-clean across runs |
+| `StandardLibrary/Audio/Granular.cs` | **NEW** (Phase 37) | `granular(buf, grainSizeMs, density, pitch, scatter)` builtin → `GranularSynth` |
+| `StandardLibrary/Audio/PanningFunctions.cs` | **MODIFIED** (Phase 37) | Existing `pan()` extended with `stereoSpread(voiceArray, width)` + per-instrument-pan musical-context block `pan -0.5 { ... }` |
+| `StandardLibrary/Generative/*.cs` | **NEW** (Phase 36) | `MarkovChain.cs`, `LSystem.cs`, `CellularAutomaton.cs`, `LorenzAttractor.cs`, `ImprovEngine.cs` |
+| `StandardLibrary/Patterns/*.cs` | **NEW** (Phase 36) | TidalCycles-style combinators (`fast`, `slow`, `rev`, `every`, `chop`, `striate`, `juxt`) operating on `Sequence` |
+| `StandardLibrary/Test/AssertFunctions.cs` | **NEW** (Phase 35) | `assert`, `assertEq`, `assertApprox`, `expectError`, `test "name" { ... }`; module name `@test` |
+| `StandardLibrary/Notation/MusicXmlExport.cs` | **NEW** (Phase 39) | Sequence/Song → MusicXML 4.0 emit |
+| `StandardLibrary/Notation/LilyPondExport.cs` | **NEW** (Phase 39) | Sequence/Song → LilyPond `.ly` emit |
+| `StandardLibrary/Notation/AbcImport.cs` | **NEW** (Phase 39) | ABC parser → Sequence value |
+| `StandardLibrary/Notation/MmlImport.cs` | **NEW** (Phase 39) | MML parser → Sequence value |
+| `StandardLibrary/Realtime/OscServer.cs`, `OscClient.cs` | **NEW** (Phase 38) | UDP loopback OSC 1.0 (no bundles initially); message → `Value` Flow callback |
+| `StandardLibrary/Realtime/MidiRt.cs` | **NEW** (Phase 40) | `midiOut(port, msg)`, `onMidi(port, callback)`, `midiClockSync(bpm)`, `linkSync()`, `jackSync()` |
+| `flow-interpreter/Repl.cs` | **MODIFIED** | LSP-in-process: embed `flow-lsp` library, call its completion engine on `Tab`; pretty piano-roll renders via `BufferPrinter` (already exists) |
+| `flow-interpreter/LiveReloadManager.cs` | **MODIFIED** | Receives optional `live { ... }` AST node from rendered program → uses its quantize-unit instead of inferred bar boundary; otherwise unchanged |
+| `flow-cli/Commands/LiveCommand.cs` | **NEW** | `flow live <file>` — wraps LiveReloadManager (modernized watch) with explicit `live { ... }` semantics; supersedes `flow watch` as the recommended live-coding entry |
+| `flow-cli/Commands/TestCommand.cs` | **NEW** | `flow test [path]` — discovers `*.test.flow` files, runs each, reports pass/fail; thin wrapper over the `@test` stdlib's runner |
+| `flow-cli/Commands/DocCommand.cs` | **NEW** | `flow doc [out-dir]` — emits HTML/MD from BuiltInDocs (104 entries) + proc signatures + `//` comments |
+| `flow-doc/` (project) | **NEW or in-CLI** | Doc-generator library — recommendation: **as a flow-cli subcommand** with a small `flow-doc-lib` referenced from `flow-cli/`; standalone project only if a third consumer emerges |
+| `flow-jetbrains/` | **UNTOUCHED CODE; PROCESS CHANGE** | Marketplace publish requires: signing key in CI, version bump, screenshots, marketplace listing — no functional code change |
+| `flow-wasm/` (project) | **NEW** (Phase 41) | `dotnet workload install wasm-tools` + `Microsoft.NET.Sdk.WebAssembly` SDK; renders FlowEngine inside browser; depends on `WebAudioBackend` + `WebFsAdapter` |
 
-### Recommendation: `TupletElement` is a NEW `NoteStreamElement` record, recursive in its children
+## Recommended Project Structure (Post-v1.5)
 
+```
+flow-sharp/
+├── flow-lang/                              # core interpreter library
+│   ├── Ast/
+│   │   ├── Expressions/
+│   │   │   ├── MatchExpression.cs          # NEW Phase 35
+│   │   │   └── ... (FlowExpression extended with BindingName)
+│   │   ├── Patterns/                       # NEW Phase 35 — pattern AST nodes
+│   │   │   ├── Pattern.cs                  # abstract base
+│   │   │   ├── LiteralPattern.cs
+│   │   │   ├── IdentifierPattern.cs        # irrefutable, binds
+│   │   │   ├── WildcardPattern.cs          # _
+│   │   │   ├── TuplePattern.cs             # <<a, b>>
+│   │   │   ├── NotePattern.cs              # C4 specific pitch
+│   │   │   ├── ChordPattern.cs             # Cmaj7
+│   │   │   └── RangePattern.cs             # 0..10
+│   │   └── Statements/
+│   │       └── LiveBlockStatement.cs       # NEW Phase 38
+│   ├── Audio/
+│   │   ├── IAudioBackend.cs                # MODIFIED — adds StartCapture
+│   │   ├── IMidiBackend.cs                 # NEW Phase 40
+│   │   ├── AudioInputManager.cs            # NEW Phase 38
+│   │   ├── Backends/                       # NEW folder (Phase 41 polish)
+│   │   │   ├── PulseAudioSimpleBackend.cs  # MOVED from flat
+│   │   │   ├── WasapiBackend.cs            # NEW Phase 41
+│   │   │   ├── CoreAudioBackend.cs         # NEW Phase 41
+│   │   │   ├── WebAudioBackend.cs          # NEW Phase 41
+│   │   │   ├── AlsaSeqMidiBackend.cs       # NEW Phase 40
+│   │   │   ├── CoreMidiBackend.cs          # NEW Phase 40+41
+│   │   │   ├── WinMmMidiBackend.cs         # NEW Phase 40+41
+│   │   │   └── WebMidiBackend.cs           # NEW Phase 41
+│   │   └── Transport/                      # NEW folder (Phase 40)
+│   │       ├── MidiClock.cs
+│   │       ├── AbletonLink.cs              # P/Invoke to libabl_link
+│   │       └── JackTransport.cs            # P/Invoke to libjack
+│   ├── Diagnostics/
+│   │   ├── ErrorReporter.cs                # MODIFIED — Rust-style snippets
+│   │   └── SnippetRenderer.cs              # NEW Phase 35
+│   ├── Runtime/
+│   │   ├── ExecutionContext.cs             # MODIFIED — Midi/Osc/Link/Input
+│   │   ├── MusicalContext.cs               # MODIFIED — Link-aware Tempo
+│   │   ├── ParameterizedSectionCache.cs    # NEW Phase 36
+│   │   └── PrngRegistry.cs                 # NEW Phase 36 — determinism
+│   ├── StandardLibrary/
+│   │   ├── Audio/
+│   │   │   ├── DSP/
+│   │   │   │   ├── GranularSynth.cs        # NEW Phase 37
+│   │   │   │   └── TimeStretchPitchShift.cs# NEW Phase 37
+│   │   │   ├── PanningFunctions.cs         # MODIFIED Phase 37
+│   │   │   ├── SongRenderer.cs             # MODIFIED Phase 37 — voice.Pan
+│   │   │   └── Sfz/                        # MODIFIED Phase 37 — RR + ampeg
+│   │   ├── Generative/                     # NEW folder Phase 36
+│   │   │   ├── MarkovChain.cs
+│   │   │   ├── LSystem.cs
+│   │   │   ├── CellularAutomaton.cs
+│   │   │   ├── LorenzAttractor.cs
+│   │   │   └── ImprovEngine.cs
+│   │   ├── Patterns/                       # NEW folder Phase 36
+│   │   │   └── PatternAlgebra.cs           # Tidal-style combinators
+│   │   ├── Realtime/                       # NEW folder Phase 38 + 40
+│   │   │   ├── OscServer.cs
+│   │   │   ├── OscClient.cs
+│   │   │   └── MidiRt.cs
+│   │   ├── Notation/                       # NEW folder Phase 39
+│   │   │   ├── MusicXmlExport.cs
+│   │   │   ├── LilyPondExport.cs
+│   │   │   ├── AbcImport.cs
+│   │   │   └── MmlImport.cs
+│   │   └── Test/                           # NEW folder Phase 35
+│   │       └── AssertFunctions.cs
+│   ├── generative.flow                     # NEW Phase 36 stdlib
+│   ├── patterns.flow                       # NEW Phase 36 stdlib
+│   ├── osc.flow                            # NEW Phase 38 stdlib
+│   ├── midi-rt.flow                        # NEW Phase 40 stdlib
+│   ├── test.flow                           # already exists — extended Phase 35
+│   ├── audio-input.flow                    # NEW Phase 38 stdlib
+│   ├── musicxml.flow / lilypond.flow / abc.flow / mml.flow  # NEW Phase 39
+│   └── ... (existing modules untouched)
+├── flow-cli/                               # CLI subcommands
+│   └── Commands/
+│       ├── LiveCommand.cs                  # NEW Phase 38
+│       ├── TestCommand.cs                  # NEW Phase 35
+│       └── DocCommand.cs                   # NEW Phase 41
+├── flow-interpreter/
+│   ├── Repl.cs                             # MODIFIED Phase 38 — LSP completion
+│   └── LiveReloadManager.cs                # MODIFIED Phase 38 — live{} aware
+├── flow-lsp/                               # in-process bridge target Phase 38
+│   └── Handlers/CompletionHandler.cs       # already exists; expose engine for REPL
+├── flow-wasm/                              # NEW project Phase 41
+│   ├── flow-wasm.csproj                    # WebAssembly SDK
+│   ├── Program.cs                          # main entry; constructs FlowEngine
+│   ├── JsInterop/                          # WebAudio + getUserMedia + fetch
+│   └── wwwroot/                            # static playground page
+├── flow-doc/ OR (flow-cli/DocLib/)         # NEW Phase 41 — pick one
+└── ... (existing projects untouched: flow-midi, flow-jetbrains, vscode-extension)
+```
+
+### Structure Rationale
+
+- **`Audio/Backends/` folder:** four playback backends + four MIDI backends justify a folder; flat `Audio/` directory was fine at one backend but becomes noise at eight.
+- **`Audio/Transport/`:** Link / JACK / MIDI-clock are conceptually different from audio backends — they're tempo sources, not sample sinks. Separate folder keeps the abstraction story clean.
+- **`StandardLibrary/Realtime/`:** OSC + real-time MIDI share a "network/IPC event pump" implementation pattern, distinct from offline DSP.
+- **`StandardLibrary/Notation/`:** Import and export share parser/emit infrastructure (e.g., a Note → glyph table). Co-locate.
+- **`Ast/Patterns/`:** Pattern AST nodes are conceptually distinct from Expressions/Statements (they're consumed by `MatchExpression`, never by the main evaluator dispatch). Keeps the existing Expression/Statement bucket tidy.
+- **`flow-wasm/` as a separate project** rather than a target in `flow-cli`: WebAssembly SDK pulls in different MSBuild props; cleaner to isolate so the desktop build stays uncoupled from WASM workload installs.
+- **`flow-doc` recommendation: subcommand, NOT separate project.** The doc generator has one consumer (the `flow doc` command) and reads BuiltInDocs (already in `flow-lang`). A separate project would add a third assembly with no payoff. If JetBrains plugin or VSCode extension later needs to consume the generated docs programmatically, **then** spin it out.
+
+## Architectural Patterns
+
+### Pattern 1: Backend Abstraction by Interface + Per-Platform Impl
+
+**What:** `IAudioBackend` already exists (PulseAudio impl). Same pattern repeats for `IMidiBackend` (Phase 40) and gets extended for capture + new platforms (Phase 41).
+
+**When to use:** Whenever the underlying OS API differs across platforms but the language-facing semantics are uniform.
+
+**Trade-offs:**
+- (+) Single abstraction for stdlib to target; new platform = new file, no callsite churn.
+- (+) WebAssembly fits naturally — it's just another impl (`WebAudioBackend : IAudioBackend`).
+- (−) Capture must extend the interface — be careful not to force every backend to implement features no platform supports universally (e.g., low-latency capture on WebAudio's AudioWorklet is fine; on WinMM it requires WASAPI shared-mode trickery).
+
+**Example shape (Phase 40 IMidiBackend):**
 ```csharp
-// Add to flow-lang/Ast/Expressions/NoteStreamExpression.cs
-public record TupletElement(
-    SourceLocation Location,
-    int Numerator,                           // "3" in 3:2
-    int Denominator,                         // "2" in 3:2
-    IReadOnlyList<NoteStreamElement> Children, // recursive — children may themselves be TupletElements
-    string? DurationSuffix,                  // outer suffix: (3:2 ...)q  applies q to the WHOLE tuplet group
-    bool IsDotted
-) : NoteStreamElement(Location);
-```
-
-**Why recursive (not flat):**
-- Nested tuplets compose naturally — `(3:2 (5:4 C4 D4 E4 F4 G4) D4 E4)q` becomes one outer ratio applied to a child that has its own ratio. Compiler handles by multiplying scaling factors down the tree. This matches music21's `Tuplet` model where each note carries an ordered list of active Tuplets.
-- Children are heterogeneous — a tuplet may contain a `NoteElement`, a `RestElement`, a `ChordElement`, even another `TupletElement`. Reusing `NoteStreamElement` as the child type means zero new code for "what's allowed inside a tuplet" — the same parser branches dispatch.
-- Source-location and source-length tracking already required for editor-highlighting; the recursive model lets us highlight either the whole tuplet group or any single child.
-
-**Why NOT a flat encoding (e.g. tuplet-start/tuplet-end pseudo-elements):**
-- The current parser is recursive descent; emitting paired marker tokens would force every consumer (`NoteStreamCompiler`, `SequenceRenderer`, the LSP semantic-token encoder) to maintain a parallel "are we inside a tuplet?" stack. Recursive AST localizes that state inside `CompileTupletElement`.
-
-### NoteStreamCompiler scaling under nested tuplets
-
-Add a single new method that takes a *scaling factor* the same way `autoFitDuration` is currently threaded:
-
-```csharp
-// flow-lang/Runtime/NoteStreamCompiler.cs
-private void CompileTupletElement(
-    TupletElement tuplet,
-    NoteValueType.Value? autoFitDuration,
-    MusicalContext context,
-    ExecutionContext? execCtx,
-    List<MusicalNoteData> output,
-    Fraction outerScale)   // NEW — accumulated tuplet scaling from ancestor TupletElements
+public interface IMidiBackend : IDisposable
 {
-    // 3:2 means "play 3 notes in the time of 2"  →  each child duration ×  2/3
-    var scale = outerScale * new Fraction(tuplet.Denominator, tuplet.Numerator);
-
-    // The TupletElement's own DurationSuffix is the GROUP duration — i.e. (3:2 ...)q
-    // means "the whole group occupies one quarter note". Resolve outer first:
-    var groupDuration = ResolveDuration(tuplet.DurationSuffix, autoFitDuration);
-
-    // groupDuration is the wall-clock duration of all N children combined,
-    // distributed equally before scaling. Each child gets groupDuration / N as
-    // its base, then the tuplet scaling redistributes so that N children fit
-    // into M-notes' worth of time.
-
-    foreach (var child in tuplet.Children) {
-        switch (child) {
-            case TupletElement nested:
-                CompileTupletElement(nested, autoFitDuration, context, execCtx, output, scale);
-                break;
-            case NoteElement n:
-                var note = CompileNoteElement(n, autoFitDuration, context);
-                output.Add(note.WithScaledDuration(scale));   // see §3 for WithScaledDuration
-                break;
-            // ... rest same as outer switch
-        }
-    }
-}
-```
-
-**Single source of truth:** the outer `CompileBar` switch dispatches to `CompileTupletElement(...)` with `outerScale = Fraction.One`. Recursion handles nesting with no special cases.
-
----
-
-## 3. Question 2 — Duration Representation
-
-### Recommendation: Option (b) — extend `MusicalNoteData` with a `Fraction DurationFraction` field. Keep `NoteValue` enum for backward compatibility.
-
-This is the canonical approach used by [music21](https://music21.org/music21docs/usersGuide/usersGuide_19_duration2.html), the most actively developed open-source music engine. From their docs:
-
-> "music21 Durations are almost always measured in Quarter Notes... When a note's quarterLength is set to 0.8, it's represented as Fraction(4, 5), with the full name 'Quarter Quintuplet (4/5 QL)'."
-
-### Why option (a) — extending the enum — is wrong:
-
-- `TUPLET_THIRD`, `TUPLET_FIFTH`, etc. don't compose. A 5:4 of a 7:6 of a quarter has no enum slot. You'd need a combinatorial explosion.
-- Dotted tuplets (a dotted triplet eighth) would force a Cartesian product of dot-bits × tuplet-types.
-- Lilypond and music21 both rejected this approach for the same reason.
-
-### Why option (c) — `double DurationScale` — is wrong:
-
-- `Math.Pow(2, -1.0/3)` is irrational on the binary side and rational on the musical side. Two `(3:2 ...)` triplets concatenated must sum to *exactly* one half note. Floating point will accumulate ε that breaks `BarData.ValidateDuration()` by ~1e-15 every bar — silent under noise floor for one bar, catastrophic for a 1000-bar piece because the deterministic-WAV byte-pin tests in v1.2 will diverge.
-- MIDI export through DryWetMidi uses integer ticks-per-quarter (`PPQN`, default 480). Tuplets need exact integer division — 480 / 3 = 160, clean. With doubles you'd accumulate drift before tick conversion.
-
-### Concrete shape:
-
-```csharp
-// flow-lang/TypeSystem/SpecialTypes/NoteType.cs (MusicalNoteData)
-public class MusicalNoteData {
-    public char NoteName { get; }
-    public int Octave { get; }
-    public int Alteration { get; }
-
-    // Existing — keep for backward compatibility
-    public int? DurationValue { get; }   // NoteValue enum int
-    public bool IsDotted { get; }
-
-    // NEW — when set, this OVERRIDES DurationValue + IsDotted for actual playback duration
-    // For non-tuplet, non-arbitrary-fraction notes, this stays null and the enum path runs.
-    public Fraction? DurationFraction { get; }   // in quarter-note units (matches music21)
-
-    // Existing
-    public bool IsRest { get; }
-    public double? CentOffset { get; }
-    // ...
-
-    public double GetBeats(int timeSigDenominator) {
-        if (DurationFraction.HasValue) {
-            // DurationFraction is in quarter-note units. Convert to beats:
-            // beats = quarter-notes × (timeSigDenominator / 4)
-            return (double)DurationFraction.Value * timeSigDenominator / 4.0;
-        }
-        // existing enum path
-        if (!DurationValue.HasValue) return 1.0;
-        double fraction = NoteValueType.ToFraction((NoteValueType.Value)DurationValue.Value);
-        if (IsDotted) fraction *= 1.5;
-        return fraction * timeSigDenominator;
-    }
-}
-```
-
-### What `Fraction` to use:
-
-.NET 10 has no built-in `Fraction`. Three options:
-
-1. **Hand-roll a 50-line `readonly record struct Fraction`** in `flow-lang/TypeSystem/Fraction.cs`. With `int Numerator, int Denominator`, normalized to lowest terms via `Gcd` in the constructor. Operations: `+ - * /`, implicit cast to/from int, explicit cast to `double`. This is the minimal-dependency choice — matches the project's "Guiding Principle: Minimal Dependencies" (STACK.md).
-
-2. **`System.Numerics.BigInteger` numerator/denominator.** Overkill: Flow durations stay within `int` range (PPQN 480 × 1024 bars × 32 = ~1.5e7).
-
-3. **External library (Fractions, BigRational).** Violates STACK.md guiding principle.
-
-**Recommendation: hand-roll.** ~50 LOC, zero dependency, easy to optimize. Place it under `flow-lang/TypeSystem/Fraction.cs` (sibling to `ArrayType.cs`). Consider it a primitive numeric helper — it does NOT need to be a `FlowType`.
-
-### Migration plan (zero-disruption):
-
-- All existing `MusicalNoteData` constructors take 0 new required parameters; `DurationFraction` is optional and null by default.
-- `NoteStreamCompiler` for plain `NoteElement` continues to set `DurationValue` only (DurationFraction stays null).
-- `NoteStreamCompiler.CompileTupletElement` sets `DurationFraction` to `(parentDurationFraction × tuplet ratio)` and leaves `DurationValue` at the *closest* enum value (for visual/MIDI hints) — but `GetBeats` prefers `DurationFraction` when present.
-- All 70+ existing test files keep their byte-identical WAV output because the `DurationFraction == null` branch runs the existing math unchanged.
-
-### Where Fraction propagates through the pipeline:
-
-| Site | Behavior |
-|------|----------|
-| `MusicalNoteData.GetBeats` | Branches on `DurationFraction.HasValue` |
-| `BarData.GetActualBeats` | Already calls `GetBeats` — no change needed |
-| `BarRenderer.RenderBarToVoices` (line 51, 260) | Already calls `GetBeats` — no change needed |
-| `MidiExport` | Convert `Fraction` to PPQN ticks: `(int)(frac.Num × 480 × 4 / frac.Den)` |
-| `SequenceRenderer` | Uses `GetBeats` indirectly — no change |
-
-This is why the rational-arithmetic decision is *load-bearing*: it touches one chokepoint (`GetBeats`) and the rest of the pipeline is unaffected.
-
----
-
-## 4. Question 3 — Pragma System Architecture
-
-### Recommendation: **Per-file pragmas during parsing, materialized into a `PragmaTable` on the `Parser`, then snapshotted onto each `Program` AST**. NOT on `ExecutionContext`.
-
-### Reasoning:
-
-- **The `H` alias is a LEXER concern** — it changes how the character `H` is tokenized inside note streams (BLetter vs Identifier vs Error). By the time `ExecutionContext` exists, lexing is done. Per-execution context arrives too late.
-- **DEFER-04 multi-letter enharmonic edges are an INTERPRETER concern** — the existing `Enharmonic` runtime function would just check a flag.
-
-So pragmas have two scopes that map to two pipeline stages. Treat them uniformly:
-
-```csharp
-// flow-lang/Runtime/PragmaTable.cs (NEW)
-public sealed class PragmaTable {
-    private readonly HashSet<string> _enabled = new(StringComparer.OrdinalIgnoreCase);
-    public bool IsEnabled(string pragma) => _enabled.Contains(pragma);
-    public void Enable(string pragma) => _enabled.Add(pragma);
-    public PragmaTable Clone() { var c = new PragmaTable(); foreach (var p in _enabled) c.Enable(p); return c; }
-}
-```
-
-### Lifecycle:
-
-1. **Parser** maintains a `PragmaTable` instance during parsing. The `enable H_alias;` statement is parsed top-of-file (or anywhere — it takes effect at point-of-encounter going forward). Parser builds the table and attaches a snapshot to the `Program` AST: `Program.Pragmas`.
-2. **Lexer-affecting pragmas** (`H_alias`) are problematic because lexing is done before parsing. Solution: do a **two-pass approach for lexer-affecting pragmas only** — a tiny pre-lex pass that scans for `enable H_alias;` lines via regex (line-anchored, BEFORE any non-pragma statement) and toggles a `LexerPragmas` struct passed into `SimpleLexer`. This is a 20-line pre-scanner, not a real second parse. Haskell's `LANGUAGE` pragmas use the same trick — they're regex-extractable BEFORE the GHC lexer runs.
-3. **Interpreter-affecting pragmas** (`enable_enharmonic_edges`) flow naturally — `Program.Pragmas` is read by the interpreter at startup and copied into a `PragmaTable` field on `ExecutionContext`.
-
-### Layering decision:
-
-| Pragma | Stage that reads it | Storage |
-|--------|---------------------|---------|
-| `H_alias` | Lexer | `LexerPragmas` struct passed to `SimpleLexer.ctor` |
-| `enable_enharmonic_edges` | Interpreter (HarmonyFunctions) | `ExecutionContext.Pragmas` |
-| Future tuning pragmas (`enable_just_intonation`) | Interpreter | `ExecutionContext.Pragmas` |
-
-### `use` import behavior:
-
-- **Pragmas are file-scoped, NOT inherited by importing module.** Same as Haskell `LANGUAGE` pragmas. If a stdlib module enables an experimental syntax, that doesn't infect the user's main file.
-- **Pragmas DO survive import in the imported module's own scope** — i.e. when interpreting code from `inner.flow`, that file's pragmas are active for the duration of its execution.
-- Implementation: `Program.Pragmas` is per-AST. The `ModuleLoader` reads pragmas from the imported `Program` and pushes them onto a stack on `ExecutionContext`, popping when import returns.
-
-### Why not global compiler flags (Scala-style)?
-
-- A single REPL session might run multiple files with different pragma needs. Global flags break this.
-- Watch mode reloads files independently. File-scoped pragmas re-evaluate on reload; global flags would persist stale state.
-
----
-
-## 5. Question 4 — Microtonal Tuning Architecture
-
-### The pluggability seam is `PitchConversion.NoteToFrequency`
-
-Currently (`flow-lang/StandardLibrary/Audio/PitchConversion.cs`):
-```csharp
-public static double NoteToFrequency(char noteName, int octave, int alteration) {
-    int midiNote = GetMidiNote(noteName, octave, alteration);
-    return 440.0 * Math.Pow(2.0, (midiNote - 69) / 12.0);   // ← hardcoded 12-TET
-}
-```
-
-This is called from EVERY synthesizer (`PianoSynthesizer.cs`, `BrassSynthesizer.cs`, etc. — 11 call sites confirmed via grep). Routing tuning through this single function means **zero changes to synthesizers**.
-
-### Recommendation: introduce `ITuningSystem` abstraction; lookup happens in `PitchConversion`, sourcing the active tuning from `MusicalContext`.
-
-```csharp
-// flow-lang/StandardLibrary/Audio/Tuning/ITuningSystem.cs (NEW)
-public interface ITuningSystem {
+    bool Initialize();
+    IReadOnlyList<string> GetInputPorts();
+    IReadOnlyList<string> GetOutputPorts();
+    bool OpenOutput(string port);
+    bool OpenInput(string port);
+    void SendNoteOn(int channel, int pitch, int velocity);
+    void SendNoteOff(int channel, int pitch);
+    void SendCC(int channel, int cc, int value);
+    void SendClock();           // one 24-PPQ pulse
+    void SendStart(); void SendStop(); void SendContinue();
+    event Action<MidiMessage>? OnMessage;
+    event Action<MidiPortEvent>? OnHotPlug;
     string Name { get; }
-    double NoteToFrequency(char noteName, int octave, int alteration, double? centOffset);
-}
-
-public sealed class EqualTemperament : ITuningSystem { /* current behavior */ }
-public sealed class JustIntonation : ITuningSystem {
-    private readonly char _tonicLetter;
-    private readonly int _tonicAlteration;
-    // 5-limit ratios from tonic: 1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 45/32, 3/2, 8/5, 5/3, 16/9, 15/8
-    public double NoteToFrequency(...) { /* ratio table relative to tonic */ }
-}
-public sealed class CustomRatioTuning : ITuningSystem {
-    private readonly Fraction[] _ratios;   // 12 ratios from tonic (one per chromatic step)
-    // ...
 }
 ```
 
-### Where the tuning lookup happens:
+### Pattern 2: Stdlib Module = .flow file + matching C# folder
 
-```csharp
-// flow-lang/StandardLibrary/Audio/PitchConversion.cs (MODIFIED)
-public static double NoteToFrequency(char noteName, int octave, int alteration,
-                                     double? centOffset = null, ITuningSystem? tuning = null) {
-    tuning ??= EqualTemperament.Instance;   // default preserves existing behavior
-    return tuning.NoteToFrequency(noteName, octave, alteration, centOffset);
-}
-```
+**What:** Existing convention — `flow-lang/audio.flow` declares Flow procs that wrap C# builtins registered in `flow-lang/StandardLibrary/Audio/`. The `.flow` file is the Flow-visible API surface; the C# folder is the implementation.
 
-### Where the tuning is set:
+**When to use:** Every new stdlib module (Phases 36, 38, 39, 40 all add modules).
 
-- **MusicalContext** gains `ITuningSystem? Tuning { get; set; }`.
-- New context block: `tuning just C { ... }`, `tuning equal { ... }`, `tuning ratios [1, 16/15, 9/8, ...] C { ... }`.
-- The synth call site reads it: `var tuning = context.GetMusicalContext().Tuning ?? EqualTemperament.Instance; PitchConversion.NoteToFrequency(..., tuning);`.
+**Trade-offs:**
+- (+) Flow-side procs can compose multiple C# builtins, add defaults, document.
+- (+) Module loader (`@name` resolution) already handles this — zero new infrastructure.
+- (−) Two files to maintain per module — discipline required to keep the `.flow` declaration in sync with the registered C# signature.
 
-### Where tuning does NOT live:
+### Pattern 3: Musical-Context Stack for Scoped Behavior
 
-- **NOT on Voice** — voices are post-pitch-resolution. By the time you have a `Voice`, frequency is baked in.
-- **NOT on Synthesizer** — synthesizers should be pitch-agnostic (they take a frequency in Hz). Putting tuning on the synthesizer would force every preset to know about every tuning.
-- **NOT in `renderSong`** — that's after sequence compilation. By then, if we deferred tuning to render time, we'd need to plumb it through every intermediate buffer.
+**What:** `MusicalContext` push/pop pattern (Phase 1+) is the canonical way to scope state in Flow. Phase 28 added `voicePool`; Phase 32 added `tuning`. Phase 36 parameterized sections **must** play nicely with this stack (section args are scoped, not global).
 
-### Critical detail: the lookup site needs to receive `MusicalContext`.
+**When to use:** Any feature whose value should be inherited by nested blocks and override-able.
 
-Currently synthesizers call `PitchConversion.NoteToFrequency(note)` with no context awareness. This requires plumbing `MusicalContext` (or just the active `ITuningSystem`) into `BarRenderer.RenderBarToVoices`. The good news: `BarRenderer` already receives `MusicalContext` indirectly via `bpm` parameter — extending its signature to accept the tuning is a one-call-site change at each renderer entry point.
+**Trade-offs:**
+- (+) Composable nesting: `tempo 120 { key Cmajor { tuning t { ... } } }` Just Works.
+- (+) Phase 40 Ableton Link can override `Tempo` at the network layer without changing call sites — the stack reads the network-provided tempo when the Link frame is active.
+- (−) Network-driven mutation of a context value (Phase 40 Link) is a new pattern; the stack so far has been pure pushdown.
 
-**Touch points for tuning:**
-- `Audio/PitchConversion.cs` — accept tuning param
-- `Audio/Tuning/` — new directory for tuning systems
-- `Runtime/MusicalContext.cs` — add `Tuning` field
-- `Audio/BarRenderer.cs` — propagate tuning to `NoteToFrequency` calls
-- 11 synthesizer files — each needs the call signature updated to pass tuning through (mechanical)
-- `Parsing/Parser.cs` — parse `tuning <name> [args] { ... }` block as a new musical-context variant
-- `Interpreter/Interpreter.cs` — push/pop tuning on the musical-context stack
+### Pattern 4: Determinism via Seeded RNG Registry
 
-This is **medium blast radius** — wide but mechanical.
+**What:** v1.2 established "two-run cmp-clean" — consecutive runs produce byte-identical WAV. Phase 36's markov/lsystem/cellular/lorenz primitives MUST seed from a deterministic source. Recommendation: `PrngRegistry` in `Runtime/` keyed by `(call-site-SourceLocation, generator-name)`.
 
----
+**When to use:** Every new generative primitive.
 
-## 6. Question 5 — Scale Linting Integration
+**Trade-offs:**
+- (+) Keeps Phase 18/25/27/33 determinism contract intact.
+- (+) Composer can explicitly seed via existing convention (`humanize seed:42`).
+- (−) Call-site keys are SourceLocation-dependent — refactoring a script changes seeds. This is acceptable per established Phase 25 humanizeGaussian convention.
 
-### Recommendation: **Pure `flow-lsp` logic that walks the AST + tracks key blocks via a parser-level scope analyzer**. Do NOT add a "lint mode" to the interpreter.
+### Pattern 5: Capture Mode for Headless Render (existing — Phase 38 reuse)
 
-### Why not in flow-lang interpreter:
+**What:** `AudioPlaybackManager.CaptureMode = true` makes audio operations buffer-to-memory instead of streaming-to-backend. Used by `LiveReloadManager` already.
 
-- The interpreter is execution-time. Scale linting is an authoring-time concern. Running the interpreter to lint forces evaluating arbitrary user code — slow, side-effectful (writes WAV files, plays audio).
-- Already in v1.2 the LSP makes a deliberate decision: it references `flow-lang` for the lexer/parser/error reporter ONLY. Adding interpreter-mode coupling reverses that win.
-- The interpreter would have to grow an "abstract evaluation" mode that doesn't render audio but does track musical context — non-trivial new code path.
+**When to use:**
+- WASM playground (no PulseAudio available; render to memory then play via WebAudio).
+- Test framework (Phase 35 — capture audio output, compare buffers via RMS).
+- `flow render` CLI command (already uses it).
 
-### MusicalContext propagation in flow-lsp (parse-only world):
+**Trade-offs:**
+- (+) Single existing mechanism scales to four new use cases.
+- (−) None — well-trodden.
 
-`flow-lsp` already has `NoteStreamContext.FindEnclosingKey` (`flow-lsp/NoteStream/NoteStreamContext.cs`) which uses brace-depth scanning over the token list to find the innermost `key Cmajor { ... }` block enclosing a cursor position. This pattern generalizes:
+## Data Flow
 
-```csharp
-// flow-lsp/Diagnostics/ScaleLinter.cs (NEW)
-public static class ScaleLinter {
-    public static IEnumerable<Diagnostic> Lint(Program ast, IReadOnlyList<Token> tokens) {
-        // For each NoteStreamExpression in the AST:
-        //   1. Walk up through parent statements to find enclosing musical-context blocks
-        //   2. Collect key {x}, tempo, etc. into a synthetic MusicalContext (parse-time only)
-        //   3. For each NoteElement in the stream: check NoteType.GetMidiNote against
-        //      ScaleDatabase.GetScaleNotes(key)
-        //   4. Emit Diagnostic (Severity.Warning) for out-of-key notes
-    }
-}
-```
-
-The trick is that AST currently lacks parent pointers. Two options:
-
-1. **Build a parent map** during the diagnostic pass — single AST walk producing `Dictionary<NoteStreamExpression, IReadOnlyList<MusicalContextStatement>>`. This is a ~30-line traversal.
-
-2. **Use the brace-depth-on-tokens approach** that `NoteStreamContext` already uses — just replace "find enclosing key" with "synthesize MusicalContext from enclosing context blocks". This is more uniform with v1.2 code.
-
-**Recommend option 2** — reuses the `NoteStreamContext` pattern, no new AST traversal infrastructure.
-
-### Pragma to disable linting:
-
-`enable strict_scale_lint;` (default off, opt-in warning). Or inverse: `disable scale_lint;` per-file. This is the FIRST place pragmas pay off — gives users escape hatch when they want chromatic passages.
-
----
-
-## 7. Question 6 — File-Level Touch Map
-
-### Legend
-- **N** = New file
-- **M** = Modified file
-- **HBR** = High blast radius (3+ files)
-- **MBR** = Medium blast radius (1-2 files)
-- **LBR** = Low blast radius (0-1 files outside its own directory)
-
-### Feature 1: Tuplets (`(3:2 C4 D4 E4)q`) — **HBR (8 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/Lexing/SimpleLexer.cs` | M — recognize `:` between integers inside `(` as tuplet ratio (already a token, but tighten to context) |
-| `flow-lang/Parsing/Parser.NoteStream.cs` | M — add tuplet branch in `(` dispatch (sibling to ghost/grace/?/??) |
-| `flow-lang/Ast/Expressions/NoteStreamExpression.cs` | M — add `TupletElement` record |
-| `flow-lang/TypeSystem/Fraction.cs` | N — hand-rolled rational struct |
-| `flow-lang/TypeSystem/SpecialTypes/NoteType.cs` | M — add `Fraction? DurationFraction` to `MusicalNoteData` |
-| `flow-lang/Runtime/NoteStreamCompiler.cs` | M — `CompileTupletElement` recursive method, propagate scale through children |
-| `flow-lang/StandardLibrary/Audio/MidiExport.cs` | M — convert `DurationFraction` to PPQN ticks for tuplets |
-| `flow-lsp/Semantic/SemanticTokensEncoder.cs` | M — colorize tuplet ratio numbers as `number` token |
-| `flow-lang/StandardLibrary/BuiltInDocs.cs` | M — document tuplet syntax for hover |
-
-### Feature 2: Arbitrary fractional durations (`C4/12`) — **MBR (3 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/Lexing/SimpleLexer.cs` | M — extend note-literal regex to recognize `/N` after note name as arbitrary-duration suffix |
-| `flow-lang/Parsing/Parser.NoteStream.cs` | M — `TryParseDurationSuffix` accepts `/12` form alongside `q`, `e`, etc. |
-| `flow-lang/Runtime/NoteStreamCompiler.cs` | M — when duration is `/N`, compute `Fraction(4, N)` (since N=12 means twelfth-note = 4/12 quarter-units) and set `MusicalNoteData.DurationFraction` |
-
-Note: the `Fraction` struct from Feature 1 is a prerequisite — these two features SHARE that infrastructure.
-
-### Feature 3: `range(Int, Int)` and `range(Int, Int, Int)` — **LBR (1 file)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/BuiltInFunctions.cs` | M — register two new `FunctionSignature` entries; existing `range` is in `BuiltInDocs.cs:38` so docs already describe it |
-
-This is a 15-LOC addition. Truly trivial.
-
-### Feature 4: Pragma system (`enable H_alias;`) — **HBR (5-6 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/Runtime/PragmaTable.cs` | N — pragma storage |
-| `flow-lang/Lexing/SimpleLexer.cs` | M — pre-scan for lexer-affecting pragmas (~20 LOC), pass `LexerPragmas` struct in ctor |
-| `flow-lang/Parsing/Parser.cs` | M — parse `enable <name>;` statement, accumulate into `Program.Pragmas` |
-| `flow-lang/Ast/Statements/PragmaStatement.cs` | N — AST node |
-| `flow-lang/Ast/Program.cs` | M — add `IReadOnlyList<PragmaStatement> Pragmas` field |
-| `flow-lang/Runtime/ExecutionContext.cs` | M — add `PragmaTable Pragmas` field, populate from `Program.Pragmas` at startup |
-| `flow-lang/Runtime/ModuleLoader.cs` | M — push/pop pragma scope on `use` |
-
-### Feature 5: Multi-letter enharmonic edges (DEFER-04, E↔Fb etc.) — **LBR (1 file)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs` | M — gate the existing `D-05: naturals return unchanged` early-exit on `pragma enharmonic_edges`. When pragma on, fall through to compute Fb/E#/Cb/B# spellings. |
-
-### Feature 6: Slice negative-from-end indexing (DEFER-05) — **LBR (1 file)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Collections.cs` | M — in `SliceArray` and `SliceSequence` (line 157, 185), interpret negative `start`/`end` as offset-from-end before clamping |
-
-### Feature 7: Gaussian humanize (DEFER-06) — **LBR (1 file)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/BuiltInFunctions.cs` | M — extend `BuildEuclideanSequence` (called from `RegisterEuclideanOverloads`) to accept distribution flag; or add 7-arg overload. Box-Muller transform for Gaussian sample. ~20 LOC. |
-
-### Feature 8: Arpeggio parameters — **LBR (1 file)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs` | M — add overloads `arpeggio(Chord, String dir, NoteValue rate)` and `arpeggio(Chord, String dir, NoteValue rate, String pattern)` (e.g. "1357", "1537"). Modify the existing `arpeggio` (line 309) to be the no-rate default. |
-
-### Feature 9: Chord inversions/voicings — **MBR (3 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Harmony/ChordParser.cs` | M — recognize `/3`, `/5`, `/7` suffix and `:1`, `:2` voicing markers; populate new field on `ChordData` |
-| `flow-lang/TypeSystem/SpecialTypes/ChordType.cs` (ChordData) | M — add `int Inversion` field |
-| `flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs` | M — `chordNotes` reads inversion and rotates note list accordingly |
-
-### Feature 10: Delay sync to NoteValue — **MBR (2 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Audio/DSP/Delay.cs` | M — overload `Apply(buffer, NoteValue dur, double bpm, feedback, mix)` that converts to ms via `60000 / bpm × ToFraction(dur) × 4` |
-| `flow-lang/StandardLibrary/BuiltInFunctions.cs` | M — register the new `delay` overload signature; tempo/bpm comes from `MusicalContext.Tempo` ?? 120 |
-
-### Feature 11: Microtonal ratios — **HBR (10+ files)**
-
-See §5 above for full detail. Affects every synthesizer, `PitchConversion`, `MusicalContext`, `Parser`, `Interpreter`. **Highest blast radius of any v1.3 feature.**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Audio/Tuning/ITuningSystem.cs` | N |
-| `flow-lang/StandardLibrary/Audio/Tuning/EqualTemperament.cs` | N |
-| `flow-lang/StandardLibrary/Audio/Tuning/JustIntonation.cs` | N |
-| `flow-lang/StandardLibrary/Audio/Tuning/CustomRatioTuning.cs` | N |
-| `flow-lang/StandardLibrary/Audio/PitchConversion.cs` | M — accept tuning param |
-| `flow-lang/Runtime/MusicalContext.cs` | M — add `Tuning` field |
-| `flow-lang/Parsing/Parser.cs` | M — parse `tuning <name> [args] { ... }` block |
-| `flow-lang/Interpreter/Interpreter.cs` | M — handle new context block |
-| `flow-lang/StandardLibrary/Audio/BarRenderer.cs` | M — propagate tuning into synth calls |
-| 11× `flow-lang/StandardLibrary/Audio/Synthesizers/*.cs` | M — accept tuning, pass through to `PitchConversion` |
-
-### Feature 12: Scale linting — **MBR (3 files in flow-lsp; 0 in flow-lang)**
-
-| File | Change |
-|------|--------|
-| `flow-lsp/Diagnostics/ScaleLinter.cs` | N |
-| `flow-lsp/Handlers/DiagnosticsPublisher.cs` | M — invoke `ScaleLinter.Lint` and merge with parse diagnostics |
-| `flow-lsp/NoteStream/NoteStreamContext.cs` | M (small) — extract `FindEnclosingKey` brace-walk into a reusable `FindEnclosingMusicalContext` returning a synthetic `MusicalContext` |
-
-### Feature 13: Legato/portamento articulations — **MBR (3 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/TypeSystem/SpecialTypes/NoteType.cs` | M — extend `Articulation` enum with `Legato`, `Portamento` |
-| `flow-lang/Parsing/Parser.NoteStream.cs` | M — `TryParseArticulation` recognizes new tokens (`leg`, `port`) |
-| `flow-lang/StandardLibrary/Audio/EnvelopeProcessor.cs` | M — `Legato` extends release into next note's attack; `Portamento` adds frequency glide |
-| `flow-lang/StandardLibrary/Audio/MidiExport.cs` | M — emit MIDI CC65 (portamento on/off) for portamento-marked notes |
-
-### Feature 14: Snap-to-grid quantize — **LBR (1 file)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Transforms/TransformFunctions.cs` | M — add `quantize(Sequence, NoteValue grid) → Sequence`. Walks bar-by-bar, snaps each note's onset to nearest grid multiple. Operates in beat-space using existing `BarData.ToTimeline`. |
-
-### Feature 15: WAV pitch-shift on load — **LBR (1-2 files)**
-
-| File | Change |
-|------|--------|
-| `flow-lang/StandardLibrary/Audio/FileIO.cs` (loadWav) | M — accept optional `Semitone` shift; resample via simple linear interpolation OR retain length via PSOLA. Recommend simple resample first — pitch + length both change, document this trade-off. |
-| `flow-lang/StandardLibrary/BuiltInFunctions.cs` | M — register new `loadWav(String, Semitone)` overload |
-
-### Blast-radius summary
-
-| Feature | Files | Blast |
-|---------|-------|-------|
-| Tuplets | 9 | HBR |
-| Arbitrary durations | 3 | MBR (shares Fraction with tuplets) |
-| range | 1 | LBR |
-| Pragma system | 6-7 | HBR |
-| Enharmonic edges | 1 | LBR |
-| Slice negative | 1 | LBR |
-| Gaussian humanize | 1 | LBR |
-| Arpeggio params | 1 | LBR |
-| Chord inversions | 3 | MBR |
-| Delay sync | 2 | MBR |
-| Microtonal | 18+ | HBR (highest) |
-| Scale linting | 3 (flow-lsp) | MBR |
-| Legato/portamento | 4 | MBR |
-| Snap-to-grid | 1 | LBR |
-| WAV pitch-shift | 2 | LBR |
-
----
-
-## 8. Question 7 — Suggested Build Order
-
-### Build-order graph (→ = depends on)
+### v1.5 New Data Flow #1: Pattern Matching (Phase 35)
 
 ```
-                       Fraction struct (foundation)
-                         /            \
-                Tuplets         Arbitrary durations
-                   ↓                      ↓
-          Arpeggio rate=tuplet      Snap-to-grid (uses fractions)
-                   ↓
-              Delay sync (uses NoteValue + tempo)
-
-
-       PragmaTable infrastructure
-              /     \
-       H_alias    Enharmonic edges (DEFER-04)
-                       ↓
-                Scale linting (uses pragma to disable)
-
-
-            range stdlib            (independent)
-            Slice negative         (independent)
-            Gaussian humanize      (independent)
-            Chord inversions       (independent)
-            WAV pitch-shift        (independent)
-            Legato/portamento      (independent)
-
-
-                  Microtonal (independent BUT highest blast radius —
-                              schedule as dedicated phase)
+Source: match note { C4 => ... ; Note n => ... ; _ => ... }
+   ↓
+Lexer: TokenMatch + braces
+   ↓
+Parser → MatchExpression(scrutinee, [MatchArm(pat, guard?, body)*])
+   ↓
+ExpressionEvaluator.EvaluateMatch:
+   1. Evaluate scrutinee → Value
+   2. For each arm in order:
+      a. TryBindPattern(arm.pattern, value, bindings) → bool
+      b. If matched and (guard?.Evaluate(bindings + ctx) == true):
+         - Push new StackFrame with bindings
+         - Execute body
+         - Return ImplicitReturnCollector's value
+         - Pop frame
+   3. If no arm matched: emit error via ErrorReporter (NOT throw — soft fail per existing model)
 ```
 
-### Recommended phase ordering
+### v1.5 New Data Flow #2: Live Block + Quantized Hot-Swap (Phase 38)
 
-**Phase A — Foundation (Fraction + Tuplets + Arbitrary durations)**
-- Ship `Fraction` struct first
-- Tuplets and arbitrary durations land together (they share `MusicalNoteData.DurationFraction`)
-- Tutorial test: `(3:2 C4 D4 E4)q` plays as triplet, byte-identical determinism preserved
-- Feeds: arpeggio params (next phase), delay sync (next phase), snap-to-grid (later phase)
+```
+File on disk: live 1bar { ... }
+   ↓
+flow-cli/LiveCommand → flow-interpreter/LiveReloadManager
+   ↓
+LiveReloadManager.Run():
+   - Initial FlowEngine.Execute(source) in capture mode
+   - Walk AST for LiveBlockStatement; extract QuantizeUnit (1bar / 2bar / 0.5beat ...)
+   - Set FileSystemWatcher on source file
+   - Start streaming playback loop
+   ↓
+[File changes]
+   ↓
+Background FlowEngine renders new version in capture mode → AudioBuffer
+   ↓
+Streaming loop: at NEXT QuantizeUnit boundary, atomically swap _currentBuffer
+   - Existing 64-sample equal-power crossfade applied (already in LiveReloadManager)
+   - Pending MusicalContext (tempo + timesig) overwrites current
+   ↓
+Playback continues seamlessly
+```
 
-**Phase B — Pragma infrastructure**
-- `PragmaTable`, `PragmaStatement` AST, lexer pre-scan
-- Land BEFORE H_alias and enharmonic-edges (DEFER-02/03 + DEFER-04)
-- Once pragma works, those two land as 1-LOC each (just check the flag)
+**Key difference from existing watch mode:** the `live { ... }` block becomes the **explicit, in-source declaration** of "this is hot-swappable" — currently `--watch` infers a bar boundary from MusicalContext.TimeSignature. With `live`, the composer chooses quantize granularity per script.
 
-**Phase C — DEFER closures (cheap, mostly independent)**
-- range (DEFER-01), slice negative (DEFER-05), Gaussian humanize (DEFER-06) — all LBR, no dependencies
-- H_alias (DEFER-02/03), enharmonic-edges (DEFER-04) — depend on Phase B pragma
-- This phase clears all 6 DEFER items in one swoop
+### v1.5 New Data Flow #3: Real-Time MIDI Output (Phase 40)
 
-**Phase D — Tier B/C composer DX (uses tuplets from Phase A)**
-- Arpeggio params (depends on tuplet rate semantics from Phase A)
-- Chord inversions (independent)
-- Delay sync (uses NoteValue + tempo — could ship before tuplets, no hard dep)
-- Snap-to-grid (uses Fraction from Phase A)
-- Legato/portamento (independent)
-- WAV pitch-shift (independent)
+```
+Flow: midiOut #port_a (noteOn 60 100)
+   ↓
+StandardLibrary/Realtime/MidiRt — registered builtin
+   ↓
+ExecutionContext.MidiBackend!.SendNoteOn(0, 60, 100)
+   ↓
+[Platform-specific impl]
+   - Linux: ALSA snd_seq_event_output
+   - macOS: MIDIPacketListAdd + MIDISend
+   - Windows: midiOutShortMsg
+   - WASM: navigator.requestMIDIAccess().outputs[port].send(...)
+```
 
-**Phase E — Microtonal**
-- Highest blast radius. Dedicate a single phase.
-- Land tuning context block, ITuningSystem, EqualTemperament (default), JustIntonation, CustomRatioTuning
-- Verify all 11 synth presets still produce byte-identical 12-TET output when tuning is unset
+### v1.5 New Data Flow #4: Ableton Link Tempo Slave (Phase 40)
 
-**Phase F — Scale linting (flow-lsp only)**
-- Depends on Phase B pragma (for `enable strict_scale_lint`)
-- Pure flow-lsp work, no flow-lang touch
-- Can run in parallel with Phase E
+```
+Init: linkSync()
+   ↓
+ExecutionContext.Link = new LinkTransport()
+LinkTransport spawns background thread that polls libabl_link's session_tempo
+   ↓
+MusicalContext.Tempo accessor (modified):
+   - If ExecutionContext.Link != null && Link.IsActive:
+     return Link.SessionTempo()
+   - Else: return _localTempo  (existing path)
+   ↓
+Songs render with network-synced tempo
+   ↓
+Tempo changes propagate via the same accessor — no audio-thread mutation
+```
 
-### Critical-path observations
+### v1.5 New Data Flow #5: WASM Playground (Phase 41)
 
-- **`Fraction` is the root dependency.** Cannot ship tuplets, arbitrary durations, snap-to-grid, or precise delay-sync math without it.
-- **Pragma system is the second root.** Without it, DEFER-02/03 (H_alias) and DEFER-04 (enharmonic edges) and Phase F (scale lint opt-in) are blocked.
-- **Microtonal is independent but expensive.** Don't bundle with anything else — it's its own phase to keep blast-radius reviewable.
-- **DEFER closures cluster well.** Six items, cheap, mostly independent — landing them in one phase gives a satisfying "DEFER list cleared" milestone moment.
-- **Tuplets unlock arpeggio rate semantics.** When `arpeggio(chord, "up", q)` ships, users will immediately want `arpeggio(chord, "up", (3:2 q))` — that already works for free if tuplets land first because the parameter is just a NoteValue with a Fraction backing.
+```
+Browser: user types Flow source in textarea, clicks Play
+   ↓
+flow-wasm/Program.cs:
+   - Read source via JS interop string passing
+   - Construct FlowEngine (with WebAudioBackend instead of Pulse)
+   - Execute in capture mode
+   ↓
+WebAudioBackend.Play():
+   - JS interop: window.audioPlayer.queue(samples)
+   - AudioWorklet pulls from queue
+   ↓
+Output through browser's WebAudio graph
+```
 
-### Anti-suggestion: do NOT do tuplets and microtonal in the same phase
+**Hard constraints for WASM:**
+- No P/Invoke (rules out PulseAudio, ALSA, libjack, libabl_link).
+- No `System.IO.File` directly — use `IFileSystem` abstraction → either bundled-as-blob (sample bundle) or `fetch()` + IndexedDB cache.
+- No threads in some configurations — use single-threaded async patterns where possible. (Note: .NET 10 WASM does support multithreading with the right flags — verify before committing.)
 
-Both are HBR. Their blast radii overlap on `MusicalContext` and `BarRenderer`. Reviewing one set of changes is hard enough; reviewing both at once is a code-review trap. Keep them in separate phases even though they're technically independent.
+## Build Order (Phase Dependencies)
 
----
+```
+Phase 35 (Language Foundation) ─┬─→ Phase 36 (Pattern Algebra / Generative)
+                                ├─→ Phase 37 (Sound Design)
+                                ├─→ Phase 38 (Live 2.0)
+                                ├─→ Phase 39 (Notation)
+                                ├─→ Phase 40 (Studio Sync)
+                                └─→ Phase 41 (Web / Distribution)
 
-## 9. Anti-Patterns to Avoid
+Phase 38 (Live 2.0 — modernized watch mode) ───→ Phase 41 (WASM playground = live in browser)
 
-### Anti-Pattern 1: Adding tuplet support by extending `NoteValue` enum
+Phase 35's match + diagnostics + test framework feed EVERY later phase:
+   - match: pattern-algebra branches in Phase 36, MIDI event dispatch in Phase 40
+   - Rust-style diagnostics: every parser extension in 36/38/39 benefits
+   - test framework: every later phase ships regression tests via @test
+```
 
-**What people do:** Add `TUPLET_THIRD = 6, TUPLET_FIFTH = 7, ...` to the enum.
-**Why wrong:** Doesn't compose under nested tuplets; explodes combinatorially with dotted-tuplets; breaks MIDI tick math.
-**Do this instead:** Add `Fraction? DurationFraction` to `MusicalNoteData` and let `GetBeats` branch on it.
+### Build-Order Justification
 
-### Anti-Pattern 2: Pragma table on `ExecutionContext` only
+- **Phase 35 absolutely first.** Pattern matching is used in MIDI event dispatch (Phase 40 `onMidi #port { case (noteOn n v) => ...; case (cc n v) => ... }`), in pattern-algebra branches (Phase 36), and in import/export emit (Phase 39 — "match the note's articulation and emit the LilyPond glyph"). Rust-style diagnostics improve every later parser change. The test framework lets every later phase land regression tests.
+- **Phase 36 can land before Phase 37** but they're commutative — neither blocks the other.
+- **Phase 38 must precede Phase 41.** The WASM playground IS a watch-mode-in-browser; the modernized watch + `live` block is the cross-platform contract that Phase 41 implements in the browser.
+- **Phase 39 can land any time after Phase 35** — it's standalone.
+- **Phase 40 must precede Phase 41's MIDI piece.** Web MIDI API is implemented as just another `IMidiBackend`, so the abstraction must exist first.
+- **Phase 41 last.** Cross-platform binaries need every other phase's I/O abstractions to be backend-clean.
 
-**What people do:** Put pragma flags on `ExecutionContext`, set them at runtime from `enable` statements.
-**Why wrong:** Lexer-affecting pragmas (`H_alias`) need to fire BEFORE the parser runs, let alone the interpreter. Runtime pragma table can't reach back into the lexer.
-**Do this instead:** Two-stage pragma model — lexer pragmas via 20-line pre-scanner; interpreter pragmas on `ExecutionContext`. Same `PragmaTable` storage type used in both places.
+### Recommended Sub-Order Within Phases (where it matters)
 
-### Anti-Pattern 3: Tuning system on the synthesizer
+- **Phase 35:** diagnostics-snippet renderer **first** (improves error reporting for everything else), then test framework (gives regression bed), then `match` (the big one), then `-> as name` (smallest).
+- **Phase 36:** pattern algebra **first** (foundation for the generative primitives, which slot in as members of the algebra), then markov + lsystem + cellular + lorenz, then improv (composes the others), then parameterized sections (independent — could go first).
+- **Phase 37:** sampler polish first (low-risk Phase 33 extensions); granular + time-stretch + stereo pan independently.
+- **Phase 38:** modernized watch + `live` block **first** (used by REPL polish); REPL polish; audio input; OSC.
+- **Phase 39:** MusicXML export first (most-requested per industry); LilyPond export; ABC + MML import.
+- **Phase 40:** `IMidiBackend` Linux first (project's primary platform); MIDI clock; Link; JACK.
+- **Phase 41:** `flow doc` first (purely additive, no platform dependency); WASM playground; cross-platform binaries; JetBrains marketplace publish (process); third-genre showcase last (consumes everything).
 
-**What people do:** Each synthesizer (`PianoSynthesizer`, etc.) takes a `tuning` parameter and converts pitch internally.
-**Why wrong:** 11 synthesizers × every tuning system = combinatorial test surface. Synthesizers should be pitch-blind (they take Hz).
-**Do this instead:** Keep tuning at `PitchConversion.NoteToFrequency` — single chokepoint, synthesizers stay pitch-agnostic.
+## Integration Points — Cross-Cutting
 
-### Anti-Pattern 4: Scale linting in the interpreter
+### SFZ sampler (Phase 33 ↔ Phase 37)
 
-**What people do:** Add a `--lint` mode to flow-interpreter that runs the interpreter abstractly.
-**Why wrong:** Forces creating an "abstract evaluation" interpreter mode (huge new code path). Violates v1.2's clean separation: flow-lsp consumes lexer/parser only.
-**Do this instead:** Pure flow-lsp pass walking AST + brace-depth scanning of tokens for context resolution. Reuses the Phase 17 `NoteStreamContext` pattern.
+`SfzParser` opcode whitelist extends with `seq_position`, `seq_length`, `ampeg_attack/decay/sustain/release`. `SfzRenderer.SelectRegion` gains round-robin state (per-region counter keyed by note+vel bucket). The Phase 28 articulation envelope hook in `SfzRenderer` gains a per-articulation multiplier dict so staccato on a sampled patch has different envelope params than on the synth path. **Risk:** sample-cache key changes — keep the existing `(absPath, midiPitch, articulation)` shape, add a `velocityLayer` field. Two-run determinism remains preserved by sort-key-ordered eager-load.
 
-### Anti-Pattern 5: `double` for tuplet duration scaling
+### Voice pool (Phase 28 ↔ Phase 37 stereo pan)
 
-**What people do:** Multiply durations by `2.0/3.0` in floats.
-**Why wrong:** Accumulates ε per note. v1.2 byte-identical determinism contract breaks. MIDI tick conversion drifts.
-**Do this instead:** `Fraction.Multiply` keeps integers in lowest terms.
+`SongRenderer` allocates one buffer per voice, mixes additively. Phase 37 stereo pan adds a per-voice `Pan` field to `Voice` (in `flow-lang/StandardLibrary/Audio/Voice.cs`). Constant-power pan applied per-voice BEFORE the additive mix: `mono_sample * cos(angle) → L`, `mono_sample * sin(angle) → R`. **Risk:** existing `Voice` is currently mono — promote to stereo at the mix-down step. The existing `mix()` builtin already handles mono→stereo promotion (v1.1) so the pipeline tolerates this. The voice-pool steal-oldest tiebreaker (Phase 28 deterministic by original index) is **unaffected** — pan is an attribute, not a selection key.
 
----
+### Musical-context stack (Phase 36 ↔ Phase 40)
 
-## 10. Integration Points (Summary Table)
+Phase 36 parameterized sections push a synthetic context frame on call (binding section parameters as scoped vars in the StackFrame, NOT in MusicalContext). Phase 40 Link/JACK **read from** the MusicalContext.Tempo accessor — the MusicalContext becomes a tempo-aware view (delegating to Link when active). **No write-back from the network into the stack** — keep mutation one-directional (Flow source → stack → playback; network → MusicalContext accessor → playback).
 
-### Internal Boundaries Affected
+### Lexer/Parser (Phase 35 + 36 + 38)
 
-| Boundary | v1.3 Feature That Crosses It | Communication Pattern |
-|----------|------------------------------|------------------------|
-| Lexer ↔ Parser | Pragma `H_alias` (lexer-affecting) | Pre-lex pragma scan; LexerPragmas struct passed into ctor |
-| Parser ↔ Interpreter | All pragmas, all new AST nodes | AST node fields; `Program.Pragmas` snapshot |
-| Interpreter ↔ NoteStreamCompiler | Tuplet scaling factor | New `outerScale: Fraction` parameter on `CompileTupletElement` |
-| MusicalContext ↔ Synthesizer | Tuning system | New `ITuningSystem` field on MusicalContext, propagated through BarRenderer |
-| flow-lang ↔ flow-lsp | Scale linting | flow-lsp re-uses `ScaleDatabase.GetScaleNotes`, walks tokens itself for context |
-| flow-lang ↔ DryWetMidi | Tuplet ticks | `Fraction → PPQN ticks` conversion in `MidiExport` |
+New reserved keywords: `match`, `live`, `test`, `as` (already a contextual word — check existing `as` usage; if any conflict, scope it to flow chains only). Section args use existing `(` `)` tokens — minimal lex change, parser-level change in `ParseSectionDeclaration`. The `-> as name` flow extension: `as` is consumed only in `ParseFlowChain` context, not at statement-top — keeps it from polluting expression grammar.
 
-### External Services
+### OverloadResolver (Phase 35 pattern matching)
 
-None new. DryWetMidi already integrated since v1.2 (Phase 14 DX-08). Microtonal feature uses no external library — hand-rolled tuning table.
+**Pattern matching is orthogonal to function dispatch.** `match` is an expression, not a function call. The OverloadResolver does NOT participate in pattern matching. Pattern arms are resolved purely structurally (literal-equals, type-tag-equals, sub-pattern recurse). This keeps the existing specificity-scoring untouched.
 
----
+### Dither RNG + Determinism Contract (Phase 36 generative ↔ existing)
 
-## 11. Open Risks (Flagged for Roadmap)
+Phase 36 generative primitives MUST seed from `PrngRegistry` (new). Default seeding strategy: hash of `(call-site SourceLocation, generator name, optional user seed)`. Composer can override via existing `seed: N` named-argument convention. The synth white-noise RNG + TPDF dither RNG already reseed at `renderSong`/`writeWav` boundaries (v1.2 Phase 15 Plan 05) — Phase 36 RNGs MUST reseed at the same boundaries. **Verification:** add a Phase 36 two-run cmp-clean test on a script using each generative primitive.
 
-1. **`Fraction` arithmetic perf** — note streams in long compositions might create many Fraction instances. Mitigate by making `Fraction` a `readonly record struct` (stack-allocated, no GC). Confidence: HIGH this is sufficient based on existing `MusicalNoteData` allocation patterns.
+## Anti-Patterns to Avoid
 
-2. **Tuplet auto-fit interaction** — `CalculateAutoFitDuration` (NoteStreamCompiler.cs:206) is the trickiest existing logic. Tuplet children inside an auto-fit bar need their *combined* time to count as one auto-fit slot, not N. Recommend: tuplets always require explicit duration on the group `(3:2 C4 D4 E4)q` — disallow auto-fit-inside-tuplet for v1.3, document as "explicit only" constraint. Lift constraint in v1.4 if users complain.
+### Anti-Pattern 1: Lifting Platform-Specific Code Out of IAudioBackend
 
-3. **Microtonal cents interaction with tuning** — existing `centOffset` is a *post-pitch* adjustment (added to MIDI cents). With non-12-TET tuning, "+50c" becomes ambiguous: 50 cents of equal-temperament, or 50 cents of the active tuning's step? Recommend: cents always mean equal-temperament cents (Hz-multiplicative `2^(c/1200)`), applied AFTER tuning lookup. Document this clearly. Charitable-interpretation principle from MEMORY.md says: "music > rigid correctness" — this is the user-friendly default.
+**What people do:** Audio capture is "harder" on Linux than Windows, so they put the capture pipeline in `flow-cli/` or `flow-interpreter/` as platform-detection switches.
 
-4. **Lexer pre-scan for pragmas** — feels hacky. The actual risk is a `enable` keyword inside a string literal getting matched by the regex. Mitigate: regex must be line-anchored AND require pragma to appear before any non-comment, non-pragma statement. Same constraint Haskell uses for `LANGUAGE` pragmas.
+**Why it's wrong:** Breaks the WASM browser story. The capture pipeline must live inside `IAudioBackend` so the WASM backend can implement it via `getUserMedia` without touching CLI code. Same lesson v1.0 learned with PulseAudio.
 
-5. **flow-lsp sync with new AST nodes** — every new `NoteStreamElement` type requires a new branch in `SemanticTokensEncoder` for proper colorization. Add a "new AST node added" checklist item to flow-lsp PR template.
+**Do this instead:** Extend `IAudioBackend` with capture methods; each platform-specific backend implements them. The browser playground gets capture support transparently.
 
----
+### Anti-Pattern 2: Hardcoding Tempo at Render Time
+
+**What people do:** Phase 40 Link integration polls libabl_link at render-start, captures tempo as a constant, renders the whole song.
+
+**Why it's wrong:** Link's whole point is that tempo CHANGES mid-session. A statically-rendered song doesn't slave to the network.
+
+**Do this instead:** `MusicalContext.Tempo` accessor delegates to Link when active. The audio rendering loop is already chunk-based via `WriteChunk` — read tempo per chunk, not per render.
+
+### Anti-Pattern 3: Adding a Sixth AST "Pattern Node Type" Inside Expressions
+
+**What people do:** Add `MatchPattern` as a sibling of `LiteralExpression` in `Ast/Expressions/`.
+
+**Why it's wrong:** Patterns aren't expressions — they don't evaluate to a Value, they bind names and return boolean match status. Mixing them pollutes the Expression hierarchy and breaks the ExpressionEvaluator's exhaustive switch.
+
+**Do this instead:** Separate `Ast/Patterns/` folder with its own base class. `MatchExpression` (an Expression) contains `MatchArm[]`, each carrying a `Pattern`. Pattern evaluation is a separate dispatch table.
+
+### Anti-Pattern 4: One-Off OSC/MIDI Threads
+
+**What people do:** OSC server spawns its own thread; MIDI input spawns its own thread; AudioInput spawns its own thread. Each manages its own lifetime.
+
+**Why it's wrong:** Three threads + shared mutable state in callbacks → race conditions. Currently the project has audio-thread-only mutation (one PulseAudio writer thread). Adding three more uncoordinated threads invites bugs that won't show up until a live performance.
+
+**Do this instead:** One **event pump** in `Runtime/` that owns the network/MIDI/audio-input threads and marshals callbacks onto the Flow execution thread (or a dedicated "stdlib callback" thread with explicit lock-free queues to the audio thread). This mirrors what AudioPlaybackManager already does for playback.
+
+### Anti-Pattern 5: WASM Build as a Target Profile of flow-cli
+
+**What people do:** Add `<TargetFramework>net10.0;net10.0-browser</TargetFramework>` to flow-cli.csproj.
+
+**Why it's wrong:** Browser target needs `Microsoft.NET.Sdk.WebAssembly`, not `Microsoft.NET.Sdk` — different SDK, not a target framework flip. Pulls in conflicting build properties.
+
+**Do this instead:** Separate `flow-wasm/` project with its own SDK. Reference `flow-lang/` directly (it's a library — works on both). Backend-specific code (PulseAudio P/Invoke) is wrapped in `#if !BROWSER` or — preferred — isolated in `IAudioBackend` impls that flow-wasm just doesn't reference.
+
+### Anti-Pattern 6: Test Framework as Subprocess Per Test
+
+**What people do:** `flow test` shells out to `flow run test1.flow`, `flow run test2.flow`, etc., one process per test.
+
+**Why it's wrong:** 70+ tests × ~1s startup = 70s overhead. Slow feedback discourages testing.
+
+**Do this instead:** `flow test` constructs ONE FlowEngine, runs each `*.test.flow` script as a separate `Execute()` call in capture mode, captures pass/fail via the `@test` stdlib's accumulator. Reset musical-context stack + PrngRegistry + ExecutionContext bindings between tests for isolation. Total run time: O(actual work) not O(process spawn).
+
+## REPL ↔ LSP Integration (Phase 38)
+
+**Recommendation:** Embed `flow-lsp` as an in-process library reference from `flow-interpreter/Repl.cs`. The LSP project already references `flow-lang` directly (no shadow language model — v1.2 design choice) and its handlers (`CompletionHandler.cs`, etc.) are callable C# methods.
+
+**Wiring:**
+1. Add `flow-lsp` ProjectReference to `flow-interpreter.csproj`.
+2. Repl owns a `DocumentManager` (already in flow-lsp) seeded with the REPL's accumulated source.
+3. On `Tab` press: invoke `CompletionHandler.Handle(currentLine, cursorPos)` directly — no LSP RPC, no stdio, no JSON-RPC frame parsing.
+4. Render completions to console via a simple list UI (ANSI menu).
+
+**Rejected alternative:** running flow-lsp as a child process and talking JSON-RPC. Adds process management, latency, and IO complexity for zero benefit since both projects live in the same repo.
+
+**Trade-off:** The REPL's binary grows by ~the size of flow-lsp's compiled assembly + OmniSharp.Extensions.LanguageServer (notable — ~5 MB). Acceptable for `flow repl`; if it bloats `flow run`, gate the LSP reference behind a `--rich-repl` flag or split flow-interpreter into `flow-interpreter-core` + `flow-interpreter-repl`.
+
+## flow doc — Recommended Shape
+
+**Recommendation:** `flow doc` is a `flow-cli` subcommand (`flow-cli/Commands/DocCommand.cs`). Its implementation lives in a small `flow-cli/Doc/` folder, NOT a separate project, because:
+1. Only one consumer (the command itself).
+2. The doc generator reads `BuiltInDocs` (already in `flow-lang`) + proc declarations (parses via `flow-lang.Parser`) + Flow `//` comments — all data is already in `flow-lang`.
+3. A separate project adds one more `.csproj`, one more assembly to load, with no payoff.
+
+**Output:** emit HTML + Markdown. HTML for the WASM playground (Phase 41 — sidebar reference); Markdown for GitHub wiki sync (existing scripts/ workflow).
+
+**Spinoff trigger:** if the JetBrains plugin or VSCode extension wants programmatic access to docs at runtime (rather than baking docs at build time), extract `flow-cli/Doc/` to a `flow-doc/` library project. NOT before.
+
+## JetBrains Marketplace Publish — Code Changes Required
+
+The plugin scaffolding ships in v1.4 Phase 31. Marketplace publish requires (Phase 41):
+
+**Code changes (small):**
+- `flow-jetbrains/plugin.xml` — set production `<vendor>` block + URL + email.
+- `flow-jetbrains/build.gradle.kts` — add `signPlugin` task with cert paths from env vars; add `publishPlugin` task.
+- Add `flow-jetbrains/CHANGELOG.md` (marketplace renders this).
+- Bump `version` to a stable semver (currently scaffolding likely sits at `0.0.1` or similar).
+
+**Process (one-time):**
+- JetBrains Marketplace account; vendor verification.
+- Plugin signing cert (free for OSS) or self-signed for initial upload.
+- First-publish goes through manual review (~3-5 business days).
+- Subsequent updates auto-publish unless they touch sensitive APIs.
+
+**No new C# code needed** — the LSP server bundled with the plugin is already buildable from v1.4 Phase 31 deliverables.
+
+## Scaling Considerations
+
+| Scenario | Architecture Adjustments |
+|----------|--------------------------|
+| Single user, single script, <30s render | No change — current design |
+| Single user, live coding 30+ min session | LiveReloadManager already designed for this; verify `PrngRegistry` doesn't accumulate state across hot-reloads (reset on swap) |
+| 10K-step generative score | Phase 36 markov/lsystem must stream — don't buffer the full sequence. Yield per-bar. |
+| Network MIDI to 5+ external devices | One `IMidiBackend` instance, one open port — multiplex via channel field. No multi-backend orchestration. |
+| Browser playground, 100 KB script | WebAssembly runtime supports it; main risk is sample-bundle blob size (3 MB in Phase 29) — gate sampled instruments behind on-demand load. |
+| Ableton Link session w/ 4 peers | libabl_link handles peer discovery; Flow's only job is reading the tempo accessor. No new architecture. |
 
 ## Sources
 
-- [music21 Advanced Durations & Tuplets](https://music21.org/music21docs/usersGuide/usersGuide_19_duration2.html) — canonical Fraction-based duration model with tuplet ratio multiplication; verified MIT/active-maintenance reference
-- [music21 duration.py source](https://github.com/cuthbertLab/music21/blob/master/music21/duration.py) — `DurationTuple` (type, dots, quarterLength) implementation pattern
-- [music21j Tuplet class docs](http://tarmo.uuu.ee/varia/failid/komp/music21j/doc/music21.duration.Tuplet.html) — JavaScript port confirms ratio semantics ("5-in-the-place-of-4 means 4/5ths as long")
-- [Formalizing Time Units to Handle Symbolic Music Durations](https://arxiv.org/pdf/2310.14952) — academic paper on rational-time representation in music engines
-- Codebase: `flow-lang/Runtime/NoteStreamCompiler.cs`, `flow-lang/Ast/Expressions/NoteStreamExpression.cs`, `flow-lang/TypeSystem/SpecialTypes/NoteType.cs`, `flow-lang/Parsing/Parser.NoteStream.cs`, `flow-lang/Runtime/ExecutionContext.cs`, `flow-lang/Runtime/MusicalContext.cs`, `flow-lang/StandardLibrary/Audio/PitchConversion.cs`, `flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs`, `flow-lsp/NoteStream/NoteStreamContext.cs` — all read in full during research
+- Existing codebase inspection:
+  - `flow-lang/Audio/IAudioBackend.cs` — current 8-method interface, drives Phase 41 capture extension
+  - `flow-lang/Audio/PulseAudioSimpleBackend.cs` — implementation pattern for new backends
+  - `flow-interpreter/LiveReloadManager.cs` — existing watch+swap+crossfade pipeline (377 LOC); Phase 38 extends, doesn't replace
+  - `flow-lang/Core/FlowEngine.cs` — orchestrator entry; `CurrentExecutionContext` static accessor pattern (v1.4 Phase 33) extends to MIDI/Link/OSC in v1.5
+  - `flow-lang/Ast/{Expressions,Statements}/` — 16 expression types, 14 statement types — new nodes slot in without breaking the immutable-record pattern
+  - `flow-lang/StandardLibrary/Audio/{DSP,Synthesizers,Sfz,Tuning}/` — module organization template for new Phase 36/37 folders
+  - `flow-lsp/Handlers/CompletionHandler.cs` — direct-method-call surface for in-process REPL bridge
+- Project documentation:
+  - `CLAUDE.md` — architecture section (single source of truth for component boundaries)
+  - `.planning/MILESTONES.md` v1.4 entry — voice-pool + articulation + SFZ patterns to inherit
+  - `.planning/research/STACK.md` (in this directory) — DryWetMidi for offline MIDI export already decided; real-time MIDI (Phase 40) is NEW dependency surface to research separately
+- Reference patterns from prior milestones:
+  - v1.4 Phase 33 SFZ — opt-in stdlib module pattern (`use "@sfz"`) — repeats for Phase 38 (`@osc`), Phase 40 (`@midi-rt`), Phase 41 (none — `flow doc` is CLI)
+  - v1.4 Phase 32 Tuning — first-class music type with reference identity — NOT needed for v1.5 (no new music types planned)
+  - v1.3 Phase 26 prefix-only arithmetic — establishes that BREAKING grammar changes ship in one commit while pre-traction; Phase 35 `match` syntax can land cleanly
+  - v1.2 Phase 17 LSP — direct `flow-lang` reference (no shadow language model) — Phase 38 REPL bridge inherits this discipline
 
 ---
-*Architecture research for: Flow v1.3 — tuplets, arbitrary durations, DEFER closures, Tier B/C composer DX*
-*Researched: 2026-04-26*
+*Architecture research for: Flow v1.5 Stage, Studio, Web milestone — additive integration with existing interpreter*
+*Researched: 2026-05-18*

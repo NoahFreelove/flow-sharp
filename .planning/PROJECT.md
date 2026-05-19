@@ -12,7 +12,29 @@ Users can write musical ideas as code and hear them immediately — the language
 
 **Shipped:** v1.4 Audio Fidelity, Distribution & Public Showcase (2026-05-16)
 
-**Next milestone:** TBD — see `.planning/MILESTONES.md`
+**Current milestone:** v1.5 Stage, Studio, Web (started 2026-05-17)
+
+## Current Milestone: v1.5 Stage, Studio, Web
+
+**Goal:** Take Flow from "credible single-author public language" to "real citizen of the music-software world" — extending creative reach (live coding revamp, generative algebra, improv API), ecosystem interop (notation export, real-time MIDI, transport sync), and distribution (WASM playground, cross-platform binaries, docs generator). Plus a language-foundation phase that unblocks the rest and a sound-design phase that pays down sampler-polish debt.
+
+**Target features:**
+- Language foundation: pattern matching, `-> as name` chain naming, Rust-style diagnostics, pure-Flow test framework
+- Sequence algebra & generative: Tidal-style pattern algebra, Markov/L-system/cellular/Lorenz primitives, parameterized sections, improvisation API
+- Sound design: granular synthesis, independent time-stretch + pitch-shift, stereo pan across instruments, sampler polish (warmer piano, velocity layers, SFZ round-robin, articulation envelope multipliers, more flute samples, sampled drums)
+- Live coding 2.0: `live { ... }` block + modernized watch mode, REPL polish (LSP-backed completion, inline help, pretty piano-roll), audio input, OSC server/client
+- Notation citizenship: MusicXML export, LilyPond export, ABC / MML notation import
+- Studio sync: real-time MIDI output (new `IMidiBackend`), MIDI clock + Ableton Link + JACK transport sync
+- Reach + closer: WASM playground (paired with `live` block — browser live-coding), cross-platform binaries (WASAPI / CoreAudio), `flow doc` generator, JetBrains Marketplace publish, third-genre showcase piece
+
+**Key context:**
+- Phases: 35–41 (continues numbering from v1.4; no reset)
+- Pre-traction no-deprecation latitude is ACTIVE — breaking changes ship in one commit; in-repo migrators sufficient. See `project_pre_public_no_legacy_burden` external memory (rewritten 2026-05-17).
+- Phase 35 includes housekeeping: humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 VERIFICATION gaps, CLAUDE.md "Public as of v1.4" footnote revision.
+- Phase 37 is the largest phase (8 sub-items) — roadmapper may subdivide plans.
+- Phase 38's modernized watch mode is a prerequisite for Phase 41's WASM live-coding-in-browser demo.
+- Phase 40's `IMidiBackend` mirrors the v1.0 `IAudioBackend` abstraction pattern.
+- Phase 41 closes the milestone with a third-genre showcase (jazz / EDM / death metal) validating the genre-agnostic claim, mirroring v1.4 Phase 34's shape.
 
 <details>
 <summary>v1.4 Audio Fidelity, Distribution & Public Showcase (shipped 2026-05-16)</summary>
@@ -122,7 +144,7 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 
 ### Active
 
-**v1.2 shipped 2026-04-26.** Active requirements list will be repopulated by `/gsd-new-milestone` (v1.3).
+**v1.4 shipped 2026-05-16.** v1.5 Stage, Studio, Web started 2026-05-17 — active requirements will be populated by the v1.5 requirements step of `/gsd-new-milestone`.
 
 **Deferred candidates (post-v1.2):**
 - Triplet/tuplet syntax + arbitrary fractional note durations (conversation trigger 2026-04-26)
@@ -215,4 +237,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-16 after v1.4 milestone closure (Phase 34 — symphony showcase + public pivot) — v1.4 shipped*
+*Last updated: 2026-05-17 — v1.5 Stage, Studio, Web milestone started (Phases 35–41 planned)*
