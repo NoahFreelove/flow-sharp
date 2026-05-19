@@ -1434,9 +1434,7 @@ public partial class Parser
         else if (Match(TokenType.ChordLiteral))
         {
             // Plan 35-06 consumes IsChordLiteral=true to route through
-            // ChordParser.Parse for chord-quality extraction. Plan 35-05's
-            // PatternMatcher.MatchConstructor falls through to silent Void
-            // until 35-06 lands the music-aware path.
+            // ChordParser.Parse for chord-quality extraction.
             inner = new ConstructorPattern(
                 location,
                 PreviousToken.Text,
@@ -1446,15 +1444,56 @@ public partial class Parser
                 IsChordLiteral = true,
             };
         }
+        else if (Match(TokenType.SymbolLiteral))
+        {
+            // Phase 35 Plan 35-06 (LANG-02) — `#staccato` / `#legato` /
+            // `#accent` etc. in pattern position become a
+            // ConstructorPattern with IsArticulationSymbol=true. The lexer
+            // already stripped the leading `#`, so PreviousToken.Text holds
+            // just the symbol body. PatternMatcher.MatchArticulation maps
+            // the body string to an <see cref="Articulation"/> enum value
+            // and compares against the scrutinee's note articulation.
+            inner = new ConstructorPattern(
+                location,
+                PreviousToken.Text,
+                new List<Pattern>(),
+                Span: PreviousToken.EffectiveSpan)
+            {
+                IsArticulationSymbol = true,
+            };
+        }
         else if (Match(TokenType.Identifier))
         {
-            // Bare identifier captures the scrutinee as a binding.
-            inner = new BindingPattern(location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            // Phase 35 Plan 35-06 (LANG-02) — a roman-numeral identifier
+            // (I / ii / V7 / vi / etc.) in pattern position becomes a
+            // ConstructorPattern with IsRomanNumeral=true. The decision is
+            // made at parse time using ScaleDatabase.IsRomanNumeral; the
+            // ACTUAL resolution against the active key context happens at
+            // match time inside PatternMatcher.MatchRomanNumeral, since
+            // the key musical-context is not known until evaluation. When
+            // the identifier is NOT a roman numeral, fall back to the
+            // BindingPattern semantics from Plan 35-05.
+            if (ScaleDatabase.IsRomanNumeral(PreviousToken.Text))
+            {
+                inner = new ConstructorPattern(
+                    location,
+                    PreviousToken.Text,
+                    new List<Pattern>(),
+                    Span: PreviousToken.EffectiveSpan)
+                {
+                    IsRomanNumeral = true,
+                };
+            }
+            else
+            {
+                // Bare identifier captures the scrutinee as a binding.
+                inner = new BindingPattern(location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            }
         }
         else
         {
             _errorReporter.ReportError(
-                $"Unexpected token '{CurrentToken.Text}' in match pattern; expected literal, identifier, '_', or chord",
+                $"Unexpected token '{CurrentToken.Text}' in match pattern; expected literal, identifier, '_', chord, or #symbol",
                 CurrentToken.Location);
             // Consume the offending token to avoid an infinite loop in the arm.
             if (!IsAtEnd()) Advance();
