@@ -149,6 +149,37 @@ public class StackFrame
     {
         return _functions.ContainsKey(name) || (Parent?.HasFunction(name) ?? false);
     }
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-02 — snapshot helper used by
+    /// <see cref="ExecutionContext.SnapshotState"/>. Returns a SHALLOW copy
+    /// of this frame's local variable dictionary so subsequent mutations
+    /// (DeclareVariable / SetVariable on the same key) do not leak into the
+    /// snapshot. Values themselves are not deep-cloned — Flow Values are
+    /// effectively-immutable wrappers (Data is set in the constructor) and
+    /// the underlying CLR objects that mutate at runtime (AudioBuffer,
+    /// SequenceData, etc.) are captured by reference. Tests that mutate
+    /// shared-by-reference Audio/Sequence data still affect each other
+    /// (documented limitation — assertion semantics should be value-based
+    /// or use fresh constructions per test).
+    /// </summary>
+    public Dictionary<string, Value> SnapshotLocalVariables()
+        => new Dictionary<string, Value>(_variables);
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-02 — restore helper used by
+    /// <see cref="ExecutionContext.RestoreState"/>. Replaces this frame's
+    /// local variable dictionary with <paramref name="snapshot"/>'s
+    /// contents — any keys declared since the snapshot are dropped, any
+    /// values reassigned are reverted. The function-overload map and
+    /// MusicalContext are NOT touched (those have separate snapshot fields).
+    /// </summary>
+    public void RestoreLocalVariables(IReadOnlyDictionary<string, Value> snapshot)
+    {
+        _variables.Clear();
+        foreach (var (k, v) in snapshot)
+            _variables[k] = v;
+    }
 }
 
 /// <summary>

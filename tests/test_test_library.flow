@@ -32,7 +32,10 @@ Bool[] results = (list
 )
 
 Note: Exercise the test runner with a zero-arg Function thunk returning a Bool.
-Bool tResult = (test "inline test: 2 + 2 = 4" (fn => (equals (add 2 2) 4)))
+Note: Phase 35 Plan 35-04 — RENAMED from `test` to `runTest` to avoid the
+Note: collision with the new TEST-01 (test "name" body) C# builtin which
+Note: takes a Lazy<Void> body rather than a Function thunk.
+Bool tResult = (runTest "inline test: 2 + 2 = 4" (fn => (equals (add 2 2) 4)))
 (print (str tResult))
 
 Note: Tally the collected Bool[]. summary returns true only if every result is true.

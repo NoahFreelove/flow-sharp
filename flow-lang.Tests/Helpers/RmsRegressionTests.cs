@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using FlowLang.StandardLibrary.Audio;
+using FlowLang.StandardLibrary.TestFramework;
 using Xunit;
 
 namespace FlowLang.Tests.Helpers;
@@ -86,32 +87,20 @@ public static class RmsRegressionTests
         Assert.Equal(baseline.Channels, rendered.Channels);
         Assert.Equal(baseline.Frames, rendered.Frames);
 
-        int windowSamples = (int)(rendered.SampleRate * windowMs / 1000.0);
-        if (windowSamples < 1) windowSamples = 1;
-        int totalWindows = (int)Math.Ceiling((double)rendered.Frames / windowSamples);
+        // Phase 35 Plan 35-04 — pure RMS comparison math now lives at
+        // flow-lang/StandardLibrary/TestFramework/RmsComparator.cs so the
+        // runtime (assertWithinDb) builtin and this xUnit helper share a
+        // single source of truth (no Xunit.Assert dependency in flow-lang).
+        var firstFailure = RmsComparator.FirstWindowExceedingTolerance(
+            rendered, baseline, toleranceDb, windowMs);
+        if (firstFailure is null) return;
 
-        for (int win = 0; win < totalWindows; win++)
-        {
-            int start = win * windowSamples;
-            int end = Math.Min(start + windowSamples, rendered.Frames);
-            double rmsRendered = ComputeRms(rendered, start, end);
-            double rmsBaseline = ComputeRms(baseline, start, end);
-
-            double dbRendered = ToDb(rmsRendered);
-            double dbBaseline = ToDb(rmsBaseline);
-            double dbDelta = Math.Abs(dbRendered - dbBaseline);
-
-            if (dbDelta > toleranceDb)
-            {
-                int startMs = (int)(start * 1000.0 / rendered.SampleRate);
-                int endMs = (int)(end * 1000.0 / rendered.SampleRate);
-                Assert.Fail(
-                    $"RMS deviation in window {win} ({startMs}ms-{endMs}ms): " +
-                    $"expected {dbBaseline:F2} dB, got {dbRendered:F2} dB " +
-                    $"(delta {dbDelta:F2} dB exceeds tolerance {toleranceDb} dB)" +
-                    (overrideReason != null ? $". Override reason: {overrideReason}" : ""));
-            }
-        }
+        var (win, startMs, endMs, dbRendered, dbBaseline, dbDelta) = firstFailure.Value;
+        Assert.Fail(
+            $"RMS deviation in window {win} ({startMs}ms-{endMs}ms): " +
+            $"expected {dbBaseline:F2} dB, got {dbRendered:F2} dB " +
+            $"(delta {dbDelta:F2} dB exceeds tolerance {toleranceDb} dB)" +
+            (overrideReason != null ? $". Override reason: {overrideReason}" : ""));
     }
 
     private static void ValidateOverride(double toleranceDb, string? overrideReason)
@@ -120,27 +109,5 @@ public static class RmsRegressionTests
             throw new ArgumentException(
                 $"Non-default tolerance ({toleranceDb} dB) requires overrideReason explaining why " +
                 "this test legitimately exceeds the SPEC-8 locked ±0.5 dB / 100ms band.");
-    }
-
-    private static double ComputeRms(AudioBuffer buf, int startFrame, int endFrame)
-    {
-        double sumSquares = 0.0;
-        int count = 0;
-        for (int i = startFrame; i < endFrame; i++)
-        {
-            for (int ch = 0; ch < buf.Channels; ch++)
-            {
-                double s = buf.GetSample(i, ch);
-                sumSquares += s * s;
-                count++;
-            }
-        }
-        return count == 0 ? 0.0 : Math.Sqrt(sumSquares / count);
-    }
-
-    private static double ToDb(double rms)
-    {
-        // Avoid log(0) — clamp at -120 dB for silence (matches typical DAW noise floors).
-        return rms < 1e-6 ? -120.0 : 20.0 * Math.Log10(rms);
     }
 }

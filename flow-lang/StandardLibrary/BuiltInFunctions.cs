@@ -872,6 +872,12 @@ public static class BuiltInFunctions
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
         Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
         Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
+        // Phase 35 Plan 35-04 TEST-01 — (test "name" body) defers via Lazy<Void>
+        // wrap (Pitfall 10 LOAD-BEARING) + 5 assertion primitives. Context-
+        // dependent because (test ...) appends a TestRecord to
+        // context.TestRegistry; assertions throw AssertionException which
+        // TestRunner catches to convert into FAIL outcomes.
+        TestFramework.TestFunctions.RegisterTestFramework(registry, context);
         // ===== Random Generator Functions =====
 
         var randSignature = new FunctionSignature("?", []);

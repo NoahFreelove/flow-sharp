@@ -9,6 +9,8 @@ namespace FlowCli.Commands;
 // Plan 30-09 Task 1 replaces the deferral stub with the real Midi2FlowCommand.
 // Plan 31-01 Task 1 adds LspCommand — 12 subcommands total; Phase 31 added
 // LspCommand for JetBrains plugin binary-discoverability per RESEARCH Pitfall 7.
+// Plan 35-04 Task 3 adds TestCommand — 13 subcommands total; Phase 35 TEST-01
+// wires the pure-Flow test framework into `flow test [path]`.
 internal static class CommandRegistry
 {
     public static Command[] BuildAllCommands()
@@ -26,7 +28,8 @@ internal static class CommandRegistry
             CheckCommand.Build(),
             VersionCommand.Build(),
             NewCommand.Build(),
-            LspCommand.Build(),     // NEW — Phase 31 REQ-7 support
+            LspCommand.Build(),     // Phase 31 REQ-7 support
+            TestCommand.Build(),    // NEW — Phase 35 Plan 35-04 TEST-01 (pure-Flow test framework)
         };
     }
 }

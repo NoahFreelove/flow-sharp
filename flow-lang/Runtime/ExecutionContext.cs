@@ -77,6 +77,15 @@ public class ExecutionContext
     public Dictionary<string, SectionData> SectionRegistry { get; } = new();
 
     /// <summary>
+    /// Phase 35 Plan 35-04 TEST-01 — registry of <c>(test "name" body)</c>
+    /// invocations accumulated during program evaluation. Each entry's
+    /// <c>BodyThunk</c> is forced by <c>FlowLang.StandardLibrary.TestFramework.TestRunner</c>
+    /// inside a Snapshot/Restore guard so the per-test mutations enumerated
+    /// in RESEARCH §Pitfall 3 do not leak.
+    /// </summary>
+    public List<FlowLang.StandardLibrary.TestFramework.TestRecord> TestRegistry { get; } = new();
+
+    /// <summary>
     /// Per-context Symbol intern table — guarantees pointer equality for <c>#foo</c> literals
     /// (Phase 26.1 SYM-01). All <c>Value.Symbol(name, ctx)</c> calls with the same name and the
     /// same context return the same <see cref="Value"/> instance, so reference-equality of the
@@ -468,5 +477,134 @@ public class ExecutionContext
             return null;
 
         return overloads.FirstOrDefault(o => o.Signature == signature);
+    }
+
+    // ===================================================================
+    // Phase 35 Plan 35-04 TEST-02 — hermetic-isolation surface
+    // ===================================================================
+    //
+    // SnapshotState / RestoreState capture the 11+ mutable surfaces
+    // enumerated in 35-RESEARCH.md §Pitfall 3 so the TestRunner can
+    // wrap each (test "name" body) invocation in a clean slate.
+    //
+    // Per RESEARCH Notable Departures: NO reflection. Every captured
+    // field has an explicit read/restore site below — adding a new
+    // mutable surface to the engine requires touching THREE places
+    // (TestSnapshot record + SnapshotState + RestoreState). This is
+    // intentional: the explicit list makes leak audits possible.
+    //
+    // NOT reset (per RESEARCH Assumption A8): AudioPlaybackManager —
+    // tests must not trigger live (play ...) playback. Documented in
+    // the SUMMARY as a follow-up CLAUDE.md edit.
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-02 — captures the 11+ mutable state
+    /// surfaces into an immutable <see cref="FlowLang.StandardLibrary.TestFramework.TestSnapshot"/>
+    /// record. Called by <c>TestRunner</c> before each test body runs.
+    /// </summary>
+    public FlowLang.StandardLibrary.TestFramework.TestSnapshot SnapshotState()
+    {
+        return new FlowLang.StandardLibrary.TestFramework.TestSnapshot
+        {
+            // 1-3. Global frame variables, test registry size, section registry.
+            GlobalVariables = GlobalFrame.SnapshotLocalVariables(),
+            TestRegistryCount = TestRegistry.Count,
+            SectionRegistry = new Dictionary<string, SectionData>(SectionRegistry),
+
+            // 4. Phase 26.1 — Symbol intern table.
+            SymbolInternTable = new Dictionary<string, Value>(SymbolInternTable),
+
+            // 5. PRNG state — FixedRandSeed + FixedGen + Gen. Random itself is
+            //    mutable; we capture the references AND the seed. Restore
+            //    rebuilds FixedGen from the captured seed so the next draw
+            //    is identical to the pre-snapshot draw.
+            FixedRandSeed = FixedRandSeed,
+            FixedGen = FixedGen,
+            Gen = Gen,
+
+            // 6. Musical-context stack — clone the global frame's
+            //    MusicalContext (carries tuning stack + tempo + key + ...).
+            GlobalFrameMusicalContext = GlobalFrame.MusicalContext?.Clone(),
+
+            // 7-10. Phase 33 SFZ statics.
+            SfzEnabled = SfzEnabled,
+            SfzInstruments = new Dictionary<Value, string>(SfzInstruments),
+            SfzPatchRegistry =
+                new Dictionary<string, FlowLang.StandardLibrary.Audio.Sfz.SfzData>(SfzPatchRegistry),
+            SfzDiagnostics = new HashSet<string>(SfzDiagnostics),
+            ResolvedSfzRoot = ResolvedSfzRoot,
+
+            // 11. FlowConfig.Active singleton.
+            FlowConfigActive = FlowConfig.Active,
+        };
+    }
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-02 — reinstates the captured state. Static
+    /// mutable surfaces with explicit reset hooks (SynthUtils.Rng,
+    /// RenderingDiagnostics._emitted) are reset via their existing hooks;
+    /// surfaces without one are clear-and-repopulate from the snapshot.
+    /// </summary>
+    public void RestoreState(FlowLang.StandardLibrary.TestFramework.TestSnapshot snap)
+    {
+        // 1. Global frame variables.
+        GlobalFrame.RestoreLocalVariables(snap.GlobalVariables);
+
+        // 2. TestRegistry — pop any tests appended after the snapshot.
+        //    (Test bodies may call (test "nested" ...) which would mutate
+        //    the registry; we drop those entries to keep the next test's
+        //    snapshot count identical to the pre-test count.)
+        while (TestRegistry.Count > snap.TestRegistryCount)
+            TestRegistry.RemoveAt(TestRegistry.Count - 1);
+
+        // 3. SectionRegistry.
+        SectionRegistry.Clear();
+        foreach (var (k, v) in snap.SectionRegistry)
+            SectionRegistry[k] = v;
+
+        // 4. SymbolInternTable.
+        SymbolInternTable.Clear();
+        foreach (var (k, v) in snap.SymbolInternTable)
+            SymbolInternTable[k] = v;
+
+        // 5. PRNG state.
+        lock (RandLock)
+        {
+            FixedRandSeed = snap.FixedRandSeed;
+            // Rebuild FixedGen from the captured seed so the next draw is
+            // identical to the pre-snapshot draw. Capturing the Random
+            // reference alone is insufficient — it may have been advanced
+            // by the test body, and Random has no public restart API.
+            FixedGen = new Random(snap.FixedRandSeed);
+            // Gen has no seed surface — null it so the next GetRand re-seeds
+            // from Random.Shared (matches the constructor's lazy-init path).
+            Gen = snap.Gen;
+        }
+
+        // 6. Musical-context stack on the global frame.
+        GlobalFrame.MusicalContext = snap.GlobalFrameMusicalContext;
+
+        // 7-10. Phase 33 SFZ statics.
+        SfzEnabled = snap.SfzEnabled;
+        SfzInstruments.Clear();
+        foreach (var (k, v) in snap.SfzInstruments)
+            SfzInstruments[k] = v;
+        SfzPatchRegistry.Clear();
+        foreach (var (k, v) in snap.SfzPatchRegistry)
+            SfzPatchRegistry[k] = v;
+        SfzDiagnostics.Clear();
+        foreach (var k in snap.SfzDiagnostics)
+            SfzDiagnostics.Add(k);
+        ResolvedSfzRoot = snap.ResolvedSfzRoot;
+
+        // 11. FlowConfig.Active singleton.
+        FlowConfig.Active = snap.FlowConfigActive;
+
+        // Static reset hooks for mutable singletons without snapshot fields.
+        // Per RESEARCH §Pitfall 3 — these existing hooks were added by prior
+        // phases (Phase 23 / Phase 32 / Phase 33) for the same hermetic-test
+        // purpose. We piggyback on them rather than maintaining duplicates.
+        FlowLang.StandardLibrary.Audio.Synthesizers.SynthUtils.ResetNoiseRng();
+        FlowLang.Diagnostics.RenderingDiagnostics.ResetForTesting();
     }
 }

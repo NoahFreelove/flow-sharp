@@ -1,6 +1,33 @@
-Note: Pure-Flow Test Library
+Note: @test stdlib module
+Note:
+Note: Phase 35 Plan 35-04 TEST-01 — exposes the C#-registered test framework
+Note: surface (TestFramework.TestFunctions): (test "name" body) defers the
+Note: body via LazyType (RESEARCH §Pitfall 10 LOAD-BEARING) + 5 assertion
+Note: primitives. Coexists with the legacy pure-Flow library below
+Note: (assertTrue / assertEqual / proc runTest(String, Function) / summary,
+Note: consumed by tests/test_test_library.flow).
+Note:
+Note: USAGE: composer wraps the test body with the `lazy(...)` keyword so the
+Note: body is captured as a Thunk and deferred until the TestRunner forces it
+Note: (matches Flow's strict-by-default semantics — `lazy(...)` is the
+Note: canonical opt-in to deferred evaluation per (if), (and), (or)). The
+Note: TestRunner walks the registry per-test, wrapping each body invocation
+Note: in a SnapshotState/RestoreState guard for hermetic isolation.
+Note:
+Note:   use "@test"
+Note:   (test "two plus two is four" lazy((assertEq 4 (add 2 2))))
+Note:   (test "audio identity"        lazy((assertWithinDb buf buf 0.5dB)))
+
+internal proc test (String: name, Lazy<Void>: body)
+internal proc assert (Bool: condition)
+internal proc assertEq (Void: a, Void: b)
+internal proc assertNotesMatch (Sequence: a, Sequence: b)
+internal proc assertBytesEqual (Buffer: a, Buffer: b)
+internal proc assertWithinDb (Buffer: a, Buffer: b, Decibel: toleranceDb)
+
+Note: ===== Legacy pure-Flow Test Library (pre-Phase-35) =====
 Note: Assertions print PASS/FAIL and return Bool so results can be reduced via summary.
-Note: All procs are pure-Flow -- no C-backed stubs. Built on @std and @collections primitives.
+Note: All procs below are pure-Flow -- no C-backed stubs. Built on @std and @collections primitives.
 
 use "@std"
 use "@collections"
@@ -79,7 +106,15 @@ Note: ===== Runner and summary =====
 
 Note: Run a named test block. The thunk must be a zero-arg Function returning Bool.
 Note: Prints a header, invokes the thunk, reports PASS/FAIL using the test name.
-proc test(String: name, Function: thunk)
+Note:
+Note: Phase 35 Plan 35-04: RENAMED from `test` to `runTest` to avoid the
+Note: collision with the new C# (test "name" body) builtin (signature
+Note: [String, Lazy<Void>]). The new (test ...) defers body evaluation per
+Note: RESEARCH §Pitfall 10 — the legacy `proc test(String, Function)`
+Note: required an explicit `fn => ...` wrapper which the new builtin
+Note: removes. Pre-traction breaking-change latitude per CLAUDE.md
+Note: project_pre_public_no_legacy_burden footnote (D-v1.5-01).
+proc runTest(String: name, Function: thunk)
     String header = (concat "=== " name)
     (print header)
     Bool result = (thunk)

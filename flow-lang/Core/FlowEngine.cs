@@ -255,6 +255,28 @@ public class FlowEngine : IDisposable
         _audioManager.StopPlayback();
     }
 
+    // ===== Phase 35 Plan 35-04 TEST-01 + TEST-02 — pass-throughs =====
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-01 — read-only view of the test registry
+    /// accumulated by (test "name" body) calls during program evaluation.
+    /// Consumed by <c>FlowCli.Commands.TestCommand</c> + <c>TestRunner.Run</c>.
+    /// </summary>
+    public IReadOnlyList<FlowLang.StandardLibrary.TestFramework.TestRecord> TestRegistry
+        => _context.TestRegistry;
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-02 — pass-through to <see cref="ExecutionContext.SnapshotState"/>.
+    /// </summary>
+    public FlowLang.StandardLibrary.TestFramework.TestSnapshot SnapshotState()
+        => _context.SnapshotState();
+
+    /// <summary>
+    /// Phase 35 Plan 35-04 TEST-02 — pass-through to <see cref="ExecutionContext.RestoreState"/>.
+    /// </summary>
+    public void RestoreState(FlowLang.StandardLibrary.TestFramework.TestSnapshot snap)
+        => _context.RestoreState(snap);
+
     public void Dispose()
     {
         if (!_disposed)
