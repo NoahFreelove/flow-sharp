@@ -33,10 +33,13 @@ public class PragmaRegistryFacts
     [Fact]
     public void AlphabetizedKnownNames_ReturnsCsvSorted()
     {
-        // Phase 24 closed-set growth: 5 entries — equalTemperament, hAsB,
-        // justIntonation, pythagorean, scaleLint (ordinal-sorted: e < h < j < p < s).
+        // Phase 35 closed-set growth: 6 entries — equalTemperament, hAsB,
+        // justIntonation, matchExhaustive, pythagorean, scaleLint (ordinal-sorted:
+        // e < h < j < m < p < s). matchExhaustive registered by Plan 35-03 per
+        // Pitfall 4 — Plan 35-06 consumes it at match-eval time to promote
+        // non-exhaustive warnings to errors.
         var csv = PragmaRegistry.AlphabetizedKnownNames();
-        Assert.Equal("equalTemperament, hAsB, justIntonation, pythagorean, scaleLint", csv);
+        Assert.Equal("equalTemperament, hAsB, justIntonation, matchExhaustive, pythagorean, scaleLint", csv);
     }
 
     [Fact]

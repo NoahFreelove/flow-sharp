@@ -32,4 +32,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <!-- Phase 35 LANG-04 Wave 2a — diagnostic-renderer golden baselines.
+       Copies every .txt under baselines/Phase35/diagnostics/ to the test
+       output directory so DiagnosticRendererGoldenTests can read them
+       from AppContext.BaseDirectory. -->
+  <ItemGroup>
+    <None Include="baselines\Phase35\diagnostics\*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>baselines\Phase35\diagnostics\%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
 </Project>

@@ -61,9 +61,13 @@ public class Repl
 
                 if (_engine.ErrorReporter.HasErrors)
                 {
-                    // Print errors
+                    // Phase 35 LANG-04 Wave 2a: picks rich Rust-style format
+                    // when the engine has accumulated any FlowDiagnostic; the
+                    // REPL `<repl>` sentinel source registered by
+                    // FlowEngine.Execute lets the renderer quote the offending
+                    // line back to the composer.
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(_engine.ErrorReporter.FormatErrors());
+                    Console.WriteLine(Program.FormatErrorsForEmit(_engine));
                     Console.ResetColor();
                 }
                 else if (result != null && result.Type is not VoidType)

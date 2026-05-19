@@ -1,6 +1,7 @@
 using FlowLang.Ast;
 using FlowLang.Ast.Expressions;
 using FlowLang.Ast.Statements;
+using FlowLang.Core;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
@@ -184,8 +185,32 @@ public class ExpressionEvaluator
                 return Value.Function(overloads[0]);
             }
 
-            // Not a variable or function
-            _errorReporter.ReportError($"Variable '{var.Name}' not found", var.Location);
+            // Not a variable or function — Phase 35 LANG-04 Wave 2a: emit rich
+            // FlowDiagnostic with Levenshtein-derived did-you-mean suggestion
+            // pulled from the union of all in-scope variable names and known
+            // function names. Per RESEARCH § Pitfall 5: ONE suggestion, threshold
+            // max(2, len/3). Span is the variable expression's span (post Plan
+            // 35-01 migration); back-compat fallback `Span.At(var.Location)` for
+            // any node still constructed without a span.
+            var span = var.Span ?? Span.At(var.Location);
+            var candidates = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var name in _context.CurrentFrame.GetAllAccessibleVariables().Keys)
+                candidates.Add(name);
+            // Internal builtins — enumerated via the registry so prefix-only
+            // arithmetic / stdlib / harmony / transform names all become
+            // candidate suggestions.
+            foreach (var (name, _) in _context.InternalRegistry.EnumerateSignatures())
+                candidates.Add(name);
+            var suggestion = LevenshteinHelper.SuggestNearest(var.Name, candidates);
+
+            var diag = new FlowDiagnostic(
+                DiagnosticLevel.Error,
+                $"unknown identifier '{var.Name}'",
+                span,
+                Labels: [new DiagnosticLabel(span, "not found in scope")],
+                Notes: Array.Empty<string>(),
+                Suggestion: suggestion);
+            _errorReporter.Report(diag);
             return Value.Void();
         }
     }

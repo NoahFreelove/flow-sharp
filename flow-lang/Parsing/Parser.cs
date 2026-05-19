@@ -1160,8 +1160,13 @@ public partial class Parser
                 return new FunctionCallExpression(location, name, args, Span: new Span(location, PreviousToken.Location));
             }
 
-            // No arguments - it's a variable reference
-            return new VariableExpression(location, name, Span: Span.At(location));
+            // No arguments - it's a variable reference. Phase 35 LANG-04 Wave 2a:
+            // use the identifier token's full Span (start + end-of-identifier)
+            // so the diagnostic renderer can size the caret line to the
+            // identifier width when the variable is unknown. PreviousToken is the
+            // identifier we just consumed via Match() above; its EffectiveSpan
+            // is populated by the lexer (Plan 35-01 LexerSpan sweep).
+            return new VariableExpression(location, name, Span: PreviousToken.EffectiveSpan);
         }
 
         throw new ParseException($"Unexpected token {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");

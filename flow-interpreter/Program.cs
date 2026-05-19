@@ -75,7 +75,7 @@ class Program
             if (!success)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                Console.Error.WriteLine(FormatErrorsForEmit(engine));
                 Console.ResetColor();
                 return 1;
             }
@@ -103,7 +103,7 @@ class Program
             if (!success)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                Console.Error.WriteLine(FormatErrorsForEmit(engine));
                 Console.ResetColor();
                 return 1;
             }
@@ -117,6 +117,36 @@ class Program
             Console.ResetColor();
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Phase 35 LANG-04 Wave 2a — picks the rich Rust-style format
+    /// (<see cref="FlowLang.Diagnostics.ErrorReporter.FormatDiagnostics"/>)
+    /// when the engine has accumulated any <see cref="FlowLang.Diagnostics.FlowDiagnostic"/>,
+    /// falling back to the legacy single-line <see cref="FlowLang.Diagnostics.ErrorReporter.FormatErrors"/>
+    /// otherwise. Concatenates both when present so emit sites mid-Span-migration
+    /// don't drop legacy FlowError accumulator output.
+    ///
+    /// <para>
+    /// Color is emitted unconditionally (the wrapping
+    /// <c>Console.ForegroundColor = Red</c> remains the existing precedent);
+    /// .NET auto-suppresses ANSI when stderr is redirected. The
+    /// <c>useColor:false</c> path is reserved for the golden-file tests.
+    /// </para>
+    /// </summary>
+    internal static string FormatErrorsForEmit(FlowEngine engine)
+    {
+        var hasRich = engine.ErrorReporter.HasDiagnostics;
+        var hasLegacy = engine.ErrorReporter.Errors.Count > 0;
+        if (hasRich && hasLegacy)
+        {
+            return engine.ErrorReporter.FormatDiagnostics(engine.SourceMap, useColor: true)
+                + "\n\n"
+                + engine.ErrorReporter.FormatErrors();
+        }
+        if (hasRich)
+            return engine.ErrorReporter.FormatDiagnostics(engine.SourceMap, useColor: true);
+        return engine.ErrorReporter.FormatErrors();
     }
 
     /// <summary>
