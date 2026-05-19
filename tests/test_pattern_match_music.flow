@@ -1,0 +1,41 @@
+// Phase 35 Plan 35-06 — composer-facing acceptance for music-aware pattern
+// extractors (LANG-02).
+//
+// Exercises:
+//   - Chord literal patterns (Cmaj7, Dm7) matching Chord scrutinees by Root + Quality.
+//   - Roman numeral patterns (I, V) resolved against active key context.
+//   - Articulation symbol patterns — skipped here, covered by xUnit because
+//     constructing a Note value with a specific Articulation enum requires
+//     direct C# Value injection (no composer-surface builtin sets Articulation
+//     on a bare Note in v1.5).
+//   - Pitch-class via guard pattern — uses (gt (noteToFrequency n) 400.0) as
+//     the load-bearing guard composition test (pitchClass/mod/midi builtins
+//     are not in stdlib v1.5).
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_pattern_match_music.flow
+//   PASS  ...::chord literal matches by quality
+//   PASS  ...::chord literal misses on different root
+//   ...
+//   Total: 4; Passed: 4; Failed: 0
+
+use "@std"
+use "@test"
+
+(test "chord literal matches by quality"
+  lazy((assertEq "I" (match Cmaj7 | Cmaj7 => "I" | Dm7 => "ii" | _ => "other"))))
+
+(test "chord literal misses on different root"
+  lazy((assertEq "other" (match Cmaj7 | Dmaj7 => "match" | _ => "other"))))
+
+(test "roman numeral in key context resolves correctly"
+  lazy((assertEq "dominant"
+                 (key Cmajor { (match G | V => "dominant" | _ => "other") }))))
+
+(test "pitch-class via guard composes with note scrutinee"
+  lazy((assertEq "high"
+                 (match A4
+                   | n when (gt (noteToFrequency n) 400.0) => "high"
+                   | _ => "low"))))
+
+(print "ALL MUSIC-AWARE PATTERN TESTS REGISTERED")

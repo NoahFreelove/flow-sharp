@@ -1,0 +1,25 @@
+// Phase 35 Plan 35-06 — composer-facing acceptance for the D-v1.5-05
+// non-exhaustive match policy.
+//
+// This script verifies the wildcard arm satisfies exhaustiveness under the
+// `enable matchExhaustive;` pragma (the negative case — pragma promotes a
+// non-exhaustive match to error — is verified by xUnit
+// MatchExhaustivePragmaTests because stderr/error inspection is not
+// expressible in pure-Flow assertEq, and a true non-exhaustive match would
+// FAIL the script via error-reporter HasErrors).
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_match_exhaustive_pragma.flow
+
+enable matchExhaustive;
+
+use "@std"
+use "@test"
+
+(test "wildcard arm satisfies exhaustiveness under pragma"
+  lazy((assertEq "other" (match 5 | 1 => "one" | _ => "other"))))
+
+(test "first match still wins under pragma"
+  lazy((assertEq "one" (match 1 | 1 => "one" | _ => "other"))))
+
+(print "ALL MATCH-EXHAUSTIVE-PRAGMA TESTS REGISTERED")
