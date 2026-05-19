@@ -20,6 +20,7 @@
 //   Total: 4; Passed: 4; Failed: 0
 
 use "@std"
+use "@audio"
 use "@test"
 
 (test "chord literal matches by quality"
@@ -30,7 +31,7 @@ use "@test"
 
 (test "roman numeral in key context resolves correctly"
   lazy((assertEq "dominant"
-                 (key Cmajor { (match G | V => "dominant" | _ => "other") }))))
+                 (key Cmajor { (match (chord "G") | V => "dominant" | _ => "other") }))))
 
 (test "pitch-class via guard composes with note scrutinee"
   lazy((assertEq "high"

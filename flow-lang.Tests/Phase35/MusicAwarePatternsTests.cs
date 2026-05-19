@@ -56,7 +56,9 @@ public class MusicAwarePatternsTests
     public void RomanNumeralMatchesInKeyContext()
     {
         // V in C major = G (major triad). Pattern resolves against active key context.
-        var v = Eval("key Cmajor { (match G | V => \"dominant\" | _ => \"other\") }");
+        // Scrutinee must be a Chord value, NOT a bare note literal — we use the
+        // (chord "G") builtin which produces a ChordData with Root="G", Quality="".
+        var v = Eval("use \"@std\"\nkey Cmajor { (match (chord \"G\") | V => \"dominant\" | _ => \"other\") }");
         Assert.NotNull(v);
         Assert.Equal("dominant", v!.As<string>());
     }
@@ -65,16 +67,16 @@ public class MusicAwarePatternsTests
     public void RomanNumeralRespectsKeyContextSwitch()
     {
         // V in C major = G; V in G major = D. Same V pattern, different key contexts.
-        var inC = Eval("key Cmajor { (match G | V => \"hit\" | _ => \"miss\") }");
+        var inC = Eval("use \"@std\"\nkey Cmajor { (match (chord \"G\") | V => \"hit\" | _ => \"miss\") }");
         Assert.NotNull(inC);
         Assert.Equal("hit", inC!.As<string>());
 
-        var inG = Eval("key Gmajor { (match D | V => \"hit\" | _ => \"miss\") }");
+        var inG = Eval("use \"@std\"\nkey Gmajor { (match (chord \"D\") | V => \"hit\" | _ => \"miss\") }");
         Assert.NotNull(inG);
         Assert.Equal("hit", inG!.As<string>());
 
         // Negative cross-check: G chord under G major key is I, NOT V.
-        var inGMiss = Eval("key Gmajor { (match G | V => \"hit\" | _ => \"miss\") }");
+        var inGMiss = Eval("use \"@std\"\nkey Gmajor { (match (chord \"G\") | V => \"hit\" | _ => \"miss\") }");
         Assert.NotNull(inGMiss);
         Assert.Equal("miss", inGMiss!.As<string>());
     }
@@ -123,6 +125,7 @@ public class MusicAwarePatternsTests
         // that Plan 35-05's GuardPattern dispatch passes a Note binding through to a
         // guard expression that consumes it.
         var src = @"use ""@std""
+use ""@audio""
 (match A4
   | n when (gt (noteToFrequency n) 400.0) => ""high""
   | _ => ""low"")";
