@@ -12,6 +12,13 @@
       <PackageReference Include="Pidgin" Version="3.5.1" />
     </ItemGroup>
 
+    <!-- Phase 35 HK-03: expose internals to the xUnit project so
+         MutateRhythmEnumValuesTests can call the internal MutateRhythm helper
+         directly (04-VERIFICATION.md gap closure regression). -->
+    <ItemGroup>
+      <InternalsVisibleTo Include="flow-lang.Tests" />
+    </ItemGroup>
+
     <ItemGroup>
       <None Update="std.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

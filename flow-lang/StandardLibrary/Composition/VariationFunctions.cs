@@ -245,8 +245,16 @@ public static class VariationFunctions
 
     /// <summary>
     /// Rhythm mutation: splits a note into two notes of half duration.
+    ///
+    /// Phase 35 HK-03: visibility raised from private -> internal so that
+    /// <c>flow-lang.Tests/Phase35/MutateRhythmEnumValuesTests.cs</c> can pin the
+    /// 04-VERIFICATION.md enum-mapping fact (WHOLE->HALF, HALF->QUARTER,
+    /// QUARTER->EIGHTH, EIGHTH->SIXTEENTH) without re-running the full vary()
+    /// stochastic stack. The behaviour of the switch is unchanged from its
+    /// pre-Phase-35 shape — only access modifier is widened. Requires the
+    /// [InternalsVisibleTo("flow-lang.Tests")] attribute landed in this file.
     /// </summary>
-    private static void MutateRhythm(MusicalNoteData note, Random rng, List<MusicalNoteData> output)
+    internal static void MutateRhythm(MusicalNoteData note, Random rng, List<MusicalNoteData> output)
     {
         // Only split if duration allows halving
         // NoteValueType.Value enum: WHOLE=0, HALF=1, QUARTER=2, EIGHTH=3, SIXTEENTH=4

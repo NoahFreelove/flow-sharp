@@ -83,6 +83,7 @@ pending: 0
 skipped: 0
 blocked: 0
 closed: 2026-05-13 via Phase 31 Plan 31-08 UAT
+audit_cross_reference: 2026-05-18 — Phase 35 Plan 35-02 HK-02 confirmed rows 1-3 already show `[pass-via-phase-31-uat]`; no further work required. REQUIREMENTS.md HK-02 checkbox flipped accordingly.
 
 ## Gaps
 

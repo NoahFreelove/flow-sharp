@@ -943,22 +943,68 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest) { newNotes.Add(note); continue; }   // D-11
-
-                double z = NextGaussianSample(rng);                  // D-05/D-06
-                double velJitter = z * amount * 0.2;                 // D-07
-                double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);  // D-09
-
-                // RESEARCH §Critical Pre-Existing Bug: use With(velocity:) to preserve
-                // all 17 MusicalNoteData fields (Plan 25-01 extended With with velocity slot).
-                newNotes.Add(note.With(velocity: newVelocity));
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+            result.AddBar(HumanizeBar(bar, amount, rng));
         }
         return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// Phase 35 HK-01 (BarRenderer.cs:62-77 mirror): humanize one bar with
+    /// recursive ParallelVoices support. When the bar carries Phase 28 voice
+    /// blocks, recurse into each voice sub-bar reusing the SAME seeded RNG —
+    /// per RESEARCH §Pitfall 8, sharing the single seeded Random across all
+    /// voices preserves the Phase 18/25 byte-identical determinism contract
+    /// (T-35-04 mitigation). Pre-Phase-35 shape iterated only bar.MusicalNotes
+    /// and dropped ParallelVoices entirely → silent 44-byte WAVs.
+    /// </summary>
+    private static BarData HumanizeBar(BarData bar, double amount, Random rng)
+    {
+        // Voice-block branch: recurse, preserving ParallelVoices in the
+        // output bar. The parent bar's MusicalNotes list is the BarRenderer
+        // convention for the whole-bar rest placeholder; humanize it the
+        // same way so its rest stays a rest (IsRest fast-path) and any
+        // future non-rest content on the parent bar still gets jittered.
+        if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
+        {
+            var humanizedParent = HumanizeBarNotes(bar, amount, rng);
+            var humanizedVoices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+            {
+                // Each voice block is its own BarData. Each one may itself
+                // recurse if it carries nested ParallelVoices (defensive —
+                // the Phase 28 compiler emits one level today, but the
+                // recursion is the safe shape).
+                humanizedVoices.Add(HumanizeBar(voiceBar, amount, rng));
+            }
+            humanizedParent.ParallelVoices = humanizedVoices;
+            return humanizedParent;
+        }
+
+        return HumanizeBarNotes(bar, amount, rng);
+    }
+
+    /// <summary>
+    /// Inner humanize step — iterates a single bar's MusicalNotes list and
+    /// builds a new BarData preserving the per-note With(velocity:) update.
+    /// Extracted from HumanizeGaussian so HumanizeBar can reuse it on each
+    /// recursion level (parent bar + each voice sub-bar).
+    /// </summary>
+    private static BarData HumanizeBarNotes(BarData bar, double amount, Random rng)
+    {
+        var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
+        foreach (var note in bar.MusicalNotes)
+        {
+            if (note.IsRest) { newNotes.Add(note); continue; }   // D-11
+
+            double z = NextGaussianSample(rng);                  // D-05/D-06
+            double velJitter = z * amount * 0.2;                 // D-07
+            double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);  // D-09
+
+            // RESEARCH §Critical Pre-Existing Bug: use With(velocity:) to preserve
+            // all 17 MusicalNoteData fields (Plan 25-01 extended With with velocity slot).
+            newNotes.Add(note.With(velocity: newVelocity));
+        }
+        return new BarData(newNotes, bar.TimeSignature!);
     }
 
     // D-17: extracted helper for testability — basic Box-Muller (cos branch).

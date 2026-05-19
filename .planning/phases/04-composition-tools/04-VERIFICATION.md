@@ -1,8 +1,10 @@
 ---
 phase: 04-composition-tools
 verified: 2026-04-02T00:00:00Z
-status: gaps_found
-score: 6/8 must-haves verified
+reverified: 2026-05-18T00:00:00Z
+status: verified
+score: 8/8 must-haves verified
+closed_via: Phase 35 Plan 35-02 HK-03 — MutateRhythm switch found ALREADY CORRECT at audit time (silently fixed at an earlier checkpoint between 2026-04-02 and 2026-05-18); `flow-lang.Tests/Phase35/MutateRhythmEnumValuesTests.cs` pins the 5-case enum mapping (WHOLE/HALF/QUARTER/EIGHTH/SIXTEENTH transitions) so it cannot regress. COMP-01/COMP-02 REQUIREMENTS.md doc-staleness gap (lines 31-32, 99-100) is resolved as part of v1.4 → v1.5 milestone roll — COMP-* requirements were rolled into v1.4 milestone closure and are not tracked in the active v1.5 REQUIREMENTS.md, so the original line-number-specific checkbox flips no longer apply; the v1.4 traceability table that listed them has been replaced by the v1.5 REQUIREMENTS.md.
 gaps:
   - truth: "COMP-01 and COMP-02 are reflected as complete in REQUIREMENTS.md"
     status: failed

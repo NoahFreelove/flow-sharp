@@ -18,12 +18,20 @@ Flow is an interpreted, statically-typed language designed for music production.
 - **Make the easy cases fast.** The common, well-typed paths should be as fast
   as we can reasonably make them.
 
-> **Note (Public as of v1.4):** Flow is public as of v1.4 (2026-05-16).
-> The pre-public scope-creep-without-deprecation latitude
-> (`project_pre_public_no_legacy_burden`) no longer applies; breaking changes
-> now go through a deprecation cycle. See `.planning/MILESTONES.md` v1.4 entry
-> + the external memory file `project_pre_public_no_legacy_burden.md` (rewritten
-> 2026-05-16) for the operational rule.
+> **Note (Public as of v1.4, pre-traction):** Flow shipped publicly at v1.4
+> (2026-05-16) — GitHub release, README Showcase section, two showcase pieces
+> live. The public release alone does NOT activate a deprecation cycle. Per
+> D-v1.5-01 (locked 2026-05-17 at v1.5 milestone start), the no-deprecation
+> latitude (`project_pre_public_no_legacy_burden`) remains ACTIVE through
+> pre-traction: breaking syntax/builtin changes still ship in single commits,
+> in-repo migrators only, no `flow migrate` CLI subcommand required yet. The
+> rule flips when a non-author composer opens a GitHub issue/PR with `.flow`
+> code they wrote, when a third-party fork/downstream project appears, when
+> the user observes traction signals they care about and explicitly says
+> "switch to deprecation discipline," or when Flow ships to a package registry
+> (NuGet / Homebrew / AUR / apt PPA) where users install without cloning. See
+> the external memory file `project_pre_public_no_legacy_burden.md`
+> (rewritten 2026-05-17) for the full rule and revisit triggers.
 
 **Non-Goals**
 - **General-purpose computation.** Flow *can* compute, but that's not what it's
