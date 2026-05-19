@@ -411,7 +411,7 @@ public partial class Parser
             _errorReporter.ReportError("Empty note stream", location);
         }
 
-        return new NoteStreamExpression(location, bars);
+        return new NoteStreamExpression(location, bars, Span: new Span(location, PreviousToken.Location));
     }
 
     /// <summary>

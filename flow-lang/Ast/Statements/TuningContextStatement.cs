@@ -38,5 +38,6 @@ namespace FlowLang.Ast.Statements;
 public record TuningContextStatement(
     SourceLocation Location,
     Expression TuningExpr,
-    IReadOnlyList<Statement> Body
+    IReadOnlyList<Statement> Body,
+    Span? Span = null
 ) : Statement(Location);

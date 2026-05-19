@@ -9,4 +9,5 @@ namespace FlowLang.Ast.Statements;
 public record AssignmentStatement(
     SourceLocation Location,
     string Name,
-    Expression Value) : Statement(Location);
+    Expression Value,
+    Span? Span = null) : Statement(Location);

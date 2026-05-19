@@ -19,5 +19,6 @@ public record ProgressionElement(
 public record ProgressionExpression(
     SourceLocation Location,
     IReadOnlyList<ProgressionElement> Chords,
-    int? VoiceCount    // Optional voice count from "voices N" modifier. null = auto
+    int? VoiceCount,    // Optional voice count from "voices N" modifier. null = auto
+    Span? Span = null
 ) : Expression(Location);

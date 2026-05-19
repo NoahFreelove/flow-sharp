@@ -160,5 +160,6 @@ public record NoteStreamBar(
 /// </summary>
 public record NoteStreamExpression(
     SourceLocation Location,
-    IReadOnlyList<NoteStreamBar> Bars
+    IReadOnlyList<NoteStreamBar> Bars,
+    Span? Span = null
 ) : Expression(Location);

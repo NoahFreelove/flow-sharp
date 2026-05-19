@@ -11,7 +11,8 @@ public record ProcDeclaration(
     string Name,
     IReadOnlyList<Parameter> Parameters,
     IReadOnlyList<Statement> Body,
-    bool IsInternal) : Statement(Location);
+    bool IsInternal,
+    Span? Span = null) : Statement(Location);
 
 /// <summary>
 /// Represents a function parameter.

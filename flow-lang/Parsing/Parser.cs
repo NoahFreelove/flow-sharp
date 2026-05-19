@@ -174,13 +174,15 @@ public partial class Parser
             {
                 if (!_inLoop)
                     throw new ParseException("'break' can only be used inside a loop");
-                return new BreakStatement(PreviousToken.Location);
+                var breakLoc = PreviousToken.Location;
+                return new BreakStatement(breakLoc, Span: Span.At(breakLoc));
             }
             if (Match(TokenType.Continue))
             {
                 if (!_inLoop)
                     throw new ParseException("'continue' can only be used inside a loop");
-                return new ContinueStatement(PreviousToken.Location);
+                var contLoc = PreviousToken.Location;
+                return new ContinueStatement(contLoc, Span: Span.At(contLoc));
             }
 
             // Phase 26.1 TUP-09: Tuple destructuring assignment statement
@@ -240,7 +242,7 @@ public partial class Parser
 
             // Expression statement
             var expr = ParseExpression();
-            return new ExpressionStatement(expr.Location, expr);
+            return new ExpressionStatement(expr.Location, expr, Span: new Span(expr.Location, PreviousToken.Location));
         }
         finally
         {
@@ -320,7 +322,7 @@ public partial class Parser
                 Advance();
         }
 
-        return new ProcDeclaration(location, name, parameters, body, isInternal);
+        return new ProcDeclaration(location, name, parameters, body, isInternal, Span: new Span(location, PreviousToken.Location));
     }
 
     private VariableDeclaration ParseVariableDeclaration()
@@ -358,7 +360,7 @@ public partial class Parser
             value = CreateDefaultValueExpression(varType, location);
         }
 
-        return new VariableDeclaration(value.Location, varType, name, value);
+        return new VariableDeclaration(value.Location, varType, name, value, Span: new Span(location, PreviousToken.Location));
     }
 
     /// <summary>
@@ -394,7 +396,7 @@ public partial class Parser
         Expect(TokenType.GreaterGreater, "Expected '>>' after destructure pattern");
         Expect(TokenType.Assign, "Expected '=' after destructure pattern");
         var value = ParseExpression();
-        return new TupleDestructureStatement(location, patterns, value);
+        return new TupleDestructureStatement(location, patterns, value, Span: new Span(location, PreviousToken.Location));
     }
 
     private Expression CreateDefaultValueExpression(FlowType type, SourceLocation location)
@@ -416,19 +418,20 @@ public partial class Parser
         // Handle array types - create empty array expression via list() call
         if (type is ArrayType arrayType)
         {
-            // Create a call to list() with no arguments
-            return new FunctionCallExpression(location, "list", new List<Expression>());
+            // Create a call to list() with no arguments. Synthetic — zero-width Span.
+            return new FunctionCallExpression(location, "list", new List<Expression>(), Span: Span.At(location));
         }
 
         // For null default values (Buffer, custom types), use null literal
         if (defaultValue == null)
         {
             // Return a special marker that will evaluate to a null/void value
-            // We'll use 0 as a placeholder and handle conversion at runtime
-            return new LiteralExpression(location, 0);
+            // We'll use 0 as a placeholder and handle conversion at runtime.
+            // Synthetic literal — zero-width Span.
+            return new LiteralExpression(location, 0, Span: Span.At(location));
         }
 
-        return new LiteralExpression(location, defaultValue);
+        return new LiteralExpression(location, defaultValue, Span: Span.At(location));
     }
 
     private AssignmentStatement ParseAssignment()
@@ -440,14 +443,14 @@ public partial class Parser
 
         var value = ParseExpression();
 
-        return new AssignmentStatement(location, name, value);
+        return new AssignmentStatement(location, name, value, Span: new Span(location, PreviousToken.Location));
     }
 
     private ReturnStatement ParseReturnStatement()
     {
         var location = PreviousToken.Location;
         var value = ParseExpression();
-        return new ReturnStatement(location, value);
+        return new ReturnStatement(location, value, Span: new Span(location, PreviousToken.Location));
     }
 
     private SongExpression ParseSongExpression()
@@ -474,7 +477,7 @@ public partial class Parser
 
         Expect(TokenType.RBracket, "Expected ']' after song arrangement");
 
-        return new SongExpression(location, sections);
+        return new SongExpression(location, sections, Span: new Span(location, PreviousToken.Location));
     }
 
     private SectionDeclaration ParseSectionDeclaration()
@@ -501,14 +504,14 @@ public partial class Parser
 
         Expect(TokenType.RBrace, "Expected '}' after section body");
 
-        return new SectionDeclaration(location, name, body);
+        return new SectionDeclaration(location, name, body, Span: new Span(location, PreviousToken.Location));
     }
 
     private ImportStatement ParseImportStatement()
     {
         var location = PreviousToken.Location;
         var path = Expect(TokenType.StringLiteral, "Expected string literal for import path");
-        return new ImportStatement(location, (string)path.Value!);
+        return new ImportStatement(location, (string)path.Value!, Span: new Span(location, PreviousToken.Location));
     }
 
     private MusicalContextStatement ParseMusicalContextStatement(MusicalContextType contextType)
@@ -526,15 +529,21 @@ public partial class Parser
                 {
                     var cLoc = CurrentToken.Location;
                     Advance(); // consume `C`
-                    value = new LiteralExpression(cLoc, 4);
-                    value2 = new LiteralExpression(cLoc, 4);
+                    value = new LiteralExpression(cLoc, 4, Span: Span.At(cLoc));
+                    value2 = new LiteralExpression(cLoc, 4, Span: Span.At(cLoc));
                     break;
                 }
-                value = new LiteralExpression(CurrentToken.Location,
-                    (int)Expect(TokenType.IntLiteral, "Expected integer numerator for time signature (or 'C' for common time)").Value!);
-                Expect(TokenType.Slash, "Expected '/' separator in time signature (e.g., timesig 4/4)");
-                value2 = new LiteralExpression(CurrentToken.Location,
-                    (int)Expect(TokenType.IntLiteral, "Expected integer denominator for time signature").Value!);
+                {
+                    var numLoc = CurrentToken.Location;
+                    value = new LiteralExpression(numLoc,
+                        (int)Expect(TokenType.IntLiteral, "Expected integer numerator for time signature (or 'C' for common time)").Value!,
+                        Span: Span.At(numLoc));
+                    Expect(TokenType.Slash, "Expected '/' separator in time signature (e.g., timesig 4/4)");
+                    var denLoc = CurrentToken.Location;
+                    value2 = new LiteralExpression(denLoc,
+                        (int)Expect(TokenType.IntLiteral, "Expected integer denominator for time signature").Value!,
+                        Span: Span.At(denLoc));
+                }
                 break;
 
             case MusicalContextType.Tempo:
@@ -544,9 +553,9 @@ public partial class Parser
                 if (Match(TokenType.Minus)) tempoSign = -1;
                 else if (Match(TokenType.Plus)) tempoSign = 1;
                 if (Check(TokenType.IntLiteral))
-                    value = new LiteralExpression(tempoLoc, tempoSign * (int)Advance().Value!);
+                    value = new LiteralExpression(tempoLoc, tempoSign * (int)Advance().Value!, Span: Span.At(tempoLoc));
                 else if (Check(TokenType.FloatLiteral))
-                    value = new LiteralExpression(tempoLoc, tempoSign * (double)Advance().Value!);
+                    value = new LiteralExpression(tempoLoc, tempoSign * (double)Advance().Value!, Span: Span.At(tempoLoc));
                 else
                     throw new ParseException($"Expected numeric tempo value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
                 break;
@@ -565,13 +574,13 @@ public partial class Parser
                     if (Check(TokenType.Identifier) && CurrentToken.Text == "%")
                     {
                         Advance();
-                        value = new LiteralExpression(swingLoc, intVal / 100.0);
+                        value = new LiteralExpression(swingLoc, intVal / 100.0, Span: Span.At(swingLoc));
                     }
                     else
-                        value = new LiteralExpression(swingLoc, (double)intVal);
+                        value = new LiteralExpression(swingLoc, (double)intVal, Span: Span.At(swingLoc));
                 }
                 else if (Check(TokenType.FloatLiteral))
-                    value = new LiteralExpression(swingLoc, swingSign * (double)Advance().Value!);
+                    value = new LiteralExpression(swingLoc, swingSign * (double)Advance().Value!, Span: Span.At(swingLoc));
                 else
                     throw new ParseException($"Expected swing value (percentage or float), got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
                 break;
@@ -580,7 +589,7 @@ public partial class Parser
             case MusicalContextType.Key:
                 // Accept identifier like Cmajor, Aminor, etc.
                 var keyToken = Expect(TokenType.Identifier, "Expected key name (e.g., Cmajor, Aminor)");
-                value = new LiteralExpression(keyToken.Location, keyToken.Text);
+                value = new LiteralExpression(keyToken.Location, keyToken.Text, Span: Span.At(keyToken.Location));
                 break;
 
             case MusicalContextType.Dynamics:
@@ -592,11 +601,11 @@ public partial class Parser
                     _errorReporter.ReportError(
                         $"Unknown dynamic marking '{dynToken.Text}'. Use: ppp, pp, p, mp, mf, f, ff, fff",
                         dynToken.Location);
-                    value = new LiteralExpression(dynToken.Location, 0.63);
+                    value = new LiteralExpression(dynToken.Location, 0.63, Span: Span.At(dynToken.Location));
                 }
                 else
                 {
-                    value = new LiteralExpression(dynToken.Location, velocity.Value);
+                    value = new LiteralExpression(dynToken.Location, velocity.Value, Span: Span.At(dynToken.Location));
                 }
                 break;
             }
@@ -606,9 +615,9 @@ public partial class Parser
             {
                 var tempoLoc = CurrentToken.Location;
                 if (Check(TokenType.IntLiteral))
-                    value = new LiteralExpression(tempoLoc, (int)Advance().Value!);
+                    value = new LiteralExpression(tempoLoc, (int)Advance().Value!, Span: Span.At(tempoLoc));
                 else if (Check(TokenType.FloatLiteral))
-                    value = new LiteralExpression(tempoLoc, (double)Advance().Value!);
+                    value = new LiteralExpression(tempoLoc, (double)Advance().Value!, Span: Span.At(tempoLoc));
                 else
                     throw new ParseException($"Expected target tempo for {contextType}, got {CurrentToken.Type}");
                 break;
@@ -621,9 +630,9 @@ public partial class Parser
                 if (Match(TokenType.Minus)) panSign = -1;
                 else if (Match(TokenType.Plus)) panSign = 1;
                 if (Check(TokenType.IntLiteral))
-                    value = new LiteralExpression(panLoc, panSign * (double)(int)Advance().Value!);
+                    value = new LiteralExpression(panLoc, panSign * (double)(int)Advance().Value!, Span: Span.At(panLoc));
                 else if (Check(TokenType.FloatLiteral))
-                    value = new LiteralExpression(panLoc, panSign * (double)Advance().Value!);
+                    value = new LiteralExpression(panLoc, panSign * (double)Advance().Value!, Span: Span.At(panLoc));
                 else
                     throw new ParseException($"Expected numeric pan value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
                 break;
@@ -636,9 +645,9 @@ public partial class Parser
                 if (Match(TokenType.Minus)) gainSign = -1;
                 else if (Match(TokenType.Plus)) gainSign = 1;
                 if (Check(TokenType.IntLiteral))
-                    value = new LiteralExpression(gainLoc, gainSign * (double)(int)Advance().Value!);
+                    value = new LiteralExpression(gainLoc, gainSign * (double)(int)Advance().Value!, Span: Span.At(gainLoc));
                 else if (Check(TokenType.FloatLiteral))
-                    value = new LiteralExpression(gainLoc, gainSign * (double)Advance().Value!);
+                    value = new LiteralExpression(gainLoc, gainSign * (double)Advance().Value!, Span: Span.At(gainLoc));
                 else
                     throw new ParseException($"Expected numeric gain value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
                 break;
@@ -652,9 +661,9 @@ public partial class Parser
                         $"reverbTime cannot be negative (RT60 is a time in seconds); got '-' at {rtLoc}");
                 if (Match(TokenType.Plus)) { /* silent sign noise, accept */ }
                 if (Check(TokenType.IntLiteral))
-                    value = new LiteralExpression(rtLoc, (double)(int)Advance().Value!);
+                    value = new LiteralExpression(rtLoc, (double)(int)Advance().Value!, Span: Span.At(rtLoc));
                 else if (Check(TokenType.FloatLiteral))
-                    value = new LiteralExpression(rtLoc, (double)Advance().Value!);
+                    value = new LiteralExpression(rtLoc, (double)Advance().Value!, Span: Span.At(rtLoc));
                 else
                     throw new ParseException(
                         $"Expected numeric reverbTime value, got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
@@ -668,7 +677,7 @@ public partial class Parser
                 // message points at the offending integer, not at the '{'.
                 var poolLoc = CurrentToken.Location;
                 if (Check(TokenType.IntLiteral))
-                    value = new LiteralExpression(poolLoc, (int)Advance().Value!);
+                    value = new LiteralExpression(poolLoc, (int)Advance().Value!, Span: Span.At(poolLoc));
                 else
                     throw new ParseException(
                         $"Expected integer voice pool size (1..256), got {CurrentToken.Type} '{CurrentToken.Text}' at {poolLoc}");
@@ -699,7 +708,7 @@ public partial class Parser
 
         Expect(TokenType.RBrace, "Expected '}' to close musical context block");
 
-        return new MusicalContextStatement(location, contextType, value, value2, body);
+        return new MusicalContextStatement(location, contextType, value, value2, body, Span: new Span(location, PreviousToken.Location));
     }
 
     /// <summary>
@@ -740,11 +749,12 @@ public partial class Parser
             // runtime errors surface at the user's source line (T-32-AST).
             var litToken = Advance();
             string sclPath = (string)litToken.Value!;
-            var literalArg = new LiteralExpression(litToken.Location, sclPath);
+            var literalArg = new LiteralExpression(litToken.Location, sclPath, Span: Span.At(litToken.Location));
             tuningExpr = new FunctionCallExpression(
                 tuningLocation,
                 "loadScala",
-                new List<Expression> { literalArg });
+                new List<Expression> { literalArg },
+                Span: new Span(tuningLocation, litToken.Location));
         }
         else
         {
@@ -774,7 +784,7 @@ public partial class Parser
 
         Expect(TokenType.RBrace, "Expected '}' to close tuning context block");
 
-        return new TuningContextStatement(tuningLocation, tuningExpr, body);
+        return new TuningContextStatement(tuningLocation, tuningExpr, body, Span: new Span(tuningLocation, PreviousToken.Location));
     }
 
     private ForStatement ParseForStatement()
@@ -803,7 +813,7 @@ public partial class Parser
         _inLoop = savedInLoop;
 
         Expect(TokenType.RBrace, "Expected '}' to close for loop body");
-        return new ForStatement(location, elementType, varName, collection, body);
+        return new ForStatement(location, elementType, varName, collection, body, Span: new Span(location, PreviousToken.Location));
     }
 
     private WhileStatement ParseWhileStatement()
@@ -826,7 +836,7 @@ public partial class Parser
         _inLoop = savedInLoop;
 
         Expect(TokenType.RBrace, "Expected '}' to close while loop body");
-        return new WhileStatement(location, condition, body);
+        return new WhileStatement(location, condition, body, Span: new Span(location, PreviousToken.Location));
     }
 
     private Expression ParseExpression()
@@ -869,7 +879,7 @@ public partial class Parser
             if (isTildeArrow)
             {
                 // Always defer to runtime — arity unknown at parse time (RESEARCH Q5)
-                left = new TupleUnpackFlowExpression(location, left, right);
+                left = new TupleUnpackFlowExpression(location, left, right, Span: new Span(left.Location, PreviousToken.Location));
                 continue;
             }
 
@@ -890,7 +900,7 @@ public partial class Parser
                 {
                     args.Add(ParseUnaryShorthand());
                 }
-                right = new FunctionCallExpression(right.Location, varExpr.Name, args);
+                right = new FunctionCallExpression(right.Location, varExpr.Name, args, Span: new Span(right.Location, PreviousToken.Location));
             }
             else if (right is FunctionCallExpression funcCall)
             {
@@ -902,7 +912,7 @@ public partial class Parser
             else
             {
                 // Otherwise just wrap in flow expression
-                left = new FlowExpression(location, left, right);
+                left = new FlowExpression(location, left, right, Span: new Span(left.Location, PreviousToken.Location));
                 continue;
             }
 
@@ -932,7 +942,8 @@ public partial class Parser
             Advance(); // consume '-'
             var name = Advance().Text;
             return new FunctionCallExpression(loc, "neg",
-                new List<Expression> { new VariableExpression(loc, name) });
+                new List<Expression> { new VariableExpression(loc, name, Span: Span.At(loc)) },
+                Span: new Span(loc, PreviousToken.Location));
         }
         return ParsePostfix();
     }
@@ -947,13 +958,13 @@ public partial class Parser
             {
                 // Array indexing: arr@index (supports unary minus for negative indices)
                 var index = ParseUnaryShorthand();
-                expr = new ArrayIndexExpression(expr.Location, expr, index);
+                expr = new ArrayIndexExpression(expr.Location, expr, index, Span: new Span(expr.Location, PreviousToken.Location));
             }
             else if (Match(TokenType.Dot))
             {
                 // Member access: obj.member
                 var memberName = Expect(TokenType.Identifier, "Expected member name after '.'").Text;
-                expr = new MemberAccessExpression(expr.Location, expr, memberName);
+                expr = new MemberAccessExpression(expr.Location, expr, memberName, Span: new Span(expr.Location, PreviousToken.Location));
             }
             else
             {
@@ -973,53 +984,55 @@ public partial class Parser
             Expect(TokenType.LParen, "Expected '(' after 'lazy'");
             var innerExpr = ParseExpression();
             Expect(TokenType.RParen, "Expected ')' after lazy expression");
-            return new LazyExpression(location, innerExpr);
+            return new LazyExpression(location, innerExpr, Span: new Span(location, PreviousToken.Location));
         }
 
         // Literals
         // Phase 26: IntLiteral may carry an int, long, or BigInteger payload depending
         // on whether the literal overflowed Int32. Pass the boxed Value through —
         // EvaluateLiteral dispatches on the underlying CLR type.
+        // Phase 35 LANG-04: literals derive their Span from the consumed token's
+        // EffectiveSpan (which the lexer populated via the Wave 1 sweep).
         if (Match(TokenType.IntLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.FloatLiteral))
-            return new LiteralExpression(PreviousToken.Location, (double)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, (double)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.StringLiteral))
-            return new LiteralExpression(PreviousToken.Location, (string)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, (string)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.InterpolatedStringStart))
             return ParseInterpolatedString();
 
         if (Match(TokenType.BoolLiteral))
-            return new LiteralExpression(PreviousToken.Location, (bool)PreviousToken.Value!);
+            return new LiteralExpression(PreviousToken.Location, (bool)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.NoteLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.SemitoneLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.CentLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.TimeLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.DecibelLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         // Phase 26.2 ERG-04 — HertzLiteral routes to LiteralExpression with raw text;
         // ExpressionEvaluator.TryParseSpecialLiteral resolves "800Hz" / "1.5kHz" to Value.Hertz(canonical-Hz double).
         if (Match(TokenType.HertzLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.ChordLiteral))
-            return new ChordLiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new ChordLiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         if (Match(TokenType.SymbolLiteral))
-            return new SymbolLiteralExpression(PreviousToken.Location, PreviousToken.Text);
+            return new SymbolLiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
         // Lambda expression: fn Type name, Type name => body
         if (Match(TokenType.Fn))
@@ -1064,7 +1077,7 @@ public partial class Parser
             }
 
             Expect(TokenType.RBracket, "Expected ']' after array literal");
-            return new ArrayLiteralExpression(location, elements);
+            return new ArrayLiteralExpression(location, elements, Span: new Span(location, PreviousToken.Location));
         }
 
         // Phase 26.1 TUP-09: tuple literal <<elem1, elem2, ...>>. Empty <<>> and singleton
@@ -1082,7 +1095,7 @@ public partial class Parser
             }
 
             Expect(TokenType.GreaterGreater, "Expected '>>' after tuple literal");
-            return new TupleLiteralExpression(location, elements);
+            return new TupleLiteralExpression(location, elements, Span: new Span(location, PreviousToken.Location));
         }
 
         // Parenthesized expression or function call
@@ -1111,7 +1124,7 @@ public partial class Parser
                 _inFuncCallArgs = savedFlag;
 
                 Expect(TokenType.RParen, "Expected ')' after function arguments");
-                return new FunctionCallExpression(location, name, args);
+                return new FunctionCallExpression(location, name, args, Span: new Span(location, PreviousToken.Location));
             }
 
             // Regular parenthesized expression
@@ -1144,11 +1157,11 @@ public partial class Parser
                     args.Add(ParseUnaryShorthand()); // Parse argument expression
                 }
 
-                return new FunctionCallExpression(location, name, args);
+                return new FunctionCallExpression(location, name, args, Span: new Span(location, PreviousToken.Location));
             }
 
             // No arguments - it's a variable reference
-            return new VariableExpression(location, name);
+            return new VariableExpression(location, name, Span: Span.At(location));
         }
 
         throw new ParseException($"Unexpected token {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
@@ -1163,7 +1176,7 @@ public partial class Parser
         {
             if (Match(TokenType.InterpolatedStringText))
             {
-                parts.Add(new LiteralExpression(PreviousToken.Location, (string)PreviousToken.Value!));
+                parts.Add(new LiteralExpression(PreviousToken.Location, (string)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan));
             }
             else
             {
@@ -1173,7 +1186,7 @@ public partial class Parser
         }
 
         Expect(TokenType.InterpolatedStringEnd, "Expected closing '\"' for interpolated string");
-        return new InterpolatedStringExpression(location, parts);
+        return new InterpolatedStringExpression(location, parts, Span: new Span(location, PreviousToken.Location));
     }
 
     private Expression ParseLambdaExpression()
@@ -1217,9 +1230,9 @@ public partial class Parser
         {
             // Single-expression body (existing behavior)
             var expr = ParseExpression();
-            body = new List<Statement> { new ExpressionStatement(expr.Location, expr) };
+            body = new List<Statement> { new ExpressionStatement(expr.Location, expr, Span: new Span(expr.Location, PreviousToken.Location)) };
         }
-        return new LambdaExpression(location, parameters, body);
+        return new LambdaExpression(location, parameters, body, Span: new Span(location, PreviousToken.Location));
     }
 
     /// <summary>
@@ -1293,7 +1306,7 @@ public partial class Parser
             _errorReporter.ReportError("Progression must contain at least one chord", location);
         }
 
-        return new ProgressionExpression(location, chords, voiceCount);
+        return new ProgressionExpression(location, chords, voiceCount, Span: new Span(location, PreviousToken.Location));
     }
 
     // Helper methods

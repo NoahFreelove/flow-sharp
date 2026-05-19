@@ -16,5 +16,6 @@ public record MusicalContextStatement(
     MusicalContextType ContextType,
     Expression Value,                    // The value expression (e.g., 120 for tempo, 4 for timesig numerator)
     Expression? Value2,                  // Optional second value (denominator for timesig)
-    IReadOnlyList<Statement> Body
+    IReadOnlyList<Statement> Body,
+    Span? Span = null
 ) : Statement(Location);

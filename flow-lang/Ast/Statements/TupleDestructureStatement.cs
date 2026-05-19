@@ -20,4 +20,5 @@ public record TupleDestructurePattern(FlowType? Type, string Name);
 public record TupleDestructureStatement(
     SourceLocation Location,
     IReadOnlyList<TupleDestructurePattern> Patterns,
-    Expression Value) : Statement(Location);
+    Expression Value,
+    Span? Span = null) : Statement(Location);

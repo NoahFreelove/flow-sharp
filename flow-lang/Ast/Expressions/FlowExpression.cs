@@ -9,4 +9,5 @@ namespace FlowLang.Ast.Expressions;
 public record FlowExpression(
     SourceLocation Location,
     Expression Left,
-    Expression Right) : Expression(Location);
+    Expression Right,
+    Span? Span = null) : Expression(Location);

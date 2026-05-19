@@ -8,5 +8,6 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record ChordLiteralExpression(
     SourceLocation Location,
-    string ChordText
+    string ChordText,
+    Span? Span = null
 ) : Expression(Location);

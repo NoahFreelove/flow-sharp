@@ -9,5 +9,6 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record SymbolLiteralExpression(
     SourceLocation Location,
-    string Name
+    string Name,
+    Span? Span = null
 ) : Expression(Location);

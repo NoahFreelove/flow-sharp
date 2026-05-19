@@ -7,4 +7,5 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record VariableExpression(
     SourceLocation Location,
-    string Name) : Expression(Location);
+    string Name,
+    Span? Span = null) : Expression(Location);

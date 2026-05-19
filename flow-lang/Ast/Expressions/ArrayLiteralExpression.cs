@@ -7,4 +7,5 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record ArrayLiteralExpression(
     SourceLocation Location,
-    IReadOnlyList<Expression> Elements) : Expression(Location);
+    IReadOnlyList<Expression> Elements,
+    Span? Span = null) : Expression(Location);

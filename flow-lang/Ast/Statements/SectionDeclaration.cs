@@ -8,5 +8,6 @@ namespace FlowLang.Ast.Statements;
 public record SectionDeclaration(
     SourceLocation Location,
     string Name,
-    IReadOnlyList<Statement> Body
+    IReadOnlyList<Statement> Body,
+    Span? Span = null
 ) : Statement(Location);

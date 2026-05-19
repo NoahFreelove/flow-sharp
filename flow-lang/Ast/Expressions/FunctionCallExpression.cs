@@ -8,4 +8,5 @@ namespace FlowLang.Ast.Expressions;
 public record FunctionCallExpression(
     SourceLocation Location,
     string Name,
-    IReadOnlyList<Expression> Arguments) : Expression(Location);
+    IReadOnlyList<Expression> Arguments,
+    Span? Span = null) : Expression(Location);

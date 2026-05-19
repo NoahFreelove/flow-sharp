@@ -32,6 +32,15 @@ public class FlowEngine : IDisposable
     public RuntimeContext Context => _context;
 
     /// <summary>
+    /// Phase 35 LANG-04 Wave 1 — per-engine registry of source text keyed by
+    /// file path (or REPL sentinel <c>&lt;eval&gt;</c> / <c>&lt;stdin&gt;</c> /
+    /// <c>&lt;repl&gt;</c>). Populated by <see cref="Execute"/> on every script /
+    /// REPL eval BEFORE lexing so the future diagnostic renderer (Wave 2a) can
+    /// quote the offending source line without re-reading the file from disk.
+    /// </summary>
+    public SourceMap SourceMap { get; } = new();
+
+    /// <summary>
     /// The audio playback manager for this engine instance.
     /// Shared across REPL evaluations to maintain backend state.
     /// </summary>
@@ -130,6 +139,13 @@ public class FlowEngine : IDisposable
     public bool Execute(string source, string? fileName = null)
     {
         _errorReporter.Clear();
+
+        // Phase 35 LANG-04 Wave 1: register source text into the per-engine
+        // SourceMap BEFORE lexing so the future diagnostic renderer (Wave 2a)
+        // can quote the offending source line. REPL/eval callers that pass a
+        // null fileName register under the <eval> sentinel; subsequent REPL
+        // re-evals overwrite the prior entry (no unbounded growth).
+        SourceMap.Register(fileName ?? SourceMap.EvalKey, source);
 
         try
         {

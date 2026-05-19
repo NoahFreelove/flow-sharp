@@ -49,7 +49,9 @@ public class SimpleLexer
             }
         }
 
-        tokens.Add(new Token(TokenType.Eof, "", new SourceLocation(_line, _column, _fileName)));
+        // Phase 35 LANG-04 Wave 1: EOF is zero-width at the post-source position.
+        var eofLoc = new SourceLocation(_line, _column, _fileName);
+        tokens.Add(new Token(TokenType.Eof, "", eofLoc, Span: Span.At(eofLoc)));
         return tokens;
     }
 
@@ -68,7 +70,7 @@ public class SimpleLexer
             Advance();
             Advance();
             Advance();
-            return new Token(TokenType.Ellipsis, "...", start);
+            return new Token(TokenType.Ellipsis, "...", start, Span: new Span(start, CurrentLocation()));
         }
 
         // Two-character operators
@@ -76,7 +78,7 @@ public class SimpleLexer
         {
             Advance();
             Advance();
-            return new Token(TokenType.Arrow, "->", start);
+            return new Token(TokenType.Arrow, "->", start, Span: new Span(start, CurrentLocation()));
         }
 
         // Phase 26.1 TUP-10: TildeArrow `~>` (tuple-unpack flow operator).
@@ -89,7 +91,7 @@ public class SimpleLexer
         {
             Advance();
             Advance();
-            return new Token(TokenType.TildeArrow, "~>", start);
+            return new Token(TokenType.TildeArrow, "~>", start, Span: new Span(start, CurrentLocation()));
         }
 
         // Check for special literals that start with +/- before treating them as operators
@@ -137,7 +139,7 @@ public class SimpleLexer
                 {
                     Advance();
                     Advance();
-                    return new Token(TokenType.FatArrow, "=>", start);
+                    return new Token(TokenType.FatArrow, "=>", start, Span: new Span(start, CurrentLocation()));
                 }
                 return SingleChar(TokenType.Assign);
             case '.': return SingleChar(TokenType.Dot);
@@ -179,7 +181,7 @@ public class SimpleLexer
                 }
                 if (sb.Length == 0)
                     throw new Exception($"Expected identifier after '#' at {start}");
-                return new Token(TokenType.SymbolLiteral, sb.ToString(), start);
+                return new Token(TokenType.SymbolLiteral, sb.ToString(), start, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -198,7 +200,9 @@ public class SimpleLexer
     {
         var start = new SourceLocation(_line, _column, _fileName);
         char c = Advance();
-        return new Token(type, c.ToString(), start);
+        // Phase 35 LANG-04 Wave 1: single-char tokens use a zero-width Span.At(start)
+        // per PATTERNS.md Bucket 1 § SimpleLexer.cs note (single-char SingleChar arm).
+        return new Token(type, c.ToString(), start, Span: Span.At(start));
     }
 
     private Token ScanString(SourceLocation start)
@@ -234,13 +238,13 @@ public class SimpleLexer
         {
             _errorReporter.ReportError("Unterminated string literal", start);
             var partialValue = sb.ToString();
-            return new Token(TokenType.StringLiteral, $"\"{partialValue}\"", start, partialValue);
+            return new Token(TokenType.StringLiteral, $"\"{partialValue}\"", start, partialValue, Span: new Span(start, CurrentLocation()));
         }
 
         Advance(); // Skip closing quote
 
         var value = sb.ToString();
-        return new Token(TokenType.StringLiteral, $"\"{value}\"", start, value);
+        return new Token(TokenType.StringLiteral, $"\"{value}\"", start, value, Span: new Span(start, CurrentLocation()));
     }
 
     private Token ScanInterpolatedString(SourceLocation start)
@@ -249,7 +253,8 @@ public class SimpleLexer
         Advance(); // Skip '"'
 
         var tokens = new List<Token>();
-        tokens.Add(new Token(TokenType.InterpolatedStringStart, "$\"", start));
+        // Phase 35 LANG-04: `$"` delimiter is 2 chars; capture end at current pos.
+        tokens.Add(new Token(TokenType.InterpolatedStringStart, "$\"", start, Span: new Span(start, CurrentLocation())));
 
         var textSb = new StringBuilder();
 
@@ -279,8 +284,9 @@ public class SimpleLexer
                 if (textSb.Length > 0)
                 {
                     var textValue = textSb.ToString();
+                    var textTokLoc = new SourceLocation(_line, _column, _fileName);
                     tokens.Add(new Token(TokenType.InterpolatedStringText, textValue,
-                        new SourceLocation(_line, _column, _fileName), textValue));
+                        textTokLoc, textValue, Span: Span.At(textTokLoc)));
                     textSb.Clear();
                 }
 
@@ -326,15 +332,17 @@ public class SimpleLexer
         if (textSb.Length > 0)
         {
             var textValue = textSb.ToString();
+            var textTokLoc = new SourceLocation(_line, _column, _fileName);
             tokens.Add(new Token(TokenType.InterpolatedStringText, textValue,
-                new SourceLocation(_line, _column, _fileName), textValue));
+                textTokLoc, textValue, Span: Span.At(textTokLoc)));
         }
 
         if (!IsAtEnd())
             Advance(); // Skip closing '"'
 
+        var endTokLoc = new SourceLocation(_line, _column, _fileName);
         tokens.Add(new Token(TokenType.InterpolatedStringEnd, "\"",
-            new SourceLocation(_line, _column, _fileName)));
+            endTokLoc, Span: Span.At(endTokLoc)));
 
         // Return the first token, enqueue the rest
         for (int i = 1; i < tokens.Count; i++)
@@ -363,17 +371,18 @@ public class SimpleLexer
             }
 
             var floatValue = double.Parse(sb.ToString(), System.Globalization.CultureInfo.InvariantCulture);
-            return new Token(TokenType.FloatLiteral, sb.ToString(), start, floatValue);
+            return new Token(TokenType.FloatLiteral, sb.ToString(), start, floatValue, Span: new Span(start, CurrentLocation()));
         }
 
         // Phase 26: int-overflow → long-overflow → BigInteger fallthrough.
         string text = sb.ToString();
         if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int intValue))
-            return new Token(TokenType.IntLiteral, text, start, intValue);
+            return new Token(TokenType.IntLiteral, text, start, intValue, Span: new Span(start, CurrentLocation()));
         if (long.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long longValue))
-            return new Token(TokenType.IntLiteral, text, start, longValue);
+            return new Token(TokenType.IntLiteral, text, start, longValue, Span: new Span(start, CurrentLocation()));
         return new Token(TokenType.IntLiteral, text, start,
-            System.Numerics.BigInteger.Parse(text, System.Globalization.CultureInfo.InvariantCulture));
+            System.Numerics.BigInteger.Parse(text, System.Globalization.CultureInfo.InvariantCulture),
+            Span: new Span(start, CurrentLocation()));
     }
 
     /// <summary>
@@ -440,7 +449,7 @@ public class SimpleLexer
         Advance(); // consume second char
         var tt = c == '<' ? TokenType.LessLess : TokenType.GreaterGreater;
         var lex = c == '<' ? "<<" : ">>";
-        return new Token(tt, lex, start);
+        return new Token(tt, lex, start, Span: new Span(start, CurrentLocation()));
     }
 
     private Token? TryLexSignedNumber(SourceLocation start)
@@ -494,15 +503,15 @@ public class SimpleLexer
 
         string text = sb.ToString();
         if (isFloat && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dval))
-            return new Token(TokenType.FloatLiteral, text, start, dval);
+            return new Token(TokenType.FloatLiteral, text, start, dval, Span: new Span(start, CurrentLocation()));
         if (!isFloat)
         {
             if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int ival))
-                return new Token(TokenType.IntLiteral, text, start, ival);
+                return new Token(TokenType.IntLiteral, text, start, ival, Span: new Span(start, CurrentLocation()));
             if (long.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long lval))
-                return new Token(TokenType.IntLiteral, text, start, lval);
+                return new Token(TokenType.IntLiteral, text, start, lval, Span: new Span(start, CurrentLocation()));
             if (System.Numerics.BigInteger.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bival))
-                return new Token(TokenType.IntLiteral, text, start, bival);
+                return new Token(TokenType.IntLiteral, text, start, bival, Span: new Span(start, CurrentLocation()));
         }
 
         // Parse failure — rewind so SingleChar(Plus/Minus) gets the chance.
@@ -564,7 +573,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 3);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
             {
-                return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0);  // canonical Hz
+                return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0, Span: new Span(start, CurrentLocation()));  // canonical Hz
             }
         }
 
@@ -578,7 +587,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
             {
-                return new Token(TokenType.HertzLiteral, text, start, hzValue);
+                return new Token(TokenType.HertzLiteral, text, start, hzValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -593,7 +602,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 2);
             if (int.TryParse(numberPart, out int semitoneValue))
             {
-                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue);
+                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -607,7 +616,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 1);
             if (double.TryParse(numberPart, out double centValue))
             {
-                return new Token(TokenType.CentLiteral, text, start, centValue);
+                return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -622,7 +631,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, out double decibelValue))
             {
-                return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+                return new Token(TokenType.DecibelLiteral, text, start, decibelValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -637,7 +646,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, out double msValue))
             {
-                return new Token(TokenType.TimeLiteral, text, start, msValue);
+                return new Token(TokenType.TimeLiteral, text, start, msValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -651,7 +660,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 1);
             if (double.TryParse(numberPart, out double sValue))
             {
-                return new Token(TokenType.TimeLiteral, text, start, sValue);
+                return new Token(TokenType.TimeLiteral, text, start, sValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -698,7 +707,7 @@ public class SimpleLexer
 
                 if (double.TryParse(numberText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
                 {
-                    return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0);  // canonical Hz
+                    return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0, Span: new Span(start, CurrentLocation()));  // canonical Hz
                 }
             }
             // Phase 26.2 ERG-04: Try "Hz" suffix (2 chars) AFTER kHz
@@ -710,7 +719,7 @@ public class SimpleLexer
 
                 if (double.TryParse(numberText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
                 {
-                    return new Token(TokenType.HertzLiteral, text, start, hzValue);
+                    return new Token(TokenType.HertzLiteral, text, start, hzValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "ms" suffix (milliseconds)
@@ -723,7 +732,7 @@ public class SimpleLexer
                 string numberPart = text.Substring(0, text.Length - 2);
                 if (double.TryParse(numberPart, out double msValue))
                 {
-                    return new Token(TokenType.TimeLiteral, text, start, msValue);
+                    return new Token(TokenType.TimeLiteral, text, start, msValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "dB" suffix (decibel) - for unsigned decibels like 0dB
@@ -736,7 +745,7 @@ public class SimpleLexer
                 string numberPart = text.Substring(0, text.Length - 2);
                 if (double.TryParse(numberPart, out double dbValue))
                 {
-                    return new Token(TokenType.DecibelLiteral, text, start, dbValue);
+                    return new Token(TokenType.DecibelLiteral, text, start, dbValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "c" suffix (cent) - but not if followed by a letter (could be 'c' in a longer identifier)
@@ -748,7 +757,7 @@ public class SimpleLexer
                 string numberPart = text.Substring(0, text.Length - 1);
                 if (double.TryParse(numberPart, out double centValue))
                 {
-                    return new Token(TokenType.CentLiteral, text, start, centValue);
+                    return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "s" suffix (seconds) - but not if followed by 't'
@@ -760,7 +769,7 @@ public class SimpleLexer
                 string numberPart = text.Substring(0, text.Length - 1);
                 if (double.TryParse(numberPart, out double sValue))
                 {
-                    return new Token(TokenType.TimeLiteral, text, start, sValue);
+                    return new Token(TokenType.TimeLiteral, text, start, sValue, Span: new Span(start, CurrentLocation()));
                 }
             }
         }
@@ -769,7 +778,7 @@ public class SimpleLexer
         if (numberText.Contains('.'))
         {
             var floatValue = double.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture);
-            return new Token(TokenType.FloatLiteral, numberText, start, floatValue);
+            return new Token(TokenType.FloatLiteral, numberText, start, floatValue, Span: new Span(start, CurrentLocation()));
         }
         else
         {
@@ -779,17 +788,18 @@ public class SimpleLexer
             // throws OverflowException at lex time.
             if (int.TryParse(numberText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int intValue))
             {
-                return new Token(TokenType.IntLiteral, numberText, start, intValue);
+                return new Token(TokenType.IntLiteral, numberText, start, intValue, Span: new Span(start, CurrentLocation()));
             }
             if (long.TryParse(numberText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long longValue))
             {
                 // Lex as IntLiteral with a long Value; the parser/evaluator treats
                 // it as a literal whose runtime Value type matches Data's CLR type.
-                return new Token(TokenType.IntLiteral, numberText, start, longValue);
+                return new Token(TokenType.IntLiteral, numberText, start, longValue, Span: new Span(start, CurrentLocation()));
             }
             // Fall back to BigInteger for truly huge literals.
             return new Token(TokenType.IntLiteral, numberText, start,
-                System.Numerics.BigInteger.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture));
+                System.Numerics.BigInteger.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture),
+                Span: new Span(start, CurrentLocation()));
         }
     }
 
@@ -908,7 +918,7 @@ public class SimpleLexer
             // fall through the chord check and are picked up by TryParseNote as NoteLiteral(B,7,-1).
             if (ChordParser.IsChordSymbol(text))
             {
-                return new Token(TokenType.ChordLiteral, text, start, text);
+                return new Token(TokenType.ChordLiteral, text, start, text, Span: new Span(start, CurrentLocation()));
             }
 
             // Try to parse as Note (A-G followed by optional octave and alteration)
@@ -920,7 +930,7 @@ public class SimpleLexer
                 // the authored shape. Token.Text always carries the canonical form
                 // so renderer/MIDI export consume B-rooted notes unchanged.
                 string? originalText = (text != noteValue) ? text : null;
-                return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText);
+                return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText, Span: new Span(start, CurrentLocation()));
             }
 
             // Check for note + duration suffix (e.g., C4h, D5q, E3w)
@@ -941,7 +951,7 @@ public class SimpleLexer
                         // when notePartText ("H4") canonicalizes to notePartValue ("B4"),
                         // preserve the original.
                         string? originalText = (notePartText != notePartValue) ? notePartText : null;
-                        return new Token(TokenType.NoteLiteral, notePartValue, start, notePartValue, originalText);
+                        return new Token(TokenType.NoteLiteral, notePartValue, start, notePartValue, originalText, Span: new Span(start, CurrentLocation()));
                     }
                 }
             }
@@ -949,23 +959,23 @@ public class SimpleLexer
             // Try to parse as Semitone (+/-Nst)
             if (TryParseSemitone(text, out var semitoneValue))
             {
-                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue);
+                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue, Span: new Span(start, CurrentLocation()));
             }
 
             // Try to parse as Time (Nms or Ns)
             if (TryParseTime(text, out var timeValue, out var timeUnit))
             {
-                return new Token(TokenType.TimeLiteral, text, start, timeValue);
+                return new Token(TokenType.TimeLiteral, text, start, timeValue, Span: new Span(start, CurrentLocation()));
             }
 
             // Try to parse as Decibel (+/-NdB)
             if (TryParseDecibel(text, out var decibelValue))
             {
-                return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+                return new Token(TokenType.DecibelLiteral, text, start, decibelValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
-        return new Token(type, text, start, value);
+        return new Token(type, text, start, value, Span: new Span(start, CurrentLocation()));
     }
 
     private bool TryParseNote(string text, out string noteValue)
@@ -1203,6 +1213,14 @@ public class SimpleLexer
 
     private char Peek() => IsAtEnd() ? '\0' : _source[_position];
     private char PeekNext() => _position + 1 >= _source.Length ? '\0' : _source[_position + 1];
+
+    /// <summary>
+    /// Phase 35 LANG-04 Wave 1: capture the current source position as the
+    /// END of a span being emitted. The lexer's <c>_line</c> / <c>_column</c>
+    /// track the position of the NEXT character to read — which is exactly the
+    /// half-open END position we want (one past the last consumed character).
+    /// </summary>
+    private SourceLocation CurrentLocation() => new SourceLocation(_line, _column, _fileName);
 
     private char Advance()
     {

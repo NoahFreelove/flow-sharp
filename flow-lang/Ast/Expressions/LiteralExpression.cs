@@ -7,4 +7,5 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record LiteralExpression(
     SourceLocation Location,
-    object Value) : Expression(Location);
+    object Value,
+    Span? Span = null) : Expression(Location);

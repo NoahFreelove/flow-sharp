@@ -15,4 +15,5 @@ public record LambdaParameter(string Name, FlowType Type);
 public record LambdaExpression(
     SourceLocation Location,
     IReadOnlyList<LambdaParameter> Parameters,
-    IReadOnlyList<Statement> Body) : Expression(Location);
+    IReadOnlyList<Statement> Body,
+    Span? Span = null) : Expression(Location);

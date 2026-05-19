@@ -12,5 +12,6 @@ public record SongSectionReference(string Name, int RepeatCount);
 /// </summary>
 public record SongExpression(
     SourceLocation Location,
-    IReadOnlyList<SongSectionReference> Sections
+    IReadOnlyList<SongSectionReference> Sections,
+    Span? Span = null
 ) : Expression(Location);
