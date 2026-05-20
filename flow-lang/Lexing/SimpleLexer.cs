@@ -894,6 +894,7 @@ public class SimpleLexer
             "break" => TokenType.Break,
             "continue" => TokenType.Continue,
             "in" => TokenType.In,
+            "as" => TokenType.As,
             "progression" => TokenType.Progression,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,

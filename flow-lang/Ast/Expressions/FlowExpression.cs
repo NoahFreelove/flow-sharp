@@ -10,4 +10,5 @@ public record FlowExpression(
     SourceLocation Location,
     Expression Left,
     Expression Right,
+    string? IntermediateName = null,
     Span? Span = null) : Expression(Location);

@@ -35,6 +35,7 @@ public enum TokenType
     Break,
     Continue,
     In,
+    As,                 // Phase 35 Plan 35-07 (LANG-03) — `-> CALL as NAME` chain naming
     Progression,
 
     // Type keywords
