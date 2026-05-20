@@ -352,6 +352,22 @@ public class ExpressionEvaluator
 
     private Value EvaluateFlowExpression(FlowExpression flowEx)
     {
+        // Phase 35 Plan 35-07 (LANG-03): when the parser saw `-> CALL as NAME`,
+        // it wrapped the constructed FunctionCallExpression (with Left already
+        // prepended to its args by ParseFlowExpression's branches 1+2) inside a
+        // FlowExpression carrying IntermediateName. The result of this chain
+        // step IS the evaluation of Right (the constructed call); Left is
+        // preserved on the AST node for span/diagnostic reasons but is NOT
+        // re-applied here. After computing the result, declare the binding in
+        // the CURRENT frame per Pitfall 7 so subsequent chain steps + same-
+        // block statements can read it.
+        if (flowEx.IntermediateName != null)
+        {
+            var result = Evaluate(flowEx.Right);
+            _context.DeclareVariable(flowEx.IntermediateName, result);
+            return result;
+        }
+
         var leftVal = Evaluate(flowEx.Left);
         var rightVal = Evaluate(flowEx.Right);
 
