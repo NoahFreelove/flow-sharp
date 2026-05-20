@@ -912,12 +912,30 @@ public partial class Parser
             }
             else
             {
-                // Otherwise just wrap in flow expression
-                left = new FlowExpression(location, left, right, Span: new Span(left.Location, PreviousToken.Location));
+                // Otherwise just wrap in flow expression — also threads `as NAME` if present
+                // (RESEARCH §Pattern 3; OQ5 supported form is `EXPR -> CALL as NAME` so
+                // branch 3 + `as` is an edge case; classic pipe semantics still apply).
+                var intermediateNameElse = TryConsumeAsClause();
+                left = new FlowExpression(location, left, right, IntermediateName: intermediateNameElse, Span: new Span(left.Location, PreviousToken.Location));
                 continue;
             }
 
-            left = right;
+            // Phase 35 Plan 35-07 (LANG-03): peek for `as NAME` after the prepend-transform
+            // produced the constructed FunctionCallExpression. When present, wrap the
+            // constructed call in a FlowExpression carrying IntermediateName — the evaluator
+            // path with IntermediateName != null evaluates Right ONLY (the constructed call
+            // already contains the prepended Left in its args) and declares the binding in
+            // the CURRENT frame per Pitfall 7. RESEARCH OQ5 (RESOLVED 2026-05-18):
+            // right-associative with `->`; only the `EXPR -> CALL as NAME -> ...` form ships.
+            var intermediateName = TryConsumeAsClause();
+            if (intermediateName != null)
+            {
+                left = new FlowExpression(location, left, right, IntermediateName: intermediateName, Span: new Span(left.Location, PreviousToken.Location));
+            }
+            else
+            {
+                left = right;
+            }
         }
 
         return left;
@@ -1596,6 +1614,27 @@ public partial class Parser
             or TokenType.SymbolLiteral
             or TokenType.InterpolatedStringStart
             or TokenType.Identifier;
+    }
+
+    /// <summary>
+    /// Phase 35 Plan 35-07 (LANG-03) — consumes an optional `as Identifier`
+    /// clause appearing after a flow-chain step's RHS. Returns the identifier
+    /// text when present, null otherwise. Per RESEARCH OQ5 (RESOLVED 2026-05-18):
+    /// `as` must be followed by an Identifier; emits a parse error and returns
+    /// null when the next token is anything else (caller's chain continues
+    /// without binding for graceful recovery).
+    /// </summary>
+    private string? TryConsumeAsClause()
+    {
+        if (!Match(TokenType.As)) return null;
+        if (!Check(TokenType.Identifier))
+        {
+            _errorReporter.ReportError(
+                $"Expected identifier after `as` in flow chain, got {CurrentToken.Type} '{CurrentToken.Text}'",
+                CurrentToken.Location);
+            return null;
+        }
+        return Advance().Text;
     }
 
     private bool Check(TokenType type)
