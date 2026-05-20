@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: phase_complete
-stopped_at: Phase 35 complete (7/7) -- v1.5 dependency root shipped 2026-05-19
-last_updated: "2026-05-19T03:30:00.000Z"
-last_activity: 2026-05-19 -- Phase 35 verified (10/10 must-haves), unblocks Phases 36/39/40
+status: context_gathered
+stopped_at: Phase 36 context gathered 2026-05-20 -- 18 decisions locked, ready for planning
+last_updated: "2026-05-20T04:00:00.000Z"
+last_activity: 2026-05-20 -- Phase 36 CONTEXT.md committed (0e12765); universal named-arg rollout absorbed
 progress:
   total_phases: 7
   completed_phases: 1
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 36 — Sequence Algebra & Generative (next; Phase 35 dependency root complete)
+**Current focus:** Phase 36 — Sequence Algebra & Generative (context gathered; ready for /gsd:plan-phase 36)
 
 ## Current Position
 
-Phase: 35 (Language Foundation) — COMPLETE (verified 2026-05-19, 10/10 must-haves)
-Next phase: 36 (Sequence Algebra & Generative) — Pending discuss/plan
-Status: Phase 35 closed; awaiting `/gsd:discuss-phase 36` to begin next phase
-Last activity: 2026-05-19 -- Phase 35 plans 35-06 + 35-07 executed and verified; LANG-01..04 + TEST-01..02 + HK-01..04 all closed
+Phase: 36 (Sequence Algebra & Generative) — CONTEXT GATHERED (18 decisions locked 2026-05-20)
+Next step: `/gsd:plan-phase 36` to produce PLAN.md inventory (estimated 10-12 plans)
+Status: Phase 35 closed (verified passed); Phase 36 context committed (0e12765); planner up next
+Last activity: 2026-05-20 -- Phase 36 CONTEXT.md + DISCUSSION-LOG.md committed (4 areas discussed, universal named-arg rollout absorbed into scope)
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
