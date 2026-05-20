@@ -156,7 +156,19 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
   3. All GEN-* primitives route their RNGs through `Runtime/PrngRegistry` keyed by `(SourceLocation, generator-name)`. Two consecutive runs at the same git SHA produce byte-identical WAV+MIDI output (two-run cmp-clean determinism contract per Phase 18/25/27/33 inheritance). Lorenz cross-platform FP divergence documented as platform-specific limitation; same-platform two-run cmp-clean preserved. (GEN-05)
   4. Composer can write `section verse(Note root, Int repeats) { ... }` and call it as `[verse(C4, 2) verse(G4, 1) chorus]` — section args bind in a synthetic stack frame on call, closure over outer musical context preserved. Existing zero-arg `section verse { ... }` form unchanged. (SECT-01)
   5. Composer can call `(jam over=chords style=#bebop length=8bars seed=N)` and get a chord-aware melodic Sequence respecting chord tones on strong beats and scale tones on weak beats; deterministic when `seed` provided; `#jazz`, `#blues`, `#classical` baseline rule packs ship. (IMPROV-01)
-**Plans**: TBD
+**Plans**: 12 plans (pending execution)
+- [ ] 36-01-PLAN.md — PrngRegistry foundation + render-boundary hooks + two-run determinism harness (GEN-05)
+- [ ] 36-02-PLAN.md — Universal named-argument syntax (lexer + parser + OverloadResolver) — D-36-11 foundation, no backfill yet (PAT-01)
+- [ ] 36-03-PLAN.md — Named-arg backfill across BuiltInFunctions.cs + Collections + Bars + DictFunctions (PAT-01)
+- [ ] 36-04-PLAN.md — Named-arg backfill across Audio + DSP + Transforms + Composition + Harmony + TestFramework (PAT-01)
+- [ ] 36-05-PLAN.md — @patterns stdlib: 13 Tidal combinators (every/fast/slow/chunk/phase/rev/jux/sometimes/iter/palindrome/degrade/superimpose + sparseSeq) (PAT-01, PAT-02, GEN-05)
+- [ ] 36-06-PLAN.md — Markov primitives + MarkovModel reference-identity type (GEN-01, GEN-05)
+- [ ] 36-07-PLAN.md — L-system primitives with Symbol alphabet + LsystemModel reference-identity type (GEN-02, GEN-05)
+- [ ] 36-08-PLAN.md — Cellular automata: 1D elementary CA + 2D Game of Life (GEN-03, GEN-05)
+- [ ] 36-09-PLAN.md — Chaos maps: Lorenz + logistic + quantizeToScale (GEN-04, GEN-05)
+- [ ] 36-10-PLAN.md — Parameterized sections + section overload via Phase 35 pattern dispatch + Rust-style diagnostics (SECT-01)
+- [ ] 36-11-PLAN.md — jam builtin + StyleRegistry + 3 baseline rule packs (jazz/blues/classical) (IMPROV-01, GEN-05)
+- [ ] 36-12-PLAN.md — Composer-facing examples + Phase 36 VERIFICATION + ROADMAP/STATE/REQUIREMENTS closure (all 9 reqs)
 
 ### Phase 37: Sound Design + Sampler Polish
 **Goal**: Closes 4 v1.4 carryovers (stereo pan polish, SFZ round-robin, sampled drums, more flute samples, warmer piano) plus ships granular synthesis + independent time-stretch + pitch-shift as first-class native-citizen builtins composable with the existing DSP rack. Largest phase of v1.5 — plans may subdivide per PROJECT.md note.
@@ -263,7 +275,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 | 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete    | 2026-05-16 |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
 | 35. Language Foundation | v1.5 | 5/7 | In Progress|  |
-| 36. Sequence Algebra & Generative | v1.5 | 0/0 | Not started | - |
+| 36. Sequence Algebra & Generative | v1.5 | 0/12 | Planned | - |
 | 37. Sound Design + Sampler Polish | v1.5 | 0/0 | Not started | - |
 | 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |

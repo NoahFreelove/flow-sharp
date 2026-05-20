@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: context_gathered
-stopped_at: Phase 36 context gathered 2026-05-20 -- 18 decisions locked, ready for planning
-last_updated: "2026-05-20T04:00:00.000Z"
-last_activity: 2026-05-20 -- Phase 36 CONTEXT.md committed (0e12765); universal named-arg rollout absorbed
+status: executing
+stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
+last_updated: "2026-05-20T23:53:56.990Z"
+last_activity: 2026-05-20 -- Phase 36 planning complete
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 7
+  total_plans: 19
   completed_plans: 7
   percent: 14
 ---
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 
 Phase: 36 (Sequence Algebra & Generative) — CONTEXT GATHERED (18 decisions locked 2026-05-20)
 Next step: `/gsd:plan-phase 36` to produce PLAN.md inventory (estimated 10-12 plans)
-Status: Phase 35 closed (verified passed); Phase 36 context committed (0e12765); planner up next
-Last activity: 2026-05-20 -- Phase 36 CONTEXT.md + DISCUSSION-LOG.md committed (4 areas discussed, universal named-arg rollout absorbed into scope)
+Status: Ready to execute
+Last activity: 2026-05-20 -- Phase 36 planning complete
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
