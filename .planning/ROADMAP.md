@@ -117,7 +117,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 
 ### Phase Summary
 
-- [ ] **Phase 35: Language Foundation** — Pattern matching (literal + constructor + wildcard + guard + music-aware extractors), Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> as name` chain naming, and v1.4 housekeeping (humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 verification gaps, CLAUDE.md "Public as of v1.4" footnote revision)
+- [x] **Phase 35: Language Foundation** (completed 2026-05-19) — Pattern matching (literal + constructor + wildcard + guard + music-aware extractors), Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> as name` chain naming, and v1.4 housekeeping (humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 verification gaps, CLAUDE.md "Public as of v1.4" footnote revision)
 - [ ] **Phase 36: Sequence Algebra & Generative** — 12 Tidal-style combinators on Sequence (every/fast/slow/chunk/phase/rev/jux/sometimes/often/rarely/degrade/superimpose), generative primitives (Markov, L-system, cellular automata, Lorenz/logistic chaos maps), parameterized sections, chord-aware Markov improvisation
 - [ ] **Phase 37: Sound Design + Sampler Polish (largest phase)** — Granular synthesis (Hann/Gaussian/Tukey), independent time-stretch + pitch-shift via hand-rolled phase vocoder + PSOLA + #auto HPS detector, stereo pan + SFZ-renderer stereo retrofit, sampler polish bundle (SFZ round-robin, velocity-layer crossfade, per-articulation envelope multipliers, warmer piano timbre, more flute samples, sampled drums)
 - [ ] **Phase 38: Live Coding 2.0** — `live <quantize> { ... }` block + modernized watch mode + REPL polish (LSP-backed completion, `?fn` help, multiline + history search, piano-roll preview) + audio input via PA_STREAM_RECORD + OSC server/client (Rug.Osc 1.2.5)
@@ -143,8 +143,8 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [x] 35-03-PLAN.md — Rust-style diagnostics renderer (LANG-04)
 - [x] 35-04-PLAN.md — Pure-Flow test framework + flow test CLI (TEST-01, TEST-02)
 - [x] 35-05-PLAN.md — Pattern matching foundation (LANG-01)
-- [ ] 35-06-PLAN.md — Music-aware pattern extractors + exhaustiveness (LANG-02)
-- [ ] 35-07-PLAN.md — -> as name chain naming (LANG-03)
+- [x] 35-06-PLAN.md — Music-aware pattern extractors + exhaustiveness (LANG-02)
+- [x] 35-07-PLAN.md — -> as name chain naming (LANG-03)
 
 ### Phase 36: Sequence Algebra & Generative
 **Goal**: Composer can write Tidal-style pattern algebra over `Sequence` values (12 combinators that compose via `->`), generate musical material from Markov chains / L-systems / cellular automata / Lorenz attractors as first-class stdlib primitives, parameterize sections with positional args, and improvise chord-aware Markov solos over a progression — all with deterministic seeding routed through the new PrngRegistry.

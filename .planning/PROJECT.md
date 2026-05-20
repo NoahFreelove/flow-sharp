@@ -14,6 +14,8 @@ Users can write musical ideas as code and hear them immediately — the language
 
 **Current milestone:** v1.5 Stage, Studio, Web (started 2026-05-17)
 
+**Latest phase complete:** Phase 35 — Language Foundation (2026-05-19). LANG-01..04 + TEST-01..02 + HK-01..04 closed: pattern matching foundation with music-aware extractors (chord literal, roman numeral, articulation symbol) + matchExhaustive pragma policy, Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> CALL as NAME` chain naming, v1.4 housekeeping. v1.5 dependency root shipped — Phases 36 (destructuring), 39 (articulation emit), and 40 (MIDI dispatch) now unblocked.
+
 ## Current Milestone: v1.5 Stage, Studio, Web
 
 **Goal:** Take Flow from "credible single-author public language" to "real citizen of the music-software world" — extending creative reach (live coding revamp, generative algebra, improv API), ecosystem interop (notation export, real-time MIDI, transport sync), and distribution (WASM playground, cross-platform binaries, docs generator). Plus a language-foundation phase that unblocks the rest and a sound-design phase that pays down sampler-polish debt.
