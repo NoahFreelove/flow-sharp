@@ -93,6 +93,18 @@ public class ExecutionContext
     /// </summary>
     public Dictionary<string, Value> SymbolInternTable { get; } = new();
 
+    /// <summary>
+    /// Phase 36 Plan 36-01 (D-v1.5-06 / D-36-09) — per-context PRNG registry
+    /// keyed by <c>(SourceLocation, generator-name)</c>. All Phase 36 PRNG-driven
+    /// primitives (<c>markov</c> / <c>lsystem</c> / <c>cellular</c> / <c>lorenz</c> /
+    /// <c>logistic</c> / <c>degrade</c> / <c>sparseSeq</c> / <c>sometimes</c> /
+    /// <c>jam</c>) route their unseeded paths through this registry. Reseeded
+    /// at every <c>renderSong</c> / <c>writeWav</c> / <c>exportWav</c> boundary
+    /// to preserve the two-run cmp-clean determinism contract inherited from
+    /// Phase 18/25/27/28/29/33.
+    /// </summary>
+    public PrngRegistry PrngRegistry { get; } = new();
+
     // ===== Phase 33 — SFZ surface =====
 
     /// <summary>
@@ -550,6 +562,13 @@ public class ExecutionContext
 
             // 11. FlowConfig.Active singleton.
             FlowConfigActive = FlowConfig.Active,
+
+            // 12. Phase 36 Plan 36-01 — PrngRegistry cache snapshot.
+            //     Captures the (SourceLocation, name) → Random map by reference;
+            //     RestoreFromSnapshot below repopulates the live registry from
+            //     this dict so post-snapshot draws on the same Random instances
+            //     replay the SAME values they would have drawn before mutation.
+            PrngRegistryState = PrngRegistry.SnapshotForTesting(),
         };
     }
 
@@ -613,6 +632,12 @@ public class ExecutionContext
 
         // 11. FlowConfig.Active singleton.
         FlowConfig.Active = snap.FlowConfigActive;
+
+        // 12. Phase 36 Plan 36-01 — PrngRegistry restore. Null-guard preserves
+        //     backward compatibility with pre-Phase-36 TestSnapshots that don't
+        //     populate PrngRegistryState (Threat T-36-03 mitigation).
+        if (snap.PrngRegistryState != null)
+            PrngRegistry.RestoreFromSnapshot(snap.PrngRegistryState);
 
         // Static reset hooks for mutable singletons without snapshot fields.
         // Per RESEARCH §Pitfall 3 — these existing hooks were added by prior

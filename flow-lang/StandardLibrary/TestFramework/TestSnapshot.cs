@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FlowLang.Core;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.Sfz;
 
@@ -57,4 +58,18 @@ public sealed record TestSnapshot
 
     // 11. FlowConfig.Active singleton reference. Last-write-wins reset.
     public required FlowConfigPoco FlowConfigActive { get; init; }
+
+    // 12. Phase 36 Plan 36-01 — PrngRegistry draw-count snapshot. Defaulted-null
+    //     so pre-Phase-36 TestSnapshot constructions remain backward-compatible
+    //     (RestoreState null-guards this field per T-36-03). The map carries
+    //     the per-key draw count at snapshot time; restore re-creates each
+    //     Random from its deterministic seed and replays the captured draw
+    //     count to bring the PRNG state to the snapshot's exact position.
+    //     Storing draw counts rather than Random instances guarantees the
+    //     PRNG state is RECONSTRUCTABLE from the snapshot — System.Random
+    //     has no public serialization/clone API.
+    public IReadOnlyDictionary<(SourceLocation Site, string Name), long>? PrngRegistryState
+    {
+        get; init;
+    }
 }

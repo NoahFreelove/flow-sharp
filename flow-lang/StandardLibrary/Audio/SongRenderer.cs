@@ -51,6 +51,11 @@ public static class SongRenderer
         var song = args[0].As<SongData>();
         var lambda = args[1].As<FunctionOverload>();
 
+        // Phase 36 Plan 36-01 (D-v1.5-06 / D-36-09) — reseed PrngRegistry at the
+        // renderSong boundary so any unseeded Phase 36 stochastic primitives
+        // produce byte-identical buffers across renders.
+        context.PrngRegistry.ResetAtRenderBoundary();
+
         // Plan 15-05 ROADMAP #2: deterministic synth noise across renders.
         SynthUtils.ResetNoiseRng();
 
@@ -100,6 +105,12 @@ public static class SongRenderer
     {
         var song = args[0].As<SongData>();
         string synthType = (string)args[1].Data!;
+
+        // Phase 36 Plan 36-01 (D-v1.5-06 / D-36-09) — reseed PrngRegistry at the
+        // renderSong boundary so any unseeded Phase 36 stochastic primitives
+        // (markov / lsystem / cellular / lorenz / degrade / sparseSeq / sometimes /
+        // jam) produce byte-identical buffers across renders.
+        FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
 
         // Reset the synth white-noise RNG to its fixed seed so that two
         // renderSong calls on the same SongData produce byte-identical

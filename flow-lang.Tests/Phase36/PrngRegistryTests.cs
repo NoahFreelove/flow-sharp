@@ -129,4 +129,60 @@ public class PrngRegistryTests
         var r2 = new PrngRegistry().GetRandom(loc, "anyGen");
         Assert.Equal(r.Next(), r2.Next());
     }
+
+    // ===================================================================
+    // Task 2 facts — ExecutionContext + TestSnapshot integration gates.
+    // ===================================================================
+
+    [Fact]
+    public void ContextOwnsRegistryAcrossRenders()
+    {
+        // FlowEngine owns one PrngRegistry per ExecutionContext.
+        // Calling ResetAtRenderBoundary() between renders must produce the SAME
+        // first draw for the SAME (loc, name) — the two-run cmp-clean contract
+        // at the PRNG-key level, independent of the audio pipeline.
+        using var engine = new FlowEngine(verbose: false);
+        var loc = Loc(100, 1, "renders.flow");
+
+        var rngA = engine.Context.PrngRegistry.GetRandom(loc, "x");
+        int firstA = rngA.Next();
+
+        engine.Context.PrngRegistry.ResetAtRenderBoundary();
+
+        var rngB = engine.Context.PrngRegistry.GetRandom(loc, "x");
+        int firstB = rngB.Next();
+
+        Assert.Equal(firstA, firstB);
+    }
+
+    [Fact]
+    public void TestSnapshotCapturesAndRestores()
+    {
+        // SnapshotState → mutate → RestoreState round-trip must preserve the
+        // post-snapshot first draw at the registry level. Phase 35-04's
+        // hermetic-isolation contract extended to Phase 36's PRNG keys.
+        using var engine = new FlowEngine(verbose: false);
+        var loc = Loc(50, 1, "snapshot.flow");
+
+        // Re-seed via reset so the snapshot captures a fresh registry state
+        // for the (loc, "snapKey") key — no prior draws against it.
+        engine.Context.PrngRegistry.ResetAtRenderBoundary();
+        var rngBeforeSnap = engine.Context.PrngRegistry.GetRandom(loc, "snapKey");
+
+        var snapshot = engine.Context.SnapshotState();
+
+        // Capture what the SAME Random would draw next (the value we expect
+        // to see again after restore). Drain rngBeforeSnap, then mutate further.
+        int expectedFirst = rngBeforeSnap.Next();
+        rngBeforeSnap.Next();
+        engine.Context.PrngRegistry.GetRandom(Loc(999, 1), "noisy");
+
+        engine.Context.RestoreState(snapshot);
+
+        // After restore, requesting the same (loc, "snapKey") yields a Random
+        // whose first draw equals expectedFirst — the registry rewound to the
+        // post-snapshot Random reference whose first draw was expectedFirst.
+        var rngPost = engine.Context.PrngRegistry.GetRandom(loc, "snapKey");
+        Assert.Equal(expectedFirst, rngPost.Next());
+    }
 }

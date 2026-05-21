@@ -54,6 +54,13 @@ public static class FileIO
     /// </summary>
     private static void ExportWavInternal(AudioBuffer buffer, string filepath, int bitDepth)
     {
+        // Phase 36 Plan 36-01 (D-v1.5-06 / D-36-09) — reseed PrngRegistry at the
+        // WAV-export boundary so any unseeded Phase 36 stochastic primitives
+        // upstream of this write produce byte-identical bytes on the next
+        // render. Null-safe — direct-API callers that bypass FlowEngine
+        // (rare; legacy unit-test entry) skip the reseed harmlessly.
+        Core.FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
+
         // Validate inputs
         if (buffer == null)
             throw new ArgumentNullException(nameof(buffer));
