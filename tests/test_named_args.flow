@@ -1,0 +1,49 @@
+// Phase 36 Plan 36-02 — composer-facing acceptance for the universal
+// named-argument call syntax (D-36-11).
+//
+// Exercises the new `(fn name=value)` surface. Per RESEARCH § Named-arg
+// syntax (mirrors Python/C# convention):
+//   - positional args MUST precede all named args
+//   - a named arg `name=expr` binds the slot whose parameter name is `name`
+//   - positional + named args targeting the same slot raises a clear diag
+//   - signatures registered WITHOUT `ParameterNames` (the not-yet-backfilled
+//     tail in Plans 36-03/04) raise a graceful "does not yet support named
+//     arguments" advisory rather than misbehaving (RESEARCH Pitfall 5)
+//
+// USAGE (Plan 35-04 framework — bodies deferred via lazy):
+//   $ dotnet run --project flow-cli -- test tests/test_named_args.flow
+//
+// At Plan 36-02 commit time, the only builtins that opt into named-arg
+// resolution are the ones explicitly annotated in this plan (transpose).
+// Plans 36-03 + 36-04 backfill the remaining ~350 builtin signatures with
+// ParameterNames so the surface works universally; until then, named-arg
+// calls to un-annotated builtins surface the safety-net advisory.
+
+use "@std"
+use "@test"
+
+// Bind the input sequence to a variable — embedding `| C4q D4q |` directly
+// inside a `(transpose ...)` arg list interleaves note-stream lexing with
+// call-arg parsing in unintended ways. The named-arg fact is what we're
+// testing; the input is plumbing.
+Sequence base_seq = | C4q D4q |
+
+// ---- Test 1: named-arg form matches positional form ----
+// `(transpose base_seq amount=2)` and `(transpose base_seq 2)` must produce
+// the same result. Phase 36 Plan 36-02 annotates `transpose` with
+// ParameterNames so this is the canonical surface for both calls. Use
+// `assertNotesMatch` for structural Sequence equality — `assertEq` falls
+// back to reference equality for non-primitive Values (Phase 35 LANG-04).
+(test "transpose named matches positional"
+  lazy((assertNotesMatch (transpose base_seq 2)
+                         (transpose base_seq amount=2))))
+
+// ---- Test 2: negative literal after `=` lexes as a single signed token ----
+// Phase 26 D-04 expression-start set already includes TokenType.Assign, so
+// `arg=-5` parses as a single signed IntLiteral. Exercised through transpose
+// (which accepts a negative semitone for transposing down).
+(test "transpose accepts negative named amount"
+  lazy((assertNotesMatch (transpose base_seq -2)
+                         (transpose base_seq amount=-2))))
+
+(print "ALL NAMED-ARG TESTS REGISTERED")

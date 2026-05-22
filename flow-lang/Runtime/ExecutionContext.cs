@@ -259,8 +259,16 @@ public class ExecutionContext
 
     /// <summary>
     /// Resolves a function call to a specific overload.
+    ///
+    /// <para>
+    /// Phase 36 Plan 36-02 (D-36-11): <paramref name="namedArgTypes"/>
+    /// forwards named-argument Type info to <see cref="OverloadResolver"/>
+    /// when the call surface uses <c>(fn name=value)</c>. Existing callers
+    /// pass null (defaulted) — legacy positional-only behavior is preserved.
+    /// </para>
     /// </summary>
-    public FunctionOverload? ResolveFunction(string name, IReadOnlyList<FlowType> argTypes, Core.SourceLocation? location = null)
+    public FunctionOverload? ResolveFunction(string name, IReadOnlyList<FlowType> argTypes, Core.SourceLocation? location = null,
+        IReadOnlyDictionary<string, FlowType>? namedArgTypes = null)
     {
         var overloads = CurrentFrame.GetFunctionOverloads(name);
 
@@ -272,7 +280,7 @@ public class ExecutionContext
         }
 
         var signatures = overloads.Select(o => o.Signature).ToList();
-        var signature = _overloadResolver.Resolve(name, signatures, argTypes, location);
+        var signature = _overloadResolver.Resolve(name, signatures, argTypes, location, namedArgTypes);
 
         if (signature == null)
             return null;
@@ -484,8 +492,17 @@ public class ExecutionContext
 
     /// <summary>
     /// Tries to resolve a function without reporting errors (for probing).
+    ///
+    /// <para>
+    /// Phase 36 Plan 36-02 (D-36-11): <paramref name="namedArgTypes"/>
+    /// forwards named-arg info to <see cref="OverloadResolver"/> without
+    /// surfacing rejection diagnostics. The Interpreter's main resolution
+    /// path calls this first to probe; only on null does it fall back to
+    /// <see cref="ResolveFunction"/> for the error-reporting pass.
+    /// </para>
     /// </summary>
-    public FunctionOverload? TryResolveFunction(string name, IReadOnlyList<FlowType> argTypes)
+    public FunctionOverload? TryResolveFunction(string name, IReadOnlyList<FlowType> argTypes,
+        IReadOnlyDictionary<string, FlowType>? namedArgTypes = null)
     {
         var overloads = CurrentFrame.GetFunctionOverloads(name);
 
@@ -497,7 +514,7 @@ public class ExecutionContext
         // Create a temporary error reporter that doesn't actually report
         var tempReporter = new ErrorReporter();
         var tempResolver = new OverloadResolver(tempReporter);
-        var signature = tempResolver.Resolve(name, signatures, argTypes, null);
+        var signature = tempResolver.Resolve(name, signatures, argTypes, null, namedArgTypes);
 
         if (signature == null)
             return null;
