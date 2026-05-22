@@ -249,14 +249,20 @@ public static class TransformFunctions
 
     private static void RegisterTranspose(InternalFunctionRegistry registry)
     {
-        // transpose(Sequence, Semitone)
+        // Phase 36 Plan 36-02 (D-36-11): transpose is the seed builtin for
+        // the universal named-arg surface — Plans 36-03/04 backfill the rest.
+        // Both Semitone and Cent overloads share the (seq, amount) parameter
+        // name shape so `(transpose s amount=2)` and `(transpose s amount=+50c)`
+        // both work transparently.
         var transposeSemitoneSig = new FunctionSignature("transpose",
-            [SequenceType.Instance, SemitoneType.Instance]);
+            [SequenceType.Instance, SemitoneType.Instance],
+            ParameterNames: ["seq", "amount"]);
         registry.Register("transpose", transposeSemitoneSig, TransposeSemitone);
 
         // transpose(Sequence, Cent)
         var transposeCentSig = new FunctionSignature("transpose",
-            [SequenceType.Instance, CentType.Instance]);
+            [SequenceType.Instance, CentType.Instance],
+            ParameterNames: ["seq", "amount"]);
         registry.Register("transpose", transposeCentSig, TransposeCent);
     }
 

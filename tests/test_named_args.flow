@@ -31,17 +31,19 @@ Sequence base_seq = | C4q D4q |
 // ---- Test 1: named-arg form matches positional form ----
 // `(transpose base_seq amount=2)` and `(transpose base_seq 2)` must produce
 // the same result. Phase 36 Plan 36-02 annotates `transpose` with
-// ParameterNames so this is the canonical surface for both calls.
+// ParameterNames so this is the canonical surface for both calls. Use
+// `assertNotesMatch` for structural Sequence equality — `assertEq` falls
+// back to reference equality for non-primitive Values (Phase 35 LANG-04).
 (test "transpose named matches positional"
-  lazy((assertEq (transpose base_seq 2)
-                 (transpose base_seq amount=2))))
+  lazy((assertNotesMatch (transpose base_seq 2)
+                         (transpose base_seq amount=2))))
 
 // ---- Test 2: negative literal after `=` lexes as a single signed token ----
 // Phase 26 D-04 expression-start set already includes TokenType.Assign, so
 // `arg=-5` parses as a single signed IntLiteral. Exercised through transpose
 // (which accepts a negative semitone for transposing down).
 (test "transpose accepts negative named amount"
-  lazy((assertEq (transpose base_seq -2)
-                 (transpose base_seq amount=-2))))
+  lazy((assertNotesMatch (transpose base_seq -2)
+                         (transpose base_seq amount=-2))))
 
 (print "ALL NAMED-ARG TESTS REGISTERED")

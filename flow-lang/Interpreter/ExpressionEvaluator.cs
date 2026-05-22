@@ -224,8 +224,25 @@ public class ExpressionEvaluator
         var argValues = call.Arguments.Select(Evaluate).ToList();
         var argTypes = argValues.Select(v => v.Type).ToList();
 
+        // Phase 36 Plan 36-02 (D-36-11): evaluate named-arg values up-front
+        // so the resolver can see their Types. The dict shape mirrors the
+        // AST shape (preserve composer's insertion order via Dictionary<>).
+        Dictionary<string, Value>? namedArgValues = null;
+        Dictionary<string, FlowType>? namedArgTypes = null;
+        if (call.NamedArgs is { Count: > 0 })
+        {
+            namedArgValues = new Dictionary<string, Value>(call.NamedArgs.Count);
+            namedArgTypes = new Dictionary<string, FlowType>(call.NamedArgs.Count);
+            foreach (var (name, expr) in call.NamedArgs)
+            {
+                var val = Evaluate(expr);
+                namedArgValues[name] = val;
+                namedArgTypes[name] = val.Type;
+            }
+        }
+
         // Try to resolve function overload
-        var overload = _context.TryResolveFunction(call.Name, argTypes);
+        var overload = _context.TryResolveFunction(call.Name, argTypes, namedArgTypes);
 
         // If no function found, try looking up as a variable holding a lambda
         if (overload == null)
@@ -247,8 +264,37 @@ public class ExpressionEvaluator
         if (overload == null)
         {
             // Report error using the full resolution path
-            _context.ResolveFunction(call.Name, argTypes, call.Location);
+            _context.ResolveFunction(call.Name, argTypes, call.Location, namedArgTypes);
             return Value.Void();
+        }
+
+        // Phase 36 Plan 36-02 (D-36-11): if the call uses named-args, re-order
+        // argValues to match the resolved signature's positional layout. The
+        // resolver already validated that ParameterNames is non-null and that
+        // no slot is doubly bound, so the lookup-by-name pass is safe here.
+        if (namedArgValues is { Count: > 0 } && overload.Signature.ParameterNames is { } paramNames)
+        {
+            var reorderedArgs = new List<Value>(overload.Signature.InputTypes.Count);
+            // Positional args fill slots 0..argValues.Count-1.
+            for (int i = 0; i < argValues.Count; i++)
+                reorderedArgs.Add(argValues[i]);
+            // Named args fill the remaining slots by parameter-name lookup.
+            // Add placeholders to grow the list, then assign by index — we can't
+            // assume the named-arg dictionary iteration order matches the
+            // signature's slot order (it's source-text order, not declaration order).
+            while (reorderedArgs.Count < overload.Signature.InputTypes.Count)
+                reorderedArgs.Add(Value.Void());
+            foreach (var (name, val) in namedArgValues)
+            {
+                int slot = -1;
+                for (int i = 0; i < paramNames.Count; i++)
+                {
+                    if (paramNames[i] == name) { slot = i; break; }
+                }
+                if (slot >= 0)
+                    reorderedArgs[slot] = val;
+            }
+            argValues = reorderedArgs;
         }
 
         // Execute function
