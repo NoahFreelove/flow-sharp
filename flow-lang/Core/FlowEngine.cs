@@ -7,6 +7,7 @@ using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Audio.Sfz;
 using FlowLang.StandardLibrary.Audio.Tuning;
+using FlowLang.StandardLibrary.Patterns;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.Core;
@@ -114,6 +115,12 @@ public class FlowEngine : IDisposable
         CurrentExecutionContext = _context;
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
+        // Phase 36 Plan 36-05 — register the @patterns stdlib's 13 Tidal-style
+        // combinators (PAT-01 / PAT-02 / GEN-05). Stochastic combinators
+        // (sometimes/degrade/sparseSeq) route their PRNG through
+        // ExecutionContext.PrngRegistry — same per-engine ownership as
+        // HarmonyFunctions.RegisterContextDependent above.
+        PatternFunctions.RegisterContextDependent(internalRegistry, _context);
         // Phase 33 Plan 33-05: wire the SFZ surface — loadSfz(Symbol) +
         // loadSfz(String) + __enableSfzModule(Dict) builtins. All three check
         // ExecutionContext.SfzEnabled at call time, so the registration is

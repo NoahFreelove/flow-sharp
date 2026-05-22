@@ -342,8 +342,23 @@ public class ExpressionEvaluator
                     argValues[i] = argValues[i].ConvertTo(sig.InputTypes[i]);
                 }
             }
-            // Call internal implementation
-            return overload.Implementation!(argValues);
+            // Phase 36 Plan 36-05: thread the call-site SourceLocation through
+            // ExecutionContext.CurrentCallSite so Phase 36 stochastic combinators
+            // (PatternFunctions.sometimes/degrade/sparseSeq) can key their PRNG
+            // by (site, name) without a new lambda-signature overload. Save +
+            // restore so nested builtin calls see their parent's site after the
+            // inner call returns (stack-like discipline without an actual stack).
+            var prevCallSite = _context.CurrentCallSite;
+            _context.CurrentCallSite = call.Location;
+            try
+            {
+                // Call internal implementation
+                return overload.Implementation!(argValues);
+            }
+            finally
+            {
+                _context.CurrentCallSite = prevCallSite;
+            }
         }
         else
         {

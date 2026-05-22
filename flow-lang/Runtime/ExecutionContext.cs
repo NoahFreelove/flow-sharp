@@ -105,6 +105,30 @@ public class ExecutionContext
     /// </summary>
     public PrngRegistry PrngRegistry { get; } = new();
 
+    /// <summary>
+    /// Phase 36 Plan 36-05 — the currently-evaluating builtin call site, set by
+    /// <c>ExpressionEvaluator.EvaluateFunctionCall</c> immediately before invoking
+    /// the registered C# lambda and cleared (reset to <see cref="SourceLocation.Unknown"/>)
+    /// after the lambda returns. Phase 36 stochastic combinators in
+    /// <c>StandardLibrary/Patterns/</c> read this to feed
+    /// <c>PrngRegistry.GetRandom(callSite, name)</c> — the lambda signature
+    /// <c>Func&lt;IReadOnlyList&lt;Value&gt;, Value&gt;</c> does not carry a
+    /// SourceLocation argument, and threading a new overload would touch every
+    /// existing registration site. Setting a per-context field is the smaller diff.
+    ///
+    /// <para>
+    /// CONTRACT: read this ONLY from inside a builtin lambda body. Outside that
+    /// scope it may be stale or <see cref="SourceLocation.Unknown"/>. Builtins
+    /// that nest builtin calls (e.g., a combinator that internally invokes
+    /// another combinator) will see their own outer call's location for the
+    /// duration of the nested execution because the evaluator stack pops back
+    /// up — the field is not stack-allocated. This is acceptable for Phase 36
+    /// PRNG keying: the OUTER combinator's call site is what determines the
+    /// (site, name) PRNG key, which is the determinism contract we want.
+    /// </para>
+    /// </summary>
+    public Core.SourceLocation CurrentCallSite { get; set; } = Core.SourceLocation.Unknown;
+
     // ===== Phase 33 — SFZ surface =====
 
     /// <summary>
