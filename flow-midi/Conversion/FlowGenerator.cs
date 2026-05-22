@@ -38,7 +38,7 @@ static class FlowGenerator
         { (-7, false), "Cbmajor" },   { (-7, true), "Abminor" },
     };
 
-    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true)
+    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false)
     {
         var sb = new StringBuilder();
         var tracks = quantizeResult.Tracks;
@@ -75,7 +75,20 @@ static class FlowGenerator
         // Imports
         sb.AppendLine("use \"@std\"");
         sb.AppendLine("use \"@audio\"");
+        if (useSfz && !roundTrip)
+        {
+            sb.AppendLine("use \"@sfz\"");
+        }
         sb.AppendLine();
+
+        // SFZ piano binding — resolves #piano against VSCO-CE's UprightPiano.sfz via
+        // sfz_root in ~/.config/flow/config.toml. Must render with flow-cli (not
+        // flow-interpreter) — only flow-cli loads the XDG config.
+        if (useSfz && !roundTrip)
+        {
+            sb.AppendLine("Sfz piano = (loadSfz #piano)");
+            sb.AppendLine();
+        }
 
         // Open context blocks
         string indent = "";
@@ -175,7 +188,8 @@ static class FlowGenerator
         {
             // Single section holds all parallel parts.
             sb.AppendLine($"{indent}Song song = [{sectionName}]");
-            sb.AppendLine($"{indent}Buffer output = (renderSong song \"piano\")");
+            string instrumentTag = useSfz ? "sampler:piano" : "piano";
+            sb.AppendLine($"{indent}Buffer output = (renderSong song \"{instrumentTag}\")");
             sb.AppendLine($"{indent}(play output)");
         }
 

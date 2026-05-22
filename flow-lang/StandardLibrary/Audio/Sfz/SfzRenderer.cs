@@ -122,7 +122,6 @@ public class SfzRenderer
 
         // Region match (D-01 O(1) grid lookup).
         SfzRegion? region = patch.Grid[targetMidi, vel];
-        int semitonesShift = 0;
         if (region is null)
         {
             // Nearest-pitch fallback (SPEC-4). SortedByPitch carries
@@ -134,8 +133,6 @@ public class SfzRenderer
                 // Try the exact velocity slot at the nearest pitch first;
                 // fall through to any velocity-row covering region if absent.
                 region = patch.Grid[nearestPitch, vel] ?? FindAnyRegionAtPitch(patch, nearestPitch);
-                if (region is not null)
-                    semitonesShift = targetMidi - nearestPitch;
             }
 
             if (region is null)
@@ -148,6 +145,17 @@ public class SfzRenderer
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
             }
         }
+
+        // Compute pitch shift relative to the matched region's pitch_keycenter.
+        // SFZ regions cover a range via lokey/hikey but the recorded sample
+        // sits at exactly one pitch (pitch_keycenter). Every other pitch in
+        // the region must be varispeed-shifted by (targetMidi - keycenter).
+        // Previously this offset was only applied in the nearest-pitch
+        // fallback branch — direct grid matches at off-keycenter pitches
+        // played the keycenter sample at unity speed, producing wrong pitch
+        // (e.g. VSCO UprightPiano's region 71-74 keyed at 73 played B4/C5/D5
+        // all at C#5/554 Hz).
+        int semitonesShift = targetMidi - region.PitchKeycenter;
 
         // Pull the (possibly varispeed-shifted) buffer from the cache.
         // GetVarispeed returns null only when the underlying WAV wasn't
@@ -241,10 +249,11 @@ public class SfzRenderer
 
         if (!isLooped || loopLen <= 0)
         {
-            // NoLoop / OneShot — straight copy and zero-pad. Mirrors
-            // SampledInstrumentRenderer.cs lines 116-119.
+            // NoLoop / OneShot — straight copy and zero-pad. fitted is mono;
+            // source may be stereo (VSCO-CE patches all ship L-R interleaved),
+            // so read each frame via ReadFrameMono to downmix on the fly.
             int copyLen = Math.Min(source.Frames, targetFrames);
-            for (int i = 0; i < copyLen; i++) fitted[i] = source.Data[i];
+            for (int i = 0; i < copyLen; i++) fitted[i] = ReadFrameMono(source, i);
             return fitted;
         }
 
@@ -261,13 +270,13 @@ public class SfzRenderer
             // Pre-attack head.
             while (dst0 < region.LoopStart && dst0 < targetFrames)
             {
-                fitted[dst0] = source.Data[dst0];
+                fitted[dst0] = ReadFrameMono(source, dst0);
                 dst0++;
             }
             while (dst0 < targetFrames)
             {
                 int rel = (dst0 - region.LoopStart) % loopLen;
-                fitted[dst0] = source.Data[region.LoopStart + rel];
+                fitted[dst0] = ReadFrameMono(source, region.LoopStart + rel);
                 dst0++;
             }
             return fitted;
@@ -276,7 +285,7 @@ public class SfzRenderer
         // Stage 1: pre-attack [0, LoopStart) plays once at the head.
         int dst = 0;
         int headEnd = Math.Min(region.LoopStart, targetFrames);
-        for (; dst < headEnd; dst++) fitted[dst] = source.Data[dst];
+        for (; dst < headEnd; dst++) fitted[dst] = ReadFrameMono(source, dst);
 
         // Stage 2: loop body with crossfade. Each iteration emits
         //   - bodyLen samples (loopLen - xfade frames, straight read)
@@ -302,7 +311,7 @@ public class SfzRenderer
             int straightEnd = effectiveLoopEnd - xfade; // exclusive upper bound of straight read in source
             while (srcReadPos < straightEnd && dst < targetFrames)
             {
-                fitted[dst++] = source.Data[srcReadPos++];
+                fitted[dst++] = ReadFrameMono(source, srcReadPos++);
             }
 
             if (dst >= targetFrames) break;
@@ -321,7 +330,7 @@ public class SfzRenderer
                 int srcB = region.LoopStart + k;            // approaching LoopStart + xfade
                 if (srcA > source.Frames - 1) srcA = source.Frames - 1;
                 if (srcB > source.Frames - 1) srcB = source.Frames - 1;
-                fitted[dst++] = wA * source.Data[srcA] + wB * source.Data[srcB];
+                fitted[dst++] = wA * ReadFrameMono(source, srcA) + wB * ReadFrameMono(source, srcB);
             }
 
             // Next iteration begins at LoopStart + xfade — those first
@@ -331,6 +340,24 @@ public class SfzRenderer
             firstIteration = false;
         }
         return fitted;
+    }
+
+    /// <summary>
+    /// Read a single frame from <paramref name="source"/> as a mono sample,
+    /// averaging across all channels. Stereo sources (VSCO-CE patches are all
+    /// L-R interleaved) require this downmix because <c>AssembleBody</c>'s
+    /// <c>fitted[]</c> buffer is mono. Indexing <c>source.Data[frame]</c>
+    /// directly would alias the interleaved stream as half-rate mono — every
+    /// note plays an octave low with R-channel fizz between L samples.
+    /// </summary>
+    private static float ReadFrameMono(AudioBuffer source, int frame)
+    {
+        int ch = source.Channels;
+        if (ch == 1) return source.Data[frame];
+        int baseIdx = frame * ch;
+        float sum = 0f;
+        for (int c = 0; c < ch; c++) sum += source.Data[baseIdx + c];
+        return sum / ch;
     }
 
     /// <summary>

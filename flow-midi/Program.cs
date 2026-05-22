@@ -14,6 +14,7 @@ class Program
         string? outputPath = null;
         bool dump = false;
         bool sustainPedal = true;  // default ON for piano-style holds; --no-sustain to disable
+        bool useSfz = false;       // opt-in: emit SFZ-pipeline source (VSCO-CE UprightPiano)
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -30,6 +31,12 @@ class Program
                     break;
                 case "--sustain":
                     sustainPedal = true;
+                    break;
+                case "--sfz":
+                    useSfz = true;
+                    break;
+                case "--no-sfz":
+                    useSfz = false;
                     break;
                 case "-o":
                     if (i + 1 >= args.Length)
@@ -83,7 +90,7 @@ class Program
             }
 
             var quantizeResult = Conversion.Quantizer.Quantize(midiFile);
-            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath), sustainPedal: sustainPedal);
+            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath), sustainPedal: sustainPedal, useSfz: useSfz);
 
             if (outputPath != null)
             {
@@ -117,5 +124,9 @@ class Program
         Console.Error.WriteLine("  -h, --help        Show this help message");
         Console.Error.WriteLine("  --sustain         Wrap output in sustainPedal { ... } (default ON; matches piano hold)");
         Console.Error.WriteLine("  --no-sustain      Disable sustainPedal wrapping (use for non-piano / staccato music)");
+        Console.Error.WriteLine("  --sfz             Emit SFZ-pipeline source — renders via VSCO-CE UprightPiano.sfz");
+        Console.Error.WriteLine("                    (requires `sfz_root` in ~/.config/flow/config.toml + VSCO-CE installed;");
+        Console.Error.WriteLine("                     must be rendered with flow-cli, NOT flow-interpreter)");
+        Console.Error.WriteLine("  --no-sfz          (default) Use bundled piano samples via renderSong \"piano\"");
     }
 }
