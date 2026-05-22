@@ -33,12 +33,14 @@ public static class EffectsFunctions
     {
         // reverb(Buffer, Double) -> Buffer — room size only, default damping=0.5, mix=0.3
         var reverbSimpleSig = new FunctionSignature("reverb",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "room"]);
         registry.Register("reverb", reverbSimpleSig, ReverbSimple);
 
         // reverb(Buffer, Double, Double, Double) -> Buffer — room, damping, mix
         var reverbFullSig = new FunctionSignature("reverb",
-            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "room", "damping", "mix"]);
         registry.Register("reverb", reverbFullSig, ReverbFull);
 
         // Phase 26.2 ERG-02: reverb(Buffer, Double, Second) — decay time as Second.
@@ -75,7 +77,8 @@ public static class EffectsFunctions
         // accepts a Double third arg too). Thus per-sample identity holds by
         // construction (both calls invoke this same lambda).
         var reverbSecondSig = new FunctionSignature("reverb",
-            [BufferType.Instance, DoubleType.Instance, SecondType.Instance]);
+            [BufferType.Instance, DoubleType.Instance, SecondType.Instance],
+            ParameterNames: ["buf", "room", "decay"]);
         registry.Register("reverb", reverbSecondSig, args =>
         {
             var buffer = args[0].As<AudioBuffer>();
@@ -136,17 +139,20 @@ public static class EffectsFunctions
     {
         // lowpass(Buffer, Double) -> Buffer — cutoff Hz
         var lowpassSig = new FunctionSignature("lowpass",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "cutoff"]);
         registry.Register("lowpass", lowpassSig, LowpassFilter);
 
         // highpass(Buffer, Double) -> Buffer — cutoff Hz
         var highpassSig = new FunctionSignature("highpass",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "cutoff"]);
         registry.Register("highpass", highpassSig, HighpassFilter);
 
         // bandpass(Buffer, Double, Double) -> Buffer — low Hz, high Hz
         var bandpassSig = new FunctionSignature("bandpass",
-            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "low", "high"]);
         registry.Register("bandpass", bandpassSig, BandpassFilter);
 
         // Phase 26.2 ERG-04: Hertz-typed overloads — explicit frequency-type
@@ -155,15 +161,18 @@ public static class EffectsFunctions
         // factory wraps a double), so args[1].As<double>() reads it directly
         // without per-overload coercion.
         var lowpassHzSig = new FunctionSignature("lowpass",
-            [BufferType.Instance, HertzType.Instance]);
+            [BufferType.Instance, HertzType.Instance],
+            ParameterNames: ["buf", "cutoff"]);
         registry.Register("lowpass", lowpassHzSig, LowpassFilter);
 
         var highpassHzSig = new FunctionSignature("highpass",
-            [BufferType.Instance, HertzType.Instance]);
+            [BufferType.Instance, HertzType.Instance],
+            ParameterNames: ["buf", "cutoff"]);
         registry.Register("highpass", highpassHzSig, HighpassFilter);
 
         var bandpassHzSig = new FunctionSignature("bandpass",
-            [BufferType.Instance, HertzType.Instance, HertzType.Instance]);
+            [BufferType.Instance, HertzType.Instance, HertzType.Instance],
+            ParameterNames: ["buf", "low", "high"]);
         registry.Register("bandpass", bandpassHzSig, BandpassFilter);
     }
 
@@ -219,13 +228,15 @@ public static class EffectsFunctions
     {
         // compress(Buffer, Double, Double) -> Buffer — threshold dB, ratio
         var compressSimpleSig = new FunctionSignature("compress",
-            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "threshold", "ratio"]);
         registry.Register("compress", compressSimpleSig, CompressSimple);
 
         // compress(Buffer, Double, Double, Double, Double) -> Buffer — threshold, ratio, attack ms, release ms
         var compressFullSig = new FunctionSignature("compress",
             [BufferType.Instance, DoubleType.Instance, DoubleType.Instance,
-             DoubleType.Instance, DoubleType.Instance]);
+             DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "threshold", "ratio", "attack", "release"]);
         registry.Register("compress", compressFullSig, CompressFull);
 
         // Phase 26.2 ERG-02 + D-10: compress(Buffer, Decibel, Double, Millisecond, Millisecond)
@@ -236,7 +247,8 @@ public static class EffectsFunctions
         // so args[i].As<double>() reads each one directly.
         var compressMusicTypedSig = new FunctionSignature("compress",
             [BufferType.Instance, DecibelType.Instance, DoubleType.Instance,
-             MillisecondType.Instance, MillisecondType.Instance]);
+             MillisecondType.Instance, MillisecondType.Instance],
+            ParameterNames: ["buf", "threshold", "ratio", "attack", "release"]);
         registry.Register("compress", compressMusicTypedSig, CompressFull);
     }
 
@@ -280,7 +292,8 @@ public static class EffectsFunctions
     {
         // delay(Buffer, Double, Double, Double) -> Buffer — time ms, feedback, mix
         var delaySig = new FunctionSignature("delay",
-            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "timeMs", "feedback", "mix"]);
         registry.Register("delay", delaySig, DelayEffect);
 
         // Phase 26.2 ERG-02: delay(Buffer, Millisecond, Double, Double) — explicit ms ergonomics.
@@ -288,7 +301,8 @@ public static class EffectsFunctions
         // (Value.Millisecond factory wraps a double — see Value.cs:36), so
         // args[1].As<double>() reads it directly without per-overload coercion.
         var delayMsSig = new FunctionSignature("delay",
-            [BufferType.Instance, MillisecondType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, MillisecondType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "timeMs", "feedback", "mix"]);
         registry.Register("delay", delayMsSig, DelayEffect);
     }
 
@@ -348,7 +362,8 @@ public static class EffectsFunctions
     {
         // delay(Buffer, NoteValue, Double, Double) -> Buffer — rate (NoteValue), feedback, mix
         var delaySyncedSig = new FunctionSignature("delay",
-            [BufferType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "rate", "feedback", "mix"]);
         registry.Register("delay", delaySyncedSig, args =>
         {
             var buffer = args[0].As<AudioBuffer>();
@@ -379,7 +394,8 @@ public static class EffectsFunctions
     {
         // gain(Buffer, Double) -> Buffer — gain in dB
         var gainSig = new FunctionSignature("gain",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "db"]);
         registry.Register("gain", gainSig, GainEffect);
 
         // gain(Buffer, Decibel) -> Buffer — same dB semantics, exact-match score (1000)
@@ -387,7 +403,8 @@ public static class EffectsFunctions
         // for documentation/discoverability. Delegates to the same GainEffect lambda; the
         // underlying value's data is already a double (see Value.Decibel in Runtime/Value.cs).
         var gainDecibelSig = new FunctionSignature("gain",
-            [BufferType.Instance, DecibelType.Instance]);
+            [BufferType.Instance, DecibelType.Instance],
+            ParameterNames: ["buf", "db"]);
         registry.Register("gain", gainDecibelSig, GainEffect);
     }
 
@@ -430,13 +447,15 @@ public static class EffectsFunctions
     {
         // sidechain(Buffer source, Buffer trigger, Double threshold, Double ratio) -> Buffer
         var sidechainSimpleSig = new FunctionSignature("sidechain",
-            [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "sidechain", "threshold", "ratio"]);
         registry.Register("sidechain", sidechainSimpleSig, SidechainSimple);
 
         // sidechain(Buffer source, Buffer trigger, Double threshold, Double ratio, Double attackMs, Double releaseMs) -> Buffer
         var sidechainFullSig = new FunctionSignature("sidechain",
             [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance,
-             DoubleType.Instance, DoubleType.Instance]);
+             DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "sidechain", "threshold", "ratio", "attack", "release"]);
         registry.Register("sidechain", sidechainFullSig, SidechainFull);
 
         // Phase 26.2 ERG-02 + D-10: sidechain(Buffer, Buffer, Decibel, Double, Millisecond, Millisecond)
@@ -445,7 +464,8 @@ public static class EffectsFunctions
         // backing IS double, so args[i].As<double>() reads each one directly.
         var sidechainMusicTypedSig = new FunctionSignature("sidechain",
             [BufferType.Instance, BufferType.Instance, DecibelType.Instance, DoubleType.Instance,
-             MillisecondType.Instance, MillisecondType.Instance]);
+             MillisecondType.Instance, MillisecondType.Instance],
+            ParameterNames: ["buf", "sidechain", "threshold", "ratio", "attack", "release"]);
         registry.Register("sidechain", sidechainMusicTypedSig, SidechainFull);
     }
 
@@ -502,7 +522,8 @@ public static class EffectsFunctions
     private static void RegisterVolume(InternalFunctionRegistry registry)
     {
         var volumeSig = new FunctionSignature("volume",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "factor"]);
         registry.Register("volume", volumeSig, VolumeEffect);
     }
 

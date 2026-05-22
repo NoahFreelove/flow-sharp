@@ -89,18 +89,21 @@ public static class SfzBuiltins
         // (set)/(get)/(remove)/etc. registrations so the actual concrete type
         // Dict<Symbol, String> matches via VoidType-wildcard compatibility.
         var enableSig = new FunctionSignature("__enableSfzModule",
-            [new DictType(VoidType.Instance, VoidType.Instance)]);
+            [new DictType(VoidType.Instance, VoidType.Instance)],
+            ParameterNames: ["instruments"]);
         registry.Register("__enableSfzModule", enableSig,
             args => EnableSfzModule(args, context));
 
         // loadSfz(Symbol) — Phase 26.1 SYM-01 strict separation from String
         // ensures the overload resolver picks the right body (Pitfall 12).
-        var sigSym = new FunctionSignature("loadSfz", [SymbolType.Instance]);
+        var sigSym = new FunctionSignature("loadSfz", [SymbolType.Instance],
+            ParameterNames: ["instrument"]);
         registry.Register("loadSfz", sigSym,
             args => LoadSfzSymbol(args, context));
 
         // loadSfz(String) — bypass-the-dict literal path.
-        var sigStr = new FunctionSignature("loadSfz", [StringType.Instance]);
+        var sigStr = new FunctionSignature("loadSfz", [StringType.Instance],
+            ParameterNames: ["path"]);
         registry.Register("loadSfz", sigStr,
             args => LoadSfzString(args, context));
     }

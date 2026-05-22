@@ -51,7 +51,8 @@ public static class TransformFunctions
     {
         // legato(Sequence, Double) -> Sequence
         var legatoSig = new FunctionSignature("legato",
-            [SequenceType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "overlap"]);
         registry.Register("legato", legatoSig, args =>
         {
             var seq = args[0].As<SequenceData>();
@@ -62,7 +63,8 @@ public static class TransformFunctions
 
         // portamento(Sequence, Millisecond) -> Sequence
         var portamentoSig = new FunctionSignature("portamento",
-            [SequenceType.Instance, MillisecondType.Instance]);
+            [SequenceType.Instance, MillisecondType.Instance],
+            ParameterNames: ["seq", "glideMs"]);
         registry.Register("portamento", portamentoSig, args =>
         {
             var seq = args[0].As<SequenceData>();
@@ -94,7 +96,8 @@ public static class TransformFunctions
         FlowLang.Runtime.ExecutionContext context)
     {
         var quantizeSig = new FunctionSignature("quantize",
-            [SequenceType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, NoteValueType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "resolution", "strength", "swing"]);
         registry.Register("quantize", quantizeSig, args =>
         {
             var seq = args[0].As<SequenceData>();
@@ -324,7 +327,8 @@ public static class TransformFunctions
     private static void RegisterInvert(InternalFunctionRegistry registry)
     {
         var invertSig = new FunctionSignature("invert",
-            [SequenceType.Instance]);
+            [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("invert", invertSig, Invert);
     }
 
@@ -372,7 +376,8 @@ public static class TransformFunctions
     private static void RegisterRetrograde(InternalFunctionRegistry registry)
     {
         var retrogradeSig = new FunctionSignature("retrograde",
-            [SequenceType.Instance]);
+            [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("retrograde", retrogradeSig, Retrograde);
     }
 
@@ -401,11 +406,13 @@ public static class TransformFunctions
     private static void RegisterAugmentDiminish(InternalFunctionRegistry registry)
     {
         var augmentSig = new FunctionSignature("augment",
-            [SequenceType.Instance]);
+            [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("augment", augmentSig, Augment);
 
         var diminishSig = new FunctionSignature("diminish",
-            [SequenceType.Instance]);
+            [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("diminish", diminishSig, Diminish);
     }
 
@@ -498,11 +505,13 @@ public static class TransformFunctions
     private static void RegisterOctaveShift(InternalFunctionRegistry registry)
     {
         var upSig = new FunctionSignature("up",
-            [SequenceType.Instance, IntType.Instance]);
+            [SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "octaves"]);
         registry.Register("up", upSig, OctaveUp);
 
         var downSig = new FunctionSignature("down",
-            [SequenceType.Instance, IntType.Instance]);
+            [SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "octaves"]);
         registry.Register("down", downSig, OctaveDown);
     }
 
@@ -524,12 +533,14 @@ public static class TransformFunctions
     {
         // repeat(Sequence, Int)
         var repeatSig = new FunctionSignature("repeat",
-            [SequenceType.Instance, IntType.Instance]);
+            [SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "times"]);
         registry.Register("repeat", repeatSig, Repeat);
 
         // repeat(Sequence, Int, Semitone)
         var repeatTransposeSig = new FunctionSignature("repeat",
-            [SequenceType.Instance, IntType.Instance, SemitoneType.Instance]);
+            [SequenceType.Instance, IntType.Instance, SemitoneType.Instance],
+            ParameterNames: ["seq", "times", "transposeBy"]);
         registry.Register("repeat", repeatTransposeSig, RepeatTranspose);
     }
 
@@ -588,7 +599,8 @@ public static class TransformFunctions
     private static void RegisterConcat(InternalFunctionRegistry registry)
     {
         var concatSig = new FunctionSignature("concat",
-            [SequenceType.Instance, SequenceType.Instance]);
+            [SequenceType.Instance, SequenceType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("concat", concatSig, ConcatSequences);
     }
 
@@ -616,15 +628,18 @@ public static class TransformFunctions
     private static void RegisterDynamicTransforms(InternalFunctionRegistry registry)
     {
         var crescSig = new FunctionSignature("crescendo",
-            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "startVel", "endVel"]);
         registry.Register("crescendo", crescSig, Crescendo);
 
         var decrescSig = new FunctionSignature("decrescendo",
-            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "startVel", "endVel"]);
         registry.Register("decrescendo", decrescSig, Decrescendo);
 
         var swellSig = new FunctionSignature("swell",
-            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "edgeVel", "peakVel"]);
         registry.Register("swell", swellSig, Swell);
     }
 
@@ -744,15 +759,18 @@ public static class TransformFunctions
     private static void RegisterTempoTransforms(InternalFunctionRegistry registry)
     {
         var ritSig = new FunctionSignature("ritardando",
-            [SequenceType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "amount"]);
         registry.Register("ritardando", ritSig, RitardandoTransform);
 
         var accelSig = new FunctionSignature("accelerando",
-            [SequenceType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "amount"]);
         registry.Register("accelerando", accelSig, AccelerandoTransform);
 
         var fermataSig = new FunctionSignature("fermata",
-            [SequenceType.Instance, IntType.Instance]);
+            [SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "index"]);
         registry.Register("fermata", fermataSig, FermataTransform);
     }
 
@@ -873,7 +891,8 @@ public static class TransformFunctions
     private static void RegisterHumanize(InternalFunctionRegistry registry)
     {
         var humanizeSig = new FunctionSignature("humanize",
-            [SequenceType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "amount"]);
         registry.Register("humanize", humanizeSig, Humanize);
     }
 
@@ -930,7 +949,8 @@ public static class TransformFunctions
     private static void RegisterHumanizeGaussian(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("humanizeGaussian",
-            [SequenceType.Instance, DoubleType.Instance, IntType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "amount", "seed"]);
         registry.Register("humanizeGaussian", sig, HumanizeGaussian);
     }
 
@@ -1031,11 +1051,13 @@ public static class TransformFunctions
     private static void RegisterOrnamentTransforms(InternalFunctionRegistry registry)
     {
         var trillSig = new FunctionSignature("trill",
-            [SequenceType.Instance, SemitoneType.Instance]);
+            [SequenceType.Instance, SemitoneType.Instance],
+            ParameterNames: ["seq", "interval"]);
         registry.Register("trill", trillSig, Trill);
 
         var tremSig = new FunctionSignature("tremolo",
-            [SequenceType.Instance, IntType.Instance]);
+            [SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "reps"]);
         registry.Register("tremolo", tremSig, Tremolo);
     }
 

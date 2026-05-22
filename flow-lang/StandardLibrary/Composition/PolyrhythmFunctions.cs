@@ -19,12 +19,14 @@ public static class PolyrhythmFunctions
     {
         // polyrhythm(Sequence, Sequence) -> Buffer
         var sig2 = new FunctionSignature("polyrhythm",
-            [SequenceType.Instance, SequenceType.Instance]);
+            [SequenceType.Instance, SequenceType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("polyrhythm", sig2, Polyrhythm);
 
         // polyrhythm(Sequence, Sequence, Int) -> Buffer (beat count override)
         var sig3 = new FunctionSignature("polyrhythm",
-            [SequenceType.Instance, SequenceType.Instance, IntType.Instance]);
+            [SequenceType.Instance, SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b", "totalBeats"]);
         registry.Register("polyrhythm", sig3, Polyrhythm);
     }
 

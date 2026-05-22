@@ -36,16 +36,19 @@ public static class ScalaBuiltins
     public static void Register(InternalFunctionRegistry registry)
     {
         // 1-arg: loadScala(String) → Tuning
-        var sigOne = new FunctionSignature("loadScala", [StringType.Instance]);
+        var sigOne = new FunctionSignature("loadScala", [StringType.Instance],
+            ParameterNames: ["path"]);
         registry.Register("loadScala", sigOne, LoadScalaOneArg);
 
         // 2-arg: loadScala(String, String) → Tuning
         var sigTwo = new FunctionSignature("loadScala",
-            [StringType.Instance, StringType.Instance]);
+            [StringType.Instance, StringType.Instance],
+            ParameterNames: ["sclPath", "kbmPath"]);
         registry.Register("loadScala", sigTwo, LoadScalaTwoArg);
 
         // (str Tuning) → String  per CONTEXT D-04 description format
-        var sigStrTuning = new FunctionSignature("str", [TuningType.Instance]);
+        var sigStrTuning = new FunctionSignature("str", [TuningType.Instance],
+            ParameterNames: ["tuning"]);
         registry.Register("str", sigStrTuning, StrTuning);
     }
 

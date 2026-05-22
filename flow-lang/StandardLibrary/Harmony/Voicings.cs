@@ -34,7 +34,8 @@ public static class Voicings
     {
         // inversion(Chord, Int) -> Chord
         var inversionSig = new FunctionSignature("inversion",
-            [ChordType.Instance, IntType.Instance]);
+            [ChordType.Instance, IntType.Instance],
+            ParameterNames: ["chord", "n"]);
         registry.Register("inversion", inversionSig, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -44,7 +45,8 @@ public static class Voicings
 
         // voicing(Chord, String) -> Chord
         var voicingSig = new FunctionSignature("voicing",
-            [ChordType.Instance, StringType.Instance]);
+            [ChordType.Instance, StringType.Instance],
+            ParameterNames: ["chord", "voicing"]);
         registry.Register("voicing", voicingSig, args =>
         {
             var chord = args[0].As<ChordData>();

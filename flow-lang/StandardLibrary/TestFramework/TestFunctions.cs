@@ -43,7 +43,8 @@ public static class TestFunctions
         // (test "name" body) — body deferred via LazyType wrap (Pitfall 10).
         var testSig = new FunctionSignature(
             "test",
-            [StringType.Instance, new LazyType(VoidType.Instance)]);
+            [StringType.Instance, new LazyType(VoidType.Instance)],
+            ParameterNames: ["name", "body"]);
         registry.Register("test", testSig, args =>
         {
             var name = args[0].As<string>();
@@ -54,7 +55,8 @@ public static class TestFunctions
 
         // (assert cond) — single bool arg; throws AssertionException on false.
         var assertSig = new FunctionSignature(
-            "assert", [BoolType.Instance]);
+            "assert", [BoolType.Instance],
+            ParameterNames: ["cond"]);
         registry.Register("assert", assertSig, args =>
         {
             AssertionHelpers.AssertOrThrow(args[0].As<bool>());
@@ -64,7 +66,8 @@ public static class TestFunctions
         // (assertEq a b) — Void-wildcard pair per the (equals a b) precedent.
         var assertEqSig = new FunctionSignature(
             "assertEq",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["actual", "expected"]);
         registry.Register("assertEq", assertEqSig, args =>
         {
             AssertionHelpers.AssertEqOrThrow(args[0], args[1]);
@@ -74,7 +77,8 @@ public static class TestFunctions
         // (assertNotesMatch seqA seqB) — structural Sequence equality.
         var assertNotesMatchSig = new FunctionSignature(
             "assertNotesMatch",
-            [SequenceType.Instance, SequenceType.Instance]);
+            [SequenceType.Instance, SequenceType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("assertNotesMatch", assertNotesMatchSig, args =>
         {
             var a = args[0].As<SequenceData>();
@@ -86,7 +90,8 @@ public static class TestFunctions
         // (assertBytesEqual buf1 buf2) — PCM sample-for-sample equality.
         var assertBytesEqualSig = new FunctionSignature(
             "assertBytesEqual",
-            [BufferType.Instance, BufferType.Instance]);
+            [BufferType.Instance, BufferType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("assertBytesEqual", assertBytesEqualSig, args =>
         {
             var a = args[0].As<AudioBuffer>();
@@ -98,7 +103,8 @@ public static class TestFunctions
         // (assertWithinDb buf1 buf2 toleranceDb) — SPEC-8 100 ms RMS window.
         var assertWithinDbSig = new FunctionSignature(
             "assertWithinDb",
-            [BufferType.Instance, BufferType.Instance, DecibelType.Instance]);
+            [BufferType.Instance, BufferType.Instance, DecibelType.Instance],
+            ParameterNames: ["a", "b", "tolerance"]);
         registry.Register("assertWithinDb", assertWithinDbSig, args =>
         {
             var a = args[0].As<AudioBuffer>();
