@@ -55,6 +55,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), lands a foundational language consistency pass — prefix-only arithmetic standardization (Phase 26) followed by symbols + tuples + generic dicts (Phase 26.1) — and resolves the music-type ergonomics gap surfaced after Phase 25 (Phase 26.2). 41 requirements across 12 phases.
 
 **Locked decisions** (from `/gsd-new-milestone` discussion):
+
 - D-01: Tuplet bracket syntax is `{N:M ...}` (braces)
 - D-02: Pragmas are file-scope only, top-of-file only, NOT propagated via `use`
 - D-03: Microtonal scope is named-tunings wedge; full Scala loader deferred to v1.4
@@ -103,6 +104,7 @@ Full details for the Phase 18–34 detail sections were preserved in `.planning/
 Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phases (35–41) Flow adds 23 picked features + 4 v1.4 carryovers + housekeeping to take Flow from "credible single-author public language" to "real citizen of the music-software world" alongside TidalCycles, Sonic Pi, Strudel, and SuperCollider — extending creative reach (live coding revamp, generative algebra, improv API), ecosystem interop (notation export, real-time MIDI, transport sync), and distribution (WASM playground, cross-platform binaries, docs generator). 66 requirements across 7 phases. Pre-traction no-deprecation latitude is ACTIVE — breaking changes ship in one commit with in-repo migrators.
 
 **Locked decisions** (from `/gsd-new-milestone` discussion + research synthesis):
+
 - D-v1.5-01: Pre-traction no-deprecation latitude is ACTIVE — breaking syntax/builtin changes ship in single commits; in-repo migrators only.
 - D-v1.5-02: WASM playground ships on Mono-WASM jiterpreter, NOT NativeAOT-LLVM. Reflection-heavy `InternalFunctionRegistry` would require source-generator pass — deferred to v1.6.
 - D-v1.5-03: Phase vocoder hand-rolled (RubberBand GPL hazard rejected, same posture as Phase 29 SPEC-2 license discipline).
@@ -128,16 +130,20 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 ### Phase Details
 
 ### Phase 35: Language Foundation
+
 **Goal**: Pattern matching, multi-line diagnostics, a pure-Flow test framework, and `-> as name` chain naming all land — unblocking every later phase. Composer can write `(match seq | Cmaj7 => "I" | Dm7 => "ii" | _ => "other")`, see Rust-style multi-line error diagnostics with source-quoted spans, write `(test "name" body)` blocks that run via `flow test`, and name intermediate values mid-chain with `seq -> (transpose 2) as melody -> render`. Phase also closes v1.4 housekeeping carryover.
 **Depends on**: Nothing (first v1.5 phase — dependency root per D-v1.5-10). Span migration / diagnostics renderer runs first within the phase, then test framework, then pattern matching, then `-> as name`.
 **Requirements**: LANG-01, LANG-02, LANG-03, LANG-04, TEST-01, TEST-02, HK-01, HK-02, HK-03, HK-04
 **Success Criteria** (what must be TRUE):
+
   1. Composer can write a `match` expression with literal / constructor / wildcard / guard arms and music-aware extractors (chord quality `Cmaj7`, roman numeral `V7`, articulation `#staccato`); non-exhaustive matches WARN to stderr and fall through to `Void` (charitable interpretation per D-v1.5-05); `enable matchExhaustive;` pragma promotes to errors. (LANG-01, LANG-02)
   2. Composer can write `seq -> (transpose 2) as melody -> (legato 0.5) as legato-melody -> render` and reference `melody` / `legato-melody` as intermediate-value bindings without breaking the chain. (LANG-03)
   3. Parse errors and runtime type mismatches render as Rust-style multi-line diagnostics — source-quoted span, caret pointer, label, secondary notes, and "did you mean?" Levenshtein suggestions for unknown identifiers in scope. (LANG-04)
   4. Composer can write `tests/test_foo.flow` containing `(test "name" body)` blocks with `(assert ...)`, `(assertEq a b)`, `(assertNotesMatch seqA seqB)`, `(assertBytesEqual buf1 buf2)`, and `(assertWithinDb buf1 buf2 0.5dB)` primitives; `flow test [path]` discovers and runs them with hermetic isolation (musical context stack + voice pool + PRNG state + ExecutionContext bindings reset between tests in a single FlowEngine process). (TEST-01, TEST-02)
   5. v1.4 housekeeping cleared: humanizeGaussian voice-block bug fixed (HK-01); Phase 17 HUMAN-UAT rows 1-3 closed (HK-02); Phase 04 VERIFICATION.md gaps closed (HK-03); CLAUDE.md "Public as of v1.4" footnote rewritten to match the post-public deprecation framing (HK-04).
+
 **Plans**: 7 plans
+
 - [x] 35-01-PLAN.md — Span migration foundation (LANG-04 prereq)
 - [x] 35-02-PLAN.md — v1.4 housekeeping closeout (HK-01..04)
 - [x] 35-03-PLAN.md — Rust-style diagnostics renderer (LANG-04)
@@ -147,21 +153,25 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [x] 35-07-PLAN.md — -> as name chain naming (LANG-03)
 
 ### Phase 36: Sequence Algebra & Generative
+
 **Goal**: Composer can write Tidal-style pattern algebra over `Sequence` values (12 combinators that compose via `->`), generate musical material from Markov chains / L-systems / cellular automata / Lorenz attractors as first-class stdlib primitives, parameterize sections with positional args, and improvise chord-aware Markov solos over a progression — all with deterministic seeding routed through the new PrngRegistry.
 **Depends on**: Phase 35 (parameterized-section destructuring uses match patterns; D-v1.5-10). Phase 36 ↔ Phase 37 are commutative; milestone orders 36 first per PROJECT.md.
 **Requirements**: PAT-01, PAT-02, GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, SECT-01, IMPROV-01
 **Success Criteria** (what must be TRUE):
+
   1. Composer can chain `seq -> (every 4 (fast 2)) -> (sometimes rev) -> (jux (transpose 7))` and the 12 Tidal-style combinators (every/fast/slow/chunk/phase/rev/jux/sometimes/often/rarely/degrade/superimpose) all compose cleanly via existing `->`. Failures (zero-length sequence, divide-by-zero rate) charitably interpreted with stderr advisory. (PAT-01, PAT-02)
   2. Composer can call `(markov corpus 2 16 seed)`, `(lsystem #A {<<#A, <<#A #B>>>>} 4)`, `(cellular 30 16 32 seed)` / `(life 16 16 32 seed)`, `(lorenz 10.0 28.0 2.667 200 seed)` / `(logistic 3.9 200 seed)` and get a deterministic `Sequence` (or `Array[Double]` for chaos maps quantized via `(quantizeToScale series scale)`). (GEN-01, GEN-02, GEN-03, GEN-04)
   3. All GEN-* primitives route their RNGs through `Runtime/PrngRegistry` keyed by `(SourceLocation, generator-name)`. Two consecutive runs at the same git SHA produce byte-identical WAV+MIDI output (two-run cmp-clean determinism contract per Phase 18/25/27/33 inheritance). Lorenz cross-platform FP divergence documented as platform-specific limitation; same-platform two-run cmp-clean preserved. (GEN-05)
   4. Composer can write `section verse(Note root, Int repeats) { ... }` and call it as `[verse(C4, 2) verse(G4, 1) chorus]` — section args bind in a synthetic stack frame on call, closure over outer musical context preserved. Existing zero-arg `section verse { ... }` form unchanged. (SECT-01)
   5. Composer can call `(jam over=chords style=#bebop length=8bars seed=N)` and get a chord-aware melodic Sequence respecting chord tones on strong beats and scale tones on weak beats; deterministic when `seed` provided; `#jazz`, `#blues`, `#classical` baseline rule packs ship. (IMPROV-01)
+
 **Plans**: 12 plans (pending execution)
-- [ ] 36-01-PLAN.md — PrngRegistry foundation + render-boundary hooks + two-run determinism harness (GEN-05)
-- [ ] 36-02-PLAN.md — Universal named-argument syntax (lexer + parser + OverloadResolver) — D-36-11 foundation, no backfill yet (PAT-01)
-- [ ] 36-03-PLAN.md — Named-arg backfill across BuiltInFunctions.cs + Collections + Bars + DictFunctions (PAT-01)
-- [ ] 36-04-PLAN.md — Named-arg backfill across Audio + DSP + Transforms + Composition + Harmony + TestFramework (PAT-01)
-- [ ] 36-05-PLAN.md — @patterns stdlib: 13 Tidal combinators (every/fast/slow/chunk/phase/rev/jux/sometimes/iter/palindrome/degrade/superimpose + sparseSeq) (PAT-01, PAT-02, GEN-05)
+
+- [x] 36-01-PLAN.md — PrngRegistry foundation + render-boundary hooks + two-run determinism harness (GEN-05)
+- [x] 36-02-PLAN.md — Universal named-argument syntax (lexer + parser + OverloadResolver) — D-36-11 foundation, no backfill yet (PAT-01)
+- [x] 36-03-PLAN.md — Named-arg backfill across BuiltInFunctions.cs + Collections + Bars + DictFunctions (PAT-01)
+- [x] 36-04-PLAN.md — Named-arg backfill across Audio + DSP + Transforms + Composition + Harmony + TestFramework (PAT-01)
+- [x] 36-05-PLAN.md — @patterns stdlib: 13 Tidal combinators (every/fast/slow/chunk/phase/rev/jux/sometimes/iter/palindrome/degrade/superimpose + sparseSeq) (PAT-01, PAT-02, GEN-05)
 - [ ] 36-06-PLAN.md — Markov primitives + MarkovModel reference-identity type (GEN-01, GEN-05)
 - [ ] 36-07-PLAN.md — L-system primitives with Symbol alphabet + LsystemModel reference-identity type (GEN-02, GEN-05)
 - [ ] 36-08-PLAN.md — Cellular automata: 1D elementary CA + 2D Game of Life (GEN-03, GEN-05)
@@ -171,66 +181,81 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [ ] 36-12-PLAN.md — Composer-facing examples + Phase 36 VERIFICATION + ROADMAP/STATE/REQUIREMENTS closure (all 9 reqs)
 
 ### Phase 37: Sound Design + Sampler Polish
+
 **Goal**: Closes 4 v1.4 carryovers (stereo pan polish, SFZ round-robin, sampled drums, more flute samples, warmer piano) plus ships granular synthesis + independent time-stretch + pitch-shift as first-class native-citizen builtins composable with the existing DSP rack. Largest phase of v1.5 — plans may subdivide per PROJECT.md note.
 **Depends on**: Phase 35 (test framework needed for RMS-windowed regression coverage). Phase 37 ↔ Phase 36 commutative. **Pre-plan audit required at CONTEXT spawn** (D-v1.5-09): confirm whether per-voice stereo pan in synth-path is shipped (PROJECT.md says v1.0 Phase 2) — likely scope is SFZ-renderer-only retrofit. Audit `Audio/SongRenderer.cs` + `Audio/Sfz/SfzRenderer.cs`.
 **Requirements**: DSP-01, DSP-02, DSP-03, MIX-01, MIX-02, SAMP-01, SAMP-02, SAMP-03, PIANO-01, FLUTE-01, DRUM-01
 **Success Criteria** (what must be TRUE):
+
   1. Composer can call `(granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)` and get a granular texture Buffer composable with existing reverb/gain/pan/filter; Hann (default), Gaussian, and Tukey windowing supported; jitter PRNG routed through PrngRegistry per D-v1.5-06. (DSP-01)
   2. Composer can call `(stretch buf 2.0 mode=#auto)` to time-stretch without pitch change and `(pitchShift buf +5st mode=#auto)` to pitch-shift without time change; `#vocoder` (phase vocoder for harmonic), `#psola` (for percussive), `#auto` (HPS transient detector picks per-frame). Existing `loadWav` varispeed call sites unaffected. Hand-rolled per D-v1.5-03 (RubberBand rejected). (DSP-02, DSP-03)
   3. Every voice has a per-voice `Pan` attribute (range -1.0 to +1.0) applied via constant-power law (`left = cos((pan+1)*π/4)`, `right = sin((pan+1)*π/4)`) before the SongRenderer additive-mix stage; SFZ sampled instruments respect the same pan attribute via SfzRenderer stereo retrofit. (MIX-01, MIX-02)
   4. SFZ round-robin opcodes (`seq_position` / `seq_length`) parsed; equal-power velocity-layer crossfade via `xfin_lovel`/`xfin_hivel`/`xfout_*` opcodes; per-articulation envelope multipliers (multiplicative stack on top of Phase 28 locked rules) close the "staccato sampled path sounds thinner than synth path" gap. Round-robin index deterministic across runs (seeded from voice ordinal, not wall-clock). (SAMP-01, SAMP-02, SAMP-03)
   5. Ragtime UAT iteration #2 follow-ups close: warmer piano timbre + ≥4 VSCO velocity layers per pitch point (PIANO-01); ≥1 additional flute sample point between G4 and G5 (likely D5 or A4) closing the D5 timbre-crossover gap (FLUTE-01); sampled drums via SampledInstrumentRenderer with transient-preserving pitch shift (PSOLA for transients, vocoder for sustain — same `#auto` hierarchy as DSP-02/03). (DRUM-01)
   6. Two-run cmp-clean determinism contract preserved for non-`live` paths; RMS-windowed regression (±0.5 dB / 100ms per SPEC-8) holds for behavior changes that legitimately move bytes (e.g. new pan applied to existing voices, sample-path envelope multipliers).
+
 **Plans**: TBD
 
 ### Phase 38: Live Coding 2.0
+
 **Goal**: Modernized live-coding surface — composer wraps a section in `live 1bar { ... }`, edits the file mid-playback, and the new content hot-swaps at the next bar boundary without re-initializing voices or destroying playback state. REPL gets LSP-backed completion + `?fn` inline help + multiline editing + history search + ASCII piano-roll preview. Audio input from mic/line-in composes with DSP pipeline. OSC server/client opens Flow to the network.
 **Depends on**: Phase 35 (test framework + pattern matching). MUST precede Phase 41 — WASM playground IS watch-mode-in-browser. Sub-order: modernized watch + live block FIRST → REPL polish → audio input → OSC.
 **Requirements**: LIVE-01, LIVE-02, LIVE-03, REPL-01, REPL-02, REPL-03, REPL-04, AUDIO-IN-01, AUDIO-IN-02, OSC-01, OSC-02
 **Success Criteria** (what must be TRUE):
+
   1. Composer can wrap hot-swappable code in `live <quantize> { ... }` (default `1bar`); on file save the block re-evaluates and swaps at the next quantize-unit boundary with a 64-sample equal-power crossfade. Live blocks emit a stderr advisory on every entry explicitly opting OUT of the two-run cmp-clean determinism contract (D-v1.5-07). 30s wall-clock evaluation cap (CancellationToken); 200ms file-watch debounce. (LIVE-01, LIVE-02)
   2. Voice-pool state preserved across live reload IF voice name still exists post-edit; musical context stack resets to file-scope; PRNG state reseeded at swap boundary; stale-closure detection raises a clear advisory rather than silently misbehaving. (LIVE-03)
   3. REPL has Tab completion sourced from in-process `flow-lsp` (token-heuristic fallback on partial-parse failure), `?transpose` inline help printing signature + doc-comment + 1-line example from `BuiltInDocs` (104 entries from Phase 31), multi-line editing with paren-balanced continuation prompt, Ctrl+R history search backed by `~/.config/flow/history`, and ASCII piano-roll on `(inspect seq)`. (REPL-01, REPL-02, REPL-03, REPL-04)
   4. Composer can read mic/line input as a Buffer via `(micBuffer duration)` (PulseAudio `PA_STREAM_RECORD`, auto-attenuated 20 dB on open to prevent feedback) and compose it with existing `mix`/`play`/`writeWav`/`granular` builtins. Sample-rate conversion to 44.1 kHz at capture-side. (AUDIO-IN-01, AUDIO-IN-02)
   5. Composer can run an OSC server (`(oscListen port path handler)`) rate-limited to 200 Hz per path and send OSC messages (`(oscSend host port path arg1 arg2 ...)`) with explicit OSC 1.0 type-tag conventions (`,f`/`,d`/`,i`/`,s`). Uses Rug.Osc 1.2.5. (OSC-01, OSC-02)
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 39: Notation Citizenship
+
 **Goal**: Flow becomes a citizen of the music-notation ecosystem — composer exports to MusicXML (consumed by MuseScore, Finale, Sibelius, Dorico, LilyPond) and LilyPond (engraving-quality printed scores), and imports from ABC notation (folk / Irish trad corpus on thesession.org) and MML (PC-98-era chiptune common core).
 **Depends on**: Phase 35 (pattern matching used in articulation emit). Phase 39 is otherwise standalone — any time after Phase 35. Sub-order: MusicXML → LilyPond → ABC → MML (defer MML to v1.6 first if cuts needed).
 **Requirements**: XML-01, XML-02, LILY-01, ABC-01, ABC-02, MML-01
 **Success Criteria** (what must be TRUE):
+
   1. Composer can call `(writeMusicXML song "piece.xml")` and the output opens correctly in MuseScore (reference consumer per D-v1.5-08) — notes + durations + key + timesig + tempo + Phase 28 articulations (Accent→`<accent/>`, Marcato→`<strong-accent/>`, Staccato→`<staccato/>`, Tenuto→`<tenuto/>`, Sforzando→`<dynamics><sfz/></dynamics>`, Legato→slur spans NOT per-note) + multi-part for multi-track songs + microtonal pitches via `<alter>` with cent precision or text annotation fallback. (XML-01)
   2. CI gate: `mscore --convert-to mxl` on exported MusicXML round-trips structurally (note count + durations + pitches + articulations preserved). One-way Flow → XML; import deferred to v1.6 per FEATURES.md anti-feature lock. (XML-02)
   3. Composer can call `(writeLilyPond song "piece.ly")` and the output compiles via `lilypond -dno-print-pages` without engraver errors — multi-voice notation via `\new Voice` contexts inside `<< { ... } \\ { ... } >>`, tuplet brackets via `\tuplet N/M {...}` (nested tuplets flattened for engraver compatibility), microtonal pitches as cent-offset comments alongside nearest 12-TET notation. (LILY-01)
   4. Composer can call `(abc "X:1\nT:Reel\nM:4/4\nK:Dmaj\n|: A2 d2 fedB |...")` and get a `Section` or `Sequence`; ABC 2.1 subset + abc2midi extensions (modal keys `Edor`/`Dmix`/`Aphr`/etc. parsed); multi-tune files (`X:1`, `X:2`, ...) return `Array[Section]`; unknown ornaments/headers dropped with `[abc]` stderr advisory (charitable interpretation). Vendored `matthewcpp/ABCSharp` source. (ABC-01, ABC-02)
   5. Composer can call `(mml "T120 L4 O4 cdefga>c")` and get a `Sequence`; PC-98-era common core supported (notes, accidentals `+`/`#`/`-`, octave `O<n>`/`>`/`<`, length `L<n>`, tempo `T<n>`, loops `[...]<n>`); dialect-specific FM/drum opcodes ignored with stderr advisory. (MML-01)
+
 **Plans**: TBD
 
 ### Phase 40: Studio Sync
+
 **Goal**: Flow joins the studio — real-time MIDI output to hardware synths and DAW VST tracks via new `IMidiBackend` abstraction parallel to `IAudioBackend`; MIDI clock master + slave (24 PPQN) for sync with drum machines and hardware sequencers; optional Ableton Link for cross-application LAN sync; optional JACK transport for Linux pro-audio composers. Ableton Link license review required at plan-start per D-v1.5-04.
 **Depends on**: Phase 35 (pattern matching used in MIDI event dispatch `(match msg | (noteOn n v) => ... | (cc n v) => ...)`). MUST precede Phase 41 — Web MIDI is just another IMidiBackend implementation. Sub-order: IMidiBackend Linux first → MIDI clock master + slave → Ableton Link (license-gated) → JACK transport.
 **Requirements**: MIDI-RT-01, MIDI-RT-02, MIDI-RT-03, MIDI-RT-04, CLOCK-01, CLOCK-02, LINK-01, LINK-02, JACK-01
 **Success Criteria** (what must be TRUE):
+
   1. Composer can call `(listMidiPorts)`, `(openMidiOutput "Roland JV-1080")`, and `device.SendNoteOn(channel, pitch, velocity)` / `.SendNoteOff` / `.SendControlChange` / `.SendSysex(data)` against an external hardware synth via the new `IMidiBackend` abstraction (RtMidi.Core 1.0.53). ALSA-seq backend (Linux primary, MIDI-RT-02), CoreMIDI + WinMM backends enabled in Phase 41 cross-platform binary work (MIDI-RT-03). DryWetMidi 8.0.3 remains for offline MIDI file I/O (verified: NO Linux device support upstream — RtMidi.Core is the load-bearing replacement). (MIDI-RT-01, MIDI-RT-02, MIDI-RT-03)
   2. MIDI events emit at `audioBuffer.PlaybackStartTime + bufferOffset` (NOT at queue time) — sample-accurate sync with audio. Sysex on separate best-effort queue. Hot-plug failures: log + retry + quiet-drop (NEVER throw — would break long `live` sessions). (MIDI-RT-04)
   3. Composer can enable MIDI clock master mode (emit 24 PPQN clock + start/stop/continue tied to active `MusicalContext.Tempo`; tempo changes apply at next bar boundary) OR slave mode (receive 24 PPQN clock from external master and drive `MusicalContext.Tempo`; 8-pulse settle on master tempo change). Mode (master XOR slave) switchable only at bar boundary. (CLOCK-01, CLOCK-02)
   4. Ableton Link integration (license-gated per D-v1.5-04): peer-equal tempo sync via libabletonlink P/Invoke; Link tempo is render-time input for playback ONLY (`play` / `loop` / `preview`) — NEVER applied to `writeWav` / `writeMidi` (offline render preserves deterministic output). Peer-disappear: latch last-seen tempo (no mid-piece fallback). CI test: byte-identical `writeWav` with Link peer connected vs without. If GPLv2+/commercial license review surfaces a conflict with Flow's MIT distribution at Phase 40 plan-start, LINK-01 + LINK-02 defer to community contribution (PR welcome, not shipped from upstream in v1.5). (LINK-01, LINK-02)
   5. Composer can opt into JACK transport sync (Linux only) — `(jackSync)` builtin; transport position drives `MusicalContext.Tempo` + bar/beat; absence of JACK server does not affect non-JACK workflows. macOS / Windows: JACK theoretically available but not shipped/tested in v1.5. (JACK-01)
+
 **Plans**: TBD
 
 ### Phase 41: Reach + v1.5 Closer
+
 **Goal**: WASM playground brings Flow to the browser as a Strudel-tier live-coding experience; cross-platform self-contained binaries close the long-deferred v1.0 Phase 41 gap (Mac + Windows users can finally run Flow locally); `flow doc` makes the ~200-builtin surface learnable; JetBrains Marketplace publish closes the Phase 31 scaffolding stretch; third-genre showcase (jazz / EDM / death metal) validates Flow's genre-agnostic claim alongside v1.4's symphony + ragtime. Last by construction — consumes every other v1.5 phase's surface.
 **Depends on**: Every other v1.5 phase. WASM playground requires Phase 38 `live` block (the browser experience IS watch-mode-in-browser); cross-platform binaries require new IAudioBackend impls; Web MIDI requires Phase 40's IMidiBackend abstraction. Sub-order: `flow doc` first (purely additive, no platform dependency) → WASM playground → cross-platform binaries → JetBrains publish → third-genre showcase last (consumes everything). WASM ships on Mono-WASM jiterpreter NOT NativeAOT-LLVM per D-v1.5-02 (FlowEngine's reflection-heavy `InternalFunctionRegistry` would require a source-generator pass — deferred to v1.6). OwnAudioSharp macOS smoke-test required at Plan 01; fall back to hand-rolled CoreAudio P/Invoke if miniaudio latency unacceptable (>20ms round-trip for live coding).
 **Requirements**: WASM-01, WASM-02, WASM-03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01, DOC-02, JET-01, SHOWCASE-01
 **Success Criteria** (what must be TRUE):
+
   1. WASM playground hosted at a public URL (`flow-lang.example.dev` or similar) — composer types Flow source in browser editor, clicks Play, hears audio via Web Audio API (`KristofferStrube.Blazor.WebAudio` wrapper). Pairs with Phase 38 `live` block as watch-mode-in-browser. Share-via-URL with URL-encoded source (limit 8 KB). Bundle size ≤15 MB compressed (measured at Plan 01 dry-run; if exceeded, prune stdlib subset — lazy-load `@sfz` / `@notation-emit` / `@osc` — or lazy-load Phase 29 sample bundle on first sampled-instrument use). (WASM-01, WASM-02, WASM-03)
   2. Cross-platform self-contained binaries published for linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64 via `dotnet publish -p:PublishSingleFile=true` — released as v1.5.0 tarballs (Linux/macOS) + zip (Windows) alongside the existing flow-linux-x64.tar.gz. Mac + Windows users can `flow run script.flow` locally without cloning. NAudio.Wasapi 2.3.0 backs Windows (single scoped `WasapiBackend.cs`); OwnAudioSharp 1.0.68 backs macOS (smoke-test Plan 01, hand-rolled CoreAudio fallback). (WASAPI-01, COREAUDIO-01, BIN-01)
   3. `flow doc` generates browsable reference site (HTML + Markdown) from `///` doc-comments (new lexer grammar additive to `//`) + proc signatures + builtin metadata from BuiltInDocs (104 Phase 31 entries). Content-hash incremental cache for re-gen. Code examples in `///` doc-comments execute via the test framework (TEST-01 hermetic isolation) — failures surface as `[example failed]` annotations; runnable examples double as regression tests. (DOC-01, DOC-02)
   4. JetBrains plugin published to Marketplace from the Phase 31 scaffolding — plugin.xml metadata + build.gradle.kts signing config (JetBrains marketplace cert) + CHANGELOG.md + plugin verifier CI against IntelliJ Platform 2024.3+. Direct-download fallback page (`docs/jetbrains/install.html`) if marketplace review delays. (JET-01)
   5. Third-genre showcase piece (jazz / EDM / death metal, composer's choice) — ~60s curated piece in `examples/<genre>/<piece>.flow` consuming features from Phases 35-40 (at minimum: pattern matching, one generative primitive, granular DSP or time-stretch, live block, real-time MIDI playback via new IMidiBackend). README.md `## Showcase` v1.5 section embeds inline-audio. v1.5.0 GitHub Release ships the audio + cross-platform binaries. Genre choice validates Flow's genre-agnostic claim alongside v1.4's symphony + ragtime. (SHOWCASE-01)
   6. Two-run cmp-clean determinism contract preserved for offline-render paths (`writeWav` / `writeMidi`) across every new platform. RMS-windowed regression (±0.5 dB / 100ms per SPEC-8) holds for the third-genre showcase across WAV + MIDI output.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -275,7 +300,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 | 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete    | 2026-05-16 |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
 | 35. Language Foundation | v1.5 | 5/7 | In Progress|  |
-| 36. Sequence Algebra & Generative | v1.5 | 0/12 | Planned | - |
+| 36. Sequence Algebra & Generative | v1.5 | 5/12 | In Progress|  |
 | 37. Sound Design + Sampler Polish | v1.5 | 0/0 | Not started | - |
 | 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
