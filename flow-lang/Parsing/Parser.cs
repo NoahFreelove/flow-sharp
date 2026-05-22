@@ -1143,18 +1143,66 @@ public partial class Parser
                 var name = Advance().Text;
                 var args = new List<Expression>();
 
+                // Phase 36 Plan 36-02 (D-36-11): universal named-argument syntax.
+                // 2-token peek inside the arg-list loop — when current is Identifier
+                // and next is Assign, parse as `name=expr` named arg. Positional args
+                // MUST precede all named args (same rule as Python/C#); sawNamedArg
+                // is the flip-on flag that converts a subsequent positional into a
+                // diagnostic. TokenType.Assign is already in TryLexSignedNumber's
+                // expression-start set (SimpleLexer.cs:468) so `arg=-5` lexes the
+                // negative as a single signed IntLiteral — no special-casing here.
+                Dictionary<string, Expression>? namedArgs = null;
+                bool sawNamedArg = false;
+
                 // Inside (func ...) args, disable the "identifier literal = function call"
                 // heuristic so that (add n 1) parses as add(n, 1), not add(n(1)).
                 var savedFlag = _inFuncCallArgs;
                 _inFuncCallArgs = true;
                 while (!Check(TokenType.RParen) && !IsAtEnd())
                 {
-                    args.Add(ParseExpression());
+                    // 2-token peek for named-arg form `Identifier = Expression`.
+                    if (Check(TokenType.Identifier)
+                        && _current + 1 < _tokens.Count
+                        && _tokens[_current + 1].Type == TokenType.Assign)
+                    {
+                        var argNameTok = Advance(); // Identifier
+                        Advance();                  // Assign
+                        var argName = argNameTok.Text;
+                        var argLoc = argNameTok.Location;
+                        var valueExpr = ParseExpression();
+                        namedArgs ??= new Dictionary<string, Expression>();
+                        if (namedArgs.ContainsKey(argName))
+                        {
+                            _errorReporter.ReportError(
+                                $"duplicate named argument '{argName}' in call to '{name}'",
+                                argLoc);
+                        }
+                        else
+                        {
+                            namedArgs[argName] = valueExpr;
+                        }
+                        sawNamedArg = true;
+                    }
+                    else
+                    {
+                        if (sawNamedArg)
+                        {
+                            _errorReporter.ReportError(
+                                $"positional argument after named argument is not allowed (in call to '{name}')",
+                                CurrentToken.Location);
+                        }
+                        args.Add(ParseExpression());
+                    }
                 }
                 _inFuncCallArgs = savedFlag;
 
                 Expect(TokenType.RParen, "Expected ')' after function arguments");
-                return new FunctionCallExpression(location, name, args, Span: new Span(location, PreviousToken.Location));
+                return new FunctionCallExpression(
+                    location,
+                    name,
+                    args,
+                    Span: new Span(location, PreviousToken.Location),
+                    NamedArgs: namedArgs);
             }
 
             // Regular parenthesized expression

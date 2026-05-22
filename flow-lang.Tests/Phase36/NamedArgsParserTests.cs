@@ -112,10 +112,12 @@ public class NamedArgsParserTests
     [Fact]
     public void ParsesMixedPositionalThenNamed()
     {
-        // `(compress buf -12dB ratio=4.0)` — positionals first, named tail.
+        // `(compress sig -12dB ratio=4.0)` — positionals first, named tail.
         // RESEARCH § Named-arg syntax: same shape as Python / C# — positional
-        // args must precede all named args.
-        var program = ParseSource("(compress buf -12dB ratio=4.0)");
+        // args must precede all named args. NOTE: `buf` is a reserved
+        // TokenType.Buf keyword in Flow so the buffer-typed local is named
+        // `sig` here to keep the test independent of the buf-keyword surface.
+        var program = ParseSource("(compress sig -12dB ratio=4.0)");
         var call = FirstCall(program, "compress");
         Assert.Equal(2, call.Arguments.Count);
         Assert.IsType<VariableExpression>(call.Arguments[0]);
@@ -131,8 +133,11 @@ public class NamedArgsParserTests
     {
         // RESEARCH § Named-arg syntax Pattern: once a named arg has been
         // parsed, a subsequent positional raises a clear diagnostic.
+        // NOTE: `fn` is the lambda keyword in Flow; use `xform` (plain
+        // identifier) so the call form parses through the function-call
+        // branch and the inner arg-list loop hits our new diagnostic.
         var reporter = new ErrorReporter();
-        var lexer = new SimpleLexer("(fn arg1 name=val arg2)", reporter);
+        var lexer = new SimpleLexer("(xform arg1 name=val arg2)", reporter);
         var tokens = lexer.Tokenize();
         Assert.False(reporter.HasErrors, $"Lexer errors: {reporter.FormatErrors()}");
         var parser = new Parser(tokens, reporter);
@@ -148,9 +153,11 @@ public class NamedArgsParserTests
         // Phase 26 D-04 + Phase 36 D-36-11 RESEARCH Open Question 4:
         // TokenType.Assign is already in TryLexSignedNumber's expression-start
         // set, so `arg=-5` lexes the `-5` as a single signed IntLiteral and
-        // the parser binds it as the named-arg value.
-        var program = ParseSource("(fn arg=-5)");
-        var call = FirstCall(program, "fn");
+        // the parser binds it as the named-arg value. NOTE: `fn` is reserved
+        // (lambda keyword) — use `xform` to keep this fact focused on the
+        // post-Assign signed-literal lex path, not the keyword-collision.
+        var program = ParseSource("(xform arg=-5)");
+        var call = FirstCall(program, "xform");
         Assert.Empty(call.Arguments);
         Assert.NotNull(call.NamedArgs);
         Assert.True(call.NamedArgs!.ContainsKey("arg"));

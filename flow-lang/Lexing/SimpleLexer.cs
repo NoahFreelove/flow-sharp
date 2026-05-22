@@ -465,6 +465,13 @@ public class SimpleLexer
             or TokenType.Comma
             or TokenType.LBracket
             or TokenType.Arrow
+            // Phase 36 Plan 36-02 (D-36-11) — named-arg negative-literal support.
+            // The named-arg call form `(fn arg=-5)` places `-5` immediately after
+            // the Assign token; TokenType.Assign was already in this set as of
+            // Phase 26 D-04 for variable-declaration initializers (`Int x = -5`),
+            // so named-arg `arg=-5` lexes the negative as a single signed
+            // IntLiteral with no additional change to the lexer — verified by
+            // NamedArgsParserTests.NegativeLiteralAfterAssign.
             or TokenType.Assign
             or TokenType.Pipe
             or TokenType.Semicolon
