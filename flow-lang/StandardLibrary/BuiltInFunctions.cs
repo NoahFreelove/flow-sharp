@@ -20,7 +20,8 @@ public static class BuiltInFunctions
     /// </summary>
     public static void RegisterIterationGuard(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
     {
-        var setMaxIterSignature = new FunctionSignature("setMaxIterations", [IntType.Instance]);
+        var setMaxIterSignature = new FunctionSignature("setMaxIterations", [IntType.Instance],
+            ParameterNames: ["max"]);
         registry.Register("setMaxIterations", setMaxIterSignature, args =>
         {
             context.MaxIterations = args[0].As<int>();
@@ -140,190 +141,240 @@ public static class BuiltInFunctions
 
     private static void RegisterStdLib(InternalFunctionRegistry registry)
     {
-        var lenStrSignature = new FunctionSignature("len", [StringType.Instance]);
+        var lenStrSignature = new FunctionSignature("len", [StringType.Instance],
+            ParameterNames: ["s"]);
         registry.Register("len", lenStrSignature, StdLib.LenString);
         
         // ===== I/O Functions =====
         var printSignature = new FunctionSignature(
             "print",
-            [StringType.Instance]);
+            [StringType.Instance],
+            ParameterNames: ["s"]);
         registry.Register("print", printSignature, StdLib.Print);
 
         // ===== String Conversion Functions =====
 
-        var strIntSignature = new FunctionSignature("str", [IntType.Instance]);
+        var strIntSignature = new FunctionSignature("str", [IntType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strIntSignature, StdLib.StrInt);
 
-        var strFloatSignature = new FunctionSignature("str", [FloatType.Instance]);
+        var strFloatSignature = new FunctionSignature("str", [FloatType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strFloatSignature, StdLib.StrFloat);
 
-        var strDoubleSignature = new FunctionSignature("str", [DoubleType.Instance]);
+        var strDoubleSignature = new FunctionSignature("str", [DoubleType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strDoubleSignature, StdLib.StrDouble);
 
         // Phase 26 (STD-02): str overloads for Long + Number — without these,
         // (str Long) is ambiguous (widens to both Float and Double) and (str Number)
         // has no candidate (Number doesn't widen on the str chain).
-        var strLongSignature = new FunctionSignature("str", [LongType.Instance]);
+        var strLongSignature = new FunctionSignature("str", [LongType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strLongSignature, StdLib.StrLong);
-        var strNumberSignature = new FunctionSignature("str", [NumberType.Instance]);
+        var strNumberSignature = new FunctionSignature("str", [NumberType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strNumberSignature, StdLib.StrNumber);
 
-        var strStringSignature = new FunctionSignature("str", [StringType.Instance]);
+        var strStringSignature = new FunctionSignature("str", [StringType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strStringSignature, StdLib.StrString);
 
-        var strBoolSignature = new FunctionSignature("str", [BoolType.Instance]);
+        var strBoolSignature = new FunctionSignature("str", [BoolType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strBoolSignature, StdLib.StrBool);
 
-        var strNoteSignature = new FunctionSignature("str", [NoteType.Instance]);
+        var strNoteSignature = new FunctionSignature("str", [NoteType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strNoteSignature, StdLib.StrNote);
 
         // Phase 26.1 SYM-01: (str Symbol) → "#name"
-        var strSymbolSignature = new FunctionSignature("str", [SymbolType.Instance]);
+        var strSymbolSignature = new FunctionSignature("str", [SymbolType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strSymbolSignature, StdLib.StrSymbol);
 
-        var strBarSignature = new FunctionSignature("str", [BarType.Instance]);
+        var strBarSignature = new FunctionSignature("str", [BarType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strBarSignature, StdLib.StrBar);
 
-        var strSemitoneSignature = new FunctionSignature("str", [SemitoneType.Instance]);
+        var strSemitoneSignature = new FunctionSignature("str", [SemitoneType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strSemitoneSignature, StdLib.StrSemitone);
 
-        var strCentSignature = new FunctionSignature("str", [CentType.Instance]);
+        var strCentSignature = new FunctionSignature("str", [CentType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strCentSignature, StdLib.StrCent);
 
-        var strMillisecondSignature = new FunctionSignature("str", [MillisecondType.Instance]);
+        var strMillisecondSignature = new FunctionSignature("str", [MillisecondType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strMillisecondSignature, StdLib.StrMillisecond);
 
-        var strSecondSignature = new FunctionSignature("str", [SecondType.Instance]);
+        var strSecondSignature = new FunctionSignature("str", [SecondType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strSecondSignature, StdLib.StrSecond);
 
-        var strDecibelSignature = new FunctionSignature("str", [DecibelType.Instance]);
+        var strDecibelSignature = new FunctionSignature("str", [DecibelType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strDecibelSignature, StdLib.StrDecibel);
 
-        var strArraySignature = new FunctionSignature("str", [new ArrayType(VoidType.Instance)]);
+        var strArraySignature = new FunctionSignature("str", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["value"]);
         registry.Register("str", strArraySignature, StdLib.StrArray);
 
-        var strSequenceSignature = new FunctionSignature("str", [SequenceType.Instance]);
+        var strSequenceSignature = new FunctionSignature("str", [SequenceType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("str", strSequenceSignature, args =>
         {
             var seq = args[0].As<SequenceData>();
             return Value.String(seq.ToString());
         });
 
-        var concatSignature = new FunctionSignature("concat", [StringType.Instance, StringType.Instance]);
+        var concatSignature = new FunctionSignature("concat", [StringType.Instance, StringType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("concat", concatSignature, StdLib.Concat);
 
         // ===== Type Conversion Functions =====
 
-        var intToDoubleSignature = new FunctionSignature("intToDouble", [IntType.Instance]);
+        var intToDoubleSignature = new FunctionSignature("intToDouble", [IntType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("intToDouble", intToDoubleSignature, StdLib.IntToDouble);
 
-        var doubleToIntSignature = new FunctionSignature("doubleToInt", [DoubleType.Instance]);
+        var doubleToIntSignature = new FunctionSignature("doubleToInt", [DoubleType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("doubleToInt", doubleToIntSignature, StdLib.DoubleToInt);
 
         // ===== Arithmetic Functions =====
 
         var addIntSignature = new FunctionSignature(
             "add",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("add", addIntSignature, StdLib.AddInt);
 
         var addFloatSignature = new FunctionSignature(
             "add",
-            [FloatType.Instance, FloatType.Instance]);
+            [FloatType.Instance, FloatType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("add", addFloatSignature, StdLib.AddFloat);
 
         var subFloatSignature = new FunctionSignature(
             "sub",
-            [FloatType.Instance, FloatType.Instance]);
+            [FloatType.Instance, FloatType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("sub", subFloatSignature, StdLib.SubFloat);
 
         var mulFloatSignature = new FunctionSignature(
             "mul",
-            [FloatType.Instance, FloatType.Instance]);
+            [FloatType.Instance, FloatType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("mul", mulFloatSignature, StdLib.MulFloat);
 
         var divFloatSignature = new FunctionSignature(
             "div",
-            [FloatType.Instance, FloatType.Instance]);
+            [FloatType.Instance, FloatType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("div", divFloatSignature, StdLib.DivFloat);
 
         var subSignature = new FunctionSignature(
             "sub",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("sub", subSignature, StdLib.SubInt);
 
         var mulSignature = new FunctionSignature(
             "mul",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("mul", mulSignature, StdLib.MulInt);
 
         var divSignature = new FunctionSignature(
             "div",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("div", divSignature, StdLib.DivIntPromote);   // Phase 26 D-08: now returns Double
 
         // Double overloads for arithmetic
         var addDoubleSignature = new FunctionSignature(
             "add",
-            [DoubleType.Instance, DoubleType.Instance]);
+            [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("add", addDoubleSignature, StdLib.AddDouble);
 
         var subDoubleSignature = new FunctionSignature(
             "sub",
-            [DoubleType.Instance, DoubleType.Instance]);
+            [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("sub", subDoubleSignature, StdLib.SubDouble);
 
         var mulDoubleSignature = new FunctionSignature(
             "mul",
-            [DoubleType.Instance, DoubleType.Instance]);
+            [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("mul", mulDoubleSignature, StdLib.MulDouble);
 
         var divDoubleSignature = new FunctionSignature(
             "div",
-            [DoubleType.Instance, DoubleType.Instance]);
+            [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("div", divDoubleSignature, StdLib.DivDouble);
 
         // ===== Phase 26 (STD-02): Long + Number same-type fast paths =====
 
-        var addLongSignature = new FunctionSignature("add", [LongType.Instance, LongType.Instance]);
+        var addLongSignature = new FunctionSignature("add", [LongType.Instance, LongType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("add", addLongSignature, StdLib.AddLong);
-        var subLongSignature = new FunctionSignature("sub", [LongType.Instance, LongType.Instance]);
+        var subLongSignature = new FunctionSignature("sub", [LongType.Instance, LongType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("sub", subLongSignature, StdLib.SubLong);
-        var mulLongSignature = new FunctionSignature("mul", [LongType.Instance, LongType.Instance]);
+        var mulLongSignature = new FunctionSignature("mul", [LongType.Instance, LongType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("mul", mulLongSignature, StdLib.MulLong);
-        var divLongSignature = new FunctionSignature("div", [LongType.Instance, LongType.Instance]);
+        var divLongSignature = new FunctionSignature("div", [LongType.Instance, LongType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("div", divLongSignature, StdLib.DivLong);
 
-        var addNumberSignature = new FunctionSignature("add", [NumberType.Instance, NumberType.Instance]);
+        var addNumberSignature = new FunctionSignature("add", [NumberType.Instance, NumberType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("add", addNumberSignature, StdLib.AddNumber);
-        var subNumberSignature = new FunctionSignature("sub", [NumberType.Instance, NumberType.Instance]);
+        var subNumberSignature = new FunctionSignature("sub", [NumberType.Instance, NumberType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("sub", subNumberSignature, StdLib.SubNumber);
-        var mulNumberSignature = new FunctionSignature("mul", [NumberType.Instance, NumberType.Instance]);
+        var mulNumberSignature = new FunctionSignature("mul", [NumberType.Instance, NumberType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("mul", mulNumberSignature, StdLib.MulNumber);
-        var divNumberSignature = new FunctionSignature("div", [NumberType.Instance, NumberType.Instance]);
+        var divNumberSignature = new FunctionSignature("div", [NumberType.Instance, NumberType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("div", divNumberSignature, StdLib.DivNumber);
 
         // ===== Phase 26 (STD-02): (neg) 5-pack (D-07) =====
-        var negIntSignature    = new FunctionSignature("neg", [IntType.Instance]);
+        var negIntSignature    = new FunctionSignature("neg", [IntType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("neg", negIntSignature, StdLib.NegInt);
-        var negLongSignature   = new FunctionSignature("neg", [LongType.Instance]);
+        var negLongSignature   = new FunctionSignature("neg", [LongType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("neg", negLongSignature, StdLib.NegLong);
-        var negFloatSignature  = new FunctionSignature("neg", [FloatType.Instance]);
+        var negFloatSignature  = new FunctionSignature("neg", [FloatType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("neg", negFloatSignature, StdLib.NegFloat);
-        var negDoubleSignature = new FunctionSignature("neg", [DoubleType.Instance]);
+        var negDoubleSignature = new FunctionSignature("neg", [DoubleType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("neg", negDoubleSignature, StdLib.NegDouble);
-        var negNumberSignature = new FunctionSignature("neg", [NumberType.Instance]);
+        var negNumberSignature = new FunctionSignature("neg", [NumberType.Instance],
+            ParameterNames: ["value"]);
         registry.Register("neg", negNumberSignature, StdLib.NegNumber);
 
         // ===== Phase 26 (STD-02): (idiv Int Int) → Int (D-08) =====
-        var idivIntSignature = new FunctionSignature("idiv", [IntType.Instance, IntType.Instance]);
+        var idivIntSignature = new FunctionSignature("idiv", [IntType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("idiv", idivIntSignature, StdLib.IDivInt);
 
         // String-to-number conversions
-        var stringToIntSignature = new FunctionSignature("stringToInt", [StringType.Instance]);
+        var stringToIntSignature = new FunctionSignature("stringToInt", [StringType.Instance],
+            ParameterNames: ["s"]);
         registry.Register("stringToInt", stringToIntSignature, StdLib.StringToInt);
 
-        var stringToDoubleSignature = new FunctionSignature("stringToDouble", [StringType.Instance]);
+        var stringToDoubleSignature = new FunctionSignature("stringToDouble", [StringType.Instance],
+            ParameterNames: ["s"]);
         registry.Register("stringToDouble", stringToDoubleSignature, StdLib.StringToDouble);
 
         // ===== Lazy Evaluation Functions =====
@@ -332,35 +383,42 @@ public static class BuiltInFunctions
         // due to special handling in the implementation
         var evalSignature = new FunctionSignature(
             "eval",
-            [new LazyType(VoidType.Instance)]);
+            [new LazyType(VoidType.Instance)],
+            ParameterNames: ["thunk"]);
         registry.Register("eval", evalSignature, StdLib.Eval);
         
         var ifSignature = new FunctionSignature(
-            "if", [BoolType.Instance, new LazyType(VoidType.Instance), new LazyType(VoidType.Instance)]);
+            "if", [BoolType.Instance, new LazyType(VoidType.Instance), new LazyType(VoidType.Instance)],
+            ParameterNames: ["cond", "then", "else"]);
         registry.Register("if", ifSignature, StdLib.If);
 
         // Strict (non-Lazy) if overload — Void-wildcard covers all Bool-T-T concrete shapes
         // (String/String, Double/Double, Int/Int, etc.). The Lazy overload above has higher
         // specificity for Lazy<Void> args, so it wins when args are lazy-wrapped.
         var ifStrictSignature = new FunctionSignature(
-            "if", [BoolType.Instance, VoidType.Instance, VoidType.Instance]);
+            "if", [BoolType.Instance, VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["cond", "then", "else"]);
         registry.Register("if", ifStrictSignature, StdLib.IfStrict);
 
 
         var andSignature = new FunctionSignature(
-            "and", [new LazyType(BoolType.Instance), new LazyType(BoolType.Instance)]);
+            "and", [new LazyType(BoolType.Instance), new LazyType(BoolType.Instance)],
+            ParameterNames: ["a", "b"]);
         registry.Register("and", andSignature, StdLib.And);
         
         var andBoolSignature = new FunctionSignature(
-            "and", [BoolType.Instance, BoolType.Instance]);
+            "and", [BoolType.Instance, BoolType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("and", andBoolSignature, StdLib.AndBool);
         
         var orSignature = new FunctionSignature(
-            "or", [new LazyType(BoolType.Instance), new LazyType(BoolType.Instance)]);
+            "or", [new LazyType(BoolType.Instance), new LazyType(BoolType.Instance)],
+            ParameterNames: ["a", "b"]);
         registry.Register("or", orSignature, StdLib.Or);
         
         var orBoolSignature = new FunctionSignature(
-            "or", [BoolType.Instance, BoolType.Instance]);
+            "or", [BoolType.Instance, BoolType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("or", orBoolSignature, StdLib.OrBool);
 
         // ===== Equality and Comparison Functions =====
@@ -370,32 +428,38 @@ public static class BuiltInFunctions
 
         var equalsSignature = new FunctionSignature(
             "equals",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("equals", equalsSignature, StdLib.Equals);
 
         var sequalsSignature = new FunctionSignature(
             "sequals",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("sequals", sequalsSignature, StdLib.StrictEquals);
 
         var ltSignature = new FunctionSignature(
             "lt",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("lt", ltSignature, StdLib.LessThan);
 
         var gtSignature = new FunctionSignature(
             "gt",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("gt", gtSignature, StdLib.GreaterThan);
 
         var lteSignature = new FunctionSignature(
             "lte",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("lte", lteSignature, StdLib.LessThanOrEqual);
 
         var gteSignature = new FunctionSignature(
             "gte",
-            [VoidType.Instance, VoidType.Instance]);
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("gte", gteSignature, StdLib.GreaterThanOrEqual);
         
         // (Moved random functions to RegisterContextDependentFunctions)
@@ -404,66 +468,84 @@ public static class BuiltInFunctions
     private static void RegisterMath(InternalFunctionRegistry registry)
     {
         // ===== Trigonometric Functions =====
-        registry.Register("sin", new FunctionSignature("sin", [DoubleType.Instance]),
+        registry.Register("sin", new FunctionSignature("sin", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Double(Math.Sin(args[0].As<double>())));
 
-        registry.Register("cos", new FunctionSignature("cos", [DoubleType.Instance]),
+        registry.Register("cos", new FunctionSignature("cos", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Double(Math.Cos(args[0].As<double>())));
 
-        registry.Register("tan", new FunctionSignature("tan", [DoubleType.Instance]),
+        registry.Register("tan", new FunctionSignature("tan", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Double(Math.Tan(args[0].As<double>())));
 
         // ===== Absolute Value =====
-        registry.Register("abs", new FunctionSignature("abs", [DoubleType.Instance]),
+        registry.Register("abs", new FunctionSignature("abs", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Double(Math.Abs(args[0].As<double>())));
 
-        registry.Register("abs", new FunctionSignature("abs", [IntType.Instance]),
+        registry.Register("abs", new FunctionSignature("abs", [IntType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Int(Math.Abs(args[0].As<int>())));
 
         // ===== Square Root =====
-        registry.Register("sqrt", new FunctionSignature("sqrt", [DoubleType.Instance]),
+        registry.Register("sqrt", new FunctionSignature("sqrt", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Double(Math.Sqrt(args[0].As<double>())));
 
         // ===== Min / Max =====
-        registry.Register("min", new FunctionSignature("min", [DoubleType.Instance, DoubleType.Instance]),
+        registry.Register("min", new FunctionSignature("min", [DoubleType.Instance, DoubleType.Instance],
+                ParameterNames: ["a", "b"]),
             args => Value.Double(Math.Min(args[0].As<double>(), args[1].As<double>())));
 
-        registry.Register("min", new FunctionSignature("min", [IntType.Instance, IntType.Instance]),
+        registry.Register("min", new FunctionSignature("min", [IntType.Instance, IntType.Instance],
+                ParameterNames: ["a", "b"]),
             args => Value.Int(Math.Min(args[0].As<int>(), args[1].As<int>())));
 
-        registry.Register("max", new FunctionSignature("max", [DoubleType.Instance, DoubleType.Instance]),
+        registry.Register("max", new FunctionSignature("max", [DoubleType.Instance, DoubleType.Instance],
+                ParameterNames: ["a", "b"]),
             args => Value.Double(Math.Max(args[0].As<double>(), args[1].As<double>())));
 
-        registry.Register("max", new FunctionSignature("max", [IntType.Instance, IntType.Instance]),
+        registry.Register("max", new FunctionSignature("max", [IntType.Instance, IntType.Instance],
+                ParameterNames: ["a", "b"]),
             args => Value.Int(Math.Max(args[0].As<int>(), args[1].As<int>())));
 
         // ===== Rounding =====
-        registry.Register("floor", new FunctionSignature("floor", [DoubleType.Instance]),
+        registry.Register("floor", new FunctionSignature("floor", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Int((int)Math.Floor(args[0].As<double>())));
 
-        registry.Register("ceil", new FunctionSignature("ceil", [DoubleType.Instance]),
+        registry.Register("ceil", new FunctionSignature("ceil", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Int((int)Math.Ceiling(args[0].As<double>())));
 
-        registry.Register("round", new FunctionSignature("round", [DoubleType.Instance]),
+        registry.Register("round", new FunctionSignature("round", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Int((int)Math.Round(args[0].As<double>())));
 
         // ===== Power / Logarithm =====
-        registry.Register("pow", new FunctionSignature("pow", [DoubleType.Instance, DoubleType.Instance]),
+        registry.Register("pow", new FunctionSignature("pow", [DoubleType.Instance, DoubleType.Instance],
+                ParameterNames: ["base", "exp"]),
             args => Value.Double(Math.Pow(args[0].As<double>(), args[1].As<double>())));
 
-        registry.Register("log", new FunctionSignature("log", [DoubleType.Instance]),
+        registry.Register("log", new FunctionSignature("log", [DoubleType.Instance],
+                ParameterNames: ["x"]),
             args => Value.Double(Math.Log(args[0].As<double>())));
 
         // ===== Constants =====
-        registry.Register("pi", new FunctionSignature("pi", []),
+        registry.Register("pi", new FunctionSignature("pi", [],
+                ParameterNames: []),
             args => Value.Double(Math.PI));
 
-        registry.Register("tau", new FunctionSignature("tau", []),
+        registry.Register("tau", new FunctionSignature("tau", [],
+                ParameterNames: []),
             args => Value.Double(Math.Tau));
 
         // Nothing() -> Void. The explicit-void escape hatch for `return (Nothing)`
         // when a proc would otherwise collect non-void expressions before its end.
-        registry.Register("Nothing", new FunctionSignature("Nothing", []),
+        registry.Register("Nothing", new FunctionSignature("Nothing", [],
+                ParameterNames: []),
             args => Value.Void());
 
         // ===== Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance) =====
@@ -472,7 +554,8 @@ public static class BuiltInFunctions
         // Tuple-of-hashables key acceptance needs to construct Beat values in user source.
         // (beat Double) wraps a fractional-beat double in a Beat-typed Value so that
         // `<<C4, (beat 0.25)>>` produces a Tuple<<Note, Beat>> usable as a Dict key.
-        registry.Register("beat", new FunctionSignature("beat", [DoubleType.Instance]),
+        registry.Register("beat", new FunctionSignature("beat", [DoubleType.Instance],
+                ParameterNames: ["value"]),
             args => Value.Beat(args[0].As<double>()));
 
         // ===== Phase 26.1 NaN production primitive (REVISION 2) =====
@@ -481,7 +564,8 @@ public static class BuiltInFunctions
         // (nanFloat) is the canonical IEEE 754 NaN producer for the DICT-03
         // NaN-as-key acceptance shape and any future float-edge-case work.
         // Returns Float (double-backed per Value.Float definition).
-        registry.Register("nanFloat", new FunctionSignature("nanFloat", []),
+        registry.Register("nanFloat", new FunctionSignature("nanFloat", [],
+                ParameterNames: []),
             args => Value.Float(double.NaN));
     }
 
@@ -495,64 +579,81 @@ public static class BuiltInFunctions
             IsVarArgs: true);
         registry.Register("list", listSignature, Collections.List);
 
-        var lenSignature = new FunctionSignature("len", [new ArrayType(VoidType.Instance)]);
+        var lenSignature = new FunctionSignature("len", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("len", lenSignature, Collections.Len);
         
-        var headSignature = new FunctionSignature("head", [new ArrayType(VoidType.Instance)]);
+        var headSignature = new FunctionSignature("head", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("head", headSignature, Collections.Head);
 
-        var tailSignature = new FunctionSignature("tail", [new ArrayType(VoidType.Instance)]);
+        var tailSignature = new FunctionSignature("tail", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("tail", tailSignature, Collections.Tail);
 
-        var lastSignature = new FunctionSignature("last", [new ArrayType(VoidType.Instance)]);
+        var lastSignature = new FunctionSignature("last", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("last", lastSignature, Collections.Last);
 
-        var initSignature = new FunctionSignature("init", [new ArrayType(VoidType.Instance)]);
+        var initSignature = new FunctionSignature("init", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("init", initSignature, Collections.Init);
 
-        var emptySignature = new FunctionSignature("empty", [new ArrayType(VoidType.Instance)]);
+        var emptySignature = new FunctionSignature("empty", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("empty", emptySignature, Collections.Empty);
 
-        var reverseSignature = new FunctionSignature("reverse", [new ArrayType(VoidType.Instance)]);
+        var reverseSignature = new FunctionSignature("reverse", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
         registry.Register("reverse", reverseSignature, Collections.Reverse);
 
-        var takeSignature = new FunctionSignature("take", [new ArrayType(VoidType.Instance), IntType.Instance]);
+        var takeSignature = new FunctionSignature("take", [new ArrayType(VoidType.Instance), IntType.Instance],
+            ParameterNames: ["arr", "n"]);
         registry.Register("take", takeSignature, Collections.Take);
 
-        var dropSignature = new FunctionSignature("drop", [new ArrayType(VoidType.Instance), IntType.Instance]);
+        var dropSignature = new FunctionSignature("drop", [new ArrayType(VoidType.Instance), IntType.Instance],
+            ParameterNames: ["arr", "n"]);
         registry.Register("drop", dropSignature, Collections.Drop);
 
         // DEFER-01 (Phase 20 plan 20-01): range(Int, Int) + range(Int, Int, Int) -> Array[Int].
         // Standard Pythonic semantics. Two arities registered explicitly (overload resolver disambiguates by exact arity match per 20-RESEARCH Pitfall 3).
-        var range2Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance]);
+        var range2Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance],
+            ParameterNames: ["start", "end"]);
         registry.Register("range", range2Signature, Collections.Range);
 
-        var range3Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance, IntType.Instance]);
+        var range3Signature = new FunctionSignature("range", [IntType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["start", "end", "step"]);
         registry.Register("range", range3Signature, Collections.Range);
 
         // DX-05 (Phase 14 plan 14-01): slice(Array[T], Int, Int) + slice(Sequence, Int, Int).
         // Silent two-sided clamping per CONTEXT D-01. Both overloads ship atomically per D-02.
         // Overload resolver disambiguates by arg 0 type (Array vs Sequence).
         var sliceArraySignature = new FunctionSignature("slice",
-            [new ArrayType(VoidType.Instance), IntType.Instance, IntType.Instance]);
+            [new ArrayType(VoidType.Instance), IntType.Instance, IntType.Instance],
+            ParameterNames: ["arr", "start", "end"]);
         registry.Register("slice", sliceArraySignature, Collections.SliceArray);
 
         var sliceSeqSignature = new FunctionSignature("slice",
-            [SequenceType.Instance, IntType.Instance, IntType.Instance]);
+            [SequenceType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "start", "end"]);
         registry.Register("slice", sliceSeqSignature, Collections.SliceSequence);
 
-        var appendSignature = new FunctionSignature("append", [new ArrayType(VoidType.Instance), VoidType.Instance]);
+        var appendSignature = new FunctionSignature("append", [new ArrayType(VoidType.Instance), VoidType.Instance],
+            ParameterNames: ["arr", "element"]);
         registry.Register("append", appendSignature, Collections.Append);
 
-        var prependSignature = new FunctionSignature("prepend", [VoidType.Instance, new ArrayType(VoidType.Instance)]);
+        var prependSignature = new FunctionSignature("prepend", [VoidType.Instance, new ArrayType(VoidType.Instance)],
+            ParameterNames: ["element", "arr"]);
         registry.Register("prepend", prependSignature, Collections.Prepend);
 
         // Note: "concat" is intentionally overloaded for both strings (in RegisterStdLib)
         // and arrays (here). The overload resolver selects the correct one by argument types.
-        var concatSignature = new FunctionSignature("concat", [new ArrayType(VoidType.Instance), new ArrayType(VoidType.Instance)]);
+        var concatSignature = new FunctionSignature("concat", [new ArrayType(VoidType.Instance), new ArrayType(VoidType.Instance)],
+            ParameterNames: ["a", "b"]);
         registry.Register("concat", concatSignature, Collections.Concat);
 
-        var containsSignature = new FunctionSignature("contains", [new ArrayType(VoidType.Instance), VoidType.Instance]);
+        var containsSignature = new FunctionSignature("contains", [new ArrayType(VoidType.Instance), VoidType.Instance],
+            ParameterNames: ["arr", "element"]);
         registry.Register("contains", containsSignature, Collections.Contains);
     }
 
@@ -562,39 +663,48 @@ public static class BuiltInFunctions
 
         var createBufferSignature = new FunctionSignature(
             "createBuffer",
-            [IntType.Instance, IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["frames", "channels", "sampleRate"]);
         registry.Register("createBuffer", createBufferSignature, Audio.AudioCore.CreateBuffer);
 
-        var getFramesSignature = new FunctionSignature("getFrames", [BufferType.Instance]);
+        var getFramesSignature = new FunctionSignature("getFrames", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("getFrames", getFramesSignature, Audio.AudioCore.GetFrames);
 
-        var getChannelsSignature = new FunctionSignature("getChannels", [BufferType.Instance]);
+        var getChannelsSignature = new FunctionSignature("getChannels", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("getChannels", getChannelsSignature, Audio.AudioCore.GetChannels);
 
-        var getSampleRateSignature = new FunctionSignature("getSampleRate", [BufferType.Instance]);
+        var getSampleRateSignature = new FunctionSignature("getSampleRate", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("getSampleRate", getSampleRateSignature, Audio.AudioCore.GetSampleRate);
 
         var getSampleSignature = new FunctionSignature(
             "getSample",
-            [BufferType.Instance, IntType.Instance, IntType.Instance]);
+            [BufferType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["buf", "frame", "channel"]);
         registry.Register("getSample", getSampleSignature, Audio.AudioCore.GetSample);
 
         var setSampleSignature = new FunctionSignature(
             "setSample",
-            [BufferType.Instance, IntType.Instance, IntType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, IntType.Instance, IntType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "frame", "channel", "value"]);
         registry.Register("setSample", setSampleSignature, Audio.AudioCore.SetSample);
 
         var fillBufferSignature = new FunctionSignature(
             "fillBuffer",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "value"]);
         registry.Register("fillBuffer", fillBufferSignature, Audio.AudioCore.FillBuffer);
 
         var mixBuffersSignature = new FunctionSignature(
             "mixBuffers",
-            [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, BufferType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["a", "b", "gainA", "gainB"]);
         registry.Register("mixBuffers", mixBuffersSignature, Audio.AudioCore.MixBuffers);
 
-        var mixSignature = new FunctionSignature("mix", [BufferType.Instance, BufferType.Instance]);
+        var mixSignature = new FunctionSignature("mix", [BufferType.Instance, BufferType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("mix", mixSignature, Audio.AudioCore.Mix);
 
         // ===== File I/O Operations =====
@@ -602,39 +712,46 @@ public static class BuiltInFunctions
         // exportWav(Buffer, String) - default 16-bit
         var exportWavSignature = new FunctionSignature(
             "exportWav",
-            [BufferType.Instance, StringType.Instance]);
+            [BufferType.Instance, StringType.Instance],
+            ParameterNames: ["buf", "path"]);
         registry.Register("exportWav", exportWavSignature, Audio.FileIO.ExportWav);
 
         // exportWav(Buffer, String, Int) - custom bit depth
         var exportWavWithDepthSignature = new FunctionSignature(
             "exportWav",
-            [BufferType.Instance, StringType.Instance, IntType.Instance]);
+            [BufferType.Instance, StringType.Instance, IntType.Instance],
+            ParameterNames: ["buf", "path", "bitDepth"]);
         registry.Register("exportWav", exportWavWithDepthSignature, Audio.FileIO.ExportWavWithBitDepth);
 
         // writeWav(String, Buffer) - primary name, path-first arg order (matches writeMidi)
         var writeWavSignature = new FunctionSignature(
             "writeWav",
-            [StringType.Instance, BufferType.Instance]);
+            [StringType.Instance, BufferType.Instance],
+            ParameterNames: ["path", "buf"]);
         registry.Register("writeWav", writeWavSignature, Audio.FileIO.WriteWav);
 
         // writeWav(String, Buffer, Int) - with bit depth
         var writeWavWithDepthSignature = new FunctionSignature(
             "writeWav",
-            [StringType.Instance, BufferType.Instance, IntType.Instance]);
+            [StringType.Instance, BufferType.Instance, IntType.Instance],
+            ParameterNames: ["path", "buf", "bitDepth"]);
         registry.Register("writeWav", writeWavWithDepthSignature, Audio.FileIO.WriteWavWithBitDepth);
 
         // loadWav(String) -> Buffer - load WAV file
-        var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance]);
+        var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance],
+            ParameterNames: ["path"]);
         registry.Register("loadWav", loadWavSignature, Audio.FileIO.LoadWav);
 
         // DX-15: loadWav(String, Int) -> Buffer — varispeed by semitones (Phase 22 plan 22-02)
         var loadWavSemiSig = new FunctionSignature("loadWav",
-            [StringType.Instance, IntType.Instance]);
+            [StringType.Instance, IntType.Instance],
+            ParameterNames: ["path", "semitones"]);
         registry.Register("loadWav", loadWavSemiSig, Audio.FileIO.LoadWavSemitones);
 
         // DX-15: loadWav(String, Double) -> Buffer — varispeed by ratio (Phase 22 plan 22-02)
         var loadWavRatioSig = new FunctionSignature("loadWav",
-            [StringType.Instance, DoubleType.Instance]);
+            [StringType.Instance, DoubleType.Instance],
+            ParameterNames: ["path", "ratio"]);
         registry.Register("loadWav", loadWavRatioSig, Audio.FileIO.LoadWavRatio);
 
         // writeMidi(String, Song) -> Void migrated to RegisterContextDependentFunctions
@@ -646,182 +763,219 @@ public static class BuiltInFunctions
 
         var createOscillatorStateSignature = new FunctionSignature(
             "createOscillatorState",
-            [DoubleType.Instance, IntType.Instance]);
+            [DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["frequency", "sampleRate"]);
         registry.Register("createOscillatorState", createOscillatorStateSignature, Audio.SignalGeneration.CreateOscillatorState);
 
-        var createSineToneSig = new FunctionSignature("createSineTone", [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance]);
+        var createSineToneSig = new FunctionSignature("createSineTone", [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["duration", "frequency", "amplitude"]);
         registry.Register("createSineTone", createSineToneSig, Audio.SignalGeneration.CreateSineTone);
 
         // Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics.
         // Delegates to the same CreateSineTone lambda; Hertz's CLR backing IS double
         // (Value.Hertz factory wraps a double), so args[1].As<double>() reads it
         // directly without per-overload coercion.
-        var createSineToneHzSig = new FunctionSignature("createSineTone", [DoubleType.Instance, HertzType.Instance, DoubleType.Instance]);
+        var createSineToneHzSig = new FunctionSignature("createSineTone", [DoubleType.Instance, HertzType.Instance, DoubleType.Instance],
+            ParameterNames: ["duration", "frequency", "amplitude"]);
         registry.Register("createSineTone", createSineToneHzSig, Audio.SignalGeneration.CreateSineTone);
 
-        var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance]);
+        var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["duration", "amplitude"]);
         registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
 
         // White noise -- wraps SynthUtils.GenerateWhiteNoise. Four arities; resolver disambiguates by arg count.
-        var noise1Sig = new FunctionSignature("noise", [DoubleType.Instance]);
+        var noise1Sig = new FunctionSignature("noise", [DoubleType.Instance],
+            ParameterNames: ["seconds"]);
         registry.Register("noise", noise1Sig, Audio.SignalGeneration.Noise1);
 
-        var noise2Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance]);
+        var noise2Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seconds", "amplitude"]);
         registry.Register("noise", noise2Sig, Audio.SignalGeneration.Noise2);
 
-        var noise3Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+        var noise3Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["seconds", "amplitude", "channels"]);
         registry.Register("noise", noise3Sig, Audio.SignalGeneration.Noise3);
 
-        var noise4Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance, IntType.Instance]);
+        var noise4Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["seconds", "amplitude", "channels", "sampleRate"]);
         registry.Register("noise", noise4Sig, Audio.SignalGeneration.Noise);
 
         var resetPhaseSignature = new FunctionSignature(
             "resetPhase",
-            [OscillatorStateType.Instance]);
+            [OscillatorStateType.Instance],
+            ParameterNames: ["state"]);
         registry.Register("resetPhase", resetPhaseSignature, Audio.SignalGeneration.ResetPhase);
 
         var generateSineSignature = new FunctionSignature(
             "generateSine",
-            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "state", "amplitude"]);
         registry.Register("generateSine", generateSineSignature, Audio.SignalGeneration.GenerateSine);
 
         var generateSawSignature = new FunctionSignature(
             "generateSaw",
-            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "state", "amplitude"]);
         registry.Register("generateSaw", generateSawSignature, Audio.SignalGeneration.GenerateSaw);
 
         var generateSquareSignature = new FunctionSignature(
             "generateSquare",
-            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "state", "amplitude"]);
         registry.Register("generateSquare", generateSquareSignature, Audio.SignalGeneration.GenerateSquare);
 
         var generateTriangleSignature = new FunctionSignature(
             "generateTriangle",
-            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, OscillatorStateType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "state", "amplitude"]);
         registry.Register("generateTriangle", generateTriangleSignature, Audio.SignalGeneration.GenerateTriangle);
 
         // ===== Buffer Helper Operations =====
 
         var copyBufferSignature = new FunctionSignature(
             "copyBuffer",
-            [BufferType.Instance]);
+            [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("copyBuffer", copyBufferSignature, Audio.BufferHelpers.CopyBuffer);
 
         var sliceBufferSignature = new FunctionSignature(
             "sliceBuffer",
-            [BufferType.Instance, IntType.Instance, IntType.Instance]);
+            [BufferType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["buf", "start", "end"]);
         registry.Register("sliceBuffer", sliceBufferSignature, Audio.BufferHelpers.SliceBuffer);
 
         var appendBuffersSignature = new FunctionSignature(
             "appendBuffers",
-            [BufferType.Instance, BufferType.Instance]);
+            [BufferType.Instance, BufferType.Instance],
+            ParameterNames: ["a", "b"]);
         registry.Register("appendBuffers", appendBuffersSignature, Audio.BufferHelpers.AppendBuffers);
 
         var scaleBufferSignature = new FunctionSignature(
             "scaleBuffer",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "factor"]);
         registry.Register("scaleBuffer", scaleBufferSignature, Audio.BufferHelpers.ScaleBuffer);
 
         var fadeInSignature = new FunctionSignature(
             "fadeIn",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "duration"]);
         registry.Register("fadeIn", fadeInSignature, Audio.BufferHelpers.FadeIn);
 
         var fadeOutSignature = new FunctionSignature(
             "fadeOut",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "duration"]);
         registry.Register("fadeOut", fadeOutSignature, Audio.BufferHelpers.FadeOut);
 
         // ===== Envelope Operations =====
 
         var createARSignature = new FunctionSignature(
             "createAR",
-            [DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+            [DoubleType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["attack", "release", "sampleRate"]);
         registry.Register("createAR", createARSignature, Audio.EnvelopeProcessor.CreateAR);
 
         var createADSRSignature = new FunctionSignature(
             "createADSR",
-            [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+            [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["attack", "decay", "sustain", "release", "sampleRate"]);
         registry.Register("createADSR", createADSRSignature, Audio.EnvelopeProcessor.CreateADSR);
 
         var applyEnvelopeSignature = new FunctionSignature(
             "applyEnvelope",
-            [BufferType.Instance, EnvelopeType.Instance]);
+            [BufferType.Instance, EnvelopeType.Instance],
+            ParameterNames: ["buf", "env"]);
         registry.Register("applyEnvelope", applyEnvelopeSignature, Audio.EnvelopeProcessor.ApplyEnvelope);
 
         // ===== Timeline Operations =====
 
         var setBPMSignature = new FunctionSignature(
             "setBPM",
-            [DoubleType.Instance]);
+            [DoubleType.Instance],
+            ParameterNames: ["bpm"]);
         registry.Register("setBPM", setBPMSignature, Audio.Timeline.SetBPM);
 
-        var getBPMSignature = new FunctionSignature("getBPM", []);
+        var getBPMSignature = new FunctionSignature("getBPM", [],
+            ParameterNames: []);
         registry.Register("getBPM", getBPMSignature, Audio.Timeline.GetBPM);
 
         var beatsToFramesSignature = new FunctionSignature(
             "beatsToFrames",
-            [DoubleType.Instance, IntType.Instance]);
+            [DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["beats", "sampleRate"]);
         registry.Register("beatsToFrames", beatsToFramesSignature, Audio.Timeline.BeatsToFrames);
 
         var framesToBeatsSignature = new FunctionSignature(
             "framesToBeats",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["frames", "sampleRate"]);
         registry.Register("framesToBeats", framesToBeatsSignature, Audio.Timeline.FramesToBeats);
 
         var createVoiceSignature = new FunctionSignature(
             "createVoice",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "offset"]);
         registry.Register("createVoice", createVoiceSignature, Audio.Timeline.CreateVoice);
 
         var setVoiceGainSignature = new FunctionSignature(
             "setVoiceGain",
-            [VoiceType.Instance, DoubleType.Instance]);
+            [VoiceType.Instance, DoubleType.Instance],
+            ParameterNames: ["voice", "gain"]);
         registry.Register("setVoiceGain", setVoiceGainSignature, Audio.Timeline.SetVoiceGain);
 
         var setVoicePanSignature = new FunctionSignature(
             "setVoicePan",
-            [VoiceType.Instance, DoubleType.Instance]);
+            [VoiceType.Instance, DoubleType.Instance],
+            ParameterNames: ["voice", "pan"]);
         registry.Register("setVoicePan", setVoicePanSignature, Audio.Timeline.SetVoicePan);
 
         var setVoiceOffsetSignature = new FunctionSignature(
             "setVoiceOffset",
-            [VoiceType.Instance, DoubleType.Instance]);
+            [VoiceType.Instance, DoubleType.Instance],
+            ParameterNames: ["voice", "offset"]);
         registry.Register("setVoiceOffset", setVoiceOffsetSignature, Audio.Timeline.SetVoiceOffset);
 
         var createTrackSignature = new FunctionSignature(
             "createTrack",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["channels", "sampleRate"]);
         registry.Register("createTrack", createTrackSignature, Audio.Timeline.CreateTrack);
 
         var addVoiceSignature = new FunctionSignature(
             "addVoice",
-            [TrackType.Instance, VoiceType.Instance]);
+            [TrackType.Instance, VoiceType.Instance],
+            ParameterNames: ["track", "voice"]);
         registry.Register("addVoice", addVoiceSignature, Audio.Timeline.AddVoice);
 
         var setTrackOffsetSignature = new FunctionSignature(
             "setTrackOffset",
-            [TrackType.Instance, DoubleType.Instance]);
+            [TrackType.Instance, DoubleType.Instance],
+            ParameterNames: ["track", "offset"]);
         registry.Register("setTrackOffset", setTrackOffsetSignature, Audio.Timeline.SetTrackOffset);
 
         var setTrackGainSignature = new FunctionSignature(
             "setTrackGain",
-            [TrackType.Instance, DoubleType.Instance]);
+            [TrackType.Instance, DoubleType.Instance],
+            ParameterNames: ["track", "gain"]);
         registry.Register("setTrackGain", setTrackGainSignature, Audio.Timeline.SetTrackGain);
 
         var setTrackPanSignature = new FunctionSignature(
             "setTrackPan",
-            [TrackType.Instance, DoubleType.Instance]);
+            [TrackType.Instance, DoubleType.Instance],
+            ParameterNames: ["track", "pan"]);
         registry.Register("setTrackPan", setTrackPanSignature, Audio.Timeline.SetTrackPan);
 
         var renderTrackSignature = new FunctionSignature(
             "renderTrack",
-            [TrackType.Instance, DoubleType.Instance]);
+            [TrackType.Instance, DoubleType.Instance],
+            ParameterNames: ["track", "duration"]);
         registry.Register("renderTrack", renderTrackSignature, Audio.Timeline.RenderTrack);
 
         // ===== Voice Allocation =====
 
-        var setMaxVoicesSignature = new FunctionSignature("setMaxVoices", [IntType.Instance]);
+        var setMaxVoicesSignature = new FunctionSignature("setMaxVoices", [IntType.Instance],
+            ParameterNames: ["max"]);
         registry.Register("setMaxVoices", setMaxVoicesSignature, args =>
         {
             int maxVoices = args[0].As<int>();
@@ -836,7 +990,8 @@ public static class BuiltInFunctions
         // (Moved oscillator higher-order functions to RegisterContextDependentFunctions)
 
         // oscillator(String, Void[]) - register custom wavetable from pre-built array
-        var oscillatorArraySignature = new FunctionSignature("oscillator", [StringType.Instance, new ArrayType(VoidType.Instance)]);
+        var oscillatorArraySignature = new FunctionSignature("oscillator", [StringType.Instance, new ArrayType(VoidType.Instance)],
+            ParameterNames: ["name", "wavetable"]);
         registry.Register("oscillator", oscillatorArraySignature, args =>
         {
             string name = args[0].As<string>();
@@ -880,35 +1035,44 @@ public static class BuiltInFunctions
         TestFramework.TestFunctions.RegisterTestFramework(registry, context);
         // ===== Random Generator Functions =====
 
-        var randSignature = new FunctionSignature("?", []);
+        var randSignature = new FunctionSignature("?", [],
+            ParameterNames: []);
         registry.Register("?", randSignature, args => StdLib.Rand(args, context));
 
-        var fixedRandSignature = new FunctionSignature("??", []);
+        var fixedRandSignature = new FunctionSignature("??", [],
+            ParameterNames: []);
         registry.Register("??", fixedRandSignature, args => StdLib.FixedRand(args, context));
 
-        var resetRandSignature = new FunctionSignature("??reset", []);
+        var resetRandSignature = new FunctionSignature("??reset", [],
+            ParameterNames: []);
         registry.Register("??reset", resetRandSignature, args => StdLib.FixedRandReset(args, context));
 
-        var setRandSignature = new FunctionSignature("??set", [IntType.Instance]);
+        var setRandSignature = new FunctionSignature("??set", [IntType.Instance],
+            ParameterNames: ["seed"]);
         registry.Register("??set", setRandSignature, args => StdLib.FixedRandSet(args, context));
 
         // ===== Higher-Order Functions =====
 
-        var eachSignature = new FunctionSignature("each", [new ArrayType(VoidType.Instance), FunctionType.Instance]);
+        var eachSignature = new FunctionSignature("each", [new ArrayType(VoidType.Instance), FunctionType.Instance],
+            ParameterNames: ["arr", "fn"]);
         registry.Register("each", eachSignature, args => Collections.Each(args, context));
 
-        var mapSignature = new FunctionSignature("map", [new ArrayType(VoidType.Instance), FunctionType.Instance]);
+        var mapSignature = new FunctionSignature("map", [new ArrayType(VoidType.Instance), FunctionType.Instance],
+            ParameterNames: ["arr", "fn"]);
         registry.Register("map", mapSignature, args => Collections.Map(args, context));
 
-        var filterSignature = new FunctionSignature("filter", [new ArrayType(VoidType.Instance), FunctionType.Instance]);
+        var filterSignature = new FunctionSignature("filter", [new ArrayType(VoidType.Instance), FunctionType.Instance],
+            ParameterNames: ["arr", "pred"]);
         registry.Register("filter", filterSignature, args => Collections.Filter(args, context));
 
-        var reduceSignature = new FunctionSignature("reduce", [new ArrayType(VoidType.Instance), VoidType.Instance, FunctionType.Instance]);
+        var reduceSignature = new FunctionSignature("reduce", [new ArrayType(VoidType.Instance), VoidType.Instance, FunctionType.Instance],
+            ParameterNames: ["arr", "initial", "fn"]);
         registry.Register("reduce", reduceSignature, args => Collections.Reduce(args, context));
 
         // ===== Custom Oscillator Registration (Higher Order) =====
 
-        var oscillatorSignature = new FunctionSignature("oscillator", [StringType.Instance, FunctionType.Instance]);
+        var oscillatorSignature = new FunctionSignature("oscillator", [StringType.Instance, FunctionType.Instance],
+            ParameterNames: ["name", "fn"]);
         registry.Register("oscillator", oscillatorSignature, args =>
         {
             string name = args[0].As<string>();
@@ -920,7 +1084,8 @@ public static class BuiltInFunctions
             return Value.Void();
         });
 
-        var oscillatorWithSizeSignature = new FunctionSignature("oscillator", [StringType.Instance, FunctionType.Instance, IntType.Instance]);
+        var oscillatorWithSizeSignature = new FunctionSignature("oscillator", [StringType.Instance, FunctionType.Instance, IntType.Instance],
+            ParameterNames: ["name", "fn", "tableSize"]);
         registry.Register("oscillator", oscillatorWithSizeSignature, args =>
         {
             string name = args[0].As<string>();
@@ -942,7 +1107,8 @@ public static class BuiltInFunctions
         // ===== (unpack) — runtime first-class apply (TUP-11) — Wave 3 =====
         var unpackSig = new FunctionSignature(
             "unpack",
-            new FlowType[] { TupleType.AnyArity, FunctionType.Instance });
+            new FlowType[] { TupleType.AnyArity, FunctionType.Instance },
+            ParameterNames: ["tup", "fn"]);
         registry.Register("unpack", unpackSig,
             args => DictFunctions.Unpack(args, context));
 
@@ -964,59 +1130,71 @@ public static class BuiltInFunctions
 
         // (get d k)
         var getSig = new FunctionSignature("get",
-            new FlowType[] { dictWildcard, VoidType.Instance });
+            new FlowType[] { dictWildcard, VoidType.Instance },
+            ParameterNames: ["d", "k"]);
         registry.Register("get", getSig, args => DictFunctions.Get(args, context));
 
         // (getOr d k default)
         var getOrSig = new FunctionSignature("getOr",
-            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance });
+            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance },
+            ParameterNames: ["d", "k", "default"]);
         registry.Register("getOr", getOrSig, args => DictFunctions.GetOr(args, context));
 
         // (set d k v)
         var setSig = new FunctionSignature("set",
-            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance });
+            new FlowType[] { dictWildcard, VoidType.Instance, VoidType.Instance },
+            ParameterNames: ["d", "k", "v"]);
         registry.Register("set", setSig, args => DictFunctions.Set(args, context));
 
         // (remove d k)
         var removeSig = new FunctionSignature("remove",
-            new FlowType[] { dictWildcard, VoidType.Instance });
+            new FlowType[] { dictWildcard, VoidType.Instance },
+            ParameterNames: ["d", "k"]);
         registry.Register("remove", removeSig, args => DictFunctions.Remove(args, context));
 
         // (has d k)
         var hasSig = new FunctionSignature("has",
-            new FlowType[] { dictWildcard, VoidType.Instance });
+            new FlowType[] { dictWildcard, VoidType.Instance },
+            ParameterNames: ["d", "k"]);
         registry.Register("has", hasSig, args => DictFunctions.Has(args, context));
 
         // (keys d)
-        var keysSig = new FunctionSignature("keys", new FlowType[] { dictWildcard });
+        var keysSig = new FunctionSignature("keys", new FlowType[] { dictWildcard },
+            ParameterNames: ["d"]);
         registry.Register("keys", keysSig, args => DictFunctions.Keys(args, context));
 
         // (values d)
-        var valuesSig = new FunctionSignature("values", new FlowType[] { dictWildcard });
+        var valuesSig = new FunctionSignature("values", new FlowType[] { dictWildcard },
+            ParameterNames: ["d"]);
         registry.Register("values", valuesSig, args => DictFunctions.Values(args, context));
 
         // (size d) — Int
-        var sizeSig = new FunctionSignature("size", new FlowType[] { dictWildcard });
+        var sizeSig = new FunctionSignature("size", new FlowType[] { dictWildcard },
+            ParameterNames: ["d"]);
         registry.Register("size", sizeSig, args => DictFunctions.Size(args, context));
 
         // (merge d1 d2) — last-write-wins
         var mergeSig = new FunctionSignature("merge",
-            new FlowType[] { dictWildcard, dictWildcard });
+            new FlowType[] { dictWildcard, dictWildcard },
+            ParameterNames: ["d1", "d2"]);
         registry.Register("merge", mergeSig, args => DictFunctions.Merge(args, context));
 
         // (each Dict Function) — SEPARATE overload from existing (each Array Function); Pitfall 6
         var eachDictSig = new FunctionSignature("each",
-            new FlowType[] { dictWildcard, FunctionType.Instance });
+            new FlowType[] { dictWildcard, FunctionType.Instance },
+            ParameterNames: ["d", "fn"]);
         registry.Register("each", eachDictSig, args => DictFunctions.Each(args, context));
 
         // (map Dict Function) — SEPARATE overload from existing (map Array Function)
         var mapDictSig = new FunctionSignature("map",
-            new FlowType[] { dictWildcard, FunctionType.Instance });
+            new FlowType[] { dictWildcard, FunctionType.Instance },
+            ParameterNames: ["d", "fn"]);
         registry.Register("map", mapDictSig, args => DictFunctions.Map(args, context));
 
         // (filter Dict Function) — SEPARATE overload from existing (filter Array Function)
         var filterDictSig = new FunctionSignature("filter",
-            new FlowType[] { dictWildcard, FunctionType.Instance });
+            new FlowType[] { dictWildcard, FunctionType.Instance },
+            ParameterNames: ["d", "pred"]);
         registry.Register("filter", filterDictSig, args => DictFunctions.Filter(args, context));
     }
 
@@ -1024,40 +1202,48 @@ public static class BuiltInFunctions
     {
         // ===== Bar Operations =====
 
-        var createBarSignature = new FunctionSignature("createBar", []);
+        var createBarSignature = new FunctionSignature("createBar", [],
+            ParameterNames: []);
         registry.Register("createBar", createBarSignature, Bars.CreateBar);
 
         var createBarWithNoteSignature = new FunctionSignature(
             "createBarWithNote",
-            [NoteType.Instance]);
+            [NoteType.Instance],
+            ParameterNames: ["note"]);
         registry.Register("createBarWithNote", createBarWithNoteSignature, Bars.CreateBarWithNote);
 
         var createBarFromNotesSignature = new FunctionSignature(
             "createBarFromNotes",
-            [new ArrayType(NoteType.Instance)]);
+            [new ArrayType(NoteType.Instance)],
+            ParameterNames: ["notes"]);
         registry.Register("createBarFromNotes", createBarFromNotesSignature, Bars.CreateBarFromNotes);
 
         var addNoteToBarSignature = new FunctionSignature(
             "addNoteToBar",
-            [BarType.Instance, NoteType.Instance]);
+            [BarType.Instance, NoteType.Instance],
+            ParameterNames: ["bar", "note"]);
         registry.Register("addNoteToBar", addNoteToBarSignature, Bars.AddNoteToBar);
 
         var getNoteFromBarSignature = new FunctionSignature(
             "getNoteFromBar",
-            [BarType.Instance, IntType.Instance]);
+            [BarType.Instance, IntType.Instance],
+            ParameterNames: ["bar", "index"]);
         registry.Register("getNoteFromBar", getNoteFromBarSignature, Bars.GetNoteFromBar);
 
-        var barLengthSignature = new FunctionSignature("barLength", [BarType.Instance]);
+        var barLengthSignature = new FunctionSignature("barLength", [BarType.Instance],
+            ParameterNames: ["bar"]);
         registry.Register("barLength", barLengthSignature, Bars.BarLength);
 
         var setTimeSignatureSignature = new FunctionSignature(
             "setTimeSignature",
-            [BarType.Instance, IntType.Instance, IntType.Instance]);
+            [BarType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["bar", "numerator", "denominator"]);
         registry.Register("setTimeSignature", setTimeSignatureSignature, Bars.SetTimeSignature);
 
         var getTimeSignatureSignature = new FunctionSignature(
             "getTimeSignature",
-            [BarType.Instance]);
+            [BarType.Instance],
+            ParameterNames: ["bar"]);
         registry.Register("getTimeSignature", getTimeSignatureSignature, Bars.GetTimeSignature);
     }
 
@@ -1067,7 +1253,8 @@ public static class BuiltInFunctions
 
         var createMusicalNoteSignature = new FunctionSignature(
             "createMusicalNote",
-            [NoteType.Instance, NoteValueType.Instance]);
+            [NoteType.Instance, NoteValueType.Instance],
+            ParameterNames: ["pitch", "duration"]);
         registry.Register("createMusicalNote", createMusicalNoteSignature, args =>
         {
             string pitchStr = (string)args[0].Data!;
@@ -1078,7 +1265,8 @@ public static class BuiltInFunctions
 
         var createRestSignature = new FunctionSignature(
             "createRest",
-            [NoteValueType.Instance]);
+            [NoteValueType.Instance],
+            ParameterNames: ["duration"]);
         registry.Register("createRest", createRestSignature, args =>
         {
             int durationValue = (int)args[0].Data!;
@@ -1090,7 +1278,8 @@ public static class BuiltInFunctions
 
         var createTimeSignatureSignature = new FunctionSignature(
             "createTimeSignature",
-            [IntType.Instance, IntType.Instance]);
+            [IntType.Instance, IntType.Instance],
+            ParameterNames: ["numerator", "denominator"]);
         registry.Register("createTimeSignature", createTimeSignatureSignature, args =>
         {
             int numerator = (int)args[0].Data!;
@@ -1103,7 +1292,8 @@ public static class BuiltInFunctions
 
         var createMusicalBarSignature = new FunctionSignature(
             "createMusicalBar",
-            [new ArrayType(NoteType.Instance), TimeSignatureType.Instance]);
+            [new ArrayType(NoteType.Instance), TimeSignatureType.Instance],
+            ParameterNames: ["notes", "timeSig"]);
         registry.Register("createMusicalBar", createMusicalBarSignature, args =>
         {
             var notesArray = (IReadOnlyList<Value>)args[0].Data!;
@@ -1122,7 +1312,8 @@ public static class BuiltInFunctions
 
         var createEmptyMusicalBarSignature = new FunctionSignature(
             "createEmptyMusicalBar",
-            [TimeSignatureType.Instance]);
+            [TimeSignatureType.Instance],
+            ParameterNames: ["timeSig"]);
         registry.Register("createEmptyMusicalBar", createEmptyMusicalBarSignature, args =>
         {
             var timeSig = (TimeSignatureData)args[0].Data!;
@@ -1132,7 +1323,8 @@ public static class BuiltInFunctions
 
         var tryAddNoteToBarSignature = new FunctionSignature(
             "tryAddNoteToBar",
-            [BarType.Instance, MusicalNoteType.Instance]);
+            [BarType.Instance, MusicalNoteType.Instance],
+            ParameterNames: ["bar", "note"]);
         registry.Register("tryAddNoteToBar", tryAddNoteToBarSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1143,7 +1335,8 @@ public static class BuiltInFunctions
 
         var addNoteToBarSignature = new FunctionSignature(
             "addNoteToBar",
-            [BarType.Instance, MusicalNoteType.Instance]);
+            [BarType.Instance, MusicalNoteType.Instance],
+            ParameterNames: ["bar", "note"]);
         registry.Register("addNoteToBar", addNoteToBarSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1156,7 +1349,8 @@ public static class BuiltInFunctions
 
         var noteValueToBeatsSignature = new FunctionSignature(
             "noteValueToBeats",
-            [NoteValueType.Instance, IntType.Instance]);
+            [NoteValueType.Instance, IntType.Instance],
+            ParameterNames: ["noteValue", "denominator"]);
         registry.Register("noteValueToBeats", noteValueToBeatsSignature, args =>
         {
             int noteValueEnum = (int)args[0].Data!;
@@ -1167,7 +1361,8 @@ public static class BuiltInFunctions
 
         var validateBarDurationSignature = new FunctionSignature(
             "validateBarDuration",
-            [BarType.Instance, TimeSignatureType.Instance]);
+            [BarType.Instance, TimeSignatureType.Instance],
+            ParameterNames: ["bar", "timeSig"]);
         registry.Register("validateBarDuration", validateBarDurationSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1180,7 +1375,8 @@ public static class BuiltInFunctions
 
         var getRemainingBeatsSignature = new FunctionSignature(
             "getRemainingBeats",
-            [BarType.Instance]);
+            [BarType.Instance],
+            ParameterNames: ["bar"]);
         registry.Register("getRemainingBeats", getRemainingBeatsSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1190,7 +1386,8 @@ public static class BuiltInFunctions
 
         var wouldFitSignature = new FunctionSignature(
             "wouldFit",
-            [BarType.Instance, MusicalNoteType.Instance]);
+            [BarType.Instance, MusicalNoteType.Instance],
+            ParameterNames: ["bar", "note"]);
         registry.Register("wouldFit", wouldFitSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1201,7 +1398,8 @@ public static class BuiltInFunctions
 
         var calculateOverflowSignature = new FunctionSignature(
             "calculateOverflow",
-            [BarType.Instance]);
+            [BarType.Instance],
+            ParameterNames: ["bar"]);
         registry.Register("calculateOverflow", calculateOverflowSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1213,7 +1411,8 @@ public static class BuiltInFunctions
 
         var renderBarToVoicesSignature = new FunctionSignature(
             "renderBarToVoices",
-            [BarType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+            [BarType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance],
+            ParameterNames: ["bar", "synth", "sampleRate", "bpm"]);
         registry.Register("renderBarToVoices", renderBarToVoicesSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1228,7 +1427,8 @@ public static class BuiltInFunctions
 
         // ===== Sequence Functions =====
 
-        var createSequenceSignature = new FunctionSignature("createSequence", []);
+        var createSequenceSignature = new FunctionSignature("createSequence", [],
+            ParameterNames: []);
         registry.Register("createSequence", createSequenceSignature, args =>
         {
             var sequence = Audio.SequenceRenderer.CreateSequence();
@@ -1237,7 +1437,8 @@ public static class BuiltInFunctions
 
         var addBarToSequenceSignature = new FunctionSignature(
             "addBarToSequence",
-            [SequenceType.Instance, BarType.Instance]);
+            [SequenceType.Instance, BarType.Instance],
+            ParameterNames: ["seq", "bar"]);
         registry.Register("addBarToSequence", addBarToSequenceSignature, args =>
         {
             var sequence = (SequenceData)args[0].Data!;
@@ -1248,7 +1449,8 @@ public static class BuiltInFunctions
 
         var renderSequenceToVoicesSignature = new FunctionSignature(
             "renderSequenceToVoices",
-            [SequenceType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "synth", "sampleRate", "bpm"]);
         registry.Register("renderSequenceToVoices", renderSequenceToVoicesSignature, args =>
         {
             var sequence = (SequenceData)args[0].Data!;
@@ -1265,7 +1467,8 @@ public static class BuiltInFunctions
 
         var renderBarAtBeatSignature = new FunctionSignature(
             "renderBarAtBeat",
-            [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+            [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance],
+            ParameterNames: ["bar", "beat", "synth", "sampleRate", "bpm"]);
         registry.Register("renderBarAtBeat", renderBarAtBeatSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1281,7 +1484,8 @@ public static class BuiltInFunctions
 
         var renderBarAtTimeSignature = new FunctionSignature(
             "renderBarAtTime",
-            [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance]);
+            [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance],
+            ParameterNames: ["bar", "time", "synth", "sampleRate", "bpm"]);
         registry.Register("renderBarAtTime", renderBarAtTimeSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
@@ -1299,7 +1503,8 @@ public static class BuiltInFunctions
 
         var noteToFrequencySignature = new FunctionSignature(
             "noteToFrequency",
-            [NoteType.Instance]);
+            [NoteType.Instance],
+            ParameterNames: ["note"]);
         registry.Register("noteToFrequency", noteToFrequencySignature, args =>
         {
             if (args[0].Data is string stringNote)
@@ -1318,7 +1523,8 @@ public static class BuiltInFunctions
 
         var euclideanSignature = new FunctionSignature(
             "euclidean",
-            [IntType.Instance, IntType.Instance, NoteType.Instance]);
+            [IntType.Instance, IntType.Instance, NoteType.Instance],
+            ParameterNames: ["hits", "steps", "note"]);
         registry.Register("euclidean", euclideanSignature, args =>
         {
             int hits = (int)args[0].Data!;
@@ -1389,7 +1595,8 @@ public static class BuiltInFunctions
         // euclidean(Int, Int, Note, Double) -> Sequence
         var euclideanSwingSig = new FunctionSignature(
             "euclidean",
-            [IntType.Instance, IntType.Instance, NoteType.Instance, DoubleType.Instance]);
+            [IntType.Instance, IntType.Instance, NoteType.Instance, DoubleType.Instance],
+            ParameterNames: ["hits", "steps", "note", "swing"]);
         registry.Register("euclidean", euclideanSwingSig, args =>
         {
             int hits = (int)args[0].Data!;
@@ -1409,7 +1616,8 @@ public static class BuiltInFunctions
         var euclideanHumanSig = new FunctionSignature(
             "euclidean",
             [IntType.Instance, IntType.Instance, NoteType.Instance,
-             DoubleType.Instance, DoubleType.Instance, IntType.Instance]);
+             DoubleType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["hits", "steps", "note", "swing", "humanize", "seed"]);
         registry.Register("euclidean", euclideanHumanSig, args =>
         {
             int hits = (int)args[0].Data!;
