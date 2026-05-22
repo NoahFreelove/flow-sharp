@@ -55,11 +55,11 @@ public static class PlaybackFunctions
         registry.Register("preview", previewSig, args => PreviewBuffer(args, manager));
 
         // stop() -> Void — stop any currently playing audio
-        var stopSig = new FunctionSignature("stop", []);
+        var stopSig = new FunctionSignature("stop", [], ParameterNames: []);
         registry.Register("stop", stopSig, args => StopPlayback(args, manager));
 
         // audioDevices() -> String[]
-        var devicesSig = new FunctionSignature("audioDevices", []);
+        var devicesSig = new FunctionSignature("audioDevices", [], ParameterNames: []);
         registry.Register("audioDevices", devicesSig, args => GetAudioDevices(args, manager));
 
         // setAudioDevice(String) -> Bool
@@ -68,7 +68,7 @@ public static class PlaybackFunctions
         registry.Register("setAudioDevice", setDeviceSig, args => SetAudioDevice(args, manager));
 
         // isAudioAvailable() -> Bool
-        var isAvailableSig = new FunctionSignature("isAudioAvailable", []);
+        var isAvailableSig = new FunctionSignature("isAudioAvailable", [], ParameterNames: []);
         registry.Register("isAudioAvailable", isAvailableSig, args => IsAudioAvailable(args, manager));
     }
 
