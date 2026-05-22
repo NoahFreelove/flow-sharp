@@ -236,7 +236,8 @@ public static class MidiExport
     /// </summary>
     public static void RegisterContextDependent(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
     {
-        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance]);
+        var writeMidiSignature = new FunctionSignature("writeMidi", [StringType.Instance, SongType.Instance],
+            ParameterNames: ["path", "song"]);
         registry.Register("writeMidi", writeMidiSignature, args => WriteMidi(args, context));
     }
 

@@ -20,31 +20,38 @@ public static class PlaybackFunctions
     public static void Register(InternalFunctionRegistry registry, AudioPlaybackManager manager)
     {
         // play(Buffer) -> Void
-        var playBufferSig = new FunctionSignature("play", [BufferType.Instance]);
+        var playBufferSig = new FunctionSignature("play", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("play", playBufferSig, args => PlayBuffer(args, manager));
 
         // play(Sequence) -> Void — renders to buffer then plays
-        var playSeqSig = new FunctionSignature("play", [SequenceType.Instance]);
+        var playSeqSig = new FunctionSignature("play", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("play", playSeqSig, args => PlaySequence(args, manager));
 
         // loop(Buffer) -> Void — loops indefinitely (non-blocking)
-        var loopBufferSig = new FunctionSignature("loop", [BufferType.Instance]);
+        var loopBufferSig = new FunctionSignature("loop", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("loop", loopBufferSig, args => LoopBufferInfiniteAsync(args, manager));
 
         // loop(Buffer, Int) -> Void — loops N times (non-blocking)
-        var loopBufferNSig = new FunctionSignature("loop", [BufferType.Instance, IntType.Instance]);
+        var loopBufferNSig = new FunctionSignature("loop", [BufferType.Instance, IntType.Instance],
+            ParameterNames: ["buf", "count"]);
         registry.Register("loop", loopBufferNSig, args => LoopBufferNAsync(args, manager));
 
         // stream(Buffer) -> Void — plays without blocking the interpreter
-        var streamBufferSig = new FunctionSignature("stream", [BufferType.Instance]);
+        var streamBufferSig = new FunctionSignature("stream", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("stream", streamBufferSig, args => StreamBuffer(args, manager));
 
         // stream(Sequence) -> Void — renders and streams
-        var streamSeqSig = new FunctionSignature("stream", [SequenceType.Instance]);
+        var streamSeqSig = new FunctionSignature("stream", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("stream", streamSeqSig, args => StreamSequence(args, manager));
 
         // preview(Buffer) -> Void — low-quality mono 22050Hz playback
-        var previewSig = new FunctionSignature("preview", [BufferType.Instance]);
+        var previewSig = new FunctionSignature("preview", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("preview", previewSig, args => PreviewBuffer(args, manager));
 
         // stop() -> Void — stop any currently playing audio
@@ -56,7 +63,8 @@ public static class PlaybackFunctions
         registry.Register("audioDevices", devicesSig, args => GetAudioDevices(args, manager));
 
         // setAudioDevice(String) -> Bool
-        var setDeviceSig = new FunctionSignature("setAudioDevice", [StringType.Instance]);
+        var setDeviceSig = new FunctionSignature("setAudioDevice", [StringType.Instance],
+            ParameterNames: ["device"]);
         registry.Register("setAudioDevice", setDeviceSig, args => SetAudioDevice(args, manager));
 
         // isAudioAvailable() -> Bool

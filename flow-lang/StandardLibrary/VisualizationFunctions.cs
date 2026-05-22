@@ -19,10 +19,12 @@ public static class VisualizationFunctions
     /// </summary>
     public static void Register(InternalFunctionRegistry registry)
     {
-        var sig = new FunctionSignature("visualize", [SequenceType.Instance]);
+        var sig = new FunctionSignature("visualize", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("visualize", sig, Visualize);
 
-        var sig2 = new FunctionSignature("visualize", [BufferType.Instance]);
+        var sig2 = new FunctionSignature("visualize", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("visualize", sig2, VisualizeBuffer);
     }
 
