@@ -2,11 +2,36 @@ namespace FlowLang.TypeSystem;
 
 /// <summary>
 /// Represents a function signature with input types.
+///
+/// <para>
+/// Phase 36 Plan 36-02 (D-36-11): <see cref="ParameterNames"/> is the
+/// defaulted-positional extension carrying parameter labels for the
+/// universal named-argument call surface `(fn name=value)`. The field
+/// is nullable — signatures registered WITHOUT names remain functional
+/// with positional-only calls (backward-compatible safety net for the
+/// parallel backfill in Plans 36-03 + 36-04 across ~350 builtin sites).
+/// When a named-arg call targets a signature with null
+/// <see cref="ParameterNames"/>, <see cref="OverloadResolver"/> raises a
+/// graceful advisory rather than misbehaving (RESEARCH Pitfall 5).
+/// </para>
+///
+/// <para>
+/// Equality semantics: <see cref="ParameterNames"/> is intentionally
+/// excluded from <see cref="Equals(FunctionSignature?)"/> and
+/// <see cref="GetHashCode"/>. The resolver does name-based lookup against
+/// the field, not signature deduplication; two signatures that differ
+/// ONLY in parameter names (e.g., during the backfill window when a
+/// pre-Phase-36 anonymous overload is re-registered with names) remain
+/// equal under the content-equality contract Phase 26 introduced. This
+/// keeps the SignatureSet de-dup behavior in
+/// <see cref="StandardLibrary.InternalFunctionRegistry"/> stable.
+/// </para>
 /// </summary>
 public record FunctionSignature(
     string Name,
     IReadOnlyList<FlowType> InputTypes,
-    bool IsVarArgs = false)
+    bool IsVarArgs = false,
+    IReadOnlyList<string>? ParameterNames = null)
 {
     public override string ToString()
     {
@@ -19,6 +44,7 @@ public record FunctionSignature(
 
     /// <summary>
     /// Custom equality to compare InputTypes by content, not reference.
+    /// ParameterNames is intentionally excluded — see class doc.
     /// </summary>
     public virtual bool Equals(FunctionSignature? other)
     {
