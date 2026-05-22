@@ -22,32 +22,38 @@ public static class VariationFunctions
     {
         // vary(Sequence, Double) -> Sequence (random mutation type, chromatic)
         var sig1 = new FunctionSignature("vary",
-            [SequenceType.Instance, DoubleType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "probability"]);
         registry.Register("vary", sig1, VaryRandom);
 
         // vary(Sequence, Double, String) -> Sequence (specific mutation type, chromatic)
         var sig2 = new FunctionSignature("vary",
-            [SequenceType.Instance, DoubleType.Instance, StringType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, StringType.Instance],
+            ParameterNames: ["seq", "probability", "mutationType"]);
         registry.Register("vary", sig2, VaryTyped);
 
         // vary(Sequence, Double, Int) -> Sequence (random mutation type, seeded)
         var sig3 = new FunctionSignature("vary",
-            [SequenceType.Instance, DoubleType.Instance, IntType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "probability", "seed"]);
         registry.Register("vary", sig3, VarySeeded);
 
         // vary(Sequence, Double, String, Int) -> Sequence (specific type, seeded)
         var sig4 = new FunctionSignature("vary",
-            [SequenceType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "probability", "mutationType", "seed"]);
         registry.Register("vary", sig4, VaryTypedSeeded);
 
         // vary(Sequence, Double, String, String) -> Sequence (specific type, diatonic with key)
         var sig5 = new FunctionSignature("vary",
-            [SequenceType.Instance, DoubleType.Instance, StringType.Instance, StringType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, StringType.Instance, StringType.Instance],
+            ParameterNames: ["seq", "probability", "mutationType", "key"]);
         registry.Register("vary", sig5, VaryTypedWithKey);
 
         // vary(Sequence, Double, String, String, Int) -> Sequence (specific type, diatonic, seeded)
         var sig6 = new FunctionSignature("vary",
-            [SequenceType.Instance, DoubleType.Instance, StringType.Instance, StringType.Instance, IntType.Instance]);
+            [SequenceType.Instance, DoubleType.Instance, StringType.Instance, StringType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "probability", "mutationType", "key", "seed"]);
         registry.Register("vary", sig6, VaryTypedWithKeySeed);
     }
 
