@@ -25,7 +25,7 @@ public class NoteStreamCompiler
 
     /// <summary>
     /// Maps duration suffix characters to NoteValue enum values.
-    /// w=whole, h=half, q=quarter, e=eighth, s=sixteenth, t=32nd
+    /// w=whole, h=half, q=quarter, e=eighth, s=sixteenth, t=32nd, x=64th, y=128th
     /// </summary>
     private static readonly Dictionary<string, NoteValueType.Value> DurationSuffixMap = new()
     {
@@ -34,7 +34,9 @@ public class NoteStreamCompiler
         { "q", NoteValueType.Value.QUARTER },
         { "e", NoteValueType.Value.EIGHTH },
         { "s", NoteValueType.Value.SIXTEENTH },
-        { "t", NoteValueType.Value.THIRTYSECOND }
+        { "t", NoteValueType.Value.THIRTYSECOND },
+        { "x", NoteValueType.Value.SIXTYFOURTH },
+        { "y", NoteValueType.Value.ONETWENTYEIGHTH }
     };
 
     /// <summary>
@@ -853,7 +855,7 @@ public class NoteStreamCompiler
             // Remaining tones share its onset (IsChordTone=true) so the chord
             // plays as one polyphonic strike, not as an arpeggio across bar
             // beats. See MusicalNoteData.IsChordTone and BarType.ToTimeline.
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen, isChordTone: !first));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isTied: chord.IsTied, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen, isChordTone: !first));
             first = false;
         }
 

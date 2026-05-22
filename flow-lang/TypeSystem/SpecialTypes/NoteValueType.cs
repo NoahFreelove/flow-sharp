@@ -26,7 +26,9 @@ namespace FlowLang.TypeSystem.SpecialTypes
             QUARTER = 2,
             EIGHTH = 3,
             SIXTEENTH = 4,
-            THIRTYSECOND = 5
+            THIRTYSECOND = 5,
+            SIXTYFOURTH = 6,
+            ONETWENTYEIGHTH = 7
         }
 
         public static Value Parse(string str)
@@ -51,6 +53,12 @@ namespace FlowLang.TypeSystem.SpecialTypes
                 case "thirtysecond":
                 case "32":
                     return Value.THIRTYSECOND;
+                case "sixtyfourth":
+                case "64":
+                    return Value.SIXTYFOURTH;
+                case "onetwentyeighth":
+                case "128":
+                    return Value.ONETWENTYEIGHTH;
                 default:
                     throw new ArgumentException($"Invalid note value: {str}");
             }
@@ -72,6 +80,10 @@ namespace FlowLang.TypeSystem.SpecialTypes
                     return 0.0625;
                 case Value.THIRTYSECOND:
                     return 0.03125;
+                case Value.SIXTYFOURTH:
+                    return 0.015625;
+                case Value.ONETWENTYEIGHTH:
+                    return 0.0078125;
                 default:
                     throw new ArgumentException($"Invalid note value: {noteValue}");
             }
@@ -93,6 +105,10 @@ namespace FlowLang.TypeSystem.SpecialTypes
                     return "sixteenth";
                 case Value.THIRTYSECOND:
                     return "thirtysecond";
+                case Value.SIXTYFOURTH:
+                    return "sixtyfourth";
+                case Value.ONETWENTYEIGHTH:
+                    return "onetwentyeighth";
                 default:
                     return noteValue.ToString().ToLowerInvariant();
             }

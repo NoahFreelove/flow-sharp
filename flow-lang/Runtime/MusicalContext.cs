@@ -59,6 +59,24 @@ public class MusicalContext
     public int? VoicePoolSize { get; set; }
 
     /// <summary>
+    /// Sustain pedal — when true, notes within this context render with their
+    /// audio buffer extended by <see cref="SustainTailSeconds"/> so they ring
+    /// through subsequent notes, mimicking a piano's sustain pedal. The flag
+    /// itself is a stack via the musical-context push/pop, so nested
+    /// <c>sustainPedal { ... }</c> blocks compose naturally with other context.
+    /// </summary>
+    public bool? SustainPedal { get; set; }
+
+    /// <summary>
+    /// Locked default sustain tail when SustainPedal is active. 2 seconds matches
+    /// a real piano's perceptual decay envelope without creating mud — long
+    /// enough that held notes ring through the next 1-2 beats at typical 100-130
+    /// BPM tempos, short enough that overlapping sustained notes don't pile up
+    /// into volume swells that mask attacks (perceived as tempo drift).
+    /// </summary>
+    public const double SustainTailSeconds = 2.0;
+
+    /// <summary>
     /// Phase 32 D-12 transitional shim: the Phase 23 scalar field. SUPERSEDED by
     /// <see cref="TuningStack"/> + <see cref="ActiveTuning"/>. Marked
     /// <see cref="ObsoleteAttribute"/> so any unmigrated read site surfaces as a
@@ -131,7 +149,8 @@ public class MusicalContext
             Pan = Pan,
             Gain = Gain,
             ReverbTime = ReverbTime,
-            VoicePoolSize = VoicePoolSize
+            VoicePoolSize = VoicePoolSize,
+            SustainPedal = SustainPedal
         };
         // Stack<T> enumeration order is top-to-bottom; the single-arg ctor preserves
         // that order, so naive `new Stack<T>(original)` would REVERSE the stack.

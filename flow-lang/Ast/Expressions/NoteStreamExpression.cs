@@ -36,13 +36,14 @@ public record RestElement(
 
 /// <summary>
 /// Simultaneous notes (chord bracket notation).
-/// e.g., [C4 E4 G4]q
+/// e.g., [C4 E4 G4]q, [C4 E4 G4]h~ for a tied chord.
 /// </summary>
 public record ChordElement(
     SourceLocation Location,
     IReadOnlyList<string> Notes,
     string? DurationSuffix,
-    bool IsDotted
+    bool IsDotted,
+    bool IsTied = false
 ) : NoteStreamElement(Location);
 
 /// <summary>

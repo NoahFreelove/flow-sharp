@@ -885,6 +885,7 @@ public class SimpleLexer
             "gain" => TokenType.Gain,
             "reverbTime" => TokenType.ReverbTime,
             "voicePool" => TokenType.VoicePool,
+            "sustainPedal" => TokenType.SustainPedal,
             "tuning" => TokenType.Tuning,
             "match" => TokenType.Match,
             "when" => TokenType.When,
@@ -943,13 +944,13 @@ public class SimpleLexer
                 return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText, Span: new Span(start, CurrentLocation()));
             }
 
-            // Check for note + duration suffix (e.g., C4h, D5q, E3w)
-            // The duration suffix (w/h/q/e/s/t) gets consumed as part of the identifier
-            // but should be a separate token for the parser's TryParseDurationSuffix
+            // Check for note + duration suffix (e.g., C4h, D5q, E3w, F4x for 64th, G5y for 128th)
+            // The duration suffix gets consumed as part of the identifier but should be a
+            // separate token for the parser's TryParseDurationSuffix.
             if (text.Length >= 3)
             {
                 char lastChar = text[^1];
-                if (lastChar is 'w' or 'h' or 'q' or 'e' or 's' or 't')
+                if (lastChar is 'w' or 'h' or 'q' or 'e' or 's' or 't' or 'x' or 'y')
                 {
                     string notePartText = text[..^1];
                     if (TryParseNote(notePartText, out var notePartValue))

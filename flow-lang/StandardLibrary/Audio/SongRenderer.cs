@@ -237,6 +237,11 @@ public static class SongRenderer
         var allVoices = new List<Voice>();
         double maxBeats = 0;
 
+        // Sustain pedal — when active, every note in every sequence extends its
+        // rendered buffer by MusicalContext.SustainTailSeconds, mimicking piano
+        // pedal behavior. Notes ring through subsequent attacks. Onsets unchanged.
+        bool sustainActive = section.Context?.SustainPedal == true;
+
         foreach (var (name, sequence) in section.Sequences)
         {
             // Phase 28 SPEC-7: route through the voice-pool overload — uses the
@@ -245,7 +250,8 @@ public static class SongRenderer
             // policy is preserved for direct callers via RenderSequenceToVoices.
             var voices = SequenceRenderer.RenderSequenceToVoicesWithPool(
                 sequence, synthesizer, DefaultSampleRate, bpm, renderTuning,
-                section.Context?.VoicePoolSize);
+                section.Context?.VoicePoolSize,
+                sustainActive);
             // Apply pan and gain from musical context to all voices in this section
             foreach (var voice in voices)
             {

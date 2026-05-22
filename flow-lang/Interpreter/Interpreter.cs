@@ -280,6 +280,14 @@ public class Interpreter : IFunctionInvoker
                     break;
                 }
 
+                case MusicalContextType.SustainPedal:
+                    // Notes evaluated within this block render with their buffer
+                    // extended by MusicalContext.SustainTailSeconds, mimicking a
+                    // piano's sustain pedal. The flag itself is part of the
+                    // context Clone so nesting works.
+                    musicalCtx.SustainPedal = true;
+                    break;
+
                 case MusicalContextType.Key:
                     if (ctx.Value is LiteralExpression keyExpr)
                     {

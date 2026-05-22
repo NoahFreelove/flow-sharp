@@ -38,7 +38,8 @@ namespace FlowLang.StandardLibrary.Audio
             INoteSynthesizer synthesizer,
             int sampleRate,
             double bpm,
-            RenderTuning tuning)
+            RenderTuning tuning,
+            bool sustainPedalActive = false)
         {
             if (bar.Mode != BarMode.Musical)
             {
@@ -70,7 +71,7 @@ namespace FlowLang.StandardLibrary.Audio
                     // RenderBarAtBeat overload).
                     if (voiceBar.TimeSignature == null)
                         voiceBar.TimeSignature = bar.TimeSignature;
-                    var subVoices = RenderBarToVoices(voiceBar, synthesizer, sampleRate, bpm, tuning);
+                    var subVoices = RenderBarToVoices(voiceBar, synthesizer, sampleRate, bpm, tuning, sustainPedalActive);
                     combined.AddRange(subVoices);
                 }
                 return combined;
@@ -80,9 +81,10 @@ namespace FlowLang.StandardLibrary.Audio
             var timeline = bar.ToTimeline();
             var voices = new List<Voice>();
 
-            // Render each note
-            foreach (var (note, offsetBeats) in timeline)
+            // Render each note (indexed loop so tied notes can look ahead for rests)
+            for (int idx = 0; idx < timeline.Count; idx++)
             {
+                var (note, offsetBeats) = timeline[idx];
                 if (note.IsRest)
                     continue; // Skip rests - they create gaps in the timeline
 
@@ -111,13 +113,32 @@ namespace FlowLang.StandardLibrary.Audio
                     // Tenuto, Accent, Sforzando, Normal — duration unchanged
                 }
 
-                // For tied notes, extend render duration so the audio tail overlaps the next note.
-                // This creates a legato transition since voices mix additively on the timeline.
+                // For tied notes, extend render duration to sustain through subsequent
+                // rest elements in the same voice/bar. This matches the standard musical
+                // interpretation of a tie: the note rings through the following silence.
+                // Crossfade tail is only added when sustain pedal is OFF; otherwise the
+                // sustain extension carries the smoothing and a 100ms crossfade would
+                // add an audible bleed into the next bar's attack (perceived as a grace
+                // note 100ms after the bar boundary).
                 if (note.IsTied)
                 {
-                    double overlapSeconds = 0.1; // 100ms overlap for smooth crossfade
-                    double overlapBeats = (overlapSeconds / 60.0) * bpm;
-                    durationBeats += overlapBeats;
+                    double tiedExtension = 0;
+                    for (int j = idx + 1; j < timeline.Count; j++)
+                    {
+                        var (next, _) = timeline[j];
+                        if (next.IsRest)
+                            tiedExtension += next.GetBeats(bar.TimeSignature.Denominator);
+                        else
+                            break;
+                    }
+                    durationBeats += tiedExtension;
+
+                    if (!sustainPedalActive)
+                    {
+                        double overlapSeconds = 0.1;
+                        double overlapBeats = (overlapSeconds / 60.0) * bpm;
+                        durationBeats += overlapBeats;
+                    }
                 }
 
                 // DX-14 legato: extend rendered duration by overlap factor BEFORE rendering audio buffer.
@@ -128,6 +149,16 @@ namespace FlowLang.StandardLibrary.Audio
                 if (note.DurationOverlap > 0.0)
                 {
                     durationBeats *= (1.0 + note.DurationOverlap);
+                }
+
+                // Sustain pedal — extend every note's rendered buffer by the section's
+                // pedal-tail. Notes ring through subsequent attacks, mimicking piano
+                // pedal behavior. Onset is unchanged (additive mix handles overlap),
+                // so positions remain correct.
+                if (sustainPedalActive)
+                {
+                    double sustainTailBeats = (FlowLang.Runtime.MusicalContext.SustainTailSeconds * bpm) / 60.0;
+                    durationBeats += sustainTailBeats;
                 }
 
                 // Render note to audio buffer.
@@ -143,6 +174,10 @@ namespace FlowLang.StandardLibrary.Audio
 
             return voices;
         }
+
+        // NOTE: foreach → for(idx) conversion above is intentional. The other
+        // RenderBarToVoices overloads delegate here, so the tie-sustain logic
+        // is centralized.
 
         /// <summary>
         /// Overload that applies pan value from musical context to all rendered voices.
@@ -227,9 +262,10 @@ namespace FlowLang.StandardLibrary.Audio
             INoteSynthesizer synthesizer,
             int sampleRate,
             double bpm,
-            RenderTuning tuning)
+            RenderTuning tuning,
+            bool sustainPedalActive = false)
         {
-            var voices = RenderBarToVoices(bar, synthesizer, sampleRate, bpm, tuning);
+            var voices = RenderBarToVoices(bar, synthesizer, sampleRate, bpm, tuning, sustainPedalActive);
 
             // Add beat offset to all voices
             foreach (var voice in voices)

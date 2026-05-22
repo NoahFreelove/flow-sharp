@@ -152,6 +152,13 @@ public partial class Parser
                 Advance(); // consume `voicePool`
                 return ParseMusicalContextStatement(MusicalContextType.VoicePool);
             }
+            // sustainPedal { ... } — no value, just the block. Notes inside this block
+            // render with extended duration so they ring like a piano with the sustain
+            // pedal held down. Nests with other context blocks.
+            if (Match(TokenType.SustainPedal))
+            {
+                return ParseMusicalContextStatement(MusicalContextType.SustainPedal);
+            }
 
             // Phase 32 D-13: `tuning <expr> { ... }` musical-context block. Unlike the
             // other musical-context keywords, `tuning` is FULLY RESERVED per CONTEXT
@@ -684,6 +691,12 @@ public partial class Parser
                         $"Expected integer voice pool size (1..256), got {CurrentToken.Type} '{CurrentToken.Text}' at {poolLoc}");
                 break;
             }
+
+            case MusicalContextType.SustainPedal:
+                // No value — sustainPedal { ... } takes no argument. Synthesize a
+                // placeholder so the existing MusicalContextStatement shape holds.
+                value = new LiteralExpression(location, 1, Span: Span.At(location));
+                break;
 
             default:
                 throw new ParseException($"Unknown musical context type: {contextType}");

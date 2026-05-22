@@ -13,6 +13,7 @@ class Program
         string? inputPath = null;
         string? outputPath = null;
         bool dump = false;
+        bool sustainPedal = true;  // default ON for piano-style holds; --no-sustain to disable
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -23,6 +24,12 @@ class Program
                     return 0;
                 case "--dump":
                     dump = true;
+                    break;
+                case "--no-sustain":
+                    sustainPedal = false;
+                    break;
+                case "--sustain":
+                    sustainPedal = true;
                     break;
                 case "-o":
                     if (i + 1 >= args.Length)
@@ -76,7 +83,7 @@ class Program
             }
 
             var quantizeResult = Conversion.Quantizer.Quantize(midiFile);
-            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath));
+            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath), sustainPedal: sustainPedal);
 
             if (outputPath != null)
             {
@@ -107,6 +114,8 @@ class Program
         Console.Error.WriteLine("  flow-midi <input.mid> -o out.flow    Write .flow to file");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Options:");
-        Console.Error.WriteLine("  -h, --help    Show this help message");
+        Console.Error.WriteLine("  -h, --help        Show this help message");
+        Console.Error.WriteLine("  --sustain         Wrap output in sustainPedal { ... } (default ON; matches piano hold)");
+        Console.Error.WriteLine("  --no-sustain      Disable sustainPedal wrapping (use for non-piano / staccato music)");
     }
 }

@@ -38,7 +38,7 @@ static class FlowGenerator
         { (-7, false), "Cbmajor" },   { (-7, true), "Abminor" },
     };
 
-    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false)
+    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true)
     {
         var sb = new StringBuilder();
         var tracks = quantizeResult.Tracks;
@@ -94,6 +94,17 @@ static class FlowGenerator
         }
 
         sb.AppendLine();
+
+        // Sustain pedal wrap — when the source is piano-style (default), wrap the
+        // section in `sustainPedal { ... }` so the renderer extends every note's
+        // buffer by ~4 seconds. This emulates a pianist holding the sustain pedal
+        // throughout (typical for Romantic-era piano). Disable with --no-sustain
+        // for staccato or non-piano sources.
+        if (sustainPedal && !roundTrip)
+        {
+            sb.AppendLine($"{indent}sustainPedal {{");
+            indent += "    ";
+        }
 
         if (drumTracks.Count > 0)
         {
@@ -171,6 +182,11 @@ static class FlowGenerator
         sb.AppendLine();
 
         // Close context blocks
+        if (sustainPedal && !roundTrip)
+        {
+            indent = indent.Substring(0, indent.Length - 4);
+            sb.AppendLine($"{indent}}}");
+        }
         if (hasKey)
         {
             indent = "        ";
@@ -235,10 +251,23 @@ static class FlowGenerator
 
     static string FormatBar(QuantizedBar bar, bool useAutoFit)
     {
-        var parts = new List<string>();
-        bool barHasNotes = bar.Elements.Any(e => e is NoteElement or ChordElement);
+        // Single flat note stream per bar — true polyphony is expressed at the
+        // Sequence level (one Sequence per voice in a section), not at the bar
+        // level via {voice} blocks. The per-bar voice-block path was abandoned
+        // because per-bar voice allocation discarded musical voice identity
+        // across bars (a melody line could end up in voice 1 of bar 1 and voice 2
+        // of bar 2, causing re-attacks at every bar boundary). The track-wide
+        // voice allocator in Quantizer.cs now produces one stable Sequence per
+        // voice and the FlowGenerator emits them as parallel sequences in one
+        // section — Flow's SongRenderer mixes them additively.
+        return FormatElements(bar.Elements, useAutoFit);
+    }
 
-        foreach (var elem in bar.Elements)
+    static string FormatElements(List<IBarElement> elements, bool useAutoFit)
+    {
+        var parts = new List<string>();
+
+        foreach (var elem in elements)
         {
             switch (elem)
             {
@@ -264,15 +293,27 @@ static class FlowGenerator
                         s += chord.DurationSuffix;
                         if (chord.IsDotted) s += ".";
                     }
+                    if (chord.IsTied) s += "~";
                     parts.Add(s);
                     break;
                 }
 
-                case RestElement:
+                case RestElement rest:
                 {
-                    // Flow rests are just "_" — no duration suffix allowed.
-                    // The rest auto-fits to fill available space in the bar.
-                    parts.Add("_");
+                    // Flow supports both auto-fit rests (`_`) and duration-suffixed
+                    // rests (`_ q`, `_ h`, `_ e .` ...). The space before the suffix
+                    // is required because `_q` lexes as a single underscore-prefixed
+                    // identifier (Flow allows leading underscores in identifiers).
+                    if (!useAutoFit && rest.DurationSuffix != null)
+                    {
+                        string r = "_ " + rest.DurationSuffix;
+                        if (rest.IsDotted) r += " .";
+                        parts.Add(r);
+                    }
+                    else
+                    {
+                        parts.Add("_");
+                    }
                     break;
                 }
             }

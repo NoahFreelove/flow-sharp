@@ -255,7 +255,8 @@ public partial class Parser
                 Expect(TokenType.RBracket, "Expected ']' after chord bracket");
                 string? durSuffix = TryParseDurationSuffix();
                 bool isDotted = durSuffix != null && Match(TokenType.Dot);
-                currentBarElements.Add(new ChordElement(elemLoc, notes, durSuffix, isDotted));
+                bool isTied = Match(TokenType.Tilde);
+                currentBarElements.Add(new ChordElement(elemLoc, notes, durSuffix, isDotted, isTied));
                 continue;
             }
 
@@ -415,7 +416,7 @@ public partial class Parser
     }
 
     /// <summary>
-    /// Tries to parse a duration suffix (w, h, q, e, s, t) from the current token.
+    /// Tries to parse a duration suffix (w, h, q, e, s, t, x, y) from the current token.
     /// Returns null if no valid duration suffix is found.
     /// </summary>
     private string? TryParseDurationSuffix()
@@ -423,7 +424,7 @@ public partial class Parser
         if (Check(TokenType.Identifier))
         {
             var text = CurrentToken.Text;
-            if (text is "w" or "h" or "q" or "e" or "s" or "t")
+            if (text is "w" or "h" or "q" or "e" or "s" or "t" or "x" or "y")
             {
                 Advance();
                 return text;
@@ -790,7 +791,8 @@ public partial class Parser
                 Expect(TokenType.RBracket, "Expected ']' after chord bracket");
                 string? durSuffix = TryParseDurationSuffix();
                 bool isDotted = durSuffix != null && Match(TokenType.Dot);
-                children.Add(new ChordElement(elemLoc, notes, durSuffix, isDotted));
+                bool isTied = Match(TokenType.Tilde);
+                children.Add(new ChordElement(elemLoc, notes, durSuffix, isDotted, isTied));
                 continue;
             }
 

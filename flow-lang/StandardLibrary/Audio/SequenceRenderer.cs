@@ -97,7 +97,8 @@ namespace FlowLang.StandardLibrary.Audio
             int sampleRate,
             double bpm,
             RenderTuning tuning,
-            int? voicePoolSize)
+            int? voicePoolSize,
+            bool sustainPedalActive = false)
         {
             var allVoices = new List<Voice>();
             var timeline = sequence.ToTimeline();
@@ -110,7 +111,8 @@ namespace FlowLang.StandardLibrary.Audio
                     synthesizer,
                     sampleRate,
                     bpm,
-                    tuning);
+                    tuning,
+                    sustainPedalActive);
                 allVoices.AddRange(barVoices);
             }
 

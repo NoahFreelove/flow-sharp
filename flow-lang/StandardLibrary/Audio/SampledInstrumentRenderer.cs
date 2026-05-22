@@ -76,7 +76,16 @@ public class SampledInstrumentRenderer
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
         double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
-        int targetFrames = (int)(durationSeconds * sampleRate);
+        // Tail extension: keep the natural sample decay for up to 500ms past the
+        // authored duration. Sustained piano tones decay exponentially for ~1.4s after
+        // release; cutting at authored duration kills audible energy (~-30 to -40 dBFS
+        // still ringing). The articulation envelope's release ramp keeps the tail from
+        // clicking. Caller's positioning is unaffected because SongRenderer mixes
+        // additively in absolute frames — a tail that overlaps the next note's onset
+        // just sums in (natural piano sustain behavior).
+        double tailSeconds = 0.5;
+        int authoredFrames = (int)(durationSeconds * sampleRate);
+        int targetFrames = authoredFrames + (int)(tailSeconds * sampleRate);
         if (targetFrames <= 0)
             return new AudioBuffer(0, 1, sampleRate);
 
@@ -118,16 +127,29 @@ public class SampledInstrumentRenderer
         Array.Copy(mono, fitted, copyLen);
 
         // Phase 29 REQ-5 / REQ-D-17 / D-18 / D-19: Phase 28 articulation envelope applies
-        // ON TOP of the sample. The recorded WAV provides the instrument timbre; the
-        // envelope shapes attack/sustain/release per Phase 28 SPEC-5 locked rules
-        // (Staccato/Marcato truncate, Tenuto softens release, Sforzando spikes the head,
-        // etc.). Near-transparent baseline ADSR chosen because the sample already carries
-        // the natural attack/decay envelope — see class doc-comment for the rationale.
+        // ON TOP of the sample. The envelope is shaped against the AUTHORED duration so
+        // the release ramp lands at the authored end-of-note; the additional tail past
+        // that point fades exponentially via a separate post-envelope ramp that lets the
+        // natural sample decay ring out (piano-pedal-like sustain).
         float[] envelope = SynthUtils.GenerateArticulationADSR(
             note.Articulation,
             baseAttack: 0.005, baseDecay: 0.05, baseSustain: 1.0, baseRelease: 0.05,
-            frames: targetFrames, sampleRate: sampleRate, isPercussion: false);
-        SynthUtils.ApplyEnvelope(fitted, envelope);
+            frames: authoredFrames, sampleRate: sampleRate, isPercussion: false);
+        for (int i = 0; i < authoredFrames && i < fitted.Length; i++)
+            fitted[i] *= envelope[i];
+        // Tail fade: exponential decay from the envelope's release-end amplitude to silence
+        // over the tail window. ~6dB / 100ms ≈ exp(-frame / (sampleRate * 0.15)) keeps the
+        // tail audible for the first ~150ms and inaudible by 500ms.
+        if (authoredFrames < fitted.Length)
+        {
+            double tailDecayPerFrame = Math.Exp(-1.0 / (sampleRate * 0.15));
+            double level = 1.0;
+            for (int i = authoredFrames; i < fitted.Length; i++)
+            {
+                fitted[i] = (float)(fitted[i] * level);
+                level *= tailDecayPerFrame;
+            }
+        }
 
         return SynthUtils.ToMonoBuffer(fitted, sampleRate);
     }

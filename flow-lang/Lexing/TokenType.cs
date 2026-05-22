@@ -26,6 +26,7 @@ public enum TokenType
     Gain,
     ReverbTime,
     VoicePool,          // Phase 28 (SPEC-7) — voicePool N { ... } musical-context block
+    SustainPedal,       // sustainPedal { ... } musical-context block — extends note durations
     Tuning,             // Phase 32 (SPEC-2) — tuning <expr> { ... } musical-context block (D-13)
     Match,              // Phase 35 Plan 35-05 (LANG-01) — (match scrutinee | pat => body | ...)
     When,               // Phase 35 Plan 35-05 (LANG-01) — guard clause: `| n when (...) => ...`
