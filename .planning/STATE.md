@@ -29,7 +29,7 @@ Phase: 38 OR 40 (composer picks)
 Plan: Not started
 Next step: `/clear` then `/gsd:context-phase 38` or `/gsd:context-phase 40` to spawn the next CONTEXT.md
 Status: Ready to plan
-Last activity: 2026-05-23 — parallel-worktree experiment succeeded: Phases 37 + 39 shipped on the same day via two concurrent agents, no collisions, merge resolved by hand (CLAUDE.md additive, .gitignore additive)
+Last activity: 2026-05-23 — Completed quick task 260523-u78: macOS audio playback via CoreAudio AudioQueue backend (build clean on Mac, isAudioAvailable() returns true)
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
@@ -643,6 +643,7 @@ None yet for Phase 15.
 | 260504-cks | (chord String\|Note) runtime constructor + ChordParser vocabulary expanded from 18 to ~80 entries (5/6/7/9/11/13 + sus + add + alterations with b/# === f/s aliases + slash bass) | 2026-05-04 | 00d9e2e | [260504-cks-chord-string-constructor-comprehensive-vocab](./quick/260504-cks-chord-string-constructor-comprehensive-vocab/) |
 | 260509-qqe | Fix Phase 26 deferred Blockers 1 + 3 — `(str X[])` Void[] wildcard pass-through in EvaluateFunctionCall coercion loop + 6 `(div Int Int)` → `(idiv ...)` site rewrites; ByteIdentical 8/8, smoke 88/0/3, .continue-here.md retired | 2026-05-09 | d88a6ab | [260509-qqe-fix-phase-26-deferred-blockers-str-x-coe](./quick/260509-qqe-fix-phase-26-deferred-blockers-str-x-coe/) |
 | 260504-w24 | Hot fix: Decibel + Beat numerically compatible with Double/Float (CentType precedent) + explicit gain(Buffer, Decibel) overload — unblocks `(gain rendered -12dB)` ergonomics; broader cleanup queued as Phase 26.2 | 2026-05-05 | 1960a92 | [260504-w24-hot-fix-make-decibel-and-beat-types-nume](./quick/260504-w24-hot-fix-make-decibel-and-beat-types-nume/) |
+| 260523-u78 | macOS audio playback via CoreAudio AudioQueue backend (P/Invoke into AudioToolbox.framework; AudioPlaybackManager routes CoreAudio on OSPlatform.OSX, PulseAudio elsewhere) | 2026-05-23 | 1e3f13d | [260523-u78-add-macos-audio-playback-support-via-cor](./quick/260523-u78-add-macos-audio-playback-support-via-cor/) |
 
 ## Deferred Items
 
