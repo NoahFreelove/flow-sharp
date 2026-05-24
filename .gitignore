@@ -242,3 +242,21 @@ examples/live/*.mid
 !FEATURES.md
 midi-to-wav.sh
 .claude/worktrees/
+
+# Quick-task 260524-qnf — flow-interpreter benchmark harness under bench/.
+# Hand-authored .flow scripts + run.sh + README.md + baseline.txt must be
+# tracked despite the global *.flow / *.md ignores above. Mirrors the
+# examples/{pragmas,scala,generative,sections,dsp,notation,live}/ + flow-cli/
+# Scaffold/ + flow-lang.Tests/Fixtures/ allow-list precedents.
+!bench/
+!bench/**
+!bench/**/*.flow
+!bench/**/*.md
+!bench/**/*.txt
+!bench/run.sh
+
+# Re-ignore per-run results files inside bench/ — only the stable-filename
+# baseline.txt is tracked. results-<label>-<timestamp>.txt are historical
+# artifacts that accumulate per re-run and should not be checked in.
+bench/results-*.txt
+

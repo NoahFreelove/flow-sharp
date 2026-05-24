@@ -1,0 +1,31 @@
+Note: m04.flow -- parse-bench import target #4
+Note: Plain Int decls + one proc + one print. Exercises ModuleLoader on relative path.
+
+use "@std"
+
+Int k61 = 61
+Int k62 = 62
+Int k63 = 63
+Int k64 = 64
+Int k65 = 65
+Int k66 = 66
+Int k67 = 67
+Int k68 = 68
+Int k69 = 69
+Int k70 = 70
+Int k71 = 71
+Int k72 = 72
+Int k73 = 73
+Int k74 = 74
+Int k75 = 75
+Int k76 = 76
+Int k77 = 77
+Int k78 = 78
+Int k79 = 79
+Int k80 = 80
+
+proc m04proc (Int: x)
+    (add x k61)
+end proc
+
+(print "m04 loaded")
