@@ -1,10 +1,11 @@
 ---
 phase: 38
 slug: live-coding-2-0
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-23
+approved: 2026-05-23
 ---
 
 # Phase 38 — Validation Strategy
@@ -51,23 +52,23 @@ Pulled from `38-RESEARCH.md` § Validation Architecture. Plan/Task IDs finalized
 | 38-03-* | 38-03 | 3 | LIVE-03 | T-38-12 | Stale-closure detection emits advisory + reverts | unit | `dotnet test --filter "Phase38.StaleClosureDetectionTests"` | ❌ W0 | ⬜ pending |
 | 38-03-* | 38-03 | 3 | LIVE-03 | — | PrngRegistry.ResetAtRenderBoundary called at swap | unit | `dotnet test --filter "Phase38.PrngReseedAtSwapTests"` | ❌ W0 | ⬜ pending |
 | 38-03-* | 38-03 | 3 | LIVE-01, LIVE-02 | T-38-12 | 30s CancellationToken cap → revert + advisory | unit | `dotnet test --filter "Phase38.TimeoutRevertTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-01 | T-38-13 (partial parse) | Tab completion uses in-process CompletionHandler.BuildItems() | unit | `dotnet test --filter "Phase38.ReplCompletionTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-02 | — | `:help transpose` prints signature + doc + example | unit | `dotnet test --filter "Phase38.ReplHelpMetaCommandTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-03 | — | Multi-line paren-balanced continuation works | unit | `dotnet test --filter "Phase38.ReplMultiLineTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-03 | — | Ctrl+R history search returns matches from `~/.config/flow/history` | unit | `dotnet test --filter "Phase38.ReplHistorySearchTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-04 | — | `(visualize seq)` renders articulation glyphs at note onsets | unit | `dotnet test --filter "Phase38.VisualizeArticulationGlyphTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-04 | — | `(inspect seq)` is a working alias of `(visualize seq)` | unit | `dotnet test --filter "Phase38.InspectAliasTests"` | ❌ W0 | ⬜ pending |
-| 38-04-* | 38-04 | 4 | REPL-04 | — | Glyph collision rules resolved correctly (bar line wins) | unit | `dotnet test --filter "Phase38.GlyphCollisionTests"` | ❌ W0 | ⬜ pending |
-| 38-05-* | 38-05 | 5 | AUDIO-IN-01 | T-38-24 (mic feedback) | -20 dB auto-attenuation applied on `(micBuffer)` open | unit | `dotnet test --filter "Phase38.MicBufferAttenuationTests"` | ❌ W0 | ⬜ pending |
-| 38-05-* | 38-05 | 5 | AUDIO-IN-02 | — | Linear interp resample to 44.1kHz preserves duration ±1 sample | unit | `dotnet test --filter "Phase38.MicBufferResampleTests"` | ❌ W0 | ⬜ pending |
-| 38-05-* | 38-05 | 5 | AUDIO-IN-02 | — | `(micBuffer)` composes with `(granular)` / `(mix)` / `(writeWav)` | smoke | `dotnet run --project flow-interpreter tests/test_audio_in_pipeline.flow` | ❌ W0 | ⬜ pending |
-| 38-06-* | 38-06 | 6 | OSC-02 | — | Charitable type-tag inference: Int→,i Long→,h Float→,f Double→,d String→,s Bool→,T/,F | unit | `dotnet test --filter "Phase38.OscTypeTagInferenceTests"` | ❌ W0 | ⬜ pending |
-| 38-06-* | 38-06 | 6 | OSC-01 | T-38-10 (OSC flood) | Rate-limit gate: 200Hz/path drop-newest sample-and-hold | unit | `dotnet test --filter "Phase38.OscRateLimitTests"` | ❌ W0 | ⬜ pending |
-| 38-06-* | 38-06 | 6 | OSC-01, OSC-02 | — | UDP loopback round-trip (127.0.0.1:ephemeral) preserves payload | unit | `dotnet test --filter "Phase38.OscLoopbackTests"` | ❌ W0 | ⬜ pending |
-| 38-06-* | 38-06 | 6 | OSC-01, OSC-02 | — | Bundle support both directions, timetag honored on receive | unit | `dotnet test --filter "Phase38.OscBundleTests"` | ❌ W0 | ⬜ pending |
-| 38-06-* | 38-06 | 6 | OSC-01 | — | Bundle nesting depth >8 → clamp + stderr advisory | unit | `dotnet test --filter "Phase38.OscBundleDepthCapTests"` | ❌ W0 | ⬜ pending |
-| 38-07-* | 38-07 | 7 | all | — | All 5 `examples/live/*.flow` chapters execute cleanly | smoke | `for f in examples/live/*.flow; do dotnet run --project flow-interpreter "$f" || exit 1; done` | ❌ W0 | ⬜ pending |
-| 38-07-* | 38-07 | 7 | REPL-02, REPL-04, OSC-02 | — | REQUIREMENTS.md wording overrides applied per D-38-09/10/13 | manual | `grep -E ":help fn|charitable type-tag|inspect.*visualize alias" .planning/REQUIREMENTS.md` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-01 | T-38-13 (partial parse) | Tab completion uses in-process CompletionHandler.BuildItems() | unit | `dotnet test --filter "Phase38.ReplCompletionTests"` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-02 | — | `:help transpose` prints signature + doc + example | unit | `dotnet test --filter "Phase38.ReplHelpMetaCommandTests"` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-03 | — | Multi-line paren-balanced continuation works | unit | `dotnet test --filter "Phase38.ReplMultiLineTests"` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-03 | — | Ctrl+R history search returns matches from `~/.config/flow/history` | unit | `dotnet test --filter "Phase38.ReplHistorySearchTests"` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-04 | — | `(visualize seq)` renders articulation glyphs at note onsets | unit | `dotnet test --filter "Phase38.VisualizeArticulationGlyphTests"` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-04 | — | `(inspect seq)` is a working alias of `(visualize seq)` | unit | `dotnet test --filter "Phase38.InspectAliasTests"` | ❌ W0 | ⬜ pending |
+| 38-04-* | 38-04 | 2 | REPL-04 | — | Glyph collision rules resolved correctly (bar line wins) | unit | `dotnet test --filter "Phase38.GlyphCollisionTests"` | ❌ W0 | ⬜ pending |
+| 38-05-* | 38-05 | 2 | AUDIO-IN-01 | T-38-24 (mic feedback) | -20 dB auto-attenuation applied on `(micBuffer)` open | unit | `dotnet test --filter "Phase38.MicBufferAttenuationTests"` | ❌ W0 | ⬜ pending |
+| 38-05-* | 38-05 | 2 | AUDIO-IN-02 | — | Linear interp resample to 44.1kHz preserves duration ±1 sample | unit | `dotnet test --filter "Phase38.MicBufferResampleTests"` | ❌ W0 | ⬜ pending |
+| 38-05-* | 38-05 | 2 | AUDIO-IN-02 | — | `(micBuffer)` composes with `(granular)` / `(mix)` / `(writeWav)` | smoke | `dotnet run --project flow-interpreter tests/test_audio_in_pipeline.flow` | ❌ W0 | ⬜ pending |
+| 38-06-* | 38-06 | 3 | OSC-02 | — | Charitable type-tag inference: Int→,i Long→,h Float→,f Double→,d String→,s Bool→,T/,F | unit | `dotnet test --filter "Phase38.OscTypeTagInferenceTests"` | ❌ W0 | ⬜ pending |
+| 38-06-* | 38-06 | 3 | OSC-01 | T-38-10 (OSC flood) | Rate-limit gate: 200Hz/path drop-newest sample-and-hold | unit | `dotnet test --filter "Phase38.OscRateLimitTests"` | ❌ W0 | ⬜ pending |
+| 38-06-* | 38-06 | 3 | OSC-01, OSC-02 | — | UDP loopback round-trip (127.0.0.1:ephemeral) preserves payload | unit | `dotnet test --filter "Phase38.OscLoopbackTests"` | ❌ W0 | ⬜ pending |
+| 38-06-* | 38-06 | 3 | OSC-01, OSC-02 | — | Bundle support both directions, timetag honored on receive | unit | `dotnet test --filter "Phase38.OscBundleTests"` | ❌ W0 | ⬜ pending |
+| 38-06-* | 38-06 | 3 | OSC-01 | — | Bundle nesting depth >8 → clamp + stderr advisory | unit | `dotnet test --filter "Phase38.OscBundleDepthCapTests"` | ❌ W0 | ⬜ pending |
+| 38-07-* | 38-07 | 4 | all | — | All 5 `examples/live/*.flow` chapters execute cleanly | smoke | `for f in examples/live/*.flow; do dotnet run --project flow-interpreter "$f" || exit 1; done` | ❌ W0 | ⬜ pending |
+| 38-07-* | 38-07 | 4 | REPL-02, REPL-04, OSC-02 | — | REQUIREMENTS.md wording overrides applied per D-38-09/10/13 | manual | `grep -E ":help fn|charitable type-tag|inspect.*visualize alias" .planning/REQUIREMENTS.md` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 

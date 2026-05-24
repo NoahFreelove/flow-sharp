@@ -217,7 +217,28 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
   4. Composer can read mic/line input as a Buffer via `(micBuffer duration)` (PulseAudio `PA_STREAM_RECORD`, auto-attenuated 20 dB on open to prevent feedback) and compose it with existing `mix`/`play`/`writeWav`/`granular` builtins. Sample-rate conversion to 44.1 kHz at capture-side. (AUDIO-IN-01, AUDIO-IN-02)
   5. Composer can run an OSC server (`(oscListen port path handler)`) rate-limited to 200 Hz per path and send OSC messages (`(oscSend host port path arg1 arg2 ...)`) with explicit OSC 1.0 type-tag conventions (`,f`/`,d`/`,i`/`,s`). Uses Rug.Osc 1.2.5. (OSC-01, OSC-02)
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 38-01-PLAN.md — Modernized watch + ANSI status panel + 200ms debounce + 30s CancellationToken (LIVE-02)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 38-02-PLAN.md — live { quantize } block AST + Lexer/Parser/Interpreter + LiveBlockRegistry (LIVE-01)
+- [ ] 38-04-PLAN.md — REPL polish: PrettyPrompt + in-process LSP completion + :help fn + (inspect seq) alias + articulation glyphs (REPL-01..04)
+- [ ] 38-05-PLAN.md — Audio input: PulseAudioCaptureBackend + micBuffer + -20 dB attenuation + 44.1 kHz resample (AUDIO-IN-01..02)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 38-03-PLAN.md — State preservation across reload: Voice.Name + DiffByVoiceName + LambdaCaptureAuditor + PRNG reseed at swap (LIVE-03, LIVE-02)
+- [ ] 38-06-PLAN.md — OSC: Rug.Osc + oscSend/oscListen/oscStop/oscBundle/oscSendBundle + charitable type-tag inference (OSC-01..02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 38-07-PLAN.md — Closer (5 examples + 4 paired tests + 38-VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE sweep)
+
 **UI hint**: yes
 
 ### Phase 39: Notation Citizenship
