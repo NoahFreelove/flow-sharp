@@ -178,6 +178,16 @@ public class FlowEngine : IDisposable
         // when a script imports @notation-io). The registration is unconditional —
         // the runtime gate enforces module activation (CONTEXT D-39-01).
         FlowLang.StandardLibrary.Notation.NotationIoBuiltins.Register(internalRegistry, _context);
+        // Phase 38 Plan 38-06 — register the @osc stdlib surface
+        // (oscSend / oscListen / oscStop / oscBundle / oscSendBundle +
+        // __enableOscModule marker). All 5 surface builtins gate on
+        // ExecutionContext.OscEnabled (flipped true by the trailing init call
+        // in flow-lang/osc.flow when a script imports @osc). Mirrors the
+        // Phase 33 SFZ + Phase 39 notation-io pattern. Charitable type-tag
+        // inference per D-38-13; per-path drop-newest sample-and-hold rate
+        // limit at 200 Hz per D-38-14; bundle nesting depth cap 8 per
+        // D-38-15; reference-identity OscHandle lifecycle per D-38-16.
+        FlowLang.StandardLibrary.Network.OscFunctions.Register(internalRegistry, _context);
         // Phase 36 Plan 36-11 — register the @improv stdlib surface
         // (registerStyle / listStyles / jam builtins). The jam builtin lives
         // alongside in JamFunctions.RegisterContextDependent, wired below.

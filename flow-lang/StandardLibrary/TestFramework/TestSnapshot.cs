@@ -66,6 +66,12 @@ public sealed record TestSnapshot
     //      (no new `required` keyword to avoid breaking existing callers).
     public bool NotationIoEnabled { get; init; } = false;
 
+    // 10c. Phase 38 Plan 38-06 OSC-01 — OSC module activation gate. Defaulted-
+    //      false so pre-Phase-38 TestSnapshot constructions remain backward-
+    //      compatible (no new `required` keyword to avoid breaking existing
+    //      callers).
+    public bool OscEnabled { get; init; } = false;
+
     // 11. FlowConfig.Active singleton reference. Last-write-wins reset.
     public required FlowConfigPoco FlowConfigActive { get; init; }
 
