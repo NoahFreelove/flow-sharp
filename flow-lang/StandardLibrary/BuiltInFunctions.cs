@@ -1033,6 +1033,7 @@ public static class BuiltInFunctions
         Harmony.HarmonyFunctions.RegisterContextDependent(registry, context);
         RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
         Audio.EffectsFunctions.RegisterContextDependent(registry, context);  // Phase 22-04 DX-12 (NoteValue-rate delay synced to MusicalContext.Tempo)
+        Audio.BeatConversionFunctions.RegisterContextDependent(registry, context);  // Phase 43 D-08 — beatToSec + secToBeat tempo-aware conversion (closes AUDIT.md §1 Beat-orphan anchor)
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
         Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
         Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)

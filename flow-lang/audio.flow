@@ -588,3 +588,13 @@ internal proc tts(String: text)
 
 Note: Set the external TTS command (default: "espeak-ng --stdout")
 internal proc setTtsCommand(String: command)
+
+Note: ===== Phase 43 D-08 — Beat <-> Second tempo-aware conversion =====
+Note: Both read the active MusicalContext.Tempo at call time; default 120 BPM + one-shot stderr advisory when no tempo block is active.
+Note: Closes the Phase 42 AUDIT §1 BeatType-orphan finding.
+
+Note: beatToSec(Beat) -> Second. 1 beat at 120 BPM = 0.5 seconds.
+internal proc beatToSec(Beat: beats)
+
+Note: secToBeat(Second) -> Beat. 1 second at 120 BPM = 2.0 beats. Symmetric inverse.
+internal proc secToBeat(Second: seconds)
