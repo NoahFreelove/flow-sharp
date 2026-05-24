@@ -1,6 +1,8 @@
 Note: Audio Processing Standard Library
 Note: Phase 1: AudioBuffer Foundation
 
+module audio
+
 Note: ===== Core Buffer Operations =====
 
 Note: Creates a new audio buffer with the specified parameters
