@@ -1,4 +1,5 @@
 using FlowLang.Diagnostics;
+using FlowLang.Runtime;
 
 namespace FlowLang.TypeSystem;
 
@@ -9,6 +10,19 @@ public class OverloadResolver
 {
     private readonly ErrorReporter _errorReporter;
     private readonly TextWriter? _diagnosticOutput;
+
+    /// <summary>
+    /// Bundle A (260524-r4o) — shared, lazily-allocated <see cref="ErrorReporter"/>
+    /// used by the new <c>Resolve(IReadOnlyList&lt;FunctionOverload&gt;, ..., silent: true)</c>
+    /// overload when the caller wants silent probing without per-call allocation.
+    /// The reporter's accumulated errors are never read or flushed — callers in
+    /// silent mode only care about the resolved signature, not the rejection
+    /// reasons. A single shared instance is safe because the silent-path
+    /// reporter is fire-and-forget; concurrent probes accumulate errors into
+    /// the same buffer, but no consumer reads them.
+    /// </summary>
+    private ErrorReporter? _silentReporter;
+    private ErrorReporter SilentReporter => _silentReporter ??= new ErrorReporter();
 
     public OverloadResolver(ErrorReporter errorReporter, TextWriter? diagnosticOutput = null)
     {
@@ -53,9 +67,90 @@ public class OverloadResolver
         Core.SourceLocation? location = null,
         IReadOnlyDictionary<string, FlowType>? namedArgTypes = null)
     {
+        return ResolveCore(functionName, candidates, positionalArgTypes, location, namedArgTypes, _errorReporter);
+    }
+
+    /// <summary>
+    /// Bundle A (260524-r4o) Task 2 — FunctionOverload-direct overload that
+    /// avoids the caller's <c>overloads.Select(o => o.Signature).ToList()</c>
+    /// projection AND the subsequent <c>overloads.FirstOrDefault(o => o.Signature == sig)</c>
+    /// reverse-lookup. The caller passes the live <see cref="FunctionOverload"/>
+    /// list (read-only by contract — see <see cref="StackFrame.GetFunctionOverloads"/>);
+    /// this method extracts signatures into a fixed-size <see cref="FunctionSignature"/>
+    /// array (one allocation, no growable List, no boxed enumerator) and rescans
+    /// the candidates by reference-equality after <see cref="ResolveCore"/> picks
+    /// the winning signature.
+    ///
+    /// <para>
+    /// When <paramref name="silent"/> is true, errors are routed to a shared
+    /// <see cref="SilentReporter"/> instance whose accumulated errors are never
+    /// flushed — used by <c>TryResolveFunction</c> for fire-and-forget probing
+    /// without per-call <see cref="ErrorReporter"/> allocation.
+    /// </para>
+    /// </summary>
+    public FunctionOverload? Resolve(
+        string functionName,
+        IReadOnlyList<FunctionOverload> candidates,
+        IReadOnlyList<FlowType> positionalArgTypes,
+        Core.SourceLocation? location = null,
+        IReadOnlyDictionary<string, FlowType>? namedArgTypes = null,
+        bool silent = false)
+    {
         if (candidates.Count == 0)
         {
-            _errorReporter.ReportError(
+            // Match the legacy "No overloads found" diagnostic when not silent.
+            if (!silent)
+            {
+                _errorReporter.ReportError(
+                    $"No overloads found for function '{functionName}'",
+                    location);
+            }
+            return null;
+        }
+
+        // Single allocation: fixed-size array, no growable List, no LINQ enumerator.
+        var signatures = new FunctionSignature[candidates.Count];
+        for (int i = 0; i < candidates.Count; i++)
+            signatures[i] = candidates[i].Signature;
+
+        var reporter = silent ? SilentReporter : _errorReporter;
+        var sig = ResolveCore(functionName, signatures, positionalArgTypes, location, namedArgTypes, reporter);
+        if (sig == null)
+            return null;
+
+        // Reference-equality scan: each FunctionOverload owns its FunctionSignature
+        // instance (no equality-fallback needed — ResolveCore returns the same
+        // FunctionSignature reference that lived in `signatures[i]`).
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            if (ReferenceEquals(candidates[i].Signature, sig))
+                return candidates[i];
+        }
+
+        // Defensive fallback — should be unreachable if ResolveCore behaves.
+        return null;
+    }
+
+    /// <summary>
+    /// Bundle A (260524-r4o) — shared scoring/named-arg body extracted from the
+    /// legacy <see cref="Resolve(string, IReadOnlyList{FunctionSignature}, IReadOnlyList{FlowType}, Core.SourceLocation?, IReadOnlyDictionary{string, FlowType}?)"/>
+    /// method so both the legacy FunctionSignature-returning entry point and
+    /// the new FunctionOverload-direct overload share it. The
+    /// <paramref name="reporter"/> parameter decouples error emission from the
+    /// <see cref="_errorReporter"/> field — silent probes pass a shared
+    /// fire-and-forget reporter, the legacy path passes <see cref="_errorReporter"/>.
+    /// </summary>
+    private FunctionSignature? ResolveCore(
+        string functionName,
+        IReadOnlyList<FunctionSignature> candidates,
+        IReadOnlyList<FlowType> positionalArgTypes,
+        Core.SourceLocation? location,
+        IReadOnlyDictionary<string, FlowType>? namedArgTypes,
+        ErrorReporter reporter)
+    {
+        if (candidates.Count == 0)
+        {
+            reporter.ReportError(
                 $"No overloads found for function '{functionName}'",
                 location);
             return null;
@@ -79,7 +174,11 @@ public class OverloadResolver
             // we only flush to the real reporter if NO candidate survives —
             // otherwise a successful resolve would leak "unknown parameter"
             // chatter from sibling overloads.
-            var localReporter = new ErrorReporter();
+            //
+            // Bundle A (260524-r4o) Task 3 — lazy-allocate localReporter only
+            // on first rejection. The success path (first candidate wins
+            // immediately) never allocates a local ErrorReporter.
+            ErrorReporter? localReporter = null;
             FunctionSignature? namedArgCandidate = null;
             IReadOnlyList<FlowType>? reorderedArgTypes = null;
 
@@ -88,14 +187,14 @@ public class OverloadResolver
                 if (sig.IsVarArgs)
                 {
                     var firstName = namedArgTypes.Keys.First();
-                    localReporter.ReportError(
+                    (localReporter ??= new ErrorReporter()).ReportError(
                         $"named arg '{firstName}' cannot be used with variadic function '{functionName}'",
                         location);
                     continue;
                 }
                 if (sig.ParameterNames is null)
                 {
-                    localReporter.ReportError(
+                    (localReporter ??= new ErrorReporter()).ReportError(
                         $"function '{functionName}' does not yet support named arguments " +
                         "(parameter names not yet declared on this signature)",
                         location);
@@ -108,7 +207,7 @@ public class OverloadResolver
                 {
                     if (!sig.ParameterNames.Contains(name))
                     {
-                        localReporter.ReportError(
+                        (localReporter ??= new ErrorReporter()).ReportError(
                             $"unknown parameter '{name}' for function '{functionName}' " +
                             $"(expected: {string.Join(", ", sig.ParameterNames)})",
                             location);
@@ -127,7 +226,7 @@ public class OverloadResolver
                     int slot = sig.ParameterNames.ToList().IndexOf(name);
                     if (slot < positionalArgTypes.Count)
                     {
-                        localReporter.ReportError(
+                        (localReporter ??= new ErrorReporter()).ReportError(
                             $"parameter '{name}' bound by both positional and named argument " +
                             $"in call to '{functionName}'",
                             location);
@@ -140,7 +239,7 @@ public class OverloadResolver
                 // Validate arity: positional + named must cover the whole signature.
                 if (positionalArgTypes.Count + namedArgTypes.Count != sig.InputTypes.Count)
                 {
-                    localReporter.ReportError(
+                    (localReporter ??= new ErrorReporter()).ReportError(
                         $"function '{functionName}' expects {sig.InputTypes.Count} arguments, " +
                         $"got {positionalArgTypes.Count} positional + {namedArgTypes.Count} named",
                         location);
@@ -180,9 +279,12 @@ public class OverloadResolver
             {
                 // Flush rejection diagnostics — these are the actionable
                 // messages for the composer.
-                foreach (var err in localReporter.Errors)
+                if (localReporter != null)
                 {
-                    _errorReporter.ReportError(err.Message, err.Location);
+                    foreach (var err in localReporter.Errors)
+                    {
+                        reporter.ReportError(err.Message, err.Location);
+                    }
                 }
                 return null;
             }
@@ -211,7 +313,7 @@ public class OverloadResolver
                 foreach (var sig in candidates)
                     _diagnosticOutput.WriteLine($"[verbose]   candidate: {sig}");
             }
-            _errorReporter.ReportError(
+            reporter.ReportError(
                 $"No matching overload for function '{functionName}' with argument types ({string.Join(", ", argTypes)})",
                 location);
             return null;
@@ -236,7 +338,7 @@ public class OverloadResolver
         if (rankedCandidates.Count > 1
             && rankedCandidates[0].Specificity == rankedCandidates[1].Specificity)
         {
-            _errorReporter.ReportError(
+            reporter.ReportError(
                 $"Ambiguous overload for function '{functionName}' with argument types ({string.Join(", ", argTypes)}). " +
                 $"Candidates: {rankedCandidates[0].Signature}, {rankedCandidates[1].Signature}",
                 location);
