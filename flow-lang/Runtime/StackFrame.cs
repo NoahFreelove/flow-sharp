@@ -43,6 +43,28 @@ public class StackFrame
         throw new InvalidOperationException($"Variable '{name}' not found");
     }
 
+    /// <summary>
+    /// Bundle B (260524-rjm) hot-path probe. Walks this → parent chain
+    /// identically to <see cref="GetVariable"/> but returns <c>false</c>
+    /// instead of throwing on miss. Does NOT throw under any circumstance.
+    /// Use this in dispatch hot paths; use <see cref="GetVariable"/> where
+    /// the throw IS the correct semantic.
+    /// </summary>
+    public bool TryGetVariable(string name, out Value value)
+    {
+        if (_variables.TryGetValue(name, out var v))
+        {
+            value = v;
+            return true;
+        }
+
+        if (Parent != null)
+            return Parent.TryGetVariable(name, out value);
+
+        value = default!;
+        return false;
+    }
+
     public void SetVariable(string name, Value value)
     {
         if (_variables.ContainsKey(name))
