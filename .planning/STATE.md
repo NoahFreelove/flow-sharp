@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: ready_to_plan
-stopped_at: Phase 43 complete (5/5) — ready to discuss Phase 44
-last_updated: 2026-05-24T17:53:33.885Z
-last_activity: 2026-05-24 -- Phase 43 closed (Plan 43-05 closer)
+status: planning
+stopped_at: Phase 44 context gathered
+last_updated: "2026-05-24T20:22:54.379Z"
+last_activity: 2026-05-24
 progress:
-  total_phases: 10
-  completed_phases: 7
+  total_phases: 11
+  completed_phases: 6
   total_plans: 47
-  completed_plans: 217
-  percent: 70
+  completed_plans: 42
+  percent: 55
 ---
 
 # Project State
@@ -684,6 +684,7 @@ Phase 22 — Tier B/C Composer DX Bundle — CLOSED 2026-05-02. Six independentl
 - Phase 26.1 inserted after Phase 26: Symbols + Tuples + Dicts bundle — #foo symbols, <<a,b,c>> tuples with ~> unpack op, generic Dict<K,V> with hashable keys (Int/Symbol/Note/Chord/Tuple); dicts via builtins only, no literal syntax
 - Phase 27 edited: expanded scope to cover prefix-only arithmetic, symbols, tuples, and generic dicts from Phases 26 + 26.1; updated depends_on to 18-26.1
 - Phases 42-44 added (2026-05-24): v1.5 closeout trio addressing stdlib growth pressure. **Phase 42 Type System & Stdlib Audit** — graphify-driven sweep of FlowType ↔ builtin-signature graph, produces AUDIT.md gap list; cheap, runs first, informs 43+44. **Phase 43 Module Names & Qualified Imports** — file-level `module math` declaration + `math.sin` qualified access; unqualified-by-default per ergonomics-first; depends on Phase 42. **Phase 44 Strict Mode** — `enable strict;` file pragma (matches `enable justIntonation;` precedent), file-scoped, no stdlib propagation. Three strictness axes at input perimeter only (internals unchanged): Axis A type-coercion rejection (OverloadResolver convertible +100 tier disabled, requires new `(db x)`/`(hz x)`/`(ms x)`/`(sec x)`/`(cents x)`/`(semitones x)` explicit conversions), Axis B input-domain clamps → errors (markov/lsystem/cellular/granular/tuning/SFZ/ABC clamp sites all gain `if (ctx.StrictMode) throw; else clamp+advisory`), Bool-`if`/String-`print`/cross-type-`(equals)` blocked. Bundled pre-strict bugfix: `print` today rejects non-String per BuiltInFunctions.cs:150-154 — non-strict fixed to auto-stringify, strict re-tightens. Tension flag: Axis B contradicts feedback_charitable_interpretation; resolved by file-scoped opt-in, charitable remains default everywhere else. Sub-order 42 → 43 → 44.
+- Phase 45 added (2026-05-24): **Beat Literal Syntax & True-to-Sig Pragma** — follow-up to Phase 43 closing the literal-syntax half of the BeatType orphan finding. Phase 42 audit identified BeatType as sole coercible orphan; Phase 43 added 4 Beat-typed builtins (beatToSec/secToBeat/delay(Buffer,Beat)/renderBarAtBeat(Bar,Beat)) but composers still can't write Beat values ergonomically — `(beat 0.5)` is wordier than `0.5b` and there's no surface syntax matching the rest of the music-type family. Phase 45 adds: (1) `Nb` literal syntax (lowercase `b`; `B` reserved to avoid `dB`/Decibel ambiguity); default `1b = 1 quarter = 60/bpm seconds` matching MIDI/DAW convention. (2) `enable beat-true-to-sig;` opt-in file pragma (last-wins, matches justIntonation/pythagorean/equalTemperament family) — when active, `Nb` literals AND `(beat N)` constructor multiply by `4.0/denominator` at eval time, reading active MusicalContext.TimeSignature. So in 6/8 with pragma: `1b = 1 eighth`; in 2/2: `1b = 1 half`. Pragma affects literal CONSTRUCTION only — Beat values stored are always quarters internally, so all Phase 43 builtins + 8 `secondsPerBeat = 60/bpm` sites + MIDI export microsPerBeat + Voice.OffsetBeats remain unchanged. Pure parse/eval-time desugar. Cross-file consistency preserved because internal storage is quarter-relative regardless of file. **Ordered after Phase 44** (not Phase 43.1) at composer request — Phase 44 planning is happening in a parallel session and the user wants to avoid contention. Phase 45 could in principle execute in parallel with Phase 44 once 44's plans are locked. Depends on Phase 43; independent of Phase 44.
 
 ### Pending Todos
 
@@ -727,9 +728,9 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-24T18:30:00.000Z
-Stopped at: Phase 43 shipped
-Resume file: None — awaiting composer pick (`/gsd:context-phase 40` for Studio Sync OR `/gsd:plan-phase 44` for Strict Mode)
+Last session: 2026-05-24T20:22:54.368Z
+Stopped at: Phase 44 context gathered
+Resume file: .planning/phases/44-strict-mode/44-CONTEXT.md
 
 **Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 44 (Strict Mode) remain. Phase 44 is AUDIT.md-fed (depends on Phase 42 deliverable, shipped) and now also benefits from Phase 43's module-namespace + qualified-import work for organizing strict-mode test files; Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 44 can ship in either order with Phase 40.
 
