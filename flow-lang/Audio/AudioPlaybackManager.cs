@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using FlowLang.StandardLibrary.Audio;
 
 namespace FlowLang.Audio;
@@ -73,7 +74,14 @@ public sealed class AudioPlaybackManager : IDisposable
     {
         try
         {
-            // Check PulseAudio (covers PipeWire compatibility too)
+            // On macOS, prefer CoreAudio (AudioToolbox.framework is always present on
+            // a standard install). Fall through to PulseAudio for the rare case where
+            // a composer runs PulseAudio under Homebrew on a Mac.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return CoreAudioBackend.IsAvailable() || PulseAudioSimpleBackend.IsAvailable();
+
+            // On Linux (and other non-macOS platforms), PulseAudio Simple covers both
+            // native PulseAudio and PipeWire's compatibility layer.
             return PulseAudioSimpleBackend.IsAvailable();
         }
         catch
@@ -129,13 +137,24 @@ public sealed class AudioPlaybackManager : IDisposable
 
     private static IAudioBackend DetectBackend()
     {
-        // Try PulseAudio Simple API first — this also works on PipeWire systems
-        // since PipeWire provides a PulseAudio compatibility layer.
+        // macOS: prefer CoreAudio via AudioToolbox.framework. AudioToolbox is a
+        // system framework so this should always succeed on a standard install.
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            if (CoreAudioBackend.IsAvailable())
+                return new CoreAudioBackend();
+            // Fall through to PulseAudio probe — covers the (rare) macOS user
+            // running PulseAudio under Homebrew.
+        }
+
+        // Try PulseAudio Simple API — this also works on PipeWire systems since
+        // PipeWire provides a PulseAudio compatibility layer.
         if (PulseAudioSimpleBackend.IsAvailable())
             return new PulseAudioSimpleBackend();
 
         throw new PlatformNotSupportedException(
-            "No audio output available. Install PipeWire or PulseAudio.");
+            "No audio output available. On Linux, install PipeWire or PulseAudio. " +
+            "On macOS, CoreAudio (AudioToolbox.framework) should be present by default.");
     }
 
     public override string ToString() =>
