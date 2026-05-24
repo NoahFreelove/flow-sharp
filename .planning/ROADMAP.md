@@ -345,7 +345,7 @@ Plans:
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
-| 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete   | 2026-05-24 |
+| 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 0/0 | Not started | - |
 
 ### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24
