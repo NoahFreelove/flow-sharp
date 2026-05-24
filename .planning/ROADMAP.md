@@ -377,10 +377,18 @@ Plans:
 
 Plans:
 
+**Wave 1**
+
 - [ ] 43-01-PLAN.md — Lexer/Parser/AST module-declaration surface (REQ-MOD-01)
 - [ ] 43-02-PLAN.md — ModuleRegistry + ExecutionContext property (REQ-MOD-02)
-- [ ] 43-03-PLAN.md — ModuleLoader hook + dispatcher + collision/shadow advisories (REQ-MOD-02/03/04/05/11)
 - [ ] 43-04-PLAN.md — Beat backfill (beatToSec/secToBeat + delay/renderBarAtBeat Beat overloads) + Phase 42 audit polarity flip (REQ-MOD-07/08/09/10/12, D-10)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 43-03-PLAN.md — ModuleLoader hook + dispatcher + collision/shadow advisories (REQ-MOD-02/03/04/05/11)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
 - [ ] 43-05-PLAN.md — 12-file stdlib migration + final regression bar + tracking sweep (REQ-MOD-06/09/11/12)
 
 ### Phase 44: Strict Mode
