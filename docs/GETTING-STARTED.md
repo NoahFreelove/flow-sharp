@@ -264,11 +264,6 @@ recommended path through the wiki and the in-repo examples.
 - [`examples/tutorial.flow`](../examples/tutorial.flow) — the full
   guided tour; step through every major feature with one
   `flow run examples/tutorial.flow`
-- [`examples/ragtime/ragtime.flow`](../examples/ragtime/ragtime.flow) —
-  *Stride & Stomp*, an upbeat ~58s solo-piano ragtime showcase
-- [`examples/symphony/symphony.flow`](../examples/symphony/symphony.flow) —
-  *In Five Voices*, a ~60s ABA orchestral piece using the SFZ
-  sampler against VSCO Community CE
 
 When you're ready to scaffold your own piece, `flow new my-piece`
 writes a minimum-viable `my-piece/my-piece.flow` you can edit and

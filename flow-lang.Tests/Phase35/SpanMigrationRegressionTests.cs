@@ -21,8 +21,8 @@ public class SpanMigrationRegressionTests
         // Audit-trail marker. The actual regression-coverage runs are
         // (1) the full xUnit suite — every fact under flow-lang.Tests/
         //     continues to pass post-migration; the dev-tip baseline of
-        //     pre-existing failures (Phase 28 PerSynthArticulation FFT,
-        //     Phase 28 Ragtime RMS) is preserved, no new failures introduced.
+        //     pre-existing failures (Phase 28 PerSynthArticulation FFT)
+        //     is preserved, no new failures introduced.
         // (2) the .flow regression loop — every script under tests/test_*.flow
         //     either succeeds (83) or fails for an intentional-error reason
         //     (4 scripts whose first comment line documents the expected

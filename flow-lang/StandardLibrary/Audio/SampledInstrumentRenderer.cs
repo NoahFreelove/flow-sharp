@@ -73,9 +73,9 @@ public class SampledInstrumentRenderer
     /// </summary>
     /// <summary>
     /// Phase 37 PIANO-01 (Plan 37-04) D-37-11 LOCK — release tail default in seconds.
-    /// 1.5s reference value per Lehtonen 2007 / RESEARCH §Pattern 8: matches ragtime
-    /// sustain expectations and the upright-piano decay envelope of the U-Iowa MIS
-    /// source. Composer overrides via the <c>release=</c> named arg on
+    /// 1.5s reference value per Lehtonen 2007 / RESEARCH §Pattern 8: matches typical
+    /// sustained-piano expectations and the upright-piano decay envelope of the
+    /// U-Iowa MIS source. Composer overrides via the <c>release=</c> named arg on
     /// <c>renderSong</c>, threaded through this renderer via the <c>releaseSec</c>
     /// parameter on the per-note <see cref="Render"/> call (T-37-04-04 clamps the
     /// override to [0.05, 10.0]).

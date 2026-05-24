@@ -23,7 +23,7 @@ dotnet build
 dotnet test
 
 # Run a single .flow script from source
-dotnet run --project flow-cli -- run examples/symphony/sfz_smoke.flow
+dotnet run --project flow-cli -- run examples/tutorial.flow
 
 # Start the REPL
 dotnet run --project flow-cli -- repl

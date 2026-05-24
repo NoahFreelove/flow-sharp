@@ -242,7 +242,7 @@ static class Quantizer
     // track whose pitch range exceeded 24 semitones got bisected at the
     // median pitch (clamped near middle C) and emitted as two sub-tracks
     // with right-hand / left-hand suffixes, double-splitting a 2-channel
-    // ragtime MIDI into 4 sequences. The composer-authored channel/track
+    // piano MIDI into 4 sequences. The composer-authored channel/track
     // assignment is the source of truth for hand/voice separation; flow-midi
     // now respects that without heuristic re-derivation.
 
@@ -351,8 +351,8 @@ static class Quantizer
     /// method already handles the back end; the leading-trim added here makes
     /// the contract symmetric. This prevents the cascade where 4 silent bars
     /// at the start of a track became 4 whole-bar rests of `| _ |` in the
-    /// generated .flow output (ragtime_imported.flow's bar 0 was four `_q`
-    /// tokens before any actual note).
+    /// generated .flow output (a composer-imported file's bar 0 was four
+    /// `_q` tokens before any actual note).
     /// </summary>
     static List<QuantizedBar> QuantizeSpans(List<NoteSpan> spans, int tpqn, int timeSigNum, int timeSigDen, bool useFlats, int? globalFirstBarIdx = null)
     {
@@ -821,7 +821,7 @@ static class Quantizer
     /// without this tolerance, a 480-tick quarter following a slightly
     /// jittered earlier note (availableTicks = 479) would be rejected
     /// strictly and fall back to ("e", true) at 360 ticks — producing the
-    /// composer-observed `D4s. _ _ _ _ _` cascade in ragtime_imported.flow.
+    /// composer-observed `D4s. _ _ _ _ _` cascade in an imported MIDI.
     /// </summary>
     static (string Suffix, bool IsDotted) SnapDurationCapped(long ticks, long capTicks, int tpqn)
     {

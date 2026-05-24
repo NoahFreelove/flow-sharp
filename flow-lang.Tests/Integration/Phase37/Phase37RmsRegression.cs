@@ -16,17 +16,10 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// concrete baseline (bundled-piano warmth smoke render).
 ///
 /// Baseline routing decision (Plan 37-04 / D-37-12 / 37-HUMAN-UAT.md):
-/// The original plan called for an `examples/ragtime/ragtime.flow` rerender as
-/// the UAT artifact, BUT ragtime routes through `(renderSong "sampler:piano")`
-/// which is the Phase 33 SFZ surface, not the Plan 37-04 bundled-piano path.
-/// Ragtime would only exercise Plan 37-04's warmth levers if the composer
-/// edited the fixture to use `"piano"` + `release=` — that's a downstream
-/// decision (Phase 37 closer can address).
-///
-/// Plan 37-04 therefore pins a SMALL bundled-piano fixture
+/// Plan 37-04 pins a SMALL bundled-piano fixture
 /// (`Fixtures/Phase37/piano_warmth_smoke.flow`) that exercises:
 ///   - The 4-way velocity crossfade (pp/mp/mf/ff) via varied velocities in a
-///     short ragtime-flavored 4-bar phrase
+///     short 4-bar phrase
 ///   - The `release=2.0s` named arg (renderSong third positional)
 ///   - SAMP-03 multiplier overlay via mixed articulations (stacc, marc, leg)
 ///

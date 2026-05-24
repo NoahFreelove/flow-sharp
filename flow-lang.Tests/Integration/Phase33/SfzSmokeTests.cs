@@ -30,8 +30,8 @@ namespace FlowLang.Tests.Integration.Phase33;
 ///   sustained body of a held <c>C4w</c> (whole note), no consecutive-sample
 ///   amplitude jump exceeds the SPEC-5 / SPEC-7 locked 0.05 ceiling. This is
 ///   the worst-case loop-boundary failure mode the Phase 33 RESEARCH §"Round
-///   4" interview pinned as the gate that would invalidate Phase 34's
-///   symphony showcase if it failed.</description></item>
+///   4" interview pinned as the gate that would invalidate sustained
+///   orchestral renders if it failed.</description></item>
 /// </list>
 ///
 /// <para>Class name is <c>Phase33SfzSmokeTests</c> per Plan 33-08's

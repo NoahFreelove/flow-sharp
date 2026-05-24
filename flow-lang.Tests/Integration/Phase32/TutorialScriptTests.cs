@@ -22,7 +22,7 @@ namespace FlowLang.Tests.Integration.Phase32;
 ///     extending the SPEC-6 two-run determinism contract from the per-fixture
 ///     ScalaTuningDeterminismTests to the composer-facing tutorial path.
 ///
-/// Cwd handling mirrors <c>RagtimeFixtureTests.RunFixture</c>: the tutorial
+/// Cwd handling: the tutorial
 /// references the .scl fixtures via the relative path
 /// <c>flow-lang.Tests/fixtures/scala/partch_43.scl</c>, which resolves only
 /// when the process's cwd is the repo root. The test sets cwd to the repo

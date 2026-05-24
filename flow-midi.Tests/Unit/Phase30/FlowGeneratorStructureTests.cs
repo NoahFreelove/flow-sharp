@@ -3,7 +3,7 @@
 //
 // References:
 // - .planning/debug/midi-import-quarter-quantize.md (composer had to sed
-//   `(play output)` away to make ragtime_imported.flow useful)
+//   `(play output)` away to make the imported .flow output useful)
 // - .planning/phases/30-flow-cli-formal-install/30-RESEARCH.md Bug B Scope
 //   Assessment Layer 3 — FlowGenerator emit adjustments.
 // - SPEC-5: "one `Sequence trackN = | ... |` per MIDI track inside a single

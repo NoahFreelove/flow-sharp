@@ -26,8 +26,8 @@ namespace FlowLang.StandardLibrary.Audio;
 /// <para><b>A8 (Option A scalar ADSR multiplier)</b> locked per CONTEXT
 /// "Claude's Discretion" + RESEARCH §Pattern 7: scalar per-stage multipliers
 /// (Option A) chosen over full per-frame curve overlay (Option B) for lower
-/// risk + composability. Escalates to Option B only if Plan 37-04's ragtime
-/// UAT iteration #2 still flags the staccato gap.</para>
+/// risk + composability. Escalates to Option B only if subsequent UAT
+/// iterations still flag the staccato gap.</para>
 ///
 /// <para><b>Locked multiplier table</b> (CLAUDE.md "Locked articulation rules"
 /// composed with the SAMP-03 multiplicative stack — values chosen to
