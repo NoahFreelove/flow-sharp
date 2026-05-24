@@ -353,7 +353,12 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 42 to break down)
+
+**Cross-cutting constraints:**
+
+- Existing flow-lang.Tests suite remains green — zero production code touched
 
 ### Phase 43: Module Names & Qualified Imports
 
@@ -363,6 +368,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 43 to break down)
 
 ### Phase 44: Strict Mode
@@ -382,4 +388,5 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 44 to break down)
