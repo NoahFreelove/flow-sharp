@@ -411,17 +411,34 @@ Plans:
 
 Plans:
 
+**Wave 1**
+
 - [ ] 44-00-PLAN.md — Wave 0 test infrastructure + strict-error-manifest.csv (~126 in-scope rows + 5 carve-outs) + grep extractor + Phase44 Category trait
 - [ ] 44-01-PLAN.md — PragmaRegistry + ExecutionContext.StrictMode + ApplyStrictPragma + ModuleLoader per-imported-file push/restore (REQ-STRICT-01, REQ-STRICT-02)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
 - [ ] 44-02-PLAN.md — ProcDeclaration.IsStrict AST capture + Interpreter push/pop + ExpressionEvaluator CallerStrictMode snapshot (REQ-STRICT-02, REQ-STRICT-03)
-- [ ] 44-03-PLAN.md — OverloadResolver Axis A tier-disable (BOTH Pitfall 1 clauses dropped) (REQ-STRICT-04)
 - [ ] 44-04-PLAN.md — 6 forward + 24 reverse explicit-conversion builtins (REQ-STRICT-05, REQ-STRICT-06)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 44-03-PLAN.md — OverloadResolver Axis A tier-disable (BOTH Pitfall 1 clauses dropped) (REQ-STRICT-04)
 - [ ] 44-05-PLAN.md — 13 §6a input-perimeter clamp sites flip to [strict] errors + Phase44ClampGrepConsistencyTests (REQ-STRICT-07)
-- [ ] 44-06-PLAN.md — Axis B HIGH-priority advisory rewrites (~50 sites: SFZ + Patterns + Render + Match + DSP) (REQ-STRICT-08)
-- [ ] 44-07-PLAN.md — Axis B MED+LOW advisory rewrites (~65 sites: Generative + Improv + Notation + OSC + Tuning + Harmony + InputFunctions + MidiExport) + CarveOutsPreservedTests (REQ-STRICT-08)
 - [ ] 44-08-PLAN.md — Pre-strict bug fix: Void-wildcard print/if/not + AutoStr + (not) builtin registration + D-12 non-strict (and)/(or) last-truthy semantics (REQ-STRICT-10)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 44-06-PLAN.md — Axis B HIGH-priority advisory rewrites (~50 sites: SFZ + Patterns + Render + Match + DSP) (REQ-STRICT-08)
 - [ ] 44-09-PLAN.md — Axis C strict: Bool-required (and)/(or) + cross-type comparison errors + (equals 1 1.0) returns false strict + D-13 Dict regression-pin (REQ-STRICT-09, REQ-STRICT-11)
 - [ ] 44-10-PLAN.md — REPL :strict on/off sticky meta-command + LiveBlockStrictTests (REQ-STRICT-12, REQ-STRICT-13)
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [ ] 44-07-PLAN.md — Axis B MED+LOW advisory rewrites (~65 sites: Generative + Improv + Notation + OSC + Tuning + Harmony + InputFunctions + MidiExport) + CarveOutsPreservedTests (REQ-STRICT-08)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
 - [ ] 44-11-PLAN.md — tests/strict/ positive .flow suite + showcase_strict.flow + Phase44TwoRunDeterminismTests + StrictFlowScriptSuiteTests (REQ-STRICT-14, REQ-STRICT-15)
 
 ### Phase 45: Beat Literal Syntax & True-to-Sig Pragma
@@ -440,6 +457,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 45 to break down)
 
 ### Phase 46: Codebase Bloat Removal
@@ -455,6 +473,7 @@ Plans:
   5. **audio.flow quadruple-declared oscillator wrappers** — `createSineTone`/`createSawTone`/`createSquareTone`/`createTriangleTone` each declared 4× (internal proc forward-decl + Flow proc body, both ×2 for Hertz overload). C# decls are dead weight because the Flow wrappers always intercept. Collapse to single declaration each.
 
 **Secondary targets** (address opportunistically, plan-phase decides ordering):
+
   - `bars.flow` legacy API — zero composer usage post note-streams
   - `preview` builtin — registered but unused
   - `exportWav` legacy alias paralleling canonical `writeWav`
@@ -463,6 +482,7 @@ Plans:
   - 2× Phase35 diagnostics `.txt` baselines (orphaned)
 
 **Anti-scope** (DO NOT TOUCH — audit-preserved intentional patterns):
+
   - Per-synth delegation shells (≤25-line by design per Phase 29 "Sample-based tonal instruments")
   - Hand-rolled DSP (Fft/WindowFunctions/Psola/PhaseVocoder/Hps/PitchShiftEngine — NWaves/RubberBand rejected deliberately)
   - Charitable-interpretation fallbacks (core philosophy per `feedback_charitable_interpretation`)
@@ -480,4 +500,5 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 46 to break down)
