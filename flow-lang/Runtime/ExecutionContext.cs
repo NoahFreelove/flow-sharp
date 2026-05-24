@@ -181,6 +181,27 @@ public class ExecutionContext
     public ModuleRegistry ModuleRegistry { get; } = new();
 
     /// <summary>
+    /// Phase 43 Plan 43-03 (D-04) — per-context map of unqualified proc name
+    /// → owning module name. Populated by <c>ModuleLoader</c>'s registration
+    /// hook (Plan 43-03) immediately AFTER the registry registration step.
+    /// Read at the SAME hook on the next module's load: if a proc this module
+    /// exports is already owned by a DIFFERENT prior module, the loader fires
+    /// the one-shot D-04 last-import-wins shadow advisory via
+    /// <c>RenderingDiagnostics.WarnOnce</c> keyed by
+    /// <c>module-shadow:&lt;priorOwner&gt;:&lt;newOwner&gt;:&lt;procName&gt;</c>.
+    ///
+    /// <para>
+    /// Last-write-wins on collision (the new module CLAIMS the unqualified
+    /// name). Procs from MODULE-LESS files do NOT update this map — those
+    /// files don't claim a namespace per D-01, so a module-less proc colliding
+    /// with a later module's proc fires no advisory (the existing
+    /// <c>StackFrame.DeclareFunction</c> overwrite gives last-import-wins for
+    /// the unqualified call resolution naturally).
+    /// </para>
+    /// </summary>
+    public Dictionary<string, string> ProcOwnership { get; } = new();
+
+    /// <summary>
     /// Phase 36 Plan 36-11 (D-36-12, IMPROV-01) — style-pack registry keyed by
     /// Symbol-typed <see cref="Value"/>. Populated at FlowEngine init by
     /// <c>StyleRegistry.LoadAtEngineInit</c> (shipped packs at

@@ -221,6 +221,53 @@ public class ExpressionEvaluator
 
     private Value EvaluateFunctionCall(FunctionCallExpression call)
     {
+        // Phase 43 Plan 43-03 D-02 — qualified-call routing: when call.Name carries a
+        // dot (parser emits "mod.fn" for (mod.fn args) syntax), try the ModuleRegistry
+        // first. A hit short-circuits to invoking the registered Function Value with
+        // the call's argValues. A miss falls through to the normal unqualified-name
+        // resolution, which will report a clean "no proc 'fn' in module 'mod'" error.
+        // Pitfall 2: only qualified names (containing '.') hit this branch — all
+        // existing call sites pass bare identifiers and remain unaffected.
+        if (call.Name.IndexOf('.') >= 0)
+        {
+            var dotIdx = call.Name.IndexOf('.');
+            var modName = call.Name.Substring(0, dotIdx);
+            var procName = call.Name.Substring(dotIdx + 1);
+            if (_context.ModuleRegistry.TryGetProc(modName, procName, out var registeredValue))
+            {
+                if (registeredValue!.Data is FunctionOverload registeredOverload)
+                {
+                    var qArgValues = call.Arguments.Select(Evaluate).ToList();
+                    if (registeredOverload.IsInternal)
+                    {
+                        var prevSite = _context.CurrentCallSite;
+                        _context.CurrentCallSite = call.Location;
+                        try
+                        {
+                            return registeredOverload.Implementation!(qArgValues);
+                        }
+                        finally
+                        {
+                            _context.CurrentCallSite = prevSite;
+                        }
+                    }
+                    return _invoker.ExecuteUserFunctionWithCaptures(
+                        registeredOverload.Declaration!, qArgValues, registeredOverload.CapturedVariables);
+                }
+            }
+            else if (_context.ModuleRegistry.Contains(modName))
+            {
+                // Module is registered but the proc is not. Clearer error than the generic
+                // "no matching overload" — name the module + the missing proc explicitly.
+                _errorReporter.ReportError(
+                    $"[module] module '{modName}' has no proc '{procName}'",
+                    call.Location);
+                return Value.Void();
+            }
+            // Module not registered — fall through to the normal path so the existing
+            // "Function '<mod.fn>' not found" error message fires.
+        }
+
         // Evaluate all arguments
         var argValues = call.Arguments.Select(Evaluate).ToList();
         var argTypes = argValues.Select(v => v.Type).ToList();
@@ -626,6 +673,39 @@ public class ExpressionEvaluator
 
     private Value EvaluateMemberAccess(MemberAccessExpression member)
     {
+        // Phase 43 Plan 43-03 D-02 — registry-first branch. When the LHS is a bare
+        // identifier that matches a registered module name, return the named proc as
+        // a Function Value. Falls through to the existing instance-member dispatch
+        // (chord.root / song.sections / voice.Pan / track.SampleRate / etc.) on miss.
+        //
+        // Registry-first because:
+        //   (a) Cheaper check — dict lookup vs. potentially-failing variable evaluation
+        //       (a bare `math` identifier is NOT a variable; the existing code path
+        //       would error with "Variable 'math' not found").
+        //   (b) Clearer errors — unknown proc on a registered module says
+        //       "module 'math' has no proc 'foo'" instead of "Variable 'math' not found".
+        //   (c) Preserves Pitfall 2 — chord/song/voice/track LHSes evaluate to non-null
+        //       values that don't have entries in ModuleRegistry; only bare
+        //       VariableExpression references to REGISTERED module names hit this branch.
+        //
+        // The qualified-call form `(mod.fn args)` is handled at EvaluateFunctionCall
+        // (where call.Name carries the dot); this branch covers the value-reference
+        // form `mod.fn` (e.g., `Function f = math.sin`, `(print mod.fn)`).
+        if (member.Object is VariableExpression varExpr
+            && _context.ModuleRegistry.TryGetProc(varExpr.Name, member.MemberName, out var procValue))
+        {
+            return procValue!;
+        }
+        if (member.Object is VariableExpression varExpr2
+            && _context.ModuleRegistry.Contains(varExpr2.Name))
+        {
+            // Module is registered but the member is not a proc in this module — clearer error.
+            _errorReporter.ReportError(
+                $"[module] module '{varExpr2.Name}' has no proc '{member.MemberName}'",
+                member.Location);
+            return Value.Void();
+        }
+
         var obj = Evaluate(member.Object);
 
         // Handle known types with property maps

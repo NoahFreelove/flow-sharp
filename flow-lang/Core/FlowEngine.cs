@@ -29,11 +29,21 @@ public class FlowEngine : IDisposable
     private readonly SampleCache _sampleCache;
     // Phase 33 Plan 33-07 — per-engine SFZ sample cache, mirrors _sampleCache lifecycle.
     private readonly SfzSampleCache _sfzSampleCache;
+    private readonly ModuleLoader _moduleLoader;
     private readonly TextWriter? _diagnosticOutput;
     private bool _disposed;
 
     public ErrorReporter ErrorReporter => _errorReporter;
     public RuntimeContext Context => _context;
+
+    /// <summary>
+    /// Phase 43 Plan 43-03 — exposes the engine's <see cref="ModuleLoader"/> so
+    /// callers (tests + future composer tooling) can seed
+    /// <see cref="ModuleLoader.AdditionalSearchPaths"/> before
+    /// <see cref="Execute"/> runs. Mirrors the <see cref="AudioManager"/> /
+    /// <see cref="SampleCache"/> exposure pattern.
+    /// </summary>
+    public ModuleLoader ModuleLoader => _moduleLoader;
 
     /// <summary>
     /// Phase 35 LANG-04 Wave 1 — per-engine registry of source text keyed by
@@ -205,16 +215,16 @@ public class FlowEngine : IDisposable
         // directly (PRNG-SANCTIONED). Reuses MarkovFunctions.TrainMarkov +
         // GenerateMarkov via internal-method exposure.
         JamFunctions.RegisterContextDependent(internalRegistry, _context);
-        var moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
+        _moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
         // REQ-4 (Plan 30-03): seed the loader's AdditionalSearchPaths from the active
         // config singleton. Empty list when no config.toml is loaded — zero-cost no-op
         // for existing scripts. flow-cli's FlowConfigLoader.LoadFromXdg() populates
         // FlowConfig.Active before any FlowEngine is constructed, so the read here
         // sees the user's configured paths at process startup.
         foreach (var p in FlowConfig.ConfiguredStdlibSearchPaths)
-            moduleLoader.AdditionalSearchPaths.Add(p);
-        _interpreter = new Interpreter.Interpreter(_context, _errorReporter, moduleLoader);
-        moduleLoader.ParentInterpreter = _interpreter;
+            _moduleLoader.AdditionalSearchPaths.Add(p);
+        _interpreter = new Interpreter.Interpreter(_context, _errorReporter, _moduleLoader);
+        _moduleLoader.ParentInterpreter = _interpreter;
 
         // Phase 36 Plan 36-11 — load shipped + user style packs AFTER the
         // interpreter is fully wired. Each pack `use "@improv"` + declares a
