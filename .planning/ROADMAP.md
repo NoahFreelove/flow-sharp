@@ -345,7 +345,7 @@ Plans:
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
-| 43. Module Names & Qualified Imports | v1.5 | 0/0 | Not started | - |
+| 43. Module Names & Qualified Imports | v1.5 | 3/5 | In Progress|  |
 | 44. Strict Mode | v1.5 | 0/0 | Not started | - |
 
 ### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24
@@ -373,15 +373,15 @@ Plans:
 **Goal**: Address growing stdlib name-collision pressure (already feeling it with `gain` vs `volume`; `math.sin` vs other `sin` is the imminent case) by introducing file-level module declarations (e.g., `module math` at top of `.flow` files) and qualified access (`math.sin`). Unqualified-by-default with explicit qualification as the escape hatch — ergonomics-first per `feedback_ergonomics_priority`, composers shouldn't have to type `math.sin` for everything. Existing `use "@x"` import mechanism extends to register module names; collisions across imported modules resolved by qualified-access fallback.
 **Depends on**: Phase 42 (audit informs which stdlib functions need namespace separation first — likely candidates: math/audio/harmony/transforms).
 **Requirements**: REQ-MOD-01, REQ-MOD-02, REQ-MOD-03, REQ-MOD-04, REQ-MOD-05, REQ-MOD-06, REQ-MOD-07, REQ-MOD-08, REQ-MOD-09, REQ-MOD-10, REQ-MOD-11, REQ-MOD-12
-**Plans:** 5 plans
+**Plans:** 3/5 plans executed
 
 Plans:
 
 **Wave 1**
 
-- [ ] 43-01-PLAN.md — Lexer/Parser/AST module-declaration surface (REQ-MOD-01)
-- [ ] 43-02-PLAN.md — ModuleRegistry + ExecutionContext property (REQ-MOD-02)
-- [ ] 43-04-PLAN.md — Beat backfill (beatToSec/secToBeat + delay/renderBarAtBeat Beat overloads) + Phase 42 audit polarity flip (REQ-MOD-07/08/09/10/12, D-10)
+- [x] 43-01-PLAN.md — Lexer/Parser/AST module-declaration surface (REQ-MOD-01)
+- [x] 43-02-PLAN.md — ModuleRegistry + ExecutionContext property (REQ-MOD-02)
+- [x] 43-04-PLAN.md — Beat backfill (beatToSec/secToBeat + delay/renderBarAtBeat Beat overloads) + Phase 42 audit polarity flip (REQ-MOD-07/08/09/10/12, D-10)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
