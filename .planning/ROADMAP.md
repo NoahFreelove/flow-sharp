@@ -7,7 +7,7 @@
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
 - ✅ **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, shipped 2026-05-10)
 - ✅ **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (shipped 2026-05-16) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + JetBrains plugin scaffolding, full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and the curated symphony showcase ("In Five Voices") + ragtime companion ("Stride & Stomp") as the milestone closer (pre-public → public pivot). Release: [v1.4.0](https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0)
-- 🚧 **v1.5 Stage, Studio, Web** — Phases 35-44 (started 2026-05-17) — citizenship + reach milestone: pattern matching + Rust-style diagnostics + pure-Flow test framework (Phase 35), Tidal-style sequence algebra + generative primitives + improv API (Phase 36), granular synthesis + time-stretch/pitch-shift + stereo pan + sampler polish (Phase 37), `live { ... }` block + modernized watch + REPL polish + audio input + OSC (Phase 38), MusicXML/LilyPond export + ABC/MML import (Phase 39), real-time MIDI + clock + Link + JACK transport sync (Phase 40), WASM playground + cross-platform binaries + `flow doc` + JetBrains Marketplace publish + third-genre showcase (Phase 41), type system + stdlib audit (Phase 42), module names + qualified imports (Phase 43), `enable strict;` mode (Phase 44). Phases 42-44 added 2026-05-24 to address stdlib growth pressure (collisions, dead-end types, charitable-default escape hatch). 66 requirements across 7 original phases + Phase 42-44 TBD at plan-phase.
+- 🚧 **v1.5 Stage, Studio, Web** — Phases 35-44 (started 2026-05-17) — citizenship + reach milestone: pattern matching + Rust-style diagnostics + pure-Flow test framework (Phase 35), Tidal-style sequence algebra + generative primitives + improv API (Phase 36), granular synthesis + time-stretch/pitch-shift + stereo pan + sampler polish (Phase 37), `live { ... }` block + modernized watch + REPL polish + audio input + OSC (Phase 38), MusicXML/LilyPond export + ABC/MML import (Phase 39), real-time MIDI + clock + Link + JACK transport sync (Phase 40), WASM playground + cross-platform binaries + `flow doc` + JetBrains Marketplace publish + third-genre showcase (Phase 41), type system + stdlib audit (Phase 42), module names + qualified imports (Phase 43), `enable strict;` mode (Phase 44). Phases 42-44 added 2026-05-24 to address stdlib growth pressure (collisions, dead-end types, charitable-default escape hatch). 66 v1.5 requirements across the 7 original phases (35-41) + 9 new REQ-AUDIT-NN added with Phase 42 closure on 2026-05-24 (75 total v1.5 requirements; Phase 43 + 44 requirements still TBD at their plan-phase). **Phase 42 SHIPPED 2026-05-24** — `42-AUDIT.md` deliverable feeds Phase 43 + Phase 44.
 
 ## Phases
 
@@ -126,6 +126,9 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [x] **Phase 39: Notation Citizenship** — MusicXML 3.1 partwise export (MuseScore reference consumer per D-v1.5-08), LilyPond text emit, ABC 2.1 + abc2midi import, MML PC-98 common-core import (completed 2026-05-23)
 - [ ] **Phase 40: Studio Sync** — IMidiBackend abstraction mirroring IAudioBackend (RtMidi.Core 1.0.53 for ALSA-seq + CoreMIDI + WinMM), MIDI clock master + slave (24 PPQN), Ableton Link (license-gated per D-v1.5-04), JACK transport (Linux opt-in)
 - [ ] **Phase 41: Reach + v1.5 Closer** — WASM playground (Mono-WASM jiterpreter, ≤15 MB compressed), cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal)
+- [x] **Phase 42: Type System & Stdlib Audit** — Reflective audit of FlowType ↔ FunctionSignature graph + clamp/advisory/charitable inventory + .flow caller cross-reference; ships `42-AUDIT.md` deliverable with 7 gap-class sections + 53 routing tags (→ Phase 43 module/naming, → Phase 44 strict-mode Axis B sites, → v1.6-backlog); anchor finding: `BeatType` is the sole coercible orphan. **Zero production code touched — read-only audit phase** (invariant gate-enforced via empty production diff). Closed 9 REQ-AUDIT-NN across 4 plans; 26/26 Phase 42 fixtures GREEN. (completed 2026-05-24)
+- [ ] **Phase 43: Module Names & Qualified Imports** — file-level `module math` declaration + qualified `math.sin` access; depends on Phase 42 AUDIT.md §1/§2/§5a routing
+- [ ] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites
 
 ### Phase Details
 
@@ -341,24 +344,29 @@ Plans:
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
-| 42. Type System & Stdlib Audit | v1.5 | 3/4 | In Progress|  |
+| 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 0/0 | Not started | - |
 | 44. Strict Mode | v1.5 | 0/0 | Not started | - |
 
-### Phase 42: Type System & Stdlib Audit
+### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24
 
 **Goal**: Graphify-driven sweep of the FlowType ↔ builtin-signature graph to surface orphaned types, missing conversions, asymmetric pairs (e.g., `Beat` arithmetic exists but no `Beat → Second` at tempo context), and dead-end builtins (the historical "Decibel type exists but no function accepts it" pattern). Produces prioritized `AUDIT.md` gap list that feeds Phases 43 + 44. Cheapest of the v1.5 closeout trio — runs first because strict mode (Phase 44) needs every clamp/courtesy/advisory site inventoried up front, and module naming (Phase 43) benefits from knowing which stdlib functions collide today.
 **Depends on**: None. Informs Phases 43 + 44.
-**Requirements**: TBD (defined at plan-phase)
-**Plans:** 3/4 plans executed
+**Requirements**: REQ-AUDIT-01, REQ-AUDIT-02, REQ-AUDIT-03, REQ-AUDIT-04, REQ-AUDIT-05, REQ-AUDIT-06, REQ-AUDIT-07, REQ-AUDIT-08, REQ-AUDIT-09
+**Deliverable**: `.planning/phases/42-type-system-stdlib-audit/42-AUDIT.md` (277 lines, 9 sections, 53 routing tags — feeds Phase 43 module/naming + new builtins, Phase 44 strict-mode Axis B sites + explicit-conversion builtins, v1.6-backlog candidates)
+**Plans:** 4 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 42 to break down)
+- [x] 42-01-PLAN.md — Reflective audit harness + xUnit self-check (REQ-AUDIT-01/02/03/06) — `3c74e70` / `e47f7b4`
+- [x] 42-02-PLAN.md — Clamp/advisory grep extractor + .flow caller index (REQ-AUDIT-04/05/07) — `a0858f4` / `763a9fc`
+- [x] 42-03-PLAN.md — AUDIT.md synthesis + composer review checkpoint (REQ-AUDIT-02/04/05/06/07/08/09) — `76972b4` / `2cca3fd` / `d512158`
+- [x] 42-04-PLAN.md — Closer: VERIFICATION + ROADMAP/STATE/REQUIREMENTS sweep + full-suite gate (REQ-AUDIT-03/09)
 
 **Cross-cutting constraints:**
 
-- Existing flow-lang.Tests suite remains green — zero production code touched
+- Existing flow-lang.Tests suite remains green — zero production code touched (invariant gate-enforced via `git diff --stat -- flow-lang/StandardLibrary/ flow-lang/TypeSystem/ "flow-lang/*.flow"` at every commit boundary; verified empty at closer time against both the Wave 1 spawn commit `c4cd738` and the Wave 3 base `82d83a8`)
+- All Phase 42 fixtures (`AuditHarnessTests` 9 + `ClampGrepConsistencyTests` 6 + `AuditReportShapeTests` 11 = 26 facts) GREEN; pre-existing Phase 28/29/35/38 failures from spawn commit `c4cd738` remain pre-existing — Phase 42 introduces zero new failures (see `.planning/phases/42-type-system-stdlib-audit/deferred-items.md`)
 
 ### Phase 43: Module Names & Qualified Imports
 
