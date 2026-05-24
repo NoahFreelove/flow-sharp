@@ -218,4 +218,71 @@ public class ModuleCollisionAdvisoryTests : IDisposable
         Assert.DoesNotContain("[module]", stderr, StringComparison.Ordinal);
     }
 
+    // ==================================================================
+    // Task 2 — Shadow advisory (D-04 last-import-wins) tests
+    // ==================================================================
+
+    // ------------------------------------------------------------------
+    // Test 6 — Two `use` statements where both modules export a same-named
+    // proc produces one shadow advisory; calling unqualified resolves to
+    // the LAST-imported module (D-04 last-import-wins).
+    // ------------------------------------------------------------------
+    [Fact]
+    public void ShadowingProcsAcrossModules_EmitsOneShotAdvisory()
+    {
+        WriteModuleFile("shadowA",
+            "module shadowA\nproc shfn (Int: n) (mul n 2) end\n");
+        WriteModuleFile("shadowB",
+            "module shadowB\nproc shfn (Int: n) (mul n 3) end\n");
+
+        var stderr = CaptureStderr(() =>
+        {
+            using var engine = new FlowEngine();
+            engine.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
+            var ok = engine.Execute("use \"shadowA\"\nuse \"shadowB\"\n", "<test>");
+            Assert.True(ok);
+        });
+
+        var matches = Regex.Matches(stderr,
+            @"\[module\] 'shfn' from 'shadowB' shadows 'shfn' from 'shadowA'");
+        Assert.Equal(1, matches.Count);
+        Assert.Contains("qualify with 'shadowA.shfn' or 'shadowB.shfn'", stderr, StringComparison.Ordinal);
+    }
+
+    // ------------------------------------------------------------------
+    // Test 7 — shadow-advisory dedup across re-runs (WarnOnce dedup keyed by
+    // module-shadow:<a>:<b>:<name>).
+    // ------------------------------------------------------------------
+    [Fact]
+    public void ShadowAdvisory_DedupsAcrossRuns()
+    {
+        WriteModuleFile("dedupA",
+            "module dedupA\nproc shfn (Int: n) (mul n 2) end\n");
+        WriteModuleFile("dedupB",
+            "module dedupB\nproc shfn (Int: n) (mul n 3) end\n");
+
+        // First run — advisory fires once.
+        var stderr1 = CaptureStderr(() =>
+        {
+            using var engine = new FlowEngine();
+            engine.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
+            var ok = engine.Execute("use \"dedupA\"\nuse \"dedupB\"\n", "<test>");
+            Assert.True(ok);
+        });
+
+        var matches1 = Regex.Matches(stderr1, @"shadows 'shfn' from 'dedupA'");
+        Assert.Equal(1, matches1.Count);
+
+        // Second run — dedup keyed by module-shadow:dedupA:dedupB:shfn.
+        var stderr2 = CaptureStderr(() =>
+        {
+            using var engine2 = new FlowEngine();
+            engine2.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
+            var ok2 = engine2.Execute("use \"dedupA\"\nuse \"dedupB\"\n", "<test>");
+            Assert.True(ok2);
+        });
+
+        var matches2 = Regex.Matches(stderr2, @"shadows 'shfn' from 'dedupA'");
+        Assert.Equal(0, matches2.Count);
+    }
 }
