@@ -23,6 +23,13 @@ namespace FlowLang.Tests.Integration.Phase38;
 [Collection("FlowScripts")]
 public class PanelTtyFallbackTests : IDisposable
 {
+    /// <summary>
+    /// ANSI ESC character (U+001B). Built at runtime from <c>(char)0x1B</c>
+    /// so the source file stays pure ASCII and we sidestep the C# <c>\x</c>
+    /// hex-escape's variable-length-when-followed-by-a-hex-digit ambiguity.
+    /// </summary>
+    private static readonly string Esc = new string((char)0x1B, 1);
+
     public PanelTtyFallbackTests()
     {
         RenderingDiagnostics.ResetForTesting();
@@ -52,8 +59,8 @@ public class PanelTtyFallbackTests : IDisposable
 
         var output = sw.ToString();
 
-        // No ANSI escape sequences.
-        Assert.DoesNotContain("\x1b[", output);
+        // No ANSI escape sequences (ESC = U+001B).
+        Assert.False(output.Contains(Esc), $"plain-line output unexpectedly contains ESC byte: {output}");
 
         // Exact plain-line shape per UI-SPEC line 178.
         Assert.Contains("[watch] tempo=120 timesig=4/4 bar=47 voices=8/32", output);
@@ -80,7 +87,7 @@ public class PanelTtyFallbackTests : IDisposable
             perInstrumentCount: new Dictionary<string, int>());
 
         var output = sw.ToString();
-        Assert.DoesNotContain("\x1b[", output);
+        Assert.False(output.Contains(Esc), $"NO_COLOR=1 output unexpectedly contains ESC byte: {output}");
     }
 
     [Fact]

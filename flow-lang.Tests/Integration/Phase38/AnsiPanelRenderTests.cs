@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using FlowInterpreter;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
@@ -19,10 +20,21 @@ namespace FlowLang.Tests.Integration.Phase38;
 /// <see cref="LiveStatusPanel"/> ctor's <c>out</c> seam; passes
 /// <c>forceTtyMode: true</c> so the ANSI path is exercised even when the test
 /// runner has redirected stdout.
+///
+/// Because the panel inserts ANSI dim/reset escapes BETWEEN the field label
+/// and field value (per Typography table — "labels dim, values default"),
+/// assertions strip ESC sequences first via <see cref="StripAnsi"/> before
+/// substring-checking the visible text.
 /// </summary>
 [Collection("FlowScripts")]
 public class AnsiPanelRenderTests : IDisposable
 {
+    private static readonly Regex AnsiEscapeRegex =
+        new Regex("\\u001b\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
+
+    /// <summary>Strips ANSI CSI escapes (ESC [ ... letter) from a string.</summary>
+    private static string StripAnsi(string s) => AnsiEscapeRegex.Replace(s, string.Empty);
+
     public AnsiPanelRenderTests()
     {
         RenderingDiagnostics.ResetForTesting();
@@ -62,25 +74,25 @@ public class AnsiPanelRenderTests : IDisposable
             poolSize: 32,
             perInstrumentCount: instruments);
 
-        var output = sw.ToString();
+        var visible = StripAnsi(sw.ToString());
 
-        // Row 1 — tempo / timesig / bar.
-        Assert.Contains("Tempo: 120 BPM", output);
-        Assert.Contains("TimeSig: 4/4", output);
-        Assert.Contains("Bar: 47", output);
+        // Row 1 — tempo / timesig / bar (label-dim ESCs stripped).
+        Assert.Contains("Tempo: 120 BPM", visible);
+        Assert.Contains("TimeSig: 4/4", visible);
+        Assert.Contains("Bar: 47", visible);
 
         // Row 2 — live blocks segment present (one of the two blocks suffices to
         // verify the row was rendered at all).
-        Assert.Contains("live 1bar @ L12", output);
+        Assert.Contains("live 1bar @ L12", visible);
 
         // Row 3 — voices summary + at least one instrument breakdown.
-        Assert.Contains("Voices: 8/32", output);
-        Assert.Contains("piano:3", output);
+        Assert.Contains("Voices: 8/32", visible);
+        Assert.Contains("piano:3", visible);
 
         // Row 4 — empty at first PublishState (no advisory yet); the row is
         // either absent or contains only the placeholder. We verify by
         // absence of a Warning advisory body.
-        Assert.DoesNotContain("[live]", output);
+        Assert.DoesNotContain("[live]", visible);
     }
 
     [Fact]
@@ -98,14 +110,14 @@ public class AnsiPanelRenderTests : IDisposable
             poolSize: 32,
             perInstrumentCount: new Dictionary<string, int>());
 
-        var output = sw.ToString();
+        var visible = StripAnsi(sw.ToString());
 
         // Row 1 + row 3 present.
-        Assert.Contains("Tempo: 120 BPM", output);
-        Assert.Contains("Voices: 0/32", output);
+        Assert.Contains("Tempo: 120 BPM", visible);
+        Assert.Contains("Voices: 0/32", visible);
 
         // Row 2 omitted per UI-SPEC line 145 — no "Live blocks:" prefix at all.
-        Assert.DoesNotContain("Live blocks:", output);
+        Assert.DoesNotContain("Live blocks:", visible);
     }
 
     [Fact]
@@ -128,7 +140,7 @@ public class AnsiPanelRenderTests : IDisposable
             level: AdvisoryLevel.Warning,
             dedupKey: "live-timeout:test.flow");
 
-        var output = sw.ToString();
-        Assert.Contains("[live] evaluation timed out at 30s", output);
+        var visible = StripAnsi(sw.ToString());
+        Assert.Contains("[live] evaluation timed out at 30s", visible);
     }
 }
