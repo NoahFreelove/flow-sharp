@@ -48,10 +48,10 @@ public class LiveBlockParserTests : IDisposable
         var errorReporter = new ErrorReporter();
         var lexer = new SimpleLexer(source, errorReporter, fileName);
         var tokens = lexer.Tokenize();
-        Assert.False(errorReporter.HasErrors, $"Lex errors: {errorReporter.GetErrors().FirstOrDefault()?.Message}");
+        Assert.False(errorReporter.HasErrors, $"Lex errors: {errorReporter.Errors.FirstOrDefault()?.Message}");
         var parser = new Parser(tokens, errorReporter);
         var program = parser.Parse();
-        Assert.False(errorReporter.HasErrors, $"Parse errors: {errorReporter.GetErrors().FirstOrDefault()?.Message}");
+        Assert.False(errorReporter.HasErrors, $"Parse errors: {errorReporter.Errors.FirstOrDefault()?.Message}");
         return program;
     }
 
