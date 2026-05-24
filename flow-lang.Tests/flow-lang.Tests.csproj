@@ -19,6 +19,7 @@
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
     <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
     <ProjectReference Include="..\flow-midi\flow-midi.csproj" />
+    <ProjectReference Include="..\flow-interpreter\flow-interpreter.csproj" />
   </ItemGroup>
 
   <ItemGroup>
