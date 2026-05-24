@@ -224,6 +224,15 @@ internal proc createSineTone(Double: duration, Double: freq, Double: amp)
 Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 internal proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
 
+Note: Phase 37 DSP-01 — granular synthesis with composable jitter PRNG.
+Note: Composer-facing: (granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)
+Note: Returns a Buffer of the SAME length as input (granular is texture, not stretch).
+Note: Jitter PRNG routes through ctx.PrngRegistry per D-v1.5-06 — two-run cmp-clean preserved.
+Note: Cost model: CPU cost ~ density * grain * sampleRate * output-duration.
+internal proc granular(Buffer: buffer, Double: grain, Double: density, Double: jitter)
+internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter)
+internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter, Symbol: windowing)
+
 internal proc createClip(Double: duration, Double: amp)
 
 Note: White noise -- 1s mono buffer at 44100 Hz, amplitude 1.0

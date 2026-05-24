@@ -194,7 +194,15 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
   5. Ragtime UAT iteration #2 follow-ups close: warmer piano timbre + ≥4 VSCO velocity layers per pitch point (PIANO-01); ≥1 additional flute sample point between G4 and G5 (likely D5 or A4) closing the D5 timbre-crossover gap (FLUTE-01); sampled drums via SampledInstrumentRenderer with transient-preserving pitch shift (PSOLA for transients, vocoder for sustain — same `#auto` hierarchy as DSP-02/03). (DRUM-01)
   6. Two-run cmp-clean determinism contract preserved for non-`live` paths; RMS-windowed regression (±0.5 dB / 100ms per SPEC-8) holds for behavior changes that legitimately move bytes (e.g. new pan applied to existing voices, sample-path envelope multipliers).
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+- [x] 37-01-PLAN.md — DSP foundation + granular synthesis (DSP-01); absorbs all shared utilities (WindowFunctions, Fft, Hps) + Wave 0 test scaffolds for the whole phase
+- [ ] 37-02-PLAN.md — Stretch + pitchShift (DSP-02, DSP-03); hand-rolled phase vocoder + PSOLA + Hps #auto dispatch
+- [ ] 37-03-PLAN.md — SFZ retrofit + MIX-01 verification (MIX-01, MIX-02, SAMP-01, SAMP-02, SAMP-03); round-robin + xfin/xfout + SAMP-03 multipliers + per-voice pan wire-up
+- [ ] 37-04-PLAN.md — PIANO-01 sample asset expansion (4 velocity layers + synthesized mp + release= knob)
+- [ ] 37-05-PLAN.md — FLUTE-01 A4 sample point (closes D5 timbre crossover)
+- [ ] 37-06-PLAN.md — DRUM-01 via VSCO-CE GM-StylePerc.sfz + #auto pitch shift (depends on Plan 37-02)
+- [ ] 37-07-PLAN.md — Closer (examples + 37-VERIFICATION.md + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep)
 
 ### Phase 38: Live Coding 2.0
 
@@ -301,7 +309,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
-| 37. Sound Design + Sampler Polish | v1.5 | 0/0 | Not started | - |
+| 37. Sound Design + Sampler Polish | v1.5 | 1/7 | In Progress|  |
 | 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |

@@ -5,6 +5,7 @@ using FlowLang.Parsing;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Audio;
+using FlowLang.StandardLibrary.Audio.DSP;
 using FlowLang.StandardLibrary.Audio.Sfz;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.StandardLibrary.Generative;
@@ -117,6 +118,12 @@ public class FlowEngine : IDisposable
         CurrentExecutionContext = _context;
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
+        // Phase 37 Plan 37-01 Task 3 — register the granular builtin (DSP-01).
+        // Routes jitter PRNG through ExecutionContext.PrngRegistry keyed by
+        // (CurrentCallSite, "granular_offset" | "granular_timing") per
+        // D-v1.5-06 + 37-RESEARCH.md Pitfall 8. Same per-engine ownership
+        // pattern as PatternFunctions / MarkovFunctions below.
+        GranularFunctions.Register(internalRegistry, _context);
         // Phase 36 Plan 36-05 — register the @patterns stdlib's 13 Tidal-style
         // combinators (PAT-01 / PAT-02 / GEN-05). Stochastic combinators
         // (sometimes/degrade/sparseSeq) route their PRNG through
