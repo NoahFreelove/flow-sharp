@@ -49,6 +49,30 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 ///   parse time (Pitfall 7 in 33-RESEARCH). Runtime never sees the SFZ range.
 ///   SFZ <c>pan=0</c> → Flow pan <c>0.0</c> (centered);
 ///   SFZ <c>pan=+100</c> → Flow pan <c>+1.0</c> (hard right).</description></item>
+///
+///   <item><description><see cref="SeqPosition"/> / <see cref="SeqLength"/> —
+///   Phase 37 SAMP-01 round-robin pair (RESEARCH §Pattern 5). <see cref="SeqLength"/>
+///   <c>=N</c> defines a round-robin group of N regions sharing the same
+///   key+vel range; <see cref="SeqPosition"/> <c>=K</c> (1..N) marks which
+///   alternate this region represents. SFZ spec caps <see cref="SeqPosition"/>
+///   at 100; the parser clamps <see cref="SeqLength"/> values that exceed
+///   100 per Pitfall 1 DoS guard. Sentinel default <c>(1, 1)</c> preserves
+///   Phase 33 behavior when the opcodes are absent: a 1-alternate "group" is
+///   functionally a plain region.</description></item>
+///
+///   <item><description><see cref="XfinLoVel"/> / <see cref="XfinHiVel"/> —
+///   Phase 37 SAMP-02 fade-IN-as-velocity-rises pair (RESEARCH §Pattern 6).
+///   When the note velocity lands in <c>[XfinLoVel, XfinHiVel]</c>, the region
+///   gain is <c>sin(normVel · π/2)</c> per equal-power curve. Sentinel default
+///   <c>(-1, -1)</c> means "no xfin band declared" — the region falls back to
+///   Phase 33 hard-switch behavior at <c>lovel</c>/<c>hivel</c> boundaries.</description></item>
+///
+///   <item><description><see cref="XfoutLoVel"/> / <see cref="XfoutHiVel"/> —
+///   Phase 37 SAMP-02 fade-OUT-as-velocity-rises pair (RESEARCH §Pattern 6).
+///   When the note velocity lands in <c>[XfoutLoVel, XfoutHiVel]</c>, the
+///   region gain is <c>cos(normVel · π/2)</c> per equal-power curve. Sentinel
+///   default <c>(-1, -1)</c> means "no xfout band declared" — Phase 33
+///   hard-switch fallback applies.</description></item>
 /// </list>
 ///
 /// Sealed record: immutable + structural equality + the region grid stores
@@ -67,4 +91,10 @@ public sealed record SfzRegion(
     double AmpegAttack,
     double AmpegRelease,
     double Volume,
-    double Pan);
+    double Pan,
+    int SeqPosition = 1,
+    int SeqLength = 1,
+    int XfinLoVel = -1,
+    int XfinHiVel = -1,
+    int XfoutLoVel = -1,
+    int XfoutHiVel = -1);

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -80,9 +82,37 @@ public class SfzRenderer
     /// </summary>
     private const int CrossfadeFrames = 441;
 
+    /// <summary>
+    /// Phase 37 SAMP-01 — per-region-group round-robin counter. The key tuple
+    /// identifies a round-robin GROUP (regions sharing key+vel range that
+    /// declare <c>seq_length &gt; 1</c>). The stored counter is the number of
+    /// triggers seen so far against that group; the picked region's
+    /// <c>seq_position</c> is <c>(counter % seqLength) + 1</c>.
+    ///
+    /// <para><b>Pitfall 6 reset discipline</b>: the counter resets at the
+    /// renderSong / writeWav boundary via <see cref="ResetAtRenderBoundary"/>
+    /// so two consecutive renders of the same song produce byte-identical
+    /// output. In practice every <c>SongRenderer.RenderSongWithSfz</c> call
+    /// constructs a FRESH <see cref="SfzRenderer"/> (line ~525) so the
+    /// counters are naturally clear at the boundary; the explicit Reset is
+    /// for test callers + future reuse scenarios.</para>
+    /// </summary>
+    private readonly Dictionary<(int loKey, int hiKey, int loVel, int hiVel), int> _rrCounter = new();
+
     public SfzRenderer(SfzSampleCache cache)
     {
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+    }
+
+    /// <summary>
+    /// Phase 37 SAMP-01 — clear the round-robin counters. Called from the
+    /// renderSong / writeWav boundary (Pitfall 6) alongside
+    /// <see cref="FlowLang.Runtime.PrngRegistry.ResetAtRenderBoundary"/> so
+    /// two-run cmp-clean determinism holds.
+    /// </summary>
+    public void ResetAtRenderBoundary()
+    {
+        _rrCounter.Clear();
     }
 
     /// <summary>
@@ -90,8 +120,36 @@ public class SfzRenderer
     /// <paramref name="patch"/>. Returns an <see cref="AudioBuffer"/> at the
     /// requested <paramref name="sampleRate"/> covering
     /// <paramref name="durationBeats"/> beats at <paramref name="bpm"/> BPM.
+    ///
+    /// <para>5-arg back-compat surface — routes to the 6-arg overload with
+    /// <c>voicePan = 0.0</c> so the effective pan equals <c>region.Pan</c>.
+    /// Phase 33 callers see identical pan semantics modulo the B2 lock
+    /// (centered now produces stereo with equal L/R at √0.5 rather than
+    /// the pre-Phase 37 mono buffer).</para>
     /// </summary>
     public AudioBuffer Render(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, SfzData patch)
+        => RenderInternal(note, sampleRate, durationBeats, bpm, patch, voicePan: 0.0);
+
+    /// <summary>
+    /// Phase 37 MIX-02 / OQ4 — voice-pan-aware overload. Composes the
+    /// per-region <c>region.Pan</c> (from the SFZ opcode) additively with the
+    /// per-voice <paramref name="voicePan"/> (from the composer's musical
+    /// context), then clamps to <c>[-1.0, +1.0]</c> per the OQ4 locked
+    /// composition rule. Always emits stereo (B2 lock).
+    /// </summary>
+    public AudioBuffer Render(
+        MusicalNoteData note, int sampleRate, double durationBeats, double bpm,
+        SfzData patch, double voicePan)
+        => RenderInternal(note, sampleRate, durationBeats, bpm, patch, voicePan);
+
+    /// <summary>
+    /// Inner render path used by both the 5-arg back-compat surface and the
+    /// 6-arg voice-pan surface. Threading <paramref name="voicePan"/> here
+    /// lets us compute the effective pan once and apply it in one pass.
+    /// </summary>
+    private AudioBuffer RenderInternal(
+        MusicalNoteData note, int sampleRate, double durationBeats, double bpm,
+        SfzData patch, double voicePan)
     {
         if (note is null) throw new ArgumentNullException(nameof(note));
         if (patch is null) throw new ArgumentNullException(nameof(patch));
@@ -107,38 +165,25 @@ public class SfzRenderer
         int targetMidi = PitchConversion.GetMidiNote(note.NoteName, note.Octave, note.Alteration);
         if (targetMidi < 0 || targetMidi > 127)
         {
-            // Out-of-range MIDI pitch — treat like missing region.
             RenderingDiagnostics.WarnOnce(
                 $"sfz:oob:{patch.Description}:{targetMidi}",
                 $"[sfz] pitch {targetMidi} out of MIDI range under '{patch.Description}' — rendered as rest");
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
         }
 
-        // Pitfall 9 velocity clamp: SFZ default is lovel=1 (not 0). A composer's
-        // note.Velocity == 0.0 maps to raw MIDI 0 which would never match a
-        // lovel=1 region; clamp to [1, 127] so charitable rendering preserves
-        // the default region match.
         int vel = Math.Clamp((int)Math.Round(note.Velocity * 127.0), 1, 127);
 
-        // Region match (D-01 O(1) grid lookup).
-        SfzRegion? region = patch.Grid[targetMidi, vel];
+        SfzRegion? region = PickRoundRobinCandidate(patch, targetMidi, vel)
+                            ?? patch.Grid[targetMidi, vel];
         if (region is null)
         {
-            // Nearest-pitch fallback (SPEC-4). SortedByPitch carries
-            // deduplicated ascending MIDI pitches with ANY coverage; an
-            // empty list short-circuits to the "no region anywhere" branch.
             if (patch.SortedByPitch is { Length: > 0 })
             {
                 int nearestPitch = FindNearestPitch(patch.SortedByPitch, targetMidi);
-                // Try the exact velocity slot at the nearest pitch first;
-                // fall through to any velocity-row covering region if absent.
                 region = patch.Grid[nearestPitch, vel] ?? FindAnyRegionAtPitch(patch, nearestPitch);
             }
-
             if (region is null)
             {
-                // Charitable: emit a one-shot advisory and render silence
-                // (matches Phase 32's [tuning] unmapped-MIDI-key handling).
                 RenderingDiagnostics.WarnOnce(
                     $"sfz:missing:{patch.Description}:{targetMidi}:{vel}",
                     $"[sfz] no region for ({targetMidi}, {vel}) in '{patch.Description}' — rendered as rest");
@@ -146,23 +191,7 @@ public class SfzRenderer
             }
         }
 
-        // Compute pitch shift relative to the matched region's pitch_keycenter.
-        // SFZ regions cover a range via lokey/hikey but the recorded sample
-        // sits at exactly one pitch (pitch_keycenter). Every other pitch in
-        // the region must be varispeed-shifted by (targetMidi - keycenter).
-        // Previously this offset was only applied in the nearest-pitch
-        // fallback branch — direct grid matches at off-keycenter pitches
-        // played the keycenter sample at unity speed, producing wrong pitch
-        // (e.g. VSCO UprightPiano's region 71-74 keyed at 73 played B4/C5/D5
-        // all at C#5/554 Hz).
         int semitonesShift = targetMidi - region.PitchKeycenter;
-
-        // Pull the (possibly varispeed-shifted) buffer from the cache.
-        // GetVarispeed returns null only when the underlying WAV wasn't
-        // eager-loaded — production code paths guarantee eager-load before
-        // render (Plan 33-07 sequences EagerLoad → render). Defensive
-        // advisory + silence still keeps the song alive if a test calls
-        // Render without populating the cache.
         AudioBuffer? source = _cache.GetVarispeed(patch, region.SamplePath, semitonesShift);
         if (source is null)
         {
@@ -172,22 +201,30 @@ public class SfzRenderer
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
         }
 
-        // Body assembly: either NoLoop / OneShot copy-and-zero-pad, or
-        // LoopContinuous / LoopSustain 441-frame equal-power crossfade.
         float[] fitted = AssembleBody(source, region, targetFrames);
 
-        // region.Volume is LINEAR (parser converted from dB at parse time
-        // per Pitfall 8). SFZ default volume=0 dB → linear 1.0; -6 dB →
-        // linear ≈ 0.501.
         if (region.Volume != 1.0)
         {
             float volScale = (float)region.Volume;
             for (int i = 0; i < fitted.Length; i++) fitted[i] *= volScale;
         }
 
-        // Phase 28 articulation envelope ON TOP (SPEC-8). The SFZ
-        // ampeg_attack / ampeg_release override the near-transparent Phase 28
-        // baseline only when > 0 — composer-authored values take precedence.
+        double xfadeGain = ComputeXfadeGain(region, vel);
+        if (xfadeGain != 1.0)
+        {
+            bool siblingInBand = false;
+            foreach (var sibling in patch.Regions)
+            {
+                if (ReferenceEquals(sibling, region)) continue;
+                if (sibling.LoKey > targetMidi || sibling.HiKey < targetMidi) continue;
+                if (sibling.LoVel > vel || sibling.HiVel < vel) continue;
+                if (ComputeXfadeGain(sibling, vel) != 1.0) { siblingInBand = true; break; }
+            }
+            if (siblingInBand) xfadeGain *= 0.7071;
+            float xfadeScale = (float)xfadeGain;
+            for (int i = 0; i < fitted.Length; i++) fitted[i] *= xfadeScale;
+        }
+
         float[] envelope = SynthUtils.GenerateArticulationADSR(
             note.Articulation,
             baseAttack:  region.AmpegAttack  > 0 ? region.AmpegAttack  : 0.005,
@@ -199,14 +236,123 @@ public class SfzRenderer
             isPercussion: false);
         SynthUtils.ApplyEnvelope(fitted, envelope);
 
-        // Pan via constant-power stereo split (Pitfall 7). Center (pan == 0)
-        // stays mono so unaffected patches don't double their channel count.
-        if (region.Pan != 0.0)
+        // Phase 37 SAMP-03 (Pitfall 10 — Phase 28 helper unchanged).
+        var sampleMult = SamplePathArticulationMultipliers.For(note.Articulation);
+        if (sampleMult.IsNontrivial)
         {
-            return ToStereoBufferWithPan(fitted, sampleRate, region.Pan);
+            for (int i = 0; i < fitted.Length; i++)
+                fitted[i] *= sampleMult.Sample(i, fitted.Length);
         }
-        return SynthUtils.ToMonoBuffer(fitted, sampleRate);
+
+        // Phase 37 MIX-02 + B2 lock — unconditional stereo + OQ4
+        // additive-with-clamp pan composition.
+        double effectivePan = Math.Clamp(region.Pan + voicePan, -1.0, 1.0);
+        return ToStereoBufferWithPan(fitted, sampleRate, effectivePan);
     }
+
+    /// <summary>
+    /// Phase 37 SAMP-01 round-robin region picker (RESEARCH §Pattern 5).
+    /// When the patch has multiple regions covering <paramref name="midiPitch"/>
+    /// + <paramref name="midiVelocity"/> AND those regions declare
+    /// <c>seq_length &gt; 1</c>, advance the per-group counter and return the
+    /// region matching the picked <c>seq_position</c>. Otherwise return null
+    /// so the caller falls through to the standard grid lookup.
+    /// </summary>
+    private SfzRegion? PickRoundRobinCandidate(SfzData patch, int midiPitch, int midiVelocity)
+    {
+        // Walk the patch's region list (declaration order) to enumerate
+        // candidate alternates for the requested key+vel pair. The list is
+        // typically &lt; 100 entries for orchestral patches; linear scan is
+        // acceptable.
+        var candidates = new List<SfzRegion>();
+        int maxSeqLength = 1;
+        foreach (var r in patch.Regions)
+        {
+            if (r.LoKey > midiPitch || r.HiKey < midiPitch) continue;
+            if (r.LoVel > midiVelocity || r.HiVel < midiVelocity) continue;
+            if (r.SeqLength > maxSeqLength) maxSeqLength = r.SeqLength;
+            candidates.Add(r);
+        }
+
+        // Only invoke round-robin when the group declares seq_length > 1.
+        // A single-candidate region (or all-default seq_length=1 regions) is
+        // not a round-robin group — fall through to the grid lookup so the
+        // Phase 33 last-declared-wins contract holds.
+        if (candidates.Count < 2 || maxSeqLength < 2) return null;
+
+        // Restrict the group to regions matching the dominant seq_length so
+        // mixed-config patches (some declare RR, some don't) don't pull
+        // non-RR regions into the rotation.
+        var rrGroup = candidates.Where(r => r.SeqLength == maxSeqLength).ToList();
+        if (rrGroup.Count < 2) return null;
+
+        // Per RESEARCH §Pattern 5 the counter advances modulo seqLength on
+        // each trigger. Key the counter by the FIRST region's key+vel range
+        // (representative of the group — all members share the same span).
+        var groupKey = (rrGroup[0].LoKey, rrGroup[0].HiKey, rrGroup[0].LoVel, rrGroup[0].HiVel);
+        int counter = _rrCounter.TryGetValue(groupKey, out var c) ? c : 0;
+        int targetSeqPos = (counter % maxSeqLength) + 1;
+        _rrCounter[groupKey] = counter + 1;
+
+        // Return the region at the picked seq_position. If a patch declares
+        // seq_length=N but is missing one of the positions (composer error),
+        // fall back to the first candidate so the song still plays.
+        return rrGroup.FirstOrDefault(r => r.SeqPosition == targetSeqPos) ?? rrGroup[0];
+    }
+
+    /// <summary>
+    /// Phase 37 SAMP-02 — equal-power velocity-layer crossfade gain
+    /// computation (RESEARCH §Pattern 6). Returns 1.0 when the region's
+    /// xfin/xfout opcodes are both absent (the Phase 33 hard-switch default).
+    /// When the note velocity falls in <c>[XfinLoVel, XfinHiVel]</c>, returns
+    /// <c>sin(normVel · π/2)</c> (fade-in as velocity rises). When in
+    /// <c>[XfoutLoVel, XfoutHiVel]</c>, returns <c>cos(normVel · π/2)</c>
+    /// (fade-out as velocity rises). Outside any declared band returns 1.0.
+    /// </summary>
+    private static double ComputeXfadeGain(SfzRegion region, int midiVelocity)
+    {
+        if (region.XfinLoVel != -1 && region.XfinHiVel != -1
+            && midiVelocity >= region.XfinLoVel && midiVelocity <= region.XfinHiVel)
+        {
+            int bandWidth = Math.Max(1, region.XfinHiVel - region.XfinLoVel);
+            double normVel = (midiVelocity - region.XfinLoVel) / (double)bandWidth;
+            return Math.Sin(normVel * Math.PI / 2.0);
+        }
+        if (region.XfoutLoVel != -1 && region.XfoutHiVel != -1
+            && midiVelocity >= region.XfoutLoVel && midiVelocity <= region.XfoutHiVel)
+        {
+            int bandWidth = Math.Max(1, region.XfoutHiVel - region.XfoutLoVel);
+            double normVel = (midiVelocity - region.XfoutLoVel) / (double)bandWidth;
+            return Math.Cos(normVel * Math.PI / 2.0);
+        }
+        return 1.0;
+    }
+
+    // ----- test-only surface --------------------------------------------
+
+    /// <summary>
+    /// Test-only entry point exposing <see cref="PickRoundRobinCandidate"/>
+    /// for SfzRoundRobinDeterminismTests. Production callers reach the picker
+    /// indirectly via <see cref="Render"/>.
+    /// </summary>
+    internal SfzRegion PickRegion_TestOnly(SfzData patch, int midiPitch, int midiVelocity)
+    {
+        var picked = PickRoundRobinCandidate(patch, midiPitch, midiVelocity);
+        if (picked is not null) return picked;
+        // Fall back to grid lookup so callers can still exercise the path
+        // when only one region matches.
+        return patch.Grid[midiPitch, midiVelocity]
+               ?? throw new InvalidOperationException(
+                   $"PickRegion_TestOnly: no region for ({midiPitch}, {midiVelocity})");
+    }
+
+    /// <summary>
+    /// Test-only entry point exposing <see cref="ComputeXfadeGain"/> for
+    /// SfzHardSwitchRegression. Production callers reach the helper
+    /// indirectly via <see cref="Render"/>.
+    /// </summary>
+    public static double ComputeXfadeGain_TestOnly(SfzRegion region, int midiVelocity)
+        => ComputeXfadeGain(region, midiVelocity);
 
     /// <summary>
     /// NoLoop / OneShot: copy the source body into the fitted buffer and

@@ -124,6 +124,14 @@ public class FlowEngine : IDisposable
         // D-v1.5-06 + 37-RESEARCH.md Pitfall 8. Same per-engine ownership
         // pattern as PatternFunctions / MarkovFunctions below.
         GranularFunctions.Register(internalRegistry, _context);
+        // Phase 37 Plan 37-02 Task 3 — register the stretch + pitchShift
+        // builtins (DSP-02 + DSP-03). Both dispatch through StretchEngine /
+        // PitchShiftEngine which honor the W4 LOCK knob bag end-to-end
+        // (mode + frameSize + hopSize + overlap + transientThreshold +
+        // pitchPeriod + windowSize). #auto mode emits the D-37-06 one-shot
+        // stderr advisory keyed by (CurrentCallSite, summary).
+        StretchFunctions.Register(internalRegistry, _context);
+        PitchShiftFunctions.Register(internalRegistry, _context);
         // Phase 36 Plan 36-05 — register the @patterns stdlib's 13 Tidal-style
         // combinators (PAT-01 / PAT-02 / GEN-05). Stochastic combinators
         // (sometimes/degrade/sparseSeq) route their PRNG through

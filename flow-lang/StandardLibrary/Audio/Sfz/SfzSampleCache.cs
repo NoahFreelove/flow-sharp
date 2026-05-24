@@ -65,6 +65,18 @@ public class SfzSampleCache
     }
 
     /// <summary>
+    /// Test-only entry point — directly populate the raw cache for a
+    /// <paramref name="patch"/> + <paramref name="samplePath"/> pair without
+    /// running the full <see cref="EagerLoad"/> SongData walk. Lets unit /
+    /// integration tests exercise the SfzRenderer without constructing a
+    /// SongData around their fixture. Production callers MUST use EagerLoad.
+    /// </summary>
+    public void SetRaw_TestOnly(SfzData patch, string samplePath, AudioBuffer buffer)
+    {
+        _rawCache[(patch, samplePath)] = buffer;
+    }
+
+    /// <summary>
     /// Returns the buffer for <paramref name="samplePath"/> in
     /// <paramref name="patch"/>, varispeed-shifted by
     /// <paramref name="semitonesShift"/> semitones. Memoizes the shifted

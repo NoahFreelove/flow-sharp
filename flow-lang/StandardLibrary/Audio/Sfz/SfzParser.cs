@@ -15,9 +15,13 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 /// <see cref="MaxRegionCount"/> DoS guard mirroring
 /// <c>ScalaParser.MaxStepCount</c>.
 ///
-/// <para><b>Whitelist — 14 opcodes</b> (extended from SPEC-3's "13" per the
-/// Plan 33-01 VSCO-CE 1.1.0 <c>&lt;control&gt;</c> audit, which found 15/15
-/// probed VSCO patches declare <c>default_path=</c> as their first header):
+/// <para><b>Whitelist — 20 opcodes</b> (Phase 37 SAMP-01 + SAMP-02 extends
+/// Phase 33's 14-entry set with 6 new opcodes: round-robin pair
+/// <c>seq_position</c>/<c>seq_length</c>, velocity-crossfade quad
+/// <c>xfin_lovel</c>/<c>xfin_hivel</c>/<c>xfout_lovel</c>/<c>xfout_hivel</c>).
+/// Phase 33 baseline (extended from SPEC-3's "13" per the Plan 33-01 VSCO-CE
+/// 1.1.0 <c>&lt;control&gt;</c> audit, which found 15/15 probed VSCO patches
+/// declare <c>default_path=</c> as their first header):
 /// <c>sample</c>, <c>lokey</c>, <c>hikey</c>, <c>pitch_keycenter</c>,
 /// <c>lovel</c>, <c>hivel</c>, <c>loop_mode</c>, <c>loop_start</c>,
 /// <c>loop_end</c>, <c>ampeg_attack</c>, <c>ampeg_release</c>, <c>volume</c>,
@@ -72,9 +76,10 @@ public static class SfzParser
         NumberStyles.Float & ~NumberStyles.AllowExponent & ~NumberStyles.AllowThousands;
 
     /// <summary>
-    /// 14-opcode whitelist (per VSCO-CONTROL-DECISION FOUND: extends SPEC-3's
-    /// original 13 with <c>default_path</c>). Case-sensitive Ordinal compare
-    /// per T-33-OPCODE-01 — rejects unicode tricks and case-fold variants.
+    /// 20-opcode whitelist — Phase 33's 14 plus the Phase 37 SAMP-01/02 six
+    /// (round-robin pair + velocity-crossfade quad). Case-sensitive Ordinal
+    /// compare per T-33-OPCODE-01 — rejects unicode tricks and case-fold
+    /// variants.
     /// </summary>
     private static readonly HashSet<string> KnownOpcodes = new(StringComparer.Ordinal)
     {
@@ -92,6 +97,14 @@ public static class SfzParser
         "volume",
         "pan",
         "default_path",
+        // Phase 37 SAMP-01 (RESEARCH §Pattern 5) — round-robin pair.
+        "seq_position",
+        "seq_length",
+        // Phase 37 SAMP-02 (RESEARCH §Pattern 6) — velocity-crossfade quad.
+        "xfin_lovel",
+        "xfin_hivel",
+        "xfout_lovel",
+        "xfout_hivel",
     };
 
     /// <summary>
@@ -469,6 +482,30 @@ public static class SfzParser
         // Pitfall 7: SFZ pan [-100, +100] → Flow pan [-1.0, +1.0].
         double panFlow = panSfz / 100.0;
 
+        // Phase 37 SAMP-01 round-robin opcodes (RESEARCH §Pattern 5).
+        // Sentinel defaults (1, 1) preserve Phase 33 behavior when absent
+        // — a 1-alternate "group" is functionally a plain region.
+        int seqPosition = ReadInt(region, "seq_position", 1, patchDescription);
+        int seqLength = ReadInt(region, "seq_length", 1, patchDescription);
+
+        // Pitfall 1 + Security Domain DoS guard: spec caps seq_position at 100;
+        // clamp seq_length values that exceed 100 with one-shot WarnOnce.
+        if (seqLength > 100)
+        {
+            RenderingDiagnostics.WarnOnce(
+                $"sfz:opcode_value:{patchDescription}:seq_length:{seqLength}",
+                $"[sfz] seq_length={seqLength} exceeds spec max 100 in '{patchDescription}' — clamping to 100");
+            seqLength = 100;
+        }
+
+        // Phase 37 SAMP-02 velocity-crossfade opcodes (RESEARCH §Pattern 6).
+        // Sentinel defaults (-1) mean "no xfade band declared" — region falls
+        // back to Phase 33 hard-switch behavior at lovel/hivel boundaries.
+        int xfinLoVel = ReadIntAllowingNegative(region, "xfin_lovel", -1, patchDescription);
+        int xfinHiVel = ReadIntAllowingNegative(region, "xfin_hivel", -1, patchDescription);
+        int xfoutLoVel = ReadIntAllowingNegative(region, "xfout_lovel", -1, patchDescription);
+        int xfoutHiVel = ReadIntAllowingNegative(region, "xfout_hivel", -1, patchDescription);
+
         // loop_mode — value mapping with charitable fallback.
         SfzLoopMode loopMode;
         if (region.TryGetValue("loop_mode", out var lmStr))
@@ -506,7 +543,10 @@ public static class SfzParser
             loopMode,
             loopStart, loopEnd,
             ampegAttack, ampegRelease,
-            volumeLinear, panFlow);
+            volumeLinear, panFlow,
+            seqPosition, seqLength,
+            xfinLoVel, xfinHiVel,
+            xfoutLoVel, xfoutHiVel);
     }
 
     private static int ReadInt(
@@ -521,6 +561,27 @@ public static class SfzParser
             // (pan, transpose). For the 7 int opcodes in our whitelist
             // (lokey/hikey/lovel/hivel/loop_start/loop_end/pitch_keycenter)
             // the value must be non-negative — NumberStyles.None enforces that.
+            RenderingDiagnostics.WarnOnce(
+                $"sfz:opcode_value:{patchDescription}:{key}:{raw}",
+                $"[sfz] invalid value for {key} in '{patchDescription}' — '{raw}' rejected, using default");
+            return fallback;
+        }
+        return v;
+    }
+
+    /// <summary>
+    /// Like <see cref="ReadInt"/> but permits a leading sign so the Phase 37
+    /// SAMP-02 xfin/xfout opcodes can carry the <c>-1</c> sentinel from inline
+    /// SFZ patches. Used only by the Phase 37 opcode quad (xfin_lovel,
+    /// xfin_hivel, xfout_lovel, xfout_hivel); the Phase 33 baseline keeps the
+    /// strict <see cref="NumberStyles.None"/> path.
+    /// </summary>
+    private static int ReadIntAllowingNegative(
+        Dictionary<string, string> region, string key, int fallback, string patchDescription)
+    {
+        if (!region.TryGetValue(key, out var raw)) return fallback;
+        if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var v))
+        {
             RenderingDiagnostics.WarnOnce(
                 $"sfz:opcode_value:{patchDescription}:{key}:{raw}",
                 $"[sfz] invalid value for {key} in '{patchDescription}' — '{raw}' rejected, using default");

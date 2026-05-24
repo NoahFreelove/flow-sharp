@@ -274,25 +274,28 @@ public class SfzArticulationTests : IDisposable
             .Select(g => g.Select(kv => kv.Key).OrderBy(a => a).ToList())
             .ToList();
 
-        Assert.True(groups.Count >= 4,
-            $"Expected at least 4 distinct envelope shapes from the SFZ " +
-            $"renderer; got {groups.Count}. Phase 28 envelope hook may be " +
-            "regressed (at least one articulation case is a no-op).");
+        // Phase 37 SAMP-03 update: the SamplePathArticulationMultipliers
+        // table assigns DISTINCT per-stage scalars to every articulation
+        // (Staccato (0.5,1.2,1.0,0.8), Marcato (0.6,1.1,1.0,0.9), Accent
+        // (0.7,1.0,1.0,1.0), Sforzando (0.5,1.0,1.0,1.0), Tenuto
+        // (1.0,1.0,1.0,1.05), Legato identity). The Phase 33-era groupings
+        // {Staccato==Marcato} and {Accent==Legato} no longer hold because
+        // the sample-path overlay differentiates each enum value. The
+        // structural contract Phase 37 ships: all 6 articulations produce
+        // pairwise-distinct envelope shapes on the SFZ render path.
+        Assert.True(groups.Count == 6,
+            $"Phase 37 SAMP-03 contract: expected 6 distinct envelope shapes " +
+            $"(one per articulation); got {groups.Count}. " +
+            "SamplePathArticulationMultipliers table may have collapsed an entry.");
 
-        // Pin the structural grouping so a future regression that COLLAPSES
-        // shapes (e.g. Tenuto silently behaving as Normal) is caught.
-        // Each documented group must produce one shape.
-        // {Staccato, Marcato} share a shape.
-        Assert.Equal(hashes[Articulation.Staccato], hashes[Articulation.Marcato]);
-        // {Normal-default, Accent, Legato} share a shape.
-        Assert.Equal(hashes[Articulation.Accent], hashes[Articulation.Legato]);
-        // The 4 documented shapes are pairwise distinct.
-        Assert.NotEqual(hashes[Articulation.Staccato], hashes[Articulation.Tenuto]);
-        Assert.NotEqual(hashes[Articulation.Staccato], hashes[Articulation.Sforzando]);
-        Assert.NotEqual(hashes[Articulation.Staccato], hashes[Articulation.Legato]);
-        Assert.NotEqual(hashes[Articulation.Tenuto], hashes[Articulation.Sforzando]);
-        Assert.NotEqual(hashes[Articulation.Tenuto], hashes[Articulation.Legato]);
-        Assert.NotEqual(hashes[Articulation.Sforzando], hashes[Articulation.Legato]);
+        // Pairwise distinctness across all 6 articulations.
+        for (int i = 0; i < articulations.Length; i++)
+        {
+            for (int j = i + 1; j < articulations.Length; j++)
+            {
+                Assert.NotEqual(hashes[articulations[i]], hashes[articulations[j]]);
+            }
+        }
     }
 
     /// <summary>

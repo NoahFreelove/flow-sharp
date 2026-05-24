@@ -233,6 +233,53 @@ internal proc granular(Buffer: buffer, Double: grain, Double: density, Double: j
 internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter)
 internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter, Symbol: windowing)
 
+Note: Phase 37 DSP-02 — time-stretch with vocoder/psola/auto mode dispatch.
+Note: Composer-facing: (stretch buf 2.0 mode=#auto frameSize=4096 transientThreshold=0.25)
+Note: factor=1.0 fast-paths to identity (byte-identical to input — Pitfall 11).
+Note: #auto mode emits a one-shot stderr advisory per call-site summarizing the
+Note: per-frame vocoder vs psola split (D-37-06 + RESEARCH OQ5).
+Note: W4 LOCK: all knobs (frameSize/hopSize/overlap/transientThreshold/
+Note: pitchPeriod/windowSize) reach the underlying DSP engine end-to-end.
+Note: Universal named-arg surface — composer can pass any subset of knobs
+Note: by name; the resolver picks the overload at the matching arity.
+internal proc stretch(Buffer: buffer, Double: factor)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+
+Note: Phase 37 DSP-03 — pitch-shift via stretch+resample; cents=0 identity fast-path.
+Note: Composer-facing: (pitchShift buf +5st mode=#auto) or (pitchShift buf +50c).
+Note: Accepts Double cents, Cent literal (+50c), or Semitone literal (+2st — auto-scaled).
+Note: Universal named-arg surface — same knob bag as stretch, all 6 W4 LOCK knobs honored.
+internal proc pitchShift(Buffer: buffer, Double: cents)
+internal proc pitchShift(Buffer: buffer, Cent: cents)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+
 internal proc createClip(Double: duration, Double: amp)
 
 Note: White noise -- 1s mono buffer at 44100 Hz, amplitude 1.0

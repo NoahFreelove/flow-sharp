@@ -305,32 +305,69 @@ public static class SongRenderer
         {
             int voiceStartFrame = (int)(voice.OffsetBeats * secondsPerBeat * sampleRate);
 
-            // Constant-power panning using voice.Pan (D-05, D-08 bug fix)
-            float panAngle = (float)((voice.Pan + 1.0) * 0.25 * Math.PI);
-            float leftGain = MathF.Cos(panAngle) * (float)voice.Gain;
-            float rightGain = MathF.Sin(panAngle) * (float)voice.Gain;
-
-            for (int frame = 0; frame < voice.Buffer.Frames; frame++)
+            // Mono voices: legacy synth path — apply constant-power pan from
+            // voice.Pan at the additive-mix stage (D-05, D-08 bug fix).
+            // Stereo voices: Phase 37 MIX-02 SFZ path — voice.Buffer already
+            // carries channel-resolved pan information (region.Pan + voice.Pan
+            // composed inside SfzRenderer per OQ4 additive-with-clamp). The
+            // mix stage MUST preserve L/R rather than downmix-and-re-pan,
+            // otherwise it overwrites the per-region SFZ pan with a generic
+            // voice.Pan re-pan. Channel-preservation cost: zero — the per-frame
+            // loop body is the same shape, just reads from the channel-resolved
+            // source.
+            if (voice.Buffer.Channels == 1)
             {
-                int destFrame = voiceStartFrame + frame;
-                if (destFrame < 0 || destFrame >= totalFrames) continue;
+                float panAngle = (float)((voice.Pan + 1.0) * 0.25 * Math.PI);
+                float leftGain = MathF.Cos(panAngle) * (float)voice.Gain;
+                float rightGain = MathF.Sin(panAngle) * (float)voice.Gain;
 
-                // Get mono sample from voice (downmix if stereo)
-                float sample;
-                if (voice.Buffer.Channels == 1)
+                for (int frame = 0; frame < voice.Buffer.Frames; frame++)
                 {
-                    sample = voice.Buffer.GetSample(frame, 0);
-                }
-                else
-                {
-                    sample = 0f;
-                    for (int ch = 0; ch < voice.Buffer.Channels; ch++)
-                        sample += voice.Buffer.GetSample(frame, ch);
-                    sample /= voice.Buffer.Channels;
-                }
+                    int destFrame = voiceStartFrame + frame;
+                    if (destFrame < 0 || destFrame >= totalFrames) continue;
 
-                result.SetSample(destFrame, 0, result.GetSample(destFrame, 0) + sample * leftGain);
-                result.SetSample(destFrame, 1, result.GetSample(destFrame, 1) + sample * rightGain);
+                    float sample = voice.Buffer.GetSample(frame, 0);
+                    result.SetSample(destFrame, 0, result.GetSample(destFrame, 0) + sample * leftGain);
+                    result.SetSample(destFrame, 1, result.GetSample(destFrame, 1) + sample * rightGain);
+                }
+            }
+            else
+            {
+                // Phase 37 MIX-02 — preserve stereo voices' L/R. Apply
+                // voice.Gain uniformly (gain ≠ pan; gain is a scalar level
+                // adjustment that touches both channels equally).
+                float gain = (float)voice.Gain;
+                for (int frame = 0; frame < voice.Buffer.Frames; frame++)
+                {
+                    int destFrame = voiceStartFrame + frame;
+                    if (destFrame < 0 || destFrame >= totalFrames) continue;
+
+                    // Read L/R from the source voice (channel 0 = L, 1 = R).
+                    // Voice buffers with > 2 channels are not produced by any
+                    // shipping path; fall back to averaging extra channels
+                    // into the existing L/R for defensive robustness.
+                    float left, right;
+                    if (voice.Buffer.Channels == 2)
+                    {
+                        left = voice.Buffer.GetSample(frame, 0);
+                        right = voice.Buffer.GetSample(frame, 1);
+                    }
+                    else
+                    {
+                        left = voice.Buffer.GetSample(frame, 0);
+                        right = voice.Buffer.GetSample(frame, 1);
+                        // Fold any additional channels into both L/R averaged.
+                        float extraSum = 0f;
+                        for (int c = 2; c < voice.Buffer.Channels; c++)
+                            extraSum += voice.Buffer.GetSample(frame, c);
+                        float extraAvg = extraSum / (voice.Buffer.Channels - 2);
+                        left += extraAvg;
+                        right += extraAvg;
+                    }
+
+                    result.SetSample(destFrame, 0, result.GetSample(destFrame, 0) + left * gain);
+                    result.SetSample(destFrame, 1, result.GetSample(destFrame, 1) + right * gain);
+                }
             }
         }
 
@@ -532,6 +569,16 @@ public static class SongRenderer
                 throw new InvalidOperationException(
                     $"renderSong: section '{sectionRef.Name}' not found in song registry");
 
+            // Phase 37 MIX-02 — capture the section's pan context BEFORE
+            // RenderSection so the SfzNoteSynthesizer threads it into
+            // SfzRenderer's 6-arg Render overload as voicePan. OQ4
+            // additive-with-clamp composition with region.Pan happens inside
+            // the renderer; the SongRenderer mix stage then preserves the
+            // resulting stereo L/R per the channels==2 branch added in
+            // MixVoicesToStereoBuffer (so voice.Pan is NOT re-applied at
+            // mix time for SFZ-rendered voices — that would double-pan).
+            adapter.SectionPan = sectionData.Context?.Pan ?? 0.0;
+
             var sectionBuffer = RenderSection(sectionData, adapter);
             for (int r = 0; r < sectionRef.RepeatCount; r++)
             {
@@ -554,10 +601,20 @@ public static class SongRenderer
         private readonly SfzRenderer _renderer;
         private readonly SfzData _patch;
 
+        /// <summary>
+        /// Phase 37 MIX-02 — the composer's section-pan context, captured by
+        /// <see cref="RenderSongWithSfz"/> between section iterations. Threaded
+        /// into <see cref="SfzRenderer.Render(MusicalNoteData,int,double,double,SfzData,double)"/>
+        /// as the <c>voicePan</c> argument so per-region SFZ pan composes
+        /// additively with per-voice composer pan (OQ4 lock).
+        /// </summary>
+        public double SectionPan { get; set; }
+
         public SfzNoteSynthesizer(SfzRenderer renderer, SfzData patch)
         {
             _renderer = renderer;
             _patch = patch;
+            SectionPan = 0.0;
         }
 
         public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
@@ -568,7 +625,7 @@ public static class SongRenderer
             // The interface signature requires the parameter; document the
             // discard explicitly so future readers don't think this is a bug.
             _ = tuning;
-            return _renderer.Render(note, sampleRate, durationBeats, bpm, _patch);
+            return _renderer.Render(note, sampleRate, durationBeats, bpm, _patch, SectionPan);
         }
     }
 
