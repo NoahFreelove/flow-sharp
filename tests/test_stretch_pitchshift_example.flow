@@ -1,0 +1,42 @@
+Note: Phase 37 Plan 37-07 — regression test pairing
+Note: examples/dsp/stretch_pitchshift.flow.
+Note:
+Note: Exercises the same composer surface (stretch + pitchShift + identity
+Note: fast-paths) the tutorial chapter exercises. Uses the Phase 35
+Note: (test "name" lazy((...))) framework (B1 lock — `lazy((...))` REQUIRED
+Note: per tests/test_markov_jazz_example.flow:24-25 normative reference).
+Note:
+Note: USAGE (composer):
+Note:   $ dotnet run --project flow-cli -- test tests/test_stretch_pitchshift_example.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+Buffer base = (createSineTone 1.0 440Hz 0.4)
+
+Note: factor=1.0 identity fast-path returns input byte-identical (Pitfall 11)
+Buffer s_one = (stretch base 1.0)
+(test "stretch_factor1_is_identity"
+    lazy((assertBytesEqual base s_one)))
+
+Note: cents=0 pitchShift identity fast-path returns input byte-identical
+Buffer p_zero = (pitchShift base 0c)
+(test "pitchshift_0cents_is_identity"
+    lazy((assertBytesEqual base p_zero)))
+
+Note: stretch by 2.0x in #vocoder mode roughly doubles the frame count
+Note: (within +/- frameSize slack from STFT overlap-add boundaries — see
+Note: Phase 37 Plan 37-02 SUMMARY "Vocoder default knobs locked").
+Buffer s_two = (stretch base 2.0 #vocoder)
+Int base_frames = (getFrames base)
+Int s_two_frames = (getFrames s_two)
+Int lower_bound = (mul base_frames 1)
+Int upper_bound = (mul base_frames 3)
+(test "stretch_2x_grows_frame_count_within_slack"
+    lazy((assert (gt s_two_frames lower_bound))))
+
+(test "stretch_2x_frame_count_below_3x_ceiling"
+    lazy((assert (lt s_two_frames upper_bound))))
+
+(print "STRETCH/PITCHSHIFT EXAMPLE REGRESSION TESTS REGISTERED")

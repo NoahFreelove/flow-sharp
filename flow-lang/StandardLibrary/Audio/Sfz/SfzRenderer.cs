@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FlowLang.Diagnostics;
+using FlowLang.StandardLibrary.Audio.DSP;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.SpecialTypes;
 
@@ -192,13 +193,74 @@ public class SfzRenderer
         }
 
         int semitonesShift = targetMidi - region.PitchKeycenter;
-        AudioBuffer? source = _cache.GetVarispeed(patch, region.SamplePath, semitonesShift);
-        if (source is null)
+
+        // Phase 37 DRUM-01 (D-37-14 + W7 LOCK) — percussion patches use
+        // PitchShiftEngine's #auto path (PSOLA for transient kits, vocoder
+        // for sustained cymbal/gong) instead of the Phase 33 varispeed
+        // route (which couples pitch + time). The gate is
+        // patch.IsPercussion — set at SfzBuiltins LOAD TIME by the
+        // dict-symbol (#drums), NOT by filename inspection. This is the
+        // W7 LOCK revision: composers can rename GM-StylePerc.sfz, fork
+        // VSCO-CE, or extend the GM dict with custom percussion symbols
+        // without losing transient-preserving pitch shift, and loading a
+        // non-drum patch via #piano never accidentally routes through
+        // PitchShiftEngine.
+        //
+        // Non-percussion patches (IsPercussion=false default) keep the
+        // Phase 33 byte-identical varispeed path — Phase 33/34 regression
+        // tests preserve their pinned baselines.
+        //
+        // semitonesShift=0 is the identity case in BOTH paths:
+        //   * Varispeed: GetVarispeed short-circuits to the raw buffer.
+        //   * PitchShiftEngine: Pitfall 11 identity fast-path (cents=0
+        //     returns input verbatim).
+        AudioBuffer? source;
+        if (patch.IsPercussion && semitonesShift != 0)
         {
-            RenderingDiagnostics.WarnOnce(
-                $"sfz:nosample:{patch.Description}:{region.SamplePath}",
-                $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
-            return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+            // >12 semitone advisory per OQ3 resolution + RESEARCH §Pattern 11
+            // sub-recommendation — varispeed-style artifacts dominate at
+            // large shifts even through PSOLA. Composer trust: don't reject,
+            // just warn once per (patch, sample-center, target-MIDI) tuple.
+            if (Math.Abs(semitonesShift) > 12)
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"pitchShift:drum:large:{patch.Description}:{region.PitchKeycenter}:{targetMidi}",
+                    $"[pitchShift] >12st shift on drum sample at MIDI {targetMidi} " +
+                    $"(sample center MIDI {region.PitchKeycenter}, patch '{patch.Description}') — " +
+                    "varispeed artifacts likely dominate (D-37-14 + RESEARCH Pattern 11 advisory)");
+            }
+
+            // Load the RAW sample at sample-center (semitonesShift=0
+            // short-circuits to the raw buffer in GetVarispeed) — then
+            // run through PitchShiftEngine which preserves duration via
+            // its internal stretch(1/r) + resample(r) inverse remap.
+            AudioBuffer? raw = _cache.GetVarispeed(patch, region.SamplePath, 0);
+            if (raw is null)
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:nosample:{patch.Description}:{region.SamplePath}",
+                    $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
+                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+            }
+            double cents = semitonesShift * 100.0;
+            source = PitchShiftEngine.Process(raw, cents, StretchMode.Auto);
+        }
+        else
+        {
+            // Phase 33 varispeed path — preserved for non-percussion
+            // patches (default IsPercussion=false) AND the
+            // semitonesShift=0 identity case for percussion patches
+            // (GetVarispeed short-circuits to the raw buffer at shift=0,
+            // making this branch byte-identical to a PitchShiftEngine
+            // identity fast-path).
+            source = _cache.GetVarispeed(patch, region.SamplePath, semitonesShift);
+            if (source is null)
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:nosample:{patch.Description}:{region.SamplePath}",
+                    $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
+                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+            }
         }
 
         float[] fitted = AssembleBody(source, region, targetFrames);

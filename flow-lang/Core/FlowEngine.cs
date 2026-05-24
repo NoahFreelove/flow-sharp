@@ -171,6 +171,13 @@ public class FlowEngine : IDisposable
         // __enableSfzModule call inside sfz.flow flips the gate during
         // `use "@sfz"` import.
         SfzBuiltins.Register(internalRegistry, _context);
+        // Phase 39 Plan 39-01 — register the @notation-io stdlib surface
+        // (writeMusicXML / writeLilyPond / abc / mml + __enableNotationIoModule
+        // marker). All 4 surface builtins gate on ExecutionContext.NotationIoEnabled
+        // (flipped true by the trailing init call in flow-lang/notation-io.flow
+        // when a script imports @notation-io). The registration is unconditional —
+        // the runtime gate enforces module activation (CONTEXT D-39-01).
+        FlowLang.StandardLibrary.Notation.NotationIoBuiltins.Register(internalRegistry, _context);
         // Phase 36 Plan 36-11 — register the @improv stdlib surface
         // (registerStyle / listStyles / jam builtins). The jam builtin lives
         // alongside in JamFunctions.RegisterContextDependent, wired below.

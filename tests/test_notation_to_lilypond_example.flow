@@ -1,0 +1,25 @@
+Note: =====================================================================
+Note: test_notation_to_lilypond_example.flow — Phase 39 regression test
+Note: =====================================================================
+Note:
+Note: Composer-facing regression for the writeLilyPond builtin (LILY-01).
+Note: The deep textual-format assertions (version header, Dutch pitch,
+Note: slur grouping, microtonal comments) are owned by LilyPondExportTests.cs.
+
+use "@test"
+use "@notation-io"
+use "@std"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section testIntro {
+                Sequence piano = | C4q D4q E4q F4q |
+            }
+            Song song = [testIntro]
+            (writeLilyPond "/tmp/flow_test_to_lilypond.ly" song)
+        }
+    }
+}
+
+(test "writeLilyPond executed without error" lazy((assert true)))

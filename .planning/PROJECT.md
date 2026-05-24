@@ -14,7 +14,9 @@ Users can write musical ideas as code and hear them immediately — the language
 
 **Current milestone:** v1.5 Stage, Studio, Web (started 2026-05-17)
 
-**Latest phase complete:** Phase 35 — Language Foundation (2026-05-19). LANG-01..04 + TEST-01..02 + HK-01..04 closed: pattern matching foundation with music-aware extractors (chord literal, roman numeral, articulation symbol) + matchExhaustive pragma policy, Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> CALL as NAME` chain naming, v1.4 housekeeping. v1.5 dependency root shipped — Phases 36 (destructuring), 39 (articulation emit), and 40 (MIDI dispatch) now unblocked.
+**Latest phase complete:** Phase 37 — Sound Design + Sampler Polish (2026-05-23). DSP-01..03 + MIX-01..02 + SAMP-01..03 + PIANO-01 + FLUTE-01 + DRUM-01 closed (11 REQs): granular synthesis (Hann/Gaussian/Tukey + GranularEngine), independent time-stretch + pitch-shift via hand-rolled PhaseVocoder (Laroche-Dolson identity phase-locking) + Psola (YIN + epoch-OLA) + `#auto` HPS-driven per-frame mode dispatch, SFZ per-voice pan retrofit + channel-aware mix, SAMP round-robin + velocity-layer crossfade + per-articulation envelope multipliers for the sample path, PIANO-01 4-way velocity crossfade (pp + synthesized mp via RmsInterpolate α=0.6 + real mf + ff) + `release=` named arg, FLUTE-01 A4 sample point closing the D5 timbre crossover gap, DRUM-01 VSCO-CE GM-StylePerc sampled drums via `#drums` symbol + W7 LOCK `IsPercussion` gate routing off-center pitch-shifts through PitchShiftEngine `#auto` (transient-preserving).
+
+**Prior v1.5 phases:** Phase 35 Language Foundation (2026-05-19, LANG/TEST/HK), Phase 36 Sequence Algebra & Generative (2026-05-22, PAT/GEN/IMPROV/SECT + universal named args + PrngRegistry).
 
 ## Current Milestone: v1.5 Stage, Studio, Web
 
@@ -239,4 +241,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-17 — v1.5 Stage, Studio, Web milestone started (Phases 35–41 planned)*
+*Last updated: 2026-05-23 — Phase 37 Sound Design + Sampler Polish complete (3/7 v1.5 phases shipped: 35 + 36 + 37; 26/26 plans; 43%)*

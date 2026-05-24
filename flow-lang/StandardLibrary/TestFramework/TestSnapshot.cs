@@ -61,6 +61,11 @@ public sealed record TestSnapshot
     public required IReadOnlySet<string> SfzDiagnostics { get; init; }
     public required string? ResolvedSfzRoot { get; init; }
 
+    // 10b. Phase 39 — notation-io module activation gate. Defaulted-false so
+    //      pre-Phase-39 TestSnapshot constructions remain backward-compatible
+    //      (no new `required` keyword to avoid breaking existing callers).
+    public bool NotationIoEnabled { get; init; } = false;
+
     // 11. FlowConfig.Active singleton reference. Last-write-wins reset.
     public required FlowConfigPoco FlowConfigActive { get; init; }
 

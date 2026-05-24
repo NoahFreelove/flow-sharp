@@ -219,6 +219,15 @@ public class ExecutionContext
     public bool SfzEnabled { get; set; } = false;
 
     /// <summary>
+    /// Phase 39 D-39-01 — flips <c>true</c> when the <c>__enableNotationIoModule</c>
+    /// marker builtin runs (triggered by <c>use "@notation-io"</c> in a script).
+    /// Until then, <c>writeMusicXML</c> / <c>writeLilyPond</c> / <c>abc</c> /
+    /// <c>mml</c> are gated off and raise a clear "requires <c>use \"@notation-io\"</c>"
+    /// error. Default <c>false</c>.
+    /// </summary>
+    public bool NotationIoEnabled { get; set; } = false;
+
+    /// <summary>
     /// Phase 33 — 19-entry GM-orchestral Symbol → relative-path map populated
     /// from <c>flow-lang/sfz.flow</c> via <c>__enableSfzModule</c> per CONTEXT
     /// D-09 / D-11 (the dict lives in Flow source, not C#, so composers can
@@ -683,6 +692,9 @@ public class ExecutionContext
             SfzDiagnostics = new HashSet<string>(SfzDiagnostics),
             ResolvedSfzRoot = ResolvedSfzRoot,
 
+            // 10b. Phase 39 — notation-io module gate.
+            NotationIoEnabled = NotationIoEnabled,
+
             // 11. FlowConfig.Active singleton.
             FlowConfigActive = FlowConfig.Active,
 
@@ -761,6 +773,9 @@ public class ExecutionContext
         foreach (var k in snap.SfzDiagnostics)
             SfzDiagnostics.Add(k);
         ResolvedSfzRoot = snap.ResolvedSfzRoot;
+
+        // 10b. Phase 39 — notation-io module gate restore.
+        NotationIoEnabled = snap.NotationIoEnabled;
 
         // 11. FlowConfig.Active singleton.
         FlowConfig.Active = snap.FlowConfigActive;

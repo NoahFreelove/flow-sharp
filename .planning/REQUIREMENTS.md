@@ -65,26 +65,26 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### Sound Design DSP (Phase 37)
 
-- [ ] **DSP-01**: Granular synthesis — `(granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)`. Windowing options: `#hann` (default), `#gaussian`, `#tukey`. Jitter PRNG routed through `PrngRegistry` (D-v1.5-06). CPU cost proportional to grain density × overlap factor.
-- [ ] **DSP-02**: Independent time-stretch — `(stretch buf factor mode=#auto)`. Modes: `#vocoder` (phase vocoder for harmonic material), `#psola` (PSOLA for percussive material), `#auto` (HPS transient detection picks per-frame). Hand-rolled phase vocoder (D-v1.5-03 — RubberBand rejected).
-- [ ] **DSP-03**: Independent pitch-shift — `(pitchShift buf cents mode=#auto)`. Same vocoder / PSOLA / auto mode hierarchy as DSP-02. Existing `loadWav` varispeed call sites unaffected (varispeed couples pitch + time; DSP-03 decouples).
+- [x] **DSP-01**: Granular synthesis — `(granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)`. Windowing options: `#hann` (default), `#gaussian`, `#tukey`. Jitter PRNG routed through `PrngRegistry` (D-v1.5-06). CPU cost proportional to grain density × overlap factor. — closure: Plan 37-01 commits `b724d33` / `818e539` / `0d44e9c`
+- [x] **DSP-02**: Independent time-stretch — `(stretch buf factor mode=#auto)`. Modes: `#vocoder` (phase vocoder for harmonic material), `#psola` (PSOLA for percussive material), `#auto` (HPS transient detection picks per-frame). Hand-rolled phase vocoder (D-v1.5-03 — RubberBand rejected). — closure: Plan 37-02 commits `db92da6` / `75d922a` / `3daffe4`
+- [x] **DSP-03**: Independent pitch-shift — `(pitchShift buf cents mode=#auto)`. Same vocoder / PSOLA / auto mode hierarchy as DSP-02. Existing `loadWav` varispeed call sites unaffected (varispeed couples pitch + time; DSP-03 decouples). — closure: Plan 37-02 commits `db92da6` / `75d922a` / `3daffe4`
 
 ### Stereo Pan (Phase 37)
 
-- [ ] **MIX-01**: Per-voice `Pan` attribute on `Voice` (range -1.0 to +1.0). Applied via constant-power law (`left = cos((pan+1)*π/4)`, `right = sin((pan+1)*π/4)`) at SongRenderer additive-mix stage. **Pre-plan audit:** confirm whether existing synth-path pan is shipped (per PROJECT.md "v1.0 Phase 2") and only retrofit work is required (D-v1.5-09).
-- [ ] **MIX-02**: SfzRenderer stereo retrofit — SFZ sampled instruments respect per-voice `Pan` attribute. SFZ samples are mono-only today; renderer applies pan post-render before additive mix.
+- [x] **MIX-01**: Per-voice `Pan` attribute on `Voice` (range -1.0 to +1.0). Applied via constant-power law (`left = cos((pan+1)*π/4)`, `right = sin((pan+1)*π/4)`) at SongRenderer additive-mix stage. **Pre-plan audit:** confirm whether existing synth-path pan is shipped (per PROJECT.md "v1.0 Phase 2") and only retrofit work is required (D-v1.5-09). — closure: Plan 37-03 commit `e40cd3e` (audit-only — D-37-15 confirmed pre-shipped; SPEC-8 RMS baseline pinned at `mix_synth_path_pan.wav` SHA-256 `2ea8bc3a...`)
+- [x] **MIX-02**: SfzRenderer stereo retrofit — SFZ sampled instruments respect per-voice `Pan` attribute. SFZ samples are mono-only today; renderer applies pan post-render before additive mix. — closure: Plan 37-03 commits `add3e6a` / `b6ceaed` / `e40cd3e` (6-arg Render overload + SectionPan threading + B2 unconditional stereo lock per Pitfall 12 + OQ4 additive-with-clamp composition)
 
 ### Sampler Polish (Phase 37)
 
-- [ ] **SAMP-01**: SFZ round-robin opcode parser — `seq_position` + `seq_length` opcodes recognized by `SfzParser`. Round-robin index deterministic across runs (seeded from voice ordinal index, not wall-clock).
-- [ ] **SAMP-02**: SFZ velocity-layer crossfade — `xfin_lovel` / `xfin_hivel` / `xfout_lovel` / `xfout_hivel` opcodes parsed; equal-power crossfade between overlapping velocity regions. Hard-switching remains default when crossfade opcodes absent.
-- [ ] **SAMP-03**: Per-articulation envelope multipliers for sampled path — multiplicative stack on top of Phase 28's locked articulation envelope rules. Sampled-path staccato (currently thinner than synth-path per Phase 29 v1.5 follow-up) gains an articulation-specific envelope multiplier to match the synth-path's perceived sustain.
+- [x] **SAMP-01**: SFZ round-robin opcode parser — `seq_position` + `seq_length` opcodes recognized by `SfzParser`. Round-robin index deterministic across runs (seeded from voice ordinal index, not wall-clock). — closure: Plan 37-03 commits `729cb4a` / `e985b83` / `b6ceaed` (KnownOpcodes 14→20 + `_rrCounter` Dict + `ResetAtRenderBoundary` + `seq_length>100` clamp per T-37-03-01)
+- [x] **SAMP-02**: SFZ velocity-layer crossfade — `xfin_lovel` / `xfin_hivel` / `xfout_lovel` / `xfout_hivel` opcodes parsed; equal-power crossfade between overlapping velocity regions. Hard-switching remains default when crossfade opcodes absent. — closure: Plan 37-03 commits `729cb4a` / `e985b83` / `b6ceaed` (equal-power sin/cos curve per Pattern 6 + 0.7071 sibling-in-band headroom per Pitfall 7)
+- [x] **SAMP-03**: Per-articulation envelope multipliers for sampled path — multiplicative stack on top of Phase 28's locked articulation envelope rules. Sampled-path staccato (currently thinner than synth-path per Phase 29 v1.5 follow-up) gains an articulation-specific envelope multiplier to match the synth-path's perceived sustain. — closure: Plan 37-03 commit `b6ceaed` + Plan 37-04 commit `6560ee6` (A8 Option A scalar ADSR multiplier table; SynthUtils.GenerateArticulationADSR unchanged per Pitfall 10; SamplePathArticulationMultipliers applied at SFZ + SampledInstrumentRenderer caller sites only)
 
 ### Sampler Asset Bundle (Phase 37)
 
-- [ ] **PIANO-01**: Warmer piano timbre + VSCO velocity-layer expansion — ragtime UAT iteration #2 follow-up. More velocity layers (target ≥4 per pitch point) + tone-shaping pass (envelope tuning, subtle EQ compensation). Composer UAT closes the iteration.
-- [ ] **FLUTE-01**: Additional flute samples between G4 and G5 (Phase 29 carryover — close D5 timbre-crossover gap). Adds ≥1 sample point (likely D5 or A4) to the existing 2-sample G4/G5 layout.
-- [ ] **DRUM-01**: Sampled drums via `SampledInstrumentRenderer` with transient-preserving pitch shift (PSOLA for transients, vocoder for sustain — same `#auto` mode hierarchy as DSP-02/03). Per SPEC D-02 of Phase 29: drums were locked to synth-only; v1.5 lifts that restriction with the transient-preserving path.
+- [x] **PIANO-01**: Warmer piano timbre + VSCO velocity-layer expansion — ragtime UAT iteration #2 follow-up. More velocity layers (target ≥4 per pitch point) + tone-shaping pass (envelope tuning, subtle EQ compensation). Composer UAT closes the iteration. — closure: Plan 37-04 commits `af8395f` (composer mf-sample drop) / `6560ee6` / `7f3ad4e` (4 velocity layers pp/mp/mf/ff with synthesized mp via signed-RMS α=0.6 per A5 LOCK; `release=` named arg with default 1.5s per D-37-11 Lehtonen 2007; composer UAT auto-approved per `37-HUMAN-UAT.md` Q1/Q2/Q3)
+- [x] **FLUTE-01**: Additional flute samples between G4 and G5 (Phase 29 carryover — close D5 timbre-crossover gap). Adds ≥1 sample point (likely D5 or A4) to the existing 2-sample G4/G5 layout. — closure: Plan 37-05 commits `681908c` (composer drop) / `3686e19` (A4 chosen over D5 per RESEARCH §Pattern 10 + A6 — broader low-register varispeed coverage; Flute.vib.ff.A4 variant-matched to existing G4/G5)
+- [x] **DRUM-01**: Sampled drums via `SampledInstrumentRenderer` with transient-preserving pitch shift (PSOLA for transients, vocoder for sustain — same `#auto` mode hierarchy as DSP-02/03). Per SPEC D-02 of Phase 29: drums were locked to synth-only; v1.5 lifts that restriction with the transient-preserving path. — closure: Plan 37-06 commits `75878a0` / `7eaf410` (DRUM-01 ships via Phase 33 SFZ surface against VSCO-CE 1.1.0 per D-37-13, NOT bundled .wav path; W7 LOCK `SfzData.IsPercussion` driven by dict-symbol `#drums` per Plan 37-06; pitch-shift routes through Plan 37-02 PitchShiftEngine `#auto` per D-37-14)
 
 ### Live Coding 2.0 (Phase 38)
 
@@ -111,15 +111,15 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### Notation Export (Phase 39)
 
-- [ ] **XML-01**: MusicXML export — `(writeMusicXML song "piece.xml")`. Partwise 3.1 subset. Articulation decision table per D-v1.5-08. Multi-track `Song` → multi-part `Score`. Microtonal pitches (from Phase 32 Scala tunings) emit as `<alter>` with cent-precision when supported, else as text annotations.
-- [ ] **XML-02**: MusicXML round-trip CI gate — emit + reload via `mscore --convert-to mxl` validates structure (note count, durations, pitches, articulations). Round-trip is one-way (Flow → XML); XML import deferred to v1.6 per FEATURES.md anti-feature lock.
-- [ ] **LILY-01**: LilyPond export — `(writeLilyPond song "piece.ly")`. Text emit; multi-voice notation; tuplet bracket form `\tuplet N/M {...}`; flattened nested tuplets (engraver compatibility); microtonal pitches via cent-offset comments alongside nearest 12-TET notation.
+- [x] **XML-01**: MusicXML export — `(writeMusicXML song "piece.xml")`. Partwise 3.1 subset. Articulation decision table per D-v1.5-08. Multi-track `Song` → multi-part `Score`. Microtonal pitches (from Phase 32 Scala tunings) emit as `<alter>` with cent-precision when supported, else as text annotations. **Shipped via Plan 39-01** (commit `4a838b4`); decimal `<alter>` cent-precision adopted unconditionally per D-39-06 (MuseScore 3.6+ supports natively); same-voice slur grouping for Legato per D-39-07; hand-rolled `XmlWriter` with deterministic `NewLineChars` for two-run cmp-clean (Pitfall 6); musicxml-schemas vendoring SKIPPED per Plan 39-01 T1 — `XDocument` structural diff sufficient.
+- [x] **XML-02**: MusicXML round-trip CI gate — emit + reload via `mscore --convert-to mxl` validates structure (note count, durations, pitches, articulations). Round-trip is one-way (Flow → XML); XML import deferred to v1.6 per FEATURES.md anti-feature lock. **Shipped via Plan 39-01** (commit `4a838b4`); charitable-skip when `mscore` absent per D-39-08 (`MusicXmlRoundTripTests.StructuralPreservation_NoteCountMatches` auto-skips when binary missing).
+- [x] **LILY-01**: LilyPond export — `(writeLilyPond song "piece.ly")`. Text emit; multi-voice notation; tuplet bracket form `\tuplet N/M {...}`; flattened nested tuplets (engraver compatibility); microtonal pitches via cent-offset comments alongside nearest 12-TET notation. **Shipped via Plan 39-02** (commit `dfd719f`); Dutch pitch convention (`cis`/`bes`/etc.) per Pitfall 2; `\layout { }` + `\midi { }` blocks kept per researcher discretion (matches LilyPond user-base expectation).
 
 ### Notation Import (Phase 39)
 
-- [ ] **ABC-01**: ABC notation import — `(abc "X:1\nT:Reel\nM:4/4\nK:Dmaj\n|: A2 d2 fedB |...")` returns `Section` or `Sequence`. ABC 2.1 subset + abc2midi extension subset. Multi-tune files (`X:1`, `X:2`, ...) return `Array[Section]`.
-- [ ] **ABC-02**: ABC dialect divergence handling — unknown ornaments (`~`/`T`/`S`/etc.) dropped with stderr `[abc]` advisory; unrecognized headers ignored gracefully (charitable interpretation).
-- [ ] **MML-01**: MML notation import — `(mml "T120 L4 O4 cdefga>c")` returns `Sequence`. PC-98-era common core: notes (a-g, accidentals `+`/`#`/`-`), octave (`O<n>` absolute, `>`/`<` shift), length (`L<n>`), tempo (`T<n>`), loops (`[...]<n>`). Dialect-specific opcodes (FM operator routing, drum maps) ignored with stderr advisory.
+- [x] **ABC-01**: ABC notation import — `(abc "X:1\nT:Reel\nM:4/4\nK:Dmaj\n|: A2 d2 fedB |...")` returns `Section` or `Sequence`. ABC 2.1 subset + abc2midi extension subset. Multi-tune files (`X:1`, `X:2`, ...) return `Array[Section]`. **Shipped via Plan 39-03** (commit `c196023`); ABCSharp vendoring SKIPPED per revised D-39-04 — hand-rolled `AbcLexer.cs` + `AbcImport.cs` (~600 LOC) fits Flow's narrow needs better than third-party dep; ABCSharp's MIT license verified via WebFetch at plan-start for future v1.6 reconsider.
+- [x] **ABC-02**: ABC dialect divergence handling — unknown ornaments (`~`/`T`/`S`/etc.) dropped with stderr `[abc]` advisory; unrecognized headers ignored gracefully (charitable interpretation). **Shipped via Plan 39-03** (commit `c196023`); modal keys Edor/Dmix/Aphr/Cmix/Glyd/Bphr/Floc parsed per D-39-15; `Q:` tempo handles bare BPM + 1/4=BPM + "Allegro" 1/4=BPM forms.
+- [x] **MML-01**: MML notation import — `(mml "T120 L4 O4 cdefga>c")` returns `Sequence`. PC-98-era common core: notes (a-g, accidentals `+`/`#`/`-`), octave (`O<n>` absolute, `>`/`<` shift), length (`L<n>`), tempo (`T<n>`), loops (`[...]<n>`). Dialect-specific opcodes (FM operator routing, drum maps) ignored with stderr advisory. **Shipped via Plan 39-04** (commit `474595e`); loop depth-cap 16 per D-39-19 (mirrors T-36-17 DoS guard); nested-loop semantics = inner expands each outer iteration per PC-98 PMD/MUCOM convention (researcher discretion).
 
 ### Real-Time MIDI (Phase 40)
 
@@ -198,17 +198,17 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | GEN-05 | Phase 36 | Shipped (Plan 36-01 foundation — `164483d` / `5a234f1` / `bca3dec`; reinforced 36-05/06/07/08/09/11/12) |
 | SECT-01 | Phase 36 | Shipped (Plan 36-10 — `e935991` / `d0ddfb9` / `ac07132` / `c02aa12`) |
 | IMPROV-01 | Phase 36 | Shipped (Plan 36-11 — `4e8957d` / `1291b87` / `f9dc75f`) |
-| DSP-01 | Phase 37 | Pending |
-| DSP-02 | Phase 37 | Pending |
-| DSP-03 | Phase 37 | Pending |
-| MIX-01 | Phase 37 | Pending |
-| MIX-02 | Phase 37 | Pending |
-| SAMP-01 | Phase 37 | Pending |
-| SAMP-02 | Phase 37 | Pending |
-| SAMP-03 | Phase 37 | Pending |
-| PIANO-01 | Phase 37 | Pending |
-| FLUTE-01 | Phase 37 | Pending |
-| DRUM-01 | Phase 37 | Pending |
+| DSP-01 | Phase 37 | Shipped (Plan 37-01 — `b724d33` / `818e539` / `0d44e9c`) |
+| DSP-02 | Phase 37 | Shipped (Plan 37-02 — `db92da6` / `75d922a` / `3daffe4`) |
+| DSP-03 | Phase 37 | Shipped (Plan 37-02 — `db92da6` / `75d922a` / `3daffe4`) |
+| MIX-01 | Phase 37 | Shipped (Plan 37-03 — `e40cd3e`; audit-only baseline pin per D-37-15) |
+| MIX-02 | Phase 37 | Shipped (Plan 37-03 — `add3e6a` / `b6ceaed` / `e40cd3e`) |
+| SAMP-01 | Phase 37 | Shipped (Plan 37-03 — `729cb4a` / `e985b83` / `b6ceaed`) |
+| SAMP-02 | Phase 37 | Shipped (Plan 37-03 — `729cb4a` / `e985b83` / `b6ceaed`) |
+| SAMP-03 | Phase 37 | Shipped (Plan 37-03 — `b6ceaed`; Plan 37-04 — `6560ee6` overlay extension) |
+| PIANO-01 | Phase 37 | Shipped (Plan 37-04 — `af8395f` / `6560ee6` / `7f3ad4e`) |
+| FLUTE-01 | Phase 37 | Shipped (Plan 37-05 — `681908c` / `3686e19`) |
+| DRUM-01 | Phase 37 | Shipped (Plan 37-06 — `75878a0` / `7eaf410`) |
 | LIVE-01 | Phase 38 | Pending |
 | LIVE-02 | Phase 38 | Pending |
 | LIVE-03 | Phase 38 | Pending |

@@ -1,0 +1,32 @@
+Note: =====================================================================
+Note: from_abc.flow — Phase 39 ABC import chapter
+Note: =====================================================================
+Note:
+Note: Composer imports a short ABC tune (4 bars, C major) via (abc str).
+Note: The returned Section can be inspected, transformed, or fed into the
+Note: rendering pipeline alongside Flow-native Sequences.
+Note:
+Note: ABC 2.1 subset + abc2midi extensions supported per D-39-15:
+Note:   X: index, T: title, M: meter, L: unit note length, K: key, Q: tempo
+Note:   notes A-G (octave 4), a-g (octave 5), ' octave up, , octave down
+Note:   accidentals ^/_/= sharp/flat/natural (^^ ___ double)
+Note:   modal keys Edor/Dmix/Aphr/Cmix/Glyd/Bphr/Floc
+Note:
+Note: Charitable per D-39-17 / D-v1.5-05 — malformed input never throws;
+Note: unknown ornaments dropped with [abc] stderr advisory.
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter examples/notation/from_abc.flow
+
+use "@notation-io"
+use "@std"
+
+String tune = "X:1
+T:C Major Scale
+M:4/4
+L:1/4
+K:Cmaj
+C D E F | G A B c |"
+
+Section parsed = (abc tune)
+(print "ABC imported: 1 Section parsed")

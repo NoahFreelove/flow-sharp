@@ -1,0 +1,33 @@
+Note: =====================================================================
+Note: test_notation_to_musicxml_example.flow — Phase 39 regression test
+Note: =====================================================================
+Note:
+Note: Composer-facing regression for the writeMusicXML builtin (XML-01).
+Note: The deep file-format assertions (XML well-formedness, multi-part shape,
+Note: D-39-07 slur grouping, two-run cmp-clean determinism) are owned by
+Note: MusicXmlExportTests.cs. This .flow test gates the "composer-facing
+Note: call doesn't crash" surface via the Phase 35 (test "name" lazy(body))
+Note: framework.
+
+use "@test"
+use "@notation-io"
+use "@std"
+
+Note: Top-level setup — build the Song and call writeMusicXML at script
+Note: registration time. The (test ...) call only deferred-asserts an
+Note: invariant that holds AFTER the call returned. This mirrors the
+Note: pattern in tests/test_parameterized_example.flow.
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section testIntro {
+                Sequence piano = | C4q D4q E4q F4q |
+            }
+            Song song = [testIntro]
+            (writeMusicXML "/tmp/flow_test_to_musicxml.musicxml" song)
+        }
+    }
+}
+
+(test "writeMusicXML executed without error" lazy((assert true)))

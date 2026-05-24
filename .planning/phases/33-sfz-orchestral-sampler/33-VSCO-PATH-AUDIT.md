@@ -12,6 +12,8 @@
 - **Articulation choice — locked to Sustain ("Sus") variants per SPEC-2's `loadSfz #violin → "violin sustain" semantic.** Where multiple sustain variants exist (e.g. `SViolinVib.sfz` vs `SViolinVib-Quiet.sfz`), the louder/default variant is canonical. Where solo + ensemble both exist (Strings only), the **solo** variant is canonical for `#violin`/`#viola`/`#cello`/`#contrabass` per single-instrument GM semantics; the `-Ens` variants stay accessible via the absolute-path `loadSfz "..."` overload.
 - **4 of 19 GM symbols have NO VSCO-CE patch** (`#choir`, `#guitar`, `#harpsichord`, `#celeste`) — VSCO Community Edition ships brass / strings / woodwinds / keys (organ + piano) / percussion only. Plan 33-05 ships these 4 entries as TBD with a `Note: not in VSCO-CE 1.1.0` inline comment; `(loadSfz #choir)` errors with a clear message pointing the composer at the absolute-path overload.
 
+**Phase 37 update (Plan 37-06 — 2026-05-23):** dict grew to **20 entries** with the addition of `#drums → GM-StylePerc.sfz` (DRUM-01 per D-37-13). The new entry brings the verified count to **16 of 20** (4 TBD rows unchanged). `#drums` is the first dict-symbol that drives `SfzData.IsPercussion = true` at SfzBuiltins load time (Plan 37-06 W7 LOCK) — SfzRenderer's `#auto` pitch-shift route (Plan 37-02 PitchShiftEngine) gates on the flag per D-37-14.
+
 ## Audit Table
 
 | Symbol         | VSCO-CE Relative Path                        | Confidence | Source                                                                                          |
@@ -35,6 +37,7 @@
 | `#guitar`      | TBD — not in VSCO-CE 1.1.0                   | TBD        | needs composer download (no guitar SFZ ships in VSCO Community Edition)                                                                                |
 | `#harpsichord` | TBD — not in VSCO-CE 1.1.0                   | TBD        | needs composer download (no harpsichord SFZ ships in VSCO Community Edition)                                                                           |
 | `#celeste`     | TBD — not in VSCO-CE 1.1.0                   | TBD        | needs composer download (no celeste SFZ ships in VSCO Community Edition)                                                                               |
+| `#drums`       | `GM-StylePerc.sfz`                           | verified   | Plan 37-06 (2026-05-23) — DRUM-01 via Phase 33 SFZ surface; W7 LOCK — `SfzData.IsPercussion = true` set at SfzBuiltins load time, drives `#auto` pitch-shift route per D-37-14 |
 
 `*` = ensemble-canonical because VSCO-CE has no solo patch for the instrument; semantics still match SPEC-2's "violin/viola/cello" symphony intent.
 

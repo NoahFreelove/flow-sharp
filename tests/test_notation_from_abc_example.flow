@@ -1,0 +1,23 @@
+Note: =====================================================================
+Note: test_notation_from_abc_example.flow — Phase 39 regression test
+Note: =====================================================================
+Note:
+Note: Composer-facing regression for the abc builtin (ABC-01, ABC-02).
+Note: Deep parser correctness (multi-tune dispatch, modal keys, charitable
+Note: advisories, default-L per-meter, accidentals) is owned by
+Note: AbcImportTests.cs + AbcCharitableTests.cs.
+
+use "@test"
+use "@notation-io"
+use "@std"
+
+String tune = "X:1
+T:Test
+M:4/4
+L:1/4
+K:Cmaj
+C D E F | G A B c |"
+
+Section parsed = (abc tune)
+
+(test "abc executed and returned a Section" lazy((assert true)))

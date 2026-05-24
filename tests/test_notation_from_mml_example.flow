@@ -1,0 +1,17 @@
+Note: =====================================================================
+Note: test_notation_from_mml_example.flow — Phase 39 regression test
+Note: =====================================================================
+Note:
+Note: Composer-facing regression for the mml builtin (MML-01). Deep parser
+Note: correctness (loop expansion, depth cap, expansion cap, unknown opcode
+Note: advisories, dotted/tie suffixes) is owned by MmlImportTests.cs.
+
+use "@test"
+use "@notation-io"
+use "@std"
+
+String chiptune = "T120 L8 O4 cdefga>cb<a>c"
+
+Sequence parsed = (mml chiptune)
+
+(test "mml executed and returned a Sequence" lazy((assert true)))

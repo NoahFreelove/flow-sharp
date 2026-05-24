@@ -47,12 +47,21 @@ public class SampleCache
     /// </summary>
     private static readonly Dictionary<string, (int[] pitches, string[] velocities)> InstrumentManifest = new()
     {
-        // Piano: 5 pitches × pp/ff = 10 samples
-        ["piano"] = (new[] { 36, 48, 60, 72, 84 }, new[] { "pp", "ff" }),  // C2, C3, C4, C5, C6
+        // Piano: 5 pitches × pp/mf/ff = 15 samples on disk; mp synthesized per-pitch at
+        // eager-load via RmsInterpolate(pp, mf, alpha=0.6) so the in-memory layer count is
+        // 5 × 4 = 20 (D-37-09 lock — ≥4 velocity layers per pitch point; Plan 37-04 PIANO-01).
+        // Plan 37-04 D-37-10 keeps the source (U-Iowa MIS); pp/mf/ff are real recordings,
+        // mp is synthesized per RESEARCH §Pattern 9 Path 1 (A5 — RMS-interpolation).
+        ["piano"] = (new[] { 36, 48, 60, 72, 84 }, new[] { "pp", "mp", "mf", "ff" }),  // C2, C3, C4, C5, C6
         ["brass"] = (new[] { 57, 69, 81 }, new[] { "mf" }),                 // A3, A4, A5 (single velocity)
         ["sax"] = (new[] { 65, 72 }, new[] { "mf" }),                       // F4, C5
         ["strings"] = (new[] { 50, 62, 74 }, new[] { "mf" }),               // D3, D4, D5
-        ["flute"] = (new[] { 67, 79 }, new[] { "mf" }),                     // G4, G5
+        // Flute: 3 pitches × mf = 3 samples on disk (Phase 37 FLUTE-01 — Plan 37-05
+        // adds A4 between G4 and G5 to close the D5 timbre crossover gap per RESEARCH
+        // §Pattern 10 / A6 lock. A4 chosen over D5 because G4→A4 = 2-semitone varispeed
+        // stretch (vs G4→D5 = 7) gives better coverage of the flute's expressive low
+        // register where most melodies live).
+        ["flute"] = (new[] { 67, 69, 79 }, new[] { "mf" }),                 // G4, A4 (Phase 37 FLUTE-01), G5
         ["bell"] = (new[] { 72 }, new[] { "mf" }),                          // C5
     };
 
@@ -94,6 +103,14 @@ public class SampleCache
                 var cacheKey = (instrument, pitch, velocity);
                 if (_rawCache.ContainsKey(cacheKey)) continue;
 
+                // Phase 37 PIANO-01 (Plan 37-04) — the "mp" piano layer is SYNTHESIZED
+                // post-load via RmsInterpolate(pp, mf, alpha=0.6) per RESEARCH §Pattern 9
+                // Path 1. No _mp.wav files ship on disk (U-Iowa MIS source supplies only
+                // pp/mf/ff — Pitfall 9). Skip the file-load attempt and synthesize after
+                // the disk pass completes.
+                if (instrument == "piano" && velocity == "mp")
+                    continue;
+
                 string filename = manifest.velocities.Length > 1
                     ? $"{MidiToPitchName(pitch)}_{velocity}.wav"
                     : $"{MidiToPitchName(pitch)}.wav";
@@ -116,7 +133,112 @@ public class SampleCache
             }
         }
 
+        // Phase 37 PIANO-01 (Plan 37-04) — synthesize the "mp" piano layer per pitch.
+        // U-Iowa MIS source ships pp/mf/ff but no mp (Pitfall 9). RESEARCH §Pattern 9
+        // Path 1 / A5 lock: mp[n] = sqrt(pp[n]^2 * (1 - alpha) + mf[n]^2 * alpha) with
+        // alpha=0.6 chosen for perceptual distinctness from both pp (too dark) and mf
+        // (too bright). Synthesis is deterministic — same alpha + same pp/mf buffers
+        // produce byte-identical mp, preserving two-run cmp-clean (Phase 28/29/33).
+        // Charitable degradation (T-37-04-02): if pp+mf both exist but they're already
+        // length-mismatched (corrupt drop, future composer swap), RmsInterpolate throws
+        // — but TrimLeadingSilence above can also produce mismatched lengths from
+        // identical source files because pp's onset window differs from mf's. The
+        // mismatch handling truncates to min length before synthesis so the eager-load
+        // never throws; an advisory fires once per pitch.
+        if (instrument == "piano")
+        {
+            foreach (var pitch in manifest.pitches.OrderBy(p => p))
+            {
+                var ppKey = (instrument, pitch, "pp");
+                var mfKey = (instrument, pitch, "mf");
+                var mpKey = (instrument, pitch, "mp");
+                if (_rawCache.ContainsKey(mpKey)) continue;
+                if (!_rawCache.TryGetValue(ppKey, out var pp)) continue;
+                if (!_rawCache.TryGetValue(mfKey, out var mf)) continue;
+                _rawCache[mpKey] = RmsInterpolateTruncated(pp, mf, alpha: 0.6);
+            }
+        }
+
         _eagerLoadedKeys.Add(key);
+    }
+
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) — synthesize a velocity-layer buffer via
+    /// signed-RMS interpolation between two source buffers. Used at eager-load
+    /// to construct the piano "mp" layer between disk-loaded "pp" and "mf"
+    /// (U-Iowa MIS ships no mp). Per RESEARCH §Pattern 9 Path 1 + A5:
+    ///
+    ///     mp[n] = sign(heavier) × sqrt(pp[n]² × (1 - alpha) + mf[n]² × alpha)
+    ///
+    /// with alpha=0.6 the locked weighting (mf slightly favored — composer
+    /// expects mp to lean toward mezzo-forte, not pp). Signed-RMS preserves
+    /// audio polarity (unsigned RMS would collapse the waveform shape to a
+    /// rectified mess); sign is picked from the heavier-weighted source per
+    /// T-37-04-03 — avoids polarity flips mid-buffer when pp and mf disagree.
+    ///
+    /// Throws ArgumentException when buffers differ in Channels or SampleRate
+    /// (T-37-04-01 — mismatched audio formats can't be sensibly interpolated).
+    /// Length mismatches are handled charitably by the public-facing
+    /// <see cref="RmsInterpolateTruncated"/> wrapper.
+    /// </summary>
+    private static AudioBuffer RmsInterpolate(AudioBuffer pp, AudioBuffer mf, double alpha)
+    {
+        if (pp.Channels != mf.Channels || pp.SampleRate != mf.SampleRate || pp.Frames != mf.Frames)
+            throw new ArgumentException(
+                $"RmsInterpolate requires matched buffers; got pp({pp.Frames}/{pp.Channels}/{pp.SampleRate}) " +
+                $"vs mf({mf.Frames}/{mf.Channels}/{mf.SampleRate})");
+
+        double a = Math.Clamp(alpha, 0.0, 1.0);
+        var result = new AudioBuffer(pp.Frames, pp.Channels, pp.SampleRate);
+        int total = pp.Data.Length;
+        // Preserve sign: signed-RMS is non-standard but preserves audio polarity vs
+        // unsigned RMS which would corrupt waveform shape. Pick sign from the
+        // heavier-weighted source (mf when alpha >= 0.5, pp otherwise).
+        bool signFromMf = a >= 0.5;
+        for (int i = 0; i < total; i++)
+        {
+            double pSamp = pp.Data[i];
+            double mSamp = mf.Data[i];
+            double rms = Math.Sqrt(pSamp * pSamp * (1.0 - a) + mSamp * mSamp * a);
+            double signed = (signFromMf ? Math.Sign(mSamp) : Math.Sign(pSamp)) * rms;
+            result.Data[i] = (float)Math.Clamp(signed, -1.0, 1.0);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) — length-tolerant wrapper around
+    /// <see cref="RmsInterpolate"/>. TrimLeadingSilence can produce
+    /// length-mismatched buffers from a single source pair when the source
+    /// recordings' pre-strike pad differs (which is exactly why TrimLeadingSilence
+    /// exists). Eager-load should never throw on a mismatched pair — truncate to
+    /// the shorter buffer and proceed. Channels / sample rate mismatches still
+    /// throw via the inner call (T-37-04-01).
+    /// </summary>
+    private static AudioBuffer RmsInterpolateTruncated(AudioBuffer pp, AudioBuffer mf, double alpha)
+    {
+        if (pp.Frames == mf.Frames)
+            return RmsInterpolate(pp, mf, alpha);
+
+        int minFrames = Math.Min(pp.Frames, mf.Frames);
+        int channels = pp.Channels;
+        var ppTrim = new AudioBuffer(minFrames, channels, pp.SampleRate);
+        var mfTrim = new AudioBuffer(minFrames, channels, mf.SampleRate);
+        Array.Copy(pp.Data, ppTrim.Data, minFrames * channels);
+        Array.Copy(mf.Data, mfTrim.Data, minFrames * channels);
+        return RmsInterpolate(ppTrim, mfTrim, alpha);
+    }
+
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) — introspection helper used by
+    /// <c>PianoSampleCacheLayersTest</c> to verify the 4-layer eager-load post
+    /// condition. True when the (instrument, pitch, velocity) triple has a
+    /// raw-cache entry (either disk-loaded or synthesized).
+    /// </summary>
+    public bool HasLayer(string instrument, int pitch, string velocity)
+    {
+        instrument = (instrument ?? string.Empty).ToLowerInvariant();
+        return _rawCache.ContainsKey((instrument, pitch, velocity));
     }
 
     /// <summary>

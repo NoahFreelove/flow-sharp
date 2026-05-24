@@ -1,4 +1,5 @@
 using System;
+using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -70,20 +71,69 @@ public class SampledInstrumentRenderer
     /// pitches, so honouring just-intonation / Pythagorean offsets would require per-render
     /// varispeed math beyond Phase 29's scope).
     /// </summary>
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) D-37-11 LOCK — release tail default in seconds.
+    /// 1.5s reference value per Lehtonen 2007 / RESEARCH §Pattern 8: matches ragtime
+    /// sustain expectations and the upright-piano decay envelope of the U-Iowa MIS
+    /// source. Composer overrides via the <c>release=</c> named arg on
+    /// <c>renderSong</c>, threaded through this renderer via the <c>releaseSec</c>
+    /// parameter on the per-note <see cref="Render"/> call (T-37-04-04 clamps the
+    /// override to [0.05, 10.0]).
+    /// </summary>
+    public const double DefaultReleaseSec = 1.5;
+
+    private const double MinReleaseSec = 0.05;
+    private const double MaxReleaseSec = 10.0;
+
+    /// <summary>
+    /// Phase 29 entry point — Phase 37 PIANO-01 (Plan 37-04) adds the
+    /// <paramref name="releaseSec"/> overload below. This zero-arg form
+    /// preserves the existing call-site contract (BrassSynthesizer, etc. that
+    /// never need a per-render release knob) by deferring to the locked
+    /// <see cref="DefaultReleaseSec"/>.
+    /// </summary>
     public AudioBuffer Render(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
+        => Render(note, sampleRate, durationBeats, bpm, tuning, DefaultReleaseSec);
+
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) — release-aware overload.
+    /// <paramref name="releaseSec"/> drives both the post-authored tail window
+    /// AND the tail decay time constant (RESEARCH §Pattern 8: time-constant =
+    /// releaseSec × 0.3 so a 1.5s release produces an audible tail across the
+    /// full 1.5s window, a 0.3s release produces a sharper cutoff, etc.).
+    /// Clamped to [<see cref="MinReleaseSec"/>, <see cref="MaxReleaseSec"/>]
+    /// per T-37-04-04 with a one-shot stderr advisory on clamp.
+    /// </summary>
+    public AudioBuffer Render(
+        MusicalNoteData note, int sampleRate, double durationBeats, double bpm,
+        RenderTuning tuning, double releaseSec)
     {
         if (note.IsRest)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
+        // T-37-04-04 — clamp release knob to a sane band. Charitable interpretation
+        // (CLAUDE.md): never throw on a bad knob, clamp + advise once per process.
+        double clampedRelease = releaseSec;
+        if (double.IsNaN(releaseSec) || releaseSec < MinReleaseSec)
+        {
+            clampedRelease = MinReleaseSec;
+            if (releaseSec < MinReleaseSec)
+                RenderingDiagnostics.WarnOnce("piano:release:clamp-low",
+                    $"[piano] release={releaseSec:F3}s below floor {MinReleaseSec}s — clamped");
+        }
+        else if (releaseSec > MaxReleaseSec)
+        {
+            clampedRelease = MaxReleaseSec;
+            RenderingDiagnostics.WarnOnce("piano:release:clamp-high",
+                $"[piano] release={releaseSec:F3}s above ceiling {MaxReleaseSec}s — clamped");
+        }
+
         double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
-        // Tail extension: keep the natural sample decay for up to 500ms past the
-        // authored duration. Sustained piano tones decay exponentially for ~1.4s after
-        // release; cutting at authored duration kills audible energy (~-30 to -40 dBFS
-        // still ringing). The articulation envelope's release ramp keeps the tail from
-        // clicking. Caller's positioning is unaffected because SongRenderer mixes
-        // additively in absolute frames — a tail that overlaps the next note's onset
-        // just sums in (natural piano sustain behavior).
-        double tailSeconds = 0.5;
+        // Phase 37 PIANO-01 — tail window scales with the composer's release= knob.
+        // 1.5s default (D-37-11) sustains naturally; 2.0s feels concert-grand-like;
+        // 0.8s feels upright-piano-like. Sample's natural decay is exposed across the
+        // window via an exponential tail-fade (see post-envelope ramp below).
+        double tailSeconds = clampedRelease;
         int authoredFrames = (int)(durationSeconds * sampleRate);
         int targetFrames = authoredFrames + (int)(tailSeconds * sampleRate);
         if (targetFrames <= 0)
@@ -96,7 +146,12 @@ public class SampledInstrumentRenderer
         float[] mono;
         if (_hasVelocityLayers)
         {
-            // Piano path: crossfade pp + ff (REQ-3 velocity-driven timbre).
+            // Phase 37 PIANO-01 (Plan 37-04) D-37-09 LOCK — 4-way velocity crossfade
+            // (pp/mp/mf/ff) replaces the Phase 29 2-way (pp/ff). mp is synthesized by
+            // SampleCache at eager-load per RESEARCH §Pattern 9 Path 1; mf is a real
+            // U-Iowa MIS recording. Charitable fallback (T-37-04-02): if mp OR mf is
+            // missing (composer skipped the Task 2 user_setup drop), fall back to the
+            // existing 2-way pp/ff path with a one-shot advisory.
             var pp = _cache.GetVarispeed(_instrument, sampleMidi, "pp", semitonesShift);
             var ff = _cache.GetVarispeed(_instrument, sampleMidi, "ff", semitonesShift);
             if (pp is null || ff is null)
@@ -105,8 +160,19 @@ public class SampledInstrumentRenderer
                 // The render still respects the authored duration so downstream mixing is unaffected.
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
             }
+            var mp = _cache.GetVarispeed(_instrument, sampleMidi, "mp", semitonesShift);
+            var mf = _cache.GetVarispeed(_instrument, sampleMidi, "mf", semitonesShift);
             double v = Math.Clamp(note.Velocity, 0.0, 1.0);
-            mono = LoudnessNormalizedCrossfade(pp.Data, ff.Data, v);
+            if (mp is null || mf is null)
+            {
+                RenderingDiagnostics.WarnOnce("piano:mp_mf:missing",
+                    "[piano] 4-way velocity crossfade unavailable (mp/mf layer missing) — falling back to 2-way pp/ff crossfade. Drop the 5 _mf.wav files at flow-lang/Samples/piano/ to enable the warmer 4-way path (Plan 37-04 user_setup).");
+                mono = LoudnessNormalizedCrossfade(pp.Data, ff.Data, v);
+            }
+            else
+            {
+                mono = LoudnessNormalized4WayCrossfade(pp.Data, mp.Data, mf.Data, ff.Data, v);
+            }
         }
         else
         {
@@ -137,12 +203,28 @@ public class SampledInstrumentRenderer
             frames: authoredFrames, sampleRate: sampleRate, isPercussion: false);
         for (int i = 0; i < authoredFrames && i < fitted.Length; i++)
             fitted[i] *= envelope[i];
-        // Tail fade: exponential decay from the envelope's release-end amplitude to silence
-        // over the tail window. ~6dB / 100ms ≈ exp(-frame / (sampleRate * 0.15)) keeps the
-        // tail audible for the first ~150ms and inaudible by 500ms.
+
+        // Phase 37 SAMP-03 (Pitfall 10) — sample-path articulation multiplier overlay.
+        // Identical wire-up to SfzRenderer.cs:240-245 (Plan 37-03 Task 2). Stacks AFTER
+        // the Phase 28 envelope; Phase 28's SynthUtils.GenerateArticulationADSR is
+        // unchanged so synth-path regression baselines stay green.
+        var sampleMult = SamplePathArticulationMultipliers.For(note.Articulation);
+        if (sampleMult.IsNontrivial)
+        {
+            for (int i = 0; i < fitted.Length; i++)
+                fitted[i] *= sampleMult.Sample(i, fitted.Length);
+        }
+
+        // Phase 37 PIANO-01 — tail fade decay time-constant scales with releaseSec
+        // (RESEARCH §Pattern 8: time-constant = releaseSec × 0.3). A 1.5s release →
+        // 0.45 time-constant → exp(-1/(sr*0.45)) per frame → audible energy across the
+        // full 1.5s window. A 0.3s release → 0.09 → near-silence after 0.3s. Pre-Phase-37
+        // used a hard-coded 0.15 time constant + 0.5s window (Phase 29). The scaling
+        // factor (×0.3) is the locked default per Pattern 8 — releaseSec is the
+        // composer-facing knob, time-constant is derived.
         if (authoredFrames < fitted.Length)
         {
-            double tailDecayPerFrame = Math.Exp(-1.0 / (sampleRate * 0.15));
+            double tailDecayPerFrame = Math.Exp(-1.0 / (sampleRate * clampedRelease * 0.3));
             double level = 1.0;
             for (int i = authoredFrames; i < fitted.Length; i++)
             {
@@ -242,5 +324,39 @@ public class SampledInstrumentRenderer
             sumSq += s * s;
         }
         return Math.Sqrt(sumSq / n);
+    }
+
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) D-37-09 LOCK — 4-way velocity crossfade
+    /// (pp/mp/mf/ff). Splits the velocity axis [0, 1] into 3 transition bands:
+    ///   v in [0.00, 0.33) → pp ↔ mp
+    ///   v in [0.33, 0.66) → mp ↔ mf
+    ///   v in [0.66, 1.00] → mf ↔ ff
+    /// Within each band, delegates to the existing
+    /// <see cref="LoudnessNormalizedCrossfade"/> with a band-local velocity (so
+    /// the per-band pp↔ff transition-band semantics are inherited verbatim — soft
+    /// notes carry the lower-velocity timbre cleanly, loud notes carry the upper).
+    /// Phase 29 REQ-3 cosSim &lt; 0.92 acceptance gate holds within each band
+    /// because LoudnessNormalizedCrossfade's own transition-band mapping fires.
+    /// </summary>
+    private static float[] LoudnessNormalized4WayCrossfade(
+        float[] pp, float[] mp, float[] mf, float[] ff, double v)
+    {
+        // 3 transition bands across [0, 1].
+        if (v < 0.33)
+        {
+            double vLocal = v / 0.33;
+            return LoudnessNormalizedCrossfade(pp, mp, vLocal);
+        }
+        else if (v < 0.66)
+        {
+            double vLocal = (v - 0.33) / 0.33;
+            return LoudnessNormalizedCrossfade(mp, mf, vLocal);
+        }
+        else
+        {
+            double vLocal = (v - 0.66) / 0.34;
+            return LoudnessNormalizedCrossfade(mf, ff, vLocal);
+        }
     }
 }

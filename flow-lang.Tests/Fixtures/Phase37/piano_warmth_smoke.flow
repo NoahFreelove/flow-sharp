@@ -1,0 +1,15 @@
+use "@std"
+use "@audio"
+
+tempo 100 {
+    key Fmajor {
+        section main {
+            Sequence rh = | C4q D4q E4e F4e G4q stacc A4h marc Bb4q G4q leg F4w |
+            Sequence lh = | F2q [F3 A3]q F2q [F3 A3]q F2q [F3 A3]q F2q [F3 A3]q F2w |
+        }
+    }
+}
+
+Song piece = [main]
+Buffer rendered = (renderSong piece "piano" 2.0s)
+(writeWav "/tmp/piano_warmth_smoke.wav" rendered)

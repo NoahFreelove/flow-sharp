@@ -1,0 +1,28 @@
+Note: =====================================================================
+Note: from_mml.flow — Phase 39 MML import chapter
+Note: =====================================================================
+Note:
+Note: Composer imports a short PC-98-era MML melody via (mml str). The
+Note: returned Sequence can be transformed, layered, or rendered.
+Note:
+Note: PC-98 common core supported per D-39-18:
+Note:   notes a-g (case-insensitive)
+Note:   accidentals + or # (sharp), - (flat)
+Note:   absolute octave O<n> (0..8), relative > (up), < (down)
+Note:   default length L<n>, per-note length override
+Note:   tempo T<n>, loops [...]<n>, dotted '.', tie '&'
+Note:
+Note: Charitable per D-39-19 / D-v1.5-05 — malformed input never throws;
+Note: FM operator routing and drum-bank opcodes dropped with [mml] stderr
+Note: advisory; loop nesting capped at 16, total notes at 65536 (DoS guard).
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter examples/notation/from_mml.flow
+
+use "@notation-io"
+use "@std"
+
+String chiptune = "T120 L8 O4 cdefga>cb<a>c"
+
+Sequence parsed = (mml chiptune)
+(print "MML imported: 1 Sequence parsed")

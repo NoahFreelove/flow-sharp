@@ -82,6 +82,20 @@ examples/sections/*.wav
 examples/sections/*.mp3
 examples/sections/*.mid
 
+# Phase 37 Plan 37-07 — composer-facing tutorial chapters for granular
+# synthesis (examples/dsp/granular.flow) + time-stretch / pitch-shift
+# (examples/dsp/stretch_pitchshift.flow). Mirrors the Phase 36 36-12
+# examples/{generative,sections}/ allow-list precedent. Same defensive
+# D-502 enforcement: rendered .wav / .mp3 / .mid output goes to /tmp/
+# per the test harness convention, NEVER inside examples/dsp/.
+!examples/dsp/
+!examples/dsp/**
+!examples/dsp/**/*.flow
+!examples/dsp/**/*.md
+examples/dsp/*.wav
+examples/dsp/*.mp3
+examples/dsp/*.mid
+
 # Phase 34 Plan 34-06 D-502 defensive enforcement: the !examples/{symphony,ragtime}/**
 # allow-list above re-includes EVERYTHING under those directories, which silently
 # defeats the global *.wav ignore for rendered audio. Composer's rendered showcase
@@ -142,6 +156,14 @@ examples/ragtime/*.mid
 !flow-lang.Tests/Fixtures/Phase29/**
 !flow-lang.Tests/Fixtures/Phase29/**/*.wav
 
+# Phase 37 Plan 37-04 PIANO-01 RMS regression fixture — small bundled-piano
+# .flow render that exercises the 4-way velocity crossfade + release= knob.
+# Must be tracked despite the global *.flow ignore. Mirrors the Phase 29 /
+# Phase 30 fixture-tracking precedents.
+!flow-lang.Tests/Fixtures/Phase37/
+!flow-lang.Tests/Fixtures/Phase37/**
+!flow-lang.Tests/Fixtures/Phase37/**/*.flow
+
 # Phase 32 Scala tuning archive fixtures — 5 canonical .scl + 3 hand-authored
 # malformed fixtures + LICENSE.md attribution. The LICENSE.md must be tracked
 # despite the global *.md ignore; mirrors the Phase 29 Samples precedent above.
@@ -173,6 +195,45 @@ examples/ragtime/*.mid
 !flow-lang/improv/
 !flow-lang/improv/**
 !flow-lang/improv/**/*.flow
+
+# Phase 39 D-39-01 @notation-io stdlib module — opt-in surface that
+# composers import via `use "@notation-io"`. Same precedent as sfz.flow /
+# improv.flow above. Distinct from existing flow-lang/notation.flow
+# (musical-notation primitives — auto-tracked because added pre-global-ignore).
+!flow-lang/notation-io.flow
+
+# Phase 39 D-39-22 — composer-facing tutorial chapters for notation IO
+# (writeMusicXML / writeLilyPond / abc / mml). Mirrors examples/symphony/
+# + examples/ragtime/ + examples/generative/ allow-list precedents.
+!examples/notation/
+!examples/notation/**
+!examples/notation/**/*.flow
+!examples/notation/**/*.md
+
+# Phase 34 D-502 defensive enforcement applied to examples/notation/ — the
+# allow-list above re-includes EVERYTHING under that directory. Rendered audio
+# from `flow render` calls (composer accidentally drops a multi-MB .wav into the
+# tutorial directory) should NEVER land in-tree. examples/notation/output/ is
+# the intended write target; we explicitly re-ignore the WAV/MIDI/MP3 there too
+# but allow the .musicxml + .ly emit which is small + intentional.
+examples/notation/*.wav
+examples/notation/*.mp3
+examples/notation/*.mid
+examples/notation/output/*.wav
+examples/notation/output/*.mp3
+examples/notation/output/*.mid
+examples/notation/output/*.musicxml
+examples/notation/output/*.ly
+
+# Phase 39 D-39-22 — composer-facing test_notation_*_example.flow regression
+# tests under tests/. The global `tests/` ignore can't be bypassed via
+# allow-list because gitignore docs say "it is not possible to re-include a
+# file if a parent directory of that file is excluded". The 4 Phase 39
+# composer test files were added via `git add -f` (matching the same posture
+# under which the existing tracked tests/*.flow files coexist with the
+# global tests/ ignore — they were committed before the ignore was added).
+# Future Phase 39 maintenance: edit these in place (git tracks them once
+# committed); `git add -f` if files need to be re-staged after a clean rebuild.
 
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets

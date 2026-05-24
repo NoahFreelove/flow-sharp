@@ -44,19 +44,17 @@ public static class MidiExport
     /// Phase 33 D-15 — strips the <c>sampler:</c> prefix from a sequence name
     /// so the GM-program lookup AND the SequenceTrackName meta-event both
     /// see the canonical instrument name (e.g. <c>"sampler:violin"</c> →
-    /// <c>"violin"</c>). Used at TWO sites: <see cref="ResolveGmProgram"/>
-    /// (FIRST statement after the empty-name check per Pitfall 6 — guards
-    /// against prefix bleeding through to the GM-0 fallback) AND the
-    /// SequenceTrackName meta-event emission (D-17 — composer's bound
-    /// variable name appears verbatim in the receiving DAW).
+    /// <c>"violin"</c>).
+    ///
+    /// Phase 39 D-39-20 — implementation moved to
+    /// <see cref="FlowLang.StandardLibrary.Notation.InstrumentRouting.StripSamplerPrefix"/>
+    /// as the single source of truth across MIDI / MusicXML / LilyPond emit
+    /// paths. This wrapper preserves the public method signature for
+    /// backwards compat with existing callers (test fixtures, Phase 33 SFZ
+    /// dispatcher).
     /// </summary>
     public static string StripSamplerPrefix(string name)
-    {
-        if (string.IsNullOrEmpty(name)) return name;
-        return name.StartsWith("sampler:", StringComparison.OrdinalIgnoreCase)
-            ? name.Substring("sampler:".Length)
-            : name;
-    }
+        => FlowLang.StandardLibrary.Notation.InstrumentRouting.StripSamplerPrefix(name);
 
     /// <summary>
     /// Phase 28 SPEC-6 + Phase 33 D-15 / D-16: maps a Sequence's name to a
@@ -96,48 +94,17 @@ public static class MidiExport
     ///     flute* → (73, 0), string* → (48, 0), organ* → (19, 0),
     ///     bell* → (14, 0), drum* → (0, 9), default → (0, 0)
     /// </summary>
+    /// <summary>
+    /// Phase 39 D-39-20 — implementation moved to
+    /// <see cref="FlowLang.StandardLibrary.Notation.InstrumentRouting.ResolveGmProgram"/>
+    /// as the single source of truth across MIDI / MusicXML / LilyPond emit
+    /// paths. The 17-entry routing table + ordering contract lives there;
+    /// this wrapper preserves the public method signature so existing
+    /// callers (SongRenderer SFZ dispatcher, test fixtures, Phase 28 + 33
+    /// byte-identical contracts) continue to resolve identically.
+    /// </summary>
     public static (int gmProgram, int channel) ResolveGmProgram(string seqName)
-    {
-        if (string.IsNullOrEmpty(seqName)) return (0, 0);
-
-        // Phase 33 D-15: strip the sampler: prefix BEFORE any StartsWith check
-        // so sampler:NAME routes to the same GM program as NAME alone. Pitfall
-        // 6 — this MUST be the first statement after the empty-name check.
-        string stripped = StripSamplerPrefix(seqName);
-        string lower = stripped.ToLowerInvariant();
-
-        // Phase 33 D-16: more-specific names first. `horn` MUST come before
-        // `brass` because the Phase 28 brass entry historically swallowed
-        // horn* sequences; D-16 reassigns horn → 60 (French horn).
-        if (lower.StartsWith("violin"))      return (40, 0);
-        if (lower.StartsWith("viola"))       return (41, 0);
-        if (lower.StartsWith("cello"))       return (42, 0);
-        if (lower.StartsWith("contrabass"))  return (43, 0);
-        if (lower.StartsWith("oboe"))        return (68, 0);
-        if (lower.StartsWith("clarinet"))    return (71, 0);
-        if (lower.StartsWith("bassoon"))     return (70, 0);
-        if (lower.StartsWith("horn"))        return (60, 0);
-        if (lower.StartsWith("trombone"))    return (57, 0);
-        if (lower.StartsWith("tuba"))        return (58, 0);
-        if (lower.StartsWith("timpani"))     return (47, 9);  // channel 9 = percussion
-        if (lower.StartsWith("choir"))       return (52, 0);
-        if (lower.StartsWith("harp"))        return (46, 0);
-        if (lower.StartsWith("guitar"))      return (24, 0);
-        if (lower.StartsWith("harpsichord")) return (6, 0);
-        if (lower.StartsWith("celeste"))     return (8, 0);
-
-        // Phase 28 entries (UNCHANGED ordering — must come AFTER Phase 33
-        // entries so that horn/violin/etc. don't fall through to brass etc.)
-        if (lower.StartsWith("piano")) return (0, 0);
-        if (lower.StartsWith("brass")) return (56, 0);
-        if (lower.StartsWith("sax")) return (65, 0);
-        if (lower.StartsWith("flute")) return (73, 0);
-        if (lower.StartsWith("string")) return (48, 0);
-        if (lower.StartsWith("organ")) return (19, 0);
-        if (lower.StartsWith("bell")) return (14, 0);
-        if (lower.StartsWith("drum")) return (0, 9);
-        return (0, 0);
-    }
+        => FlowLang.StandardLibrary.Notation.InstrumentRouting.ResolveGmProgram(seqName);
 
     /// <summary>
     /// TUP-06: pre-export pass over the Song collecting tuplet denominators from
@@ -150,7 +117,7 @@ public static class MidiExport
     /// with the LOCKED message format from CONTEXT D-06. The error fires BEFORE
     /// any DryWetMidi MidiFile allocation or disk I/O — atomic, no partial export.
     /// </summary>
-    private static int ComputeRequiredTpqn(SongData song)
+    internal static int ComputeRequiredTpqn(SongData song)
     {
         var denominators = new HashSet<int>();
         foreach (var section in song.SectionRegistry.Values)
@@ -182,7 +149,7 @@ public static class MidiExport
     /// Key signature lookup: Flow key string -> (sharps/flats, minor flag).
     /// MIDI encodes sharps as positive, flats as negative; minor = 1.
     /// </summary>
-    private static readonly Dictionary<string, (sbyte sharpsFlats, byte minor)> KeySignatureMap =
+    internal static readonly Dictionary<string, (sbyte sharpsFlats, byte minor)> KeySignatureMap =
         new(StringComparer.OrdinalIgnoreCase)
         {
             // Major keys

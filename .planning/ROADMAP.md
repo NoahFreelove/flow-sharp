@@ -121,9 +121,9 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 
 - [x] **Phase 35: Language Foundation** (completed 2026-05-19) — Pattern matching (literal + constructor + wildcard + guard + music-aware extractors), Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> as name` chain naming, and v1.4 housekeeping (humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 verification gaps, CLAUDE.md "Public as of v1.4" footnote revision)
 - [x] **Phase 36: Sequence Algebra & Generative** (completed 2026-05-22) — 13 Tidal-style combinators on `Sequence` in `@patterns` stdlib (every/fast/slow/chunk/phase/rev/iter/palindrome/jux/superimpose + sometimes/degrade/sparseSeq), generative primitives in `@generative` stdlib (Markov + train/generate split + MarkovModel ref-identity type, L-system + LsystemModel, cellular automata 1D + 2D Conway, Lorenz/logistic chaos maps + quantizeToScale bridge), parameterized sections (SECT-01 — full Phase 35 pattern syntax in signatures + overloading + defaults + `*N` repeat + Rust-style diagnostics), chord-aware Markov improvisation in `@improv` stdlib (`jam` + 3 baseline Flow-file style packs + XDG override discovery), universal named-argument syntax (D-36-11) with ~150-builtin backfill, and the new `Runtime/PrngRegistry` foundation routing PRNG by (SourceLocation, name) preserving two-run cmp-clean determinism
-- [ ] **Phase 37: Sound Design + Sampler Polish (largest phase)** — Granular synthesis (Hann/Gaussian/Tukey), independent time-stretch + pitch-shift via hand-rolled phase vocoder + PSOLA + #auto HPS detector, stereo pan + SFZ-renderer stereo retrofit, sampler polish bundle (SFZ round-robin, velocity-layer crossfade, per-articulation envelope multipliers, warmer piano timbre, more flute samples, sampled drums)
+- [x] **Phase 37: Sound Design + Sampler Polish (largest phase)** — Granular synthesis (Hann/Gaussian/Tukey), independent time-stretch + pitch-shift via hand-rolled phase vocoder + PSOLA + #auto HPS detector, stereo pan + SFZ-renderer stereo retrofit, sampler polish bundle (SFZ round-robin, velocity-layer crossfade, per-articulation envelope multipliers, warmer piano timbre, more flute samples, sampled drums) (completed 2026-05-23)
 - [ ] **Phase 38: Live Coding 2.0** — `live <quantize> { ... }` block + modernized watch mode + REPL polish (LSP-backed completion, `?fn` help, multiline + history search, piano-roll preview) + audio input via PA_STREAM_RECORD + OSC server/client (Rug.Osc 1.2.5)
-- [ ] **Phase 39: Notation Citizenship** — MusicXML 3.1 partwise export (MuseScore reference consumer per D-v1.5-08), LilyPond text emit, ABC 2.1 + abc2midi import, MML PC-98 common-core import
+- [x] **Phase 39: Notation Citizenship** — MusicXML 3.1 partwise export (MuseScore reference consumer per D-v1.5-08), LilyPond text emit, ABC 2.1 + abc2midi import, MML PC-98 common-core import (completed 2026-05-23)
 - [ ] **Phase 40: Studio Sync** — IMidiBackend abstraction mirroring IAudioBackend (RtMidi.Core 1.0.53 for ALSA-seq + CoreMIDI + WinMM), MIDI clock master + slave (24 PPQN), Ableton Link (license-gated per D-v1.5-04), JACK transport (Linux opt-in)
 - [ ] **Phase 41: Reach + v1.5 Closer** — WASM playground (Mono-WASM jiterpreter, ≤15 MB compressed), cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal)
 
@@ -196,13 +196,13 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 
 **Plans**: 7 plans
 
-- [x] 37-01-PLAN.md — DSP foundation + granular synthesis (DSP-01); absorbs all shared utilities (WindowFunctions, Fft, Hps) + Wave 0 test scaffolds for the whole phase
-- [x] 37-02-PLAN.md — Stretch + pitchShift (DSP-02, DSP-03); hand-rolled phase vocoder + PSOLA + Hps #auto dispatch
-- [x] 37-03-PLAN.md — SFZ retrofit + MIX-01 verification (MIX-01, MIX-02, SAMP-01, SAMP-02, SAMP-03); round-robin + xfin/xfout + SAMP-03 multipliers + per-voice pan wire-up
-- [ ] 37-04-PLAN.md — PIANO-01 sample asset expansion (4 velocity layers + synthesized mp + release= knob)
-- [ ] 37-05-PLAN.md — FLUTE-01 A4 sample point (closes D5 timbre crossover)
-- [ ] 37-06-PLAN.md — DRUM-01 via VSCO-CE GM-StylePerc.sfz + #auto pitch shift (depends on Plan 37-02)
-- [ ] 37-07-PLAN.md — Closer (examples + 37-VERIFICATION.md + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep)
+- [x] 37-01-PLAN.md — DSP foundation + granular synthesis (DSP-01); absorbs all shared utilities (WindowFunctions, Fft, Hps) + Wave 0 test scaffolds for the whole phase — `b724d33` / `818e539` / `0d44e9c`
+- [x] 37-02-PLAN.md — Stretch + pitchShift (DSP-02, DSP-03); hand-rolled phase vocoder + PSOLA + Hps #auto dispatch — `db92da6` / `75d922a` / `3daffe4`
+- [x] 37-03-PLAN.md — SFZ retrofit + MIX-01 verification (MIX-01, MIX-02, SAMP-01, SAMP-02, SAMP-03); round-robin + xfin/xfout + SAMP-03 multipliers + per-voice pan wire-up — `729cb4a` / `e985b83` / `add3e6a` / `b6ceaed` / `e40cd3e`
+- [x] 37-04-PLAN.md — PIANO-01 sample asset expansion (4 velocity layers + synthesized mp + release= knob) — `af8395f` / `6560ee6` / `7f3ad4e`
+- [x] 37-05-PLAN.md — FLUTE-01 A4 sample point (closes D5 timbre crossover) — `681908c` / `3686e19`
+- [x] 37-06-PLAN.md — DRUM-01 via VSCO-CE GM-StylePerc.sfz + #auto pitch shift (depends on Plan 37-02) — `75878a0` / `7eaf410`
+- [x] 37-07-PLAN.md — Closer (examples + 37-VERIFICATION.md + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep) — Wave 5 closer (this commit)
 
 ### Phase 38: Live Coding 2.0
 
@@ -233,7 +233,13 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
   4. Composer can call `(abc "X:1\nT:Reel\nM:4/4\nK:Dmaj\n|: A2 d2 fedB |...")` and get a `Section` or `Sequence`; ABC 2.1 subset + abc2midi extensions (modal keys `Edor`/`Dmix`/`Aphr`/etc. parsed); multi-tune files (`X:1`, `X:2`, ...) return `Array[Section]`; unknown ornaments/headers dropped with `[abc]` stderr advisory (charitable interpretation). Vendored `matthewcpp/ABCSharp` source. (ABC-01, ABC-02)
   5. Composer can call `(mml "T120 L4 O4 cdefga>c")` and get a `Sequence`; PC-98-era common core supported (notes, accidentals `+`/`#`/`-`, octave `O<n>`/`>`/`<`, length `L<n>`, tempo `T<n>`, loops `[...]<n>`); dialect-specific FM/drum opcodes ignored with stderr advisory. (MML-01)
 
-**Plans**: TBD
+**Plans**: 5 plans (all complete 2026-05-23)
+
+- [x] 39-01-PLAN.md — @notation-io module + MusicXML export + XML-02 round-trip gate + InstrumentRouting D-39-20 extraction (XML-01, XML-02) — `4a838b4`
+- [x] 39-02-PLAN.md — LilyPond export with Dutch pitch convention + slur grouping + microtonal comments (LILY-01) — `dfd719f`
+- [x] 39-03-PLAN.md — ABC import (ABC 2.1 subset + abc2midi `Q:` + modal keys + charitable advisories) (ABC-01, ABC-02) — `c196023`
+- [x] 39-04-PLAN.md — MML import (PC-98 common core + loop expansion with depth/total caps) (MML-01) — `474595e`
+- [x] 39-05-PLAN.md — Composer-facing examples + Phase 39 VERIFICATION + CLAUDE.md sweep — `c60a2db`
 
 ### Phase 40: Studio Sync
 
@@ -309,7 +315,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
-| 37. Sound Design + Sampler Polish | v1.5 | 3/7 | In Progress|  |
+| 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
 | 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |

@@ -218,6 +218,20 @@ public static class SfzBuiltins
         string content = File.ReadAllText(absolutePath);
         var sfzData = SfzParser.Parse(content, absolutePath,
             patchDescription: Path.GetFileNameWithoutExtension(absolutePath));
+
+        // Phase 37 DRUM-01 W7 LOCK (revision pass 2/3) — dict-symbol drives
+        // percussion routing, NOT filename. When the composer wrote
+        // `loadSfz #drums`, they're loading a percussion patch by construction
+        // — that intent is the source of truth, robust against filename
+        // changes, VSCO-CE forks, and future custom-dict-symbol extensions.
+        // SfzRenderer's #auto pitch-shift route gates on
+        // SfzData.IsPercussion per D-37-14 / OQ3 / Pattern 11.
+        bool isPercussion = symbolName == "drums";
+        if (isPercussion)
+        {
+            sfzData = sfzData with { IsPercussion = true };
+        }
+
         return Value.Sfz(sfzData);
     }
 

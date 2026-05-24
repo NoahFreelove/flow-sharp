@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: executing
-stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
-last_updated: "2026-05-23T03:07:45.458Z"
-last_activity: 2026-05-23 -- Phase 37 execution started
+status: ready_to_plan
+stopped_at: Phases 37 + 39 complete — ready to discuss Phase 38 or Phase 40
+last_updated: 2026-05-23T18:00:07.654Z
+last_activity: 2026-05-23 -- Phase 39 closed (Notation Citizenship; 6/6 REQs shipped); Phase 37 also closed earlier today (Sound Design + Sampler Polish; 11/11 REQs shipped). Phases 37 + 39 ran in parallel in separate worktrees and merged independently into dev.
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 26
-  completed_plans: 19
-  percent: 29
+  completed_phases: 4
+  total_plans: 31
+  completed_plans: 31
+  percent: 57
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 37 — sound-design-sampler-polish
+**Current focus:** Phase 38 (live coding 2.0) OR Phase 40 (studio sync) — both unblocked by Phase 35; ordering at composer discretion.
 
 ## Current Position
 
-Phase: 37 (sound-design-sampler-polish) — EXECUTING
-Plan: 1 of 7
-Next step: `/clear` then `/gsd:context-phase 37` to spawn Phase 37 CONTEXT.md
-Status: Executing Phase 37
-Last activity: 2026-05-23 -- Phase 37 execution started
+Phase: 38 OR 40 (composer picks)
+Plan: Not started
+Next step: `/clear` then `/gsd:context-phase 38` or `/gsd:context-phase 40` to spawn the next CONTEXT.md
+Status: Ready to plan
+Last activity: 2026-05-23 — parallel-worktree experiment succeeded: Phases 37 + 39 shipped on the same day via two concurrent agents, no collisions, merge resolved by hand (CLAUDE.md additive, .gitignore additive)
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
@@ -62,7 +62,38 @@ Last activity: 2026-05-23 -- Phase 37 execution started
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-**Phase 36 closed 2026-05-22.** Next session: run `/clear` to drop context, then `/gsd:context-phase 37` to spawn Phase 37 CONTEXT.md (Sound Design + Sampler Polish; 11 REQs — DSP-01..03, MIX-01..02, SAMP-01..03, PIANO-01, FLUTE-01, DRUM-01). Pre-plan audit at CONTEXT spawn (D-v1.5-09): confirm whether per-voice stereo pan in synth-path is shipped per PROJECT.md v1.0 Phase 2 — likely scope is SFZ-renderer-only retrofit; audit `Audio/SongRenderer.cs` + `Audio/Sfz/SfzRenderer.cs`. v1.5 milestone progress: 2/7 phases complete (35 + 36), 19/19 plans complete in those phases.
+**Phases 37 + 39 closed 2026-05-23 (same day, parallel worktrees).** v1.5 milestone progress: **4/7 phases complete** (35 + 36 + 37 + 39), 31/31 plans complete in those phases. Phase 38 and Phase 40 are both unblocked by Phase 35; composer picks order.
+
+- For Phase 38 (Live Coding 2.0; 11 REQs — LIVE-01..03, REPL-01..04, AUDIO-IN-01..02, OSC-01..02): `/clear` then `/gsd:context-phase 38`. Sub-order: modernized watch + `live` block FIRST → REPL polish → audio input → OSC. Phase 37 inheritance: granular DSP-01 composability with live mic input (AUDIO-IN-01), stretch/pitchShift in live blocks (LIVE-01), per-voice pan for live mix experiments, B2 unconditional stereo lock (REPL piano-roll preview can assume stereo), W7 LOCK dict-symbol-driven semantic flag pattern.
+- For Phase 40 (Studio Sync; 9 REQs — MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01): `/clear` then `/gsd:context-phase 40`. Sub-order: IMidiBackend Linux first → MIDI clock master + slave → Ableton Link (license-gated per D-v1.5-04) → JACK transport. Phase 39 inheritance: `(match articulation | ...)` Phase 35 pattern matching consumer pattern established at `flow-lang/StandardLibrary/Notation/ArticulationEmit.cs` is the precedent for Phase 40 MIDI event dispatch `(match msg | (noteOn n v) => ... | (cc n v) => ...)`.
+
+**Parallel-worktree experiment outcome (2026-05-23):** Phases 37 and 39 ran concurrently via two independent agents — Phase 37 in main tree on `dev`, Phase 39 in `/home/noah/Desktop/projects/flow-sharp-phase39` on branch `phase-39-notation` branched from `af8395f`. Zero collisions during work — each phase touched disjoint source trees (Phase 37: `Audio/*`, `Synthesizers/*`, `Samples/*`; Phase 39: new `Notation/*`, vendoring docs, new `notation-io.flow` module). Merge resolved by hand on CLAUDE.md (both phases appended a bullet to the language features list — keep-both resolution) and .gitignore (additive, auto-merged). STATE.md / ROADMAP.md / REQUIREMENTS.md intentionally left untouched in the worktree per the parallel-isolation posture, then reconciled by hand at merge time. Repeatable pattern for future parallel work.
+
+**Phase 39 highlights:**
+
+- `@notation-io` stdlib module (opt-in `use "@notation-io"`) registers 4 builtins: `writeMusicXML` / `writeLilyPond` / `abc` / `mml`. Sibling to `@sfz` precedent — single composer-facing import for the notation interchange concern.
+- MusicXML 3.1 partwise export (`flow-lang/StandardLibrary/Notation/MusicXmlExport.cs`) with hand-rolled `XmlWriter` + deterministic `NewLineChars = "\n"` for two-run cmp-clean; D-v1.5-08 articulation table emitted via Phase 35 `(match)` consumer pattern (D-v1.5-10 dependency-root contract fulfilled at `ArticulationEmit.cs`); same-voice Legato slur grouping per D-39-07; multi-track Song → multi-`<part>` per D-39-09; decimal `<alter>` cent-precision unconditionally per D-39-06.
+- XML-02 round-trip CI gate (`MusicXmlRoundTripTests.StructuralPreservation_NoteCountMatches`) charitable-skips when `mscore` absent per D-39-08; structural diff via `XDocument` (musicxml-schemas vendoring SKIPPED — `XDocument` sufficient for Flow's narrow needs per Plan 39-01 T1 researcher discretion).
+- LilyPond export (`LilyPondExport.cs`) with Dutch pitch convention per Pitfall 2; per-Sequence `\new Staff`; voice blocks → `\new Voice` siblings inside `<< { } \\ { } >>` per D-39-13; microtonal as `% +Nc` comments per D-39-12; nested tuplets flattened by effective ratio per D-39-11; `\layout { }` + `\midi { }` blocks kept per researcher discretion (matches LilyPond user-base expectation).
+- ABC import (`AbcLexer.cs` + `AbcImport.cs`, ~600 LOC hand-rolled) — ABCSharp vendoring SKIPPED per revised D-39-04 (third-party API too broad for Flow's narrow needs); ABC 2.1 subset + abc2midi `Q:` tempo (handles bare BPM + 1/4=BPM + "Allegro" 1/4=BPM forms) + modal keys (Edor/Dmix/Aphr/Cmix/Glyd/Bphr/Floc per D-39-15); multi-tune `X:1`/`X:2` → `Array[Section]` per D-39-16; charitable per D-39-17.
+- MML import (`MmlImport.cs`) PC-98 common core (notes/accidentals/octave/length/tempo/loops); loop depth-cap 16 per D-39-19 (mirrors T-36-17 DoS guard); nested-loop semantics = inner expands each outer iteration per PC-98 PMD/MUCOM convention; FM operator routing + drum-bank opcodes ignored with `[mml]` advisory per D-39-18.
+- `flow-lang/Vendor/README.md` documents both vendoring decisions (both source candidates verified MIT via WebFetch at plan-start; both elected hand-roll path for v1.5; future v1.6 may revisit).
+- Reused MidiExport sequence-name → GM-program routing logic by extracting it to `InstrumentRouting.cs` per D-39-20 — backwards-compat verified by Phase 33 `SfzMidiExportTests` 10/10 PASS.
+- 4 composer-facing tutorial chapters under `examples/notation/` (to_musicxml.flow, to_lilypond.flow, from_abc.flow, from_mml.flow) + 4 paired regression tests under `tests/test_notation_*_example.flow` — all PASS.
+- Phase 39 xUnit: 55/55 PASS + 1 SKIP (the `mscore` round-trip auto-skip per D-39-08).
+- Zero external packages added across all 5 plans (per D-39-03/04/05).
+
+**Phase 37 highlights:**
+
+- Granular synthesis (`(granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)`) in `flow-lang/StandardLibrary/Audio/DSP/` with Hann/Gaussian(σ=0.4)/Tukey(α=0.5) windowing; jitter PRNG routed through Runtime/PrngRegistry per D-v1.5-06 — two-run cmp-clean preserved
+- Independent time-stretch + pitch-shift hand-rolled per D-v1.5-03 (RubberBand rejected for GPL hazard): Laroche-Dolson 1999 phase-locked vocoder + TD-PSOLA + YIN pitch detection + Fitzgerald 2010 HPS #auto dispatch; 6 W4 LOCK composer knobs (frameSize / hopSize / overlap / transientThreshold / pitchPeriod / windowSize) thread end-to-end; identity fast-paths (factor=1.0, 0c) preserve byte-identity
+- SFZ sampler polish bundle (Plan 37-03 in one wave per D-37-03): MIX-01 audit-only baseline pin (synth-path pan already shipped per D-37-15), MIX-02 SFZ per-voice pan retrofit with additive-with-clamp composition (OQ4 LOCK), B2 unconditional stereo promotion (Pitfall 12 resolution), SAMP-01 round-robin (`seq_position`/`seq_length`), SAMP-02 velocity-layer crossfade (`xfin_lovel`/`xfin_hivel`/`xfout_*`), SAMP-03 per-articulation envelope multipliers (A8 Option A scalar ADSR table — Pitfall 10 scoping at SFZ caller site only, SynthUtils unchanged)
+- PIANO-01 4-way velocity crossfade (pp/mp/mf/ff) replacing 2-way; synthesized mp via signed-RMS interpolation α=0.6 (A5 LOCKED, mf-leaning); `release=` named arg threaded via `PianoSynthesizer.CurrentReleaseSec` AsyncLocal; default 1.5s per Lehtonen 2007 (D-37-11); composer UAT auto-approved per 37-HUMAN-UAT.md
+- FLUTE-01 closes D5 timbre crossover gap (G4 / A4 / G5 — 3 sample points); A4 chosen over D5 per RESEARCH §Pattern 10 + A6 (broader low-register coverage); composer drop variant-matched Flute.vib.ff.A4
+- DRUM-01 ships via Phase 33 SFZ surface against VSCO-CE 1.1.0 GM-StylePerc.sfz; W7 LOCK — `SfzData.IsPercussion` set at LOAD TIME by dict-symbol `#drums` (NOT filename); SfzRenderer pitch-shift fork gates on `patch.IsPercussion` and routes through Plan 37-02's `PitchShiftEngine.Process(raw, cents, StretchMode.Auto)` for transient-preserving pitch shift; >12-semitone shift advisory per OQ3
+- Phase 37 xUnit: 41+ facts GREEN across 23 test classes (8 from 37-01 + 11 from 37-02 + 13 from 37-03 + 5 from 37-04 + 2 from 37-05 + 7 from 37-06); 2 composer-facing tutorial chapters (`examples/dsp/granular.flow` + `examples/dsp/stretch_pitchshift.flow`) + 2 paired regression tests (B1 LOCK — `lazy((...))` deferred-body idiom honored)
+- 34 pre-existing test failures (Phase 28 PerSynthArticulation FFT + Phase 30 FlowMidi quantizer + Phase 35 match exhaustiveness) documented in `deferred-items.md` — NOT introduced by Phase 37; out of scope per executor SCOPE BOUNDARY rule
+- Zero external packages added across all 7 plans (per CONTEXT D-v1.5-03)
 
 **Phase 36 highlights:**
 
@@ -102,7 +133,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 
 **Velocity:**
 
-- Total plans completed: 38 (v1.2 milestone)
+- Total plans completed: 45 (v1.2 milestone)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -121,6 +152,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 27 | 5 | - | - |
 | 32 | 7 | - | - |
 | 33 | 7 | - | - |
+| 37 | 7 | - | - |
 
 **Recent Trend:**
 
@@ -238,6 +270,13 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 36 P10 | ~80min | 3 tasks | 25 files (parameterized section AST + Parser + SectionOverloadDispatch + Interpreter wiring + 4 xUnit suites 24 facts + 5 composer tests + SUMMARY) |
 | Phase 36 P11 | ~80min | 2 tasks | 17 files (StyleRegistry + JamFunctions ~650L + 3 baseline rule packs + improv.flow + improv/styles/README.md + 3 xUnit suites + 3 composer tests + SUMMARY) |
 | Phase 36 P12 | ~15min | 2 tasks | 12 files (3 example .flow + 3 paired regression tests + 36-VERIFICATION.md + 36-VALIDATION.md status flip + CLAUDE.md Phase 36 section + ROADMAP + STATE + REQUIREMENTS + .gitignore + SUMMARY) |
+| Phase 37 P01 | ~19min | 3 tasks | 32 files (WindowFunctions/Fft/Hps/GranularEngine/GranularFunctions + 23-file Wave 0 scaffold + fixtures/baselines READMEs + FlowEngine wiring + audio.flow forward decls + deferred-items.md) |
+| Phase 37 P02 | ~28min | 3 tasks | 14 files (PhaseVocoder/Psola/StretchEngine/PitchShiftEngine/StretchFunctions/PitchShiftFunctions + Phase37Fixtures helper + 3 regenerated synthetic WAV fixtures + audio.flow 32 forward decls + 5 Wave 0 test scaffolds filled) |
+| Phase 37 P03 | ~32min | 3 tasks | 18 files (SamplePathArticulationMultipliers + SfzRegion/SfzParser/SfzRenderer/SfzSampleCache/SongRenderer + Phase 33 SfzArticulationTests SAMP-03 contract update + 6 Wave 0 scaffolds filled + 2 SFZ fixtures + 1 RMS baseline) |
+| Phase 37 P04 | ~50min | 4 tasks | 13 files (SampleCache/SampledInstrumentRenderer/SongRenderer/PianoSynthesizer rewrite + audio.flow renderSong(Second) + Samples/CREDITS+piano LICENSE + 3 Wave 0 scaffolds filled + 37-HUMAN-UAT.md + piano warmth fixture + RMS baseline + .gitignore) |
+| Phase 37 P05 | ~30min | 2 tasks | 5 files (SampleCache 3-pitch flute manifest + flute LICENSE.md + bundle CREDITS.md + 2 Wave 0 scaffolds filled — composer A4 drop in prior commit 681908c) |
+| Phase 37 P06 | ~35min | 2 tasks | 7 files (sfz.flow + SfzData IsPercussion + SfzBuiltins + SfzRenderer W7 LOCK gate + 33-VSCO-PATH-AUDIT.md row 20 + 2 Wave 0 scaffolds filled) |
+| Phase 37 P07 | ~Xmin | 2 tasks | 12 files (2 example .flow + 2 paired regression tests + 37-VERIFICATION.md + 37-VALIDATION.md status flip + CLAUDE.md Phase 37 section + ROADMAP + STATE + REQUIREMENTS + .gitignore + SUMMARY) |
 
 ## Accumulated Context
 

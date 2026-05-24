@@ -427,6 +427,12 @@ internal proc renderSequenceToVoices(Sequence: seq, String: synthType, Int: samp
 Note: Render an entire Song arrangement to a stereo Buffer
 internal proc renderSong(Song: song, String: synthType)
 internal proc renderSong(Song: song, Function: synth)
+
+Note: Phase 37 PIANO-01 (Plan 37-04 / D-37-11) -- release-tail knob (Second).
+Note: Composer-facing: (renderSong song "piano" release=2.0s).
+Note: Default 1.5s (RESEARCH §Pattern 8 / Lehtonen 2007 reference);
+Note: clamped to [0.05s, 10.0s] at the renderer (T-37-04-04 charitable clamp).
+internal proc renderSong(Song: song, String: synthType, Second: release)
 internal proc createSong(String: title)
 internal proc addBarToSong(Song: song, String: sectionName)
 internal proc addBarToSong(Song: song, String: sectionName, Int: count)

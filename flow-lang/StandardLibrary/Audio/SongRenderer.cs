@@ -29,6 +29,45 @@ public static class SongRenderer
             "renderSong",
             [SongType.Instance, StringType.Instance]);
         registry.Register("renderSong", signature, RenderSong);
+
+        // Phase 37 PIANO-01 (Plan 37-04 / D-37-11) — release-aware overload.
+        // Composer surface: (renderSong song "piano" release=2.0s) — the named-arg
+        // resolver matches Second against this third parameter. Sets
+        // PianoSynthesizer.CurrentReleaseSec via AsyncLocal so the dispatched
+        // RenderNote calls see the override; resets in finally to keep the
+        // AsyncLocal scope clean for subsequent renders.
+        var releaseSig = new FunctionSignature(
+            "renderSong",
+            [SongType.Instance, StringType.Instance, SecondType.Instance],
+            IsVarArgs: false,
+            ParameterNames: new[] { "song", "instrument", "release" });
+        registry.Register("renderSong", releaseSig, RenderSongWithRelease);
+    }
+
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04 / D-37-11) — renderSong overload that
+    /// accepts a <c>release=</c> tail-length knob (Second). Currently consumed
+    /// only by the piano synth path via
+    /// <see cref="Synthesizers.PianoSynthesizer.CurrentReleaseSec"/>; other
+    /// instruments accept the knob harmlessly (ignored — they don't depend on
+    /// the tail extension because they don't ship the velocity-layered sample
+    /// expansion). T-37-04-04 clamping happens at the renderer; this entry
+    /// point just sets the AsyncLocal + dispatches.
+    /// </summary>
+    private static Value RenderSongWithRelease(IReadOnlyList<Value> args)
+    {
+        double releaseSec = System.Convert.ToDouble(args[2].Data);
+        var basicArgs = new List<Value> { args[0], args[1] };
+        var prev = Synthesizers.PianoSynthesizer.CurrentReleaseSec.Value;
+        Synthesizers.PianoSynthesizer.CurrentReleaseSec.Value = releaseSec;
+        try
+        {
+            return RenderSong(basicArgs);
+        }
+        finally
+        {
+            Synthesizers.PianoSynthesizer.CurrentReleaseSec.Value = prev;
+        }
     }
 
     /// <summary>

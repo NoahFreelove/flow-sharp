@@ -40,6 +40,22 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 ///   fallback per CONTEXT D-03: when <c>Grid[pitch, vel]</c> is null, find the
 ///   closest pitch in this index and varispeed-shift that region's sample by
 ///   the pitch delta. ~512 bytes per patch.</description></item>
+///
+///   <item><description><see cref="IsPercussion"/> — Phase 37 DRUM-01 W7 LOCK
+///   (revision pass 2/3). True when this Sfz value was produced by
+///   <c>loadSfz(#drums)</c> or any future percussion-class dict-symbol.
+///   False for all 19 non-drum GM-dict resolutions and for the
+///   <c>loadSfz(String)</c> path (the filename arg is opaque to the
+///   load-time flag — composer using the string path opts out of
+///   percussion routing). Drives <see cref="SfzRenderer"/>'s
+///   <c>#auto</c> pitch-shift gate per CONTEXT D-37-14 / W7 LOCK: the
+///   dict-symbol is the source of truth, NOT the filename. Filename
+///   inspection in <see cref="SfzRenderer"/> would be fragile against
+///   composer renames, VSCO-CE forks, or custom percussion-patch
+///   extensions to the GM dict. Default <c>false</c> preserves existing
+///   construction sites (Phase 33 parser tests, the
+///   <c>loadSfz(String)</c> bypass path, fixture loaders) unchanged —
+///   positional-record-with-default append is back-compat-safe.</description></item>
 /// </list>
 /// </summary>
 public sealed record SfzData(
@@ -47,4 +63,5 @@ public sealed record SfzData(
     string BasePath,
     IReadOnlyList<SfzRegion> Regions,
     SfzRegion?[,] Grid,
-    int[] SortedByPitch);
+    int[] SortedByPitch,
+    bool IsPercussion = false);

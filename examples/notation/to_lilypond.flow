@@ -1,0 +1,36 @@
+Note: =====================================================================
+Note: to_lilypond.flow — Phase 39 LilyPond export chapter
+Note: =====================================================================
+Note:
+Note: Composer writes a 4-bar piano piece in C major, exports it as LilyPond
+Note: source. The .ly file compiles cleanly with `lilypond -dno-print-pages`
+Note: when LilyPond 2.24+ is installed.
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter examples/notation/to_lilypond.flow
+Note:
+Note: Output:
+Note:   examples/notation/output/to_lilypond.ly — LilyPond 2.24 source
+Note:
+Note: Verify (optional, requires lilypond 2.24+ in PATH):
+Note:   lilypond -o examples/notation/output/to_lilypond examples/notation/output/to_lilypond.ly
+Note:
+Note: Flow emits the .ly correctly without lilypond installed; the engraver
+Note: compile step is opt-in for composers who want printed PDF output.
+
+use "@notation-io"
+use "@std"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section intro {
+                Sequence piano = | C4q D4q E4q F4q | G4q A4q B4q C5q | C5q B4q A4q G4q | F4q E4q D4q C4w |
+            }
+            Song song = [intro]
+            (writeLilyPond "examples/notation/output/to_lilypond.ly" song)
+            (print "LilyPond source written to examples/notation/output/to_lilypond.ly")
+            (print "Run `lilypond -o examples/notation/output/to_lilypond examples/notation/output/to_lilypond.ly` to render PDF (requires lilypond 2.24+)")
+        }
+    }
+}
