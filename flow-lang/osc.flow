@@ -1,0 +1,56 @@
+Note: OSC — Open Sound Control client + server, opt-in via `use "@osc"`
+Note: Phase 38 Plan 38-06 OSC-01 + OSC-02 — single-module surface for the
+Note: 5 OSC builtins:
+Note:   oscSend(String host, Int port, String path, ...args) → Void      [OSC-01]
+Note:   oscListen(Int port, String path, Function handler) → OscHandle    [OSC-01]
+Note:   oscStop(OscHandle handle) → Void                                  [D-38-16]
+Note:   oscBundle(...packets) → OscBundle (varargs)                       [D-38-15]
+Note:   oscSendBundle(String host, Int port, OscBundle bundle) → Void     [D-38-15]
+Note:
+Note: Type-tag inference (D-38-13): Int→,i Long→,h Float→,f Double→,d
+Note:   String/Symbol→,s Bool→,T/,F Buffer→,b. OVERRIDES REQUIREMENTS.md
+Note:   OSC-02 strict-tag wording per D-v1.5-05 charitable interpretation
+Note:   default.
+Note: Rate limit (D-38-14): per-path drop-newest sample-and-hold at 200 Hz
+Note:   (5 ms window). No advisory on individual drops.
+Note: Bundle nesting depth cap (D-38-15): collapses at 8 with stderr
+Note:   advisory; mirrors Phase 36 T-36-17 / Phase 39 D-39-19 DoS guard.
+Note:
+Note: Implementation backed by Rug.Osc 1.2.5 — MIT, zero transitive deps,
+Note: verified live on NuGet flatcontainer API 2026-05-23 per RESEARCH §K +
+Note: Package Legitimacy Audit (slopcheck [SLOP] is a confirmed false
+Note: positive — Rug.Osc is .NET-only; slopcheck only queries PyPI).
+
+use "@std"
+
+Note: ===== Internal C# Function Declarations =====
+
+Note: Marker builtin called once at module load (last expression of this
+Note: file). Flips ExecutionContext.OscEnabled = true so the 5 surface
+Note: builtins unlock. Composers should not call this directly — the
+Note: trailing (__enableOscModule) line below handles it at import time.
+internal proc __enableOscModule ()
+
+Note: ----- Client builtins -----
+internal proc oscSend (String: host, Int: port, String: path)
+internal proc oscSendBundle (String: host, Int: port, OscHandle: bundle)
+
+Note: ----- Server builtins -----
+Note: oscListen returns an OscHandle reference-identity value per D-38-16.
+Note: The handler lambda is invoked once per matching incoming message
+Note: (rate-limited per D-38-14 at 200 Hz/path drop-newest).
+internal proc oscListen (Int: port, String: path, Function: handler)
+internal proc oscStop (OscHandle: handle)
+
+Note: ----- Bundle constructor (varargs) -----
+Note: Returns an OscHandle-wrapped OscBundle. Per D-38-15 bundles dispatch
+Note: both ways with timetag honored on receive; outgoing bundles use
+Note: OscTimeTag.Immediate (value 1) unless an explicit timetag is added
+Note: at the send call.
+internal proc oscBundle ()
+
+Note: ===== Side-effecting init marker =====
+Note: Flips ExecutionContext.OscEnabled = true so the 5 builtins above
+Note: unlock. Without this line, every call to oscSend / oscListen /
+Note: oscStop / oscBundle / oscSendBundle raises "requires `use \"@osc\"`".
+(__enableOscModule)

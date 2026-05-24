@@ -10,6 +10,7 @@
     <ItemGroup>
       <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
       <PackageReference Include="Pidgin" Version="3.5.1" />
+      <PackageReference Include="Rug.Osc" Version="1.2.5" />
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
@@ -41,6 +42,13 @@
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>
       <None Update="notation-io.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <!-- Phase 38 Plan 38-06 — OSC opt-in module. Loaded via `use "@osc"`;
+           registers the __enableOscModule marker and 5 forward decls
+           (oscSend / oscListen / oscStop / oscBundle / oscSendBundle). -->
+      <None Update="osc.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>

@@ -210,6 +210,12 @@ examples/ragtime/*.mid
 # (musical-notation primitives — auto-tracked because added pre-global-ignore).
 !flow-lang/notation-io.flow
 
+# Phase 38 Plan 38-06 OSC-01 + OSC-02 — opt-in @osc surface that composers
+# import via `use "@osc"`. Same precedent as sfz.flow / improv.flow /
+# notation-io.flow above — new shipped composer surface that escapes the
+# global *.flow ignore.
+!flow-lang/osc.flow
+
 # Phase 39 D-39-22 — composer-facing tutorial chapters for notation IO
 # (writeMusicXML / writeLilyPond / abc / mml). Mirrors examples/symphony/
 # + examples/ragtime/ + examples/generative/ allow-list precedents.

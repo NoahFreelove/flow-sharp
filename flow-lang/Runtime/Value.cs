@@ -100,6 +100,21 @@ public class Value
     public static Value LsystemModel(LsystemModelData model)
         => new(model, LsystemModelType.Instance);
 
+    /// <summary>
+    /// Phase 38 Plan 38-06 (OSC-01, D-38-16) — wraps a
+    /// <see cref="StandardLibrary.Network.OscHandleData"/> reference in a Flow
+    /// <see cref="Value"/> typed as <see cref="OscHandleType.Instance"/>.
+    /// Reference identity per CONTEXT D-38-16 + the Phase 32/33/36
+    /// precedent: two <c>(oscListen 7777 "/x" h)</c> calls produce distinct
+    /// Values even with identical port + path (each call spawns its own
+    /// background receive loop and CancellationTokenSource — no caching at
+    /// the value layer). Mirrors <see cref="Value.Tuning"/> /
+    /// <see cref="Value.Sfz"/> / <see cref="Value.MarkovModel"/> /
+    /// <see cref="Value.LsystemModel"/> contract.
+    /// </summary>
+    public static Value OscHandle(StandardLibrary.Network.OscHandleData handle)
+        => new(handle, OscHandleType.Instance);
+
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
 
     /// <summary>
