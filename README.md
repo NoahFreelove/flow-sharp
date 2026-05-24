@@ -31,10 +31,6 @@ I hope my direction on where I want flow-lang to go was clear. If it has to be o
 ## Features
 See [FEATURES.md](./FEATURES.md) for a complete list of features.
 
-## Showcase
-
-Two pieces shipped in v1.4 (2026-05-16), both rendered entirely from Flow source against the VSCO Community CE 1.1.0 SFZ library via the Phase 33 orchestral sampler. *In Five Voices* is a pensive ~60 s ABA symphony in D minor for 5 orchestral instruments (violin, cello, flute, horn, timpani). *Stride & Stomp* is an upbeat ~58 s solo-piano ragtime in F major. Same interpreter, same SFZ pipeline, opposite moods -- the genre-agnostic claim in one release.
-
 ## Install (Linux x64)
 
 Per-user install (no sudo), from a local checkout:
