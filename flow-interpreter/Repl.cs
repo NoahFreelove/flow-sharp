@@ -1,4 +1,6 @@
+using System.Linq;
 using FlowLang.Core;
+using FlowLang.StandardLibrary;
 using FlowLang.TypeSystem.PrimitiveTypes;
 
 namespace FlowInterpreter;
@@ -7,10 +9,18 @@ namespace FlowInterpreter;
 /// Read-Eval-Print Loop for interactive Flow execution.
 /// Maintains audio backend state across evaluations.
 /// Handles Ctrl+C to stop playback without exiting.
+///
+/// Phase 38 Plan 38-04 (REPL-01..04): wires <see cref="ReplLineEditor"/> for
+/// PrettyPrompt-backed line editing (Tab completion via in-process flow-lsp
+/// CompletionHandler per D-38-12; Ctrl+R history search via PrettyPrompt
+/// built-in; multi-line continuation preserved through
+/// <see cref="ReplInputCompleteness"/>). Extends <see cref="HandleCommand"/>
+/// with <c>:help &lt;name&gt;</c> per D-38-09.
 /// </summary>
 public class Repl
 {
     private readonly FlowEngine _engine;
+    private ReplLineEditor? _lineEditor;
 
     public Repl()
     {
@@ -181,34 +191,28 @@ public class Repl
 
     private bool IsInputComplete(string input)
     {
-        if (string.IsNullOrWhiteSpace(input))
-            return true;
-
-        // For internal procs, they don't have bodies
-        if (input.TrimStart().StartsWith("internal proc"))
-            return true;
-
-        // Use the actual lexer to tokenize and count block depths
-        var reporter = new FlowLang.Diagnostics.ErrorReporter();
-        var lexer = new FlowLang.Lexing.SimpleLexer(input, reporter, "<repl>");
-        var tokens = lexer.Tokenize();
-
-        int blockDepth = 0;
-        int procDepth = 0;
-
-        foreach (var token in tokens)
-        {
-            if (token.Type == FlowLang.Lexing.TokenType.LBrace) blockDepth++;
-            else if (token.Type == FlowLang.Lexing.TokenType.RBrace) blockDepth--;
-            else if (token.Type == FlowLang.Lexing.TokenType.Proc) procDepth++;
-            else if (token.Type == FlowLang.Lexing.TokenType.EndProc) procDepth--;
-        }
-
-        return blockDepth <= 0 && procDepth <= 0;
+        // Phase 38 Plan 38-04: delegate to the shared helper so the legacy
+        // Console.ReadLine path AND the PrettyPrompt path call the same logic.
+        return ReplInputCompleteness.IsInputComplete(input);
     }
 
     private bool HandleCommand(string command)
     {
+        // Phase 38 Plan 38-04 (D-38-09): `:help <name>` extension — look up the
+        // identifier in BuiltInDocs and render header + body + Example per UI-SPEC
+        // lines 263-280. The bare-:help arms below remain unchanged.
+        var trimmed = command.TrimEnd();
+        if (trimmed.StartsWith(":help ", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith(":h ", StringComparison.OrdinalIgnoreCase))
+        {
+            int spaceIdx = trimmed.IndexOf(' ');
+            var name = trimmed.Substring(spaceIdx + 1).Trim();
+            if (!string.IsNullOrEmpty(name))
+            {
+                return ShowHelpForName(name);
+            }
+        }
+
         return command.ToLower() switch
         {
             ":quit" or ":q" or ":exit" => false,
@@ -217,6 +221,86 @@ public class Repl
             ":stop" => StopAudio(),
             _ => UnknownCommand(command)
         };
+    }
+
+    /// <summary>
+    /// Test seam — exposes <see cref="HandleCommand"/> to xUnit per Phase 38 Plan 38-04
+    /// ReplHelpMetaCommandTests. Production callers go through <see cref="Run"/>.
+    /// Returns the same bool the dispatch returns: <c>true</c> = continue REPL,
+    /// <c>false</c> = exit (matches the `:quit` arm contract).
+    /// </summary>
+    public bool HandleCommandForTesting(string command) => HandleCommand(command);
+
+    /// <summary>
+    /// Phase 38 Plan 38-04 D-38-09 — `:help &lt;name&gt;` arm. Looks up <paramref name="name"/>
+    /// in <see cref="BuiltInDocs"/>; on hit renders the 3-block layout per UI-SPEC
+    /// lines 263-280 (bold+green header, dim signature, default body, dim Example);
+    /// on miss emits the locked yellow advisory per line 289.
+    /// Mirrors the HoverHandler.BuildHover consumer pattern at flow-lsp:46-65.
+    /// </summary>
+    private bool ShowHelpForName(string name)
+    {
+        var entry = BuiltInDocs.TryGet(name);
+        if (entry is null)
+        {
+            // UI-SPEC line 289: locked yellow advisory wording (composer-interactive).
+            var prevFg = Console.ForegroundColor;
+            try
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"[help] no documentation entry for '{name}' — try ':help' for the meta-command list");
+            }
+            finally
+            {
+                Console.ForegroundColor = prevFg;
+            }
+            return true;
+        }
+
+        // Header: proc-name bold + green per UI-SPEC line 268+281
+        var prev = Console.ForegroundColor;
+        try
+        {
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            // ANSI bold escape — terminals that support both colour and SGR honour the bold.
+            Console.WriteLine($"\x1b[1m{name}\x1b[0m");
+            Console.ForegroundColor = prev;
+
+            // Signature line — dim per UI-SPEC line 269+282. Params come from BuiltInDocs entry.
+            Console.WriteLine();
+            var sigDisplay = entry.Params.Count > 0
+                ? $"({name} {string.Join(' ', entry.Params.Select(p => p.Name))})"
+                : $"({name})";
+            Console.WriteLine($"  \x1b[2m{sigDisplay}\x1b[0m");
+
+            // Body — default attribute per UI-SPEC line 272+283.
+            Console.WriteLine();
+            Console.WriteLine($"  {entry.Summary}");
+
+            // Per-param lines (if any) — composer-useful detail.
+            foreach (var p in entry.Params)
+            {
+                if (!string.IsNullOrEmpty(p.Description))
+                    Console.WriteLine($"    \x1b[2m{p.Name}\x1b[0m: {p.Description}");
+            }
+
+            // Example label — dim per UI-SPEC line 276.
+            Console.WriteLine();
+            Console.WriteLine($"  \x1b[2mExample:\x1b[0m");
+            // BuiltInDocs.Doc has no Example field today — render a generic one-liner
+            // sourced from the param names per UI-SPEC line 277 example pattern.
+            var exampleArgs = entry.Params.Count > 0
+                ? string.Join(' ', entry.Params.Select(p => p.Name))
+                : string.Empty;
+            Console.WriteLine($"    ({name}{(exampleArgs.Length > 0 ? " " + exampleArgs : string.Empty)})");
+            Console.WriteLine();
+        }
+        finally
+        {
+            Console.ForegroundColor = prev;
+        }
+        return true;
     }
 
     private bool StopAudio()
@@ -231,6 +315,7 @@ public class Repl
         Console.WriteLine("Flow REPL Commands:");
         Console.WriteLine("  :quit, :q, :exit  - Exit the REPL");
         Console.WriteLine("  :help, :h         - Show this help");
+        Console.WriteLine("  :help <name>      - Show docs for a builtin (e.g. ':help transpose')"); // Phase 38 Plan 38-04 D-38-09 + UI-SPEC line 362
         Console.WriteLine("  :clear, :cls      - Clear the screen");
         Console.WriteLine("  :stop             - Stop audio playback");
         Console.WriteLine();
