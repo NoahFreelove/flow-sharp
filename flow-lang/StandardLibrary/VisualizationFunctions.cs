@@ -16,6 +16,11 @@ public static class VisualizationFunctions
 {
     /// <summary>
     /// Registers the visualize built-in function.
+    ///
+    /// Phase 38 Plan 38-04 D-38-10: <c>(inspect seq)</c> ships as a builtin-level
+    /// alias backed by the same <see cref="Visualize"/> dispatch (overrides
+    /// REQUIREMENTS.md REPL-04 wording per D-v1.5-01 single-commit migration —
+    /// composer can call either name; identical output).
     /// </summary>
     public static void Register(InternalFunctionRegistry registry)
     {
@@ -26,6 +31,11 @@ public static class VisualizationFunctions
         var sig2 = new FunctionSignature("visualize", [BufferType.Instance],
             ParameterNames: ["buf"]);
         registry.Register("visualize", sig2, VisualizeBuffer);
+
+        // Phase 38 Plan 38-04 D-38-10 — (inspect seq) alias (same dispatch).
+        var sig3 = new FunctionSignature("inspect", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
+        registry.Register("inspect", sig3, Visualize);
     }
 
     /// <summary>
@@ -42,8 +52,10 @@ public static class VisualizationFunctions
 
         var timeline = sequence.ToTimeline();
 
-        // Collect all notes with their absolute beat positions and durations
-        var noteEvents = new List<(int midiPitch, string label, double startBeat, double durationBeats)>();
+        // Collect all notes with their absolute beat positions, durations, and
+        // articulation (Phase 38 Plan 38-04 D-38-10 — articulation drives the
+        // onset glyph per UI-SPEC §"Glyph Inventory" lines 187-201).
+        var noteEvents = new List<(int midiPitch, string label, double startBeat, double durationBeats, Articulation articulation)>();
         double totalBeats = 0;
         var barBoundaries = new List<double>();
 
@@ -65,7 +77,7 @@ public static class VisualizationFunctions
                 {
                     int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
                     string label = FormatNoteLabel(note.NoteName, note.Octave, note.Alteration);
-                    noteEvents.Add((midi, label, offsetBeats + beatCursor, noteDuration));
+                    noteEvents.Add((midi, label, offsetBeats + beatCursor, noteDuration, note.Articulation));
                 }
 
                 beatCursor += noteDuration;
@@ -114,24 +126,78 @@ public static class VisualizationFunctions
                 barLineColumns.Add(col);
         }
 
-        // Fill in notes
-        foreach (var (midi, label, startBeat, duration) in noteEvents)
+        // Fill in notes per Phase 38 Plan 38-04 D-38-10:
+        //   - First cell of a sustained note is the articulation glyph (UI-SPEC line 210):
+        //       Accent → '>', Staccato → '.', Marcato → '^', Tenuto → '_',
+        //       Sforzando → '!', Normal/Legato → '#' (Legato handled by the gap-fill pass
+        //       below per UI-SPEC line 212).
+        //   - Subsequent cells stay '#' (the sustain glyph; pre-Phase-38 behavior).
+        //   - Single-cell notes collapse to the onset glyph alone (UI-SPEC line 211 —
+        //     naturally true because the loop stops when endCol == startCol).
+        foreach (var (midi, label, startBeat, duration, articulation) in noteEvents)
         {
             int row = maxMidi - midi; // top = highest pitch
             int startCol = (int)Math.Round(startBeat * columnsPerBeat);
             int endCol = (int)Math.Round((startBeat + duration) * columnsPerBeat);
             endCol = Math.Min(endCol, gridWidth);
 
+            // Ensure at least one cell renders for very short notes (so the onset glyph is
+            // visible per UI-SPEC line 211 — single-cell collapse).
+            if (endCol <= startCol) endCol = startCol + 1;
+            endCol = Math.Min(endCol, gridWidth);
+
+            char onsetGlyph = articulation switch
+            {
+                Articulation.Accent => '>',
+                Articulation.Staccato => '.',
+                Articulation.Marcato => '^',
+                Articulation.Tenuto => '_',
+                Articulation.Sforzando => '!',
+                _ => '#'  // Normal — pre-Phase-38 baseline. Legato handled separately below.
+            };
+
             for (int c = startCol; c < endCol; c++)
             {
                 if (c >= 0 && c < gridWidth)
-                    grid[row, c] = '#';
+                    grid[row, c] = (c == startCol) ? onsetGlyph : '#';
+            }
+        }
+
+        // Phase 38 Plan 38-04 D-38-10 + UI-SPEC line 212 — Legato gap-fill pass.
+        // For each Legato note, look back to the previous note on the same row that ends
+        // immediately before this note's startCol; fill the gap cell with `~`. Charitable
+        // skip when no adjacent prior-row note exists (D-v1.5-05).
+        var rowNoteEnds = new Dictionary<int, List<(int startCol, int endCol)>>();
+        foreach (var (midi, _, startBeat, duration, _) in noteEvents)
+        {
+            int row = maxMidi - midi;
+            int startCol = (int)Math.Round(startBeat * columnsPerBeat);
+            int endCol = (int)Math.Round((startBeat + duration) * columnsPerBeat);
+            if (!rowNoteEnds.ContainsKey(row)) rowNoteEnds[row] = new List<(int, int)>();
+            rowNoteEnds[row].Add((startCol, endCol));
+        }
+        foreach (var (midi, _, startBeat, _, articulation) in noteEvents)
+        {
+            if (articulation != Articulation.Legato) continue;
+            int row = maxMidi - midi;
+            int startCol = (int)Math.Round(startBeat * columnsPerBeat);
+            // Look for a prior note on the same row ending at startCol or startCol-1.
+            if (!rowNoteEnds.TryGetValue(row, out var spans)) continue;
+            foreach (var (prevStart, prevEnd) in spans)
+            {
+                if (prevEnd >= startCol) continue;
+                int gapCol = prevEnd; // first empty cell after the previous note
+                if (gapCol >= 0 && gapCol < gridWidth && gapCol < startCol && grid[row, gapCol] == ' ')
+                {
+                    grid[row, gapCol] = '~';
+                    break;
+                }
             }
         }
 
         // Build pitch labels (collect unique labels per MIDI pitch)
         var pitchLabels = new Dictionary<int, string>();
-        foreach (var (midi, label, _, _) in noteEvents)
+        foreach (var (midi, label, _, _, _) in noteEvents)
         {
             pitchLabels.TryAdd(midi, label);
         }
@@ -143,6 +209,21 @@ public static class VisualizationFunctions
         // Render output
         var sb = new StringBuilder();
 
+        // Phase 38 Plan 38-04 D-38-10 + UI-SPEC lines 217-228 — tick-mark row
+        // rendered ABOVE the first pitch row. Format mirrors the existing bottom
+        // separator (`+` at bar-line cols, `-` elsewhere) and is followed by
+        // beat-number annotations below the rule.
+        sb.Append(new string(' ', labelWidth));
+        sb.Append(" +");
+        for (int c = 0; c < gridWidth; c++)
+        {
+            if (barLineColumns.Contains(c) && c > 0)
+                sb.Append('+');
+            else
+                sb.Append('-');
+        }
+        sb.AppendLine("+");
+
         for (int r = 0; r < gridHeight; r++)
         {
             int midi = maxMidi - r;
@@ -152,8 +233,23 @@ public static class VisualizationFunctions
 
             for (int c = 0; c < gridWidth; c++)
             {
-                if (grid[r, c] == '#')
-                    sb.Append('#');
+                char cell = grid[r, c];
+                // Articulation glyphs + sustain + legato gap-fill take precedence
+                // over the bar-line stamp at the same cell EXCEPT for `|` itself —
+                // per UI-SPEC line 214, bar line wins over sustain `#`.
+                if (cell != ' ' && cell != '#')
+                {
+                    // Onset glyphs (>./^_!~) win over sustain; per UI-SPEC line 213.
+                    sb.Append(cell);
+                }
+                else if (cell == '#')
+                {
+                    // Sustain — bar line wins per UI-SPEC line 214.
+                    if (barLineColumns.Contains(c) && c > 0)
+                        sb.Append('|');
+                    else
+                        sb.Append('#');
+                }
                 else if (barLineColumns.Contains(c) && c > 0)
                     sb.Append('|');
                 else
