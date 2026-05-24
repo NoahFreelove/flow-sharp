@@ -1,3 +1,4 @@
+using FlowLang.Ast.Statements;
 using FlowLang.Diagnostics;
 
 namespace FlowLang.Runtime;
@@ -114,6 +115,68 @@ public class ModuleLoader
             // 4. Execute in current context (no new frame - imports add to current scope)
             var interpreter = ParentInterpreter ?? new Interpreter.Interpreter(context, _errorReporter, this);
             interpreter.Execute(program);
+
+            // Phase 43 Plan 43-03 D-05 / D-06 — ModuleRegistry registration hook.
+            // Runs ONCE per resolvedPath because the _loadedModules.Contains short-circuit
+            // at line 53 prevents a second load (Pitfall 7). Walks program.Statements
+            // looking for the leading ModuleDeclarationStatement (RESEARCH A2: preferred
+            // over snapshot-and-diff because Flow has no dynamic proc declarations).
+            // If found:
+            //   - Iterates remaining ProcDeclarations to build the exportedProcs dict
+            //     (proc.Name → Value.Function looked up from the global frame).
+            //   - Emits D-06 one-shot dup-module advisory if Contains() is already true.
+            //   - Emits D-04 last-import-wins shadow advisory at the proc-shadow site
+            //     (per-proc-name; for procs already owned by a DIFFERENT prior module).
+            //   - Registers the module name → exportedProcs into context.ModuleRegistry.
+            // Files WITHOUT a `module` declaration register nothing and inherit the
+            // back-compat path (procs are already in context.GlobalFrame from Execute).
+            if (program.Statements.Count > 0
+                && program.Statements[0] is ModuleDeclarationStatement modDecl)
+            {
+                var exportedProcs = new Dictionary<string, Value>();
+                foreach (var stmt in program.Statements)
+                {
+                    if (stmt is Ast.Statements.ProcDeclaration proc)
+                    {
+                        var overloads = context.GlobalFrame.GetFunctionOverloads(proc.Name);
+                        if (overloads.Count > 0)
+                        {
+                            // Last-declared overload wins for the qualified-access surface.
+                            // OverloadResolver handles multi-overload resolution downstream when
+                            // the registry returns a Function Value the caller wraps in a call.
+                            exportedProcs[proc.Name] = Value.Function(overloads[overloads.Count - 1]);
+                        }
+                    }
+                }
+
+                // D-06 advisory: duplicate-module name detected BEFORE re-registering.
+                // Per-name dedup (NOT per-name-and-path) so hot-reload re-registration
+                // of the same module name doesn't flood stderr.
+                if (context.ModuleRegistry.Contains(modDecl.Name))
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"module-dup:{modDecl.Name}",
+                        $"[module] duplicate module name '{modDecl.Name}' — last load wins");
+                }
+
+                // D-04 last-import-wins shadow advisory — for each proc this module exports
+                // that was previously owned by a DIFFERENT module, emit one-shot advisory
+                // keyed by (priorOwner, newOwner, procName). Update ownership last-write-wins
+                // so the next-import's shadow check sees this module as the prior owner.
+                foreach (var procName in exportedProcs.Keys)
+                {
+                    if (context.ProcOwnership.TryGetValue(procName, out var priorOwner)
+                        && priorOwner != modDecl.Name)
+                    {
+                        RenderingDiagnostics.WarnOnce(
+                            $"module-shadow:{priorOwner}:{modDecl.Name}:{procName}",
+                            $"[module] '{procName}' from '{modDecl.Name}' shadows '{procName}' from '{priorOwner}' — qualify with '{priorOwner}.{procName}' or '{modDecl.Name}.{procName}' to disambiguate");
+                    }
+                    context.ProcOwnership[procName] = modDecl.Name;
+                }
+
+                context.ModuleRegistry.Register(modDecl.Name, exportedProcs);
+            }
 
             _loadedModules.Add(resolvedPath);
             if (_errorReporter.HasErrors)
