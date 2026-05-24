@@ -268,9 +268,20 @@ public class ExpressionEvaluator
             // "Function '<mod.fn>' not found" error message fires.
         }
 
-        // Evaluate all arguments
-        var argValues = call.Arguments.Select(Evaluate).ToList();
-        var argTypes = argValues.Select(v => v.Type).ToList();
+        // Evaluate all arguments — Bundle A (260524-r4o) Task 4: single
+        // pre-sized loop builds argValues (List<Value>) + argTypes (FlowType[])
+        // in one pass. FlowType[] satisfies IReadOnlyList<FlowType> at every
+        // downstream consumer (TryResolveFunction / ResolveFunction), avoiding
+        // the legacy double-LINQ allocation (2 iterators + 2 boxed enumerators
+        // + 2 growable Lists).
+        var argValues = new List<Value>(call.Arguments.Count);
+        var argTypes = new FlowType[call.Arguments.Count];
+        for (int i = 0; i < call.Arguments.Count; i++)
+        {
+            var v = Evaluate(call.Arguments[i]);
+            argValues.Add(v);
+            argTypes[i] = v.Type;
+        }
 
         // Phase 36 Plan 36-02 (D-36-11): evaluate named-arg values up-front
         // so the resolver can see their Types. The dict shape mirrors the
