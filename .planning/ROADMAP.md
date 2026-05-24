@@ -232,8 +232,8 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 38-03-PLAN.md — State preservation across reload: Voice.Name + DiffByVoiceName + LambdaCaptureAuditor + PRNG reseed at swap (LIVE-03, LIVE-02)
-- [ ] 38-06-PLAN.md — OSC: Rug.Osc + oscSend/oscListen/oscStop/oscBundle/oscSendBundle + charitable type-tag inference (OSC-01..02)
+- [x] 38-03-PLAN.md — State preservation across reload: Voice.Name + DiffByVoiceName + LambdaCaptureAuditor + PRNG reseed at swap (LIVE-03, LIVE-02)
+- [x] 38-06-PLAN.md — OSC: Rug.Osc + oscSend/oscListen/oscStop/oscBundle/oscSendBundle + charitable type-tag inference (OSC-01..02)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -337,7 +337,7 @@ Plans:
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
-| 38. Live Coding 2.0 | v1.5 | 4/7 | In Progress|  |
+| 38. Live Coding 2.0 | v1.5 | 6/7 | In Progress|  |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
