@@ -57,15 +57,16 @@ public class GlyphCollisionTests : IDisposable
     public void BarLineWinsOverSustainHash()
     {
         var ts = new TimeSignatureData(4, 4);
+        int whole = (int)NoteValueType.Value.WHOLE;
         // Bar 1: a single whole-note that fills the whole bar.
         var bar1 = new BarData(new[]
         {
-            new MusicalNoteData('C', 4, 0, durationValue: 1, isRest: false, articulation: Articulation.Normal),
+            new MusicalNoteData('C', 4, 0, durationValue: whole, isRest: false, articulation: Articulation.Normal),
         }, ts);
         // Bar 2: another whole-note so there's a bar-boundary BETWEEN them.
         var bar2 = new BarData(new[]
         {
-            new MusicalNoteData('C', 4, 0, durationValue: 1, isRest: false, articulation: Articulation.Normal),
+            new MusicalNoteData('C', 4, 0, durationValue: whole, isRest: false, articulation: Articulation.Normal),
         }, ts);
         var seq = new SequenceData();
         seq.AddBar(bar1);
@@ -105,7 +106,8 @@ public class GlyphCollisionTests : IDisposable
         var ts = new TimeSignatureData(4, 4);
         var bar = new BarData(new[]
         {
-            new MusicalNoteData('C', 4, 0, durationValue: 2 /* half */, isRest: false,
+            new MusicalNoteData('C', 4, 0,
+                durationValue: (int)NoteValueType.Value.HALF, isRest: false,
                 articulation: Articulation.Accent),
         }, ts);
         var seq = new SequenceData();

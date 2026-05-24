@@ -33,12 +33,13 @@ public class InspectAliasTests : IDisposable
     private static SequenceData BuildNonTrivialSequence()
     {
         var ts = new TimeSignatureData(4, 4);
+        int quarter = (int)NoteValueType.Value.QUARTER;
         var bar1 = new BarData(new[]
         {
-            new MusicalNoteData('C', 4, 0, durationValue: 4, isRest: false, articulation: Articulation.Accent),
-            new MusicalNoteData('E', 4, 0, durationValue: 4, isRest: false, articulation: Articulation.Normal),
-            new MusicalNoteData('G', 4, 0, durationValue: 4, isRest: false, articulation: Articulation.Staccato),
-            new MusicalNoteData('C', 5, 0, durationValue: 4, isRest: false, articulation: Articulation.Marcato),
+            new MusicalNoteData('C', 4, 0, durationValue: quarter, isRest: false, articulation: Articulation.Accent),
+            new MusicalNoteData('E', 4, 0, durationValue: quarter, isRest: false, articulation: Articulation.Normal),
+            new MusicalNoteData('G', 4, 0, durationValue: quarter, isRest: false, articulation: Articulation.Staccato),
+            new MusicalNoteData('C', 5, 0, durationValue: quarter, isRest: false, articulation: Articulation.Marcato),
         }, ts);
         var seq = new SequenceData();
         seq.AddBar(bar1);
