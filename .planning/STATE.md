@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: ready_to_plan
-stopped_at: Phases 37 + 39 complete — ready to discuss Phase 38 or Phase 40
-last_updated: 2026-05-23T18:00:07.654Z
-last_activity: 2026-05-23 -- Phase 39 closed (Notation Citizenship; 6/6 REQs shipped); Phase 37 also closed earlier today (Sound Design + Sampler Polish; 11/11 REQs shipped). Phases 37 + 39 ran in parallel in separate worktrees and merged independently into dev.
+status: planning
+stopped_at: Phase 38 context gathered
+last_updated: "2026-05-24T01:24:43.269Z"
+last_activity: "2026-05-23 — parallel-worktree experiment succeeded: Phases 37 + 39 shipped on the same day via two concurrent agents, no collisions, merge resolved by hand (CLAUDE.md additive, .gitignore additive)"
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 3
   total_plans: 31
-  completed_plans: 31
-  percent: 57
+  completed_plans: 26
+  percent: 43
 ---
 
 # Project State
@@ -659,9 +659,9 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-16T22:37:40Z
-Stopped at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
-Resume file: .planning/MILESTONES.md (v1.4 entry) + `/gsd-new-milestone`
+Last session: 2026-05-24T01:24:43.259Z
+Stopped at: Phase 38 context gathered
+Resume file: .planning/phases/38-live-coding-2-0/38-CONTEXT.md
 
 **Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction.
 

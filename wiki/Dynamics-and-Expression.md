@@ -19,14 +19,18 @@ timesig 4/4 {
 
 | Marking | Velocity | Italian Name |
 |---------|----------|--------------|
-| `ppp` | ~0.10 | Pianississimo |
-| `pp` | ~0.20 | Pianissimo |
-| `p` | ~0.35 | Piano |
-| `mp` | ~0.50 | Mezzo-piano |
-| `mf` | ~0.63 | Mezzo-forte (default) |
-| `f` | ~0.75 | Forte |
-| `ff` | ~0.875 | Fortissimo |
-| `fff` | ~1.0 | Fortississimo |
+| `ppp` | 0.125 | Pianississimo |
+| `pp`  | 0.25  | Pianissimo |
+| `p`   | 0.375 | Piano |
+| `mp`  | 0.5   | Mezzo-piano |
+| `mf`  | 0.625 | Mezzo-forte (default) |
+| `f`   | 0.75  | Forte |
+| `ff`  | 0.875 | Fortissimo |
+| `fff` | 1.0   | Fortississimo |
+| `sfz` | 0.95  | Sforzando — also drives an envelope spike (see below) |
+| `fp`  | 0.75  | Forte-piano |
+
+Dynamic markings are **sticky**: once set, they apply to every following note in the stream until the next marking. They propagate through pitch transforms (`transpose`, `retrograde`, etc.) — see [Velocity Preservation](#velocity-preservation) below.
 
 ### Inline Crescendo/Decrescendo
 
@@ -80,18 +84,25 @@ Place articulation keywords before the affected note:
 
 ```flow
 timesig 4/4 {
-    Sequence stac = | C4q stacc D4q E4q F4q |  Note: staccato (short)
-    Sequence ten = | C4q ten D4q E4q F4q |      Note: tenuto (sustained)
-    Sequence marc = | C4q marc D4q E4q F4q |    Note: marcato (strongly accented)
+    Sequence stac  = | C4q stacc D4q E4q F4q |  Note: staccato (short)
+    Sequence ten   = | C4q ten   D4q E4q F4q |  Note: tenuto (sustained)
+    Sequence marc  = | C4q marc  D4q E4q F4q |  Note: marcato (strongly accented)
+    Sequence legArt = | C4q leg  D4q E4q F4q |  Note: legato (overlapping)
 }
 ```
 
-| Articulation | Keyword | Effect |
+| Articulation | Keyword | Locked envelope effect |
 |-------------|---------|--------|
-| Staccato | `stacc` | Short, detached |
-| Tenuto | `ten` | Full value, sustained |
-| Marcato | `marc` | Strongly accented |
-| Accent | `>` (suffix) | Emphasis |
+| Accent | `>` (suffix) | +0.30 velocity (clamped) |
+| Staccato | `stacc` | 25% duration, sustain = 0, release × 0.5 |
+| Marcato | `marc` | 25% duration + Accent's +0.30 velocity boost |
+| Tenuto | `ten` | 100% duration, release × 1.2 (soft tail) |
+| Legato | `leg` | 110% duration + crossfade overlap into next note |
+| Sforzando | `sfz` (dynamic) | Velocity 0.95 + 1.5×→1.0× envelope spike over the first 15% of frames |
+
+The envelope rules are **locked** across all 9 shipping synthesizers (piano, brass, sax, drums, bell, flute, organ, strings, wavetable) — drums opt out of articulation shaping. The sampled-instrument path (piano, brass, sax, strings, flute, bell, SFZ) additionally applies per-articulation A/D/S/R multipliers on top of the locked shape, so e.g. a sampled-piano staccato gets the duration cut plus a brighter decay shaping.
+
+> The per-note `leg` articulation is distinct from the `legato(seq, overlap)` transform — the articulation drives envelope shaping per note; the transform sets `DurationOverlap` for the whole sequence. They compose: a note with `leg` AND `legato(seq, 0.5)` applied renders at 1.0 × 1.10 × 1.5 = 1.65 of its authored duration.
 
 ## Ornaments
 
@@ -221,7 +232,11 @@ timesig 4/4 {
 
 ## Humanize
 
-Adds subtle random velocity variation for a natural, "human-played" feel:
+Two flavors of velocity jitter ship:
+
+### humanize (uniform)
+
+Adds subtle random velocity variation for a natural, "human-played" feel. Uniform distribution, shared (non-deterministic) RNG — frozen for backward compatibility:
 
 ```flow
 timesig 4/4 {
@@ -231,6 +246,36 @@ timesig 4/4 {
     Note: 0.2 = up to 4% velocity variation (0.2 * 20%)
 }
 ```
+
+### humanizeGaussian (Box-Muller, seeded)
+
+A deterministic, Gaussian-distributed alternative. Takes an explicit seed, so two runs at the same seed are byte-identical. Recurses correctly into voice blocks:
+
+```flow
+timesig 4/4 {
+    Sequence mel = | {voice C4w} {voice E4q G4q B4q C5q} |
+    Sequence h1  = (humanizeGaussian mel 0.3 42)    Note: seed = 42
+    Sequence h2  = (humanizeGaussian mel 0.3 42)    Note: identical to h1
+}
+```
+
+Prefer `humanizeGaussian` for any sequence you plan to render reproducibly (showcases, regression tests, etc.).
+
+## Gain vs. Volume
+
+Two buffer-level gain primitives ship — they differ only in how they interpret their second argument, so the function name documents your intent:
+
+- `gain(buf, dB)` — the second argument is in **decibels**. Negative attenuates, positive amplifies.
+- `volume(buf, multiplier)` — the second argument is a **linear multiplier**. `0.5` = half-amplitude; `2.0` = double-amplitude.
+
+```flow
+use "@audio"
+
+Buffer quieter = rendered -> gain -6dB         Note: half loudness (perceptual)
+Buffer doubled = rendered -> volume 2.0        Note: double the sample magnitude
+```
+
+Both emit clipping warnings to stderr when post-multiplication samples exceed 1.0. `volume` rejects negative values — use `gain` for dB attenuation.
 
 ## Velocity Preservation
 

@@ -242,5 +242,7 @@ examples/notation/output/*.ly
 !docs/**
 !docs/**/*.md
 !README.md
+!CONTRIBUTING.md
+!FEATURES.md
 midi-to-wav.sh
 .claude/worktrees/

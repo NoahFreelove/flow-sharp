@@ -1,19 +1,30 @@
 # Language Basics
 
-Flow is a statically-typed, interpreted language. Every variable has a type, statements are separated by newlines or semicolons, and comments use either `Note:` or `//`.
+Flow is a statically-typed, interpreted language. Every variable has a type, statements are separated by newlines or semicolons, and there are five comment styles for different positions in a line.
 
 ## Comments
 
-Flow accepts two comment styles. Both run from their marker to the end of the line:
+Flow accepts five comment markers. All five run from their marker to the end of the line:
 
 ```flow
-Note: This is a comment
-// This is also a comment
+Note: This is a comment (must start the line content)
+TODO: also a comment to EOL (start of line content)
+FIXME: same — recognized at line start
+// This is also a comment, anywhere on the line
+; A Lisp-style line comment — must be at column 0 (mid-line `;` is a statement separator)
 Int x = 5  Note: inline comment
 Int y = 7  // inline comment
 ```
 
-`Note:` must start at the beginning of a line's content. `//` works anywhere.
+`Note:`, `TODO:`, `FIXME:`, and column-0 `;` must start at the beginning of a line's content (leading whitespace allowed). `//` works anywhere on the line.
+
+A backslash at end-of-line is a **line continuation** — it joins the next physical line into the current logical line while preserving line numbers for diagnostics:
+
+```flow
+Int total = (add 1 \
+             (add 2 \
+              3))
+```
 
 ## Variables
 
@@ -24,6 +35,7 @@ Int x = 5
 Float pi = 3.14
 String name = "Flow"
 Bool active = true
+Symbol tag = #verse
 ```
 
 ### Default Values
@@ -39,12 +51,14 @@ Int[] nums          Note: nums = []
 
 ### Reassignment
 
-Variables can be reassigned after declaration:
+Variables can be reassigned after declaration. Use the prefix arithmetic builtins for math (Flow has no infix `+ - * /`):
 
 ```flow
+use "@std"
+
 Int x = 10
 x = 20
-x = x + 5
+x = (add x 5)
 (print (str x))     Note: prints 25
 ```
 
@@ -67,7 +81,11 @@ Int a = 1; Int b = 2; Int c = 3
 | `Double` | 64-bit float | `3.14` |
 | `String` | Text | `"hello"` |
 | `Bool` | Boolean | `true`, `false` |
-| `Number` | Arbitrary precision | - |
+| `Number` | Arbitrary precision (BigInteger) | - |
+| `Symbol` | Interned identity literal | `#foo` |
+| `Lazy` | Deferred / memoized expression | `lazy (expr)` |
+| `Function` | Callable value | `fn Int n => (mul n 2)` |
+| `Buffer` | Audio samples | - |
 
 ### Numeric Widening
 
@@ -77,7 +95,7 @@ Flow supports implicit numeric widening:
 Int → Long → Float → Double → Number
 ```
 
-An `Int` can be used wherever a `Double` is expected, for example.
+An `Int` can be used wherever a `Double` is expected. Integer literals that exceed `Int` range automatically fall through to `Long`, then `BigInteger` (`Number`) — no overflow error.
 
 ## Special (Music) Types
 
@@ -89,12 +107,12 @@ An `Int` can be used wherever a `Double` is expected, for example.
 | `Bar` | Musical measure | - |
 | `Section` | Named song part | `section intro { ... }` |
 | `Song` | Arrangement | `[intro verse chorus]` |
-| `Buffer` | Audio samples | - |
-| `Semitone` | Pitch offset | `+2st` |
-| `Cent` | Microtonal offset | `+50c` |
+| `Semitone` | Pitch offset | `+2st`, `-3st` |
+| `Cent` | Microtonal offset | `+50c`, `-25c` |
 | `Millisecond` | Time in ms | `100ms` |
 | `Second` | Time in seconds | `2.5s` |
-| `Decibel` | Gain in dB | `+6dB` |
+| `Decibel` | Gain in dB | `+6dB`, `-12dB` |
+| `Hertz` | Frequency | `440Hz`, `1.5kHz` |
 | `Beat` | Musical beat | - |
 | `NoteValue` | Note duration | - |
 | `TimeSignature` | Meter | - |
@@ -102,7 +120,9 @@ An `Int` can be used wherever a `Double` is expected, for example.
 | `Voice` | Positioned audio | - |
 | `Track` | Voice collection | - |
 | `Envelope` | Amplitude shape | - |
-| `OscillatorState` | Running oscillator | - |
+| `Tuning` | Scala tuning (reference identity) | `(loadScala "x.scl")` |
+| `Sfz` | SFZ sampler patch (reference identity) | `(loadSfz #violin)` |
+| `MarkovModel` / `LsystemModel` | Generative models (reference identity) | `(markovTrain ...)` |
 
 ### Note Literals
 
@@ -115,8 +135,26 @@ Notes use `[A-G][octave][alteration]`:
 | `C4-` | C flat, octave 4 |
 | `C4++` | C double sharp |
 | `C4--` | C double flat |
+| `C4+50c` | C4 + 50 cents (microtonal) |
 
 Chord-symbol accidentals use `s` and `f` instead (for example, `Csmaj7`, `Bfm`). See [Chords and Harmony](Chords-and-Harmony.md).
+
+## Symbols
+
+A `Symbol` is an interned identity literal — like Ruby's `:foo` or Clojure's `:foo`. Two `#foo` literals always compare equal by reference, and a Symbol is **strictly distinct** from the string `"foo"`:
+
+```flow
+use "@std"
+
+Symbol style = #jazz
+Symbol same = #jazz
+(print (str (equals style same)))     Note: true
+
+Note: Symbols and Strings are NOT interchangeable
+(print (str (equals #foo "foo")))     Note: false
+```
+
+Symbols are the natural choice for tags, enum-like flags, and `Dict` keys.
 
 ## Arrays
 
@@ -127,42 +165,110 @@ use "@std"
 
 Int[] nums = (list 1 2 3 4 5)
 String[] names = (list "Alice" "Bob" "Charlie")
+Int[] inline = [10, 20, 30]      Note: array literal — comma OR space separated
 ```
 
-Array indexing uses `@`:
+Array indexing uses `@` (supports negative-from-end):
 
 ```flow
 Int first = nums@0
-Int second = nums@1
+Int last = nums@-1
 ```
 
-Plural type names are shorthand for arrays: `Ints` = `Int[]`, `Notes` = `Note[]`, etc.
+Plural type names are shorthand for arrays: `Ints` = `Int[]`, `Notes` = `Note[]`, `Strings` = `String[]`, `Voids` = `Void[]` (any), etc.
 
-See [Collections](Collections.md) for full array operations.
+See [Collections](Collections.md) for full array (and `Dict`) operations.
 
-## Operators
+## Tuples
 
-### Arithmetic (Binary)
-
-```flow
-Int sum  = 3 + 4      Note: 7
-Int diff = 10 - 3     Note: 7
-Int prod = 5 * 6      Note: 30
-Int quot = 15 / 4     Note: 3 (integer division)
-```
-
-Flow has no negative number literal: write `(sub 0 5)` to get `-5`.
-
-### Arithmetic (Function-style)
+Tuples group fixed-arity heterogeneous values. They're written with `<<` and `>>`, with per-position types:
 
 ```flow
 use "@std"
 
-Int sum  = (add 3 4)
-Int diff = (sub 10 3)
-Int prod = (mul 5 6)
-Int quot = (div 15 4)
+<<Int, Int>> point = <<3, 4>>
+<<String, Note, Bool>> mix = <<"snare", C4, true>>
+
+Note: Empty and singleton arities are both valid
+<<>> nothing = <<>>
+<<Int>> solo = <<42>>
+
+Note: Index with @N
+Int x = point@0
+Int y = point@1
 ```
+
+Tuples compare by **structural equality** (`(equals <<1, 2>> <<1, 2>>)` is true).
+
+### Destructuring Assignment
+
+Unpack a tuple into named bindings with `<<...>> =`:
+
+```flow
+<<Int x, Int y>> = <<3, 4>>
+(print $"x={x} y={y}")
+
+Note: Per-slot types are optional
+<<a, b, c>> = <<1, "two", true>>
+```
+
+### Tuple-Unpack with `~>`
+
+The `~>` flow operator unpacks a tuple into a multi-arg call. Non-tuple LHS falls through to plain `->` semantics:
+
+```flow
+proc renderHit (Note: pitch, Note: dur)
+    (print $"hit: {pitch} {dur}")
+end proc
+
+<<Note, Note>> entry = <<C4, D4>>
+entry ~> renderHit                    Note: equivalent to (renderHit C4 D4)
+```
+
+There's also a runtime equivalent — `(unpack tuple func)` — which mirrors Lisp's `(apply f args)`. See [Flow Operator](Flow-Operator.md).
+
+## Dictionaries
+
+Generic `Dict<K, V>` preserves insertion order. Allowed key types: `Int`, `Long`, `Float`, `String`, `Symbol`, `Note`, `Chord`, `Beat`, and tuples of any of these.
+
+```flow
+use "@std"
+
+Dict<Symbol, Int> bpms = (dict #verse 120 #chorus 140 #bridge 100)
+
+Int v   = (get bpms #verse)            Note: 120
+Int fb  = (getOr bpms #outro 80)       Note: 80 (default)
+Dict<Symbol, Int> bigger = (set bpms #outro 90)
+Bool has = (has bpms #verse)           Note: true
+Int n   = (size bpms)
+Symbol[] ks = (keys bpms)
+Int[] vs    = (values bpms)
+```
+
+`dict` takes alternating key/value pairs; `dictTuple` takes `<<K, V>>` tuples instead. Higher-order ops (`each`, `map`, `filter`) and `size` are overloaded — they work on both arrays and dicts; the resolver picks based on argument types.
+
+See [Collections](Collections.md) for the full 14-op surface.
+
+## Arithmetic and Other Operators
+
+### Arithmetic
+
+Arithmetic is **prefix-only** via standard-library builtins — there are no infix `+ - * /` operators (the parser will reject stray infix and suggest the prefix form).
+
+```flow
+use "@std"
+
+Int sum  = (add 3 4)       Note: 7
+Int diff = (sub 10 3)      Note: 7
+Int prod = (mul 5 6)       Note: 30
+Double q = (div 15 4)      Note: 3.75 — (div Int Int) auto-promotes to Double
+Int qi   = (idiv 15 4)     Note: 3 — integer (truncating) division
+Int neg  = (neg 5)         Note: -5
+
+String greeting = (concat "Hello, " "World!")
+```
+
+Negative numeric literals (`-3`, `-2.5`, `-12dB`) lex as single tokens at expression-start positions (after `(`, `,`, `=`, `|`, etc.) — `(add x -3)` works as written.
 
 ### Comparison
 
@@ -171,12 +277,12 @@ Comparisons are function calls:
 ```flow
 use "@std"
 
-Bool eq  = (equals 5 5)     Note: true
+Bool eq  = (equals 5 5)      Note: true (compatible types)
+Bool seq = (sequals 5 5)     Note: true (strict — types must match exactly)
 Bool lt  = (lt 3 5)          Note: true
 Bool gt  = (gt 10 5)         Note: true
 Bool lte = (lte 3 3)         Note: true
 Bool gte = (gte 5 3)         Note: true
-Bool seq = (sequals 5 5)     Note: strict equals (types must match)
 ```
 
 ### Logical
@@ -189,21 +295,11 @@ Bool b = (or true false)     Note: true
 Bool c = (not true)          Note: false
 ```
 
-`and` and `or` support lazy evaluation with `Lazy` arguments for short-circuiting.
-
-### String Concatenation
-
-```flow
-use "@std"
-
-String greeting = (concat "Hello, " "World!")
-```
-
-For dynamic labels, prefer [string interpolation](String-Interpolation.md): `$"x is {x}"`.
+`and` and `or` accept `Lazy` arguments for short-circuit evaluation.
 
 ## Control Flow
 
-### Conditional (if)
+### Conditional (`if`)
 
 `if` is a function that takes a boolean and two `lazy` expressions. You **must** wrap both branches with `lazy ()`:
 
@@ -222,6 +318,41 @@ Note: side-effect branches
 
 Without `lazy`, arguments are eagerly evaluated and the overload won't match.
 
+### Pattern Matching
+
+`match` is the structured alternative to chained `if`s. It scrutinizes a value against one or more arms:
+
+```flow
+use "@std"
+
+Int n = 3
+String label = (match n
+                | 0 => "zero"
+                | 1 => "one"
+                | _ => "many")
+(print label)
+
+Note: Music-aware patterns — chord literals match by chord identity
+String roleName = (match Cmaj7
+                   | Cmaj7 => "tonic"
+                   | Dm    => "ii"
+                   | _     => "other")
+
+Note: Binding patterns capture the matched value
+String sign = (match n
+               | x when (lt x 0) => "negative"
+               | 0               => "zero"
+               | x               => "positive")
+```
+
+Patterns supported: `_` wildcard, literal patterns (Int / Float / String / Bool / Note), binding patterns (bare identifier), constructor patterns (chord literals, roman numerals, articulation symbols), and `when (...)` guards.
+
+To make non-exhaustive matches a hard error instead of a warning, add this pragma at the top of the file:
+
+```flow
+enable matchExhaustive;
+```
+
 ### Loops
 
 Flow supports `for` and `while` loops with `break` and `continue`:
@@ -231,20 +362,20 @@ use "@std"
 
 Int sum = 0
 for Int n in (list 1 2 3 4 5) {
-    sum = sum + n
+    sum = (add sum n)
 }
 
 Int count = 0
 while (lt count 5) {
-    count = count + 1
+    count = (add count 1)
 }
 ```
 
-See [Loops](Loops.md) for the full reference.
+Loops have a configurable maximum iteration count (default 10000) to prevent runaway execution — call `(setMaxIterations N)` to raise it. See [Loops](Loops.md) for the full reference.
 
 ### Lazy Evaluation
 
-`lazy (expr)` creates a deferred value (a thunk) that is not evaluated until forced with `eval`:
+`lazy (expr)` creates a deferred value (a thunk) that is not evaluated until forced with `eval`. The result is memoized:
 
 ```flow
 use "@std"
@@ -264,18 +395,37 @@ Prefix a string with `$` and wrap expressions in `{ }`:
 use "@std"
 
 Int x = 42
-(print $"x is {x}")               Note: x is 42
+(print $"x is {x}")                  Note: x is 42
 
 Int a = 3
 Int b = 4
-(print $"sum is {a + b}")         Note: sum is 7
+(print $"sum is {(add a b)}")        Note: sum is 7
 ```
 
-See [String Interpolation](String-Interpolation.md) for details.
+See [String Interpolation](String-Interpolation.md) for details (including `\{` / `\}` escapes).
 
-## Type Annotations for Functions
+## Named Arguments
 
-Function type annotations use parenthesized arrow syntax:
+Any function with named parameters can be called using `name=value` syntax. Positional and named args can mix, but every positional arg must precede every named one:
+
+```flow
+use "@std"
+use "@improv"
+
+Sequence chords = | Cmaj7 Am7 Dm7 G7 |
+
+Note: All named
+Sequence solo = (jam over=chords style=#jazz length=8 seed=42)
+
+Note: Mixed — positional first
+Sequence solo2 = (jam chords style=#blues length=16)
+```
+
+About 150 builtin signatures have parameter names backfilled. See [Functions](Functions.md#named-arguments).
+
+## Function Type Annotations
+
+Use parenthesized arrow syntax for precise function types:
 
 ```flow
 (Int => Int) doubler = fn Int n => (mul n 2)
@@ -283,19 +433,32 @@ Function type annotations use parenthesized arrow syntax:
 (Void => Int) constant = fn => 42
 ```
 
-## Type Aliases
+## Type Aliases (Plural Shorthand)
 
 Any type name ending in `s` refers to the array form: `Ints` = `Int[]`, `Strings` = `String[]`, `Voids` = `Void[]`, `Notes` = `Note[]`, etc.
 
 ## Scoping
 
-Variables declared inside blocks (functions, musical context blocks, sections, loops) are scoped to that block. Inner scopes can access variables from outer scopes.
+Variables declared inside blocks (functions, musical context blocks, sections, loops) are scoped to that block. Inner scopes can access variables from outer scopes (lexical scope).
+
+## Pragmas
+
+Pragmas are file-scope toggles at the top of a file. Each module has its own `PragmaSet` — pragmas don't leak across `use` imports:
+
+```flow
+enable hAsB;             Note: H aliases to B in note streams (German notation)
+enable justIntonation;   Note: 5-limit JI tuning rooted at active key tonic
+enable matchExhaustive;  Note: promote non-exhaustive match warnings to errors
+```
+
+Unknown pragmas error with a did-you-mean suggestion.
 
 ## See Also
 
-- [Functions](Functions.md) - Procedures and lambdas
-- [Flow Operator](Flow-Operator.md) - The `->` pipe
-- [Collections](Collections.md) - Arrays and list operations
+- [Functions](Functions.md) - Procedures, lambdas, named args, function types
+- [Flow Operator](Flow-Operator.md) - The `->` pipe, `~>` tuple unpack, `as NAME`
+- [Collections](Collections.md) - Arrays, `Dict<K, V>`, list operations
 - [Loops](Loops.md) - `for`, `while`, `break`, `continue`
 - [String Interpolation](String-Interpolation.md) - `$"..."` syntax
 - [Musical Context](Musical-Context.md) - Musical context blocks
+- [Imports and Modules](Imports-and-Modules.md) - All 12 stdlib modules

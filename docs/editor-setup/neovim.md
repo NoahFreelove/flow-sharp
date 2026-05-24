@@ -1,17 +1,33 @@
 # Neovim (nvim-lspconfig) setup for Flow
 
-Flow ships an LSP server, `flow-lsp`, that speaks plain LSP over stdio. Any
-Neovim installation with [`nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig)
-can drive it.
+Flow ships an LSP server reachable via the `flow lsp` subcommand (or the
+standalone `flow-lsp` binary). Any Neovim installation with
+[`nvim-lspconfig`](https://github.com/neovim/nvim-lspconfig) can drive it.
 
-## Prerequisite: get the `flow-lsp` binary
+For the authoritative list of LSP capabilities (what works today, what does
+not), see **[FEATURES.md § LSP](../../FEATURES.md#lsp-flow-lsp)**. In short:
+diagnostics, semantic tokens, completion, hover, go-to-definition, and
+signature help all work. Rename, find-references, code actions, and document
+symbols are not yet implemented — `vim.lsp.buf.rename` / `references` /
+`document_symbol` will return nothing.
 
-**Option A — Download a release tarball (recommended once releases are tagged):**
-Pre-built per-platform binaries live at
-https://github.com/noah-freelove/flow-sharp/releases. Extract into a directory
-on your `PATH`, e.g. `~/.local/bin/`.
+## Prerequisite: the `flow` (or `flow-lsp`) binary on PATH
 
-**Option B — Build from source:**
+**Option A — `flow install` (recommended once a release tag is cut):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/NoahFreelove/flow-sharp/main/scripts/install.sh | bash
+```
+
+Drops `flow` onto `~/.local/bin/`. The nvim config below uses `flow lsp` as
+the spawn command.
+
+**Option B — Download a release tarball directly:**
+Pre-built per-platform archives live at
+https://github.com/NoahFreelove/flow-sharp/releases. Extract and ensure
+`bin/flow` lands on `PATH` (e.g. via symlink into `~/.local/bin/`).
+
+**Option C — Build from source:**
 Requires the .NET 10 SDK. From the `flow-sharp` repo root:
 
 ```bash
@@ -27,18 +43,21 @@ ln -s ~/.local/bin/flow-lsp-dir/flow-lsp ~/.local/bin/flow-lsp
 
 Replace `linux-x64` with `win-x64`, `osx-x64`, or `osx-arm64` as appropriate.
 
-**Critical:** the binary needs the six shipped stdlib `.flow` files
-(`std.flow`, `audio.flow`, `collections.flow`, `bars.flow`, `notation.flow`,
-`composition.flow`) next to it. `dotnet publish` copies them automatically
-via the csproj's `<CopyToOutputDirectory>` settings. Do not move the binary
-away from its directory without taking those files along.
+If you go Option C, the standalone `flow-lsp` binary needs the six shipped
+stdlib `.flow` files (`std.flow`, `audio.flow`, `collections.flow`,
+`bars.flow`, `notation.flow`, `composition.flow`) next to it. `dotnet
+publish` copies them automatically via the csproj's `<CopyToOutputDirectory>`
+settings. Do not move the binary away from its directory without taking
+those files along. (Options A / B handle this automatically.)
 
 Verify:
 
 ```bash
-which flow-lsp     # should print a path
-flow-lsp --help    # should respond (though flow-lsp is an LSP server, not a CLI;
-                   # if no help is shown it is still likely working over stdio)
+which flow         # Option A/B: should print a path
+flow lsp --help    # the lsp subcommand itself has no flags, but the
+                   # outer `flow --help` will list it
+# OR
+which flow-lsp     # Option C: should print a path
 ```
 
 ## Configuration
@@ -46,16 +65,19 @@ flow-lsp --help    # should respond (though flow-lsp is an LSP server, not a CLI
 Copy [`nvim-lspconfig.lua`](./nvim-lspconfig.lua) to
 `~/.config/nvim/lua/plugins/flow-lsp.lua` (or adapt to your plugin manager's
 layout). The snippet registers Flow as a filetype, points `nvim-lspconfig` at
-`flow-lsp` on `PATH`, and wires a `root_dir` based on `.git` / `.flowproject`.
+`flow lsp` (Option A/B) — swap to `{ 'flow-lsp' }` in `cmd` if you went
+Option C — and wires a `root_dir` based on `.git` / `.flowproject`.
 
 Open any `.flow` file — the LSP attaches automatically. You should see
 diagnostics, completion, hover, go-to-definition, and signature help.
 
 ## Troubleshooting
 
-- **"flow-lsp: command not found"** — the binary is not on your `PATH`.
-  Check with `which flow-lsp`; either install via Option A/B above or
-  point `cmd = { '/absolute/path/to/flow-lsp' }` in the config.
+- **"flow: command not found" / "flow-lsp: command not found"** — the
+  binary is not on your `PATH`. Check with `which flow` or `which flow-lsp`;
+  either install via Option A/B/C above or point
+  `cmd = { '/absolute/path/to/flow', 'lsp' }` (or
+  `cmd = { '/absolute/path/to/flow-lsp' }`) in the config.
 - **"Definition not found" when following a `use "@audio"` import** — stdlib
   `.flow` files are not shipping beside the binary. Re-run `dotnet publish`
   (the csproj handles this), or copy them manually next to the binary.

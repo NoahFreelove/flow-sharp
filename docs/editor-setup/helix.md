@@ -1,16 +1,31 @@
 # Helix setup for Flow
 
-Helix has a built-in LSP client — no plugin required. Point it at the `flow-lsp`
-binary and Helix handles the rest.
+Helix has a built-in LSP client — no plugin required. Point it at `flow lsp`
+(or the standalone `flow-lsp` binary) and Helix handles the rest.
 
-## Prerequisite: get the `flow-lsp` binary
+For the authoritative list of LSP capabilities (what works today, what does
+not), see **[FEATURES.md § LSP](../../FEATURES.md#lsp-flow-lsp)**. In short:
+diagnostics, semantic tokens, completion, hover, go-to-definition, and
+signature help all work. Rename, find-references, code actions, and document
+symbols are not yet implemented.
 
-**Option A — Download a release tarball (recommended once releases are tagged):**
-Pre-built per-platform binaries live at
-https://github.com/noah-freelove/flow-sharp/releases. Extract into a directory
-on your `PATH`, e.g. `~/.local/bin/`.
+## Prerequisite: the `flow` (or `flow-lsp`) binary on PATH
 
-**Option B — Build from source:**
+**Option A — `flow install` (recommended once a release tag is cut):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/NoahFreelove/flow-sharp/main/scripts/install.sh | bash
+```
+
+Drops `flow` onto `~/.local/bin/`. The Helix config below uses `flow lsp` as
+the spawn command.
+
+**Option B — Download a release tarball directly:**
+Pre-built per-platform archives live at
+https://github.com/NoahFreelove/flow-sharp/releases. Extract and ensure
+`bin/flow` lands on `PATH`.
+
+**Option C — Build from source:**
 Requires the .NET 10 SDK. From the `flow-sharp` repo root:
 
 ```bash
@@ -24,11 +39,15 @@ ln -s ~/.local/bin/flow-lsp-dir/flow-lsp ~/.local/bin/flow-lsp
 ```
 
 Replace `linux-x64` with `win-x64`, `osx-x64`, or `osx-arm64` as appropriate.
+If you go Option C, swap `command = "flow"` + `args = ["lsp"]` in the config
+below for plain `command = "flow-lsp"`.
 
-**Critical:** the binary needs the six shipped stdlib `.flow` files
-(`std.flow`, `audio.flow`, `collections.flow`, `bars.flow`, `notation.flow`,
-`composition.flow`) next to it. `dotnet publish` copies them automatically via
-the csproj's `<CopyToOutputDirectory>` settings. Do not move the binary alone.
+If you go Option C, the standalone `flow-lsp` binary needs the six shipped
+stdlib `.flow` files (`std.flow`, `audio.flow`, `collections.flow`,
+`bars.flow`, `notation.flow`, `composition.flow`) next to it. `dotnet
+publish` copies them automatically via the csproj's `<CopyToOutputDirectory>`
+settings. Do not move the binary alone. (Options A / B handle this
+automatically.)
 
 ## Configuration
 
@@ -48,7 +67,12 @@ indent = { tab-width = 4, unit = "    " }
 language-servers = ["flow-lsp"]
 
 [language-server.flow-lsp]
-command = "flow-lsp"
+# Option A / B: use the `flow lsp` subcommand shipped by `flow install`.
+command = "flow"
+args = ["lsp"]
+# Option C alternative (standalone binary): comment the two lines above and
+# uncomment:
+# command = "flow-lsp"
 ```
 
 Reload Helix (`:config-reload`) and open any `.flow` file. You should see
@@ -57,10 +81,10 @@ status line.
 
 ## Troubleshooting
 
-- **"Server failed to start: No such file or directory"** — the `flow-lsp`
-  binary is not on `PATH`. Either install per Option A/B above or set
-  `command = "/absolute/path/to/flow-lsp"` in the `[language-server.flow-lsp]`
-  block.
+- **"Server failed to start: No such file or directory"** — neither `flow`
+  nor `flow-lsp` is on `PATH`. Either install per Option A/B/C above or set
+  an absolute path: `command = "/absolute/path/to/flow"` (keep `args =
+  ["lsp"]`) or `command = "/absolute/path/to/flow-lsp"` (drop `args`).
 - **"Definition not found" when following a `use "@audio"` import** — stdlib
   `.flow` files are not shipping beside the binary. Re-run `dotnet publish`
   (the csproj handles this) or copy them manually next to the binary.

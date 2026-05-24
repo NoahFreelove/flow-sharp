@@ -67,6 +67,54 @@ Song mySong = [intro verse*2 chorus verse chorus*2]
 
 This plays: intro, verse, verse, chorus, verse, chorus, chorus.
 
+## Parameterized Sections
+
+Sections can declare typed parameters with optional default values, so the same musical idea can be reused with different roots, transpositions, or repeat counts. Parameters use the full pattern syntax (typed bindings, tuple destructure, music-aware extractors):
+
+```flow
+section verse(Note root, Int repeats = 2) {
+    Sequence mel = | root D4 E4 F4 |
+}
+
+section chorus(Chord on = Cmaj7) {
+    Sequence bigChord = | on |
+}
+```
+
+Call them from a `Song` expression with either positional or named arguments — defaults are honored for any trailing argument that isn't supplied:
+
+```flow
+Song s = [verse(C4)                Note: uses default repeats=2
+          verse(D4, 4)             Note: positional override
+          verse(root=E4, repeats=1) Note: named-arg form
+          chorus]                  Note: uses default on=Cmaj7
+```
+
+Combine with the `*N` repetition operator — it works on both zero-arg and parameterized calls:
+
+```flow
+Song looped = [verse(C4)*3 chorus*2]
+```
+
+### Section Overloading
+
+Multiple `section verse(...)` declarations with different signatures coexist — the overload resolver picks the highest-specificity match at call time:
+
+```flow
+section verse(Note root) {
+    Sequence mel = | root D4 E4 F4 |
+}
+
+section verse(Note root, Int reps) {
+    Sequence mel = | root D4 E4 F4 |
+    Sequence echo = | (root) |
+}
+
+Song s = [verse(C4) verse(C4, 3)]      Note: dispatches to each overload
+```
+
+Per-call args bind in a fresh stack frame that **inherits the call-site's musical context**, so a `verse(C4)` call inside a `key Aminor { ... }` block sees Aminor as its active key.
+
 ## Song Functions
 
 ### getSections

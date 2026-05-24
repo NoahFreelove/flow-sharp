@@ -1,6 +1,12 @@
 # Musical Context
 
-Musical context blocks set tempo, time signature, key, swing, dynamics, pan, gain, and tempo ramps for the code inside them. They use a scoping model where inner blocks inherit from outer blocks and can override specific settings.
+Musical context blocks set tempo, time signature, key, swing, dynamics, pan, gain, reverb time, voice pool size, sustain pedal state, tuning, and tempo ramps for the code inside them. They use a push/pop scoping model — inner blocks inherit from outer blocks and can override specific settings; exiting a block restores the previous state.
+
+The full set of context-block keywords is:
+
+> `tempo`, `timesig`, `key`, `swing`, `dynamics`, `pan`, `gain`, `reverbTime`, `rit`, `accel`, `voicePool`, `sustainPedal`, `tuning`
+
+These are all **reserved** — they can't be redefined as `proc` or variable names.
 
 ## Tempo
 
@@ -36,6 +42,16 @@ timesig 6/8 {
 
 Default: **4/4**.
 
+### Common-Time Shorthand
+
+The capital `C` is shorthand for 4/4 — it lowers to 4/4 at parse time so the renderer, MIDI export, and musical-context stack all see identical data to the explicit form:
+
+```flow
+timesig C {
+    Sequence sameAs44 = | C4 D4 E4 F4 |
+}
+```
+
 ## Key
 
 Sets the musical key for roman numeral resolution and scale operations:
@@ -70,6 +86,8 @@ swing 0.6 {
 }
 ```
 
+The `N%` form divides by 100 at parse time — `swing 55%` and `swing 0.55` are equivalent through the rest of the pipeline.
+
 ## Dynamics
 
 Sets a default velocity for notes in scope:
@@ -86,14 +104,14 @@ dynamics f {
 
 | Marking | Velocity |
 |---------|----------|
-| `ppp` | ~0.1 |
-| `pp` | ~0.2 |
-| `p` | ~0.35 |
-| `mp` | ~0.5 |
-| `mf` | ~0.63 |
-| `f` | ~0.75 |
-| `ff` | ~0.875 |
-| `fff` | ~1.0 |
+| `ppp` | 0.125 |
+| `pp`  | 0.25 |
+| `p`   | 0.375 |
+| `mp`  | 0.5 |
+| `mf`  | 0.625 |
+| `f`   | 0.75 |
+| `ff`  | 0.875 |
+| `fff` | 1.0 |
 
 ## Pan
 
@@ -134,6 +152,84 @@ gain 0.3 {
 ```
 
 `gain` is also available as a [buffer-level effect](Effects.md) using decibel values.
+
+## Reverb Time
+
+Wraps audio rendered inside the block with a global reverb tail of the given RT60 (in seconds):
+
+```flow
+use "@audio"
+
+reverbTime 2.5 {
+    section cathedral {
+        Sequence chant = | C4w E4w G4w C5w |
+    }
+}
+```
+
+Must be non-negative. Use `0` to disable.
+
+## Voice Pool
+
+Sets the maximum number of simultaneously active voices for the block. When the voice count exceeds the pool, Flow truncates the active voice with the earliest onset (steal-oldest policy) with a 5 ms fade to avoid clicks:
+
+```flow
+voicePool 16 {
+    Note: rendering inside this block uses at most 16 simultaneous voices
+    section denseTexture {
+        Sequence layered = | [C3 E3 G3 C4 E4 G4 C5 E5 G5]w |
+    }
+}
+```
+
+The default pool size is **32**; the range is `[1, 256]`. The policy is fully deterministic (tiebreaker is the original input index), so two-run output stays byte-identical.
+
+## Sustain Pedal
+
+Extends every note's rendered buffer by a 2.0 s sustain tail — the digital equivalent of holding down a piano damper pedal:
+
+```flow
+use "@audio"
+
+sustainPedal {
+    section dreamy {
+        Sequence arp = | C4q E4q G4q B4q C5q E5q G5q B5q |
+    }
+}
+```
+
+Pair with the `release=` named arg on `renderSong` for finer-grained control over the decay tail length:
+
+```flow
+Buffer buf = (renderSong song "piano" release=3.0s)
+```
+
+## Tuning
+
+Applies a non-12-TET tuning to its body — Scala `.scl` files load into a `Tuning` value, then a `tuning { ... }` block scopes that tuning to the contained code. Three composer-facing surface forms:
+
+```flow
+use "@std"
+use "@audio"
+
+Note: 1. identifier-bound variable
+Tuning partch = (loadScala "partch43.scl")
+tuning partch {
+    section microtonal { Sequence mel = | C4 D4 E4 F4 | }
+}
+
+Note: 2. inline call
+tuning (loadScala "carlos_alpha.scl") {
+    section nonOctave { Sequence climb = | C4 D4 E4 F4 G4 A4 B4 C5 | }
+}
+
+Note: 3. string-literal sugar (desugars to form 2 at parse time)
+tuning "bohlen_pierce.scl" {
+    section thirteenStep { Sequence mel = | C4 D4 E4 F4 | }
+}
+```
+
+Tuning blocks compose last-wins with the file-scope `enable justIntonation;` / `pythagorean;` / `equalTemperament;` pragmas. Non-octave-repeating scales (Carlos Alpha, Bohlen-Pierce) auto-adopt the loaded scale's period.
 
 ## Ritardando / Accelerando
 
@@ -225,6 +321,10 @@ tempo 100 {
 | `dynamics` | When you want a default velocity for all notes in scope |
 | `pan` | When you want a section positioned in the stereo field |
 | `gain` | When you want a passage rendered quieter/louder |
+| `reverbTime` | When you want a global reverb tail (RT60 seconds) |
+| `voicePool` | When you need to cap simultaneous-voice count for dense textures |
+| `sustainPedal` | When you want piano-pedal-style 2 s sustain tails |
+| `tuning` | When using a non-12-TET tuning (Scala `.scl` file) |
 | `rit`, `accel` | When you want tempo interpolation inside the block |
 
 ## See Also

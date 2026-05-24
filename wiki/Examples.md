@@ -1,8 +1,66 @@
 # Examples
 
-Complete, runnable Flow programs demonstrating various features.
+Complete, runnable Flow programs demonstrating various features. Every snippet on this page parses and runs against the current Flow build — if one doesn't, please file an issue.
 
-## Hello World
+For longer chapter-style tutorials, see the `examples/` directory in the repo (linked at the bottom of this page).
+
+## Table of Contents
+
+- [Core Language](#core-language)
+  - [Hello World](#hello-world)
+  - [String Interpolation](#string-interpolation)
+  - [For Loop: Summing a Range](#for-loop-summing-a-range)
+  - [While Loop with `break`](#while-loop-with-break)
+  - [Variables and Arithmetic](#variables-and-arithmetic)
+  - [Functions and Lambdas](#functions-and-lambdas)
+  - [Match Expressions](#match-expressions)
+  - [Tuples and `~>` Unpack](#tuples-and--unpack)
+  - [Dicts](#dicts)
+  - [Collections and Functional Programming](#collections-and-functional-programming)
+- [Composition Basics](#composition-basics)
+  - [Simple Melody](#simple-melody)
+  - [Chord Progression](#chord-progression)
+  - [Full Song with Sections](#full-song-with-sections)
+  - [Expressive Piano Piece](#expressive-piano-piece)
+  - [Voice-Block Polyphony](#voice-block-polyphony)
+  - [Parameterized Sections](#parameterized-sections)
+- [Transforms](#transforms)
+  - [Pattern Transforms](#pattern-transforms)
+  - [Tidal-Style Pattern Combinators](#tidal-style-pattern-combinators)
+- [Generative](#generative)
+  - [Random Choice + Euclidean](#random-choice--euclidean)
+  - [Markov Chains](#markov-chains)
+  - [L-Systems](#l-systems)
+  - [Chord-Aware Improvisation with `jam`](#chord-aware-improvisation-with-jam)
+- [Audio](#audio)
+  - [Effect Processing Chain](#effect-processing-chain)
+  - [Granular Synthesis](#granular-synthesis)
+  - [Time-Stretch and Pitch-Shift](#time-stretch-and-pitch-shift)
+  - [Audio Synthesis from Scratch](#audio-synthesis-from-scratch)
+  - [Multiple Synthesizers](#multiple-synthesizers)
+  - [Chord Progression with Voice Leading](#chord-progression-with-voice-leading)
+  - [Loading a WAV Sample](#loading-a-wav-sample)
+  - [Vocalization](#vocalization)
+- [Microtonal](#microtonal)
+  - [Just Intonation via Pragma](#just-intonation-via-pragma)
+  - [Scala `.scl` Tuning](#scala-scl-tuning)
+- [Notation IO](#notation-io)
+  - [MusicXML Export](#musicxml-export)
+  - [LilyPond Export](#lilypond-export)
+  - [ABC Import](#abc-import)
+  - [MML Import](#mml-import)
+- [Misc](#misc)
+  - [MIDI Export](#midi-export)
+  - [Waltz in 3/4](#waltz-in-34)
+  - [Ornaments and Expression](#ornaments-and-expression)
+  - [SFZ Orchestral Sampler](#sfz-orchestral-sampler)
+- [Where to Find More](#where-to-find-more)
+
+---
+
+## Core Language
+
+### Hello World
 
 ```flow
 use "@std"
@@ -10,7 +68,7 @@ use "@std"
 (print "Hello, Flow!")
 ```
 
-## String Interpolation
+### String Interpolation
 
 ```flow
 use "@std"
@@ -21,38 +79,39 @@ String key = "Cmajor"
 (print $"playing at {bpm} bpm in {key} on {name}")
 ```
 
-## For Loop: Summing a Range
+### For Loop: Summing a Range
 
 ```flow
 use "@std"
 
 Int total = 0
 for Int n in (range 1 11) {
-    total = total + n
+    total = (add total n)
 }
 (print $"sum 1..10 = {total}")    Note: 55
 ```
 
-## While Loop with break
+### While Loop with `break`
 
 ```flow
 use "@std"
 
 Int i = 0
 while true {
-    i = i + 1
+    i = (add i 1)
     if (equals i 5) lazy (break) lazy (0)
 }
 (print $"stopped at {i}")
+```
 
-## Variables and Arithmetic
+### Variables and Arithmetic
 
 ```flow
 use "@std"
 
 Int x = 5
 Int y = 10
-Int sum = x + y
+Int sum = (add x y)
 (print (concat "Sum: " (str sum)))
 
 Int a = 1; Int b = 2; Int c = 3
@@ -60,19 +119,21 @@ Int a = 1; Int b = 2; Int c = 3
 
 Note: Reassignment
 Int counter = 0
-counter = counter + 1
-counter = counter + 1
+counter = (add counter 1)
+counter = (add counter 1)
 (print (concat "Counter: " (str counter)))
 ```
 
-## Functions and Lambdas
+Flow has NO infix arithmetic — `x + y` is a parse error. Use `(add)`, `(sub)`, `(mul)`, `(div)`, `(idiv)`, `(neg)`, `(concat)`.
+
+### Functions and Lambdas
 
 ```flow
 use "@std"
 
 Note: Procedure with implicit return
-proc double (Int: x)
-    x * 2
+proc double(Int: x)
+    (mul x 2)
 end proc
 
 (print (str (double 7)))  Note: 14
@@ -90,13 +151,89 @@ Int result = 5 -> double -> tripler
 (print (str result))  Note: 30
 ```
 
-## Collections and Functional Programming
+### Match Expressions
 
 ```flow
 use "@std"
-use "@collections"
 
-Int[] nums = (list 1 2 3 4 5)
+proc describe(Int: n)
+    (match n
+       | 0 => "zero"
+       | x when (gt x 0) => "positive"
+       | _ => "negative")
+end proc
+
+(print (describe 5))       Note: positive
+(print (describe 0))       Note: zero
+(print (describe -3))      Note: negative
+
+Note: Music-aware patterns — chord literals
+key Cmajor {
+    String role = (match (chord "G")
+                     | V => "dominant"
+                     | I => "tonic"
+                     | _ => "other")
+    (print role)           Note: dominant
+}
+```
+
+Patterns: literal (`1`, `"hello"`, `Cmaj7`, `V7`), wildcard (`_`), binding (`n`), guards (`pat when (predicate)`). Add `enable matchExhaustive;` at the top of the file to error on non-exhaustive arms.
+
+### Tuples and `~>` Unpack
+
+```flow
+use "@std"
+
+Note: Tuples hold positionally-typed values.
+Tuple<<Int, Int>> pair = <<10, 20>>
+Int first = pair@0
+Int second = pair@1
+(print $"pair = <<{first}, {second}>>")
+
+Note: Destructuring assignment.
+<<Int a, Int b>> = pair
+(print $"a={a}, b={b}")
+
+Note: ~> unpacks a tuple into a multi-arg call.
+proc add3(Int: x, Int: y, Int: z)
+    (add (add x y) z)
+end proc
+
+Int sum = <<1, 2, 3>> ~> add3       Note: lowers to (add3 1 2 3)
+(print $"sum = {sum}")
+
+Note: On a non-tuple LHS, ~> falls through to -> semantics.
+Int chained = 5 ~> double           Note: same as 5 -> double
+```
+
+### Dicts
+
+```flow
+use "@std"
+
+Note: Generic Dict<K, V> with insertion-order iteration.
+Dict<Symbol, Int> velocities = (dict #kick 90 #snare 70 #hihat 50)
+
+(print $"size: {(size velocities)}")
+(print $"kick: {(get velocities #kick)}")
+(print $"missing: {(getOr velocities #cowbell 0)}")
+
+Note: Update returns a new dict — Dict is immutable.
+Dict<Symbol, Int> withRide = (set velocities #ride 60)
+
+Note: Iterate in insertion order.
+(each velocities (fn Symbol k, Int v => (print $"  {(str k)} = {v}")))
+
+Note: Keys can be Int / Long / Float / String / Symbol / Note / Chord / hashable Tuples.
+Dict<Note, Int> noteVel = (dict C4 90 E4 70 G4 80)
+```
+
+### Collections and Functional Programming
+
+```flow
+use "@std"
+
+Int[] nums = [1, 2, 3, 4, 5]
 
 Note: Map - double each number
 Int[] doubled = (map nums (fn Int n => (mul n 2)))
@@ -115,11 +252,15 @@ Note: Each - print each number
 
 Note: Closures capture variables
 Int factor = 10
-Int[] scaled = (map (list 1 2 3) (fn Int n => (mul n factor)))
+Int[] scaled = (map [1, 2, 3] (fn Int n => (mul n factor)))
 (print (str scaled))
 ```
 
-## Simple Melody
+---
+
+## Composition Basics
+
+### Simple Melody
 
 ```flow
 use "@std"
@@ -133,13 +274,13 @@ tempo 120 {
 
         Song song = [melody]
         Buffer buf = (renderSong song "piano")
-        (exportWav buf "simple_melody.wav")
+        (writeWav "simple_melody.wav" buf)
         (print "Exported simple_melody.wav!")
     }
 }
 ```
 
-## Chord Progression
+### Chord Progression
 
 ```flow
 use "@std"
@@ -155,14 +296,14 @@ tempo 100 {
 
             Song song = [progression]
             Buffer buf = (renderSong song "piano")
-            (exportWav buf "chords.wav")
+            (writeWav "chords.wav" buf)
             (print "Exported chords.wav!")
         }
     }
 }
 ```
 
-## Full Song with Sections
+### Full Song with Sections
 
 ```flow
 use "@std"
@@ -195,7 +336,7 @@ tempo 120 {
             Song fullSong = [intro verse*2 chorus bridge verse chorus*2 outro]
             Buffer rendered = (renderSong fullSong "piano")
             Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
-            (exportWav final "full_song.wav")
+            (writeWav "full_song.wav" final)
 
             Int frames = (getFrames final)
             Int duration = (div frames 44100)
@@ -205,7 +346,7 @@ tempo 120 {
 }
 ```
 
-## Expressive Piano Piece
+### Expressive Piano Piece
 
 ```flow
 use "@std"
@@ -238,19 +379,90 @@ tempo 72 {
             }
 
             Song piece = [intro development climax resolution]
-            Buffer rendered = (renderSong piece "piano")
+            Buffer rendered = (renderSong piece "piano" release=2.5s)
             Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
-            (exportWav final "expressive_piano.wav")
-
-            Int frames = (getFrames final)
-            Int duration = (div frames 44100)
-            (print (concat "Duration: ~" (concat (str duration) "s")))
+            (writeWav "expressive_piano.wav" final)
         }
     }
 }
 ```
 
-## Pattern Transforms
+The `release=2.5s` named arg lengthens piano's sustain-pedal-sim tail (default 1.5s, range [0.05s, 10s]).
+
+### Voice-Block Polyphony
+
+Multiple voices that share a bar's onset, written inline:
+
+```flow
+use "@std"
+use "@audio"
+
+tempo 110 {
+    timesig 4/4 {
+        key Cmajor {
+            section stride {
+                Note: Bass voice (whole note) under a quarter-note melody.
+                Sequence bar = | {voice C3w} {voice C5q D5q E5q F5q} |
+            }
+            Song song = [stride*2]
+            Buffer buf = (renderSong song "piano")
+            (writeWav "stride.wav" buf)
+        }
+    }
+}
+```
+
+The two voices render additively in audio AND as overlapping NoteOn events in MIDI export. For voices the composer thinks of as different "lines", use separate `Sequence` variables instead.
+
+### Parameterized Sections
+
+Sections can take typed parameters with defaults, support overloading, and compose with the `*N` repetition operator:
+
+```flow
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: Overload 1 - single Note binding
+            section verse(Note root) {
+                Sequence inner = | C4q E4q G4q B4q |
+            }
+
+            Note: Overload 2 - chord-literal pattern (music-aware)
+            section verse(Cmaj7) {
+                Sequence inner = | C4q E4q G4q B4q | C5q B4q G4q E4q |
+            }
+
+            Note: Default values
+            section intro(Note root = C4, Int repeats = 2) {
+                Sequence inner = | C4h E4h | G4h B4h |
+            }
+
+            section chorus {
+                Sequence inner = | C4h E4h G4h B4h |
+            }
+
+            Song song = [
+                intro()           Note: both defaults
+                verse(C4)         Note: overload 1 wins
+                verse(Cmaj7)      Note: overload 2 wins
+                chorus            Note: legacy zero-arg form
+                verse(C4)*3       Note: repetition operator
+            ]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "parameterized.wav" mix)
+        }
+    }
+}
+```
+
+---
+
+## Transforms
+
+### Pattern Transforms
 
 ```flow
 use "@std"
@@ -292,7 +504,48 @@ timesig 4/4 {
 }
 ```
 
-## Generative Music
+### Tidal-Style Pattern Combinators
+
+Opt-in via `use "@patterns"`. 13 combinators operate on `Sequence`s; cycle unit is bars:
+
+```flow
+use "@std"
+use "@audio"
+use "@patterns"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence base = | C4q D4q E4q F4q | G4q A4q B4q C5q |
+
+            Note: every Nth bar: apply a transform
+            Sequence v1 = (every 2 (fn Sequence s => (fast s 2.0)) base)
+
+            Note: rotate bar order by 25%
+            Sequence v2 = (phase 0.25 v1)
+
+            Note: layer original + transposed copy
+            Sequence v3 = (jux (fn Sequence s => (transpose s +12st)) v2)
+
+            Note: 40% chance per bar of reversing
+            Sequence v4 = (sometimes 0.4 (fn Sequence s => (rev s)) v3)
+
+            section main { Sequence v = v4 }
+            Song song = [main]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "tidal.wav" mix)
+        }
+    }
+}
+```
+
+Other combinators: `slow`, `chunk`, `rev`, `iter`, `palindrome`, `superimpose`, `degrade`, `sparseSeq`. Transform args are lambda-required.
+
+---
+
+## Generative
+
+### Random Choice + Euclidean
 
 ```flow
 use "@std"
@@ -306,13 +559,12 @@ timesig 4/4 {
     Sequence weighted = | (? C4:50 E4:30 G4:20) (? C4:50 E4:30 G4:20) _ _ |
     (print (concat "Weighted: " (str weighted)))
 
-    Note: Seeded random (deterministic)
-    (??set 42)
+    Note: Seeded random (deterministic — same output every run)
     Sequence seeded = | (?? C4 E4 G4) (?? D4 F4 A4) (?? E4 G4 B4) (?? C4 E4 G4) |
     (print (concat "Seeded: " (str seeded)))
 }
 
-Note: Euclidean rhythms
+Note: Euclidean rhythms (Bjorklund algorithm)
 Sequence euclid1 = (euclidean 3 8 C4)
 (print (concat "Euclidean 3/8: " (str euclid1)))
 
@@ -320,54 +572,199 @@ Sequence euclid2 = (euclidean 5 8 E4)
 (print (concat "Euclidean 5/8: " (str euclid2)))
 ```
 
-## Effect Processing Chain
+### Markov Chains
+
+Train a Markov model from a short corpus, generate variations:
+
+```flow
+use "@std"
+use "@audio"
+use "@generative"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: 1. Teach the chain a step-wise scale shape
+            Sequence corpus = | C4q D4q E4q F4q G4q F4q E4q D4q C4q |
+
+            Note: 2. One-shot: (markov corpus order length seed)
+            Sequence oneShot = (markov corpus 2 16 42)
+
+            Note: 3. Or train once, generate many times
+            MarkovModel m = (markovTrain corpus 2)
+            Sequence riffA = (markovGenerate m 8 100)
+            Sequence riffB = (markovGenerate m 8 200)
+
+            section A { Sequence v = oneShot }
+            section B { Sequence v = riffA }
+            section C { Sequence v = riffB }
+
+            Song song = [A B C]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "markov.wav" mix)
+        }
+    }
+}
+```
+
+Order is clamped to [1, 3]. Feature extraction via `features=#pitch` (default) or `features=<<#pitch, #duration>>` for richer tuple-keyed states.
+
+### L-Systems
+
+Lindenmayer-system Symbol rewriting → notes:
+
+```flow
+use "@std"
+use "@audio"
+use "@generative"
+
+tempo 120 {
+    timesig 4/4 {
+        Note: Canonical "algae" rules:
+        Note:   #A → #A #B
+        Note:   #B → #A
+        Dict<Symbol, Symbol[]> rules = (dict #A (list #A #B) #B (list #A))
+
+        Note: Iteration 4 produces an 8-Symbol sequence
+        Symbol[] expanded = (lsystem #A rules 4)
+
+        Note: Map each Symbol to a note
+        Sequence music = (lsystemToSequence expanded
+                            (fn Symbol s =>
+                              (if (equals s #A)
+                                  (createMusicalNote C4 4)
+                                  (createMusicalNote E4 4))))
+
+        section main { Sequence v = music }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "lsystem.wav" mix)
+    }
+}
+```
+
+Iterations clamped to [0, 20] (DoS guard). Also available: `lsystemModel` / `lsystemGenerate` for the train-once-generate-many split.
+
+### Chord-Aware Improvisation with `jam`
+
+`jam` is a chord-aware Markov improviser — chord tones on strong beats, scale tones on weak, chromatic-passing notes per style pack:
+
+```flow
+use "@std"
+use "@audio"
+use "@improv"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Note: A ii-V-I-VI progression
+            Sequence chords = | Dm7 | G7 | Cmaj7 | Am7 |
+
+            Note: Named-arg form — usually clearer than 6-position call
+            Sequence solo = (jam over=chords style=#jazz length=4 seed=42)
+
+            Note: Or full positional: (jam over style length key seed order)
+            Sequence soloAlt = (jam chords #blues 4 "Cmajor" 100 2)
+
+            section A { Sequence v = solo }
+            Song song = [A]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "jam.wav" mix)
+        }
+    }
+}
+```
+
+Style packs ship at `flow-lang/improv/styles/*.flow` (`#jazz`, `#blues`, `#classical`). Override by dropping a same-named file at `~/.config/flow/styles/`.
+
+---
+
+## Audio
+
+### Effect Processing Chain
 
 ```flow
 use "@std"
 use "@audio"
 
-Note: Create a test tone
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Note: Create a test tone (Hertz-typed)
+Buffer tone = (createSineTone 0.5 440Hz 0.5)
 (print (concat "Original frames: " (str (getFrames tone))))
 
-Note: Apply effects chain
-Double negThree = (sub 0.0 3.0)
-Buffer processed = tone -> lowpass 1000.0 -> reverb 0.3 -> gain negThree
+Note: Apply effects chain — Hertz / Decibel / Millisecond / Second literals
+Buffer processed = tone -> lowpass 1.0kHz -> reverb 0.3 -> gain -3dB
 (print (concat "Processed frames: " (str (getFrames processed))))
 
 Note: Individual effects
-Buffer lp = (lowpass tone 800.0)
-(print (concat "Lowpass: " (str (getFrames lp))))
-
-Buffer hp = (highpass tone 200.0)
-(print (concat "Highpass: " (str (getFrames hp))))
-
-Buffer bp = (bandpass tone 200.0 2000.0)
-(print (concat "Bandpass: " (str (getFrames bp))))
-
+Buffer lp = (lowpass tone 800Hz)
+Buffer hp = (highpass tone 200Hz)
+Buffer bp = (bandpass tone 200Hz 2000Hz)
 Buffer rev = (reverb tone 0.7 0.3 0.5)
-(print (concat "Reverb: " (str (getFrames rev))))
+Buffer comp = (compress tone -12dB 4.0)
+Buffer del = (delay tone 250ms 0.4 0.5)
 
-Double negThreshold = (sub 0.0 12.0)
-Buffer comp = (compress tone negThreshold 4.0)
-(print (concat "Compressed: " (str (getFrames comp))))
-
-Buffer del = (delay tone 250.0 0.4 0.5)
-(print (concat "Delayed: " (str (getFrames del))))
-
-Note: Export
-(exportWav processed "processed.wav")
+(writeWav "processed.wav" processed)
 (print "Exported processed.wav!")
 ```
 
-## Audio Synthesis from Scratch
+### Granular Synthesis
+
+```flow
+use "@std"
+use "@audio"
+
+Note: Source: 1-second 440Hz sine
+Buffer tone = (createSineTone 1.0 440Hz 0.5)
+
+Note: Default Hann windowing, modest jitter
+Buffer g1 = (granular tone 50ms 20Hz 0.3)
+
+Note: Heavier jitter + Gaussian windowing — cloudier texture
+Buffer g2 = (granular tone 80ms 15Hz 0.7 #gaussian)
+
+Note: Compose with reverb + pan
+Buffer wet = (reverb g2 0.5) -> pan -0.3
+
+Buffer mix = (mix g1 wet)
+(writeWav "granular.wav" mix)
+```
+
+Knobs: `grain` (Millisecond), `density` (Hertz), `jitter` (Double in [0, 1]), `windowing` (`#hann` default, `#gaussian`, `#tukey`). Unknown windowing Symbol falls back to Hann + stderr advisory.
+
+### Time-Stretch and Pitch-Shift
+
+```flow
+use "@std"
+use "@audio"
+
+Buffer base = (createSineTone 2.0 440Hz 0.4)
+
+Note: Time-stretch 2x without pitch change. Mode picks per-frame algorithm.
+Buffer slow = (stretch base 2.0 #auto)         Note: HPS picks vocoder vs PSOLA
+Buffer vocoder = (stretch base 2.0 #vocoder)   Note: phase-locked STFT — harmonic material
+Buffer psola = (stretch base 2.0 #psola)       Note: TD-PSOLA — percussive material
+
+Note: Pitch-shift up 5 semitones without time change.
+Note: pitchShift accepts Double / Cent / Semitone for the cents arg.
+Buffer up5 = (pitchShift base +5st #auto)
+Buffer up500c = (pitchShift base +500c #auto)
+
+Note: Identity fast-paths — return input byte-identical.
+Buffer ident1 = (stretch base 1.0)
+Buffer ident2 = (pitchShift base 0c)
+
+Buffer out = (mix slow up5)
+(writeWav "stretch_pitchshift.wav" out)
+```
+
+### Audio Synthesis from Scratch
 
 ```flow
 use "@std"
 use "@audio"
 
 Note: Create an oscillator
-OscillatorState osc = (createOscillatorState 440.0 44100)
+OscillatorState osc = (createOscillatorState 440Hz 44100)
 
 Note: Generate a buffer of sine wave
 Buffer buf = (createBuffer 44100 2 44100)
@@ -380,15 +777,11 @@ Envelope env = (createADSR 0.01 0.1 0.7 0.3 44100)
 Note: Add some reverb
 Buffer wet = (reverb buf 0.4)
 
-Note: Export
-(exportWav wet "synth_from_scratch.wav")
+(writeWav "synth_from_scratch.wav" wet)
 (print "Exported synth_from_scratch.wav!")
-
-Int frames = (getFrames wet)
-(print (concat "Frames: " (str frames)))
 ```
 
-## Multiple Synthesizers
+### Multiple Synthesizers
 
 ```flow
 use "@std"
@@ -402,7 +795,9 @@ tempo 120 {
             }
             Song song = [melody]
 
-            Note: same melody with different instruments
+            Note: Same melody, different instruments.
+            Note: Piano / brass / sax / strings / flute / bell are sampled
+            Note: (U-Iowa MIS); organ and drums are hand-rolled synthesis.
             Buffer piano   = (renderSong song "piano")
             Buffer brass   = (renderSong song "brass")
             Buffer sax     = (renderSong song "sax")
@@ -412,16 +807,16 @@ tempo 120 {
             Buffer bell    = (renderSong song "bell")
             Buffer drums   = (renderSong song "drums")
 
-            (exportWav piano   "piano.wav")
-            (exportWav strings "strings.wav")
-            (exportWav bell    "bell.wav")
+            (writeWav "piano.wav"   piano)
+            (writeWav "strings.wav" strings)
+            (writeWav "bell.wav"    bell)
             (print "exported all instruments")
         }
     }
 }
 ```
 
-## Chord Progression with Voice Leading
+### Chord Progression with Voice Leading
 
 ```flow
 use "@std"
@@ -436,13 +831,186 @@ tempo 100 {
             Song song = [hook*4]
             Buffer rendered = (renderSong song "piano")
             Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
-            (exportWav final "progression.wav")
+            (writeWav "progression.wav" final)
         }
     }
 }
 ```
 
-## MIDI Export
+### Loading a WAV Sample
+
+```flow
+use "@std"
+use "@audio"
+
+Note: Plain load — 16/24/32-bit PCM, auto-resampled to 44.1 kHz
+Buffer sample = (loadWav "kick.wav")
+
+Note: Varispeed load — semitones or ratio overload
+Buffer up3 = (loadWav "kick.wav" 3)           Note: +3 semitones
+Buffer half = (loadWav "kick.wav" 0.5)        Note: half-speed (octave down)
+
+Buffer processed = sample -> pan 0.0 -> gain 0dB -> reverb 0.2
+(writeWav "kick_processed.wav" processed)
+```
+
+### Vocalization
+
+```flow
+use "@std"
+use "@audio"
+
+Note: Formant vowel synthesis on a pitched note.
+Buffer ah = (sing "ah" C4 0.5)
+Buffer ee = (sing "ee" E4 0.5)
+Buffer oh = (sing "oh" G4 0.5)
+
+Buffer melody = ah -> appendBuffers ee -> appendBuffers oh
+(writeWav "vocal_line.wav" melody)
+```
+
+---
+
+## Microtonal
+
+### Just Intonation via Pragma
+
+```flow
+enable justIntonation;
+
+use "@std"
+use "@audio"
+
+Note: With the pragma active, C-E renders at the pure 5/4 ratio
+Note: instead of the 12-TET ~1.2599 approximation.
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section triad {
+                Sequence arp = | C4q E4q G4q C5q |
+                Sequence held = | [C4 E4 G4 C5]w |
+            }
+            Song song = [triad]
+            Buffer audio = (renderSong song "piano")
+            (writeWav "ji_triad.wav" audio)
+        }
+    }
+}
+```
+
+Available tuning pragmas: `enable justIntonation;`, `enable pythagorean;`, `enable equalTemperament;` (the default). File-scoped, last-wins with inline `tuning { }` blocks.
+
+### Scala `.scl` Tuning
+
+```flow
+use "@std"
+use "@audio"
+
+Note: Load any Scala .scl file (~5300 community tunings available).
+Tuning partch = (loadScala "tunings/partch_43.scl")
+(print $"Loaded: {(str partch)}")
+
+tempo 100 {
+    timesig 4/4 {
+        Note: Identifier form
+        tuning partch {
+            section a { Sequence mel = | C4q D4q E4q F4q | }
+        }
+
+        Note: String-literal sugar — desugars to (loadScala "...") at parse time
+        tuning "tunings/carlos_alpha.scl" {
+            section b { Sequence mel = | C4q E4q G4q B4q | }
+        }
+    }
+}
+```
+
+For non-octave-repeating scales (Carlos Alpha, Bohlen-Pierce) the period auto-adopts from the .scl — no explicit `.kbm` needed. Pass one as the 2nd arg to `loadScala` if you have one.
+
+---
+
+## Notation IO
+
+### MusicXML Export
+
+```flow
+use "@std"
+use "@notation-io"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section piano {
+                Sequence mel = | C4q D4q E4q F4q | G4q A4q B4q C5q |
+            }
+            Song song = [piano]
+            (writeMusicXML "song.musicxml" song)
+            (print "MusicXML written — opens in MuseScore / Sibelius / Dorico / Finale")
+        }
+    }
+}
+```
+
+Voice blocks export as per-note `<voice>N</voice>` tagging; microtonal pitches as decimal `<alter>` cent precision; articulations map per MuseScore convention.
+
+### LilyPond Export
+
+```flow
+use "@std"
+use "@notation-io"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section piano {
+                Sequence mel = | C4q D4q E4q F4q | G4q A4q B4q C5q |
+            }
+            Song song = [piano]
+            (writeLilyPond "song.ly" song)
+            (print "Run `lilypond song.ly` to render PDF (requires lilypond 2.24+)")
+        }
+    }
+}
+```
+
+### ABC Import
+
+```flow
+use "@std"
+use "@notation-io"
+
+String tune = "X:1
+T:C Major Scale
+M:4/4
+L:1/4
+K:Cmaj
+C D E F | G A B c |"
+
+Section parsed = (abc tune)
+(print "ABC imported")
+```
+
+Supports ABC 2.1 subset + abc2midi extensions: standard headers (`X`, `T`, `M`, `L`, `K`, `Q`), accidentals (`^`/`_`/`=`), octave markers (`'`/`,`), modal keys (`Edor`, `Dmix`, `Aphr`, `Cmix`, `Glyd`, `Bphr`, `Floc`). Multi-tune files (`X:1`, `X:2`) return `Array[Section]`. Unknown ornaments dropped with `[abc]` stderr advisory.
+
+### MML Import
+
+```flow
+use "@std"
+use "@notation-io"
+
+String chiptune = "T120 L8 O4 cdefga>cb<a>c"
+
+Sequence parsed = (mml chiptune)
+(print "MML imported")
+```
+
+Supports PC-98 MML common core: notes (case-insensitive), accidentals (`+`/`#`/`-`), absolute octave (`O<n>`), relative octave (`>`/`<`), tempo (`T<n>`), default length (`L<n>`), loops (`[...]<n>`, depth cap 16), dotted notes, ties (`&`). FM operator routing + drum-bank opcodes ignored with `[mml]` advisory.
+
+---
+
+## Misc
+
+### MIDI Export
 
 ```flow
 use "@std"
@@ -452,10 +1020,9 @@ tempo 140 {
     timesig 3/4 {
         key Gmajor {
             section waltz {
-                | G4q B4q D5q |
-                | D5h G4q |
+                Sequence v = | G4q B4q D5q | D5h G4q |
             }
-            section ending { | G4h. | }
+            section ending { Sequence v = | G4h. | }
 
             Song song = [waltz waltz ending]
             (writeMidi "waltz.mid" song)
@@ -465,32 +1032,9 @@ tempo 140 {
 }
 ```
 
-## Loading a WAV Sample
+Multi-track export with GM-program routing: sequence names prefix-match to instruments (`piano*`→0, `brass*`→56, `sax*`→65, `flute*`→73, `violin*`→40, `cello*`→42, `drum*`→0 on channel 9). One track per unique sequence name + a conductor track.
 
-```flow
-use "@std"
-use "@audio"
-
-Buffer sample = (loadWav "kick.wav")
-Buffer processed = sample -> (pan 0.0) -> gain 0.0 -> reverb 0.2
-(exportWav processed "kick_processed.wav")
-```
-
-## Vocalization
-
-```flow
-use "@std"
-use "@audio"
-
-Buffer ah = (sing "ah" C4 0.5)
-Buffer ee = (sing "ee" E4 0.5)
-Buffer oh = (sing "oh" G4 0.5)
-
-Buffer melody = ah -> appendBuffers ee -> appendBuffers oh
-(exportWav melody "vocal_line.wav")
-```
-
-## Waltz in 3/4
+### Waltz in 3/4
 
 ```flow
 use "@std"
@@ -509,14 +1053,14 @@ tempo 90 {
             Song piece = [waltz*4 middle*2 waltz*2]
             Buffer buf = (renderSong piece "piano")
             Buffer final = buf -> reverb 0.4 -> fadeOut 0.5
-            (exportWav final "waltz.wav")
+            (writeWav "waltz.wav" final)
             (print "Exported waltz.wav!")
         }
     }
 }
 ```
 
-## Ornaments and Expression
+### Ornaments and Expression
 
 ```flow
 use "@std"
@@ -541,12 +1085,73 @@ tempo 120 {
             Sequence trem = mel -> tremolo 4
             (print (concat "Tremolo: " (str trem)))
 
-            Note: Humanize for natural feel
-            Sequence natural = | C4 D4 E4 F4 | -> humanize 0.15
+            Note: Humanize for natural feel (Gaussian, seeded → deterministic)
+            Sequence natural = (humanizeGaussian | C4 D4 E4 F4 | 0.15 42)
             (print (concat "Humanized: " (str natural)))
         }
     }
 }
+```
+
+### SFZ Orchestral Sampler
+
+For large external sample libraries (blessed: VSCO Community CE 1.1.0), use `@sfz`:
+
+```flow
+use "@audio"
+use "@sfz"
+
+Note: Resolve #violin against the 20-entry GM dict and your `sfz_root`
+Note: setting in ~/.config/flow/config.toml.
+Sfz violin = (loadSfz #violin)
+
+tempo 100 {
+    timesig 4/4 {
+        key Cmajor {
+            section opening {
+                Sequence main = | C4q D4q E4q F4q G4h G4h C5w |
+            }
+            Song song = [opening]
+            Note: "sampler:NAME" looks up the bound `violin` patch.
+            Buffer mix = (renderSong song "sampler:violin")
+            (writeWav "violin.wav" mix)
+        }
+    }
+}
+```
+
+See [examples/symphony/sfz_smoke.flow](https://github.com/NoahFreelove/flow-sharp/blob/dev/examples/symphony/sfz_smoke.flow) for a full walkthrough, and `examples/symphony/symphony.flow` for the v1.4 showcase using 5 VSCO-CE instruments.
+
+---
+
+## Where to Find More
+
+The `examples/` directory in the repo ships runnable tutorial chapters. Each file is heavily commented and runs end-to-end:
+
+| Folder | What's inside |
+|---|---|
+| `examples/tutorial.flow` | Top-to-bottom language walkthrough — start here if you're new |
+| `examples/showcase.flow` | Multi-feature demonstration |
+| `examples/long_demo.flow` | Extended composition example |
+| `examples/dsp/` | Granular (`granular.flow`), time-stretch + pitch-shift (`stretch_pitchshift.flow`) |
+| `examples/generative/` | Markov chains (`markov_jazz.flow`), Tidal combinators (`tidal_combinators.flow`) |
+| `examples/notation/` | MusicXML + LilyPond export, ABC + MML import (4 files in `to_*.flow` / `from_*.flow`) |
+| `examples/pragmas/` | `enable hAsB;` (German B notation), `enable justIntonation;` (5-limit JI) |
+| `examples/ragtime/` | "Stride & Stomp" — v1.4 showcase #2 (solo VSCO-CE UprightPiano, F major, ~58s) |
+| `examples/scala/` | Scala `.scl` microtuning walkthrough |
+| `examples/sections/` | Parameterized sections with defaults, overloads, and `*N` repetition |
+| `examples/symphony/` | "In Five Voices" — v1.4 showcase #1 (5 VSCO-CE instruments, ABA D minor, ~60s) + `sfz_smoke.flow` |
+
+Run any of them with:
+
+```bash
+dotnet run --project flow-interpreter examples/tutorial.flow
+```
+
+Or with the `flow` CLI binary (after `scripts/install.sh`):
+
+```bash
+flow run examples/dsp/granular.flow
 ```
 
 ## See Also

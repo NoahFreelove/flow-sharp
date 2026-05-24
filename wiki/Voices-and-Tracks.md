@@ -38,6 +38,8 @@ Voice v = (createVoice note 0.0)
 | `setVoicePan` | `(Voice, Double) -> Void` | Pan (-1.0 left, 0.0 center, +1.0 right) |
 | `setVoiceOffset` | `(Voice, Double) -> Void` | Beat offset on the timeline |
 
+Per-voice pan threads through both the synth path and the SFZ sampler path. In the SFZ path, the effective per-note pan is `clamp(region.Pan + voice.Pan, -1.0, +1.0)` — voice pan adds to any per-region pan baked into the SFZ patch.
+
 ## Creating Tracks
 
 ```flow
@@ -110,15 +112,22 @@ tempo 120 {
 | `renderBarAtBeat` | `(Bar, Double, String, Int, Double) -> Voice[]` | Render at a beat offset |
 | `renderBarAtTime` | `(Bar, Double, String, Int, Double) -> Voice[]` | Render at a time offset (seconds) |
 
+The `String` synth argument accepts any of the [built-in synth names](Audio-and-Synthesis.md#built-in-synthesizers), any registered custom wavetable, or `"sampler:NAME"` for an SFZ patch bound earlier in the script.
+
 ## Polyphonic Voice Allocation
 
-When rendering dense passages (many simultaneous notes), Flow allocates voices from a fixed pool. If the pool is exhausted, oldest voices are stolen. Adjust the pool size with `setMaxVoices`:
+When rendering dense passages (many simultaneous notes), Flow allocates from a fixed voice pool. Two allocation policies are supported:
+
+- **Legacy keep-loudest-N** — preserves the loudest active voices.
+- **Steal-oldest pool** (default) — when the pool overflows, the active voice with the earliest onset is truncated at the new voice's onset, with a short fade. Ties break by original input index for deterministic two-run cmp-clean behavior.
+
+Adjust the pool ceiling at runtime with `setMaxVoices` or scope it to a section with the `voicePool N { }` musical-context block:
 
 ```flow
 use "@std"
 use "@audio"
 
-(setMaxVoices 32)    Note: default
+(setMaxVoices 32)                Note: default
 
 Note: large chord: 8 simultaneous notes
 tempo 120 {
@@ -130,6 +139,50 @@ tempo 120 {
 
 Note: very constrained pool (testing voice stealing)
 (setMaxVoices 4)
+
+Note: per-section pool override — only this section uses 16 voices
+voicePool 16 {
+    section busy {
+        Sequence wash = | [C2 E2 G2 C3 E3 G3 C4 E4 G4 C5 E5 G5]w |
+    }
+}
+```
+
+Pool size is clamped to the range `[1, 256]`; default is `32`.
+
+## Voice-Block Polyphony
+
+For multi-voice writing within a single sequence, use `{voice ...}` blocks inside a note stream. Each voice shares the parent bar's onset and renders in parallel — the same render path drives both audio output and MIDI export, so voice blocks become per-note `<voice>N</voice>` tags or sibling `<<{ } \\ { }>>` voices in MusicXML / LilyPond:
+
+```flow
+timesig 4/4 {
+    key Cmajor {
+        Sequence twoVoice = | {voice C4w} {voice C5q D5q E5q F5q} |
+    }
+}
+```
+
+## Sustain Pedal
+
+The `sustainPedal { }` block extends every note's audio buffer inside it by a 2-second sustain tail — pair it with the piano's `release=` knob on `renderSong` for full sustain-pedal-sim control:
+
+```flow
+sustainPedal {
+    section ringing {
+        Sequence chord = | [C4 E4 G4]w |
+    }
+}
+```
+
+## Polyrhythm
+
+Overlay two sequences with different time signatures, aligned at LCM (or an explicit beat count):
+
+```flow
+Sequence three = | C4q E4q G4q |       Note: 3-beat pattern
+Sequence four  = | D4q D4q D4q D4q |   Note: 4-beat pattern
+Sequence poly  = (polyrhythm three four)         Note: LCM = 12 beats
+Sequence poly8 = (polyrhythm three four 8.0)     Note: explicit length
 ```
 
 ## Multi-Track Example
@@ -165,7 +218,7 @@ tempo 120 {
             Buffer bassBuf = (renderTrack bassTrack 4.0)
             Buffer mixed = (mix leadBuf bassBuf)
 
-            (exportWav mixed "two_track.wav")
+            (writeWav "two_track.wav" mixed)
         }
     }
 }
@@ -176,12 +229,16 @@ tempo 120 {
 | You want... | Use |
 |-------------|-----|
 | To arrange named parts, repeats, instruments | `section` / `Song` / `renderSong` |
+| Multi-voice writing within a single sequence | `{voice ...}` blocks in a note stream |
 | To place individual buffers at arbitrary beat offsets | `Voice` / `Track` |
-| To mix pre-rendered audio assets (e.g. samples, TTS, synthesized WAVs) | `Voice` / `Track` |
+| To mix pre-rendered audio assets (samples, TTS, synthesized WAVs) | `Voice` / `Track` |
 | To hand-tune per-note pan/gain | `Voice` on a `Track` |
+| To cap polyphony for an entire piece | `setMaxVoices` |
+| To cap polyphony for one section | `voicePool N { }` block |
 
 ## See Also
 
 - [Song Structure](Song-Structure.md) - Higher-level arrangement
-- [Audio and Synthesis](Audio-and-Synthesis.md) - Buffer creation, synthesizers
-- [Effects](Effects.md) - Panning and gain at the buffer level
+- [Audio and Synthesis](Audio-and-Synthesis.md) - Buffer creation, synthesizers, SFZ sampler
+- [Effects](Effects.md) - Panning, gain, and other per-buffer effects
+- [Musical Context](Musical-Context.md) - `voicePool`, `sustainPedal`, `pan`, `gain` blocks

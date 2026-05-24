@@ -1,6 +1,6 @@
 # Collections
 
-Flow provides arrays (lists) with a full set of functional operations. Most collection functions require `use "@std"` or `use "@collections"`.
+Flow ships two general-purpose collection types: **arrays** (ordered, indexable, homogeneous) and **dictionaries** (`Dict<K, V>`, insertion-order preserved). Most collection functions require `use "@std"` (which transitively imports `@collections`).
 
 ## Creating Arrays
 
@@ -10,17 +10,21 @@ use "@std"
 Int[] nums = (list 1 2 3 4 5)
 String[] names = (list "Alice" "Bob" "Charlie")
 Int[] empty = (list)
+
+Note: Array literal syntax also works — comma OR space-separated
+Int[] inline   = [10, 20, 30]
+Int[] spaceSep = [10 20 30]
 ```
 
 ## Array Indexing
 
-Use `@` to access elements by index (0-based):
+Use `@` to access elements by index (0-based). Negative indices count from the end:
 
 ```flow
 Int[] nums = (list 10 20 30)
-Int first = nums@0   Note: 10
-Int second = nums@1  Note: 20
-Int third = nums@2   Note: 30
+Int first = nums@0    Note: 10
+Int second = nums@1   Note: 20
+Int last = nums@-1    Note: 30
 ```
 
 ## Inspection
@@ -30,9 +34,9 @@ use "@std"
 
 Int[] nums = (list 1 2 3 4 5)
 
-Int count = (length nums)    Note: 5 (alias: len)
-Bool isEmpty = (empty nums)  Note: false
-Bool has3 = (contains nums 3) Note: true
+Int count    = (length nums)        Note: 5 (alias: len)
+Bool isEmpty = (empty nums)         Note: false
+Bool has3    = (contains nums 3)    Note: true
 ```
 
 ## Accessing Elements
@@ -53,10 +57,11 @@ use "@std"
 
 Int[] nums = (list 1 2 3 4 5)
 
-Int[] rest = (tail nums)     Note: [2, 3, 4, 5]
-Int[] front = (init nums)    Note: [1, 2, 3, 4]
-Int[] firstTwo = (take nums 2)  Note: [1, 2]
-Int[] lastThree = (drop nums 2) Note: [3, 4, 5]
+Int[] rest = (tail nums)         Note: [2, 3, 4, 5]
+Int[] front = (init nums)        Note: [1, 2, 3, 4]
+Int[] firstTwo = (take nums 2)   Note: [1, 2]
+Int[] lastThree = (drop nums 2)  Note: [3, 4, 5]
+Int[] middle = (slice nums 1 4)  Note: [2, 3, 4] (half-open)
 ```
 
 ## Building Arrays
@@ -77,7 +82,8 @@ Int[] flipped = (reverse nums)        Note: [3, 2, 1]
 ```flow
 use "@std"
 
-Int[] oneToFive = (range 1 6)    Note: [1, 2, 3, 4, 5]
+Int[] oneToFive = (range 1 6)        Note: [1, 2, 3, 4, 5] (half-open)
+Int[] evens     = (range 0 20 2)     Note: [0, 2, ..., 18] (3-arg step)
 ```
 
 ## Zip
@@ -87,12 +93,12 @@ use "@std"
 
 Int[] a = (list 1 2 3)
 Int[] b = (list 10 20 30)
-Int[][] zipped = (zip a b)  Note: [[1,10], [2,20], [3,30]]
+Int[][] zipped = (zip a b)    Note: [[1,10], [2,20], [3,30]]
 ```
 
 ## Higher-Order Functions
 
-### map
+### `map`
 
 Transform each element:
 
@@ -104,7 +110,7 @@ Int[] doubled = (map nums (fn Int n => (mul n 2)))
 (print (str doubled))  Note: [2, 4, 6, 8, 10]
 ```
 
-### filter
+### `filter`
 
 Keep elements matching a predicate:
 
@@ -116,7 +122,7 @@ Int[] big = (filter nums (fn Int n => (gt n 3)))
 (print (str big))  Note: [4, 5]
 ```
 
-### reduce
+### `reduce`
 
 Fold an array with an accumulator:
 
@@ -128,7 +134,7 @@ Int total = (reduce nums 0 (fn Int acc, Int n => (add acc n)))
 (print (str total))  Note: 15
 ```
 
-### each
+### `each`
 
 Apply a function to each element for side effects:
 
@@ -148,12 +154,70 @@ use "@std"
 
 Int[] nums = (list 1 2 3 4 5 6 7 8 9 10)
 
-Note: Filter even numbers, double them, sum
-Int[] evens = (filter nums (fn Int n => (equals 0 (sub n (mul (div n 2) 2)))))
+Note: Filter even numbers, double them, sum them
+Int[] evens   = (filter nums (fn Int n => (equals 0 (sub n (mul (idiv n 2) 2)))))
 Int[] doubled = (map evens (fn Int n => (mul n 2)))
-Int total = (reduce doubled 0 (fn Int acc, Int n => (add acc n)))
+Int total     = (reduce doubled 0 (fn Int acc, Int n => (add acc n)))
 (print (str total))
 ```
+
+## Dictionaries (`Dict<K, V>`)
+
+`Dict<K, V>` is a generic map that preserves insertion order. Allowed key types: `Int`, `Long`, `Float`, `String`, `Symbol`, `Note`, `Chord`, `Beat`, and tuples whose components are themselves hashable. Values are unrestricted.
+
+### Creating a Dict
+
+```flow
+use "@std"
+
+Note: Alternating key, value, key, value, ...
+Dict<Symbol, Int> bpms = (dict #verse 120 #chorus 140 #bridge 100)
+
+Note: From tuples of <<K, V>>
+Dict<String, Note> roots = (dictTuple <<"verse", C4>> <<"chorus", G4>>)
+```
+
+### 14-Op Surface
+
+| Op | Signature | Description |
+|----|-----------|-------------|
+| `dict` | `(... K V K V) -> Dict<K, V>` | Construct from key/value pairs |
+| `dictTuple` | `(... <<K, V>>) -> Dict<K, V>` | Construct from tuple pairs |
+| `get` | `(Dict, K) -> V` | Fetch value (errors if missing) |
+| `getOr` | `(Dict, K, V) -> V` | Fetch value or fall back to default |
+| `set` | `(Dict, K, V) -> Dict` | Return new dict with key set |
+| `remove` | `(Dict, K) -> Dict` | Return new dict with key removed |
+| `has` | `(Dict, K) -> Bool` | Key exists? |
+| `keys` | `(Dict) -> K[]` | Insertion-ordered keys |
+| `values` | `(Dict) -> V[]` | Insertion-ordered values |
+| `size` | `(Dict) -> Int` | Number of entries |
+| `merge` | `(Dict, Dict) -> Dict` | Right-biased merge |
+| `each` | `(Dict, (K, V) => Void) -> Void` | Iterate for side effects |
+| `map` | `(Dict, (K, V) => U) -> Dict<K, U>` | Transform values |
+| `filter` | `(Dict, (K, V) => Bool) -> Dict` | Keep entries matching predicate |
+
+### Examples
+
+```flow
+use "@std"
+
+Dict<Symbol, Int> bpms = (dict #verse 120 #chorus 140)
+
+Int v = (get bpms #verse)               Note: 120
+Int fb = (getOr bpms #outro 100)        Note: 100 (fallback)
+Dict<Symbol, Int> bigger = (set bpms #outro 90)
+Dict<Symbol, Int> withoutChorus = (remove bpms #chorus)
+
+(each bpms (fn Symbol k, Int v => (print $"{k} = {v}")))
+```
+
+### Overloaded with Arrays
+
+`each`, `map`, `filter`, and `size` are overloaded on **both** arrays and dicts — the resolver dispatches on argument types. The same function call shape works for either collection.
+
+## Tuples (Brief)
+
+Tuples (`<<a, b, c>>`) live in [Language Basics](Language-Basics.md#tuples) — they're a fixed-arity, heterogeneous shape distinct from arrays. They support per-position types, structural equality, destructuring assignment (`<<x, y>> = expr`), and the tuple-unpack flow operator `~>`.
 
 ## Varargs and Plural Type Notation
 
@@ -161,7 +225,7 @@ Flow has two mechanisms for working with variable-length argument lists in funct
 
 ### Plural Form (Array Type Sugar)
 
-Adding `s` to any type name creates an array type. This works in both variable declarations and proc parameters:
+Adding `s` to any type name creates an array type:
 
 ```flow
 use "@std"
@@ -207,12 +271,10 @@ end proc
 | `Int...: x` | Varargs parameter | Individual arguments, collected into array |
 
 The standard library uses both. For example:
-- `list` uses `Void...: items` — you call `(list 1 2 3)` with individual args
-- `head` uses `Voids: arr` — you call `(head myArray)` with an array
+- `list` uses `Void...: items` — call `(list 1 2 3)` with individual args
+- `head` uses `Voids: arr` — call `(head myArray)` with an array
 
 ### Plural Forms Reference
-
-Any type gets a plural form by appending `s`:
 
 | Singular | Plural (Array) |
 |----------|---------------|
@@ -225,7 +287,7 @@ Any type gets a plural form by appending `s`:
 | `Buffer` | `Buffers` = `Buffer[]` |
 | `Sequence` | `Sequences` = `Sequence[]` |
 
-## Complete Function Reference
+## Complete Array Function Reference
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -239,6 +301,7 @@ Any type gets a plural form by appending `s`:
 | `reverse` | `(T[]) -> T[]` | Reverse order |
 | `take` | `(T[], Int) -> T[]` | First N elements |
 | `drop` | `(T[], Int) -> T[]` | Drop first N |
+| `slice` | `(T[], Int, Int) -> T[]` | Half-open slice |
 | `append` | `(T[], T) -> T[]` | Add to end |
 | `prepend` | `(T, T[]) -> T[]` | Add to start |
 | `concat` | `(T[], T[]) -> T[]` | Concatenate arrays |
@@ -247,11 +310,12 @@ Any type gets a plural form by appending `s`:
 | `filter` | `(T[], T => Bool) -> T[]` | Filter by predicate |
 | `reduce` | `(T[], U, (U, T) => U) -> U` | Fold with accumulator |
 | `each` | `(T[], T => Void) -> Void` | Apply for side effects |
-| `range` | `(Int, Int) -> Int[]` | Integer range |
+| `range` | `(Int, Int[, Int]) -> Int[]` | Half-open integer range with optional step |
 | `zip` | `(T[], U[]) -> [T,U][]` | Pair elements |
 
 ## See Also
 
-- [Functions](Functions.md) - Lambdas and higher-order functions
+- [Language Basics](Language-Basics.md) - Tuples and dicts in the type system
+- [Functions](Functions.md) - Lambdas, higher-order functions, named args
 - [Standard Library](Standard-Library.md) - Full function reference
-- [Flow Operator](Flow-Operator.md) - Chaining operations with `->`
+- [Flow Operator](Flow-Operator.md) - Chaining operations with `->`, tuple unpack with `~>`

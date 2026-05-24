@@ -76,6 +76,14 @@ timesig 4/4 {
 }
 ```
 
+Append duration suffixes (and dots) to a named chord element to control its rhythm:
+
+```flow
+timesig 4/4 {
+    Sequence rhythmic = | Cmaj7q Am7q Dm7h | G7h. Cmaj7q |
+}
+```
+
 ## Roman Numerals
 
 Within a `key` context, roman numerals represent scale-degree chords:
@@ -135,7 +143,7 @@ See [Chord Progressions](Chord-Progressions.md) for the full reference, includin
 
 ## Arpeggios
 
-Generate arpeggiated sequences from chords:
+Generate arpeggiated sequences from chords. The 2-arg form takes a direction string and emits eighth notes:
 
 ```flow
 use "@std"
@@ -144,6 +152,47 @@ Sequence up     = (arpeggio Cmaj "up")
 Sequence down   = (arpeggio Cmaj "down")
 Sequence updown = (arpeggio Cmaj "updown")
 ```
+
+The 4-arg form gives full control over rate, direction, and pattern:
+
+```flow
+use "@std"
+
+Note: rate is a NoteValue (q, e, s, etc. as keywords), direction is up/down/updown/downup/random,
+Note: pattern is linear/chord-tone/scale-tone
+Sequence triplets = (arpeggio Cmaj7 q "updown" "linear")
+Sequence rolling  = (arpeggio Cmaj7 s "down" "linear")
+```
+
+> `downup` and `random` are accepted today; `chord-tone` and `scale-tone` currently behave the same as `linear` (placeholders for future expansion).
+
+## Chord Inversions and Voicings
+
+Invert a chord by rotating its lowest N notes up an octave each:
+
+```flow
+use "@std"
+
+Chord triad = Cmaj                          Note: C4 E4 G4
+Chord first = (inversion triad 1)           Note: E4 G4 C5
+Chord second = (inversion triad 2)          Note: G4 C5 E5
+```
+
+Apply a named voicing for richer textures (jazz comping, open spacing, etc.):
+
+```flow
+use "@std"
+
+Chord shell = Cmaj7
+
+Chord drop2  = (voicing shell "drop2")      Note: lower the 2nd-from-top note an octave
+Chord drop3  = (voicing shell "drop3")      Note: lower the 3rd-from-top note an octave
+Chord open   = (voicing shell "open")       Note: raise the middle note an octave (wider)
+Chord close  = (voicing shell "close")      Note: collapse to within one octave of root
+Chord spread = (voicing shell "spread")     Note: raise the highest note another octave
+```
+
+> Voicings whose minimum-note requirement isn't met (`drop2`/`drop3` need ≥4 notes; `spread`/`open`/`close` need ≥3) return the input unchanged — no error, no warning. Same for out-of-range inversion indices.
 
 ## Scale Operations
 

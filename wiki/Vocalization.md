@@ -14,7 +14,9 @@ Buffer vowel = (sing "ah" C4 0.5)
 (play vowel)
 ```
 
-**Signature**: `(sing String syllable, Note pitch, Double seconds) -> Buffer`
+**Signature**: `(sing String phoneme, Note pitch, Double duration) -> Buffer`
+
+`sing` is tuning-aware — under `enable justIntonation;` + `key Cmajor`, an E4 vocalization renders at the 5/4 ratio rather than 12-TET. Same for `enable pythagorean;`, `enable equalTemperament;`, and `tuning t { }` blocks.
 
 ### Vowels
 
@@ -38,12 +40,12 @@ Buffer o  = (sing "oh" A4 0.3)
 Buffer u  = (sing "oo" A4 0.3)
 
 Buffer phrase = a -> appendBuffers e -> appendBuffers i -> appendBuffers o -> appendBuffers u
-(exportWav phrase "vowels.wav")
+(writeWav "vowels.wav" phrase)
 ```
 
 ### Consonant-Vowel Syllables
 
-Prefix a vowel with a supported consonant to get a syllable:
+Prefix a vowel with one of three supported consonants — `s` (sibilant fricative, filtered noise), `t` (plosive), or `n` (nasal) — to get a syllable. The synthesizer renders the consonant onset, then crossfades into the vowel formants:
 
 ```flow
 use "@audio"
@@ -51,10 +53,10 @@ use "@audio"
 Buffer na = (sing "na" C4 0.5)
 Buffer ta = (sing "ta" E4 0.3)
 Buffer sa = (sing "sa" G4 0.3)
-Buffer la = (sing "la" C5 0.5)
+Buffer noo = (sing "noo" C5 0.5)
 ```
 
-The synthesizer applies a short consonant attack (plosive, fricative, or nasal) followed by the vowel formants.
+Other consonants are not yet supported — passing e.g. `"la"` will be treated as an unknown phoneme.
 
 ## Mixing Vocals with Instruments
 
@@ -68,8 +70,8 @@ Buffer vocal  = (sing "ah" C4 1.0)
 Buffer tone   = (createSineTone 1.0 440.0 0.5)
 Buffer mixed  = (mix vocal tone)
 
-Buffer wet = mixed -> reverb 0.4 -> gain 0.0
-(exportWav wet "vocal_mix.wav")
+Buffer wet = mixed -> reverb 0.4 -> gain 0dB
+(writeWav "vocal_mix.wav" wet)
 ```
 
 ## Different Pitches
@@ -88,17 +90,18 @@ Very low or very high pitches may become less intelligible, as with real voices.
 
 ## Text-to-Speech Hook
 
-Flow can delegate a string to an external TTS engine (such as `espeak-ng`) and return the generated audio as a buffer.
+Flow can delegate a string to an external TTS engine and return the generated audio as a buffer. The default command is `espeak-ng --stdout` — install `espeak-ng` (or any TTS that writes WAV to stdout) and `tts` works without further setup.
 
-### Setting the TTS Command
+### Setting a Custom TTS Command
 
 ```flow
 use "@audio"
 
-(setTtsCommand "espeak-ng -v en -w {out}")
+Note: The first token is the executable; remaining tokens are base args.
+Note: The text to speak is appended as a quoted last argument, so the command
+Note: must write WAV data to stdout (espeak-ng's --stdout does exactly this).
+(setTtsCommand "espeak-ng -v en --stdout")
 ```
-
-The command template should write WAV output to the path substituted for `{out}`. The generated file is loaded back into a buffer and the temporary file is cleaned up.
 
 ### Running TTS
 
@@ -109,7 +112,7 @@ Buffer greeting = (tts "Hello from Flow")
 (play greeting)
 ```
 
-If no TTS command has been configured, or the engine is not installed, `tts` reports an error.
+If the TTS executable can't be found, `tts` raises an error pointing at `setTtsCommand` to change engines. The process is killed if it doesn't return within 30 seconds.
 
 ### Exporting TTS Audio
 
@@ -120,7 +123,7 @@ use "@audio"
 
 Buffer words = (tts "welcome to the piece")
 Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5
-(exportWav wet "intro_voice.wav")
+(writeWav "intro_voice.wav" wet)
 ```
 
 ## Use Cases
@@ -134,8 +137,8 @@ Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `sing` | `(String, Note, Double) -> Buffer` | Formant-synthesized vowel or syllable |
-| `tts` | `(String) -> Buffer` | External TTS → buffer (requires `setTtsCommand`) |
+| `sing` | `(String, Note, Double) -> Buffer` | Formant-synthesized vowel or syllable (tuning-aware) |
+| `tts` | `(String) -> Buffer` | External TTS → buffer (defaults to `espeak-ng --stdout`) |
 | `setTtsCommand` | `(String) -> Void` | Configure the TTS command template |
 
 ## See Also
@@ -143,3 +146,4 @@ Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5
 - [Audio and Synthesis](Audio-and-Synthesis.md) - Buffers and synthesizers
 - [Effects](Effects.md) - Reverb, filters, compression for vocals
 - [Playback and Export](Playback-and-Export.md) - Saving vocal renders
+- [Tuning](Tuning.md) - How `sing` reads the active tuning context

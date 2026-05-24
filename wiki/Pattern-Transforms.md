@@ -167,18 +167,73 @@ timesig 4/4 {
 }
 ```
 
+## Articulation Transforms
+
+These shape how notes connect or detach without changing their authored durations.
+
+### legato
+
+Sets a `DurationOverlap` on every note in the sequence — overlap is a multiplier (`0.0` = no overlap, `0.5` = each note runs 50% into the next):
+
+```flow
+timesig 4/4 {
+    Sequence mel = | C4q D4q E4q F4q |
+    Sequence smooth = mel -> legato 0.5
+}
+```
+
+> Distinct from the per-note `leg` articulation in [note streams](Note-Streams.md), which drives envelope shaping. Both compose.
+
+### portamento
+
+Adds a glide time (in milliseconds) between consecutive notes — the engine sweeps pitch over `glideMs` at the start of each note:
+
+```flow
+timesig 4/4 {
+    Sequence mel = | C4q E4q G4q C5q |
+    Sequence glissy = mel -> portamento 50ms
+}
+```
+
+## Quantize
+
+Snap notes to a metric grid with adjustable strength and optional swing. Requires a `timesig` context (the active time signature drives subdivision math):
+
+```flow
+use "@std"
+
+timesig 4/4 {
+    Sequence loose = | C4 D4q. E4e F4 |
+
+    Note: hard-quantize to eighth-note grid
+    Sequence tight = (quantize loose e 1.0 0.0)
+
+    Note: 50% pull to sixteenths, with light swing
+    Sequence laidback = (quantize loose s 0.5 0.2)
+}
+```
+
+`strength` is clamped to `[0, 1]` and `swing` to `[-1, 1]`. At `strength=0, swing=0` the transform is a byte-identical no-op.
+
 ## Texture and Ornamentation
 
-### humanize
+### humanize / humanizeGaussian
 
-Adds random velocity variation for a natural, human-played feel:
+Two flavors of velocity jitter:
 
 ```flow
 timesig 4/4 {
     Sequence mel = | C4 D4 E4 F4 |
-    Sequence h   = mel -> humanize 0.2      Note: 0.0 - 1.0
+
+    Note: uniform jitter, frozen non-deterministic RNG
+    Sequence h1 = mel -> humanize 0.2
+
+    Note: Gaussian (Box-Muller), seeded — deterministic
+    Sequence h2 = (humanizeGaussian mel 0.2 42)
 }
 ```
+
+`humanizeGaussian` recurses correctly into voice blocks; prefer it for reproducible renders. See [Dynamics and Expression](Dynamics-and-Expression.md#humanize) for the full discussion.
 
 ### trill
 
@@ -206,7 +261,7 @@ timesig 4/4 {
 
 ### vary
 
-Mutate a sequence randomly. Supports pitch, rhythm, rest, and velocity mutations, optionally seeded and optionally constrained to a scale:
+Mutate a sequence randomly. Six overloads cover the combinations of mutation type, seed, and scale constraint — supported mutation types are `"pitch"`, `"rhythm"`, `"rest"`, and `"velocity"`:
 
 ```flow
 use "@std"
@@ -218,6 +273,7 @@ Sequence v2 = (vary s 0.5 "pitch")
 Sequence v3 = (vary s 0.5 "pitch" 42)                Note: seeded
 Sequence v4 = (vary s 0.5 "pitch" "Cmajor")          Note: diatonic
 Sequence v5 = (vary s 0.5 "pitch" "Cmajor" 42)       Note: diatonic + seeded
+Sequence v6 = (vary s 0.5 "rhythm" 42)               Note: seeded rhythm mutation
 ```
 
 See [Generative Music](Generative.md) for details.
@@ -241,6 +297,26 @@ tempo 120 {
     }
 }
 ```
+
+## Tidal-Style Combinators
+
+Beyond the core transforms above, a separate `@patterns` module ships 13 Tidal-style combinators (`every`, `fast`, `slow`, `chunk`, `phase`, `rev`, `iter`, `palindrome`, `jux`, `superimpose`, `sometimes`, `degrade`, `sparseSeq`). They operate on whole sequences in units of bars and chain naturally with `->`:
+
+```flow
+use "@patterns"
+
+timesig 4/4 {
+    Sequence base = | C4 D4 E4 F4 | G4 A4 B4 C5 |
+
+    Note: every 4th bar, double-speed it
+    Sequence shifted = base -> (every 4 (fn Sequence s => (fast s 2.0)))
+
+    Note: probabilistic drop
+    Sequence sparse  = (sometimes 0.3 (fn Sequence s => (degrade s)) base)
+}
+```
+
+See [Generative Music](Generative.md) for the full list and per-combinator docs.
 
 ## Tempo Ramp (buffer-level)
 
@@ -303,12 +379,17 @@ timesig 4/4 {
 | `ritardando` | Sequence | `mel -> ritardando amount` | Slowdown feel (via velocity) |
 | `accelerando` | Sequence | `mel -> accelerando amount` | Speedup feel (via velocity) |
 | `fermata` | Sequence | `mel -> fermata index` | Hold note at index |
-| `humanize` | Sequence | `mel -> humanize amount` | Random velocity variation |
+| `legato` | Sequence | `mel -> legato overlap` | Set `DurationOverlap` per note |
+| `portamento` | Sequence | `mel -> portamento 50ms` | Pitch glide between notes |
+| `quantize` | Sequence | `(quantize mel res strength swing)` | Snap to metric grid (needs `timesig`) |
+| `humanize` | Sequence | `mel -> humanize amount` | Random velocity variation (uniform, frozen RNG) |
+| `humanizeGaussian` | Sequence | `(humanizeGaussian mel amount seed)` | Gaussian velocity jitter (seeded) |
 | `trill` | Sequence | `mel -> trill +Nst` | Rapid alternation |
 | `tremolo` | Sequence | `mel -> tremolo N` | Rapid repetition |
-| `vary` | Sequence | `mel -> vary(prob)` | Random mutation |
+| `vary` | Sequence | `mel -> vary(prob)` | Random mutation (6 overloads) |
 | `polyrhythm` | Buffer | `(polyrhythm a b)` | Overlay sequences (LCM cycle) |
 | `tempoRamp` | Buffer | `(tempoRamp seq startBpm endBpm)` | Rendered tempo interpolation |
+| `every` / `fast` / `slow` / ... | Sequence | `(every n cb mel)` etc. | [Tidal-style combinators](Generative.md) (opt-in via `use "@patterns"`) |
 
 ## See Also
 

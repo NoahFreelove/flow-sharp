@@ -25,7 +25,7 @@ Flow note literals use `[A-G][octave][alteration]`:
 |-----------|---------|---------|
 | Pitch | A, B, C, D, E, F, G (uppercase) | `C`, `D`, `G` |
 | Octave | 0-10 (required when an alteration is used) | `C4`, `A3`, `G5` |
-| Alteration | `+` sharp, `-` flat, `++` double sharp, `--` double flat | `C4+`, `B3-`, `F4++` |
+| Alteration | `+` / `#` sharp, `-` / `b` flat, `++` double sharp, `--` double flat | `C4+`, `B3-`, `F4##`, `Bb4` |
 
 ```flow
 timesig 4/4 {
@@ -34,7 +34,22 @@ timesig 4/4 {
 }
 ```
 
+Accidentals stack arbitrarily — the net pitch is `(# count + + count) - (b count + - count)`. So `F##4` is F double-sharp at octave 4, and `Bb-+bbb` resolves the same way (4 flats minus 1 sharp = triple-flat B). Note literals also include the multi-letter enharmonic edges `E↔Fb` and `B↔Cb`.
+
 > **Note**: Chord symbols use a different accidental convention: `s` for sharp and `f` for flat (e.g., `Csmaj7`, `Bfm`). See [Chords and Harmony](Chords-and-Harmony.md).
+
+### H-as-B Alias (German Notation)
+
+With `enable hAsB;` at the top of a file, `H` aliases to `B` and `Hb` (or `H-`) aliases to `Bb` — matching the German convention found in Bach et al.:
+
+```flow
+enable hAsB;
+use "@std"
+
+timesig 4/4 {
+    Sequence bWvWunderbar = | H4 Hb4 H3 |   Note: same as | B4 Bb4 B3 |
+}
+```
 
 ## Duration Suffixes
 
@@ -48,6 +63,8 @@ Append a letter to specify note duration:
 | `e` | Eighth | 0.5 |
 | `s` | Sixteenth | 0.25 |
 | `t` | Thirty-second | 0.125 |
+| `x` | Sixty-fourth | 0.0625 |
+| `y` | 128th | 0.03125 |
 
 ```flow
 timesig 4/4 {
@@ -122,6 +139,66 @@ timesig 4/4 {
 }
 ```
 
+## Tuplets
+
+Wrap notes in `{ }` with an explicit ratio `N:M` followed by a duration suffix to play N notes in the time of M:
+
+```flow
+timesig 4/4 {
+    Note: triplet — 3 quarters in the time of 2
+    Sequence trip = | {3:2 C4 E4 G4}q D4q E4q F4q |
+
+    Note: quintuplet of eighths
+    Sequence five = | {5:4 C4 D4 E4 F4 G4}e D4e E4e |
+}
+```
+
+Or use the **music21 shorthand** `{N ...}q` — the ratio is inferred from a small lookup table (3→2, 5→4, 6→4, 7→4, 9→8, etc.; counts 2..11 supported):
+
+```flow
+timesig 4/4 {
+    Sequence trip = | {3 C4 E4 G4}q D4q E4q F4q |    Note: same as {3:2 ...}q
+}
+```
+
+Per-note tuplet ratios also work — useful inside otherwise straight bars:
+
+```flow
+timesig 4/4 {
+    Note: C4 lasts the time of a /3:2 (triplet eighth)
+    Sequence mixed = | C4/3:2q D4q E4q F4q |
+}
+```
+
+For arbitrary fractional durations, use `C4/N` — the note lasts 1/N of a whole note:
+
+```flow
+timesig 4/4 {
+    Sequence twelfth = | C4/12 D4/12 E4/12 F4/12 G4/12 A4/12 |
+}
+```
+
+## Voice Blocks (Polyphony)
+
+A `{voice ...}` block inside a bar declares a parallel voice. Multiple voice blocks within the same `|...|` share the bar's onset and play simultaneously — this is the canonical way to write polyphony:
+
+```flow
+timesig 4/4 {
+    Sequence twoVoices = | {voice C4w} {voice C5q D5q E5q F5q} |
+    Note: a held whole-note bass under a quarter-note melody
+}
+```
+
+Voice blocks render identically through both audio and MIDI export — each voice becomes its own track on disk. They can carry their own articulation and dynamics:
+
+```flow
+timesig 4/4 {
+    Sequence chorale = | {voice mf C4h E4h} {voice p E5q stacc G5q stacc B5q stacc D6q>} |
+}
+```
+
+> Voice blocks may not be nested inside other voice blocks. Tuplets inside a voice block work fine.
+
 ## Named Chords in Note Streams
 
 Use chord symbols directly:
@@ -151,24 +228,26 @@ For automatic voice leading, see [Chord Progressions](Chord-Progressions.md).
 
 ## Dynamics in Note Streams
 
-Dynamic markings set the velocity of following notes:
+Dynamic markings are **sticky** — once placed they set the velocity for all following notes in the bar (and downstream bars) until another marking is seen:
 
 ```flow
 timesig 4/4 {
-    Sequence dynamic = | ff C4 D4 pp E4 F4 |
+    Sequence dynamic = | ff C4 D4 pp E4 F4 |    Note: first two loud, last two soft
 }
 ```
 
 | Marking | Velocity | Name |
 |---------|----------|------|
-| `ppp` | ~0.1 | Pianississimo |
-| `pp` | ~0.2 | Pianissimo |
-| `p` | ~0.35 | Piano |
-| `mp` | ~0.5 | Mezzo-piano |
-| `mf` | ~0.63 | Mezzo-forte (default) |
-| `f` | ~0.75 | Forte |
-| `ff` | ~0.875 | Fortissimo |
-| `fff` | ~1.0 | Fortississimo |
+| `ppp` | 0.125 | Pianississimo |
+| `pp`  | 0.25  | Pianissimo |
+| `p`   | 0.375 | Piano |
+| `mp`  | 0.5   | Mezzo-piano |
+| `mf`  | 0.625 | Mezzo-forte (default) |
+| `f`   | 0.75  | Forte |
+| `ff`  | 0.875 | Fortissimo |
+| `fff` | 1.0   | Fortississimo |
+| `sfz` | 0.95  | Sforzando (spike + envelope shape — see [Dynamics and Expression](Dynamics-and-Expression.md)) |
+| `fp`  | 0.75  | Forte-piano |
 
 ### Inline `cresc` / `decresc`
 
@@ -185,19 +264,24 @@ timesig 4/4 {
 
 ```flow
 timesig 4/4 {
-    Sequence accented  = | C4q> D4q E4q F4q> |         Note: > = accent (suffix)
+    Sequence accented  = | C4q> D4q E4q F4q> |             Note: > = accent (suffix)
     Sequence staccato  = | C4q stacc D4q E4q F4q |
     Sequence tenuto    = | C4q ten D4q E4q F4q |
     Sequence marcato   = | C4q marc D4q E4q F4q |
+    Sequence legato    = | C4q leg D4q E4q F4q |
 }
 ```
 
-| Articulation | Keyword | Effect |
+| Articulation | Keyword | Effect (locked envelope) |
 |-------------|---------|--------|
-| Accent | `>` (suffix) | Velocity bump |
-| Staccato | `stacc` | Shortened (~50% duration) |
-| Tenuto | `ten` | Full sustain |
-| Marcato | `marc` | Accented + slightly shortened |
+| Accent | `>` (suffix) | +0.30 velocity (clamped) |
+| Staccato | `stacc` | 25% duration, sustain = 0, release × 0.5 |
+| Marcato | `marc` | 25% duration + Accent's +0.30 velocity boost |
+| Tenuto | `ten` | 100% duration, release × 1.2 (soft tail) |
+| Legato | `leg` | 110% duration + crossfade overlap into next note |
+| Sforzando | `sfz` dynamic | 1.5×→1.0× envelope spike over first 15% of frames |
+
+Articulation marks accept on the same note as a duration suffix. Per-note articulations and dynamics propagate through pitch transforms (`transpose`, `retrograde`, etc.) — see [Dynamics and Expression](Dynamics-and-Expression.md) for the full reference.
 
 ## Ghost Notes
 
@@ -260,6 +344,17 @@ Separate bars with `|`:
 timesig 4/4 {
     Sequence twoBar = | C4 D4 E4 F4 | G4 A4 B4 C5 |
     (print (str twoBar))
+}
+```
+
+Multi-line bars work too. Adjacent `|` pipes at line wraps collapse charitably — no empty bars get inserted:
+
+```flow
+timesig 4/4 {
+    Sequence longMelody =
+        | C4 D4 E4 F4
+        | G4 A4 B4 C5
+        | D5 C5 B4 A4 |
 }
 ```
 
