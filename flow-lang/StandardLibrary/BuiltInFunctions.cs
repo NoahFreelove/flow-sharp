@@ -1033,6 +1033,7 @@ public static class BuiltInFunctions
         Harmony.HarmonyFunctions.RegisterContextDependent(registry, context);
         RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
         Audio.EffectsFunctions.RegisterContextDependent(registry, context);  // Phase 22-04 DX-12 (NoteValue-rate delay synced to MusicalContext.Tempo)
+        Audio.BeatConversionFunctions.RegisterContextDependent(registry, context);  // Phase 43 D-08 — beatToSec + secToBeat tempo-aware conversion (closes AUDIT.md §1 Beat-orphan anchor)
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
         Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
         Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
@@ -1479,6 +1480,31 @@ public static class BuiltInFunctions
             [BarType.Instance, DoubleType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance],
             ParameterNames: ["bar", "beat", "synth", "sampleRate", "bpm"]);
         registry.Register("renderBarAtBeat", renderBarAtBeatSignature, args =>
+        {
+            var bar = (BarData)args[0].Data!;
+            double beatOffset = (double)args[1].Data!;
+            string synthType = (string)args[2].Data!;
+            int sampleRate = (int)args[3].Data!;
+            double bpm = (double)args[4].Data!;
+
+            var voices = Audio.BarRenderer.RenderBarAtBeat(bar, beatOffset, synthType, sampleRate, bpm);
+            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            return Value.Array(voiceValues, VoiceType.Instance);
+        });
+
+        // Phase 43 D-09 — renderBarAtBeat(Bar, Beat, String, Int, Double) overload.
+        // Beat is fractional-double-backed (BeatType.cs:25-28), so the underlying
+        // CLR cast args[1].Data is a double — identical implementation to the
+        // Double overload. Registering as a distinct signature lets composers
+        // pass Beat-typed values explicitly (e.g. `(renderBarAtBeat bar 1.0b ...)`)
+        // and reach the exact-match +1000 slot per OverloadResolver scoring
+        // (vs. the compat-match +500 that bare Beat→Double would otherwise hit).
+        // bpm is supplied explicitly via args[4], so no MusicalContext read here.
+        var renderBarAtBeatBeatSignature = new FunctionSignature(
+            "renderBarAtBeat",
+            [BarType.Instance, BeatType.Instance, StringType.Instance, IntType.Instance, DoubleType.Instance],
+            ParameterNames: ["bar", "beat", "synth", "sampleRate", "bpm"]);
+        registry.Register("renderBarAtBeat", renderBarAtBeatBeatSignature, args =>
         {
             var bar = (BarData)args[0].Data!;
             double beatOffset = (double)args[1].Data!;
