@@ -1,5 +1,4 @@
 Note: Composition and Timeline Standard Library
-Note: Phase 3b: Timeline Abstractions
 Note:
 Note: For classical music composition with note durations and time signatures,
 Note: see the @notation library which provides structured musical notation.

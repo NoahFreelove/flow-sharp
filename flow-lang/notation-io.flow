@@ -1,15 +1,15 @@
 Note: Notation IO — opt-in via `use "@notation-io"`
-Note: Phase 39 D-39-01 — single-module surface for the 4 notation IO builtins:
-Note:   writeMusicXML(String, Song) → Void          [Plan 39-01 XML-01]
-Note:   writeLilyPond(String, Song) → Void           [Plan 39-02 LILY-01]
-Note:   abc(String) → Section | Array[Section]       [Plan 39-03 ABC-01 / ABC-02]
-Note:   mml(String) → Sequence                       [Plan 39-04 MML-01]
+Note: Single-module surface for the 4 notation IO builtins:
+Note:   writeMusicXML(String, Song) → Void
+Note:   writeLilyPond(String, Song) → Void
+Note:   abc(String) → Section | Array[Section]
+Note:   mml(String) → Sequence
 Note:
 Note: Distinct from `@notation` (musical-notation primitives — note durations,
 Note: rests, bar/sequence building, transitively loaded via `@std`).
 Note:
 Note: Round-trip CI gate for MusicXML uses `mscore --convert-to mxl` when
-Note: available; charitable-skip when absent per D-39-08.
+Note: available; charitable-skip when absent.
 
 module notation
 
@@ -29,7 +29,7 @@ internal proc writeLilyPond (String: path, Song: song)
 
 Note: ----- Import builtins -----
 Note: `abc` returns Section for single-tune input, Array[Section] for multi-tune
-Note: files (≥2 `X:N` blocks). Type discrimination at runtime per D-39-16.
+Note: files (≥2 `X:N` blocks). Type discrimination at runtime.
 internal proc abc (String: source)
 
 Note: `mml` returns Sequence (one synthetic bar containing the parsed notes;
