@@ -47,6 +47,7 @@ public static class BuiltInFunctions
         Transforms.TransformFunctions.RegisterArticulationTransforms(registry);  // Phase 22-06 DX-14 (legato + portamento)
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
+        Audio.InputFunctions.Register(registry);  // Phase 38 AUDIO-IN-01/02 — (micBuffer duration) capture
         BufferPrinter.Register(registry);
         Composition.PolyrhythmFunctions.Register(registry);
         Composition.VariationFunctions.Register(registry);
