@@ -21,6 +21,8 @@ Note: verified live on NuGet flatcontainer API 2026-05-23 per RESEARCH §K +
 Note: Package Legitimacy Audit (slopcheck [SLOP] is a confirmed false
 Note: positive — Rug.Osc is .NET-only; slopcheck only queries PyPI).
 
+module osc
+
 use "@std"
 
 Note: ===== Internal C# Function Declarations =====

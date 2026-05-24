@@ -10,6 +10,8 @@ Note: parameter name for transform-arg combinators, matching the convention in
 Note: the existing `(each Dict Function: cb)` / `(map Dict Function: cb)` /
 Note: `(filter Dict Function: pred)` declarations in std.flow.
 
+module patterns
+
 Note: Deterministic combinators (10)
 internal proc every (Int: n, Function: cb, Sequence: seq)
 internal proc fast (Sequence: seq, Double: factor)

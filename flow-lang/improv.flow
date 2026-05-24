@@ -8,6 +8,9 @@ Note: forward-declares the surface so `use "@improv"` makes the names visible.
 
 Note: Pull in @std so (dict ...) etc. are resolvable when composer style packs
 Note: `use "@improv"` and start constructing their rule packs.
+
+module improv
+
 use "@std"
 
 Note: ===== Style pack registry =====

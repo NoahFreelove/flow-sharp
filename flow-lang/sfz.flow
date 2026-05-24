@@ -5,6 +5,9 @@ Note: shared (loadSfz Symbol) / (loadSfz String) forward-decls are visible
 Note: by the time the trailing (__enableSfzModule ...) call runs. Composers
 Note: who `use "@sfz"` therefore get @std transitively (matching the
 Note: existing composition.flow → @audio precedent).
+
+module sfz
+
 use "@std"
 
 Note: ===== Internal C# Function Declarations =====

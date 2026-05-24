@@ -3,6 +3,8 @@ Note: GEN-01 Markov chain primitive in BOTH one-shot AND train+generate-split
 Note: shapes (D-36-06). New first-class MarkovModel reference-identity value
 Note: type — see CLAUDE.md Music Types Quick Reference table.
 
+module generative
+
 Note: One-shot — compose train + generate at the call site
 internal proc markov (Sequence: corpus, Int: order, Int: length, Int: seed)
 internal proc markov (Sequence: corpus, Int: order, Int: length)
