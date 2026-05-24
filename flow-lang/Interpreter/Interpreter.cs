@@ -120,6 +120,10 @@ public class Interpreter : IFunctionInvoker
                 ExecuteTuningContext(tctx);
                 break;
 
+            case LiveBlockStatement live:
+                ExecuteLiveBlock(live);
+                break;
+
             case ExpressionStatement exprStmt:
                 var value = _evaluator.Evaluate(exprStmt.Expression);
                 _lastExpressionValue = value;  // Store for REPL
@@ -427,6 +431,132 @@ public class Interpreter : IFunctionInvoker
         {
             _context.PopTuning();
         }
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-02 LIVE-01 — executes a <c>live &lt;quantize&gt; { ... }</c>
+    /// block during initial render. Three steps:
+    /// <list type="number">
+    ///   <item>Emit the D-v1.5-07 stderr advisory once per (line, process) via
+    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
+    ///   <c>live-determinism-optout:&lt;line&gt;</c> — explicit opt-out from the
+    ///   two-run cmp-clean determinism contract per D-v1.5-07.</item>
+    ///   <item>Resolve <see cref="LiveBlockStatement.QuantizeValue"/> to a beat
+    ///   count: Int payload → bars × beatsPerBar from active
+    ///   <see cref="MusicalContext"/>; String payload → NoteValue (q/h/w/e/s)
+    ///   → fraction × 4 beats per whole.</item>
+    ///   <item>Register a <see cref="LiveBlockRegistration"/> into
+    ///   <see cref="ExecutionContext.LiveBlockRegistry"/> so Plan 38-03's
+    ///   swap consumer can hang per-block pending-buffer slots off the
+    ///   BlockId, then execute the body once inside a scope frame so initial
+    ///   render captures the per-block buffer.</item>
+    /// </list>
+    ///
+    /// <para>
+    /// Scope discipline mirrors <see cref="ExecuteMusicalContext"/>: PushFrame
+    /// before the body, PopFrame in a finally so a body throw still rebalances
+    /// the call stack. The body inherits the caller's musical context (tempo /
+    /// timesig / key) — necessary so <c>tempo 120 { live 1bar { ... } }</c>
+    /// resolves bar = 4 beats from the outer frame.
+    /// </para>
+    /// </summary>
+    private void ExecuteLiveBlock(LiveBlockStatement live)
+    {
+        // Step 1: D-v1.5-07 stderr advisory — once per (line, process).
+        RenderingDiagnostics.WarnOnce(
+            $"live-determinism-optout:{live.Location.Line}",
+            $"[live] entering live block at line {live.Location.Line} — opts OUT of two-run cmp-clean determinism");
+
+        // Step 2: resolve quantize to beats.
+        var quantizeValue = _evaluator.Evaluate(live.QuantizeValue);
+        double quantizeBeats = ResolveQuantizeBeats(quantizeValue);
+
+        // Step 3: register into LiveBlockRegistry so Plan 38-03's swap
+        // consumer can address this block by BlockId.
+        var registration = new LiveBlockRegistration(
+            live.BlockId,
+            live.Location,
+            live.Body,
+            quantizeBeats);
+        _context.LiveBlockRegistry.Register(registration);
+
+        // Step 4: execute body once in a scope frame. PushFrame/PopFrame
+        // mirrors ExecuteMusicalContext at lines 149-150 so block-local
+        // declarations don't leak.
+        _context.PushFrame();
+        try
+        {
+            foreach (var stmt in live.Body)
+            {
+                ExecuteStatement(stmt);
+
+                // Mirror ExecuteMusicalContext's bare-expression capture so
+                // section-nested live blocks still produce audible output.
+                if (_activeSectionBareExpressions != null
+                    && stmt is ExpressionStatement
+                    && _lastExpressionValue?.Data is SequenceData innerSeq)
+                {
+                    _activeSectionBareExpressions.Add(innerSeq);
+                }
+
+                if (_returnValue != null) break;
+            }
+        }
+        finally
+        {
+            _context.PopFrame();
+        }
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-02 — resolves a quantize <see cref="Value"/> (Int = bars,
+    /// String = NoteValue token text q/h/w/e/s) to a double beat count using the
+    /// active <see cref="MusicalContext"/>'s time signature.
+    ///
+    /// <para>
+    /// Charitable per D-v1.5-05: unknown or malformed payloads silently fall
+    /// back to one bar's worth of beats so the registry registration doesn't
+    /// abort the script — the live-coding session keeps running ("live session
+    /// never dies mid-set" Pitfall #12).
+    /// </para>
+    /// </summary>
+    private double ResolveQuantizeBeats(Value quantizeValue)
+    {
+        var musicalContext = _context.GetMusicalContext();
+        int numerator = musicalContext.TimeSignature?.Numerator ?? 4;
+        // beatsPerBar uses the time signature's numerator (canonical 4 for 4/4,
+        // 3 for 3/4, 7 for 7/8). For non-standard denominators the bar still
+        // contains numerator-many denominator-units, which is what composers
+        // intuitively call "a bar's worth of beats" inside a live block.
+        double beatsPerBar = (double)numerator;
+
+        // Int payload → bars (the parser produces Int for both "live N bar/bars"
+        // and the omitted-default 1bar path).
+        if (quantizeValue.Type is FlowLang.TypeSystem.PrimitiveTypes.IntType)
+        {
+            int bars = quantizeValue.As<int>();
+            return bars * beatsPerBar;
+        }
+
+        // String payload → NoteValue suffix q/h/w/e/s.
+        if (quantizeValue.Type is FlowLang.TypeSystem.PrimitiveTypes.StringType)
+        {
+            string suffix = quantizeValue.As<string>();
+            double fractionOfWhole = suffix switch
+            {
+                "w" => 1.0,        // whole note
+                "h" => 0.5,        // half note
+                "q" => 0.25,       // quarter note
+                "e" => 0.125,      // eighth note
+                "s" => 0.0625,     // sixteenth note
+                _   => 0.25,       // charitable fallback to quarter
+            };
+            // 4 quarter-note beats per whole note in the canonical 4-beat bar.
+            return fractionOfWhole * 4.0;
+        }
+
+        // Unknown shape — charitable fallback to 1 bar.
+        return beatsPerBar;
     }
 
     private void ExecuteForStatement(ForStatement stmt)

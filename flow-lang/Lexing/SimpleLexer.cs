@@ -894,6 +894,7 @@ public class SimpleLexer
             "voicePool" => TokenType.VoicePool,
             "sustainPedal" => TokenType.SustainPedal,
             "tuning" => TokenType.Tuning,
+            "live" => TokenType.Live,             // Phase 38 (LIVE-01) — live <quantize> { ... } block (D-38-02)
             "match" => TokenType.Match,
             "when" => TokenType.When,
             "pickup" => TokenType.Pickup,
