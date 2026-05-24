@@ -130,19 +130,47 @@ public class StackFrame
         }
     }
 
+    /// <summary>
+    /// Returns the list of <see cref="FunctionOverload"/> registrations for
+    /// <paramref name="name"/> visible from this frame, walking the parent
+    /// chain top-down.
+    ///
+    /// <para>
+    /// Bundle A (260524-r4o) — fast path: the returned list MUST be treated
+    /// as read-only by callers. When only one frame in the parent chain
+    /// holds overloads for this name, this method returns a direct reference
+    /// to that frame's internal list to avoid per-call allocation. Mutating
+    /// the returned list is undefined behavior — register new overloads via
+    /// <see cref="DeclareFunction"/>. All 5 in-tree callers (StackFrame
+    /// self-recursion, ModuleLoader, ExpressionEvaluator,
+    /// ExecutionContext.ResolveFunction, ExecutionContext.TryResolveFunction)
+    /// are read-only as of Bundle A (260524-r4o); if a future caller mutates
+    /// the returned list, fix the caller (not this method).
+    /// </para>
+    /// </summary>
     public List<FunctionOverload> GetFunctionOverloads(string name)
     {
-        var overloads = new List<FunctionOverload>();
-
-        // Collect from current frame
         if (_functions.TryGetValue(name, out var localOverloads))
-            overloads.AddRange(localOverloads);
+        {
+            // Fast path: local hit AND parent chain has no shadow for this name
+            // → return the internal list directly (read-only contract above).
+            if (Parent == null || !Parent.HasFunction(name))
+                return localOverloads;
 
-        // Collect from parent frames
-        if (Parent != null)
+            // Multi-frame shadow: allocate-merge as before. Recurse into Parent;
+            // Parent's recursion may itself land on its own fast path, but the
+            // result is still consumed read-only via AddRange here.
+            var overloads = new List<FunctionOverload>(localOverloads);
             overloads.AddRange(Parent.GetFunctionOverloads(name));
+            return overloads;
+        }
 
-        return overloads;
+        // No local hit: defer entirely to parent (no wrapping). Parent's fast
+        // path may return its own internal list — safe because callers are
+        // read-only by contract.
+        if (Parent == null)
+            return new List<FunctionOverload>(0);
+        return Parent.GetFunctionOverloads(name);
     }
 
     public bool HasFunction(string name)
