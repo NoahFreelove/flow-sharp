@@ -7,7 +7,7 @@
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
 - ✅ **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, shipped 2026-05-10)
 - ✅ **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (shipped 2026-05-16) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + JetBrains plugin scaffolding, full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and the curated symphony showcase ("In Five Voices") + ragtime companion ("Stride & Stomp") as the milestone closer (pre-public → public pivot). Release: [v1.4.0](https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0)
-- 🚧 **v1.5 Stage, Studio, Web** — Phases 35-44 (started 2026-05-17) — citizenship + reach milestone: pattern matching + Rust-style diagnostics + pure-Flow test framework (Phase 35), Tidal-style sequence algebra + generative primitives + improv API (Phase 36), granular synthesis + time-stretch/pitch-shift + stereo pan + sampler polish (Phase 37), `live { ... }` block + modernized watch + REPL polish + audio input + OSC (Phase 38), MusicXML/LilyPond export + ABC/MML import (Phase 39), real-time MIDI + clock + Link + JACK transport sync (Phase 40), WASM playground + cross-platform binaries + `flow doc` + JetBrains Marketplace publish + third-genre showcase (Phase 41), type system + stdlib audit (Phase 42), module names + qualified imports (Phase 43), `enable strict;` mode (Phase 44). Phases 42-44 added 2026-05-24 to address stdlib growth pressure (collisions, dead-end types, charitable-default escape hatch). 66 v1.5 requirements across the 7 original phases (35-41) + 9 new REQ-AUDIT-NN added with Phase 42 closure on 2026-05-24 (75 total v1.5 requirements; Phase 43 + 44 requirements still TBD at their plan-phase). **Phase 42 SHIPPED 2026-05-24** — `42-AUDIT.md` deliverable feeds Phase 43 + Phase 44.
+- 🚧 **v1.5 Stage, Studio, Web** — Phases 35-46 (started 2026-05-17) — citizenship + reach milestone: pattern matching + Rust-style diagnostics + pure-Flow test framework (Phase 35), Tidal-style sequence algebra + generative primitives + improv API (Phase 36), granular synthesis + time-stretch/pitch-shift + stereo pan + sampler polish (Phase 37), `live { ... }` block + modernized watch + REPL polish + audio input + OSC (Phase 38), MusicXML/LilyPond export + ABC/MML import (Phase 39), real-time MIDI + clock + Link + JACK transport sync (Phase 40), WASM playground + cross-platform binaries + `flow doc` + JetBrains Marketplace publish + third-genre showcase (Phase 41), type system + stdlib audit (Phase 42), module names + qualified imports (Phase 43), `enable strict;` mode (Phase 44), Beat literal `Nb` + `enable beat-true-to-sig;` pragma (Phase 45). Phases 42-44 added 2026-05-24 to address stdlib growth pressure (collisions, dead-end types, charitable-default escape hatch); Phase 45 added 2026-05-24 as follow-up to Phase 43 (closes the literal-syntax half of the Beat-orphan finding). Phase 46 added 2026-05-24 as cleanup pass acting on `.planning/research/CODEBASE-BLOAT-AUDIT-2026-05-24.md` (~1,100 LOC removable upper-bound, 7 files deletable, zero high-confidence false-positives). 66 v1.5 requirements across the 7 original phases (35-41) + 9 new REQ-AUDIT-NN added with Phase 42 closure on 2026-05-24 (75 total v1.5 requirements; Phase 43 + 44 + 45 requirements still TBD at their plan-phase). **Phase 42 SHIPPED 2026-05-24** — `42-AUDIT.md` deliverable feeds Phase 43 + Phase 44.
 
 ## Phases
 
@@ -128,7 +128,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [ ] **Phase 41: Reach + v1.5 Closer** — WASM playground (Mono-WASM jiterpreter, ≤15 MB compressed), cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal)
 - [x] **Phase 42: Type System & Stdlib Audit** — Reflective audit of FlowType ↔ FunctionSignature graph + clamp/advisory/charitable inventory + .flow caller cross-reference; ships `42-AUDIT.md` deliverable with 7 gap-class sections + 53 routing tags (→ Phase 43 module/naming, → Phase 44 strict-mode Axis B sites, → v1.6-backlog); anchor finding: `BeatType` is the sole coercible orphan. **Zero production code touched — read-only audit phase** (invariant gate-enforced via empty production diff). Closed 9 REQ-AUDIT-NN across 4 plans; 26/26 Phase 42 fixtures GREEN. (completed 2026-05-24)
 - [x] **Phase 43: Module Names & Qualified Imports** — file-level `module math` declaration + qualified `math.sin` access; depends on Phase 42 AUDIT.md §1/§2/§5a routing (completed 2026-05-24)
-- [x] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites (completed 2026-05-24)
+- [ ] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites
 
 ### Phase Details
 
@@ -347,6 +347,8 @@ Plans:
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 0/0 | Not started | - |
+| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
+| 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 
 ### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24
 
@@ -404,9 +406,78 @@ Plans:
 **Tension flag**: Axis B contradicts `feedback_charitable_interpretation` head-on. Resolved by file-scoped opt-in — charitable behavior remains the default for all non-strict files (including the entire stdlib). Phase plan must preserve charitable behavior as the default everywhere; strict is purely an additive switch.
 
 **Depends on**: Phase 42 (audit provides the clamp/advisory site inventory needed to confidently enumerate Axis B sites — missing any one regresses the strict contract). Phase 43 optional but useful for organizing strict-mode test files.
+**Requirements**: REQ-STRICT-01, REQ-STRICT-02, REQ-STRICT-03, REQ-STRICT-04, REQ-STRICT-05, REQ-STRICT-06, REQ-STRICT-07, REQ-STRICT-08, REQ-STRICT-09, REQ-STRICT-10, REQ-STRICT-11, REQ-STRICT-12, REQ-STRICT-13, REQ-STRICT-14, REQ-STRICT-15
+**Plans:** 12 plans
+
+Plans:
+
+- [ ] 44-00-PLAN.md — Wave 0 test infrastructure + strict-error-manifest.csv (~126 in-scope rows + 5 carve-outs) + grep extractor + Phase44 Category trait
+- [ ] 44-01-PLAN.md — PragmaRegistry + ExecutionContext.StrictMode + ApplyStrictPragma + ModuleLoader per-imported-file push/restore (REQ-STRICT-01, REQ-STRICT-02)
+- [ ] 44-02-PLAN.md — ProcDeclaration.IsStrict AST capture + Interpreter push/pop + ExpressionEvaluator CallerStrictMode snapshot (REQ-STRICT-02, REQ-STRICT-03)
+- [ ] 44-03-PLAN.md — OverloadResolver Axis A tier-disable (BOTH Pitfall 1 clauses dropped) (REQ-STRICT-04)
+- [ ] 44-04-PLAN.md — 6 forward + 24 reverse explicit-conversion builtins (REQ-STRICT-05, REQ-STRICT-06)
+- [ ] 44-05-PLAN.md — 13 §6a input-perimeter clamp sites flip to [strict] errors + Phase44ClampGrepConsistencyTests (REQ-STRICT-07)
+- [ ] 44-06-PLAN.md — Axis B HIGH-priority advisory rewrites (~50 sites: SFZ + Patterns + Render + Match + DSP) (REQ-STRICT-08)
+- [ ] 44-07-PLAN.md — Axis B MED+LOW advisory rewrites (~65 sites: Generative + Improv + Notation + OSC + Tuning + Harmony + InputFunctions + MidiExport) + CarveOutsPreservedTests (REQ-STRICT-08)
+- [ ] 44-08-PLAN.md — Pre-strict bug fix: Void-wildcard print/if/not + AutoStr + (not) builtin registration (REQ-STRICT-10)
+- [ ] 44-09-PLAN.md — Axis C strict: Bool-required (and)/(or) + cross-type comparison errors + (equals 1 1.0) returns false strict + D-13 Dict regression-pin (REQ-STRICT-09, REQ-STRICT-11)
+- [ ] 44-10-PLAN.md — REPL :strict on/off sticky meta-command + LiveBlockStrictTests (REQ-STRICT-12, REQ-STRICT-13)
+- [ ] 44-11-PLAN.md — tests/strict/ positive .flow suite + showcase_strict.flow + Phase44TwoRunDeterminismTests + StrictFlowScriptSuiteTests (REQ-STRICT-14, REQ-STRICT-15)
+
+### Phase 45: Beat Literal Syntax & True-to-Sig Pragma
+
+**Goal**: Close the Beat-ergonomics gap left by Phase 43. Phase 42 audit correctly identified `BeatType` as the sole coercible orphan; Phase 43 added 4 Beat-typed builtins (`beatToSec` / `secToBeat` / `delay(Buffer, Beat)` / `renderBarAtBeat(Bar, Beat)`) but composers still can't write Beat values ergonomically because `(beat 0.5)` is wordier than `0.5b` and there's no surface syntax matching the rest of the music-type family (every other music type has a literal — see CLAUDE.md music-types table). This phase finishes what Phase 43 started.
+
+  - **`Nb` literal syntax** (lowercase `b`; `B` reserved to avoid `dB`/Decibel ambiguity). Defaults: `1b = 1 quarter note = 60/bpm seconds`, matching MIDI/DAW convention. No conflict with note `B` (which requires octave `B4`) or NoteValue letters `q/h/w/e/s` (none use `b`). Lexer follows existing `Nms`/`Ns`/`Nc`/`Nst`/`NdB`/`NHz` precedent.
+  - **`enable beat-true-to-sig;` file pragma**, opt-in, file-scoped, last-wins semantics matching the `enable justIntonation;` / `pythagorean;` / `equalTemperament;` family. When active, `Nb` literals AND `(beat N)` constructor calls multiply by `4.0/denominator` at evaluation time, reading active `MusicalContext.TimeSignature`. So in `timesig 6/8 { }` with the pragma on: `1b = 1 eighth`; in `timesig 2/2 { }`: `1b = 1 half`. Default `4/4` context unchanged. Gives composers the musician-intuition path for non-quarter time signatures (jigs, cut time, irregular meters) without breaking existing tempo/BPM/MIDI semantics.
+  - **Pragma affects literal CONSTRUCTION only.** Beat values stored are always quarters internally — the eval-time multiplier resolves to a quarter-relative double before the `Value.Beat` is constructed. All Phase 43 builtins, the 8 `secondsPerBeat = 60.0/bpm` sites (SongRenderer / VoiceAllocator / Timeline / PlaybackFunctions / MidiExport / SynthUtils / etc.), MIDI `microsPerBeat`, and `Voice.OffsetBeats` remain unchanged. Pure parse/eval-time desugar.
+  - **Cross-file consistency.** Beat values that flow from a `beat-true-to-sig` file to a non-pragma file retain their pre-converted quarter value — semantically consistent because internal storage is always quarters regardless of file.
+
+**Implementation surface**: Lexer `Nb` token + Parser BeatLiteral expression + ExpressionEvaluator context-lookup at BeatLiteral / `(beat N)` evaluation sites + ModuleLoader pragma registration → `ExecutionContext.BeatTrueToSig` flag + tutorial in `examples/beat/` (6/8 jig with/without pragma) + CLAUDE.md music-types table update.
+
+**Depends on**: Phase 43 (Beat builtins shipped). Independent of Phase 44 (Strict Mode) — ordered after 44 only because 44 planning is active in a parallel session and we want to avoid contention. Phase 45 could in principle execute in parallel with Phase 44 once 44's plans are locked.
 **Requirements**: TBD (defined at plan-phase)
 **Plans:** 0 plans
 
 Plans:
+- [ ] TBD (run /gsd-plan-phase 45 to break down)
 
-- [ ] TBD (run /gsd-plan-phase 44 to break down)
+### Phase 46: Codebase Bloat Removal
+
+**Goal**: Pay down accumulated cruft from 40+ phases of organic growth before v1.5 closes. Acts on the read-only audit deliverable at `.planning/research/CODEBASE-BLOAT-AUDIT-2026-05-24.md` (general-purpose agent sweep, 2026-05-24). Audit found ~1,100 LOC removable upper-bound across 7 deletable files + several secondary items, with **zero high-confidence false-positives** (anti-findings section explicitly preserves intentional patterns: per-synth delegation shells, hand-rolled DSP, music-type singletons, Pidgin reference, flow-lang/flow-interpreter split, charitable fallbacks, CC-BY 4.0 sample assets).
+
+**High-priority targets** (locked, low-risk):
+
+  1. **NoteSynthesizer.cs:24-182 deduplication** — ~80 LOC of private `BeatsToSeconds` + `CreateSilence` + oscillator loops that already exist in `SynthUtils`. Every other synth uses `SynthUtils` correctly; the primitive synths kept private copies. Pure delete-and-redirect.
+  2. **`Fixtures/` + `fixtures/` directory case-collision** — VERIFIED both exist on disk as distinct directories. Silent macOS APFS / Windows NTFS breakage waiting to happen; 6 C# test files reference each casing. Merge urgently (highest-priority risk reduction item).
+  3. **Track/Timeline/DAW-multitrack stack removal** — `Timeline.cs` (265 LOC) + `Track.cs` + 11 wrapper procs in `composition.flow`, consumed by exactly one test (`tests/test_full_song.flow`). Superseded by Song/Section in Phase 28. ~380 LOC removable.
+  4. **TimelineMap editor-highlighting plumbing** — ~250 LOC across parallel `RenderSongWithTimeline` overload + matching paths in BarRenderer/SequenceRenderer/SongRenderer. Zero callers in flow-lsp/flow-interpreter/flow-cli/tests. **Decision required at plan-phase**: confirm with flow-lsp roadmap (does v1.6 LSP plan to consume it?) — if yes, keep; otherwise remove.
+  5. **audio.flow quadruple-declared oscillator wrappers** — `createSineTone`/`createSawTone`/`createSquareTone`/`createTriangleTone` each declared 4× (internal proc forward-decl + Flow proc body, both ×2 for Hertz overload). C# decls are dead weight because the Flow wrappers always intercept. Collapse to single declaration each.
+
+**Secondary targets** (address opportunistically, plan-phase decides ordering):
+  - `bars.flow` legacy API — zero composer usage post note-streams
+  - `preview` builtin — registered but unused
+  - `exportWav` legacy alias paralleling canonical `writeWav`
+  - Pre-Phase-35 `test.flow` assertion legacy half (one test uses it)
+  - `ProgressionExpression`/`ProgressionCompiler` — one composer call site, no unit tests (decision needed: add tests or remove)
+  - 2× Phase35 diagnostics `.txt` baselines (orphaned)
+
+**Anti-scope** (DO NOT TOUCH — audit-preserved intentional patterns):
+  - Per-synth delegation shells (≤25-line by design per Phase 29 "Sample-based tonal instruments")
+  - Hand-rolled DSP (Fft/WindowFunctions/Psola/PhaseVocoder/Hps/PitchShiftEngine — NWaves/RubberBand rejected deliberately)
+  - Charitable-interpretation fallbacks (core philosophy per `feedback_charitable_interpretation`)
+  - Music-type singletons (DecibelType/MillisecondType/CentType boilerplate — documented tradeoff at `CentType.cs:24-27`)
+  - Pidgin package reference (intentional unused per CLAUDE.md)
+  - `flow-lang` ↔ `flow-interpreter` project split
+  - `flow-lang/Samples/` data assets (CC-BY 4.0 U-Iowa MIS bundle)
+
+**Quantification** (per audit upper-bound): ~1,100 LOC removable, 7 files deletable (Timeline.cs, Track.cs, TimelineMap.cs, bars.flow, Bars.cs, 2 diagnostics baselines), zero stale TODO/FIXME/HACK markers.
+
+**Acceptance**: Full test suite (`flow-lang.Tests` + every `tests/test_*.flow` script + Phase 28 RMS-windowed baselines + two-run cmp-clean determinism contract) remains green post-cleanup. No behavior changes — pure removal of dead/duplicate code. Cleanup commits stay atomic per target to allow selective revert if a removal regresses something subtle.
+
+**Depends on**: None — pure cleanup. Independent of Phases 44 + 45 currently in flight; could parallelize with either once their plans lock. Bundled as one phase (vs scattered `/gsd:quick` tasks) because targets share regression-risk surface (synthesizers, song rendering, test infrastructure) and one atomic test-suite-green gate per cleanup is more economical than running it 12+ times.
+**Requirements**: TBD (defined at plan-phase)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 46 to break down)
