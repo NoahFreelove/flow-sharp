@@ -32,6 +32,14 @@
     <None Update="Fixtures\midi\drum_loop.mid">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Phase 38 Plan 38-05 AUDIO-IN-01/02 — mic capture-path fixture
+         (1s sine 440Hz @ 48 kHz mono PCM; synthesized by
+         Tools/Phase38FixtureGenerator). Copied so MicBufferResampleTests
+         can read it from AppContext.BaseDirectory without walking the
+         project tree. -->
+    <None Update="Integration\Phase38\TestFixtures\mic_fixture.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <!-- Phase 35 LANG-04 Wave 2a — diagnostic-renderer golden baselines.
