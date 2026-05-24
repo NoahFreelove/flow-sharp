@@ -17,7 +17,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 ///
 /// Baseline routing decision (Plan 37-04 / D-37-12 / 37-HUMAN-UAT.md):
 /// Plan 37-04 pins a SMALL bundled-piano fixture
-/// (`Fixtures/Phase37/piano_warmth_smoke.flow`) that exercises:
+/// (`fixtures/Phase37/piano_warmth_smoke.flow`) that exercises:
 ///   - The 4-way velocity crossfade (pp/mp/mf/ff) via varied velocities in a
 ///     short 4-bar phrase
 ///   - The `release=2.0s` named arg (renderSong third positional)
@@ -48,7 +48,7 @@ public class Phase37RmsRegression : IDisposable
     {
         string testsRoot = FlowScriptData.FindTestsRoot();
         string repoRoot = Path.GetFullPath(Path.Combine(testsRoot, ".."));
-        string fixturePath = Path.Combine(repoRoot, "flow-lang.Tests", "Fixtures", "Phase37", "piano_warmth_smoke.flow");
+        string fixturePath = Path.Combine(repoRoot, "flow-lang.Tests", "fixtures", "Phase37", "piano_warmth_smoke.flow");
         string baselinePath = Path.Combine(repoRoot, "flow-lang.Tests", "baselines", "Phase37", "piano_warmth_smoke.wav");
         Assert.True(File.Exists(fixturePath), $"Fixture missing: {fixturePath}");
         Assert.True(File.Exists(baselinePath), $"Baseline missing: {baselinePath}");
