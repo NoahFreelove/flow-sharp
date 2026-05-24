@@ -122,7 +122,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [x] **Phase 35: Language Foundation** (completed 2026-05-19) — Pattern matching (literal + constructor + wildcard + guard + music-aware extractors), Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> as name` chain naming, and v1.4 housekeeping (humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 verification gaps, CLAUDE.md "Public as of v1.4" footnote revision)
 - [x] **Phase 36: Sequence Algebra & Generative** (completed 2026-05-22) — 13 Tidal-style combinators on `Sequence` in `@patterns` stdlib (every/fast/slow/chunk/phase/rev/iter/palindrome/jux/superimpose + sometimes/degrade/sparseSeq), generative primitives in `@generative` stdlib (Markov + train/generate split + MarkovModel ref-identity type, L-system + LsystemModel, cellular automata 1D + 2D Conway, Lorenz/logistic chaos maps + quantizeToScale bridge), parameterized sections (SECT-01 — full Phase 35 pattern syntax in signatures + overloading + defaults + `*N` repeat + Rust-style diagnostics), chord-aware Markov improvisation in `@improv` stdlib (`jam` + 3 baseline Flow-file style packs + XDG override discovery), universal named-argument syntax (D-36-11) with ~150-builtin backfill, and the new `Runtime/PrngRegistry` foundation routing PRNG by (SourceLocation, name) preserving two-run cmp-clean determinism
 - [x] **Phase 37: Sound Design + Sampler Polish (largest phase)** — Granular synthesis (Hann/Gaussian/Tukey), independent time-stretch + pitch-shift via hand-rolled phase vocoder + PSOLA + #auto HPS detector, stereo pan + SFZ-renderer stereo retrofit, sampler polish bundle (SFZ round-robin, velocity-layer crossfade, per-articulation envelope multipliers, warmer piano timbre, more flute samples, sampled drums) (completed 2026-05-23)
-- [ ] **Phase 38: Live Coding 2.0** — `live <quantize> { ... }` block + modernized watch mode + REPL polish (LSP-backed completion, `?fn` help, multiline + history search, piano-roll preview) + audio input via PA_STREAM_RECORD + OSC server/client (Rug.Osc 1.2.5)
+- [x] **Phase 38: Live Coding 2.0** — `live <quantize> { ... }` block + modernized watch mode + REPL polish (LSP-backed completion, `:help fn` per D-38-09 overrides `?fn`, multiline + history search, `(inspect seq)`/`(visualize seq)` alias pair per D-38-10) + audio input via PA_STREAM_RECORD + OSC server/client (Rug.Osc 1.2.5 + PrettyPrompt 4.1.1) (completed 2026-05-24)
 - [x] **Phase 39: Notation Citizenship** — MusicXML 3.1 partwise export (MuseScore reference consumer per D-v1.5-08), LilyPond text emit, ABC 2.1 + abc2midi import, MML PC-98 common-core import (completed 2026-05-23)
 - [ ] **Phase 40: Studio Sync** — IMidiBackend abstraction mirroring IAudioBackend (RtMidi.Core 1.0.53 for ALSA-seq + CoreMIDI + WinMM), MIDI clock master + slave (24 PPQN), Ableton Link (license-gated per D-v1.5-04), JACK transport (Linux opt-in)
 - [ ] **Phase 41: Reach + v1.5 Closer** — WASM playground (Mono-WASM jiterpreter, ≤15 MB compressed), cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal)
@@ -237,7 +237,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 38-07-PLAN.md — Closer (5 examples + 4 paired tests + 38-VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE sweep)
+- [x] 38-07-PLAN.md — Closer (5 examples + 4 paired tests + 38-VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE sweep) — `c5b7bad` (Task 1 examples + tests) / `d5e8fcb` (Task 2 VERIFICATION + HUMAN-UAT + REQUIREMENTS sweep) / Wave 4 closer commit (Task 4 tracking-file sweep)
 
 **UI hint**: yes
 
@@ -337,7 +337,7 @@ Plans:
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
-| 38. Live Coding 2.0 | v1.5 | 6/7 | In Progress|  |
+| 38. Live Coding 2.0 | v1.5 | 7/7 | Complete | 2026-05-24 |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
