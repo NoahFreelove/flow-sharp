@@ -1,0 +1,7965 @@
+{
+  "types": [
+    {
+      "name": "BarType",
+      "flow_name": "Bar",
+      "kind": "strict-equality",
+      "consumer_count": 16,
+      "specificity": 135,
+      "is_hashable": false
+    },
+    {
+      "name": "BeatType",
+      "flow_name": "Beat",
+      "kind": "coercible",
+      "consumer_count": 0,
+      "specificity": 139,
+      "is_hashable": true
+    },
+    {
+      "name": "BoolType",
+      "flow_name": "Bool",
+      "kind": "strict-equality",
+      "consumer_count": 8,
+      "specificity": 115,
+      "is_hashable": false
+    },
+    {
+      "name": "BufType",
+      "flow_name": "buf",
+      "kind": "strict-equality",
+      "consumer_count": 0,
+      "specificity": 135,
+      "is_hashable": false
+    },
+    {
+      "name": "BufferType",
+      "flow_name": "Buffer",
+      "kind": "strict-equality",
+      "consumer_count": 100,
+      "specificity": 136,
+      "is_hashable": false
+    },
+    {
+      "name": "CentType",
+      "flow_name": "Cent",
+      "kind": "coercible",
+      "consumer_count": 10,
+      "specificity": 143,
+      "is_hashable": false
+    },
+    {
+      "name": "ChordType",
+      "flow_name": "Chord",
+      "kind": "strict-equality",
+      "consumer_count": 8,
+      "specificity": 136,
+      "is_hashable": true
+    },
+    {
+      "name": "DecibelType",
+      "flow_name": "Decibel",
+      "kind": "coercible",
+      "consumer_count": 5,
+      "specificity": 128,
+      "is_hashable": false
+    },
+    {
+      "name": "DoubleType",
+      "flow_name": "Double",
+      "kind": "strict-equality",
+      "consumer_count": 179,
+      "specificity": 103,
+      "is_hashable": true
+    },
+    {
+      "name": "EnvelopeType",
+      "flow_name": "Envelope",
+      "kind": "strict-equality",
+      "consumer_count": 1,
+      "specificity": 138,
+      "is_hashable": false
+    },
+    {
+      "name": "FloatType",
+      "flow_name": "Float",
+      "kind": "strict-equality",
+      "consumer_count": 10,
+      "specificity": 105,
+      "is_hashable": true
+    },
+    {
+      "name": "FunctionType",
+      "flow_name": "Function",
+      "kind": "strict-equality",
+      "consumer_count": 19,
+      "specificity": 50,
+      "is_hashable": false
+    },
+    {
+      "name": "HertzType",
+      "flow_name": "Hertz",
+      "kind": "coercible",
+      "consumer_count": 7,
+      "specificity": 144,
+      "is_hashable": false
+    },
+    {
+      "name": "IntType",
+      "flow_name": "Int",
+      "kind": "strict-equality",
+      "consumer_count": 202,
+      "specificity": 110,
+      "is_hashable": true
+    },
+    {
+      "name": "LongType",
+      "flow_name": "Long",
+      "kind": "strict-equality",
+      "consumer_count": 10,
+      "specificity": 108,
+      "is_hashable": true
+    },
+    {
+      "name": "LsystemModelType",
+      "flow_name": "LsystemModel",
+      "kind": "reference-identity",
+      "consumer_count": 3,
+      "specificity": 149,
+      "is_hashable": false
+    },
+    {
+      "name": "MarkovModelType",
+      "flow_name": "MarkovModel",
+      "kind": "reference-identity",
+      "consumer_count": 4,
+      "specificity": 148,
+      "is_hashable": false
+    },
+    {
+      "name": "MillisecondType",
+      "flow_name": "Millisecond",
+      "kind": "coercible",
+      "consumer_count": 9,
+      "specificity": 122,
+      "is_hashable": false
+    },
+    {
+      "name": "MusicalNoteType",
+      "flow_name": "MusicalNote",
+      "kind": "coercible",
+      "consumer_count": 3,
+      "specificity": 131,
+      "is_hashable": false
+    },
+    {
+      "name": "NoteType",
+      "flow_name": "Note",
+      "kind": "strict-equality",
+      "consumer_count": 11,
+      "specificity": 130,
+      "is_hashable": true
+    },
+    {
+      "name": "NoteValueType",
+      "flow_name": "NoteValue",
+      "kind": "coercible",
+      "consumer_count": 6,
+      "specificity": 132,
+      "is_hashable": false
+    },
+    {
+      "name": "NumberType",
+      "flow_name": "Number",
+      "kind": "strict-equality",
+      "consumer_count": 10,
+      "specificity": 90,
+      "is_hashable": false
+    },
+    {
+      "name": "OscHandleType",
+      "flow_name": "OscHandle",
+      "kind": "reference-identity",
+      "consumer_count": 3,
+      "specificity": 151,
+      "is_hashable": false
+    },
+    {
+      "name": "OscillatorStateType",
+      "flow_name": "OscillatorState",
+      "kind": "strict-equality",
+      "consumer_count": 5,
+      "specificity": 137,
+      "is_hashable": false
+    },
+    {
+      "name": "SecondType",
+      "flow_name": "Second",
+      "kind": "coercible",
+      "consumer_count": 4,
+      "specificity": 123,
+      "is_hashable": false
+    },
+    {
+      "name": "SectionType",
+      "flow_name": "Section",
+      "kind": "strict-equality",
+      "consumer_count": 2,
+      "specificity": 138,
+      "is_hashable": false
+    },
+    {
+      "name": "SemitoneType",
+      "flow_name": "Semitone",
+      "kind": "coercible",
+      "consumer_count": 12,
+      "specificity": 125,
+      "is_hashable": false
+    },
+    {
+      "name": "SequenceType",
+      "flow_name": "Sequence",
+      "kind": "strict-equality",
+      "consumer_count": 72,
+      "specificity": 134,
+      "is_hashable": false
+    },
+    {
+      "name": "SfzType",
+      "flow_name": "Sfz",
+      "kind": "reference-identity",
+      "consumer_count": 0,
+      "specificity": 150,
+      "is_hashable": false
+    },
+    {
+      "name": "SongType",
+      "flow_name": "Song",
+      "kind": "strict-equality",
+      "consumer_count": 11,
+      "specificity": 140,
+      "is_hashable": false
+    },
+    {
+      "name": "StringType",
+      "flow_name": "String",
+      "kind": "strict-equality",
+      "consumer_count": 63,
+      "specificity": 120,
+      "is_hashable": true
+    },
+    {
+      "name": "SymbolType",
+      "flow_name": "Symbol",
+      "kind": "strict-equality",
+      "consumer_count": 39,
+      "specificity": 125,
+      "is_hashable": true
+    },
+    {
+      "name": "TimeSignatureType",
+      "flow_name": "TimeSignature",
+      "kind": "strict-equality",
+      "consumer_count": 3,
+      "specificity": 133,
+      "is_hashable": false
+    },
+    {
+      "name": "TrackType",
+      "flow_name": "Track",
+      "kind": "strict-equality",
+      "consumer_count": 5,
+      "specificity": 141,
+      "is_hashable": false
+    },
+    {
+      "name": "TuningType",
+      "flow_name": "Tuning",
+      "kind": "reference-identity",
+      "consumer_count": 1,
+      "specificity": 137,
+      "is_hashable": false
+    },
+    {
+      "name": "VoiceType",
+      "flow_name": "Voice",
+      "kind": "strict-equality",
+      "consumer_count": 4,
+      "specificity": 140,
+      "is_hashable": false
+    },
+    {
+      "name": "VoidType",
+      "flow_name": "Void",
+      "kind": "coercible",
+      "consumer_count": 30,
+      "specificity": 0,
+      "is_hashable": false
+    }
+  ],
+  "signatures": [
+    {
+      "name": "?",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "??",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "??reset",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "??set",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "Nothing",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "__enableNotationIoModule",
+      "input_types": [],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "__enableOscModule",
+      "input_types": [],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "__enableSfzModule",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "instruments"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "abc",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "source"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "abs",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "abs",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "accelerando",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "amount"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "add",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "add",
+      "input_types": [
+        "Float",
+        "Float"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "add",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "add",
+      "input_types": [
+        "Long",
+        "Long"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "add",
+      "input_types": [
+        "Number",
+        "Number"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addBarToSequence",
+      "input_types": [
+        "Sequence",
+        "Bar"
+      ],
+      "parameter_names": [
+        "seq",
+        "bar"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addBarToSong",
+      "input_types": [
+        "Song",
+        "String"
+      ],
+      "parameter_names": [
+        "song",
+        "name"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addBarToSong",
+      "input_types": [
+        "Song",
+        "String",
+        "Int"
+      ],
+      "parameter_names": [
+        "song",
+        "name",
+        "repeat"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addBarToSong",
+      "input_types": [
+        "Song",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "song",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addNoteToBar",
+      "input_types": [
+        "Bar",
+        "Note"
+      ],
+      "parameter_names": [
+        "bar",
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addNoteToBar",
+      "input_types": [
+        "Bar",
+        "MusicalNote"
+      ],
+      "parameter_names": [
+        "bar",
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "addVoice",
+      "input_types": [
+        "Track",
+        "Voice"
+      ],
+      "parameter_names": [
+        "track",
+        "voice"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "and",
+      "input_types": [
+        "Lazy\u003CBool\u003E",
+        "Lazy\u003CBool\u003E"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "and",
+      "input_types": [
+        "Bool",
+        "Bool"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "append",
+      "input_types": [
+        "Void[]",
+        "Void"
+      ],
+      "parameter_names": [
+        "arr",
+        "element"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "appendBuffers",
+      "input_types": [
+        "Buffer",
+        "Buffer"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "applyEnvelope",
+      "input_types": [
+        "Buffer",
+        "Envelope"
+      ],
+      "parameter_names": [
+        "buf",
+        "env"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "arpeggio",
+      "input_types": [
+        "Chord",
+        "String"
+      ],
+      "parameter_names": [
+        "chord",
+        "direction"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "arpeggio",
+      "input_types": [
+        "Chord",
+        "NoteValue",
+        "String",
+        "String"
+      ],
+      "parameter_names": [
+        "chord",
+        "rate",
+        "direction",
+        "pattern"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "assert",
+      "input_types": [
+        "Bool"
+      ],
+      "parameter_names": [
+        "cond"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "assertBytesEqual",
+      "input_types": [
+        "Buffer",
+        "Buffer"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "assertEq",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "actual",
+        "expected"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "assertNotesMatch",
+      "input_types": [
+        "Sequence",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "assertWithinDb",
+      "input_types": [
+        "Buffer",
+        "Buffer",
+        "Decibel"
+      ],
+      "parameter_names": [
+        "a",
+        "b",
+        "tolerance"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "audioDevices",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "augment",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "bandpass",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "low",
+        "high"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "bandpass",
+      "input_types": [
+        "Buffer",
+        "Hertz",
+        "Hertz"
+      ],
+      "parameter_names": [
+        "buf",
+        "low",
+        "high"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "barLength",
+      "input_types": [
+        "Bar"
+      ],
+      "parameter_names": [
+        "bar"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "beat",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "beatsToFrames",
+      "input_types": [
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "beats",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "bufferHex",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "bufferHex",
+      "input_types": [
+        "Buffer",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "calculateOverflow",
+      "input_types": [
+        "Bar"
+      ],
+      "parameter_names": [
+        "bar"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "ceil",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "cellular",
+      "input_types": [
+        "Int",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "rule",
+        "width",
+        "steps",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "cellularSeeded",
+      "input_types": [
+        "Int",
+        "Int",
+        "Int",
+        "Int",
+        "Bool[]"
+      ],
+      "parameter_names": [
+        "rule",
+        "width",
+        "steps",
+        "seed",
+        "initialPattern"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "chord",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "symbol"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "chord",
+      "input_types": [
+        "Note"
+      ],
+      "parameter_names": [
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "chordNotes",
+      "input_types": [
+        "Chord"
+      ],
+      "parameter_names": [
+        "chord"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "chordQuality",
+      "input_types": [
+        "Chord"
+      ],
+      "parameter_names": [
+        "chord"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "chordRoot",
+      "input_types": [
+        "Chord"
+      ],
+      "parameter_names": [
+        "chord"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "chunk",
+      "input_types": [
+        "Int",
+        "Function",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "n",
+        "fn",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "compress",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "threshold",
+        "ratio"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "compress",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Double",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "threshold",
+        "ratio",
+        "attack",
+        "release"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "compress",
+      "input_types": [
+        "Buffer",
+        "Decibel",
+        "Double",
+        "Millisecond",
+        "Millisecond"
+      ],
+      "parameter_names": [
+        "buf",
+        "threshold",
+        "ratio",
+        "attack",
+        "release"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "concat",
+      "input_types": [
+        "String",
+        "String"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "concat",
+      "input_types": [
+        "Void[]",
+        "Void[]"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "concat",
+      "input_types": [
+        "Sequence",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "contains",
+      "input_types": [
+        "Void[]",
+        "Void"
+      ],
+      "parameter_names": [
+        "arr",
+        "element"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "copyBuffer",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "cos",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createADSR",
+      "input_types": [
+        "Double",
+        "Double",
+        "Double",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "attack",
+        "decay",
+        "sustain",
+        "release",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createAR",
+      "input_types": [
+        "Double",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "attack",
+        "release",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createBar",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "createBarFromNotes",
+      "input_types": [
+        "Note[]"
+      ],
+      "parameter_names": [
+        "notes"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createBarWithNote",
+      "input_types": [
+        "Note"
+      ],
+      "parameter_names": [
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createBuffer",
+      "input_types": [
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "frames",
+        "channels",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createClip",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "duration",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createEmptyMusicalBar",
+      "input_types": [
+        "TimeSignature"
+      ],
+      "parameter_names": [
+        "timeSig"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createMusicalBar",
+      "input_types": [
+        "Note[]",
+        "TimeSignature"
+      ],
+      "parameter_names": [
+        "notes",
+        "timeSig"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createMusicalNote",
+      "input_types": [
+        "Note",
+        "NoteValue"
+      ],
+      "parameter_names": [
+        "pitch",
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createOscillatorState",
+      "input_types": [
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "frequency",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createRest",
+      "input_types": [
+        "NoteValue"
+      ],
+      "parameter_names": [
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createSequence",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "createSineTone",
+      "input_types": [
+        "Double",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "duration",
+        "frequency",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createSineTone",
+      "input_types": [
+        "Double",
+        "Hertz",
+        "Double"
+      ],
+      "parameter_names": [
+        "duration",
+        "frequency",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createSong",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "title"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createTimeSignature",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "numerator",
+        "denominator"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createTrack",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "channels",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "createVoice",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "offset"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "crescendo",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "startVel",
+        "endVel"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "decrescendo",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "startVel",
+        "endVel"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "degrade",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "delay",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "timeMs",
+        "feedback",
+        "mix"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "delay",
+      "input_types": [
+        "Buffer",
+        "Millisecond",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "timeMs",
+        "feedback",
+        "mix"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "delay",
+      "input_types": [
+        "Buffer",
+        "NoteValue",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "rate",
+        "feedback",
+        "mix"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "dict",
+      "input_types": [
+        "Void"
+      ],
+      "parameter_names": null,
+      "is_var_args": true
+    },
+    {
+      "name": "dictTuple",
+      "input_types": [
+        "Tuple\u003C\u003C*\u003E\u003E"
+      ],
+      "parameter_names": null,
+      "is_var_args": true
+    },
+    {
+      "name": "diminish",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "div",
+      "input_types": [
+        "Float",
+        "Float"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "div",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "div",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "div",
+      "input_types": [
+        "Long",
+        "Long"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "div",
+      "input_types": [
+        "Number",
+        "Number"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "doubleToInt",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "down",
+      "input_types": [
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "octaves"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "drop",
+      "input_types": [
+        "Void[]",
+        "Int"
+      ],
+      "parameter_names": [
+        "arr",
+        "n"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "each",
+      "input_types": [
+        "Void[]",
+        "Function"
+      ],
+      "parameter_names": [
+        "arr",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "each",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Function"
+      ],
+      "parameter_names": [
+        "d",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "empty",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "enharmonic",
+      "input_types": [
+        "Note"
+      ],
+      "parameter_names": [
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "equals",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "euclidean",
+      "input_types": [
+        "Int",
+        "Int",
+        "Note"
+      ],
+      "parameter_names": [
+        "hits",
+        "steps",
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "euclidean",
+      "input_types": [
+        "Int",
+        "Int",
+        "Note",
+        "Double"
+      ],
+      "parameter_names": [
+        "hits",
+        "steps",
+        "note",
+        "swing"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "euclidean",
+      "input_types": [
+        "Int",
+        "Int",
+        "Note",
+        "Double",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "hits",
+        "steps",
+        "note",
+        "swing",
+        "humanize",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "eval",
+      "input_types": [
+        "Lazy\u003CVoid\u003E"
+      ],
+      "parameter_names": [
+        "thunk"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "every",
+      "input_types": [
+        "Int",
+        "Function",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "n",
+        "fn",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "exportWav",
+      "input_types": [
+        "Buffer",
+        "String"
+      ],
+      "parameter_names": [
+        "buf",
+        "path"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "exportWav",
+      "input_types": [
+        "Buffer",
+        "String",
+        "Int"
+      ],
+      "parameter_names": [
+        "buf",
+        "path",
+        "bitDepth"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "fadeIn",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "fadeOut",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "fast",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "factor"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "fermata",
+      "input_types": [
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "index"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "fillBuffer",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "filter",
+      "input_types": [
+        "Void[]",
+        "Function"
+      ],
+      "parameter_names": [
+        "arr",
+        "pred"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "filter",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Function"
+      ],
+      "parameter_names": [
+        "d",
+        "pred"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "floor",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "framesToBeats",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "frames",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "gain",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "db"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "gain",
+      "input_types": [
+        "Buffer",
+        "Decibel"
+      ],
+      "parameter_names": [
+        "buf",
+        "db"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "generateSaw",
+      "input_types": [
+        "Buffer",
+        "OscillatorState",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "state",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "generateSine",
+      "input_types": [
+        "Buffer",
+        "OscillatorState",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "state",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "generateSquare",
+      "input_types": [
+        "Buffer",
+        "OscillatorState",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "state",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "generateTriangle",
+      "input_types": [
+        "Buffer",
+        "OscillatorState",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "state",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "get",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Void"
+      ],
+      "parameter_names": [
+        "d",
+        "k"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getBPM",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "getChannels",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getFrames",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getNoteFromBar",
+      "input_types": [
+        "Bar",
+        "Int"
+      ],
+      "parameter_names": [
+        "bar",
+        "index"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getOr",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "d",
+        "k",
+        "default"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getRemainingBeats",
+      "input_types": [
+        "Bar"
+      ],
+      "parameter_names": [
+        "bar"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getSample",
+      "input_types": [
+        "Buffer",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buf",
+        "frame",
+        "channel"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getSampleRate",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getSections",
+      "input_types": [
+        "Song"
+      ],
+      "parameter_names": [
+        "song"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "getTimeSignature",
+      "input_types": [
+        "Bar"
+      ],
+      "parameter_names": [
+        "bar"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "granular",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "grain",
+        "density",
+        "jitter"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "granular",
+      "input_types": [
+        "Buffer",
+        "Millisecond",
+        "Hertz",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "grain",
+        "density",
+        "jitter"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "granular",
+      "input_types": [
+        "Buffer",
+        "Millisecond",
+        "Hertz",
+        "Double",
+        "Symbol"
+      ],
+      "parameter_names": [
+        "buffer",
+        "grain",
+        "density",
+        "jitter",
+        "windowing"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "gt",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "gte",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "has",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Void"
+      ],
+      "parameter_names": [
+        "d",
+        "k"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "head",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "highpass",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "cutoff"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "highpass",
+      "input_types": [
+        "Buffer",
+        "Hertz"
+      ],
+      "parameter_names": [
+        "buf",
+        "cutoff"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "humanize",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "amount"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "humanizeGaussian",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "amount",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "idiv",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "if",
+      "input_types": [
+        "Bool",
+        "Lazy\u003CVoid\u003E",
+        "Lazy\u003CVoid\u003E"
+      ],
+      "parameter_names": [
+        "cond",
+        "then",
+        "else"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "if",
+      "input_types": [
+        "Bool",
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "cond",
+        "then",
+        "else"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "init",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "inspect",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "intToDouble",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "inversion",
+      "input_types": [
+        "Chord",
+        "Int"
+      ],
+      "parameter_names": [
+        "chord",
+        "n"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "invert",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "isAudioAvailable",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "iter",
+      "input_types": [
+        "Int",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "n",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jam",
+      "input_types": [
+        "Sequence",
+        "Symbol",
+        "Int",
+        "String",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "over",
+        "style",
+        "length",
+        "key",
+        "seed",
+        "order"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jam",
+      "input_types": [
+        "Sequence",
+        "Symbol",
+        "Int",
+        "String",
+        "Int"
+      ],
+      "parameter_names": [
+        "over",
+        "style",
+        "length",
+        "key",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jam",
+      "input_types": [
+        "Sequence",
+        "Symbol",
+        "Int",
+        "String"
+      ],
+      "parameter_names": [
+        "over",
+        "style",
+        "length",
+        "key"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jam",
+      "input_types": [
+        "Sequence",
+        "Symbol",
+        "Int"
+      ],
+      "parameter_names": [
+        "over",
+        "style",
+        "length"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jam",
+      "input_types": [
+        "Sequence",
+        "Symbol"
+      ],
+      "parameter_names": [
+        "over",
+        "style"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jam",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "over"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "jux",
+      "input_types": [
+        "Function",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "fn",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "keys",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "d"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "last",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "legato",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "overlap"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "len",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "s"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "len",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "life",
+      "input_types": [
+        "Int",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "width",
+        "height",
+        "steps",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "list",
+      "input_types": [
+        "Void"
+      ],
+      "parameter_names": null,
+      "is_var_args": true
+    },
+    {
+      "name": "listStyles",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "loadScala",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "path"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loadScala",
+      "input_types": [
+        "String",
+        "String"
+      ],
+      "parameter_names": [
+        "sclPath",
+        "kbmPath"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loadSfz",
+      "input_types": [
+        "Symbol"
+      ],
+      "parameter_names": [
+        "instrument"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loadSfz",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "path"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loadWav",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "path"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loadWav",
+      "input_types": [
+        "String",
+        "Int"
+      ],
+      "parameter_names": [
+        "path",
+        "semitones"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loadWav",
+      "input_types": [
+        "String",
+        "Double"
+      ],
+      "parameter_names": [
+        "path",
+        "ratio"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "log",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "logistic",
+      "input_types": [
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "r",
+        "length",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loop",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "loop",
+      "input_types": [
+        "Buffer",
+        "Int"
+      ],
+      "parameter_names": [
+        "buf",
+        "count"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lorenz",
+      "input_types": [
+        "Double",
+        "Double",
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "sigma",
+        "rho",
+        "beta",
+        "length",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lowpass",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "cutoff"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lowpass",
+      "input_types": [
+        "Buffer",
+        "Hertz"
+      ],
+      "parameter_names": [
+        "buf",
+        "cutoff"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lsystem",
+      "input_types": [
+        "Symbol",
+        "Dict\u003CVoid, Void\u003E",
+        "Int"
+      ],
+      "parameter_names": [
+        "axiom",
+        "rules",
+        "iterations"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lsystemEqual",
+      "input_types": [
+        "LsystemModel",
+        "LsystemModel"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lsystemGenerate",
+      "input_types": [
+        "LsystemModel",
+        "Int"
+      ],
+      "parameter_names": [
+        "model",
+        "iterations"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lsystemModel",
+      "input_types": [
+        "Symbol",
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "axiom",
+        "rules"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lsystemToSequence",
+      "input_types": [
+        "Symbol[]",
+        "Function"
+      ],
+      "parameter_names": [
+        "expanded",
+        "mapper"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lt",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "lte",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "map",
+      "input_types": [
+        "Void[]",
+        "Function"
+      ],
+      "parameter_names": [
+        "arr",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "map",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Function"
+      ],
+      "parameter_names": [
+        "d",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markov",
+      "input_types": [
+        "Sequence",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "corpus",
+        "order",
+        "length",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markov",
+      "input_types": [
+        "Sequence",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "corpus",
+        "order",
+        "length"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markovEqual",
+      "input_types": [
+        "MarkovModel",
+        "MarkovModel"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markovGenerate",
+      "input_types": [
+        "MarkovModel",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "model",
+        "length",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markovGenerate",
+      "input_types": [
+        "MarkovModel",
+        "Int"
+      ],
+      "parameter_names": [
+        "model",
+        "length"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markovTrain",
+      "input_types": [
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "corpus",
+        "order"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "markovTrain",
+      "input_types": [
+        "Sequence",
+        "Int",
+        "Void"
+      ],
+      "parameter_names": [
+        "corpus",
+        "order",
+        "features"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "max",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "max",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "merge",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "d1",
+        "d2"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "micBuffer",
+      "input_types": [
+        "Second"
+      ],
+      "parameter_names": [
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "micBuffer",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "min",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "min",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mix",
+      "input_types": [
+        "Buffer",
+        "Buffer"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mixBuffers",
+      "input_types": [
+        "Buffer",
+        "Buffer",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b",
+        "gainA",
+        "gainB"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mml",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "source"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mul",
+      "input_types": [
+        "Float",
+        "Float"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mul",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mul",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mul",
+      "input_types": [
+        "Long",
+        "Long"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "mul",
+      "input_types": [
+        "Number",
+        "Number"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "nanFloat",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "neg",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "neg",
+      "input_types": [
+        "Long"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "neg",
+      "input_types": [
+        "Float"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "neg",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "neg",
+      "input_types": [
+        "Number"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "noise",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "seconds"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "noise",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "seconds",
+        "amplitude"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "noise",
+      "input_types": [
+        "Double",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "seconds",
+        "amplitude",
+        "channels"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "noise",
+      "input_types": [
+        "Double",
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "seconds",
+        "amplitude",
+        "channels",
+        "sampleRate"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "noteToFrequency",
+      "input_types": [
+        "Note"
+      ],
+      "parameter_names": [
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "noteValueToBeats",
+      "input_types": [
+        "NoteValue",
+        "Int"
+      ],
+      "parameter_names": [
+        "noteValue",
+        "denominator"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "or",
+      "input_types": [
+        "Lazy\u003CBool\u003E",
+        "Lazy\u003CBool\u003E"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "or",
+      "input_types": [
+        "Bool",
+        "Bool"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "oscBundle",
+      "input_types": [
+        "OscHandle"
+      ],
+      "parameter_names": [
+        "packet"
+      ],
+      "is_var_args": true
+    },
+    {
+      "name": "oscListen",
+      "input_types": [
+        "Int",
+        "String",
+        "Function"
+      ],
+      "parameter_names": [
+        "port",
+        "path",
+        "handler"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "oscSend",
+      "input_types": [
+        "String",
+        "Int",
+        "String"
+      ],
+      "parameter_names": [
+        "host",
+        "port",
+        "path"
+      ],
+      "is_var_args": true
+    },
+    {
+      "name": "oscSendBundle",
+      "input_types": [
+        "String",
+        "Int",
+        "OscHandle"
+      ],
+      "parameter_names": [
+        "host",
+        "port",
+        "bundle"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "oscStop",
+      "input_types": [
+        "OscHandle"
+      ],
+      "parameter_names": [
+        "handle"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "oscillator",
+      "input_types": [
+        "String",
+        "Void[]"
+      ],
+      "parameter_names": [
+        "name",
+        "wavetable"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "oscillator",
+      "input_types": [
+        "String",
+        "Function"
+      ],
+      "parameter_names": [
+        "name",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "oscillator",
+      "input_types": [
+        "String",
+        "Function",
+        "Int"
+      ],
+      "parameter_names": [
+        "name",
+        "fn",
+        "tableSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "palindrome",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pan",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "pan"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "phase",
+      "input_types": [
+        "Double",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "offset",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pi",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod",
+        "windowSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Cent",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "cents",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod",
+        "windowSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode",
+        "frameSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode",
+        "frameSize",
+        "hopSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pitchShift",
+      "input_types": [
+        "Buffer",
+        "Semitone",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "semitones",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod",
+        "windowSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "play",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "play",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "polyrhythm",
+      "input_types": [
+        "Sequence",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "polyrhythm",
+      "input_types": [
+        "Sequence",
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b",
+        "totalBeats"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "portamento",
+      "input_types": [
+        "Sequence",
+        "Millisecond"
+      ],
+      "parameter_names": [
+        "seq",
+        "glideMs"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "pow",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "base",
+        "exp"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "prepend",
+      "input_types": [
+        "Void",
+        "Void[]"
+      ],
+      "parameter_names": [
+        "element",
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "prettyBuffer",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "preview",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "print",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "s"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "quantize",
+      "input_types": [
+        "Sequence",
+        "NoteValue",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "resolution",
+        "strength",
+        "swing"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "quantizeToScale",
+      "input_types": [
+        "Double[]",
+        "String"
+      ],
+      "parameter_names": [
+        "series",
+        "scaleName"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "quantizeToScale",
+      "input_types": [
+        "Double[]",
+        "Note[]"
+      ],
+      "parameter_names": [
+        "series",
+        "scaleNotes"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "range",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "start",
+        "end"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "range",
+      "input_types": [
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "start",
+        "end",
+        "step"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "reduce",
+      "input_types": [
+        "Void[]",
+        "Void",
+        "Function"
+      ],
+      "parameter_names": [
+        "arr",
+        "initial",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "registerStyle",
+      "input_types": [
+        "Symbol",
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "name",
+        "pack"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "remove",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Void"
+      ],
+      "parameter_names": [
+        "d",
+        "k"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "renderBarAtBeat",
+      "input_types": [
+        "Bar",
+        "Double",
+        "String",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "bar",
+        "beat",
+        "synth",
+        "sampleRate",
+        "bpm"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "renderBarAtTime",
+      "input_types": [
+        "Bar",
+        "Double",
+        "String",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "bar",
+        "time",
+        "synth",
+        "sampleRate",
+        "bpm"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "renderBarToVoices",
+      "input_types": [
+        "Bar",
+        "String",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "bar",
+        "synth",
+        "sampleRate",
+        "bpm"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "renderSequenceToVoices",
+      "input_types": [
+        "Sequence",
+        "String",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "synth",
+        "sampleRate",
+        "bpm"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "renderSong",
+      "input_types": [
+        "Song",
+        "String"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "renderSong",
+      "input_types": [
+        "Song",
+        "String",
+        "Second"
+      ],
+      "parameter_names": [
+        "song",
+        "instrument",
+        "release"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "renderSong",
+      "input_types": [
+        "Song",
+        "Function"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "renderTrack",
+      "input_types": [
+        "Track",
+        "Double"
+      ],
+      "parameter_names": [
+        "track",
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "repeat",
+      "input_types": [
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "times"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "repeat",
+      "input_types": [
+        "Sequence",
+        "Int",
+        "Semitone"
+      ],
+      "parameter_names": [
+        "seq",
+        "times",
+        "transposeBy"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "resetPhase",
+      "input_types": [
+        "OscillatorState"
+      ],
+      "parameter_names": [
+        "state"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "resolveNumeral",
+      "input_types": [
+        "String",
+        "String"
+      ],
+      "parameter_names": [
+        "numeral",
+        "key"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "retrograde",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "rev",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "reverb",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "room"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "reverb",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "room",
+        "damping",
+        "mix"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "reverb",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Second"
+      ],
+      "parameter_names": [
+        "buf",
+        "room",
+        "decay"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "reverse",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "ritardando",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "amount"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "round",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "scaleBuffer",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "factor"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "scaleNotes",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "key"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sectionSequences",
+      "input_types": [
+        "Section"
+      ],
+      "parameter_names": [
+        "section"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sequals",
+      "input_types": [
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "set",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E",
+        "Void",
+        "Void"
+      ],
+      "parameter_names": [
+        "d",
+        "k",
+        "v"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setAudioDevice",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "device"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setBPM",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "bpm"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setMaxIterations",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "max"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setMaxVoices",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "max"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setSample",
+      "input_types": [
+        "Buffer",
+        "Int",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "frame",
+        "channel",
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setTimeSignature",
+      "input_types": [
+        "Bar",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "bar",
+        "numerator",
+        "denominator"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setTrackGain",
+      "input_types": [
+        "Track",
+        "Double"
+      ],
+      "parameter_names": [
+        "track",
+        "gain"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setTrackOffset",
+      "input_types": [
+        "Track",
+        "Double"
+      ],
+      "parameter_names": [
+        "track",
+        "offset"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setTrackPan",
+      "input_types": [
+        "Track",
+        "Double"
+      ],
+      "parameter_names": [
+        "track",
+        "pan"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setTtsCommand",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "command"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setVoiceGain",
+      "input_types": [
+        "Voice",
+        "Double"
+      ],
+      "parameter_names": [
+        "voice",
+        "gain"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setVoiceOffset",
+      "input_types": [
+        "Voice",
+        "Double"
+      ],
+      "parameter_names": [
+        "voice",
+        "offset"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "setVoicePan",
+      "input_types": [
+        "Voice",
+        "Double"
+      ],
+      "parameter_names": [
+        "voice",
+        "pan"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sidechain",
+      "input_types": [
+        "Buffer",
+        "Buffer",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "sidechain",
+        "threshold",
+        "ratio"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sidechain",
+      "input_types": [
+        "Buffer",
+        "Buffer",
+        "Double",
+        "Double",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "sidechain",
+        "threshold",
+        "ratio",
+        "attack",
+        "release"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sidechain",
+      "input_types": [
+        "Buffer",
+        "Buffer",
+        "Decibel",
+        "Double",
+        "Millisecond",
+        "Millisecond"
+      ],
+      "parameter_names": [
+        "buf",
+        "sidechain",
+        "threshold",
+        "ratio",
+        "attack",
+        "release"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sin",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sing",
+      "input_types": [
+        "String",
+        "Note",
+        "Double"
+      ],
+      "parameter_names": [
+        "phoneme",
+        "pitch",
+        "duration"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "size",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "d"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "slice",
+      "input_types": [
+        "Void[]",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "arr",
+        "start",
+        "end"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "slice",
+      "input_types": [
+        "Sequence",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "start",
+        "end"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sliceBuffer",
+      "input_types": [
+        "Buffer",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buf",
+        "start",
+        "end"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "slow",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "factor"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sometimes",
+      "input_types": [
+        "Double",
+        "Function",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "prob",
+        "fn",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sometimes",
+      "input_types": [
+        "Function",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "fn",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sparseSeq",
+      "input_types": [
+        "Double",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "prob",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sqrt",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stop",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Int"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Float"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Long"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Number"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Bool"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Note"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Symbol"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Bar"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Semitone"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Cent"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Millisecond"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Second"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Decibel"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "value"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Chord"
+      ],
+      "parameter_names": [
+        "chord"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Section"
+      ],
+      "parameter_names": [
+        "section"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Song"
+      ],
+      "parameter_names": [
+        "song"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "str",
+      "input_types": [
+        "Tuning"
+      ],
+      "parameter_names": [
+        "tuning"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stream",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stream",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode",
+        "frameSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode",
+        "frameSize",
+        "hopSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stretch",
+      "input_types": [
+        "Buffer",
+        "Double",
+        "Symbol",
+        "Int",
+        "Int",
+        "Int",
+        "Double",
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "buffer",
+        "factor",
+        "mode",
+        "frameSize",
+        "hopSize",
+        "overlap",
+        "transientThreshold",
+        "pitchPeriod",
+        "windowSize"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stringToDouble",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "s"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "stringToInt",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "s"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sub",
+      "input_types": [
+        "Float",
+        "Float"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sub",
+      "input_types": [
+        "Int",
+        "Int"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sub",
+      "input_types": [
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sub",
+      "input_types": [
+        "Long",
+        "Long"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "sub",
+      "input_types": [
+        "Number",
+        "Number"
+      ],
+      "parameter_names": [
+        "a",
+        "b"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "superimpose",
+      "input_types": [
+        "Function",
+        "Sequence"
+      ],
+      "parameter_names": [
+        "fn",
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "swell",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "edgeVel",
+        "peakVel"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "tail",
+      "input_types": [
+        "Void[]"
+      ],
+      "parameter_names": [
+        "arr"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "take",
+      "input_types": [
+        "Void[]",
+        "Int"
+      ],
+      "parameter_names": [
+        "arr",
+        "n"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "tan",
+      "input_types": [
+        "Double"
+      ],
+      "parameter_names": [
+        "x"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "tau",
+      "input_types": [],
+      "parameter_names": [],
+      "is_var_args": false
+    },
+    {
+      "name": "tempoRamp",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Double"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "tempoRamp",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Double",
+        "String"
+      ],
+      "parameter_names": null,
+      "is_var_args": false
+    },
+    {
+      "name": "test",
+      "input_types": [
+        "String",
+        "Lazy\u003CVoid\u003E"
+      ],
+      "parameter_names": [
+        "name",
+        "body"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "transpose",
+      "input_types": [
+        "Sequence",
+        "Semitone"
+      ],
+      "parameter_names": [
+        "seq",
+        "amount"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "transpose",
+      "input_types": [
+        "Sequence",
+        "Cent"
+      ],
+      "parameter_names": [
+        "seq",
+        "amount"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "tremolo",
+      "input_types": [
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "reps"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "trill",
+      "input_types": [
+        "Sequence",
+        "Semitone"
+      ],
+      "parameter_names": [
+        "seq",
+        "interval"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "tryAddNoteToBar",
+      "input_types": [
+        "Bar",
+        "MusicalNote"
+      ],
+      "parameter_names": [
+        "bar",
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "tts",
+      "input_types": [
+        "String"
+      ],
+      "parameter_names": [
+        "text"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "unpack",
+      "input_types": [
+        "Tuple\u003C\u003C*\u003E\u003E",
+        "Function"
+      ],
+      "parameter_names": [
+        "tup",
+        "fn"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "up",
+      "input_types": [
+        "Sequence",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "octaves"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "validateBarDuration",
+      "input_types": [
+        "Bar",
+        "TimeSignature"
+      ],
+      "parameter_names": [
+        "bar",
+        "timeSig"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "values",
+      "input_types": [
+        "Dict\u003CVoid, Void\u003E"
+      ],
+      "parameter_names": [
+        "d"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "vary",
+      "input_types": [
+        "Sequence",
+        "Double"
+      ],
+      "parameter_names": [
+        "seq",
+        "probability"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "vary",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "String"
+      ],
+      "parameter_names": [
+        "seq",
+        "probability",
+        "mutationType"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "vary",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "probability",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "vary",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "String",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "probability",
+        "mutationType",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "vary",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "String",
+        "String"
+      ],
+      "parameter_names": [
+        "seq",
+        "probability",
+        "mutationType",
+        "key"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "vary",
+      "input_types": [
+        "Sequence",
+        "Double",
+        "String",
+        "String",
+        "Int"
+      ],
+      "parameter_names": [
+        "seq",
+        "probability",
+        "mutationType",
+        "key",
+        "seed"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "visualize",
+      "input_types": [
+        "Sequence"
+      ],
+      "parameter_names": [
+        "seq"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "visualize",
+      "input_types": [
+        "Buffer"
+      ],
+      "parameter_names": [
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "voicing",
+      "input_types": [
+        "Chord",
+        "String"
+      ],
+      "parameter_names": [
+        "chord",
+        "voicing"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "volume",
+      "input_types": [
+        "Buffer",
+        "Double"
+      ],
+      "parameter_names": [
+        "buf",
+        "factor"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "wouldFit",
+      "input_types": [
+        "Bar",
+        "MusicalNote"
+      ],
+      "parameter_names": [
+        "bar",
+        "note"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "writeLilyPond",
+      "input_types": [
+        "String",
+        "Song"
+      ],
+      "parameter_names": [
+        "path",
+        "song"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "writeMidi",
+      "input_types": [
+        "String",
+        "Song"
+      ],
+      "parameter_names": [
+        "path",
+        "song"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "writeMusicXML",
+      "input_types": [
+        "String",
+        "Song"
+      ],
+      "parameter_names": [
+        "path",
+        "song"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "writeWav",
+      "input_types": [
+        "String",
+        "Buffer"
+      ],
+      "parameter_names": [
+        "path",
+        "buf"
+      ],
+      "is_var_args": false
+    },
+    {
+      "name": "writeWav",
+      "input_types": [
+        "String",
+        "Buffer",
+        "Int"
+      ],
+      "parameter_names": [
+        "path",
+        "buf",
+        "bitDepth"
+      ],
+      "is_var_args": false
+    }
+  ],
+  "orphans": [
+    {
+      "name": "BeatType",
+      "flow_name": "Beat",
+      "kind": "coercible",
+      "reason": "coercible type with zero consumer signatures \u2014 composer cannot pass values of this type to any builtin"
+    }
+  ],
+  "asymmetries": [
+    {
+      "a": "BarType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "BeatType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "BeatType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "BeatType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "BoolType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "BufType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "BufferType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "CentType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "CentType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "CentType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "ChordType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DecibelType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "DecibelType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "DecibelType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "BeatType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "CentType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "DecibelType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "FloatType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "HertzType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "IntType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "LongType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "MillisecondType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "NumberType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "SecondType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "DoubleType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "EnvelopeType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "BeatType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "CentType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "DecibelType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "DoubleType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "HertzType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "IntType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "LongType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "MillisecondType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "NumberType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "SecondType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FloatType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "FunctionType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "HertzType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "HertzType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "HertzType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "DoubleType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "FloatType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "LongType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "NoteValueType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        true,
+        true
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "NumberType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "SemitoneType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "IntType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "LongType",
+      "b": "DoubleType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "LongType",
+      "b": "FloatType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "LongType",
+      "b": "IntType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "LongType",
+      "b": "NumberType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "LongType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "LsystemModelType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "MarkovModelType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "MillisecondType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "MillisecondType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "MillisecondType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "MusicalNoteType",
+      "b": "NoteType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "MusicalNoteType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NoteType",
+      "b": "MusicalNoteType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NoteType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NoteValueType",
+      "b": "IntType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        true
+      ]
+    },
+    {
+      "a": "NoteValueType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NumberType",
+      "b": "DoubleType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NumberType",
+      "b": "FloatType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NumberType",
+      "b": "IntType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NumberType",
+      "b": "LongType",
+      "is_compat": [
+        false,
+        false
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "NumberType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "OscHandleType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "OscillatorStateType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SecondType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "SecondType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "SecondType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SectionType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SemitoneType",
+      "b": "IntType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "SemitoneType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SequenceType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SfzType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SongType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "StringType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "SymbolType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "TimeSignatureType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "TrackType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "TuningType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "VoiceType",
+      "b": "VoidType",
+      "is_compat": [
+        false,
+        true
+      ],
+      "can_convert": [
+        false,
+        true
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "BarType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "BeatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "BoolType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "BufType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "BufferType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "CentType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "ChordType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "DecibelType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "DoubleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "EnvelopeType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "FloatType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "FunctionType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "HertzType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "IntType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "LongType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "LsystemModelType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "MarkovModelType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "MillisecondType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "MusicalNoteType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "NoteType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "NoteValueType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "NumberType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "OscHandleType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "OscillatorStateType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SecondType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SectionType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SemitoneType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SequenceType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SfzType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SongType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "StringType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "SymbolType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "TimeSignatureType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "TrackType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "TuningType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    },
+    {
+      "a": "VoidType",
+      "b": "VoiceType",
+      "is_compat": [
+        true,
+        false
+      ],
+      "can_convert": [
+        true,
+        false
+      ]
+    }
+  ],
+  "overload_gap_candidates": [
+    {
+      "function": "abs",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "accelerando",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "add",
+      "accepts_double": true,
+      "accepts_float": true,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "bandpass",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "beat",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "beatsToFrames",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "ceil",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "compress",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Cent",
+        "Hertz",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "cos",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "createADSR",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "createAR",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "createClip",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "createOscillatorState",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "createSineTone",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "createVoice",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "crescendo",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "decrescendo",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "delay",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "div",
+      "accepts_double": true,
+      "accepts_float": true,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "doubleToInt",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "euclidean",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "fadeIn",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "fadeOut",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "fast",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "fillBuffer",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "floor",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "gain",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "generateSaw",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "generateSine",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "generateSquare",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "generateTriangle",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "granular",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "highpass",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "humanize",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "humanizeGaussian",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "legato",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "loadWav",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "log",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "logistic",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "lorenz",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "lowpass",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "max",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "micBuffer",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "min",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "mixBuffers",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "mul",
+      "accepts_double": true,
+      "accepts_float": true,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "neg",
+      "accepts_double": true,
+      "accepts_float": true,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "noise",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "pan",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "phase",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "pitchShift",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Hertz",
+        "Millisecond",
+        "Second"
+      ]
+    },
+    {
+      "function": "pow",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "quantize",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "renderBarAtBeat",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "renderBarAtTime",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "renderBarToVoices",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "renderSequenceToVoices",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "renderTrack",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "reverb",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "ritardando",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "round",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "scaleBuffer",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setBPM",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setSample",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setTrackGain",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setTrackOffset",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setTrackPan",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setVoiceGain",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setVoiceOffset",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "setVoicePan",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sidechain",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Cent",
+        "Hertz",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sin",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sing",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "slow",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sometimes",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sparseSeq",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sqrt",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "str",
+      "accepts_double": true,
+      "accepts_float": true,
+      "missing_music_types": [
+        "Hertz"
+      ]
+    },
+    {
+      "function": "stretch",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "sub",
+      "accepts_double": true,
+      "accepts_float": true,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "swell",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "tan",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "tempoRamp",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "vary",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    },
+    {
+      "function": "volume",
+      "accepts_double": true,
+      "accepts_float": false,
+      "missing_music_types": [
+        "Decibel",
+        "Cent",
+        "Hertz",
+        "Millisecond",
+        "Second",
+        "Semitone"
+      ]
+    }
+  ]
+}
