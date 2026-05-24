@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 38 Live Coding 2.0 SHIPPED (Plan 38-07 closer)
-last_updated: "2026-05-24T05:14:37.887Z"
-last_activity: 2026-05-24 -- Phase 42 execution started
+stopped_at: Phase 42 Type System & Stdlib Audit SHIPPED (Plan 42-04 closer)
+last_updated: "2026-05-24T15:13:00.000Z"
+last_activity: "2026-05-24 — Phase 42 Type System & Stdlib Audit SHIPPED — read-only audit harness + 42-AUDIT.md gap list across 7 sections (37 types, 413 signatures, 1 orphan, 122 asymmetries, 85 overload-gap candidates, 72 clamps, 117 advisories, 110 charitable markers); 9/9 REQ-AUDIT-NN CLOSED per 42-VERIFICATION.md; zero production code touched (invariant gate-enforced)"
 progress:
   total_phases: 10
-  completed_phases: 4
-  total_plans: 42
-  completed_plans: 33
-  percent: 40
+  completed_phases: 5
+  total_plans: 46
+  completed_plans: 37
+  percent: 50
 ---
 
 # Project State
@@ -21,27 +21,35 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 42 — type-system-stdlib-audit
+**Current focus:** v1.5 closeout — Phase 42 SHIPPED 2026-05-24; next targets are Phase 43 (Module Names) + Phase 44 (Strict Mode), both AUDIT.md-fed, OR Phase 40 (Studio Sync), still the only Phase 35-41 v1.5 phase remaining.
 
 ## Current Position
 
-Phase: 42 (type-system-stdlib-audit) — EXECUTING
-Plan: 1 of 4
-Next step: `/clear` then `/gsd:context-phase 40` to spawn Phase 40 Studio Sync CONTEXT.md (or revisit any of Phases 42/43/44 added 2026-05-24 for stdlib audit pressure)
-Status: Executing Phase 42
-Last activity: 2026-05-24 -- Phase 42 execution started
+Phase: 42 (type-system-stdlib-audit) — SHIPPED 2026-05-24 (closer Plan 42-04 lands the VERIFICATION + ROADMAP/STATE/REQUIREMENTS sweep + final regression gates)
+Plan: 4 of 4 (CLOSED)
+Next step: `/clear` then one of (composer pick):
+  - `/gsd:plan-phase 43` — Module Names & Qualified Imports (consumes AUDIT.md §1 + §2 + §5a + §7a; HIGH-priority items: Beat ↔ Second context-aware builtins + `pitchShift(Buffer, Hertz)` design-decision)
+  - `/gsd:plan-phase 44` — Strict Mode (consumes AUDIT.md §2 + §6a + §6b + §7b; load-bearing 13 input-perimeter clamps + 117 advisory sites + explicit-conversion builtins `(db x)`/`(cents x)`/`(hz x)`/`(ms x)`/`(sec x)`)
+  - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
+Status: Phase 42 CLOSED; v1.5 milestone at 6/10 phases complete (35 + 36 + 37 + 38 + 39 + 42); 4 phases remain (40 + 41 + 43 + 44)
+Last activity: 2026-05-24 — Phase 42 Type System & Stdlib Audit SHIPPED (Plan 42-04 closer; 42-AUDIT.md is the canonical input for Phase 43 + Phase 44 plan-phase spawns)
 
-### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
+### v1.5 Phase Map (10 phases, 75 REQs)
 
-| Phase | Name | REQs | Count |
-|-------|------|------|-------|
-| 35 | Language Foundation | LANG-01..04, TEST-01..02, HK-01..04 | 10 |
-| 36 | Sequence Algebra & Generative | PAT-01..02, GEN-01..05, SECT-01, IMPROV-01 | 9 |
-| 37 | Sound Design + Sampler Polish | DSP-01..03, MIX-01..02, SAMP-01..03, PIANO-01, FLUTE-01, DRUM-01 | 11 |
-| 38 | Live Coding 2.0 | LIVE-01..03, REPL-01..04, AUDIO-IN-01..02, OSC-01..02 | 11 |
-| 39 | Notation Citizenship | XML-01..02, LILY-01, ABC-01..02, MML-01 | 6 |
-| 40 | Studio Sync | MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01 | 9 |
-| 41 | Reach + v1.5 Closer | WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01 | 10 |
+| Phase | Name | REQs | Count | Status |
+|-------|------|------|-------|--------|
+| 35 | Language Foundation | LANG-01..04, TEST-01..02, HK-01..04 | 10 | Shipped 2026-05-19 |
+| 36 | Sequence Algebra & Generative | PAT-01..02, GEN-01..05, SECT-01, IMPROV-01 | 9 | Shipped 2026-05-22 |
+| 37 | Sound Design + Sampler Polish | DSP-01..03, MIX-01..02, SAMP-01..03, PIANO-01, FLUTE-01, DRUM-01 | 11 | Shipped 2026-05-23 |
+| 38 | Live Coding 2.0 | LIVE-01..03, REPL-01..04, AUDIO-IN-01..02, OSC-01..02 | 11 | Shipped 2026-05-24 |
+| 39 | Notation Citizenship | XML-01..02, LILY-01, ABC-01..02, MML-01 | 6 | Shipped 2026-05-23 |
+| 40 | Studio Sync | MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01 | 9 | Pending |
+| 41 | Reach + v1.5 Closer | WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01 | 10 | Pending |
+| 42 | Type System & Stdlib Audit | REQ-AUDIT-01..09 | 9 | **Shipped 2026-05-24** |
+| 43 | Module Names & Qualified Imports | TBD (defined at plan-phase) | TBD | Pending — AUDIT.md-fed |
+| 44 | Strict Mode | TBD (defined at plan-phase) | TBD | Pending — AUDIT.md-fed |
+
+**v1.5 progress: 6/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42). 75 v1.5 REQs total; 56 closed + Phase 40/41/43/44 still pending.
 
 **Build-order constraints from research:**
 
@@ -62,7 +70,23 @@ Last activity: 2026-05-24 -- Phase 42 execution started
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-**Phase 38 closed 2026-05-24 (Plan 38-07 closer).** v1.5 milestone progress: **5/7 phases complete** (35 + 36 + 37 + 38 + 39), 38/38 plans complete in those phases. Phase 40 (Studio Sync) and Phase 41 (Reach + Closer) remain — Phase 40 is the only unblocked v1.5 phase; Phase 41 consumes Phase 40's IMidiBackend abstraction for Web MIDI.
+**Phase 42 closed 2026-05-24 (Plan 42-04 closer).** v1.5 milestone progress: **6/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42), 42/42 plans complete in those phases. Phase 40 (Studio Sync), Phase 41 (Reach + Closer), Phase 43 (Module Names), and Phase 44 (Strict Mode) remain. Phase 42's `42-AUDIT.md` is the canonical input artifact for Phase 43 + Phase 44 plan-phase spawns — those two are unblocked. Phase 40 + Phase 41 are orthogonal to the AUDIT.md (the Phase 35-41 original v1.5 trajectory; Phase 41 still consumes Phase 40's IMidiBackend abstraction for Web MIDI).
+
+**Phase 42 closure highlights (2026-05-24):**
+
+- `42-AUDIT.md` (277 lines, 9 sections, 53 routing tags) — the load-bearing deliverable. 7 gap-class sections + composer sign-off + limitations. Stable identifier per row is `builtin_name + signature` (NOT `file:line`, per Pitfall 7) so routing tags survive Phase 43 rename work without invalidating Phase 44 plan-phase consumption.
+- Anchor finding confirmed: `BeatType` is the SOLE coercible orphan — zero registered signatures accept `Beat` as a parameter today. Routed to Phase 43 (HIGH) — needs context-aware `beatToSec` / `secToBeat` builtins reading active `tempo` from `ExecutionContext.MusicalContext` (Pitfall 3: pure-function `FlowType` methods have no runtime context access, so this MUST be a builtin not a `BeatType.CanConvertTo(SecondType)` override).
+- Phase 44 strict-mode Axis B is LOAD-BEARING per ROADMAP line 380 — 13 input-perimeter clamp sites (§6a) classified via Pitfall 4 heuristic; 117 advisory sites (§6b) grouped across 19 stdlib modules with HIGH/MEDIUM/LOW priorities; §6c pointer to `42-AUDIT-data/charitable-sites.txt` (110 markers) for bespoke `if (x < 0) x = 0` pattern discovery sweep at Phase 44 plan-phase.
+- Phase 44 explicit-conversion-builtin shapes finalized from §2 missing-conversion analysis: `(db Double)`, `(cents Double)`, `(hz Double)`, `(ms Double)`, `(sec Double)` — matches the ROADMAP line 372 description verbatim.
+- Read-only invariant gate-enforced: `git diff --stat 82d83a8..HEAD -- flow-lang/StandardLibrary/ flow-lang/TypeSystem/ "flow-lang/*.flow"` is EMPTY at every commit boundary across all four plans. Verified at Plan 42-01 close, Plan 42-02 close, Plan 42-03 close, and Plan 42-04 (this closer). Phase 42 ships AUDIT.md only; zero production code touched.
+- Phase 42 fixture suite (26 facts): `AuditHarnessTests` (9) + `ClampGrepConsistencyTests` (6) + `AuditReportShapeTests` (11) — all GREEN. Pre-existing Phase 28/29/35/38 failures (37 total) at spawn commit `c4cd738` documented in `.planning/phases/42-type-system-stdlib-audit/deferred-items.md` + `42-VERIFICATION.md §Known Caveats`. Phase 42 introduces zero new failures.
+- Standalone .NET 10 console project landed at `scripts/StdlibAuditor/` (561 LOC + .csproj + sln registration). FlowEngine-as-registry-source pattern (D-42-01-A) captures all 14 context-bound stdlib surfaces missed by `RegisterSignaturesOnly`. Re-runnable as `dotnet run --project scripts/StdlibAuditor -- --emit-json PATH --emit-markdown-skeleton PATH`.
+- Two scripts/audit/ Bash extractors landed: `clamp-grep.sh` (fans out 5 inventories) + `flow-callers.sh` (.flow proc decl + 4114-token call-site frequency table). `ClampGrepConsistencyTests` pins baseline counts with intentionally wide tolerance bands.
+
+Note: Phase 38 + Phase 40 were commutative on the original plan — composer picked Phase 38 first. Next composer choices for v1.5 closeout:
+
+- For Phase 43 (Module Names & Qualified Imports — AUDIT.md-fed; consumes §1 BeatType orphan + §2 Beat↔Second + §5a pitchShift design-decision + §7a candidate table): `/clear` then `/gsd:plan-phase 43`. Inputs: 42-AUDIT.md (canonical) + AUDIT-data/type-signature-graph.json (raw graph). Sub-order: `beatToSec`/`secToBeat` context-aware builtins first → Beat-companion overloads (delay/renderBarAtBeat) → `pitchShift(Buffer, Hertz)` design-decision → module-naming + qualified-import wedge.
+- For Phase 44 (Strict Mode — AUDIT.md-fed; consumes §2 explicit-conversions + §6a 13 clamps + §6b 117 advisories + §7b LOAD-BEARING list): `/clear` then `/gsd:plan-phase 44`. Inputs: 42-AUDIT.md (canonical) + AUDIT-data/{input-clamps,advisory-sites,charitable-sites}.txt (raw). Sub-order: explicit-conversion builtins first (independent foundation) → Axis A (OverloadResolver convertible-tier disable) → Axis B (input-perimeter clamp errors) → cross-type-equality + Bool-`if` + String-`print` discipline → pre-strict `print` charitable-fixup bundled in.
 
 Note: Phase 38 + Phase 40 were commutative on the original plan — composer picked Phase 38 first. Next:
 
@@ -170,6 +194,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 33 | 7 | - | - |
 | 37 | 7 | - | - |
 | 38 | 7 | - | - |
+| 42 | 4 | ~115min | ~29min |
 
 **Recent Trend:**
 
@@ -294,6 +319,10 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 37 P05 | ~30min | 2 tasks | 5 files (SampleCache 3-pitch flute manifest + flute LICENSE.md + bundle CREDITS.md + 2 Wave 0 scaffolds filled — composer A4 drop in prior commit 681908c) |
 | Phase 37 P06 | ~35min | 2 tasks | 7 files (sfz.flow + SfzData IsPercussion + SfzBuiltins + SfzRenderer W7 LOCK gate + 33-VSCO-PATH-AUDIT.md row 20 + 2 Wave 0 scaffolds filled) |
 | Phase 37 P07 | ~Xmin | 2 tasks | 12 files (2 example .flow + 2 paired regression tests + 37-VERIFICATION.md + 37-VALIDATION.md status flip + CLAUDE.md Phase 37 section + ROADMAP + STATE + REQUIREMENTS + .gitignore + SUMMARY) |
+| Phase 42 P01 | ~75min | 2 tasks | 4 files (3 created: StdlibAuditor.csproj + Program.cs 561L + AuditHarnessTests.cs 299L; 1 modified: flow-sharp.sln registers StdlibAuditor under scripts solution folder) |
+| Phase 42 P02 | ~15min | 2 tasks | 12 files (2 new scripts/audit/ bash extractors + 1 new ClampGrepConsistencyTests.cs 6-fact + 7 generated 42-AUDIT-data/ inventory files + 1 deferred-items.md + 1 summary) |
+| Phase 42 P03 | ~7min | 3 tasks (2 auto + 1 checkpoint auto-approved) | 4 files (3 created: 42-AUDIT.md 277L + 42-AUDIT-data/type-signature-graph.json regenerated + AUDIT-skeleton.md + AuditReportShapeTests.cs 167L) |
+| Phase 42 P04 | ~Xmin | 2 tasks | 5 files (42-VERIFICATION.md 178L + ROADMAP + STATE + REQUIREMENTS + 42-04-SUMMARY) |
 
 ## Accumulated Context
 
@@ -678,11 +707,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-24T04:30:00.000Z
-Stopped at: Phase 38 Live Coding 2.0 SHIPPED (Plan 38-07 closer)
-Resume file: .planning/phases/38-live-coding-2-0/38-VERIFICATION.md (then `/clear` + `/gsd:context-phase 40` for the next unblocked v1.5 phase)
+Last session: 2026-05-24T15:13:00.000Z
+Stopped at: Phase 42 Type System & Stdlib Audit SHIPPED (Plan 42-04 closer)
+Resume file: .planning/phases/42-type-system-stdlib-audit/42-VERIFICATION.md (then `/clear` + one of: `/gsd:plan-phase 43` for Module Names & Qualified Imports OR `/gsd:plan-phase 44` for Strict Mode OR `/gsd:context-phase 40` for Studio Sync). Phase 42's `42-AUDIT.md` is the canonical input for Phase 43 + Phase 44.
 
-**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction. Within v1.5, only Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) remain; Phase 41 consumes Phase 40's IMidiBackend abstraction so the build order is Phase 40 → Phase 41.
+**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 43 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 43 (Module Names) + Phase 44 (Strict Mode) remain. Phase 43 + 44 are AUDIT.md-fed (depend on Phase 42 deliverable, now shipped); Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 43 + 44 can ship in either order; Phase 44 plan-phase will likely want Phase 43's module-namespace + qualified-import work for organizing strict-mode test files.
 
 ## Resume Instructions (next PC)
 
