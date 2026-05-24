@@ -390,13 +390,15 @@ public sealed class CoreAudioBackend : IAudioBackend
 
         Marshal.Copy(source, srcOffset, header.mAudioData, sampleCount);
 
-        // mAudioDataByteSize field offset:
-        //   AudioQueueBuffer layout = [mAudioDataBytesCapacity:uint][mAudioData:IntPtr][mAudioDataByteSize:uint]
-        // i.e. sizeof(uint) + IntPtr.Size from the struct base.
-        int byteSizeOffset = sizeof(uint) + IntPtr.Size;
-        Marshal.WriteInt32(bufferPtr, byteSizeOffset, byteSize);
+        // On 64-bit, IntPtr aligns to 8, so the layout is
+        // [uint:4][pad:4][IntPtr:8][uint:4] — mAudioDataByteSize sits at offset 16,
+        // not 12. Ask Marshal for the actual offset rather than computing it.
+        Marshal.WriteInt32(bufferPtr, MAudioDataByteSizeOffset, byteSize);
         return true;
     }
+
+    private static readonly int MAudioDataByteSizeOffset =
+        (int)Marshal.OffsetOf<AudioQueueBuffer>(nameof(AudioQueueBuffer.mAudioDataByteSize));
 
     private void OnAudioQueueBuffer(IntPtr userData, IntPtr aq, IntPtr buffer)
     {
