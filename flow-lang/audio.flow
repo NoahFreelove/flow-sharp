@@ -495,6 +495,9 @@ Note: code (RESEARCH Pitfall 2). Same DSP path as the bare-Double overload above
 Note: delay(Buffer, Millisecond, ...) — explicit ms ergonomics
 internal proc delay(Buffer: buffer, Millisecond: delayMs, Double: feedback, Double: mix)
 
+Note: Phase 43 D-09 -- delay(Buffer, Beat, ...) -- tempo-synced rate in beats; reads MusicalContext.Tempo (default 120 BPM + one-shot advisory)
+internal proc delay(Buffer: buffer, Beat: beats, Double: feedback, Double: mix)
+
 Note: compress(Buffer, Decibel threshold, ratio, Millisecond attack, Millisecond release) — full music-typed
 internal proc compress(Buffer: buffer, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
 

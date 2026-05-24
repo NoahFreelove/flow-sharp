@@ -229,16 +229,23 @@ public class AuditHarnessTests
     }
 
     [Fact]
-    public void OrphanList_ContainsBeatType()
+    public void OrphanList_DoesNotContainBeatType()
     {
         var snap = _snapshot.Value;
-        Assert.Contains("BeatType", snap.CoercibleOrphans);
-        // Failure message context for future maintainers:
-        // BeatType must appear in the orphan list — see RESEARCH.md §Summary.
-        // If a producer/consumer for Beat shipped (e.g. a new signature
-        // accepting a Beat parameter), this test needs to be updated to drop
-        // BeatType from the expected-orphan set — and the new finding should
-        // be reflected in AUDIT.md's "Resolved Orphans" section.
+        Assert.DoesNotContain("BeatType", snap.CoercibleOrphans);
+        // Phase 43 closure context (D-10 polarity flip — Pitfall 5):
+        // Before Phase 43, BeatType was the SOLE coercible orphan
+        // (AUDIT.md SS1 anchor — Beat IsCompatibleWith Double/Float but
+        // no signature accepted a Beat parameter). Phase 43 Plan 43-04
+        // shipped `delay(Buffer, Beat, ...)` + `renderBarAtBeat(Bar, Beat, ...)`
+        // + `beatToSec(Beat)` + `secToBeat(Second)` — Beat now has consumers,
+        // so the orphan-detection rule (coercible AND zero signatures accept
+        // it) no longer applies.
+        //
+        // If a future refactor drops the Beat-companion overloads, this
+        // fact fails with "BeatType found in CoercibleOrphans" — the
+        // expected failure mode that protects against accidental regression
+        // of the AUDIT-anchored consumer surface.
     }
 
     [Theory]

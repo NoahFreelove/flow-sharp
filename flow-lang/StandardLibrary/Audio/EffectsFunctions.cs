@@ -386,6 +386,65 @@ public static class EffectsFunctions
             var result = Delay.Apply(buffer, (float)delayMs, feedback, mix);
             return Value.Buffer(result);
         });
+
+        // Phase 43 D-09 — delay(Buffer, Beat, Double, Double) -> Buffer.
+        // Beat is fractional-double-backed (BeatType.cs:25-28); the conversion math
+        // mirrors the NoteValue path with `beats * 60_000.0 / bpm` instead of the
+        // NoteValueToMs enum lookup. Same Delay.Apply DSP entry point so the
+        // perceptual output is RMS-equivalent to (delay buf (beats * 60_000 / bpm)ms ...)
+        // under matching tempo.
+        //
+        // Per RESEARCH A5 + Pitfall 5: registering this overload alongside the
+        // existing Buffer/Double/Double/Double and Buffer/NoteValue/Double/Double
+        // overloads does NOT ambiguate dispatch. The OverloadResolver scores
+        // exact-match Beat at +1000 over compat-match Buffer/Double's +500 when
+        // the second arg is Beat-typed; the bare-Double path stays +1000 exact.
+        var delayBeatSig = new FunctionSignature("delay",
+            [BufferType.Instance, BeatType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "beats", "feedback", "mix"]);
+        registry.Register("delay", delayBeatSig, args =>
+        {
+            var buffer = args[0].As<AudioBuffer>();
+            double beats = args[1].As<double>();
+            float feedback = (float)args[2].As<double>();
+            float mix = (float)args[3].As<double>();
+
+            double bpm = context.GetMusicalContext().Tempo ?? 120.0;
+            // Walk frames manually (mirrors BeatConversionFunctions.AnyFrameHasTempo)
+            // because GetMusicalContext()'s tier-3 default would hide "no explicit tempo".
+            if (!HasExplicitTempo(context))
+            {
+                Diagnostics.RenderingDiagnostics.WarnOnce(
+                    "delay-beat-no-tempo",
+                    "[delay] no active tempo — defaulting to 120 BPM (use tempo N { ... } to set explicitly)");
+            }
+
+            double delayMs = beats * (60_000.0 / bpm);
+
+            if (buffer.Frames == 0)
+                return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+
+            var result = Delay.Apply(buffer, (float)delayMs, feedback, mix);
+            return Value.Buffer(result);
+        });
+    }
+
+    /// <summary>
+    /// Walks the <see cref="FlowLang.Runtime.StackFrame"/> parent chain looking
+    /// for an explicit <see cref="FlowLang.Runtime.MusicalContext.Tempo"/>
+    /// assignment. Per Phase 30 REQ-4, <see cref="FlowLang.Runtime.ExecutionContext.GetMusicalContext"/>
+    /// always reports a non-null Tempo (defaulting to 120 BPM at tier 3) so
+    /// callers needing to detect "tempo block in scope" must walk frames
+    /// directly. Mirrors the helper in
+    /// <see cref="BeatConversionFunctions"/>.
+    /// </summary>
+    private static bool HasExplicitTempo(FlowLang.Runtime.ExecutionContext context)
+    {
+        for (var f = context.CurrentFrame; f != null; f = f.Parent)
+        {
+            if (f.MusicalContext is { Tempo: not null }) return true;
+        }
+        return false;
     }
 
     // ===== Gain =====
