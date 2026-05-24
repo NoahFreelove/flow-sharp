@@ -1040,10 +1040,13 @@ public class Interpreter : IFunctionInvoker
         // Evaluate new value
         var newValue = _evaluator.Evaluate(assignment.Value);
 
-        // Get existing variable to check type compatibility
-        try
+        // Get existing variable to check type compatibility.
+        // Bundle B (260524-rjm) — non-throwing TryGetVariable replaces the
+        // legacy try/catch on InvalidOperationException. Identical type-check
+        // + conversion + SetVariable semantics on the found branch; identical
+        // error wording on the not-found branch.
+        if (_context.CurrentFrame.TryGetVariable(assignment.Name, out var existingValue))
         {
-            var existingValue = _context.GetVariable(assignment.Name);
             var targetType = existingValue.Type;
 
             // Type check
@@ -1065,7 +1068,7 @@ public class Interpreter : IFunctionInvoker
             // Update variable
             _context.SetVariable(assignment.Name, newValue);
         }
-        catch (InvalidOperationException)
+        else
         {
             _errorReporter.ReportError(
                 $"Variable '{assignment.Name}' not found",
