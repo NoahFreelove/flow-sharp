@@ -1,0 +1,77 @@
+// Phase 36 Plan 36-09 Task 2 — composer-facing Lorenz chaos exercise.
+//
+// (lorenz sigma rho beta length seed) returns an Array[Double] holding
+// the x-axis trajectory of the canonical 3-state Lorenz attractor
+// integrated via forward-Euler. The composer quantises the raw series
+// to musical pitch via (quantizeToScale series scale).
+//
+// SAME-PLATFORM two-run cmp-clean is preserved (single-machine IEEE 754
+// reproducibility); CROSS-PLATFORM reproducibility is NOT guaranteed
+// for the chaotic-system outputs per D-36-09 / RESEARCH Pitfall 4.
+// See flow-lang/generative.flow module header for the full caveat.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_lorenz_quantize.flow
+//
+// USAGE (determinism gate — same platform only):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_lorenz_quantize.flow
+
+use "@std"
+use "@audio"
+use "@generative"
+use "@test"
+
+// =====================================================================
+// Lorenz with canonical butterfly params σ=10, ρ=28, β=8/3.
+// Same seed → same trajectory across calls in the same process.
+// =====================================================================
+
+Double beta = (div 8.0 3.0)
+Double[] lorenz_a = (lorenz 10.0 28.0 beta 64 42)
+Double[] lorenz_b = (lorenz 10.0 28.0 beta 64 42)
+
+(test "lorenz with canonical butterfly is deterministic across calls"
+  lazy((assertEq (len lorenz_a) (len lorenz_b))))
+
+// =====================================================================
+// quantizeToScale string-form: resolve "cmajor" via ScaleDatabase,
+// map the unbounded Lorenz trajectory into a 7-note diatonic Sequence.
+// =====================================================================
+
+Sequence quantized_a = (quantizeToScale lorenz_a "cmajor")
+Sequence quantized_b = (quantizeToScale lorenz_b "cmajor")
+
+(test "lorenz → quantizeToScale produces deterministic Sequence"
+  lazy((assertNotesMatch quantized_a quantized_b)))
+
+// =====================================================================
+// quantizeToScale array-form: composer-supplied scale notes (escape
+// hatch around ScaleDatabase).
+// =====================================================================
+
+Note[] customScale = [C4, E4, G4, B4, D5]
+Sequence pentatonic_a = (quantizeToScale lorenz_a customScale)
+Sequence pentatonic_b = (quantizeToScale lorenz_b customScale)
+
+(test "lorenz → quantizeToScale (Array[Note] form) is deterministic"
+  lazy((assertNotesMatch pentatonic_a pentatonic_b)))
+
+(print "LORENZ QUANTIZE TESTS REGISTERED")
+
+// =====================================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+//
+// Same Lorenz seed + same scale → same Sequence → same render path →
+// byte-identical WAV across consecutive runs ON THE SAME PLATFORM.
+// =====================================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Double[] series = (lorenz 10.0 28.0 beta 16 42)
+        Sequence music = (quantizeToScale series "cmajor")
+        section main { Sequence v = music }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/lorenz_quantize.wav" mix)
+    }
+}

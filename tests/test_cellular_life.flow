@@ -1,0 +1,61 @@
+// Phase 36 Plan 36-08 Task 2 — composer-facing 2D Game of Life exercise.
+//
+// (life width height steps seed) seeds a 2D grid at 30% density and
+// iterates Conway's Game of Life with Moore-neighborhood wrap-around.
+// The composer's seed flows directly to new Random — same seed produces
+// the same initial grid, so two consecutive runs produce byte-identical
+// WAV output via scripts/test_two_run_determinism.sh.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_cellular_life.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_cellular_life.flow
+
+use "@std"
+use "@audio"
+use "@generative"
+use "@test"
+
+// =====================================================================
+// 2D Life: (life width height steps seed) → Array[Sequence] of length=height.
+// Each Sequence has `steps` bars (one per step); each bar has `width` notes
+// (one per column, alive → pitch, dead → rest).
+// =====================================================================
+
+Sequence[] life_a = (life 8 4 2 42)
+Sequence[] life_b = (life 8 4 2 42)
+
+// Pick the same row from both runs and assert structural equality.
+Sequence row0_a = life_a@0
+Sequence row0_b = life_b@0
+
+(test "life same seed produces deterministic row 0"
+  lazy((assertNotesMatch row0_a row0_b)))
+
+Sequence row1_a = life_a@1
+Sequence row1_b = life_b@1
+
+(test "life same seed produces deterministic row 1"
+  lazy((assertNotesMatch row1_a row1_b)))
+
+(print "CELLULAR LIFE TESTS REGISTERED")
+
+// =====================================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+//
+// Render the FIRST row of the grid sequence to a small WAV. The composer's
+// seed drives the initial fill; same seed → same initial → same iterations
+// → byte-identical render.
+// =====================================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence[] grid = (life 8 4 4 42)
+        Sequence music = grid@0
+        section main { Sequence v = music }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/cellular_life.wav" mix)
+    }
+}

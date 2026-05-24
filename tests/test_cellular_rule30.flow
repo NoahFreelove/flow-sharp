@@ -1,0 +1,63 @@
+// Phase 36 Plan 36-08 Task 1 — composer-facing 1D cellular automaton exercise.
+//
+// Rule 30 from a single-1-center initial pattern produces the canonical
+// Wolfram-atlas chaos pattern. 1D cellular is purely deterministic (no
+// PRNG — the seed arg is accepted for signature uniformity but ignored
+// for the single-1-center default). Two consecutive runs MUST produce
+// byte-identical WAV output via scripts/test_two_run_determinism.sh.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_cellular_rule30.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_cellular_rule30.flow
+
+use "@std"
+use "@audio"
+use "@generative"
+use "@test"
+
+// =====================================================================
+// Rule 30 canonical chaos pattern from single-1-center default.
+// (cellular rule width steps seed) — seed ignored for default.
+// =====================================================================
+
+Sequence rule30 = (cellular 30 16 8 0)
+Sequence rule30b = (cellular 30 16 8 0)
+
+(test "cellular Rule 30 is deterministic across calls"
+  lazy((assertNotesMatch rule30 rule30b)))
+
+// Rule 90 Sierpinski-triangle pattern smoke check.
+Sequence rule90 = (cellular 90 16 8 0)
+Sequence rule90b = (cellular 90 16 8 0)
+
+(test "cellular Rule 90 is deterministic across calls"
+  lazy((assertNotesMatch rule90 rule90b)))
+
+// cellularSeeded with an explicit initial pattern.
+Bool[] initPattern = (list true false true false false false false false)
+Sequence seeded = (cellularSeeded 30 8 4 0 initPattern)
+Sequence seededb = (cellularSeeded 30 8 4 0 initPattern)
+
+(test "cellularSeeded with explicit pattern is deterministic"
+  lazy((assertNotesMatch seeded seededb)))
+
+(print "CELLULAR RULE 30 TESTS REGISTERED")
+
+// =====================================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+//
+// The same single-1-center initial pattern + same Wolfram rule produces
+// byte-identical WAV across consecutive runs (no PRNG involved).
+// =====================================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence music = (cellular 30 16 4 0)
+        section main { Sequence v = music }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/cellular_rule30.wav" mix)
+    }
+}

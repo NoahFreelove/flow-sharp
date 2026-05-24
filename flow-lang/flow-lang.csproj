@@ -52,6 +52,10 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>
+      <None Update="generative.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
       <None Update="test.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

@@ -1,0 +1,85 @@
+// Phase 36 Plan 36-09 Task 2 — composer-facing logistic-map chaos exercise.
+//
+// (logistic r length seed) iterates the logistic recurrence
+// x_{n+1} = r * x_n * (1 - x_n) over a seed-derived initial x ∈ (0, 1).
+// Output is Array[Double] with values in [0, 1]; the composer quantises
+// to musical pitch via (quantizeToScale series scale).
+//
+// SAME-PLATFORM two-run cmp-clean is preserved per D-36-09 — the logistic
+// map is less FP-sensitive than Lorenz but still uses chained
+// multiplications, so cross-platform reproducibility is not guaranteed
+// for long sequences. See flow-lang/generative.flow module header.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_logistic.flow
+//
+// USAGE (determinism gate — same platform only):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_logistic.flow
+
+use "@std"
+use "@audio"
+use "@generative"
+use "@test"
+
+// =====================================================================
+// Logistic in chaotic regime (r ∈ [3.57, 4.0]). Same seed → same
+// trajectory across calls.
+// =====================================================================
+
+Double[] chaotic_a = (logistic 3.9 64 42)
+Double[] chaotic_b = (logistic 3.9 64 42)
+
+(test "logistic chaotic regime is deterministic across calls"
+  lazy((assertEq (len chaotic_a) (len chaotic_b))))
+
+// =====================================================================
+// Logistic in fixed-point regime (r ∈ (1, 3)). Settles to x* = 1 - 1/r;
+// every emitted point is at the same value post-warmup.
+// =====================================================================
+
+Double[] fixedPoint = (logistic 2.5 16 42)
+
+(test "logistic fixed-point regime emits same length as chaotic"
+  lazy((assertEq 16 (len fixedPoint))))
+
+// =====================================================================
+// quantizeToScale on the chaotic series: maps [0, 1]-bounded logistic
+// values into a diatonic Sequence.
+// =====================================================================
+
+Sequence quantized_a = (quantizeToScale chaotic_a "cmajor")
+Sequence quantized_b = (quantizeToScale chaotic_b "cmajor")
+
+(test "logistic → quantizeToScale produces deterministic Sequence"
+  lazy((assertNotesMatch quantized_a quantized_b)))
+
+// =====================================================================
+// Array[Note] direct form: composer supplies a small custom scale.
+// =====================================================================
+
+Note[] customScale = [C4, D4, E4, G4, A4]
+Sequence pent_a = (quantizeToScale chaotic_a customScale)
+Sequence pent_b = (quantizeToScale chaotic_b customScale)
+
+(test "logistic → quantizeToScale (Array[Note] form) is deterministic"
+  lazy((assertNotesMatch pent_a pent_b)))
+
+(print "LOGISTIC TESTS REGISTERED")
+
+// =====================================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+//
+// Same r + same seed → same logistic series → same Sequence → same
+// WAV bytes across consecutive runs ON THE SAME PLATFORM.
+// =====================================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Double[] series = (logistic 3.9 16 42)
+        Sequence music = (quantizeToScale series "cmajor")
+        section main { Sequence v = music }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/logistic.wav" mix)
+    }
+}

@@ -71,6 +71,35 @@ public class Value
     public static Value Sfz(StandardLibrary.Audio.Sfz.SfzData data)
         => new(data, SfzType.Instance);
 
+    /// <summary>
+    /// Phase 36 Plan 36-06 (GEN-01, D-36-06) — wraps a
+    /// <see cref="MarkovModelData"/> reference in a Flow <see cref="Value"/>
+    /// typed as <see cref="MarkovModelType.Instance"/>. Reference identity per
+    /// CLAUDE.md Music Types Quick Reference (Pitfall 6 in
+    /// <c>36-PATTERNS.md</c>): two <c>(markovTrain corpus order)</c> calls
+    /// produce distinct Values even with identical training input. Composers
+    /// who need structural compare use the dedicated <c>(markovEqual a b)</c>
+    /// builtin. Mirrors the Phase 32 <see cref="Value.Tuning"/> + Phase 33
+    /// <see cref="Value.Sfz"/> precedent.
+    /// </summary>
+    public static Value MarkovModel(MarkovModelData model)
+        => new(model, MarkovModelType.Instance);
+
+    /// <summary>
+    /// Phase 36 Plan 36-07 (GEN-02, D-36-06 + D-36-08) — wraps an
+    /// <see cref="LsystemModelData"/> reference in a Flow <see cref="Value"/>
+    /// typed as <see cref="LsystemModelType.Instance"/>. Reference identity per
+    /// CLAUDE.md Music Types Quick Reference (Pitfall 6 in
+    /// <c>36-PATTERNS.md</c>): two <c>(lsystemModel axiom rules)</c> calls
+    /// produce distinct Values even with identical axiom + rules input.
+    /// Composers who need structural compare use the dedicated
+    /// <c>(lsystemEqual a b)</c> builtin. Mirrors the Phase 32
+    /// <see cref="Value.Tuning"/> + Phase 33 <see cref="Value.Sfz"/> + Plan
+    /// 36-06 <see cref="Value.MarkovModel"/> precedent.
+    /// </summary>
+    public static Value LsystemModel(LsystemModelData model)
+        => new(model, LsystemModelType.Instance);
+
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
 
     /// <summary>

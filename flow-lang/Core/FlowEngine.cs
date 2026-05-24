@@ -7,6 +7,7 @@ using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Audio.Sfz;
 using FlowLang.StandardLibrary.Audio.Tuning;
+using FlowLang.StandardLibrary.Generative;
 using FlowLang.StandardLibrary.Patterns;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
@@ -121,6 +122,32 @@ public class FlowEngine : IDisposable
         // ExecutionContext.PrngRegistry — same per-engine ownership as
         // HarmonyFunctions.RegisterContextDependent above.
         PatternFunctions.RegisterContextDependent(internalRegistry, _context);
+        // Phase 36 Plan 36-06 — register the @generative stdlib's Markov
+        // primitive (GEN-01 / D-36-06 / D-36-07). Unseeded markov/markovGenerate
+        // route their PRNG through the same ExecutionContext.PrngRegistry as
+        // PatternFunctions; the seeded overloads use new Random(seed) directly.
+        MarkovFunctions.RegisterContextDependent(internalRegistry, _context);
+        // Phase 36 Plan 36-07 — register the @generative stdlib's L-system
+        // primitive (GEN-02 / D-36-06 / D-36-08). Pure deterministic rewrite
+        // (no PRNG), so no PrngRegistry routing — but lsystemToSequence invokes
+        // a composer-supplied lambda, requiring the context-dependent shape.
+        LsystemFunctions.RegisterContextDependent(internalRegistry, _context);
+        // Phase 36 Plan 36-08 — register the @generative stdlib's cellular
+        // automata primitives (GEN-03 / D-36-08). 1D cellular + cellularSeeded
+        // are purely deterministic (single-1-center default); 2D life uses
+        // one PRNG-SANCTIONED `new Random(seed)` for the 30%-density initial
+        // fill per REQ wording (the seed arg is REQUIRED, so no PrngRegistry
+        // routing).
+        CellularFunctions.RegisterContextDependent(internalRegistry, _context);
+        // Phase 36 Plan 36-09 — register the @generative stdlib's chaos-map
+        // primitives (GEN-04 / D-36-08 + D-36-09). Lorenz forward-Euler +
+        // logistic recurrence + quantizeToScale bridge. Each primitive
+        // derives its single Random from the REQ-mandated seed arg (no
+        // PrngRegistry routing — the seed is REQUIRED). Cross-platform FP
+        // divergence is documented as platform-specific limitation per
+        // D-36-09 / RESEARCH Pitfall 4 — same-platform two-run cmp-clean
+        // preserved.
+        ChaosFunctions.RegisterContextDependent(internalRegistry, _context);
         // Phase 33 Plan 33-05: wire the SFZ surface — loadSfz(Symbol) +
         // loadSfz(String) + __enableSfzModule(Dict) builtins. All three check
         // ExecutionContext.SfzEnabled at call time, so the registration is

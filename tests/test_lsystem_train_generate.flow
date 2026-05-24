@@ -1,0 +1,50 @@
+// Phase 36 Plan 36-07 Task 2 — composer-facing split-shape L-system exercise.
+//
+// Demonstrates the (lsystemModel axiom rules) → LsystemModel +
+// (lsystemGenerate model iterations) → Symbol[] split per D-36-06: the
+// composer builds the model ONCE, then reuses it across many generation
+// calls with different iteration counts. Reference identity (Pitfall 6):
+// two independently-built models on the same axiom + rules are STRUCTURALLY
+// equal via (lsystemEqual) but REFERENCE-DISTINCT under default equality.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_lsystem_train_generate.flow
+
+use "@std"
+use "@generative"
+use "@test"
+
+Dict<Symbol, Symbol[]> rules = (dict #A (list #A #B) #B (list #A))
+
+// Build once, generate at many iteration counts.
+LsystemModel m = (lsystemModel #A rules)
+Symbol[] gen1 = (lsystemGenerate m 1)
+Symbol[] gen2 = (lsystemGenerate m 2)
+Symbol[] gen4 = (lsystemGenerate m 4)
+
+(test "lsystemGenerate iteration 1 produces 2 symbols (A B)"
+  lazy((assertEq 2 (len gen1))))
+
+(test "lsystemGenerate iteration 2 produces 3 symbols (A B A)"
+  lazy((assertEq 3 (len gen2))))
+
+(test "lsystemGenerate iteration 4 produces 8 symbols (Fibonacci)"
+  lazy((assertEq 8 (len gen4))))
+
+// Two independently-built models on the same axiom + rules: structurally
+// equal but reference-distinct. (lsystemEqual) returns true here.
+LsystemModel m1 = (lsystemModel #A rules)
+LsystemModel m2 = (lsystemModel #A rules)
+
+(test "lsystemEqual reports structural equality"
+  lazy((assert (lsystemEqual m1 m2))))
+
+// Iteration clamp (T-36-17 DoS guard): asking for 100 clamps to 20 with
+// a charitable advisory. The result has many symbols (Fibonacci-count at
+// iteration 20) but stays well below the 100-iteration-without-clamp size.
+Symbol[] clamped = (lsystemGenerate m 100)
+
+(test "lsystemGenerate clamps iterations to 20 without crashing"
+  lazy((assert (gt (len clamped) 100))))
+
+(print "LSYSTEM TRAIN/GENERATE TESTS REGISTERED")

@@ -208,6 +208,12 @@ public static class TypeParser
             // `Sfz v = (loadSfz #violin)` declarations parse. (Plan 33-02 shipped
             // the type itself; this entry wires it into the type-name parser.)
             TokenType.Identifier when token.Text == "Sfz" => SfzType.Instance,
+            // Phase 36 Plan 36-06: MarkovModel is the 17th SpecialType. Required so
+            // `MarkovModel m = (markovTrain corpus 2)` declarations parse.
+            TokenType.Identifier when token.Text == "MarkovModel" => MarkovModelType.Instance,
+            // Phase 36 Plan 36-07: LsystemModel is the 18th SpecialType. Required so
+            // `LsystemModel m = (lsystemModel #A rules)` declarations parse.
+            TokenType.Identifier when token.Text == "LsystemModel" => LsystemModelType.Instance,
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -334,6 +340,8 @@ public static class TypeParser
             "Song" => SongType.Instance,
             "Tuning" => TuningType.Instance, // Phase 32 Plan 32-04
             "Sfz" => SfzType.Instance,       // Phase 33 Plan 33-05
+            "MarkovModel" => MarkovModelType.Instance, // Phase 36 Plan 36-06
+            "LsystemModel" => LsystemModelType.Instance, // Phase 36 Plan 36-07
             "Function" => FunctionType.Instance,
             _ => null
         };

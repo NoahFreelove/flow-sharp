@@ -11,13 +11,19 @@ namespace FlowLang.Tests.Phase36;
 /// Scans <c>flow-lang/StandardLibrary/Patterns/</c>,
 /// <c>flow-lang/StandardLibrary/Generative/</c>, and
 /// <c>flow-lang/StandardLibrary/Improv/</c> for occurrences of
-/// <c>new Random(</c> (outside <c>//</c> line comments). Asserts zero hits.
+/// <c>new Random(</c> (outside <c>//</c> line comments). Asserts zero hits
+/// EXCEPT on lines bearing the trailing comment marker
+/// <c>// PRNG-SANCTIONED:</c> — which Plan 36-06+ uses to flag the
+/// explicit-seed overloads of Markov / L-system / cellular / chaos
+/// builtins, where <c>new Random(seed)</c> IS the contract.
 ///
-/// Per D-v1.5-06 / D-36-09: every PRNG-driven primitive added in later Phase 36
-/// plans MUST route through <see cref="FlowLang.Runtime.PrngRegistry"/> rather
-/// than constructing a wall-clock <c>Random</c> directly. Today (Plan 36-01)
-/// the three target directories do not yet exist — the fact passes
-/// vacuously, but it BECOMES the gate the moment Plans 36-05+ create those
+/// Per D-v1.5-06 / D-36-09: every UNSEEDED PRNG-driven primitive MUST
+/// route through <see cref="FlowLang.Runtime.PrngRegistry"/> rather
+/// than constructing a wall-clock <c>Random</c> directly. The sanctioned
+/// marker preserves the spirit of the gate (no wall-clock Randoms) while
+/// permitting documented seed-driven exceptions. Today (Plan 36-01) the
+/// three target directories did not yet exist — the fact passed vacuously
+/// then; it BECOMES the gate the moment Plans 36-05+ create those
 /// directories. Mirrors Phase 29 LicenseAuditTests' source-grep pattern.
 /// </summary>
 public class PrngRegistryNewRandomGateTests
@@ -52,6 +58,12 @@ public class PrngRegistryNewRandomGateTests
                     continue;
                 if (line.Contains("new Random(", StringComparison.Ordinal))
                 {
+                    // Plan 36-06: lines bearing the trailing
+                    // `// PRNG-SANCTIONED:` marker are documented exceptions —
+                    // the explicit-seed overloads of generative builtins MUST
+                    // construct `new Random(seed)` directly per their contract.
+                    if (line.Contains("PRNG-SANCTIONED:", StringComparison.Ordinal))
+                        continue;
                     hits++;
                     offenders.Add($"{file}:{i + 1}: {line.Trim()}");
                 }

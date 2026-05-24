@@ -200,6 +200,8 @@ Single source of truth — alongside the Special Types list above.
 | `#foo`               | `Symbol`      | strict (no `Double`/`Float`) | `Dict<Symbol, V>` keys, identity-equality usage                                   |
 | `(loadScala "x.scl")` | `Tuning`     | strict (reference identity; no `Double`/`Float`) | `tuning t { ... }` block, `(str t)` description, reference-equality usage (Phase 32)         |
 | `(loadSfz #violin)`  | `Sfz`         | strict (reference identity; no `Double`/`Float`) | `Sfz` variable binding for `renderSong song "sampler:NAME"` dispatch (Phase 33)              |
+| `(markovTrain ...)` returned ref | `MarkovModel` | strict (reference identity; no `Double`/`Float`) | `markovGenerate`, `markovEqual` — `(eq m1 m2)` is reference-compare (false on independently-trained models); `(markovEqual m1 m2)` is structural compare (Phase 36) |
+| `(lsystemModel ...)` returned ref | `LsystemModel` | strict (reference identity; no `Double`/`Float`) | `lsystemGenerate`, `lsystemEqual` — `(eq m1 m2)` is reference-compare (distinct on independently-built models); `(lsystemEqual m1 m2)` is structural compare. Pure deterministic Symbol rewriting; iteration count clamped to [0, 20] (T-36-17 DoS guard) (Phase 36) |
 
 Notes:
 - Decibel and Millisecond/Second use the `CentType.cs:24-27` pattern (sealed singleton with `IsCompatibleWith(Double|Float)`); see `flow-lang/TypeSystem/SpecialTypes/`.
