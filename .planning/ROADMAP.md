@@ -222,7 +222,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 Plans:
 **Wave 1**
 
-- [ ] 38-01-PLAN.md — Modernized watch + ANSI status panel + 200ms debounce + 30s CancellationToken (LIVE-02)
+- [x] 38-01-PLAN.md — Modernized watch + ANSI status panel + 200ms debounce + 30s CancellationToken (LIVE-02)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -337,7 +337,7 @@ Plans:
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
-| 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |
+| 38. Live Coding 2.0 | v1.5 | 1/7 | In Progress|  |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
