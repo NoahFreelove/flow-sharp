@@ -113,6 +113,17 @@ public class PrngRegistry
     }
 
     /// <summary>
+    /// Phase 38 Plan 38-03 LIVE-03 test instrumentation — increments every
+    /// time <see cref="ResetAtRenderBoundary"/> is called. PrngReseedAtSwapTests
+    /// reads this to assert the live-block swap path fires exactly one
+    /// reseed per swap boundary (RESEARCH §D line 770). Production code
+    /// never reads this; the increment is one int operation per reset call.
+    /// Mirrors the <c>VoiceAllocator.LastPoolSizeUsedForTests</c>
+    /// AsyncLocal precedent at VoiceAllocator.cs:23-28.
+    /// </summary>
+    public int ResetCallCount { get; private set; }
+
+    /// <summary>
     /// Called at <c>renderSong</c> / <c>writeWav</c> / <c>exportWav</c> entry.
     /// Clears the per-site cache so the next pass starts from fresh reseeded
     /// <see cref="Random"/>s. The render-boundary salt stays constant in v1.5;
@@ -123,6 +134,7 @@ public class PrngRegistry
     {
         _registry.Clear();
         _drawCounts.Clear();
+        ResetCallCount++;
     }
 
     /// <summary>

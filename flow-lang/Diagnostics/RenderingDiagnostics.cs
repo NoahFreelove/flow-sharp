@@ -48,4 +48,17 @@ public static class RenderingDiagnostics
     {
         lock (_lock) { _emitted.Clear(); }
     }
+
+    /// <summary>
+    /// Test-only: returns <c>true</c> if <paramref name="sentinelKey"/> was
+    /// recorded by <see cref="WarnOnce"/> at least once since the last
+    /// <see cref="ResetForTesting"/> call. Consumed by Phase 38 Plan 38-03
+    /// TimeoutRevertTests to verify the live-block timeout advisory's dedup
+    /// sentinel landed at the locked <c>live-timeout:&lt;line&gt;</c> format
+    /// per UI-SPEC line 330.
+    /// </summary>
+    public static bool WasWarnedForTesting(string sentinelKey)
+    {
+        lock (_lock) { return _emitted.Contains(sentinelKey); }
+    }
 }
