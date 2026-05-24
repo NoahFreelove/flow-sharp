@@ -1,6 +1,6 @@
 Note: bench_function_calls.flow
 Note: Hot path measured: function dispatch + var lookup + parameter binding.
-Note: Drives a reduce loop calling a user proc each iteration.
+Note: Drives a reduce over (range 0 N) that calls a user proc each step.
 Note: Tuned iteration count: N = 600000 (200k=1.24s -> 300k=1.38s -> 600k=~2.5s target).
 
 use "@std"
