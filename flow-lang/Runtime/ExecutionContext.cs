@@ -74,7 +74,42 @@ public class ExecutionContext
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
-    public Dictionary<string, SectionData> SectionRegistry { get; } = new();
+    /// <summary>
+    /// Section registry — keyed by section name.
+    ///
+    /// <para>
+    /// Phase 36 Plan 36-10 (D-36-18 SECT-01) — value type is
+    /// <c>List&lt;SectionData&gt;</c> so multiple overloads with the same
+    /// name (but different pattern signatures) can coexist. The list
+    /// preserves DECLARATION ORDER which the OverloadResolver uses for
+    /// tiebreaker stability and the legacy "single-entry per name" path
+    /// is preserved as the trivial case (list of one). Zero-arg bare-name
+    /// references in song expressions still resolve correctly through the
+    /// <see cref="SectionRegistryFlat"/> helper.
+    /// </para>
+    /// </summary>
+    public Dictionary<string, List<SectionData>> SectionRegistry { get; } = new();
+
+    /// <summary>
+    /// Phase 36 Plan 36-10 — flat <c>Dictionary&lt;string, SectionData&gt;</c>
+    /// view of <see cref="SectionRegistry"/> for downstream consumers
+    /// (SongRenderer / MidiExport / SfzSampleCache) that don't yet know
+    /// about overloads. Returns the FIRST entry per name — sufficient for
+    /// bare-identifier dispatch on zero-arg sections. Parameterized
+    /// sections produce materialized SectionData entries under synthetic
+    /// keys (<c>name#callsite</c>) at song-evaluation time so the flat
+    /// view captures them too.
+    /// </summary>
+    public Dictionary<string, SectionData> SectionRegistryFlat()
+    {
+        var flat = new Dictionary<string, SectionData>();
+        foreach (var (key, list) in SectionRegistry)
+        {
+            if (list.Count > 0)
+                flat[key] = list[list.Count - 1];  // last-registered wins for legacy bare-name lookup
+        }
+        return flat;
+    }
 
     /// <summary>
     /// Phase 35 Plan 35-04 TEST-01 — registry of <c>(test "name" body)</c>
@@ -104,6 +139,49 @@ public class ExecutionContext
     /// Phase 18/25/27/28/29/33.
     /// </summary>
     public PrngRegistry PrngRegistry { get; } = new();
+
+    /// <summary>
+    /// Phase 36 Plan 36-11 (D-36-12, IMPROV-01) — style-pack registry keyed by
+    /// Symbol-typed <see cref="Value"/>. Populated at FlowEngine init by
+    /// <c>StyleRegistry.LoadAtEngineInit</c> (shipped packs at
+    /// <c>flow-lang/improv/styles/*.flow</c> first, then user packs at
+    /// <c>~/.config/flow/styles/*.flow</c>; last-write-wins per Pitfall 8). The
+    /// <c>(registerStyle #name pack)</c> builtin mutates this dict at runtime.
+    /// Each value is a <see cref="DictData"/> holding the composer's rule-pack
+    /// content (beat_weights / interval_transitions / rhythmic_template /
+    /// articulation_distribution per the contract in
+    /// <c>flow-lang/improv/styles/README.md</c>).
+    ///
+    /// <para>
+    /// Keys use the same equality semantics as <see cref="SymbolInternTable"/>
+    /// (interned Symbol values → pointer equality), so the standard
+    /// <see cref="Value"/>-keyed Dictionary lookup works directly without a
+    /// custom comparer.
+    /// </para>
+    /// </summary>
+    public Dictionary<Value, DictData> StyleRegistry { get; } = new();
+
+    /// <summary>
+    /// Phase 36 Plan 36-11 — dedup set for the per-style override advisory
+    /// emitted by the user-pack load path (Pitfall 8). Tracks Symbol name
+    /// strings (not Values) because the user-pack file is loaded into the SAME
+    /// <see cref="ExecutionContext"/> as the shipped packs — the override
+    /// detection sees the EXISTING entry already in <see cref="StyleRegistry"/>
+    /// and fires the advisory keyed by the symbol name string.
+    /// </summary>
+    public HashSet<string> StyleOverrideAdvisoriesEmitted { get; } = new();
+
+    /// <summary>
+    /// Phase 36 Plan 36-11 — when <c>true</c>, the <c>registerStyle</c> builtin
+    /// suppresses its "user overrides shipped" advisory for the duration of the
+    /// flag. Set by <c>StyleRegistry.LoadShippedAndUserPacks</c> during the
+    /// shipped-pack phase only — re-registering the same shipped pack between
+    /// processes (e.g., back-to-back FlowEngine instances) is NOT an override
+    /// from the composer's perspective. The user-pack phase un-sets the flag
+    /// so a user pack with the same Symbol as a shipped pack DOES fire the
+    /// override advisory once.
+    /// </summary>
+    public bool SuppressStyleOverrideAdvisory { get; set; } = false;
 
     /// <summary>
     /// Phase 36 Plan 36-05 — the currently-evaluating builtin call site, set by
@@ -576,7 +654,11 @@ public class ExecutionContext
             // 1-3. Global frame variables, test registry size, section registry.
             GlobalVariables = GlobalFrame.SnapshotLocalVariables(),
             TestRegistryCount = TestRegistry.Count,
-            SectionRegistry = new Dictionary<string, SectionData>(SectionRegistry),
+            // Phase 36 Plan 36-10 — deep-copy each per-name list so post-snapshot
+            // mutations on the live registry don't leak into the snapshot.
+            SectionRegistry = SectionRegistry.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new List<SectionData>(kvp.Value)),
 
             // 4. Phase 26.1 — Symbol intern table.
             SymbolInternTable = new Dictionary<string, Value>(SymbolInternTable),
@@ -610,6 +692,15 @@ public class ExecutionContext
             //     this dict so post-snapshot draws on the same Random instances
             //     replay the SAME values they would have drawn before mutation.
             PrngRegistryState = PrngRegistry.SnapshotForTesting(),
+
+            // 13. Phase 36 Plan 36-11 — StyleRegistry snapshot. Value keys are
+            //     interned Symbol values (pointer-equality), DictData values
+            //     are immutable copies, so a shallow copy is faithful. The
+            //     override-advisory dedup set is also captured so post-test
+            //     reload (a test that resets and re-loads packs) sees a clean
+            //     advisory slate.
+            StyleRegistryState = new Dictionary<Value, DictData>(StyleRegistry),
+            StyleOverrideAdvisoriesEmitted = new HashSet<string>(StyleOverrideAdvisoriesEmitted),
         };
     }
 
@@ -631,10 +722,10 @@ public class ExecutionContext
         while (TestRegistry.Count > snap.TestRegistryCount)
             TestRegistry.RemoveAt(TestRegistry.Count - 1);
 
-        // 3. SectionRegistry.
+        // 3. SectionRegistry — Phase 36 Plan 36-10 list-of-overloads shape.
         SectionRegistry.Clear();
         foreach (var (k, v) in snap.SectionRegistry)
-            SectionRegistry[k] = v;
+            SectionRegistry[k] = new List<SectionData>(v);
 
         // 4. SymbolInternTable.
         SymbolInternTable.Clear();
@@ -679,6 +770,23 @@ public class ExecutionContext
         //     populate PrngRegistryState (Threat T-36-03 mitigation).
         if (snap.PrngRegistryState != null)
             PrngRegistry.RestoreFromSnapshot(snap.PrngRegistryState);
+
+        // 13. Phase 36 Plan 36-11 — StyleRegistry restore. Same null-guard
+        //     posture as #12. Clear + repopulate so the registry exactly
+        //     matches the snapshot (in-test (registerStyle ...) calls do not
+        //     leak across tests).
+        if (snap.StyleRegistryState != null)
+        {
+            StyleRegistry.Clear();
+            foreach (var kv in snap.StyleRegistryState)
+                StyleRegistry[kv.Key] = kv.Value;
+        }
+        if (snap.StyleOverrideAdvisoriesEmitted != null)
+        {
+            StyleOverrideAdvisoriesEmitted.Clear();
+            foreach (var key in snap.StyleOverrideAdvisoriesEmitted)
+                StyleOverrideAdvisoriesEmitted.Add(key);
+        }
 
         // Static reset hooks for mutable singletons without snapshot fields.
         // Per RESEARCH §Pitfall 3 — these existing hooks were added by prior

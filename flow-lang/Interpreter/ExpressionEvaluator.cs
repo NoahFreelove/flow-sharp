@@ -1,4 +1,5 @@
 using FlowLang.Ast;
+using FlowLang.Ast.Elements;
 using FlowLang.Ast.Expressions;
 using FlowLang.Ast.Patterns;
 using FlowLang.Ast.Statements;
@@ -799,28 +800,193 @@ public class ExpressionEvaluator
     private Value EvaluateSong(SongExpression song)
     {
         var sectionRefs = new List<SongSectionRef>();
+        var flatRegistry = new Dictionary<string, SectionData>();
 
-        foreach (var sectionRef in song.Sections)
+        // Phase 36 Plan 36-10 (D-36-13) — when the parser populated
+        // song.Elements (mixed BareSectionElement + SectionCallElement), the
+        // ELEMENT path is canonical. Each SectionCallElement materializes a
+        // SectionData via OverloadResolver dispatch + synthetic-frame body
+        // execution, registered under a unique synthetic name so the
+        // downstream renderer sees a flat registry of zero-arg-shaped
+        // entries (preserves SongRenderer / MidiExport / SfzSampleCache
+        // backward compatibility).
+
+        var elements = song.Elements;
+        if (elements != null)
         {
-            if (!_context.SectionRegistry.ContainsKey(sectionRef.Name))
+            int callIdx = 0;
+            foreach (var elem in elements)
             {
-                _errorReporter.ReportError(
-                    $"Undefined section '{sectionRef.Name}' in song arrangement", song.Location);
-                return Value.Void();
+                if (elem is BareSectionElement bare)
+                {
+                    if (!_context.SectionRegistry.TryGetValue(bare.Name, out var existing))
+                    {
+                        _errorReporter.ReportError(
+                            $"Undefined section '{bare.Name}' in song arrangement", song.Location);
+                        return Value.Void();
+                    }
+                    // Bare reference dispatches to the zero-arg overload (Parameters==null)
+                    // if present, else the LAST-registered overload.
+                    SectionData? target = null;
+                    foreach (var s in existing)
+                        if (s.Parameters == null) { target = s; break; }
+                    target ??= existing[existing.Count - 1];
+                    if (bare.RepeatCount <= 0)
+                    {
+                        _errorReporter.ReportError(
+                            $"Repeat count must be positive, got {bare.RepeatCount} for section '{bare.Name}'",
+                            song.Location);
+                        return Value.Void();
+                    }
+                    flatRegistry[bare.Name] = target;
+                    sectionRefs.Add(new SongSectionRef(bare.Name, bare.RepeatCount));
+                }
+                else if (elem is SectionCallElement call)
+                {
+                    var materialized = EvaluateSectionCallToData(call);
+                    if (materialized == null)
+                        return Value.Void();  // diagnostic already emitted
+                    var syntheticName = $"{call.Name}#{callIdx++}";
+                    flatRegistry[syntheticName] = materialized;
+                    sectionRefs.Add(new SongSectionRef(syntheticName, call.RepeatCount));
+                }
             }
-
-            if (sectionRef.RepeatCount <= 0)
+        }
+        else
+        {
+            // Pre-Phase-36 path (defensive — parser should always populate Elements now)
+            foreach (var sectionRef in song.Sections)
             {
-                _errorReporter.ReportError(
-                    $"Repeat count must be positive, got {sectionRef.RepeatCount} for section '{sectionRef.Name}'",
-                    song.Location);
-                return Value.Void();
+                if (!_context.SectionRegistry.TryGetValue(sectionRef.Name, out var existing))
+                {
+                    _errorReporter.ReportError(
+                        $"Undefined section '{sectionRef.Name}' in song arrangement", song.Location);
+                    return Value.Void();
+                }
+                if (sectionRef.RepeatCount <= 0)
+                {
+                    _errorReporter.ReportError(
+                        $"Repeat count must be positive, got {sectionRef.RepeatCount} for section '{sectionRef.Name}'",
+                        song.Location);
+                    return Value.Void();
+                }
+                SectionData? target = null;
+                foreach (var s in existing)
+                    if (s.Parameters == null) { target = s; break; }
+                target ??= existing[existing.Count - 1];
+                flatRegistry[sectionRef.Name] = target;
+                sectionRefs.Add(new SongSectionRef(sectionRef.Name, sectionRef.RepeatCount));
             }
-
-            sectionRefs.Add(new SongSectionRef(sectionRef.Name, sectionRef.RepeatCount));
         }
 
-        var songData = new SongData(sectionRefs, new Dictionary<string, SectionData>(_context.SectionRegistry));
+        var songData = new SongData(sectionRefs, flatRegistry);
         return Value.Song(songData);
+    }
+
+    /// <summary>
+    /// Phase 36 Plan 36-10 (SECT-01) — dispatches a section call through
+    /// OverloadResolver, evaluates the matched section's body under a
+    /// synthetic frame with bound parameter values (Pitfall 7 dynamic
+    /// scope — the synthetic frame inherits the CALLSITE's MusicalContext,
+    /// not the declaration's), and returns the materialized SectionData
+    /// (sequences harvested from the body's local variables + bare-expr capture).
+    /// Returns <c>null</c> on dispatch failure (diagnostic already emitted).
+    /// </summary>
+    private SectionData? EvaluateSectionCallToData(SectionCallElement call)
+    {
+        if (!_context.SectionRegistry.TryGetValue(call.Name, out var candidates))
+        {
+            _errorReporter.ReportError(
+                $"Undefined section '{call.Name}' in song arrangement", call.Location);
+            return null;
+        }
+
+        // Evaluate positional args
+        var posValues = new List<Value>();
+        foreach (var argExpr in call.PositionalArgs)
+            posValues.Add(Evaluate(argExpr));
+
+        // Evaluate named args
+        Dictionary<string, Value>? namedValues = null;
+        if (call.NamedArgs != null && call.NamedArgs.Count > 0)
+        {
+            namedValues = new Dictionary<string, Value>();
+            foreach (var (n, vexpr) in call.NamedArgs)
+                namedValues[n] = Evaluate(vexpr);
+        }
+
+        // OverloadResolver dispatch — scan candidates for a match
+        var matched = FlowLang.Interpreter.SectionOverloadDispatch.Resolve(
+            call.Name,
+            candidates,
+            posValues,
+            namedValues,
+            _context,
+            _errorReporter,
+            this,
+            call.Location);
+
+        if (matched == null)
+            return null;  // diagnostic emitted by dispatcher
+
+        var (section, finalArgValues, bindings) = matched.Value;
+
+        // Synthetic-frame execution
+        _context.PushFrame();
+        try
+        {
+            foreach (var (n, v) in bindings)
+                _context.DeclareVariable(n, v);
+
+            var musicalContext = _context.GetMusicalContext();
+
+            // Re-run the body. Same shape as Interpreter.ExecuteSectionDeclaration's
+            // body-execution block — we mirror it here because the section is
+            // re-evaluated per call site with different bindings.
+            var bareExprSeqs = new List<SequenceData>();
+            // Note: we don't have access to _activeSectionBareExpressions from
+            // the ExpressionEvaluator. The section body's bare-expression
+            // sequences are captured via the local-variable scan + a manual
+            // post-pass.
+            if (section.Body != null)
+            {
+                foreach (var stmt in section.Body)
+                {
+                    // Use the parent Interpreter via _context.Invoker indirection;
+                    // Since we don't have direct Interpreter ref here, fall through
+                    // to a dispatched re-execution by invoking ExecuteStatement
+                    // through the ExecutionContext's invoker.
+                    _context.Invoker!.ExecuteStatement(stmt);
+
+                    if (stmt is ExpressionStatement
+                        && _context.Invoker.LastExpressionValue?.Data is SequenceData exprSeq)
+                    {
+                        bareExprSeqs.Add(exprSeq);
+                    }
+                }
+            }
+
+            var sequences = new Dictionary<string, SequenceData>();
+            foreach (var (n, val) in _context.CurrentFrame.GetLocalVariables())
+            {
+                if (val.Data is SequenceData seq)
+                    sequences[n] = seq;
+            }
+            for (int i = 0; i < bareExprSeqs.Count; i++)
+            {
+                if (!sequences.ContainsValue(bareExprSeqs[i]))
+                    sequences[$"_anon_{i}"] = bareExprSeqs[i];
+            }
+
+            return new SectionData(
+                section.Name,
+                sequences,
+                musicalContext,
+                call.Location);
+        }
+        finally
+        {
+            _context.PopFrame();
+        }
     }
 }

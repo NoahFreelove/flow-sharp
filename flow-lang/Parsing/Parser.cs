@@ -1,4 +1,5 @@
 using FlowLang.Ast;
+using FlowLang.Ast.Elements;
 using FlowLang.Ast.Expressions;
 using FlowLang.Ast.Patterns;
 using FlowLang.Ast.Statements;
@@ -467,13 +468,67 @@ public partial class Parser
         Expect(TokenType.LBracket, "Expected '[' for song arrangement");
 
         var sections = new List<SongSectionReference>();
+        var elements = new List<SongElement>();
 
         while (!Check(TokenType.RBracket) && !IsAtEnd())
         {
-            var sectionName = Expect(TokenType.Identifier, "Expected section name in song arrangement").Text;
+            var nameToken = Expect(TokenType.Identifier, "Expected section name in song arrangement");
+            var sectionName = nameToken.Text;
+            var elemLoc = nameToken.Location;
+
+            // Phase 36 Plan 36-10 (D-36-13): parameterized call shape
+            // `verse(arg1, arg2, name=value, ...)`. Mirrors the function-call
+            // arg-list logic from Phase 36 Plan 36-02 — supports positionals
+            // followed by named args; positional-after-named is rejected.
+            List<Expression>? positionalArgs = null;
+            Dictionary<string, Expression>? namedArgs = null;
+            bool isCall = false;
+            if (Match(TokenType.LParen))
+            {
+                isCall = true;
+                positionalArgs = new List<Expression>();
+                bool sawNamedArg = false;
+                while (!Check(TokenType.RParen) && !IsAtEnd())
+                {
+                    if (Check(TokenType.Identifier)
+                        && _current + 1 < _tokens.Count
+                        && _tokens[_current + 1].Type == TokenType.Assign)
+                    {
+                        var argNameTok = Advance();
+                        Advance(); // consume `=`
+                        var valueExpr = ParseExpression();
+                        namedArgs ??= new Dictionary<string, Expression>();
+                        if (namedArgs.ContainsKey(argNameTok.Text))
+                        {
+                            _errorReporter.ReportError(
+                                $"duplicate named argument '{argNameTok.Text}' in call to section '{sectionName}'",
+                                argNameTok.Location);
+                        }
+                        else
+                        {
+                            namedArgs[argNameTok.Text] = valueExpr;
+                        }
+                        sawNamedArg = true;
+                    }
+                    else
+                    {
+                        if (sawNamedArg)
+                        {
+                            _errorReporter.ReportError(
+                                $"positional argument after named argument is not allowed (in call to section '{sectionName}')",
+                                CurrentToken.Location);
+                        }
+                        positionalArgs.Add(ParseExpression());
+                    }
+                    // Allow comma between args (optional)
+                    if (!Check(TokenType.RParen)) Match(TokenType.Comma);
+                }
+                Expect(TokenType.RParen, "Expected ')' after section call arguments");
+            }
+
             int repeatCount = 1;
 
-            // Check for repeat: name*N
+            // Check for repeat: name*N or name(args)*N (D-36-14)
             if (Match(TokenType.Star))
             {
                 var countToken = Expect(TokenType.IntLiteral, "Expected repeat count after '*'");
@@ -481,17 +536,80 @@ public partial class Parser
             }
 
             sections.Add(new SongSectionReference(sectionName, repeatCount));
+
+            if (isCall)
+            {
+                elements.Add(new SectionCallElement(
+                    elemLoc,
+                    sectionName,
+                    positionalArgs!,
+                    NamedArgs: namedArgs,
+                    RepeatCount: repeatCount,
+                    Span: new Span(elemLoc, PreviousToken.Location)));
+            }
+            else
+            {
+                elements.Add(new BareSectionElement(
+                    elemLoc,
+                    sectionName,
+                    RepeatCount: repeatCount,
+                    Span: nameToken.EffectiveSpan));
+            }
         }
 
         Expect(TokenType.RBracket, "Expected ']' after song arrangement");
 
-        return new SongExpression(location, sections, Span: new Span(location, PreviousToken.Location));
+        return new SongExpression(
+            location,
+            sections,
+            Span: new Span(location, PreviousToken.Location),
+            Elements: elements);
     }
 
     private SectionDeclaration ParseSectionDeclaration()
     {
         var location = PreviousToken.Location;
         var name = Expect(TokenType.Identifier, "Expected section name").Text;
+
+        // Phase 36 Plan 36-10 (D-36-13..17 / SECT-01) — optional parameter
+        // list: `section verse(Pattern, Pattern, ...) { ... }`. Each parameter
+        // is a Phase 35 pattern (LiteralPattern / BindingPattern / ConstructorPattern /
+        // GuardPattern / etc.) optionally followed by `= Expression` for the
+        // default value (D-36-15).
+        //
+        // Backward-compat: when no LParen follows the name, both Parameters
+        // and DefaultValues stay null and the section behaves exactly like
+        // the pre-Phase-36 zero-arg form.
+        IReadOnlyList<Pattern>? parameters = null;
+        IReadOnlyList<Expression?>? defaultValues = null;
+        if (Match(TokenType.LParen))
+        {
+            var paramList = new List<Pattern>();
+            var defaultList = new List<Expression?>();
+            while (!Check(TokenType.RParen) && !IsAtEnd())
+            {
+                var pattern = ParseSectionParameterPattern();
+                Expression? defaultExpr = null;
+                if (Match(TokenType.Assign))
+                    defaultExpr = ParseExpression();
+                paramList.Add(pattern);
+                defaultList.Add(defaultExpr);
+                if (!Check(TokenType.RParen))
+                {
+                    if (!Match(TokenType.Comma))
+                    {
+                        // Allow space-separated for S-expression-friendly
+                        // surface but emit nothing on a clean Comma. If we
+                        // see something else AND we're not at RParen, bail.
+                        if (!Check(TokenType.RParen))
+                            Expect(TokenType.Comma, "Expected ',' between section parameters");
+                    }
+                }
+            }
+            Expect(TokenType.RParen, "Expected ')' after section parameters");
+            parameters = paramList;
+            defaultValues = defaultList;
+        }
 
         Expect(TokenType.LBrace, "Expected '{' after section name");
 
@@ -512,7 +630,13 @@ public partial class Parser
 
         Expect(TokenType.RBrace, "Expected '}' after section body");
 
-        return new SectionDeclaration(location, name, body, Span: new Span(location, PreviousToken.Location));
+        return new SectionDeclaration(
+            location,
+            name,
+            body,
+            Span: new Span(location, PreviousToken.Location),
+            Parameters: parameters,
+            DefaultValues: defaultValues);
     }
 
     private ImportStatement ParseImportStatement()
@@ -1482,6 +1606,93 @@ public partial class Parser
     /// <see cref="WildcardPattern"/> recovery so the surrounding match keeps
     /// parsing — mirrors the rest of Parser.cs's recovery posture.
     /// </summary>
+    /// <summary>
+    /// Phase 36 Plan 36-10 (D-36-17 SECT-01) — parses a single Pattern node
+    /// in section-parameter position. Recognized surface forms:
+    ///
+    /// <list type="bullet">
+    ///   <item><description><c>Type name</c> — typed BindingPattern (the
+    ///   common case: <c>Note root</c>, <c>Int repeats</c>).</description></item>
+    ///   <item><description><c>&lt;&lt;Type name, Type name&gt;&gt;</c> —
+    ///   ConstructorPattern with tuple-destructure flag set; binds each
+    ///   inner slot as a typed BindingPattern.</description></item>
+    ///   <item><description>Guard clause <c>pattern when (expr)</c> wraps the
+    ///   inner pattern in a GuardPattern (D-36-17).</description></item>
+    ///   <item><description>Otherwise falls through to the existing
+    ///   <see cref="ParsePattern"/> entry point — match-arm patterns
+    ///   (LiteralPattern, ConstructorPattern with music-aware extractors,
+    ///   BindingPattern, etc.) all work transparently.</description></item>
+    /// </list>
+    /// </summary>
+    private Pattern ParseSectionParameterPattern()
+    {
+        var location = CurrentToken.Location;
+
+        // Tuple-destructure pattern: `<<Type name, Type name, ...>>`
+        if (Match(TokenType.LessLess))
+        {
+            var subPatterns = new List<Pattern>();
+            while (!Check(TokenType.GreaterGreater) && !IsAtEnd())
+            {
+                var subPattern = ParseSectionParameterPattern();
+                subPatterns.Add(subPattern);
+                if (!Check(TokenType.GreaterGreater))
+                {
+                    if (!Match(TokenType.Comma))
+                    {
+                        if (!Check(TokenType.GreaterGreater))
+                            Expect(TokenType.Comma, "Expected ',' in tuple destructure pattern");
+                    }
+                }
+            }
+            Expect(TokenType.GreaterGreater, "Expected '>>' after tuple destructure pattern");
+            var tuplePattern = new ConstructorPattern(
+                location,
+                "Tuple",
+                subPatterns,
+                Span: new Span(location, PreviousToken.Location));
+
+            // Guard clause on tuple
+            if (Match(TokenType.When))
+            {
+                var guardExpr = ParseExpression();
+                return new GuardPattern(location, tuplePattern, guardExpr,
+                    Span: new Span(location, PreviousToken.Location));
+            }
+            return tuplePattern;
+        }
+
+        // Typed binding: `Type identifier`
+        if (IsTypeKeyword(CurrentToken.Type))
+        {
+            var (slotType, nextIdx, _) = Parsing.TypeParser.ParseType(_tokens, _current);
+            _current = nextIdx;
+            if (CurrentToken.Type == TokenType.Identifier)
+            {
+                var nameTok = Advance();
+                var binding = new BindingPattern(
+                    location,
+                    nameTok.Text,
+                    Span: new Span(location, PreviousToken.Location),
+                    TypeAnnotation: slotType);
+
+                if (Match(TokenType.When))
+                {
+                    var guardExpr = ParseExpression();
+                    return new GuardPattern(location, binding, guardExpr,
+                        Span: new Span(location, PreviousToken.Location));
+                }
+                return binding;
+            }
+            // If no identifier follows, fall through to the general parser
+            // (rare and likely a syntax error — let ParsePattern report it).
+            _current--;  // best-effort recover (rare)
+        }
+
+        // Fall through to the match-arm pattern grammar
+        return ParsePattern();
+    }
+
     private Pattern ParsePattern()
     {
         var startToken = CurrentToken;

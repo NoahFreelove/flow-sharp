@@ -1,0 +1,103 @@
+// =====================================================================
+// Tidal Combinators — Phase 36 @patterns showcase
+// =====================================================================
+// Exercises all 13 Tidal-style combinators that ship in `@patterns`
+// (PAT-01 / PAT-02 / D-36-01..05):
+//
+//   Deterministic (10):
+//     every, fast, slow, chunk, phase, rev, iter, palindrome, jux,
+//     superimpose
+//
+//   Stochastic (3 + 1 default-prob overload):
+//     sometimes, degrade, sparseSeq
+//
+// Cycle unit for the cycle-dependent combinators (every, chunk, phase)
+// is BARS — `(every 2 cb seq)` applies `cb` to bars 0, 2, 4, ...;
+// `(chunk N cb seq)` divides the sequence into N bar-aligned chunks;
+// `(phase 0.25 seq)` rotates by 25% of bar count. D-36-04.
+//
+// Stochastic combinators route their PRNG through
+// `ExecutionContext.PrngRegistry` keyed by (SourceLocation, name) per
+// D-v1.5-06 / D-36-09. Two consecutive renders of THIS file produce
+// byte-identical WAV output — `degrade` (fixed-50% drop) and
+// `sparseSeq` (composer-supplied drop probability) included.
+//
+// NOTE: `degrade` chained here uses a small drop probability via
+// `sparseSeq 0.85` (keep 85% of bars) so the final render still has
+// audible content. The full Tidal-compat fixed-50% drop is exercised
+// in `tests/test_patterns_chain.flow`.
+//
+// Render with:
+//   dotnet run --project flow-cli -- run examples/generative/tidal_combinators.flow
+
+use "@std"
+use "@audio"
+use "@patterns"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+
+            // -------------------------------------------------------------
+            // 4-bar base sequence — enough to make `every 2`, `chunk 4`,
+            // and `phase 0.25` produce visibly different behavior.
+            // -------------------------------------------------------------
+            Sequence base = | C4q D4q E4q F4q | G4q A4q B4q C5q | D5q E5q F5q G5q | A5q B5q C6q D6q |
+
+            // =============================================================
+            // Deterministic combinators — chained left-to-right.
+            // =============================================================
+
+            // (1) rev — reverse the bar order
+            Sequence step1 = (rev base)
+
+            // (2) palindrome — concat with its reverse
+            Sequence step2 = (palindrome step1)
+
+            // (3) every 2 + (4) fast 2.0 — double tempo on every 2nd bar
+            Sequence step3 = (every 2 (fn Sequence s => (fast s 2.0)) step2)
+
+            // (5) slow 2.0 — undo half the tempo doubling
+            Sequence step4 = (slow step3 2.0)
+
+            // (6) chunk 4 + transpose — rotate which 1/4 chunk gets +7st
+            Sequence step5 = (chunk 4 (fn Sequence s => (transpose s +7st)) step4)
+
+            // (7) phase 0.25 — rotate the sequence forward by 25% of bars
+            Sequence step6 = (phase 0.25 step5)
+
+            // (8) iter 2 — repeat the sequence 2 times
+            Sequence step7 = (iter 2 step6)
+
+            // (9) jux — layer original + lambda result (mono-mixed in v1.5;
+            //     reserves L/R placement for v1.6 per Plan 36-05)
+            Sequence step8 = (jux (fn Sequence s => (transpose s +12st)) step7)
+
+            // (10) superimpose — layer with a half-tempo voice
+            Sequence step9 = (superimpose (fn Sequence s => (slow s 2.0)) step8)
+
+            // =============================================================
+            // Stochastic combinators — PRNG routed via PrngRegistry.
+            // =============================================================
+
+            // (11) sometimes — 30% chance per bar of applying `rev`
+            Sequence step10 = (sometimes 0.3 (fn Sequence s => (rev s)) step9)
+
+            // (12) sparseSeq — keep 85% of bars (15% silently dropped)
+            Sequence step11 = (sparseSeq 0.85 step10)
+
+            // Note: full `degrade` (fixed 50% drop) is exercised in the
+            // companion regression test; chaining it here would silence
+            // half the bars in the final render.
+
+            // -------------------------------------------------------------
+            // Render to WAV. writeWav resets PrngRegistry at the boundary
+            // so two renders of this file produce byte-identical output.
+            // -------------------------------------------------------------
+            section A { Sequence v = step11 }
+            Song song = [A]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "/tmp/tidal_combinators.wav" mix)
+        }
+    }
+}

@@ -1,0 +1,81 @@
+// Phase 36 Plan 36-12 Task 1 — regression test pairing
+// examples/sections/parameterized.flow.
+//
+// Verifies that all 6 D-36-13..18 parameterized-section deliverables
+// dispatch cleanly in a single composer-facing file.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_parameterized_example.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+// Overload 1 — Note binding (specificity 500)
+section verse(Note root) {
+    Sequence inner = | C4q E4q G4q B4q |
+}
+
+// Overload 2 — tuple destructure (specificity 600)
+section verse(<<Note root, Int repeats>>) {
+    Sequence inner = | D4q F4q A4q C5q |
+}
+
+// Overload 3 — chord-literal music-aware extractor (specificity 800)
+section verse(Cmaj7) {
+    Sequence inner = | C4q E4q G4q B4q | C5q B4q G4q E4q |
+}
+
+// Defaults (D-36-15)
+section intro(Note root = C4, Int repeats = 2) {
+    Sequence inner = | C4h E4h | G4h B4h |
+}
+
+// Legacy zero-arg
+section chorus {
+    Sequence inner = | C4h E4h G4h B4h |
+}
+
+// D-36-13 — overload 1 (Note) dispatches
+Song s1 = [verse(C4)]
+Int s1Count = s1.SectionCount
+(test "parameterized example: overload 1 (Note) dispatches"
+    lazy((assertEq s1Count 1)))
+
+// D-36-13 — overload 2 (tuple destructure) dispatches
+Song s2 = [verse(<<D4, 3>>)]
+Int s2Count = s2.SectionCount
+(test "parameterized example: overload 2 (tuple) dispatches"
+    lazy((assertEq s2Count 1)))
+
+// D-36-17 — overload 3 (chord literal) dispatches
+Song s3 = [verse(Cmaj7)]
+Int s3Count = s3.SectionCount
+(test "parameterized example: overload 3 (Cmaj7 extractor) dispatches"
+    lazy((assertEq s3Count 1)))
+
+// D-36-15 — defaults apply when no args supplied
+Song s4 = [intro()]
+Int s4Count = s4.SectionCount
+(test "parameterized example: defaults apply when args omitted"
+    lazy((assertEq s4Count 1)))
+
+// D-36-13 — legacy zero-arg works
+Song s5 = [chorus]
+Int s5Count = s5.SectionCount
+(test "parameterized example: legacy zero-arg works"
+    lazy((assertEq s5Count 1)))
+
+// D-36-14 — *N repeat
+Song s6 = [verse(C4)*3]
+Int s6Count = s6.SectionCount
+(test "parameterized example: *N repeat composes with parameterized call"
+    lazy((assertEq s6Count 1)))
+
+// Full heterogeneous composition (mirror of the example)
+Song full = [intro() verse(C4) verse(<<D4, 3>>) verse(Cmaj7) chorus verse(C4)*3]
+Int fullCount = full.SectionCount
+(test "parameterized example: full heterogeneous Song dispatches"
+    lazy((assertEq fullCount 6)))
+
+(print "PARAMETERIZED EXAMPLE REGRESSION TESTS REGISTERED")

@@ -1,0 +1,34 @@
+Note: Phase 36 IMPROV-01 — baseline #classical rule pack
+Note: Loaded at FlowEngine init by StyleRegistry.LoadAtEngineInit
+Note: See flow-lang/improv/styles/README.md for the Dict shape contract.
+Note:
+Note: Classical character: tight chord-tone weight on strong beats (the
+Note: harmonic skeleton stays explicit), scale-tone-favored on weak beats with
+Note: ZERO chromatic_passing (classical purity), step-down/step-up dominate
+Note: intervals (smooth voice leading), legato/tenuto articulations for the
+Note: long-line phrasing.
+
+use "@improv"
+
+(registerStyle #classical
+    (dict
+        Note: ---- Beat-strength weights — explicit harmony, no chromatic ----
+        #beat_weights (dict
+            #strong (dict #chord_tone 0.85 #scale_tone 0.15 #chromatic_passing 0.00)
+            #weak   (dict #chord_tone 0.40 #scale_tone 0.60 #chromatic_passing 0.00))
+
+        Note: ---- Interval transitions — smooth voice leading ----
+        Note: stepwise heavily preferred; chromatic minimized; small leaps allowed.
+        #interval_transitions (dict
+            #step_up 0.38 #step_down 0.38
+            #leap_up 0.08 #leap_down 0.10
+            #chromatic 0.02 #repeat 0.04)
+
+        Note: ---- Rhythmic template — eighth-note straight feel ----
+        #rhythmic_template <<#eighth #eighth #eighth #eighth #eighth #eighth #eighth #eighth>>
+
+        Note: ---- Articulation distribution — long-line phrasing ----
+        #articulation_distribution (dict
+            #downbeat   #legato
+            #offbeat    #tenuto
+            #syncopated #legato)))

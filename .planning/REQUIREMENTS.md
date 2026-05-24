@@ -44,24 +44,24 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### Pattern Algebra (Phase 36)
 
-- [ ] **PAT-01**: 12 Tidal-style combinators on `Sequence` — `every`, `fast`, `slow`, `chunk`, `phase`, `rev`, `jux`, `sometimes`, `often`, `rarely`, `degrade`, `superimpose`. All compose via existing `->` chain. Live in new `@patterns` stdlib module.
-- [ ] **PAT-02**: Combinator semantics typed on Flow's `Sequence` (no polymorphic `Pattern a` monad — Flow's type system stays). Failures (zero-length sequence, divide-by-zero rate) charitably interpreted (`(fast seq 0)` → unchanged sequence with stderr advisory).
+- [x] **PAT-01**: 13 Tidal-style combinators on `Sequence` — `every`, `fast`, `slow`, `chunk`, `phase`, `rev`, `iter`, `palindrome`, `jux`, `sometimes`, `degrade`, `sparseSeq`, `superimpose` (D-36-01 hybrid: drops `often`/`rarely` collapsed into `sometimes prob`, drops `cat` redundant with `Transforms.concat`, drops `striate` Phase 37 territory, adds `iter`/`palindrome` from research, adds Flow-native `sparseSeq` for custom drop prob). All compose via direct calls; lambda-required transform-arg style per D-36-03. Live in new `@patterns` stdlib module. (Shipped Phase 36 Plan 36-05 commits `a0f9882`+`4ddbf86`+`c823c83`)
+- [x] **PAT-02**: Combinator semantics typed on Flow's `Sequence` (no polymorphic `Pattern a` monad — Flow's type system stays). Failures (zero-length sequence, divide-by-zero rate) charitably interpreted (`(fast seq 0)` → unchanged sequence with stderr advisory). (Shipped Phase 36 Plan 36-05 — `PatternChalkyEdgeCasesTests` 8/8 GREEN)
 
 ### Generative Primitives (Phase 36)
 
-- [ ] **GEN-01**: Markov chain primitive — `(markov corpus order length seed)`. Corpus is `Sequence` or `Array[Note]`; order ∈ [1, 3]; deterministic when `seed` provided.
-- [ ] **GEN-02**: L-system primitive — `(lsystem axiom rules iterations)`. Axiom and rules use `Symbol` alphabet (e.g. `#A #B #+`); rule application via dict of `Symbol → Array[Symbol]`; terminal symbols map to notes via final post-pass. Output is `Sequence`.
-- [ ] **GEN-03**: Cellular automata — `(cellular rule width steps seed)` for 1D rules (30 / 90 / 110 / 184 — musically interesting per research); `(life width height steps seed)` for 2D Game of Life. 1D output is `Sequence`; 2D output is `Array[Sequence]` (one per row).
-- [ ] **GEN-04**: Chaos maps — `(lorenz sigma rho beta length seed)` returns `Array[Double]` (one of x/y/z axes, default x) for parameter modulation; `(logistic r length seed)` returns `Array[Double]`. Quantized to `Sequence` via separate `(quantizeToScale series scale)` helper.
-- [ ] **GEN-05**: Determinism contract — all GEN-* primitives route through `Runtime/PrngRegistry` keyed by `(SourceLocation, generator-name)`. Unseeded calls reseed at `renderSong`/`writeWav` boundary preserving two-run cmp-clean contract (D-v1.5-06). Lorenz cross-platform FP divergence documented as platform-specific limitation; same-platform two-run cmp-clean preserved.
+- [x] **GEN-01**: Markov chain primitive — `(markov corpus order length seed)` one-shot OR `(markovTrain corpus order) → MarkovModel` + `(markovGenerate model length seed)` train-once-generate-many split (D-36-06). Corpus is `Sequence`; order ∈ [1, 3] charitably clamped; deterministic when `seed` provided. First-class `MarkovModel` reference-identity value type (specificity 148). Feature extraction via named-arg `features=#pitch` or `features=<<#pitch, #duration>>` (D-36-07). (Shipped Phase 36 Plan 36-06 commits `3628c64`+`89bd359`+`2a9067a`)
+- [x] **GEN-02**: L-system primitive — `(lsystem axiom rules iterations)` one-shot OR `(lsystemModel + lsystemGenerate)` split. Axiom and rules use `Symbol` alphabet (e.g. `#A #B #+`); rule application via dict of `Symbol → Symbol[]`; terminal symbols map to notes via `(lsystemToSequence symbols mapper)` post-pass. Output is `Sequence`. T-36-17 DoS guard via 20-iteration cap. First-class `LsystemModel` reference-identity value type (specificity 149). (Shipped Phase 36 Plan 36-07 commits `28091f1`+`e4b93ba`+`3bac210`)
+- [x] **GEN-03**: Cellular automata — `(cellular rule width steps seed)` for 1D rules (Wolfram canonical: 30/90/110/184 verified via hand-computed boolean rows); `(cellularSeeded rule width steps seed initialPattern)` escape-hatch with explicit `Array[Bool]` seed; `(life width height steps seed)` for 2D Conway with 30%-density seeded fill. 1D output is `Sequence`; 2D output is `Array[Sequence]`. T-36-19 DoS guard via 1024 per-dimension cap. (Shipped Phase 36 Plan 36-08 commits `292585c`+`c1c3a32`+`8478f11`)
+- [x] **GEN-04**: Chaos maps — `(lorenz sigma rho beta length seed)` forward-Euler 3-state ODE (returns `Array[Double]` x-axis trajectory; canonical butterfly fallback σ=10/ρ=28/β=8/3 on degenerate params); `(logistic r length seed)` recurrence in [0, 1] with r clamped to [0, 4]. Bridge via `(quantizeToScale series scale)` in two overloads (String scale-name + Array[Note] direct). T-36-21 DoS guard via 100,000-element length cap. Cross-platform FP divergence documented as platform-specific limitation per D-36-09. (Shipped Phase 36 Plan 36-09 commits `f96b5b2`+`061f2ab`+`f77e66a`)
+- [x] **GEN-05**: Determinism contract — all GEN-* + stochastic PAT-* + IMPROV-* primitives route through `Runtime/PrngRegistry` keyed by `(SourceLocation, generator-name)`. Unseeded calls reseed at `renderSong`/`writeWav` boundary preserving two-run cmp-clean contract (D-v1.5-06). `PrngRegistryNewRandomGateTests` source-grep gate enforces zero unsanctioned `new Random(` constructions; documented exceptions carry `// PRNG-SANCTIONED:` marker. Lorenz cross-platform FP divergence documented as platform-specific limitation; same-platform two-run cmp-clean preserved across 11 stochastic test/example files. (Shipped Phase 36 Plan 36-01 commits `164483d`+`5a234f1`+`bca3dec`; reinforced across all stochastic plans)
 
 ### Parameterized Sections (Phase 36)
 
-- [ ] **SECT-01**: Parameterized sections — `section verse(Note root, Int repeats) { ... }`. Section calls take positional args; calling pushes a synthetic frame onto the MusicalContext stack so `root` and `repeats` are bound during evaluation. Closure over outer musical state preserved. Existing zero-arg `section verse { ... }` form unchanged.
+- [x] **SECT-01**: Parameterized sections — `section verse(Note root = C4, Int repeats = 2) { ... }`. Section calls take positional + named args (D-36-13 parens syntax `[verse(C4, 2) chorus]`); calling pushes a synthetic frame at CALL time inheriting the CALLSITE's MusicalContext (D-36-10-03 / Pitfall 7 dynamic scope). Closure over outer musical state preserved. Existing zero-arg `section verse { ... }` form unchanged. Full Phase 35 pattern syntax in signatures: typed BindingPattern, tuple destructure, music-aware extractors (chord literal / roman numeral / articulation symbol) per D-36-17. Section overloading via OverloadResolver per D-36-18. Repeat operator `*N` (D-36-14). Defaults work with positional + named-arg forms (D-36-15). Arity / type errors via Phase 35-03 Rust-style multi-line DiagnosticRenderer (D-36-16). (Shipped Phase 36 Plan 36-10 commits `e935991`+`d0ddfb9`+`ac07132`+`c02aa12`)
 
 ### Improvisation API (Phase 36)
 
-- [ ] **IMPROV-01**: Chord-aware Markov improvisation — `(jam over=chords style=#bebop length=8bars seed=N)`. Style symbol resolves to a locked rule pack (`#jazz`, `#blues`, `#classical` baseline ship in v1.5; community contributions via Symbol-keyed dict in `@improv` stdlib). Output is `Sequence`. Deterministic when `seed` provided.
+- [x] **IMPROV-01**: Chord-aware Markov improvisation — `(jam over=chords style=#jazz length=8 key="Cmajor" seed=N order=2)`. Only `over` is required; defaults `style=#jazz`, `length=8`, `key=active MusicalContext`, `seed=PrngRegistry-routed`, `order=2`. Style symbol resolves to composer-editable Flow-file rule packs at `flow-lang/improv/styles/*.flow` (shipped `#jazz` / `#blues` / `#classical` baselines) + `~/.config/flow/styles/*.flow` (user packs, override shipped via Pitfall 8 last-write-wins). Pack Dict shape (scale_weights / interval_transitions / rhythmic_template / articulation_distribution) documented at `flow-lang/improv/styles/README.md`. The `key=` arg pushes a synthetic MusicalContext frame for chromatic pivot bars. Output is `Sequence`. Deterministic when `seed` provided. Charitable interpretation throughout: degenerate inputs emit one-shot advisory + return usable Sequence, never error. (Shipped Phase 36 Plan 36-11 commits `4e8957d`+`1291b87`+`f9dc75f`)
 
 ### Sound Design DSP (Phase 37)
 
@@ -189,15 +189,15 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | HK-02 | Phase 35 | Pending |
 | HK-03 | Phase 35 | Pending |
 | HK-04 | Phase 35 | Pending |
-| PAT-01 | Phase 36 | Pending |
-| PAT-02 | Phase 36 | Pending |
-| GEN-01 | Phase 36 | Pending |
-| GEN-02 | Phase 36 | Pending |
-| GEN-03 | Phase 36 | Pending |
-| GEN-04 | Phase 36 | Pending |
-| GEN-05 | Phase 36 | Pending |
-| SECT-01 | Phase 36 | Pending |
-| IMPROV-01 | Phase 36 | Pending |
+| PAT-01 | Phase 36 | Shipped (Plan 36-05 — `a0f9882` / `4ddbf86` / `c823c83`) |
+| PAT-02 | Phase 36 | Shipped (Plan 36-05 — `a0f9882` / `c823c83`) |
+| GEN-01 | Phase 36 | Shipped (Plan 36-06 — `3628c64` / `89bd359` / `2a9067a`) |
+| GEN-02 | Phase 36 | Shipped (Plan 36-07 — `28091f1` / `e4b93ba` / `3bac210`) |
+| GEN-03 | Phase 36 | Shipped (Plan 36-08 — `292585c` / `c1c3a32` / `8478f11`) |
+| GEN-04 | Phase 36 | Shipped (Plan 36-09 — `f96b5b2` / `061f2ab` / `f77e66a`) |
+| GEN-05 | Phase 36 | Shipped (Plan 36-01 foundation — `164483d` / `5a234f1` / `bca3dec`; reinforced 36-05/06/07/08/09/11/12) |
+| SECT-01 | Phase 36 | Shipped (Plan 36-10 — `e935991` / `d0ddfb9` / `ac07132` / `c02aa12`) |
+| IMPROV-01 | Phase 36 | Shipped (Plan 36-11 — `4e8957d` / `1291b87` / `f9dc75f`) |
 | DSP-01 | Phase 37 | Pending |
 | DSP-02 | Phase 37 | Pending |
 | DSP-03 | Phase 37 | Pending |

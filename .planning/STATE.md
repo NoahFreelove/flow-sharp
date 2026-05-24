@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16
-last_updated: "2026-05-22T03:54:00.721Z"
-last_activity: 2026-05-22 -- Phase 36 execution started
+stopped_at: Phase 36 closed 2026-05-22 — 9/9 verified, ready for Phase 37 CONTEXT spawn
+last_updated: "2026-05-22T20:40:00Z"
+last_activity: 2026-05-22 -- Phase 36 closure (Plan 36-12) complete
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 19
-  completed_plans: 12
-  percent: 14
+  completed_plans: 19
+  percent: 29
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 36 — Sequence Algebra & Generative
+**Current focus:** Phase 37 — Sound Design + Sampler Polish (pending CONTEXT spawn)
 
 ## Current Position
 
-Phase: 36 (Sequence Algebra & Generative) — EXECUTING
-Plan: 1 of 12
-Next step: `/gsd:plan-phase 36` to produce PLAN.md inventory (estimated 10-12 plans)
-Status: Executing Phase 36
-Last activity: 2026-05-22 -- Phase 36 execution started
+Phase: 37 (Sound Design + Sampler Polish) — PENDING CONTEXT SPAWN
+Plan: 0 of 0 (Phase 37 not yet planned)
+Next step: `/clear` then `/gsd:context-phase 37` to spawn Phase 37 CONTEXT.md
+Status: Phase 36 closed 2026-05-22 (12/12 plans, 9/9 requirements verified per 36-VERIFICATION.md); Phase 37 awaits CONTEXT
+Last activity: 2026-05-22 -- Phase 36 closure (Plan 36-12) complete — Plan 36-12 executor signed off, ready for Phase 37 spawn
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
@@ -62,7 +62,20 @@ Last activity: 2026-05-22 -- Phase 36 execution started
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-**v1.4 closed.** Next session starts with `/gsd-new-milestone` to discuss the v1.5+ direction. Carryover candidates (recorded in MILESTONES.md v1.5 backlog block + 34-HUMAN-UAT.md ragtime `closed_with_followup` note): warmer-piano timbre / SFZ velocity layers / humanizeGaussian voice-block bug, stereo panning across instruments, second showcase genre (jazz / EDM / death metal), SFZ round-robin opcode parser extension, per-articulation envelope multipliers for sampled instrument path, sampled drums with transient-preserving pitch shift, more flute samples for D5 timbre crossover gap, GitHub-rendered video screen-recording demo, `flow showcase` CLI subcommand.
+**Phase 36 closed 2026-05-22.** Next session: run `/clear` to drop context, then `/gsd:context-phase 37` to spawn Phase 37 CONTEXT.md (Sound Design + Sampler Polish; 11 REQs — DSP-01..03, MIX-01..02, SAMP-01..03, PIANO-01, FLUTE-01, DRUM-01). Pre-plan audit at CONTEXT spawn (D-v1.5-09): confirm whether per-voice stereo pan in synth-path is shipped per PROJECT.md v1.0 Phase 2 — likely scope is SFZ-renderer-only retrofit; audit `Audio/SongRenderer.cs` + `Audio/Sfz/SfzRenderer.cs`. v1.5 milestone progress: 2/7 phases complete (35 + 36), 19/19 plans complete in those phases.
+
+**Phase 36 highlights:**
+- 13 Tidal-style combinators in `@patterns` stdlib (every/fast/slow/chunk/phase/rev/iter/palindrome/jux/superimpose + sometimes/degrade/sparseSeq)
+- Markov + L-system + cellular automata + Lorenz/logistic chaos primitives in `@generative` stdlib; first-class `MarkovModel` + `LsystemModel` reference-identity value types (specificity 148 + 149)
+- Parameterized sections (SECT-01) with full Phase 35 pattern syntax in signatures + overloading + defaults + `*N` repeat + Rust-style multi-line diagnostics
+- Chord-aware Markov improvisation in `@improv` stdlib (`jam`) with composer-editable Flow-file style packs (jazz / blues / classical) + XDG override discovery
+- Universal named-argument syntax (D-36-11) shipped at the WHOLE-language level with ~150-builtin parameter-name backfill
+- `Runtime/PrngRegistry` foundation routes stochastic primitives by (SourceLocation, name) preserving two-run cmp-clean determinism across `renderSong`/`writeWav` boundaries; `PrngRegistryNewRandomGateTests` source-grep CI gate enforces no unsanctioned `new Random(` in Patterns/Generative/Improv directories
+- Lorenz/logistic cross-platform FP divergence documented as platform-specific limitation per D-36-09; same-platform two-run cmp-clean preserved
+- 3 composer-facing tutorial chapters: `examples/generative/markov_jazz.flow`, `examples/generative/tidal_combinators.flow`, `examples/sections/parameterized.flow` — all pass two-run determinism + paired regression tests in `tests/test_*_example.flow`
+- Phase 36 xUnit: 173/173 GREEN; 24/24 composer .flow test files PASS
+
+**v1.4 carryover (still relevant for Phase 37):** Carryover candidates (recorded in MILESTONES.md v1.5 backlog block + 34-HUMAN-UAT.md ragtime `closed_with_followup` note): warmer-piano timbre / SFZ velocity layers, stereo panning across instruments, SFZ round-robin opcode parser extension, per-articulation envelope multipliers for sampled instrument path, sampled drums with transient-preserving pitch shift, more flute samples for D5 timbre crossover gap.
 
 ---
 
@@ -212,6 +225,18 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 31 P05 | ~40min | 1 task (RED→GREEN TDD) | 4 files (1 created: VarargsRenderingFacts.cs — 8 facts; 3 modified: LspMappings.cs +48 lines, HoverHandler.cs 1-line swap, SignatureHelpHandler.cs Label+Parameters swap) |
 | Phase 31 P06 | ~10min | 2 tasks | 9 files (4 created: comment-forms.flow + .snap, function-calls.flow + .snap; 5 modified: flow.tmLanguage.json + 4 re-snapped existing snapshots — sample/chords/musical-context/note-stream) |
 | Phase 31 P07 | ~9min | 1 task (empirical audit) | 1 file created (31-MIGRATION-AUDIT.md) |
+| Phase 36 P01 | ~35min | 2 tasks | 6 files (PrngRegistry.cs + ExecutionContext hooks + scripts/test_two_run_determinism.sh + source-grep gate + SUMMARY) |
+| Phase 36 P02 | ~50min | 3 tasks | 12 files (ParameterNames defaulted-positional + NamedArgs parser + OverloadResolver named-arg dispatch + SUMMARY) |
+| Phase 36 P03 | ~25min | 2 tasks | 7 files (~75 builtin signatures backfilled in BuiltInFunctions/Collections/Bars/Dict + coverage gate + SUMMARY) |
+| Phase 36 P04 | ~25min | 2 tasks | 8 files (~75 builtin signatures backfilled in Audio/DSP/Transforms/Tuning/SFZ/Vocal/Visualization/Composition/Harmony/TestFramework + SUMMARY) |
+| Phase 36 P05 | ~25min | 2 tasks | 12 files (PatternFunctions.cs 895L + patterns.flow + 3 xUnit suites 26 facts + 3 composer tests + ExecutionContext.CurrentCallSite + SUMMARY) |
+| Phase 36 P06 | ~55min | 2 tasks | 15 files (MarkovModelData + MarkovModelType + MarkovFunctions.cs 455L + Parser/TypeParser type allowlist + 2 xUnit suites + 2 composer tests + generative.flow + SUMMARY) |
+| Phase 36 P07 | ~40min | 2 tasks | 13 files (LsystemModelData + LsystemModelType + LsystemFunctions.cs 340L + Parser/TypeParser allowlist + 2 xUnit suites 14 facts + 2 composer tests + CLAUDE.md + SUMMARY) |
+| Phase 36 P08 | ~35min | 2 tasks | 7 files (CellularFunctions.cs 325L + 2 xUnit suites 13 facts + 2 composer tests + generative.flow forward decls + SUMMARY) |
+| Phase 36 P09 | ~30min | 2 tasks | 7 files (ChaosFunctions.cs 511L + 2 xUnit suites 14 facts + 2 composer tests + generative.flow forward decls + SUMMARY) |
+| Phase 36 P10 | ~80min | 3 tasks | 25 files (parameterized section AST + Parser + SectionOverloadDispatch + Interpreter wiring + 4 xUnit suites 24 facts + 5 composer tests + SUMMARY) |
+| Phase 36 P11 | ~80min | 2 tasks | 17 files (StyleRegistry + JamFunctions ~650L + 3 baseline rule packs + improv.flow + improv/styles/README.md + 3 xUnit suites + 3 composer tests + SUMMARY) |
+| Phase 36 P12 | ~15min | 2 tasks | 12 files (3 example .flow + 3 paired regression tests + 36-VERIFICATION.md + 36-VALIDATION.md status flip + CLAUDE.md Phase 36 section + ROADMAP + STATE + REQUIREMENTS + .gitignore + SUMMARY) |
 
 ## Accumulated Context
 

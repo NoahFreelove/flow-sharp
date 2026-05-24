@@ -1,0 +1,46 @@
+// Phase 36 Plan 36-11 Task 2 — composer-facing exercise of all 3 baseline
+// style packs (#jazz / #blues / #classical).
+//
+// Demonstrates the composer's ability to swap improvisation character by
+// changing a single Symbol argument. All three packs ship with FlowEngine and
+// load at engine init — composers don't need to do anything to use them.
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_jam_styles.flow
+
+use "@std"
+use "@improv"
+use "@test"
+
+Sequence chords = | Cmaj7 | Am7 | Dm7 | G7 |
+
+// Each style is independently seeded for determinism.
+Sequence jazz_a = (jam chords #jazz 4 "Cmajor" 42 2)
+Sequence jazz_b = (jam chords #jazz 4 "Cmajor" 42 2)
+Sequence blues_a = (jam chords #blues 4 "Cmajor" 42 2)
+Sequence blues_b = (jam chords #blues 4 "Cmajor" 42 2)
+Sequence classical_a = (jam chords #classical 4 "Cmajor" 42 2)
+Sequence classical_b = (jam chords #classical 4 "Cmajor" 42 2)
+
+(test "jam jazz pack is deterministic"
+    lazy((assertNotesMatch jazz_a jazz_b)))
+
+(test "jam blues pack is deterministic"
+    lazy((assertNotesMatch blues_a blues_b)))
+
+(test "jam classical pack is deterministic"
+    lazy((assertNotesMatch classical_a classical_b)))
+
+// Verify the registry contains all three baseline packs.
+Symbol[] registered = (listStyles)
+
+(test "shipped style packs are loaded at engine init"
+    lazy((assert (contains registered #jazz))))
+
+(test "blues pack is loaded"
+    lazy((assert (contains registered #blues))))
+
+(test "classical pack is loaded"
+    lazy((assert (contains registered #classical))))
+
+(print "JAM STYLES TESTS REGISTERED")

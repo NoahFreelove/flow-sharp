@@ -1,0 +1,26 @@
+// Phase 36 Plan 36-10 (SECT-01 / D-36-15) — composer-facing default-value
+// parameters + named-argument override.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_section_defaults.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+section verse(Note root = C4, Int repeats = 2) {
+  Sequence inner = | C4q D4q E4q F4q |
+}
+
+Song s1 = [verse()]
+Song s2 = [verse(repeats=5)]
+Int s1Count = s1.SectionCount
+Int s2Count = s2.SectionCount
+
+(test "section defaults apply when no args supplied"
+  lazy((assertEq s1Count 1)))
+
+(test "named-arg override applies, others default"
+  lazy((assertEq s2Count 1)))
+
+(print "SECTION DEFAULTS TEST REGISTERED")

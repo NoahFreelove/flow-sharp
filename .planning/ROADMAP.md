@@ -120,7 +120,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 ### Phase Summary
 
 - [x] **Phase 35: Language Foundation** (completed 2026-05-19) — Pattern matching (literal + constructor + wildcard + guard + music-aware extractors), Rust-style multi-line diagnostics, pure-Flow test framework + `flow test` CLI, `-> as name` chain naming, and v1.4 housekeeping (humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 verification gaps, CLAUDE.md "Public as of v1.4" footnote revision)
-- [ ] **Phase 36: Sequence Algebra & Generative** — 12 Tidal-style combinators on Sequence (every/fast/slow/chunk/phase/rev/jux/sometimes/often/rarely/degrade/superimpose), generative primitives (Markov, L-system, cellular automata, Lorenz/logistic chaos maps), parameterized sections, chord-aware Markov improvisation
+- [x] **Phase 36: Sequence Algebra & Generative** (completed 2026-05-22) — 13 Tidal-style combinators on `Sequence` in `@patterns` stdlib (every/fast/slow/chunk/phase/rev/iter/palindrome/jux/superimpose + sometimes/degrade/sparseSeq), generative primitives in `@generative` stdlib (Markov + train/generate split + MarkovModel ref-identity type, L-system + LsystemModel, cellular automata 1D + 2D Conway, Lorenz/logistic chaos maps + quantizeToScale bridge), parameterized sections (SECT-01 — full Phase 35 pattern syntax in signatures + overloading + defaults + `*N` repeat + Rust-style diagnostics), chord-aware Markov improvisation in `@improv` stdlib (`jam` + 3 baseline Flow-file style packs + XDG override discovery), universal named-argument syntax (D-36-11) with ~150-builtin backfill, and the new `Runtime/PrngRegistry` foundation routing PRNG by (SourceLocation, name) preserving two-run cmp-clean determinism
 - [ ] **Phase 37: Sound Design + Sampler Polish (largest phase)** — Granular synthesis (Hann/Gaussian/Tukey), independent time-stretch + pitch-shift via hand-rolled phase vocoder + PSOLA + #auto HPS detector, stereo pan + SFZ-renderer stereo retrofit, sampler polish bundle (SFZ round-robin, velocity-layer crossfade, per-articulation envelope multipliers, warmer piano timbre, more flute samples, sampled drums)
 - [ ] **Phase 38: Live Coding 2.0** — `live <quantize> { ... }` block + modernized watch mode + REPL polish (LSP-backed completion, `?fn` help, multiline + history search, piano-roll preview) + audio input via PA_STREAM_RECORD + OSC server/client (Rug.Osc 1.2.5)
 - [ ] **Phase 39: Notation Citizenship** — MusicXML 3.1 partwise export (MuseScore reference consumer per D-v1.5-08), LilyPond text emit, ABC 2.1 + abc2midi import, MML PC-98 common-core import
@@ -165,20 +165,20 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
   4. Composer can write `section verse(Note root, Int repeats) { ... }` and call it as `[verse(C4, 2) verse(G4, 1) chorus]` — section args bind in a synthetic stack frame on call, closure over outer musical context preserved. Existing zero-arg `section verse { ... }` form unchanged. (SECT-01)
   5. Composer can call `(jam over=chords style=#bebop length=8bars seed=N)` and get a chord-aware melodic Sequence respecting chord tones on strong beats and scale tones on weak beats; deterministic when `seed` provided; `#jazz`, `#blues`, `#classical` baseline rule packs ship. (IMPROV-01)
 
-**Plans**: 12 plans (pending execution)
+**Plans**: 12 plans (all complete 2026-05-22)
 
-- [x] 36-01-PLAN.md — PrngRegistry foundation + render-boundary hooks + two-run determinism harness (GEN-05)
-- [x] 36-02-PLAN.md — Universal named-argument syntax (lexer + parser + OverloadResolver) — D-36-11 foundation, no backfill yet (PAT-01)
-- [x] 36-03-PLAN.md — Named-arg backfill across BuiltInFunctions.cs + Collections + Bars + DictFunctions (PAT-01)
-- [x] 36-04-PLAN.md — Named-arg backfill across Audio + DSP + Transforms + Composition + Harmony + TestFramework (PAT-01)
-- [x] 36-05-PLAN.md — @patterns stdlib: 13 Tidal combinators (every/fast/slow/chunk/phase/rev/jux/sometimes/iter/palindrome/degrade/superimpose + sparseSeq) (PAT-01, PAT-02, GEN-05)
-- [ ] 36-06-PLAN.md — Markov primitives + MarkovModel reference-identity type (GEN-01, GEN-05)
-- [ ] 36-07-PLAN.md — L-system primitives with Symbol alphabet + LsystemModel reference-identity type (GEN-02, GEN-05)
-- [ ] 36-08-PLAN.md — Cellular automata: 1D elementary CA + 2D Game of Life (GEN-03, GEN-05)
-- [ ] 36-09-PLAN.md — Chaos maps: Lorenz + logistic + quantizeToScale (GEN-04, GEN-05)
-- [ ] 36-10-PLAN.md — Parameterized sections + section overload via Phase 35 pattern dispatch + Rust-style diagnostics (SECT-01)
-- [ ] 36-11-PLAN.md — jam builtin + StyleRegistry + 3 baseline rule packs (jazz/blues/classical) (IMPROV-01, GEN-05)
-- [ ] 36-12-PLAN.md — Composer-facing examples + Phase 36 VERIFICATION + ROADMAP/STATE/REQUIREMENTS closure (all 9 reqs)
+- [x] 36-01-PLAN.md — PrngRegistry foundation + render-boundary hooks + two-run determinism harness (GEN-05) — `164483d` / `5a234f1` / `bca3dec`
+- [x] 36-02-PLAN.md — Universal named-argument syntax (lexer + parser + OverloadResolver) — D-36-11 foundation, no backfill yet (PAT-01) — `9f415c6` / `22508a9` / `e332462` / `4fc0854`
+- [x] 36-03-PLAN.md — Named-arg backfill across BuiltInFunctions.cs + Collections + Bars + DictFunctions (PAT-01) — `3e5de25` / `3df3a68` / `cc8b8ac`
+- [x] 36-04-PLAN.md — Named-arg backfill across Audio + DSP + Transforms + Composition + Harmony + TestFramework (PAT-01) — `a74827f` / `efcf8e5` / `90e2353`
+- [x] 36-05-PLAN.md — @patterns stdlib: 13 Tidal combinators (every/fast/slow/chunk/phase/rev/jux/sometimes/iter/palindrome/degrade/superimpose + sparseSeq) (PAT-01, PAT-02, GEN-05) — `a0f9882` / `4ddbf86` / `c823c83`
+- [x] 36-06-PLAN.md — Markov primitives + MarkovModel reference-identity type (GEN-01, GEN-05) — `3628c64` / `89bd359` / `2a9067a`
+- [x] 36-07-PLAN.md — L-system primitives with Symbol alphabet + LsystemModel reference-identity type (GEN-02, GEN-05) — `28091f1` / `e4b93ba` / `3bac210`
+- [x] 36-08-PLAN.md — Cellular automata: 1D elementary CA + 2D Game of Life (GEN-03, GEN-05) — `6ea3f7f` / `292585c` / `c1c3a32` / `8478f11`
+- [x] 36-09-PLAN.md — Chaos maps: Lorenz + logistic + quantizeToScale (GEN-04, GEN-05) — `57b0633` / `f96b5b2` / `061f2ab` / `f77e66a`
+- [x] 36-10-PLAN.md — Parameterized sections + section overload via Phase 35 pattern dispatch + Rust-style diagnostics (SECT-01) — `e935991` / `d0ddfb9` / `ac07132` / `c02aa12`
+- [x] 36-11-PLAN.md — jam builtin + StyleRegistry + 3 baseline rule packs (jazz/blues/classical) (IMPROV-01, GEN-05) — `4e8957d` / `1291b87` / `f9dc75f`
+- [x] 36-12-PLAN.md — Composer-facing examples + Phase 36 VERIFICATION + ROADMAP/STATE/REQUIREMENTS closure (all 9 reqs) — `727b3ea` + closure commit
 
 ### Phase 37: Sound Design + Sampler Polish
 
@@ -299,8 +299,8 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 | 32. Full Scala (.scl) Tuning Loader | v1.4 | 7/7 | Complete    | 2026-05-15 |
 | 33. SFZ Orchestral Sampler | v1.4 | 7/7 | Complete    | 2026-05-16 |
 | 34. Symphony Showcase (v1.4 closer) | v1.4 | 6/6 | Complete | 2026-05-16 |
-| 35. Language Foundation | v1.5 | 5/7 | In Progress|  |
-| 36. Sequence Algebra & Generative | v1.5 | 5/12 | In Progress|  |
+| 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
+| 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 0/0 | Not started | - |
 | 38. Live Coding 2.0 | v1.5 | 0/0 | Not started | - |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |

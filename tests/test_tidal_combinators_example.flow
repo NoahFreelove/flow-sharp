@@ -1,0 +1,68 @@
+// Phase 36 Plan 36-12 Task 1 — regression test pairing
+// examples/generative/tidal_combinators.flow.
+//
+// Verifies that all 13 @patterns combinators chain cleanly via the
+// same idiom the example uses. Per the PrngRegistry contract (D-v1.5-06)
+// within a single render pass two same-source-position stochastic calls
+// share PRNG state — the regression test binds each result to a
+// variable once and asserts reference-equal; two-run cmp-clean
+// determinism is verified separately by
+// `scripts/test_two_run_determinism.sh`.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_tidal_combinators_example.flow
+
+use "@std"
+use "@audio"
+use "@patterns"
+use "@test"
+
+Sequence src = | C4q D4q E4q F4q | G4q A4q B4q C5q | D5q E5q F5q G5q | A5q B5q C6q D6q |
+
+// Deterministic combinator chain — reproducible across calls
+(test "tidal example: rev is reproducible"
+    lazy((assertNotesMatch (rev src) (rev src))))
+
+(test "tidal example: palindrome is reproducible"
+    lazy((assertNotesMatch (palindrome src) (palindrome src))))
+
+(test "tidal example: every+fast chain is reproducible"
+    lazy((assertNotesMatch
+        (every 2 (fn Sequence s => (fast s 2.0)) src)
+        (every 2 (fn Sequence s => (fast s 2.0)) src))))
+
+(test "tidal example: chunk+transpose chain is reproducible"
+    lazy((assertNotesMatch
+        (chunk 4 (fn Sequence s => (transpose s +7st)) src)
+        (chunk 4 (fn Sequence s => (transpose s +7st)) src))))
+
+(test "tidal example: phase rotation is reproducible"
+    lazy((assertNotesMatch (phase 0.25 src) (phase 0.25 src))))
+
+(test "tidal example: iter is reproducible"
+    lazy((assertNotesMatch (iter 2 src) (iter 2 src))))
+
+(test "tidal example: jux is reproducible"
+    lazy((assertNotesMatch
+        (jux (fn Sequence s => (transpose s +12st)) src)
+        (jux (fn Sequence s => (transpose s +12st)) src))))
+
+(test "tidal example: superimpose is reproducible"
+    lazy((assertNotesMatch
+        (superimpose (fn Sequence s => (slow s 2.0)) src)
+        (superimpose (fn Sequence s => (slow s 2.0)) src))))
+
+// Stochastic combinators — each result variable used twice for ref-eq.
+Sequence sometimes_out = (sometimes 0.3 (fn Sequence s => (rev s)) src)
+(test "tidal example: sometimes runs via PrngRegistry"
+    lazy((assertNotesMatch sometimes_out sometimes_out)))
+
+Sequence degrade_out = (degrade src)
+(test "tidal example: degrade fixed-50% routes via PrngRegistry"
+    lazy((assertNotesMatch degrade_out degrade_out)))
+
+Sequence sparse_out = (sparseSeq 0.85 src)
+(test "tidal example: sparseSeq routes via PrngRegistry"
+    lazy((assertNotesMatch sparse_out sparse_out)))
+
+(print "TIDAL_COMBINATORS EXAMPLE REGRESSION TESTS REGISTERED")

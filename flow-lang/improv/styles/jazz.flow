@@ -1,0 +1,39 @@
+Note: Phase 36 IMPROV-01 — baseline #jazz rule pack
+Note: Loaded at FlowEngine init by StyleRegistry.LoadAtEngineInit
+Note: See flow-lang/improv/styles/README.md for the Dict shape contract.
+Note:
+Note: Jazz character: chord-tone-heavy on strong beats, scale-tone-favored on
+Note: weak beats, light chromatic passing tones, eighth-note swing template,
+Note: accents on offbeats per jazz convention.
+
+use "@improv"
+
+Note: Inline dict literal — Flow's variable declarations require a type
+Note: annotation and the rule pack's outer dict has heterogeneous values
+Note: (Dict / Tuple / Dict-of-Symbol). The cleanest composer-facing surface
+Note: is to pass the dict literal inline to (registerStyle ...), bypassing
+Note: the type-annotation requirement.
+(registerStyle #jazz
+    (dict
+        Note: ---- Beat-strength → chord-tone vs scale-tone vs chromatic weights ----
+        #beat_weights (dict
+            #strong (dict #chord_tone 0.75 #scale_tone 0.20 #chromatic_passing 0.05)
+            #weak   (dict #chord_tone 0.30 #scale_tone 0.50 #chromatic_passing 0.20))
+
+        Note: ---- Interval-transition preferences (relative to previous note) ----
+        Note: Stepwise motion preferred; chromatic + leaps allowed but rare.
+        #interval_transitions (dict
+            #step_up 0.30 #step_down 0.30
+            #leap_up 0.10 #leap_down 0.15
+            #chromatic 0.10 #repeat 0.05)
+
+        Note: ---- Rhythmic template — eighth-note swing-heavy ----
+        Note: Symbols rather than NoteValue identifiers for portability — the
+        Note: jam impl maps #eighth/#quarter/etc. to the right beat slot count.
+        #rhythmic_template <<#eighth #eighth #eighth #eighth #eighth #eighth #eighth #eighth>>
+
+        Note: ---- Articulation distribution by beat strength ----
+        #articulation_distribution (dict
+            #downbeat   #legato
+            #offbeat    #accent
+            #syncopated #marcato)))

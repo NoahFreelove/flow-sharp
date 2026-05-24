@@ -57,6 +57,31 @@ vscode-extension/server/
 !examples/ragtime/**/*.flow
 !examples/ragtime/**/*.md
 
+# Phase 36 Plan 36-12 — composer-facing tutorial chapters for the @patterns
+# combinators (examples/generative/tidal_combinators.flow), generative
+# primitives + jam (examples/generative/markov_jazz.flow), and
+# parameterized sections (examples/sections/parameterized.flow). Mirrors
+# the examples/symphony/ + examples/ragtime/ allow-list precedent.
+!examples/generative/
+!examples/generative/**
+!examples/generative/**/*.flow
+!examples/generative/**/*.md
+!examples/sections/
+!examples/sections/**
+!examples/sections/**/*.flow
+!examples/sections/**/*.md
+
+# Same Phase 34 D-502 defensive enforcement applied to the Phase 36 example
+# folders — rendered WAV/MIDI/MP3 should NEVER land inside the tracked
+# tutorial-chapter directories. Composer's intended writeWav target is
+# `/tmp/` per the test harness convention.
+examples/generative/*.wav
+examples/generative/*.mp3
+examples/generative/*.mid
+examples/sections/*.wav
+examples/sections/*.mp3
+examples/sections/*.mid
+
 # Phase 34 Plan 34-06 D-502 defensive enforcement: the !examples/{symphony,ragtime}/**
 # allow-list above re-includes EVERYTHING under those directories, which silently
 # defeats the global *.wav ignore for rendered audio. Composer's rendered showcase
@@ -140,6 +165,14 @@ examples/ragtime/*.mid
 # (so they remained tracked), but sfz.flow is new and needs an explicit
 # allow-list entry to escape the ignore.
 !flow-lang/sfz.flow
+
+# Phase 36 Plan 36-11 @improv stdlib module + the 3 baseline rule packs
+# under flow-lang/improv/styles/. Same precedent as sfz.flow above —
+# new shipped composer surface that escapes the global *.flow ignore.
+!flow-lang/improv.flow
+!flow-lang/improv/
+!flow-lang/improv/**
+!flow-lang/improv/**/*.flow
 
 # Editor-setup documentation (docs/editor-setup/) is user-facing prose and
 # MUST be tracked even though *.md is globally ignored above. Raw snippets

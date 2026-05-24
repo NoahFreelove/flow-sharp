@@ -1,0 +1,100 @@
+// =====================================================================
+// Parameterized Sections — Phase 36 SECT-01 showcase
+// =====================================================================
+// Demonstrates D-36-13..18 parameterized section deliverables:
+//
+//   D-36-13: parens-call syntax inside song expressions —
+//            `[verse(C4) chorus]` — zero-arg sections stay as bare
+//            identifier (`chorus`)
+//   D-36-14: `*N` repetition operator composes with parameterized
+//            calls — `verse(C4)*3` repeats the call 3 times
+//   D-36-15: section params support default values —
+//            `section verse(Note root = C4, Int repeats = 2) { ... }`
+//   D-36-16: Rust-style multi-line diagnostics on arity / type
+//            mismatch (exercised in the regression test only)
+//   D-36-17: full Phase 35 pattern syntax in section signatures —
+//            tuple destructure, music-aware extractors (chord literal),
+//            typed bindings
+//   D-36-18: section overloading — multiple sections with the same
+//            name but different pattern signatures coexist; the
+//            OverloadResolver picks the highest-specificity match at
+//            call time
+//
+// Synthetic-frame dynamic scope (D-36-10-03 / Pitfall 7): the
+// parameterized body executes inside a synthetic frame at CALL time,
+// inheriting the CALLSITE's MusicalContext (NOT the declaration's).
+//
+// Render with:
+//   dotnet run --project flow-cli -- run examples/sections/parameterized.flow
+
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+
+            // -------------------------------------------------------------
+            // Overload 1 — single Note binding pattern, specificity 500
+            // (D-36-17 typed BindingPattern).
+            // -------------------------------------------------------------
+            section verse(Note root) {
+                Sequence inner = | C4q E4q G4q B4q |
+            }
+
+            // -------------------------------------------------------------
+            // Overload 2 — tuple destructure, specificity 600
+            // (D-36-17 tuple ConstructorPattern with typed bindings).
+            // -------------------------------------------------------------
+            section verse(<<Note root, Int repeats>>) {
+                Sequence inner = | D4q F4q A4q C5q |
+            }
+
+            // -------------------------------------------------------------
+            // Overload 3 — chord-literal music-aware extractor,
+            // specificity 800 (D-36-17 IsChordLiteral discriminator from
+            // Phase 35-06). When call args match this shape it wins over
+            // overloads 1 and 2.
+            // -------------------------------------------------------------
+            section verse(Cmaj7) {
+                Sequence inner = | C4q E4q G4q B4q | C5q B4q G4q E4q |
+            }
+
+            // -------------------------------------------------------------
+            // Default-value section (D-36-15). Calling as `intro()` uses
+            // both defaults; `intro(D4)` overrides root; the second slot
+            // is left at the default `2`.
+            // -------------------------------------------------------------
+            section intro(Note root = C4, Int repeats = 2) {
+                Sequence inner = | C4h E4h | G4h B4h |
+            }
+
+            // -------------------------------------------------------------
+            // Zero-arg section (legacy form per D-36-13 — bare identifier
+            // in the song expression below). Existing zero-arg sections
+            // continue to work unchanged.
+            // -------------------------------------------------------------
+            section chorus {
+                Sequence inner = | C4h E4h G4h B4h |
+            }
+
+            // -------------------------------------------------------------
+            // Song expression — exercises every overload, defaults, and
+            // the `*N` repeat operator (D-36-14). Heterogeneous bracket
+            // contents (parameterized vs bare identifier vs *N repeat)
+            // all compose in one Song list.
+            // -------------------------------------------------------------
+            Song song = [
+                intro()           // both defaults — root=C4, repeats=2
+                verse(C4)         // overload 1 (Note binding) wins
+                verse(<<D4, 3>>)  // overload 2 (tuple destructure) wins
+                verse(Cmaj7)      // overload 3 (chord literal) wins
+                chorus            // legacy zero-arg form
+                verse(C4)*3       // D-36-14 *N repeat — 3 copies
+            ]
+
+            Buffer mix = (renderSong song "piano")
+            (writeWav "/tmp/parameterized.wav" mix)
+        }
+    }
+}

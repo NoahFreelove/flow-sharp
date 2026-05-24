@@ -1,4 +1,5 @@
 using FlowLang.Core;
+using FlowLang.TypeSystem;
 
 namespace FlowLang.Ast.Patterns;
 
@@ -13,8 +14,19 @@ namespace FlowLang.Ast.Patterns;
 /// MUST NOT leak into the enclosing scope; that contract is gated by
 /// <c>MatchRuntimeTests.BindingDoesNotLeakToEnclosingScope</c>.
 /// </para>
+///
+/// <para>
+/// Phase 36 Plan 36-10 (D-36-17 SECT-01) extends the record with a
+/// defaulted-positional <see cref="TypeAnnotation"/> field so a section
+/// parameter <c>section verse(Note root)</c> can carry the <c>Note</c> type
+/// alongside the <c>root</c> name. Pre-Phase-36 BindingPatterns leave the
+/// field null (untyped binding); the resolver uses it both for specificity
+/// scoring (+500 typed vs +200 untyped per RESEARCH §Pattern 7 table) and
+/// for type-mismatch diagnostics at section-call time (D-36-16).
+/// </para>
 /// </summary>
 public record BindingPattern(
     SourceLocation Location,
     string Name,
-    Span? Span = null) : Pattern(Location, Span);
+    Span? Span = null,
+    FlowType? TypeAnnotation = null) : Pattern(Location, Span);

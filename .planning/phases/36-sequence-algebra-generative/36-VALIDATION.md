@@ -1,11 +1,12 @@
 ---
 phase: 36
 slug: sequence-algebra-generative
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: closed
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-05-20
-modified: 2026-05-20
+modified: 2026-05-22
+closed: 2026-05-22
 ---
 
 # Phase 36 — Validation Strategy
@@ -138,12 +139,12 @@ Framework install: NONE — xUnit.v3 + `flow test` CLI already exist.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
-- [ ] `nyquist_compliant: true` set in frontmatter (flipped by Plan 36-12 at closure)
-- [ ] `wave_0_complete: true` set in frontmatter (flipped by Plan 36-12 at closure)
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
+- [x] `nyquist_compliant: true` set in frontmatter (flipped by Plan 36-12 at closure)
+- [x] `wave_0_complete: true` set in frontmatter (flipped by Plan 36-12 at closure)
 
-**Approval:** pending
+**Approval:** signed-off 2026-05-22 (Plan 36-12 closure executor) — 9/9 requirements verified per 36-VERIFICATION.md; Phase 36 xUnit 173/173 GREEN; 24/24 composer .flow test files PASS; 3-file two-run cmp-clean PASS (markov_jazz `f46c1ca9...`, tidal_combinators `6d301369...`, parameterized `7d6d99c4...`).

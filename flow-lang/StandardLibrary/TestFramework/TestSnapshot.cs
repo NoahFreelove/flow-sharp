@@ -34,7 +34,12 @@ public sealed record TestSnapshot
     //      cardinality), and SectionRegistry contents.
     public required IReadOnlyDictionary<string, Value> GlobalVariables { get; init; }
     public required int TestRegistryCount { get; init; }
-    public required IReadOnlyDictionary<string, FlowLang.TypeSystem.SpecialTypes.SectionData> SectionRegistry { get; init; }
+    // Phase 36 Plan 36-10 (D-36-18) — value type is now List<SectionData> so
+    // overload-bearing same-name registrations are captured + restored
+    // verbatim. Pre-Phase-36 snapshot consumers only need the single
+    // last-registered entry per name (see ExecutionContext.SectionRegistryFlat)
+    // but the snapshot preserves the full overload list for fidelity.
+    public required IReadOnlyDictionary<string, List<FlowLang.TypeSystem.SpecialTypes.SectionData>> SectionRegistry { get; init; }
 
     // 4. Phase 26.1 — Symbol intern table (per-context).
     public required IReadOnlyDictionary<string, Value> SymbolInternTable { get; init; }
@@ -72,4 +77,12 @@ public sealed record TestSnapshot
     {
         get; init;
     }
+
+    // 13. Phase 36 Plan 36-11 — StyleRegistry snapshot. Defaulted-null so
+    //     pre-Plan-36-11 TestSnapshot constructions stay backward-compatible.
+    //     The dict is shallow-copied (Value keys are interned, DictData values
+    //     are immutable per Phase 26.1 DICT-02). The override-advisory dedup
+    //     set is captured alongside so the WarnOnce sentinels reset cleanly.
+    public IReadOnlyDictionary<Value, DictData>? StyleRegistryState { get; init; }
+    public IReadOnlySet<string>? StyleOverrideAdvisoriesEmitted { get; init; }
 }

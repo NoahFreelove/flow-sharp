@@ -8,6 +8,7 @@ using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Audio.Sfz;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.StandardLibrary.Generative;
+using FlowLang.StandardLibrary.Improv;
 using FlowLang.StandardLibrary.Patterns;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
@@ -155,6 +156,23 @@ public class FlowEngine : IDisposable
         // __enableSfzModule call inside sfz.flow flips the gate during
         // `use "@sfz"` import.
         SfzBuiltins.Register(internalRegistry, _context);
+        // Phase 36 Plan 36-11 — register the @improv stdlib surface
+        // (registerStyle / listStyles / jam builtins). The jam builtin lives
+        // alongside in JamFunctions.RegisterContextDependent, wired below.
+        // StyleRegistry.RegisterAndLoadAtEngineInit ALSO loads the shipped
+        // baseline packs (jazz/blues/classical) and any user packs under
+        // ~/.config/flow/styles/ — last-write-wins per Pitfall 8. We defer
+        // the pack-load step until AFTER JamFunctions.RegisterContextDependent
+        // has wired `jam` and the std.flow forward-decls have parsed (the
+        // packs only need `(dict ...)` + `(registerStyle ...)` which are
+        // already registered by BuiltInFunctions + StyleRegistry above).
+        StyleRegistry.RegisterBuiltinsOnly(internalRegistry, _context);
+        // Phase 36 Plan 36-11 — register the chord-aware Markov `jam` builtin.
+        // Routes its unseeded PRNG through ExecutionContext.PrngRegistry keyed
+        // by (CurrentCallSite, "jam"); seeded path uses `new Random(seed)`
+        // directly (PRNG-SANCTIONED). Reuses MarkovFunctions.TrainMarkov +
+        // GenerateMarkov via internal-method exposure.
+        JamFunctions.RegisterContextDependent(internalRegistry, _context);
         var moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
         // REQ-4 (Plan 30-03): seed the loader's AdditionalSearchPaths from the active
         // config singleton. Empty list when no config.toml is loaded — zero-cost no-op
@@ -165,6 +183,14 @@ public class FlowEngine : IDisposable
             moduleLoader.AdditionalSearchPaths.Add(p);
         _interpreter = new Interpreter.Interpreter(_context, _errorReporter, moduleLoader);
         moduleLoader.ParentInterpreter = _interpreter;
+
+        // Phase 36 Plan 36-11 — load shipped + user style packs AFTER the
+        // interpreter is fully wired. Each pack `use "@improv"` + declares a
+        // Dict<Symbol, Value> + calls (registerStyle #name pack), so we need
+        // the moduleLoader + parsing/interpretation surface to be ready. Pack
+        // loading is charitable — a malformed pack fires a one-shot stderr
+        // advisory and CONTINUES; FlowEngine init MUST NOT abort on a bad pack.
+        StyleRegistry.LoadShippedAndUserPacks(this, _context);
     }
 
     /// <summary>

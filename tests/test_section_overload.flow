@@ -1,0 +1,60 @@
+// Phase 36 Plan 36-10 (SECT-01 / D-36-18) — composer-facing section overloading.
+//
+// Demonstrates the 3-overload example from RESEARCH §Code Examples: a section
+// `verse` declared with three different pattern signatures coexists, and the
+// OverloadResolver dispatches to the highest-specificity match at call time.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_section_overload.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_section_overload.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+// Overload 1 — simple Note binding (specificity 500)
+section verse(Note root) {
+  Sequence base = | C4q E4q G4q B4q |
+}
+
+// Overload 2 — tuple destructure (specificity 600)
+section verse(<<Note root, Int repeats>>) {
+  Sequence base = | D4q F4q A4q C5q |
+}
+
+// Overload 3 — chord literal constructor pattern (specificity 800)
+section verse(Cmaj7) {
+  Sequence base = | C4q E4q G4q B4q |
+}
+
+Song s1 = [verse(C4)]
+Song s2 = [verse(<<D4, 3>>)]
+Song s3 = [verse(Cmaj7)]
+Int s1Count = s1.SectionCount
+Int s2Count = s2.SectionCount
+Int s3Count = s3.SectionCount
+
+(test "overload 1 (Note binding) dispatches"
+  lazy((assertEq s1Count 1)))
+
+(test "overload 2 (tuple destructure) dispatches"
+  lazy((assertEq s2Count 1)))
+
+(test "overload 3 (chord literal) dispatches"
+  lazy((assertEq s3Count 1)))
+
+(print "SECTION OVERLOAD TEST REGISTERED")
+
+// ===========================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+// ===========================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Song song = [verse(C4) verse(<<D4, 2>>) verse(Cmaj7)]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/section_overload.wav" mix)
+    }
+}

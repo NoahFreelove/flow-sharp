@@ -53,6 +53,14 @@ public class Interpreter : IFunctionInvoker
     public Value? GetLastExpressionValue() => _lastExpressionValue;
 
     /// <summary>
+    /// Phase 36 Plan 36-10 — IFunctionInvoker contract; exposes the last
+    /// evaluated expression value to the ExpressionEvaluator's section-call
+    /// dispatcher so bare-expression sequences emitted by a parameterized
+    /// section body can be captured at call time.
+    /// </summary>
+    public Value? LastExpressionValue => _lastExpressionValue;
+
+    /// <summary>
     /// Executes a program.
     /// </summary>
     public void Execute(Program program)
@@ -489,8 +497,67 @@ public class Interpreter : IFunctionInvoker
 
     private void ExecuteSectionDeclaration(SectionDeclaration section)
     {
-        // Check for duplicate section names
-        if (_context.SectionRegistry.ContainsKey(section.Name))
+        // Phase 36 Plan 36-10 (D-36-18 SECT-01) — section overload registration.
+        // Multiple same-name sections coexist when their parameter pattern
+        // signatures DIFFER; identical signatures raise "ambiguous section
+        // overload" via the declaration-time pre-flight check (Pitfall 3).
+        //
+        // Backward-compat: a zero-arg section (Parameters == null) is rejected
+        // as a duplicate when ANOTHER zero-arg section already exists under the
+        // same name — identical Parameters-null shapes are by definition
+        // indistinguishable.
+
+        if (section.Parameters != null)
+        {
+            // Parameterized section — DO NOT execute the body at declaration time;
+            // the body executes on each call site with bound parameter values
+            // pushed into a synthetic frame. Stash the declaration metadata in
+            // a SectionData with empty Sequences (the call-site dispatch
+            // re-runs the body and materializes the sequences).
+
+            // Pitfall 3 pre-flight: scan existing overloads for an identical
+            // pattern shape; identical shapes raise an Ambiguous-overload
+            // diagnostic instead of registering.
+            if (_context.SectionRegistry.TryGetValue(section.Name, out var existing))
+            {
+                foreach (var prior in existing)
+                {
+                    if (SectionsHaveIdenticalShape(prior, section))
+                    {
+                        _errorReporter.ReportError(
+                            $"Ambiguous section overload — section '{section.Name}' " +
+                            $"already declared with identical pattern shape" +
+                            (prior.SourceLocation != null
+                                ? $" at {prior.SourceLocation}"
+                                : ""),
+                            section.Location);
+                        return;
+                    }
+                }
+            }
+
+            var musicalCtx = _context.GetMusicalContext();
+            var stubData = new SectionData(
+                section.Name,
+                new Dictionary<string, SequenceData>(),
+                musicalCtx,
+                section.Location,
+                parameters: section.Parameters,
+                defaultValues: section.DefaultValues,
+                body: section.Body);
+
+            if (!_context.SectionRegistry.TryGetValue(section.Name, out var list))
+            {
+                list = new List<SectionData>();
+                _context.SectionRegistry[section.Name] = list;
+            }
+            list.Add(stubData);
+            return;
+        }
+
+        // Legacy zero-arg form: check for duplicate.
+        if (_context.SectionRegistry.TryGetValue(section.Name, out var existingZero)
+            && existingZero.Any(s => s.Parameters == null))
         {
             _errorReporter.ReportError(
                 $"Section '{section.Name}' is already defined", section.Location);
@@ -553,11 +620,77 @@ public class Interpreter : IFunctionInvoker
             }
 
             var sectionData = new SectionData(section.Name, sequences, musicalContext, section.Location);
-            _context.SectionRegistry[section.Name] = sectionData;
+            if (!_context.SectionRegistry.TryGetValue(section.Name, out var sectionList))
+            {
+                sectionList = new List<SectionData>();
+                _context.SectionRegistry[section.Name] = sectionList;
+            }
+            sectionList.Add(sectionData);
         }
         finally
         {
             _context.PopFrame();
+        }
+    }
+
+    /// <summary>
+    /// Phase 36 Plan 36-10 (Pitfall 3) — declaration-time identical-shape check.
+    /// Two parameterized sections are indistinguishable when both have the same
+    /// parameter-arity AND every parameter slot has a structurally identical
+    /// pattern (kind + flags + type annotation + sub-pattern shapes). Identical
+    /// shapes cannot be tiebroken by the resolver; the user must change one of
+    /// the signatures.
+    /// </summary>
+    private static bool SectionsHaveIdenticalShape(
+        FlowLang.TypeSystem.SpecialTypes.SectionData prior,
+        SectionDeclaration newSection)
+    {
+        // Zero-arg vs parameterized never collides via this path
+        if (prior.Parameters == null) return false;
+        if (newSection.Parameters == null) return false;
+        if (prior.Parameters.Count != newSection.Parameters.Count) return false;
+        for (int i = 0; i < prior.Parameters.Count; i++)
+        {
+            if (!PatternsHaveIdenticalShape(prior.Parameters[i], newSection.Parameters[i]))
+                return false;
+        }
+        return true;
+    }
+
+    private static bool PatternsHaveIdenticalShape(
+        FlowLang.Ast.Patterns.Pattern a,
+        FlowLang.Ast.Patterns.Pattern b)
+    {
+        if (a.GetType() != b.GetType()) return false;
+        switch (a)
+        {
+            case FlowLang.Ast.Patterns.BindingPattern bpA:
+                var bpB = (FlowLang.Ast.Patterns.BindingPattern)b;
+                return bpA.TypeAnnotation?.GetType() == bpB.TypeAnnotation?.GetType();
+            case FlowLang.Ast.Patterns.ConstructorPattern cpA:
+                var cpB = (FlowLang.Ast.Patterns.ConstructorPattern)b;
+                if (cpA.IsChordLiteral != cpB.IsChordLiteral) return false;
+                if (cpA.IsRomanNumeral != cpB.IsRomanNumeral) return false;
+                if (cpA.IsArticulationSymbol != cpB.IsArticulationSymbol) return false;
+                // Tuple-destructure shape: arity matters
+                if (cpA.Name == "Tuple" && cpB.Name == "Tuple")
+                {
+                    if (cpA.SubPatterns.Count != cpB.SubPatterns.Count) return false;
+                    for (int i = 0; i < cpA.SubPatterns.Count; i++)
+                    {
+                        if (!PatternsHaveIdenticalShape(cpA.SubPatterns[i], cpB.SubPatterns[i]))
+                            return false;
+                    }
+                    return true;
+                }
+                // Non-Tuple ConstructorPattern: same flag set + same Name
+                return cpA.Name == cpB.Name;
+            case FlowLang.Ast.Patterns.GuardPattern gpA:
+                var gpB = (FlowLang.Ast.Patterns.GuardPattern)b;
+                return PatternsHaveIdenticalShape(gpA.Inner, gpB.Inner);
+            default:
+                // LiteralPattern / WildcardPattern have no further fields to compare
+                return true;
         }
     }
 

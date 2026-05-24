@@ -1,0 +1,33 @@
+Note: Phase 36 IMPROV-01 — baseline #blues rule pack
+Note: Loaded at FlowEngine init by StyleRegistry.LoadAtEngineInit
+Note: See flow-lang/improv/styles/README.md for the Dict shape contract.
+Note:
+Note: Blues character: relaxed chord-tone bias on strong beats (more passing
+Note: tones than jazz), heavier chromatic passing on weak beats (bent-note
+Note: feel), step-up/step-down dominate intervals, marcato/accent articulations
+Note: on offbeats and syncopated positions for the gritty groove.
+
+use "@improv"
+
+(registerStyle #blues
+    (dict
+        Note: ---- Beat-strength weights — looser chord-tone grip, more chromatic ----
+        #beat_weights (dict
+            #strong (dict #chord_tone 0.55 #scale_tone 0.30 #chromatic_passing 0.15)
+            #weak   (dict #chord_tone 0.20 #scale_tone 0.45 #chromatic_passing 0.35))
+
+        Note: ---- Interval transitions — stepwise dominant, more chromatic ----
+        Note: bent-note feel via the elevated chromatic weight.
+        #interval_transitions (dict
+            #step_up 0.30 #step_down 0.30
+            #leap_up 0.05 #leap_down 0.10
+            #chromatic 0.20 #repeat 0.05)
+
+        Note: ---- Rhythmic template — eighth-note shuffle base ----
+        #rhythmic_template <<#eighth #eighth #eighth #eighth #eighth #eighth #eighth #eighth>>
+
+        Note: ---- Articulation distribution — bent / gritty articulations ----
+        #articulation_distribution (dict
+            #downbeat   #tenuto
+            #offbeat    #marcato
+            #syncopated #accent)))

@@ -192,6 +192,122 @@ public static class PatternMatcher
         return musicalNote.Articulation == expected;
     }
 
+    /// <summary>
+    /// Phase 36 Plan 36-10 (D-36-17 SECT-01) — section-overload dispatch
+    /// helper. Tries to match a list of patterns (the section's parameter
+    /// signature) against a list of runtime arg Values. Returns
+    /// <c>(matched: false, ...)</c> on length mismatch OR any individual
+    /// pattern miss; otherwise aggregates per-position bindings + sums
+    /// per-pattern specificity scores per RESEARCH §Pattern 7:
+    ///
+    /// <list type="bullet">
+    ///   <item><description>LiteralPattern → +1000</description></item>
+    ///   <item><description>ConstructorPattern with music-aware extractor → +800</description></item>
+    ///   <item><description>ConstructorPattern (tuple destructure) → +600</description></item>
+    ///   <item><description>BindingPattern (typed) → +500</description></item>
+    ///   <item><description>BindingPattern (untyped) → +200</description></item>
+    ///   <item><description>WildcardPattern → +100</description></item>
+    ///   <item><description>GuardPattern → +inner specificity (guard expr
+    ///     evaluated as part of the match)</description></item>
+    /// </list>
+    ///
+    /// <para>
+    /// Typed BindingPattern (D-36-17): when <c>TypeAnnotation</c> is set, the
+    /// arg Value's Type must be compatible (per FlowType.IsCompatibleWith) —
+    /// otherwise the match misses. Untyped BindingPattern accepts any arg.
+    /// </para>
+    /// </summary>
+    public static (bool matched, Dictionary<string, Value> bindings, int specificity)
+        TryMatchAll(
+            IReadOnlyList<Pattern> patterns,
+            IReadOnlyList<Value> args,
+            ExpressionEvaluator evaluator,
+            Runtime.ExecutionContext context)
+    {
+        var bindings = new Dictionary<string, Value>();
+
+        if (patterns.Count != args.Count)
+            return (false, bindings, 0);
+
+        int totalSpecificity = 0;
+        for (int i = 0; i < patterns.Count; i++)
+        {
+            var pat = patterns[i];
+            var arg = args[i];
+
+            // Typed-binding type-compatibility gate (D-36-17).
+            if (pat is BindingPattern bp && bp.TypeAnnotation != null)
+            {
+                if (!IsTypeCompatible(arg, bp.TypeAnnotation))
+                    return (false, bindings, 0);
+            }
+
+            // Tuple destructure: ConstructorPattern with Name="Tuple".
+            // Tuples are stored as IReadOnlyList<Value> tagged with TupleType.
+            if (pat is ConstructorPattern cp && cp.Name == "Tuple"
+                && !cp.IsChordLiteral && !cp.IsRomanNumeral && !cp.IsArticulationSymbol)
+            {
+                if (arg.Type is not TypeSystem.SpecialTypes.TupleType
+                    || arg.Data is not IReadOnlyList<Value> tupleElements)
+                    return (false, bindings, 0);
+                if (tupleElements.Count != cp.SubPatterns.Count)
+                    return (false, bindings, 0);
+
+                // Recursive per-slot match.
+                var inner = TryMatchAll(cp.SubPatterns, tupleElements, evaluator, context);
+                if (!inner.matched)
+                    return (false, bindings, 0);
+                foreach (var (n, v) in inner.bindings)
+                    bindings[n] = v;
+                totalSpecificity += 600;
+                continue;
+            }
+
+            // Music-aware ConstructorPattern (chord literal / roman numeral / articulation):
+            if (pat is ConstructorPattern cpMusic && (cpMusic.IsChordLiteral || cpMusic.IsRomanNumeral || cpMusic.IsArticulationSymbol))
+            {
+                if (!PatternMatches(cpMusic, arg, bindings, evaluator, context))
+                    return (false, bindings, 0);
+                totalSpecificity += 800;
+                continue;
+            }
+
+            // Guard pattern — delegate to PatternMatches; on success add inner specificity.
+            if (pat is GuardPattern gp)
+            {
+                if (!PatternMatches(gp, arg, bindings, evaluator, context))
+                    return (false, bindings, 0);
+                totalSpecificity += SpecificityOf(gp.Inner);
+                continue;
+            }
+
+            // Default: delegate to PatternMatches.
+            if (!PatternMatches(pat, arg, bindings, evaluator, context))
+                return (false, bindings, 0);
+            totalSpecificity += SpecificityOf(pat);
+        }
+
+        return (true, bindings, totalSpecificity);
+    }
+
+    private static int SpecificityOf(Pattern pattern) => pattern switch
+    {
+        LiteralPattern => 1000,
+        ConstructorPattern cp when cp.IsChordLiteral || cp.IsRomanNumeral || cp.IsArticulationSymbol => 800,
+        ConstructorPattern cp when cp.Name == "Tuple" => 600,
+        BindingPattern bp when bp.TypeAnnotation != null => 500,
+        BindingPattern => 200,
+        WildcardPattern => 100,
+        GuardPattern gp => SpecificityOf(gp.Inner),
+        _ => 100,
+    };
+
+    private static bool IsTypeCompatible(Value arg, TypeSystem.FlowType expected)
+    {
+        if (arg.Type == null) return true;
+        return expected.IsCompatibleWith(arg.Type);
+    }
+
     private static bool MatchGuard(
         GuardPattern guard,
         Value scrutinee,

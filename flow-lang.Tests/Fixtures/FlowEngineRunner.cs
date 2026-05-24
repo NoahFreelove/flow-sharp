@@ -45,6 +45,16 @@ public sealed class FlowEngineRunner : IDisposable
     public Value GetVariable(string name) => _engine.Context.GlobalFrame.GetVariable(name);
 
     /// <summary>
+    /// Phase 36 Plan 36-11 — returns the underlying <see cref="FlowEngine"/> so
+    /// tests can poke at engine-init-time state (e.g.,
+    /// <c>FlowEngine.Context.StyleRegistry</c> populated at construction time
+    /// from the shipped + user style packs). Other fixture consumers should
+    /// prefer <see cref="GetVariable"/> / <see cref="RunSource"/> — direct
+    /// engine access exists for the rare init-state probing case.
+    /// </summary>
+    public FlowEngine GetEngine() => _engine;
+
+    /// <summary>
     /// Mirrors flow-interpreter/Program.cs:78 behavior: after Execute, format the
     /// ErrorReporter contents to stderr. The interpreter entry-point does this
     /// for user feedback; our fixture does it so that Theory rows asserting
