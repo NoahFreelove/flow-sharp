@@ -1,0 +1,52 @@
+Note: =====================================================================
+Note: hello_live.flow — Phase 38 LIVE-01 chapter
+Note: =====================================================================
+Note:
+Note: The minimal `live <quantize> { ... }` block — a single 4-note melody
+Note: that auto-loops at the next bar boundary. This is the smallest possible
+Note: composer experience for the new Phase 38 live-coding surface.
+Note:
+Note: Run (one-shot smoke):
+Note:   dotnet run --project flow-interpreter examples/live/hello_live.flow
+Note:
+Note: Run (live hot-swap mode):
+Note:   dotnet run --project flow-interpreter -- --watch examples/live/hello_live.flow
+Note:
+Note:   While the watch is running, edit the `Sequence melody = | ... |`
+Note:   line below and SAVE. The new content swaps in at the next bar
+Note:   boundary with a 64-sample equal-power crossfade — no click, no
+Note:   re-init of voices whose names survive the edit (LIVE-03 voice-pool
+Note:   name-key preservation; D-38-06 micro-crossfade lock).
+Note:
+Note: Stderr advisory (D-v1.5-07):
+Note:   On every entry into a `live { ... }` block, Flow emits a one-shot
+Note:   stderr line `[live] entering live block at line N — opts OUT of
+Note:   two-run cmp-clean determinism`. This is by design — live blocks
+Note:   explicitly opt out of Phase 18/25/27/28/29/33/36/37 byte-identity
+Note:   so the composer can edit mid-set without the determinism contract
+Note:   surprising them. Offline render paths (writeWav / writeMidi)
+Note:   STAY deterministic — the opt-out is scoped to live mode only.
+Note:
+Note: Quantize forms (per D-38-02):
+Note:   live 1bar { ... }      Bar-quantized (default, also: 2bar, 4bar, ...)
+Note:   live q { ... }         Quarter-note quantized
+Note:   live h { ... }         Half-note quantized
+Note:   live { ... }           Omitted quantize → 1-bar default
+
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            live 1bar {
+                section main {
+                    Sequence melody = | C4q D4q E4q F4q |
+                }
+                Song song = [main]
+                Buffer result = (renderSong song "piano")
+                (play result)
+            }
+        }
+    }
+}

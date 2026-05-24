@@ -1,0 +1,44 @@
+Note: Phase 38 Plan 38-07 LIVE-01 / LIVE-02 multi-block smoke —
+Note: validates that two distinct `live` blocks parse + execute
+Note: independently. The full LiveBlockRegistry per-block dispatch
+Note: contract (each block gets its own FNV-1a stable BlockId from
+Note: SourceLocation; LiveReloadManager routes saved-file edits to
+Note: the correct block via DiffByVoiceName) is covered by
+Note: flow-lang.Tests/Integration/Phase38/MultiLiveBlockTests.cs +
+Note: VoicePoolNameDiffTests.cs (Wave 0 xUnit suite). This .flow
+Note: smoke exercises the composer-facing surface: two `live` blocks
+Note: in one file should both execute their bodies once and emit
+Note: TWO distinct D-v1.5-07 stderr advisories (one per BlockId).
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter tests/test_live_multi_block.flow
+Note: Expected: prints PASS sentinel after both block bodies run.
+
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            live 1bar {
+                section drums {
+                    Sequence kick = | C2q _ C2q _ |
+                }
+                Song song = [drums]
+                Buffer result = (renderSong song "drums")
+                (print "drums block ran")
+            }
+
+            live 2bar {
+                section pad {
+                    Sequence chord_pad = | C3w | F3w |
+                }
+                Song song = [pad]
+                Buffer result = (renderSong song "strings")
+                (print "pad block ran")
+            }
+        }
+    }
+}
+
+(print "PASS: multi-block live registration")
