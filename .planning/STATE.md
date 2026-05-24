@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 38 UI-SPEC approved
-last_updated: "2026-05-24T02:55:41.033Z"
-last_activity: 2026-05-24 -- Phase 38 execution started
+stopped_at: Phase 38 Live Coding 2.0 SHIPPED
+last_updated: "2026-05-24T04:30:00.000Z"
+last_activity: "2026-05-24 — Phase 38 Live Coding 2.0 SHIPPED — live { quantize } block + modernized watch + ANSI panel + REPL polish + audio input + OSC; PrettyPrompt 4.1.1 + Rug.Osc 1.2.5 NuGets added; 11/11 REQs CLOSED per 38-VERIFICATION.md"
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 5
   total_plans: 38
-  completed_plans: 26
-  percent: 43
+  completed_plans: 38
+  percent: 71
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 38 — Live Coding 2.0
+**Current focus:** Phase 40 — Studio Sync (next unblocked v1.5 phase after Phase 38 closure)
 
 ## Current Position
 
-Phase: 38 (Live Coding 2.0) — EXECUTING
-Plan: 1 of 7
-Next step: `/clear` then `/gsd:context-phase 38` or `/gsd:context-phase 40` to spawn the next CONTEXT.md
-Status: Executing Phase 38
-Last activity: 2026-05-24 -- Phase 38 execution started
+Phase: 38 (Live Coding 2.0) — COMPLETE 2026-05-24
+Plan: 7 of 7 (closer) — SHIPPED
+Next step: `/clear` then `/gsd:context-phase 40` to spawn Phase 40 Studio Sync CONTEXT.md (or revisit any of Phases 42/43/44 added 2026-05-24 for stdlib audit pressure)
+Status: Phase 38 SHIPPED; v1.5 milestone progress 5/7 phases complete (35 + 36 + 37 + 38 + 39); 38/38 plans complete in those phases
+Last activity: 2026-05-24 — Phase 38 Live Coding 2.0 closer (Plan 38-07) shipped
 
 ### v1.5 Phase Map (7 phases, 66 REQs, all Pending)
 
@@ -62,10 +62,26 @@ Last activity: 2026-05-24 -- Phase 38 execution started
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-**Phases 37 + 39 closed 2026-05-23 (same day, parallel worktrees).** v1.5 milestone progress: **4/7 phases complete** (35 + 36 + 37 + 39), 31/31 plans complete in those phases. Phase 38 and Phase 40 are both unblocked by Phase 35; composer picks order.
+**Phase 38 closed 2026-05-24 (Plan 38-07 closer).** v1.5 milestone progress: **5/7 phases complete** (35 + 36 + 37 + 38 + 39), 38/38 plans complete in those phases. Phase 40 (Studio Sync) and Phase 41 (Reach + Closer) remain — Phase 40 is the only unblocked v1.5 phase; Phase 41 consumes Phase 40's IMidiBackend abstraction for Web MIDI.
 
-- For Phase 38 (Live Coding 2.0; 11 REQs — LIVE-01..03, REPL-01..04, AUDIO-IN-01..02, OSC-01..02): `/clear` then `/gsd:context-phase 38`. Sub-order: modernized watch + `live` block FIRST → REPL polish → audio input → OSC. Phase 37 inheritance: granular DSP-01 composability with live mic input (AUDIO-IN-01), stretch/pitchShift in live blocks (LIVE-01), per-voice pan for live mix experiments, B2 unconditional stereo lock (REPL piano-roll preview can assume stereo), W7 LOCK dict-symbol-driven semantic flag pattern.
-- For Phase 40 (Studio Sync; 9 REQs — MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01): `/clear` then `/gsd:context-phase 40`. Sub-order: IMidiBackend Linux first → MIDI clock master + slave → Ableton Link (license-gated per D-v1.5-04) → JACK transport. Phase 39 inheritance: `(match articulation | ...)` Phase 35 pattern matching consumer pattern established at `flow-lang/StandardLibrary/Notation/ArticulationEmit.cs` is the precedent for Phase 40 MIDI event dispatch `(match msg | (noteOn n v) => ... | (cc n v) => ...)`.
+Note: Phase 38 + Phase 40 were commutative on the original plan — composer picked Phase 38 first. Next:
+
+- For Phase 40 (Studio Sync; 9 REQs — MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01): `/clear` then `/gsd:context-phase 40`. Sub-order: IMidiBackend Linux first → MIDI clock master + slave → Ableton Link (license-gated per D-v1.5-04) → JACK transport. Phase 38 inheritance: the `live { }` block lifecycle (LIVE-01..03) + LiveBlockRegistry + LambdaCaptureAuditor will pair naturally with Phase 40's MIDI event dispatch — composer can wire incoming MIDI clock to drive `live { }` block bar boundaries when CLOCK-02 ships. Phase 39 inheritance: `(match articulation | ...)` Phase 35 pattern-matching consumer pattern at `flow-lang/StandardLibrary/Notation/ArticulationEmit.cs` is the precedent for Phase 40 MIDI event dispatch `(match msg | (noteOn n v) => ... | (cc n v) => ...)`.
+- For Phase 41 (Reach + v1.5 Closer; 10 REQs — WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01): blocked on Phase 40. Phase 38's `live { }` block is the load-bearing dependency for WASM-02 ("Browser live-coding UX ... the browser experience IS watch-mode-in-browser").
+
+**Phase 38 highlights:**
+
+- `live <quantize> { ... }` block surface — composer wraps hot-swappable code in `live 1bar { ... }` (default 1-bar; also q/h/w/e/s NoteValue, omitted-default). On file save the block re-evaluates and swaps at the next quantize boundary with a 64-sample equal-power crossfade. Multiple `live` blocks per file swap on their own quantize timelines per D-38-02 (e.g. `live 1bar { drums }` + `live 2bar { pad }`). FNV-1a stable BlockId from SourceLocation routes saved-file edits to the correct block via LiveBlockRegistry. D-v1.5-07 stderr advisory on every entry explicitly opts OUT of two-run cmp-clean determinism.
+- Modernized `flow watch` (LiveReloadManager rewrite 389 → 614 LOC) — 4-row ANSI live status panel with TTY-detection fallback (per UI-SPEC §"ANSI Live Status Panel"); 200ms file-watch debounce (down from 500ms); 30s wall-clock CancellationToken via Task.Run + Wait per RESEARCH §E Option A; LiveStatusPanel.cs (429 LOC) ships PublishState + PublishAdvisory + 2 Hz heartbeat off the audio thread (Pitfall #21). Plain-line fallback `[watch] tempo=N timesig=N/N bar=N voices=N/M` when stdout is redirected / NO_COLOR / `--no-color` / TERM=dumb.
+- State preservation across live reload (LIVE-03) — Voice.Name init property + VoiceAllocator.DiffByVoiceName returns (Preserved/Dropped/Added) by name-key; SongRenderer tags every voice "{sequenceName}:{ordinal}" at allocation; LambdaCaptureAuditor (526 LOC) AST walker covers every Phase 35/36/38 expression/statement/pattern node type with charitable D-v1.5-05 defaults; StagePendingBuffers per-block stale-closure gate + PrngRegistry.ResetAtRenderBoundary called once per swap + ApplyFadeOut on dropped voices.
+- REPL polish — PrettyPrompt 4.1.1 (MPL-2.0, .NET 6+, verified live on NuGet 2026-05-23) replaces Console.ReadLine; in-process flow-lsp Tab completion via STATIC CompletionHandler.BuildItems() per D-38-12 SIMPLIFICATION (no MemoryStream LanguageServer plumbing); `:help fn` meta-command per D-38-09 (overrides REQUIREMENTS.md REPL-02 `?fn` wording per D-v1.5-01); `(inspect seq)` / `(visualize seq)` alias pair per D-38-10 with Phase 28 articulation glyphs at note onsets (`>`/`.`/`^`/`_`/`!`/`~` per UI-SPEC §"Glyph Inventory") + tick-mark row above first pitch row + Legato gap-fill pass + bar-line `|` wins over sustain `#` collision rule; `~/.config/flow/history` 10k cap with rotation + 0600 mode on Linux/macOS; Ctrl+R reverse history search built-in via PrettyPrompt's persistentHistoryFilepath; multi-line continuation extended beyond brace+proc-depth to LParen/RParen + LBracket/RBracket nesting (Rule 2 auto-add).
+- Audio input — PulseAudioCaptureBackend sibling class (272 LOC) to PulseAudioSimpleBackend; PA_STREAM_RECORD = 2 constant + pa_simple_read P/Invoke binding; InputFunctions.cs (244 LOC) registers `(micBuffer Second)` + `(micBuffer Double)` overloads; -20 dB feedback-guard attenuation scalar applied unconditionally on every micBuffer call per Pitfall #24; linear-interp resample to 44.1 kHz at capture-side; charitable null-fallback to silent buffer when libpulse load fails; one-shot WarnOnce advisories `[audio-in] mic stream attenuated -20 dB on open` + `[audio-in] resampling capture stream from <N> Hz to 44100 Hz`; CaptureOverride + NativeRateForTesting test seam lets xUnit Facts exercise the full pipeline without real PA.
+- OSC surface (opt-in via `use "@osc"`) — Rug.Osc 1.2.5 (MIT, .NET Standard 2.0, zero transitive deps); 5 surface builtins + 1 marker (oscSend / oscListen / oscStop / oscBundle / oscSendBundle / __enableOscModule); D-38-13 charitable smallest-tag-that-fits type-tag inference via Value.Type switch (Int→,i Long→,h Float→,f Double→,d String|Symbol→,s Bool→,T/,F Buffer→,b per OSC 1.0 spec) — OVERRIDES REQUIREMENTS.md OSC-02 strict-tag-by-arg wording per D-v1.5-05 + D-v1.5-01; D-38-14 per-path drop-newest sample-and-hold at 5ms (= 1/200Hz); D-38-15 bundle dispatch both directions with timetag honored on receive + nesting depth cap 8 (mirrors Phase 36 T-36-17 / Phase 39 D-39-19); D-38-16 reference-identity OscHandle Value with dual-role discriminator (listener vs pending-packet); Pitfall #5 Cts.Token.Register(() => receiver.Dispose()) forces blocked Receive() to throw ObjectDisposedException.
+- Composer-facing chapters under `examples/live/` (4 .flow + 1 narrated .md): hello_live.flow, multi_block.flow, mic_granular.flow, osc_controller.flow, repl_session.md. 4 paired regression tests under `tests/test_live_*.flow` with PASS sentinels (mic test composer-facing manual smoke per Phase 17 precedent; xUnit suite under flow-lang.Tests/Integration/Phase38/MicBuffer*Tests carries the automated coverage).
+- Phase 38 xUnit: ~67 facts GREEN across 6 plans (Plan 38-01 = 9, 38-02 = 7, 38-03 = 12, 38-04 = 7, 38-05 = 13, 38-06 = 19). 3 wording overrides applied per D-v1.5-01 single-commit migration latitude — REPL-02 `:help fn` / REPL-04 alias pair / OSC-02 charitable inference — all traced in 38-VERIFICATION.md + this STATE.md highlights block.
+- Two NuGet packages added (PrettyPrompt 4.1.1 + Rug.Osc 1.2.5) — both license-gated at plan-start per D-38-11 / 38-06 plan-start, both verified live on NuGet flatcontainer 2026-05-23. Brings Flow's external-dep count from 3 (Pidgin + DryWetMidi + previous) to 5; the Phase 40 RtMidi.Core addition (planned) will bring it to 6.
+
+**Phase 37 + Phase 39 highlights:** (preserved below from prior closures)
 
 **Parallel-worktree experiment outcome (2026-05-23):** Phases 37 and 39 ran concurrently via two independent agents — Phase 37 in main tree on `dev`, Phase 39 in `/home/noah/Desktop/projects/flow-sharp-phase39` on branch `phase-39-notation` branched from `af8395f`. Zero collisions during work — each phase touched disjoint source trees (Phase 37: `Audio/*`, `Synthesizers/*`, `Samples/*`; Phase 39: new `Notation/*`, vendoring docs, new `notation-io.flow` module). Merge resolved by hand on CLAUDE.md (both phases appended a bullet to the language features list — keep-both resolution) and .gitignore (additive, auto-merged). STATE.md / ROADMAP.md / REQUIREMENTS.md intentionally left untouched in the worktree per the parallel-isolation posture, then reconciled by hand at merge time. Repeatable pattern for future parallel work.
 
@@ -661,11 +677,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-24T01:42:33.473Z
-Stopped at: Phase 38 UI-SPEC approved
-Resume file: .planning/phases/38-live-coding-2-0/38-UI-SPEC.md
+Last session: 2026-05-24T04:30:00.000Z
+Stopped at: Phase 38 Live Coding 2.0 SHIPPED (Plan 38-07 closer)
+Resume file: .planning/phases/38-live-coding-2-0/38-VERIFICATION.md (then `/clear` + `/gsd:context-phase 40` for the next unblocked v1.5 phase)
 
-**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction.
+**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction. Within v1.5, only Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) remain; Phase 41 consumes Phase 40's IMidiBackend abstraction so the build order is Phase 40 → Phase 41.
 
 ## Resume Instructions (next PC)
 

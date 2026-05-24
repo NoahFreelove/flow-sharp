@@ -1,0 +1,36 @@
+Note: Phase 38 Plan 38-07 AUDIO-IN-01 / AUDIO-IN-02 + DSP-01 composability
+Note: smoke — same scope as the existing tests/test_audio_in_pipeline.flow
+Note: (Plan 38-05 ship) but framed as the Plan 38-07 closer's regression
+Note: row in the 4-paired-tests table. Validates the headline composer
+Note: claim that (micBuffer) chains seamlessly with (granular) + (gain)
+Note: + (writeWav).
+Note:
+Note: AUTOMATED COVERAGE: the 6 xUnit Facts under
+Note:   flow-lang.Tests/Integration/Phase38/MicBuffer{Attenuation,Resample}Tests.cs
+Note: cover this surface end-to-end via the InputFunctions.CaptureOverride
+Note: test seam (no real PulseAudio dependency). They pass without a
+Note: physical mic device on the host.
+Note:
+Note: MANUAL SMOKE (developer machine with PulseAudio + default input):
+Note:   dotnet run --project flow-interpreter tests/test_live_mic_granular.flow
+Note: Expected: prints PASS sentinel + writes /tmp/test_live_mic.wav with
+Note: 1 second of audible granularized mic capture.
+Note:
+Note: ON CI HOSTS WITHOUT PA: per Phase 17 precedent, this test is
+Note: composer-facing manual-smoke; the xUnit suite above is the
+Note: load-bearing automated coverage.
+
+use "@std"
+use "@audio"
+
+Note: 1-second mic capture with the locked -20 dB feedback guard.
+Buffer mic = (micBuffer 1.0s)
+
+Note: Granular texture composes with mic input — Phase 37 DSP-01.
+Buffer textured = (granular mic 50ms 20Hz 0.3)
+
+Note: Trim for headroom + write to /tmp (composer-host path).
+Buffer played = (gain textured -6dB)
+(writeWav "/tmp/test_live_mic.wav" played)
+
+(print "PASS: mic + granular pipeline composes")

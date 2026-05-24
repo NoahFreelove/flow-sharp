@@ -88,26 +88,26 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### Live Coding 2.0 (Phase 38)
 
-- [ ] **LIVE-01**: `live <quantize> { ... }` block — auto-loops the block; hot-swaps content at the next quantize unit boundary (default `1bar`). Quantize unit accepts `NoteValue` (`q`, `h`, `w`, etc.) or `Bar`. Explicit opt-out from two-run determinism contract with stderr advisory at every entry (D-v1.5-07).
-- [ ] **LIVE-02**: Modernized watch mode (rewrite of existing `flow --watch`) — ANSI live status panel, structured stderr (`[live]` prefix on advisory, `[error]` on parse fail), 30s wall-clock evaluation cap with CancellationToken, 200ms file-watch debounce.
-- [ ] **LIVE-03**: State preservation across live reload — voice-pool state preserved IF voice name still exists post-edit; musical context stack reset to file-scope; PRNG state reseeded at swap boundary. Stale-closure detection: closures referencing now-removed bindings raise a clear advisory rather than silently misbehaving.
+- [x] **LIVE-01**: `live <quantize> { ... }` block — auto-loops the block; hot-swaps content at the next quantize unit boundary (default `1bar`). Quantize unit accepts `NoteValue` (`q`, `h`, `w`, etc.) or `Bar`. Explicit opt-out from two-run determinism contract with stderr advisory at every entry (D-v1.5-07). **Shipped via Plan 38-02** (commits `fc9edc0` + `155b5aa`).
+- [x] **LIVE-02**: Modernized watch mode (rewrite of existing `flow --watch`) — ANSI live status panel, structured stderr (`[live]` prefix on advisory, `[error]` on parse fail), 30s wall-clock evaluation cap with CancellationToken, 200ms file-watch debounce. **Shipped via Plan 38-01** (commits `ccba90f` / `8fbc127` / `d4f14f3`) + **Plan 38-03** (commit `9c02b8d` — timeout-revert wording aligned to UI-SPEC line 330).
+- [x] **LIVE-03**: State preservation across live reload — voice-pool state preserved IF voice name still exists post-edit; musical context stack reset to file-scope; PRNG state reseeded at swap boundary. Stale-closure detection: closures referencing now-removed bindings raise a clear advisory rather than silently misbehaving. **Shipped via Plan 38-03** (commits `0c1e30e` / `c9e5f1b` / `9c02b8d`).
 
 ### REPL Polish (Phase 38)
 
-- [ ] **REPL-01**: LSP-backed tab completion — REPL embeds `flow-lsp` in-process and queries `CompletionHandler` for the current line. Token-heuristic fallback when partial-parse fails (matches identifier prefix against scope).
-- [ ] **REPL-02**: Inline `?fn` help — `?transpose` prints signature + doc-comment + 1-line example from `BuiltInDocs` table (Phase 31 LSP table — 104 entries reused by REPL).
-- [ ] **REPL-03**: Multi-line editing + history search — Ctrl+R history search; multi-line input via continuation prompt (paren-balanced detection); persistent history at `~/.config/flow/history`.
-- [ ] **REPL-04**: Pretty piano-roll on `(inspect seq)` — ASCII piano-roll with pitch on Y axis, time on X axis; tick marks at bar boundaries; articulation glyphs (`>`/`.`/`^`/etc.) at note onsets.
+- [x] **REPL-01**: LSP-backed tab completion — REPL embeds `flow-lsp` in-process and queries `CompletionHandler` for the current line. Token-heuristic fallback when partial-parse fails (matches identifier prefix against scope). **Shipped via Plan 38-04** (commits `1a99aa9` / `bf5a3b1`); in-process LSP via STATIC `CompletionHandler.BuildItems()` per D-38-12 SIMPLIFICATION.
+- [x] **REPL-02**: Inline `:help fn` meta-command — `:help transpose` prints signature + doc-comment + 1-line example from `BuiltInDocs` table (Phase 31 LSP table — 104 entries reused by REPL). Composer asks via `:help <name>` per D-38-09 — consistency with the existing `:quit` / `:help` / `:clear` / `:stop` meta-command family in `flow-interpreter/Repl.cs:210-220`. OVERRIDES earlier `?fn` wording per D-v1.5-01 single-commit migration latitude — see `.planning/phases/38-live-coding-2-0/38-CONTEXT.md` D-38-09 decision + `.planning/phases/38-live-coding-2-0/38-VERIFICATION.md` for rationale. **Shipped via Plan 38-04** (commit `bf5a3b1`).
+- [x] **REPL-03**: Multi-line editing + history search — Ctrl+R history search; multi-line input via continuation prompt (paren-balanced detection); persistent history at `~/.config/flow/history`. **Shipped via Plan 38-04** (commits `1a99aa9` / `bf5a3b1`); PrettyPrompt 4.1.1 (MPL-2.0, verified live on NuGet 2026-05-23); `~/.config/flow/history` 10k cap with rotation + 0600 mode on Linux/macOS.
+- [x] **REPL-04**: Pretty piano-roll on `(inspect seq)` / `(visualize seq)` alias pair (D-38-10 — both names ship backed by one implementation) — ASCII piano-roll with pitch on Y axis, time on X axis; tick marks at bar boundaries; articulation glyphs (`>` Accent / `.` Staccato / `^` Marcato / `_` Tenuto / `!` Sforzando / `~` Legato gap-fill) at note onsets per UI-SPEC §"Glyph Inventory". `(inspect seq)` is a new alias backed by the existing `flow-lang/StandardLibrary/VisualizationFunctions.cs` renderer — charitable to pre-Phase-38 scripts that called `visualize`. OVERRIDES solo `(inspect seq)` wording per D-v1.5-01 single-commit migration latitude — see `.planning/phases/38-live-coding-2-0/38-CONTEXT.md` D-38-10 decision. **Shipped via Plan 38-04** (commit `644aeb8`).
 
 ### Audio Input (Phase 38)
 
-- [ ] **AUDIO-IN-01**: Audio input — `(micBuffer duration)` reads from the default input device via PulseAudio capture (`PA_STREAM_RECORD` flag, parallel to existing playback path). Auto-attenuates 20 dB on open to prevent feedback. Returns `Buffer`.
-- [ ] **AUDIO-IN-02**: Audio input pipeline integration — captured `Buffer` composes with existing `mix`/`play`/`writeWav` builtins. Sample-rate conversion to 44.1 kHz at capture-side (linear interpolation). Granular DSP-01 composes with mic input for real-time texture creation.
+- [x] **AUDIO-IN-01**: Audio input — `(micBuffer duration)` reads from the default input device via PulseAudio capture (`PA_STREAM_RECORD` flag, parallel to existing playback path). Auto-attenuates 20 dB on open to prevent feedback. Returns `Buffer`. **Shipped via Plan 38-05** (commits `a15b1f4` PulseAudioCaptureBackend sibling class + `3a98542` mic_fixture + `34bb251` InputFunctions wiring); sibling-class P/Invoke direction-swap pattern preserves PulseAudioSimpleBackend single-responsibility per RESEARCH §I.
+- [x] **AUDIO-IN-02**: Audio input pipeline integration — captured `Buffer` composes with existing `mix`/`play`/`writeWav` builtins. Sample-rate conversion to 44.1 kHz at capture-side (linear interpolation). Granular DSP-01 composes with mic input for real-time texture creation. **Shipped via Plan 38-05** (commit `34bb251` ResampleLinear helper + `2a2146a` `tests/test_audio_in_pipeline.flow` composability smoke).
 
 ### OSC (Phase 38)
 
-- [ ] **OSC-01**: OSC server — `(oscListen port path handler)`. Accepts OSC 1.0 type-tag conventions (`,f`/`,d`/`,i`/`,s`). Rate-limited to 200 Hz per path (`OSC flood` prevention). Handler is a Flow `(Args... => Void)` lambda.
-- [ ] **OSC-02**: OSC client — `(oscSend host port path arg1 arg2 ...)`. Args explicitly typed at the type-tag level (no implicit conversion) — pass `1.5` for `,f`, `1.5d` for `,d` (existing Double literal). Uses Rug.Osc 1.2.5.
+- [x] **OSC-01**: OSC server — `(oscListen port path handler)`. Accepts OSC 1.0 type-tag conventions (`,f`/`,d`/`,i`/`,s`). Rate-limited to 200 Hz per path (`OSC flood` prevention) — drop-newest sample-and-hold per D-38-14 (5ms window). Handler is a Flow `(Args... => Void)` lambda. Bundle support both directions with timetag honored on receive per D-38-15; nesting depth cap 8 (mirrors Phase 36 T-36-17 / Phase 39 D-39-19 DoS guard). **Shipped via Plan 38-06** (commits `525d1a2` / `465056e`); Rug.Osc 1.2.5 (MIT, .NET Standard 2.0, zero transitive deps).
+- [x] **OSC-02**: OSC client — `(oscSend host port path arg1 arg2 ...)`. Args charitable smallest-tag-that-fits inference per D-38-13: Int → `,i` / Long → `,h` / Float → `,f` / Double → `,d` / String|Symbol → `,s` / Bool → `,T`/`,F` / Buffer → `,b` (blob — 4-byte LE IEEE-754 flatten). Composer escape hatch via explicit cast at call site (e.g. `(toLong 1)` for explicit Long, `1.5d` for explicit Double). Uses Rug.Osc 1.2.5. OVERRIDES strict-tag-by-arg wording per D-v1.5-05 charitable interpretation default + D-v1.5-01 single-commit migration latitude — see `.planning/phases/38-live-coding-2-0/38-CONTEXT.md` D-38-13 decision. **Shipped via Plan 38-06** (commit `465056e`).
 
 ### Notation Export (Phase 39)
 
@@ -209,17 +209,17 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | PIANO-01 | Phase 37 | Shipped (Plan 37-04 — `af8395f` / `6560ee6` / `7f3ad4e`) |
 | FLUTE-01 | Phase 37 | Shipped (Plan 37-05 — `681908c` / `3686e19`) |
 | DRUM-01 | Phase 37 | Shipped (Plan 37-06 — `75878a0` / `7eaf410`) |
-| LIVE-01 | Phase 38 | Pending |
-| LIVE-02 | Phase 38 | Pending |
-| LIVE-03 | Phase 38 | Pending |
-| REPL-01 | Phase 38 | Pending |
-| REPL-02 | Phase 38 | Pending |
-| REPL-03 | Phase 38 | Pending |
-| REPL-04 | Phase 38 | Pending |
-| AUDIO-IN-01 | Phase 38 | Pending |
-| AUDIO-IN-02 | Phase 38 | Pending |
-| OSC-01 | Phase 38 | Pending |
-| OSC-02 | Phase 38 | Pending |
+| LIVE-01 | Phase 38 | Shipped (Plan 38-02 — `fc9edc0` / `155b5aa`) |
+| LIVE-02 | Phase 38 | Shipped (Plan 38-01 — `ccba90f` / `8fbc127` / `d4f14f3`; Plan 38-03 — `9c02b8d` timeout-revert wording finalization) |
+| LIVE-03 | Phase 38 | Shipped (Plan 38-03 — `0c1e30e` / `c9e5f1b` / `9c02b8d`) |
+| REPL-01 | Phase 38 | Shipped (Plan 38-04 — `1a99aa9` / `bf5a3b1`) |
+| REPL-02 | Phase 38 | Shipped (Plan 38-04 — `bf5a3b1`; D-38-09 `:help fn` overrides bare `?fn` wording per D-v1.5-01) |
+| REPL-03 | Phase 38 | Shipped (Plan 38-04 — `1a99aa9` / `bf5a3b1`) |
+| REPL-04 | Phase 38 | Shipped (Plan 38-04 — `644aeb8`; D-38-10 `(inspect seq)` / `(visualize seq)` alias pair per D-v1.5-01) |
+| AUDIO-IN-01 | Phase 38 | Shipped (Plan 38-05 — `a15b1f4` / `3a98542` / `34bb251`) |
+| AUDIO-IN-02 | Phase 38 | Shipped (Plan 38-05 — `34bb251` / `2a2146a`) |
+| OSC-01 | Phase 38 | Shipped (Plan 38-06 — `525d1a2` / `465056e`) |
+| OSC-02 | Phase 38 | Shipped (Plan 38-06 — `465056e`; D-38-13 charitable smallest-tag-that-fits per D-v1.5-05 + D-v1.5-01) |
 | XML-01 | Phase 39 | Pending |
 | XML-02 | Phase 39 | Pending |
 | LILY-01 | Phase 39 | Pending |
