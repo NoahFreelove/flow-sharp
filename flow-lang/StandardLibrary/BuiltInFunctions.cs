@@ -48,6 +48,14 @@ public static class BuiltInFunctions
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
         Audio.InputFunctions.Register(registry);  // Phase 38 AUDIO-IN-01/02 — (micBuffer duration) capture
+        // Phase 38 Plan 38-06 OSC-01/02 — Network.OscFunctions.Register
+        // (oscSend / oscListen / oscStop / oscBundle / oscSendBundle +
+        // __enableOscModule marker) is wired into FlowEngine.cs directly
+        // because it needs ExecutionContext for the module-activation gate
+        // and for invoking handler lambdas via context.Invoker
+        // (mirror Phase 33 SfzBuiltins + Phase 39 NotationIoBuiltins pattern).
+        // The 5 surface builtins gate on ExecutionContext.OscEnabled
+        // (flipped true by `use "@osc"` import). PATTERNS line 832 reference.
         BufferPrinter.Register(registry);
         Composition.PolyrhythmFunctions.Register(registry);
         Composition.VariationFunctions.Register(registry);
