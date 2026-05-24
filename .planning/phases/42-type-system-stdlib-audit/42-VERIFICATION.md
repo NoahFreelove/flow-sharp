@@ -1,6 +1,6 @@
 ---
 phase: 42-type-system-stdlib-audit
-status: CLOSED
+status: passed
 nyquist_compliant: true
 ships: audit-deliverable-only
 production_code_changes: 0
