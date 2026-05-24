@@ -38,23 +38,25 @@ created: 2026-05-24
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 44-01-* | 01 | 1 | REQ-STRICT-01 | — | `enable strict;` pragma recognized; unknown typo gets levenshtein suggestion | unit | `dotnet test --filter "FullyQualifiedName~PragmaRegistryStrictTests"` | ❌ W0 | ⬜ pending |
-| 44-01-* | 01 | 1 | REQ-STRICT-02 | — | `ctx.StrictMode=true` set after PragmaScanner detects `enable strict;`; strict file importing non-strict module runs imported procs non-strict | unit | `dotnet test --filter "FullyQualifiedName~ExecutionContextStrictModeTests OR FullyQualifiedName~ModuleLoaderStrictPropagationTests"` | ❌ W0 | ⬜ pending |
-| 44-01-* | 01 | 1 | REQ-STRICT-03 | — | `ctx.CallerStrictMode` snapshotted at call dispatch into stdlib | unit | `dotnet test --filter "FullyQualifiedName~CallerStrictModeSnapshotTests"` | ❌ W0 | ⬜ pending |
-| 44-02-* | 02 | 1 | REQ-STRICT-04 | — | OverloadResolver disables +100 convertible tier when ctx.StrictMode=true; covers BOTH CanConvertTo + IsCompatibleWith implicit conversions (Pitfall 1) | unit | `dotnet test --filter "FullyQualifiedName~OverloadResolverStrictTierTests"` | ❌ W0 | ⬜ pending |
-| 44-03-* | 03 | 1 | REQ-STRICT-05 | — | 6 forward conv builtins (db/hz/ms/sec/cents/semitones) accept all 4 numeric + idempotent on tagged target | unit | `dotnet test --filter "FullyQualifiedName~ExplicitConversionForwardTests"` | ❌ W0 | ⬜ pending |
-| 44-03-* | 03 | 1 | REQ-STRICT-06 | — | 4 reverse extractors (double/float/int/long) accept all 6 tagged music types | unit | `dotnet test --filter "FullyQualifiedName~ExplicitConversionReverseTests"` | ❌ W0 | ⬜ pending |
-| 44-04-* | 04 | 1 | REQ-STRICT-10 | — | Pre-strict bug fix: non-strict `(print 42)` auto-strs via `(str x)`; non-strict `if Int x` truthy-coerces | unit | `dotnet test --filter "FullyQualifiedName~PrintCharitablyTests OR FullyQualifiedName~IfTruthyCoerceTests"` | ❌ W0 | ⬜ pending |
-| 44-05-* | 05 | 2 | REQ-STRICT-07 | — | 13 §6a clamp sites error in strict with verbatim message `[strict] <tag> <issue>` | unit (Theory) | `dotnet test --filter "FullyQualifiedName~Axis_B_ClampSiteTests"` | ❌ W0 | ⬜ pending |
-| 44-05-* | 05 | 2 | REQ-STRICT-07 | — | Inventory regression: exactly 13 input-perimeter Math.Clamp sites remain (mirrors Phase 42 ClampGrepConsistencyTests) | unit | `dotnet test --filter "FullyQualifiedName~Phase44ClampGrepConsistencyTests"` | ❌ W0 | ⬜ pending |
-| 44-06-* | 06 | 2 | REQ-STRICT-08 | — | HIGH-priority advisory sites (~79: SFZ + patterns + render + match + DSP) error in strict | unit (Theory) | `dotnet test --filter "FullyQualifiedName~Axis_B_AdvisorySiteTests_High"` | ❌ W0 | ⬜ pending |
-| 44-07-* | 07 | 3 | REQ-STRICT-08 | — | MED/LOW advisory sites (~34: chaos + generative + abc + mml + tuning + osc + audio-in + piano + midi + harmony) error in strict | unit (Theory) | `dotnet test --filter "FullyQualifiedName~Axis_B_AdvisorySiteTests_MedLow"` | ❌ W0 | ⬜ pending |
-| 44-08-* | 08 | 3 | REQ-STRICT-09 | — | Strict `(and Int Int)`/`(or Int Int)`/`(not Int)`/`if Int` all error; strict returns Bool from logical ops | unit | `dotnet test --filter "FullyQualifiedName~AxisCBoolRequiredTests"` | ❌ W0 | ⬜ pending |
-| 44-08-* | 08 | 3 | REQ-STRICT-11 | — | Cross-type `(gt 1 1.0)`, `(lt 1 1.0)`, `(gte 1 1.0)`, `(lte 1 1.0)` all error in strict; `(equals 1 1.0)` returns false | unit | `dotnet test --filter "FullyQualifiedName~CrossTypeComparisonStrictTests"` | ❌ W0 | ⬜ pending |
-| 44-09-* | 09 | 3 | REQ-STRICT-12 | — | `enable strict;` file with `live { }` block: body runs strict on re-eval; `[live] entering` advisory stays charitable (carve-out) | unit | `dotnet test --filter "FullyQualifiedName~LiveBlockStrictTests"` | ❌ W0 | ⬜ pending |
-| 44-09-* | 09 | 3 | REQ-STRICT-13 | — | REPL `:strict on` / `:strict off` toggles `ctx.StrictMode`; sticky session | unit | `dotnet test --filter "FullyQualifiedName~ReplStrictMetaCommandTests"` | ❌ W0 | ⬜ pending |
-| 44-10-* | 10 | 3 | REQ-STRICT-14 | — | All `tests/strict/test_*.flow` files run to completion; `showcase_strict.flow` renders | integration | `for f in tests/strict/test_*.flow; do dotnet run --project flow-interpreter "$f"; done` | ❌ W0 | ⬜ pending |
-| 44-10-* | 10 | 3 | REQ-STRICT-15 | — | Two-run cmp-clean determinism preserved after strict-mode introduction (no PRNG sites added; Axis B advisory→error path is mechanical) | integration | `dotnet test --filter "FullyQualifiedName~Phase44TwoRunDeterminismTests"` | ❌ W0 | ⬜ pending |
+| 44-00-* | 00 | 1 | REQ-STRICT-08 | T-44-00-02 | Wave 0 manifest deliverable — strict-error-manifest.csv (~126 in-scope rows + 5 carve-outs) drives every xUnit `[Theory]` in Plans 44-05/06/07; StrictErrorManifestLoader partitions HIGH/MED/LOW + carve-out subsets | unit | `dotnet test --filter "FullyQualifiedName~Phase44.StrictErrorManifestSanityTests"` | ❌ W0 | ⬜ pending |
+| 44-01-* | 01 | 1 | REQ-STRICT-01 | — | `enable strict;` pragma recognized; unknown typo gets levenshtein suggestion; pragma-position regression for `enable strict;` after first statement | unit | `dotnet test --filter "FullyQualifiedName~Phase44.PragmaRegistryStrictTests"` | ❌ W0 | ⬜ pending |
+| 44-01-* | 01 | 1 | REQ-STRICT-02 | — | `ctx.StrictMode=true` set after PragmaScanner detects `enable strict;`; strict file importing non-strict module runs imported procs non-strict | unit | `dotnet test --filter "FullyQualifiedName~Phase44.ExecutionContextStrictModeTests|FullyQualifiedName~Phase44.ModuleLoaderStrictPropagationTests"` | ❌ W0 | ⬜ pending |
+| 44-02-* | 02 | 2 | REQ-STRICT-02 | — | ProcDeclaration.IsStrict AST capture per declaring file + Interpreter push/pop on proc entry | unit | `dotnet test --filter "FullyQualifiedName~Phase44.ProcDeclarationStrictAstTests"` | ❌ W0 | ⬜ pending |
+| 44-02-* | 02 | 2 | REQ-STRICT-03 | — | `ctx.CallerStrictMode` snapshotted at call dispatch into stdlib (D-05 two-field design) | unit | `dotnet test --filter "FullyQualifiedName~Phase44.CallerStrictModeSnapshotTests"` | ❌ W0 | ⬜ pending |
+| 44-03-* | 03 | 3 | REQ-STRICT-04 | — | OverloadResolver disables +100 convertible tier when ctx.StrictMode=true; covers BOTH CanConvertTo + IsCompatibleWith implicit conversions (Pitfall 1) | unit | `dotnet test --filter "FullyQualifiedName~Phase44.OverloadResolverStrictTierTests"` | ❌ W0 | ⬜ pending |
+| 44-04-* | 04 | 2 | REQ-STRICT-05 | — | 6 forward conv builtins (db/hz/ms/sec/cents/semitones) accept all 4 numeric + idempotent on tagged target | unit | `dotnet test --filter "FullyQualifiedName~Phase44.ExplicitConversionForwardTests"` | ❌ W0 | ⬜ pending |
+| 44-04-* | 04 | 2 | REQ-STRICT-06 | — | 4 reverse extractors (double/float/int/long) accept all 6 tagged music types | unit | `dotnet test --filter "FullyQualifiedName~Phase44.ExplicitConversionReverseTests"` | ❌ W0 | ⬜ pending |
+| 44-05-* | 05 | 3 | REQ-STRICT-07 | — | 13 §6a clamp sites error in strict with verbatim message `[strict] <tag> <issue>` | unit (Theory) | `dotnet test --filter "FullyQualifiedName~Phase44.Axis_B_ClampSiteTests"` | ❌ W0 | ⬜ pending |
+| 44-05-* | 05 | 3 | REQ-STRICT-07 | — | Inventory regression: exactly 13 input-perimeter Math.Clamp sites remain (mirrors Phase 42 ClampGrepConsistencyTests) | unit | `dotnet test --filter "FullyQualifiedName~Phase44.Phase44ClampGrepConsistencyTests"` | ❌ W0 | ⬜ pending |
+| 44-06-* | 06 | 4 | REQ-STRICT-08 | — | HIGH-priority advisory sites (~79: SFZ + patterns + render + match + DSP) error in strict | unit (Theory) | `dotnet test --filter "FullyQualifiedName~Phase44.Axis_B_AdvisorySiteTests_High"` | ❌ W0 | ⬜ pending |
+| 44-07-* | 07 | 5 | REQ-STRICT-08 | — | MED/LOW advisory sites (~34: chaos + generative + abc + mml + tuning + osc + audio-in + piano + midi + harmony) error in strict | unit (Theory) | `dotnet test --filter "FullyQualifiedName~Phase44.Axis_B_AdvisorySiteTests_MedLow"` | ❌ W0 | ⬜ pending |
+| 44-08-* | 08 | 3 | REQ-STRICT-10 | — | Pre-strict bug fix: non-strict `(print 42)` auto-strs via `(str x)`; non-strict `if Int x` truthy-coerces; `(not)` registered (RESEARCH A6); D-12 last-truthy `(and 1 "foo")` → `"foo"`, `(or false 42)` → `42` | unit | `dotnet test --filter "FullyQualifiedName~Phase44.PrintCharitablyTests|FullyQualifiedName~Phase44.IfTruthyCoerceTests|FullyQualifiedName~Phase44.NotBuiltinTests|FullyQualifiedName~Phase44.AndOrLastTruthyTests"` | ❌ W0 | ⬜ pending |
+| 44-09-* | 09 | 4 | REQ-STRICT-09 | — | Strict `(and Int Int)`/`(or Int Int)`/`(not Int)`/`if Int` all error; strict returns Bool from logical ops | unit | `dotnet test --filter "FullyQualifiedName~Phase44.AxisCBoolRequiredTests"` | ❌ W0 | ⬜ pending |
+| 44-09-* | 09 | 4 | REQ-STRICT-11 | — | Cross-type `(gt 1 1.0)`, `(lt 1 1.0)`, `(gte 1 1.0)`, `(lte 1 1.0)` all error in strict; `(equals 1 1.0)` returns false strict | unit | `dotnet test --filter "FullyQualifiedName~Phase44.CrossTypeComparisonStrictTests"` | ❌ W0 | ⬜ pending |
+| 44-10-* | 10 | 4 | REQ-STRICT-12 | — | `enable strict;` file with `live { }` block: body runs strict on re-eval; `[live] entering` advisory stays charitable (carve-out) | unit | `dotnet test --filter "FullyQualifiedName~Phase44.LiveBlockStrictTests"` | ❌ W0 | ⬜ pending |
+| 44-10-* | 10 | 4 | REQ-STRICT-13 | — | REPL `:strict on` / `:strict off` toggles `ctx.StrictMode`; sticky session | unit | `dotnet test --filter "FullyQualifiedName~Phase44.ReplStrictMetaCommandTests"` | ❌ W0 | ⬜ pending |
+| 44-11-* | 11 | 6 | REQ-STRICT-14 | — | All `tests/strict/test_*.flow` files run to completion; `showcase_strict.flow` renders | integration | `dotnet test --filter "FullyQualifiedName~Phase44.StrictFlowScriptSuiteTests"` | ❌ W0 | ⬜ pending |
+| 44-11-* | 11 | 6 | REQ-STRICT-15 | — | Two-run cmp-clean determinism preserved after strict-mode introduction (Theory over all 7 strict fixtures; no PRNG sites added; Axis B advisory→error path is mechanical) | integration | `dotnet test --filter "FullyQualifiedName~Phase44.Phase44TwoRunDeterminismTests"` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -68,21 +70,26 @@ The Phase 44 test directory does not exist today; entire suite is Wave 0:
 
 ### xUnit Negative Tests (~126 verbatim string assertions)
 
-- [ ] `flow-lang.Tests/Phase44/` directory creation
-- [ ] `flow-lang.Tests/Phase44/StrictModeNegativeTests.cs` — ~126 Facts pinning error strings (xUnit `[Theory]` + `[InlineData]`; strings from AUDIT §6a Column 5 + per-site §6b sentinels with `[strict]` prefix)
-- [ ] `flow-lang.Tests/Phase44/ExplicitConversionTests.cs` — forward + reverse direction matrix (24 forward + 24 reverse = 48 cases)
-- [ ] `flow-lang.Tests/Phase44/OverloadResolverStrictTierTests.cs` — Axis A: confirm +100 disabled, +500 + +1000 preserved
-- [ ] `flow-lang.Tests/Phase44/PrintCharitablyTests.cs` — pre-strict bug fix: non-strict `(print Int x)` auto-strs
-- [ ] `flow-lang.Tests/Phase44/IfTruthyCoerceTests.cs` — pre-strict bug fix: non-strict `if Int x` truthy-coerces
-- [ ] `flow-lang.Tests/Phase44/CallerStrictModeSnapshotTests.cs` — D-05 two-field design
-- [ ] `flow-lang.Tests/Phase44/ModuleLoaderStrictPropagationTests.cs` — D-03 per-declaring-file
-- [ ] `flow-lang.Tests/Phase44/PragmaRegistryStrictTests.cs` — D-04 registry entry + typo suggestion
-- [ ] `flow-lang.Tests/Phase44/LiveBlockStrictTests.cs` — D-15 strict-in-live-blocks
-- [ ] `flow-lang.Tests/Phase44/ReplStrictMetaCommandTests.cs` — D-16 sticky session + `:strict on/off`
-- [ ] `flow-lang.Tests/Phase44/AxisCBoolRequiredTests.cs` — D-12 strict Bool requirement
-- [ ] `flow-lang.Tests/Phase44/CrossTypeComparisonStrictTests.cs` — D-11 comparison error / equals false
-- [ ] `flow-lang.Tests/Phase44/Phase44TwoRunDeterminismTests.cs` — REQ-STRICT-15 cmp-clean preservation
-- [ ] `flow-lang.Tests/Phase44/Phase44ClampGrepConsistencyTests.cs` — mirrors Phase 42 ClampGrepConsistencyTests; pins exactly 13 input-perimeter clamps remain
+- [ ] `flow-lang.Tests/Integration/Phase44/` directory creation (Plan 44-00 Task 1; Phase 43 integration-layout convention)
+- [ ] `flow-lang.Tests/Integration/Phase44/StrictModeNegativeTests.cs` — ~126 Facts pinning error strings (xUnit `[Theory]` + `[InlineData]`; strings from AUDIT §6a Column 5 + per-site §6b sentinels with `[strict]` prefix; sourced via StrictErrorManifestLoader)
+- [ ] `flow-lang.Tests/Integration/Phase44/ExplicitConversionForwardTests.cs` + `ExplicitConversionReverseTests.cs` — forward + reverse direction matrix (24 forward + 24 reverse = 48 cases)
+- [ ] `flow-lang.Tests/Integration/Phase44/OverloadResolverStrictTierTests.cs` — Axis A: confirm +100 disabled, +500 + +1000 preserved
+- [ ] `flow-lang.Tests/Integration/Phase44/PrintCharitablyTests.cs` — pre-strict bug fix: non-strict `(print Int x)` auto-strs
+- [ ] `flow-lang.Tests/Integration/Phase44/IfTruthyCoerceTests.cs` — pre-strict bug fix: non-strict `if Int x` truthy-coerces
+- [ ] `flow-lang.Tests/Integration/Phase44/NotBuiltinTests.cs` — `(not)` builtin registered (RESEARCH A6) + non-strict charitable truthy + strict Bool-required
+- [ ] `flow-lang.Tests/Integration/Phase44/AndOrLastTruthyTests.cs` — D-12 non-strict `(and)`/`(or)` last-truthy semantics ((and 1 "foo") → "foo", (or false 42) → 42)
+- [ ] `flow-lang.Tests/Integration/Phase44/CallerStrictModeSnapshotTests.cs` — D-05 two-field design
+- [ ] `flow-lang.Tests/Integration/Phase44/ModuleLoaderStrictPropagationTests.cs` — D-03 per-declaring-file
+- [ ] `flow-lang.Tests/Integration/Phase44/PragmaRegistryStrictTests.cs` — D-04 registry entry + typo suggestion + Phase 21 pragma-position regression for `strict`
+- [ ] `flow-lang.Tests/Integration/Phase44/LiveBlockStrictTests.cs` — D-15 strict-in-live-blocks
+- [ ] `flow-lang.Tests/Integration/Phase44/ReplStrictMetaCommandTests.cs` — D-16 sticky session + `:strict on/off`
+- [ ] `flow-lang.Tests/Integration/Phase44/AxisCBoolRequiredTests.cs` — D-12 strict Bool requirement
+- [ ] `flow-lang.Tests/Integration/Phase44/CrossTypeComparisonStrictTests.cs` — D-11 comparison error / equals false
+- [ ] `flow-lang.Tests/Integration/Phase44/DictTypeStrictRegressionTests.cs` — D-13 Dict lookup type-strict regression-pin
+- [ ] `flow-lang.Tests/Integration/Phase44/Phase44TwoRunDeterminismTests.cs` — REQ-STRICT-15 cmp-clean preservation (Theory over all 7 `tests/strict/*.flow` fixtures per W10)
+- [ ] `flow-lang.Tests/Integration/Phase44/StrictFlowScriptSuiteTests.cs` — REQ-STRICT-14 integration phase-gate (Process.Start dotnet run per file)
+- [ ] `flow-lang.Tests/Integration/Phase44/Phase44ClampGrepConsistencyTests.cs` — mirrors Phase 42 ClampGrepConsistencyTests; pins exactly 13 input-perimeter clamps remain
+- [ ] `flow-lang.Tests/Integration/Phase44/CarveOutsPreservedTests.cs` — Plan 44-07 anti-Pitfall-2 regression-pin (5 carve-out sites still WarnOnce in both modes)
 
 ### Positive `.flow` Smoke Tests
 

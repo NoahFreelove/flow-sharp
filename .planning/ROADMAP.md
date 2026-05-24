@@ -419,7 +419,7 @@ Plans:
 - [ ] 44-05-PLAN.md — 13 §6a input-perimeter clamp sites flip to [strict] errors + Phase44ClampGrepConsistencyTests (REQ-STRICT-07)
 - [ ] 44-06-PLAN.md — Axis B HIGH-priority advisory rewrites (~50 sites: SFZ + Patterns + Render + Match + DSP) (REQ-STRICT-08)
 - [ ] 44-07-PLAN.md — Axis B MED+LOW advisory rewrites (~65 sites: Generative + Improv + Notation + OSC + Tuning + Harmony + InputFunctions + MidiExport) + CarveOutsPreservedTests (REQ-STRICT-08)
-- [ ] 44-08-PLAN.md — Pre-strict bug fix: Void-wildcard print/if/not + AutoStr + (not) builtin registration (REQ-STRICT-10)
+- [ ] 44-08-PLAN.md — Pre-strict bug fix: Void-wildcard print/if/not + AutoStr + (not) builtin registration + D-12 non-strict (and)/(or) last-truthy semantics (REQ-STRICT-10)
 - [ ] 44-09-PLAN.md — Axis C strict: Bool-required (and)/(or) + cross-type comparison errors + (equals 1 1.0) returns false strict + D-13 Dict regression-pin (REQ-STRICT-09, REQ-STRICT-11)
 - [ ] 44-10-PLAN.md — REPL :strict on/off sticky meta-command + LiveBlockStrictTests (REQ-STRICT-12, REQ-STRICT-13)
 - [ ] 44-11-PLAN.md — tests/strict/ positive .flow suite + showcase_strict.flow + Phase44TwoRunDeterminismTests + StrictFlowScriptSuiteTests (REQ-STRICT-14, REQ-STRICT-15)
