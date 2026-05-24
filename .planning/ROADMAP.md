@@ -337,7 +337,7 @@ Plans:
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
-| 38. Live Coding 2.0 | v1.5 | 7/7 | Complete | 2026-05-24 |
+| 38. Live Coding 2.0 | v1.5 | 7/7 | Complete    | 2026-05-24 |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
