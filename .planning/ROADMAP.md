@@ -341,7 +341,7 @@ Plans:
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
-| 42. Type System & Stdlib Audit | v1.5 | 2/4 | In Progress|  |
+| 42. Type System & Stdlib Audit | v1.5 | 3/4 | In Progress|  |
 | 43. Module Names & Qualified Imports | v1.5 | 0/0 | Not started | - |
 | 44. Strict Mode | v1.5 | 0/0 | Not started | - |
 
@@ -350,7 +350,7 @@ Plans:
 **Goal**: Graphify-driven sweep of the FlowType ↔ builtin-signature graph to surface orphaned types, missing conversions, asymmetric pairs (e.g., `Beat` arithmetic exists but no `Beat → Second` at tempo context), and dead-end builtins (the historical "Decibel type exists but no function accepts it" pattern). Produces prioritized `AUDIT.md` gap list that feeds Phases 43 + 44. Cheapest of the v1.5 closeout trio — runs first because strict mode (Phase 44) needs every clamp/courtesy/advisory site inventoried up front, and module naming (Phase 43) benefits from knowing which stdlib functions collide today.
 **Depends on**: None. Informs Phases 43 + 44.
 **Requirements**: TBD (defined at plan-phase)
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 
