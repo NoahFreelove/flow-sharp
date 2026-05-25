@@ -216,6 +216,43 @@ public static class ConversionFunctions
             registry.Register("long", lngSig, args =>
                 Value.Long(isSemitone ? args[0].As<int>() : (long)Math.Floor(args[0].As<double>())));
         }
+
+        // Phase 44 Plan 44-09 Task 2 — primitive numeric cross-casts. Without
+        // these, strict-mode composers have no escape hatch for cross-type
+        // comparisons / arithmetic: `(double 1)` would fail overload resolution
+        // because Int → Double widening is disabled under strict (Plan 44-03).
+        // Each of the 4 extractors (double/float/int/long) accepts every
+        // primitive numeric source (Int/Long/Float/Double). Identity casts
+        // (e.g. `(double 1.0)`) are no-ops; widening / narrowing follows the
+        // CLAUDE.md "Float × Double is fine" + StdLib.DoubleToInt floor
+        // convention.
+        var numericPrims = new (FlowType src, Func<Value, double> toDbl, Func<Value, long> toLng)[]
+        {
+            (IntType.Instance,    v => (double)v.As<int>(),    v => (long)v.As<int>()),
+            (LongType.Instance,   v => (double)v.As<long>(),   v => v.As<long>()),
+            (FloatType.Instance,  v => v.As<double>(),         v => (long)Math.Floor(v.As<double>())),
+            (DoubleType.Instance, v => v.As<double>(),         v => (long)Math.Floor(v.As<double>())),
+        };
+
+        foreach (var (src, toDbl, toLng) in numericPrims)
+        {
+            // (double Int|Long|Float|Double)
+            var dblSig = new FunctionSignature("double", [src], ParameterNames: ["value"]);
+            registry.Register("double", dblSig, args => Value.Double(toDbl(args[0])));
+
+            // (float Int|Long|Float|Double) — Flow Float is CLR double.
+            var fltSig = new FunctionSignature("float", [src], ParameterNames: ["value"]);
+            registry.Register("float", fltSig, args => Value.Float(toDbl(args[0])));
+
+            // (int Int|Long|Float|Double) — floor matches StdLib.DoubleToInt.
+            var intSig = new FunctionSignature("int", [src], ParameterNames: ["value"]);
+            registry.Register("int", intSig, args =>
+                Value.Int(src == IntType.Instance ? args[0].As<int>() : (int)toLng(args[0])));
+
+            // (long Int|Long|Float|Double)
+            var lngSig = new FunctionSignature("long", [src], ParameterNames: ["value"]);
+            registry.Register("long", lngSig, args => Value.Long(toLng(args[0])));
+        }
     }
 
     /// <summary>

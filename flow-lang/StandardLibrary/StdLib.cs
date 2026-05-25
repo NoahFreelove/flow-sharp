@@ -862,4 +862,93 @@ public static class StdLib
         }
         return last;
     }
+
+    // ===== Phase 44 Plan 44-09 Task 2 — Charitable strict-aware comparisons + equals =====
+    // D-11 strict equality vs comparison asymmetry:
+    //  - (equals 1 1.0) strict → false (set-theoretic; defensible answer).
+    //  - (gt|lt|gte|lte 1 1.0) strict → error (no defined cross-type ordering).
+    // Non-strict path PRESERVED — Utils.LooseEquals numeric coercion + Utils.CompareNumeric.
+
+    /// <summary>
+    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+    /// <c>(equals a b)</c>. Routes through
+    /// <see cref="Utils.LooseEqualsStrict"/> which short-circuits to
+    /// <c>false</c> on cross-type strict (D-11 set-theoretic). Non-strict
+    /// behavior is byte-identical to Plan 44-08's <see cref="Equals"/> —
+    /// <see cref="Utils.LooseEquals"/> retains JS-style numeric coercion.
+    /// </summary>
+    public static Value EqualsCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        return Value.Bool(Utils.LooseEqualsStrict(args[0], args[1], ctx));
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+    /// <c>(gt a b)</c>. Strict mode + cross-type emits the canonical
+    /// <c>[strict] cross-type comparison &lt;T1&gt; vs &lt;T2&gt; — use explicit
+    /// (double x) / (int x)</c> error. Same-type strict + non-strict route
+    /// through <see cref="Utils.CompareNumeric"/> byte-identical.
+    /// </summary>
+    public static Value GreaterThanCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && !args[0].Type.Equals(args[1].Type))
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] cross-type comparison {args[0].Type} vs {args[1].Type} — use explicit (double x) / (int x)",
+                ctx.CurrentCallSite);
+            return Value.Bool(false);
+        }
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) > 0);
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+    /// <c>(lt a b)</c>. See <see cref="GreaterThanCharitable"/> for D-11
+    /// strict cross-type semantics.
+    /// </summary>
+    public static Value LessThanCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && !args[0].Type.Equals(args[1].Type))
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] cross-type comparison {args[0].Type} vs {args[1].Type} — use explicit (double x) / (int x)",
+                ctx.CurrentCallSite);
+            return Value.Bool(false);
+        }
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) < 0);
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+    /// <c>(gte a b)</c>. See <see cref="GreaterThanCharitable"/> for D-11
+    /// strict cross-type semantics.
+    /// </summary>
+    public static Value GreaterThanOrEqualCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && !args[0].Type.Equals(args[1].Type))
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] cross-type comparison {args[0].Type} vs {args[1].Type} — use explicit (double x) / (int x)",
+                ctx.CurrentCallSite);
+            return Value.Bool(false);
+        }
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) >= 0);
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+    /// <c>(lte a b)</c>. See <see cref="GreaterThanCharitable"/> for D-11
+    /// strict cross-type semantics.
+    /// </summary>
+    public static Value LessThanOrEqualCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && !args[0].Type.Equals(args[1].Type))
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] cross-type comparison {args[0].Type} vs {args[1].Type} — use explicit (double x) / (int x)",
+                ctx.CurrentCallSite);
+            return Value.Bool(false);
+        }
+        return Value.Bool(Utils.CompareNumeric(args[0], args[1]) <= 0);
+    }
 }
