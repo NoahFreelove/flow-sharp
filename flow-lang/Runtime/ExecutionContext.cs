@@ -175,6 +175,18 @@ public class ExecutionContext
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
+
+    /// <summary>
+    /// Phase 44 Plan 44-08 — public accessor for the engine-level
+    /// <see cref="ErrorReporter"/> so context-dependent builtin
+    /// registrations can route strict-mode errors through the same
+    /// accumulator the rest of the pipeline reads. Mirrors
+    /// <see cref="Core.FlowEngine.ErrorReporter"/>. Read by the
+    /// strict-aware wildcard overloads for <c>print</c> / <c>if</c> /
+    /// <c>not</c> / <c>and</c> / <c>or</c> registered in
+    /// <see cref="StandardLibrary.BuiltInFunctions.RegisterContextDependentFunctions"/>.
+    /// </summary>
+    public ErrorReporter ErrorReporter => _errorReporter;
     /// <summary>
     /// Section registry — keyed by section name.
     ///

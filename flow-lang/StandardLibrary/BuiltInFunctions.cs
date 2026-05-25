@@ -1117,6 +1117,22 @@ public static class BuiltInFunctions
 
         // Phase 26.1 dict + tuple-unpack runtime functions (TUP-11 + DICT-01/02/03)
         RegisterDict(registry, context);
+
+        // ===== Phase 44 Plan 44-08 — non-strict charitable overloads =====
+        // Pre-strict bug fix per ROADMAP line 404 + D-12 last-truthy and/or +
+        // RESEARCH A6 (not) base registration. Void-wildcard overloads
+        // co-exist with existing String / Bool / Lazy<Bool> typed overloads
+        // — OverloadResolver scoring (+1000 exact / +500 compatible) ensures
+        // (print "hello") / (if true ...) / (and true false) continue
+        // hitting their typed-path byte-identical. The wildcards only fire
+        // on non-typed args where today's pipeline errors with "no matching
+        // overload". Strict tightening is layered on top by Plan 44-09.
+
+        // (print Void) — charitable AutoStr in non-strict; [strict] error
+        // in strict. Pitfall 3: String overload still scores +1000.
+        var printAnySig = new FunctionSignature("print", [VoidType.Instance],
+            ParameterNames: ["s"]);
+        registry.Register("print", printAnySig, args => StdLib.PrintAny(args, context));
     }
 
     private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)

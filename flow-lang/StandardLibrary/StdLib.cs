@@ -1,4 +1,6 @@
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
+using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using System.Numerics;
@@ -582,10 +584,93 @@ public static class StdLib
     public static Value FixedRandSet(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var val = args[0];
-        if (val.Type is not IntType)                                                      
-            throw new InvalidOperationException($"Expected Int, got {val.Type}"); 
-        
+        if (val.Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {val.Type}");
+
         context.SetSeed(val.As<int>());
         return Value.Void();
     }
+
+    // ===== Phase 44 Plan 44-08 — Charitable non-strict helpers + strict-aware =====
+    // Pre-strict bug fix per ROADMAP line 404 — `(print Int x)` charitably auto-strs
+    // via AutoStr in non-strict, `if Int x` truthy-coerces, `(not Int 0)` returns
+    // true (charitable wildcard). Strict mode (Plan 44-09 follow-up) layers the
+    // Bool-required / String-required checks via `ctx.CallerStrictMode`. Plan 44-08
+    // lands the strict-error TEXT here; Plan 44-09's REQ-STRICT-09 test suite pins
+    // exact wording via the strict-error-manifest.csv.
+
+    /// <summary>
+    /// Stringifies a <see cref="Value"/> for the non-strict <c>(print)</c> charitable
+    /// path. Functionally equivalent to <c>(str x)</c> — dispatches by
+    /// <see cref="Value.Type"/> so the result matches the existing per-type
+    /// <c>StrInt</c> / <c>StrDouble</c> / <c>StrSemitone</c> / etc. format
+    /// conventions documented in CLAUDE.md §"Music Types Quick Reference".
+    /// <para>
+    /// String inputs return the underlying string raw (no enclosing quotes —
+    /// matches the existing <see cref="Print"/> contract). All other inputs
+    /// match their per-type <c>(str)</c> overload byte-for-byte. Unknown /
+    /// reference-identity types fall back to <see cref="Value.ToString"/>.
+    /// </para>
+    /// </summary>
+    public static string AutoStr(Value v)
+    {
+        if (v.Type is StringType) return v.As<string>();
+        if (v.Type is IntType) return v.As<int>().ToString();
+        if (v.Type is LongType) return v.As<long>().ToString();
+        if (v.Type is FloatType) return v.As<double>().ToString();
+        if (v.Type is DoubleType) return v.As<double>().ToString();
+        if (v.Type is NumberType) return v.As<BigInteger>().ToString();
+        if (v.Type is BoolType) return v.As<bool>() ? "true" : "false";
+        if (v.Type is NoteType) return v.As<string>();
+        if (v.Type is SymbolType) return "#" + v.As<string>();
+        if (v.Type is SemitoneType)
+        {
+            var st = v.As<int>();
+            return $"{(st >= 0 ? "+" : "")}{st}st";
+        }
+        if (v.Type is CentType)
+        {
+            var c = v.As<double>();
+            return $"{(c >= 0 ? "+" : "")}{c}c";
+        }
+        if (v.Type is MillisecondType) return $"{v.As<double>()}ms";
+        if (v.Type is SecondType) return $"{v.As<double>()}s";
+        if (v.Type is DecibelType)
+        {
+            var dB = v.As<double>();
+            return $"{(dB >= 0 ? "+" : "")}{dB}dB";
+        }
+        if (v.Type is HertzType) return $"{v.As<double>()}Hz";
+        if (v.Type is VoidType) return "()";
+        // Sequence / Bar / Chord / Song / Section / Tuple / Dict / Array / Tuning /
+        // Sfz / MarkovModel / LsystemModel / OscHandle etc. — fall through to
+        // Value.ToString which already handles each (and reference-identity types
+        // print their canonical description). Pitfall 6 (NewLineChars) does not
+        // apply here — we are NOT writing structured docs.
+        return v.ToString();
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(print)</c> impl backing the Void-wildcard
+    /// overload registered alongside the existing String overload. In strict
+    /// mode (caller's <c>CallerStrictMode == true</c>) emits the canonical
+    /// <c>[strict] (print) requires String — got &lt;Type&gt;</c> error
+    /// through <see cref="ExecutionContext.ErrorReporter"/> and returns
+    /// <see cref="Value.Void"/> without printing. Pitfall 3: the explicit
+    /// String overload scores +1000 vs Void-wildcard +500 so
+    /// <c>(print "hello")</c> never reaches this method.
+    /// </summary>
+    public static Value PrintAny(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] (print) requires String — got {args[0].Type}",
+                ctx.CurrentCallSite);
+            return Value.Void();
+        }
+        Console.WriteLine(AutoStr(args[0]));
+        return Value.Void();
+    }
+
 }

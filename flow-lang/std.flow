@@ -6,6 +6,12 @@ use "@collections"
 use "@bars"
 
 internal proc print (String: s)
+Note: Phase 44 Plan 44-08 — Void-wildcard print overload for the pre-strict
+Note: bug fix per ROADMAP line 404. (print 42) charitably auto-strs in
+Note: non-strict; emits [strict] (print) requires String — got <Type>
+Note: in strict files. The String overload above scores +1000 vs this
+Note: wildcard's +500 so (print "hello") stays byte-identical.
+internal proc print (Void: s)
 
 Note: Nothing() returns Void. Use as `return (Nothing)` to explicitly
 Note: return Void from a proc that would otherwise collect non-void
