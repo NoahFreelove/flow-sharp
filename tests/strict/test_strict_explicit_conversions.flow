@@ -1,0 +1,77 @@
+enable strict;
+
+use "@std"
+
+Note: Phase 44 Plan 44-11 Task 1 — explicit-conversion matrix fixture.
+Note: Exercises all 6 forward (raw numeric → tagged music type) + 4 reverse
+Note: (tagged music type → raw numeric) explicit conversion builtins shipped
+Note: in Plan 44-04 + extended in Plan 44-09 with primitive cross-cast
+Note: overloads. All conversions stay available in BOTH modes (D-09) — strict
+Note: mode just means composers MUST go through these builtins instead of
+Note: relying on numeric widening or implicit narrowing.
+
+Note: ===== Forward direction: raw numeric → tagged music type =====
+
+Note: (db x) — Int/Long/Float/Double → Decibel
+Decibel dbFromInt = (db 5)
+Decibel dbFromDouble = (db -12.0)
+Decibel dbIdem = (db -6dB)
+(print (concat "(db 5) = " (str dbFromInt)))
+(print (concat "(db -12.0) = " (str dbFromDouble)))
+(print (concat "(db -6dB) = " (str dbIdem)))
+
+Note: (hz x) — Int/Long/Float/Double → Hertz
+Note: Hertz has no dedicated str overload (Pitfall: ambiguity Float vs Double
+Note: under strict), so we round-trip through (double Hertz) for printing.
+Hertz hzFromInt = (hz 440)
+Hertz hzFromDouble = (hz 1000.0)
+Hertz hzIdem = (hz 880Hz)
+(print (concat "(hz 440) = " (str (double hzFromInt))))
+(print (concat "(hz 1000.0) = " (str (double hzFromDouble))))
+(print (concat "(hz 880Hz) = " (str (double hzIdem))))
+
+Note: (ms x) — Int/Long/Float/Double → Millisecond
+Millisecond msFromInt = (ms 100)
+Millisecond msFromDouble = (ms 250.0)
+(print (concat "(ms 100) = " (str msFromInt)))
+(print (concat "(ms 250.0) = " (str msFromDouble)))
+
+Note: (sec x) — Int/Long/Float/Double → Second
+Second secFromInt = (sec 2)
+Second secFromDouble = (sec 2.5)
+(print (concat "(sec 2) = " (str secFromInt)))
+(print (concat "(sec 2.5) = " (str secFromDouble)))
+
+Note: (cents x) — Int/Long/Float/Double → Cent
+Cent centFromInt = (cents 50)
+Cent centFromDouble = (cents -25.0)
+(print (concat "(cents 50) = " (str centFromInt)))
+(print (concat "(cents -25.0) = " (str centFromDouble)))
+
+Note: (semitones x) — Int-ONLY (whole-numbers-by-design per D-08 carve-out)
+Semitone stFromInt = (semitones 2)
+(print (concat "(semitones 2) = " (str stFromInt)))
+
+Note: ===== Reverse direction: tagged music type → raw numeric =====
+
+Note: (double x) — Decibel/Hertz/Cent/Millisecond/Second → Double
+Double dbAsDouble = (double -12dB)
+Double hzAsDouble = (double 440Hz)
+(print (concat "(double -12dB) = " (str dbAsDouble)))
+(print (concat "(double 440Hz) = " (str hzAsDouble)))
+
+Note: (float x) — same surface as (double x), narrows to Float (CLR double)
+Float hzAsFloat = (float 440Hz)
+(print (concat "(float 440Hz) = " (str hzAsFloat)))
+
+Note: (int x) — Semitone exact / fractional music types floor
+Int stAsInt = (int +2st)
+Int msAsInt = (int 100ms)
+(print (concat "(int +2st) = " (str stAsInt)))
+(print (concat "(int 100ms) = " (str msAsInt)))
+
+Note: (long x) — Second narrows via floor
+Long secAsLong = (long 2.5s)
+(print (concat "(long 2.5s) = " (str secAsLong)))
+
+(print "test_strict_explicit_conversions PASS")
