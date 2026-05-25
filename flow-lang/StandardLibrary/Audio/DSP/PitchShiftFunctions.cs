@@ -161,7 +161,7 @@ public static class PitchShiftFunctions
         if (arity >= 3)
         {
             string sym = args[2].As<string>();
-            mode = ResolveStretchMode(sym);
+            mode = ResolveStretchMode(sym, ctx);
         }
 
         int frameSize = arity >= 4 ? args[3].As<int>() : 2048;
@@ -180,19 +180,28 @@ public static class PitchShiftFunctions
         return Value.Buffer(result);
     }
 
-    private static StretchMode ResolveStretchMode(string sym)
+    private static StretchMode ResolveStretchMode(string sym, ExecutionContext ctx)
     {
         return sym switch
         {
             "vocoder" => StretchMode.Vocoder,
             "psola" => StretchMode.Psola,
             "auto" => StretchMode.Auto,
-            _ => FallbackToAuto(sym),
+            _ => FallbackToAuto(sym, ctx),
         };
     }
 
-    private static StretchMode FallbackToAuto(string sym)
+    private static StretchMode FallbackToAuto(string sym, ExecutionContext ctx)
     {
+        // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        if (ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] [pitchShift] unknown mode symbol '#{sym}' — falling back to #auto. " +
+                "Valid options: #vocoder | #psola | #auto.",
+                ctx.CurrentCallSite);
+            return StretchMode.Auto;
+        }
         RenderingDiagnostics.WarnOnce(
             $"pitchShift:mode:{sym}",
             $"[pitchShift] unknown mode symbol '#{sym}' — falling back to #auto. " +

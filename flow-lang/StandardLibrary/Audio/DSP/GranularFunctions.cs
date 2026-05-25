@@ -151,6 +151,15 @@ public static class GranularFunctions
 
     private static WindowKind FallbackToHann(string sym, ExecutionContext ctx)
     {
+        // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        if (ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] [granular] unknown windowing symbol '#{sym}' — falling back to #hann. " +
+                "Valid options: #hann | #gaussian | #tukey.",
+                ctx.CurrentCallSite);
+            return WindowKind.Hann;
+        }
         RenderingDiagnostics.WarnOnce(
             $"granular:windowing:{sym}",
             $"[granular] unknown windowing symbol '#{sym}' — falling back to #hann. " +
