@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using FlowLang.Core;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio;
@@ -338,6 +339,20 @@ public static class OscFunctions
 
     private static Value StartListener(int port, string path, FunctionOverload handler, FlowLang.Runtime.ExecutionContext context)
     {
+        // Phase 44 review CR-01: snapshot the composer's strict bit AND
+        // current call site at oscListen-call-time, BEFORE the Task.Run.
+        // The intent (per the class XML doc at 350-358) is "treat
+        // listener-bind failure as a [strict] event so composer can react"
+        // — meaning "the composer's strict bit AT oscListen call time", not
+        // "whatever the foreground thread happens to be doing seconds later
+        // when an OSC packet arrives". The previous code read
+        // context.CallerStrictMode from the background Task.Run body where
+        // the value is unpredictable (per-dispatch snapshot owned by the
+        // synchronous evaluator loop). Capture into immutable locals and
+        // thread through every helper that runs on the listener thread.
+        bool listenerStrict = context.CallerStrictMode;
+        var listenerSite = context.CurrentCallSite;
+
         Rug.Osc.OscReceiver receiver;
         try
         {
@@ -349,12 +364,14 @@ public static class OscFunctions
         {
             // Phase 44 Plan 44-07 Pattern S3: strict-mode branch. Treat
             // listener-bind failure as a [strict] handler exception event
-            // so composer can react.
-            if (context.CallerStrictMode)
+            // so composer can react. Synchronous path — listenerStrict and
+            // context.CallerStrictMode are still equal here (we have not
+            // yet escaped to the background task).
+            if (listenerStrict)
             {
                 context.ErrorReporter.ReportError(
-                    $"[strict] [osc] handler exception — bind failed on port {port}: {ex.Message} at {context.CurrentCallSite}",
-                    context.CurrentCallSite);
+                    $"[strict] [osc] handler exception — bind failed on port {port}: {ex.Message} at {listenerSite}",
+                    listenerSite);
             }
             else
             {
@@ -389,11 +406,14 @@ public static class OscFunctions
             catch (Exception ex)
             {
                 // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
-                if (context.CallerStrictMode)
+                // CR-01: read the captured listenerStrict snapshot rather
+                // than context.CallerStrictMode (which on this background
+                // thread is whatever stale value the foreground last wrote).
+                if (listenerStrict)
                 {
                     context.ErrorReporter.ReportError(
-                        $"[strict] [osc] handler exception — connect failed on port {port}: {ex.Message} at {context.CurrentCallSite}",
-                        context.CurrentCallSite);
+                        $"[strict] [osc] handler exception — connect failed on port {port}: {ex.Message} at {listenerSite}",
+                        listenerSite);
                 }
                 else
                 {
@@ -421,7 +441,7 @@ public static class OscFunctions
                     Console.Error.WriteLine($"[osc] receive error on port {port}: {ex.Message}");
                     continue;
                 }
-                DispatchPacket(packet, path, handler, context, 0);
+                DispatchPacket(packet, path, handler, context, 0, listenerStrict, listenerSite);
             }
         }, cts.Token);
 
@@ -454,22 +474,34 @@ public static class OscFunctions
     /// D-38-15 (DoS guard, mirrors Phase 36 T-36-17 + Phase 39 D-39-19).
     /// OscMessage bodies pass through the per-path rate-limit gate per
     /// D-38-14 + RESEARCH §M before invoking the Flow handler lambda.
+    ///
+    /// <para>Phase 44 review CR-01: <paramref name="listenerStrict"/> and
+    /// <paramref name="listenerSite"/> are the captured strict-bit /
+    /// call-site snapshot taken at <c>oscListen</c> call time. They MUST be
+    /// threaded through every helper that runs on the background listener
+    /// thread instead of reading <c>context.CallerStrictMode</c> /
+    /// <c>context.CurrentCallSite</c> directly — those are per-dispatch
+    /// snapshots owned by the synchronous evaluator loop and read stale on
+    /// the listener thread.</para>
     /// </summary>
     private static void DispatchPacket(
         Rug.Osc.OscPacket packet,
         string targetPath,
         FunctionOverload handler,
         FlowLang.Runtime.ExecutionContext context,
-        int depth)
+        int depth,
+        bool listenerStrict,
+        SourceLocation listenerSite)
     {
         if (depth > BundleDepthCap)
         {
             // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
-            if (context.CallerStrictMode)
+            // CR-01: use captured listenerStrict + listenerSite.
+            if (listenerStrict)
             {
                 context.ErrorReporter.ReportError(
-                    $"[strict] [osc] bundle nesting depth > 8 at {targetPath} (depth={depth}) at {context.CurrentCallSite}",
-                    context.CurrentCallSite);
+                    $"[strict] [osc] bundle nesting depth > 8 at {targetPath} (depth={depth}) at {listenerSite}",
+                    listenerSite);
             }
             else
             {
@@ -493,17 +525,17 @@ public static class OscFunctions
                 if (delay > TimeSpan.Zero)
                 {
                     Task.Delay(delay).ContinueWith(_ =>
-                        DispatchBundleContents(bundle, targetPath, handler, context, depth + 1));
+                        DispatchBundleContents(bundle, targetPath, handler, context, depth + 1, listenerStrict, listenerSite));
                     return;
                 }
             }
-            DispatchBundleContents(bundle, targetPath, handler, context, depth + 1);
+            DispatchBundleContents(bundle, targetPath, handler, context, depth + 1, listenerStrict, listenerSite);
             return;
         }
 
         if (packet is Rug.Osc.OscMessage msg && msg.Address == targetPath)
         {
-            InvokeHandlerWithRateLimit(targetPath, handler, msg, context);
+            InvokeHandlerWithRateLimit(targetPath, handler, msg, context, listenerStrict, listenerSite);
         }
     }
 
@@ -512,11 +544,13 @@ public static class OscFunctions
         string targetPath,
         FunctionOverload handler,
         FlowLang.Runtime.ExecutionContext context,
-        int depth)
+        int depth,
+        bool listenerStrict,
+        SourceLocation listenerSite)
     {
         for (int i = 0; i < bundle.Count; i++)
         {
-            DispatchPacket(bundle[i], targetPath, handler, context, depth);
+            DispatchPacket(bundle[i], targetPath, handler, context, depth, listenerStrict, listenerSite);
         }
     }
 
@@ -524,7 +558,9 @@ public static class OscFunctions
         string path,
         FunctionOverload handler,
         Rug.Osc.OscMessage msg,
-        FlowLang.Runtime.ExecutionContext context)
+        FlowLang.Runtime.ExecutionContext context,
+        bool listenerStrict,
+        SourceLocation listenerSite)
     {
         var nowMs = Environment.TickCount64;
         var lastMs = _lastFireTimeMs.GetOrAdd(path, 0L);
@@ -625,6 +661,13 @@ public static class OscFunctions
         FunctionOverload handler,
         FlowLang.Runtime.ExecutionContext context)
     {
-        DispatchPacket(packet, targetPath, handler, context, 0);
+        // Phase 44 review CR-01: tests still invoke dispatch on the caller
+        // thread, so the synchronous context.CallerStrictMode /
+        // context.CurrentCallSite read here is correct (no background thread
+        // to race the foreground). Production listeners route through
+        // StartListener which captures these into immutable locals before
+        // the Task.Run boundary.
+        DispatchPacket(packet, targetPath, handler, context, 0,
+            context.CallerStrictMode, context.CurrentCallSite);
     }
 }
