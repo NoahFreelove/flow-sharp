@@ -20,7 +20,12 @@ namespace FlowLang.Tests.Phase35;
 /// RED state: Plan 35-05's EvaluateMatch silently returns Value.Void(). Task 4
 /// adds the WARN-vs-error policy at the marker comment.
 /// </summary>
-[Collection("RenderingDiagnostics")]
+// Joins "FlowScripts" (not the historical "RenderingDiagnostics" collection)
+// so this class serializes with every other test that calls
+// RenderingDiagnostics.ResetForTesting() (Phase23/32/33/36). A separate
+// collection would let those Reset calls race against the dedup state this
+// test is asserting on, producing flaky count assertions.
+[Collection("FlowScripts")]
 public class MatchExhaustivenessDefaultTests
 {
     private static (string stderr, Value? result, bool hasErrors) RunWithStderrCapture(string source)

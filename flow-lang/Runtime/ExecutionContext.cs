@@ -645,17 +645,23 @@ public class ExecutionContext
         }
 
         // Bundle F (260524-srj) — cache read with the bypass gates documented
-        // on _overloadResolveCache. The cache stores (FunctionOverload?) so
-        // known-misses are also memoized (avoids re-paying the scoring cost on
-        // repeat lookups for procs that won't match).
+        // on _overloadResolveCache. The cache stores ONLY non-null hits.
+        //
+        // FIX (post-Bundle F): a cached `null` from the silent-probe path
+        // (TryResolveFunction) MUST NOT short-circuit the noisy path here —
+        // doing so suppresses the "No matching overload" / "Ambiguous overload"
+        // diagnostic that callers rely on. So when this path lands on a miss
+        // (or on a null-cached value from the probe), re-run the resolver in
+        // noisy mode and only cache successful (non-null) resolutions.
         if (!ShouldBypassOverloadCache(argTypes, overloads, namedArgTypes))
         {
             var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes));
-            if (_overloadResolveCache.TryGetValue(key, out var cached))
+            if (_overloadResolveCache.TryGetValue(key, out var cached) && cached != null)
                 return cached;
             // Bundle A (260524-r4o) Task 2 — FunctionOverload-direct resolve.
             var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes);
-            _overloadResolveCache[key] = resolved;
+            if (resolved != null)
+                _overloadResolveCache[key] = resolved;
             return resolved;
         }
 
@@ -958,17 +964,17 @@ public class ExecutionContext
             return null;
 
         // Bundle F (260524-srj) — silent-mode probes SHARE the same cache as
-        // the noisy ResolveFunction path. The cached FunctionOverload? value is
-        // the resolution OUTCOME and doesn't depend on the silent flag; only
-        // diagnostics differ, and a cache HIT skips them entirely (which is
-        // exactly the silent=true behavior we want here anyway).
+        // the noisy ResolveFunction path. The cache stores ONLY non-null hits
+        // so a probe-cached miss never silences the diagnostic that the noisy
+        // path is supposed to emit (see ResolveFunction above for the rationale).
         if (!ShouldBypassOverloadCache(argTypes, overloads, namedArgTypes))
         {
             var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes));
-            if (_overloadResolveCache.TryGetValue(key, out var cached))
+            if (_overloadResolveCache.TryGetValue(key, out var cached) && cached != null)
                 return cached;
             var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true);
-            _overloadResolveCache[key] = resolved;
+            if (resolved != null)
+                _overloadResolveCache[key] = resolved;
             return resolved;
         }
 

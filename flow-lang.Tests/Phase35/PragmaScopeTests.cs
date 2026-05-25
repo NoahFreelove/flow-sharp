@@ -21,7 +21,10 @@ namespace FlowLang.Tests.Phase35;
 /// triggers an error AND no WARN is emitted (Plan 35-05's policy is silent).
 /// Task 4 makes the contract observable.
 /// </summary>
-[Collection("RenderingDiagnostics")]
+// Joins "FlowScripts" so this class serializes with every other test that
+// calls RenderingDiagnostics.ResetForTesting() (Phase23/32/33/36) — see
+// MatchExhaustivenessDefaultTests.cs for rationale.
+[Collection("FlowScripts")]
 public class PragmaScopeTests
 {
     [Fact]
