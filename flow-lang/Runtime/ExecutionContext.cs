@@ -312,6 +312,64 @@ public class ExecutionContext
     /// </summary>
     public bool OscEnabled { get; set; } = false;
 
+    // ===== Phase 44 — strict mode (D-02 / D-03 / D-05) =====
+
+    /// <summary>
+    /// Phase 44 Plan 44-01 D-02 / D-03 — per-DECLARING-file strict-mode bit.
+    /// Set by <see cref="Core.FlowEngine.Execute"/> for the top-level file
+    /// (<c>_context.StrictMode = pragmaSet.Has("strict")</c> in
+    /// <c>ApplyStrictPragma</c>) and by
+    /// <see cref="ModuleLoader.LoadModule"/> for each imported file
+    /// (save-set-restore around <c>interpreter.Execute(program)</c>). Default
+    /// <c>false</c>.
+    ///
+    /// <para>
+    /// File-scope per D-03: each file's pragma governs ONLY statements
+    /// declared in that file. A strict file that <c>use</c>s a non-strict
+    /// stdlib module runs the imported module's procs with
+    /// <c>StrictMode == false</c>; the importer's bit is restored once the
+    /// import returns. The bit lives on ExecutionContext (not StackFrame)
+    /// because Flow has dynamic-scope semantics for imports — the active bit
+    /// is whatever the most-recent file-load boundary set.
+    /// </para>
+    ///
+    /// <para>
+    /// Read site: Plan 44-02 wires <c>OverloadResolver</c> (Axis A — strict
+    /// strict-mode disables compatible/convertible coercion). Plan 44-01
+    /// only RECOGNIZES + CARRIES the pragma. NOT to be read by stdlib leaf
+    /// sites — they consume <see cref="CallerStrictMode"/> instead per
+    /// 44-PATTERNS.md Anti-Pattern 1.
+    /// </para>
+    /// </summary>
+    public bool StrictMode { get; set; } = false;
+
+    /// <summary>
+    /// Phase 44 Plan 44-01 D-05 — call-dispatch SNAPSHOT of the caller's
+    /// <see cref="StrictMode"/> at the moment a builtin / proc is invoked.
+    /// Captured in <c>Interpreter.ExecuteUserFunctionWithCaptures</c>
+    /// (Plan 44-02) so stdlib clamp + advisory leaf sites can decide whether
+    /// to raise <c>StrictModeError</c> vs. keep the existing charitable
+    /// <c>WarnOnce</c> behavior — without depending on whatever file the
+    /// callee was DECLARED in.
+    ///
+    /// <para>
+    /// Default <c>false</c>. Field lands here in Plan 44-01 (alongside
+    /// <see cref="StrictMode"/>) to avoid an extra ExecutionContext edit
+    /// cycle in Plan 44-02; the push/pop wiring is what Plan 44-02 adds. The
+    /// field stays unread until Plan 44-02 / 44-05.
+    /// </para>
+    ///
+    /// <para>
+    /// Read sites (Plan 44-05+): stdlib clamp + advisory leaf sites in
+    /// <c>StandardLibrary/Transforms/TransformFunctions.cs</c> (the §6a HIGH
+    /// + axis=B + Param-bearing rows) and the broader HIGH/MED/LOW advisory
+    /// inventory (Plans 44-06 / 44-07). See
+    /// <c>flow-lang.Tests/Integration/Phase44/strict-error-manifest.csv</c>
+    /// for the full site list.
+    /// </para>
+    /// </summary>
+    public bool CallerStrictMode { get; set; } = false;
+
     /// <summary>
     /// Phase 33 — 19-entry GM-orchestral Symbol → relative-path map populated
     /// from <c>flow-lang/sfz.flow</c> via <c>__enableSfzModule</c> per CONTEXT

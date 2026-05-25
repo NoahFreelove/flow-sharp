@@ -112,9 +112,21 @@ public class ModuleLoader
                 return ModuleLoadResult.Error;
             }
 
-            // 4. Execute in current context (no new frame - imports add to current scope)
+            // 4. Execute in current context (no new frame - imports add to current scope).
+            //
+            // Phase 44 Plan 44-01 D-03 — per-DECLARING-file strict-mode bit: save the
+            // caller's StrictMode, set it to THIS module's pragma bit for the duration
+            // of the imported Execute, then restore on the way out (try/finally is
+            // mandatory per Anti-Pattern 1 — never mutate StrictMode without a paired
+            // restore). The restore runs even when interpreter.Execute throws or the
+            // ModuleRegistry hook below errors, so the importer's bit cannot leak the
+            // imported file's value into subsequent statements.
             var interpreter = ParentInterpreter ?? new Interpreter.Interpreter(context, _errorReporter, this);
-            interpreter.Execute(program);
+            var prevStrict = context.StrictMode;
+            context.StrictMode = pragmaSet.Has("strict");
+            try
+            {
+                interpreter.Execute(program);
 
             // Phase 43 Plan 43-03 D-05 / D-06 — ModuleRegistry registration hook.
             // Runs ONCE per resolvedPath because the _loadedModules.Contains short-circuit
@@ -176,6 +188,16 @@ public class ModuleLoader
                 }
 
                 context.ModuleRegistry.Register(modDecl.Name, exportedProcs);
+            }
+            }
+            finally
+            {
+                // Phase 44 Plan 44-01 D-03 / Anti-Pattern 1 — restore the caller's
+                // StrictMode regardless of how the imported file's Execute exited
+                // (success, error-via-reporter, or thrown exception caught by the
+                // outer try). The outer try/finally below cleans _currentlyLoading;
+                // this inner finally cleans the strict-bit save.
+                context.StrictMode = prevStrict;
             }
 
             _loadedModules.Add(resolvedPath);
