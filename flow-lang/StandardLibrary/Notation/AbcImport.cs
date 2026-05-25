@@ -47,12 +47,59 @@ public static class AbcImport
         new Regex(@"^X:\s*\d+", RegexOptions.Multiline | RegexOptions.Compiled);
 
     /// <summary>
+    /// Phase 44 Plan 44-07: thread-local strict-mode context. Set by the
+    /// public entry points (ParseSingleTune / ParseMultiTune) in a try/finally
+    /// so the deep parser helpers can consult CallerStrictMode without
+    /// threading ctx through ~10 parsing methods. Cleared on exit so the
+    /// AbcImport static surface stays re-entrant-safe across threads.
+    /// </summary>
+    [System.ThreadStatic]
+    private static FlowLang.Runtime.ExecutionContext? _strictCtx;
+
+    /// <summary>
+    /// Helper for the deep parser helpers — picks the strict branch when
+    /// the thread-local context bit is set, otherwise emits the original
+    /// WarnOnce advisory verbatim (byte-identical to pre-Plan-44-07 behavior).
+    /// <c>internal</c> so <see cref="AbcLexer"/> (sibling parser-deep helper)
+    /// can route its own advisories through the same strict-mode gate.
+    /// </summary>
+    internal static void EmitAbcAdvisory(string sentinelKey, string sentinelBody, string strictBody)
+    {
+        var ctx = _strictCtx;
+        if (ctx is not null && ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError($"[strict] {strictBody}", ctx.CurrentCallSite);
+            return;
+        }
+        RenderingDiagnostics.WarnOnce(sentinelKey, sentinelBody);
+    }
+
+    /// <summary>
     /// Parse a single ABC tune (any number of X: blocks treated as one
     /// concatenated tune). Returns a <see cref="SectionData"/> built from
     /// the parsed notes, with the active musical context populated from
     /// the headers (M:, L:, K:, Q:).
     /// </summary>
-    public static SectionData ParseSingleTune(string source)
+    public static SectionData ParseSingleTune(string source, FlowLang.Runtime.ExecutionContext? strictCtx = null)
+    {
+        var previous = _strictCtx;
+        _strictCtx = strictCtx;
+        try
+        {
+            return ParseSingleTuneInner(source);
+        }
+        finally
+        {
+            _strictCtx = previous;
+        }
+    }
+
+    /// <summary>
+    /// Inner workhorse — assumes <see cref="_strictCtx"/> is set by the
+    /// caller. Recursive ParseMultiTune calls into this so it doesn't
+    /// stomp on the outer caller's strict-ctx.
+    /// </summary>
+    private static SectionData ParseSingleTuneInner(string source)
     {
         try
         {
@@ -64,9 +111,10 @@ public static class AbcImport
             string preview = (source ?? string.Empty).Length > 40
                 ? (source ?? string.Empty).Substring(0, 40)
                 : (source ?? string.Empty);
-            RenderingDiagnostics.WarnOnce(
-                $"abc-parse-error:{preview}",
-                $"[abc] parse error: {ex.Message}");
+            EmitAbcAdvisory(
+                sentinelKey: $"abc-parse-error:{preview}",
+                sentinelBody: $"[abc] parse error: {ex.Message}",
+                strictBody: $"[abc] could not parse tempo — parse error: {ex.Message}");
             return EmptySection("abc");
         }
     }
@@ -75,7 +123,21 @@ public static class AbcImport
     /// Parse a multi-tune ABC file. Splits on <c>X:N</c> line boundaries
     /// and returns one <see cref="SectionData"/> per tune.
     /// </summary>
-    public static List<SectionData> ParseMultiTune(string source)
+    public static List<SectionData> ParseMultiTune(string source, FlowLang.Runtime.ExecutionContext? strictCtx = null)
+    {
+        var previous = _strictCtx;
+        _strictCtx = strictCtx;
+        try
+        {
+            return ParseMultiTuneInner(source);
+        }
+        finally
+        {
+            _strictCtx = previous;
+        }
+    }
+
+    private static List<SectionData> ParseMultiTuneInner(string source)
     {
         var result = new List<SectionData>();
         if (string.IsNullOrEmpty(source))
@@ -88,7 +150,7 @@ public static class AbcImport
         var matches = XHeaderLineRegex.Matches(source);
         if (matches.Count <= 1)
         {
-            result.Add(ParseSingleTune(source));
+            result.Add(ParseSingleTuneInner(source));
             return result;
         }
 
@@ -97,7 +159,7 @@ public static class AbcImport
             int start = matches[i].Index;
             int end = (i + 1 < matches.Count) ? matches[i + 1].Index : source.Length;
             string tuneText = source.Substring(start, end - start);
-            result.Add(ParseSingleTune(tuneText));
+            result.Add(ParseSingleTuneInner(tuneText));
         }
         return result;
     }
@@ -170,9 +232,10 @@ public static class AbcImport
                             break;
                         default:
                             // Unknown header — drop with advisory
-                            RenderingDiagnostics.WarnOnce(
-                                $"abc-header:{letter}",
-                                $"[abc] ignored header '{letter}'");
+                            EmitAbcAdvisory(
+                                sentinelKey: $"abc-header:{letter}",
+                                sentinelBody: $"[abc] ignored header '{letter}'",
+                                strictBody: $"[abc] unknown bar marker — ignored header '{letter}' at line {lineNo}");
                             break;
                     }
                     continue;
@@ -238,9 +301,10 @@ public static class AbcImport
 
                 case AbcTokenType.Ornament:
                 case AbcTokenType.Decoration:
-                    RenderingDiagnostics.WarnOnce(
-                        $"abc-ornament:{tok.Text}:{tok.Line}",
-                        $"[abc] dropped ornament '{tok.Text}' at line {tok.Line}");
+                    EmitAbcAdvisory(
+                        sentinelKey: $"abc-ornament:{tok.Text}:{tok.Line}",
+                        sentinelBody: $"[abc] dropped ornament '{tok.Text}' at line {tok.Line}",
+                        strictBody: $"[abc] dropped ornament '{tok.Text}' at line {tok.Line}");
                     idx++;
                     continue;
 
@@ -254,9 +318,10 @@ public static class AbcImport
                         // Repeat marks emit a one-shot advisory; treat as plain bar.
                         if (tok.Text == ":|" || tok.Text == "|:")
                         {
-                            RenderingDiagnostics.WarnOnce(
-                                $"abc-repeat:{tok.Text}",
-                                $"[abc] repeat mark '{tok.Text}' parsed as plain bar (Flow's BarData has no repeat support)");
+                            EmitAbcAdvisory(
+                                sentinelKey: $"abc-repeat:{tok.Text}",
+                                sentinelBody: $"[abc] repeat mark '{tok.Text}' parsed as plain bar (Flow's BarData has no repeat support)",
+                                strictBody: $"[abc] unknown bar marker '{tok.Text}' parsed as plain bar at line {tok.Line}");
                         }
                         // Flush current bar
                         if (currentBarNotes.Count > 0)
@@ -400,9 +465,10 @@ public static class AbcImport
         {
             return (n, d, true);
         }
-        RenderingDiagnostics.WarnOnce(
-            $"abc-meter:{val}:{line}",
-            $"[abc] could not parse meter '{val}' at line {line}; using 4/4 default");
+        EmitAbcAdvisory(
+            sentinelKey: $"abc-meter:{val}:{line}",
+            sentinelBody: $"[abc] could not parse meter '{val}' at line {line}; using 4/4 default",
+            strictBody: $"[abc] could not parse meter '{val}' at line {line} — using 4/4");
         return (4, 4, false);
     }
 
@@ -419,9 +485,10 @@ public static class AbcImport
         {
             return (n, d);
         }
-        RenderingDiagnostics.WarnOnce(
-            $"abc-unitlength:{val}:{line}",
-            $"[abc] could not parse unit length '{val}' at line {line}; using 1/8 default");
+        EmitAbcAdvisory(
+            sentinelKey: $"abc-unitlength:{val}:{line}",
+            sentinelBody: $"[abc] could not parse unit length '{val}' at line {line}; using 1/8 default",
+            strictBody: $"[abc] could not parse Q: header — unit length '{val}' at line {line}, using 1/8");
         return (1, 8);
     }
 
@@ -443,9 +510,10 @@ public static class AbcImport
         char root = char.ToUpperInvariant(v[i]);
         if (root < 'A' || root > 'G')
         {
-            RenderingDiagnostics.WarnOnce(
-                $"abc-key:{val}:{line}",
-                $"[abc] unknown key '{val}' at line {line}; using Cmajor");
+            EmitAbcAdvisory(
+                sentinelKey: $"abc-key:{val}:{line}",
+                sentinelBody: $"[abc] unknown key '{val}' at line {line}; using Cmajor",
+                strictBody: $"[abc] unknown key '{val}' at line {line} — using Cmajor");
             return "Cmajor";
         }
         i++;
@@ -497,9 +565,10 @@ public static class AbcImport
             return simpleBpm;
         }
 
-        RenderingDiagnostics.WarnOnce(
-            $"abc-tempo:{val}:{line}",
-            $"[abc] could not parse tempo '{val}' at line {line}; using default 120");
+        EmitAbcAdvisory(
+            sentinelKey: $"abc-tempo:{val}:{line}",
+            sentinelBody: $"[abc] could not parse tempo '{val}' at line {line}; using default 120",
+            strictBody: $"[abc] could not parse tempo '{val}' at line {line} — using default 120");
         return current;
     }
 

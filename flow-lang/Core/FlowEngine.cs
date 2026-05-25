@@ -118,8 +118,6 @@ public class FlowEngine : IDisposable
         // Create internal function registry and register C# implementations
         var internalRegistry = new InternalFunctionRegistry();
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
-        // Phase 32 Plan 32-04: register (loadScala) overloads + (str Tuning).
-        ScalaBuiltins.Register(internalRegistry);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
         // Phase 33 Plan 33-07 — publish the ExecutionContext to the static
@@ -128,6 +126,10 @@ public class FlowEngine : IDisposable
         CurrentExecutionContext = _context;
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
+        // Phase 32 Plan 32-04: register (loadScala) overloads + (str Tuning).
+        // Phase 44 Plan 44-07: moved post-_context to thread ExecutionContext
+        // for strict-mode advisory elevation (unmapped-MIDI-keys).
+        ScalaBuiltins.RegisterContextDependent(internalRegistry, _context);
         // Phase 37 Plan 37-01 Task 3 — register the granular builtin (DSP-01).
         // Routes jitter PRNG through ExecutionContext.PrngRegistry keyed by
         // (CurrentCallSite, "granular_offset" | "granular_timing") per

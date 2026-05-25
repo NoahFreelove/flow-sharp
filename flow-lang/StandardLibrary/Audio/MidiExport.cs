@@ -242,9 +242,19 @@ public static class MidiExport
         var activeTuning = musicalCtx?.ActiveTuning ?? RenderTuning.Default;
         if (activeTuning.Custom != null || activeTuning.System != TuningSystem.EqualTemperament)
         {
-            RenderingDiagnostics.WarnOnce(
-                "writemidi-non-equal-temperament",
-                "[midi] tuning != equalTemperament; MIDI export emits 12-TET pitches without pitch-bend (faithful microtonal MIDI deferred to v1.4)");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [midi] velocity floor applied — tuning != equalTemperament, MIDI export emits 12-TET pitches without pitch-bend at {context.CurrentCallSite}",
+                    context.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    "writemidi-non-equal-temperament",
+                    "[midi] tuning != equalTemperament; MIDI export emits 12-TET pitches without pitch-bend (faithful microtonal MIDI deferred to v1.4)");
+            }
         }
         return WriteMidi(args);
     }

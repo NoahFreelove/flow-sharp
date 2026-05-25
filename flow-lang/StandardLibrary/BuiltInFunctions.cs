@@ -54,7 +54,9 @@ public static class BuiltInFunctions
         Transforms.TransformFunctions.RegisterArticulationTransforms(registry);  // Phase 22-06 DX-14 (legato + portamento)
         Harmony.HarmonyFunctions.Register(registry);
         VisualizationFunctions.Register(registry);
-        Audio.InputFunctions.Register(registry);  // Phase 38 AUDIO-IN-01/02 — (micBuffer duration) capture
+        // Phase 38 AUDIO-IN-01/02 — (micBuffer duration) capture. Moved to
+        // RegisterContextDependentFunctions in Phase 44 Plan 44-07 to thread
+        // ExecutionContext for strict-mode advisory elevation.
         // Phase 38 Plan 38-06 OSC-01/02 — Network.OscFunctions.Register
         // (oscSend / oscListen / oscStop / oscBundle / oscSendBundle +
         // __enableOscModule marker) is wired into FlowEngine.cs directly
@@ -1022,6 +1024,7 @@ public static class BuiltInFunctions
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
         Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
         Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
+        Audio.InputFunctions.RegisterContextDependent(registry, context);  // Phase 44 Plan 44-07 — strict-mode advisory elevation
         // Phase 35 Plan 35-04 TEST-01 — (test "name" body) defers via Lazy<Void>
         // wrap (Pitfall 10 LOAD-BEARING) + 5 assertion primitives. Context-
         // dependent because (test ...) appends a TestRecord to

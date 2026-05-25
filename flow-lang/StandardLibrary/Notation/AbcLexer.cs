@@ -290,10 +290,15 @@ internal static class AbcLexer
                 continue;
             }
 
-            // Unknown character — charitable advisory + advance
-            RenderingDiagnostics.WarnOnce(
-                $"abc-token:{c}:{line}",
-                $"[abc] unknown character '{c}' at line {line} col {col}");
+            // Unknown character — charitable advisory + advance.
+            // Phase 44 Plan 44-07: route through AbcImport.EmitAbcAdvisory so
+            // the strict-mode branch fires when caller is in strict-mode (the
+            // thread-local strictCtx is set by AbcImport.ParseSingleTune /
+            // ParseMultiTune entry points).
+            AbcImport.EmitAbcAdvisory(
+                sentinelKey: $"abc-token:{c}:{line}",
+                sentinelBody: $"[abc] unknown character '{c}' at line {line} col {col}",
+                strictBody: $"[abc] unknown character '{c}' at line {line} col {col}");
             tokens.Add(new AbcToken(AbcTokenType.Unknown, c.ToString(), line, col));
             i++; col++;
         }

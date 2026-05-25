@@ -347,9 +347,21 @@ public static class OscFunctions
         }
         catch (Exception ex)
         {
-            RenderingDiagnostics.WarnOnce(
-                $"osc-bind:{port}",
-                $"[osc] bind failed on port {port}: {ex.Message} — oscListen returned no handle");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch. Treat
+            // listener-bind failure as a [strict] handler exception event
+            // so composer can react.
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [osc] handler exception — bind failed on port {port}: {ex.Message} at {context.CurrentCallSite}",
+                    context.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"osc-bind:{port}",
+                    $"[osc] bind failed on port {port}: {ex.Message} — oscListen returned no handle");
+            }
             // Return a sentinel "dead" handle — composer can still pass to
             // (oscStop) without crashing.
             return Value.OscHandle(new OscHandleData
@@ -376,9 +388,19 @@ public static class OscFunctions
             try { receiver.Connect(); }
             catch (Exception ex)
             {
-                RenderingDiagnostics.WarnOnce(
-                    $"osc-bind:{port}",
-                    $"[osc] connect failed on port {port}: {ex.Message}");
+                // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                if (context.CallerStrictMode)
+                {
+                    context.ErrorReporter.ReportError(
+                        $"[strict] [osc] handler exception — connect failed on port {port}: {ex.Message} at {context.CurrentCallSite}",
+                        context.CurrentCallSite);
+                }
+                else
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"osc-bind:{port}",
+                        $"[osc] connect failed on port {port}: {ex.Message}");
+                }
                 return;
             }
             while (!cts.IsCancellationRequested)
@@ -442,9 +464,19 @@ public static class OscFunctions
     {
         if (depth > BundleDepthCap)
         {
-            RenderingDiagnostics.WarnOnce(
-                $"osc-bundle-depth:{targetPath}",
-                $"[osc] bundle nesting depth exceeds 8 at {targetPath} — collapsing to flat dispatch");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [osc] bundle nesting depth > 8 at {targetPath} (depth={depth}) at {context.CurrentCallSite}",
+                    context.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"osc-bundle-depth:{targetPath}",
+                    $"[osc] bundle nesting depth exceeds 8 at {targetPath} — collapsing to flat dispatch");
+            }
             return;
         }
 
