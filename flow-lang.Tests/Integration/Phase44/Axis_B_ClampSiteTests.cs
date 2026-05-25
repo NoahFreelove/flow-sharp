@@ -207,6 +207,15 @@ public class Axis_B_ClampSiteTests : IDisposable
     /// Choose a value that's out of the manifest's range. Use the upper-bound + 1.0
     /// for double ranges (so 2.0 for [0.0, 1.0]) and upper-bound + 4 for int ranges
     /// (so 20 for [1, 16]).
+    ///
+    /// <para>
+    /// IMPORTANT: double bounds must emit a literal with a decimal point (e.g. "2.0",
+    /// not "2") so Flow's lexer tokenizes them as Double, not Int. Under strict mode
+    /// (Plan 44-03) Int → Double implicit widening is disabled, so an Int literal
+    /// passed where Double is expected fails overload resolution before the function
+    /// body's strict-clamp check can fire. Use the "0.0##" format so whole-number
+    /// doubles like 2.0 stay "2.0" instead of being stripped to "2".
+    /// </para>
     /// </summary>
     private static string OutOfRangeForRange(string range)
     {
@@ -217,7 +226,9 @@ public class Axis_B_ClampSiteTests : IDisposable
         if (hiStr.Contains('.'))
         {
             double hi = double.Parse(hiStr, System.Globalization.CultureInfo.InvariantCulture);
-            return (hi + 1.0).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // "0.0##" keeps the trailing ".0" on whole-number doubles so the Flow
+            // lexer tokenizes as Double (not Int) — required under strict mode.
+            return (hi + 1.0).ToString("0.0##", System.Globalization.CultureInfo.InvariantCulture);
         }
         int hiInt = int.Parse(hiStr);
         return (hiInt + 4).ToString();

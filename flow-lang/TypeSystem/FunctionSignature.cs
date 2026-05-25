@@ -1,3 +1,5 @@
+using FlowLang.TypeSystem.PrimitiveTypes;
+
 namespace FlowLang.TypeSystem;
 
 /// <summary>
@@ -172,9 +174,26 @@ public record FunctionSignature(
     /// <see cref="Matches(IReadOnlyList{FlowType}, bool)"/> XML doc for the
     /// full Pitfall 1 rationale.
     /// </para>
+    /// <para>
+    /// EXCEPTION (Plan 44-08 integration) — <see cref="VoidType"/> as the PARAM
+    /// type is an explicit wildcard surface ("accept any arg type, dispatch to
+    /// the handler that decides"), not an implicit conversion. Plan 44-08's
+    /// strict-aware <c>print</c> / <c>if</c> / <c>not</c> / <c>and</c> / <c>or</c>
+    /// overloads register with <c>Void</c> param types so the handler can read
+    /// <see cref="Runtime.ExecutionContext.CallerStrictMode"/> and emit the
+    /// canonical <c>[strict]</c> error. Without this escape, strict overload
+    /// resolution would drop the Void wildcard (the inverse-direction clause
+    /// <c>VoidType.IsCompatibleWith(IntType)</c> is what makes it match) and
+    /// the handler would never get a chance to fire — producing "No matching
+    /// overload" instead of the intended strict diagnostic.
+    /// </para>
     /// </summary>
     private static bool SlotMatches(FlowType argType, FlowType paramType, bool strictMode)
     {
+        // Plan 44-08 integration: Void on the PARAM side is an explicit wildcard,
+        // accepted in BOTH modes. See XML doc above.
+        if (paramType is VoidType) return true;
+
         bool exactOrCompat = argType.Equals(paramType)
                           || argType.IsCompatibleWith(paramType);
         if (strictMode)
