@@ -544,6 +544,18 @@ public class ExecutionContext
     public TextWriter? DiagnosticOutput => _diagnosticOutput;
 
     /// <summary>
+    /// Read-only accessor for the per-context <see cref="Diagnostics.ErrorReporter"/>.
+    /// Added Phase 44 Plan 44-05 so stdlib leaf sites that want to elevate
+    /// charitable WarnOnce advisories to <c>[strict]</c> errors can route via
+    /// <see cref="Diagnostics.ErrorReporter.ReportError(string, Core.SourceLocation?)"/>
+    /// when <see cref="CallerStrictMode"/> is true. Mirrors the existing
+    /// <see cref="DiagnosticOutput"/> read-only-accessor shape; the underlying
+    /// field stays <c>private readonly</c> so external code cannot replace the
+    /// reporter mid-execution.
+    /// </summary>
+    public Diagnostics.ErrorReporter ErrorReporter => _errorReporter;
+
+    /// <summary>
     /// Pushes a new stack frame for a function call.
     /// </summary>
     public void PushFrame()

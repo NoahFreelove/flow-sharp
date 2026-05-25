@@ -23,10 +23,18 @@ public static class TransformFunctions
         RegisterOctaveShift(registry);
         RegisterRepeat(registry);
         RegisterConcat(registry);
-        RegisterDynamicTransforms(registry);
-        RegisterTempoTransforms(registry);
-        RegisterHumanize(registry);
-        RegisterHumanizeGaussian(registry);  // PHASE 25 (DEFER-06)
+        // Phase 44 Plan 44-05: crescendo / decrescendo / swell / ritardando /
+        // accelerando / humanize / humanizeGaussian / tremolo registrations are
+        // owned by RegisterContextDependent so each per-arg clamp site can read
+        // context.CallerStrictMode at the leaf. They are NOT registered here —
+        // RegisterSignaturesOnly + RegisterAllImplementations both invoke
+        // RegisterContextDependentFunctions which routes through
+        // TransformFunctions.RegisterContextDependent, so the LSP signature path
+        // and runtime path both pick up the context-aware delegates.
+        // (The legacy non-context-dep Crescendo/Decrescendo/Swell/RitardandoTransform/
+        // AccelerandoTransform/Humanize/HumanizeGaussian/Tremolo private methods
+        // remain in this file but are unreferenced after Phase 44 Plan 44-05;
+        // kept as documentation of the pre-strict shape.)
         RegisterOrnamentTransforms(registry);
     }
 
@@ -102,9 +110,38 @@ public static class TransformFunctions
         {
             var seq = args[0].As<SequenceData>();
             int resEnum = args[1].As<int>();
-            // V5: clamp out-of-range inputs (charitable D-07; threats T-22-V5-17, T-22-V5-18).
-            double strength = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
-            double swing = Math.Clamp(args[3].As<double>(), -1.0, 1.0);
+            // Phase 44 Plan 44-05 (D-06/D-07): strict-mode promotes the V5 charitable
+            // clamps to ErrorReporter errors. Non-strict path stays byte-identical to
+            // the pre-Phase-44 Math.Clamp + fallback shape (Pitfall 5 two-run cmp-clean).
+            double strengthRaw = args[2].As<double>();
+            double swingRaw = args[3].As<double>();
+            double strength;
+            double swing;
+            if (context.CallerStrictMode)
+            {
+                if (strengthRaw < 0.0 || strengthRaw > 1.0)
+                {
+                    context.ErrorReporter.ReportError(
+                        $"[strict] quantize strength {strengthRaw} outside [0.0, 1.0]",
+                        context.CurrentCallSite);
+                    return Value.Void();
+                }
+                if (swingRaw < -1.0 || swingRaw > 1.0)
+                {
+                    context.ErrorReporter.ReportError(
+                        $"[strict] quantize swing {swingRaw} outside [-1.0, 1.0]",
+                        context.CurrentCallSite);
+                    return Value.Void();
+                }
+                strength = strengthRaw;
+                swing = swingRaw;
+            }
+            else
+            {
+                // V5: clamp out-of-range inputs (charitable D-07; threats T-22-V5-17, T-22-V5-18).
+                strength = Math.Clamp(strengthRaw, 0.0, 1.0);
+                swing = Math.Clamp(swingRaw, -1.0, 1.0);
+            }
 
             // Pitfall 9 — byte-identical regression gate. strength=0 + swing=0 MUST return the
             // input sequence object reference unchanged, or the ByteIdentical gate breaks.
@@ -115,6 +152,317 @@ public static class TransformFunctions
             return Value.Sequence(QuantizeSequence(seq, (NoteValueType.Value)resEnum,
                 strength, swing, timesig));
         });
+
+        // Phase 44 Plan 44-05 (D-06/D-07): re-register the dynamic / tempo / humanize /
+        // ornament transforms via context-capturing closures so their per-arg clamp
+        // checks can read context.CallerStrictMode at the leaf site. Non-strict path
+        // is byte-identical to the pre-Phase-44 Math.Clamp shape (Pitfall 5).
+        RegisterDynamicTransformsContextDependent(registry, context);
+        RegisterTempoTransformsContextDependent(registry, context);
+        RegisterHumanizeContextDependent(registry, context);
+        RegisterHumanizeGaussianContextDependent(registry, context);
+        RegisterTremoloContextDependent(registry, context);
+    }
+
+    // ===== Phase 44 Plan 44-05 context-dependent re-registrations =====
+
+    /// <summary>
+    /// Phase 44 Plan 44-05 — re-register crescendo / decrescendo / swell with a
+    /// context-capturing closure so their per-arg [0.0, 1.0] velocity clamps can
+    /// promote to <c>[strict] &lt;builtin&gt; &lt;param&gt; ... outside [0.0, 1.0]</c>
+    /// when <see cref="ExecutionContext.CallerStrictMode"/> is true. The
+    /// non-context-dependent <see cref="RegisterDynamicTransforms"/> still runs
+    /// first via <see cref="Register"/>; this method overlays the same names
+    /// with context-aware closures via the registry's last-write-wins overload
+    /// lookup (the runtime resolver picks the most-recently-registered impl
+    /// matching the same signature shape).
+    /// </summary>
+    private static void RegisterDynamicTransformsContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var crescSig = new FunctionSignature("crescendo",
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "startVel", "endVel"]);
+        registry.Register("crescendo", crescSig, args => CrescendoStrict(args, context));
+
+        var decrescSig = new FunctionSignature("decrescendo",
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "startVel", "endVel"]);
+        registry.Register("decrescendo", decrescSig, args => DecrescendoStrict(args, context));
+
+        var swellSig = new FunctionSignature("swell",
+            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "edgeVel", "peakVel"]);
+        registry.Register("swell", swellSig, args => SwellStrict(args, context));
+    }
+
+    private static void RegisterTempoTransformsContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var ritSig = new FunctionSignature("ritardando",
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "amount"]);
+        registry.Register("ritardando", ritSig, args => RitardandoStrict(args, context));
+
+        var accelSig = new FunctionSignature("accelerando",
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "amount"]);
+        registry.Register("accelerando", accelSig, args => AccelerandoStrict(args, context));
+    }
+
+    private static void RegisterHumanizeContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var humanizeSig = new FunctionSignature("humanize",
+            [SequenceType.Instance, DoubleType.Instance],
+            ParameterNames: ["seq", "amount"]);
+        registry.Register("humanize", humanizeSig, args => HumanizeStrict(args, context));
+    }
+
+    private static void RegisterHumanizeGaussianContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var sig = new FunctionSignature("humanizeGaussian",
+            [SequenceType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "amount", "seed"]);
+        registry.Register("humanizeGaussian", sig, args => HumanizeGaussianStrict(args, context));
+    }
+
+    private static void RegisterTremoloContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var tremSig = new FunctionSignature("tremolo",
+            [SequenceType.Instance, IntType.Instance],
+            ParameterNames: ["seq", "reps"]);
+        registry.Register("tremolo", tremSig, args => TremoloStrict(args, context));
+    }
+
+    // ===== Phase 44 Plan 44-05 strict-mode-aware implementations =====
+    //
+    // Each method follows the RESEARCH §"Axis B Site Rewrite" template:
+    //   1. Extract raw arg(s) into local var(s).
+    //   2. If ctx.CallerStrictMode:
+    //        - For each out-of-range raw, ReportError "[strict] <builtin> <param>
+    //          {raw} outside [lo, hi]" + return Value.Void() (early return; report
+    //          ONE error per call to keep diagnostics minimal).
+    //        - Otherwise pass raw values through (no clamp needed).
+    //   3. Else: existing Math.Clamp + fallback path verbatim (preserves the
+    //      pre-Phase-44 byte-identical non-strict shape per Pitfall 5).
+    //
+    // Error strings match the strict-error-manifest.csv §6a rows verbatim
+    // (D-07 + AUDIT §6a Column 5 composer-approved 2026-05-24). NO PRNG /
+    // DateTime / Guid in the message — preserves two-run cmp-clean determinism.
+
+    private static Value CrescendoStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double startRaw = args[1].As<double>();
+        double endRaw = args[2].As<double>();
+        if (ctx.CallerStrictMode)
+        {
+            if (startRaw < 0.0 || startRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] crescendo startVel {startRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            if (endRaw < 0.0 || endRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] crescendo endVel {endRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            return Value.Sequence(ApplyVelocityGradient(seq, startRaw, endRaw));
+        }
+        double startVel = Math.Clamp(startRaw, 0.0, 1.0);
+        double endVel = Math.Clamp(endRaw, 0.0, 1.0);
+        return Value.Sequence(ApplyVelocityGradient(seq, startVel, endVel));
+    }
+
+    private static Value DecrescendoStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double startRaw = args[1].As<double>();
+        double endRaw = args[2].As<double>();
+        if (ctx.CallerStrictMode)
+        {
+            if (startRaw < 0.0 || startRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] decrescendo startVel {startRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            if (endRaw < 0.0 || endRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] decrescendo endVel {endRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            // Reverse the velocity gradient: decrescendo goes from endVel down to startVel
+            return Value.Sequence(ApplyVelocityGradient(seq, endRaw, startRaw));
+        }
+        double startVel = Math.Clamp(startRaw, 0.0, 1.0);
+        double endVel = Math.Clamp(endRaw, 0.0, 1.0);
+        return Value.Sequence(ApplyVelocityGradient(seq, endVel, startVel));
+    }
+
+    private static Value SwellStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double edgeRaw = args[1].As<double>();
+        double peakRaw = args[2].As<double>();
+        double edgeVel;
+        double peakVel;
+        if (ctx.CallerStrictMode)
+        {
+            if (edgeRaw < 0.0 || edgeRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] swell edgeVel {edgeRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            if (peakRaw < 0.0 || peakRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] swell peakVel {peakRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            edgeVel = edgeRaw;
+            peakVel = peakRaw;
+        }
+        else
+        {
+            edgeVel = Math.Clamp(edgeRaw, 0.0, 1.0);
+            peakVel = Math.Clamp(peakRaw, 0.0, 1.0);
+        }
+        return SwellCore(seq, edgeVel, peakVel);
+    }
+
+    private static Value RitardandoStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amountRaw = args[1].As<double>();
+        double amount;
+        if (ctx.CallerStrictMode)
+        {
+            if (amountRaw < 0.0 || amountRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] ritardando amount {amountRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            amount = amountRaw;
+        }
+        else
+        {
+            amount = Math.Clamp(amountRaw, 0.0, 1.0);
+        }
+        return RitardandoCore(seq, amount);
+    }
+
+    private static Value AccelerandoStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amountRaw = args[1].As<double>();
+        double amount;
+        if (ctx.CallerStrictMode)
+        {
+            if (amountRaw < 0.0 || amountRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] accelerando amount {amountRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            amount = amountRaw;
+        }
+        else
+        {
+            amount = Math.Clamp(amountRaw, 0.0, 1.0);
+        }
+        return AccelerandoCore(seq, amount);
+    }
+
+    private static Value HumanizeStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amountRaw = args[1].As<double>();
+        double amount;
+        if (ctx.CallerStrictMode)
+        {
+            if (amountRaw < 0.0 || amountRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] humanize amount {amountRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            amount = amountRaw;
+        }
+        else
+        {
+            amount = Math.Clamp(amountRaw, 0.0, 1.0);
+        }
+        return HumanizeCore(seq, amount);
+    }
+
+    private static Value HumanizeGaussianStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        double amountRaw = args[1].As<double>();
+        int seed = args[2].As<int>();
+        double amount;
+        if (ctx.CallerStrictMode)
+        {
+            if (amountRaw < 0.0 || amountRaw > 1.0)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] humanizeGaussian amount {amountRaw} outside [0.0, 1.0]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            amount = amountRaw;
+        }
+        else
+        {
+            amount = Math.Clamp(amountRaw, 0.0, 1.0);
+        }
+        return HumanizeGaussianCore(seq, amount, seed);
+    }
+
+    private static Value TremoloStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        var seq = args[0].As<SequenceData>();
+        int repsRaw = args[1].As<int>();
+        int reps;
+        if (ctx.CallerStrictMode)
+        {
+            if (repsRaw < 1 || repsRaw > 16)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] tremolo reps {repsRaw} outside [1, 16]",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
+            reps = repsRaw;
+        }
+        else
+        {
+            reps = Math.Clamp(repsRaw, 1, 16);
+        }
+        return TremoloCore(seq, reps);
     }
 
     /// <summary>
@@ -665,7 +1013,16 @@ public static class TransformFunctions
         var seq = args[0].As<SequenceData>();
         double edgeVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
         double peakVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
+        return SwellCore(seq, edgeVel, peakVel);
+    }
 
+    /// <summary>
+    /// Shared body of swell extracted Phase 44 Plan 44-05 so the strict-aware
+    /// <see cref="SwellStrict"/> can call the same code path with already-validated
+    /// raw values (strict skips the clamp; non-strict pre-clamps).
+    /// </summary>
+    private static Value SwellCore(SequenceData seq, double edgeVel, double peakVel)
+    {
         int totalNotes = 0;
         foreach (var bar in seq.Bars)
             foreach (var note in bar.MusicalNotes)
@@ -783,7 +1140,16 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+        return RitardandoCore(seq, amount);
+    }
 
+    /// <summary>
+    /// Shared body of ritardando extracted Phase 44 Plan 44-05 so the
+    /// strict-aware <see cref="RitardandoStrict"/> can call the same code path
+    /// with an already-validated amount (strict skips the clamp; non-strict pre-clamps).
+    /// </summary>
+    private static Value RitardandoCore(SequenceData seq, double amount)
+    {
         int totalNotes = 0;
         foreach (var bar in seq.Bars)
             foreach (var note in bar.MusicalNotes)
@@ -819,7 +1185,14 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+        return AccelerandoCore(seq, amount);
+    }
 
+    /// <summary>
+    /// Shared body of accelerando extracted Phase 44 Plan 44-05.
+    /// </summary>
+    private static Value AccelerandoCore(SequenceData seq, double amount)
+    {
         int totalNotes = 0;
         foreach (var bar in seq.Bars)
             foreach (var note in bar.MusicalNotes)
@@ -902,7 +1275,14 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
+        return HumanizeCore(seq, amount);
+    }
 
+    /// <summary>
+    /// Shared body of humanize extracted Phase 44 Plan 44-05.
+    /// </summary>
+    private static Value HumanizeCore(SequenceData seq, double amount)
+    {
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
@@ -959,7 +1339,16 @@ public static class TransformFunctions
         var seq = args[0].As<SequenceData>();
         double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);  // D-08
         int seed = args[2].As<int>();                                // D-15
+        return HumanizeGaussianCore(seq, amount, seed);
+    }
 
+    /// <summary>
+    /// Shared body of humanizeGaussian extracted Phase 44 Plan 44-05 so the
+    /// strict-aware <see cref="HumanizeGaussianStrict"/> can reuse the same
+    /// renderer path with an already-validated amount.
+    /// </summary>
+    private static Value HumanizeGaussianCore(SequenceData seq, double amount, int seed)
+    {
         if (amount == 0.0) return Value.Sequence(seq);               // D-10 short-circuit
 
         // D-03: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
@@ -1055,10 +1444,9 @@ public static class TransformFunctions
             ParameterNames: ["seq", "interval"]);
         registry.Register("trill", trillSig, Trill);
 
-        var tremSig = new FunctionSignature("tremolo",
-            [SequenceType.Instance, IntType.Instance],
-            ParameterNames: ["seq", "reps"]);
-        registry.Register("tremolo", tremSig, Tremolo);
+        // Phase 44 Plan 44-05: tremolo registration moved to
+        // RegisterContextDependent so its reps-clamp can read
+        // context.CallerStrictMode at the leaf site.
     }
 
     private static Value Trill(IReadOnlyList<Value> args)
@@ -1104,7 +1492,14 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         int reps = Math.Clamp(args[1].As<int>(), 1, 16);
+        return TremoloCore(seq, reps);
+    }
 
+    /// <summary>
+    /// Shared body of tremolo extracted Phase 44 Plan 44-05.
+    /// </summary>
+    private static Value TremoloCore(SequenceData seq, int reps)
+    {
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
