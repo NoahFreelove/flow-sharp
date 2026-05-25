@@ -33,7 +33,7 @@ Next step: `/clear` then one of (composer pick):
   - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
 
 Status: Ready to execute
-Last activity: 2026-05-24 - Completed quick task 260524-rjm: Bundle B TryGetVariable (cumulative A+B preserved -12% to -26%; marginal noise-level)
+Last activity: 2026-05-25 - Completed quick task 260524-rsg: Bundle C reusable Value[] callback buffer (cumulative A+B+C -8.8% to -31.8% vs baseline)
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
@@ -717,6 +717,7 @@ None yet for Phase 15.
 | 260524-qnf | Flow interpreter benchmark harness + Release baseline (6 bench_*.flow scripts + run.sh; baseline.txt captured for upcoming 6-bundle optimization sweep) | 2026-05-24 | bf1da32 | [260524-qnf-set-up-flow-interpreter-benchmark-harnes](./quick/260524-qnf-set-up-flow-interpreter-benchmark-harnes/) |
 | 260524-r4o | Bundle A — dispatch hot-path micro-opts (StackFrame fast path, OverloadResolver direct-return, TryResolveFunction reuses resolver in silent mode, EvaluateFunctionCall single-pass arg build). var_lookup -27.1%, overload -23.2%, collections -21.4%, function_calls -15.3%. Zero new test failures. | 2026-05-24 | 7c00f68 | [260524-r4o-bundle-a-function-dispatch-hot-path-micr](./quick/260524-r4o-bundle-a-function-dispatch-hot-path-micr/) |
 | 260524-rjm | Bundle B — TryGetVariable replaces 3 throw/catch sites (EvaluateVariable, EvaluateFunctionCall var-fallback, ExecuteAssignment). Marginal vs Bundle A within noise (planner caught that GetVariable only throws on not-found). Cumulative A+B -12% to -26% preserved. Zero new test failures. Follow-up flagged: same pattern in NoteStreamCompiler.cs:1014-1023. | 2026-05-24 | df97bd1 | [260524-rjm-bundle-b-kill-var-lookup-exceptions](./quick/260524-rjm-bundle-b-kill-var-lookup-exceptions/) |
+| 260524-rsg | Bundle C — reusable Value[] buffer per call (replaces per-iteration `new List<Value> { element }`) for each/map/filter/reduce in Collections.cs. Honest result: bench_collections marginal -2.9% inside stddev, but JIT escape-analysis side effects boosted other benches. Cumulative A+B+C: var_lookup -31.8%, overload -24.7%, collections -21.3%, function_calls -16.9%, notestream -10.1%, parse -8.8%. Zero new test failures. | 2026-05-25 | d210dbe | [260524-rsg-bundle-c-drop-per-call-list-wrap-in-coll](./quick/260524-rsg-bundle-c-drop-per-call-list-wrap-in-coll/) |
 
 ## Deferred Items
 
