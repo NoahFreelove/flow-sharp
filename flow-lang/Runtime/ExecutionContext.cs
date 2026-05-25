@@ -70,13 +70,15 @@ public class ExecutionContext
     /// </list>
     ///
     /// <para>
-    /// FORWARD RISK (Phase 44 Plan 44-02): when <see cref="CallerStrictMode"/> wires
-    /// into <see cref="OverloadResolver"/> (Axis A — strict mode disables
-    /// compatible/convertible coercion), the same <c>(name, argTypes)</c> may
-    /// resolve differently in strict vs. non-strict callers. Today's key does NOT
-    /// encode the strict bit. Plan 44-02 must either extend
-    /// <see cref="OverloadCacheKey"/> with a strict discriminator OR invalidate
-    /// this cache around <see cref="CallerStrictMode"/> changes.
+    /// FORWARD RISK RESOLVED (Phase 44 Plan 44-03): the cache key now encodes
+    /// the strict bit as a third <see cref="OverloadCacheKey"/> field
+    /// (<see cref="OverloadCacheKey.StrictMode"/>). Same <c>(name, argTypes)</c>
+    /// resolves to a DIFFERENT entry in strict vs. non-strict callers — required
+    /// because strict drops two implicit-conversion clauses in
+    /// <see cref="FunctionSignature.Matches"/> (RESEARCH Pitfall 1). Without
+    /// the discriminator, a non-strict callee that pre-warmed the cache for
+    /// <c>(add, [Int, Double])</c> would silently let a strict caller's same
+    /// call resolve via numeric-widened <c>(Double, Double)</c> overload.
     /// </para>
     /// </summary>
     private readonly Dictionary<OverloadCacheKey, FunctionOverload?> _overloadResolveCache = new();
@@ -94,15 +96,30 @@ public class ExecutionContext
         public readonly string Name;
         public readonly FlowType[] ArgTypes;
 
-        public OverloadCacheKey(string name, FlowType[] argTypes)
+        /// <summary>
+        /// Phase 44 Plan 44-03 — strict-mode discriminator. Strict callers and
+        /// non-strict callers MUST resolve through separate cache entries because
+        /// strict drops two implicit-conversion clauses in
+        /// <see cref="FunctionSignature.Matches"/>. Without this field, a
+        /// non-strict call site that pre-warmed the cache for
+        /// <c>(add, [Int, Double])</c> would silently let a strict caller's
+        /// identical call resolve to the numeric-widened <c>(Double, Double)</c>
+        /// overload — breaking the strict-mode contract.
+        /// </summary>
+        public readonly bool StrictMode;
+
+        public OverloadCacheKey(string name, FlowType[] argTypes, bool strictMode = false)
         {
             Name = name;
             ArgTypes = argTypes;
+            StrictMode = strictMode;
         }
 
         public bool Equals(OverloadCacheKey other)
         {
             if (!string.Equals(Name, other.Name, StringComparison.Ordinal))
+                return false;
+            if (StrictMode != other.StrictMode)
                 return false;
             if (ArgTypes.Length != other.ArgTypes.Length)
                 return false;
@@ -122,6 +139,7 @@ public class ExecutionContext
             unchecked
             {
                 int hash = Name.GetHashCode();
+                hash = (hash * 31) + StrictMode.GetHashCode();
                 for (int i = 0; i < ArgTypes.Length; i++)
                     hash = (hash * 31) + ArgTypes[i].GetHashCode();
                 return hash;
@@ -644,24 +662,47 @@ public class ExecutionContext
             return null;
         }
 
+        // Phase 44 Plan 44-03 — snapshot the executing frame's strict bit
+        // (Pitfall 4: explicit-parameter route, NO thread-local accessor).
+        // This is the currently-executing proc's IsStrict (pushed by Plan 44-02
+        // `Interpreter.ExecuteUserFunctionWithCaptures` push/pop), which IS the
+        // caller's strict bit for the to-be-resolved builtin/proc.
+        bool strictMode = this.StrictMode;
+
         // Bundle F (260524-srj) — cache read with the bypass gates documented
         // on _overloadResolveCache. The cache stores (FunctionOverload?) so
         // known-misses are also memoized (avoids re-paying the scoring cost on
         // repeat lookups for procs that won't match).
+        // Phase 44 Plan 44-03 — strictMode is encoded as a third cache-key
+        // field so strict + non-strict callers do NOT share cache entries.
         if (!ShouldBypassOverloadCache(argTypes, overloads, namedArgTypes))
         {
-            var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes));
+            var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes), strictMode);
             if (_overloadResolveCache.TryGetValue(key, out var cached))
+            {
+                // Phase 44 Plan 44-03 (Rule 1 auto-fix) — cached MISS must
+                // still emit the "No matching overload" diagnostic so callers
+                // (ExpressionEvaluator at the report-error fallback site) see
+                // a real error in ErrorReporter, not just a silent null. The
+                // shared TryResolveFunction probe routes errors to the silent
+                // reporter (per design); a subsequent ResolveFunction call must
+                // re-emit through the real reporter. Re-run resolve in the
+                // cached-miss case (rare slow path; cached HITs return fast).
+                if (cached == null)
+                {
+                    return _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes, strictMode: strictMode);
+                }
                 return cached;
+            }
             // Bundle A (260524-r4o) Task 2 — FunctionOverload-direct resolve.
-            var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes);
+            var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes, strictMode: strictMode);
             _overloadResolveCache[key] = resolved;
             return resolved;
         }
 
         // Bundle A (260524-r4o) Task 2 — FunctionOverload-direct resolve:
         // no Signature projection, no FirstOrDefault reverse-lookup.
-        return _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes);
+        return _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes, strictMode: strictMode);
     }
 
     /// <summary>
@@ -957,17 +998,23 @@ public class ExecutionContext
         if (overloads.Count == 0)
             return null;
 
+        // Phase 44 Plan 44-03 — snapshot the executing frame's strict bit
+        // (mirrors ResolveFunction; same Pitfall-4 explicit-parameter route).
+        bool strictMode = this.StrictMode;
+
         // Bundle F (260524-srj) — silent-mode probes SHARE the same cache as
         // the noisy ResolveFunction path. The cached FunctionOverload? value is
         // the resolution OUTCOME and doesn't depend on the silent flag; only
         // diagnostics differ, and a cache HIT skips them entirely (which is
         // exactly the silent=true behavior we want here anyway).
+        // Phase 44 Plan 44-03 — strict bit is part of the cache key so strict
+        // + non-strict probes do NOT collide.
         if (!ShouldBypassOverloadCache(argTypes, overloads, namedArgTypes))
         {
-            var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes));
+            var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes), strictMode);
             if (_overloadResolveCache.TryGetValue(key, out var cached))
                 return cached;
-            var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true);
+            var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true, strictMode: strictMode);
             _overloadResolveCache[key] = resolved;
             return resolved;
         }
@@ -976,7 +1023,7 @@ public class ExecutionContext
         // via the silent-mode FunctionOverload-direct overload from Task 2.
         // No per-probe resolver-allocation; rejection diagnostics route into
         // the resolver's shared SilentReporter and are never flushed.
-        return _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true);
+        return _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true, strictMode: strictMode);
     }
 
     // ===================================================================

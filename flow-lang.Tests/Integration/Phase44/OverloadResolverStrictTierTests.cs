@@ -146,6 +146,7 @@ public class OverloadResolverStrictTierTests
     {
         var (engine, ok) = RunSource(
             "enable strict;\n"
+            + "use \"@audio\"\n"
             + "Buffer src = (createSineTone 0.5 440.0 0.5)\n"
             + "Buffer wet = (reverb src 0.5 1.5)\n");
         try
@@ -201,6 +202,7 @@ public class OverloadResolverStrictTierTests
     {
         var (engineStrict, okStrict) = RunSource(
             "enable strict;\n"
+            + "use \"@audio\"\n"
             + "Buffer src = (createSineTone 0.5 440.0 0.5)\n"
             + "Buffer wet = (gain src -12dB)\n");
         try
@@ -212,7 +214,8 @@ public class OverloadResolverStrictTierTests
         finally { engineStrict.Dispose(); }
 
         var (engineLax, okLax) = RunSource(
-            "Buffer src = (createSineTone 0.5 440.0 0.5)\n"
+            "use \"@audio\"\n"
+            + "Buffer src = (createSineTone 0.5 440.0 0.5)\n"
             + "Buffer wet = (gain src -12dB)\n");
         try
         {
@@ -255,7 +258,8 @@ public class OverloadResolverStrictTierTests
 
         // (reverb buf 0.5 1.5) — inverse music-type widening on 3rd arg.
         var (e3, ok3) = RunSource(
-            "Buffer src = (createSineTone 0.5 440.0 0.5)\n"
+            "use \"@audio\"\n"
+            + "Buffer src = (createSineTone 0.5 440.0 0.5)\n"
             + "Buffer wet = (reverb src 0.5 1.5)\n");
         try
         {
