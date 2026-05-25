@@ -346,7 +346,7 @@ Plans:
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
-| 44. Strict Mode | v1.5 | 4/12 | In Progress|  |
+| 44. Strict Mode | v1.5 | 7/12 | In Progress|  |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 
@@ -407,7 +407,7 @@ Plans:
 
 **Depends on**: Phase 42 (audit provides the clamp/advisory site inventory needed to confidently enumerate Axis B sites — missing any one regresses the strict contract). Phase 43 optional but useful for organizing strict-mode test files.
 **Requirements**: REQ-STRICT-01, REQ-STRICT-02, REQ-STRICT-03, REQ-STRICT-04, REQ-STRICT-05, REQ-STRICT-06, REQ-STRICT-07, REQ-STRICT-08, REQ-STRICT-09, REQ-STRICT-10, REQ-STRICT-11, REQ-STRICT-12, REQ-STRICT-13, REQ-STRICT-14, REQ-STRICT-15
-**Plans:** 4/12 plans executed
+**Plans:** 7/12 plans executed
 
 Plans:
 
@@ -423,9 +423,9 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 44-03-PLAN.md — OverloadResolver Axis A tier-disable (BOTH Pitfall 1 clauses dropped) (REQ-STRICT-04)
-- [ ] 44-05-PLAN.md — 13 §6a input-perimeter clamp sites flip to [strict] errors + Phase44ClampGrepConsistencyTests (REQ-STRICT-07)
-- [ ] 44-08-PLAN.md — Pre-strict bug fix: Void-wildcard print/if/not + AutoStr + (not) builtin registration + D-12 non-strict (and)/(or) last-truthy semantics (REQ-STRICT-10)
+- [x] 44-03-PLAN.md — OverloadResolver Axis A tier-disable (BOTH Pitfall 1 clauses dropped) (REQ-STRICT-04)
+- [x] 44-05-PLAN.md — 13 §6a input-perimeter clamp sites flip to [strict] errors + Phase44ClampGrepConsistencyTests (REQ-STRICT-07)
+- [x] 44-08-PLAN.md — Pre-strict bug fix: Void-wildcard print/if/not + AutoStr + (not) builtin registration + D-12 non-strict (and)/(or) last-truthy semantics (REQ-STRICT-10)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
