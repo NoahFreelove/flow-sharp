@@ -56,7 +56,8 @@ public class ProcDeclarationStrictAstTests
     [Fact]
     public void Fact_StrictPragma_SetsProcIsStrictTrue()
     {
-        var program = ParseToProgram("enable strict;\nproc foo () { 1 }\n");
+        var program = ParseToProgram(
+            "enable strict;\nproc foo ()\n    1\nend proc\n");
         var proc = program.Statements.OfType<ProcDeclaration>().Single();
         Assert.True(
             proc.IsStrict,
@@ -66,7 +67,7 @@ public class ProcDeclarationStrictAstTests
     [Fact]
     public void Fact_NoStrictPragma_LeavesIsStrictFalse()
     {
-        var program = ParseToProgram("proc foo () { 1 }\n");
+        var program = ParseToProgram("proc foo ()\n    1\nend proc\n");
         var proc = program.Statements.OfType<ProcDeclaration>().Single();
         Assert.False(
             proc.IsStrict,
@@ -79,7 +80,7 @@ public class ProcDeclarationStrictAstTests
         // Pitfall 8 — capturing the strict bit per-proc must not clobber
         // the program-level PragmaSet. Both pragmas continue to apply.
         var program = ParseToProgram(
-            "enable strict;\nenable justIntonation;\nproc foo () { 1 }\n");
+            "enable strict;\nenable justIntonation;\nproc foo ()\n    1\nend proc\n");
 
         var proc = program.Statements.OfType<ProcDeclaration>().Single();
         Assert.True(
@@ -100,7 +101,9 @@ public class ProcDeclarationStrictAstTests
         // the parser does NOT consume / clear the strict pragma between proc
         // declarations (it's a file-scope bit, not a one-shot statement modifier).
         var program = ParseToProgram(
-            "enable strict;\nproc a () { 1 }\nproc b () { 2 }\n");
+            "enable strict;\n"
+            + "proc a ()\n    1\nend proc\n"
+            + "proc b ()\n    2\nend proc\n");
         var procs = program.Statements.OfType<ProcDeclaration>().ToList();
         Assert.Equal(2, procs.Count);
         Assert.True(procs[0].IsStrict, "first proc under `enable strict;` must have IsStrict=true.");

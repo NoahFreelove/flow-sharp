@@ -665,7 +665,16 @@ public class ExpressionEvaluator
             new Parameter(p.Name, p.Type)).ToList();
 
         var body = lambda.Body.ToList();
-        var proc = new ProcDeclaration(lambda.Location, uniqueName, parameters, body, false);
+        // Phase 44 Plan 44-02 (Rule 2 auto-add): lambdas inherit the strict bit
+        // of the surrounding lexical scope at creation time. The ProcDeclaration
+        // synthesized here flows through ExecuteUserFunctionWithCaptures which
+        // pushes ctx.StrictMode = proc.IsStrict — without this capture the
+        // lambda body would lose the strict bit on invocation, breaking the
+        // D-03 file-scope contract for inline closures (e.g. lambdas passed to
+        // higher-order builtins inside a strict file).
+        var proc = new ProcDeclaration(
+            lambda.Location, uniqueName, parameters, body, false,
+            IsStrict: _context.StrictMode);
 
         // Snapshot capture: capture all currently visible variables at lambda creation time.
         // This ensures the lambda sees the values as they were when it was created,
