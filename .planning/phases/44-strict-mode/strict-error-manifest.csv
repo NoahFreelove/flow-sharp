@@ -1,17 +1,17 @@
 file_path,line,builtin,tag,sentinel_body,priority,carve_out,axis,param,range
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,106,quantize,swing,"[strict] swing strength {value} outside [0.0, 1.0]",HIGH,false,B,strength,"[0.0, 1.0]"
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,107,quantize,swing,"[strict] swing factor {value} outside [-1.0, 1.0]",HIGH,false,B,swing,"[-1.0, 1.0]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,106,quantize,quantize,"[strict] quantize strength {value} outside [0.0, 1.0]",HIGH,false,B,strength,"[0.0, 1.0]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,107,quantize,quantize,"[strict] quantize swing {value} outside [-1.0, 1.0]",HIGH,false,B,swing,"[-1.0, 1.0]"
 flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,649,crescendo,crescendo,"[strict] crescendo startVel {value} outside [0.0, 1.0]",HIGH,false,B,startVel,"[0.0, 1.0]"
 flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,650,crescendo,crescendo,"[strict] crescendo endVel {value} outside [0.0, 1.0]",HIGH,false,B,endVel,"[0.0, 1.0]"
 flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,657,decrescendo,decrescendo,"[strict] decrescendo startVel {value} outside [0.0, 1.0]",HIGH,false,B,startVel,"[0.0, 1.0]"
 flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,658,decrescendo,decrescendo,"[strict] decrescendo endVel {value} outside [0.0, 1.0]",HIGH,false,B,endVel,"[0.0, 1.0]"
 flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,666,swell,swell,"[strict] swell edgeVel {value} outside [0.0, 1.0]",HIGH,false,B,edgeVel,"[0.0, 1.0]"
 flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,667,swell,swell,"[strict] swell peakVel {value} outside [0.0, 1.0]",HIGH,false,B,peakVel,"[0.0, 1.0]"
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,785,humanize,humanize,"[strict] humanize amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,821,humanizeGaussian,humanizeGaussian,"[strict] humanizeGaussian amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,904,vary,vary,"[strict] vary amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,960,legato,legato,"[strict] legato amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
-flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,1106,repeat,repeat,"[strict] repeat reps {value} outside [1, 16]",HIGH,false,B,reps,"[1, 16]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,785,ritardando,ritardando,"[strict] ritardando amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,821,accelerando,accelerando,"[strict] accelerando amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,904,humanize,humanize,"[strict] humanize amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,960,humanizeGaussian,humanizeGaussian,"[strict] humanizeGaussian amount {value} outside [0.0, 1.0]",HIGH,false,B,amount,"[0.0, 1.0]"
+flow-lang/StandardLibrary/Transforms/TransformFunctions.cs,1106,tremolo,tremolo,"[strict] tremolo reps {value} outside [1, 16]",HIGH,false,B,reps,"[1, 16]"
 flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs,277,loadSfz,sfz,"[strict] [sfz] missing sample '{path}'",HIGH,false,B,,
 flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs,252,loadSfz,sfz,"[strict] [sfz] unsupported opcode '{name}' ignored",HIGH,false,B,,
 flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs,276,loadSfz,sfz,"[strict] [sfz] unsupported opcode '{name}' ignored",HIGH,false,B,,
