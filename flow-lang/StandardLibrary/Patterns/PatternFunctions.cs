@@ -226,8 +226,24 @@ public static class PatternFunctions
 
         if (n <= 0)
         {
+            // Phase 44 review WR-01: this site was missed in the Plan 44-06
+            // Axis B strict-elevation pass. Every other charitable advisory
+            // in PatternFunctions branches on ctx.CallerStrictMode and emits
+            // a [strict] error before falling through to WarnOnce. Match the
+            // sibling pattern + CR-03 dedup gate.
+            var sentinel = $"every:invalid-n:{ctx.CurrentCallSite}";
+            if (ctx.CallerStrictMode)
+            {
+                if (ctx.StrictAdvisoryDedup.Add(sentinel))
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [every] n must be > 0 (got {n}) at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                }
+                return Value.Sequence(seq);
+            }
             RenderingDiagnostics.WarnOnce(
-                $"every:invalid-n:{ctx.CurrentCallSite}",
+                sentinel,
                 $"[every] n must be > 0 (got {n}) at {ctx.CurrentCallSite}; sequence unchanged");
             return Value.Sequence(seq);
         }
