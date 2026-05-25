@@ -285,6 +285,13 @@ public class FlowEngine : IDisposable
             // `tuning t { ...` (unclosed) does not bleed into subsequent REPL inputs.
             _context.ResetBlockTuningStack();
             ApplyTuningPragma(program);
+            // Phase 44 Plan 44-01 D-02: file-scope strict-mode bit. ApplyStrictPragma
+            // mirrors ApplyTuningPragma — top-level Execute is the file-load
+            // boundary for the active script; imported modules are handled separately
+            // by ModuleLoader.LoadModule's save-set-restore (D-03). Order is
+            // tuning-first / strict-second by convention; the two pragmas are
+            // independent and neither reads the other's state.
+            ApplyStrictPragma(program);
 
             // 4. Interpret AST
             _interpreter.Execute(program);
@@ -317,6 +324,32 @@ public class FlowEngine : IDisposable
         else if (program.Pragmas.Has("equalTemperament"))
             _context.SetFileScopeTuning(BuildPragmaTuning(TuningSystem.EqualTemperament));
         // else: D-07 / D-08 persistence — leave previous file-scope frame untouched.
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-01 D-02 / D-03: bridges <c>program.Pragmas</c> →
+    /// <see cref="Runtime.ExecutionContext.StrictMode"/> for the top-level
+    /// file. Mirrors <see cref="ApplyTuningPragma"/>'s parse-then-set
+    /// posture — runs between parse and interpret in <see cref="Execute"/>.
+    ///
+    /// <para>
+    /// Imported files are NOT routed through this method; their file-scope bit
+    /// lives in <see cref="ModuleLoader.LoadModule"/>'s save-set-restore around
+    /// the imported file's interpreter.Execute call (D-03 — each file's pragma
+    /// governs ONLY statements declared in that file).
+    /// </para>
+    ///
+    /// <para>
+    /// Unlike <see cref="ApplyTuningPragma"/>, this method overwrites <c>StrictMode</c>
+    /// on every Execute (no "persistence" branch): the absence of <c>enable strict;</c>
+    /// MUST set StrictMode=false so a prior REPL session's strict bit does not bleed
+    /// into a fresh non-strict file's evaluation (Plan 44-10 REPL session flag handles
+    /// REPL-level persistence separately).
+    /// </para>
+    /// </summary>
+    private void ApplyStrictPragma(Ast.Program program)
+    {
+        _context.StrictMode = program.Pragmas.Has("strict");
     }
 
     /// <summary>
