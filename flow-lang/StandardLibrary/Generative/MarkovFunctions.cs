@@ -217,6 +217,16 @@ public static class MarkovFunctions
             }
             else
             {
+                // Phase 44 Plan 44-07 Pattern S3: under strict mode the advisory
+                // becomes a composer-facing [strict] error; non-strict path
+                // preserved byte-identical (Pitfall 5 two-run cmp-clean).
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [markov] features unsupported — unrecognised features tuple at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                    return Value.Void();
+                }
                 RenderingDiagnostics.WarnOnce(
                     $"markovTrain:unknown-features:{ctx.CurrentCallSite}",
                     $"[markovTrain] unrecognised features tuple at {ctx.CurrentCallSite}; "
@@ -226,6 +236,14 @@ public static class MarkovFunctions
         }
         else
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [markov] features unsupported — expects Symbol or Tuple<<Symbol,...>> at {ctx.CurrentCallSite}; got {featuresVal.Type.Name}",
+                    ctx.CurrentCallSite);
+                return Value.Void();
+            }
             RenderingDiagnostics.WarnOnce(
                 $"markovTrain:non-symbol-features:{ctx.CurrentCallSite}",
                 $"[markovTrain] features= expects Symbol or Tuple<<Symbol,...>> at {ctx.CurrentCallSite}; "
@@ -237,6 +255,16 @@ public static class MarkovFunctions
 
     private static string UnknownFeatureFallback(string sym, ExecutionContext ctx)
     {
+        // Phase 44 Plan 44-07 Pattern S3: strict-mode branch. Returns the
+        // default mode after reporting — caller sees a non-null mode but the
+        // ErrorReporter accumulates the [strict] error for surface visibility.
+        if (ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] [markov] features unsupported — unrecognised features=#{sym} at {ctx.CurrentCallSite}",
+                ctx.CurrentCallSite);
+            return FeatureModePitch;
+        }
         RenderingDiagnostics.WarnOnce(
             $"markovTrain:unknown-features:{ctx.CurrentCallSite}:{sym}",
             $"[markovTrain] unrecognised features=#{sym} at {ctx.CurrentCallSite}; "
@@ -249,6 +277,17 @@ public static class MarkovFunctions
         int clamped = Math.Clamp(requestedOrder, 1, 3);
         if (clamped != requestedOrder)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch. Returns the
+            // clamped value after reporting — the caller still gets a valid
+            // order so the rest of training/generation completes; the
+            // ErrorReporter accumulates the [strict] error for surface visibility.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [markov] order clamped to {clamped} (got {requestedOrder}) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return clamped;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"markov:order-clamp:{ctx.CurrentCallSite}:{requestedOrder}",
                 $"[markov] order {requestedOrder} clamped to {clamped} at {ctx.CurrentCallSite} "
@@ -419,6 +458,14 @@ public static class MarkovFunctions
         var output = new SequenceData();
         if (length <= 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [markov] length clamped — got {length} (must be > 0) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return output;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"markov:invalid-length:{ctx.CurrentCallSite}",
                 $"[markov] length {length} must be > 0; returned empty sequence");
@@ -426,6 +473,14 @@ public static class MarkovFunctions
         }
         if (model.StateAlphabet.Count == 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [markov] empty corpus — trained model has empty state alphabet at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return output;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"markov:empty-corpus:{ctx.CurrentCallSite}",
                 "[markov] trained on empty corpus; returned empty sequence");

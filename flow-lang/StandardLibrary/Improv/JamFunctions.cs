@@ -175,10 +175,22 @@ public static class JamFunctions
             order = Math.Clamp(requestedOrder, 1, 3);
             if (order != requestedOrder)
             {
-                RenderingDiagnostics.WarnOnce(
-                    $"jam:order-clamp:{ctx.CurrentCallSite}:{requestedOrder}",
-                    $"[jam] order {requestedOrder} clamped to {order} at {ctx.CurrentCallSite} "
-                    + "(IMPROV-01 limits order to [1, 3])");
+                // Phase 44 Plan 44-07 Pattern S3: strict-mode branch. Returns the
+                // clamped order after reporting; the caller still gets a valid
+                // order so the rest of generation completes.
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [jam] order clamped to {order} (got {requestedOrder}) at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                }
+                else
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"jam:order-clamp:{ctx.CurrentCallSite}:{requestedOrder}",
+                        $"[jam] order {requestedOrder} clamped to {order} at {ctx.CurrentCallSite} "
+                        + "(IMPROV-01 limits order to [1, 3])");
+                }
             }
         }
 
@@ -205,6 +217,14 @@ public static class JamFunctions
         // ---- Charitable degenerate input ----
         if (length <= 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] length clamped — got {length} (must be > 0) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return output;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"jam:invalid-length:{ctx.CurrentCallSite}",
                 $"[jam] length {length} must be > 0 at {ctx.CurrentCallSite}; returned empty sequence");
@@ -212,6 +232,14 @@ public static class JamFunctions
         }
         if (over.Bars.Count == 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] empty over chord progression at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return output;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"jam:empty-over:{ctx.CurrentCallSite}",
                 $"[jam] `over` is empty at {ctx.CurrentCallSite}; returned empty sequence");
@@ -224,6 +252,14 @@ public static class JamFunctions
         {
             // Neither requested style nor #jazz exists in the registry. Engine
             // init failed to load any packs — emit a final advisory and bail.
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] degenerate input — no style packs in registry at {ctx.CurrentCallSite}, returning empty",
+                    ctx.CurrentCallSite);
+                return output;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"jam:no-fallback-jazz:{ctx.CurrentCallSite}",
                 $"[jam] no style packs in registry at {ctx.CurrentCallSite} — returned empty sequence");
@@ -245,9 +281,19 @@ public static class JamFunctions
         string activeKey = keyOverride ?? musicalCtx.Key ?? DefaultKey;
         if (keyOverride == null && musicalCtx.Key == null)
         {
-            RenderingDiagnostics.WarnOnce(
-                $"jam:default-key:{ctx.CurrentCallSite}",
-                $"[jam] no active key at {ctx.CurrentCallSite}; using {DefaultKey}");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] no active key — using {DefaultKey} at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"jam:default-key:{ctx.CurrentCallSite}",
+                    $"[jam] no active key at {ctx.CurrentCallSite}; using {DefaultKey}");
+            }
         }
 
         // ---- Pre-compute scale-tone pitch classes for the active key ----
@@ -263,10 +309,20 @@ public static class JamFunctions
         }
         else
         {
-            RenderingDiagnostics.WarnOnce(
-                $"jam:unknown-key:{ctx.CurrentCallSite}:{activeKey}",
-                $"[jam] unknown key '{activeKey}' at {ctx.CurrentCallSite}; "
-                + "scale-tone weight redistributed to chord/chromatic");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] roulette fallback — unknown key '{activeKey}' at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"jam:unknown-key:{ctx.CurrentCallSite}:{activeKey}",
+                    $"[jam] unknown key '{activeKey}' at {ctx.CurrentCallSite}; "
+                    + "scale-tone weight redistributed to chord/chromatic");
+            }
         }
 
         // ---- Style + key musical-incompatibility heuristic advisory ----
@@ -308,10 +364,20 @@ public static class JamFunctions
             // progressions that mix rests and chords.
             if (chordPitchClasses.Count == 0)
             {
-                RenderingDiagnostics.WarnOnce(
-                    $"jam:rest-chord-bar:{ctx.CurrentCallSite}:{barIdx % over.Bars.Count}",
-                    $"[jam] `over` bar {barIdx % over.Bars.Count} has no pitched notes at {ctx.CurrentCallSite}; "
-                    + "improvising on scale tones only for that bar");
+                // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [jam] degenerate input — `over` bar {barIdx % over.Bars.Count} has no pitched notes at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                }
+                else
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"jam:rest-chord-bar:{ctx.CurrentCallSite}:{barIdx % over.Bars.Count}",
+                        $"[jam] `over` bar {barIdx % over.Bars.Count} has no pitched notes at {ctx.CurrentCallSite}; "
+                        + "improvising on scale tones only for that bar");
+                }
             }
 
             var barNotes = new List<MusicalNoteData>(BeatSlotsPerBar);
@@ -380,9 +446,19 @@ public static class JamFunctions
         var jazz = Value.Symbol("jazz", ctx);
         if (ctx.StyleRegistry.TryGetValue(jazz, out var jazzPack))
         {
-            RenderingDiagnostics.WarnOnce(
-                $"jam:unknown-style:{requestedName}",
-                $"[jam] unknown style '#{requestedName}' — falling back to #jazz");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] unknown style '#{requestedName}' — falling back to #jazz at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"jam:unknown-style:{requestedName}",
+                    $"[jam] unknown style '#{requestedName}' — falling back to #jazz");
+            }
             return jazzPack;
         }
         return null;
@@ -801,10 +877,20 @@ public static class JamFunctions
         if (outFrac > 0.5)
         {
             string styleName = styleSymbol.Data as string ?? "<unknown>";
-            RenderingDiagnostics.WarnOnce(
-                $"jam:style-key-mismatch:{styleName}:{activeKey}",
-                $"[jam] style '#{styleName}' + key '{activeKey}' may produce unexpected "
-                + $"harmonic flavor ({outOfKey}/{total} chord tones outside key)");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [jam] key/style mismatch — '#{styleName}' + '{activeKey}' may produce unexpected harmonic flavor ({outOfKey}/{total} chord tones outside key) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"jam:style-key-mismatch:{styleName}:{activeKey}",
+                    $"[jam] style '#{styleName}' + key '{activeKey}' may produce unexpected "
+                    + $"harmonic flavor ({outOfKey}/{total} chord tones outside key)");
+            }
         }
     }
 }
