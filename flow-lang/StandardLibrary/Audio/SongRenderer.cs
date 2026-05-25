@@ -597,15 +597,37 @@ public static class SongRenderer
             // hard failure surface; the advisory is purely additive.
             if (ctx is null || !ctx.SfzEnabled)
             {
-                RenderingDiagnostics.WarnOnce(
-                    $"sfz:dispatch:disabled:{patchName}",
-                    $"[sfz] SFZ patch '{patchName}' not loaded (config-disabled) — sampler:NAME requires 'use \"@sfz\"' before binding");
+                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+                // Mirrors the existing throw below — strict surfaces both the
+                // composer-facing [strict] error AND the throw.
+                if (ctx is not null && ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [sfz] SFZ patch '{patchName}' not loaded (config-disabled) — sampler:NAME requires 'use \"@sfz\"' before binding",
+                        ctx.CurrentCallSite);
+                }
+                else
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"sfz:dispatch:disabled:{patchName}",
+                        $"[sfz] SFZ patch '{patchName}' not loaded (config-disabled) — sampler:NAME requires 'use \"@sfz\"' before binding");
+                }
             }
             else
             {
-                RenderingDiagnostics.WarnOnce(
-                    $"sfz:dispatch:missing:{patchName}",
-                    $"[sfz] SFZ patch '{patchName}' not loaded; voice rendered as silence");
+                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [sfz] SFZ patch '{patchName}' not loaded; voice rendered as silence",
+                        ctx.CurrentCallSite);
+                }
+                else
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"sfz:dispatch:missing:{patchName}",
+                        $"[sfz] SFZ patch '{patchName}' not loaded; voice rendered as silence");
+                }
             }
 
             throw new InvalidOperationException(
@@ -620,7 +642,10 @@ public static class SongRenderer
                 "Direct SongRenderer.RenderSong calls bypassing FlowEngine are unsupported for SFZ patches.");
         cache.EagerLoad(song, patch);
 
-        var renderer = new SfzRenderer(cache);
+        // Phase 44 Plan 44-06: pass ctx for strict-mode advisory elevation in
+        // SfzRenderer leaf sites. Phase 33 byte-identical when ctx==null or
+        // CallerStrictMode==false.
+        var renderer = new SfzRenderer(cache, ctx);
         var adapter = new SfzNoteSynthesizer(renderer, patch);
 
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
