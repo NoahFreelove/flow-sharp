@@ -763,17 +763,45 @@ public static class StdLib
     /// <see cref="AndBool"/> shape; permitted under D-v1.5-01 pre-traction
     /// latitude (project_pre_public_no_legacy_burden memo).
     /// <para>
-    /// Strict mode tightening is owned by Plan 44-09 — Plan 44-08 keeps the
-    /// strict path Bool-pass-through compatible by routing the existing
-    /// Bool-typed <see cref="AndBool"/> overload (+1000 specificity) for
-    /// <c>(and Bool Bool)</c>; this wildcard (+500) only fires on
-    /// non-Bool argument types where strict has no defensible last-truthy
-    /// interpretation anyway.
+    /// Phase 44 Plan 44-09 Task 1 layers the strict-mode Bool-required
+    /// tightening per D-12: when <c>ctx.CallerStrictMode</c> is true, ALL
+    /// operands MUST be <see cref="BoolType"/> — otherwise emit
+    /// <c>[strict] (and) requires Bool — got &lt;Type&gt;</c> via the
+    /// ErrorReporter and return <see cref="Value.Bool(false)"/>. Strict + all-Bool
+    /// preserves the existing pre-44-08 semantics: short-circuit on first
+    /// false, return <c>Bool(a &amp;&amp; b &amp;&amp; ...)</c>. The Bool-typed
+    /// <see cref="AndBool"/> overload (+1000 specificity) wins for the typical
+    /// <c>(and true false)</c> call regardless of mode and stays
+    /// byte-identical.
     /// </para>
     /// </summary>
     public static Value AndLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
     {
         if (args.Count == 0) return Value.Bool(true);
+        if (ctx.CallerStrictMode)
+        {
+            // D-12 strict: Bool-required across every operand. Emit error on
+            // first non-Bool arg + return Bool(false) (no charitable fall-through
+            // — strict mode is opt-in fail-fast surface).
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].Type is not BoolType)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] (and) requires Bool — got {args[i].Type}",
+                        ctx.CurrentCallSite);
+                    return Value.Bool(false);
+                }
+            }
+            // All-Bool strict path — same Bool-return as AndBool. Short-circuit
+            // on first false; otherwise return Bool(all-true).
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (!args[i].As<bool>()) return Value.Bool(false);
+            }
+            return Value.Bool(true);
+        }
+        // Non-strict charitable last-truthy (Plan 44-08 Task 3 unchanged).
         Value last = args[0];
         if (!TruthyCoerce(last)) return last;
         for (int i = 1; i < args.Count; i++)
@@ -790,10 +818,41 @@ public static class StdLib
     /// otherwise the LAST operand is returned (matches CPython <c>or</c>).
     /// See <see cref="AndLastTruthy"/> for the D-12 / D-v1.5-01 migration
     /// rationale.
+    /// <para>
+    /// Phase 44 Plan 44-09 Task 1 layers the strict-mode Bool-required
+    /// tightening per D-12: when <c>ctx.CallerStrictMode</c> is true, ALL
+    /// operands MUST be <see cref="BoolType"/> — otherwise emit
+    /// <c>[strict] (or) requires Bool — got &lt;Type&gt;</c> via the
+    /// ErrorReporter and return <see cref="Value.Bool(false)"/>. Strict + all-Bool
+    /// preserves the existing pre-44-08 semantics: short-circuit on first
+    /// true, return <c>Bool(a || b || ...)</c>.
+    /// </para>
     /// </summary>
     public static Value OrLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
     {
         if (args.Count == 0) return Value.Bool(false);
+        if (ctx.CallerStrictMode)
+        {
+            // D-12 strict: Bool-required across every operand.
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].Type is not BoolType)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] (or) requires Bool — got {args[i].Type}",
+                        ctx.CurrentCallSite);
+                    return Value.Bool(false);
+                }
+            }
+            // All-Bool strict path — same Bool-return as OrBool. Short-circuit
+            // on first true; otherwise return Bool(any-true).
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].As<bool>()) return Value.Bool(true);
+            }
+            return Value.Bool(false);
+        }
+        // Non-strict charitable last-truthy (Plan 44-08 Task 3 unchanged).
         Value last = args[0];
         if (TruthyCoerce(last)) return last;
         for (int i = 1; i < args.Count; i++)
