@@ -377,6 +377,14 @@ public static class CellularFunctions
         int wrapped = rule & 0xFF;
         if (wrapped != rule)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] steps clamped — rule {rule} outside [0, 255], wrapped to {wrapped} at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return wrapped;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:rule-wrap:{ctx.CurrentCallSite}:{rule}",
                 $"[{siteName}] rule {rule} outside [0, 255] at {ctx.CurrentCallSite}; "
@@ -389,6 +397,14 @@ public static class CellularFunctions
     {
         if (value <= 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] width/height clamped to [1, {MaxDimension}] — got {dimName}={value} (<= 0) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return value;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:{dimName}-nonpositive:{ctx.CurrentCallSite}:{value}",
                 $"[{siteName}] {dimName} {value} <= 0 at {ctx.CurrentCallSite}; "
@@ -397,6 +413,14 @@ public static class CellularFunctions
         }
         if (value > MaxDimension)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] width/height clamped to [1, {MaxDimension}] — got {dimName}={value} (> {MaxDimension}) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return MaxDimension;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:{dimName}-cap:{ctx.CurrentCallSite}:{value}",
                 $"[{siteName}] {dimName} {value} > {MaxDimension} at {ctx.CurrentCallSite}; "

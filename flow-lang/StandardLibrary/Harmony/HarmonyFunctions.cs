@@ -60,9 +60,19 @@ public static class HarmonyFunctions
         var activeTuning = musicalCtx?.ActiveTuning ?? RenderTuning.Default;
         if (activeTuning.Custom != null || activeTuning.System != TuningSystem.EqualTemperament)
         {
-            RenderingDiagnostics.WarnOnce(
-                "enharmonic-non-equal-temperament",
-                "[enharmonic] called inside tuning != equalTemperament; conversion is destructive (≈ 21 cent shift)");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [enharmonic] called inside tuning != equalTemperament — ≈21 cent shift at {context.CurrentCallSite}",
+                    context.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    "enharmonic-non-equal-temperament",
+                    "[enharmonic] called inside tuning != equalTemperament; conversion is destructive (≈ 21 cent shift)");
+            }
         }
 
         // D-04 / D-USER-B: in-key branch fires FIRST so diatonic spelling wins for both naturals

@@ -35,16 +35,35 @@ public static class ScalaBuiltins
     /// </summary>
     public static void Register(InternalFunctionRegistry registry)
     {
+        // Phase 44 Plan 44-07: legacy entry. Tests / harnesses that don't have
+        // an ExecutionContext (e.g. unit tests for the parser surface) call this
+        // overload; the strict-mode branch is skipped and the original
+        // charitable WarnOnce path runs. Real composer surface goes through
+        // RegisterContextDependent at FlowEngine init for [strict] elevation.
+        RegisterImpl(registry, ctx: null);
+    }
+
+    public static void RegisterContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        RegisterImpl(registry, context);
+    }
+
+    private static void RegisterImpl(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext? ctx)
+    {
         // 1-arg: loadScala(String) → Tuning
         var sigOne = new FunctionSignature("loadScala", [StringType.Instance],
             ParameterNames: ["path"]);
-        registry.Register("loadScala", sigOne, LoadScalaOneArg);
+        registry.Register("loadScala", sigOne, args => LoadScalaOneArg(args, ctx));
 
         // 2-arg: loadScala(String, String) → Tuning
         var sigTwo = new FunctionSignature("loadScala",
             [StringType.Instance, StringType.Instance],
             ParameterNames: ["sclPath", "kbmPath"]);
-        registry.Register("loadScala", sigTwo, LoadScalaTwoArg);
+        registry.Register("loadScala", sigTwo, args => LoadScalaTwoArg(args, ctx));
 
         // (str Tuning) → String  per CONTEXT D-04 description format
         var sigStrTuning = new FunctionSignature("str", [TuningType.Instance],
@@ -52,18 +71,18 @@ public static class ScalaBuiltins
         registry.Register("str", sigStrTuning, StrTuning);
     }
 
-    private static Value LoadScalaOneArg(System.Collections.Generic.IReadOnlyList<Value> args)
+    private static Value LoadScalaOneArg(System.Collections.Generic.IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
         string sclPath = args[0].As<string>();
         string sclContent = File.ReadAllText(sclPath);
         var parsedScl = ScalaParser.Parse(sclContent, sclPath);
         var kbm = ScalaKbmParser.Default(parsedScl);
         var resolved = new ResolvedTuning(parsedScl, kbm);
-        FireUnmappedAdvisoryIfNeeded(resolved, kbm);
+        FireUnmappedAdvisoryIfNeeded(resolved, kbm, ctx);
         return Value.Tuning(resolved);
     }
 
-    private static Value LoadScalaTwoArg(System.Collections.Generic.IReadOnlyList<Value> args)
+    private static Value LoadScalaTwoArg(System.Collections.Generic.IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
         string sclPath = args[0].As<string>();
         string kbmPath = args[1].As<string>();
@@ -85,7 +104,7 @@ public static class ScalaBuiltins
             partialKbm.Mapping,
             period: parsedScl.PeriodCents);
         var resolved = new ResolvedTuning(parsedScl, kbm);
-        FireUnmappedAdvisoryIfNeeded(resolved, kbm);
+        FireUnmappedAdvisoryIfNeeded(resolved, kbm, ctx);
         return Value.Tuning(resolved);
     }
 
@@ -102,7 +121,7 @@ public static class ScalaBuiltins
     /// same description doesn't spam each unmapped note — matches Phase 23 D-13's
     /// "one warning per tuning name per process" pattern (CONTEXT § Specifics).
     /// </summary>
-    private static void FireUnmappedAdvisoryIfNeeded(ResolvedTuning resolved, ScalaKbm kbm)
+    private static void FireUnmappedAdvisoryIfNeeded(ResolvedTuning resolved, ScalaKbm kbm, FlowLang.Runtime.ExecutionContext? ctx)
     {
         bool anyUnmapped = false;
         // Bounds-clamp [FirstMidi, LastMidi] to the table's 0..127 range — defends
@@ -119,6 +138,18 @@ public static class ScalaBuiltins
             }
         }
         if (!anyUnmapped) return;
+
+        // Phase 44 Plan 44-07 Pattern S3: strict-mode branch. Unmapped MIDI keys
+        // under a custom .scl file are typically a composer-authored omission —
+        // strict mode escalates to a composer-visible [strict] error so the
+        // composer can decide between filling the gap or accepting the rests.
+        if (ctx is not null && ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] [tuning] malformed .scl line — unmapped MIDI keys under '{resolved.Description}' (rendered as rest) at {ctx.CurrentCallSite}",
+                ctx.CurrentCallSite);
+            return;
+        }
 
         RenderingDiagnostics.WarnOnce(
             sentinelKey: $"tuning:unmapped:{resolved.Description}",

@@ -191,6 +191,14 @@ public static class LsystemFunctions
             }
             else
             {
+                // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [lsystemToSequence] mapper returned non-Note ({lambdaResult.Type.Name}) at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                    continue;
+                }
                 RenderingDiagnostics.WarnOnce(
                     $"lsystemToSequence:non-note-result:{ctx.CurrentCallSite}",
                     $"[lsystemToSequence] mapper returned {lambdaResult.Type.Name} at "
@@ -238,6 +246,14 @@ public static class LsystemFunctions
 
             if (key.Type is not SymbolType)
             {
+                // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [lsystem] malformed rule — rule key has type {key.Type.Name} (expected Symbol) at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                    continue;
+                }
                 RenderingDiagnostics.WarnOnce(
                     $"lsystem:non-symbol-key:{ctx.CurrentCallSite}:{key.Type.Name}",
                     $"[lsystem] rule key has type {key.Type.Name} at "
@@ -257,6 +273,14 @@ public static class LsystemFunctions
                     }
                     else
                     {
+                        // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                        if (ctx.CallerStrictMode)
+                        {
+                            ctx.ErrorReporter.ReportError(
+                                $"[strict] [lsystem] rule symbol not in alphabet — rule value contains {c.Type.Name} (expected Symbol) at {ctx.CurrentCallSite}",
+                                ctx.CurrentCallSite);
+                            continue;
+                        }
                         RenderingDiagnostics.WarnOnce(
                             $"lsystem:non-symbol-value:{ctx.CurrentCallSite}:{c.Type.Name}",
                             $"[lsystem] rule value contains {c.Type.Name} at "
@@ -267,6 +291,14 @@ public static class LsystemFunctions
             }
             else
             {
+                // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                if (ctx.CallerStrictMode)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [lsystem] malformed rule — rule value has type {valExpr.Type.Name} (expected Tuple or Array of Symbols) at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                    continue;
+                }
                 RenderingDiagnostics.WarnOnce(
                     $"lsystem:non-list-value:{ctx.CurrentCallSite}:{valExpr.Type.Name}",
                     $"[lsystem] rule value has type {valExpr.Type.Name} at "
@@ -339,6 +371,14 @@ public static class LsystemFunctions
     {
         if (requested < 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] iterations clamped to [0, {MaxIterations}] — got {requested} (< 0) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return 0;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:iterations-negative:{ctx.CurrentCallSite}:{requested}",
                 $"[{siteName}] iterations {requested} < 0 at {ctx.CurrentCallSite}; "
@@ -347,6 +387,14 @@ public static class LsystemFunctions
         }
         if (requested > MaxIterations)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] iterations clamped to [0, {MaxIterations}] — got {requested} (> {MaxIterations}) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return MaxIterations;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:iterations-cap:{ctx.CurrentCallSite}:{requested}",
                 $"[{siteName}] iterations {requested} > {MaxIterations} at {ctx.CurrentCallSite}; "
