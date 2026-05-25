@@ -28,6 +28,22 @@ namespace FlowLang.Ast.Statements;
 /// the boolean evaluation of <c>.Has("strict")</c> rather than the full
 /// PragmaSet (smaller surface, no nullable handling at the read site).
 /// </para>
+///
+/// <para>
+/// <b>Phase 44 review WR-09 — cross-file semantics for lambdas:</b>
+/// when this <c>ProcDeclaration</c> is the synthetic record produced by
+/// <see cref="Interpreter.ExpressionEvaluator.EvaluateLambda"/>,
+/// <c>IsStrict</c> is captured from the file that DECLARED the lambda,
+/// not the file (or library state) that LATER invokes it. So a strict-file
+/// lambda passed into a charitable library's higher-order function still
+/// executes with strict semantics — its body's <c>(print 5)</c> raises
+/// <c>[strict] (print) requires String</c> even though the immediate
+/// caller is non-strict. This is intentional under D-03's "file-scope
+/// strict" contract but can surprise composers handing lambdas to
+/// charitable libraries: APIs that accept lambdas should document whether
+/// strict-bit propagation matters for their use case. See the XML doc on
+/// <c>EvaluateLambda</c> for the call-chain mechanics.
+/// </para>
 /// </summary>
 public record ProcDeclaration(
     SourceLocation Location,

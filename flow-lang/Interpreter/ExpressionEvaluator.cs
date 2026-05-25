@@ -755,6 +755,61 @@ public class ExpressionEvaluator
         return Value.Tuple(components, elementTypes);
     }
 
+    /// <summary>
+    /// Evaluates a lambda expression. Synthesizes a <see cref="ProcDeclaration"/>
+    /// (named <c>__lambda_{GUID}</c>) and wraps it as a <see cref="FunctionOverload"/>
+    /// closure with snapshot variable capture.
+    ///
+    /// <para>
+    /// Phase 44 review WR-09 — CROSS-FILE STRICT SEMANTICS (lexical, not call-site):
+    /// </para>
+    ///
+    /// <para>
+    /// <c>proc.IsStrict</c> is captured from <c>_context.StrictMode</c> at the
+    /// CREATION SITE — i.e. it preserves whichever strict bit was active in
+    /// the file declaring the lambda, not the file invoking it later. This
+    /// matches the file-scope <c>enable strict;</c> contract (D-03): a lambda
+    /// inherits its DECLARING file's strict bit and carries that bit into
+    /// every later invocation, regardless of where it gets called from.
+    /// </para>
+    ///
+    /// <para>
+    /// Practical consequences:
+    /// <list type="bullet">
+    /// <item>A strict-file lambda passed to a NON-strict library's higher-
+    /// order function (e.g. <c>each</c> / <c>map</c>) executes its body
+    /// with strict semantics. <c>(print 5)</c> inside that lambda raises
+    /// <c>[strict] (print) requires String</c>.</item>
+    /// <item>A non-strict-file lambda passed to a STRICT library's higher-
+    /// order function executes with charitable semantics. <c>(print 5)</c>
+    /// inside that lambda silently coerces.</item>
+    /// <item>A lambda created in a strict file then stored in non-strict
+    /// library state (e.g. <c>(registerStyle ...)</c>) and fired later
+    /// from a non-strict caller still runs with strict semantics.</item>
+    /// </list>
+    /// </para>
+    ///
+    /// <para>
+    /// Mechanism: <c>ExecuteUserFunctionWithCaptures</c> pushes
+    /// <c>ctx.StrictMode = proc.IsStrict</c> on entry to the lambda body
+    /// (try/finally restore on exit). The caller's strict snapshot
+    /// (<c>CallerStrictMode</c>) is unchanged by this push, so leaf builtins
+    /// inside the lambda body still see the caller's bit at dispatch time —
+    /// but <c>EvaluateFunctionCall</c> re-snapshots
+    /// <c>CallerStrictMode = _context.StrictMode</c> before invoking each
+    /// leaf, so a (print 5) inside the lambda body reads the strict bit of
+    /// the lambda's DECLARING file, not the lambda's caller.
+    /// </para>
+    ///
+    /// <para>
+    /// This is intentional under D-03 but surprising for composers handing
+    /// strict-file lambdas to charitable libraries — document at the API
+    /// boundary if you accept lambdas (see <c>ProcDeclaration.IsStrict</c>).
+    /// Per <c>memory/project_pre_public_no_legacy_burden.md</c>, the
+    /// alternative (call-site scoped strict) could be revisited pre-traction
+    /// if the cross-file semantics prove confusing in practice.
+    /// </para>
+    /// </summary>
     private Value EvaluateLambda(LambdaExpression lambda)
     {
         var uniqueName = $"__lambda_{Guid.NewGuid():N}";
@@ -769,6 +824,10 @@ public class ExpressionEvaluator
         // lambda body would lose the strict bit on invocation, breaking the
         // D-03 file-scope contract for inline closures (e.g. lambdas passed to
         // higher-order builtins inside a strict file).
+        //
+        // Phase 44 review WR-09: the doc comment above describes the
+        // cross-file semantics in detail — strict bit is LEXICAL (file at
+        // creation), not DYNAMIC (file at invocation).
         var proc = new ProcDeclaration(
             lambda.Location, uniqueName, parameters, body, false,
             IsStrict: _context.StrictMode);
