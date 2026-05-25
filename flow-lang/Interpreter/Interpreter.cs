@@ -1117,6 +1117,21 @@ public class Interpreter : IFunctionInvoker
             return Value.Void();
         }
 
+        // Phase 44 Plan 44-02 D-02 / D-03 (Pattern S2 + Anti-Pattern 1):
+        // push/pop the declaring file's strict bit around the proc body. The
+        // bit was captured on the AST node at parse time
+        // (`ProcDeclaration.IsStrict` per Task 1); reading it here lets the
+        // body's leaf-site dispatch see a CallerStrictMode snapshot that
+        // reflects THIS proc's file (via the ExpressionEvaluator save/restore
+        // at the call boundary), not whatever the outer caller's file was.
+        // Order: SET BEFORE PushFrame so any future PushFrame logic reading
+        // the bit gets the proc's value; RESTORE AFTER PopFrame so any
+        // diagnostic reported during PopFrame also reads the proc's bit. The
+        // restore lives in the SAME try/finally as the frame pop — a body
+        // throw rebalances both atomically.
+        var prevStrict = _context.StrictMode;
+        _context.StrictMode = proc.IsStrict;
+
         // Create new stack frame
         _context.PushFrame();
 
@@ -1201,6 +1216,11 @@ public class Interpreter : IFunctionInvoker
         finally
         {
             _context.PopFrame();
+            // Phase 44 Plan 44-02 D-02 / D-03 (Anti-Pattern 1): restore the
+            // strict bit AFTER PopFrame so error-reporting during pop reads
+            // the proc's bit. Restore in the SAME finally as PopFrame so a
+            // body throw cannot leave StrictMode mutated on unwind.
+            _context.StrictMode = prevStrict;
             _recursionDepth--;
         }
     }

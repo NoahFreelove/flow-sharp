@@ -240,8 +240,16 @@ public class ExpressionEvaluator
                     var qArgValues = call.Arguments.Select(Evaluate).ToList();
                     if (registeredOverload.IsInternal)
                     {
+                        // Phase 44 Plan 44-02 D-05 + Pattern S2: snapshot the
+                        // immediate-caller's strict bit alongside CurrentCallSite.
+                        // Pairs the existing prevSite save/restore. Mirrors the
+                        // unqualified-call branch below — qualified Phase 43
+                        // (mod.fn args) dispatch is the SAME semantic event
+                        // for the strict-bit snapshot.
                         var prevSite = _context.CurrentCallSite;
+                        var prevCallerStrict = _context.CallerStrictMode;
                         _context.CurrentCallSite = call.Location;
+                        _context.CallerStrictMode = _context.StrictMode;
                         try
                         {
                             return registeredOverload.Implementation!(qArgValues);
@@ -249,10 +257,25 @@ public class ExpressionEvaluator
                         finally
                         {
                             _context.CurrentCallSite = prevSite;
+                            _context.CallerStrictMode = prevCallerStrict;
                         }
                     }
-                    return _invoker.ExecuteUserFunctionWithCaptures(
-                        registeredOverload.Declaration!, qArgValues, registeredOverload.CapturedVariables);
+                    // Phase 44 Plan 44-02 D-05: user-proc dispatch via qualified call.
+                    // Snapshot CallerStrictMode BEFORE ExecuteUserFunctionWithCaptures
+                    // so the call-boundary semantic is consistent with the builtin
+                    // branch — the proc's own body will then re-snap as it dispatches
+                    // its leaf calls (via the unqualified branch below).
+                    var prevCallerStrictUser = _context.CallerStrictMode;
+                    _context.CallerStrictMode = _context.StrictMode;
+                    try
+                    {
+                        return _invoker.ExecuteUserFunctionWithCaptures(
+                            registeredOverload.Declaration!, qArgValues, registeredOverload.CapturedVariables);
+                    }
+                    finally
+                    {
+                        _context.CallerStrictMode = prevCallerStrictUser;
+                    }
                 }
             }
             else if (_context.ModuleRegistry.Contains(modName))
@@ -404,8 +427,17 @@ public class ExpressionEvaluator
             // by (site, name) without a new lambda-signature overload. Save +
             // restore so nested builtin calls see their parent's site after the
             // inner call returns (stack-like discipline without an actual stack).
+            //
+            // Phase 44 Plan 44-02 D-05 + Pattern S2: adjacent save/restore for
+            // CallerStrictMode — snapshots the IMMEDIATE caller's StrictMode at
+            // the moment of dispatch so the builtin's body reads the caller's
+            // file bit (not the stdlib module's own bit, which is always false
+            // per D-03 "stdlib stays charitable internally"). Anti-Pattern 1:
+            // never mutate without paired restore in try/finally.
             var prevCallSite = _context.CurrentCallSite;
+            var prevCallerStrict = _context.CallerStrictMode;
             _context.CurrentCallSite = call.Location;
+            _context.CallerStrictMode = _context.StrictMode;
             try
             {
                 // Call internal implementation
@@ -414,13 +446,30 @@ public class ExpressionEvaluator
             finally
             {
                 _context.CurrentCallSite = prevCallSite;
+                _context.CallerStrictMode = prevCallerStrict;
             }
         }
         else
         {
-            // Execute user-defined function (with closure captures if present)
-            return _invoker.ExecuteUserFunctionWithCaptures(
-                overload.Declaration!, argValues, overload.CapturedVariables);
+            // Phase 44 Plan 44-02 D-05: user-proc dispatch — snapshot
+            // CallerStrictMode BEFORE invoking so a leaf builtin called inside
+            // the user proc's body sees the caller's bit. The Interpreter's
+            // ExecuteUserFunctionWithCaptures will then swap StrictMode to
+            // proc.IsStrict for the proc's body itself, but CallerStrictMode
+            // remains pinned to the immediate caller's value until this
+            // try/finally restores it on return.
+            var prevCallerStrictUser = _context.CallerStrictMode;
+            _context.CallerStrictMode = _context.StrictMode;
+            try
+            {
+                // Execute user-defined function (with closure captures if present)
+                return _invoker.ExecuteUserFunctionWithCaptures(
+                    overload.Declaration!, argValues, overload.CapturedVariables);
+            }
+            finally
+            {
+                _context.CallerStrictMode = prevCallerStrictUser;
+            }
         }
     }
 
