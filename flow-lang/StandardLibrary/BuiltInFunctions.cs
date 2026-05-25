@@ -1133,6 +1133,21 @@ public static class BuiltInFunctions
         var printAnySig = new FunctionSignature("print", [VoidType.Instance],
             ParameterNames: ["s"]);
         registry.Register("print", printAnySig, args => StdLib.PrintAny(args, context));
+
+        // (if Void Void Void) — truthy-coerce in non-strict; [strict] error
+        // on non-Bool cond in strict. Existing if(Bool, Lazy, Lazy) and
+        // if(Bool, Void, Void) overloads stay; they out-score the wildcard
+        // when cond is Bool.
+        var ifAnySig = new FunctionSignature("if",
+            [VoidType.Instance, VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["cond", "then", "else"]);
+        registry.Register("if", ifAnySig, args => StdLib.IfTruthy(args, context));
+
+        // (not Void) — FIRST registration of `not` per RESEARCH A6. Strict
+        // path requires Bool; non-strict charitable truthy.
+        var notAnySig = new FunctionSignature("not", [VoidType.Instance],
+            ParameterNames: ["x"]);
+        registry.Register("not", notAnySig, args => StdLib.NotCharitable(args, context));
     }
 
     private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)

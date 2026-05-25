@@ -673,4 +673,84 @@ public static class StdLib
         return Value.Void();
     }
 
+    /// <summary>
+    /// Phase 44 Plan 44-08 Task 2 — charitable truthy-coerce helper. Mirrors
+    /// Python / JavaScript truthy conventions while preserving Flow's
+    /// reference-identity rule for music types (a non-null Sequence / Chord /
+    /// Song / Tuning / Sfz / etc. is truthy by presence; collection types
+    /// are falsy iff empty). Reused by <see cref="IfTruthy"/>,
+    /// <see cref="NotCharitable"/>, and Task 3's
+    /// <c>AndLastTruthy</c> / <c>OrLastTruthy</c> so the non-strict
+    /// charitable rule stays in one place.
+    /// </summary>
+    public static bool TruthyCoerce(Value v)
+    {
+        if (v.Type is VoidType) return false;
+        if (v.Data is null) return false;
+        if (v.Type is BoolType) return v.As<bool>();
+        if (v.Type is IntType) return v.As<int>() != 0;
+        if (v.Type is LongType) return v.As<long>() != 0L;
+        if (v.Type is FloatType || v.Type is DoubleType)
+        {
+            var d = v.As<double>();
+            return d != 0.0 && !double.IsNaN(d);
+        }
+        if (v.Type is NumberType) return !v.As<BigInteger>().IsZero;
+        if (v.Type is StringType) return !string.IsNullOrEmpty(v.As<string>());
+        if (v.Type is SymbolType) return true;  // any non-null Symbol is truthy
+        // Arrays / Tuples — falsy iff empty.
+        if (v.Data is IReadOnlyList<Value> list) return list.Count > 0;
+        // Dicts — falsy iff empty.
+        if (v.Type is DictType && v.Data is DictData dd)
+            return dd.Entries.Count > 0;
+        // Music tagged-numeric types: presence = truthy (Decibel/Hz/Cent/ms/sec/st
+        // values are NOT special-cased on zero — composers write -inf via
+        // -Infinity, not 0).
+        // Sequence / Chord / Song / Section / Tuning / Sfz / MarkovModel /
+        // LsystemModel / OscHandle / Voice / Track / Buffer / Function — all
+        // non-null reference-identity values are truthy by presence.
+        return true;
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(if cond then else)</c> with truthy-coerce on
+    /// <paramref name="args"/>[0]. Strict mode (caller's
+    /// <c>CallerStrictMode == true</c>) emits
+    /// <c>[strict] (if) requires Bool — got &lt;Type&gt;</c> for any non-Bool
+    /// cond. Both branches are eagerly evaluated by the interpreter before
+    /// dispatch (matches the <see cref="IfStrict"/> contract — only the
+    /// selected branch's value is returned).
+    /// </summary>
+    public static Value IfTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && args[0].Type is not BoolType)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] (if) requires Bool — got {args[0].Type}",
+                ctx.CurrentCallSite);
+            return Value.Void();
+        }
+        return TruthyCoerce(args[0]) ? args[1] : args[2];
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(not x)</c> — returns Bool but accepts any
+    /// value. <c>(not 0)</c> → <c>true</c>, <c>(not "hello")</c> → <c>false</c>,
+    /// <c>(not | C4 |)</c> → <c>false</c>. Strict mode emits
+    /// <c>[strict] (not) requires Bool — got &lt;Type&gt;</c> for non-Bool args.
+    /// Per RESEARCH A6, this is the FIRST registration of <c>(not)</c> in the
+    /// InternalFunctionRegistry (<c>flow-lang/test.flow:39</c> previously
+    /// commented on its absence).
+    /// </summary>
+    public static Value NotCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && args[0].Type is not BoolType)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] (not) requires Bool — got {args[0].Type}",
+                ctx.CurrentCallSite);
+            return Value.Bool(false);
+        }
+        return Value.Bool(!TruthyCoerce(args[0]));
+    }
 }
