@@ -346,7 +346,7 @@ Plans:
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
-| 44. Strict Mode | v1.5 | 12/12 | Complete   | 2026-05-25 |
+| 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 
