@@ -33,8 +33,10 @@ public static class TransformFunctions
         // and runtime path both pick up the context-aware delegates.
         // (The legacy non-context-dep Crescendo/Decrescendo/Swell/RitardandoTransform/
         // AccelerandoTransform/Humanize/HumanizeGaussian/Tremolo private methods
-        // remain in this file but are unreferenced after Phase 44 Plan 44-05;
-        // kept as documentation of the pre-strict shape.)
+        // were deleted Phase 44 Plan 44-05 — the strict-aware *Strict wrappers
+        // delegate directly to the extracted *Core helpers.)
+        // Fermata stays non-context-dep (no input-perimeter clamp on its arg).
+        RegisterFermata(registry);
         RegisterOrnamentTransforms(registry);
     }
 
@@ -971,50 +973,12 @@ public static class TransformFunctions
         return Value.Sequence(result);
     }
 
-    // ===== Dynamic Transforms =====
-
-    private static void RegisterDynamicTransforms(InternalFunctionRegistry registry)
-    {
-        var crescSig = new FunctionSignature("crescendo",
-            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
-            ParameterNames: ["seq", "startVel", "endVel"]);
-        registry.Register("crescendo", crescSig, Crescendo);
-
-        var decrescSig = new FunctionSignature("decrescendo",
-            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
-            ParameterNames: ["seq", "startVel", "endVel"]);
-        registry.Register("decrescendo", decrescSig, Decrescendo);
-
-        var swellSig = new FunctionSignature("swell",
-            [SequenceType.Instance, DoubleType.Instance, DoubleType.Instance],
-            ParameterNames: ["seq", "edgeVel", "peakVel"]);
-        registry.Register("swell", swellSig, Swell);
-    }
-
-    private static Value Crescendo(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double startVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
-        double endVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
-        return Value.Sequence(ApplyVelocityGradient(seq, startVel, endVel));
-    }
-
-    private static Value Decrescendo(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double startVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
-        double endVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
-        // Reverse the velocity gradient: decrescendo goes from endVel down to startVel
-        return Value.Sequence(ApplyVelocityGradient(seq, endVel, startVel));
-    }
-
-    private static Value Swell(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double edgeVel = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
-        double peakVel = Math.Clamp(args[2].As<double>(), 0.0, 1.0);
-        return SwellCore(seq, edgeVel, peakVel);
-    }
+    // ===== Dynamic Transforms (Phase 44 Plan 44-05: strict-aware registration
+    // lives in RegisterContextDependent + *Strict wrappers above. The legacy
+    // Crescendo / Decrescendo / Swell private methods and
+    // RegisterDynamicTransforms registration method were deleted Phase 44
+    // Plan 44-05 because they are no longer reachable — the strict-aware
+    // path delegates to SwellCore / ApplyVelocityGradient directly.) =====
 
     /// <summary>
     /// Shared body of swell extracted Phase 44 Plan 44-05 so the strict-aware
@@ -1111,36 +1075,22 @@ public static class TransformFunctions
         return result;
     }
 
-    // ===== Tempo Transforms =====
+    // ===== Tempo Transforms (Phase 44 Plan 44-05: ritardando + accelerando
+    // moved to RegisterTempoTransformsContextDependent for strict-aware
+    // clamp checking; fermata stays non-context-dep — no input-perimeter
+    // clamp on its int arg.) =====
 
-    private static void RegisterTempoTransforms(InternalFunctionRegistry registry)
+    /// <summary>
+    /// Standalone fermata registration carved out Phase 44 Plan 44-05 — fermata
+    /// has no out-of-range clamp so it stays in the non-context-dep Register
+    /// path. Called from Register() alongside the other ornament transforms.
+    /// </summary>
+    private static void RegisterFermata(InternalFunctionRegistry registry)
     {
-        var ritSig = new FunctionSignature("ritardando",
-            [SequenceType.Instance, DoubleType.Instance],
-            ParameterNames: ["seq", "amount"]);
-        registry.Register("ritardando", ritSig, RitardandoTransform);
-
-        var accelSig = new FunctionSignature("accelerando",
-            [SequenceType.Instance, DoubleType.Instance],
-            ParameterNames: ["seq", "amount"]);
-        registry.Register("accelerando", accelSig, AccelerandoTransform);
-
         var fermataSig = new FunctionSignature("fermata",
             [SequenceType.Instance, IntType.Instance],
             ParameterNames: ["seq", "index"]);
         registry.Register("fermata", fermataSig, FermataTransform);
-    }
-
-    /// <summary>
-    /// Ritardando: progressively stretch note durations. Amount 0.5 = last note 1.5x duration.
-    /// We approximate by adjusting velocity downward for later notes (lower velocity sounds
-    /// "slower" perceptually).
-    /// </summary>
-    private static Value RitardandoTransform(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
-        return RitardandoCore(seq, amount);
     }
 
     /// <summary>
@@ -1181,15 +1131,10 @@ public static class TransformFunctions
         return Value.Sequence(result);
     }
 
-    private static Value AccelerandoTransform(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
-        return AccelerandoCore(seq, amount);
-    }
-
     /// <summary>
-    /// Shared body of accelerando extracted Phase 44 Plan 44-05.
+    /// Shared body of accelerando extracted Phase 44 Plan 44-05. The legacy
+    /// non-context-dep AccelerandoTransform method was deleted along with the
+    /// other pre-strict shapes — strict-aware AccelerandoStrict delegates here directly.
     /// </summary>
     private static Value AccelerandoCore(SequenceData seq, double amount)
     {
@@ -1259,27 +1204,16 @@ public static class TransformFunctions
         return Value.Sequence(result);
     }
 
-    // ===== Humanize =====
-
-    private static void RegisterHumanize(InternalFunctionRegistry registry)
-    {
-        var humanizeSig = new FunctionSignature("humanize",
-            [SequenceType.Instance, DoubleType.Instance],
-            ParameterNames: ["seq", "amount"]);
-        registry.Register("humanize", humanizeSig, Humanize);
-    }
+    // ===== Humanize (Phase 44 Plan 44-05: registration owned by
+    // RegisterHumanizeContextDependent + HumanizeStrict wrapper above. Legacy
+    // RegisterHumanize + Humanize private methods were deleted along with the
+    // other pre-strict shapes.) =====
 
     private static readonly Random HumanizeRng = new();
 
-    private static Value Humanize(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);
-        return HumanizeCore(seq, amount);
-    }
-
     /// <summary>
-    /// Shared body of humanize extracted Phase 44 Plan 44-05.
+    /// Shared body of humanize extracted Phase 44 Plan 44-05. The strict-aware
+    /// HumanizeStrict delegates here directly.
     /// </summary>
     private static Value HumanizeCore(SequenceData seq, double amount)
     {
@@ -1326,21 +1260,10 @@ public static class TransformFunctions
     // NOTE: System.Random is NOT cryptographically secure. humanizeGaussian is for
     // musical jitter only — never use for security purposes.
 
-    private static void RegisterHumanizeGaussian(InternalFunctionRegistry registry)
-    {
-        var sig = new FunctionSignature("humanizeGaussian",
-            [SequenceType.Instance, DoubleType.Instance, IntType.Instance],
-            ParameterNames: ["seq", "amount", "seed"]);
-        registry.Register("humanizeGaussian", sig, HumanizeGaussian);
-    }
-
-    private static Value HumanizeGaussian(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double amount = Math.Clamp(args[1].As<double>(), 0.0, 1.0);  // D-08
-        int seed = args[2].As<int>();                                // D-15
-        return HumanizeGaussianCore(seq, amount, seed);
-    }
+    // Phase 44 Plan 44-05: registration owned by
+    // RegisterHumanizeGaussianContextDependent + HumanizeGaussianStrict wrapper.
+    // Legacy RegisterHumanizeGaussian + HumanizeGaussian private methods
+    // deleted along with other pre-strict shapes.
 
     /// <summary>
     /// Shared body of humanizeGaussian extracted Phase 44 Plan 44-05 so the
@@ -1488,15 +1411,13 @@ public static class TransformFunctions
         return Value.Sequence(result);
     }
 
-    private static Value Tremolo(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        int reps = Math.Clamp(args[1].As<int>(), 1, 16);
-        return TremoloCore(seq, reps);
-    }
+    // Phase 44 Plan 44-05: Tremolo registration owned by
+    // RegisterTremoloContextDependent + TremoloStrict wrapper. The legacy
+    // non-context-dep Tremolo method was deleted along with other pre-strict shapes.
 
     /// <summary>
-    /// Shared body of tremolo extracted Phase 44 Plan 44-05.
+    /// Shared body of tremolo extracted Phase 44 Plan 44-05. The strict-aware
+    /// TremoloStrict delegates here directly.
     /// </summary>
     private static Value TremoloCore(SequenceData seq, int reps)
     {
