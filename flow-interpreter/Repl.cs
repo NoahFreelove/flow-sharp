@@ -22,6 +22,20 @@ public class Repl
     private readonly FlowEngine _engine;
     private ReplLineEditor? _lineEditor;
 
+    /// <summary>
+    /// Phase 44 Plan 44-10 D-16 — sticky REPL strict-mode session flag.
+    /// Mirrors the Phase 32 D-08 tuning-pragma persistence pattern at REPL
+    /// scope: once the composer flips strict ON (via <c>:strict on</c> meta-
+    /// command OR by typing <c>enable strict;</c> at the prompt), the bit
+    /// persists across subsequent <see cref="FlowEngine.Execute"/> calls
+    /// even though each call's <c>ApplyStrictPragma</c> would otherwise
+    /// reset <c>engine.Context.StrictMode</c> to false (Plan 44-01 unconditional-
+    /// overwrite design — necessary for fresh script-mode runs, defeated here
+    /// for REPL stickiness by the per-line sync sandwich in
+    /// <see cref="ExecuteUserLine"/>).
+    /// </summary>
+    private bool _sessionStrict = false;
+
     public Repl()
     {
         _engine = new FlowEngine();
@@ -66,8 +80,30 @@ public class Repl
                     continue;
                 }
 
-                // Execute input and get result
-                var result = _engine.ExecuteScriptAndGetResult(input, "<repl>");
+                // Execute input and get result.
+                //
+                // Phase 44 Plan 44-10 D-16 — sticky-strict via pragma injection:
+                //
+                // Plan 44-01's ApplyStrictPragma is an UNCONDITIONAL overwrite
+                // between parse and interpret (so script-mode files without
+                // `enable strict;` always run charitable). Setting
+                // engine.Context.StrictMode=true BEFORE Execute is therefore
+                // defeated by the overwrite. To honour the D-16 sticky-session
+                // contract WITHOUT touching the Plan 44-01 design lock, we
+                // inject `enable strict;` at the front of the input line when
+                // the session is sticky-strict — the per-line PragmaScanner
+                // observes it and ApplyStrictPragma flips StrictMode=true as
+                // a natural consequence.
+                //
+                // Symmetric direction (typing `enable strict;` flips the
+                // sticky flag too): after Execute returns, copy the per-line
+                // post-ApplyStrictPragma context.StrictMode back into
+                // _sessionStrict so the next line inherits it. This is the
+                // RESEARCH §Pattern 8 sticky-from-pragma sync requirement.
+                var lineToExecute = _sessionStrict ? "enable strict;\n" + input : input;
+                var result = _engine.ExecuteScriptAndGetResult(lineToExecute, "<repl>");
+                if (_engine.Context.StrictMode != _sessionStrict)
+                    _sessionStrict = _engine.Context.StrictMode;
 
                 if (_engine.ErrorReporter.HasErrors)
                 {
@@ -219,8 +255,27 @@ public class Repl
             ":help" or ":h" => ShowHelp(),
             ":clear" or ":cls" => ClearScreen(),
             ":stop" => StopAudio(),
+            // Phase 44 Plan 44-10 D-16 — REPL sticky-strict meta-commands.
+            // Mirror the `:help` / `:quit` / `:clear` / `:stop` family.
+            ":strict on" => SetStrict(true),
+            ":strict off" => SetStrict(false),
             _ => UnknownCommand(command)
         };
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-10 D-16 — flips the sticky <see cref="_sessionStrict"/>
+    /// session flag AND mutates <c>_engine.Context.StrictMode</c> immediately
+    /// (no wait for next Execute). Prints <c>[strict] on</c> / <c>[strict] off</c>
+    /// to stdout per ReplStrictMetaCommandTests Fact 7. Returns <c>true</c> to
+    /// keep the REPL alive (matches the meta-command-family convention).
+    /// </summary>
+    private bool SetStrict(bool on)
+    {
+        _sessionStrict = on;
+        _engine.Context.StrictMode = on;
+        Console.WriteLine($"[strict] {(on ? "on" : "off")}");
+        return true;
     }
 
     /// <summary>
@@ -230,6 +285,27 @@ public class Repl
     /// <c>false</c> = exit (matches the `:quit` arm contract).
     /// </summary>
     public bool HandleCommandForTesting(string command) => HandleCommand(command);
+
+    /// <summary>
+    /// Phase 44 Plan 44-10 D-16 test seam — runs a single non-meta REPL line
+    /// through the same sticky-strict sync sandwich the production
+    /// <see cref="Run"/> loop uses (pragma-injection BEFORE Execute when
+    /// <c>_sessionStrict==true</c>, plus the symmetric sticky-from-pragma
+    /// sync AFTER Execute). Mirrors the
+    /// <see cref="HandleCommandForTesting"/> pattern: xUnit cannot drive
+    /// the interactive Console.ReadLine loop deterministically, so the test
+    /// seam invokes the per-line contract directly. Returns the underlying
+    /// <see cref="FlowEngine"/>'s post-Execute <see cref="ErrorReporter"/>
+    /// success bit (<c>true</c> = no errors).
+    /// </summary>
+    public bool ExecuteLineForTesting(string input)
+    {
+        var lineToExecute = _sessionStrict ? "enable strict;\n" + input : input;
+        _engine.Execute(lineToExecute, "<repl>");
+        if (_engine.Context.StrictMode != _sessionStrict)
+            _sessionStrict = _engine.Context.StrictMode;
+        return !_engine.ErrorReporter.HasErrors;
+    }
 
     /// <summary>
     /// Phase 38 Plan 38-04 D-38-09 — `:help &lt;name&gt;` arm. Looks up <paramref name="name"/>
