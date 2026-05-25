@@ -33,7 +33,7 @@ Next step: `/clear` then one of (composer pick):
   - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
 
 Status: Ready to execute
-Last activity: 2026-05-25 - Completed quick task 260524-s2g: Bundle D lexer span scanning (cumulative A+B+C+D -10.8% to -30.8% vs baseline)
+Last activity: 2026-05-25 - Completed quick task 260524-sa3: Bundle E MusicalContext cache (correctness-only — perf invisible on current bench; cumulative A-D wins preserved)
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
@@ -719,6 +719,7 @@ None yet for Phase 15.
 | 260524-rjm | Bundle B — TryGetVariable replaces 3 throw/catch sites (EvaluateVariable, EvaluateFunctionCall var-fallback, ExecuteAssignment). Marginal vs Bundle A within noise (planner caught that GetVariable only throws on not-found). Cumulative A+B -12% to -26% preserved. Zero new test failures. Follow-up flagged: same pattern in NoteStreamCompiler.cs:1014-1023. | 2026-05-24 | df97bd1 | [260524-rjm-bundle-b-kill-var-lookup-exceptions](./quick/260524-rjm-bundle-b-kill-var-lookup-exceptions/) |
 | 260524-rsg | Bundle C — reusable Value[] buffer per call (replaces per-iteration `new List<Value> { element }`) for each/map/filter/reduce in Collections.cs. Honest result: bench_collections marginal -2.9% inside stddev, but JIT escape-analysis side effects boosted other benches. Cumulative A+B+C: var_lookup -31.8%, overload -24.7%, collections -21.3%, function_calls -16.9%, notestream -10.1%, parse -8.8%. Zero new test failures. | 2026-05-25 | d210dbe | [260524-rsg-bundle-c-drop-per-call-list-wrap-in-coll](./quick/260524-rsg-bundle-c-drop-per-call-list-wrap-in-coll/) |
 | 260524-s2g | Bundle D — SimpleLexer span scanning (3 `_source.Substring(_position).StartsWith` sites swapped to `AsSpan().StartsWith`). Marginal bench_parse -3.92% as predicted; other benches noise-level. Cumulative A+B+C+D: var_lookup -30.8%, others -10.8% to -25%. Zero new test failures. | 2026-05-25 | 0ddd0d9 | [260524-s2g-bundle-d-lexer-zero-alloc-substring-to-s](./quick/260524-s2g-bundle-d-lexer-zero-alloc-substring-to-s/) |
+| 260524-sa3 | Bundle E — MusicalContext cache + 7-site invalidation surface (PushFrame/PopFrame/PushTuning/PopTuning/SetFileScopeTuning/ResetBlockTuningStack/RestoreState) + SetCurrentFrameMusicalContext chokepoint at Interpreter.cs:335. --validate path with plan-checker + verifier (passed 7/7 must-haves). Honest perf finding: invisible on current bench (PushFrame-per-iteration thrashes cache); correct infrastructure for song-render hot path. Cumulative A-D wins preserved; 3 two-run determinism pairs cmp-clean. Zero new test failures. | 2026-05-25 | 1d60d24 | [260524-sa3-bundle-e-cache-musicalcontext-resolution](./quick/260524-sa3-bundle-e-cache-musicalcontext-resolution/) |
 
 ## Deferred Items
 
