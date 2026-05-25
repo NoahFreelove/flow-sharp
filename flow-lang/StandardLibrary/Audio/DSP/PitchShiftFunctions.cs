@@ -194,16 +194,23 @@ public static class PitchShiftFunctions
     private static StretchMode FallbackToAuto(string sym, ExecutionContext ctx)
     {
         // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        // Phase 44 review CR-03: dedup strict-elevated advisory per
+        // ExecutionContext lifetime — hot pitchShift callers must not
+        // accumulate one ErrorReporter entry per call.
+        var sentinel = $"pitchShift:mode:{sym}";
         if (ctx.CallerStrictMode)
         {
-            ctx.ErrorReporter.ReportError(
-                $"[strict] [pitchShift] unknown mode symbol '#{sym}' — falling back to #auto. " +
-                "Valid options: #vocoder | #psola | #auto.",
-                ctx.CurrentCallSite);
+            if (ctx.StrictAdvisoryDedup.Add(sentinel))
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [pitchShift] unknown mode symbol '#{sym}' — falling back to #auto. " +
+                    "Valid options: #vocoder | #psola | #auto.",
+                    ctx.CurrentCallSite);
+            }
             return StretchMode.Auto;
         }
         RenderingDiagnostics.WarnOnce(
-            $"pitchShift:mode:{sym}",
+            sentinel,
             $"[pitchShift] unknown mode symbol '#{sym}' — falling back to #auto. " +
             "Valid options: #vocoder | #psola | #auto.");
         return StretchMode.Auto;
