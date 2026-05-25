@@ -31,43 +31,52 @@ public class ExplicitConversionForwardTests
     /// (db/hz/ms/sec/cents). Asserts the bound variable's <c>Type</c> is
     /// the target tagged type AND the underlying <c>double</c> matches the
     /// expected canonical value.
+    ///
+    /// <para>
+    /// Long inputs are supplied via a typed variable declaration (e.g.,
+    /// <c>Long n = 5; Decibel r = (db n)</c>) because Flow has no surface
+    /// <c>5L</c> literal syntax — the lexer parses bare integers as
+    /// <c>IntLiteral</c> with int/long/BigInteger promotion driven by the
+    /// VARIABLE'S declared type (<c>SimpleLexer.cs:377-385</c>), not a
+    /// suffix marker. This is per CLAUDE.md numeric-widening contract.
+    /// </para>
     /// </summary>
     [Theory]
     // --- (db x) — 5 overloads → Decibel ---
-    [InlineData("Decibel r = (db 5)",        "Decibel", 5.0)]
-    [InlineData("Decibel r = (db 5L)",       "Decibel", 5.0)]
-    [InlineData("Decibel r = (db 5.0f)",     "Decibel", 5.0)]
-    [InlineData("Decibel r = (db -12.0)",    "Decibel", -12.0)]
-    [InlineData("Decibel r = (db -12dB)",    "Decibel", -12.0)]
+    [InlineData("Decibel r = (db 5)",                          "Decibel", 5.0)]
+    [InlineData("Long n = 5\nDecibel r = (db n)",              "Decibel", 5.0)]
+    [InlineData("Float f = 5.0\nDecibel r = (db f)",           "Decibel", 5.0)]
+    [InlineData("Decibel r = (db -12.0)",                      "Decibel", -12.0)]
+    [InlineData("Decibel r = (db -12dB)",                      "Decibel", -12.0)]
     // --- (hz x) — 5 overloads → Hertz ---
-    [InlineData("Hertz r = (hz 440)",        "Hertz", 440.0)]
-    [InlineData("Hertz r = (hz 440L)",       "Hertz", 440.0)]
-    [InlineData("Hertz r = (hz 440.0f)",     "Hertz", 440.0)]
-    [InlineData("Hertz r = (hz 440.0)",      "Hertz", 440.0)]
-    [InlineData("Hertz r = (hz 440Hz)",      "Hertz", 440.0)]
+    [InlineData("Hertz r = (hz 440)",                          "Hertz", 440.0)]
+    [InlineData("Long n = 440\nHertz r = (hz n)",              "Hertz", 440.0)]
+    [InlineData("Float f = 440.0\nHertz r = (hz f)",           "Hertz", 440.0)]
+    [InlineData("Hertz r = (hz 440.0)",                        "Hertz", 440.0)]
+    [InlineData("Hertz r = (hz 440Hz)",                        "Hertz", 440.0)]
     // --- (ms x) — 5 overloads → Millisecond ---
-    [InlineData("Millisecond r = (ms 100)",    "Millisecond", 100.0)]
-    [InlineData("Millisecond r = (ms 100L)",   "Millisecond", 100.0)]
-    [InlineData("Millisecond r = (ms 100.0f)", "Millisecond", 100.0)]
-    [InlineData("Millisecond r = (ms 100.0)",  "Millisecond", 100.0)]
-    [InlineData("Millisecond r = (ms 100ms)",  "Millisecond", 100.0)]
+    [InlineData("Millisecond r = (ms 100)",                    "Millisecond", 100.0)]
+    [InlineData("Long n = 100\nMillisecond r = (ms n)",        "Millisecond", 100.0)]
+    [InlineData("Float f = 100.0\nMillisecond r = (ms f)",     "Millisecond", 100.0)]
+    [InlineData("Millisecond r = (ms 100.0)",                  "Millisecond", 100.0)]
+    [InlineData("Millisecond r = (ms 100ms)",                  "Millisecond", 100.0)]
     // --- (sec x) — 5 overloads → Second ---
-    [InlineData("Second r = (sec 2)",       "Second", 2.0)]
-    [InlineData("Second r = (sec 2L)",      "Second", 2.0)]
-    [InlineData("Second r = (sec 2.5f)",    "Second", 2.5)]
-    [InlineData("Second r = (sec 2.5)",     "Second", 2.5)]
-    [InlineData("Second r = (sec 2.5s)",    "Second", 2.5)]
+    [InlineData("Second r = (sec 2)",                          "Second", 2.0)]
+    [InlineData("Long n = 2\nSecond r = (sec n)",              "Second", 2.0)]
+    [InlineData("Float f = 2.5\nSecond r = (sec f)",           "Second", 2.5)]
+    [InlineData("Second r = (sec 2.5)",                        "Second", 2.5)]
+    [InlineData("Second r = (sec 2.5s)",                       "Second", 2.5)]
     // --- (cents x) — 5 overloads → Cent ---
-    [InlineData("Cent r = (cents 50)",      "Cent", 50.0)]
-    [InlineData("Cent r = (cents 50L)",     "Cent", 50.0)]
-    [InlineData("Cent r = (cents 50.0f)",   "Cent", 50.0)]
-    [InlineData("Cent r = (cents 50.0)",    "Cent", 50.0)]
-    [InlineData("Cent r = (cents +50c)",    "Cent", 50.0)]
+    [InlineData("Cent r = (cents 50)",                         "Cent", 50.0)]
+    [InlineData("Long n = 50\nCent r = (cents n)",             "Cent", 50.0)]
+    [InlineData("Float f = 50.0\nCent r = (cents f)",          "Cent", 50.0)]
+    [InlineData("Cent r = (cents 50.0)",                       "Cent", 50.0)]
+    [InlineData("Cent r = (cents +50c)",                       "Cent", 50.0)]
     public void Fact_ForwardConversion_ProducesCorrectMusicType(
-        string flowDecl, string expectedTypeName, double expectedValue)
+        string flowSource, string expectedTypeName, double expectedValue)
     {
         using var runner = new FlowEngineRunner();
-        var (ok, _, stderr, _) = runner.RunSource(flowDecl + "\n");
+        var (ok, _, stderr, _) = runner.RunSource(flowSource + "\n");
         Assert.True(ok, $"expected clean run; stderr: {stderr}");
 
         var v = runner.GetVariable("r");
@@ -118,8 +127,10 @@ public class ExplicitConversionForwardTests
     public void Fact_SemitonesFloat_ReportsNoMatchingOverload()
     {
         using var runner = new FlowEngineRunner();
-        var (ok, _, stderr, errors) = runner.RunSource("Semitone r = (semitones 2.0f)\n");
-        Assert.False(ok, "expected (semitones 2.0f) to fail overload resolution");
+        // Float supplied via a typed declaration — no Flow surface 2.0f literal.
+        var (ok, _, stderr, errors) = runner.RunSource(
+            "Float f = 2.0\nSemitone r = (semitones f)\n");
+        Assert.False(ok, "expected (semitones Float) to fail overload resolution");
         Assert.True(errors > 0, "expected at least one error");
         Assert.Contains("semitones", stderr);
     }
@@ -128,8 +139,10 @@ public class ExplicitConversionForwardTests
     public void Fact_SemitonesLong_ReportsNoMatchingOverload()
     {
         using var runner = new FlowEngineRunner();
-        var (ok, _, stderr, errors) = runner.RunSource("Semitone r = (semitones 2L)\n");
-        Assert.False(ok, "expected (semitones 2L) to fail overload resolution");
+        // Long supplied via a typed declaration — no Flow surface 2L literal.
+        var (ok, _, stderr, errors) = runner.RunSource(
+            "Long n = 2\nSemitone r = (semitones n)\n");
+        Assert.False(ok, "expected (semitones Long) to fail overload resolution");
         Assert.True(errors > 0, "expected at least one error");
         Assert.Contains("semitones", stderr);
     }
