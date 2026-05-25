@@ -193,6 +193,23 @@ public class ExecutionContext
     public StackFrame CurrentFrame => _callStack.Peek();
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
+
+    /// <summary>
+    /// Phase 44 Plans 44-05 + 44-08 — public accessor for the engine-level
+    /// <see cref="Diagnostics.ErrorReporter"/> so context-dependent builtin
+    /// registrations can route strict-mode errors through the same
+    /// accumulator the rest of the pipeline reads. Mirrors
+    /// <see cref="Core.FlowEngine.ErrorReporter"/>. Read by the
+    /// strict-aware wildcard overloads for <c>print</c> / <c>if</c> /
+    /// <c>not</c> / <c>and</c> / <c>or</c> (Plan 44-08) AND by Plan 44-05
+    /// stdlib leaf sites elevating charitable WarnOnce advisories to
+    /// <c>[strict]</c> errors via
+    /// <see cref="Diagnostics.ErrorReporter.ReportError(string, Core.SourceLocation?)"/>
+    /// when <see cref="CallerStrictMode"/> is true. The underlying field stays
+    /// <c>private readonly</c> so external code cannot replace the reporter
+    /// mid-execution.
+    /// </summary>
+    public ErrorReporter ErrorReporter => _errorReporter;
     /// <summary>
     /// Section registry — keyed by section name.
     ///
@@ -560,18 +577,6 @@ public class ExecutionContext
     /// The diagnostic output writer for verbose logging (null when verbose mode is off).
     /// </summary>
     public TextWriter? DiagnosticOutput => _diagnosticOutput;
-
-    /// <summary>
-    /// Read-only accessor for the per-context <see cref="Diagnostics.ErrorReporter"/>.
-    /// Added Phase 44 Plan 44-05 so stdlib leaf sites that want to elevate
-    /// charitable WarnOnce advisories to <c>[strict]</c> errors can route via
-    /// <see cref="Diagnostics.ErrorReporter.ReportError(string, Core.SourceLocation?)"/>
-    /// when <see cref="CallerStrictMode"/> is true. Mirrors the existing
-    /// <see cref="DiagnosticOutput"/> read-only-accessor shape; the underlying
-    /// field stays <c>private readonly</c> so external code cannot replace the
-    /// reporter mid-execution.
-    /// </summary>
-    public Diagnostics.ErrorReporter ErrorReporter => _errorReporter;
 
     /// <summary>
     /// Pushes a new stack frame for a function call.

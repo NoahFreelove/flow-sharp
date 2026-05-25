@@ -6,6 +6,12 @@ use "@collections"
 use "@bars"
 
 internal proc print (String: s)
+Note: Phase 44 Plan 44-08 — Void-wildcard print overload for the pre-strict
+Note: bug fix per ROADMAP line 404. (print 42) charitably auto-strs in
+Note: non-strict; emits [strict] (print) requires String — got <Type>
+Note: in strict files. The String overload above scores +1000 vs this
+Note: wildcard's +500 so (print "hello") stays byte-identical.
+internal proc print (Void: s)
 
 Note: Nothing() returns Void. Use as `return (Nothing)` to explicitly
 Note: return Void from a proc that would otherwise collect non-void
@@ -165,11 +171,28 @@ internal proc eval (Lazy<Void>: value)
 
 internal proc if (Bool: cond, Lazy<Void>: if_true, Lazy<Void>: otherwise)
 internal proc if (Bool: cond, Void: if_true, Void: otherwise)
+Note: Phase 44 Plan 44-08 — Void-wildcard if for non-strict truthy-coerce
+Note: (if 5 ...) / (if "" ...). Strict (CallerStrictMode==true) emits
+Note: [strict] (if) requires Bool — got <Type>. Existing Bool-Lazy and
+Note: Bool-Void overloads score +1000 for the Bool case.
+internal proc if (Void: cond, Void: if_true, Void: otherwise)
 internal proc and (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc and (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy and (composer Area 4.2 choice).
+Note: (and 1 "foo") → "foo"; (and false 1) → false. Bool-Bool overload above
+Note: wins +1000 for the Bool case so existing call sites are byte-identical.
+internal proc and (Void: left, Void: right)
 
 internal proc or (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc or (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy or. (or false 42) → 42;
+Note: (or "" "fallback") → "fallback".
+internal proc or (Void: left, Void: right)
+
+Note: Phase 44 Plan 44-08 — (not) FIRST registration per RESEARCH A6.
+Note: Non-strict charitable truthy: (not 0) → true, (not "x") → false.
+Note: Strict emits [strict] (not) requires Bool — got <Type>.
+internal proc not (Void: x)
 
 Note: Equality and comparison operators
 internal proc equals (Void: a, Void: b)
