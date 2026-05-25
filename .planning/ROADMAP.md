@@ -346,7 +346,7 @@ Plans:
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
-| 44. Strict Mode | v1.5 | 10/12 | In Progress|  |
+| 44. Strict Mode | v1.5 | 11/12 | In Progress|  |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 
@@ -407,7 +407,7 @@ Plans:
 
 **Depends on**: Phase 42 (audit provides the clamp/advisory site inventory needed to confidently enumerate Axis B sites — missing any one regresses the strict contract). Phase 43 optional but useful for organizing strict-mode test files.
 **Requirements**: REQ-STRICT-01, REQ-STRICT-02, REQ-STRICT-03, REQ-STRICT-04, REQ-STRICT-05, REQ-STRICT-06, REQ-STRICT-07, REQ-STRICT-08, REQ-STRICT-09, REQ-STRICT-10, REQ-STRICT-11, REQ-STRICT-12, REQ-STRICT-13, REQ-STRICT-14, REQ-STRICT-15
-**Plans:** 10/12 plans executed
+**Plans:** 11/12 plans executed
 
 Plans:
 
@@ -435,7 +435,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 44-07-PLAN.md — Axis B MED+LOW advisory rewrites (~65 sites: Generative + Improv + Notation + OSC + Tuning + Harmony + InputFunctions + MidiExport) + CarveOutsPreservedTests (REQ-STRICT-08)
+- [x] 44-07-PLAN.md — Axis B MED+LOW advisory rewrites (~65 sites: Generative + Improv + Notation + OSC + Tuning + Harmony + InputFunctions + MidiExport) + CarveOutsPreservedTests (REQ-STRICT-08)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
