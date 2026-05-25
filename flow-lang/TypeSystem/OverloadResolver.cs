@@ -223,10 +223,26 @@ public class OverloadResolver
                 // Validate positional slots don't collide with named slots.
                 // First positionalArgTypes.Count slots are filled by positionals;
                 // a named arg targeting any of those slots is a duplicate-bind.
+                //
+                // Phase 44 review WR-08: replaced the per-named-arg
+                // `sig.ParameterNames.ToList().IndexOf(name)` with an inline
+                // linear scan. ParameterNames is already IReadOnlyList<string>
+                // — .ToList() allocated a fresh List<string> per named-arg,
+                // and IndexOf scanned it linearly. The allocation churn
+                // showed up in named-arg dispatch on the audio rendering
+                // hot path (no overload-cache coverage for named-arg
+                // resolution per ExecutionContext.cs:71-82) and contradicted
+                // the "no GC pressure in hot paths" constraint at CLAUDE.md
+                // line 285. Inline scan is zero-allocation, same O(K) per
+                // named-arg.
                 bool duplicate = false;
                 foreach (var name in namedArgTypes.Keys)
                 {
-                    int slot = sig.ParameterNames.ToList().IndexOf(name);
+                    int slot = -1;
+                    for (int i = 0; i < sig.ParameterNames.Count; i++)
+                    {
+                        if (sig.ParameterNames[i] == name) { slot = i; break; }
+                    }
                     if (slot < positionalArgTypes.Count)
                     {
                         (localReporter ??= new ErrorReporter()).ReportError(
@@ -259,7 +275,14 @@ public class OverloadResolver
                 bool reorderOk = true;
                 foreach (var (name, type) in namedArgTypes)
                 {
-                    int slot = sig.ParameterNames.ToList().IndexOf(name);
+                    // WR-08: same inline scan as the duplicate-check pass
+                    // above; zero-allocation replacement for the previous
+                    // `sig.ParameterNames.ToList().IndexOf(name)`.
+                    int slot = -1;
+                    for (int i = 0; i < sig.ParameterNames.Count; i++)
+                    {
+                        if (sig.ParameterNames[i] == name) { slot = i; break; }
+                    }
                     if (slot < 0 || slot >= sig.InputTypes.Count)
                     {
                         // Defensive — should have been caught by unknown-name check above.
