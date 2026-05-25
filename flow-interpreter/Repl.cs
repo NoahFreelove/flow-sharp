@@ -249,7 +249,15 @@ public class Repl
             }
         }
 
-        return command.ToLower() switch
+        // Phase 44 review WR-02: ToLowerInvariant() instead of ToLower() so
+        // the dispatch is culture-stable. Under tr-TR locale, ToLower maps
+        // uppercase 'I' to dotless 'ı' (U+0131), breaking case-insensitive
+        // command matching for any command containing 'I'. The current
+        // strict-mode commands happen not to contain 'I' but the inconsistency
+        // is a latent bug — Repl.cs:241-242 above already uses
+        // OrdinalIgnoreCase, which is the right call. Other consumers
+        // (PragmaRegistry.cs:28) standardize on StringComparer.Ordinal.
+        return command.ToLowerInvariant() switch
         {
             ":quit" or ":q" or ":exit" => false,
             ":help" or ":h" => ShowHelp(),
