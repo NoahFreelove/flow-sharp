@@ -46,6 +46,80 @@ Note: Type conversions
 internal proc intToDouble (Int: value)
 internal proc doubleToInt (Double: value)
 
+Note: Phase 44 Plan 44-04 (D-08/D-09/D-10) — explicit-conversion builtins.
+Note: 6 forward (db/hz/ms/sec/cents/semitones) + 4 reverse (double/float/int/long
+Note: × 6 music types) = 50 always-available overloads. Mode-independent per D-09
+Note: so composers can test-drive conversions one call at a time when refactoring
+Note: toward `enable strict;`. (semitones x) is Int-ONLY per D-08 (whole-numbers-by-
+Note: design); Float/Double/Long inputs fall through to "No matching overload" in
+Note: BOTH modes. C# implementations: flow-lang/StandardLibrary/ConversionFunctions.cs.
+
+Note: -- Forward direction: raw numeric (+ idempotent target) → tagged music type
+internal proc db (Int: x)
+internal proc db (Long: x)
+internal proc db (Float: x)
+internal proc db (Double: x)
+internal proc db (Decibel: x)
+
+internal proc hz (Int: x)
+internal proc hz (Long: x)
+internal proc hz (Float: x)
+internal proc hz (Double: x)
+internal proc hz (Hertz: x)
+
+internal proc ms (Int: x)
+internal proc ms (Long: x)
+internal proc ms (Float: x)
+internal proc ms (Double: x)
+internal proc ms (Millisecond: x)
+
+internal proc sec (Int: x)
+internal proc sec (Long: x)
+internal proc sec (Float: x)
+internal proc sec (Double: x)
+internal proc sec (Second: x)
+
+internal proc cents (Int: x)
+internal proc cents (Long: x)
+internal proc cents (Float: x)
+internal proc cents (Double: x)
+internal proc cents (Cent: x)
+
+Note: (semitones x) is Int-ONLY per D-08 — Float/Double/Long fall through.
+internal proc semitones (Int: x)
+internal proc semitones (Semitone: x)
+
+Note: -- Reverse direction (D-10): tagged music type → raw numeric
+Note: 4 extractors × 6 music types = 24 overloads. (int <fractional>) floors via
+Note: Math.Floor mirroring the existing doubleToInt convention (T-44-04-01 mitigation).
+internal proc double (Decibel: value)
+internal proc double (Hertz: value)
+internal proc double (Cent: value)
+internal proc double (Millisecond: value)
+internal proc double (Second: value)
+internal proc double (Semitone: value)
+
+internal proc float (Decibel: value)
+internal proc float (Hertz: value)
+internal proc float (Cent: value)
+internal proc float (Millisecond: value)
+internal proc float (Second: value)
+internal proc float (Semitone: value)
+
+internal proc int (Decibel: value)
+internal proc int (Hertz: value)
+internal proc int (Cent: value)
+internal proc int (Millisecond: value)
+internal proc int (Second: value)
+internal proc int (Semitone: value)
+
+internal proc long (Decibel: value)
+internal proc long (Hertz: value)
+internal proc long (Cent: value)
+internal proc long (Millisecond: value)
+internal proc long (Second: value)
+internal proc long (Semitone: value)
+
 Note: Arithmetic — 5-type same-type fast paths
 internal proc add (Int: a, Int: b)
 internal proc add (Long: a, Long: b)
