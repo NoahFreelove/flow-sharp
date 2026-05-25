@@ -65,9 +65,10 @@ public class OverloadResolver
         IReadOnlyList<FunctionSignature> candidates,
         IReadOnlyList<FlowType> positionalArgTypes,
         Core.SourceLocation? location = null,
-        IReadOnlyDictionary<string, FlowType>? namedArgTypes = null)
+        IReadOnlyDictionary<string, FlowType>? namedArgTypes = null,
+        bool strictMode = false)
     {
-        return ResolveCore(functionName, candidates, positionalArgTypes, location, namedArgTypes, _errorReporter);
+        return ResolveCore(functionName, candidates, positionalArgTypes, location, namedArgTypes, _errorReporter, strictMode);
     }
 
     /// <summary>
@@ -94,7 +95,8 @@ public class OverloadResolver
         IReadOnlyList<FlowType> positionalArgTypes,
         Core.SourceLocation? location = null,
         IReadOnlyDictionary<string, FlowType>? namedArgTypes = null,
-        bool silent = false)
+        bool silent = false,
+        bool strictMode = false)
     {
         if (candidates.Count == 0)
         {
@@ -114,7 +116,7 @@ public class OverloadResolver
             signatures[i] = candidates[i].Signature;
 
         var reporter = silent ? SilentReporter : _errorReporter;
-        var sig = ResolveCore(functionName, signatures, positionalArgTypes, location, namedArgTypes, reporter);
+        var sig = ResolveCore(functionName, signatures, positionalArgTypes, location, namedArgTypes, reporter, strictMode);
         if (sig == null)
             return null;
 
@@ -146,7 +148,8 @@ public class OverloadResolver
         IReadOnlyList<FlowType> positionalArgTypes,
         Core.SourceLocation? location,
         IReadOnlyDictionary<string, FlowType>? namedArgTypes,
-        ErrorReporter reporter)
+        ErrorReporter reporter,
+        bool strictMode = false)
     {
         if (candidates.Count == 0)
         {
@@ -299,9 +302,12 @@ public class OverloadResolver
             argTypes = positionalArgTypes;
         }
 
-        // Filter candidates that match the argument types
+        // Filter candidates that match the argument types.
+        // Phase 44 Plan 44-03: strictMode drops the two implicit-conversion
+        // clauses (numeric widening + inverse music-type widening) per
+        // RESEARCH Pitfall 1 — see FunctionSignature.Matches XML doc.
         var matchingCandidates = candidates
-            .Where(sig => sig.Matches(argTypes))
+            .Where(sig => sig.Matches(argTypes, strictMode))
             .ToList();
 
         if (matchingCandidates.Count == 0)
