@@ -178,9 +178,16 @@ Note: Bool-Void overloads score +1000 for the Bool case.
 internal proc if (Void: cond, Void: if_true, Void: otherwise)
 internal proc and (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc and (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy and (composer Area 4.2 choice).
+Note: (and 1 "foo") → "foo"; (and false 1) → false. Bool-Bool overload above
+Note: wins +1000 for the Bool case so existing call sites are byte-identical.
+internal proc and (Void: left, Void: right)
 
 internal proc or (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc or (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy or. (or false 42) → 42;
+Note: (or "" "fallback") → "fallback".
+internal proc or (Void: left, Void: right)
 
 Note: Phase 44 Plan 44-08 — (not) FIRST registration per RESEARCH A6.
 Note: Non-strict charitable truthy: (not 0) → true, (not "x") → false.

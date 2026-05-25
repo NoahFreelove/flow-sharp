@@ -753,4 +753,54 @@ public static class StdLib
         }
         return Value.Bool(!TruthyCoerce(args[0]));
     }
+
+    /// <summary>
+    /// Phase 44 Plan 44-08 Task 3 — non-strict charitable <c>(and a b)</c>
+    /// with D-12 last-truthy return semantics (composer Area 4.2 choice,
+    /// RESOLVED per RESEARCH Open Question 2): short-circuit on the first
+    /// falsy operand and return THAT operand verbatim; otherwise return the
+    /// LAST operand. v1.5 breaking change vs the prior Bool-only
+    /// <see cref="AndBool"/> shape; permitted under D-v1.5-01 pre-traction
+    /// latitude (project_pre_public_no_legacy_burden memo).
+    /// <para>
+    /// Strict mode tightening is owned by Plan 44-09 — Plan 44-08 keeps the
+    /// strict path Bool-pass-through compatible by routing the existing
+    /// Bool-typed <see cref="AndBool"/> overload (+1000 specificity) for
+    /// <c>(and Bool Bool)</c>; this wildcard (+500) only fires on
+    /// non-Bool argument types where strict has no defensible last-truthy
+    /// interpretation anyway.
+    /// </para>
+    /// </summary>
+    public static Value AndLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (args.Count == 0) return Value.Bool(true);
+        Value last = args[0];
+        if (!TruthyCoerce(last)) return last;
+        for (int i = 1; i < args.Count; i++)
+        {
+            if (!TruthyCoerce(args[i])) return args[i];
+            last = args[i];
+        }
+        return last;
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(or a b)</c> with D-12 last-truthy return
+    /// semantics — first truthy operand wins (returned verbatim);
+    /// otherwise the LAST operand is returned (matches CPython <c>or</c>).
+    /// See <see cref="AndLastTruthy"/> for the D-12 / D-v1.5-01 migration
+    /// rationale.
+    /// </summary>
+    public static Value OrLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (args.Count == 0) return Value.Bool(false);
+        Value last = args[0];
+        if (TruthyCoerce(last)) return last;
+        for (int i = 1; i < args.Count; i++)
+        {
+            if (TruthyCoerce(args[i])) return args[i];
+            last = args[i];
+        }
+        return last;
+    }
 }

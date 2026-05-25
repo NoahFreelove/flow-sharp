@@ -1148,6 +1148,23 @@ public static class BuiltInFunctions
         var notAnySig = new FunctionSignature("not", [VoidType.Instance],
             ParameterNames: ["x"]);
         registry.Register("not", notAnySig, args => StdLib.NotCharitable(args, context));
+
+        // (and Void Void) — D-12 last-truthy semantics in non-strict.
+        // Existing and(Bool, Bool) overload (+1000) wins for the Bool-Bool
+        // case; this wildcard (+500) fires for everything else. (and 1 "foo")
+        // → "foo"; (and false 1) → false (first falsy short-circuit).
+        var andAnySig = new FunctionSignature("and",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("and", andAnySig, args => StdLib.AndLastTruthy(args, context));
+
+        // (or Void Void) — D-12 last-truthy semantics in non-strict.
+        // (or false 42) → 42; (or "" "fallback") → "fallback"
+        // (first truthy after short-circuit, matches CPython `or`).
+        var orAnySig = new FunctionSignature("or",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("or", orAnySig, args => StdLib.OrLastTruthy(args, context));
     }
 
     private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
