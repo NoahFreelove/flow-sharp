@@ -547,8 +547,25 @@ public class ExpressionEvaluator
             }
 
             var args = new List<Value> { leftVal };
-            if (overload.IsInternal) return overload.Implementation!(args);
-            else return _invoker.ExecuteUserFunctionWithCaptures(overload.Declaration!, args, overload.CapturedVariables);
+            // Phase 44 review CR-02: runtime `->` (function-variable RHS) must
+            // snapshot CallerStrictMode the same way EvaluateFunctionCall does
+            // — without this, strict-aware builtins invoked via `x -> g` (where
+            // `g` is a function-variable resolving to a FunctionOverload at
+            // runtime) read whatever stale CallerStrictMode the previous
+            // foreground call left behind. Mirrors the sandwich at lines
+            // 437-450 / 461-472. Anti-Pattern 1: never mutate without paired
+            // restore in try/finally.
+            var prevCallerStrict = _context.CallerStrictMode;
+            _context.CallerStrictMode = _context.StrictMode;
+            try
+            {
+                if (overload.IsInternal) return overload.Implementation!(args);
+                else return _invoker.ExecuteUserFunctionWithCaptures(overload.Declaration!, args, overload.CapturedVariables);
+            }
+            finally
+            {
+                _context.CallerStrictMode = prevCallerStrict;
+            }
         }
 
         _errorReporter.ReportError($"Cannot apply pipe operator -> to non-function type {rightVal.Type}", flowEx.Location);
@@ -670,23 +687,39 @@ public class ExpressionEvaluator
             return Value.Void();
         }
 
-        // Tuple LHS: unpack components into positional args (CONTEXT spec).
-        if (leftVal.Type is TupleType && leftVal.Data is IReadOnlyList<Value> components)
+        // Phase 44 review CR-02: snapshot CallerStrictMode around the dispatch
+        // so strict-aware builtins called via `~>` see the caller's bit (not
+        // whatever stale value the previous foreground call left behind).
+        // Mirrors EvaluateFunctionCall lines 437-450 / 461-472. Applied to
+        // both the tuple-unpack branch AND the non-tuple fall-through so all
+        // `~>` paths have the same call-boundary semantics as `->` / direct
+        // call dispatch.
+        var prevCallerStrict = _context.CallerStrictMode;
+        _context.CallerStrictMode = _context.StrictMode;
+        try
         {
-            var args = components.ToList();
-            return overload.IsInternal
-                ? overload.Implementation!(args)
-                : _invoker.ExecuteUserFunctionWithCaptures(
-                    overload.Declaration!, args, overload.CapturedVariables);
-        }
+            // Tuple LHS: unpack components into positional args (CONTEXT spec).
+            if (leftVal.Type is TupleType && leftVal.Data is IReadOnlyList<Value> components)
+            {
+                var args = components.ToList();
+                return overload.IsInternal
+                    ? overload.Implementation!(args)
+                    : _invoker.ExecuteUserFunctionWithCaptures(
+                        overload.Declaration!, args, overload.CapturedVariables);
+            }
 
-        // Charitable fallthrough: non-tuple LHS uses single-arg `->` semantics
-        // (per ROADMAP success criterion 3, ergonomics-priority memory).
-        var singleArg = new List<Value> { leftVal };
-        return overload.IsInternal
-            ? overload.Implementation!(singleArg)
-            : _invoker.ExecuteUserFunctionWithCaptures(
-                overload.Declaration!, singleArg, overload.CapturedVariables);
+            // Charitable fallthrough: non-tuple LHS uses single-arg `->` semantics
+            // (per ROADMAP success criterion 3, ergonomics-priority memory).
+            var singleArg = new List<Value> { leftVal };
+            return overload.IsInternal
+                ? overload.Implementation!(singleArg)
+                : _invoker.ExecuteUserFunctionWithCaptures(
+                    overload.Declaration!, singleArg, overload.CapturedVariables);
+        }
+        finally
+        {
+            _context.CallerStrictMode = prevCallerStrict;
+        }
     }
 
     private Value EvaluateArrayLiteral(ArrayLiteralExpression arrLit)
