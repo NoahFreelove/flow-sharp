@@ -17,6 +17,23 @@
          Matches .NET ecosystem convention (NETSTANDARD2_0 etc.). -->
     <PropertyGroup Condition="'$(FlowTarget)' == 'Web'">
         <DefineConstants>$(DefineConstants);FLOW_WEB</DefineConstants>
+        <!-- Phase 48 D-48-01: Mono-WASM jiterpreter target. browser-wasm RID activates
+             the WASM publish pipeline; jiterpreter is what Blazor uses today and matches
+             Microsoft's recommended path for reflection-friendly .NET in browser. -->
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <WasmEnableJiterpreter>true</WasmEnableJiterpreter>
+        <!-- Phase 48 D-48-03: invariant globalization saves ~10 MB ICU bundle.
+             HybridGlobalization explicitly off (pin — defaults could change across SDK versions). -->
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <HybridGlobalization>false</HybridGlobalization>
+        <!-- Phase 48 D-48-02: aggressive trim mode. Pairs with TrimmerRootDescriptor below
+             which preserves FlowType subclasses + interop boundary types (Value, AudioBuffer,
+             WebAudioBackend). InternalFunctionRegistry is NOT reflection-heavy per
+             48-PATTERNS.md Discrepancy 3 (audit 2026-05-25). -->
+        <TrimMode>full</TrimMode>
+        <!-- Phase 48 D-48-04: symbol map gated Debug-only. Release strips it for size +
+             minor security (don't leak source structure to browser). -->
+        <WasmEmitSymbolMap Condition="'$(Configuration)' == 'Debug'">true</WasmEmitSymbolMap>
     </PropertyGroup>
 
     <ItemGroup>
@@ -59,6 +76,13 @@
            OscFunctions.cs are absent. Modulo Plan 47-03's ModuleLoader gate. -->
       <None Remove="sfz.flow" />
       <None Remove="osc.flow" />
+      <!-- Phase 48 D-48-02: trimmer-root descriptor preserving FlowType subclasses,
+           music-type singletons, and the interop boundary types Phase 48 marshals across
+           [JSImport]/[JSExport] (Value, AudioBuffer, WebAudioBackend). Per
+           48-PATTERNS.md §Discrepancy 3, InternalFunctionRegistry is NOT enumerated —
+           it's not reflection-heavy and reachability analysis already covers it
+           through FlowEngine's static call chain. -->
+      <TrimmerRootDescriptor Include="wasm\trim-roots.xml" />
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
