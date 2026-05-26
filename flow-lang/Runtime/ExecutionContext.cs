@@ -689,17 +689,11 @@ public class ExecutionContext
         if (overloads.Count == 0)
             return null;
 
-        var signatures = overloads.Select(o => o.Signature).ToList();
-
-        // Create a temporary error reporter that doesn't actually report
-        var tempReporter = new ErrorReporter();
-        var tempResolver = new OverloadResolver(tempReporter);
-        var signature = tempResolver.Resolve(name, signatures, argTypes, null, namedArgTypes);
-
-        if (signature == null)
-            return null;
-
-        return overloads.FirstOrDefault(o => o.Signature == signature);
+        // Bundle A (260524-r4o) Task 3 — reuse the existing _overloadResolver
+        // via the silent-mode FunctionOverload-direct overload from Task 2.
+        // No per-probe resolver-allocation; rejection diagnostics route into
+        // the resolver's shared SilentReporter and are never flushed.
+        return _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true);
     }
 
     // ===================================================================

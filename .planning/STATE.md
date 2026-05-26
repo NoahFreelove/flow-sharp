@@ -33,7 +33,7 @@ Next step: `/clear` then one of (composer pick):
   - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
 
 Status: Ready to execute
-Last activity: 2026-05-24 - Completed quick task 260524-qnf: bench harness + baseline for optimization sweep
+Last activity: 2026-05-24 - Completed quick task 260524-r4o: Bundle A dispatch hot-path optimization (-15% to -27% on dispatch-heavy benches)
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
@@ -715,6 +715,7 @@ None yet for Phase 15.
 | 260523-u78 | macOS audio playback via CoreAudio AudioQueue backend (P/Invoke into AudioToolbox.framework; AudioPlaybackManager routes CoreAudio on OSPlatform.OSX, PulseAudio elsewhere) | 2026-05-23 | 1e3f13d | [260523-u78-add-macos-audio-playback-support-via-cor](./quick/260523-u78-add-macos-audio-playback-support-via-cor/) |
 | 260524-n96 | Resolve `Fixtures/` + `fixtures/` directory case-collision in flow-lang.Tests (merged into lowercase canonical; macOS APFS / Windows NTFS silent-merge bug closed) | 2026-05-24 | e0d7274 | [260524-n96-resolve-fixtures-fixtures-directory-case](./quick/260524-n96-resolve-fixtures-fixtures-directory-case/) |
 | 260524-qnf | Flow interpreter benchmark harness + Release baseline (6 bench_*.flow scripts + run.sh; baseline.txt captured for upcoming 6-bundle optimization sweep) | 2026-05-24 | bf1da32 | [260524-qnf-set-up-flow-interpreter-benchmark-harnes](./quick/260524-qnf-set-up-flow-interpreter-benchmark-harnes/) |
+| 260524-r4o | Bundle A — dispatch hot-path micro-opts (StackFrame fast path, OverloadResolver direct-return, TryResolveFunction reuses resolver in silent mode, EvaluateFunctionCall single-pass arg build). var_lookup -27.1%, overload -23.2%, collections -21.4%, function_calls -15.3%. Zero new test failures. | 2026-05-24 | 7c00f68 | [260524-r4o-bundle-a-function-dispatch-hot-path-micr](./quick/260524-r4o-bundle-a-function-dispatch-hot-path-micr/) |
 
 ## Deferred Items
 

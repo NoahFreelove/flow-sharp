@@ -159,64 +159,64 @@ public class ExpressionEvaluator
 
     private Value EvaluateVariable(VariableExpression var)
     {
-        try
-        {
-            return _context.GetVariable(var.Name);
-        }
-        catch (InvalidOperationException)
-        {
-            // Variable not found - check if it's a zero-argument function or a function reference
-            var overloads = _context.CurrentFrame.GetFunctionOverloads(var.Name);
+        // Bundle B (260524-rjm) — fast path: non-throwing TryGetVariable
+        // replaces the legacy try/catch on InvalidOperationException. Every
+        // bare identifier naming a function used to pay the full throw/catch
+        // cost; now the miss branch is a straight-line conditional.
+        if (_context.CurrentFrame.TryGetVariable(var.Name, out var v))
+            return v;
 
-            if (overloads.Count > 0)
+        // Variable not found - check if it's a zero-argument function or a function reference
+        var overloads = _context.CurrentFrame.GetFunctionOverloads(var.Name);
+
+        if (overloads.Count > 0)
+        {
+            // Try resolving with 0 args first (for backwards compatibility with existing 0-arg function shortcuts)
+            var zeroArgOverload = _context.TryResolveFunction(var.Name, Array.Empty<FlowType>());
+            if (zeroArgOverload != null)
             {
-                // Try resolving with 0 args first (for backwards compatibility with existing 0-arg function shortcuts)
-                var zeroArgOverload = _context.TryResolveFunction(var.Name, Array.Empty<FlowType>());
-                if (zeroArgOverload != null)
+                if (zeroArgOverload.IsInternal)
                 {
-                    if (zeroArgOverload.IsInternal)
-                    {
-                        return zeroArgOverload.Implementation!(new List<Value>());
-                    }
-                    else
-                    {
-                        return _invoker.ExecuteUserFunction(zeroArgOverload.Declaration!, new List<Value>());
-                    }
+                    return zeroArgOverload.Implementation!(new List<Value>());
                 }
-
-                // If not a 0-arg function, return it as a Function Value (the first available overload for now)
-                // In Flow, Function types are structurally compatible.
-                return Value.Function(overloads[0]);
+                else
+                {
+                    return _invoker.ExecuteUserFunction(zeroArgOverload.Declaration!, new List<Value>());
+                }
             }
 
-            // Not a variable or function — Phase 35 LANG-04 Wave 2a: emit rich
-            // FlowDiagnostic with Levenshtein-derived did-you-mean suggestion
-            // pulled from the union of all in-scope variable names and known
-            // function names. Per RESEARCH § Pitfall 5: ONE suggestion, threshold
-            // max(2, len/3). Span is the variable expression's span (post Plan
-            // 35-01 migration); back-compat fallback `Span.At(var.Location)` for
-            // any node still constructed without a span.
-            var span = var.Span ?? Span.At(var.Location);
-            var candidates = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var name in _context.CurrentFrame.GetAllAccessibleVariables().Keys)
-                candidates.Add(name);
-            // Internal builtins — enumerated via the registry so prefix-only
-            // arithmetic / stdlib / harmony / transform names all become
-            // candidate suggestions.
-            foreach (var (name, _) in _context.InternalRegistry.EnumerateSignatures())
-                candidates.Add(name);
-            var suggestion = LevenshteinHelper.SuggestNearest(var.Name, candidates);
-
-            var diag = new FlowDiagnostic(
-                DiagnosticLevel.Error,
-                $"unknown identifier '{var.Name}'",
-                span,
-                Labels: [new DiagnosticLabel(span, "not found in scope")],
-                Notes: Array.Empty<string>(),
-                Suggestion: suggestion);
-            _errorReporter.Report(diag);
-            return Value.Void();
+            // If not a 0-arg function, return it as a Function Value (the first available overload for now)
+            // In Flow, Function types are structurally compatible.
+            return Value.Function(overloads[0]);
         }
+
+        // Not a variable or function — Phase 35 LANG-04 Wave 2a: emit rich
+        // FlowDiagnostic with Levenshtein-derived did-you-mean suggestion
+        // pulled from the union of all in-scope variable names and known
+        // function names. Per RESEARCH § Pitfall 5: ONE suggestion, threshold
+        // max(2, len/3). Span is the variable expression's span (post Plan
+        // 35-01 migration); back-compat fallback `Span.At(var.Location)` for
+        // any node still constructed without a span.
+        var span = var.Span ?? Span.At(var.Location);
+        var candidates = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var name in _context.CurrentFrame.GetAllAccessibleVariables().Keys)
+            candidates.Add(name);
+        // Internal builtins — enumerated via the registry so prefix-only
+        // arithmetic / stdlib / harmony / transform names all become
+        // candidate suggestions.
+        foreach (var (name, _) in _context.InternalRegistry.EnumerateSignatures())
+            candidates.Add(name);
+        var suggestion = LevenshteinHelper.SuggestNearest(var.Name, candidates);
+
+        var diag = new FlowDiagnostic(
+            DiagnosticLevel.Error,
+            $"unknown identifier '{var.Name}'",
+            span,
+            Labels: [new DiagnosticLabel(span, "not found in scope")],
+            Notes: Array.Empty<string>(),
+            Suggestion: suggestion);
+        _errorReporter.Report(diag);
+        return Value.Void();
     }
 
     private Value EvaluateFunctionCall(FunctionCallExpression call)
@@ -268,9 +268,20 @@ public class ExpressionEvaluator
             // "Function '<mod.fn>' not found" error message fires.
         }
 
-        // Evaluate all arguments
-        var argValues = call.Arguments.Select(Evaluate).ToList();
-        var argTypes = argValues.Select(v => v.Type).ToList();
+        // Evaluate all arguments — Bundle A (260524-r4o) Task 4: single
+        // pre-sized loop builds argValues (List<Value>) + argTypes (FlowType[])
+        // in one pass. FlowType[] satisfies IReadOnlyList<FlowType> at every
+        // downstream consumer (TryResolveFunction / ResolveFunction), avoiding
+        // the legacy double-LINQ allocation (2 iterators + 2 boxed enumerators
+        // + 2 growable Lists).
+        var argValues = new List<Value>(call.Arguments.Count);
+        var argTypes = new FlowType[call.Arguments.Count];
+        for (int i = 0; i < call.Arguments.Count; i++)
+        {
+            var v = Evaluate(call.Arguments[i]);
+            argValues.Add(v);
+            argTypes[i] = v.Type;
+        }
 
         // Phase 36 Plan 36-02 (D-36-11): evaluate named-arg values up-front
         // so the resolver can see their Types. The dict shape mirrors the
@@ -292,20 +303,17 @@ public class ExpressionEvaluator
         // Try to resolve function overload
         var overload = _context.TryResolveFunction(call.Name, argTypes, namedArgTypes);
 
-        // If no function found, try looking up as a variable holding a lambda
+        // If no function found, try looking up as a variable holding a lambda.
+        // Bundle B (260524-rjm) — non-throwing TryGetVariable replaces the
+        // legacy try/catch on InvalidOperationException. Ordering preserved:
+        // function resolution runs first (above), variable-holding-lambda
+        // fallback runs second.
         if (overload == null)
         {
-            try
+            if (_context.CurrentFrame.TryGetVariable(call.Name, out var variable)
+                && variable.Data is FunctionOverload varOverload)
             {
-                var variable = _context.GetVariable(call.Name);
-                if (variable.Data is FunctionOverload varOverload)
-                {
-                    overload = varOverload;
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                // Not a variable either
+                overload = varOverload;
             }
         }
 
