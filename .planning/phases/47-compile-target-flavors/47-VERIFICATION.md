@@ -44,45 +44,55 @@ Phase 49 (flowlang.dev site).
 
 ```
 $ dotnet build flow-lang/flow-lang.csproj -p:FlowTarget=Desktop -v quiet
-Build succeeded. 0 Warning(s) / 0 Error(s)
+    0 Error(s)
+    Time Elapsed 00:00:02.06
 ```
 
 ### 2. Web build links cleanly
 
 ```
 $ dotnet build flow-lang/flow-lang.csproj -p:FlowTarget=Web -v quiet
-Build succeeded. 0 Warning(s) / 0 Error(s)
+    0 Error(s)
+    Time Elapsed 00:00:01.71
 ```
 
 ### 3. Test-project Web build (Plan 47-06 closer)
 
 ```
 $ dotnet build flow-lang.Tests/flow-lang.Tests.csproj -p:FlowTarget=Web -v quiet
-Build succeeded. 0 Error(s)
+    46 Warning(s)
+    0 Error(s)
+    Time Elapsed 00:00:03.83
 ```
 
-(18-file Sfz/Osc-referencing test-file cascade-fail closed in Plan 47-06 via `<Compile Remove>` ItemGroup in `flow-lang.Tests.csproj`; FLOW_WEB define now propagates to the test project so `FlowTargetFactAttribute.CurrentTarget == "Web"` activates correctly under `-p:FlowTarget=Web`.)
+(21-file Sfz/Osc/PulseAudio/InputFunctions-referencing test-file cascade-fail closed in Plan 47-06 via `<Compile Remove>` ItemGroup in `flow-lang.Tests.csproj` covering 18 files from 47-04-SUMMARY.md deferral list + 3 mic-input Phase 38 tests caught by Rule 3 deviation; FLOW_WEB define now propagates to the test project so `FlowTargetFactAttribute.CurrentTarget == "Web"` activates correctly under `-p:FlowTarget=Web`.)
 
 ### 4. Desktop test suite GREEN
 
 ```
-$ dotnet test flow-lang.Tests/flow-lang.Tests.csproj --no-build
-Total tests: 2136. Passed: 2127. Failed: 0 (zero new). Skipped: 9.
-Phase 47 fixture: 16 PASSED + 8 SKIPPED + 0 FAILED.
+$ dotnet test flow-lang.Tests/flow-lang.Tests.csproj
+Passed!  - Failed: 0, Passed: 2127, Skipped: 9, Total: 2136, Duration: 1 m 4 s
 ```
 
-(The 8 Skipped under Phase47 are `[FlowTargetFact("Web")]` Facts which skip with reason `"Skipped on Desktop — test runs under: Web"`. Pre-existing Phase 28/29/35/38 failures (36 baseline per STATE.md Phase 43 highlights) remain pre-existing — Phase 47 introduces zero new failures.)
+The 9 Skipped are: 8 `[FlowTargetFact("Web")]` Facts (Phase 47 Web-only) + 1 Phase 39 `MusicXmlRoundTripTests.StructuralPreservation_NoteCountMatches` (charitable-skip when `mscore` absent per D-39-08). Phase 47 introduces zero new failures.
 
-### 5. Web-side AssemblyReferenceScanTests + DryWetMidi WASM-compat + WebTargetParser / WebTargetModuleLoader
+### 5. Web test suite — Phase 47 Facts GREEN end-to-end
 
-With the test-project Web build closed by Plan 47-06, the following `[FlowTargetFact("Web")]` and `[FlowTargetFact("Desktop", "Web")]` Facts are now executable under `dotnet test -p:FlowTarget=Web`:
+```
+$ dotnet test flow-lang.Tests/flow-lang.Tests.csproj -p:FlowTarget=Web --filter "FullyQualifiedName~Phase47"
+Passed!  - Failed: 0, Passed: 20, Skipped: 4, Total: 24, Duration: 4 s
+```
 
-- `AssemblyReferenceScanTests.WebBuild_HasNoRefsToStrippedNamespaces` — verifies zero Rug.Osc / RtMidi.Core / System.IO.FileSystemWatcher type-refs + zero libpulse / AudioToolbox P/Invoke targets
-- `AssemblyReferenceScanTests.WebBuild_RetainsLegitimateRefs` — negative-check sanity Fact
-- `DryWetMidiWasmCompatTests.MidiFile_WriteAndRead_RoundTripsMinimalSmf` — Desktop + Web cross-target
-- `DryWetMidiWasmCompatTests.DryWetMidiAssembly_IsLoadable` — Desktop + Web cross-target
-- `WebTargetParserTests` (3 Facts) — mirror of Plan 47-03 Desktop counterparts
-- `WebTargetModuleLoaderTests` (3 Facts) — `@sfz`/`@osc` charitable advisory + `@notation-io` negative non-strip
+The 4 Skipped are the `[FlowTargetFact("Desktop")]` counterparts on `WebTargetGuardTests` (Plan 47-03 Desktop-side pins, retagged at closer with `[FlowTargetFact("Desktop")]` so they correctly skip under Web). The 20 PASSED include:
+
+- `AssemblyReferenceScanTests.WebBuild_HasNoRefsToStrippedNamespaces` (Plan 47-05 — invariant gate active) — GREEN
+- `AssemblyReferenceScanTests.WebBuild_RetainsLegitimateRefs` (negative-check) — GREEN
+- `DryWetMidiWasmCompatTests.MidiFile_WriteAndRead_RoundTripsMinimalSmf` (cross-target) — GREEN on Web → DryWetMidi 8.0.3 WASM-compat confirmed
+- `DryWetMidiWasmCompatTests.DryWetMidiAssembly_IsLoadable` (cross-target) — GREEN on Web
+- `WebTargetParserTests` (3 Facts — IsWebTarget=true / SupportsLiveBlocks=false / live block parse fails on Web) — 3 GREEN
+- `WebTargetModuleLoaderTests` (3 Facts — `@sfz`/`@osc` advisory + `@notation-io` non-strip) — 3 GREEN
+- `BuildConditioningSmokeTests` (3 Facts — nested dotnet build invocations) — 3 GREEN
+- `WebAudioBackendStubTests` (7 Facts — stub contract; IsAvailable returns false on host even when FLOW_WEB defined because OperatingSystem.IsBrowser() returns false on Linux test runner) — 7 GREEN
 
 ## Plan Summary
 
@@ -112,12 +122,15 @@ Plan 47-04 Task 2 shipped `DryWetMidiWasmCompatTests` with 2 `[FlowTargetFact("D
 
 Plan 47-04 Task 1 documented that `dotnet build flow-lang.Tests -p:FlowTarget=Web` cascade-failed with 50 errors across 18 Sfz/Osc-referencing test files.
 
-**Outcome at Plan 47-06:** Closed via two coordinated edits to `flow-lang.Tests/flow-lang.Tests.csproj`:
+**Outcome at Plan 47-06:** Closed via three coordinated edits to `flow-lang.Tests/flow-lang.Tests.csproj`:
 
 1. **FLOW_WEB propagation:** Added Web-conditional `<PropertyGroup Condition="'$(FlowTarget)' == 'Web'">` appending `;FLOW_WEB` to `$(DefineConstants)` (mirror of `flow-lang.csproj` pattern from Plan 47-01). This activates `FlowTargetFactAttribute.CurrentTarget == "Web"` so `[FlowTargetFact("Web")]` Facts EXECUTE (no longer skip) and `[FlowTargetFact("Desktop")]` Facts SKIP.
-2. **Conditional `<Compile Remove>` ItemGroup:** Removes the 18 test files (9 SFZ at Phase 33 + Phase 37, 5 OSC at Phase 38, 4 SFZ at Unit/Phase 33) from the Web Tests build. They all reference Sfz* / OscHandleData types stripped by Plan 47-01.
+2. **Conditional `<Compile Remove>` ItemGroup (18 files from 47-04-SUMMARY.md deferral list):** Removes 9 SFZ tests at Phase 33 + Phase 37, 5 OSC tests at Phase 38, 4 SFZ tests at Unit/Phase 33. All reference Sfz* / OscHandleData types stripped by Plan 47-01.
+3. **Rule 3 deviation — 3 additional files NOT in the 47-04 18-file list:** `Integration/Phase38/MicBufferAttenuationTests.cs` + `MicBufferResampleTests.cs` + `PulseAudioCaptureBackendTests.cs`. These reference `InputFunctions` + `PulseAudioCaptureBackend` (also stripped on Web). Missed by the 47-04 deferral scan; caught at Plan 47-06 by re-running the Web Tests build.
 
-With these two edits, `dotnet build flow-lang.Tests -p:FlowTarget=Web` now exits 0, and `dotnet test flow-lang.Tests -p:FlowTarget=Web` runs `AssemblyReferenceScanTests` (Plan 47-05) + `WebTargetParserTests` (Plan 47-04) + `WebTargetModuleLoaderTests` (Plan 47-04) + `DryWetMidiWasmCompatTests` (Plan 47-04) end-to-end GREEN.
+**Also Rule 1 (bug fix):** `WebTargetGuardTests.cs` from Plan 47-03 had 4 plain `[Fact]` methods that assumed Desktop execution (e.g. `IsWebTarget_IsFalse_OnDesktopBuild`). Plan 47-04 introduced `FlowTargetFactAttribute` AFTER Plan 47-03, so these Facts weren't retagged. Under FlowTarget=Web they now incorrectly run and fail (asserting `IsWebTarget==false` when it's `true`). Retagged the 4 Facts as `[FlowTargetFact("Desktop")]` so they skip under Web — Plan 47-04's `WebTargetParserTests` already covers the Web-side counterparts.
+
+With these edits, `dotnet build flow-lang.Tests -p:FlowTarget=Web` now exits 0, and `dotnet test flow-lang.Tests -p:FlowTarget=Web --filter Phase47` runs **20 PASSED + 4 SKIPPED + 0 FAILED**.
 
 ### Caveat 3: 47-PATTERNS.md §Discrepancies acted upon
 

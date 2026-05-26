@@ -1,5 +1,6 @@
 using System.IO;
 using FlowLang.Core;
+using FlowLang.Tests.Helpers;
 using Xunit;
 
 namespace FlowLang.Tests.Integration.Phase47;
@@ -20,7 +21,7 @@ namespace FlowLang.Tests.Integration.Phase47;
 /// </summary>
 public class WebTargetGuardTests
 {
-    [Fact]
+    [FlowTargetFact("Desktop")]
     public void IsWebTarget_IsFalse_OnDesktopBuild()
     {
         // Phase 47 D-47-10: this test assembly compiles WITHOUT FLOW_WEB,
@@ -29,14 +30,14 @@ public class WebTargetGuardTests
             "Desktop test assembly must read FlowEngine.IsWebTarget as false.");
     }
 
-    [Fact]
+    [FlowTargetFact("Desktop")]
     public void SupportsLiveBlocks_IsTrue_OnDesktopBuild()
     {
         Assert.True(FlowEngine.SupportsLiveBlocks,
             "Desktop build must have SupportsLiveBlocks=true so `live { ... }` parses.");
     }
 
-    [Fact]
+    [FlowTargetFact("Desktop")]
     public void LiveBlock_Parses_OnDesktop()
     {
         // Smoke test — a minimal live block parses to completion on Desktop.
@@ -49,7 +50,7 @@ public class WebTargetGuardTests
             "Desktop execution of a minimal live block must succeed (no parse error).");
     }
 
-    [Fact]
+    [FlowTargetFact("Desktop")]
     public void UseSfzImport_NoTargetAdvisory_OnDesktop()
     {
         // Smoke test — `use "@sfz"` on Desktop loads sfz.flow stdlib without
