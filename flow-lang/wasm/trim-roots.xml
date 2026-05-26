@@ -70,5 +70,16 @@
     <type fullname="FlowLang.StandardLibrary.Audio.AudioBuffer" preserve="all" />
     <type fullname="FlowLang.Runtime.Value" preserve="all" />
     <type fullname="FlowLang.Audio.WebAudioBackend" preserve="all" />
+
+    <!-- Phase 48 Plan 48-04: [JSExport] surface + JSON-serialized RunResult shape.
+         WasmEntry's four [JSExport] methods are statically reachable from JS
+         via getAssemblyExports; without this entry the trimmer may strip the
+         partial-static class because it has no in-assembly call sites.
+         RunResult + RunError are reflected on by System.Text.Json.JsonSerializer
+         (IL2026 warning at WasmEntry.cs:283) — preserve their public properties
+         so the camelCase output matches the D-48-14 shape JS expects. -->
+    <type fullname="FlowLang.Runtime.WasmEntry" preserve="all" />
+    <type fullname="FlowLang.Runtime.RunResult" preserve="all" />
+    <type fullname="FlowLang.Runtime.RunError" preserve="all" />
   </assembly>
 </linker>
