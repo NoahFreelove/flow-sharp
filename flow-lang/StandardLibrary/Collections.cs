@@ -319,7 +319,7 @@ public static class Collections
 
     // ===== Higher-Order Functions =====
 
-    private static Value InvokeCallback(ExecutionContext context, FunctionOverload callback, List<Value> args)
+    private static Value InvokeCallback(ExecutionContext context, FunctionOverload callback, IReadOnlyList<Value> args)
     {
         if (callback.IsInternal) return callback.Implementation!(args);
         return context.Invoker!.ExecuteUserFunctionWithCaptures(callback.Declaration!, args, callback.CapturedVariables);
@@ -330,9 +330,12 @@ public static class Collections
         var arr = args[0].As<IReadOnlyList<Value>>();
         var callback = args[1].As<FunctionOverload>();
 
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[1];
         foreach (var element in arr)
         {
-            InvokeCallback(context, callback, new List<Value> { element });
+            buffer[0] = element;
+            InvokeCallback(context, callback, buffer);
         }
 
         return Value.Void();
@@ -344,9 +347,12 @@ public static class Collections
         var callback = args[1].As<FunctionOverload>();
 
         var results = new List<Value>();
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[1];
         foreach (var element in arr)
         {
-            results.Add(InvokeCallback(context, callback, new List<Value> { element }));
+            buffer[0] = element;
+            results.Add(InvokeCallback(context, callback, buffer));
         }
 
         if (results.Count == 0)
@@ -365,9 +371,12 @@ public static class Collections
         var callback = args[1].As<FunctionOverload>();
 
         var results = new List<Value>();
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[1];
         foreach (var element in arr)
         {
-            var result = InvokeCallback(context, callback, new List<Value> { element });
+            buffer[0] = element;
+            var result = InvokeCallback(context, callback, buffer);
             if (result.As<bool>())
                 results.Add(element);
         }
@@ -386,9 +395,13 @@ public static class Collections
         var callback = args[2].As<FunctionOverload>();
 
         var accumulator = initial;
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[2];
         foreach (var element in arr)
         {
-            accumulator = InvokeCallback(context, callback, new List<Value> { accumulator, element });
+            buffer[0] = accumulator;
+            buffer[1] = element;
+            accumulator = InvokeCallback(context, callback, buffer);
         }
 
         return accumulator;

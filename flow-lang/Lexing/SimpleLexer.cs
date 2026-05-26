@@ -1174,7 +1174,7 @@ public class SimpleLexer
                     Advance();
                 }
             }
-            else if (c == 'N' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("Note:"))
+            else if (c == 'N' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("Note:".AsSpan()))
             {
                 // Skip comment until end of line
                 while (!IsAtEnd() && Peek() != '\n')
@@ -1197,7 +1197,7 @@ public class SimpleLexer
                 }
             }
             // Phase 31 REQ-4 (SPEC-4): `TODO:` lead-in line comment (mirrors the `Note:` arm above).
-            else if (c == 'T' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("TODO:"))
+            else if (c == 'T' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("TODO:".AsSpan()))
             {
                 while (!IsAtEnd() && Peek() != '\n')
                 {
@@ -1205,7 +1205,7 @@ public class SimpleLexer
                 }
             }
             // Phase 31 REQ-4 (SPEC-4): `FIXME:` lead-in line comment.
-            else if (c == 'F' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("FIXME:"))
+            else if (c == 'F' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("FIXME:".AsSpan()))
             {
                 while (!IsAtEnd() && Peek() != '\n')
                 {
