@@ -800,32 +800,37 @@ private bool SetStrict(bool on)
 | A8 | The 13 §6a clamp sites are entirely in `TransformFunctions.cs` (lines 106-107, 649-650, 657-658, 666-667, 785, 821, 904, 960, 1106) and NO separate `Swing.cs` exists. CONTEXT integration-points wording mentions `Swing.cs` but the actual swing clamp lives at TransformFunctions:106-107 inside `quantize` | Site Inventory | Plan-phase searches for missing `Swing.cs` and gets confused |
 | A9 | OverloadResolver passes a `bool strictMode = false` defaulted parameter through `Resolve` → `Matches` — backward compatible | Pattern 4, Pitfall 4 | If a third-party caller exists for `OverloadResolver` directly, it inherits non-strict (correct default) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **D-11 equality semantics discrepancy.**
    - What we know: CONTEXT D-11 says "(equals a b) cross-type → returns false in strict (per ROADMAP — set-theoretic, not error). Same as non-strict for this builtin." Current `Utils.LooseEquals` returns TRUE for `(equals 1 1.0)` via numeric coercion.
    - What's unclear: Does Phase 44 (a) flip `Utils.LooseEquals` to type-strict (breaking change to non-strict callers), (b) keep non-strict charitable + only strict returns false (matches D-12 pattern for other operators), (c) deprecate `(equals)` cross-type entirely?
    - Recommendation: Option (b) — non-strict keeps existing LooseEquals behavior; strict path returns Value.Bool(false) for cross-type. Confirm with composer at plan-phase. Pin an xUnit Fact in the strict suite either way.
+   - **RESOLVED:** Option (b) adopted in Plan 44-09 Task 2 — `Utils.LooseEqualsStrict` short-circuits cross-type to `false` under `ctx.CallerStrictMode`; non-strict `LooseEquals` unchanged. CrossTypeComparisonStrictTests pins both behaviors (Fact_EqualsIntDouble_Strict_ReturnsFalse + Fact_EqualsIntDouble_NonStrict_ReturnsTrue).
 
 2. **`(and)` / `(or)` Lisp-style last-truthy return.**
    - What we know: CONTEXT D-12 says non-strict `(and)`/`(or)` "keep Lisp-style last-truthy return". Current `StdLib.And` returns `Value.Bool(rres)` — always Bool, never the actual underlying value.
    - What's unclear: Is "last-truthy" wording aspirational (composer-stated desired behavior) or descriptive (current behavior)? If aspirational, this is a behavior change.
    - Recommendation: Read existing test fixtures (`tests/test_lazy_eval.flow` etc.) for current `(and)` semantics. If aspirational, ship under Phase 44; if descriptive, current code already complies. Likely aspirational — implication: pre-strict bug fix may include "promote `(and)`/`(or)` return type to Void wildcard, return left or right Value directly."
+   - **RESOLVED:** Aspirational, per composer's 44-DISCUSSION-LOG Area 4.2 choice (line 151: "Non-strict: returns last truthy `"foo"`"). Plan 44-08 Task 3 implements non-strict `(and)`/`(or)` last-truthy semantics as a v1.5 breaking change (pre-traction latitude per D-v1.5-01 + project_pre_public_no_legacy_burden memo). Strict `(and Bool Bool)` still returns Bool (Plan 44-09 unaffected). xUnit Facts pin `(and 1 "foo")` → `"foo"`, `(or false 42)` → `42`, `(and false 1)` → `false`, `(or "" "fallback")` → `"fallback"`.
 
 3. **OverloadResolver tier disable: predicate on `Matches()` vs filter on ranked candidates.**
    - What we know: Two implementation routes (see Pattern 4 alternatives table).
    - What's unclear: Which is cheaper for the ~5x existing `OverloadResolver` test fixtures?
    - Recommendation: Filter in `Matches()` per Pitfall 1. Drop-in single-predicate change; ranked-candidate filtering complicates ambiguous-overload diagnostics (line 235-244).
+   - **RESOLVED:** Plan 44-03 adopts the `Matches()`-filter route per the recommendation; ranked-candidate filtering rejected (OverloadResolverStrictTierTests verify the +100 tier is disabled while +500/+1000 paths are preserved).
 
 4. **Pre-strict bug fix may break existing `(print someValue)` patterns in tests.**
    - What we know: `print(String)` overload is currently the only registration. Adding `print(Void)` Void-wildcard makes `(print 42)` work.
    - What's unclear: Are there existing tests that depend on `(print 42)` FAILING?
    - Recommendation: Grep `tests/test_*.flow` for `(print <non-string>)` patterns. If any tests assert the failure, update them (they are testing pre-strict-bug behavior).
+   - **RESOLVED:** Plan 44-08 Task 1 verify block executes `tests/test_buffer_printing.flow` + `tests/test_comprehensive.flow` after the Void-wildcard `print` registration lands; any test asserting the pre-bug failure is updated in that task per its acceptance criteria. Pitfall 3 ensures `(print "hello")` continues routing to the explicit String overload via +1000 score (Fact_PrintHelloStillRoutesToStringPath pins).
 
 5. **`enable strict;` and `live` block edit-time check timing.**
    - What we know: Phase 38 LIVE-01 advisory fires at live-block ENTRY (run time, not parse time). Phase 44 strict checks fire at OverloadResolver/builtin-entry time (also run time).
    - What's unclear: Per D-15, composer "gets type safety AT EDIT TIME via Phase 38 LIVE-03 stale-closure gating" — but type safety is a parse-time + dispatch-time check, not an edit-time check. Edit-time would require LSP integration.
    - Recommendation: D-15 wording "at edit time" means "at the moment composer types `enable strict;` and saves; on next reload, body runs strict." Not an LSP claim. Plan-phase clarifies.
+   - **RESOLVED:** Plan 44-10 Task 2 LiveBlockStrictTests (Fact_LiveReloadAddStrictPragma_BodyRerunStrict) pins the "next reload" behavior — Pattern 7 auto-apply via fresh-engine PragmaScanner re-eval. No LSP plumbing; the "edit time" wording is interpreted as "next save-then-reload cycle." Plan 44-10 manual-verification section documents that watch-mode file-system-event timing is inherited from Phase 38 LIVE-02 (see W12 note).
 
 ## Environment Availability
 
