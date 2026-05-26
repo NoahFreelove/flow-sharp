@@ -214,6 +214,9 @@ public static class TypeParser
             // Phase 36 Plan 36-07: LsystemModel is the 18th SpecialType. Required so
             // `LsystemModel m = (lsystemModel #A rules)` declarations parse.
             TokenType.Identifier when token.Text == "LsystemModel" => LsystemModelType.Instance,
+            // Phase 38 Plan 38-06: OscHandle is the 19th SpecialType. Required so
+            // `OscHandle h = (oscListen 7777 "/x" handler)` declarations parse + `use "@osc"` imports.
+            TokenType.Identifier when token.Text == "OscHandle" => OscHandleType.Instance,
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -342,6 +345,7 @@ public static class TypeParser
             "Sfz" => SfzType.Instance,       // Phase 33 Plan 33-05
             "MarkovModel" => MarkovModelType.Instance, // Phase 36 Plan 36-06
             "LsystemModel" => LsystemModelType.Instance, // Phase 36 Plan 36-07
+            "OscHandle" => OscHandleType.Instance, // Phase 38 Plan 38-06
             "Function" => FunctionType.Instance,
             _ => null
         };

@@ -337,7 +337,7 @@ Plans:
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
-| 38. Live Coding 2.0 | v1.5 | 7/7 | Complete | 2026-05-24 |
+| 38. Live Coding 2.0 | v1.5 | 7/7 | Complete    | 2026-05-24 |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
@@ -353,7 +353,12 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 42 to break down)
+
+**Cross-cutting constraints:**
+
+- Existing flow-lang.Tests suite remains green — zero production code touched
 
 ### Phase 43: Module Names & Qualified Imports
 
@@ -363,6 +368,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 43 to break down)
 
 ### Phase 44: Strict Mode
@@ -382,4 +388,5 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 44 to break down)

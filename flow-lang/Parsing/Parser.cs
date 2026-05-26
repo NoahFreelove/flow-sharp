@@ -1950,7 +1950,8 @@ public partial class Parser
                 or "Tuning"  // Phase 32 Plan 32-04 — `Tuning t = (loadScala ...)` annotation gate
                 or "Sfz"  // Phase 33 Plan 33-05 — `Sfz v = (loadSfz #...)` annotation gate
                 or "MarkovModel"  // Phase 36 Plan 36-06 — `MarkovModel m = (markovTrain ...)` annotation gate
-                or "LsystemModel")  // Phase 36 Plan 36-07 — `LsystemModel m = (lsystemModel ...)` annotation gate
+                or "LsystemModel"  // Phase 36 Plan 36-07 — `LsystemModel m = (lsystemModel ...)` annotation gate
+                or "OscHandle")  // Phase 38 Plan 38-06 — `OscHandle h = (oscListen ...)` annotation gate
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)
