@@ -7,7 +7,7 @@
 - ✅ **v1.2 Stability & Composer DX** — Phases 11-17 (shipped 2026-04-26) — see `milestones/v1.2-ROADMAP.md`
 - ✅ **v1.3 Composer DX Tier B/C** — Phases 18-27 (with 26.1 + 26.2 inserted, shipped 2026-05-10)
 - ✅ **v1.4 Audio Fidelity, Distribution & Public Showcase** — Phases 28-34 (shipped 2026-05-16) — runtime-fidelity rewrite (per-voice polyphony, articulation system, richer instrument timbres), distribution wedge (`flow` CLI + formal install + MIDI↔Flow conversion), LSP polish + JetBrains plugin scaffolding, full Scala (`.scl`) microtonal loader, full SFZ orchestral sampler, and the curated symphony showcase ("In Five Voices") + ragtime companion ("Stride & Stomp") as the milestone closer (pre-public → public pivot). Release: [v1.4.0](https://github.com/NoahFreelove/flow-sharp/releases/tag/v1.4.0)
-- 🚧 **v1.5 Stage, Studio, Web** — Phases 35-41 (started 2026-05-17) — citizenship + reach milestone: pattern matching + Rust-style diagnostics + pure-Flow test framework (Phase 35), Tidal-style sequence algebra + generative primitives + improv API (Phase 36), granular synthesis + time-stretch/pitch-shift + stereo pan + sampler polish (Phase 37), `live { ... }` block + modernized watch + REPL polish + audio input + OSC (Phase 38), MusicXML/LilyPond export + ABC/MML import (Phase 39), real-time MIDI + clock + Link + JACK transport sync (Phase 40), WASM playground + cross-platform binaries + `flow doc` + JetBrains Marketplace publish + third-genre showcase (Phase 41). 66 requirements across 7 phases.
+- 🚧 **v1.5 Stage, Studio, Web** — Phases 35-44 (started 2026-05-17) — citizenship + reach milestone: pattern matching + Rust-style diagnostics + pure-Flow test framework (Phase 35), Tidal-style sequence algebra + generative primitives + improv API (Phase 36), granular synthesis + time-stretch/pitch-shift + stereo pan + sampler polish (Phase 37), `live { ... }` block + modernized watch + REPL polish + audio input + OSC (Phase 38), MusicXML/LilyPond export + ABC/MML import (Phase 39), real-time MIDI + clock + Link + JACK transport sync (Phase 40), WASM playground + cross-platform binaries + `flow doc` + JetBrains Marketplace publish + third-genre showcase (Phase 41), type system + stdlib audit (Phase 42), module names + qualified imports (Phase 43), `enable strict;` mode (Phase 44). Phases 42-44 added 2026-05-24 to address stdlib growth pressure (collisions, dead-end types, charitable-default escape hatch). 66 requirements across 7 original phases + Phase 42-44 TBD at plan-phase.
 
 ## Phases
 
@@ -232,8 +232,8 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 38-03-PLAN.md — State preservation across reload: Voice.Name + DiffByVoiceName + LambdaCaptureAuditor + PRNG reseed at swap (LIVE-03, LIVE-02)
-- [ ] 38-06-PLAN.md — OSC: Rug.Osc + oscSend/oscListen/oscStop/oscBundle/oscSendBundle + charitable type-tag inference (OSC-01..02)
+- [x] 38-03-PLAN.md — State preservation across reload: Voice.Name + DiffByVoiceName + LambdaCaptureAuditor + PRNG reseed at swap (LIVE-03, LIVE-02)
+- [x] 38-06-PLAN.md — OSC: Rug.Osc + oscSend/oscListen/oscStop/oscBundle/oscSendBundle + charitable type-tag inference (OSC-01..02)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
@@ -337,7 +337,49 @@ Plans:
 | 35. Language Foundation | v1.5 | 7/7 | Complete | 2026-05-19 |
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
-| 38. Live Coding 2.0 | v1.5 | 4/7 | In Progress|  |
+| 38. Live Coding 2.0 | v1.5 | 6/7 | In Progress|  |
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
+| 42. Type System & Stdlib Audit | v1.5 | 0/0 | Not started | - |
+| 43. Module Names & Qualified Imports | v1.5 | 0/0 | Not started | - |
+| 44. Strict Mode | v1.5 | 0/0 | Not started | - |
+
+### Phase 42: Type System & Stdlib Audit
+
+**Goal**: Graphify-driven sweep of the FlowType ↔ builtin-signature graph to surface orphaned types, missing conversions, asymmetric pairs (e.g., `Beat` arithmetic exists but no `Beat → Second` at tempo context), and dead-end builtins (the historical "Decibel type exists but no function accepts it" pattern). Produces prioritized `AUDIT.md` gap list that feeds Phases 43 + 44. Cheapest of the v1.5 closeout trio — runs first because strict mode (Phase 44) needs every clamp/courtesy/advisory site inventoried up front, and module naming (Phase 43) benefits from knowing which stdlib functions collide today.
+**Depends on**: None. Informs Phases 43 + 44.
+**Requirements**: TBD (defined at plan-phase)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 42 to break down)
+
+### Phase 43: Module Names & Qualified Imports
+
+**Goal**: Address growing stdlib name-collision pressure (already feeling it with `gain` vs `volume`; `math.sin` vs other `sin` is the imminent case) by introducing file-level module declarations (e.g., `module math` at top of `.flow` files) and qualified access (`math.sin`). Unqualified-by-default with explicit qualification as the escape hatch — ergonomics-first per `feedback_ergonomics_priority`, composers shouldn't have to type `math.sin` for everything. Existing `use "@x"` import mechanism extends to register module names; collisions across imported modules resolved by qualified-access fallback.
+**Depends on**: Phase 42 (audit informs which stdlib functions need namespace separation first — likely candidates: math/audio/harmony/transforms).
+**Requirements**: TBD (defined at plan-phase)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 43 to break down)
+
+### Phase 44: Strict Mode
+
+**Goal**: Opt-in "don't be like JavaScript" mode for composers writing reliable Flow code (test fixtures, shared snippets, large pieces). `enable strict;` file pragma (matches `enable justIntonation;` precedent — file-scoped, no stdlib propagation; stdlib stays charitable so strict files can still call it). Two axes of strictness, both at the input perimeter — internal algorithm behavior (PSOLA, HPS, phase vocoder, voice allocation, Markov internals) unchanged:
+
+  - **Axis A — No type coercions.** `OverloadResolver`'s convertible (+100) tier is disabled in strict files; only exact (+1000) and compatible (+500) match. `(gain buf -12.0)` → error in strict; `(gain buf -12dB)` required. `(reverb buf 2.5)` → error; `(reverb buf 2.5s)` required. `(add 1 2.5)` → error; `(add (float 1) 2.5)` required. Requires new explicit-conversion builtins: `(db x)`, `(hz x)`, `(ms x)`, `(sec x)`, `(cents x)`, `(semitones x)` — verify `(float x)`/`(int x)`/`(double x)`/`(long x)` coverage at planning time.
+  - **Axis B — Input-domain clamps become errors.** Every `Math.Clamp` + courtesy-fallback site in stdlib gets `if (ctx.StrictMode) throw; else clamp+advisory`. Examples: `markov order=5` → error (not clamp-to-3), `lsystem iterations=25` → error (not clamp-to-20), `cellular width=2048` → error (not clamp-to-1024), `granular windowing=#unknown` → error (not Hann fallback), `[tuning] unmapped MIDI key` → error (not rest+advisory), `seq_length>100` SFZ → error (not clamp+WarnOnce), `[abc]` unknown ornament → error (not drop+advisory).
+  - **Truthy + stringy strictness.** `if` requires Bool, `print` requires String, `(equals 1 1.0)` returns `false` in strict (no numeric coercion); cross-type equality blocked.
+
+**Pre-strict bug fix bundled in this phase**: `print` is registered today with signature `[StringType.Instance]` (`flow-lang/StandardLibrary/BuiltInFunctions.cs:150-154`), so `(print 42)` already fails overload resolution — contradicts ergonomics-first philosophy. Phase 44 fixes non-strict `print`/`if` to be charitable (auto-str / truthy-coerce), then strict re-tightens them. Composers get the right default in both modes.
+
+**Tension flag**: Axis B contradicts `feedback_charitable_interpretation` head-on. Resolved by file-scoped opt-in — charitable behavior remains the default for all non-strict files (including the entire stdlib). Phase plan must preserve charitable behavior as the default everywhere; strict is purely an additive switch.
+
+**Depends on**: Phase 42 (audit provides the clamp/advisory site inventory needed to confidently enumerate Axis B sites — missing any one regresses the strict contract). Phase 43 optional but useful for organizing strict-mode test files.
+**Requirements**: TBD (defined at plan-phase)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 44 to break down)
