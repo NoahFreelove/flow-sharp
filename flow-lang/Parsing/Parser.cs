@@ -170,6 +170,15 @@ public partial class Parser
             if (Match(TokenType.Tuning))
                 return ParseTuningContextStatement();
 
+            // Phase 38 D-38-02 LIVE-01: `live <quantize> { ... }` block. Quantize
+            // accepts Int + optional `bar`/`bars` suffix, a NoteValue identifier
+            // (`q`/`h`/`w`/`e`/`s`), or is omitted entirely (defaults to 1bar).
+            // BlockId is FNV-1a of the keyword's SourceLocation so the runtime
+            // LiveBlockRegistry slot survives re-renders per D-38-02 independent
+            // multi-block swap.
+            if (Match(TokenType.Live))
+                return ParseLiveBlockStatement();
+
             // Section declaration: section name { ... }
             if (Match(TokenType.Section))
                 return ParseSectionDeclaration();
@@ -923,6 +932,102 @@ public partial class Parser
         Expect(TokenType.RBrace, "Expected '}' to close tuning context block");
 
         return new TuningContextStatement(tuningLocation, tuningExpr, body, Span: new Span(tuningLocation, PreviousToken.Location));
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-02 LIVE-01 — parses a <c>live &lt;quantize&gt; { ... }</c>
+    /// block per RESEARCH §A lines 414-457. The <c>live</c> keyword has already
+    /// been consumed by <see cref="ParseStatement"/>; <see cref="PreviousToken"/>
+    /// carries its location.
+    ///
+    /// <para>
+    /// Quantize forms (D-38-02):
+    /// <list type="bullet">
+    ///   <item><c>live 1bar { }</c> / <c>live 2bars { }</c> — Int literal with
+    ///   optional <c>bar</c>/<c>bars</c> identifier suffix. The integer becomes
+    ///   the literal payload; the suffix is consumed when present and ignored
+    ///   in the AST shape (the runtime interprets a bare Int as bars).</item>
+    ///   <item><c>live q { }</c> — NoteValue identifier (<c>q</c>/<c>h</c>/<c>w</c>/<c>e</c>/<c>s</c>).
+    ///   Captured as a String LiteralExpression so the interpreter can map it
+    ///   to its beat fraction via <see cref="FlowLang.TypeSystem.SpecialTypes.NoteValueType"/>.</item>
+    ///   <item><c>live { }</c> — quantize omitted. Parser synthesizes a
+    ///   <c>LiteralExpression(location, 1)</c> as the 1-bar default per the
+    ///   plan's must-haves; the interpreter resolves to 1 × beats-per-bar.</item>
+    /// </list>
+    /// </para>
+    /// </summary>
+    private LiveBlockStatement ParseLiveBlockStatement()
+    {
+        // The `live` keyword has already been consumed by the dispatch in
+        // ParseStatement (via Match). PreviousToken is the `live` keyword.
+        var location = PreviousToken.Location;
+
+        Expression quantizeValue;
+
+        if (Check(TokenType.LBrace))
+        {
+            // Omitted — synthesize the 1-bar default at the `live` keyword's
+            // location so error reporting + BlockId stability anchor on the
+            // composer's source line.
+            quantizeValue = new LiteralExpression(location, 1, Span: Span.At(location));
+        }
+        else if (Check(TokenType.IntLiteral))
+        {
+            // Int + optional `bar`/`bars` suffix.
+            var intLoc = CurrentToken.Location;
+            int intVal = (int)Advance().Value!;
+            quantizeValue = new LiteralExpression(intLoc, intVal, Span: Span.At(intLoc));
+            // Consume optional "bar" / "bars" suffix when present.
+            if (Check(TokenType.Identifier)
+                && (CurrentToken.Text == "bar" || CurrentToken.Text == "bars"))
+            {
+                Advance();
+            }
+        }
+        else if (Check(TokenType.Identifier)
+            && (CurrentToken.Text == "q" || CurrentToken.Text == "h"
+                || CurrentToken.Text == "w" || CurrentToken.Text == "e"
+                || CurrentToken.Text == "s"))
+        {
+            // NoteValue identifier (q/h/w/e/s). Capture as a String literal
+            // so the interpreter routes through NoteValueType.Parse for the
+            // beats-per-unit resolution.
+            var nvToken = Advance();
+            quantizeValue = new LiteralExpression(nvToken.Location, nvToken.Text, Span: Span.At(nvToken.Location));
+        }
+        else
+        {
+            throw new ParseException(
+                $"Expected quantize unit (Int + 'bar'/'bars', or NoteValue q/h/w/e/s, or '{{' for 1-bar default), got {CurrentToken.Type} '{CurrentToken.Text}' at {CurrentToken.Location}");
+        }
+
+        Expect(TokenType.LBrace, "Expected '{' to open live block body");
+
+        var body = new List<Statement>();
+        while (!Check(TokenType.RBrace) && !IsAtEnd())
+        {
+            while (Match(TokenType.Semicolon)) ; // skip semicolons
+
+            if (Check(TokenType.RBrace) || IsAtEnd())
+                break;
+
+            var stmt = ParseStatement();
+            if (stmt != null)
+                body.Add(stmt);
+
+            Match(TokenType.Semicolon);
+        }
+
+        Expect(TokenType.RBrace, "Expected '}' to close live block body");
+
+        int blockId = LiveBlockStatement.ComputeBlockId(location);
+
+        return new LiveBlockStatement(
+            location,
+            quantizeValue,
+            body,
+            blockId,
+            Span: new Span(location, PreviousToken.Location));
     }
 
     private ForStatement ParseForStatement()

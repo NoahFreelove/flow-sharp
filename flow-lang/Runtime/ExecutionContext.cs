@@ -141,6 +141,21 @@ public class ExecutionContext
     public PrngRegistry PrngRegistry { get; } = new();
 
     /// <summary>
+    /// Phase 38 Plan 38-02 (LIVE-01 / D-38-02) — per-context registry of the
+    /// composer's active <c>live &lt;quantize&gt; { ... }</c> blocks, keyed by
+    /// <see cref="FlowLang.Ast.Statements.LiveBlockStatement.BlockId"/> (FNV-1a
+    /// of source location). The <see cref="Interpreter.Interpreter"/>'s
+    /// <c>ExecuteLiveBlock</c> branch registers each block on initial run; Plan
+    /// 38-03's <c>LiveReloadManager.StagePendingBuffers</c> consumes the
+    /// <see cref="LiveBlockRegistry.Snapshot"/> at swap time to diff old vs.
+    /// new and stage per-block pending buffers. Mirrors the
+    /// <see cref="PrngRegistry"/> shape — singleton-per-context,
+    /// <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey, TValue}"/>-backed
+    /// for the background-render + audio-thread two-actor pattern.
+    /// </summary>
+    public LiveBlockRegistry LiveBlockRegistry { get; } = new();
+
+    /// <summary>
     /// Phase 36 Plan 36-11 (D-36-12, IMPROV-01) — style-pack registry keyed by
     /// Symbol-typed <see cref="Value"/>. Populated at FlowEngine init by
     /// <c>StyleRegistry.LoadAtEngineInit</c> (shipped packs at

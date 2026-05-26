@@ -545,6 +545,15 @@ Note: ===== Voice Allocation =====
 Note: Set the maximum number of simultaneous voices (default 32)
 internal proc setMaxVoices(Int: maxVoices)
 
+Note: ===== Phase 38 AUDIO-IN-01/02 — microphone capture =====
+
+Note: Capture audio from the default PulseAudio input device for `duration` seconds.
+Note: Auto-attenuates -20 dB on open (Pitfall #24 feedback guard).
+Note: Resamples to 44.1 kHz via linear interpolation when device native rate differs.
+Note: Returns a composable Buffer — chains with mix / play / writeWav / granular.
+internal proc micBuffer(Second: duration)
+internal proc micBuffer(Double: duration)
+
 Note: ===== Custom Oscillator Registration =====
 
 Note: Register a custom wavetable oscillator via generator function (default 2048 table size)

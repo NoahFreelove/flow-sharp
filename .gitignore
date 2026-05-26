@@ -180,6 +180,14 @@ examples/ragtime/*.mid
 !flow-lang.Tests/fixtures/sfz-smoke/**/*.wav
 !flow-lang.Tests/fixtures/sfz-smoke/**/*.md
 
+# Phase 38 Plan 38-05 AUDIO-IN-01/02 — mic capture-path fixture
+# (1s sine 440Hz @ 48 kHz mono PCM, ~96 KB) — synthetic, deterministic,
+# regenerable via Tools/Phase38FixtureGenerator. Mirrors the Phase 33
+# sfz-smoke precedent — must be tracked despite the global *.wav ignore.
+!flow-lang.Tests/Integration/Phase38/
+!flow-lang.Tests/Integration/Phase38/**
+!flow-lang.Tests/Integration/Phase38/**/*.wav
+
 # Phase 33 SFZ stdlib module (flow-lang/sfz.flow) — opt-in @sfz surface that
 # composers import via `use "@sfz"`. Must be tracked despite the global *.flow
 # ignore. Mirrors the existing flow-lang/audio.flow / notation.flow / std.flow

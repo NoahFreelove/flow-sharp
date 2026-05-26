@@ -1,0 +1,34 @@
+Note: Phase 38 Plan 38-05 AUDIO-IN-02 smoke — exercises the headline
+Note: composability claim: (micBuffer) chains with (granular) + writeWav.
+Note:
+Note: REQUIRES either:
+Note:   - a real PulseAudio default input device on the host (Linux with
+Note:     working microphone), OR
+Note:   - the in-process test seam InputFunctions.CaptureOverride which is
+Note:     exercised end-to-end by flow-lang.Tests/Integration/Phase38/
+Note:     MicBuffer{Attenuation,Resample}Tests (no .flow surface — the seam
+Note:     ships in v1.6 if composer demand surfaces per CONTEXT D-38-* deferred).
+Note:
+Note: AUTOMATED COVERAGE (preferred): the 6 xUnit Facts under
+Note:   flow-lang.Tests/Integration/Phase38/MicBuffer*Tests.cs cover the same
+Note:   composability surface using the test seam; they pass without
+Note:   PulseAudio. This .flow file is the composer-facing manual smoke kept
+Note:   for the Plan 38-07 closer to exercise on a real-mic host.
+Note:
+Note: MANUAL SMOKE (developer machine with mic):
+Note:   $ dotnet run --project flow-interpreter tests/test_audio_in_pipeline.flow
+Note: Expected: prints PASS sentinel + writes /tmp/test_audio_in.wav
+
+use "@std"
+use "@audio"
+
+Note: 1-second mic capture with the locked -20 dB feedback guard applied.
+Buffer mic = (micBuffer 1.0s)
+
+Note: Granular texture — Phase 37 DSP-01 composes with mic input.
+Buffer textured = (granular mic 50ms 20Hz 0.3)
+
+Note: Write the textured capture out to disk.
+(writeWav "/tmp/test_audio_in.wav" textured)
+
+(print "PASS: audio-in pipeline composes with granular + writeWav")
