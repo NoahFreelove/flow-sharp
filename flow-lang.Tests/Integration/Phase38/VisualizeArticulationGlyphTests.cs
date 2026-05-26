@@ -32,7 +32,7 @@ public class VisualizeArticulationGlyphTests : IDisposable
     }
 
     private static SequenceData BuildSingleNoteSequence(Articulation articulation,
-        int durationValue = 2 /* half note */)
+        int durationValue = (int)NoteValueType.Value.HALF /* ordinal 1 = half note */)
     {
         var note = new MusicalNoteData(
             noteName: 'C', octave: 4, alteration: 0,
@@ -67,7 +67,7 @@ public class VisualizeArticulationGlyphTests : IDisposable
     [Fact]
     public void AccentNote_RendersAngleBracketAtOnset()
     {
-        var rendered = Render(BuildSingleNoteSequence(Articulation.Accent, durationValue: 2));
+        var rendered = Render(BuildSingleNoteSequence(Articulation.Accent, durationValue: (int)NoteValueType.Value.HALF));
         Assert.Contains(">", rendered);
         // The onset is followed by sustain '#' cells — this asserts the composition.
         Assert.Contains(">#", rendered);
@@ -88,7 +88,7 @@ public class VisualizeArticulationGlyphTests : IDisposable
     [InlineData(Articulation.Normal, '#')]
     public void AllSixArticulations_RenderCorrectGlyphs(Articulation articulation, char expectedGlyph)
     {
-        var rendered = Render(BuildSingleNoteSequence(articulation, durationValue: 2));
+        var rendered = Render(BuildSingleNoteSequence(articulation, durationValue: (int)NoteValueType.Value.HALF));
         Assert.Contains(expectedGlyph.ToString(), rendered);
     }
 
@@ -99,8 +99,10 @@ public class VisualizeArticulationGlyphTests : IDisposable
     [Fact]
     public void SingleCellStaccato_RendersDotOnly()
     {
-        // sixteenth note (durationValue 16) — 0.25 beats × 2 columns/beat = 0.5 → rounds to ~1 col
-        var rendered = Render(BuildSingleNoteSequence(Articulation.Staccato, durationValue: 16));
+        // Sixteenth note — ordinal 4 in NoteValueType.Value.
+        // 0.25 beats × 2 columns/beat = 0.5 → rounds to ~1 col (single-cell per UI-SPEC line 211).
+        var rendered = Render(BuildSingleNoteSequence(Articulation.Staccato,
+            durationValue: (int)NoteValueType.Value.SIXTEENTH));
         Assert.Contains(".", rendered);
         // Crude guard: there should NOT be a `.#` adjacency anywhere in the grid rows
         // (the staccato cell collapses to a single dot).
@@ -115,7 +117,7 @@ public class VisualizeArticulationGlyphTests : IDisposable
     [Fact]
     public void NormalArticulation_PreservesPrePhase38Output()
     {
-        var rendered = Render(BuildSingleNoteSequence(Articulation.Normal, durationValue: 2));
+        var rendered = Render(BuildSingleNoteSequence(Articulation.Normal, durationValue: (int)NoteValueType.Value.HALF));
         Assert.Contains("#", rendered);
         // No new glyphs introduced for a Normal-only sequence
         Assert.DoesNotContain(">", rendered);
