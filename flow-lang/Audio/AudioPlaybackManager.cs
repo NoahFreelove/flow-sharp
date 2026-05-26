@@ -137,6 +137,18 @@ public sealed class AudioPlaybackManager : IDisposable
 
     private static IAudioBackend DetectBackend()
     {
+        // Phase 47 D-47-06: Web target probe FIRST. OperatingSystem.IsBrowser()
+        // is a JIT intrinsic — constant-false on every Desktop platform, so the
+        // Mono-WASM linker dead-code-eliminates the WebAudioBackend instantiation
+        // on trim-mode Desktop builds (per D-47-07). On Mono-WASM the same
+        // intrinsic returns true and this branch wins before any P/Invoke probe
+        // would have run. Phase 47 ships the stub; Phase 48 fills the [JSImport]
+        // bodies — until then a Web build that calls Play() will throw
+        // PlatformNotSupportedException with a clear stub message.
+        if (WebAudioBackend.IsAvailable())
+            return new WebAudioBackend();
+
+#if !FLOW_WEB
         // macOS: prefer CoreAudio via AudioToolbox.framework. AudioToolbox is a
         // system framework so this should always succeed on a standard install.
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
@@ -151,6 +163,7 @@ public sealed class AudioPlaybackManager : IDisposable
         // PipeWire provides a PulseAudio compatibility layer.
         if (PulseAudioSimpleBackend.IsAvailable())
             return new PulseAudioSimpleBackend();
+#endif
 
         throw new PlatformNotSupportedException(
             "No audio output available. On Linux, install PipeWire or PulseAudio. " +
