@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 47 Plan 05 shipped (AssemblyReferenceScanTests + Mono.Cecil 0.11.5)
-last_updated: "2026-05-26T01:56:00Z"
-last_activity: 2026-05-26 -- Phase 47 Plan 05 shipped (Mono.Cecil reflective scan of Web flow-lang.dll; 2127 PASS / 9 SKIP / 0 FAIL on Desktop)
+stopped_at: Phase 47 SHIPPED 2026-05-25 (Compile-Target Flavors — FlowTarget=Desktop|Web MSBuild conditioning)
+last_updated: "2026-05-26T02:05:00Z"
+last_activity: 2026-05-26 -- Phase 47 closer shipped — 6/6 plans complete; FlowTarget=Web build clean end-to-end (flow-lang + flow-lang.Tests); Phase 48 unblocked
 progress:
   total_phases: 15
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 71
   completed_plans: 60
-  percent: 47
+  percent: 64
 ---
 
 # Project State
@@ -21,19 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 47 — compile-target flavors (FlowTarget=Desktop|Web)
+**Current focus:** Phase 47 SHIPPED 2026-05-25 — Phase 48 (WASM Runtime + WebAudioBackend) unblocked
 
 ## Current Position
 
-Phase: 47
-Plan: 47-06 (next — closer)
-Last completed: 47-05 (Mono.Cecil 0.11.5 PackageReference + AssemblyReferenceScanTests with 2 [FlowTargetFact("Web")] Facts — commits `5c6129c` + `25b40ea`)
-Next step: continue Phase 47 execution OR `/clear` then:
+Phase: 47 -- shipped 2026-05-25
+Plan: 6/6 complete
+Next step: `/clear` then one of:
 
-  - Plan 47-06 (closer) — Phase 47 VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + Sfz/Osc-referencing test-file tag sweep (18 files identified in 47-04-SUMMARY.md — must tag Desktop-only OR strip via `#if !FLOW_WEB` so `dotnet test -p:FlowTarget=Web` compiles, unblocking the 2 new AssemblyReferenceScanTests Facts to execute on Web)
+  - `/gsd:plan-phase 48` — WASM Runtime + WebAudioBackend (unblocked by Phase 47; consumes FlowTarget=Web build infrastructure + WebAudioBackend stub + AssemblyReferenceScanTests invariant + DryWetMidi WASM-compat verified)
+  - `/gsd:plan-phase 45` — Beat Literal Syntax & True-to-Sig Pragma (independent of Phase 47; carryover from Phase 43)
+  - `/gsd:context-phase 40` — Studio Sync (carryover; orthogonal to 47-49 track)
 
-Status: Ready to execute
-Last activity: 2026-05-26 -- Phase 47 Plan 05 shipped (Mono.Cecil reflective scan of Web flow-lang.dll; 2127 PASS / 9 SKIP / 0 FAIL on Desktop)
+Status: Phase 47 closed
+Last activity: 2026-05-26 -- Phase 47 closer landed (6/6 plans complete; FlowTarget=Web build clean end-to-end; Phase 48 unblocked)
+
+**Phase 47 highlights (2026-05-25):**
+
+- `FlowTarget=Desktop|Web` MSBuild conditioning lands in `flow-lang/flow-lang.csproj` (D-47-01..03). Default value Desktop; `dotnet build -p:FlowTarget=Web` activates `FLOW_WEB` preprocessor symbol via Web-conditional `<DefineConstants>`. Conditional `<ItemGroup>` strips 7 files from C# compile (PulseAudioSimpleBackend / PulseAudioCaptureBackend / CoreAudioBackend / Sfz/**/*.cs / OscFunctions / OscHandleData / InputFunctions) + Rug.Osc PackageReference + Samples/sfz.flow/osc.flow from publish output. Convention introduced — future phases reuse (Phase 41 cross-platform binaries; Phase 48 WASM).
+- `Audio/WebAudioBackend.cs` stub class lands implementing IAudioBackend (D-47-05). `IsAvailable()` returns `OperatingSystem.IsBrowser()` — JIT intrinsic dead-code-eliminated on Desktop trim-mode builds. All other surface methods throw `PlatformNotSupportedException` with pinned `"WebAudioBackend stub — Phase 48 will implement via [JSImport]"` message; `Dispose()` is no-op (using-block safe). `AudioPlaybackManager.DetectBackend` adds Web probe as FIRST branch (D-47-06); existing CoreAudio + PulseAudio branches wrapped in `#if !FLOW_WEB`. 7-Fact `WebAudioBackendStubTests` pins the stub contract on Desktop.
+- Central `#if !FLOW_WEB` guards land at the ACTUAL call sites (47-PATTERNS.md §Discrepancy 1 reconciled): `FlowEngine.cs:185` (SfzBuiltins.Register), `FlowEngine.cs:202` (OscFunctions.Register), `BuiltInFunctions.cs:1027` (Audio.InputFunctions.RegisterContextDependent). CONTEXT.md's hypothetical `RegisterSfz()`/`RegisterOsc()`/`RegisterMicInput()`/`RegisterLiveBlock()` wrapper-method approach was wrong — actual sites used. Rule 3 deviation extended the guards to 7 additional consumer-site files (AudioPlaybackManager.IsAudioAvailable + Interpreter + ExecutionContext + Value + SongRenderer + TestSnapshot) to fully close the Web build (13 errors → 0).
+- `FlowEngine.IsWebTarget` (bool) + `FlowEngine.SupportsLiveBlocks` (bool) static properties land near existing `CurrentSampleCache`/`CurrentSfzSampleCache`/`CurrentExecutionContext` static props (D-47-10). Compile-time-constant initializers via `#if FLOW_WEB` ternary; no runtime mutation. Read by Parser (parse-time `live` block gate) and ModuleLoader (stripped-stdlib gate).
+- Parser parse-time gate on `TokenType.Live` at `Parser.cs:220` throws Rust-style ParseException pointing at line when `!FlowEngine.SupportsLiveBlocks`. `LiveBlockStatement.cs` / `LiveBlockRegistry.cs` / `LambdaCaptureAuditor.cs` STAY in Web build (Interpreter.cs:133 case-dispatch + ExecutionContext.cs:292 property would cascade-break if stripped) — parse-time throw prevents construction; AST types remain referenceable but unreachable at runtime.
+- ModuleLoader.LoadModule gates `@sfz` + `@osc` imports on Web with charitable `[target] module '@X' unavailable on Web target — line N. Build with FlowTarget=Desktop to enable, or run with 'flow run script.flow' locally.` advisory via existing `RenderingDiagnostics.WarnOnce` infra + `ModuleLoadResult.Error` return (D-47-09). `@notation-io` + `@patterns` + `@generative` + `@improv` STAY available (pure-Flow stdlibs, hand-rolled XmlWriter — no native deps).
+- `FlowTargetFactAttribute` xUnit attribute lands at `flow-lang.Tests/Helpers/FlowTargetFactAttribute.cs` (D-47-13). Subclasses `Xunit.FactAttribute`; sets inherited `Skip` property when current target doesn't match. `CurrentTarget` const exposed as `"Web"` under `FLOW_WEB`, `"Desktop"` otherwise. Web-side guard test scaffolds shipped: `WebTargetParserTests` (3 Facts) + `WebTargetModuleLoaderTests` (3 Facts incl. negative @notation-io non-gating) + `DryWetMidiWasmCompatTests` (2 cross-target Facts).
+- `AssemblyReferenceScanTests` lands as the long-term invariant gate (D-47-14) — Mono.Cecil 0.11.5 (MIT, jbevain, package-legitimacy-gated) reflective scan asserts zero references to `Rug.Osc` / `RtMidi.Core` / `System.IO.FileSystemWatcher` (type-ref scan) + zero P/Invoke targets matching `libpulse` / `AudioToolbox` (PInvokeInfo scan) + paired negative-check sanity Fact (catches over-stripping). Catches PR drift if a future contributor accidentally re-introduces a stripped dep via transitive reference.
+- DryWetMidi 8.0.3 WASM-compat smoke verified GREEN per D-47-04 forward-look (Plan 47-04 Task 2). 2 `[FlowTargetFact("Desktop", "Web")]` Facts verify `MidiFile.Write` + `MidiFile.Read` end-to-end + `typeof(MidiFile).Assembly` load. **Outcome:** DryWetMidi STAYS in Web build; no follow-up edit needed. `writeMidi` ships on Web target subject to Phase 48 D-48-04 broader Mono-WASM runtime verification.
+- Plan 47-06 closer closed the 18-file test-project Web-build cascade-fail documented in 47-04-SUMMARY.md via two coordinated edits to `flow-lang.Tests/flow-lang.Tests.csproj`: (1) Web-conditional FLOW_WEB DefineConstants propagation so `FlowTargetFactAttribute.CurrentTarget == "Web"` activates under `dotnet test -p:FlowTarget=Web`; (2) conditional `<Compile Remove>` ItemGroup stripping the 18 Sfz/Osc-referencing test files (9 SFZ @ Phase33/Phase37 + 5 OSC @ Phase38 + 4 SFZ @ Unit/Phase33). Now `dotnet build flow-lang.Tests -p:FlowTarget=Web` exits 0 and `dotnet test -p:FlowTarget=Web` executes the 8 Web-only Facts GREEN end-to-end.
+- One new NuGet package added across all 6 Phase 47 plans (Mono.Cecil 0.11.5 — test-only, package-legitimacy gate ratified). Brings flow-lang.dll runtime dependency count UNCHANGED (Mono.Cecil is test-project only); composer-facing Flow language surface gains zero new packages.
 
 **Phase 47 Plan 05 highlights (2026-05-26):**
 
@@ -59,7 +74,7 @@ Last activity: 2026-05-26 -- Phase 47 Plan 05 shipped (Mono.Cecil reflective sca
 
 **Phase 47 Plan 03 highlights (2026-05-25):** see `.planning/phases/47-compile-target-flavors/47-03-SUMMARY.md` — `FlowEngine.IsWebTarget`/`SupportsLiveBlocks` static flags, `#if !FLOW_WEB` guards on Sfz/Osc consumers, ModuleLoader charitable advisory, Parser parse-time live-block gate, `WebTargetGuardTests` 4/4 GREEN.
 
-### v1.5 Phase Map (10 phases, 75 REQs)
+### v1.5 Phase Map (13 phases, 85 REQs)
 
 | Phase | Name | REQs | Count | Status |
 |-------|------|------|-------|--------|
@@ -72,9 +87,10 @@ Last activity: 2026-05-26 -- Phase 47 Plan 05 shipped (Mono.Cecil reflective sca
 | 41 | Reach + v1.5 Closer | WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01 | 10 | Pending |
 | 42 | Type System & Stdlib Audit | REQ-AUDIT-01..09 | 9 | Shipped 2026-05-24 |
 | 43 | Module Names & Qualified Imports | REQ-MOD-01..12 | 12 | **Shipped 2026-05-24** |
-| 44 | Strict Mode | TBD (defined at plan-phase) | TBD | Pending — AUDIT.md-fed |
+| 44 | Strict Mode | REQ-STRICT-01..15 | 15 | Shipped 2026-05-25 |
+| 47 | Compile-Target Flavors | REQ-WEB-TARGET-01..10 | 10 | **Shipped 2026-05-25** |
 
-**v1.5 progress: 7/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43). 87 v1.5 REQs total; 68 closed + Phase 40/41/44 still pending.
+**v1.5 progress: 9/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 47 — note: 44 + 47 shipped same day). 112 v1.5 REQs total; 93 closed + Phase 40/41/45/46/48/49 still pending.
 
 **Build-order constraints from research:**
 
