@@ -218,7 +218,29 @@ public partial class Parser
             // LiveBlockRegistry slot survives re-renders per D-38-02 independent
             // multi-block swap.
             if (Match(TokenType.Live))
+            {
+                // Phase 47 D-47-09: live blocks require FileSystemWatcher (browser-
+                // unavailable). Parse-time error rather than runtime advisory because
+                // `live { ... }` is block syntax, not a builtin invocation — composer
+                // needs a Rust-style diagnostic pointing at the source line.
+                // FlowEngine.SupportsLiveBlocks is false ONLY when FLOW_WEB was defined
+                // at compile time; on Desktop the property is a compile-time `true`
+                // and this branch is dead code (Roslyn constant-fold).
+                //
+                // LiveBlockStatement.cs + LiveBlockRegistry.cs STAY in the Web build
+                // per Plan 47-01 strip-list — the AST types remain referenceable
+                // (Interpreter.cs:133 case-dispatch + ExecutionContext.cs:292 property)
+                // but the parse-time throw prevents instances from ever being
+                // constructed under Web target.
+                if (!Core.FlowEngine.SupportsLiveBlocks)
+                {
+                    var liveTok = PreviousToken;
+                    throw new ParseException(
+                        $"`live` block requires Desktop target — line {liveTok.Location.Line}. " +
+                        $"Build with FlowTarget=Desktop or run with `flow run script.flow` locally.");
+                }
                 return ParseLiveBlockStatement();
+            }
 
             // Section declaration: section name { ... }
             if (Match(TokenType.Section))
