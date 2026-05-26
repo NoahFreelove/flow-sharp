@@ -5,12 +5,60 @@
         <RootNamespace>FlowLang</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <!-- Phase 47 D-47-01: compile-target flavor flag. Default Desktop;
+             override via `dotnet build -p:FlowTarget=Web` to produce a
+             browser-WASM-compatible library. Single source of truth — no
+             separate flow-lang.Web.csproj. -->
+        <FlowTarget>Desktop</FlowTarget>
+    </PropertyGroup>
+
+    <!-- Phase 47 D-47-02: FLOW_WEB preprocessor symbol activates Web-target code paths.
+         Asymmetric — no FLOW_DESKTOP constant; absence of FLOW_WEB implies Desktop.
+         Matches .NET ecosystem convention (NETSTANDARD2_0 etc.). -->
+    <PropertyGroup Condition="'$(FlowTarget)' == 'Web'">
+        <DefineConstants>$(DefineConstants);FLOW_WEB</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
       <PackageReference Include="Pidgin" Version="3.5.1" />
+    </ItemGroup>
+
+    <!-- Phase 47 D-47-03: Rug.Osc only referenced when @osc surface compiles in.
+         Web target strips OscFunctions.cs + OscHandleData.cs below, so Rug.Osc is
+         unused and would otherwise pull dead-reference into the Web build. -->
+    <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
       <PackageReference Include="Rug.Osc" Version="1.2.5" />
+    </ItemGroup>
+
+    <!-- Phase 47 D-47-03: file-level exclusion when FlowTarget=Web. Strip list per
+         47-PATTERNS.md §Discrepancies — actual file paths verified against current
+         codebase. LiveBlockStatement.cs / LiveBlockRegistry.cs / LambdaCaptureAuditor.cs
+         are NOT stripped because Interpreter.cs:133 / ExecutionContext.cs:292 /
+         Parser.cs:221 consume them — Plan 47-03 substitutes a parse-time throw. -->
+    <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+      <Compile Remove="Audio\PulseAudioSimpleBackend.cs" />
+      <Compile Remove="Audio\PulseAudioCaptureBackend.cs" />
+      <Compile Remove="Audio\CoreAudioBackend.cs" />
+      <Compile Remove="StandardLibrary\Audio\Sfz\**\*.cs" />
+      <Compile Remove="StandardLibrary\Network\OscFunctions.cs" />
+      <Compile Remove="StandardLibrary\Network\OscHandleData.cs" />
+      <Compile Remove="StandardLibrary\Audio\InputFunctions.cs" />
+      <!-- Phase 47 D-47-11: belt-and-suspenders Samples strip. PATTERNS.md §Discrepancy 3
+           flagged Samples/** has no <None Update> entry today; SDK implicit-include
+           behavior may still copy them. Explicit Remove guarantees Web publish omits
+           the 3.05 MB U-Iowa MIS bundle (~20% of WASM budget per Phase 48 D-48-03).
+           SampledInstrumentRenderer charitably falls back to synthesis per
+           SampleCache.cs:265 null-fallback (existing pattern). -->
+      <Content Remove="Samples\**" />
+      <None Remove="Samples\**" />
+      <!-- Skip copying stripped stdlib .flow files to Web publish output. The
+           existing <None Update> entries (osc.flow / sfz.flow) define
+           CopyToOutputDirectory — without these Remove entries the Web
+           publish would still ship the files even though SfzBuiltins.cs and
+           OscFunctions.cs are absent. Modulo Plan 47-03's ModuleLoader gate. -->
+      <None Remove="sfz.flow" />
+      <None Remove="osc.flow" />
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
