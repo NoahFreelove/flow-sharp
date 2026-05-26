@@ -42,6 +42,15 @@ public class HumanizeGaussianFacts
     {
         var registry = new InternalFunctionRegistry();
         TransformFunctions.Register(registry);
+        // Phase 44 Plan 44-05: humanizeGaussian + 7 sibling transforms moved
+        // to RegisterContextDependent so their per-arg clamp sites can read
+        // context.CallerStrictMode at the leaf. Construct a dummy
+        // ExecutionContext (the closures only read CallerStrictMode which
+        // defaults to false — equivalent to non-strict, byte-identical to
+        // pre-Plan-44-05 behavior).
+        var dummyReporter = new FlowLang.Diagnostics.ErrorReporter();
+        var dummyContext = new FlowLang.Runtime.ExecutionContext(dummyReporter, registry);
+        TransformFunctions.RegisterContextDependent(registry, dummyContext);
         return registry;
     }
 

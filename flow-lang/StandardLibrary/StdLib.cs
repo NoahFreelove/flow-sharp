@@ -1,4 +1,6 @@
+using FlowLang.Diagnostics;
 using FlowLang.Runtime;
+using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using System.Numerics;
@@ -582,10 +584,282 @@ public static class StdLib
     public static Value FixedRandSet(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var val = args[0];
-        if (val.Type is not IntType)                                                      
-            throw new InvalidOperationException($"Expected Int, got {val.Type}"); 
-        
+        if (val.Type is not IntType)
+            throw new InvalidOperationException($"Expected Int, got {val.Type}");
+
         context.SetSeed(val.As<int>());
         return Value.Void();
+    }
+
+    // ===== Phase 44 Plan 44-08 — Charitable non-strict helpers + strict-aware =====
+    // Pre-strict bug fix per ROADMAP line 404 — `(print Int x)` charitably auto-strs
+    // via AutoStr in non-strict, `if Int x` truthy-coerces, `(not Int 0)` returns
+    // true (charitable wildcard). Strict mode (Plan 44-09 follow-up) layers the
+    // Bool-required / String-required checks via `ctx.CallerStrictMode`. Plan 44-08
+    // lands the strict-error TEXT here; Plan 44-09's REQ-STRICT-09 test suite pins
+    // exact wording via the strict-error-manifest.csv.
+
+    /// <summary>
+    /// Stringifies a <see cref="Value"/> for the non-strict <c>(print)</c> charitable
+    /// path. Functionally equivalent to <c>(str x)</c> — dispatches by
+    /// <see cref="Value.Type"/> so the result matches the existing per-type
+    /// <c>StrInt</c> / <c>StrDouble</c> / <c>StrSemitone</c> / etc. format
+    /// conventions documented in CLAUDE.md §"Music Types Quick Reference".
+    /// <para>
+    /// String inputs return the underlying string raw (no enclosing quotes —
+    /// matches the existing <see cref="Print"/> contract). All other inputs
+    /// match their per-type <c>(str)</c> overload byte-for-byte. Unknown /
+    /// reference-identity types fall back to <see cref="Value.ToString"/>.
+    /// </para>
+    /// </summary>
+    public static string AutoStr(Value v)
+    {
+        if (v.Type is StringType) return v.As<string>();
+        if (v.Type is IntType) return v.As<int>().ToString();
+        if (v.Type is LongType) return v.As<long>().ToString();
+        if (v.Type is FloatType) return v.As<double>().ToString();
+        if (v.Type is DoubleType) return v.As<double>().ToString();
+        if (v.Type is NumberType) return v.As<BigInteger>().ToString();
+        if (v.Type is BoolType) return v.As<bool>() ? "true" : "false";
+        if (v.Type is NoteType) return v.As<string>();
+        if (v.Type is SymbolType) return "#" + v.As<string>();
+        if (v.Type is SemitoneType)
+        {
+            var st = v.As<int>();
+            return $"{(st >= 0 ? "+" : "")}{st}st";
+        }
+        if (v.Type is CentType)
+        {
+            var c = v.As<double>();
+            return $"{(c >= 0 ? "+" : "")}{c}c";
+        }
+        if (v.Type is MillisecondType) return $"{v.As<double>()}ms";
+        if (v.Type is SecondType) return $"{v.As<double>()}s";
+        if (v.Type is DecibelType)
+        {
+            var dB = v.As<double>();
+            return $"{(dB >= 0 ? "+" : "")}{dB}dB";
+        }
+        if (v.Type is HertzType) return $"{v.As<double>()}Hz";
+        if (v.Type is VoidType) return "()";
+        // Sequence / Bar / Chord / Song / Section / Tuple / Dict / Array / Tuning /
+        // Sfz / MarkovModel / LsystemModel / OscHandle etc. — fall through to
+        // Value.ToString which already handles each (and reference-identity types
+        // print their canonical description). Pitfall 6 (NewLineChars) does not
+        // apply here — we are NOT writing structured docs.
+        return v.ToString();
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(print)</c> impl backing the Void-wildcard
+    /// overload registered alongside the existing String overload. In strict
+    /// mode (caller's <c>CallerStrictMode == true</c>) emits the canonical
+    /// <c>[strict] (print) requires String — got &lt;Type&gt;</c> error
+    /// through <see cref="ExecutionContext.ErrorReporter"/> and returns
+    /// <see cref="Value.Void"/> without printing. Pitfall 3: the explicit
+    /// String overload scores +1000 vs Void-wildcard +500 so
+    /// <c>(print "hello")</c> never reaches this method.
+    /// </summary>
+    public static Value PrintAny(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] (print) requires String — got {args[0].Type}",
+                ctx.CurrentCallSite);
+            return Value.Void();
+        }
+        Console.WriteLine(AutoStr(args[0]));
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-08 Task 2 — charitable truthy-coerce helper. Mirrors
+    /// Python / JavaScript truthy conventions while preserving Flow's
+    /// reference-identity rule for music types (a non-null Sequence / Chord /
+    /// Song / Tuning / Sfz / etc. is truthy by presence; collection types
+    /// are falsy iff empty). Reused by <see cref="IfTruthy"/>,
+    /// <see cref="NotCharitable"/>, and Task 3's
+    /// <c>AndLastTruthy</c> / <c>OrLastTruthy</c> so the non-strict
+    /// charitable rule stays in one place.
+    /// </summary>
+    public static bool TruthyCoerce(Value v)
+    {
+        if (v.Type is VoidType) return false;
+        if (v.Data is null) return false;
+        if (v.Type is BoolType) return v.As<bool>();
+        if (v.Type is IntType) return v.As<int>() != 0;
+        if (v.Type is LongType) return v.As<long>() != 0L;
+        if (v.Type is FloatType || v.Type is DoubleType)
+        {
+            var d = v.As<double>();
+            return d != 0.0 && !double.IsNaN(d);
+        }
+        if (v.Type is NumberType) return !v.As<BigInteger>().IsZero;
+        if (v.Type is StringType) return !string.IsNullOrEmpty(v.As<string>());
+        if (v.Type is SymbolType) return true;  // any non-null Symbol is truthy
+        // Arrays / Tuples — falsy iff empty.
+        if (v.Data is IReadOnlyList<Value> list) return list.Count > 0;
+        // Dicts — falsy iff empty.
+        if (v.Type is DictType && v.Data is DictData dd)
+            return dd.Entries.Count > 0;
+        // Music tagged-numeric types: presence = truthy (Decibel/Hz/Cent/ms/sec/st
+        // values are NOT special-cased on zero — composers write -inf via
+        // -Infinity, not 0).
+        // Sequence / Chord / Song / Section / Tuning / Sfz / MarkovModel /
+        // LsystemModel / OscHandle / Voice / Track / Buffer / Function — all
+        // non-null reference-identity values are truthy by presence.
+        return true;
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(if cond then else)</c> with truthy-coerce on
+    /// <paramref name="args"/>[0]. Strict mode (caller's
+    /// <c>CallerStrictMode == true</c>) emits
+    /// <c>[strict] (if) requires Bool — got &lt;Type&gt;</c> for any non-Bool
+    /// cond. Both branches are eagerly evaluated by the interpreter before
+    /// dispatch (matches the <see cref="IfStrict"/> contract — only the
+    /// selected branch's value is returned).
+    /// </summary>
+    public static Value IfTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && args[0].Type is not BoolType)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] (if) requires Bool — got {args[0].Type}",
+                ctx.CurrentCallSite);
+            return Value.Void();
+        }
+        return TruthyCoerce(args[0]) ? args[1] : args[2];
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(not x)</c> — returns Bool but accepts any
+    /// value. <c>(not 0)</c> → <c>true</c>, <c>(not "hello")</c> → <c>false</c>,
+    /// <c>(not | C4 |)</c> → <c>false</c>. Strict mode emits
+    /// <c>[strict] (not) requires Bool — got &lt;Type&gt;</c> for non-Bool args.
+    /// Per RESEARCH A6, this is the FIRST registration of <c>(not)</c> in the
+    /// InternalFunctionRegistry (<c>flow-lang/test.flow:39</c> previously
+    /// commented on its absence).
+    /// </summary>
+    public static Value NotCharitable(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && args[0].Type is not BoolType)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] (not) requires Bool — got {args[0].Type}",
+                ctx.CurrentCallSite);
+            return Value.Bool(false);
+        }
+        return Value.Bool(!TruthyCoerce(args[0]));
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-08 Task 3 — non-strict charitable <c>(and a b)</c>
+    /// with D-12 last-truthy return semantics (composer Area 4.2 choice,
+    /// RESOLVED per RESEARCH Open Question 2): short-circuit on the first
+    /// falsy operand and return THAT operand verbatim; otherwise return the
+    /// LAST operand. v1.5 breaking change vs the prior Bool-only
+    /// <see cref="AndBool"/> shape; permitted under D-v1.5-01 pre-traction
+    /// latitude (project_pre_public_no_legacy_burden memo).
+    /// <para>
+    /// Phase 44 Plan 44-09 Task 1 layers the strict-mode Bool-required
+    /// tightening per D-12: when <c>ctx.CallerStrictMode</c> is true, ALL
+    /// operands MUST be <see cref="BoolType"/> — otherwise emit
+    /// <c>[strict] (and) requires Bool — got &lt;Type&gt;</c> via the
+    /// ErrorReporter and return <see cref="Value.Bool(false)"/>. Strict + all-Bool
+    /// preserves the existing pre-44-08 semantics: short-circuit on first
+    /// false, return <c>Bool(a &amp;&amp; b &amp;&amp; ...)</c>. The Bool-typed
+    /// <see cref="AndBool"/> overload (+1000 specificity) wins for the typical
+    /// <c>(and true false)</c> call regardless of mode and stays
+    /// byte-identical.
+    /// </para>
+    /// </summary>
+    public static Value AndLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (args.Count == 0) return Value.Bool(true);
+        if (ctx.CallerStrictMode)
+        {
+            // D-12 strict: Bool-required across every operand. Emit error on
+            // first non-Bool arg + return Bool(false) (no charitable fall-through
+            // — strict mode is opt-in fail-fast surface).
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].Type is not BoolType)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] (and) requires Bool — got {args[i].Type}",
+                        ctx.CurrentCallSite);
+                    return Value.Bool(false);
+                }
+            }
+            // All-Bool strict path — same Bool-return as AndBool. Short-circuit
+            // on first false; otherwise return Bool(all-true).
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (!args[i].As<bool>()) return Value.Bool(false);
+            }
+            return Value.Bool(true);
+        }
+        // Non-strict charitable last-truthy (Plan 44-08 Task 3 unchanged).
+        Value last = args[0];
+        if (!TruthyCoerce(last)) return last;
+        for (int i = 1; i < args.Count; i++)
+        {
+            if (!TruthyCoerce(args[i])) return args[i];
+            last = args[i];
+        }
+        return last;
+    }
+
+    /// <summary>
+    /// Non-strict charitable <c>(or a b)</c> with D-12 last-truthy return
+    /// semantics — first truthy operand wins (returned verbatim);
+    /// otherwise the LAST operand is returned (matches CPython <c>or</c>).
+    /// See <see cref="AndLastTruthy"/> for the D-12 / D-v1.5-01 migration
+    /// rationale.
+    /// <para>
+    /// Phase 44 Plan 44-09 Task 1 layers the strict-mode Bool-required
+    /// tightening per D-12: when <c>ctx.CallerStrictMode</c> is true, ALL
+    /// operands MUST be <see cref="BoolType"/> — otherwise emit
+    /// <c>[strict] (or) requires Bool — got &lt;Type&gt;</c> via the
+    /// ErrorReporter and return <see cref="Value.Bool(false)"/>. Strict + all-Bool
+    /// preserves the existing pre-44-08 semantics: short-circuit on first
+    /// true, return <c>Bool(a || b || ...)</c>.
+    /// </para>
+    /// </summary>
+    public static Value OrLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
+    {
+        if (args.Count == 0) return Value.Bool(false);
+        if (ctx.CallerStrictMode)
+        {
+            // D-12 strict: Bool-required across every operand.
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].Type is not BoolType)
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] (or) requires Bool — got {args[i].Type}",
+                        ctx.CurrentCallSite);
+                    return Value.Bool(false);
+                }
+            }
+            // All-Bool strict path — same Bool-return as OrBool. Short-circuit
+            // on first true; otherwise return Bool(any-true).
+            for (int i = 0; i < args.Count; i++)
+            {
+                if (args[i].As<bool>()) return Value.Bool(true);
+            }
+            return Value.Bool(false);
+        }
+        // Non-strict charitable last-truthy (Plan 44-08 Task 3 unchanged).
+        Value last = args[0];
+        if (TruthyCoerce(last)) return last;
+        for (int i = 1; i < args.Count; i++)
+        {
+            if (TruthyCoerce(args[i])) return args[i];
+            last = args[i];
+        }
+        return last;
     }
 }
