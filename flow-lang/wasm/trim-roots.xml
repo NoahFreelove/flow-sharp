@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 48 D-48-02: trimmer-root descriptor preserving FlowType subclasses,
+     music-type singletons, and the interop boundary types Phase 48 marshals across
+     [JSImport]/[JSExport]. Per 48-PATTERNS.md §Discrepancy 3 (2026-05-25 audit),
+     the StandardLibrary function registry is NOT reflection-heavy — registration is
+     via explicit Register(...) calls statically reachable from FlowEngine constructor —
+     so the descriptor does NOT enumerate its methods. The real risk is *Type.Instance
+     singleton accessors and the Value/AudioBuffer interop boundary.
+
+     Omitted by design (stripped from Web build per Phase 47 strip list — referencing
+     them here would cause IL2007 "Could not resolve assembly" at trim time):
+       - Sfz type entry         (SpecialTypes Sfz*.cs strip set)
+       - OscHandle type entry   (SpecialTypes OscHandle*.cs strip set)
+
+     Source: https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options#root-descriptors
+-->
+<linker>
+  <assembly fullname="flow-lang">
+    <!-- Base class for all Flow types -->
+    <type fullname="FlowLang.TypeSystem.FlowType" preserve="all" />
+
+    <!-- SpecialTypes — music-type singletons accessed via static Instance getters.
+         Trim-mode reachability sometimes elides static .cctor initializers; this
+         descriptor pins the Instance accessors so type lookups keep working. -->
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.BarType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.BeatType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.CentType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.ChordType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.DecibelType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.DictType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.HertzType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.LsystemModelType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.MarkovModelType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.MillisecondType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.MusicalNoteType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.NoteType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.NoteValueType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SecondType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SectionType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SemitoneType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SequenceType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SongType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.TimeSignatureType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.TuningType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.TupleType" preserve="all" />
+
+    <!-- PrimitiveTypes — core scalar/value type singletons. -->
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.BoolType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.BufferType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.DoubleType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.EnvelopeType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.FloatType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.FunctionType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.IntType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.LazyType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.LongType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.NumberType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.OscillatorStateType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.StringType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.SymbolType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.TrackType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.VoiceType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.PrimitiveTypes.VoidType" preserve="all" />
+
+    <!-- Array type (top-level, parameterized by element type). -->
+    <type fullname="FlowLang.TypeSystem.ArrayType" preserve="all" />
+
+    <!-- Interop boundary types — Phase 48 Plan 48-03 marshals these across [JSImport]/[JSExport].
+         48-PATTERNS.md §Discrepancy 1: AudioBuffer field is named `Data`, not `Samples`. -->
+    <type fullname="FlowLang.StandardLibrary.Audio.AudioBuffer" preserve="all" />
+    <type fullname="FlowLang.Runtime.Value" preserve="all" />
+    <type fullname="FlowLang.Audio.WebAudioBackend" preserve="all" />
+
+    <!-- Phase 48 Plan 48-04: [JSExport] surface + JSON-serialized RunResult shape.
+         WasmEntry's four [JSExport] methods are statically reachable from JS
+         via getAssemblyExports; without this entry the trimmer may strip the
+         partial-static class because it has no in-assembly call sites.
+         RunResult + RunError are reflected on by System.Text.Json.JsonSerializer
+         (IL2026 warning at WasmEntry.cs:283) — preserve their public properties
+         so the camelCase output matches the D-48-14 shape JS expects. -->
+    <type fullname="FlowLang.Runtime.WasmEntry" preserve="all" />
+    <type fullname="FlowLang.Runtime.RunResult" preserve="all" />
+    <type fullname="FlowLang.Runtime.RunError" preserve="all" />
+  </assembly>
+</linker>

@@ -544,7 +544,12 @@ public class ExecutionContext
     /// ExecutionContext — reassigning a same-name variable overwrites the
     /// prior registry entry, matching Flow's variable-shadowing semantics.
     /// </summary>
+#if !FLOW_WEB
+    // Phase 47 D-47-08: SfzData type stripped from Web build. Consumers
+    // (SongRenderer sampler:NAME dispatch, TestSnapshot, Value.Sfz factory)
+    // are all #if-guarded too so the absent registry is unreachable on Web.
     public Dictionary<string, FlowLang.StandardLibrary.Audio.Sfz.SfzData> SfzPatchRegistry { get; } = new();
+#endif
 
     /// <summary>
     /// Phase 33 — one-shot stderr advisory dedup set, keyed by sentinel strings
@@ -1112,10 +1117,15 @@ public class ExecutionContext
             GlobalFrameMusicalContext = GlobalFrame.MusicalContext?.Clone(),
 
             // 7-10. Phase 33 SFZ statics.
+            // Phase 47 D-47-08: SfzPatchRegistry is stripped from Web build
+            //   along with the SfzData type — Snapshot/Restore use #if guard
+            //   to mirror TestSnapshot.cs's conditional shape.
             SfzEnabled = SfzEnabled,
             SfzInstruments = new Dictionary<Value, string>(SfzInstruments),
+#if !FLOW_WEB
             SfzPatchRegistry =
                 new Dictionary<string, FlowLang.StandardLibrary.Audio.Sfz.SfzData>(SfzPatchRegistry),
+#endif
             SfzDiagnostics = new HashSet<string>(SfzDiagnostics),
             ResolvedSfzRoot = ResolvedSfzRoot,
 
@@ -1199,13 +1209,16 @@ public class ExecutionContext
         InvalidateOverloadCache();
 
         // 7-10. Phase 33 SFZ statics.
+        // Phase 47 D-47-08: SfzPatchRegistry stripped on Web build (see Snapshot).
         SfzEnabled = snap.SfzEnabled;
         SfzInstruments.Clear();
         foreach (var (k, v) in snap.SfzInstruments)
             SfzInstruments[k] = v;
+#if !FLOW_WEB
         SfzPatchRegistry.Clear();
         foreach (var (k, v) in snap.SfzPatchRegistry)
             SfzPatchRegistry[k] = v;
+#endif
         SfzDiagnostics.Clear();
         foreach (var k in snap.SfzDiagnostics)
             SfzDiagnostics.Add(k);

@@ -67,9 +67,15 @@ public class Value
     /// <c>(loadSfz #violin)</c> calls produce distinct Values even with identical
     /// resolved paths (Phase 33 doesn't cache at the value layer; mirrors Phase 32's
     /// <see cref="Value.Tuning"/> contract).
+    ///
+    /// Phase 47 D-47-08: SfzData type stripped from Web build — this factory
+    /// is unavailable there. Callers (SfzBuiltins.LoadSfzSymbol / LoadSfzString)
+    /// are also stripped, so the missing factory is unreachable on Web.
     /// </summary>
+#if !FLOW_WEB
     public static Value Sfz(StandardLibrary.Audio.Sfz.SfzData data)
         => new(data, SfzType.Instance);
+#endif
 
     /// <summary>
     /// Phase 36 Plan 36-06 (GEN-01, D-36-06) — wraps a
@@ -112,8 +118,11 @@ public class Value
     /// <see cref="Value.Sfz"/> / <see cref="Value.MarkovModel"/> /
     /// <see cref="Value.LsystemModel"/> contract.
     /// </summary>
+#if !FLOW_WEB
+    // Phase 47 D-47-08: OscHandleData type stripped from Web build (Plan 47-01).
     public static Value OscHandle(StandardLibrary.Network.OscHandleData handle)
         => new(handle, OscHandleType.Instance);
+#endif
 
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);
 

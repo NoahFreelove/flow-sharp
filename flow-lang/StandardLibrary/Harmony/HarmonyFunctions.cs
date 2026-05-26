@@ -438,7 +438,11 @@ public static class HarmonyFunctions
 
             var noteNames = chord.NoteNames.ToList();
 
-            switch (direction.ToLower())
+            // Phase 48 D-48-03 (invariant globalization): ToLowerInvariant matches
+            // the ASCII subset of direction tokens ("up" / "down" / "updown")
+            // regardless of host locale. Without InvariantCulture the Turkish-I
+            // problem surfaces under <InvariantGlobalization>true</InvariantGlobalization>.
+            switch (direction.ToLowerInvariant())
             {
                 case "down":
                     noteNames.Reverse();

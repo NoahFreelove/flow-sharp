@@ -924,15 +924,21 @@ public class Interpreter : IFunctionInvoker
             }
         }
 
+#if !FLOW_WEB
         // Phase 33 D-12: register typed-Sfz bindings in the patch registry so
         // renderSong song "sampler:violin" can find the bound patch by name.
         // Reassignment-overwrite is naturally handled by Dictionary indexer
         // semantics (Pitfall 10's last-bound-wins contract).
+        // Phase 47 D-47-08: stripped on Web target (SfzData + SfzPatchRegistry
+        // are both #if-guarded). The SfzType case is still reachable through
+        // the type system (SfzType.Instance stays in Web) but cannot bind
+        // values because Value.Sfz factory is also stripped.
         if (varDecl.Type is FlowLang.TypeSystem.SpecialTypes.SfzType &&
             value.Data is FlowLang.StandardLibrary.Audio.Sfz.SfzData sfzData)
         {
             _context.SfzPatchRegistry[varDecl.Name] = sfzData;
         }
+#endif
 
         _context.DeclareVariable(varDecl.Name, value);
     }

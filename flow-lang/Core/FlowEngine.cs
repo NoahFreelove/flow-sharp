@@ -6,7 +6,10 @@ using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Audio.DSP;
+#if !FLOW_WEB
+// Phase 47 D-47-08: SFZ namespace stripped from Web build (Plan 47-01 strip-list).
 using FlowLang.StandardLibrary.Audio.Sfz;
+#endif
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.StandardLibrary.Generative;
 using FlowLang.StandardLibrary.Improv;
@@ -27,8 +30,11 @@ public class FlowEngine : IDisposable
     private readonly Interpreter.Interpreter _interpreter;
     private readonly AudioPlaybackManager _audioManager;
     private readonly SampleCache _sampleCache;
+#if !FLOW_WEB
     // Phase 33 Plan 33-07 — per-engine SFZ sample cache, mirrors _sampleCache lifecycle.
+    // Phase 47 D-47-08: SfzSampleCache type stripped from Web build.
     private readonly SfzSampleCache _sfzSampleCache;
+#endif
     private readonly ModuleLoader _moduleLoader;
     private readonly TextWriter? _diagnosticOutput;
     private bool _disposed;
@@ -79,6 +85,7 @@ public class FlowEngine : IDisposable
     /// </summary>
     public static SampleCache? CurrentSampleCache { get; private set; }
 
+#if !FLOW_WEB
     /// <summary>
     /// Phase 33 Plan 33-07 — exposes the active engine's SfzSampleCache to static
     /// renderer code. Mirrors <see cref="CurrentSampleCache"/>'s shape exactly:
@@ -86,8 +93,11 @@ public class FlowEngine : IDisposable
     /// new <c>sampler:NAME</c> dispatch branch on entry, cleared in Dispose only
     /// if it still points at this engine's cache instance (back-to-back test
     /// engines guard).
+    ///
+    /// Phase 47 D-47-08: SFZ subsystem stripped on Web target.
     /// </summary>
     public static SfzSampleCache? CurrentSfzSampleCache { get; private set; }
+#endif
 
     /// <summary>
     /// Phase 33 Plan 33-07 — exposes the active engine's ExecutionContext to
@@ -98,6 +108,31 @@ public class FlowEngine : IDisposable
     /// </summary>
     public static RuntimeContext? CurrentExecutionContext { get; private set; }
 
+    /// <summary>
+    /// Phase 47 D-47-10: true when this assembly was compiled with
+    /// FlowTarget=Web (FLOW_WEB preprocessor symbol active). Compile-time
+    /// constant — no runtime mutation. Read by <see cref="Parsing.Parser"/>
+    /// (live-block parse-time gate) and <see cref="Runtime.ModuleLoader"/>
+    /// (stripped-stdlib advisory) to surface Web-target-aware diagnostics
+    /// at parse / load time rather than as silent runtime failures.
+    /// </summary>
+    public static bool IsWebTarget { get; } =
+#if FLOW_WEB
+        true;
+#else
+        false;
+#endif
+
+    /// <summary>
+    /// Phase 47 D-47-10: false on Web target. `live { ... }` blocks require
+    /// <c>System.IO.FileSystemWatcher</c> via <see cref="flow-interpreter"/>'s
+    /// LiveReloadManager, which is browser-unavailable. Read by
+    /// <see cref="Parsing.Parser"/> at line 220 (TokenType.Live dispatch) —
+    /// a parse-time ParseException with Rust-style diagnostic pointing at
+    /// the offending source line fires when this property is false.
+    /// </summary>
+    public static bool SupportsLiveBlocks { get; } = !IsWebTarget;
+
     public FlowEngine(bool verbose = false) : this(new ErrorReporter(), verbose)
     {
     }
@@ -107,12 +142,17 @@ public class FlowEngine : IDisposable
         _errorReporter = errorReporter;
         _audioManager = new AudioPlaybackManager();
         _sampleCache = new SampleCache();
+#if !FLOW_WEB
         // Phase 33 Plan 33-07 — per-engine SFZ sample cache.
+        // Phase 47 D-47-08: SFZ subsystem stripped on Web target.
         _sfzSampleCache = new SfzSampleCache();
+#endif
         // Publish to the static accessor so SongRenderer (a static class) can find
         // this engine's cache on renderSong entry. Cleared in Dispose.
         CurrentSampleCache = _sampleCache;
+#if !FLOW_WEB
         CurrentSfzSampleCache = _sfzSampleCache;
+#endif
         _diagnosticOutput = verbose ? Console.Error : null;
 
         // Create internal function registry and register C# implementations
@@ -182,7 +222,16 @@ public class FlowEngine : IDisposable
         // safe even when no script imports @sfz (CONTEXT D-10). The
         // __enableSfzModule call inside sfz.flow flips the gate during
         // `use "@sfz"` import.
+#if !FLOW_WEB
+        // Phase 47 D-47-08: SfzBuiltins.cs is csproj-stripped on Web target
+        // (per Plan 47-01). The Register call here would be a missing-type
+        // error under FlowTarget=Web; guard so the Web build links. SFZ
+        // support is opt-in via `use "@sfz"` even on Desktop, so this guard
+        // is composer-invisible. Web-target composers see the charitable
+        // advisory from Plan 47-03 Task 3 ModuleLoader gate when they
+        // attempt `use "@sfz"`.
         SfzBuiltins.Register(internalRegistry, _context);
+#endif
         // Phase 39 Plan 39-01 — register the @notation-io stdlib surface
         // (writeMusicXML / writeLilyPond / abc / mml + __enableNotationIoModule
         // marker). All 4 surface builtins gate on ExecutionContext.NotationIoEnabled
@@ -199,7 +248,11 @@ public class FlowEngine : IDisposable
         // inference per D-38-13; per-path drop-newest sample-and-hold rate
         // limit at 200 Hz per D-38-14; bundle nesting depth cap 8 per
         // D-38-15; reference-identity OscHandle lifecycle per D-38-16.
+#if !FLOW_WEB
+        // Phase 47 D-47-08: OscFunctions.cs is csproj-stripped on Web target
+        // (per Plan 47-01). Symmetric with the SfzBuiltins guard above.
         FlowLang.StandardLibrary.Network.OscFunctions.Register(internalRegistry, _context);
+#endif
         // Phase 36 Plan 36-11 — register the @improv stdlib surface
         // (registerStyle / listStyles / jam builtins). The jam builtin lives
         // alongside in JamFunctions.RegisterContextDependent, wired below.
@@ -425,10 +478,13 @@ public class FlowEngine : IDisposable
             // the next engine may already have overwritten CurrentSampleCache.
             if (ReferenceEquals(CurrentSampleCache, _sampleCache))
                 CurrentSampleCache = null;
+#if !FLOW_WEB
             // Phase 33 Plan 33-07 — same back-to-back-engines guard for the
             // SFZ static accessors.
+            // Phase 47 D-47-08: SFZ subsystem stripped on Web target.
             if (ReferenceEquals(CurrentSfzSampleCache, _sfzSampleCache))
                 CurrentSfzSampleCache = null;
+#endif
             if (ReferenceEquals(CurrentExecutionContext, _context))
                 CurrentExecutionContext = null;
         }

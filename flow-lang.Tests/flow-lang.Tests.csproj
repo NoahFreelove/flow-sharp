@@ -6,13 +6,63 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Phase 47 Plan 47-06 D-47-01/02 — mirror the flow-lang.csproj FlowTarget
+         property in the test project. Default Desktop; explicit Web activates
+         the FLOW_WEB preprocessor symbol so FlowTargetFactAttribute.CurrentTarget
+         resolves to "Web" and the Phase 47 Web-only Facts execute (not skip). -->
+    <FlowTarget Condition="'$(FlowTarget)' == ''">Desktop</FlowTarget>
   </PropertyGroup>
+
+  <!-- Phase 47 Plan 47-06 — Web-target define propagation. ProjectReferences
+       inherit MSBuild properties but NOT DefineConstants, so each project
+       conditioning on FLOW_WEB must add its own conditional define. -->
+  <PropertyGroup Condition="'$(FlowTarget)' == 'Web'">
+    <DefineConstants>$(DefineConstants);FLOW_WEB</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Phase 47 Plan 47-06 — strip 18 test files that reference Sfz / Osc /
+       Rug.Osc types stripped from flow-lang.dll by Plan 47-01's <Compile Remove>
+       list. Identified during Plan 47-04 Task 1 (47-04-SUMMARY.md 18-file
+       deferral table); closed here at the phase closer. Mirrors the Plan 47-01
+       conditional <Compile Remove> pattern verbatim. -->
+  <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+    <Compile Remove="Integration\Phase33\SfzArticulationTests.cs" />
+    <Compile Remove="Integration\Phase37\DrumPitchShiftAutoTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzDrumsLoadTest.cs" />
+    <Compile Remove="Integration\Phase37\SfzHardSwitchRegression.cs" />
+    <Compile Remove="Integration\Phase37\SfzPanCompositionTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzPanRetrofitTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzRoundRobinDeterminismTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzRoundRobinTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzVelocityCrossfadeTests.cs" />
+    <Compile Remove="Integration\Phase38\OscBundleDepthCapTests.cs" />
+    <Compile Remove="Integration\Phase38\OscBundleTests.cs" />
+    <Compile Remove="Integration\Phase38\OscLoopbackTests.cs" />
+    <Compile Remove="Integration\Phase38\OscRateLimitTests.cs" />
+    <Compile Remove="Integration\Phase38\OscTypeTagInferenceTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzLoopCrossfadeTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzParserTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzRegionMatchTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzTypeFacts.cs" />
+    <!-- Phase 47 Plan 47-06 Rule 3 deviation — 3 additional mic-input tests
+         missed by the Plan 47-04 18-file deferral list. Reference PulseAudio*
+         capture types + InputFunctions which are stripped on Web per Plan 47-01. -->
+    <Compile Remove="Integration\Phase38\MicBufferAttenuationTests.cs" />
+    <Compile Remove="Integration\Phase38\MicBufferResampleTests.cs" />
+    <Compile Remove="Integration\Phase38\PulseAudioCaptureBackendTests.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <!-- Phase 47 Plan 47-05 D-47-14: Mono.Cecil 0.11.5 (MIT) for reflective
+         assembly-reference scanning. Used by AssemblyReferenceScanTests to
+         assert the Web-target flow-lang.dll contains zero references to
+         stripped namespaces. Package-legitimacy gate (Task 0) ratified
+         (canonical maintainer jbevain, 1.4B+ downloads, zero transitive deps). -->
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
   </ItemGroup>
 
   <ItemGroup>

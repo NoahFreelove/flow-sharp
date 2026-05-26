@@ -179,7 +179,11 @@ public static class ScaleDatabase
         if (rootNote.Length == 0)
             return false;
 
-        rootNote = char.ToUpper(rootNote[0]) + rootNote[1..].ToLower();
+        // Phase 48 D-48-03 (invariant globalization): char.ToUpperInvariant +
+        // string.ToLowerInvariant match the ASCII root-note alphabet
+        // (A..G, a..g, plus '#'/'b' accidentals) regardless of host locale.
+        // Avoids Turkish-I problem under <InvariantGlobalization>true</InvariantGlobalization>.
+        rootNote = char.ToUpperInvariant(rootNote[0]) + rootNote[1..].ToLowerInvariant();
 
         if (!NoteToSemitone.ContainsKey(rootNote))
         {
@@ -230,7 +234,11 @@ public static class ScaleDatabase
 
         rootNote = keyName[..^suffixLen];
         if (rootNote.Length == 0) { rootNote = null; return false; }
-        rootNote = char.ToUpper(rootNote[0]) + rootNote[1..].ToLower();
+        // Phase 48 D-48-03 (invariant globalization): char.ToUpperInvariant +
+        // string.ToLowerInvariant match the ASCII root-note alphabet
+        // (A..G, a..g, plus '#'/'b' accidentals) regardless of host locale.
+        // Avoids Turkish-I problem under <InvariantGlobalization>true</InvariantGlobalization>.
+        rootNote = char.ToUpperInvariant(rootNote[0]) + rootNote[1..].ToLowerInvariant();
         if (!NoteToSemitone.ContainsKey(rootNote)) { rootNote = null; return false; }
         return true;
     }

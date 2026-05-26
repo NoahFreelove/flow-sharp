@@ -5,12 +5,110 @@
         <RootNamespace>FlowLang</RootNamespace>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <!-- Phase 47 D-47-01: compile-target flavor flag. Default Desktop;
+             override via `dotnet build -p:FlowTarget=Web` to produce a
+             browser-WASM-compatible library. Single source of truth — no
+             separate flow-lang.Web.csproj. -->
+        <FlowTarget>Desktop</FlowTarget>
+        <!-- Phase 48 D-48-06: required by [JSImport]/[JSExport] source generator
+             (SYSLIB1074). The attribute itself is a no-op on Desktop runtimes —
+             constant-folded out by the JIT — but the source generator emits the
+             marshalling shim regardless of target, so AllowUnsafeBlocks must be
+             enabled in both Desktop and Web builds. The shim never executes on
+             Desktop (every callsite is gated by OperatingSystem.IsBrowser()). -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <!-- Phase 47 D-47-02: FLOW_WEB preprocessor symbol activates Web-target code paths.
+         Asymmetric — no FLOW_DESKTOP constant; absence of FLOW_WEB implies Desktop.
+         Matches .NET ecosystem convention (NETSTANDARD2_0 etc.). -->
+    <PropertyGroup Condition="'$(FlowTarget)' == 'Web'">
+        <DefineConstants>$(DefineConstants);FLOW_WEB</DefineConstants>
+        <!-- Phase 48 D-48-01: Mono-WASM jiterpreter target. browser-wasm RID activates
+             the WASM publish pipeline; jiterpreter is what Blazor uses today and matches
+             Microsoft's recommended path for reflection-friendly .NET in browser. -->
+        <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+        <WasmEnableJiterpreter>true</WasmEnableJiterpreter>
+        <!-- Phase 48 D-48-03: invariant globalization saves ~10 MB ICU bundle.
+             HybridGlobalization explicitly off (pin — defaults could change across SDK versions). -->
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <HybridGlobalization>false</HybridGlobalization>
+        <!-- Phase 48 D-48-02: aggressive trim mode. Pairs with TrimmerRootDescriptor below
+             which preserves FlowType subclasses + interop boundary types (Value, AudioBuffer,
+             WebAudioBackend). InternalFunctionRegistry is NOT reflection-heavy per
+             48-PATTERNS.md Discrepancy 3 (audit 2026-05-25). -->
+        <TrimMode>full</TrimMode>
+        <!-- Phase 48 D-48-04: symbol map gated Debug-only. Release strips it for size +
+             minor security (don't leak source structure to browser). -->
+        <WasmEmitSymbolMap Condition="'$(Configuration)' == 'Debug'">true</WasmEmitSymbolMap>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
       <PackageReference Include="Pidgin" Version="3.5.1" />
+    </ItemGroup>
+
+    <!-- Phase 47 D-47-03: Rug.Osc only referenced when @osc surface compiles in.
+         Web target strips OscFunctions.cs + OscHandleData.cs below, so Rug.Osc is
+         unused and would otherwise pull dead-reference into the Web build. -->
+    <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
       <PackageReference Include="Rug.Osc" Version="1.2.5" />
+    </ItemGroup>
+
+    <!-- Phase 47 D-47-03: file-level exclusion when FlowTarget=Web. Strip list per
+         47-PATTERNS.md §Discrepancies — actual file paths verified against current
+         codebase. LiveBlockStatement.cs / LiveBlockRegistry.cs / LambdaCaptureAuditor.cs
+         are NOT stripped because Interpreter.cs:133 / ExecutionContext.cs:292 /
+         Parser.cs:221 consume them — Plan 47-03 substitutes a parse-time throw. -->
+    <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+      <Compile Remove="Audio\PulseAudioSimpleBackend.cs" />
+      <Compile Remove="Audio\PulseAudioCaptureBackend.cs" />
+      <Compile Remove="Audio\CoreAudioBackend.cs" />
+      <Compile Remove="StandardLibrary\Audio\Sfz\**\*.cs" />
+      <Compile Remove="StandardLibrary\Network\OscFunctions.cs" />
+      <Compile Remove="StandardLibrary\Network\OscHandleData.cs" />
+      <Compile Remove="StandardLibrary\Audio\InputFunctions.cs" />
+      <!-- Phase 47 D-47-11: belt-and-suspenders Samples strip. PATTERNS.md §Discrepancy 3
+           flagged Samples/** has no <None Update> entry today; SDK implicit-include
+           behavior may still copy them. Explicit Remove guarantees Web publish omits
+           the 3.05 MB U-Iowa MIS bundle (~20% of WASM budget per Phase 48 D-48-03).
+           SampledInstrumentRenderer charitably falls back to synthesis per
+           SampleCache.cs:265 null-fallback (existing pattern). -->
+      <Content Remove="Samples\**" />
+      <None Remove="Samples\**" />
+      <!-- Skip copying stripped stdlib .flow files to Web publish output. The
+           existing <None Update> entries (osc.flow / sfz.flow) define
+           CopyToOutputDirectory — without these Remove entries the Web
+           publish would still ship the files even though SfzBuiltins.cs and
+           OscFunctions.cs are absent. Modulo Plan 47-03's ModuleLoader gate. -->
+      <None Remove="sfz.flow" />
+      <None Remove="osc.flow" />
+      <!-- Phase 48 D-48-02: trimmer-root descriptor preserving FlowType subclasses,
+           music-type singletons, and the interop boundary types Phase 48 marshals across
+           [JSImport]/[JSExport] (Value, AudioBuffer, WebAudioBackend). Per
+           48-PATTERNS.md §Discrepancy 3, InternalFunctionRegistry is NOT enumerated —
+           it's not reflection-heavy and reachability analysis already covers it
+           through FlowEngine's static call chain. -->
+      <TrimmerRootDescriptor Include="wasm\trim-roots.xml" />
+      <!-- Phase 48 Plan 48-04: ship the runtime ES module + dev-smoke harness into
+           the AppBundle. flow-runtime.js sits next to dotnet.js at publish time —
+           the runtime's top-of-file relative `import '../_framework/dotnet.js'`
+           resolves correctly from AppBundle/wasm/flow-runtime.js. index.html is
+           dev-only; bundle consumers (Phase 49 SvelteKit) ignore it. -->
+      <None Update="wasm\flow-runtime.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <None Update="wasm\index.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <!-- trim-roots.xml is referenced by <TrimmerRootDescriptor> above at
+           BUILD time only — explicitly skip copying it to the publish output
+           so it doesn't bloat the AppBundle. -->
+      <None Update="wasm\trim-roots.xml">
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </None>
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
