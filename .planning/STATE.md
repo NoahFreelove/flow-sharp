@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 48 Plan 01 executed 2026-05-26 (WASM build pipeline foundation — dotnet publish -p:FlowTarget=Web -c Release exits 0, 10.8 MB shipped-artifact bundle)
-last_updated: "2026-05-26T03:00:00Z"
-last_activity: 2026-05-26 -- Phase 48 Plan 01 shipped — WASM publish pipeline pinned in 3 xUnit Facts; bundle 10.8 MB (65.7% under 30 MB cap); Plans 48-02..48-07 unblocked
+stopped_at: Phase 48 Plan 02 shipped
+last_updated: "2026-05-26T03:08:10Z"
+last_activity: "2026-05-26 -- Phase 48 Plan 02 shipped (DryWetMidi WASM publish smoke + culture-invariant sweep: 3 ToUpper/ToLower sites converted to *Invariant in HarmonyFunctions + ScaleDatabase; 4/4 new Facts PASS; D-48-17 closed — DryWetMidi reference retained in published flow-lang.dll per Mono.Cecil scan; bundle size unchanged at 10.8 MB)"
 progress:
   total_phases: 15
   completed_phases: 8
   total_plans: 78
-  completed_plans: 63
+  completed_plans: 64
   percent: 54
 ---
 
@@ -21,16 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plan 01 SHIPPED 2026-05-26; Plans 02-07 pending
+**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plans 01-02 SHIPPED 2026-05-26; Plans 03-07 pending
 
 ## Current Position
 
 Phase: 48 -- executing
-Plan: 1/7 complete (48-01 shipped)
-Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-1 — 48-02 DryWetMidi WASM smoke + 48-03 WebAudioBackend [JSImport] impl + 48-04 flow-runtime.js + 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
+Plan: 2/7 complete (48-01 + 48-02 shipped)
+Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-2 — 48-03 WebAudioBackend [JSImport] impl + 48-04 flow-runtime.js + 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
 
-Status: Phase 48 executing — Plan 01 closed
-Last activity: 2026-05-26 -- Phase 48 Plan 01 shipped (WASM publish pipeline: csproj + trim-roots.xml + WasmBuildPipelineTests; bundle 10.8 MB; 3/3 Facts PASS; wasm-tools workload installed as Rule 3 fix)
+Status: Phase 48 executing — Plans 01 + 02 closed
+Last activity: 2026-05-26 -- Phase 48 Plan 02 shipped (DryWetMidi WASM publish smoke + culture-invariant sweep: 3 ToUpper/ToLower sites converted to *Invariant in HarmonyFunctions + ScaleDatabase; 4/4 new Facts PASS; D-48-17 closed — DryWetMidi reference retained in published flow-lang.dll per Mono.Cecil scan; bundle size unchanged at 10.8 MB)
+
+**Phase 48 Plan 02 highlights (2026-05-26):**
+
+- 3 culture-sensitive call sites in `flow-lang/StandardLibrary/Harmony/` converted to `*Invariant` overloads per D-48-03 / 48-RESEARCH §Finding #5 (Turkish-I problem class under `<InvariantGlobalization>true</InvariantGlobalization>`): `HarmonyFunctions.cs:441` `direction.ToLower()` → `ToLowerInvariant()` (ASCII direction tokens `up`/`down`/`updown`); `ScaleDatabase.cs:182,233` `char.ToUpper(rootNote[0]) + rootNote[1..].ToLower()` → `*Invariant` variants (ASCII root-note alphabet `A..G` + `#`/`b`). Each edit ships with a 4-line comment block citing D-48-03. Behavioral safety net: `tests/test_dx_arpeggio.flow` PASSES; existing `ArpeggioFacts` + `ScaleLintAnalyzerFacts` + `ScaleLintDefaultOnFacts` (33 tests) all GREEN.
+- `flow-lang.Tests/Integration/Phase48/DryWetMidiWasmPublishTests.cs` (123 LOC, 2 plain `[Fact]`s) — `FlowLangDll_PublishedToAppBundle` asserts post-publish dll exists at library-flat layout `flow-lang/bin/Release/net10.0/browser-wasm/publish/flow-lang.dll` OR Blazor-app `…/AppBundle/_framework/flow-lang.dll` (both checked forward-compatibly) with > 1 KB sanity floor; `FlowLangDll_RetainsDryWetMidiReference` uses Mono.Cecil `AssemblyDefinition.ReadAssembly` on the POST-PUBLISH binary (NOT `typeof(FlowEngine).Assembly.Location` which yields the test-runner's Desktop copy) and asserts at least one `MainModule.AssemblyReferences` entry's `.Name` starts with `Melanchall.DryWetMidi`. **Both PASS — D-48-17 CLOSED: DryWetMidi STAYS in Web build, `writeMidi` ships on Web target, no v1.6 hand-rolled MIDI writer fallback needed.**
+- `flow-lang.Tests/Integration/Phase48/CultureInvariantSweepTests.cs` (162 LOC, 2 plain `[Fact]`s) — `NoUnqualifiedToUpper_InProductionCode` + `NoUnqualifiedToLower_InProductionCode` source-grep gates with regex `\.ToUpper\(\)` / `\.ToLower\(\)` (empty-parens shape) against every `.cs` file under `flow-lang/` (excludes `bin/`, `obj/`, `*.Tests/`). Skip comment-only lines (TrimStart `//`) + safe-variant marker `ToUpperInvariant`/`ToLowerInvariant` defense-in-depth. Both PASS — zero violations. **Failure-mode verified by temporary perturbation:** introduced unqualified `.ToLower()` at HarmonyFunctions.cs:166 → test fired RED with actionable diagnostic `flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:166  string lower = key.ToLower();`; source restored before commit.
+- Verification: `grep -rn 'ToUpper()\|ToLower()' flow-lang/ \| grep -v '^\s*//' \| wc -l` returns 0; `dotnet build -p:FlowTarget=Desktop` exits 0; `dotnet build -p:FlowTarget=Web` exits 0; `dotnet publish -p:FlowTarget=Web -c Release` exits 0; Phase 48 fixture 7/7 PASS (3 Plan 48-01 + 4 Plan 48-02); Phase 47 fixture 16 PASS + 8 SKIP + 0 FAIL (no regression); bundle size 10,796,004 bytes byte-identical to Plan 48-01 baseline (zero size regression from culture-invariant changes).
+- 2 commits: `8ab1de6` (Task 1 — culture-sensitive fix), `a4f726d` (Task 2 — DryWetMidi publish + culture-invariant sweep test files). Zero new NuGet packages (Mono.Cecil already in test deps per Phase 47-05).
+- No deviations from plan body. No Rule 1/2/3/4 escalations. No additional culture-sensitive sites surfaced beyond the 3 documented at PLAN.md authorship time.
 
 **Phase 48 Plan 01 highlights (2026-05-26):**
 

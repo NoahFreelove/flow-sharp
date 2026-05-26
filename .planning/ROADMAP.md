@@ -599,7 +599,7 @@ Plans:
 Plans:
 
 - [x] 48-01-PLAN.md — WASM build pipeline foundation (csproj + trim-roots.xml + WasmBuildPipelineTests)
-- [ ] 48-02-PLAN.md — DryWetMidi WASM publish smoke + culture-invariant sweep
+- [x] 48-02-PLAN.md — DryWetMidi WASM publish smoke + culture-invariant sweep (D-48-17 closed: DryWetMidi reference retained per Mono.Cecil scan of published flow-lang.dll; 3 ToUpper/ToLower sites converted to *Invariant; 4/4 new Facts PASS)
 - [ ] 48-03-PLAN.md — WebAudioBackend real implementation ([JSImport] + stereo promotion + 30s cap)
 - [ ] 48-04-PLAN.md — flow-runtime.js ES module + WasmEntry.cs [JSExport] + index.html dev harness
 - [ ] 48-05-PLAN.md — Bundle size budget + two-run determinism pin
