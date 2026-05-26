@@ -11,7 +11,7 @@ namespace FlowLang.Tests.Integration.Phase30;
 public class Midi2FlowRoundTripTests
 {
     static readonly string FixtureDir =
-        Path.Combine(AppContext.BaseDirectory, "Fixtures", "midi");
+        Path.Combine(AppContext.BaseDirectory, "fixtures", "midi");
 
     // SPEC-6 acceptance: per-fixture note-count + pitch + duration parity; ±1 tick tolerance.
     [Theory]

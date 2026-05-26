@@ -14,7 +14,7 @@ namespace FlowLang.Tests.Integration.Phase29;
 /// Phase 29 REQ-6 / SPEC D-23 — Drums / Organ / Wavetable harmonic-richness
 /// ratio must increase ≥ 20% vs the pinned Phase 28 baseline. Baseline values
 /// are computed once (Plan 05 Task 1 via <c>ComputePhase28Baseline</c>) and
-/// pinned in <c>flow-lang.Tests/Fixtures/Phase29/phase28_harmonic_richness_baseline.json</c>.
+/// pinned in <c>flow-lang.Tests/fixtures/Phase29/phase28_harmonic_richness_baseline.json</c>.
 /// This test compares the current (Phase 29) output to the pinned baseline.
 ///
 /// All three retained-synth instruments (Drums kick at MIDI 36, Organ at C4,
@@ -47,7 +47,7 @@ public class HarmonicRichnessTests
     /// <summary>
     /// Walks up from AppContext.BaseDirectory until it finds the
     /// flow-lang.Tests source directory, then returns the path to the named
-    /// fixture under Fixtures/Phase29/. Same pattern used by
+    /// fixture under fixtures/Phase29/. Same pattern used by
     /// ComputePhase28Baseline.cs's source-tree resolver.
     /// </summary>
     private static string LocateFixture(string fileName)
@@ -55,12 +55,12 @@ public class HarmonicRichnessTests
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            string candidate = Path.Combine(dir.FullName, "flow-lang.Tests", "Fixtures", "Phase29", fileName);
+            string candidate = Path.Combine(dir.FullName, "flow-lang.Tests", "fixtures", "Phase29", fileName);
             if (File.Exists(candidate)) return candidate;
             dir = dir.Parent;
         }
         throw new FileNotFoundException(
-            $"Could not locate fixture '{fileName}' in flow-lang.Tests/Fixtures/Phase29/ above AppContext.BaseDirectory.");
+            $"Could not locate fixture '{fileName}' in flow-lang.Tests/fixtures/Phase29/ above AppContext.BaseDirectory.");
     }
 
     [Fact]

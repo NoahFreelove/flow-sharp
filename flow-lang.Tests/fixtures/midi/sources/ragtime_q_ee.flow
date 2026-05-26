@@ -12,7 +12,7 @@ tempo 120 {
                 Sequence melody = | C4q E4e G4e C4q E4e G4e |
             }
             Song song = [main]
-            (writeMidi "flow-lang.Tests/Fixtures/midi/ragtime_q_ee.mid" song)
+            (writeMidi "flow-lang.Tests/fixtures/midi/ragtime_q_ee.mid" song)
         }
     }
 }

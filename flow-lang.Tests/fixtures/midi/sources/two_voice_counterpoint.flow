@@ -12,7 +12,7 @@ tempo 120 {
                 Sequence cp = | {voice C4q D4q E4q F4q} {voice C5q D5q E5q F5q} |
             }
             Song song = [main]
-            (writeMidi "flow-lang.Tests/Fixtures/midi/two_voice_counterpoint.mid" song)
+            (writeMidi "flow-lang.Tests/fixtures/midi/two_voice_counterpoint.mid" song)
         }
     }
 }

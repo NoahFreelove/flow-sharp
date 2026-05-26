@@ -17,7 +17,7 @@ namespace FlowLang.Tests.Tools;
 /// Computes the harmonic-richness ratio of the three retained-synth instruments
 /// (Drums kick at C2/MIDI 36, Organ at C4, Wavetable at C4) under the CURRENT
 /// (Phase 28) synthesizer implementations and writes the values to
-/// <c>flow-lang.Tests/Fixtures/Phase29/phase28_harmonic_richness_baseline.json</c>.
+/// <c>flow-lang.Tests/fixtures/Phase29/phase28_harmonic_richness_baseline.json</c>.
 ///
 /// The HarmonicRichnessTests in Phase 29 then assert that the post-Plan-05
 /// synth output is ≥ 1.20× these pinned baselines.
@@ -25,7 +25,7 @@ namespace FlowLang.Tests.Tools;
 /// This Fact is tagged <c>[Trait("Category", "Phase29Baseline")]</c> so it can
 /// be invoked explicitly via
 /// <c>dotnet test --filter "Category=Phase29Baseline"</c> without polluting
-/// normal CI runs (it writes a file under flow-lang.Tests/Fixtures/Phase29/).
+/// normal CI runs (it writes a file under flow-lang.Tests/fixtures/Phase29/).
 ///
 /// CRITICAL: this MUST be run with the pre-Plan-05 synth code in place. If
 /// run after Plan 05 modifies the synth classes, the "baseline" values it
@@ -133,7 +133,7 @@ public class Phase29BaselineRecorder
     /// <summary>
     /// Walks up from AppContext.BaseDirectory (bin/Debug/net10.0) until the
     /// flow-lang.Tests source directory is found, then returns
-    /// <c>{flow-lang.Tests}/Fixtures/Phase29</c>. We want the source-tree
+    /// <c>{flow-lang.Tests}/fixtures/Phase29</c>. We want the source-tree
     /// fixtures dir (committed to git), not a copy under bin/ — the JSON
     /// is a checked-in artifact, not a runtime asset.
     /// </summary>
@@ -142,7 +142,7 @@ public class Phase29BaselineRecorder
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null)
         {
-            string candidate = Path.Combine(dir.FullName, "flow-lang.Tests", "Fixtures", "Phase29");
+            string candidate = Path.Combine(dir.FullName, "flow-lang.Tests", "fixtures", "Phase29");
             if (Directory.Exists(Path.Combine(dir.FullName, "flow-lang.Tests")))
             {
                 Directory.CreateDirectory(candidate);
