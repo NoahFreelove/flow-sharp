@@ -398,10 +398,18 @@ public static class CellularFunctions
         if (value <= 0)
         {
             // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            // Phase 44 review WR-07: the previous message claimed "clamped to
+            // [1, MaxDimension]" but the value was NOT clamped — the strict
+            // path returned raw `value` (often 0 or negative). Two fixes:
+            // (1) align the message with the actual behavior — caller's
+            // downstream guard handles the empty-result charitable case;
+            // (2) keep the strict path's return value identical to non-strict
+            // so observable behavior is consistent between modes (only the
+            // diagnostic noisier under strict).
             if (ctx.CallerStrictMode)
             {
                 ctx.ErrorReporter.ReportError(
-                    $"[strict] [{siteName}] width/height clamped to [1, {MaxDimension}] — got {dimName}={value} (<= 0) at {ctx.CurrentCallSite}",
+                    $"[strict] [{siteName}] {dimName} must be > 0 — got {dimName}={value} at {ctx.CurrentCallSite}; returning empty result",
                     ctx.CurrentCallSite);
                 return value;
             }

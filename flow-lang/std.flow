@@ -130,25 +130,28 @@ Note: Phase 44 Plan 44-09 Task 2 — primitive numeric cross-casts. Without thes
 Note: strict-mode composers have no escape hatch for cross-type comparisons:
 Note: `(double 1)` would fail overload resolution because Int → Double widening
 Note: is disabled under strict (Plan 44-03). Each of the 4 extractors accepts
-Note: every primitive numeric source. Identity casts are no-ops; narrowing
-Note: floors per StdLib.DoubleToInt convention.
+Note: every primitive numeric source. Narrowing floors per StdLib.DoubleToInt
+Note: convention.
+Note:
+Note: Phase 44 review WR-05: identity casts ((double Double), (float Float),
+Note: (int Int), (long Long)) are intentionally OMITTED. They were no-ops
+Note: with no strict-mode ambiguity to escape, added overload-resolution
+Note: competitors for no benefit, and risked silent shadowing of other Double-
+Note: source overloads under strict. The 12 cross-type rows below cover every
+Note: case where strict mode disables the widening implicit-conversion.
 internal proc double (Int: value)
 internal proc double (Long: value)
 internal proc double (Float: value)
-internal proc double (Double: value)
 
 internal proc float (Int: value)
 internal proc float (Long: value)
-internal proc float (Float: value)
 internal proc float (Double: value)
 
-internal proc int (Int: value)
 internal proc int (Long: value)
 internal proc int (Float: value)
 internal proc int (Double: value)
 
 internal proc long (Int: value)
-internal proc long (Long: value)
 internal proc long (Float: value)
 internal proc long (Double: value)
 
