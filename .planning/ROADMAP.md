@@ -349,7 +349,7 @@ Plans:
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
-| 47. Compile-Target Flavors | v1.5 | 5/6 | In Progress|  |
+| 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 0/0 | Not started | - |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
 
@@ -522,7 +522,7 @@ Plans:
 
 - [ ] TBD (run /gsd-plan-phase 46 to break down)
 
-### Phase 47: Compile-Target Flavors
+### Phase 47: Compile-Target Flavors — SHIPPED 2026-05-25
 
 **Goal**: Introduce `FlowTarget=Desktop|Web` msbuild conditioning so the flow-lang library can compile cleanly under WASM by stripping features that cannot run in a browser sandbox (native P/Invoke backends, file system watchers, raw UDP sockets, REPL, large sample assets). Foundation for Phase 48 — without target flavors, the WASM build cannot link.
 
@@ -544,17 +544,34 @@ Plans:
 **Acceptance**: `dotnet build flow-lang -p:FlowTarget=Web` succeeds with no errors. Resulting assembly contains zero references to `libpulse-simple`/`AudioToolbox`/`Rug.Osc`/`FileSystemWatcher`/`RtMidi.Core` (verified via `ildasm` or `Mono.Cecil` reference scan in the test). `dotnet build flow-lang -p:FlowTarget=Desktop` (default) preserves byte-identical behavior for every existing test under the v1.5 two-run cmp-clean determinism contract (Phase 28 RMS baselines + 287/287 test fixtures + every `tests/test_*.flow` script). Web-target assembly size measured + recorded as Plan 47-05 baseline for Phase 48 budget tracking.
 
 **Depends on**: Nothing (Phase 47 is a pure refactor of build-time conditioning). Foundation for Phase 48 (which needs the FLOW_WEB define to ship its WebAudioBackend implementation). Phase 47 ↔ Phase 49 are commutative; we order 47 first because Phase 48 depends on it and Phase 49 consumes Phase 48.
-**Requirements**: REQ-WEB-TARGET-01..10 (closed progressively across Plans 47-01..47-06; 47-01 closed REQ-WEB-TARGET-01..03, 47-02 closed REQ-WEB-TARGET-04 + REQ-WEB-TARGET-09, 47-03 closed REQ-WEB-TARGET-05 + REQ-WEB-TARGET-06).
-**Plans:** 5/6 plans executed
+**Requirements**: REQ-WEB-TARGET-01, REQ-WEB-TARGET-02, REQ-WEB-TARGET-03, REQ-WEB-TARGET-04, REQ-WEB-TARGET-05, REQ-WEB-TARGET-06, REQ-WEB-TARGET-07, REQ-WEB-TARGET-08, REQ-WEB-TARGET-09, REQ-WEB-TARGET-10
+**Plans:** 6/6 plans complete
 
 Plans:
 
-- [x] 47-01 — MSBuild FlowTarget=Desktop|Web conditioning foundation (commits `635cbda` + `883c894`)
-- [x] 47-02 — WebAudioBackend stub + AudioPlaybackManager Web-first probe (commits `7021d8a` + `156dbd4` + `ba4d3fb`)
-- [x] 47-03 — FlowEngine + ExecutionContext + Value + SongRenderer + TestSnapshot #if !FLOW_WEB guards (commits `dfa359f` + `9600ddb` + `905b819` + `d0b8b11` + `8f6b814` — Web build 13 errors → 0; WebBuild_ExitCodeIsZero now GREEN)
-- [x] 47-04 — FlowTargetFactAttribute + DryWetMidi WASM-compat smoke + WebTargetParserTests + WebTargetModuleLoaderTests (commits `8adc89c` + `f51e58d` + `92b022a` + `a3d8537` — Desktop suite 2127 PASS / 7 SKIP / 0 FAIL; 18 Sfz/Osc-referencing test files deferred to Plan 47-06 tag sweep)
-- [x] 47-05 — Mono.Cecil AssemblyReferenceScanTests (commits `5c6129c` + `25b40ea` — Mono.Cecil 0.11.5 PackageReference + 120 LOC test class with 2 [FlowTargetFact("Web")] Facts; Desktop 2/2 SKIPPED; Web execution gated by Plan 47-06 18-file tag sweep)
-- [ ] 47-06 — Phase 47 closer (ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + Sfz/Osc-referencing test-file tag sweep — 18 files identified in 47-04-SUMMARY.md)
+**Wave 1**
+
+- [x] 47-01-PLAN.md — MSBuild conditioning foundation (FlowTarget property + strip list + BuildConditioningSmokeTests) — `635cbda` / `883c894`
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 47-02-PLAN.md — WebAudioBackend stub + AudioPlaybackManager Web-first probe (D-47-05..07) — `7021d8a` / `156dbd4` / `ba4d3fb`
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 47-03-PLAN.md — Central #if !FLOW_WEB guards + FlowEngine.IsWebTarget/SupportsLiveBlocks + Parser/ModuleLoader gates (D-47-08..10) — `dfa359f` / `9600ddb` / `905b819` / `d0b8b11` / `8f6b814`
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 47-04-PLAN.md — FlowTargetFactAttribute + DryWetMidi WASM-compat smoke + Web-side guard tests (D-47-04/13) — `8adc89c` / `f51e58d` / `92b022a` / `a3d8537`
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 47-05-PLAN.md — AssemblyReferenceScanTests via Mono.Cecil 0.11.5 (D-47-14) — `5c6129c` / `25b40ea`
+
+**Wave 6** *(blocked on Wave 5 completion)*
+
+- [x] 47-06-PLAN.md — Closer: 47-VERIFICATION.md + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + 18-file test-project Web build closer — `4ce8074` (VERIFICATION) + closer commits (this plan)
 
 ### Phase 48: WASM Runtime + WebAudioBackend
 
