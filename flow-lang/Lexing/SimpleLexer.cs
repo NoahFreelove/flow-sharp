@@ -620,6 +620,24 @@ public class SimpleLexer
             }
         }
 
+        // Try "b" suffix (beat literal — Phase 45 D-06)
+        // Single-char suffix; identifier-guard `!char.IsLetter(PeekNext())`
+        // prevents shadowing of identifiers like `bar` / `beats` / `bpm`
+        // (45-RESEARCH §Pitfall 1).
+        if (!IsAtEnd() && Peek() == 'b' && !char.IsLetter(PeekNext()))
+        {
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out double beatValue))
+            {
+                return new Token(TokenType.BeatLiteral, text, start, beatValue,
+                                 Span: new Span(start, CurrentLocation()));
+            }
+        }
+
         // Try "c" suffix (cent - microtone)
         if (!IsAtEnd() && Peek() == 'c' && !char.IsLetter(PeekNext()))
         {
@@ -772,6 +790,23 @@ public class SimpleLexer
                 if (double.TryParse(numberPart, out double centValue))
                 {
                     return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
+                }
+            }
+            // Try "b" suffix (beat literal — Phase 45 D-07)
+            // MUST be `else if` not `if` to preserve order-significant chain.
+            // Identifier-guard `!char.IsLetter(PeekNext())` keeps `1bar` /
+            // `2beats` / `0.5buf` lexing as [digits, identifier].
+            else if (Peek() == 'b' && !char.IsLetter(PeekNext()))
+            {
+                sb.Append(Advance());
+                var text = sb.ToString();
+
+                string numberPart = text.Substring(0, text.Length - 1);
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out double beatValue))
+                {
+                    return new Token(TokenType.BeatLiteral, text, start, beatValue,
+                                     Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "s" suffix (seconds) - but not if followed by 't'

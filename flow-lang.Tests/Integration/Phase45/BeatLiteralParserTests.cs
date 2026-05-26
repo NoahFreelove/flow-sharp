@@ -287,22 +287,33 @@ public class BeatLiteralParserTests : IDisposable
     }
 
     /// <summary>
-    /// <c>0.5b D4q</c> — Beat literal followed by note-stream-style note
-    /// (outside a note stream). The space-separated note becomes an
-    /// Identifier; the BeatLiteral and the Identifier must NOT collide.
+    /// <c>0.5b D4q</c> — Beat literal followed by a note expression. The
+    /// BeatLiteral must terminate cleanly at the whitespace, allowing the
+    /// following <c>D4</c> to lex via its existing music-literal path
+    /// (NoteLiteral at expression-start) and the trailing <c>q</c> to lex
+    /// as an Identifier outside note-stream mode. The critical property:
+    /// the BeatLiteral does NOT consume <c>b D4q</c> beyond the single
+    /// `b` suffix, and the boundary is whitespace-clean.
     /// (Task 2 turns this from RED to GREEN once the unsigned b-branch lands.)
     /// </summary>
     [Fact]
-    public void LexFollowedByNoteToken_0_5b_Space_D4q_BeatLiteralPlusIdentifier()
+    public void LexFollowedByNoteToken_0_5b_Space_D4q_BeatLiteralFollowedByNoteAndIdent()
     {
         var tokens = Tokenize("0.5b D4q");
-        Assert.Equal(2, tokens.Length);
+        // [BeatLiteral(0.5b), NoteLiteral(D4), Identifier(q)] —
+        // D4 lexes as a NoteLiteral via the existing pitch-letter+octave
+        // path; q is an identifier outside `| ... |` note-stream mode.
+        Assert.Equal(3, tokens.Length);
         Assert.Equal(TokenType.BeatLiteral, tokens[0].Type);
         Assert.Equal("0.5b", tokens[0].Text);
         Assert.Equal(0.5, (double)tokens[0].Value!);
-        // Top-level "D4q" outside a note-stream lexes as an identifier
-        // (note-stream lex mode is only active inside `| ... |` bars).
-        Assert.Equal(TokenType.Identifier, tokens[1].Type);
-        Assert.Equal("D4q", tokens[1].Text);
+        // The boundary properties we care about: the BeatLiteral terminates
+        // cleanly at the whitespace, and the following tokens are NOT
+        // BeatLiterals (no spurious second-emission consuming the space-D4q).
+        Assert.DoesNotContain(tokens.Skip(1), t => t.Type == TokenType.BeatLiteral);
+        Assert.Equal(TokenType.NoteLiteral, tokens[1].Type);
+        Assert.Equal("D4", tokens[1].Text);
+        Assert.Equal(TokenType.Identifier, tokens[2].Type);
+        Assert.Equal("q", tokens[2].Text);
     }
 }

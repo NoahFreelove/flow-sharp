@@ -233,10 +233,17 @@ public static class PragmaScanner
         // Require at least one whitespace after "enable".
         if (p >= lineText.Length || (lineText[p] != ' ' && lineText[p] != '\t')) return null;
         while (p < lineText.Length && (lineText[p] == ' ' || lineText[p] == '\t')) p++;
-        // Identifier: [A-Za-z_][A-Za-z0-9_]*
+        // Identifier: [A-Za-z_][A-Za-z0-9_-]*
+        // Phase 45 REQ-BEAT-PRAGMA-HYPHEN-01 — accept hyphens in CONTINUATION
+        // position so `enable beat-true-to-sig;` parses cleanly. Leading-char
+        // predicate stays unchanged (still letter/underscore only — hyphen
+        // cannot appear as the first char). PragmaRegistry.KnownPragmas is a
+        // closed-set Ordinal-string dictionary; unknown hyphenated names
+        // (e.g. `foo-bar`) still error via the existing Levenshtein-suggester
+        // path (45-PATTERNS.md §"Threat T-45-01").
         int identStart = p;
         if (p >= lineText.Length || !(char.IsLetter(lineText[p]) || lineText[p] == '_')) return null;
-        while (p < lineText.Length && (char.IsLetterOrDigit(lineText[p]) || lineText[p] == '_')) p++;
+        while (p < lineText.Length && (char.IsLetterOrDigit(lineText[p]) || lineText[p] == '_' || lineText[p] == '-')) p++;
         int identEnd = p;
         string ident = lineText.Substring(identStart, identEnd - identStart);
         // Optional whitespace, then ';'
