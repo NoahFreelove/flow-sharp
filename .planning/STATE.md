@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 47 SHIPPED 2026-05-25 (Compile-Target Flavors — FlowTarget=Desktop|Web MSBuild conditioning)
-last_updated: "2026-05-26T02:05:00Z"
-last_activity: 2026-05-26 -- Phase 47 closer shipped — 6/6 plans complete; FlowTarget=Web build clean end-to-end (flow-lang + flow-lang.Tests); Phase 48 unblocked
+stopped_at: Phase 48 Plan 01 executed 2026-05-26 (WASM build pipeline foundation — dotnet publish -p:FlowTarget=Web -c Release exits 0, 10.8 MB shipped-artifact bundle)
+last_updated: "2026-05-26T03:00:00Z"
+last_activity: 2026-05-26 -- Phase 48 Plan 01 shipped — WASM publish pipeline pinned in 3 xUnit Facts; bundle 10.8 MB (65.7% under 30 MB cap); Plans 48-02..48-07 unblocked
 progress:
   total_phases: 15
   completed_phases: 8
-  total_plans: 71
-  completed_plans: 60
-  percent: 64
+  total_plans: 78
+  completed_plans: 63
+  percent: 54
 ---
 
 # Project State
@@ -21,20 +21,27 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 47 SHIPPED 2026-05-25 — Phase 48 (WASM Runtime + WebAudioBackend) unblocked
+**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plan 01 SHIPPED 2026-05-26; Plans 02-07 pending
 
 ## Current Position
 
-Phase: 47 -- shipped 2026-05-25
-Plan: 6/6 complete
-Next step: `/clear` then one of:
+Phase: 48 -- executing
+Plan: 1/7 complete (48-01 shipped)
+Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-1 — 48-02 DryWetMidi WASM smoke + 48-03 WebAudioBackend [JSImport] impl + 48-04 flow-runtime.js + 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
 
-  - `/gsd:plan-phase 48` — WASM Runtime + WebAudioBackend (unblocked by Phase 47; consumes FlowTarget=Web build infrastructure + WebAudioBackend stub + AssemblyReferenceScanTests invariant + DryWetMidi WASM-compat verified)
-  - `/gsd:plan-phase 45` — Beat Literal Syntax & True-to-Sig Pragma (independent of Phase 47; carryover from Phase 43)
-  - `/gsd:context-phase 40` — Studio Sync (carryover; orthogonal to 47-49 track)
+Status: Phase 48 executing — Plan 01 closed
+Last activity: 2026-05-26 -- Phase 48 Plan 01 shipped (WASM publish pipeline: csproj + trim-roots.xml + WasmBuildPipelineTests; bundle 10.8 MB; 3/3 Facts PASS; wasm-tools workload installed as Rule 3 fix)
 
-Status: Phase 47 closed
-Last activity: 2026-05-26 -- Phase 47 closer landed (6/6 plans complete; FlowTarget=Web build clean end-to-end; Phase 48 unblocked)
+**Phase 48 Plan 01 highlights (2026-05-26):**
+
+- `flow-lang/flow-lang.csproj` extended in-place — Phase 47's `<PropertyGroup Condition="'$(FlowTarget)' == 'Web'">` now carries 6 new Mono-WASM publish properties per D-48-01..04: `<RuntimeIdentifier>browser-wasm</RuntimeIdentifier>` + `<WasmEnableJiterpreter>true</WasmEnableJiterpreter>` + `<InvariantGlobalization>true</InvariantGlobalization>` + explicit `<HybridGlobalization>false</HybridGlobalization>` pin + `<TrimMode>full</TrimMode>` + Debug-only `<WasmEmitSymbolMap>true</WasmEmitSymbolMap>`. New `<TrimmerRootDescriptor Include="wasm\trim-roots.xml" />` inside the existing FlowTarget=Web ItemGroup. Single-source-of-truth Pattern A preserved — no new conditional blocks. Zero new NuGet PackageReferences (Mono-WASM ships in .NET 10 SDK).
+- `flow-lang/wasm/trim-roots.xml` lands (74 lines, 42 `preserve="all"` entries) — pins FlowType base + 21 SpecialTypes (NoteType, ChordType, HertzType, TuningType, MarkovModelType, LsystemModelType, ...) + 16 PrimitiveTypes (IntType, DoubleType, StringType, BoolType, SymbolType, VoidType, ...) + ArrayType + 3 interop boundary types (FlowLang.StandardLibrary.Audio.AudioBuffer, FlowLang.Runtime.Value, FlowLang.Audio.WebAudioBackend). **Critical correction per 48-PATTERNS.md §Discrepancy 3**: `InternalFunctionRegistry` is NOT enumerated — 2026-05-25 audit confirmed zero reflection use (`grep -c GetMethods\|BindingFlags\|Activator.CreateInstance` returned 0). Trim-mode reachability already covers it through FlowEngine constructor's static call chain. **Omitted by design**: SfzType + OscHandleType (stripped from Web build per Phase 47 strip list — IL2007 if referenced). AudioBuffer field name confirmed `Data` (NOT `Samples` as CONTEXT.md mis-referenced).
+- `flow-lang.Tests/Integration/Phase48/WasmBuildPipelineTests.cs` lands (161 lines, 3 `[Fact]`s) — modelled exactly on Phase 47's `BuildConditioningSmokeTests.cs` shape: `WasmPublish_ExitCodeIsZero` + `WasmPublish_ProducesAppBundle` + `WasmBundle_UncompressedSize_MeasuredAndRecorded`. `RunDotnetPublish` helper with 10-minute `WaitForExit(600_000)` cap (Mono-WASM publish slow — jiterpreter generation ~30s, full AOT cross-compile up to 2-3 min). Plain `[Fact]` (NOT FlowTargetFact-gated) — tests shell out to a separate `dotnet publish` process, so they run from the Desktop test runner. **Rule 3 auto-fix**: PLAN must-have expected `AppBundle/_framework/dotnet.js` (Blazor-app SDK output), but flow-lang.csproj is a *library* (Microsoft.NET.Sdk + browser-wasm RID) producing flat `publish/dotnet.js`; `LocateWasmFrameworkDir` helper checks both layouts forward-compatibly.
+- **Rule 3 auto-fix (workload install)**: First `dotnet build -p:FlowTarget=Web` errored `NETSDK1147: To build this project, the following workloads must be installed: wasm-tools`. Ran `dotnet workload install wasm-tools` (v10.0.7) then `dotnet workload restore` (upgraded to SDK-band-matching v10.0.8). Documented as machine-level prerequisite for future contributors (to add to CLAUDE.md `## Build & Run Commands` at Plan 48-07 closer).
+- Bundle size measured: **10.8 MB browser-shipped artifacts** (.dll + .wasm + .js + .dat + .flow + .json + .md) — well under the 30 MB hard cap (19.7 MB / 65.7% headroom) and the 15 MB compressed target (~5 MB Brotli'd at typical 2:1 ratio). 29.5 MB of `.a` static archives are build-only Emscripten link inputs, not shipped. **Plan 48-05 lazy-loading deferred** unless v1.6 budget changes — comfortable headroom on both axes.
+- One IL2075 trim-analysis warning surfaces at `flow-lang/Interpreter/ExpressionEvaluator.cs:953` — `someValue.GetType().GetProperty(name)` for instance-member-access surface (chord.Root, voice.Pan, song.SectionCount). NOT a blocker for Plan 48-01; tracked for Plan 48-03..05 if it breaks at runtime in browser. Two paths if it does: (a) `[DynamicallyAccessedMembers]` annotations on receiver types, OR (b) hand-rolled switch dispatch keyed by (type, property-name) eliminating reflection.
+- Verification: `dotnet publish flow-lang -p:FlowTarget=Web -c Release` exits 0 in ~8s wall-clock; `dotnet.js` + `flow-lang.dll` + `dotnet.native.wasm` present at `flow-lang/bin/Release/net10.0/browser-wasm/publish/`; Phase 47 fixture preserved (16 PASS + 8 SKIP + 0 FAIL on Desktop); Phase 48 fixture: 3/3 PASS.
+- 3 commits: `74ac158` (csproj extensions), `c6dc20d` (trim-roots.xml), `447662f` (WasmBuildPipelineTests). Zero new NuGet packages.
 
 **Phase 47 highlights (2026-05-25):**
 
