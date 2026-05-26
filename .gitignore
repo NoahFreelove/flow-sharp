@@ -239,6 +239,19 @@ examples/notation/output/*.mid
 examples/notation/output/*.musicxml
 examples/notation/output/*.ly
 
+# Phase 38 examples — `live { quantize }` block + REPL polish + audio input +
+# OSC composer-facing tutorial chapters under examples/live/. Mirrors the
+# examples/notation/ + examples/dsp/ + examples/generative/ allow-list
+# precedents. Rendered audio (composer accidentally drops a .wav while
+# experimenting with live blocks or mic capture) MUST NOT land in-tree.
+!examples/live/
+!examples/live/**
+!examples/live/**/*.flow
+!examples/live/**/*.md
+examples/live/*.wav
+examples/live/*.mp3
+examples/live/*.mid
+
 # Phase 39 D-39-22 — composer-facing test_notation_*_example.flow regression
 # tests under tests/. The global `tests/` ignore can't be bypassed via
 # allow-list because gitignore docs say "it is not possible to re-include a

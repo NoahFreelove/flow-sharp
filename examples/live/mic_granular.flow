@@ -1,0 +1,48 @@
+Note: =====================================================================
+Note: mic_granular.flow — Phase 38 AUDIO-IN-01 / AUDIO-IN-02 + Phase 37 DSP-01
+Note: =====================================================================
+Note:
+Note: Compose audio input with the Phase 37 granular DSP — capture 4 seconds
+Note: from the default PulseAudio input device and feed it through granular
+Note: synthesis at modest jitter, then attenuate and play. This is the
+Note: headline AUDIO-IN-02 composability claim: (micBuffer) returns a
+Note: Buffer that chains seamlessly with every existing DSP / play / mix /
+Note: writeWav builtin.
+Note:
+Note: Run (requires PulseAudio + default input device):
+Note:   dotnet run --project flow-interpreter examples/live/mic_granular.flow
+Note:
+Note: Stderr advisories (one-shot dedup'd):
+Note:   [audio-in] mic stream attenuated -20 dB on open to prevent feedback
+Note:   [audio-in] resampling capture stream from <N> Hz to 44100 Hz (linear interpolation)
+Note:
+Note:   The -20 dB attenuation is unconditional on every (micBuffer ...)
+Note:   open per AUDIO-IN-01 + Pitfall #24 (feedback guard). If your
+Note:   capture device runs at 48 kHz (typical), the resample advisory
+Note:   fires once per process. Both are informational — Flow recovers
+Note:   charitably and keeps composing.
+Note:
+Note: Composer knobs reachable here:
+Note:   (micBuffer 4.0s)              — Second-typed duration (also accepts Double seconds)
+Note:   (granular buf 50ms 20Hz 0.3) — grain=50ms, density=20Hz, jitter=0.3 (Hann default)
+Note:   (gain buf -6dB)              — Decibel-typed attenuation per Phase 26.2 ERG-03
+
+use "@std"
+use "@audio"
+
+Note: Capture 4 seconds from the default mic with the locked -20 dB
+Note: feedback guard applied at open time.
+Buffer mic = (micBuffer 4.0s)
+
+Note: Granular texture — pulls 50ms grains at 20Hz with 0.3 jitter and
+Note: the default Hann window. Routes the jitter PRNG through
+Note: Runtime/PrngRegistry per D-v1.5-06 so a seeded harness can pin
+Note: a deterministic output even when fed live capture frames.
+Buffer textured = (granular mic 50ms 20Hz 0.3)
+
+Note: Trim 6 dB before playback to leave headroom for the granular
+Note: overlap-add amplification. (gain) reads its 2nd arg as decibels
+Note: (CLAUDE.md "Music Types Quick Reference" — Decibel row).
+Buffer played = (gain textured -6dB)
+
+(play played)

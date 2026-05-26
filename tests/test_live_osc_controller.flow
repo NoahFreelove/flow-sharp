@@ -1,0 +1,35 @@
+Note: Phase 38 Plan 38-07 OSC-01 + OSC-02 loopback smoke — sends a
+Note: single OSC message on 127.0.0.1:7777 to a listener registered
+Note: on the same port + path, expecting the handler lambda to fire
+Note: and print the received payload.
+Note:
+Note: AUTOMATED COVERAGE: the 19 xUnit Facts under
+Note:   flow-lang.Tests/Integration/Phase38/Osc{TypeTagInference,RateLimit,Loopback,Bundle,BundleDepthCap}Tests.cs
+Note: pin every Plan 38-06 contract — type-tag inference, sample-and-hold
+Note: rate limit, UDP loopback round-trip preserves payload within 2 s
+Note: (bounded per Pitfall #10 anti-flake), bundle dispatch + depth-cap
+Note: clamp at 8 with WarnOnce advisory. They all pass deterministically.
+Note:
+Note: MANUAL SMOKE (composer host):
+Note:   dotnet run --project flow-interpreter tests/test_live_osc_controller.flow
+Note: Expected: prints "fader=0.5" then PASS sentinel; the (oscStop h)
+Note: tears down the receive loop.
+
+use "@std"
+use "@osc"
+
+Note: Spawn the receive loop on 127.0.0.1:7777 listening for "/fader/1".
+Note: Returns an OscHandle reference-identity value per D-38-16.
+OscHandle h = (oscListen 7777 "/fader/1" (fn Double v => (print (concat "fader=" (str v)))))
+
+Note: Round-trip a single Double payload. oscSend infers ,d per D-38-13
+Note: (charitable smallest-tag-that-fits) and emits across the loopback
+Note: interface; the listener's handler fires and prints "fader=0.5".
+(oscSend "127.0.0.1" 7777 "/fader/1" 0.5)
+
+Note: Cancel the listener's CancellationTokenSource + dispose the
+Note: receiver per Pitfall #5 workaround (Cts.Cancel alone can't
+Note: interrupt the blocked Receive() syscall).
+(oscStop h)
+
+(print "PASS: OSC loopback round-trip")

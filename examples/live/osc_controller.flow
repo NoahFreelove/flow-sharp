@@ -1,0 +1,66 @@
+Note: =====================================================================
+Note: osc_controller.flow — Phase 38 OSC-01 + OSC-02 round-trip chapter
+Note: =====================================================================
+Note:
+Note: Listen on UDP port 7777 for an OSC message at `/fader/1`, then loop
+Note: a send-receive round-trip on localhost. The print inside the handler
+Note: confirms the OSC payload made the full round trip from sender to
+Note: receiver across the loopback interface.
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter examples/live/osc_controller.flow
+Note:
+Note: Expected output:
+Note:   fader=0.5
+Note:
+Note: Charitable type-tag inference (D-38-13):
+Note:   `oscSend` infers the OSC 1.0 type tag from each arg's Flow type via
+Note:   smallest-tag-that-fits: Int → ,i  Long → ,h  Float → ,f  Double → ,d
+Note:   String/Symbol → ,s  Bool → ,T/,F  Buffer → ,b. The composer writes
+Note:   `(oscSend host port "/x" 1.5 "hi")` and Flow infers ",fs". This
+Note:   OVERRIDES REQUIREMENTS.md OSC-02's earlier strict-tag-by-arg wording
+Note:   per D-v1.5-05 charitable interpretation. Composer escape hatch:
+Note:   explicit cast at the call site (e.g. `(toLong 1)` for Long, the
+Note:   existing `1.5d` Double literal for Double).
+Note:
+Note: Rate limit (D-38-14):
+Note:   The server is rate-limited per-path at 200 Hz (= 5 ms window) with
+Note:   drop-newest sample-and-hold semantics. The first message in each
+Note:   window per path dispatches; subsequent ones are silently dropped.
+Note:   Composer-side smoothing recommended for jitter-sensitive use.
+Note:
+Note: Bundle support (D-38-15):
+Note:   Outgoing bundles via (oscBundle msg1 msg2 ...) — wraps an
+Note:   Rug.Osc OscBundle with immediate timetag (1). Incoming bundles
+Note:   auto-unpack and dispatch in bundle order; future timetags
+Note:   schedule via a TaskScheduler queue. Nesting depth capped at 8
+Note:   (T-38 DoS guard, mirrors Phase 36 / Phase 39 patterns).
+Note:
+Note: Rug.Osc 1.2.5 sender-port quirk (Plan 38-06 documented):
+Note:   The 2-arg OscSender(IPAddress, int port) ctor binds the sender's
+Note:   LOCAL port to `port` — same value as the remote, which on loopback
+Note:   collides with the receiver. Flow's OscFunctions builtin uses the
+Note:   3-arg ctor (localPort=0, remotePort=port) so the OS picks an
+Note:   ephemeral local port. Composers calling oscSend directly never
+Note:   see this — it's wrapped at the builtin layer.
+
+use "@std"
+use "@osc"
+
+Note: Spawn a UDP receive loop on 127.0.0.1:7777 listening for "/fader/1"
+Note: messages. Returns an OscHandle reference-identity value per D-38-16.
+Note: The handler lambda receives the OSC arg (charitable-inferred to
+Note: Double here — Flow's `0.5` literal infers as Double).
+OscHandle h = (oscListen 7777 "/fader/1" (fn Double v => (print (concat "fader=" (str v)))))
+
+Note: Send a single message back to ourselves on the same port + path.
+Note: oscSend's varargs inference picks ,d for the Double `0.5` and emits
+Note: it across the loopback interface; the listener's handler fires.
+(oscSend "127.0.0.1" 7777 "/fader/1" 0.5)
+
+Note: Allow the receive loop's async Task.Run to dispatch the message
+Note: before we tear down — Flow's builtin scheduler is cooperative so
+Note: a short Thread.Sleep equivalent (here: do-nothing send-receive
+Note: round-trip from xUnit OscLoopbackTests is bounded by a 2 s
+Note: timeout per Pitfall #10 anti-flake; we mirror that ceiling).
+(oscStop h)
