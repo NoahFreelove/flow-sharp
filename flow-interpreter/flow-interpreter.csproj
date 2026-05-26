@@ -2,6 +2,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
+    <!-- Phase 38 Plan 38-04 prep: in-process LSP for REPL tab-completion (D-38-12).
+         Added at Plan 38-01 to avoid a wave-2/3 csproj race when Plan 38-04 lands. -->
+    <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
   </ItemGroup>
 
 <PropertyGroup>

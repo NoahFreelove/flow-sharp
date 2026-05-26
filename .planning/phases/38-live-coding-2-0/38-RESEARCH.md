@@ -1761,7 +1761,9 @@ public static class OscFunctions
 | A15 | `RenderingDiagnostics.WarnOnce(key, message)` exists with the contract "emit message once per key per process" | Pitfalls + Code Examples | Used throughout the existing codebase per CLAUDE.md / CONTEXT.md references. HIGH confidence. |
 | A16 | The `_engineForPrng` reference in `LiveReloadManager` would be a single persistent FlowEngine instance used for live state | §D | Currently `RenderScript` creates a fresh engine per render (line 344). Plan 38-03 must decide: either (a) keep fresh-engine-per-render and reseed PRNG inside that engine before staging buffer, OR (b) reuse the streaming engine and reseed at swap. (a) is simpler; (b) preserves PRNG cache across renders. Recommend (a) per existing pattern. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> Each question carries an inline **Recommendation:** that routes to the plan owning the resolution. Cross-referenced into the plan-checker Dimension 11 audit.
 
 1. **Does `Voice.Name` exist today, and is the format stable across re-renders?**
    - What we know: Phase 28 docs reference "piano:3" / "drums:1" voice names; SongRenderer assigns them at render time.
