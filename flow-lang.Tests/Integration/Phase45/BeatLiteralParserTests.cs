@@ -1,0 +1,308 @@
+using System;
+using System.Linq;
+using FlowLang.Core;
+using FlowLang.Diagnostics;
+using FlowLang.Lexing;
+using Xunit;
+
+namespace FlowLang.Tests.Integration.Phase45;
+
+/// <summary>
+/// Phase 45 Plan 45-01 — lexer-correctness Facts/Theory for the new
+/// <c>Nb</c> beat literal surface (D-06 signed + D-07 unsigned + D-08
+/// negative-double acceptance).
+///
+/// <para>
+/// Theory grid (Signal 1, 15 cases): 7 positive lex shapes (unsigned/signed,
+/// integer/fractional, positive/negative) + 8 identifier-guard / B-prefix
+/// negative cases pinning that <c>1bar</c> / <c>1beats</c> / <c>2bpm</c> /
+/// <c>b1</c> / <c>Bb</c> / <c>B4</c> / <c>Bmaj7</c> / <c>0.5b D4q</c> all
+/// lex via their pre-Phase-45 token routings (no spurious <see cref="TokenType.BeatLiteral"/>
+/// consumption).
+/// </para>
+///
+/// <para>
+/// RED/GREEN sequencing: Task 1 (this scaffold) leaves the 7 positive lex
+/// Facts RED — they fail until Task 2 lands the signed+unsigned lexer
+/// branches in <c>SimpleLexer.cs</c>. The 8 identifier-guard Facts PASS
+/// GREEN immediately because the lexer is unchanged in Task 1.
+/// </para>
+///
+/// <para>
+/// Token.Value carries the parsed double for music-literal tokens
+/// (<c>Token.cs:30</c>); we assert on <c>Type</c>, <c>Text</c> (raw source
+/// slice), and <c>Value</c> (parsed double) per the planner's contract.
+/// </para>
+/// </summary>
+[Trait("Category", Phase45TestCategory.Phase45)]
+[Collection("FlowScripts")]
+public class BeatLiteralParserTests : IDisposable
+{
+    public BeatLiteralParserTests()
+    {
+        RenderingDiagnostics.ResetForTesting();
+    }
+
+    public void Dispose()
+    {
+        RenderingDiagnostics.ResetForTesting();
+    }
+
+    /// <summary>
+    /// Tokenize <paramref name="source"/> with a fresh <see cref="SimpleLexer"/>
+    /// and an empty <see cref="PragmaSet"/>. Trims the trailing
+    /// <see cref="TokenType.Eof"/> token so test assertions can index by
+    /// content position without off-by-one.
+    /// </summary>
+    private static Token[] Tokenize(string source)
+    {
+        var reporter = new ErrorReporter();
+        var lexer = new SimpleLexer(source, reporter, "<test>", PragmaSet.Empty);
+        var tokens = lexer.Tokenize();
+        // Strip trailing EOF for cleaner assertions.
+        if (tokens.Count > 0 && tokens[^1].Type == TokenType.Eof)
+            return tokens.Take(tokens.Count - 1).ToArray();
+        return tokens.ToArray();
+    }
+
+    // ====================================================================
+    // SIGNAL 1A — Sanity: TokenType.BeatLiteral enum case is defined
+    // ====================================================================
+
+    [Fact]
+    public void TokenTypeEnumContainsBeatLiteral()
+    {
+        // REQ-BEAT-LEX-01 — the enum case must compile-resolve. Use
+        // Enum.IsDefined so the test runs even before SimpleLexer emits one.
+        Assert.True(Enum.IsDefined(typeof(TokenType), "BeatLiteral"),
+            "TokenType.BeatLiteral must be defined per Phase 45 D-06 / REQ-BEAT-LEX-01.");
+    }
+
+    // ====================================================================
+    // SIGNAL 1B — Theory grid: positive lex shapes
+    //   (RED until Task 2 lands the SimpleLexer.cs branches; expected to
+    //    fail with an InvalidOperationException or token-type mismatch
+    //    in Task 1's intermediate state.)
+    // ====================================================================
+
+    /// <summary>
+    /// Unsigned fractional beat literal — D-07 path
+    /// (ScanNumberOrSpecialLiteral).
+    /// </summary>
+    [Fact]
+    public void LexUnsignedFractional_0_5b_EmitsBeatLiteralWithValue0_5()
+    {
+        // Bind through an expression-start position so the lexer's
+        // music-literal expression-start gate (ERG-05) does not block
+        // unsigned forms. Standalone "0.5b" sits at file-start which is
+        // an expression-start position.
+        var tokens = Tokenize("0.5b");
+        Assert.Single(tokens);
+        Assert.Equal(TokenType.BeatLiteral, tokens[0].Type);
+        Assert.Equal("0.5b", tokens[0].Text);
+        Assert.Equal(0.5, (double)tokens[0].Value!);
+    }
+
+    /// <summary>Unsigned integer beat literal — D-07 path.</summary>
+    [Fact]
+    public void LexUnsignedInteger_2b_EmitsBeatLiteralWithValue2()
+    {
+        var tokens = Tokenize("2b");
+        Assert.Single(tokens);
+        Assert.Equal(TokenType.BeatLiteral, tokens[0].Type);
+        Assert.Equal("2b", tokens[0].Text);
+        Assert.Equal(2.0, (double)tokens[0].Value!);
+    }
+
+    /// <summary>
+    /// Unsigned 1.0 float with explicit decimal — D-07 path. Confirms
+    /// trailing zero in the mantissa does not perturb the lexer.
+    /// </summary>
+    [Fact]
+    public void LexUnsignedDecimalZero_1_0b_EmitsBeatLiteralWithValue1()
+    {
+        var tokens = Tokenize("1.0b");
+        Assert.Single(tokens);
+        Assert.Equal(TokenType.BeatLiteral, tokens[0].Type);
+        Assert.Equal("1.0b", tokens[0].Text);
+        Assert.Equal(1.0, (double)tokens[0].Value!);
+    }
+
+    /// <summary>
+    /// Signed positive beat literal — D-06 path
+    /// (TryLookAheadSpecialLiteral). Lexes at expression-start position
+    /// after the binding's '=' sign per ERG-05.
+    /// </summary>
+    [Fact]
+    public void LexSignedPositive_PlusOneB_EmitsBeatLiteralWithValue1()
+    {
+        // Wrap in a binding so '+1b' sits at an expression-start position.
+        // The lexer should emit: [Type, Identifier, Assign, BeatLiteral(+1.0)]
+        var tokens = Tokenize("Beat b = +1b");
+        // Find the BeatLiteral token by type (order: Beat keyword, Identifier 'b',
+        // Assign '=', BeatLiteral '+1b').
+        var beat = Array.Find(tokens, t => t.Type == TokenType.BeatLiteral);
+        Assert.NotNull(beat);
+        Assert.Equal("+1b", beat!.Text);
+        Assert.Equal(1.0, (double)beat.Value!);
+    }
+
+    /// <summary>Signed negative beat literal — D-06 + D-08 acceptance.</summary>
+    [Fact]
+    public void LexSignedNegative_MinusTwoB_EmitsBeatLiteralWithValueMinus2()
+    {
+        var tokens = Tokenize("Beat b = -2b");
+        var beat = Array.Find(tokens, t => t.Type == TokenType.BeatLiteral);
+        Assert.NotNull(beat);
+        Assert.Equal("-2b", beat!.Text);
+        Assert.Equal(-2.0, (double)beat.Value!);
+    }
+
+    /// <summary>Signed positive fractional beat literal.</summary>
+    [Fact]
+    public void LexSignedFractional_PlusZeroPointFiveB_EmitsBeatLiteralWithValue0_5()
+    {
+        var tokens = Tokenize("Beat b = +0.5b");
+        var beat = Array.Find(tokens, t => t.Type == TokenType.BeatLiteral);
+        Assert.NotNull(beat);
+        Assert.Equal("+0.5b", beat!.Text);
+        Assert.Equal(0.5, (double)beat.Value!);
+    }
+
+    /// <summary>
+    /// Signed negative fractional beat literal — combines D-06 signed
+    /// path with D-08 negative-double acceptance.
+    /// </summary>
+    [Fact]
+    public void LexSignedFractionalNegative_MinusZeroPoint25b_EmitsBeatLiteralWithValueMinus0_25()
+    {
+        var tokens = Tokenize("Beat b = -0.25b");
+        var beat = Array.Find(tokens, t => t.Type == TokenType.BeatLiteral);
+        Assert.NotNull(beat);
+        Assert.Equal("-0.25b", beat!.Text);
+        Assert.Equal(-0.25, (double)beat.Value!);
+    }
+
+    // ====================================================================
+    // SIGNAL 1C — Identifier-guard Facts (GREEN immediately — depend only
+    //   on existing lexer behavior).
+    //
+    //   The guard `!char.IsLetter(PeekNext())` in the existing `c` / `s`
+    //   suffix branches is mirrored verbatim by the Phase 45 `b` branches
+    //   (45-PATTERNS.md §Pitfall 1). Tests here PASS in Task 1 because
+    //   in the absence of the 'b' branch the lexer naturally falls
+    //   through to number+identifier emission.
+    // ====================================================================
+
+    /// <summary>
+    /// <c>1bar</c> must lex as [IntLiteral(1), Identifier("bar")] —
+    /// the 'b' must NOT be consumed by a putative BeatLiteral branch
+    /// because the next char 'a' IS a letter (45-RESEARCH §Pitfall 1).
+    /// </summary>
+    [Fact]
+    public void LexNotConsumedByIdentifierBar_1bar_IntPlusIdentifier()
+    {
+        var tokens = Tokenize("1bar");
+        Assert.Equal(2, tokens.Length);
+        Assert.Equal(TokenType.IntLiteral, tokens[0].Type);
+        Assert.Equal("1", tokens[0].Text);
+        Assert.Equal(TokenType.Identifier, tokens[1].Type);
+        Assert.Equal("bar", tokens[1].Text);
+    }
+
+    /// <summary><c>1beats</c> → [IntLiteral(1), Identifier("beats")].</summary>
+    [Fact]
+    public void LexNotConsumedByIdentifierBeats_1beats_IntPlusIdentifier()
+    {
+        var tokens = Tokenize("1beats");
+        Assert.Equal(2, tokens.Length);
+        Assert.Equal(TokenType.IntLiteral, tokens[0].Type);
+        Assert.Equal(TokenType.Identifier, tokens[1].Type);
+        Assert.Equal("beats", tokens[1].Text);
+    }
+
+    /// <summary><c>2bpm</c> → [IntLiteral(2), Identifier("bpm")].</summary>
+    [Fact]
+    public void LexNotConsumedByIdentifierBpm_2bpm_IntPlusIdentifier()
+    {
+        var tokens = Tokenize("2bpm");
+        Assert.Equal(2, tokens.Length);
+        Assert.Equal(TokenType.IntLiteral, tokens[0].Type);
+        Assert.Equal(TokenType.Identifier, tokens[1].Type);
+        Assert.Equal("bpm", tokens[1].Text);
+    }
+
+    /// <summary>
+    /// <c>b1</c> is an identifier — leading char is letter, no digits
+    /// precede it. Lex as Identifier("b1").
+    /// </summary>
+    [Fact]
+    public void LexBStartingIdentifier_b1_LexesAsIdentifier()
+    {
+        var tokens = Tokenize("b1");
+        Assert.Single(tokens);
+        Assert.Equal(TokenType.Identifier, tokens[0].Type);
+        Assert.Equal("b1", tokens[0].Text);
+    }
+
+    /// <summary>
+    /// <c>Bb</c> must keep its pre-Phase-45 routing — the leading capital
+    /// 'B' is the German-notation Bb pitch root; downstream the parser /
+    /// chord recognizer handles this. We assert here only that no
+    /// BeatLiteral token is emitted (the surface stays unchanged for
+    /// existing B-prefix forms).
+    /// </summary>
+    [Fact]
+    public void LexBbStillFlatNote_NoBeatLiteralEmitted()
+    {
+        var tokens = Tokenize("Bb");
+        Assert.NotEmpty(tokens);
+        Assert.DoesNotContain(tokens, t => t.Type == TokenType.BeatLiteral);
+    }
+
+    /// <summary>
+    /// <c>B4</c> must lex as NoteLiteral (uppercase 'B' + octave digit).
+    /// Phase 45 does not touch the music-pitch token boundary at expression-start.
+    /// </summary>
+    [Fact]
+    public void LexB4StillNoteLiteral_NoBeatLiteralEmitted()
+    {
+        var tokens = Tokenize("B4");
+        Assert.NotEmpty(tokens);
+        Assert.DoesNotContain(tokens, t => t.Type == TokenType.BeatLiteral);
+        Assert.Contains(tokens, t => t.Type == TokenType.NoteLiteral);
+    }
+
+    /// <summary>
+    /// <c>Bmaj7</c> must lex as ChordLiteral. Phase 45 does not perturb
+    /// the chord-recognition path.
+    /// </summary>
+    [Fact]
+    public void LexBmaj7StillChordLiteral_NoBeatLiteralEmitted()
+    {
+        var tokens = Tokenize("Bmaj7");
+        Assert.NotEmpty(tokens);
+        Assert.DoesNotContain(tokens, t => t.Type == TokenType.BeatLiteral);
+        Assert.Contains(tokens, t => t.Type == TokenType.ChordLiteral);
+    }
+
+    /// <summary>
+    /// <c>0.5b D4q</c> — Beat literal followed by note-stream-style note
+    /// (outside a note stream). The space-separated note becomes an
+    /// Identifier; the BeatLiteral and the Identifier must NOT collide.
+    /// (Task 2 turns this from RED to GREEN once the unsigned b-branch lands.)
+    /// </summary>
+    [Fact]
+    public void LexFollowedByNoteToken_0_5b_Space_D4q_BeatLiteralPlusIdentifier()
+    {
+        var tokens = Tokenize("0.5b D4q");
+        Assert.Equal(2, tokens.Length);
+        Assert.Equal(TokenType.BeatLiteral, tokens[0].Type);
+        Assert.Equal("0.5b", tokens[0].Text);
+        Assert.Equal(0.5, (double)tokens[0].Value!);
+        // Top-level "D4q" outside a note-stream lexes as an identifier
+        // (note-stream lex mode is only active inside `| ... |` bars).
+        Assert.Equal(TokenType.Identifier, tokens[1].Type);
+        Assert.Equal("D4q", tokens[1].Text);
+    }
+}
