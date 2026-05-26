@@ -43,6 +43,25 @@ public class ModuleLoader
     }
 
     /// <summary>
+    /// Phase 47 D-47-11 + D-47-12: returns true if the module path resolves
+    /// to a stdlib name that is stripped on Web target. Only `@sfz` and
+    /// `@osc` are stripped at module-load — Phase 29 sampled instruments
+    /// fall back transparently via SampleCache null-return (no module-load
+    /// gate needed for sample bundle absence).
+    ///
+    /// `@notation-io` STAYS on Web (hand-rolled XmlWriter / text emit, no
+    /// native deps). `@improv` + `@patterns` + `@generative` STAY (pure-Flow
+    /// stdlib).
+    /// </summary>
+    private static bool IsStrippedOnWeb(string requestedPath)
+    {
+        // Match the composer-facing import name BEFORE path resolution —
+        // `use "@sfz"` is what we read at composer time. The `path` param
+        // to LoadModule is the unresolved path (e.g. "@sfz" or "./other.flow").
+        return requestedPath == "@sfz" || requestedPath == "@osc";
+    }
+
+    /// <summary>
     /// Loads a module from the given path.
     /// Returns Loaded on success, AlreadyLoaded if previously imported, Error on failure.
     /// </summary>
@@ -53,6 +72,25 @@ public class ModuleLoader
 
         if (_loadedModules.Contains(resolvedPath))
             return ModuleLoadResult.AlreadyLoaded;
+
+        // Phase 47 D-47-09 + D-47-11 + D-47-12: Web-target stripped-module gate.
+        // SfzBuiltins.Register + OscFunctions.Register are guarded out on Web
+        // (per Plan 47-03 Task 1), so even if the .flow file got copied (which
+        // Plan 47-01's <None Remove> prevents), its `__enableSfzModule` /
+        // `__enableOscModule` marker call would fail "Function not found"
+        // mid-load. Catch it earlier with a charitable advisory pointing the
+        // composer at the right fix (build with FlowTarget=Desktop).
+        //
+        // FlowEngine.IsWebTarget is a compile-time constant — the entire
+        // if-body is dead code on Desktop builds (Roslyn constant-fold).
+        if (Core.FlowEngine.IsWebTarget && IsStrippedOnWeb(path))
+        {
+            Diagnostics.RenderingDiagnostics.WarnOnce(
+                $"target:stripped-module:{path}",
+                $"[target] module '{path}' unavailable on Web target — line {errorLocation.Line}. " +
+                $"Build with FlowTarget=Desktop to enable, or run with `flow run script.flow` locally.");
+            return ModuleLoadResult.Error;
+        }
 
         if (_currentlyLoading.Contains(resolvedPath))
         {
