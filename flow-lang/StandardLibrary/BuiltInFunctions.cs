@@ -1117,6 +1117,37 @@ public static class BuiltInFunctions
 
         // Phase 26.1 dict + tuple-unpack runtime functions (TUP-11 + DICT-01/02/03)
         RegisterDict(registry, context);
+
+        // ===== Phase 44 Plan 44-08 — non-strict charitable overloads =====
+        // Pre-strict bug fix per ROADMAP line 404 + D-12 last-truthy and/or +
+        // RESEARCH A6 (not) base registration. Void-wildcard overloads
+        // co-exist with existing String / Bool / Lazy<Bool> typed overloads
+        // — OverloadResolver scoring (+1000 exact / +500 compatible) ensures
+        // (print "hello") / (if true ...) / (and true false) continue
+        // hitting their typed-path byte-identical. The wildcards only fire
+        // on non-typed args where today's pipeline errors with "no matching
+        // overload". Strict tightening is layered on top by Plan 44-09.
+
+        // (print Void) — charitable AutoStr in non-strict; [strict] error
+        // in strict. Pitfall 3: String overload still scores +1000.
+        var printAnySig = new FunctionSignature("print", [VoidType.Instance],
+            ParameterNames: ["s"]);
+        registry.Register("print", printAnySig, args => StdLib.PrintAny(args, context));
+
+        // (if Void Void Void) — truthy-coerce in non-strict; [strict] error
+        // on non-Bool cond in strict. Existing if(Bool, Lazy, Lazy) and
+        // if(Bool, Void, Void) overloads stay; they out-score the wildcard
+        // when cond is Bool.
+        var ifAnySig = new FunctionSignature("if",
+            [VoidType.Instance, VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["cond", "then", "else"]);
+        registry.Register("if", ifAnySig, args => StdLib.IfTruthy(args, context));
+
+        // (not Void) — FIRST registration of `not` per RESEARCH A6. Strict
+        // path requires Bool; non-strict charitable truthy.
+        var notAnySig = new FunctionSignature("not", [VoidType.Instance],
+            ParameterNames: ["x"]);
+        registry.Register("not", notAnySig, args => StdLib.NotCharitable(args, context));
     }
 
     private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
