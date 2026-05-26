@@ -346,7 +346,7 @@ Plans:
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
-| 44. Strict Mode | v1.5 | 2/12 | In Progress|  |
+| 44. Strict Mode | v1.5 | 4/12 | In Progress|  |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 
@@ -407,7 +407,7 @@ Plans:
 
 **Depends on**: Phase 42 (audit provides the clamp/advisory site inventory needed to confidently enumerate Axis B sites — missing any one regresses the strict contract). Phase 43 optional but useful for organizing strict-mode test files.
 **Requirements**: REQ-STRICT-01, REQ-STRICT-02, REQ-STRICT-03, REQ-STRICT-04, REQ-STRICT-05, REQ-STRICT-06, REQ-STRICT-07, REQ-STRICT-08, REQ-STRICT-09, REQ-STRICT-10, REQ-STRICT-11, REQ-STRICT-12, REQ-STRICT-13, REQ-STRICT-14, REQ-STRICT-15
-**Plans:** 2/12 plans executed
+**Plans:** 4/12 plans executed
 
 Plans:
 
@@ -418,8 +418,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 44-02-PLAN.md — ProcDeclaration.IsStrict AST capture + Interpreter push/pop + ExpressionEvaluator CallerStrictMode snapshot (REQ-STRICT-02, REQ-STRICT-03)
-- [ ] 44-04-PLAN.md — 6 forward + 24 reverse explicit-conversion builtins (REQ-STRICT-05, REQ-STRICT-06)
+- [x] 44-02-PLAN.md — ProcDeclaration.IsStrict AST capture + Interpreter push/pop + ExpressionEvaluator CallerStrictMode snapshot (REQ-STRICT-02, REQ-STRICT-03)
+- [x] 44-04-PLAN.md — 6 forward + 24 reverse explicit-conversion builtins (REQ-STRICT-05, REQ-STRICT-06)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
