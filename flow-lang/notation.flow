@@ -1,6 +1,8 @@
 Note: Musical Notation Library for Flow
 Note: Provides classical music composition with note durations, rests, and time signatures
 
+module notes
+
 Note: ===== Internal C# Function Declarations =====
 
 internal proc createMusicalNote (Note: pitch, NoteValue: duration)
@@ -9,7 +11,12 @@ internal proc createTimeSignature (Int: numerator, Int: denominator)
 internal proc createMusicalBar (Notes: notes, TimeSignature: timeSig)
 internal proc createEmptyMusicalBar (TimeSignature: timeSig)
 internal proc tryAddNoteToBar (Bar: bar, MusicalNote: note)
-internal proc addNoteToBar (Bar: bar, MusicalNote: note)
+Note: addNoteToBar(Bar, MusicalNote) overload — sibling overload to bars.flow's
+Note: (Bar, Note) declaration. Both share the same C# function name but dispatch
+Note: to different overloads at runtime. The forward-decl lives in bars.flow
+Note: (canonical owner under module `bars`) to avoid Phase 43 D-04 shadow advisories;
+Note: bodies in this file that call (addNoteToBar bar note) resolve through the
+Note: unqualified GlobalFrame after @bars is loaded via @std.
 internal proc noteValueToBeats (NoteValue: noteValue, Int: denominator)
 internal proc validateBarDuration (Bar: bar, TimeSignature: timeSig)
 internal proc getRemainingBeats (Bar: bar)
@@ -18,12 +25,14 @@ internal proc calculateOverflow (Bar: bar)
 internal proc renderBarToVoices (Bar: bar, String: synthType, Int: sampleRate, Double: bpm)
 internal proc createSequence ()
 internal proc addBarToSequence (Sequence: seq, Bar: bar)
-internal proc renderSequenceToVoices (Sequence: seq, String: synthType, Int: sampleRate, Double: bpm)
+Note: renderSequenceToVoices + noteToFrequency live in audio.flow (module `audio`).
+Note: Forward-decl removed here to avoid Phase 43 D-04 shadow advisories; lambda
+Note: bodies below resolve through the unqualified GlobalFrame after @audio is
+Note: loaded transitively.
 internal proc renderBarAtBeat (Bar: bar, Double: beatOffset, String: synthType, Int: sampleRate, Double: bpm)
 Note: Phase 43 D-09 -- renderBarAtBeat(Bar, Beat, ...) -- explicit Beat-typed offset; same impl as Double overload (Beat is double-backed)
 internal proc renderBarAtBeat (Bar: bar, Beat: beatOffset, String: synthType, Int: sampleRate, Double: bpm)
 internal proc renderBarAtTime (Bar: bar, Double: timeSeconds, String: synthType, Int: sampleRate, Double: bpm)
-internal proc noteToFrequency (Note: pitch)
 
 Note: ===== Note Value Constants =====
 

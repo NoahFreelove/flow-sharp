@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 43 context gathered
-last_updated: "2026-05-24T16:23:42.360Z"
-last_activity: 2026-05-24 -- Phase 43 execution started
+stopped_at: Phase 43 shipped
+last_updated: "2026-05-24T18:30:00.000Z"
+last_activity: 2026-05-24 -- Phase 43 closed (Plan 43-05 closer)
 progress:
   total_phases: 10
-  completed_phases: 5
+  completed_phases: 7
   total_plans: 47
-  completed_plans: 37
-  percent: 50
+  completed_plans: 42
+  percent: 70
 ---
 
 # Project State
@@ -21,20 +21,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 43 — module-names-qualified-imports
+**Current focus:** Phase 40 / Phase 44 (composer pick — Phase 43 just shipped)
 
 ## Current Position
 
-Phase: 43 (module-names-qualified-imports) — EXECUTING
-Plan: 1 of 5
+Phase: 43 (module-names-qualified-imports) — **SHIPPED 2026-05-24**
+Plan: 5 of 5 complete
 Next step: `/clear` then one of (composer pick):
 
-  - `/gsd:plan-phase 43` — Module Names & Qualified Imports (consumes AUDIT.md §1 + §2 + §5a + §7a; HIGH-priority items: Beat ↔ Second context-aware builtins + `pitchShift(Buffer, Hertz)` design-decision)
-  - `/gsd:plan-phase 44` — Strict Mode (consumes AUDIT.md §2 + §6a + §6b + §7b; load-bearing 13 input-perimeter clamps + 117 advisory sites + explicit-conversion builtins `(db x)`/`(cents x)`/`(hz x)`/`(ms x)`/`(sec x)`)
+  - `/gsd:plan-phase 44` — Strict Mode (consumes AUDIT.md §2 + §6a + §6b + §7b; load-bearing 13 input-perimeter clamps + 117 advisory sites + explicit-conversion builtins `(db x)`/`(cents x)`/`(hz x)`/`(ms x)`/`(sec x)`. Phase 43's module-namespace + qualified-import work is now available for organizing strict-mode test files.)
   - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
 
-Status: Executing Phase 43
-Last activity: 2026-05-24 -- Phase 43 execution started
+Status: Phase 43 shipped — awaiting next composer pick
+Last activity: 2026-05-24 -- Phase 43 closed (Plan 43-05 closer)
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
@@ -47,11 +46,11 @@ Last activity: 2026-05-24 -- Phase 43 execution started
 | 39 | Notation Citizenship | XML-01..02, LILY-01, ABC-01..02, MML-01 | 6 | Shipped 2026-05-23 |
 | 40 | Studio Sync | MIDI-RT-01..04, CLOCK-01..02, LINK-01..02, JACK-01 | 9 | Pending |
 | 41 | Reach + v1.5 Closer | WASM-01..03, WASAPI-01, COREAUDIO-01, BIN-01, DOC-01..02, JET-01, SHOWCASE-01 | 10 | Pending |
-| 42 | Type System & Stdlib Audit | REQ-AUDIT-01..09 | 9 | **Shipped 2026-05-24** |
-| 43 | Module Names & Qualified Imports | TBD (defined at plan-phase) | TBD | Pending — AUDIT.md-fed |
+| 42 | Type System & Stdlib Audit | REQ-AUDIT-01..09 | 9 | Shipped 2026-05-24 |
+| 43 | Module Names & Qualified Imports | REQ-MOD-01..12 | 12 | **Shipped 2026-05-24** |
 | 44 | Strict Mode | TBD (defined at plan-phase) | TBD | Pending — AUDIT.md-fed |
 
-**v1.5 progress: 6/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42). 75 v1.5 REQs total; 56 closed + Phase 40/41/43/44 still pending.
+**v1.5 progress: 7/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43). 87 v1.5 REQs total; 68 closed + Phase 40/41/44 still pending.
 
 **Build-order constraints from research:**
 
@@ -72,7 +71,20 @@ Last activity: 2026-05-24 -- Phase 43 execution started
 
 ## Resume Instructions (top — see also "Resume Instructions (next PC)" at bottom)
 
-**Phase 42 closed 2026-05-24 (Plan 42-04 closer).** v1.5 milestone progress: **6/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42), 42/42 plans complete in those phases. Phase 40 (Studio Sync), Phase 41 (Reach + Closer), Phase 43 (Module Names), and Phase 44 (Strict Mode) remain. Phase 42's `42-AUDIT.md` is the canonical input artifact for Phase 43 + Phase 44 plan-phase spawns — those two are unblocked. Phase 40 + Phase 41 are orthogonal to the AUDIT.md (the Phase 35-41 original v1.5 trajectory; Phase 41 still consumes Phase 40's IMidiBackend abstraction for Web MIDI).
+**Phase 43 closed 2026-05-24 (Plan 43-05 closer).** v1.5 milestone progress: **7/10 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43), 47/47 plans complete in those phases. Phase 40 (Studio Sync), Phase 41 (Reach + Closer), and Phase 44 (Strict Mode) remain. Phase 44 is AUDIT.md-fed (depends on Phase 42 deliverable, shipped) and benefits from Phase 43's qualified-import surface for organizing strict-mode test files; Phase 40 + Phase 41 are orthogonal to the AUDIT.md trio (Phase 41 still consumes Phase 40's IMidiBackend abstraction for Web MIDI).
+
+**Phase 43 highlights (2026-05-24):**
+
+- `module <name>` declaration as the first non-comment statement of a `.flow` file claims a namespace for that file's exported procs (D-01 position constraint enforced by `Parser._seenNonModuleNonCommentStatement` flag, flag-flip in `Parse()` driver). `ModuleDeclarationStatement` AST record lands as `Statements[0]` when present; mid-file `module` declarations are REPORTED (not thrown) via ErrorReporter so a single bad declaration doesn't halt the parse — matches the existing soft-failure error model (Pitfall 1 / Plan 43-01 D-01).
+- `ExecutionContext.ModuleRegistry` runtime data structure (per-context, NOT static) registers `module <name>` → exported `Dictionary<string, Value>` proc set at module-load time. `ModuleLoader` walks `program.Statements` post-Execute for leading `ModuleDeclarationStatement` + remaining `ProcDeclaration` nodes (RESEARCH A2 walk-statements over snapshot-and-diff). Composer can write `(modname.procname args)` syntax dispatching via `ExpressionEvaluator.EvaluateFunctionCall` qualified-call routing + `EvaluateMemberAccess` registry-first branch (D-02). Existing instance-member access (`chord.Root`, `voice.Pan`, `song.SectionCount`) preserved via fall-through (Pitfall 2). `(modname.procname args)` parser surface added via 4-token-lookahead disambiguator in `Parser.cs` (Plan 43-03 Rule 3 blocking-issue deviation — qualified-call syntax was otherwise unreachable from .flow source).
+- D-06 one-shot duplicate-module advisory `[module] duplicate module name '<name>' — last load wins` via `WarnOnce(sentinel="module-dup:<name>")` (per-name dedup, NOT per-name-and-path — hot-reload safe). D-04 last-import-wins cross-module shadow advisory `[module] '<fn>' from '<B>' shadows '<fn>' from '<A>' — qualify with '<A>.<fn>' or '<B>.<fn>' to disambiguate` via `WarnOnce(sentinel="module-shadow:<prior>:<new>:<proc>")` (per-triple dedup). `ProcOwnership` Dict on `ExecutionContext` (per-context lifetime mirrors `LiveBlockRegistry`/`PrngRegistry`/`ModuleRegistry`) tracks last-write-wins ownership.
+- Beat backfill closes Phase 42 AUDIT.md §1 BeatType-orphan anchor finding. 4 new context-aware builtin signatures shipped via `RegisterContextDependent` (Phase 22 DX-12 closure-captures-ExecutionContext pattern): `beatToSec(Beat) → Second` + `secToBeat(Second) → Beat` + `delay(Buffer, Beat, Double, Double)` + `renderBarAtBeat(Bar, Beat, String, Int, Double)`. Default-120-BPM one-shot stderr advisory `[<fn>] no active tempo — defaulting to 120 BPM (use tempo N { ... } to set explicitly)` per D-08 — one sentinel per builtin (`beatToSec-no-tempo` / `secToBeat-no-tempo` / `delay-beat-no-tempo`). D-10 atomic polarity flip — `Phase42.AuditHarnessTests.OrphanList_ContainsBeatType` renamed `OrphanList_DoesNotContainBeatType` in the SAME commit (`b0b9c6f`) as the Beat-companion overload landing (Pitfall 5 prevents a RED window between commits).
+- 12-of-13 stdlib `.flow` files declared `module <name>` per D-07 in ONE commit (`578b9ab`, D-11 pre-traction no-deprecation latitude — D-12 explicitly NO `flow migrate` CLI subcommand). `notation-io.flow` claims `module notation` (canonical name — IS the notation export/import surface); `notation.flow` declares `module notes` per Pitfall 6 rename-not-merge (file path stays at `notation.flow`; declared name changes). `std.flow` remains declaration-less per D-07 (always-on prelude — keeps unqualified-only behavior). Three duplicate `internal proc` forward declarations removed from `notation.flow` (addNoteToBar/renderSequenceToVoices/noteToFrequency — also declared in bars.flow/audio.flow) as Rule 1 auto-fix to honor the must-have truth "no overlapping exports between the 12 stdlib modules cause unprompted shadow advisories".
+- Phase 43 xUnit fixture suite (34 facts): `ModuleDeclarationParserTests` (5) + `ModuleRegistryTests` (5) + `ModuleCollisionAdvisoryTests` (7) + `QualifiedAccessDispatchTests` (4) + `BeatConversionTests` (6) + `BeatCompanionOverloadTests` (5) + `Phase42.AuditHarnessTests` 9/9 incl. D-10 polarity-flipped `OrphanList_DoesNotContainBeatType`. **Full xUnit suite: 1779 passed / 36 failed / 1 skipped / 1816 total** — all 36 failures from the Phase 42 deferred-items.md baseline (Phase 28 PerSynthArticulation FFT / Phase 29 ArticulationOnSample Piano / Phase 28 Ragtime RMS / Phase 35 FlowTestCli + MatchExhaustivenessDefault). **Phase 43 introduces zero new failures.** 123 happy-path `tests/test_*.flow` scripts all pass; the 4 expected non-zero-exit scripts unchanged (`test_dict_type_errors.flow` / `test_error_masking.flow` / `test_iteration_guard.flow` / `test_musical_context_errors.flow`).
+- Composer-script smoke (REQ-MOD-11): 3 representative scripts run end-to-end with zero `[module]` advisories — `examples/showcase.flow` (Phase 27 polyrhythmic minimal), `examples/tutorial.flow` (Phase 27 language tour), `examples/dsp/granular.flow` (Phase 37 granular DSP). The plan referenced `examples/symphony/symphony.flow` + `examples/ragtime/ragtime.flow` which were deleted from this worktree earlier (commits `cd9f053` + `9990782`); substitutes preserve the REQ-MOD-11 intent. Tracking documented in `43-VERIFICATION.md §2 Known Caveats`.
+- Zero new NuGet packages added across all 5 Phase 43 plans.
+
+**Phase 42 closed 2026-05-24 (Plan 42-04 closer).** Phase 42's `42-AUDIT.md` is the canonical input artifact for Phase 44 plan-phase spawn — that one is unblocked. Phase 40 + Phase 41 are orthogonal to the AUDIT.md (the Phase 35-41 original v1.5 trajectory; Phase 41 still consumes Phase 40's IMidiBackend abstraction for Web MIDI).
 
 **Phase 42 closure highlights (2026-05-24):**
 
@@ -325,6 +337,11 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 42 P02 | ~15min | 2 tasks | 12 files (2 new scripts/audit/ bash extractors + 1 new ClampGrepConsistencyTests.cs 6-fact + 7 generated 42-AUDIT-data/ inventory files + 1 deferred-items.md + 1 summary) |
 | Phase 42 P03 | ~7min | 3 tasks (2 auto + 1 checkpoint auto-approved) | 4 files (3 created: 42-AUDIT.md 277L + 42-AUDIT-data/type-signature-graph.json regenerated + AUDIT-skeleton.md + AuditReportShapeTests.cs 167L) |
 | Phase 42 P04 | ~Xmin | 2 tasks | 5 files (42-VERIFICATION.md 178L + ROADMAP + STATE + REQUIREMENTS + 42-04-SUMMARY) |
+| Phase 43 P01 | 22min | 2 tasks | 5 files (TokenType.cs + SimpleLexer.cs + ModuleDeclarationStatement.cs + Parser.cs + ModuleDeclarationParserTests.cs) |
+| Phase 43 P02 | ~25min | 2 tasks | 6 files (ModuleRegistry.cs + ExecutionContext.ModuleRegistry property + ModuleRegistryTests.cs RED/GREEN + SUMMARY) |
+| Phase 43 P03 | ~24min | 2 tasks | 8 files (ModuleLoader registration hook + ExpressionEvaluator registry-first dispatch + Parser 4-token-lookahead qualified-call disambiguator + Interpreter no-op arm + ExecutionContext.ProcOwnership + FlowEngine.ModuleLoader property + ModuleCollisionAdvisoryTests + QualifiedAccessDispatchTests) |
+| Phase 43 P04 | ~35min | 2 tasks | 8 files (BeatConversionFunctions.cs + EffectsFunctions delay Beat overload + BuiltInFunctions renderBarAtBeat Beat overload + audio.flow internal proc decls + notation.flow internal proc decl + BeatConversionTests + BeatCompanionOverloadTests + Phase42.AuditHarnessTests D-10 polarity flip) |
+| Phase 43 P05 | ~Xmin | 2 tasks | 16 files (12 stdlib `.flow` files migrated to `module <name>` per D-07 + notation.flow duplicate-decl cleanup + 43-VERIFICATION.md + ROADMAP + STATE + REQUIREMENTS) |
 
 ## Accumulated Context
 
@@ -709,11 +726,11 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-24T15:41:26.728Z
-Stopped at: Phase 43 context gathered
-Resume file: .planning/phases/43-module-names-qualified-imports/43-CONTEXT.md
+Last session: 2026-05-24T18:30:00.000Z
+Stopped at: Phase 43 shipped
+Resume file: None — awaiting composer pick (`/gsd:context-phase 40` for Studio Sync OR `/gsd:plan-phase 44` for Strict Mode)
 
-**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 43 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 43 (Module Names) + Phase 44 (Strict Mode) remain. Phase 43 + 44 are AUDIT.md-fed (depend on Phase 42 deliverable, now shipped); Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 43 + 44 can ship in either order; Phase 44 plan-phase will likely want Phase 43's module-namespace + qualified-import work for organizing strict-mode test files.
+**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 44 (Strict Mode) remain. Phase 44 is AUDIT.md-fed (depends on Phase 42 deliverable, shipped) and now also benefits from Phase 43's module-namespace + qualified-import work for organizing strict-mode test files; Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 44 can ship in either order with Phase 40.
 
 ## Resume Instructions (next PC)
 

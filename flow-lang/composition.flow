@@ -6,6 +6,8 @@ Note: see the @notation library which provides structured musical notation.
 Note:
 Note: This library provides DAW-style timeline composition with positioned audio clips.
 
+module composition
+
 Int TIME_SIGNATURE_NOTE = 4
 Int TIME_SIGNATURE_NOTES_PER_BAR = 4
 

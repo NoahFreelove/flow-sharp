@@ -11,6 +11,8 @@ Note:
 Note: Round-trip CI gate for MusicXML uses `mscore --convert-to mxl` when
 Note: available; charitable-skip when absent per D-39-08.
 
+module notation
+
 use "@std"
 
 Note: ===== Internal C# Function Declarations =====
