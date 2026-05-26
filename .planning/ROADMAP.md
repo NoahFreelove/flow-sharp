@@ -128,7 +128,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [ ] **Phase 41: Reach + v1.5 Closer** — WASM playground (Mono-WASM jiterpreter, ≤15 MB compressed), cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal)
 - [x] **Phase 42: Type System & Stdlib Audit** — Reflective audit of FlowType ↔ FunctionSignature graph + clamp/advisory/charitable inventory + .flow caller cross-reference; ships `42-AUDIT.md` deliverable with 7 gap-class sections + 53 routing tags (→ Phase 43 module/naming, → Phase 44 strict-mode Axis B sites, → v1.6-backlog); anchor finding: `BeatType` is the sole coercible orphan. **Zero production code touched — read-only audit phase** (invariant gate-enforced via empty production diff). Closed 9 REQ-AUDIT-NN across 4 plans; 26/26 Phase 42 fixtures GREEN. (completed 2026-05-24)
 - [x] **Phase 43: Module Names & Qualified Imports** — file-level `module math` declaration + qualified `math.sin` access; depends on Phase 42 AUDIT.md §1/§2/§5a routing (completed 2026-05-24)
-- [ ] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites
+- [x] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites (completed 2026-05-24)
 
 ### Phase Details
 
@@ -344,7 +344,7 @@ Plans:
 | 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
 | 40. Studio Sync | v1.5 | 0/0 | Not started | - |
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
-| 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete   | 2026-05-24 |
+| 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 0/0 | Not started | - |
 | 44. Strict Mode | v1.5 | 0/0 | Not started | - |
 
