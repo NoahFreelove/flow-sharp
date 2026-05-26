@@ -108,6 +108,16 @@ public class Interpreter : IFunctionInvoker
                 ExecuteImport(import);
                 break;
 
+            // Phase 43 Plan 43-03 D-05: ModuleDeclarationStatement is consumed by
+            // ModuleLoader BEFORE Interpreter.Execute returns (the loader inspects
+            // program.Statements[0] post-Execute to register the module name).
+            // At execute-time the statement is metadata-only — no runtime action
+            // required. We add an explicit arm so the default `NotSupportedException`
+            // branch below does not fire when the program ITSELF carries a
+            // `module <name>` declaration (top-level scripts or REPL evals).
+            case ModuleDeclarationStatement:
+                break;
+
             case SectionDeclaration section:
                 ExecuteSectionDeclaration(section);
                 break;

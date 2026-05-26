@@ -1437,6 +1437,50 @@ public partial class Parser
                 return ParseMatch(location);
             }
 
+            // Phase 43 Plan 43-03 D-02 — qualified function call: (mod.fn args)
+            // Recognized as a function call when we see LParen Ident Dot Ident inside
+            // a parenthesized form. Emits a FunctionCallExpression with Name="mod.fn"
+            // (dotted string); EvaluateFunctionCall detects the dot at runtime and
+            // routes through ExecutionContext.ModuleRegistry.TryGetProc per D-02.
+            // Pitfall 2: only the parenthesized-call form (LParen IDENT Dot IDENT)
+            // produces a qualified-call FunctionCallExpression — bare `chord.root`
+            // (NO surrounding LParen / RParen) continues to parse as
+            // MemberAccessExpression and dispatch via the existing instance-member
+            // path. The 4-token lookahead ensures we don't perturb `(chord.root)`
+            // value-reference forms either: the trailing token must be either an
+            // argument-start or RParen, which means the disambiguator picks the
+            // qualified-call branch ONLY when the user wrote something callable.
+            if (Check(TokenType.Identifier)
+                && _current + 1 < _tokens.Count
+                && _tokens[_current + 1].Type == TokenType.Dot
+                && _current + 2 < _tokens.Count
+                && _tokens[_current + 2].Type == TokenType.Identifier
+                && _current + 3 < _tokens.Count
+                && _tokens[_current + 3].Type != TokenType.Dot   // chained `.` is NOT a call
+                && _tokens[_current + 3].Type != TokenType.At)
+            {
+                var modTok = Advance(); // module identifier
+                Advance();              // '.'
+                var fnTok = Advance();  // proc identifier
+                var qualifiedName = $"{modTok.Text}.{fnTok.Text}";
+                var args = new List<Expression>();
+
+                var savedFlag = _inFuncCallArgs;
+                _inFuncCallArgs = true;
+                while (!Check(TokenType.RParen) && !IsAtEnd())
+                {
+                    args.Add(ParseExpression());
+                }
+                _inFuncCallArgs = savedFlag;
+
+                Expect(TokenType.RParen, "Expected ')' after qualified function arguments");
+                return new FunctionCallExpression(
+                    location,
+                    qualifiedName,
+                    args,
+                    Span: new Span(location, PreviousToken.Location));
+            }
+
             // Check if this is a function call like (func arg1 arg2)
             // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
             if ((Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)) && _current + 1 < _tokens.Count
