@@ -349,7 +349,7 @@ Plans:
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
-| 47. Compile-Target Flavors | v1.5 | 1/6 | In progress | - |
+| 47. Compile-Target Flavors | v1.5 | 3/6 | In Progress|  |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 0/0 | Not started | - |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
 
@@ -544,14 +544,14 @@ Plans:
 **Acceptance**: `dotnet build flow-lang -p:FlowTarget=Web` succeeds with no errors. Resulting assembly contains zero references to `libpulse-simple`/`AudioToolbox`/`Rug.Osc`/`FileSystemWatcher`/`RtMidi.Core` (verified via `ildasm` or `Mono.Cecil` reference scan in the test). `dotnet build flow-lang -p:FlowTarget=Desktop` (default) preserves byte-identical behavior for every existing test under the v1.5 two-run cmp-clean determinism contract (Phase 28 RMS baselines + 287/287 test fixtures + every `tests/test_*.flow` script). Web-target assembly size measured + recorded as Plan 47-05 baseline for Phase 48 budget tracking.
 
 **Depends on**: Nothing (Phase 47 is a pure refactor of build-time conditioning). Foundation for Phase 48 (which needs the FLOW_WEB define to ship its WebAudioBackend implementation). Phase 47 ↔ Phase 49 are commutative; we order 47 first because Phase 48 depends on it and Phase 49 consumes Phase 48.
-**Requirements**: REQ-WEB-TARGET-01..10 (closed progressively across Plans 47-01..47-06; 47-01 closed REQ-WEB-TARGET-01..03, 47-02 closed REQ-WEB-TARGET-04 + REQ-WEB-TARGET-09).
-**Plans:** 2 of 6 complete
+**Requirements**: REQ-WEB-TARGET-01..10 (closed progressively across Plans 47-01..47-06; 47-01 closed REQ-WEB-TARGET-01..03, 47-02 closed REQ-WEB-TARGET-04 + REQ-WEB-TARGET-09, 47-03 closed REQ-WEB-TARGET-05 + REQ-WEB-TARGET-06).
+**Plans:** 3/6 plans executed
 
 Plans:
 
 - [x] 47-01 — MSBuild FlowTarget=Desktop|Web conditioning foundation (commits `635cbda` + `883c894`)
 - [x] 47-02 — WebAudioBackend stub + AudioPlaybackManager Web-first probe (commits `7021d8a` + `156dbd4` + `ba4d3fb`)
-- [ ] 47-03 — FlowEngine + ExecutionContext + Value + SongRenderer + TestSnapshot #if !FLOW_WEB guards (closes remaining 13 Web errors)
+- [x] 47-03 — FlowEngine + ExecutionContext + Value + SongRenderer + TestSnapshot #if !FLOW_WEB guards (commits `dfa359f` + `9600ddb` + `905b819` + `d0b8b11` + `8f6b814` — Web build 13 errors → 0; WebBuild_ExitCodeIsZero now GREEN)
 - [ ] 47-04 — DryWetMidi WASM-compat smoke + [FlowTargetFact] attribute + Desktop-only tag sweep
 - [ ] 47-05 — Mono.Cecil AssemblyReferenceScanTests
 - [ ] 47-06 — Phase 47 closer (ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep)

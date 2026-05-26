@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 47 Plan 02 complete
-last_updated: "2026-05-26T01:25:00Z"
-last_activity: 2026-05-26 -- Phase 47 Plan 02 shipped (WebAudioBackend stub + DetectBackend Web-first probe)
+stopped_at: Phase 47 Plan 03 shipped — Web build now succeeds end-to-end
+last_updated: "2026-05-25T00:00:00.000Z"
+last_activity: 2026-05-25 -- Phase 47 Plan 03 shipped (load-bearing — Web build flips RED→GREEN)
 progress:
   total_phases: 15
   completed_phases: 7
   total_plans: 71
-  completed_plans: 58
-  percent: 48
+  completed_plans: 59
+  percent: 47
 ---
 
 # Project State
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 47
-Plan: 47-03 (next)
-Last completed: 47-02 (WebAudioBackend stub + AudioPlaybackManager Web-first probe; commits `7021d8a` + `156dbd4` + `ba4d3fb`)
+Plan: 47-04 (next)
+Last completed: 47-03 (FlowEngine + Parser + ModuleLoader guards — Web build flips RED→GREEN end-to-end; 13 errors → 0; commits `dfa359f` + `9600ddb` + `905b819` + `d0b8b11` + `8f6b814`)
 Next step: continue Phase 47 execution OR `/clear` then one of (composer pick):
 
-  - Plan 47-03 (FlowEngine + ExecutionContext + Value + SongRenderer + TestSnapshot `#if !FLOW_WEB` guards) — closes the remaining 13 Web-build compile errors from Sfz/Network references; flips `WebBuild_ExitCodeIsZero` Fact GREEN
-  - `/gsd:plan-phase 44` — Strict Mode (consumes AUDIT.md §2 + §6a + §6b + §7b; load-bearing 13 input-perimeter clamps + 117 advisory sites + explicit-conversion builtins `(db x)`/`(cents x)`/`(hz x)`/`(ms x)`/`(sec x)`. Phase 43's module-namespace + qualified-import work is now available for organizing strict-mode test files.)
-  - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
+  - Plan 47-04 (DryWetMidi WASM-compat smoke + FlowTargetFact attribute + Desktop-only tag sweep) — verifies DryWetMidi 8.0.3 compiles under FlowTarget=Web; introduces `[FlowTargetFact("Web")]` / `[FlowTargetFact("Desktop")]` xUnit attribute; tags existing Phase 38/33/Audio-backend tests as Desktop-only
+  - Plan 47-05 (Mono.Cecil AssemblyReferenceScanTests) — reflective scan of Web-compiled flow-lang.dll asserting zero references to `Rug.Osc` / `System.IO.FileSystemWatcher` / `libpulse-simple` / `AudioToolbox` / `RtMidi.Core`
+  - Plan 47-06 (closer) — Phase 47 VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep
 
 Status: Ready to execute
-Last activity: 2026-05-26 -- Phase 47 Plan 02 shipped
+Last activity: 2026-05-25 -- Phase 47 Plan 03 shipped (load-bearing Web build closure)
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
