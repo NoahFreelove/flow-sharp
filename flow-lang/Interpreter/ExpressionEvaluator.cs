@@ -623,19 +623,6 @@ public class ExpressionEvaluator
             return Value.Void();
         }
 
-        // Phase 44 Plan 44-06 (Axis B advisory elevation — HIGH-priority): when
-        // the CALLER's file declared `enable strict;` (CallerStrictMode snapshot
-        // captured at call dispatch in Plan 44-02), promote the non-exhaustive
-        // advisory to a composer-facing [strict] error via ErrorReporter. The
-        // existing WarnOnce sentinel + body remain byte-identical on the
-        // non-strict path (Pitfall 5 two-run cmp-clean preserved).
-        if (_context.CallerStrictMode)
-        {
-            _errorReporter.ReportError(
-                $"[strict] [match] non-exhaustive pattern at {spanForReport} — fell through to Void",
-                _context.CurrentCallSite);
-            return Value.Void();
-        }
         RenderingDiagnostics.WarnOnce(
             $"match-non-exhaustive:{spanForReport}",
             $"warning: match expression at {spanForReport} non-exhaustive — fell through to Void");

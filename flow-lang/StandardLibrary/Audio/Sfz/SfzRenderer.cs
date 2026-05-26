@@ -77,16 +77,6 @@ public class SfzRenderer
     private readonly SfzSampleCache _cache;
 
     /// <summary>
-    /// Phase 44 Plan 44-06 — optional ExecutionContext for strict-mode advisory
-    /// elevation. When null (Phase 33 baseline + Phase 33 tests that construct
-    /// SfzRenderer directly), the Render path runs charitable WarnOnce
-    /// unchanged. When non-null and <c>CallerStrictMode==true</c>, advisory
-    /// sites elevate to <see cref="ErrorReporter.ReportError(string, Core.SourceLocation?)"/>
-    /// instead. Non-strict path stays byte-identical (Pitfall 5).
-    /// </summary>
-    private readonly FlowLang.Runtime.ExecutionContext? _strictCtx;
-
-    /// <summary>
     /// 441 frames = 10 ms at 44.1 kHz, locked by SPEC-5. Phase 33 §33-SPEC
     /// fixes this constant — do not adjust without re-running the SPEC-5
     /// spectral-centroid acceptance gate.
@@ -113,20 +103,6 @@ public class SfzRenderer
     public SfzRenderer(SfzSampleCache cache)
     {
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _strictCtx = null;
-    }
-
-    /// <summary>
-    /// Phase 44 Plan 44-06 — strict-aware constructor. SongRenderer's
-    /// <c>RenderSongWithSfz</c> path uses this overload to thread the active
-    /// ExecutionContext so leaf-site WarnOnce advisories elevate to ErrorReporter
-    /// errors when <c>ctx.CallerStrictMode==true</c>. Phase 33 + 37 direct
-    /// tests keep using the 1-arg overload (_strictCtx stays null → charitable).
-    /// </summary>
-    public SfzRenderer(SfzSampleCache cache, FlowLang.Runtime.ExecutionContext? strictCtx)
-    {
-        _cache = cache ?? throw new ArgumentNullException(nameof(cache));
-        _strictCtx = strictCtx;
     }
 
     /// <summary>
@@ -190,19 +166,9 @@ public class SfzRenderer
         int targetMidi = PitchConversion.GetMidiNote(note.NoteName, note.Octave, note.Alteration);
         if (targetMidi < 0 || targetMidi > 127)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-            {
-                _strictCtx.ErrorReporter.ReportError(
-                    $"[strict] [sfz] pitch {targetMidi} out of MIDI range under '{patch.Description}' — rendered as rest",
-                    _strictCtx.CurrentCallSite);
-            }
-            else
-            {
-                RenderingDiagnostics.WarnOnce(
-                    $"sfz:oob:{patch.Description}:{targetMidi}",
-                    $"[sfz] pitch {targetMidi} out of MIDI range under '{patch.Description}' — rendered as rest");
-            }
+            RenderingDiagnostics.WarnOnce(
+                $"sfz:oob:{patch.Description}:{targetMidi}",
+                $"[sfz] pitch {targetMidi} out of MIDI range under '{patch.Description}' — rendered as rest");
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
         }
 
@@ -219,19 +185,9 @@ public class SfzRenderer
             }
             if (region is null)
             {
-                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-                {
-                    _strictCtx.ErrorReporter.ReportError(
-                        $"[strict] [sfz] no region for ({targetMidi}, {vel}) in '{patch.Description}' — rendered as rest",
-                        _strictCtx.CurrentCallSite);
-                }
-                else
-                {
-                    RenderingDiagnostics.WarnOnce(
-                        $"sfz:missing:{patch.Description}:{targetMidi}:{vel}",
-                        $"[sfz] no region for ({targetMidi}, {vel}) in '{patch.Description}' — rendered as rest");
-                }
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:missing:{patch.Description}:{targetMidi}:{vel}",
+                    $"[sfz] no region for ({targetMidi}, {vel}) in '{patch.Description}' — rendered as rest");
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
             }
         }
@@ -267,23 +223,11 @@ public class SfzRenderer
             // just warn once per (patch, sample-center, target-MIDI) tuple.
             if (Math.Abs(semitonesShift) > 12)
             {
-                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-                {
-                    _strictCtx.ErrorReporter.ReportError(
-                        $"[strict] [pitchShift] >12st shift on drum sample at MIDI {targetMidi} " +
-                        $"(sample center MIDI {region.PitchKeycenter}, patch '{patch.Description}') — " +
-                        "varispeed artifacts likely dominate (D-37-14 + RESEARCH Pattern 11 advisory)",
-                        _strictCtx.CurrentCallSite);
-                }
-                else
-                {
-                    RenderingDiagnostics.WarnOnce(
-                        $"pitchShift:drum:large:{patch.Description}:{region.PitchKeycenter}:{targetMidi}",
-                        $"[pitchShift] >12st shift on drum sample at MIDI {targetMidi} " +
-                        $"(sample center MIDI {region.PitchKeycenter}, patch '{patch.Description}') — " +
-                        "varispeed artifacts likely dominate (D-37-14 + RESEARCH Pattern 11 advisory)");
-                }
+                RenderingDiagnostics.WarnOnce(
+                    $"pitchShift:drum:large:{patch.Description}:{region.PitchKeycenter}:{targetMidi}",
+                    $"[pitchShift] >12st shift on drum sample at MIDI {targetMidi} " +
+                    $"(sample center MIDI {region.PitchKeycenter}, patch '{patch.Description}') — " +
+                    "varispeed artifacts likely dominate (D-37-14 + RESEARCH Pattern 11 advisory)");
             }
 
             // Load the RAW sample at sample-center (semitonesShift=0
@@ -293,19 +237,9 @@ public class SfzRenderer
             AudioBuffer? raw = _cache.GetVarispeed(patch, region.SamplePath, 0);
             if (raw is null)
             {
-                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-                {
-                    _strictCtx.ErrorReporter.ReportError(
-                        $"[strict] [sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest",
-                        _strictCtx.CurrentCallSite);
-                }
-                else
-                {
-                    RenderingDiagnostics.WarnOnce(
-                        $"sfz:nosample:{patch.Description}:{region.SamplePath}",
-                        $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
-                }
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:nosample:{patch.Description}:{region.SamplePath}",
+                    $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
             }
             double cents = semitonesShift * 100.0;
@@ -322,19 +256,9 @@ public class SfzRenderer
             source = _cache.GetVarispeed(patch, region.SamplePath, semitonesShift);
             if (source is null)
             {
-                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-                {
-                    _strictCtx.ErrorReporter.ReportError(
-                        $"[strict] [sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest",
-                        _strictCtx.CurrentCallSite);
-                }
-                else
-                {
-                    RenderingDiagnostics.WarnOnce(
-                        $"sfz:nosample:{patch.Description}:{region.SamplePath}",
-                        $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
-                }
+                RenderingDiagnostics.WarnOnce(
+                    $"sfz:nosample:{patch.Description}:{region.SamplePath}",
+                    $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
             }
         }

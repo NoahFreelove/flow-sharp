@@ -128,7 +128,7 @@ public static class SfzParser
     /// <param name="patchDescription">Used in the WarnOnce sentinel key
     /// (so two patches with the same misspelled opcode each fire once
     /// rather than the first one suppressing the second).</param>
-    public static SfzData Parse(string content, string filePath, string patchDescription, FlowLang.Runtime.ExecutionContext? strictCtx = null)
+    public static SfzData Parse(string content, string filePath, string patchDescription)
     {
         var lines = content.Split('\n');
 
@@ -249,19 +249,9 @@ public static class SfzParser
                             break;
                         default:
                             // Unknown header — silently advisory + skip.
-                            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                            if (strictCtx is not null && strictCtx.CallerStrictMode)
-                            {
-                                strictCtx.ErrorReporter.ReportError(
-                                    $"[strict] [sfz] unrecognized header '<{header}>' in '{patchDescription}' — ignoring",
-                                    strictCtx.CurrentCallSite);
-                            }
-                            else
-                            {
-                                RenderingDiagnostics.WarnOnce(
-                                    $"sfz:header:{patchDescription}:{header}",
-                                    $"[sfz] unrecognized header '<{header}>' in '{patchDescription}' — ignoring");
-                            }
+                            RenderingDiagnostics.WarnOnce(
+                                $"sfz:header:{patchDescription}:{header}",
+                                $"[sfz] unrecognized header '<{header}>' in '{patchDescription}' — ignoring");
                             target = HeaderKind.None;
                             break;
                     }
@@ -283,19 +273,9 @@ public static class SfzParser
                     var garbage = trimmed[cursor..].TrimEnd();
                     if (garbage.Length > 0)
                     {
-                        // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                        if (strictCtx is not null && strictCtx.CallerStrictMode)
-                        {
-                            strictCtx.ErrorReporter.ReportError(
-                                $"[strict] [sfz] unrecognized token '{garbage}' in '{patchDescription}' — ignoring",
-                                strictCtx.CurrentCallSite);
-                        }
-                        else
-                        {
-                            RenderingDiagnostics.WarnOnce(
-                                $"sfz:syntax:{patchDescription}:{garbage}",
-                                $"[sfz] unrecognized token '{garbage}' in '{patchDescription}' — ignoring");
-                        }
+                        RenderingDiagnostics.WarnOnce(
+                            $"sfz:syntax:{patchDescription}:{garbage}",
+                            $"[sfz] unrecognized token '{garbage}' in '{patchDescription}' — ignoring");
                     }
                     break;
                 }
@@ -339,38 +319,18 @@ public static class SfzParser
                 // Route key=value into the active accumulator.
                 if (!KnownOpcodes.Contains(key))
                 {
-                    // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                    if (strictCtx is not null && strictCtx.CallerStrictMode)
-                    {
-                        strictCtx.ErrorReporter.ReportError(
-                            $"[strict] [sfz] unrecognized opcode '{key}' in '{patchDescription}' — ignoring",
-                            strictCtx.CurrentCallSite);
-                    }
-                    else
-                    {
-                        RenderingDiagnostics.WarnOnce(
-                            $"sfz:opcode:{patchDescription}:{key}",
-                            $"[sfz] unrecognized opcode '{key}' in '{patchDescription}' — ignoring");
-                    }
+                    RenderingDiagnostics.WarnOnce(
+                        $"sfz:opcode:{patchDescription}:{key}",
+                        $"[sfz] unrecognized opcode '{key}' in '{patchDescription}' — ignoring");
                     continue;
                 }
 
                 // default_path is control-only. Any other location → advisory.
                 if (key == "default_path" && target != HeaderKind.Control)
                 {
-                    // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                    if (strictCtx is not null && strictCtx.CallerStrictMode)
-                    {
-                        strictCtx.ErrorReporter.ReportError(
-                            $"[strict] [sfz] 'default_path' only valid inside <control>; ignoring stray occurrence in '{patchDescription}'",
-                            strictCtx.CurrentCallSite);
-                    }
-                    else
-                    {
-                        RenderingDiagnostics.WarnOnce(
-                            $"sfz:opcode_misplaced:{patchDescription}:default_path",
-                            $"[sfz] 'default_path' only valid inside <control>; ignoring stray occurrence in '{patchDescription}'");
-                    }
+                    RenderingDiagnostics.WarnOnce(
+                        $"sfz:opcode_misplaced:{patchDescription}:default_path",
+                        $"[sfz] 'default_path' only valid inside <control>; ignoring stray occurrence in '{patchDescription}'");
                     continue;
                 }
 
@@ -391,19 +351,9 @@ public static class SfzParser
                         break;
                     default:
                         // Opcode encountered with no active header — charitable advisory.
-                        // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                        if (strictCtx is not null && strictCtx.CallerStrictMode)
-                        {
-                            strictCtx.ErrorReporter.ReportError(
-                                $"[strict] [sfz] opcode '{key}' outside any header in '{patchDescription}' — ignoring",
-                                strictCtx.CurrentCallSite);
-                        }
-                        else
-                        {
-                            RenderingDiagnostics.WarnOnce(
-                                $"sfz:orphan_opcode:{patchDescription}:{key}",
-                                $"[sfz] opcode '{key}' outside any header in '{patchDescription}' — ignoring");
-                        }
+                        RenderingDiagnostics.WarnOnce(
+                            $"sfz:orphan_opcode:{patchDescription}:{key}",
+                            $"[sfz] opcode '{key}' outside any header in '{patchDescription}' — ignoring");
                         break;
                 }
             }
@@ -542,11 +492,6 @@ public static class SfzParser
         // clamp seq_length values that exceed 100 with one-shot WarnOnce.
         if (seqLength > 100)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            // BuildRegion is called from Parse; strictCtx is not in scope here.
-            // SfzParser.BuildRegion doesn't have access to strictCtx since it's a static
-            // helper. Strict elevation deferred — WarnOnce fires unconditionally.
-            // TODO Plan 44-07: thread strictCtx into BuildRegion if needed.
             RenderingDiagnostics.WarnOnce(
                 $"sfz:opcode_value:{patchDescription}:seq_length:{seqLength}",
                 $"[sfz] seq_length={seqLength} exceeds spec max 100 in '{patchDescription}' — clamping to 100");
@@ -572,8 +517,6 @@ public static class SfzParser
                 case "loop_continuous":  loopMode = SfzLoopMode.LoopContinuous; break;
                 case "loop_sustain":     loopMode = SfzLoopMode.LoopSustain; break;
                 default:
-                    // Phase 44 Plan 44-06 site: BuildRegion is a static helper without
-                    // strictCtx access. Deferred — see seq_length comment above.
                     RenderingDiagnostics.WarnOnce(
                         $"sfz:opcode_value:{patchDescription}:loop_mode:{lmStr}",
                         $"[sfz] unknown loop_mode value '{lmStr}' in '{patchDescription}' — falling back to no_loop");
@@ -618,8 +561,6 @@ public static class SfzParser
             // (pan, transpose). For the 7 int opcodes in our whitelist
             // (lokey/hikey/lovel/hivel/loop_start/loop_end/pitch_keycenter)
             // the value must be non-negative — NumberStyles.None enforces that.
-            // Phase 44 Plan 44-06: BuildRegion-internal static helper without
-            // strictCtx access — strict elevation deferred to Plan 44-07.
             RenderingDiagnostics.WarnOnce(
                 $"sfz:opcode_value:{patchDescription}:{key}:{raw}",
                 $"[sfz] invalid value for {key} in '{patchDescription}' — '{raw}' rejected, using default");

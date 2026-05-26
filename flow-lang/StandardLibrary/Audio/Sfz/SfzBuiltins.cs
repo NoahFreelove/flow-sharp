@@ -216,11 +216,8 @@ public static class SfzBuiltins
         // a clear message naming the missing path — that bubbles to the
         // composer naturally.
         string content = File.ReadAllText(absolutePath);
-        // Phase 44 Plan 44-06: thread ctx for strict-mode advisory elevation
-        // in SfzParser. Non-strict path stays byte-identical (Pitfall 5).
         var sfzData = SfzParser.Parse(content, absolutePath,
-            patchDescription: Path.GetFileNameWithoutExtension(absolutePath),
-            strictCtx: ctx);
+            patchDescription: Path.GetFileNameWithoutExtension(absolutePath));
 
         // Phase 37 DRUM-01 W7 LOCK (revision pass 2/3) — dict-symbol drives
         // percussion routing, NOT filename. When the composer wrote
@@ -252,10 +249,8 @@ public static class SfzBuiltins
 
         string path = args[0].As<string>();
         string content = File.ReadAllText(path);
-        // Phase 44 Plan 44-06: thread ctx for strict-mode advisory elevation.
         var sfzData = SfzParser.Parse(content, path,
-            patchDescription: Path.GetFileNameWithoutExtension(path),
-            strictCtx: ctx);
+            patchDescription: Path.GetFileNameWithoutExtension(path));
         return Value.Sfz(sfzData);
     }
 
@@ -279,21 +274,10 @@ public static class SfzBuiltins
             // process-global per RenderingDiagnostics convention; the throw
             // is per-call so each script that forgets sfz_root sees the
             // error (the advisory just doesn't repeat the prose).
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    "[strict] [sfz] sfz_root not configured — populate ~/.config/flow/config.toml " +
-                    "with a `sfz_root = \"/path/to/your/sfz/library\"` entry",
-                    ctx.CurrentCallSite);
-            }
-            else
-            {
-                RenderingDiagnostics.WarnOnce(
-                    sentinelKey: "sfz:config:sfz_root_missing",
-                    message: "[sfz] sfz_root not configured — populate ~/.config/flow/config.toml " +
-                             "with a `sfz_root = \"/path/to/your/sfz/library\"` entry");
-            }
+            RenderingDiagnostics.WarnOnce(
+                sentinelKey: "sfz:config:sfz_root_missing",
+                message: "[sfz] sfz_root not configured — populate ~/.config/flow/config.toml " +
+                         "with a `sfz_root = \"/path/to/your/sfz/library\"` entry");
             throw new InvalidOperationException(
                 "SFZ root directory not configured. Populate `sfz_root` in " +
                 "~/.config/flow/config.toml — e.g. `sfz_root = \"$HOME/.flow/samples/VSCO-CE\"` — " +

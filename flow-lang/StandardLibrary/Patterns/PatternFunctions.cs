@@ -73,19 +73,14 @@ public static class PatternFunctions
         ExecutionContext context)
     {
         // 10 deterministic combinators — D-36-01 PAT-01 baseline.
-        // Phase 44 Plan 44-06: every combinator now threads `context` so each
-        // WarnOnce leaf site can read `context.CallerStrictMode` and elevate
-        // the advisory to an ErrorReporter `[strict]` error when called from a
-        // strict file (D-05 + D-06 + D-07). Non-strict path remains
-        // byte-identical (Pitfall 5).
         RegisterEvery(registry, context);
-        RegisterFast(registry, context);
-        RegisterSlow(registry, context);
+        RegisterFast(registry);
+        RegisterSlow(registry);
         RegisterChunk(registry, context);
-        RegisterPhase(registry, context);
-        RegisterRev(registry, context);
-        RegisterIter(registry, context);
-        RegisterPalindrome(registry, context);
+        RegisterPhase(registry);
+        RegisterRev(registry);
+        RegisterIter(registry);
+        RegisterPalindrome(registry);
         RegisterJux(registry, context);
         RegisterSuperimpose(registry, context);
 
@@ -127,21 +122,10 @@ public static class PatternFunctions
     /// Empty-seq guard. Returns true and emits a one-shot advisory when
     /// <paramref name="seq"/> has zero bars. Caller returns the input
     /// unchanged after this fires (Pitfall 9 — charitable interpretation).
-    ///
-    /// <para>Phase 44 Plan 44-06: under strict mode the advisory is reported
-    /// as a composer-facing [strict] error via ErrorReporter. The non-strict
-    /// path remains byte-identical (Pitfall 5 two-run cmp-clean preserved).</para>
     /// </summary>
     private static bool IsEmptySeqAdvisory(SequenceData seq, string name, ExecutionContext ctx)
     {
         if (seq.Bars.Count > 0) return false;
-        if (ctx.CallerStrictMode)
-        {
-            ctx.ErrorReporter.ReportError(
-                $"[strict] [{name}] empty sequence at {ctx.CurrentCallSite}",
-                ctx.CurrentCallSite);
-            return true;
-        }
         RenderingDiagnostics.WarnOnce(
             $"{name}:empty:{ctx.CurrentCallSite}",
             $"[{name}] empty sequence at {ctx.CurrentCallSite}; returned unchanged");
@@ -242,14 +226,6 @@ public static class PatternFunctions
                 else
                 {
                     // Lambda returned non-Sequence — charitable: pass through.
-                    // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                    if (ctx.CallerStrictMode)
-                    {
-                        ctx.ErrorReporter.ReportError(
-                            $"[strict] [every] lambda at {ctx.CurrentCallSite} did not return Sequence",
-                            ctx.CurrentCallSite);
-                        return Value.Sequence(seq);
-                    }
                     RenderingDiagnostics.WarnOnce(
                         $"every:non-sequence-fn:{ctx.CurrentCallSite}",
                         $"[every] lambda at {ctx.CurrentCallSite} did not return Sequence; bar passed through unchanged");
@@ -268,12 +244,12 @@ public static class PatternFunctions
     // 2. fast — (Sequence seq, Double factor) -> Sequence
     // ====================================================================
 
-    private static void RegisterFast(InternalFunctionRegistry registry, ExecutionContext context)
+    private static void RegisterFast(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("fast",
             [SequenceType.Instance, DoubleType.Instance],
             ParameterNames: ["seq", "factor"]);
-        registry.Register("fast", sig, args => Fast(args, context));
+        registry.Register("fast", sig, args => Fast(args));
     }
 
     /// <summary>
@@ -284,23 +260,23 @@ public static class PatternFunctions
     /// rounding <c>currentDur + log2(factor)</c> to the nearest enum slot.
     /// Charitable on <c>factor &lt;= 0</c> / non-finite.
     /// </summary>
-    private static Value Fast(IReadOnlyList<Value> args, ExecutionContext ctx)
+    private static Value Fast(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
         double factor = args[1].As<double>();
-        return FastSlowImpl(seq, factor, "fast", invert: false, ctx);
+        return FastSlowImpl(seq, factor, "fast", invert: false);
     }
 
     // ====================================================================
     // 3. slow — (Sequence seq, Double factor) -> Sequence
     // ====================================================================
 
-    private static void RegisterSlow(InternalFunctionRegistry registry, ExecutionContext context)
+    private static void RegisterSlow(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("slow",
             [SequenceType.Instance, DoubleType.Instance],
             ParameterNames: ["seq", "factor"]);
-        registry.Register("slow", sig, args => Slow(args, context));
+        registry.Register("slow", sig, args => Slow(args));
     }
 
     /// <summary>
@@ -308,26 +284,18 @@ public static class PatternFunctions
     /// of 2.0 doubles durations (quarter → half). Inverse of <c>fast</c>;
     /// shares the implementation with the <c>invert: true</c> flag.
     /// </summary>
-    private static Value Slow(IReadOnlyList<Value> args, ExecutionContext ctx)
+    private static Value Slow(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
         double factor = args[1].As<double>();
-        return FastSlowImpl(seq, factor, "slow", invert: true, ctx);
+        return FastSlowImpl(seq, factor, "slow", invert: true);
     }
 
-    private static Value FastSlowImpl(SequenceData seq, double factor, string name, bool invert, ExecutionContext ctx)
+    private static Value FastSlowImpl(SequenceData seq, double factor, string name, bool invert)
     {
         if (!double.IsFinite(factor) || factor <= 0.0)
         {
             // Charitable: zero / negative / NaN / Infinity → unchanged.
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [{name}] factor must be > 0 and finite (got {factor})",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             // (Use a no-CurrentCallSite key so the advisory dedups by name —
             //  Fast/Slow have no context.PrngRegistry threading.)
             RenderingDiagnostics.WarnOnce(
@@ -405,14 +373,6 @@ public static class PatternFunctions
 
         if (n <= 0)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [chunk] n must be > 0 (got {n}) at {ctx.CurrentCallSite}",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"chunk:invalid-n:{ctx.CurrentCallSite}",
                 $"[chunk] n must be > 0 (got {n}) at {ctx.CurrentCallSite}; sequence unchanged");
@@ -446,14 +406,6 @@ public static class PatternFunctions
         }
         else
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [chunk] lambda at {ctx.CurrentCallSite} did not return Sequence",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"chunk:non-sequence-fn:{ctx.CurrentCallSite}",
                 $"[chunk] lambda at {ctx.CurrentCallSite} did not return Sequence; chunk passed through unchanged");
@@ -478,12 +430,12 @@ public static class PatternFunctions
     // 5. phase — (Double offset, Sequence seq) -> Sequence  (D-36-04 BARS)
     // ====================================================================
 
-    private static void RegisterPhase(InternalFunctionRegistry registry, ExecutionContext context)
+    private static void RegisterPhase(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("phase",
             [DoubleType.Instance, SequenceType.Instance],
             ParameterNames: ["offset", "seq"]);
-        registry.Register("phase", sig, args => Phase(args, context));
+        registry.Register("phase", sig, args => Phase(args));
     }
 
     /// <summary>
@@ -492,21 +444,13 @@ public static class PatternFunctions
     /// on a 4-bar seq rotates by 2. Charitable on non-finite offsets and
     /// empty sequences.
     /// </summary>
-    private static Value Phase(IReadOnlyList<Value> args, ExecutionContext ctx)
+    private static Value Phase(IReadOnlyList<Value> args)
     {
         double offset = args[0].As<double>();
         var seq = args[1].As<SequenceData>();
 
         if (!double.IsFinite(offset))
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [phase] offset must be finite (got {offset})",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 "phase:non-finite",
                 $"[phase] offset must be finite (got {offset}); sequence unchanged");
@@ -514,13 +458,6 @@ public static class PatternFunctions
         }
         if (seq.Bars.Count == 0)
         {
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    "[strict] [phase] empty sequence",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 "phase:empty",
                 "[phase] empty sequence; returned unchanged");
@@ -541,12 +478,12 @@ public static class PatternFunctions
     // 6. rev — (Sequence seq) -> Sequence
     // ====================================================================
 
-    private static void RegisterRev(InternalFunctionRegistry registry, ExecutionContext context)
+    private static void RegisterRev(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("rev",
             [SequenceType.Instance],
             ParameterNames: ["seq"]);
-        registry.Register("rev", sig, args => Rev(args, context));
+        registry.Register("rev", sig, args => Rev(args));
     }
 
     /// <summary>
@@ -554,22 +491,10 @@ public static class PatternFunctions
     /// preserved. Compare to the existing <c>retrograde</c> which reverses
     /// both. Charitable on empty: returns empty unchanged.
     /// </summary>
-    private static Value Rev(IReadOnlyList<Value> args, ExecutionContext ctx)
+    private static Value Rev(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
-        if (seq.Bars.Count == 0)
-        {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07. The
-            // pre-strict non-strict path is silent (Pitfall 9), so under strict
-            // we surface an error to the composer at the call boundary.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    "[strict] [rev] empty sequence",
-                    ctx.CurrentCallSite);
-            }
-            return Value.Sequence(seq);
-        }
+        if (seq.Bars.Count == 0) return Value.Sequence(seq);
 
         var reversed = new List<BarData>(seq.Bars);
         reversed.Reverse();
@@ -580,12 +505,12 @@ public static class PatternFunctions
     // 7. iter — (Int n, Sequence seq) -> Sequence
     // ====================================================================
 
-    private static void RegisterIter(InternalFunctionRegistry registry, ExecutionContext context)
+    private static void RegisterIter(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("iter",
             [IntType.Instance, SequenceType.Instance],
             ParameterNames: ["n", "seq"]);
-        registry.Register("iter", sig, args => Iter(args, context));
+        registry.Register("iter", sig, args => Iter(args));
     }
 
     /// <summary>
@@ -598,37 +523,19 @@ public static class PatternFunctions
     /// bars preserving the original bar boundaries. Charitable on
     /// <c>n &lt;= 0</c>.
     /// </summary>
-    private static Value Iter(IReadOnlyList<Value> args, ExecutionContext ctx)
+    private static Value Iter(IReadOnlyList<Value> args)
     {
         int n = args[0].As<int>();
         var seq = args[1].As<SequenceData>();
 
         if (n <= 0)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [iter] n must be > 0 (got {n})",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 "iter:invalid-n",
                 $"[iter] n must be > 0 (got {n}); sequence unchanged");
             return Value.Sequence(seq);
         }
-        if (seq.Bars.Count == 0)
-        {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    "[strict] [iter] empty sequence",
-                    ctx.CurrentCallSite);
-            }
-            return Value.Sequence(seq);
-        }
+        if (seq.Bars.Count == 0) return Value.Sequence(seq);
 
         // Flatten notes, rotate, re-distribute keeping bar.Count counts identical.
         var flat = new List<MusicalNoteData>();
@@ -665,12 +572,12 @@ public static class PatternFunctions
     // 8. palindrome — (Sequence seq) -> Sequence
     // ====================================================================
 
-    private static void RegisterPalindrome(InternalFunctionRegistry registry, ExecutionContext context)
+    private static void RegisterPalindrome(InternalFunctionRegistry registry)
     {
         var sig = new FunctionSignature("palindrome",
             [SequenceType.Instance],
             ParameterNames: ["seq"]);
-        registry.Register("palindrome", sig, args => Palindrome(args, context));
+        registry.Register("palindrome", sig, args => Palindrome(args));
     }
 
     /// <summary>
@@ -679,20 +586,10 @@ public static class PatternFunctions
     /// (Tidal's palindrome is per-cycle / per-bar; we mirror at bar
     /// granularity to compose with <c>rev</c>'s contract).
     /// </summary>
-    private static Value Palindrome(IReadOnlyList<Value> args, ExecutionContext ctx)
+    private static Value Palindrome(IReadOnlyList<Value> args)
     {
         var seq = args[0].As<SequenceData>();
-        if (seq.Bars.Count == 0)
-        {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    "[strict] [palindrome] empty sequence",
-                    ctx.CurrentCallSite);
-            }
-            return Value.Sequence(seq);
-        }
+        if (seq.Bars.Count == 0) return Value.Sequence(seq);
 
         var result = new SequenceData();
         foreach (var b in seq.Bars) result.AddBar(b);
@@ -730,14 +627,6 @@ public static class PatternFunctions
         var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { Value.Sequence(seq) });
         if (lambdaResult.Data is not SequenceData other)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [jux] lambda at {ctx.CurrentCallSite} did not return Sequence",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"jux:non-sequence-fn:{ctx.CurrentCallSite}",
                 $"[jux] lambda at {ctx.CurrentCallSite} did not return Sequence; original passed through");
@@ -745,14 +634,6 @@ public static class PatternFunctions
         }
         if (other.Bars.Count != seq.Bars.Count)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [jux] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"jux:bar-mismatch:{ctx.CurrentCallSite}",
                 $"[jux] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}; original passed through");
@@ -805,14 +686,6 @@ public static class PatternFunctions
         var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { Value.Sequence(seq) });
         if (lambdaResult.Data is not SequenceData other)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [superimpose] lambda at {ctx.CurrentCallSite} did not return Sequence",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"superimpose:non-sequence-fn:{ctx.CurrentCallSite}",
                 $"[superimpose] lambda at {ctx.CurrentCallSite} did not return Sequence; original passed through");
@@ -820,14 +693,6 @@ public static class PatternFunctions
         }
         if (other.Bars.Count != seq.Bars.Count)
         {
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [superimpose] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"superimpose:bar-mismatch:{ctx.CurrentCallSite}",
                 $"[superimpose] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}; original passed through");
@@ -902,14 +767,6 @@ public static class PatternFunctions
         if (!double.IsFinite(prob) || prob < 0.0 || prob > 1.0)
         {
             double clamped = double.IsFinite(prob) ? Math.Clamp(prob, 0.0, 1.0) : 0.5;
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [sometimes] probability {prob} outside [0.0, 1.0]",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"sometimes:clamp:{ctx.CurrentCallSite}",
                 $"[sometimes] prob {prob} clamped to {clamped} at {ctx.CurrentCallSite}");
@@ -934,14 +791,6 @@ public static class PatternFunctions
                     foreach (var b in transformed.Bars) output.Add(b);
                 else
                 {
-                    // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                    if (ctx.CallerStrictMode)
-                    {
-                        ctx.ErrorReporter.ReportError(
-                            $"[strict] [sometimes] lambda at {ctx.CurrentCallSite} did not return Sequence",
-                            ctx.CurrentCallSite);
-                        return Value.Sequence(FromBars(output));
-                    }
                     RenderingDiagnostics.WarnOnce(
                         $"sometimes:non-sequence-fn:{ctx.CurrentCallSite}",
                         $"[sometimes] lambda at {ctx.CurrentCallSite} did not return Sequence; bar passed through");
@@ -1007,14 +856,6 @@ public static class PatternFunctions
         if (!double.IsFinite(prob) || prob < 0.0 || prob > 1.0)
         {
             double clamped = double.IsFinite(prob) ? Math.Clamp(prob, 0.0, 1.0) : 0.5;
-            // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-            if (ctx.CallerStrictMode)
-            {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [sparseSeq] probability {prob} outside [0.0, 1.0]",
-                    ctx.CurrentCallSite);
-                return Value.Sequence(seq);
-            }
             RenderingDiagnostics.WarnOnce(
                 $"sparseSeq:clamp:{ctx.CurrentCallSite}",
                 $"[sparseSeq] prob {prob} clamped to {clamped} at {ctx.CurrentCallSite}");

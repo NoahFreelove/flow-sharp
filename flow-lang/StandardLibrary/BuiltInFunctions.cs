@@ -441,12 +441,13 @@ public static class BuiltInFunctions
         // VoidType.Instance is used as a wildcard/"any type" parameter in these signatures.
         // The overload resolver treats Void as compatible with all types, allowing these
         // functions to accept arguments of any type.
-
-        var equalsSignature = new FunctionSignature(
-            "equals",
-            [VoidType.Instance, VoidType.Instance],
-            ParameterNames: ["a", "b"]);
-        registry.Register("equals", equalsSignature, StdLib.Equals);
+        //
+        // Phase 44 Plan 44-09 Task 2 — equals/lt/gt/lte/gte migrated to
+        // RegisterContextDependentFunctions so strict-aware EqualsCharitable /
+        // {GreaterThan,LessThan}{,OrEqual}Charitable can read ctx.CallerStrictMode
+        // and emit `[strict] cross-type comparison ...` errors per D-11. The
+        // sequals (strict equality) builtin stays here — its semantics are
+        // mode-independent and never differs based on strict mode.
 
         var sequalsSignature = new FunctionSignature(
             "sequals",
@@ -454,31 +455,8 @@ public static class BuiltInFunctions
             ParameterNames: ["a", "b"]);
         registry.Register("sequals", sequalsSignature, StdLib.StrictEquals);
 
-        var ltSignature = new FunctionSignature(
-            "lt",
-            [VoidType.Instance, VoidType.Instance],
-            ParameterNames: ["a", "b"]);
-        registry.Register("lt", ltSignature, StdLib.LessThan);
-
-        var gtSignature = new FunctionSignature(
-            "gt",
-            [VoidType.Instance, VoidType.Instance],
-            ParameterNames: ["a", "b"]);
-        registry.Register("gt", gtSignature, StdLib.GreaterThan);
-
-        var lteSignature = new FunctionSignature(
-            "lte",
-            [VoidType.Instance, VoidType.Instance],
-            ParameterNames: ["a", "b"]);
-        registry.Register("lte", lteSignature, StdLib.LessThanOrEqual);
-
-        var gteSignature = new FunctionSignature(
-            "gte",
-            [VoidType.Instance, VoidType.Instance],
-            ParameterNames: ["a", "b"]);
-        registry.Register("gte", gteSignature, StdLib.GreaterThanOrEqual);
-        
         // (Moved random functions to RegisterContextDependentFunctions)
+        // (Moved equals/lt/gt/lte/gte to RegisterContextDependentFunctions — Plan 44-09 Task 2)
     }
 
     private static void RegisterMath(InternalFunctionRegistry registry)
@@ -1165,6 +1143,43 @@ public static class BuiltInFunctions
             [VoidType.Instance, VoidType.Instance],
             ParameterNames: ["a", "b"]);
         registry.Register("or", orAnySig, args => StdLib.OrLastTruthy(args, context));
+
+        // ===== Phase 44 Plan 44-09 Task 2 — strict-aware equals + comparisons =====
+        // Migrated from RegisterStdLib so the impls can read ctx.CallerStrictMode
+        // and emit canonical strict-mode errors. Non-strict behavior is byte-
+        // identical to the previous Utils.LooseEquals / Utils.CompareNumeric paths.
+        // D-11: (equals 1 1.0) strict → false (set-theoretic);
+        // (gt|lt|gte|lte 1 1.0) strict → error.
+
+        var equalsSig = new FunctionSignature(
+            "equals",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("equals", equalsSig, args => StdLib.EqualsCharitable(args, context));
+
+        var ltSig = new FunctionSignature(
+            "lt",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("lt", ltSig, args => StdLib.LessThanCharitable(args, context));
+
+        var gtSig = new FunctionSignature(
+            "gt",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("gt", gtSig, args => StdLib.GreaterThanCharitable(args, context));
+
+        var lteSig = new FunctionSignature(
+            "lte",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("lte", lteSig, args => StdLib.LessThanOrEqualCharitable(args, context));
+
+        var gteSig = new FunctionSignature(
+            "gte",
+            [VoidType.Instance, VoidType.Instance],
+            ParameterNames: ["a", "b"]);
+        registry.Register("gte", gteSig, args => StdLib.GreaterThanOrEqualCharitable(args, context));
     }
 
     private static void RegisterDict(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)

@@ -128,4 +128,29 @@ public static class Utils
         // Default: use object equality
         return Equals(a.Data, b.Data);
     }
+
+    /// <summary>
+    /// Phase 44 Plan 44-09 Task 2 — strict-mode wrapper around
+    /// <see cref="LooseEquals"/>. When <paramref name="ctx"/>'s
+    /// <see cref="ExecutionContext.CallerStrictMode"/> is true and the two
+    /// values have DIFFERENT types, return <c>false</c> directly — D-11
+    /// set-theoretic equality (<c>(equals 1 1.0)</c> → <c>false</c> in
+    /// strict; "1 is not 1.0 — different types" is a defensible answer).
+    /// Per RESEARCH Open Question 1 Option (b), the non-strict path is
+    /// UNCHANGED — <see cref="LooseEquals"/> retains the JS-style numeric
+    /// coercion at line 73-76 so <c>(equals 1 1.0)</c> non-strict returns
+    /// <c>true</c>. Same-type comparisons in BOTH modes route through
+    /// <see cref="StrictEquals"/> via <see cref="LooseEquals"/>.
+    /// </summary>
+    public static bool LooseEqualsStrict(Value a, Value b, FlowLang.Runtime.ExecutionContext ctx)
+    {
+        if (ctx.CallerStrictMode && !a.Type.Equals(b.Type))
+        {
+            // D-11 set-theoretic: cross-type strict equality returns false
+            // (NOT error — equality has a defensible answer where ordering
+            // does not; see CrossTypeComparisonStrictTests for asymmetry).
+            return false;
+        }
+        return LooseEquals(a, b);
+    }
 }
