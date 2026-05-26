@@ -4,14 +4,14 @@ milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
 stopped_at: Phase 45 context gathered
-last_updated: "2026-05-26T03:37:52Z"
-last_activity: "2026-05-26 -- Phase 48 Plan 04 shipped (flow-runtime.js ES module + WasmEntry [JSExport] + index.html dev-smoke harness: new WasmEntry.cs (398 LOC) with 4 [JSExport] static methods RunFromJs/PlayFromJs/StopFromJs/DisposeFromJs + RunResult/RunError POCOs pinned per D-48-14 + 30s Pattern C cap + Console.SetOut/SetError redirect with finally-restore per D-48-15; flow-runtime.js (282 LOC) ES module wires setModuleImports('flow-runtime', ...) against Plan 48-03's 5 [JSImport] names + dispatches WasmEntry via getAssemblyExports + JSON.parse on the RunResult return; index.html (118 LOC) dev-smoke harness with D-48-09 user-gesture chain (resumeAudio + run in same click handler); csproj +22 lines for publish hooks; trim-roots.xml +12 lines preserving WasmEntry+RunResult+RunError for JsonSerializer reflection; SYSLIB1072 auto-fix Rule 3 — PlayFromJs accepts byte[] not float[]; publish-layout deviation documented — dotnet.js lands flat at publish root, not under _framework/; Desktop+Web build+publish all exit 0; Phase 48 fixture 15/15 PASS preserved)"
+last_updated: "2026-05-26T03:52:00Z"
+last_activity: "2026-05-26 -- Phase 48 Plan 05 shipped (bundle size budget + two-run determinism: BundleSizeBudgetTests measures 3.07 MB Brotli-compressed publish output well under 15 MB D-48-05 target; MONOLITHIC SHIP decision branch selected; 48-BUNDLE-SIZE.md self-generated; WasmDeterminismTests pins D-48-16 two-run cmp-clean via byte-identical RunResult JSON across two RunFromJs calls; Rule 1 auto-fix on BrotliStream leaveOpen=true; 4 new Facts; Phase 48 fixture 19/19 PASS)"
 progress:
   total_phases: 15
   completed_phases: 8
   total_plans: 78
-  completed_plans: 66
-  percent: 54
+  completed_plans: 67
+  percent: 53
 ---
 
 # Project State
@@ -21,16 +21,28 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plans 01-04 SHIPPED 2026-05-26; Plans 05-07 pending
+**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plans 01-05 SHIPPED 2026-05-26; Plans 06-07 pending
 
 ## Current Position
 
 Phase: 48 -- executing
-Plan: 4/7 complete (48-01 + 48-02 + 48-03 + 48-04 shipped)
-Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-3 — 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
+Plan: 5/7 complete (48-01 + 48-02 + 48-03 + 48-04 + 48-05 shipped)
+Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-5 — 48-06 HUMAN-UAT + 48-07 closer)
 
-Status: Phase 48 executing — Plans 01 + 02 + 03 + 04 closed
-Last activity: 2026-05-26 -- Phase 48 Plan 04 shipped (flow-runtime.js ES module + WasmEntry [JSExport] + index.html dev-smoke harness — closes the C#↔JS round-trip; API surface frozen per D-48-13; RunResult shape pinned per D-48-14; stdout/stderr split per D-48-15; SYSLIB1072 auto-fix on PlayFromJs(byte[]); publish-layout deviation documented; Desktop+Web build+publish all exit 0)
+Status: Phase 48 executing — Plans 01 + 02 + 03 + 04 + 05 closed
+Last activity: 2026-05-26 -- Phase 48 Plan 05 shipped (bundle size budget + two-run determinism: BundleSizeBudgetTests measures 3.07 MB Brotli-compressed publish output well under 15 MB D-48-05 target; MONOLITHIC SHIP decision branch selected; 48-BUNDLE-SIZE.md self-generated; WasmDeterminismTests pins D-48-16 two-run cmp-clean via byte-identical RunResult JSON across two RunFromJs calls; Rule 1 auto-fix on BrotliStream leaveOpen=true; 4 new Facts; Phase 48 fixture 19/19 PASS)
+
+**Phase 48 Plan 05 highlights (2026-05-26):**
+
+- `flow-lang.Tests/Integration/Phase48/BundleSizeBudgetTests.cs` lands (329 LOC, 2 xUnit Facts). `CompressedBundle_BelowTargetSize` shells `dotnet publish -p:FlowTarget=Web -c Release`, enumerates browser-shipped artifacts (`.dll`/`.wasm`/`.js`/`.dat`/`.flow`/`.json`/`.md`/`.html`) under `publish/`, Brotli-compresses each via `BrotliStream(CompressionLevel.SmallestSize, leaveOpen=true)`, sums total compressed bytes, hard-asserts `< 20 MB` D-48-05 hard cap with actionable escalation message on failure. `BundleSizeReport_WrittenToDisk` does the same enumeration, sorts files by compressed size descending, writes `48-BUNDLE-SIZE.md` with totals table + top-20 per-file breakdown + auto-selected D-48-05 decision branch.
+- **Measurement result: 3.07 MB Brotli-compressed / 10.99 MB uncompressed.** 12 MB margin to 15 MB target / 17 MB margin to 20 MB hard cap. **MONOLITHIC SHIP** decision branch auto-selected by the test (lazy-load deferred to v1.6 backlog per D-48-05 conditional). Top 3 contributors: `dotnet.native.wasm` (977 KB) + `System.Private.CoreLib.dll` (420 KB) + `icudt.dat` (330 KB). `flow-lang.dll` is only the 5th-largest contributor (243 KB) — validates Phase 47's strip-list + Plan 48-01's trim-roots.xml work.
+- `flow-lang.Tests/Integration/Phase48/WasmDeterminismTests.cs` lands (117 LOC, 2 xUnit Facts) — pins D-48-16 two-run cmp-clean determinism for the Web target. `SameSource_TwoRuns_IdenticalStdout` calls `WasmEntry.RunFromJs(source)` twice with deterministic source `(print "hello flow")\n(print 42)\n(print (add 1 2))`, parses JSON, extracts `stdout` field, asserts equality + smoke-checks content. `SameSource_TwoRuns_IdenticalRunResultJson` strips legitimate wall-clock-jitter field (`durationMs`) via `JsonNode.AsObject().Remove`, asserts remaining JSON byte-identical via UTF-8 byte arrays. Both pass first try — `FlowEngine.Execute` already calls `ErrorReporter.Clear()` at line 298 so the lazy-init `_sharedEngine` between successive RunFromJs calls is state-clean.
+- `.planning/phases/48-wasm-runtime-webaudio-backend/48-BUNDLE-SIZE.md` lands (69 LOC, self-generating by Fact 2 on every test run — placeholder shipped in commit, overwritten on first run with real measurements). Contains generated timestamp, source SHA, totals table, top-20 per-file Brotli breakdown, and the selected D-48-05 decision branch with concrete narrative.
+- **Rule 1 auto-fix (BrotliStream + MemoryStream.get_Length)**: First test run threw `System.ObjectDisposedException: Cannot access a closed Stream` at `MemoryStream.get_Length()` — `BrotliStream(stream, level)` default ctor sets `leaveOpen=false`, so disposing the brotli writer (required to flush) also disposes the underlying MemoryStream. Fix: `BrotliStream(ms, CompressionLevel.SmallestSize, leaveOpen: true)`. Inline comment added documenting the rationale.
+- Cross-platform note (D-36-09 caveat): test source uses pure arithmetic + print, no chaos primitives. Lorenz/logistic exclusion does NOT apply; the test holds cross-platform too. Phase 28 dither-RNG seeding precedent guarantees deterministic-seeded RNGs preserve byte-identical output across runs.
+- Why measure determinism on Desktop, not in a browser? `WasmEntry.RunFromJs` carries `[SupportedOSPlatform("browser")]` but the [JSExport] marshalling boundary is browser-only for *type marshalling*, not for *FlowEngine.Execute*. The underlying execution path is platform-agnostic. CA1416 suppressed at the call site with documented justification. Phase 49 HUMAN-UAT may add browser-side audio-byte-cmp if needed; not blocking the contract pin.
+- Verification: `dotnet build -p:FlowTarget=Desktop` exits 0; `dotnet build -p:FlowTarget=Web -c Release` exits 0; `dotnet publish -p:FlowTarget=Web -c Release` exits 0 (via Fact 1's shell-out). Phase 48 fixture: 19/19 PASS (was 15/15 at Plan 48-04 baseline; +4 Facts). Phase 47 fixture: 9 PASS / 8 SKIP / 0 FAIL (unchanged from Plan 48-04 baseline). Zero new NuGet packages (BCL Brotli + System.Text.Json.Nodes both in .NET 10).
+- 2 commits: `b2645d5` (Task 1 — BundleSizeBudgetTests + 48-BUNDLE-SIZE.md placeholder), `538834c` (Task 2 — WasmDeterminismTests).
 
 **Phase 48 Plan 04 highlights (2026-05-26):**
 

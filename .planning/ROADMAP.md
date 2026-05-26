@@ -350,7 +350,7 @@ Plans:
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
-| 48. WASM Runtime + WebAudioBackend | v1.5 | 4/7 | In Progress|  |
+| 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
 
 ### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24
