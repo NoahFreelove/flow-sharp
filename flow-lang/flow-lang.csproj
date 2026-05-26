@@ -10,6 +10,13 @@
              browser-WASM-compatible library. Single source of truth — no
              separate flow-lang.Web.csproj. -->
         <FlowTarget>Desktop</FlowTarget>
+        <!-- Phase 48 D-48-06: required by [JSImport]/[JSExport] source generator
+             (SYSLIB1074). The attribute itself is a no-op on Desktop runtimes —
+             constant-folded out by the JIT — but the source generator emits the
+             marshalling shim regardless of target, so AllowUnsafeBlocks must be
+             enabled in both Desktop and Web builds. The shim never executes on
+             Desktop (every callsite is gated by OperatingSystem.IsBrowser()). -->
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <!-- Phase 47 D-47-02: FLOW_WEB preprocessor symbol activates Web-target code paths.
