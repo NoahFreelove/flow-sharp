@@ -48,6 +48,44 @@ for test in tests/test_*.flow; do dotnet run --project flow-interpreter "$test";
 
 No unit-test framework — tests are `.flow` scripts in `tests/` verified by console output (70+ files: features, pipes, audio, musical context, note streams, chords, song structure, instruments, effects, transforms, generative, lambdas, imports).
 
+## Compile-Target Flavors
+
+Phase 47 (shipped 2026-05-25) introduced `FlowTarget=Desktop|Web` MSBuild conditioning so `flow-lang.dll` compiles cleanly under WASM. Desktop is the default; Web is opt-in.
+
+```bash
+# Default — Desktop (all P/Invoke / SFZ / OSC / live coding / mic input intact)
+dotnet build flow-lang/flow-lang.csproj
+
+# Explicit Desktop
+dotnet build flow-lang/flow-lang.csproj -p:FlowTarget=Desktop
+
+# Web — strips features that cannot run in a browser sandbox
+dotnet build flow-lang/flow-lang.csproj -p:FlowTarget=Web
+```
+
+**Stripped on Web** (per D-47-01..14): `Audio/PulseAudio*Backend.cs` + `CoreAudioBackend.cs` (P/Invoke); `StandardLibrary/Audio/Sfz/**/*.cs` + `sfz.flow` + `@sfz` module; `StandardLibrary/Network/OscFunctions.cs` + `OscHandleData.cs` + `osc.flow` + Rug.Osc PackageReference; `StandardLibrary/Audio/InputFunctions.cs` (`micBuffer`); `flow-lang/Samples/**` (U-Iowa MIS bundle — Phase 29 sampled instruments fall back to synthesis); future Phase 40 RtMidi.Core.
+
+**Stays on Web** (~85% of language surface): full core (lexer/parser/AST/evaluator/type system), pattern matching (Phase 35), all music types, all synthesis + DSP, Phase 36 stdlibs (`@patterns`/`@generative`/`@improv`), Phase 39 notation IO export (`@notation-io` — hand-rolled XmlWriter), MIDI file write via DryWetMidi 8.0.3.
+
+**Composer-facing UX on Web target:**
+
+- `use "@sfz"` / `use "@osc"` under FlowTarget=Web → ModuleLoader emits `[target] module '@X' unavailable on Web target — line N. Build with FlowTarget=Desktop to enable.` + ModuleLoadResult.Error.
+- `live <quantize> { ... }` → Parser throws Rust-style ParseException pointing at the line; live coding requires FileSystemWatcher.
+- `(micBuffer N)` → function not found (InputFunctions stripped).
+- Audio playback → `WebAudioBackend` stub throws PlatformNotSupportedException with `"WebAudioBackend stub — Phase 48 will implement via [JSImport]"` (Phase 48 fills the JSImport bodies).
+
+**Guard locations** (future-contributor reference):
+
+- `flow-lang/Core/FlowEngine.cs:185,202` — `#if !FLOW_WEB` wraps SfzBuiltins.Register + OscFunctions.Register
+- `flow-lang/StandardLibrary/BuiltInFunctions.cs:1027` — `#if !FLOW_WEB` wraps InputFunctions.RegisterContextDependent
+- `flow-lang/Audio/AudioPlaybackManager.cs` — `WebAudioBackend.IsAvailable()` probe FIRST in `DetectBackend`, existing branches wrapped in `#if !FLOW_WEB`
+- `flow-lang/Runtime/ModuleLoader.cs` — `IsStrippedOnWeb` gate at top of `LoadModule`
+- `flow-lang/Parsing/Parser.cs:220` — `TokenType.Live` gate inside the dispatch branch
+- `flow-lang/Core/FlowEngine.cs` — `FlowEngine.IsWebTarget` + `FlowEngine.SupportsLiveBlocks` static properties (compile-time constants via `#if FLOW_WEB` initializer)
+- `flow-lang.Tests/Integration/Phase47/AssemblyReferenceScanTests.cs` — Mono.Cecil reflective invariant gate
+
+When adding new audio/network/IO features that may not work in the browser: (1) add a `#if !FLOW_WEB` guard at the actual call site (NOT a wrapper method); (2) if composer-invoked at parse-time or import-time, add a charitable advisory at Parser or ModuleLoader; (3) tag exercising tests with `[FlowTargetFact("Desktop")]`; (4) if a new package is pulled, add it to `AssemblyReferenceScanTests.ForbiddenTypeRefPrefixes` so Web build drift is caught.
+
 ## Project Structure
 
 Two projects: **flow-lang** (library, namespace `FlowLang`) and **flow-interpreter** (REPL/CLI, namespace `FlowInterpreter`).
