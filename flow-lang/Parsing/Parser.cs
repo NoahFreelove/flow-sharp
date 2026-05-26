@@ -27,6 +27,12 @@ public partial class Parser
     // heuristic in ParsePrimary. Set while parsing arguments inside (func arg1 arg2).
     private bool _inFuncCallArgs = false;
     private bool _inLoop = false;
+    // Phase 43 D-01 — set true after the first non-module non-comment statement
+    // is appended to the Program's Statements list inside Parse(). A subsequent
+    // `module <name>` keyword in ParseStatement reports a position-constraint
+    // error instead of dispatching to ParseModuleDeclaration. Comments never
+    // reach the flag-flip site because ParseStatement returns null for them.
+    private bool _seenNonModuleNonCommentStatement = false;
 
     // Bounds for syntax tree depth
     private int _parseDepth = 0;
@@ -59,7 +65,16 @@ public partial class Parser
 
                 var stmt = ParseStatement();
                 if (stmt != null)
+                {
                     statements.Add(stmt);
+                    // Phase 43 D-01 — flip the position-constraint flag after every
+                    // non-module statement so any subsequent `module <name>` keyword
+                    // reports the "must be first non-comment statement" error from
+                    // ParseStatement. Comments are filtered out earlier (ParseStatement
+                    // returns null on TokenType.Comment) and never reach this point.
+                    if (stmt is not ModuleDeclarationStatement)
+                        _seenNonModuleNonCommentStatement = true;
+                }
 
                 // Optionally consume trailing semicolon after statement
                 Match(TokenType.Semicolon);
@@ -85,6 +100,32 @@ public partial class Parser
             // Skip comments
             if (Match(TokenType.Comment))
                 return null;
+
+            // Phase 43 D-01 — `module <name>` top-of-file declaration.
+            // Must be the first non-comment statement of the file; mid-file
+            // `module` keywords are reported as parse errors at the keyword's
+            // source location (the flag is flipped in Parse() after each
+            // non-module, non-comment statement is appended to the Program).
+            if (Check(TokenType.Module))
+            {
+                if (_seenNonModuleNonCommentStatement)
+                {
+                    var badLoc = CurrentToken.Location;
+                    _errorReporter.ReportError(
+                        "module declaration must be the first non-comment statement of the file",
+                        badLoc);
+                    // Consume the `module` keyword + (optional) name token so the
+                    // parser advances past the bad declaration and keeps reporting
+                    // useful errors on subsequent statements rather than looping
+                    // on the same position-constraint error.
+                    Advance();
+                    if (Check(TokenType.Identifier))
+                        Advance();
+                    return null;
+                }
+                Advance(); // consume `module`
+                return ParseModuleDeclaration();
+            }
 
             if (Match(TokenType.Proc))
                 return ParseProcDeclaration(false);
@@ -653,6 +694,27 @@ public partial class Parser
         var location = PreviousToken.Location;
         var path = Expect(TokenType.StringLiteral, "Expected string literal for import path");
         return new ImportStatement(location, (string)path.Value!, Span: new Span(location, PreviousToken.Location));
+    }
+
+    /// <summary>
+    /// Phase 43 D-01 / D-03 — parses the <c>module &lt;name&gt;</c> top-of-file
+    /// declaration. Dispatched by <see cref="ParseStatement"/> when the current
+    /// token is <see cref="TokenType.Module"/> AND the position-constraint flag
+    /// (<see cref="_seenNonModuleNonCommentStatement"/>) is false. The
+    /// <c>module</c> keyword has already been consumed by the caller, so
+    /// <see cref="PreviousToken"/>.Location points at the keyword itself.
+    /// Module names follow the standard identifier rule
+    /// <c>[a-zA-Z_][a-zA-Z0-9_]*</c>; non-identifier tokens (numeric literals,
+    /// string literals, etc.) raise a parse error.
+    /// </summary>
+    private ModuleDeclarationStatement ParseModuleDeclaration()
+    {
+        var location = PreviousToken.Location;
+        var nameTok = Expect(TokenType.Identifier, "Expected module name after 'module' keyword");
+        return new ModuleDeclarationStatement(
+            location,
+            nameTok.Text,
+            Span: new Span(location, PreviousToken.Location));
     }
 
     private MusicalContextStatement ParseMusicalContextStatement(MusicalContextType contextType)
