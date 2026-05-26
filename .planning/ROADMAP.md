@@ -593,12 +593,18 @@ Plans:
 **Acceptance**: (1) `flow-lang.dll` + Mono-WASM artifacts build under FlowTarget=Web with zero errors; (2) `flow-runtime.js` API loads in Chrome 120+, Firefox 121+, Safari 17+; (3) `await runtime.run('(play (createSineTone 440Hz 1.0 0.5))')` produces audible 440 Hz tone via WebAudio (verified by hand on each browser at Plan 48-04 HUMAN-UAT); (4) `(writeMidi)` either produces a valid Float32Array→MIDI export OR fails with a clear "not available on Web target" parse-error per D-48-04 verification; (5) compressed bundle size ≤15 MB OR the closer documents what was stripped to make it fit; (6) two-run cmp-clean determinism contract preserved (same Flow source → byte-identical Float32Array output across runs at same SHA, browser-platform independent).
 
 **Depends on**: Phase 47 (needs FlowTarget=Web build to exist). Phase 48 ↔ Phase 49 are commutative for SCAFFOLDING work (Phase 49 can build the SvelteKit shell + docs sync independently), but Phase 49's playground tab cannot wire to a real runtime until Phase 48 ships `flow-runtime.js`. Ordering: 48 fully completes before Phase 49 starts the playground-tab work; Phase 49 may run in parallel for non-playground work (marketing pages, docs, navigation, design system).
-**Requirements**: TBD (defined at plan-phase — anchor candidates: REQ-WASM-BUILD-01..05 for build pipeline, REQ-WEBAUDIO-01..04 for backend, REQ-WASM-API-01..03 for JS glue API surface, REQ-WASM-SIZE-01 for bundle budget acceptance, REQ-WASM-DET-01 for determinism preservation).
-**Plans:** 0 plans
+**Requirements**: REQ-WASM-BUILD-01..05 (build pipeline), REQ-WEBAUDIO-01..04 (backend), REQ-WASM-API-01..03 (JS glue), REQ-WASM-SIZE-01 (bundle budget), REQ-WASM-DET-01 (determinism), REQ-WASM-DRYWET-01 (DryWetMidi compat).
+**Plans:** 7 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 48 to break down)
+- [ ] 48-01-PLAN.md — WASM build pipeline foundation (csproj + trim-roots.xml + WasmBuildPipelineTests)
+- [ ] 48-02-PLAN.md — DryWetMidi WASM publish smoke + culture-invariant sweep
+- [ ] 48-03-PLAN.md — WebAudioBackend real implementation ([JSImport] + stereo promotion + 30s cap)
+- [ ] 48-04-PLAN.md — flow-runtime.js ES module + WasmEntry.cs [JSExport] + index.html dev harness
+- [ ] 48-05-PLAN.md — Bundle size budget + two-run determinism pin
+- [ ] 48-06-PLAN.md — HUMAN-UAT browser smoke (Chrome / Firefox / Safari) — autonomous:false
+- [ ] 48-07-PLAN.md — Closer (VERIFICATION + Phase 49 handoff + planning-artifact flips)
 
 ### Phase 49: flowlang.dev Site
 
