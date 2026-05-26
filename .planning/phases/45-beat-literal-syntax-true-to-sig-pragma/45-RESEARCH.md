@@ -825,22 +825,24 @@ Phase 45 is incremental and does not change the state of the art for any externa
 | A3 | `BeatLiteral` tokens never appear inside note streams (`| ... |`) | Pitfall 2 | If `NoteStreamCompiler` accepts `BeatLiteral` and produces unspecified behavior, composer scripts could mysteriously parse. Mitigation: Wave 2 xUnit Theory explicitly tests that `| C4q 0.5b D4q |` errors. |
 | A4 | Phase 26.1 DICT-01 acceptance (`<<C4, (beat 0.25)>>` Dict-key shape) does not regress through `RegisterContextDependent` migration | REQ-BEAT-CONSTRUCTOR-02 | If the migration somehow changes signature dispatch (e.g., overload resolution sees a different signature), Dict construction could break. Mitigation: explicit xUnit regression fact in `BeatLiteralFacts.cs` or `BeatTrueToSigPragmaTests.cs`. Cheap insurance per CONTEXT Claude's Discretion. |
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+All three open questions resolved by plan-phase. Operational handles cited inline below.
 
 1. **`PragmaScanner` hyphen acceptance**
    - What we know: existing registered pragmas are camelCase or single-token. `beat-true-to-sig` is the first hyphenated registered name.
    - What's unclear: whether the `enable <name>;` scanner accepts `-` in `<name>`.
-   - Recommendation: Wave 1 first task — read `PragmaScanner.cs` and verify. If unaccepted, add a minimal scanner change to accept hyphens as part of the pragma identifier.
+   - **RESOLVED:** Plan 45-01 Task 2 Step C reads `PragmaScanner.cs` and closes the hyphen gap as the first sub-task of Wave 1 — before Plan 45-03 lands the `["beat-true-to-sig"]` registry entry. Tracked via REQ-BEAT-PRAGMA-HYPHEN-01.
 
 2. **`BeatLiteralExpression` Span construction in error paths**
    - What we know: `Token.EffectiveSpan` synthesizes a zero-width span when `Token.Span` is null. Newer (post-Phase-35) tokens have Span. Lexer post-Phase-35 should always populate Span.
    - What's unclear: whether the parser construction `new BeatLiteralExpression(loc, raw, Span: PreviousToken.EffectiveSpan)` produces correct diagnostic spans in all error cases.
-   - Recommendation: mirror the exact pattern used by `SymbolLiteralExpression` in `Parser.cs:1366-1367` — same `EffectiveSpan` approach.
+   - **RESOLVED:** Plan 45-02 mirrors the exact pattern used by `SymbolLiteralExpression` in `Parser.cs:1366-1367` — same `EffectiveSpan` approach. Tracked via REQ-BEAT-AST-02.
 
 3. **Whether `examples/beat/` tutorial files should render committed baselines under `flow-lang.Tests/baselines/Phase45/`**
    - What we know: Phase 28+ baselines are committed because dither RNG is seeded deterministically; tutorial WAVs use pure synthesis → two-run cmp-clean preserved.
    - What's unclear: whether plan-phase wants a Phase 45 baselines directory committed.
-   - Recommendation: yes — match Phase 28 precedent. Adds CI surface for any future regression that changes tutorial outputs unexpectedly.
+   - **RESOLVED:** Plan 45-06 commits baselines under `flow-lang.Tests/baselines/Phase45/` per Phase 28 precedent. `TutorialTwoRunCmpClean_Intro` + `TutorialTwoRunCmpClean_CutTime` + `TutorialMatchesBaseline_*` Facts pin the contract. Tracked via REQ-BEAT-TEST-06.
 
 ## Environment Availability
 

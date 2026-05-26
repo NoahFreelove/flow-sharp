@@ -453,12 +453,28 @@ Plans:
 **Implementation surface**: Lexer `Nb` token + Parser BeatLiteral expression + ExpressionEvaluator context-lookup at BeatLiteral / `(beat N)` evaluation sites + ModuleLoader pragma registration → `ExecutionContext.BeatTrueToSig` flag + tutorial in `examples/beat/` (6/8 jig with/without pragma) + CLAUDE.md music-types table update.
 
 **Depends on**: Phase 43 (Beat builtins shipped). Independent of Phase 44 (Strict Mode) — ordered after 44 only because 44 planning is active in a parallel session and we want to avoid contention. Phase 45 could in principle execute in parallel with Phase 44 once 44's plans are locked.
-**Requirements**: TBD (defined at plan-phase)
-**Plans:** 0 plans
+**Requirements**: REQ-BEAT-LEX-01..04, REQ-BEAT-AST-01..04, REQ-BEAT-PRAGMA-01..04, REQ-BEAT-PRAGMA-HYPHEN-01, REQ-BEAT-CONSTRUCTOR-01..02, REQ-BEAT-TEST-01..07, REQ-BEAT-DOC-01..04
+**Plans:** 6 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 45 to break down)
+**Wave 1**
+
+- [ ] 45-01-PLAN.md — Lexer foundation: TokenType.BeatLiteral + signed/unsigned suffix branches + PragmaScanner hyphen gap closure (REQ-BEAT-LEX-01..04, REQ-BEAT-PRAGMA-HYPHEN-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 45-02-PLAN.md — BeatLiteralExpression AST + Parser arm + literal-token-set (REQ-BEAT-AST-01..03)
+- [ ] 45-03-PLAN.md — PragmaRegistry entry + ExecutionContext.BeatTrueToSig + FlowEngine.ApplyBeatTrueToSigPragma + ModuleLoader push/pop (REQ-BEAT-PRAGMA-01..04)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [ ] 45-04-PLAN.md — EvaluateBeatLiteral switch arm + multiplier formula + 3 composer .flow smokes (REQ-BEAT-AST-04, REQ-BEAT-TEST-01..03)
+- [ ] 45-05-PLAN.md — (beat N) constructor migration to RegisterContextDependent + DICT-01 regression (REQ-BEAT-CONSTRUCTOR-01..02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [ ] 45-06-PLAN.md — Cross-file pair + tutorials + audio baselines + CLAUDE.md + REQUIREMENTS.md / ROADMAP.md / STATE.md sweep + 45-VERIFICATION.md (REQ-BEAT-TEST-04..07, REQ-BEAT-DOC-01..04)
 
 ### Phase 46: Codebase Bloat Removal
 
