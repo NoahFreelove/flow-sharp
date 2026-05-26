@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 47 Plan 03 shipped — Web build now succeeds end-to-end
-last_updated: "2026-05-25T00:00:00.000Z"
-last_activity: 2026-05-25 -- Phase 47 Plan 03 shipped (load-bearing — Web build flips RED→GREEN)
+stopped_at: Phase 47 Plan 04 shipped — FlowTargetFact attribute + Web-side test coverage landed
+last_updated: "2026-05-26T01:55:00.000Z"
+last_activity: 2026-05-26 -- Phase 47 Plan 04 shipped (FlowTargetFact xUnit subclass + DryWetMidi WASM-compat smoke + 6 Web-only Facts)
 progress:
   total_phases: 15
   completed_phases: 7
   total_plans: 71
-  completed_plans: 59
-  percent: 47
+  completed_plans: 60
+  percent: 48
 ---
 
 # Project State
@@ -26,16 +26,28 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 47
-Plan: 47-04 (next)
-Last completed: 47-03 (FlowEngine + Parser + ModuleLoader guards — Web build flips RED→GREEN end-to-end; 13 errors → 0; commits `dfa359f` + `9600ddb` + `905b819` + `d0b8b11` + `8f6b814`)
+Plan: 47-05 (next)
+Last completed: 47-04 (FlowTargetFactAttribute helper + DryWetMidi WASM-compat smoke + WebTargetParserTests + WebTargetModuleLoaderTests — commits `8adc89c` + `f51e58d` + `92b022a` + `a3d8537`)
 Next step: continue Phase 47 execution OR `/clear` then one of (composer pick):
 
-  - Plan 47-04 (DryWetMidi WASM-compat smoke + FlowTargetFact attribute + Desktop-only tag sweep) — verifies DryWetMidi 8.0.3 compiles under FlowTarget=Web; introduces `[FlowTargetFact("Web")]` / `[FlowTargetFact("Desktop")]` xUnit attribute; tags existing Phase 38/33/Audio-backend tests as Desktop-only
   - Plan 47-05 (Mono.Cecil AssemblyReferenceScanTests) — reflective scan of Web-compiled flow-lang.dll asserting zero references to `Rug.Osc` / `System.IO.FileSystemWatcher` / `libpulse-simple` / `AudioToolbox` / `RtMidi.Core`
-  - Plan 47-06 (closer) — Phase 47 VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep
+  - Plan 47-06 (closer) — Phase 47 VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + Sfz/Osc-referencing test-file tag sweep (18 files identified in 47-04-SUMMARY.md — must tag Desktop-only OR strip via `#if !FLOW_WEB` so `dotnet test -p:FlowTarget=Web` compiles)
 
 Status: Ready to execute
-Last activity: 2026-05-25 -- Phase 47 Plan 03 shipped (load-bearing Web build closure)
+Last activity: 2026-05-26 -- Phase 47 Plan 04 shipped (FlowTargetFact xUnit subclass; 2127 PASS / 7 SKIP / 0 FAIL on Desktop)
+
+**Phase 47 Plan 04 highlights (2026-05-26):**
+
+- `FlowTargetFactAttribute` xUnit subclass at `flow-lang.Tests/Helpers/FlowTargetFactAttribute.cs` (D-47-13): `params string[] targets` + `#if FLOW_WEB`-driven Skip property. `CurrentTarget` exposed as `public const string` for downstream branching. Defensive `ArgumentException` on empty targets list. Desktop build of test project exits 0; Web build cascade-fails on 18 Sfz/Osc-referencing files (documented as Plan 47-06 closer deliverable).
+- `DryWetMidiWasmCompatTests` (2 cross-target Facts marked `[FlowTargetFact("Desktop", "Web")]`): `MidiFile_WriteAndRead_RoundTripsMinimalSmf` exercises minimal MIDI write/read; `DryWetMidiAssembly_IsLoadable` confirms `typeof(MidiFile).Assembly` resolves. Desktop: 2/2 GREEN. Web execution conditioned on Plan 47-06 test-project Web build fix.
+- `WebTargetParserTests` (3 Web-only Facts): mirror Plan 47-03's Desktop counterparts — `IsWebTarget_IsTrue_OnWebBuild` / `SupportsLiveBlocks_IsFalse_OnWebBuild` / `LiveBlock_FailsToParse_OnWeb_WithCharitableDiagnostic`. Desktop: 3/3 SKIPPED with documented reason `Skipped on Desktop — test runs under: Web`.
+- `WebTargetModuleLoaderTests` (3 Web-only Facts): `UseSfzImport_EmitsCharitableAdvisory_OnWeb` + `UseOscImport_EmitsCharitableAdvisory_OnWeb` (positive — both assert stderr contains `[target] module '<name>' unavailable on Web target`) + `UseNotationIoImport_Succeeds_OnWeb` (NEGATIVE — `@notation-io` is NOT stripped on Web because XmlWriter is BCL-only). Desktop: 3/3 SKIPPED.
+- Rule 1 deviation: DryWetMidi NoteOnEvent/NoteOffEvent API shape corrected from plan body's property-init form to MidiExport.cs:466 positional-constructor form (plan-body shape fails compile on DryWetMidi 8.0.3 — `Velocity` is constructor-set, not property-set).
+- Full Desktop test suite after Plan 47-04: **2127 PASSED + 7 SKIPPED + 0 FAILED** (+2 vs Plan 47-03 baseline 2125, attributable to DryWetMidi smoke). Phase47 fixture: 16 PASSED + 6 SKIPPED + 0 FAILED.
+- 18-file deferral documented in 47-04-SUMMARY.md for Plan 47-06's tag-sweep closer: `Integration/Phase33/SfzArticulationTests.cs`, `Integration/Phase37/{DrumPitchShiftAutoTests, SfzDrumsLoadTest, SfzHardSwitchRegression, SfzPanCompositionTests, SfzPanRetrofitTests, SfzRoundRobinDeterminismTests, SfzRoundRobinTests, SfzVelocityCrossfadeTests}.cs`, `Integration/Phase38/{OscBundleDepthCapTests, OscBundleTests, OscLoopbackTests, OscRateLimitTests, OscTypeTagInferenceTests}.cs`, `Unit/Phase33/{SfzLoopCrossfadeTests, SfzParserTests, SfzRegionMatchTests, SfzTypeFacts}.cs`.
+- Zero production code changes; zero new NuGet packages.
+
+**Phase 47 Plan 03 highlights (2026-05-25):** see `.planning/phases/47-compile-target-flavors/47-03-SUMMARY.md` — `FlowEngine.IsWebTarget`/`SupportsLiveBlocks` static flags, `#if !FLOW_WEB` guards on Sfz/Osc consumers, ModuleLoader charitable advisory, Parser parse-time live-block gate, `WebTargetGuardTests` 4/4 GREEN.
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
