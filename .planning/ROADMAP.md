@@ -349,7 +349,7 @@ Plans:
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
-| 47. Compile-Target Flavors | v1.5 | 3/6 | In Progress|  |
+| 47. Compile-Target Flavors | v1.5 | 5/6 | In Progress|  |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 0/0 | Not started | - |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
 
@@ -545,7 +545,7 @@ Plans:
 
 **Depends on**: Nothing (Phase 47 is a pure refactor of build-time conditioning). Foundation for Phase 48 (which needs the FLOW_WEB define to ship its WebAudioBackend implementation). Phase 47 ↔ Phase 49 are commutative; we order 47 first because Phase 48 depends on it and Phase 49 consumes Phase 48.
 **Requirements**: REQ-WEB-TARGET-01..10 (closed progressively across Plans 47-01..47-06; 47-01 closed REQ-WEB-TARGET-01..03, 47-02 closed REQ-WEB-TARGET-04 + REQ-WEB-TARGET-09, 47-03 closed REQ-WEB-TARGET-05 + REQ-WEB-TARGET-06).
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed
 
 Plans:
 
@@ -553,7 +553,7 @@ Plans:
 - [x] 47-02 — WebAudioBackend stub + AudioPlaybackManager Web-first probe (commits `7021d8a` + `156dbd4` + `ba4d3fb`)
 - [x] 47-03 — FlowEngine + ExecutionContext + Value + SongRenderer + TestSnapshot #if !FLOW_WEB guards (commits `dfa359f` + `9600ddb` + `905b819` + `d0b8b11` + `8f6b814` — Web build 13 errors → 0; WebBuild_ExitCodeIsZero now GREEN)
 - [x] 47-04 — FlowTargetFactAttribute + DryWetMidi WASM-compat smoke + WebTargetParserTests + WebTargetModuleLoaderTests (commits `8adc89c` + `f51e58d` + `92b022a` + `a3d8537` — Desktop suite 2127 PASS / 7 SKIP / 0 FAIL; 18 Sfz/Osc-referencing test files deferred to Plan 47-06 tag sweep)
-- [ ] 47-05 — Mono.Cecil AssemblyReferenceScanTests
+- [x] 47-05 — Mono.Cecil AssemblyReferenceScanTests (commits `5c6129c` + `25b40ea` — Mono.Cecil 0.11.5 PackageReference + 120 LOC test class with 2 [FlowTargetFact("Web")] Facts; Desktop 2/2 SKIPPED; Web execution gated by Plan 47-06 18-file tag sweep)
 - [ ] 47-06 — Phase 47 closer (ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + Sfz/Osc-referencing test-file tag sweep — 18 files identified in 47-04-SUMMARY.md)
 
 ### Phase 48: WASM Runtime + WebAudioBackend

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 47 Plan 04 shipped — FlowTargetFact attribute + Web-side test coverage landed
-last_updated: "2026-05-26T01:55:00.000Z"
-last_activity: 2026-05-26 -- Phase 47 Plan 04 shipped (FlowTargetFact xUnit subclass + DryWetMidi WASM-compat smoke + 6 Web-only Facts)
+stopped_at: Phase 47 Plan 05 shipped (AssemblyReferenceScanTests + Mono.Cecil 0.11.5)
+last_updated: "2026-05-26T01:56:00Z"
+last_activity: 2026-05-26 -- Phase 47 Plan 05 shipped (Mono.Cecil reflective scan of Web flow-lang.dll; 2127 PASS / 9 SKIP / 0 FAIL on Desktop)
 progress:
   total_phases: 15
   completed_phases: 7
   total_plans: 71
   completed_plans: 60
-  percent: 48
+  percent: 47
 ---
 
 # Project State
@@ -26,15 +26,25 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 47
-Plan: 47-05 (next)
-Last completed: 47-04 (FlowTargetFactAttribute helper + DryWetMidi WASM-compat smoke + WebTargetParserTests + WebTargetModuleLoaderTests — commits `8adc89c` + `f51e58d` + `92b022a` + `a3d8537`)
-Next step: continue Phase 47 execution OR `/clear` then one of (composer pick):
+Plan: 47-06 (next — closer)
+Last completed: 47-05 (Mono.Cecil 0.11.5 PackageReference + AssemblyReferenceScanTests with 2 [FlowTargetFact("Web")] Facts — commits `5c6129c` + `25b40ea`)
+Next step: continue Phase 47 execution OR `/clear` then:
 
-  - Plan 47-05 (Mono.Cecil AssemblyReferenceScanTests) — reflective scan of Web-compiled flow-lang.dll asserting zero references to `Rug.Osc` / `System.IO.FileSystemWatcher` / `libpulse-simple` / `AudioToolbox` / `RtMidi.Core`
-  - Plan 47-06 (closer) — Phase 47 VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + Sfz/Osc-referencing test-file tag sweep (18 files identified in 47-04-SUMMARY.md — must tag Desktop-only OR strip via `#if !FLOW_WEB` so `dotnet test -p:FlowTarget=Web` compiles)
+  - Plan 47-06 (closer) — Phase 47 VERIFICATION + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + Sfz/Osc-referencing test-file tag sweep (18 files identified in 47-04-SUMMARY.md — must tag Desktop-only OR strip via `#if !FLOW_WEB` so `dotnet test -p:FlowTarget=Web` compiles, unblocking the 2 new AssemblyReferenceScanTests Facts to execute on Web)
 
 Status: Ready to execute
-Last activity: 2026-05-26 -- Phase 47 Plan 04 shipped (FlowTargetFact xUnit subclass; 2127 PASS / 7 SKIP / 0 FAIL on Desktop)
+Last activity: 2026-05-26 -- Phase 47 Plan 05 shipped (Mono.Cecil reflective scan of Web flow-lang.dll; 2127 PASS / 9 SKIP / 0 FAIL on Desktop)
+
+**Phase 47 Plan 05 highlights (2026-05-26):**
+
+- `Mono.Cecil 0.11.5` PackageReference lands at `flow-lang.Tests/flow-lang.Tests.csproj` (MIT, jbevain canonical maintainer, 1.4B+ lifetime nuget downloads, zero transitive deps). Dev-only test dependency — never in flow-lang.dll runtime closure. Package-legitimacy gate pre-approved by composer in execution prompt (Task 0 checkpoint:human-verify skipped per pre-approval).
+- `AssemblyReferenceScanTests` (120 LOC at `flow-lang.Tests/Integration/Phase47/AssemblyReferenceScanTests.cs`) — 2 `[FlowTargetFact("Web")]` Facts: `WebBuild_HasNoRefsToStrippedNamespaces` (two-pass scan: GetTypeReferences() for forbidden type-ref prefixes + MainModule.Types/Methods/PInvokeInfo for forbidden DllImport substrings, diagnostic-quality `forbidden ← actual.FullName` error messages) + `WebBuild_RetainsLegitimateRefs` (negative-check sanity Fact — catches over-stripping, prevents one-way ratchet).
+- Forbidden lists locked per D-47-14: type-ref prefixes (Rug.Osc, RtMidi.Core, System.IO.FileSystemWatcher) + P/Invoke substrings (libpulse, AudioToolbox).
+- Anchor type: `FlowLang.Core.FlowEngine` via `typeof(...).Assembly.Location` — locates `flow-lang.dll` without hardcoded paths.
+- Desktop behavior: 2/2 SKIPPED with `"Skipped on Desktop — test runs under: Web"` reason. Full Desktop suite **2127 PASSED + 9 SKIPPED + 0 FAILED** (+2 SKIPPED vs Plan 47-04 baseline 2127+7, attributable to this plan's 2 new Web-only Facts).
+- Web-side GREEN/RED execution conditioned on Plan 47-06's 18-file Sfz/Osc test-project cascade-fail fix (tracked in 47-04-SUMMARY.md). At that point both Facts become the load-bearing invariant gate against namespace-drift regressions.
+- Plan code sample adopted verbatim — no Rule 1/2/3/4 deviations needed. Mono.Cecil API surface from plan body `<interfaces>` compiled cleanly on first attempt.
+- 1 new NuGet package added (Mono.Cecil 0.11.5). flow-lang.dll runtime dependency count unchanged (Mono.Cecil is test-project only).
 
 **Phase 47 Plan 04 highlights (2026-05-26):**
 
@@ -358,6 +368,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 43 P03 | ~24min | 2 tasks | 8 files (ModuleLoader registration hook + ExpressionEvaluator registry-first dispatch + Parser 4-token-lookahead qualified-call disambiguator + Interpreter no-op arm + ExecutionContext.ProcOwnership + FlowEngine.ModuleLoader property + ModuleCollisionAdvisoryTests + QualifiedAccessDispatchTests) |
 | Phase 43 P04 | ~35min | 2 tasks | 8 files (BeatConversionFunctions.cs + EffectsFunctions delay Beat overload + BuiltInFunctions renderBarAtBeat Beat overload + audio.flow internal proc decls + notation.flow internal proc decl + BeatConversionTests + BeatCompanionOverloadTests + Phase42.AuditHarnessTests D-10 polarity flip) |
 | Phase 43 P05 | ~Xmin | 2 tasks | 16 files (12 stdlib `.flow` files migrated to `module <name>` per D-07 + notation.flow duplicate-decl cleanup + 43-VERIFICATION.md + ROADMAP + STATE + REQUIREMENTS) |
+| Phase 47 P05 | ~3min | 3 tasks (Task 0 PRE-APPROVED checkpoint + Task 1 csproj edit + Task 2 test file) | 2 files (flow-lang.Tests.csproj +6 lines for Mono.Cecil 0.11.5 PackageReference + AssemblyReferenceScanTests.cs 120 LOC NEW with 2 [FlowTargetFact("Web")] Facts) |
 
 ## Accumulated Context
 
@@ -752,9 +763,9 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-25T23:13:39.962Z
+Last session: 2026-05-26T01:57:44.223Z
 Stopped at: Phase 45 context gathered
-Resume file: .planning/phases/45-beat-literal-syntax-true-to-sig-pragma/45-CONTEXT.md
+Resume file: None
 
 **Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 44 (Strict Mode) remain. Phase 44 is AUDIT.md-fed (depends on Phase 42 deliverable, shipped) and now also benefits from Phase 43's module-namespace + qualified-import work for organizing strict-mode test files; Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 44 can ship in either order with Phase 40.
 
