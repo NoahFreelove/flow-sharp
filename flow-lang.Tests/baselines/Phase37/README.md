@@ -6,8 +6,8 @@ Plan 37-01 Wave 0 directory marker. Baselines materialize from later plans:
   synth-path per-voice constant-power pan formula against future regression.
   `mix_synth_path_pan.wav` and related.
 
-- Plan 37-04 (PIANO-01 / D-37-12) — locks the ragtime warmth baseline after
-  composer UAT iteration #2 sign-off. `ragtime_warmth.wav` and related.
+- Plan 37-04 (PIANO-01 / D-37-12) — locks the bundled-piano warmth baseline
+  after composer UAT iteration #2 sign-off. `piano_warmth_smoke.wav` and related.
 
 - Plan 37-07 closer — top-level Phase 37 phase-gate baselines covering the
   combined surface (granular + stretch + pitchShift + SFZ retrofit + sample

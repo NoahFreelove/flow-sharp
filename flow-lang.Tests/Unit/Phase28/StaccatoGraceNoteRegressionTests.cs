@@ -14,10 +14,7 @@ using Xunit;
 namespace FlowLang.Tests.Unit.Phase28;
 
 /// <summary>
-/// Regression for the Phase 28 UAT BLOCKER originally reported as
-/// "every staccato note in ragtime_polyphony.wav bar 2 has an audible
-/// pre-attack grace note." Root cause was unrelated to the SPEC-5
-/// articulation envelope — it was a NOTE-STREAM PARSER bug in
+/// Regression for a note-stream PARSER bug in
 /// <see cref="Parser"/>.ParseNoteStream where the multi-line bar list
 ///
 ///     | ... |
@@ -25,11 +22,11 @@ namespace FlowLang.Tests.Unit.Phase28;
 ///
 /// produces the token sequence <c>PIPE [bar1] PIPE PIPE [bar2] PIPE</c>.
 /// Pre-fix, every adjacent-PIPE pair silently inserted a whole-bar rest
-/// between the content bars, doubling the rendered bar count (4 source
-/// bars → 7 rendered bars in the ragtime fixture). The composer heard
-/// each rendered staccato bar onset arriving after a 2-second silent
-/// gap, and the C2w bass voice attack that started the bar perceptually
-/// grafted onto the C5 staccato as a grace-note-like thump.
+/// between the content bars, nearly doubling the rendered bar count
+/// (4 source bars → 7 rendered bars). The audible symptom was each
+/// rendered staccato bar onset arriving after a multi-second silent gap,
+/// with the held bass-voice attack that started the bar perceptually
+/// grafting onto the next staccato as a grace-note-like thump.
 ///
 /// The fix collapses adjacent PIPEs into a single bar boundary (the
 /// closing | of bar N AND the opening | of bar N+1 are the same token
@@ -48,11 +45,11 @@ public class StaccatoGraceNoteRegressionTests
     private const double Bpm = 120.0;
 
     /// <summary>
-    /// The Phase 28 ragtime fixture has 4 source bars across 4 lines.
-    /// Pre-fix this compiled to 7 bars. Post-fix it must compile to 4.
+    /// A 4-bar source spread across 4 lines must compile to exactly 4 bars.
+    /// Pre-fix this compiled to 7 bars.
     /// </summary>
     [Fact]
-    public void RagtimeFixture_MultiLineFourBars_CompilesToFourBars()
+    public void MultiLineFourBars_CompilesToFourBars()
     {
         const string source = @"
             | {voice C2w} {voice C5q E5q G5q E5q} |
@@ -66,11 +63,11 @@ public class StaccatoGraceNoteRegressionTests
     }
 
     /// <summary>
-    /// Maple-Leaf fixture has 8 source bars across 8 lines. Pre-fix this
-    /// compiled to 15 bars. Post-fix must compile to 8.
+    /// An 8-bar source spread across 8 lines must compile to exactly 8 bars.
+    /// Pre-fix this compiled to 15 bars.
     /// </summary>
     [Fact]
-    public void MapleLeafFixture_MultiLineEightBars_CompilesToEightBars()
+    public void MultiLineEightBars_CompilesToEightBars()
     {
         const string source = @"
             | {voice Ab1q [Eb3 Ab3 C4]q} {voice Eb5e G5e Ab5e Bb5e} |
@@ -88,13 +85,12 @@ public class StaccatoGraceNoteRegressionTests
     }
 
     /// <summary>
-    /// Single-line equivalent of the synthetic ragtime fixture must
-    /// produce the SAME 4-bar / 16-beat compile output as the multi-
-    /// line version. Pre-fix, the two layouts differed (single-line: 4,
-    /// multi-line: 7); the fix normalizes them.
+    /// Single-line equivalent of the multi-line 4-bar fixture must
+    /// produce the SAME 4-bar / 16-beat compile output. Pre-fix, the two
+    /// layouts differed (single-line: 4, multi-line: 7); the fix normalizes them.
     /// </summary>
     [Fact]
-    public void RagtimeFixture_SingleLineFourBars_MatchesMultiLineBarCount()
+    public void SingleLineFourBars_MatchesMultiLineBarCount()
     {
         const string source =
             "| {voice C2w} {voice C5q E5q G5q E5q} | {voice C2w} {voice C5q stacc D5q stacc E5q stacc F5q stacc} | {voice C2w} {voice C5q leg D5q leg E5q leg F5q leg} | C4q stacc D4q ten E4q > F4q marc |";

@@ -180,7 +180,7 @@ using FlowLang.Tests.Helpers;
 // AudioBuffer overload — for tests that render a fresh buffer in-memory.
 RmsRegressionTests.AssertRmsWithinTolerance(
     rendered,
-    "flow-lang.Tests/baselines/Phase28/ragtime_polyphony.wav");
+    "flow-lang.Tests/baselines/Phase37/piano_warmth_smoke.wav");
 
 // File-path overload — when the rendered audio is already on disk
 // (e.g. a .flow script wrote it via its own writeWav call).

@@ -42,26 +42,10 @@ vscode-extension/server/
 !examples/scala/**/*.flow
 !examples/scala/**/*.md
 
-# Phase 33 SFZ orchestral sampler tutorial chapter — examples/symphony/sfz_smoke.flow
-# + README.md must be tracked despite the global *.flow / *.md ignores.
-# Mirrors the examples/scala/ precedent.
-!examples/symphony/
-!examples/symphony/**
-!examples/symphony/**/*.flow
-!examples/symphony/**/*.md
-
-# Phase 34 showcase #2 — examples/ragtime/ragtime.flow + README.md must be
-# tracked despite the global *.flow / *.md ignores. Mirrors examples/symphony/.
-!examples/ragtime/
-!examples/ragtime/**
-!examples/ragtime/**/*.flow
-!examples/ragtime/**/*.md
-
 # Phase 36 Plan 36-12 — composer-facing tutorial chapters for the @patterns
 # combinators (examples/generative/tidal_combinators.flow), generative
 # primitives + jam (examples/generative/markov_jazz.flow), and
-# parameterized sections (examples/sections/parameterized.flow). Mirrors
-# the examples/symphony/ + examples/ragtime/ allow-list precedent.
+# parameterized sections (examples/sections/parameterized.flow).
 !examples/generative/
 !examples/generative/**
 !examples/generative/**/*.flow
@@ -96,22 +80,8 @@ examples/dsp/*.wav
 examples/dsp/*.mp3
 examples/dsp/*.mid
 
-# Phase 34 Plan 34-06 D-502 defensive enforcement: the !examples/{symphony,ragtime}/**
-# allow-list above re-includes EVERYTHING under those directories, which silently
-# defeats the global *.wav ignore for rendered audio. Composer's rendered showcase
-# output goes to examples/output/ (already covered) -- but composers running
-# `flow render examples/symphony/symphony.flow` with default output paths can
-# accidentally drop a multi-MB .wav into examples/symphony/. These explicit
-# ignores prevent that footgun. MP3 + MIDI variants also covered for safety.
-examples/symphony/*.wav
-examples/symphony/*.mp3
-examples/symphony/*.mid
-examples/ragtime/*.wav
-examples/ragtime/*.mp3
-examples/ragtime/*.mid
-
 # Phase 28 polyphony / articulation acceptance fixtures — must be tracked
-# despite the global *.flow ignore. Pinned by RagtimeFixtureTests.
+# despite the global *.flow ignore.
 !examples/tests/
 !examples/tests/**
 !examples/tests/**/*.flow
@@ -217,8 +187,7 @@ examples/ragtime/*.mid
 !flow-lang/osc.flow
 
 # Phase 39 D-39-22 — composer-facing tutorial chapters for notation IO
-# (writeMusicXML / writeLilyPond / abc / mml). Mirrors examples/symphony/
-# + examples/ragtime/ + examples/generative/ allow-list precedents.
+# (writeMusicXML / writeLilyPond / abc / mml).
 !examples/notation/
 !examples/notation/**
 !examples/notation/**/*.flow

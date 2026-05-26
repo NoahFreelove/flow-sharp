@@ -2,8 +2,6 @@
 
 Status: **Fully** = shipped · **Partial** = caveated or limited · **Not yet** = planned
 
-Many "Not yet" entries in the previous version of this file have since shipped — this revision was rebuilt from a top-to-bottom codebase sweep, so a few corrections appear inline (e.g. Markov, Scala, SFZ, `midi2flow`, parameterized sections).
-
 ---
 
 ### Core language
@@ -23,26 +21,26 @@ Many "Not yet" entries in the previous version of this file have since shipped �
 | Pattern matching (`match`) | Fully | `(match scrutinee | pat => body | _ => default)`; WildcardPattern, BindingPattern, LiteralPattern, ConstructorPattern (music-aware), GuardPattern (`when`) |
 | Tuples `<<a, b, c>>` | Fully | Per-position types; arity tracked; empty `<<>>` and singleton `<<x>>` valid; structural equality |
 | Tuple destructuring assignment | Fully | `<<Type? a, Type? b>> = expr` — per-slot type annotations optional |
-| `unpack(tuple, func)` first-class apply | Fully | Runtime equivalent of `~>`; mirrors Lisp `(apply f args)` |
+| `(unpack tuple func)` first-class apply | Fully | Runtime equivalent of `~>`; mirrors Lisp `(apply f args)` |
 | Generic `Dict<K, V>` | Fully | Insertion-order preservation; hashable-keys checked at parse time (Int/Long/Float/String/Symbol/Note/Chord/Beat/Tuple-of-hashables); 14-op surface (`dict`, `get`, `getOr`, `set`, `remove`, `has`, `keys`, `values`, `size`, `merge`, `each`, `map`, `filter`, `dictTuple`) |
 | Symbol primitive `#foo` | Fully | Interned at evaluation time; pointer-equality; strictly separate from `String` |
-| Arrays, indexing (`@N`), slicing | Fully | Negative-from-end indexing; `slice(arr, start, end)` |
+| Arrays, indexing (`@N`), slicing | Fully | Negative-from-end indexing; `(slice arr start end)` |
 | Array literals | Fully | `[a, b, c]` — comma OR space-separated |
-| `range(Int, Int[, Int])` | Fully | Standard half-open range with optional step |
-| Lazy evaluation | Fully | `lazy(expr)`, `eval(thunk)`; generic `Lazy<T>` annotation; thunks cache values AND exceptions |
+| `(range Int Int [Int])` | Fully | Standard half-open range with optional step |
+| Lazy evaluation | Fully | `(lazy expr)`, `(eval thunk)`; generic `Lazy<T>` annotation; thunks cache values AND exceptions |
 | Module imports (`use "@stdlib"` / relative) | Fully | `@` prefix → stdlib dir; idempotent; circular-import detection; per-module PragmaSet (pragmas don't leak across modules) |
 | Pragma system (`enable <pragma>;`) | Fully | File-scope only, top-of-file only; unknown pragma errors include did-you-mean suggestion |
 | `enable hAsB;` | Fully | `H` aliases to `B` in note streams (German notation) |
 | `enable justIntonation;` / `pythagorean;` / `equalTemperament;` | Fully | 5-limit JI / 3-limit Pythagorean / 12-TET render-time tuning, rooted at active key tonic |
 | `enable matchExhaustive;` | Fully | Promote non-exhaustive match warnings to errors |
-| `enable scaleLint;` | Fully | Accepted (no-op since Phase 31 made scale-lint default-on for LSP) |
+| `enable scaleLint;` | Fully | Accepted (no-op since scale-lint is default-on for LSP) |
 | String interpolation `$"..."` | Fully | `{expr}` segments; escapes include `\{`, `\}` |
 | Loops (`for` / `while`) | Fully | `for Type x in collection { }`; `while cond { }`; `break` / `continue`; MaxIterations safety cap (10000 default) |
 | `// ` line comments | Fully | |
-| `Note:` / `TODO:` / `FIXME:` line-start comments | Fully | Recognized as comments to EOL (Phase 31) — *was previously listed as "not yet"; in fact shipped.* |
-| Column-0 `;` Lisp-style line comments | Fully | Mid-line `;` remains a statement separator (Phase 31) |
+| `Note:` / `TODO:` / `FIXME:` line-start comments | Fully | Recognized as comments to EOL |
+| Column-0 `;` Lisp-style line comments | Fully | Mid-line `;` remains a statement separator |
 | Line continuation `\<newline>` | Fully | Joins lines while preserving logical line numbers |
-| Optional-paren function calls | Fully | Bare-identifier same-line `print x` lowers to `print(x)` |
+| Optional-paren function calls | Fully | Bare-identifier same-line `print x` lowers to `(print x)` |
 | Optional semicolons | Fully | Used as separators when present; never required |
 | Prefix-only arithmetic | Fully | `(add)` / `(sub)` / `(mul)` / `(div)` / `(idiv)` / `(neg)` / `(concat)` — no infix `+ - * /`; stray-infix error suggests prefix form |
 | Variable-as-function dispatch | Fully | Bare name with zero-arg overload auto-calls (`print` works as both ref and call) |
@@ -78,13 +76,13 @@ Many "Not yet" entries in the previous version of this file have since shipped �
 | Section declarations + Song expressions | Fully | `Song s = [intro verse*2 chorus]` |
 | Parameterized sections | Fully | `section verse(Note root, Int reps = 2) { ... }`; named or positional call form; defaults supported |
 | Section repetition operator `*N` | Fully | `[verse*3]` and `[verse(C4)*3]` |
-| Section overloading | Fully | Multiple `section verse(...)` with different signatures coexist; OverloadResolver picks at call time |
+| Section overloading | Fully | Multiple `section verse(...)` with different signatures coexist; overload resolution picks at call time |
 | Pattern syntax in section signatures | Fully | Typed bindings, tuple destructure, music-aware extractors (chord literal, roman numeral, articulation symbol) |
 | Tuplets `{N:M ...}q` + music21 shorthand `{N ...}q` | Fully | Locked ratios for 3=2, 5=4, 6=4, 7=4, 9=8 |
 | Per-note fractional duration (`C4/12`) | Fully | |
 | Per-note tuplet ratio (`C4/3:2q`) | Fully | |
 | Voice-block polyphony `{voice ...}` | Fully | Multiple parallel voices share onset; same render path for audio + MIDI |
-| Articulation marks | Fully | `>` accent, `stacc` staccato, `ten` tenuto, `marc` marcato, `leg` legato (Phase 28) |
+| Articulation marks | Fully | `>` accent, `stacc` staccato, `ten` tenuto, `marc` marcato, `leg` legato |
 | Sticky dynamic markings | Fully | `pp p mp mf f ff fff ppp sfz fp` in note streams; velocity mapped 0.125 → 1.0 |
 | Crescendo / decrescendo markers (`cresc`, `decresc`) | Fully | |
 | Ghost notes `(ghost C4q)` | Fully | |
@@ -114,33 +112,33 @@ Many "Not yet" entries in the previous version of this file have since shipped �
 | `transpose` (Semitone / Cent) | Fully | |
 | `invert`, `retrograde`, `augment`, `diminish` | Fully | |
 | `up`, `down`, `repeat`, `concat` (sequences) | Fully | |
-| Arpeggio with rate / direction / pattern params | Fully | `arpeggio(Chord, NoteValue, dir, pattern)` |
-| Chord inversions & voicings | Fully | `inversion(Chord, n)`, `voicing(Chord, name)` |
-| Roman-numeral resolution from key context | Fully | `resolveNumeral(numeral, keyName)` |
+| Arpeggio with rate / direction / pattern params | Fully | `(arpeggio Chord NoteValue dir pattern)` |
+| Chord inversions & voicings | Fully | `(inversion Chord n)`, `(voicing Chord name)` |
+| Roman-numeral resolution from key context | Fully | `(resolveNumeral numeral keyName)` |
 | Chord progression DSL | Fully | `progression [voices N] \| I IV V \|` |
-| Snap-to-grid quantize | Fully | `quantize(seq, resolution, strength, swing)` |
-| Articulation transforms | Fully | `legato(seq, overlap)`, `portamento(seq, glideMs)` |
+| Snap-to-grid quantize | Fully | `(quantize seq resolution strength swing)` |
+| Articulation transforms | Fully | `(legato seq overlap)`, `(portamento seq glideMs)` |
 | Dynamics transforms | Fully | `crescendo`, `decrescendo`, `swell` |
-| Tempo transforms | Fully | `ritardando`, `accelerando`, `fermata(seq, noteIdx)` |
-| Ornament transforms | Fully | `trill(seq, interval)`, `tremolo(seq, reps)` |
-| Pattern variation | Fully | `vary(seq, prob[, mutationType, seed, key])` — 6 overloads |
+| Tempo transforms | Fully | `ritardando`, `accelerando`, `(fermata seq noteIdx)` |
+| Ornament transforms | Fully | `(trill seq interval)`, `(tremolo seq reps)` |
+| Pattern variation | Fully | `(vary seq prob [mutationType seed key])` — 6 overloads |
 | Scale linting (out-of-key warnings) | Fully | LSP-side; runs unconditionally on `key { ... }` blocks |
-| `polyrhythm(seqA, seqB[, beats])` | Fully | LCM cycle alignment OR explicit beat count |
+| `(polyrhythm seqA seqB [beats])` | Fully | LCM cycle alignment OR explicit beat count |
 
 ### Generative
 
 | Feature | Status | Notes |
 |---|---|---|
-| Euclidean rhythms (Bjorklund) | Fully | `euclidean(hits, steps, note[, swing][, humanize, seed])` |
+| Euclidean rhythms (Bjorklund) | Fully | `(euclidean hits steps note [swing] [humanize seed])` |
 | Swing | Fully | `swing N { }` block; applied at note-stream compile time |
-| Humanize (uniform velocity) | Fully | `humanize(seq, amount)` — non-deterministic shared RNG (frozen design) |
-| Humanize (Gaussian via Box-Muller) | Fully | `humanizeGaussian(seq, amount, seed)` — seeded; recurses into voice blocks |
+| Humanize (uniform velocity) | Fully | `(humanize seq amount)` — non-deterministic shared RNG (frozen design) |
+| Humanize (Gaussian via Box-Muller) | Fully | `(humanizeGaussian seq amount seed)` — seeded; recurses into voice blocks |
 | Random choice in note streams | Fully | `(? ...)` uniform, `(? a:50 b:30 c:20)` weighted, `(?? ...)` seeded |
-| Markov chains | **Fully** | `markov` (one-shot), `markovTrain` / `markovGenerate` (split), `markovEqual`; order clamped [1, 3]; feature extraction `features=#pitch` or `<<#pitch, #duration>>` — *was previously listed as "Not yet"; in fact shipped Phase 36.* |
+| Markov chains | Fully | `markov` (one-shot), `markovTrain` / `markovGenerate` (split), `markovEqual`; order clamped [1, 3]; feature extraction `features=#pitch` or `<<#pitch, #duration>>` |
 | L-system (Lindenmayer) | Fully | `lsystem` (one-shot), `lsystemModel` / `lsystemGenerate`, `lsystemToSequence`, `lsystemEqual`; iterations clamped [0, 20] |
 | Cellular automata | Fully | `cellular` (1D Wolfram-canonical), `cellularSeeded` (explicit pattern), `life` (2D Conway with wrap) |
-| Chaos maps | Fully | `lorenz(σ, ρ, β, length, seed)` and `logistic(r, length, seed)` returning `Array[Double]`; bridge via `quantizeToScale(series, scale)` |
-| Improv `jam` (chord-aware Markov) | Fully | `jam(over[, style, length, key, seed, order])`; chord-tones on strong beats, scale on weak, chromatic-passing per style pack |
+| Chaos maps | Fully | `(lorenz σ ρ β length seed)` and `(logistic r length seed)` returning `Array[Double]`; bridge via `(quantizeToScale series scale)` |
+| Improv `jam` (chord-aware Markov) | Fully | `(jam over [style length key seed order])`; chord-tones on strong beats, scale on weak, chromatic-passing per style pack |
 | Composer-editable style packs | Fully | Shipped `#jazz`, `#blues`, `#classical` at `flow-lang/improv/styles/*.flow`; user packs at `~/.config/flow/styles/*.flow` (last-write-wins) |
 | Style registry surface | Fully | `(registerStyle #name pack)`, `(listStyles)` |
 
@@ -150,19 +148,19 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| `every n cb seq` | Fully | Apply `cb` to every Nth bar |
-| `fast seq factor` | Fully | Speed bars up |
-| `slow seq factor` | Fully | Slow bars down |
-| `chunk n cb seq` | Fully | Rotate-apply `cb` to 1/N-th chunk per call |
-| `phase offset seq` | Fully | Rotate bar order |
-| `rev seq` | Fully | Reverse bar order (within-bar preserved) |
-| `iter n seq` | Fully | Rotate note list by `totalNotes / n` |
-| `palindrome seq` | Fully | Concat with reverse |
-| `jux cb seq` | Fully | Layer original + lambda result as voice block; v1.5 mono mix (L/R stereo planned for v1.6) |
-| `superimpose cb seq` | Fully | Mono voice-block overlay |
-| `sometimes [prob] cb seq` | Fully | Probabilistic apply via PrngRegistry; default prob 0.5 |
-| `degrade seq` | Fully | Fixed-50% drop (Tidal compat) |
-| `sparseSeq prob seq` | Fully | Composer-controlled drop probability |
+| `(every n cb seq)` | Fully | Apply `cb` to every Nth bar |
+| `(fast seq factor)` | Fully | Speed bars up |
+| `(slow seq factor)` | Fully | Slow bars down |
+| `(chunk n cb seq)` | Fully | Rotate-apply `cb` to 1/N-th chunk per call |
+| `(phase offset seq)` | Fully | Rotate bar order |
+| `(rev seq)` | Fully | Reverse bar order (within-bar preserved) |
+| `(iter n seq)` | Fully | Rotate note list by `totalNotes / n` |
+| `(palindrome seq)` | Fully | Concat with reverse |
+| `(jux cb seq)` | Fully | Layer original + lambda result as voice block; v1.5 mono mix (L/R stereo planned for v1.6) |
+| `(superimpose cb seq)` | Fully | Mono voice-block overlay |
+| `(sometimes [prob] cb seq)` | Fully | Probabilistic apply via `PrngRegistry`; default prob 0.5 |
+| `(degrade seq)` | Fully | Fixed-50% drop (Tidal compat) |
+| `(sparseSeq prob seq)` | Fully | Composer-controlled drop probability |
 
 ### Synthesis
 
@@ -170,18 +168,18 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 |---|---|---|
 | Raw oscillators | Fully | `sine`, `saw`/`sawtooth`, `square`, `triangle` (aliased — no anti-alias by design) |
 | Wavetable synths | Fully | `warm` (boosted-mid additive saw), `bright` (DC-removed 10% pulse), `buzz` (1/√n supersaw stack) |
-| Custom wavetable registration | Fully | `oscillator(name, generator[, tableSize])` or `oscillator(name, wavetable[])` |
-| Custom oscillator definitions (user `proc` as oscillator) | Fully | `renderSong(Song, Function)` with lambda contract `(MusicalNote, dur, bpm) → Buffer` |
+| Custom wavetable registration | Fully | `(oscillator name generator [tableSize])` or `(oscillator name wavetable[])` |
+| Custom oscillator definitions (user `proc` as oscillator) | Fully | `(renderSong Song Function)` with lambda contract `(MusicalNote, dur, bpm) → Buffer` |
 | Sample-based piano (4 velocity layers) | Fully | U-Iowa MIS pp/mf/ff at 5 pitch points + mp synthesized at eager-load via signed-RMS interpolation (α=0.6 mf-lean) |
 | `release=` named arg on `renderSong` | Fully | Sustain-pedal-sim tail length (Second-typed; default 1.5s, clamped [0.05, 10.0]) |
 | Sample-based brass / sax / strings / flute / bell | Fully | Single mf-layer with linear velocity scaling; flute has G4/A4/G5 (A4 closes D5 crossover gap) |
-| Sample-based percussion via SFZ | Fully | Phase 37 DRUM-01 — `#drums` dict-symbol routes to VSCO-CE `GM-StylePerc.sfz`; transient-preserving pitch shift via `PitchShiftEngine` |
+| Sample-based percussion via SFZ | Fully | `#drums` dict-symbol routes to VSCO-CE `GM-StylePerc.sfz`; transient-preserving pitch shift via `PitchShiftEngine` |
 | Drums (synthesis) | Fully | Hand-rolled multi-component per MIDI key — kick/snare/hi-hat/tom/rimshot recipes with pitch sweep + filtered noise |
 | Organ (additive + formant) | Fully | 6 drawbar partials at 16'/8'/5⅓'/4'/2⅔'/2' + parallel 3-formant vowel filter bank (700/1220/2600 Hz) |
-| Formant vocal synthesis | Fully | `sing(phoneme, note, dur)` |
-| External TTS hook | Fully | `tts(text)`, `setTtsCommand(cmd)`; defaults to `espeak-ng --stdout` |
-| Sample-import varispeed `loadWav` | Fully | `loadWav(path[, Int semitones])` or `loadWav(path, Double ratio)`; identity short-circuits at semitones=0 / ratio=1.0 |
-| SFZ orchestral sampler | Fully | Phase 33 — `use "@sfz"`, `loadSfz #symbol` (20-entry GM dict) or `loadSfz "/abs/path.sfz"`; `renderSong song "sampler:NAME"` dispatch |
+| Formant vocal synthesis | Fully | `(sing phoneme note dur)` |
+| External TTS hook | Fully | `(tts text)`, `(setTtsCommand cmd)`; defaults to `espeak-ng --stdout` |
+| Sample-import varispeed `loadWav` | Fully | `(loadWav path [Int semitones])` or `(loadWav path Double ratio)`; identity short-circuits at semitones=0 / ratio=1.0 |
+| SFZ orchestral sampler | Fully | `use "@sfz"`, `(loadSfz #symbol)` (20-entry GM dict) or `(loadSfz "/abs/path.sfz")`; `(renderSong song "sampler:NAME")` dispatch |
 | Vocaloid-style voice synthesis | Not yet | Planned |
 
 ### SFZ sampler details
@@ -189,11 +187,11 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | Feature | Status | Notes |
 |---|---|---|
 | Common-subset SFZ parser | Fully | 4 header types (`<control>`, `<global>`, `<group>`, `<region>`); max 10000 regions |
-| 20-opcode whitelist | Fully | `sample`, `lokey`, `hikey`, `pitch_keycenter`, `lovel`, `hivel`, `loop_mode`, `loop_start`, `loop_end`, `ampeg_attack`, `ampeg_release`, `volume`, `pan`, `default_path` + Phase 37 round-robin (`seq_position`, `seq_length`) + velocity crossfade (`xfin_lovel`, `xfin_hivel`, `xfout_lovel`, `xfout_hivel`) |
+| 20-opcode whitelist | Fully | `sample`, `lokey`, `hikey`, `pitch_keycenter`, `lovel`, `hivel`, `loop_mode`, `loop_start`, `loop_end`, `ampeg_attack`, `ampeg_release`, `volume`, `pan`, `default_path`, round-robin (`seq_position`, `seq_length`), velocity crossfade (`xfin_lovel`, `xfin_hivel`, `xfout_lovel`, `xfout_hivel`) |
 | Per-region sustain looping | Fully | 441-frame equal-power crossfade at loop seam |
 | Round-robin sample rotation | Fully | Per-render counter; resets at `renderSong`/`writeWav` boundary; `seq_length > 100` clamped |
 | Velocity-layer crossfade | Fully | Equal-power sin/cos curve; sibling-in-band 0.7071 headroom factor |
-| Per-voice + per-region pan composition | Fully | `effectivePan = clamp(region.Pan + voice.Pan, -1, +1)` |
+| Per-voice + per-region pan composition | Fully | Effective pan = region.Pan + voice.Pan, clamped to [-1, +1] |
 | SFZ-loaded percussion routing | Fully | Dict-symbol `#drums` (not filename) drives `IsPercussion=true`; absolute-path loads stay non-percussion |
 | Blessed external library: VSCO Community CE 1.1.0 | Fully | Not vendored — composer installs separately; `sfz_root` in `~/.config/flow/config.toml` |
 | 20-entry GM symbol dict | Fully | 16 verified VSCO-CE: violin/viola/cello/contrabass/flute/oboe/clarinet/bassoon/trumpet/horn/trombone/tuba/piano/harp/timpani/drums; 4 placeholders (choir/guitar/harpsichord/celeste — use absolute-path overload) |
@@ -202,19 +200,19 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Schroeder reverb (4 parallel comb + 2 series allpass) | Fully | `reverb(buf, roomSize[, damping, mix])` and `reverb(buf, roomSize, Second decay)`; Schroeder closed-form RT60 mapping |
+| Schroeder reverb (4 parallel comb + 2 series allpass) | Fully | `(reverb buf roomSize [damping mix])` and `(reverb buf roomSize Second decay)`; Schroeder closed-form RT60 mapping |
 | Biquad filters (Direct Form I, RBJ Cookbook) | Fully | `lowpass`/`highpass`/`bandpass` with Hertz-typed overloads; default Q=0.707 (Butterworth) |
-| Peak-detect compressor with attack/release | Fully | `compress(buf, thresholdDb, ratio[, attackMs, releaseMs])`; music-typed `Decibel`/`Millisecond` overload |
-| Sidechain compression | Fully | `sidechain(buf, trigger, thresh, ratio[, attack, release])`; trigger drives envelope follower |
-| Feedback delay | Fully | `delay(buf, ms, feedback, mix)`; tempo-synced `delay(buf, NoteValue, ...)`; Millisecond-typed overload |
-| `gain` (dB) vs `volume` (linear) | Fully | Semantic-intent split (Phase 26.2); both emit clipping warnings; `volume` rejects negative (use `gain` for dB attenuation) |
-| Constant-power stereo panner | Fully | `pan(buf, [-1, 1])` — `cos²(θ) + sin²(θ) = 1`; always promotes mono → stereo |
-| Mix builtins | Fully | `mix(a, b)` unity-gain; `mixBuffers(a, b, gainA, gainB)`; mono-to-stereo auto-promotion |
-| `tempoRamp(seq, startBPM, endBPM[, synth])` | Fully | Linearly interpolates per-bar BPM |
-| Fades | Fully | `fadeIn(buf, sec)`, `fadeOut(buf, sec)` |
-| Granular synthesis | Fully | Phase 37 — `granular(buf, grain, density, jitter[, windowing=#hann\|#gaussian\|#tukey])`; Hertz / Millisecond typed; PRNG-routed jitter |
-| Time-stretch (without pitch change) | Fully | Phase 37 — `stretch(buf, factor[, mode, frameSize, hopSize, overlap, transientThreshold, pitchPeriod, windowSize])`; identity fast-path at factor=1.0 |
-| Pitch-shift (without time change) | Fully | Phase 37 — `pitchShift(buf, cents, ...)` accepting Double / Cent / Semitone (24 overloads = 3 cents-types × 8 arities); identity fast-path at cents=0 |
+| Peak-detect compressor with attack/release | Fully | `(compress buf thresholdDb ratio [attackMs releaseMs])`; music-typed `Decibel`/`Millisecond` overload |
+| Sidechain compression | Fully | `(sidechain buf trigger thresh ratio [attack release])`; trigger drives envelope follower |
+| Feedback delay | Fully | `(delay buf ms feedback mix)`; tempo-synced `(delay buf NoteValue ...)`; Millisecond-typed overload |
+| `gain` (dB) vs `volume` (linear) | Fully | Semantic-intent split; both emit clipping warnings; `volume` rejects negative (use `gain` for dB attenuation) |
+| Constant-power stereo panner | Fully | `(pan buf x)` with x ∈ [-1, 1] — `cos²(θ) + sin²(θ) = 1`; always promotes mono → stereo |
+| Mix builtins | Fully | `(mix a b)` unity-gain; `(mixBuffers a b gainA gainB)`; mono-to-stereo auto-promotion |
+| `(tempoRamp seq startBPM endBPM [synth])` | Fully | Linearly interpolates per-bar BPM |
+| Fades | Fully | `(fadeIn buf sec)`, `(fadeOut buf sec)` |
+| Granular synthesis | Fully | `(granular buf grain density jitter [windowing=#hann\|#gaussian\|#tukey])`; Hertz / Millisecond typed; PRNG-routed jitter |
+| Time-stretch (without pitch change) | Fully | `(stretch buf factor [mode frameSize hopSize overlap transientThreshold pitchPeriod windowSize])`; identity fast-path at factor=1.0 |
+| Pitch-shift (without time change) | Fully | `(pitchShift buf cents ...)` accepting Double / Cent / Semitone (24 overloads = 3 cents-types × 8 arities); identity fast-path at cents=0 |
 | Stretch / pitch-shift modes | Fully | `#vocoder` (Laroche-Dolson 1999 phase-locked STFT vocoder), `#psola` (TD-PSOLA + YIN pitch detection), `#auto` (Fitzgerald 2010 HPS per-frame picker + one-shot summary advisory) |
 | Underlying spectral utilities | Fully | Radix-2 Cooley-Tukey FFT; Hann/Gaussian/Tukey windows; Harmonic-Percussive Source separator |
 
@@ -222,22 +220,22 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Per-articulation locked ADSR shaping | Fully | Phase 28 — Staccato 25% duration + S=0 + R×0.5; Marcato 25% duration + +0.30 velocity; Tenuto R×1.2 + 100% duration; Legato +110% duration + crossfade; Accent +0.30 velocity; Sforzando 1.5× → 1.0× spike over first 15% |
-| Sample-path per-articulation multiplier overlay | Fully | Phase 37 SAMP-03 — quartile-split A/D/S/R scalars on top of Phase 28 envelope at SFZ + bundled-sample caller sites only (synth-path baselines unchanged) |
+| Per-articulation locked ADSR shaping | Fully | Staccato 25% duration + S=0 + R×0.5; Marcato 25% duration + +0.30 velocity; Tenuto R×1.2 + 100% duration; Legato +110% duration + crossfade; Accent +0.30 velocity; Sforzando 1.5× → 1.0× spike over first 15% |
+| Sample-path per-articulation multiplier overlay | Fully | Quartile-split A/D/S/R scalars on top of the locked envelope at SFZ + bundled-sample caller sites only (synth-path baselines unchanged) |
 | Drum opt-out | Fully | `isPercussion: true` no-op for percussive synths |
 
 ### Voice / polyphony / mixing
 
 | Feature | Status | Notes |
 |---|---|---|
-| Polyphonic voice allocation | Fully | Two policies: legacy keep-loudest-N AND Phase 28 steal-oldest pool with deterministic tiebreaker (original input index) |
+| Polyphonic voice allocation | Fully | Two policies: legacy keep-loudest-N AND steal-oldest pool with deterministic tiebreaker (original input index) |
 | Voice-pool block (`voicePool N { }`) | Fully | Range [1, 256]; default 32; truncates oldest voice on overflow with 5ms fade |
 | Voice-block polyphony (`{voice ...}`) | Fully | Multiple parallel voices share onset; same render path for audio + MIDI export |
-| Polyrhythm | Fully | `polyrhythm(seqA, seqB[, beats])` |
+| Polyrhythm | Fully | `(polyrhythm seqA seqB [beats])` |
 | Per-voice pan | Fully | Constant-power; threads through SFZ + synth paths |
 | Per-section context (tempo, pan, gain, reverbTime, voicePool, sustainPedal, tuning) | Fully | Per-section context overlays drive renderer choices |
 | Sustain pedal | Fully | `sustainPedal { }` extends every note's buffer by 2.0s |
-| `setMaxVoices(N)` | Fully | Runtime voice-pool ceiling override |
+| `(setMaxVoices N)` | Fully | Runtime voice-pool ceiling override |
 | Beat-synced live reload | Fully | Quantizes file-watch reloads to next bar with 64-sample crossfade |
 
 ### Audio I/O & playback
@@ -247,10 +245,10 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | WAV export (`writeWav` / `exportWav`) | Fully | 16 / 24 / 32-bit PCM; sample rate from buffer; auto-create parent directory |
 | WAV TPDF dithering | Fully | Triangular Probability Density Function dither at 1 LSB on 16/24-bit paths; deterministic-seeded (`0xD17E2`); reseeded per export → byte-identical writes |
 | WAV import (`loadWav`) | Fully | 16 / 24 / 32-bit PCM; auto-resample to 44100 Hz; chunk-walking parser; varispeed overloads (semitones / ratio) |
-| Real-time playback | Fully | `play`, `loop`, `loop(buf, count)`, `preview` (mono 22050 Hz), `stop`, `stream(buf)`/`stream(seq)` |
+| Real-time playback | Fully | `play`, `loop`, `(loop buf count)`, `preview` (mono 22050 Hz), `stop`, `(stream buf)`/`(stream seq)` |
 | PulseAudio backend | Fully | Also works on PipeWire via PA compatibility layer; `PA_SAMPLE_FLOAT32LE`, channels 1–8 |
 | Audio backend abstraction | Fully | `IAudioBackend` ready for portability; only PulseAudio implemented |
-| Audio device enumeration & selection | Partial | `audioDevices()`, `setAudioDevice()`, `isAudioAvailable()` — PulseAudio Simple API returns empty / throws (use `--device` at CLI) |
+| Audio device enumeration & selection | Partial | `(audioDevices)`, `(setAudioDevice)`, `(isAudioAvailable)` — PulseAudio Simple API returns empty / throws (use `--device` at CLI) |
 | Capture mode for headless / tests | Fully | `FLOW_SUPPRESS_PLAYBACK=1` env routes playback to capture buffer |
 | macOS / Windows playback backends | Not yet | `IAudioBackend` abstraction in place; LSP-only on these platforms today |
 
@@ -264,17 +262,17 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | MIDI velocity through to render | Fully | Velocity × 127 clamped [1, 127] |
 | Microtonal MIDI export advisory | Partial | Non-12-TET tuning fires one-shot stderr advisory; pitch-bend export deferred to v1.6+ |
 | MIDI file import | Partial | Standalone `flow-midi` CLI — reads `.mid`, emits `.flow` source; hand-rolled SMF Format 0/1 parser; running-status; no in-language `loadMidi` builtin |
-| `flow midi2flow` CLI subcommand | Fully | Phase 30 — *was previously listed as "coming soon"; in fact shipped.* `--sustain`/`--no-sustain`, `--sfz`/`--no-sfz`, `--dump`, `-o` flags |
-| `flow flow2midi` CLI subcommand | Fully | Phase 30 — script must contain `(writeMidi ...)`; CLI forwards `-o` informationally |
+| `flow midi2flow` CLI subcommand | Fully | `--sustain`/`--no-sustain`, `--sfz`/`--no-sfz`, `--dump`, `-o` flags |
+| `flow flow2midi` CLI subcommand | Fully | Script must contain `(writeMidi ...)`; CLI forwards `-o` informationally |
 
 ### Notation IO (`use "@notation-io"`)
 
 | Feature | Status | Notes |
 |---|---|---|
-| MusicXML 3.1 partwise export | Fully | Phase 39 — `writeMusicXML(path, song)`; multi-part per sequence-name; voice blocks → `<voice>N</voice>`; microtonal `<alter>` cent precision; articulations map per MuseScore convention; hand-rolled `XmlWriter` for deterministic output |
-| LilyPond 2.24+ export | Fully | Phase 39 — `writeLilyPond(path, song)`; per-Sequence `\new Staff`; voice blocks → `<< { v1 } \\ { v2 } >>`; microtonal `% +Nc` cent-offset comments; Dutch pitch convention (`cis`, `bes`) |
-| ABC 2.1 import | Fully | Phase 39 — `abc(source)` returns `Section` (single tune) or `Array[Section]` (multi-tune via `X:N` headers); modal keys (Edor/Dmix/Aphr/Cmix/Glyd/Bphr/Floc); `Q:` tempo (bare BPM, `1/4=BPM`, `"Allegro" 1/4=BPM`); charitable on unknowns |
-| PC-98 MML import | Fully | Phase 39 — `mml(source)` returns `Sequence`; notes / accidentals / octave / length / tempo / loops with depth-cap 16 + expansion-cap 65536 (DoS guards); FM operator + drum bank dropped with advisory |
+| MusicXML 3.1 partwise export | Fully | `(writeMusicXML path song)`; multi-part per sequence-name; voice blocks → `<voice>N</voice>`; microtonal `<alter>` cent precision; articulations map per MuseScore convention; hand-rolled `XmlWriter` for deterministic output |
+| LilyPond 2.24+ export | Fully | `(writeLilyPond path song)`; per-Sequence `\new Staff`; voice blocks → `<< { v1 } \\ { v2 } >>`; microtonal `% +Nc` cent-offset comments; Dutch pitch convention (`cis`, `bes`) |
+| ABC 2.1 import | Fully | `(abc source)` returns `Section` (single tune) or `Array[Section]` (multi-tune via `X:N` headers); modal keys (Edor/Dmix/Aphr/Cmix/Glyd/Bphr/Floc); `Q:` tempo (bare BPM, `1/4=BPM`, `"Allegro" 1/4=BPM`); charitable on unknowns |
+| PC-98 MML import | Fully | `(mml source)` returns `Sequence`; notes / accidentals / octave / length / tempo / loops with depth-cap 16 + expansion-cap 65536 (DoS guards); FM operator + drum bank dropped with advisory |
 
 ### Microtonal & tuning
 
@@ -282,8 +280,8 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 |---|---|---|
 | Cent offsets in note streams | Fully | `C4+50c`; preserved through transforms and voice blocks |
 | Named tunings via pragma | Fully | `enable justIntonation;`, `enable pythagorean;`, `enable equalTemperament;` — file-scope, last-wins with `tuning { }` blocks |
-| Scala `.scl` loader | **Fully** | Phase 32 — `loadScala(path)` returns `Tuning`; cents/ratio/implicit-integer step formats — *was previously listed as "Not yet"; in fact shipped.* |
-| Explicit `.kbm` keyboard mapping | Fully | `loadScala(sclPath, kbmPath)` 2-arg overload; period auto-overlaid from `.scl` |
+| Scala `.scl` loader | Fully | `(loadScala path)` returns `Tuning`; cents/ratio/implicit-integer step formats |
+| Explicit `.kbm` keyboard mapping | Fully | `(loadScala sclPath kbmPath)` 2-arg overload; period auto-overlaid from `.scl` |
 | `tuning <expr> { }` musical-context block | Fully | Three composer surfaces: identifier-bound variable, inline call, string-literal sugar |
 | Period auto-adoption for non-octave scales | Fully | Carlos Alpha, Bohlen-Pierce Just Work without explicit `.kbm` |
 | Unmapped-keys advisory | Fully | One-shot stderr per `Tuning.Description` when KBM leaves MIDI keys unmapped |
@@ -293,8 +291,8 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Two-run cmp-clean rendering | Fully | Consecutive renders at same git SHA produce byte-identical WAV bytes (Phase 28/29/33/37 maintained) |
-| `PrngRegistry` single source of truth | Fully | All Phase 36 stochastic primitives keyed by `(SourceLocation, generator-name)`; FNV-1a stable seed derivation; reseeded at `renderSong`/`writeWav` boundary |
+| Two-run cmp-clean rendering | Fully | Consecutive renders at same git SHA produce byte-identical WAV bytes |
+| `PrngRegistry` single source of truth | Fully | All stochastic primitives keyed by `(SourceLocation, generator-name)`; FNV-1a stable seed derivation; reseeded at `renderSong`/`writeWav` boundary |
 | Source-grep CI gate on PRNG routing | Fully | `PrngRegistryNewRandomGateTests` bans unsanctioned `new Random(` in Patterns/Generative/Improv; documented `// PRNG-SANCTIONED:` exceptions |
 | Deterministic synth white-noise + WAV dither | Fully | Fixed seeds reset per `renderSong` / per export |
 | SFZ round-robin counter reset | Fully | Per-render fresh `SfzRenderer` construction |
@@ -315,7 +313,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | `flow check <script>` | Partial | Parse-AND-execute (true parse-only mode deferred) |
 | `flow new <name> [--dir]` | Fully | Scaffolds a Flow project from embedded template |
 | `flow lsp` | Fully | Starts LSP server over stdio |
-| `flow test [path]` | Fully | Phase 35 TEST-01 — runs `test_*.flow` files via pure-Flow framework |
+| `flow test [path]` | Fully | Runs `test_*.flow` files via pure-Flow framework |
 | `flow version` | Fully | |
 | Legacy `flow-interpreter` binary | Fully | Maintained for backward compat; `--watch`, `-e`, `--stdin`, `--device`, `--verbose` flags |
 
@@ -336,11 +334,11 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Rust-style multi-line diagnostic renderer | Fully | Phase 35-03 — colored output (red/yellow/cyan), caret line, gutter, `= note:`, `= help: did you mean '...'?` |
+| Rust-style multi-line diagnostic renderer | Fully | Colored output (red/yellow/cyan), caret line, gutter, `= note:`, `= help: did you mean '...'?` |
 | Did-you-mean suggestions (Levenshtein) | Fully | Threshold `max(2, len/3)` — surfaces for unknown variables, unknown pragmas, missing functions |
 | Error accumulation (multiple errors per pass) | Fully | `ErrorReporter.FormatErrors()` / `FormatDiagnostics(srcMap, useColor)` |
 | ANSI color toggle | Fully | Auto-off when stdout redirected; explicit `useColor: false` for golden-file tests |
-| Charitable interpretation throughout | Fully | Degenerate inputs return reasonable defaults + one-shot stderr advisory; never throws (PAT-02 / D-v1.5-05) |
+| Charitable interpretation throughout | Fully | Degenerate inputs return reasonable defaults + one-shot stderr advisory; never throws |
 
 ### LSP (`flow-lsp`)
 
@@ -380,13 +378,13 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 
 | Feature | Status | Notes |
 |---|---|---|
-| Pure-Flow test framework | Fully | Phase 35 TEST-01 — `(test "name" body)`, `(assert)`, `(assertEq)`, `(assertNotesMatch)`, `(assertBytesEqual)`, `(assertWithinDb)`; bodies are `Lazy`-wrapped for hermetic isolation |
-| Hermetic snapshot/restore | Fully | TestSnapshot captures 11+ mutable engine surfaces per-test |
+| Pure-Flow test framework | Fully | `(test "name" body)`, `(assert)`, `(assertEq)`, `(assertNotesMatch)`, `(assertBytesEqual)`, `(assertWithinDb)`; bodies are `Lazy`-wrapped for hermetic isolation |
+| Hermetic snapshot/restore | Fully | `TestSnapshot` captures 11+ mutable engine surfaces per-test |
 | `flow test [path]` runner | Fully | Single-file OR directory mode (`test_*.flow` glob, no recursion) |
-| RMS-windowed regression helpers | Fully | `AssertRmsWithinTolerance` / `AssertWavMatchesBaseline` — SPEC-8 ±0.5 dB / 100 ms tolerance |
+| RMS-windowed regression helpers | Fully | `AssertRmsWithinTolerance` / `AssertWavMatchesBaseline` — ±0.5 dB / 100 ms tolerance |
 | Two-run determinism script | Fully | `scripts/test_two_run_determinism.sh` — renders twice and compares SHA-256s |
 | Source-grep CI gates | Fully | PRNG routing, named-arg coverage, sample-bundle license audit |
-| xUnit C# test project | Fully | `flow-lang.Tests/` — per-phase folders (`Integration/Phase06/` through `Phase39/`); standard `dotnet test` |
+| xUnit C# test project | Fully | `flow-lang.Tests/` — standard `dotnet test` |
 | Legacy `.flow`-as-test scripts | Fully | 123 `test_*.flow` files in `tests/` (run-and-check-exit-code style) |
 
 ### Tooling & DX
@@ -394,7 +392,7 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 | Feature | Status | Notes |
 |---|---|---|
 | Math stdlib | Fully | `sin`/`cos`/`tan`/`sqrt`/`floor`/`ceil`/`round`/`log`/`pow`/`abs`/`min`/`max` + `pi`/`tau` constants |
-| Buffer pretty-printing | Fully | `prettyBuffer(buf)` (60×11 ASCII waveform), `bufferHex(buf[, offset, length])` |
+| Buffer pretty-printing | Fully | `(prettyBuffer buf)` (60×11 ASCII waveform), `(bufferHex buf [offset length])` |
 | Documentation lookup table | Fully | `BuiltInDocs.cs` — 104 entries powering LSP hover (positioned for future `flow help <fn>`, not yet exposed) |
 | Wiki | Fully | 26 markdown chapters synced via `.github/workflows/wiki-sync.yml` |
 | `flow help <fn>` subcommand | Not yet | |
@@ -404,24 +402,22 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 
 | Feature | Status | Notes |
 |---|---|---|
-| `~/.config/flow/config.toml` | Fully | Phase 30 — Tomlyn 2.3.2 loader; 6 keys: `install_path`, `default_audio_device`, `default_tempo`, `default_timesig`, `stdlib_search_path`, `sfz_root` |
-| `~/.config/flow/styles/*.flow` user style packs | Fully | Phase 36 — last-write-wins over shipped packs |
+| `~/.config/flow/config.toml` | Fully | Tomlyn 2.3.2 loader; 6 keys: `install_path`, `default_audio_device`, `default_tempo`, `default_timesig`, `stdlib_search_path`, `sfz_root` |
+| `~/.config/flow/styles/*.flow` user style packs | Fully | Last-write-wins over shipped packs |
 | Charitable config loading | Fully | Missing file → silent default; malformed TOML → stderr warning + defaults (never aborts) |
-| `$XDG_CONFIG_HOME` | Not yet | Hard-coded `~/.config/flow/` per SPEC-4 lock |
+| `$XDG_CONFIG_HOME` | Not yet | Hard-coded `~/.config/flow/` |
 
 ### Example scripts (tutorial chapters)
 
 | Folder | Topic |
 |---|---|
-| `examples/dsp/` | Granular synthesis, time-stretch, pitch-shift (Phase 37) |
-| `examples/generative/` | Markov chains, Tidal-style combinators (Phase 36) |
-| `examples/improv/` (via style packs) | Chord-aware Markov improvisation (Phase 36) |
-| `examples/notation/` | MusicXML + LilyPond export, ABC + MML import (Phase 39) |
+| `examples/dsp/` | Granular synthesis, time-stretch, pitch-shift |
+| `examples/generative/` | Markov chains, Tidal-style combinators |
+| `examples/improv/` (via style packs) | Chord-aware Markov improvisation |
+| `examples/notation/` | MusicXML + LilyPond export, ABC + MML import |
 | `examples/pragmas/` | `enable hAsB;`, `enable justIntonation;` demos |
-| `examples/ragtime/` | "Stride & Stomp" — solo VSCO-CE UprightPiano, F major, ~58s (v1.4 showcase) |
-| `examples/scala/` | Microtonal `.scl` tuning loader walkthrough (Phase 32) |
-| `examples/sections/` | Parameterized sections with defaults + `*N` repetition (Phase 36) |
-| `examples/symphony/` | "In Five Voices" — 5 VSCO-CE instruments, ABA D minor, ~60s (v1.4 showcase) |
+| `examples/scala/` | Microtonal `.scl` tuning loader walkthrough |
+| `examples/sections/` | Parameterized sections with defaults + `*N` repetition |
 
 ### Platform support
 

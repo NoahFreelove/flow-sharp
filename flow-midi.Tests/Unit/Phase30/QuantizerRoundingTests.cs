@@ -105,7 +105,7 @@ public class QuantizerRoundingTests
         // a tight case but can degenerate to many more for sub-grid gaps.
         //
         // The defect's stronger manifestation is the bar with `D4s. _ _ _ _ _`
-        // in ragtime_imported.flow — 5+ rests for sub-grid gaps. Plan 30-07
+        // in an imported file — 5+ rests for sub-grid gaps. Plan 30-07
         // collapses adjacent same-suffix rests into one.
         Assert.True(restCount <= 1,
             $"Bug B Defect 2 (AddRests over-emission): a 3-quarter-rest gap after a quarter note must compress to a single auto-fit '_' rest (Plan 30-07 target). On HEAD the AddRests inner-loop emits {restCount} RestElement entries because the 'evenly divides gap' tolerance accepts the largest count that fits.");

@@ -267,10 +267,10 @@ public class SfzMidiExportTests : IDisposable
     /// Regression net — the existing Phase 28 multi-track MIDI export still
     /// produces the expected chunk count + ProgramChange events. The full
     /// Phase 28 byte-identical contract is exercised by
-    /// Phase28.MultiTrackMidiTests + Phase28.RagtimeFixtureTests
-    /// (run as part of the plan's verify step); this fact spot-checks the
-    /// most-load-bearing assertion (chunk count + per-track GM program)
-    /// inside this suite so a regression here surfaces immediately.
+    /// Phase28.MultiTrackMidiTests (run as part of the plan's verify step);
+    /// this fact spot-checks the most-load-bearing assertion (chunk count
+    /// + per-track GM program) inside this suite so a regression here
+    /// surfaces immediately.
     /// </summary>
     [Fact]
     public void Phase28_MidiExport_NonSamplerInstruments_StillWork()
