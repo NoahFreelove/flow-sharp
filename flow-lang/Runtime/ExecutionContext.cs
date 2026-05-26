@@ -2,6 +2,7 @@ using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
+using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Runtime;
@@ -39,6 +40,94 @@ public class ExecutionContext
     /// of <see cref="GetMusicalContext"/> mutates the returned <see cref="MusicalContext"/>.
     /// </summary>
     private MusicalContext? _cachedMusicalContext;
+
+    /// <summary>
+    /// Bundle F (quick task 260524-srj) — per-context overload-resolution memoization
+    /// keyed by <see cref="OverloadCacheKey"/> (<c>(name, argType[])</c>). The cached
+    /// value is the resolution outcome (<see cref="FunctionOverload"/> or
+    /// <c>null</c> for known-misses). Invalidated by any call to
+    /// <see cref="DeclareFunction"/> — the SINGLE chokepoint for <see cref="StackFrame._functions"/>
+    /// mutations (audit recorded in 260524-srj-PLAN.md &lt;invalidation_surface_audit&gt;) —
+    /// and defensively by <see cref="RestoreState"/> during hermetic-test boundaries.
+    ///
+    /// <para>
+    /// CACHE BYPASS RULES (correctness gates — must match
+    /// <see cref="OverloadResolver.Resolve"/>'s per-candidate state dependencies):
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><c>namedArgTypes is { Count: &gt; 0 }</c> — named-arg branch builds
+    ///   per-candidate rejection diagnostics into a local reporter; caching would
+    ///   skip those.</item>
+    ///   <item>Any candidate's <see cref="FunctionSignature.IsVarArgs"/> is true —
+    ///   <see cref="FunctionSignature.Matches"/> + <c>CalculateSpecificity</c> have
+    ///   arity-shifting semantics; same <c>(name, argTypes)</c> can resolve
+    ///   differently when a new fixed-arity overload is registered alongside a
+    ///   varargs one, and our key does not track candidate-set identity.</item>
+    ///   <item>Any <c>argType</c> is <see cref="VoidType"/> (unresolved/wildcard) —
+    ///   <see cref="VoidType"/> acts as a wildcard in
+    ///   <see cref="FlowType.IsCompatibleWith"/>; per-call scoring may pick a
+    ///   different overload depending on the surrounding type context.</item>
+    /// </list>
+    ///
+    /// <para>
+    /// FORWARD RISK (Phase 44 Plan 44-02): when <see cref="CallerStrictMode"/> wires
+    /// into <see cref="OverloadResolver"/> (Axis A — strict mode disables
+    /// compatible/convertible coercion), the same <c>(name, argTypes)</c> may
+    /// resolve differently in strict vs. non-strict callers. Today's key does NOT
+    /// encode the strict bit. Plan 44-02 must either extend
+    /// <see cref="OverloadCacheKey"/> with a strict discriminator OR invalidate
+    /// this cache around <see cref="CallerStrictMode"/> changes.
+    /// </para>
+    /// </summary>
+    private readonly Dictionary<OverloadCacheKey, FunctionOverload?> _overloadResolveCache = new();
+
+    /// <summary>
+    /// Bundle F (260524-srj) — composite key for <see cref="_overloadResolveCache"/>.
+    /// Equality + hash code consume the function name AND the positional arg-type
+    /// array element-wise. Every primitive/special <see cref="FlowType"/> is a sealed
+    /// singleton (<c>IntType.Instance</c>, <c>NoteType.Instance</c>, etc.) so
+    /// <see cref="FlowType.Equals(FlowType?)"/> collapses to CLR-type identity;
+    /// <see cref="ArrayType"/> overrides to content-equal on <c>ElementType</c>.
+    /// </summary>
+    private readonly struct OverloadCacheKey : IEquatable<OverloadCacheKey>
+    {
+        public readonly string Name;
+        public readonly FlowType[] ArgTypes;
+
+        public OverloadCacheKey(string name, FlowType[] argTypes)
+        {
+            Name = name;
+            ArgTypes = argTypes;
+        }
+
+        public bool Equals(OverloadCacheKey other)
+        {
+            if (!string.Equals(Name, other.Name, StringComparison.Ordinal))
+                return false;
+            if (ArgTypes.Length != other.ArgTypes.Length)
+                return false;
+            for (int i = 0; i < ArgTypes.Length; i++)
+            {
+                if (!ArgTypes[i].Equals(other.ArgTypes[i]))
+                    return false;
+            }
+            return true;
+        }
+
+        public override bool Equals(object? obj) => obj is OverloadCacheKey k && Equals(k);
+
+        public override int GetHashCode()
+        {
+            // Order-sensitive XOR-roll so (Int, Note) and (Note, Int) don't collide.
+            unchecked
+            {
+                int hash = Name.GetHashCode();
+                for (int i = 0; i < ArgTypes.Length; i++)
+                    hash = (hash * 31) + ArgTypes[i].GetHashCode();
+                return hash;
+            }
+        }
+    }
 
     // ===== Random Number Generation State =====
     
@@ -507,11 +596,31 @@ public class ExecutionContext
 
     /// <summary>
     /// Declares a function overload.
+    ///
+    /// <para>
+    /// Bundle F (260524-srj) — SINGLE chokepoint for all
+    /// <see cref="StackFrame._functions"/> mutations (audit in
+    /// 260524-srj-PLAN.md &lt;invalidation_surface_audit&gt;). Every call
+    /// invalidates <see cref="_overloadResolveCache"/> via
+    /// <see cref="InvalidateOverloadCache"/>. Function (re)declarations are
+    /// NOT in the hot inner loop (parse-time + module-load + REPL-turn
+    /// boundary only), so the cost of <c>Dictionary.Clear()</c> per call
+    /// is negligible; the cache rebuilds in &lt;100 calls during the next
+    /// hot loop. Surgical per-name invalidation buys nothing because
+    /// <c>Clear()</c> is O(buckets) regardless.
+    /// </para>
     /// </summary>
     public void DeclareFunction(FunctionOverload overload)
     {
         CurrentFrame.DeclareFunction(overload);
+        InvalidateOverloadCache();
     }
+
+    /// <summary>
+    /// Bundle F (260524-srj) — drops the memoized overload-resolution results.
+    /// See <see cref="_overloadResolveCache"/> for the invalidation contract.
+    /// </summary>
+    private void InvalidateOverloadCache() => _overloadResolveCache.Clear();
 
     /// <summary>
     /// Resolves a function call to a specific overload.
@@ -535,9 +644,65 @@ public class ExecutionContext
             return null;
         }
 
+        // Bundle F (260524-srj) — cache read with the bypass gates documented
+        // on _overloadResolveCache. The cache stores (FunctionOverload?) so
+        // known-misses are also memoized (avoids re-paying the scoring cost on
+        // repeat lookups for procs that won't match).
+        if (!ShouldBypassOverloadCache(argTypes, overloads, namedArgTypes))
+        {
+            var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes));
+            if (_overloadResolveCache.TryGetValue(key, out var cached))
+                return cached;
+            // Bundle A (260524-r4o) Task 2 — FunctionOverload-direct resolve.
+            var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes);
+            _overloadResolveCache[key] = resolved;
+            return resolved;
+        }
+
         // Bundle A (260524-r4o) Task 2 — FunctionOverload-direct resolve:
         // no Signature projection, no FirstOrDefault reverse-lookup.
         return _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes);
+    }
+
+    /// <summary>
+    /// Bundle F (260524-srj) — returns <c>true</c> when the call must bypass the
+    /// overload-resolution cache. See <see cref="_overloadResolveCache"/> for the
+    /// three correctness gates: named-args, varargs candidates, VoidType arg.
+    /// </summary>
+    private static bool ShouldBypassOverloadCache(
+        IReadOnlyList<FlowType> argTypes,
+        IReadOnlyList<FunctionOverload> overloads,
+        IReadOnlyDictionary<string, FlowType>? namedArgTypes)
+    {
+        if (namedArgTypes is { Count: > 0 })
+            return true;
+        for (int i = 0; i < argTypes.Count; i++)
+        {
+            if (argTypes[i] is VoidType)
+                return true;
+        }
+        for (int i = 0; i < overloads.Count; i++)
+        {
+            if (overloads[i].Signature.IsVarArgs)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Bundle F (260524-srj) — snapshot the positional arg-type sequence into a
+    /// fresh array so the cache key is immune to caller mutation of the source
+    /// <see cref="IReadOnlyList{T}"/>. Single allocation per cache MISS — cache
+    /// HITs skip this entirely (the TryGetValue lookup uses the existing key).
+    /// </summary>
+    private static FlowType[] ToCacheArgTypes(IReadOnlyList<FlowType> argTypes)
+    {
+        if (argTypes.Count == 0)
+            return Array.Empty<FlowType>();
+        var arr = new FlowType[argTypes.Count];
+        for (int i = 0; i < argTypes.Count; i++)
+            arr[i] = argTypes[i];
+        return arr;
     }
 
     /// <summary>
@@ -792,6 +957,21 @@ public class ExecutionContext
         if (overloads.Count == 0)
             return null;
 
+        // Bundle F (260524-srj) — silent-mode probes SHARE the same cache as
+        // the noisy ResolveFunction path. The cached FunctionOverload? value is
+        // the resolution OUTCOME and doesn't depend on the silent flag; only
+        // diagnostics differ, and a cache HIT skips them entirely (which is
+        // exactly the silent=true behavior we want here anyway).
+        if (!ShouldBypassOverloadCache(argTypes, overloads, namedArgTypes))
+        {
+            var key = new OverloadCacheKey(name, ToCacheArgTypes(argTypes));
+            if (_overloadResolveCache.TryGetValue(key, out var cached))
+                return cached;
+            var resolved = _overloadResolver.Resolve(name, overloads, argTypes, location: null, namedArgTypes: namedArgTypes, silent: true);
+            _overloadResolveCache[key] = resolved;
+            return resolved;
+        }
+
         // Bundle A (260524-r4o) Task 3 — reuse the existing _overloadResolver
         // via the silent-mode FunctionOverload-direct overload from Task 2.
         // No per-probe resolver-allocation; rejection diagnostics route into
@@ -930,6 +1110,12 @@ public class ExecutionContext
         // 6. Musical-context stack on the global frame.
         GlobalFrame.MusicalContext = snap.GlobalFrameMusicalContext;
         InvalidateMusicalContextCache();
+
+        // Bundle F (260524-srj) — defensive invalidation. The chokepoint at
+        // DeclareFunction already covered any in-test (re)declarations, but
+        // pin this in case SnapshotState/RestoreState ever gain a
+        // _functions-restoring field. Costs one Dictionary.Clear() per test.
+        InvalidateOverloadCache();
 
         // 7-10. Phase 33 SFZ statics.
         SfzEnabled = snap.SfzEnabled;

@@ -33,7 +33,7 @@ Next step: `/clear` then one of (composer pick):
   - `/gsd:context-phase 40` — Studio Sync (the only Phase 35-41 v1.5 phase still pending; orthogonal to Phase 42-44 closeout trio)
 
 Status: Ready to execute
-Last activity: 2026-05-25
+Last activity: 2026-05-25 - Completed 6-bundle interpreter optimization sweep (qnf/r4o/rjm/rsg/s2g/sa3/srj); var_lookup -62%, function_calls -38%, overload -40%, collections -37% vs original baseline
 
 ### v1.5 Phase Map (10 phases, 75 REQs)
 
@@ -720,6 +720,7 @@ None yet for Phase 15.
 | 260524-rsg | Bundle C — reusable Value[] buffer per call (replaces per-iteration `new List<Value> { element }`) for each/map/filter/reduce in Collections.cs. Honest result: bench_collections marginal -2.9% inside stddev, but JIT escape-analysis side effects boosted other benches. Cumulative A+B+C: var_lookup -31.8%, overload -24.7%, collections -21.3%, function_calls -16.9%, notestream -10.1%, parse -8.8%. Zero new test failures. | 2026-05-25 | d210dbe | [260524-rsg-bundle-c-drop-per-call-list-wrap-in-coll](./quick/260524-rsg-bundle-c-drop-per-call-list-wrap-in-coll/) |
 | 260524-s2g | Bundle D — SimpleLexer span scanning (3 `_source.Substring(_position).StartsWith` sites swapped to `AsSpan().StartsWith`). Marginal bench_parse -3.92% as predicted; other benches noise-level. Cumulative A+B+C+D: var_lookup -30.8%, others -10.8% to -25%. Zero new test failures. | 2026-05-25 | 0ddd0d9 | [260524-s2g-bundle-d-lexer-zero-alloc-substring-to-s](./quick/260524-s2g-bundle-d-lexer-zero-alloc-substring-to-s/) |
 | 260524-sa3 | Bundle E — MusicalContext cache + 7-site invalidation surface (PushFrame/PopFrame/PushTuning/PopTuning/SetFileScopeTuning/ResetBlockTuningStack/RestoreState) + SetCurrentFrameMusicalContext chokepoint at Interpreter.cs:335. --validate path with plan-checker + verifier (passed 7/7 must-haves). Honest perf finding: invisible on current bench (PushFrame-per-iteration thrashes cache); correct infrastructure for song-render hot path. Cumulative A-D wins preserved; 3 two-run determinism pairs cmp-clean. Zero new test failures. | 2026-05-25 | 1d60d24 | [260524-sa3-bundle-e-cache-musicalcontext-resolution](./quick/260524-sa3-bundle-e-cache-musicalcontext-resolution/) |
+| 260524-srj | Bundle F — overload resolution cache (per-ExecutionContext Dictionary<OverloadCacheKey, FunctionOverload?>) with single-chokepoint invalidation at DeclareFunction + defensive at RestoreState. Named-args/varargs/Void bypass. --validate path with plan-checker (4 non-blocking warnings) + verifier (13/13 must-haves passed). Marginal vs Bundle E: function_calls -31.9%, overload -19.4%, var_lookup -45.4%, collections -25.6%. Cumulative vs baseline: var_lookup -62%, overload -40%, function_calls -38%, collections -37%. Parse +16.5% regression (Dictionary.Clear per decl in 25k-decl pathological bench) accepted with v1.5-backlog follow-up. Forward-risk callout for Phase 44 Plan 44-02 (CallerStrictMode coupling). | 2026-05-25 | 2833046 | [260524-srj-bundle-f-overload-resolution-cache](./quick/260524-srj-bundle-f-overload-resolution-cache/) |
 
 ## Deferred Items
 

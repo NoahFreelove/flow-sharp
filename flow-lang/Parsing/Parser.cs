@@ -381,16 +381,7 @@ public partial class Parser
                 Advance();
         }
 
-        // Phase 44 Plan 44-02 D-02 / D-03 — capture the declaring file's
-        // `enable strict;` bit onto every ProcDeclaration at parse time.
-        // Mirrors the Phase 35 LANG-04 `CapturedPragmas: _pragmaSet` threading
-        // at line 1794 (MatchExpression). Plan 44-02 threads only the boolean
-        // `.Has("strict")` evaluation (smaller surface than capturing the full
-        // PragmaSet — no nullable handling at the Interpreter read site).
-        return new ProcDeclaration(
-            location, name, parameters, body, isInternal,
-            Span: new Span(location, PreviousToken.Location),
-            IsStrict: _pragmaSet?.Has("strict") ?? false);
+        return new ProcDeclaration(location, name, parameters, body, isInternal, Span: new Span(location, PreviousToken.Location));
     }
 
     private VariableDeclaration ParseVariableDeclaration()
