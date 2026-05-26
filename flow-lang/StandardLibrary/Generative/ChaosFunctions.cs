@@ -220,6 +220,17 @@ public static class ChaosFunctions
     {
         if (sigma < 0 || rho <= 0 || beta <= 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            // D-36-09 caveat: the strict ERROR PATH short-circuits before any
+            // chaotic FP compute, so the [strict] error itself is
+            // same-platform deterministic.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [lorenz] degenerate params (σ={sigma}, ρ={rho}, β={beta}) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return (CanonicalSigma, CanonicalRho, CanonicalBeta);
+            }
             RenderingDiagnostics.WarnOnce(
                 $"lorenz:degenerate-params:{ctx.CurrentCallSite}:{sigma},{rho},{beta}",
                 $"[lorenz] degenerate params (σ={sigma}, ρ={rho}, β={beta}) at "
@@ -285,6 +296,14 @@ public static class ChaosFunctions
     {
         if (r < 0.0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [logistic] r clamped to [0, 4] — got {r} (< 0) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return 0.0;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"logistic:r-negative:{ctx.CurrentCallSite}:{r}",
                 $"[logistic] r {r} < 0 at {ctx.CurrentCallSite}; clamped to 0 "
@@ -293,6 +312,14 @@ public static class ChaosFunctions
         }
         if (r > 4.0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [logistic] r clamped to [0, 4] — got {r} (> 4) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return 4.0;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"logistic:r-cap:{ctx.CurrentCallSite}:{r}",
                 $"[logistic] r {r} > 4 at {ctx.CurrentCallSite}; clamped to 4.0 "
@@ -328,6 +355,14 @@ public static class ChaosFunctions
         var notes = ScaleDatabase.GetScaleNotes(scaleName);
         if (notes == null)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [quantizeToScale] unknown scale '{scaleName}' at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return ChromaticC4ToB4();
+            }
             RenderingDiagnostics.WarnOnce(
                 $"quantizeToScale:unknown-scale:{ctx.CurrentCallSite}:{scaleName}",
                 $"[quantizeToScale] unknown scale name '{scaleName}' at "
@@ -400,6 +435,14 @@ public static class ChaosFunctions
                 }
                 catch (Exception)
                 {
+                    // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+                    if (ctx.CallerStrictMode)
+                    {
+                        ctx.ErrorReporter.ReportError(
+                            $"[strict] [quantizeToScale] unknown scale — unparseable Note '{noteStr}' at {ctx.CurrentCallSite}",
+                            ctx.CurrentCallSite);
+                        continue;
+                    }
                     RenderingDiagnostics.WarnOnce(
                         $"quantizeToScale:unparseable-note:{ctx.CurrentCallSite}:{noteStr}",
                         $"[quantizeToScale] unparseable Note '{noteStr}' at "
@@ -410,11 +453,22 @@ public static class ChaosFunctions
 
         if (scaleNotes.Count == 0)
         {
-            RenderingDiagnostics.WarnOnce(
-                $"quantizeToScale:empty-scale:{ctx.CurrentCallSite}",
-                $"[quantizeToScale] empty scaleNotes Array at {ctx.CurrentCallSite}; "
-                + "falling back to chromatic 12-tone (C4..B4)");
-            scaleNotes = ChromaticC4ToB4();
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [quantizeToScale] empty array — using chromatic 12-tone (C4..B4) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                scaleNotes = ChromaticC4ToB4();
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"quantizeToScale:empty-scale:{ctx.CurrentCallSite}",
+                    $"[quantizeToScale] empty scaleNotes Array at {ctx.CurrentCallSite}; "
+                    + "falling back to chromatic 12-tone (C4..B4)");
+                scaleNotes = ChromaticC4ToB4();
+            }
         }
 
         return Value.Sequence(Quantize(series, scaleNotes, ctx));
@@ -436,6 +490,14 @@ public static class ChaosFunctions
         var seq = new SequenceData();
         if (series.Count == 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [quantizeToScale] empty series at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return seq;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"quantizeToScale:empty-series:{ctx.CurrentCallSite}",
                 $"[quantizeToScale] empty series at {ctx.CurrentCallSite}; "
@@ -485,6 +547,14 @@ public static class ChaosFunctions
     {
         if (length <= 0)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] length clamped — got {length} (<= 0) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return length;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:length-nonpositive:{ctx.CurrentCallSite}:{length}",
                 $"[{siteName}] length {length} <= 0 at {ctx.CurrentCallSite}; "
@@ -493,6 +563,14 @@ public static class ChaosFunctions
         }
         if (length > MaxLength)
         {
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{siteName}] length clamped to {MaxLength} — got {length} (> {MaxLength}) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+                return MaxLength;
+            }
             RenderingDiagnostics.WarnOnce(
                 $"{siteName}:length-cap:{ctx.CurrentCallSite}:{length}",
                 $"[{siteName}] length {length} > {MaxLength} at {ctx.CurrentCallSite}; "

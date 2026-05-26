@@ -75,26 +75,42 @@ public static class InputFunctions
     /// </summary>
     public static void Register(InternalFunctionRegistry registry)
     {
+        // Phase 44 Plan 44-07: legacy entry. Same charitable-only path. Real
+        // composer surface uses RegisterContextDependent at FlowEngine init.
+        RegisterImpl(registry, ctx: null);
+    }
+
+    public static void RegisterContextDependent(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        RegisterImpl(registry, context);
+    }
+
+    private static void RegisterImpl(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext? ctx)
+    {
         var secondSig = new FunctionSignature("micBuffer", [SecondType.Instance],
             ParameterNames: ["duration"]);
-        registry.Register("micBuffer", secondSig, MicBufferFromSecond);
+        registry.Register("micBuffer", secondSig, args => MicBufferFromSecond(args, ctx));
 
         var doubleSig = new FunctionSignature("micBuffer", [DoubleType.Instance],
             ParameterNames: ["duration"]);
-        registry.Register("micBuffer", doubleSig, MicBufferFromDouble);
+        registry.Register("micBuffer", doubleSig, args => MicBufferFromDouble(args, ctx));
     }
 
-    private static Value MicBufferFromSecond(IReadOnlyList<Value> args)
+    private static Value MicBufferFromSecond(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
         double seconds = args[0].As<double>();
-        var buf = MicBuffer(seconds);
+        var buf = MicBuffer(seconds, ctx);
         return Value.Buffer(buf);
     }
 
-    private static Value MicBufferFromDouble(IReadOnlyList<Value> args)
+    private static Value MicBufferFromDouble(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
         double seconds = args[0].As<double>();
-        var buf = MicBuffer(seconds);
+        var buf = MicBuffer(seconds, ctx);
         return Value.Buffer(buf);
     }
 
@@ -104,7 +120,7 @@ public static class InputFunctions
     /// the buffer's sample data directly without a Flow-runtime round-trip.
     /// </summary>
     public static AudioBuffer? MicBufferForTesting(double durationSeconds)
-        => MicBuffer(durationSeconds);
+        => MicBuffer(durationSeconds, ctx: null);
 
     /// <summary>
     /// Core implementation. Emits the feedback-guard advisory on every call
@@ -114,13 +130,23 @@ public static class InputFunctions
     /// <see cref="AudioBuffer"/>. Charitable failure path: silent buffer +
     /// error advisory (D-v1.5-05 + Pitfall #12 "live session never dies mid-set").
     /// </summary>
-    private static AudioBuffer? MicBuffer(double durationSeconds)
+    private static AudioBuffer? MicBuffer(double durationSeconds, FlowLang.Runtime.ExecutionContext? ctx)
     {
         // (1) Always emit the attenuation advisory — composer must know feedback
         //     guard is engaged (UI-SPEC line 335).
-        RenderingDiagnostics.WarnOnce(
-            "audio-in-attenuate:open",
-            "[audio-in] mic stream attenuated -20 dB on open to prevent feedback");
+        // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+        if (ctx is not null && ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] [audio-in] mic stream attenuated -20 dB on open at {ctx.CurrentCallSite}",
+                ctx.CurrentCallSite);
+        }
+        else
+        {
+            RenderingDiagnostics.WarnOnce(
+                "audio-in-attenuate:open",
+                "[audio-in] mic stream attenuated -20 dB on open to prevent feedback");
+        }
 
         if (durationSeconds <= 0.0)
         {
@@ -155,9 +181,19 @@ public static class InputFunctions
         float[] resampled;
         if (nativeRate != TargetSampleRate)
         {
-            RenderingDiagnostics.WarnOnce(
-                $"audio-in-resample:{nativeRate}",
-                $"[audio-in] resampling capture stream from {nativeRate} Hz to {TargetSampleRate} Hz (linear interpolation)");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (ctx is not null && ctx.CallerStrictMode)
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [audio-in] resampling capture stream from {nativeRate} Hz to {TargetSampleRate} Hz (linear interpolation) at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    $"audio-in-resample:{nativeRate}",
+                    $"[audio-in] resampling capture stream from {nativeRate} Hz to {TargetSampleRate} Hz (linear interpolation)");
+            }
             resampled = ResampleLinear(rawSamples, nativeRate, TargetSampleRate, channels);
         }
         else

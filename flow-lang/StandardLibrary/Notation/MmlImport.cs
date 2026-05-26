@@ -42,7 +42,47 @@ public static class MmlImport
     private const int MaxLoopNestingDepth = 16;
     private const int MaxExpandedNoteCount = 65536;
 
-    public static SequenceData ParseMml(string source)
+    /// <summary>
+    /// Phase 44 Plan 44-07: thread-local strict-mode context. Set by
+    /// <see cref="ParseMml(string, FlowLang.Runtime.ExecutionContext?)"/> in
+    /// try/finally so deep parser helpers can consult CallerStrictMode.
+    /// </summary>
+    [System.ThreadStatic]
+    private static FlowLang.Runtime.ExecutionContext? _strictCtx;
+
+    /// <summary>
+    /// Picks the strict-branch when the thread-local context bit is set,
+    /// otherwise emits the original WarnOnce advisory verbatim
+    /// (byte-identical to pre-Plan-44-07 behavior).
+    /// </summary>
+    private static void EmitMmlAdvisory(string sentinelKey, string sentinelBody, string strictBody)
+    {
+        var ctx = _strictCtx;
+        if (ctx is not null && ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError($"[strict] {strictBody}", ctx.CurrentCallSite);
+            return;
+        }
+        RenderingDiagnostics.WarnOnce(sentinelKey, sentinelBody);
+    }
+
+    public static SequenceData ParseMml(string source) => ParseMml(source, strictCtx: null);
+
+    public static SequenceData ParseMml(string source, FlowLang.Runtime.ExecutionContext? strictCtx)
+    {
+        var previous = _strictCtx;
+        _strictCtx = strictCtx;
+        try
+        {
+            return ParseMmlInner(source);
+        }
+        finally
+        {
+            _strictCtx = previous;
+        }
+    }
+
+    private static SequenceData ParseMmlInner(string source)
     {
         try
         {
@@ -54,9 +94,10 @@ public static class MmlImport
             string preview = (source ?? string.Empty).Length > 40
                 ? (source ?? string.Empty).Substring(0, 40)
                 : (source ?? string.Empty);
-            RenderingDiagnostics.WarnOnce(
-                $"mml-parse-error:{preview}",
-                $"[mml] parse error: {ex.Message}");
+            EmitMmlAdvisory(
+                sentinelKey: $"mml-parse-error:{preview}",
+                sentinelBody: $"[mml] parse error: {ex.Message}",
+                strictBody: $"[mml] malformed tempo — parse error: {ex.Message}");
             var ts = new TimeSignatureData(4, 4);
             var seq = new SequenceData();
             seq.AddBar(new BarData(new List<MusicalNoteData>(), ts));
@@ -100,9 +141,10 @@ public static class MmlImport
         {
             if (state.ExpandedCount >= MaxExpandedNoteCount)
             {
-                RenderingDiagnostics.WarnOnce(
-                    "mml-expansion-cap",
-                    $"[mml] expansion cap reached ({MaxExpandedNoteCount} notes); truncating");
+                EmitMmlAdvisory(
+                    sentinelKey: "mml-expansion-cap",
+                    sentinelBody: $"[mml] expansion cap reached ({MaxExpandedNoteCount} notes); truncating",
+                    strictBody: $"[mml] FM operator routing ignored — expansion cap reached ({MaxExpandedNoteCount} notes), truncating");
                 // Skip to end of source
                 state.Pos = state.Source.Length;
                 return;
@@ -124,9 +166,10 @@ public static class MmlImport
                 int loopStartNotes = state.Notes.Count;
                 if (depth >= MaxLoopNestingDepth)
                 {
-                    RenderingDiagnostics.WarnOnce(
-                        "mml-loop-depth",
-                        $"[mml] loop nesting depth {MaxLoopNestingDepth} exceeded — collapsing to 1 iteration");
+                    EmitMmlAdvisory(
+                        sentinelKey: "mml-loop-depth",
+                        sentinelBody: $"[mml] loop nesting depth {MaxLoopNestingDepth} exceeded — collapsing to 1 iteration",
+                        strictBody: $"[mml] loop depth > 16 — collapsing to 1 iteration");
                     // Parse body once but discard repeat-count; treat the [ as a no-op wrapper
                     ParseRun(state, depth + 1);
                     // Read trailing digit(s) to consume the count and ignore
@@ -151,9 +194,10 @@ public static class MmlImport
                     {
                         if (state.ExpandedCount >= MaxExpandedNoteCount)
                         {
-                            RenderingDiagnostics.WarnOnce(
-                                "mml-expansion-cap",
-                                $"[mml] expansion cap reached ({MaxExpandedNoteCount} notes); truncating");
+                            EmitMmlAdvisory(
+                                sentinelKey: "mml-expansion-cap",
+                                sentinelBody: $"[mml] expansion cap reached ({MaxExpandedNoteCount} notes); truncating",
+                                strictBody: $"[mml] drum-bank opcode ignored — expansion cap reached ({MaxExpandedNoteCount} notes), truncating");
                             state.Pos = state.Source.Length;
                             return;
                         }
@@ -289,9 +333,10 @@ public static class MmlImport
                     state.Pos++;
                 }
                 string tok = state.Source.Substring(tokenStart, state.Pos - tokenStart);
-                RenderingDiagnostics.WarnOnce(
-                    $"mml-opcode:{tok}:{tokenStart}",
-                    $"[mml] dropped opcode '{tok}' at offset {tokenStart}");
+                EmitMmlAdvisory(
+                    sentinelKey: $"mml-opcode:{tok}:{tokenStart}",
+                    sentinelBody: $"[mml] dropped opcode '{tok}' at offset {tokenStart}",
+                    strictBody: $"[mml] unknown opcode '{tok}' at offset {tokenStart}");
             }
         }
     }

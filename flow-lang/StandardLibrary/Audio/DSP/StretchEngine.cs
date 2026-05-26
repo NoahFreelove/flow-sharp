@@ -190,6 +190,17 @@ public static class StretchEngine
 
         // D-37-06 + OQ5 — one-shot stderr advisory keyed by (site, summary).
         // Identical summaries inside a loop dedup naturally via WarnOnce.
+        //
+        // Phase 44 Plan 44-06 note: this advisory is informational (composer
+        // gets feedback about which engines auto-dispatch chose). StretchEngine
+        // is purely computational with no ExecutionContext access; threading
+        // ctx here would require restructuring the Process signature across
+        // both #stretch and #pitchShift callers (PitchShiftEngine wraps
+        // StretchEngine). DEFERRED to Plan 44-07 — for now the advisory stays
+        // charitable. The mode=#auto picking decision is a legitimate dispatch
+        // path, not a fallback error condition, so non-strict semantics fit
+        // (composer always sees stderr feedback, never an ErrorReporter error
+        // for a valid call).
         string sentinel = $"stretch:auto:{site}:{pctVoc}/{pctPso}";
         string message = $"[stretch] mode=#auto picked: {pctVoc}% vocoder / {pctPso}% psola across {totalFrames} frames";
         RenderingDiagnostics.WarnOnce(sentinel, message);

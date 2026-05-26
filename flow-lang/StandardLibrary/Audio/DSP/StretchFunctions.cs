@@ -126,7 +126,7 @@ public static class StretchFunctions
         // Prefix ladder: args[i] holds the value for PrefixParamNames[i].
         // Slot map (W4 LOCK): 2="mode", 3="frameSize", 4="hopSize",
         // 5="overlap", 6="transientThreshold", 7="pitchPeriod", 8="windowSize".
-        StretchMode mode = arity >= 3 ? ResolveStretchMode(args[2].As<string>()) : StretchMode.Auto;
+        StretchMode mode = arity >= 3 ? ResolveStretchMode(args[2].As<string>(), ctx) : StretchMode.Auto;
         int frameSize = arity >= 4 ? args[3].As<int>() : 2048;
         int hopSize = arity >= 5 ? args[4].As<int>() : 512;
         int overlap = arity >= 6 ? args[5].As<int>() : 4;
@@ -149,19 +149,28 @@ public static class StretchFunctions
     /// <see cref="StretchMode.Auto"/> with a one-shot stderr advisory per
     /// 37-PATTERNS.md Pattern E (charitable interpretation).
     /// </summary>
-    private static StretchMode ResolveStretchMode(string sym)
+    private static StretchMode ResolveStretchMode(string sym, ExecutionContext ctx)
     {
         return sym switch
         {
             "vocoder" => StretchMode.Vocoder,
             "psola" => StretchMode.Psola,
             "auto" => StretchMode.Auto,
-            _ => FallbackToAuto(sym),
+            _ => FallbackToAuto(sym, ctx),
         };
     }
 
-    private static StretchMode FallbackToAuto(string sym)
+    private static StretchMode FallbackToAuto(string sym, ExecutionContext ctx)
     {
+        // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        if (ctx.CallerStrictMode)
+        {
+            ctx.ErrorReporter.ReportError(
+                $"[strict] [stretch] unknown mode symbol '#{sym}' — falling back to #auto. " +
+                "Valid options: #vocoder | #psola | #auto.",
+                ctx.CurrentCallSite);
+            return StretchMode.Auto;
+        }
         RenderingDiagnostics.WarnOnce(
             $"stretch:mode:{sym}",
             $"[stretch] unknown mode symbol '#{sym}' — falling back to #auto. " +
