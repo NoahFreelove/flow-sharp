@@ -1,0 +1,52 @@
+enable strict;
+
+use "@std"
+
+Note: Phase 44 Plan 44-11 Task 1 — D-13 Dict-type-strict regression-pin.
+Note: Phase 26.1 hashes Dict keys by type+value: Int 1 ≠ Float 1.0 ≠ Double 1.0
+Note: as keys; Symbol #foo ≠ String "foo" as keys. Phase 44 changes NOTHING
+Note: about Dict key matching — composer-side this fixture proves that
+Note: heterogeneous-typed keys with the same NUMERIC value remain distinct
+Note: under strict mode (D-13).
+Note:
+Note: Construction note: Dict literal `(dict K V K V …)` infers Dict<K, V>
+Note: from the FIRST key, so heterogeneous-key dicts must be built from
+Note: empty `(dict)` (typed `Dict<Void, V>`) + incremental `(set)` per the
+Note: pattern established in DictTypeStrictRegressionTests.cs.
+
+Note: ===== Heterogeneous numeric keys: Int 1 vs Float 1.0 stay distinct =====
+Dict<Void, String> nums = (dict)
+nums = (set nums 1 "Int-one")
+nums = (set nums 1.0 "Float-one")
+
+String oneInt = (get nums 1)
+String oneFloat = (get nums 1.0)
+Int dictSize = (size nums)
+
+(print (concat "(get nums 1)   = " oneInt))
+(print (concat "(get nums 1.0) = " oneFloat))
+(print (concat "(size nums)    = " (str dictSize)))
+
+Note: ===== Heterogeneous string-like keys: Symbol #foo vs String "foo" stay distinct =====
+Dict<Void, Int> mixed = (dict)
+mixed = (set mixed #foo 100)
+mixed = (set mixed "foo" 200)
+
+Int symbolHit = (get mixed #foo)
+Int stringHit = (get mixed "foo")
+Int mixedSize = (size mixed)
+
+(print (concat "(get mixed #foo)  = " (str symbolHit)))
+(print (concat "(get mixed \"foo\") = " (str stringHit)))
+(print (concat "(size mixed)      = " (str mixedSize)))
+
+Note: ===== `has` also distinguishes types =====
+Bool hasInt = (has nums 1)
+Bool hasFloat = (has nums 1.0)
+Bool hasOther = (has nums 2)
+
+(print (concat "(has nums 1)   = " (str hasInt)))
+(print (concat "(has nums 1.0) = " (str hasFloat)))
+(print (concat "(has nums 2)   = " (str hasOther)))
+
+(print "test_strict_dict_typecheck PASS")

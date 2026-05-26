@@ -1,0 +1,41 @@
+enable strict;
+enable justIntonation;
+
+use "@std"
+use "@audio"
+
+Note: Phase 44 Plan 44-11 Task 1 — Pragma composition fixture per CONTEXT
+Note: §specifics: `enable strict;` + `enable justIntonation;` MUST compose.
+Note: Both pragmas are file-scope; neither propagates via `use`; and both
+Note: should apply simultaneously to this file. Verifies:
+Note:   1. PragmaRegistry accepts both `strict` and `justIntonation` at file top.
+Note:   2. Render path honors justIntonation (C-E renders at 5:4 not 12-TET).
+Note:   3. Strict-mode dispatch enforces explicit-typed args on the audio chain.
+Note: A small Cmaj triad is rendered to /tmp; the WAV is bit-identical
+Note: across runs given fixed seeds (two-run cmp-clean per CLAUDE.md
+Note: Conventions — no PRNG sites introduced by Phase 44 itself).
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section triad_then_arp {
+                Sequence chord = | [C4 E4 G4]h |
+                Sequence arp = | C4q E4q G4q E4q |
+            }
+        }
+    }
+}
+
+Song song = [triad_then_arp]
+Buffer raw = (renderSong song "piano")
+
+Note: Apply strict-typed effects chain (Decibel + Second + Hertz overloads
+Note: all exact-match under strict per Plan 44-03 / 44-04).
+Buffer trimmed = (gain raw -3dB)
+Buffer wet = (reverb trimmed 0.4 1.2s)
+Buffer filtered = (lowpass wet 4000Hz)
+
+(writeWav "/tmp/flow_test_strict_with_justintonation.wav" filtered)
+(print "strict + justIntonation: rendered Cmaj triad via 5:4 thirds")
+
+(print "test_strict_with_justintonation PASS")

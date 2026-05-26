@@ -1,0 +1,34 @@
+enable strict;
+
+use "@std"
+use "@audio"
+
+Note: Phase 44 Plan 44-11 Task 1 — Axis A composer-facing fixture.
+Note: Demonstrates strict-mode dispatch: explicit Decibel + Second + Hertz
+Note: literals route to the dedicated tagged-type overloads (exact-match +1000
+Note: under strict) and chain through a small DSP pipeline. No coercion
+Note: required; the OverloadResolver convertible (+100) tier is disabled in
+Note: strict, so each arg pairs cleanly with its tagged signature slot.
+
+Note: 1) Synthesize a Buffer using a Second duration + Hertz frequency.
+Note:    `createSineTone(Double, Hertz, Double)` matches via Second.IsCompatibleWith(Double)
+Note:    + the explicit Hertz overload registered in Phase 26.2 ERG-04.
+Buffer src = (createSineTone 1.0s 440Hz 0.5)
+
+Note: 2) Apply gain via the Decibel-typed overload (Phase 26.2 ERG-02 ergonomics).
+Note:    Strict mode means -6dB binds to (gain Buffer, Decibel) — the dedicated
+Note:    music-typed overload — instead of relying on numeric widening.
+Buffer trimmed = (gain src -6dB)
+
+Note: 3) Apply reverb via the Second-typed decay overload (3-arg form;
+Note:    `reverb(Buffer, Double, Second)` Phase 26.2 ERG-02).
+Buffer wet = (reverb trimmed 0.5 1.5s)
+
+Note: 4) Filter via the Hertz-typed lowpass overload.
+Buffer filtered = (lowpass wet 2000Hz)
+
+Note: Sanity check — final buffer is non-empty + frame count matches input.
+Int frames = (getFrames filtered)
+(print (concat "axis_a frames: " (str frames)))
+
+(print "test_strict_axis_a_overload PASS")

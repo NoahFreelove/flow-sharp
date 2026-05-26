@@ -1,0 +1,58 @@
+enable strict;
+
+use "@std"
+use "@audio"
+use "@notation"
+
+Note: Phase 44 Plan 44-11 Task 1 — Axis B composer-facing fixture.
+Note: Exercises in-range args to the 13 §6a input-perimeter clamp sites in
+Note: TransformFunctions.cs that Plan 44-05 elevated from silent Math.Clamp
+Note: to strict-mode '[strict] <builtin> <param> outside [lo, hi]' errors.
+Note: All args here sit comfortably inside their valid ranges, so strict
+Note: succeeds with no errors — proving the strict path stays composer-
+Note: friendly when the composer's values are reasonable.
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence base = | C4q D4q E4q F4q |
+
+            Note: 1) crescendo(seq, startVel, endVel) — both in [0.0, 1.0]
+            Sequence cresc = (crescendo base 0.3 0.9)
+
+            Note: 2) decrescendo(seq, startVel, endVel) — both in [0.0, 1.0]
+            Sequence decresc = (decrescendo base 0.9 0.3)
+
+            Note: 3) swell(seq, edgeVel, peakVel) — both in [0.0, 1.0]
+            Sequence swelled = (swell base 0.25 0.85)
+
+            Note: 4) ritardando(seq, amount) — amount in [-1.0, 1.0]
+            Sequence slowed = (ritardando base 0.5)
+
+            Note: 5) accelerando(seq, amount) — amount in [-1.0, 1.0]
+            Sequence sped = (accelerando base 0.5)
+
+            Note: 6) humanize(seq, amount) — amount in [0.0, 1.0]
+            Sequence hum = (humanize base 0.2)
+
+            Note: 7) humanizeGaussian(seq, amount, seed) — amount in [0.0, 1.0]
+            Sequence humG = (humanizeGaussian base 0.15 42)
+
+            Note: 8) tremolo(seq, reps) — reps in [1, 16]
+            Sequence trem = (tremolo base 4)
+
+            Note: 9) repeat(seq, times) — times in [1, 16] (clamp at the upper end)
+            Sequence repeated = (repeat base 4)
+
+            Note: 10) quantize(seq, resolution, strength, swing) — strength + swing in [0.0, 1.0]
+            Sequence quant = (quantize base QUARTER 0.7 0.6)
+
+            Note: Sanity-print the transforms so a downstream reader can confirm
+            Note: each one produced a non-trivial Sequence.
+            (print (concat "cresc: " (str cresc)))
+            (print (concat "repeat: " (str repeated)))
+        }
+    }
+}
+
+(print "test_strict_axis_b_clamps PASS")
