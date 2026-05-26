@@ -20,6 +20,8 @@ internal proc createSequence ()
 internal proc addBarToSequence (Sequence: seq, Bar: bar)
 internal proc renderSequenceToVoices (Sequence: seq, String: synthType, Int: sampleRate, Double: bpm)
 internal proc renderBarAtBeat (Bar: bar, Double: beatOffset, String: synthType, Int: sampleRate, Double: bpm)
+Note: Phase 43 D-09 -- renderBarAtBeat(Bar, Beat, ...) -- explicit Beat-typed offset; same impl as Double overload (Beat is double-backed)
+internal proc renderBarAtBeat (Bar: bar, Beat: beatOffset, String: synthType, Int: sampleRate, Double: bpm)
 internal proc renderBarAtTime (Bar: bar, Double: timeSeconds, String: synthType, Int: sampleRate, Double: bpm)
 internal proc noteToFrequency (Note: pitch)
 

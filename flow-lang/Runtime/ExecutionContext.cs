@@ -156,31 +156,6 @@ public class ExecutionContext
     public LiveBlockRegistry LiveBlockRegistry { get; } = new();
 
     /// <summary>
-    /// Phase 43 Plan 43-02 (D-05 / D-02) — per-context module registry keyed by
-    /// the name declared via a top-of-file <c>module &lt;name&gt;</c> statement.
-    /// Populated by <c>ModuleLoader</c> at <c>use</c>-time when the loaded file
-    /// carries a module declaration as its first non-comment statement (Plan
-    /// 43-03 hook). Read at qualified-access dispatch time by
-    /// <c>ExpressionEvaluator.EvaluateMemberAccess</c>'s registry-first branch
-    /// (also Plan 43-03 per D-02): for <c>math.sin(0.5)</c>, the dispatcher
-    /// short-circuits to the registry hit BEFORE falling through to the
-    /// existing instance-member path. Files without a <c>module</c> declaration
-    /// are absent from this registry per D-01 back-compat — they continue to
-    /// expose procs unqualified in the caller's frame.
-    ///
-    /// <para>
-    /// Mirrors the <see cref="LiveBlockRegistry"/> / <see cref="PrngRegistry"/>
-    /// shape — singleton-per-context,
-    /// <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey, TValue}"/>-backed.
-    /// The per-context (NOT process-global) lifetime is load-bearing for
-    /// Phase 35 TEST-02 hermetic isolation — a static singleton would leak
-    /// across FlowEngine instances. See RESEARCH §Pattern 4 + §"Alternatives
-    /// Considered" for rationale.
-    /// </para>
-    /// </summary>
-    public ModuleRegistry ModuleRegistry { get; } = new();
-
-    /// <summary>
     /// Phase 36 Plan 36-11 (D-36-12, IMPROV-01) — style-pack registry keyed by
     /// Symbol-typed <see cref="Value"/>. Populated at FlowEngine init by
     /// <c>StyleRegistry.LoadAtEngineInit</c> (shipped packs at
