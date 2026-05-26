@@ -36,6 +36,13 @@ public static class BuiltInFunctions
     {
         RegisterStdLib(registry);
         RegisterMath(registry);
+        // Phase 44 Plan 44-04 (D-08/D-09/D-10) — explicit-conversion builtins:
+        // 6 forward (db/hz/ms/sec/cents/semitones) + 4 reverse (double/float/int/long
+        // × 6 music types) = 50 always-available registrations. Mode-independent
+        // per D-09; composers can incrementally refactor toward strict one call
+        // at a time. Mirrors the always-available doubleToInt / intToDouble
+        // precedent registered in RegisterStdLib above.
+        ConversionFunctions.Register(registry);
         RegisterCollections(registry);
         RegisterBars(registry);
         RegisterMusicalNotationFunctions(registry);
