@@ -291,12 +291,32 @@ public static class SongRenderer
                 sequence, synthesizer, DefaultSampleRate, bpm, renderTuning,
                 section.Context?.VoicePoolSize,
                 sustainActive);
-            // Apply pan and gain from musical context to all voices in this section
-            foreach (var voice in voices)
+            // Apply pan and gain from musical context to all voices in this section.
+            // Phase 38 LIVE-03: stable Name for live-swap diff. Tag each voice with
+            // `"{sequenceName}:{ordinalIdx}"` per RESEARCH §B — the sequence name
+            // here is the per-instrument label used in the Phase 28 panel row 3
+            // breakdown, and ordinalIdx is the 0-based position within this
+            // sequence's voice list. Same Name → Voice.CopyStateFrom path at the
+            // live-swap site. Voice.Name is `init`-only so we re-construct the
+            // voice; this mirrors the reverb wet-replace pattern below at line
+            // ~320. Phase 28 offline render path unchanged: Name is set but
+            // unused outside the live-block swap consumer.
+            int ordinalIdx = 0;
+            for (int vi = 0; vi < voices.Count; vi++)
             {
+                var voice = voices[vi];
                 if (pan != 0.0)
                     voice.Pan = pan;
                 voice.Gain *= gain;
+
+                var tagged = new Voice(voice.Buffer, voice.OffsetBeats)
+                {
+                    Name = $"{name}:{ordinalIdx}",
+                };
+                tagged.Gain = voice.Gain;
+                tagged.Pan = voice.Pan;
+                voices[vi] = tagged;
+                ordinalIdx++;
             }
             allVoices.AddRange(voices);
 
@@ -317,7 +337,9 @@ public static class SongRenderer
                 // Voice.Buffer is get-only (see Voice.cs:11), so we construct a new
                 // Voice with the reverb-wetted buffer and copy OffsetBeats/Gain/Pan.
                 var wetBuffer = Reverb.Apply(v.Buffer, rt60.Value, damping: 0.5f, mix: 0.3f);  // D-15 defaults
-                var replaced = new Voice(wetBuffer, v.OffsetBeats);
+                // Phase 38 LIVE-03: preserve Name across the reverb wet-replace so
+                // the live-swap diff still recognizes the voice by its stable key.
+                var replaced = new Voice(wetBuffer, v.OffsetBeats) { Name = v.Name };
                 replaced.Gain = v.Gain;
                 replaced.Pan = v.Pan;
                 allVoices[i] = replaced;

@@ -23,7 +23,13 @@ namespace FlowInterpreter;
 /// <param name="BlockId">Identifier — 0 = whole-script swap (Plan 38-01); &gt;0 = per-<c>live { }</c>-block (Plan 38-02).</param>
 /// <param name="Bytes">Raw PCM data ready to swap in at the next bar boundary.</param>
 /// <param name="Length">Number of valid samples in <see cref="Bytes"/>.</param>
-internal sealed record LiveBlockBuffer(int BlockId, float[] Bytes, int Length);
+/// <remarks>
+/// Phase 38 Plan 38-03 LIVE-03 promoted this record from <c>internal</c> to
+/// <c>public</c> so cross-assembly Wave 0 tests (PrngReseedAtSwapTests) can
+/// construct synthetic buffer dicts at the <see cref="LiveReloadManager.StagePendingBuffers"/>
+/// test seam without needing InternalsVisibleTo or reflection.
+/// </remarks>
+public sealed record LiveBlockBuffer(int BlockId, float[] Bytes, int Length);
 
 /// <summary>
 /// Orchestrates file watching, background rendering, streaming playback, and
@@ -108,6 +114,23 @@ public class LiveReloadManager : IDisposable
     // Constructed lazily at Run() entry so test subclasses that never call
     // Run() (e.g. WatchDebounceTests) don't allocate a heartbeat Timer.
     private LiveStatusPanel? _panel;
+
+    // Phase 38 Plan 38-03 LIVE-03: most-recent voices snapshot used by
+    // PreserveVoiceState across live-block swaps. Populated from the
+    // RenderScript output once VoiceAllocator surfaces the per-section voice
+    // lists at the manager seam — for v1.5 this stays at null (the live-swap
+    // staging path remains correct because DiffByVoiceName on (empty, next)
+    // routes every next voice through the Added branch, identical to a
+    // cold-start render). A future plan can populate _lastVoices from the
+    // FlowEngine capture-mode pipeline to enable per-voice preservation
+    // across whole-script swaps too.
+    private IReadOnlyList<Voice>? _lastVoices;
+
+    // Phase 38 Plan 38-03 D-38-04 file-scope-edit detection — tracks the
+    // most-recent file text we successfully parsed so the FileSystemWatcher
+    // changed-event handler can compute a line-range diff to detect edits
+    // OUTSIDE any live { } block body.
+    private string? _lastParsedSource;
 
     private const int ChunkSamples = 4096;
     private const int CrossfadeSamples = 64;
@@ -455,13 +478,23 @@ public class LiveReloadManager : IDisposable
 
                 if (!workerTask.Wait(RenderTimeout))
                 {
-                    // Timeout: dispatch a Warning-level advisory + KEEP previous
-                    // buffer (no swap). The worker continues running in the
-                    // background as an orphan — see Option A comment above.
-                    _panel?.PublishAdvisory(
-                        $"[live] evaluation timed out at 30s — keeping previous version",
-                        AdvisoryLevel.Warning,
-                        dedupKey: $"live-timeout:{_filePath}");
+                    // Phase 38 Plan 38-03 LIVE-02 — Timeout-revert path.
+                    // Aligns wording / level / dedup key with UI-SPEC line 330:
+                    //   body: "[live] evaluation timed out at 30s at line N — keeping previous version"
+                    //   level: Error (red, UI-SPEC line 99 destructive)
+                    //   dedup: "live-timeout:<line>"
+                    // The worker continues running in the background as an
+                    // orphan per RESEARCH §E Option A. KEEP previous buffer
+                    // (no swap) — Pitfall #12 "live session never dies
+                    // mid-set" lock.
+                    //
+                    // Line-N for the timed-out render — we don't know which
+                    // specific live { } block hung (the worker's already
+                    // detached), so we report line 1 as the file-scope
+                    // anchor. Future plans can thread per-block timeout
+                    // tracking; this v1.5 cut emits the locked wording at
+                    // the documented dedup format.
+                    PublishTimeoutAdvisory(line: 1);
                     return;
                 }
 
@@ -529,6 +562,262 @@ public class LiveReloadManager : IDisposable
             activeVoices: 0,
             poolSize: 32,
             perInstrumentCount: new Dictionary<string, int>());
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-03 LIVE-03 — per-block buffer staging consumer.
+    /// Called after a successful background render: walks each new live-block
+    /// registration body via <see cref="LambdaCaptureAuditor.CollectFileScopeReferences"/>
+    /// to detect stale closures, fires the <c>live-stale-closure</c> advisory
+    /// + SKIPS that block's swap when found, calls
+    /// <see cref="PrngRegistry.ResetAtRenderBoundary"/> ONCE per RESEARCH §D
+    /// line 770, and populates <see cref="_pendingPerBlock"/> with the
+    /// surviving buffers for the streaming loop to drain at the next bar
+    /// boundary.
+    ///
+    /// <para>
+    /// Pitfall #12 lock: any per-block failure (stale closure) DOES NOT
+    /// abort the whole swap — the surviving blocks still stage. The
+    /// previous buffer for the failed block keeps playing.
+    /// </para>
+    /// </summary>
+    /// <param name="newBuffers">Per-block buffers freshly rendered by the
+    /// background task. Keys are <see cref="LiveBlockRegistration.BlockId"/>;
+    /// sentinel <c>0</c> is the whole-script swap path from Plan 38-01.</param>
+    /// <param name="engine">The FlowEngine that rendered <paramref name="newBuffers"/>.
+    /// Its <see cref="ExecutionContext.LiveBlockRegistry"/> and
+    /// <see cref="ExecutionContext.PrngRegistry"/> are consumed by the staging
+    /// gate.</param>
+    /// <param name="newBlocks">Snapshot of the engine's LiveBlockRegistry
+    /// captured at render-time. Passed in (rather than re-snapshotted here)
+    /// so test seams can drive synthetic snapshots without booting an
+    /// engine.</param>
+    protected void StagePendingBuffers(
+        Dictionary<int, LiveBlockBuffer> newBuffers,
+        FlowEngine engine,
+        IReadOnlyDictionary<int, LiveBlockRegistration> newBlocks)
+    {
+        if (newBuffers == null) throw new ArgumentNullException(nameof(newBuffers));
+        if (engine == null) throw new ArgumentNullException(nameof(engine));
+        if (newBlocks == null) throw new ArgumentNullException(nameof(newBlocks));
+
+        // Per-block stale-closure gate. Each block's body is audited; any
+        // captured reference not present at file scope triggers the advisory
+        // and removes that block's buffer from the staging dict (its
+        // previous-pass buffer keeps playing per Pitfall #12).
+        var surviving = new Dictionary<int, LiveBlockBuffer>();
+        foreach (var (blockId, buffer) in newBuffers)
+        {
+            // The sentinel BlockId=0 (Plan 38-01 whole-script swap path) has
+            // no LiveBlockRegistration entry — there's no body to audit.
+            // Stage it unconditionally.
+            if (!newBlocks.TryGetValue(blockId, out var registration))
+            {
+                surviving[blockId] = buffer;
+                continue;
+            }
+
+            // Walk the live-block body for file-scope references that aren't
+            // in the engine's global frame. Any miss = stale closure.
+            var refs = FlowLang.Interpreter.LambdaCaptureAuditor.CollectFileScopeReferences(registration.Body);
+            string? staleName = null;
+            foreach (var name in refs)
+            {
+                if (!engine.Context.GlobalFrame.HasVariable(name)
+                    && !engine.Context.GlobalFrame.HasFunction(name))
+                {
+                    staleName = name;
+                    break;
+                }
+            }
+
+            if (staleName != null)
+            {
+                _panel?.PublishAdvisory(
+                    $"[live] stale closure: references removed binding '{staleName}' at line {registration.Location.Line} — keeping previous version",
+                    AdvisoryLevel.Error,
+                    dedupKey: $"live-stale-closure:{staleName}:{registration.Location.Line}");
+                // SKIP staging — the previous buffer for this block keeps
+                // playing (Pitfall #12 lock).
+                continue;
+            }
+
+            surviving[blockId] = buffer;
+        }
+
+        // PRNG reseed at the swap boundary — fires ONCE per swap regardless
+        // of how many blocks survived (RESEARCH §D line 770). Matches the
+        // Phase 36 Plan 36-01 contract every other render path obeys.
+        engine.Context.PrngRegistry.ResetAtRenderBoundary();
+
+        // Stage the surviving buffers — the streaming loop will drain
+        // _pendingPerBlock at the next bar boundary via CheckBarBoundary.
+        lock (_pendingLock)
+        {
+            _pendingPerBlock = surviving.Count > 0 ? surviving : null;
+        }
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-03 LIVE-03 — per-voice preservation across live-block
+    /// swaps. Partitions <paramref name="prevVoices"/> + <paramref name="nextVoices"/>
+    /// via <see cref="VoiceAllocator.DiffByVoiceName"/>; calls
+    /// <see cref="Voice.CopyStateFrom"/> on each Preserved entry (the new
+    /// instance receives the previous OffsetBeats so the composer hears no
+    /// envelope retrigger), and calls <see cref="VoiceAllocator.ApplyFadeOut"/>
+    /// on each Dropped entry for a clean tail.
+    ///
+    /// <para>
+    /// Per RESEARCH §F lines 530-535 this is the single mutation site for
+    /// voice state across the live-swap path. Added voices need no
+    /// processing — they enter the next render fresh.
+    /// </para>
+    /// </summary>
+    protected void PreserveVoiceState(
+        IReadOnlyList<Voice> prevVoices,
+        IReadOnlyList<Voice> nextVoices,
+        int sampleRate)
+    {
+        if (prevVoices == null || nextVoices == null) return;
+
+        var (preserved, dropped, _) = VoiceAllocator.DiffByVoiceName(prevVoices, nextVoices);
+
+        // Build prev-name → voice map once so CopyStateFrom doesn't re-scan
+        // the prev list per preserved entry.
+        var prevByName = new Dictionary<string, Voice>(StringComparer.Ordinal);
+        for (int i = 0; i < prevVoices.Count; i++)
+        {
+            var v = prevVoices[i];
+            if (!string.IsNullOrEmpty(v.Name))
+                prevByName[v.Name] = v;
+        }
+
+        for (int i = 0; i < preserved.Count; i++)
+        {
+            var nextVoice = preserved[i];
+            if (prevByName.TryGetValue(nextVoice.Name, out var prevVoice))
+            {
+                nextVoice.CopyStateFrom(prevVoice);
+            }
+        }
+
+        for (int i = 0; i < dropped.Count; i++)
+        {
+            VoiceAllocator.ApplyFadeOut(dropped[i], sampleRate);
+        }
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-03 D-38-04 — file-scope-edit detection. Compares the
+    /// just-parsed source against <see cref="_lastParsedSource"/>; finds the
+    /// first changed line; if the changed line falls OUTSIDE any active live
+    /// block's body line range, fires the locked advisory wording per UI-SPEC
+    /// line 334 with dedup <c>live-fscope-edit:&lt;filepath&gt;:&lt;line&gt;</c>.
+    /// Does NOT auto-restart — Pitfall #12 "live session never dies mid-set"
+    /// lock.
+    /// </summary>
+    /// <param name="filePath">Path to the edited file (used in dedup key).</param>
+    /// <param name="newSource">The just-read source text post-edit.</param>
+    /// <param name="activeBlocks">Snapshot of the engine's LiveBlockRegistry —
+    /// the per-block <see cref="LiveBlockRegistration.Location"/> defines the
+    /// start of each live-block body's source range.</param>
+    protected void DetectFileScopeEdit(
+        string filePath,
+        string newSource,
+        IReadOnlyDictionary<int, LiveBlockRegistration> activeBlocks)
+    {
+        if (string.IsNullOrEmpty(newSource)) return;
+
+        var prevSource = _lastParsedSource;
+        // First parse — record and skip (no prior text to diff against).
+        if (prevSource == null)
+        {
+            _lastParsedSource = newSource;
+            return;
+        }
+        if (prevSource == newSource)
+        {
+            return; // No change (debounce coalesced an identical save).
+        }
+
+        // Find the first 1-indexed line where the two sources differ.
+        int firstChangedLine = FindFirstChangedLine(prevSource, newSource);
+        _lastParsedSource = newSource;
+
+        if (firstChangedLine < 1) return; // both files identical-with-trailing-nl, etc.
+
+        // Determine whether the changed line is INSIDE any active live-block
+        // body. For v1.5 we approximate the body range as [Location.Line + 1,
+        // Location.Line + Body.Count + 1] since each statement typically
+        // occupies one line. Future plans can thread per-statement line
+        // ranges through LiveBlockStatement; the v1.5 heuristic is sufficient
+        // for the composer's "I edited outside any live block" advisory.
+        bool insideLiveBlock = false;
+        foreach (var (_, reg) in activeBlocks)
+        {
+            int start = reg.Location.Line;
+            int end = reg.Location.Line + Math.Max(1, reg.Body?.Count ?? 0) + 1;
+            if (firstChangedLine >= start && firstChangedLine <= end)
+            {
+                insideLiveBlock = true;
+                break;
+            }
+        }
+
+        if (insideLiveBlock) return;
+
+        // Fire the dedup'd advisory — yellow per UI-SPEC line 334.
+        _panel?.PublishAdvisory(
+            $"[live] file-scope edit detected outside live blocks at line {firstChangedLine} — restart 'flow watch' to apply",
+            AdvisoryLevel.Warning,
+            dedupKey: $"live-fscope-edit:{filePath}:{firstChangedLine}");
+    }
+
+    /// <summary>
+    /// Returns the 1-indexed line number of the first line that differs
+    /// between <paramref name="a"/> and <paramref name="b"/>; returns 0 if
+    /// the two strings are equal or differ only in trailing newlines.
+    /// </summary>
+    private static int FindFirstChangedLine(string a, string b)
+    {
+        var linesA = a.Split('\n');
+        var linesB = b.Split('\n');
+        int min = Math.Min(linesA.Length, linesB.Length);
+        for (int i = 0; i < min; i++)
+        {
+            if (linesA[i] != linesB[i]) return i + 1;
+        }
+        // One file has additional lines beyond the common prefix.
+        if (linesA.Length != linesB.Length) return min + 1;
+        return 0;
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-03 LIVE-02 — timeout-revert advisory per UI-SPEC line
+    /// 330. Encapsulates the locked wording / level / dedup key so the
+    /// StartRenderTask timeout branch and the test seam share one source of
+    /// truth.
+    /// </summary>
+    /// <param name="line">Source line tagged in the advisory body + dedup
+    /// key. v1.5 uses line 1 from the timeout branch (the worker has
+    /// detached; per-block line tracking ships in a future plan).</param>
+    protected void PublishTimeoutAdvisory(int line)
+    {
+        _panel?.PublishAdvisory(
+            $"[live] evaluation timed out at 30s at line {line} — keeping previous version",
+            AdvisoryLevel.Error,
+            dedupKey: $"live-timeout:{line}");
+    }
+
+    /// <summary>
+    /// Test-only seam: installs a <see cref="LiveStatusPanel"/> instance so
+    /// test subclasses that don't call <see cref="Run"/> can still drive
+    /// PublishAdvisory paths. Mirrors the WatchDebounceTests
+    /// <c>CountingLiveReloadHarness</c> seam pattern.
+    /// </summary>
+    protected void InitPanelForTesting()
+    {
+        _panel ??= new LiveStatusPanel(cliArgs: Array.Empty<string>());
     }
 
     /// <summary>

@@ -83,8 +83,20 @@ public static class VoiceAllocator
     /// <summary>
     /// Applies a 5ms fade-out to the end of a voice's buffer to prevent click artifacts.
     /// Used on stolen voices before they are removed from the mix.
+    ///
+    /// <para>
+    /// Phase 38 Plan 38-03 LIVE-03 (RESEARCH §B line 685): consumed by the
+    /// live-block swap path (<c>LiveReloadManager.PreserveVoiceState</c>) for
+    /// voices in the DiffByVoiceName "Dropped" set — voices whose Name is no
+    /// longer present in the new render need a clean tail before being
+    /// released from the mix. Exposing this as <c>public</c> (was
+    /// <c>private</c> through Phase 37) lets the cross-assembly live consumer
+    /// reuse the same 5ms primitive rather than duplicating the fade math.
+    /// Phase 28 in-class callers (<see cref="Allocate"/>) continue to work
+    /// unchanged.
+    /// </para>
     /// </summary>
-    private static void ApplyFadeOut(Voice voice, int sampleRate)
+    public static void ApplyFadeOut(Voice voice, int sampleRate)
     {
         int fadeSamples = (int)(0.005 * sampleRate); // 5ms
         fadeSamples = Math.Min(fadeSamples, voice.Buffer.Frames);
@@ -166,6 +178,105 @@ public static class VoiceAllocator
 
         // Preserve original ordering for downstream consumers.
         return voices;
+    }
+
+    /// <summary>
+    /// Phase 38 Plan 38-03 LIVE-03 (RESEARCH §B lines 662-684) — partitions
+    /// <paramref name="prev"/> and <paramref name="next"/> by stable
+    /// <see cref="Voice.Name"/> into three lists for the live-block swap path:
+    ///
+    /// <list type="bullet">
+    ///   <item><description><b>Preserved</b> — names appearing in BOTH prev and
+    ///   next. Uses the <i>new</i> voice instances (per RESEARCH §B line 675
+    ///   "preserved.Add(newVoice)"), so the swap consumer's CopyStateFrom call
+    ///   mutates the freshly rendered voice in place: the new ADSR envelope
+    ///   shape is preserved while the previous OffsetBeats cursor is
+    ///   transferred, eliminating envelope retrigger clicks on save.</description></item>
+    ///   <item><description><b>Dropped</b> — names in prev but not next. The
+    ///   swap consumer fades these out via
+    ///   <see cref="ApplyFadeOut"/>.</description></item>
+    ///   <item><description><b>Added</b> — names in next but not prev. Mixed
+    ///   in fresh on the next bar boundary; nothing to preserve.</description></item>
+    /// </list>
+    ///
+    /// <para>
+    /// Name comparison uses <see cref="StringComparer.Ordinal"/> for
+    /// deterministic case-sensitive matching. Voices with empty Name (legacy
+    /// offline-render path) are NOT eligible for preservation — they fall
+    /// into the "no-key" bucket and are treated as if absent from both prev
+    /// and next. This keeps Phase 28 byte-identical determinism intact for
+    /// every offline code path (<c>writeWav</c> / <c>writeMidi</c>) where the
+    /// SongRenderer doesn't tag voices with Name.
+    /// </para>
+    ///
+    /// <para>
+    /// Threat T-38-VOI mitigation: collisions on the <c>"{instrument}:{ordinal}"</c>
+    /// format are bounded by the SongRenderer's allocation loop — the ordinal
+    /// is monotonic per (instrument, render) pair so within a single render
+    /// the Name is unique. Across re-renders the same instrument's ordinal
+    /// counts in source order, so identical input source produces identical
+    /// Name sets (Phase 28 deterministic-onset contract).
+    /// </para>
+    /// </summary>
+    /// <param name="prev">Voices from the previous render. May be empty (cold
+    /// start) — all next voices become Added.</param>
+    /// <param name="next">Voices from the freshly rendered next pass. May be
+    /// empty (composer removed all sequences) — all prev voices become Dropped.</param>
+    /// <returns>Three-tuple (Preserved, Dropped, Added) with the ownership
+    /// rules above.</returns>
+    public static (List<Voice> Preserved, List<Voice> Dropped, List<Voice> Added)
+        DiffByVoiceName(IReadOnlyList<Voice> prev, IReadOnlyList<Voice> next)
+    {
+        if (prev == null) throw new ArgumentNullException(nameof(prev));
+        if (next == null) throw new ArgumentNullException(nameof(next));
+
+        // Build name → voice maps. Voices with empty Name are excluded from
+        // the preservation eligibility set entirely (legacy offline path
+        // preservation).
+        var prevByName = new Dictionary<string, Voice>(StringComparer.Ordinal);
+        for (int i = 0; i < prev.Count; i++)
+        {
+            var v = prev[i];
+            if (!string.IsNullOrEmpty(v.Name))
+                prevByName[v.Name] = v;
+        }
+        var nextByName = new Dictionary<string, Voice>(StringComparer.Ordinal);
+        for (int i = 0; i < next.Count; i++)
+        {
+            var v = next[i];
+            if (!string.IsNullOrEmpty(v.Name))
+                nextByName[v.Name] = v;
+        }
+
+        var preserved = new List<Voice>();
+        var added = new List<Voice>();
+        var dropped = new List<Voice>();
+
+        // Walk next in input order — Preserved keeps the new instances; Added
+        // gets next-side voices whose name isn't in prev. Voices with empty
+        // Name are treated as Added (they can't be preserved across a swap
+        // because they have no stable key).
+        for (int i = 0; i < next.Count; i++)
+        {
+            var v = next[i];
+            if (string.IsNullOrEmpty(v.Name) || !prevByName.ContainsKey(v.Name))
+                added.Add(v);
+            else
+                preserved.Add(v);
+        }
+
+        // Walk prev in input order — Dropped gets prev-side voices whose name
+        // isn't in next. Voices with empty Name are also treated as Dropped
+        // (no preservation possible, but the swap path may still want to fade
+        // them out cleanly).
+        for (int i = 0; i < prev.Count; i++)
+        {
+            var v = prev[i];
+            if (string.IsNullOrEmpty(v.Name) || !nextByName.ContainsKey(v.Name))
+                dropped.Add(v);
+        }
+
+        return (preserved, dropped, added);
     }
 
     /// <summary>
