@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 48 Plan 02 shipped
-last_updated: "2026-05-26T03:08:10Z"
-last_activity: "2026-05-26 -- Phase 48 Plan 02 shipped (DryWetMidi WASM publish smoke + culture-invariant sweep: 3 ToUpper/ToLower sites converted to *Invariant in HarmonyFunctions + ScaleDatabase; 4/4 new Facts PASS; D-48-17 closed — DryWetMidi reference retained in published flow-lang.dll per Mono.Cecil scan; bundle size unchanged at 10.8 MB)"
+stopped_at: Phase 45 context gathered
+last_updated: "2026-05-26T03:26:07.009Z"
+last_activity: "2026-05-26 -- Phase 48 Plan 03 shipped (WebAudioBackend real [JSImport] impl: new FlowRuntimeInterop.cs partial-static class with 5 [JSImport] bindings for createAudioContext/playStereoFloat32/stopSource/closeContext/resumeContext against Plan 48-04's flow-runtime.js module; WebAudioBackend.cs stub bodies swapped for real Mono-WASM impl with lifecycle D-48-08 lazy AudioContext + D-48-07 stereo promotion + D-48-10 30s wall-clock cap + D-48-11 charitable Desktop fallback; 8/8 new IntegrationTests PASS; Phase 47 WebAudioBackendStubTests.cs deleted as stale, 4 invariants re-covered; Desktop+Web build+publish all exit 0)"
 progress:
   total_phases: 15
   completed_phases: 8
   total_plans: 78
   completed_plans: 64
-  percent: 54
+  percent: 53
 ---
 
 # Project State
@@ -26,11 +26,23 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 48 -- executing
-Plan: 2/7 complete (48-01 + 48-02 shipped)
-Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-2 — 48-03 WebAudioBackend [JSImport] impl + 48-04 flow-runtime.js + 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
+Plan: 3/7 complete (48-01 + 48-02 + 48-03 shipped)
+Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-2 — 48-04 flow-runtime.js + 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
 
-Status: Phase 48 executing — Plans 01 + 02 closed
-Last activity: 2026-05-26 -- Phase 48 Plan 02 shipped (DryWetMidi WASM publish smoke + culture-invariant sweep: 3 ToUpper/ToLower sites converted to *Invariant in HarmonyFunctions + ScaleDatabase; 4/4 new Facts PASS; D-48-17 closed — DryWetMidi reference retained in published flow-lang.dll per Mono.Cecil scan; bundle size unchanged at 10.8 MB)
+Status: Phase 48 executing — Plans 01 + 02 + 03 closed
+Last activity: 2026-05-26 -- Phase 48 Plan 03 shipped (WebAudioBackend real [JSImport] impl: new FlowRuntimeInterop.cs partial-static class with 5 [JSImport] bindings for createAudioContext/playStereoFloat32/stopSource/closeContext/resumeContext against Plan 48-04's flow-runtime.js module; WebAudioBackend.cs stub bodies swapped for real Mono-WASM impl with lifecycle D-48-08 lazy AudioContext + D-48-07 stereo promotion + D-48-10 30s wall-clock cap + D-48-11 charitable Desktop fallback; 8/8 new IntegrationTests PASS; Phase 47 WebAudioBackendStubTests.cs deleted as stale, 4 invariants re-covered; Desktop+Web build+publish all exit 0)
+
+**Phase 48 Plan 03 highlights (2026-05-26):**
+
+- `flow-lang/Audio/FlowRuntimeInterop.cs` lands (118 LOC) — `internal static partial class` decorated with `[SupportedOSPlatform("browser")]`; 5 `[JSImport(name, "flow-runtime")]` partial method declarations: `CreateAudioContext(int sampleRate) → JSObject` (D-48-08 lazy AudioContext), `PlayStereoFloat32(JSObject ctx, [JSMarshalAs<JSType.MemoryView>] Span<byte> samplesAsBytes, int channels, int sampleRate) → JSObject` (one-shot Float32 marshal), `StopSource(JSObject sourceNode)` (idempotent revoke), `CloseContext(JSObject ctx)` (Dispose cleanup), `ResumeContext(JSObject ctx)` (D-48-09 escape hatch — NEVER called from WebAudioBackend; reserved for Phase 49 user-gesture chain). Module-name string `"flow-runtime"` pinned for Plan 48-04 to honor in `setModuleImports('flow-runtime', {...})`.
+- `flow-lang/Audio/WebAudioBackend.cs` (78 LOC → 320 LOC) — Phase 47 D-47-05 PINNED IAudioBackend signatures preserved byte-identical; 7 stub-throw method bodies replaced with real Mono-WASM impl + new `public static float[] PromoteToStereo(float[], int)` helper. 6 instance fields per PulseAudioSimpleBackend analog: `_audioContext`/`_activeSource` (JSObject?), `_sampleRate`/`_channels` (int), `_disposed` (bool), `_lock` (object). Pattern B compliance: zero `#if FLOW_WEB` inside the class; every `FlowRuntimeInterop.*` callsite gated by `if (OperatingSystem.IsBrowser()) { #pragma warning disable CA1416; ...; #pragma warning restore CA1416; }`. D-48-07 stereo promotion happens BEFORE marshal via `MemoryMarshal.AsBytes(stereo.AsSpan())` (zero-copy reinterpret). D-48-10 30s wall-clock cap via `Task.Run + Wait(TimeSpan.FromSeconds(30))` matches Phase 38 LIVE-02 pattern at LiveReloadManager:82,470-499. D-48-11 charitable false-return on Desktop. WriteChunk throws `NotSupportedException` with v1.6 backlog reference per D-48-01 (offline-render canonical). Dispose NEVER throws (catches ALL exceptions).
+- `flow-lang.Tests/Integration/Phase48/WebAudioBackendIntegrationTests.cs` lands (145 LOC, 8 plain `[Fact]`s, all PASS in ~36ms on Desktop): `MonoInput_PromotesToStereo_LengthDoubles` (D-48-07 element-wise contract), `PromoteToStereo_StereoInput_PassesThrough` (ReferenceEquals cheap-stereo optimization), `Dispose_IsNoOpSafe_OnDesktop` (Phase 47 D-47-05 carryforward), `Name_IsWebAudio` + `IsInitialized_IsFalse_BeforeInitializeCall` + `IsAvailable_ReturnsFalse_OnDesktop` (carryforward from deleted Phase 47 stub tests), `Initialize_ReturnsFalse_OnDesktop_CharitableFallback` (D-48-11), `WriteChunk_ThrowsNotSupportedException_OnAnyTarget` (D-48-01 explicit reject). Plain `[Fact]` (NOT `[FlowTargetFact("Web")]`) — exercises pure-C# helpers + Desktop-side fallback paths; the [JSImport]-backed runtime behavior is HUMAN-UAT in Plan 48-06.
+- `flow-lang/flow-lang.csproj` extended: `<AllowUnsafeBlocks>true</AllowUnsafeBlocks>` added to top-level `<PropertyGroup>` (NOT FlowTarget=Web conditional) — required by `[JSImport]` source generator (SYSLIB1074); the marshalling shim is emitted on EVERY target so the SOURCE must compile under both Desktop and Web. Desktop NEVER executes unsafe code (every callsite is OperatingSystem.IsBrowser()-gated per Pattern B).
+- **Rule 3 auto-fix #1 (SYSLIB1074)**: First Desktop build errored `error SYSLIB1074: JSImportAttribute requires unsafe code` + `error CS0227: Unsafe code may only appear if compiling with /unsafe`. Added `<AllowUnsafeBlocks>true</AllowUnsafeBlocks>` at top-level PropertyGroup.
+- **Rule 3 auto-fix #2 (SYSLIB1072)**: First Desktop build errored `error SYSLIB1072: Type global::System.Span<float> is not supported by source-generated JavaScript interop`. The plan body's PATTERNS.md sketch (line 144) called for `Span<float> samples` with `[JSMarshalAs<JSType.MemoryView>]` but the source generator supports only `Span<byte>`/`Span<int>`/`Span<double>` for MemoryView. Changed `PlayStereoFloat32`'s parameter to `Span<byte> samplesAsBytes`; WebAudioBackend.Play marshals via `MemoryMarshal.AsBytes(stereo.AsSpan())` (zero-copy reinterpret). Plan 48-04 wraps the byte view JS-side as `new Float32Array(bytes.buffer, bytes.byteOffset, byteLength / 4)`. Zero-copy across the boundary per RESEARCH §5 preserved.
+- **Stale-test cleanup**: Phase 47 `flow-lang.Tests/Integration/Phase47/WebAudioBackendStubTests.cs` DELETED (commit `4c7792a`). The file's 3 stub-throw assertions (Initialize/Play/Stop throwing PNSE) inverted under Phase 48. The 4 still-valid Desktop invariants (IsAvailable=false, Dispose no-op, Name=WebAudio, IsInitialized=false-before-Initialize) re-covered in the new Phase 48 IntegrationTests with up-to-date XMLdoc. Net delta: 7 facts removed, 8 facts added; coverage strictly improved.
+- Verification: `dotnet build flow-lang -p:FlowTarget=Desktop` exits 0 (0 Error, 8 Warning — pre-existing); `dotnet build flow-lang -p:FlowTarget=Web` exits 0 (0 Error, 6 Warning — pre-existing including IL2075); `dotnet publish flow-lang -p:FlowTarget=Web -c Release` exits 0 (Plan 48-01 acceptance preserved). Phase 48 fixture: 15/15 PASS (was 7 — Plan 48-01 + 48-02; +8 from Plan 48-03). Phase 47 fixture: 9 PASS + 8 SKIP + 0 FAIL (was 16+8; -7 from WebAudioBackendStubTests.cs deletion). WasmBuildPipelineTests Plan 48-01 regression: 3/3 PASS preserved.
+- 3 commits: `2e15d22` (Task 1 — FlowRuntimeInterop with 5 [JSImport] declarations), `4c7792a` (Task 2 — WebAudioBackend stub-to-real swap + Phase 47 stub-tests delete), `028a5e5` (Task 3 — WebAudioBackendIntegrationTests with 8 Facts). Zero new NuGet packages ([JSImport]/[JSExport] are BCL-provided in .NET 7+).
 
 **Phase 48 Plan 02 highlights (2026-05-26):**
 
@@ -401,6 +413,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 43 P04 | ~35min | 2 tasks | 8 files (BeatConversionFunctions.cs + EffectsFunctions delay Beat overload + BuiltInFunctions renderBarAtBeat Beat overload + audio.flow internal proc decls + notation.flow internal proc decl + BeatConversionTests + BeatCompanionOverloadTests + Phase42.AuditHarnessTests D-10 polarity flip) |
 | Phase 43 P05 | ~Xmin | 2 tasks | 16 files (12 stdlib `.flow` files migrated to `module <name>` per D-07 + notation.flow duplicate-decl cleanup + 43-VERIFICATION.md + ROADMAP + STATE + REQUIREMENTS) |
 | Phase 47 P05 | ~3min | 3 tasks (Task 0 PRE-APPROVED checkpoint + Task 1 csproj edit + Task 2 test file) | 2 files (flow-lang.Tests.csproj +6 lines for Mono.Cecil 0.11.5 PackageReference + AssemblyReferenceScanTests.cs 120 LOC NEW with 2 [FlowTargetFact("Web")] Facts) |
+| Phase 48 P03 | 9m | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -579,6 +592,9 @@ Recent decisions affecting current work:
 - [Plan 31-03]: D-11 Option A position-sensitive `;` Lisp-style line comment shipped exactly as the planning-phase lock specified — `IsStartOfLineContent()` gates the new `;`/`TODO:`/`FIXME:` arms identically to the existing `Note:` arm at SimpleLexer.cs:1144. Mid-line `;` stays TokenType.Semicolon via the unchanged default lex path, preserving every shipped pragma and typed declaration. Zero token-stream change for any valid existing program → Phase 18/25/27/28 ByteIdentical determinism contracts preserved by construction (20/20 GREEN at HEAD).
 - [Plan 31-03]: `Substring`-not-`AsSpan` chosen for `TODO:`/`FIXME:` lookahead — matches the existing `Note:` arm verbatim. The plan's `<action>` block explicitly forbade introducing a new style mid-file; a future allocation-cleanup pass can sweep all four arms together.
 - [Plan 31-03]: TDD discipline two-commit pattern (`test(...)` RED → `feat(...)` GREEN) used for a single-task plan — 8 [Fact] tests authored first (4 RED for new arms, 4 GREEN canaries), confirmed RED, then arms added in separate commit. Pattern reusable for any future lexer-arm additions; mirrors flow-lang.Tests/Unit/Phase26/NegativeLiteralLexFacts.cs lexer-direct test shape.
+- [Phase ?]: Phase 48 Plan 03 — Span<byte> + MemoryMarshal.AsBytes workaround for SYSLIB1072: source-generated JS interop supports only Span<byte>/Span<int>/Span<double> for [JSMarshalAs<JSType.MemoryView>]; Float32 marshalling reinterprets via byte view + JS-side new Float32Array(buffer, offset, length/4); zero-copy preserved per RESEARCH §5
+- [Phase ?]: Phase 48 Plan 03 — <AllowUnsafeBlocks>true</AllowUnsafeBlocks> at top-level PropertyGroup (not FlowTarget=Web conditional): [JSImport] source generator emits unsafe marshalling shim on every target; Desktop never EXECUTES it (every callsite OperatingSystem.IsBrowser()-gated per Pattern B)
+- [Phase ?]: Phase 48 Plan 03 — Phase 47 WebAudioBackendStubTests.cs DELETED outright: 3 of 7 facts inverted under Phase 48; 4 still-valid Desktop invariants re-covered in new Phase 48 IntegrationTests
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -795,7 +811,7 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-26T01:57:44.223Z
+Last session: 2026-05-26T03:25:45.375Z
 Stopped at: Phase 45 context gathered
 Resume file: None
 
