@@ -4,14 +4,14 @@ milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
 stopped_at: Phase 45 context gathered
-last_updated: "2026-05-26T03:26:07.009Z"
-last_activity: "2026-05-26 -- Phase 48 Plan 03 shipped (WebAudioBackend real [JSImport] impl: new FlowRuntimeInterop.cs partial-static class with 5 [JSImport] bindings for createAudioContext/playStereoFloat32/stopSource/closeContext/resumeContext against Plan 48-04's flow-runtime.js module; WebAudioBackend.cs stub bodies swapped for real Mono-WASM impl with lifecycle D-48-08 lazy AudioContext + D-48-07 stereo promotion + D-48-10 30s wall-clock cap + D-48-11 charitable Desktop fallback; 8/8 new IntegrationTests PASS; Phase 47 WebAudioBackendStubTests.cs deleted as stale, 4 invariants re-covered; Desktop+Web build+publish all exit 0)"
+last_updated: "2026-05-26T03:37:52Z"
+last_activity: "2026-05-26 -- Phase 48 Plan 04 shipped (flow-runtime.js ES module + WasmEntry [JSExport] + index.html dev-smoke harness: new WasmEntry.cs (398 LOC) with 4 [JSExport] static methods RunFromJs/PlayFromJs/StopFromJs/DisposeFromJs + RunResult/RunError POCOs pinned per D-48-14 + 30s Pattern C cap + Console.SetOut/SetError redirect with finally-restore per D-48-15; flow-runtime.js (282 LOC) ES module wires setModuleImports('flow-runtime', ...) against Plan 48-03's 5 [JSImport] names + dispatches WasmEntry via getAssemblyExports + JSON.parse on the RunResult return; index.html (118 LOC) dev-smoke harness with D-48-09 user-gesture chain (resumeAudio + run in same click handler); csproj +22 lines for publish hooks; trim-roots.xml +12 lines preserving WasmEntry+RunResult+RunError for JsonSerializer reflection; SYSLIB1072 auto-fix Rule 3 — PlayFromJs accepts byte[] not float[]; publish-layout deviation documented — dotnet.js lands flat at publish root, not under _framework/; Desktop+Web build+publish all exit 0; Phase 48 fixture 15/15 PASS preserved)"
 progress:
   total_phases: 15
   completed_phases: 8
   total_plans: 78
-  completed_plans: 64
-  percent: 53
+  completed_plans: 66
+  percent: 54
 ---
 
 # Project State
@@ -21,16 +21,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plans 01-02 SHIPPED 2026-05-26; Plans 03-07 pending
+**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plans 01-04 SHIPPED 2026-05-26; Plans 05-07 pending
 
 ## Current Position
 
 Phase: 48 -- executing
-Plan: 3/7 complete (48-01 + 48-02 + 48-03 shipped)
-Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-2 — 48-04 flow-runtime.js + 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
+Plan: 4/7 complete (48-01 + 48-02 + 48-03 + 48-04 shipped)
+Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-3 — 48-05 size budget + 48-06 HUMAN-UAT + 48-07 closer)
 
-Status: Phase 48 executing — Plans 01 + 02 + 03 closed
-Last activity: 2026-05-26 -- Phase 48 Plan 03 shipped (WebAudioBackend real [JSImport] impl: new FlowRuntimeInterop.cs partial-static class with 5 [JSImport] bindings for createAudioContext/playStereoFloat32/stopSource/closeContext/resumeContext against Plan 48-04's flow-runtime.js module; WebAudioBackend.cs stub bodies swapped for real Mono-WASM impl with lifecycle D-48-08 lazy AudioContext + D-48-07 stereo promotion + D-48-10 30s wall-clock cap + D-48-11 charitable Desktop fallback; 8/8 new IntegrationTests PASS; Phase 47 WebAudioBackendStubTests.cs deleted as stale, 4 invariants re-covered; Desktop+Web build+publish all exit 0)
+Status: Phase 48 executing — Plans 01 + 02 + 03 + 04 closed
+Last activity: 2026-05-26 -- Phase 48 Plan 04 shipped (flow-runtime.js ES module + WasmEntry [JSExport] + index.html dev-smoke harness — closes the C#↔JS round-trip; API surface frozen per D-48-13; RunResult shape pinned per D-48-14; stdout/stderr split per D-48-15; SYSLIB1072 auto-fix on PlayFromJs(byte[]); publish-layout deviation documented; Desktop+Web build+publish all exit 0)
+
+**Phase 48 Plan 04 highlights (2026-05-26):**
+
+- `flow-lang/Runtime/WasmEntry.cs` lands (398 LOC) — `[SupportedOSPlatform("browser")] public static partial class WasmEntry` with 4 `[JSExport]` static methods: `RunFromJs(string source) → string` (JSON-serialized RunResult; wraps `FlowEngine.Execute` in Task.Run + Wait(30s) per Pattern C / D-48-10; redirects Console.SetOut/SetError to per-call StringWriters with finally-restore per D-48-15 + T-48-14), `PlayFromJs(byte[] wavBytes, int sampleRate, int channels)` (Float32 PCM as raw bytes per SYSLIB1072 workaround), `StopFromJs()`, `DisposeFromJs()`. Two new public type definitions at namespace scope: `RunResult` (sealed class with `Wav?/Midi?/Stdout/Stderr/Errors/DurationMs` init-only props) + `RunError` (sealed record with `Kind/Message/Line?/Column?/SourceSnippet?`) pinned to D-48-14 shape. JsonSerializer uses `PropertyNamingPolicy=JsonNamingPolicy.CamelCase + DefaultIgnoreCondition=JsonIgnoreCondition.WhenWritingNull` so JS reads `result.stdout`/`result.durationMs` and absent wav/midi are omitted. Charitable boundary: every method catches Exception and returns/logs safely — no uncaught .NET exception EVER crosses the JS boundary (T-48-15 mitigation).
+- `flow-lang/wasm/flow-runtime.js` lands (282 LOC) — ES module per D-48-12 (no UMD/CommonJS). `export async function loadFlowRuntime()` idempotent boot wraps `await dotnet.create()` in try/catch (clear `Flow runtime boot failed` error for Phase 49 UX), wires `setModuleImports('flow-runtime', { createAudioContext, playStereoFloat32, stopSource, closeContext, resumeContext })` exactly matching Plan 48-03's 5 [JSImport] names. `playStereoFloat32` reinterprets the `samplesAsBytes` MemoryView as `Float32Array(buffer, byteOffset, byteLength/4)` (SYSLIB1072 boundary contract), de-interleaves L/R into AudioBuffer's per-channel layout, creates source node, tracks in `_activeSources` Set. Returns the 5-core + 1-convenience runtime surface (`run` / `play` / `stop` / `dispose` / `resumeAudio`); `run` calls `exports.FlowLang.Runtime.WasmEntry.RunFromJs(source)` then `JSON.parse`s the return string. `play` reinterprets Float32Array as `new Uint8Array(f32.buffer, ...)` for the byte[] boundary. JSDoc `@typedef RunResult / RunError` pins the D-48-14 shape for editor tooling.
+- `flow-lang/wasm/index.html` lands (118 LOC) — dev-only smoke harness with header comment citing the python3 http.server recipe + D-48-09 user-gesture chain. Body: textarea pre-filled with `(play (createSineTone 440Hz 1.0 0.5))`, Run button, 4 `<pre>` panes (stdout/stderr/errors/duration). `<script type="module">` imports `./flow-runtime.js`; click handler awaits `runtime.resumeAudio()` AND `runtime.run(srcEl.value)` in the SAME async function — one gesture frame, autoplay policy satisfied.
+- `flow-lang/flow-lang.csproj` extended (+22 lines) — 3 new `<None Update>` entries appended to the FlowTarget=Web ItemGroup AFTER the existing `<TrimmerRootDescriptor>` line: `wasm\flow-runtime.js` + `wasm\index.html` with `CopyToOutputDirectory=PreserveNewest` + `CopyToPublishDirectory=PreserveNewest`; `wasm\trim-roots.xml` with `CopyToPublishDirectory=Never` (build-time only — no AppBundle bloat).
+- `flow-lang/wasm/trim-roots.xml` extended (+12 lines) — 3 new entries preserving `FlowLang.Runtime.WasmEntry` + `FlowLang.Runtime.RunResult` + `FlowLang.Runtime.RunError` so the JsonSerializer reflection path survives aggressive trim. Mitigates IL2026 — without these, the trimmer could elide RunResult's properties at link time and runtime JSON output would be empty/wrong.
+- **Rule 3 auto-fix (SYSLIB1072 + downstream CS0117/CS1503)**: First Desktop build errored on `PlayFromJs(float[] wav, ...)` — `[JSExport]` source generator supports `byte[]/int[]/double[]/scalars/strings/JSObject/Task<T>` but NOT `float[]`. Changed param to `byte[] wavBytes`; JS-side passes `new Uint8Array(f32.buffer, f32.byteOffset, f32.byteLength)` (zero-copy reinterpret); server-side `MemoryMarshal.Cast<byte, float>(wavBytes).CopyTo(wav)`. Mirrors Plan 48-03's `Span<byte>` posture for [JSImport].
+- **Publish-layout deviation**: PATTERNS.md sample (line 279) assumed `import { dotnet } from './_framework/dotnet.js'` — plan recommended Option 1 `'../_framework/dotnet.js'`. Actual .NET 10 SDK publish for this project is FLAT: `dotnet.js` lands at publish-root, NOT under `_framework/`. Plan 48-04 chose `import { dotnet } from '../dotnet.js'` — Option 1 spirit ("one level up") preserved; only the second path component changes.
+- Verification: `dotnet build flow-lang -p:FlowTarget=Desktop` exits 0; `dotnet build flow-lang -p:FlowTarget=Web` exits 0; `dotnet publish flow-lang -p:FlowTarget=Web -c Release` exits 0. AppBundle contains `wasm/flow-runtime.js` + `wasm/index.html` + `dotnet.js` loader. Phase 48 fixture: 15/15 PASS (unchanged — Plan 48-04 adds no tests; HUMAN-UAT in Plan 48-06). Phase 47 fixture: 9 PASS + 8 SKIP + 0 FAIL (unchanged from Plan 48-03).
+- 2 commits: `dad84b9` (Task 1 — WasmEntry [JSExport] surface + RunResult/RunError POCOs + trim-roots WasmEntry/RunResult/RunError entries), `9afdb26` (Task 2 — flow-runtime.js ES module + dev-smoke index.html + csproj publish hooks). Zero new NuGet packages.
+
+**Phase 48 Plan 03 highlights (2026-05-26):**
+
+Last activity (Plan 03): WebAudioBackend real [JSImport] impl — see prior STATE entry below.
 
 **Phase 48 Plan 03 highlights (2026-05-26):**
 
