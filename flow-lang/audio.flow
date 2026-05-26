@@ -1,5 +1,5 @@
 Note: Audio Processing Standard Library
-Note: Phase 1: AudioBuffer Foundation
+Note: AudioBuffer Foundation
 
 module audio
 
@@ -49,11 +49,11 @@ internal proc writeWav(String: filepath, Buffer: buffer, Int: bitDepth)
 Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
 internal proc loadWav(String: filepath)
 
-Note: DX-15 varispeed: load a WAV and pitch-shift by semitones via linear-interpolation resample
+Note: Varispeed: load a WAV and pitch-shift by semitones via linear-interpolation resample.
 Note: 12 semitones = octave up = ratio 2.0 = sample count halved; semitones=0 short-circuits.
 internal proc loadWav(String: filepath, Int: semitones)
 
-Note: DX-15 varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample
+Note: Varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample.
 Note: ratio > 1.0 raises pitch (fewer frames); ratio == 1.0 short-circuits; ratio <= 0 errors.
 internal proc loadWav(String: filepath, Double: ratio)
 
@@ -210,7 +210,7 @@ proc fill(Buffer: b, Double: value)
     (fillBuffer b value)
 end proc
 
-Note: ===== Phase 3a: Signal Generation =====
+Note: ===== Signal Generation =====
 
 Note: ===== Oscillator State Management =====
 
@@ -223,24 +223,24 @@ internal proc noteToFrequency(Note: n)
 
 internal proc createSineTone(Double: duration, Double: freq, Double: amp)
 
-Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 internal proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
 
-Note: Phase 37 DSP-01 — granular synthesis with composable jitter PRNG.
+Note: Granular synthesis with composable jitter PRNG.
 Note: Composer-facing: (granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)
 Note: Returns a Buffer of the SAME length as input (granular is texture, not stretch).
-Note: Jitter PRNG routes through ctx.PrngRegistry per D-v1.5-06 — two-run cmp-clean preserved.
+Note: Jitter PRNG routes through ctx.PrngRegistry — two-run cmp-clean preserved.
 Note: Cost model: CPU cost ~ density * grain * sampleRate * output-duration.
 internal proc granular(Buffer: buffer, Double: grain, Double: density, Double: jitter)
 internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter)
 internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter, Symbol: windowing)
 
-Note: Phase 37 DSP-02 — time-stretch with vocoder/psola/auto mode dispatch.
+Note: Time-stretch with vocoder/psola/auto mode dispatch.
 Note: Composer-facing: (stretch buf 2.0 mode=#auto frameSize=4096 transientThreshold=0.25)
-Note: factor=1.0 fast-paths to identity (byte-identical to input — Pitfall 11).
+Note: factor=1.0 fast-paths to identity (byte-identical to input).
 Note: #auto mode emits a one-shot stderr advisory per call-site summarizing the
-Note: per-frame vocoder vs psola split (D-37-06 + RESEARCH OQ5).
-Note: W4 LOCK: all knobs (frameSize/hopSize/overlap/transientThreshold/
+Note: per-frame vocoder vs psola split.
+Note: All knobs (frameSize/hopSize/overlap/transientThreshold/
 Note: pitchPeriod/windowSize) reach the underlying DSP engine end-to-end.
 Note: Universal named-arg surface — composer can pass any subset of knobs
 Note: by name; the resolver picks the overload at the matching arity.
@@ -253,10 +253,10 @@ internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSi
 internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
 internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
 
-Note: Phase 37 DSP-03 — pitch-shift via stretch+resample; cents=0 identity fast-path.
+Note: Pitch-shift via stretch+resample; cents=0 identity fast-path.
 Note: Composer-facing: (pitchShift buf +5st mode=#auto) or (pitchShift buf +50c).
 Note: Accepts Double cents, Cent literal (+50c), or Semitone literal (+2st — auto-scaled).
-Note: Universal named-arg surface — same knob bag as stretch, all 6 W4 LOCK knobs honored.
+Note: Universal named-arg surface — same knob bag as stretch, all 6 knobs honored.
 internal proc pitchShift(Buffer: buffer, Double: cents)
 internal proc pitchShift(Buffer: buffer, Cent: cents)
 internal proc pitchShift(Buffer: buffer, Semitone: semitones)
@@ -355,7 +355,7 @@ proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 Note: Stereo body matches the bare-Double form above. The C# Hertz overload registered in
 Note: BuiltInFunctions.cs serves as the underlying-primitive surface; this Flow proc shadows
 Note: it for user-facing calls so the resulting buffer matches the bare-Double form's stereo
@@ -375,8 +375,8 @@ proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createSawTone(Double, Hertz, Double) — explicit frequency-type ergonomics
-Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompatibleWith(Double) (Wave 1) + Value.ConvertTo Double-arm (Wave 0)
+Note: createSawTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompatibleWith(Double) + Value.ConvertTo Double-arm.
 proc createSawTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSaw b (createOsc freqHz) amplitude)
@@ -390,7 +390,7 @@ proc createSquareTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createSquareTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: createSquareTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 proc createSquareTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSquare b (createOsc freqHz) amplitude)
@@ -404,7 +404,7 @@ proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createTriangleTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: createTriangleTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 proc createTriangleTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateTriangle b (createOsc freqHz) amplitude)
@@ -430,17 +430,17 @@ Note: Render an entire Song arrangement to a stereo Buffer
 internal proc renderSong(Song: song, String: synthType)
 internal proc renderSong(Song: song, Function: synth)
 
-Note: Phase 37 PIANO-01 (Plan 37-04 / D-37-11) -- release-tail knob (Second).
+Note: Piano release-tail knob (Second).
 Note: Composer-facing: (renderSong song "piano" release=2.0s).
-Note: Default 1.5s (RESEARCH §Pattern 8 / Lehtonen 2007 reference);
-Note: clamped to [0.05s, 10.0s] at the renderer (T-37-04-04 charitable clamp).
+Note: Default 1.5s (Lehtonen 2007 reference);
+Note: clamped to [0.05s, 10.0s] at the renderer (charitable clamp).
 internal proc renderSong(Song: song, String: synthType, Second: release)
 internal proc createSong(String: title)
 internal proc addBarToSong(Song: song, String: sectionName)
 internal proc addBarToSong(Song: song, String: sectionName, Int: count)
 internal proc addBarToSong(Song: song, Sequence: seq)
 
-Note: ===== Phase 5: Audio Effects (DSP) =====
+Note: ===== Audio Effects (DSP) =====
 
 Note: Apply Schroeder reverb with room size (0-1), default damping and mix
 internal proc reverb(Buffer: buffer, Double: roomSize)
@@ -466,18 +466,17 @@ internal proc compress(Buffer: buffer, Double: thresholdDb, Double: ratio, Doubl
 Note: Apply feedback delay with time (ms), feedback (0-1), and wet/dry mix (0-1)
 internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: mix)
 
-Note: DX-12 -- tempo-synced feedback delay; rate is a NoteValue (EIGHTH, QUARTER, ...) read against the active MusicalContext.Tempo
+Note: Tempo-synced feedback delay; rate is a NoteValue (EIGHTH, QUARTER, ...) read against the active MusicalContext.Tempo
 internal proc delay(Buffer: buffer, NoteValue: rate, Double: feedback, Double: mix)
 
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
 
-Note: Phase 26.2 ERG-05 — explicit dB ergonomics; same dB semantics as the bare-Double gain overload above.
-Note: Closes RESEARCH Pitfall 2 (dormant gain(Buffer, Decibel) C# registration since QUICK-260504-w24).
+Note: Explicit dB ergonomics; same dB semantics as the bare-Double gain overload above.
 internal proc gain(Buffer: buffer, Decibel: gainDb)
 
-Note: Phase 26.2 ERG-03 — volume(Buffer, Double linear) — linear-multiplier alternative to gain(dB).
-Note: D-04 split: gain treats arg as decibels, volume treats arg as a bare linear multiplier (0.5 = half).
+Note: volume(Buffer, Double linear) — linear-multiplier alternative to gain(dB).
+Note: gain treats arg as decibels, volume treats arg as a bare linear multiplier (0.5 = half).
 internal proc volume(Buffer: buffer, Double: linearMultiplier)
 
 Note: Apply sidechain compression: source ducks under trigger signal
@@ -489,15 +488,15 @@ internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Do
 Note: Apply constant-power stereo panning. Pan: -1.0 = left, 0.0 = center, 1.0 = right. Returns stereo buffer.
 internal proc pan(Buffer: buffer, Double: panValue)
 
-Note: ===== Phase 26.2 ERG-02 + ERG-04: music-type FX overloads =====
+Note: ===== Music-type FX overloads =====
 Note: Each line below surfaces a C# overload registered in EffectsFunctions.cs. Without
 Note: a matching internal proc forward decl the C# registration is invisible to user
-Note: code (RESEARCH Pitfall 2). Same DSP path as the bare-Double overload above each pair.
+Note: code. Same DSP path as the bare-Double overload above each pair.
 
 Note: delay(Buffer, Millisecond, ...) — explicit ms ergonomics
 internal proc delay(Buffer: buffer, Millisecond: delayMs, Double: feedback, Double: mix)
 
-Note: Phase 43 D-09 -- delay(Buffer, Beat, ...) -- tempo-synced rate in beats; reads MusicalContext.Tempo (default 120 BPM + one-shot advisory)
+Note: delay(Buffer, Beat, ...) -- tempo-synced rate in beats; reads MusicalContext.Tempo (default 120 BPM + one-shot advisory)
 internal proc delay(Buffer: buffer, Beat: beats, Double: feedback, Double: mix)
 
 Note: compress(Buffer, Decibel threshold, ratio, Millisecond attack, Millisecond release) — full music-typed
@@ -514,7 +513,7 @@ internal proc lowpass(Buffer: buffer, Hertz: cutoffHz)
 internal proc highpass(Buffer: buffer, Hertz: cutoffHz)
 internal proc bandpass(Buffer: buffer, Hertz: lowHz, Hertz: highHz)
 
-Note: ===== Phase 6: Playback =====
+Note: ===== Playback =====
 
 Note: Play an audio buffer through the system audio output
 internal proc play(Buffer: buffer)
@@ -550,10 +549,10 @@ Note: ===== Voice Allocation =====
 Note: Set the maximum number of simultaneous voices (default 32)
 internal proc setMaxVoices(Int: maxVoices)
 
-Note: ===== Phase 38 AUDIO-IN-01/02 — microphone capture =====
+Note: ===== Microphone capture =====
 
 Note: Capture audio from the default PulseAudio input device for `duration` seconds.
-Note: Auto-attenuates -20 dB on open (Pitfall #24 feedback guard).
+Note: Auto-attenuates -20 dB on open (feedback guard).
 Note: Resamples to 44.1 kHz via linear interpolation when device native rate differs.
 Note: Returns a composable Buffer — chains with mix / play / writeWav / granular.
 internal proc micBuffer(Second: duration)
@@ -594,9 +593,8 @@ internal proc tts(String: text)
 Note: Set the external TTS command (default: "espeak-ng --stdout")
 internal proc setTtsCommand(String: command)
 
-Note: ===== Phase 43 D-08 — Beat <-> Second tempo-aware conversion =====
+Note: ===== Beat <-> Second tempo-aware conversion =====
 Note: Both read the active MusicalContext.Tempo at call time; default 120 BPM + one-shot stderr advisory when no tempo block is active.
-Note: Closes the Phase 42 AUDIT §1 BeatType-orphan finding.
 
 Note: beatToSec(Beat) -> Second. 1 beat at 120 BPM = 0.5 seconds.
 internal proc beatToSec(Beat: beats)

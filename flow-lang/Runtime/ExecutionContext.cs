@@ -463,13 +463,9 @@ public class ExecutionContext
             return null;
         }
 
-        var signatures = overloads.Select(o => o.Signature).ToList();
-        var signature = _overloadResolver.Resolve(name, signatures, argTypes, location, namedArgTypes);
-
-        if (signature == null)
-            return null;
-
-        return overloads.FirstOrDefault(o => o.Signature == signature);
+        // Bundle A (260524-r4o) Task 2 — FunctionOverload-direct resolve:
+        // no Signature projection, no FirstOrDefault reverse-lookup.
+        return _overloadResolver.Resolve(name, overloads, argTypes, location, namedArgTypes);
     }
 
     /// <summary>

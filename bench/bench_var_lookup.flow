@@ -1,0 +1,38 @@
+Note: bench_var_lookup.flow
+Note: Hot path measured: ExecutionContext.GetVariable bare-identifier resolution.
+Note: 20 bound vars touched per call, driven by a reduce loop.
+Note: Tuned iteration count: N = 250000 (initial dry-run at N=300000 was 5.44s, dropped to ~4.5s).
+
+use "@std"
+
+Int a = 1
+Int b = 2
+Int c = 3
+Int d = 4
+Int e = 5
+Int f = 6
+Int g = 7
+Int h = 8
+Int i0 = 9
+Int j = 10
+Int k = 11
+Int l = 12
+Int m = 13
+Int n0 = 14
+Int o = 15
+Int p = 16
+Int q = 17
+Int r0 = 18
+Int s0 = 19
+Int t = 20
+
+proc touchAll ()
+    (add a (add b (add c (add d (add e (add f (add g (add h (add i0 (add j (add k (add l (add m (add n0 (add o (add p (add q (add r0 (add s0 t)))))))))))))))))))
+end proc
+
+Int N = 250000
+
+Int total = (reduce (range 0 N) 0 (fn Int acc, Int i => (add acc (touchAll))))
+
+(print (concat "total=" (str total)))
+(print "bench_var_lookup: PASSED")

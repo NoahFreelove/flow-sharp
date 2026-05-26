@@ -1,4 +1,4 @@
-Note: Phase 36 Plan 36-11 — @improv stdlib module (IMPROV-01 / D-36-12).
+Note: @improv stdlib module.
 Note: jam(Sequence, Symbol, Int, String, Int, Int) chord-aware Markov + the
 Note: composer-overridable Flow-file style packs at
 Note:   flow-lang/improv/styles/*.flow         (shipped — jazz / blues / classical)
@@ -16,24 +16,23 @@ use "@std"
 Note: ===== Style pack registry =====
 
 Note: (registerStyle #name (dict ...)) — mutates ExecutionContext.StyleRegistry.
-Note: Last-write-wins per Pitfall 8; user packs at ~/.config/flow/styles/
+Note: Last-write-wins; user packs at ~/.config/flow/styles/
 Note: override shipped packs on Symbol-name collision and emit a one-shot
 Note: stderr advisory.
-Note: The value side uses Dict<Void, Void> as a wildcard (D-36-02-04 convention,
-Note: same shape as the @std (get)/(set)/(each) Dict-side ops) so the composer
-Note: can pass ANY Dict<Symbol, T> without forcing a specific generic
-Note: instantiation at the call site — pack values are heterogeneous (Dict,
-Note: Tuple, Dict-of-Symbol) and there is no concrete Flow type that covers
-Note: all three.
+Note: The value side uses Dict<Void, Void> as a wildcard (same shape as the
+Note: @std (get)/(set)/(each) Dict-side ops) so the composer can pass ANY
+Note: Dict<Symbol, T> without forcing a specific generic instantiation at
+Note: the call site — pack values are heterogeneous (Dict, Tuple,
+Note: Dict-of-Symbol) and there is no concrete Flow type that covers all three.
 internal proc registerStyle (Symbol: name, Dict<Void, Void>: pack)
 
 Note: (listStyles) — returns Array[Symbol] of registered style names in
 Note: insertion order. Composers call this to audit which packs loaded.
 internal proc listStyles ()
 
-Note: ===== Headline composer-facing API (IMPROV-01) =====
+Note: ===== Headline composer-facing API =====
 
-Note: jam(over=chords) chord-aware Markov improvisation per D-36-10.
+Note: jam(over=chords) chord-aware Markov improvisation.
 Note: Only `over` is required; defaults: style=#jazz, length=8, key=null (uses
 Note: active musical-context key), seed=null (PrngRegistry-routed), order=2.
 Note:
@@ -43,8 +42,8 @@ Note: pivot bars that break the surrounding key context.
 Note:
 Note: Unseeded jam routes its PRNG through ExecutionContext.PrngRegistry keyed
 Note: by (CurrentCallSite, "jam") — two consecutive renders of the same source
-Note: at the same git SHA produce byte-identical output (Phase 18/25/27/28/29/33
-Note: two-run cmp-clean determinism inherited via D-v1.5-06 / D-36-09).
+Note: at the same git SHA produce byte-identical output (two-run cmp-clean
+Note: determinism preserved).
 internal proc jam (Sequence: over, Symbol: style, Int: length, String: key, Int: seed, Int: order)
 internal proc jam (Sequence: over, Symbol: style, Int: length, String: key, Int: seed)
 internal proc jam (Sequence: over, Symbol: style, Int: length, String: key)

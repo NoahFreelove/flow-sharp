@@ -1,7 +1,7 @@
-Note: Phase 36 Plan 36-06 — @generative stdlib module
-Note: GEN-01 Markov chain primitive in BOTH one-shot AND train+generate-split
-Note: shapes (D-36-06). New first-class MarkovModel reference-identity value
-Note: type — see CLAUDE.md Music Types Quick Reference table.
+Note: @generative stdlib module
+Note: Markov chain primitive in BOTH one-shot AND train+generate-split
+Note: shapes. First-class MarkovModel reference-identity value type —
+Note: see CLAUDE.md Music Types Quick Reference table.
 
 module generative
 
@@ -9,7 +9,7 @@ Note: One-shot — compose train + generate at the call site
 internal proc markov (Sequence: corpus, Int: order, Int: length, Int: seed)
 internal proc markov (Sequence: corpus, Int: order, Int: length)
 
-Note: Train once / generate many (D-36-06 composer feedback)
+Note: Train once / generate many
 internal proc markovTrain (Sequence: corpus, Int: order)
 Note: features= accepts Symbol (e.g. #pitch) or Tuple<<Symbol, Symbol>>
 Note: (e.g. <<#pitch, #duration>>) — the Void wildcard slot dispatches at runtime.
@@ -18,13 +18,12 @@ internal proc markovTrain (Sequence: corpus, Int: order, Void: features)
 internal proc markovGenerate (MarkovModel: model, Int: length, Int: seed)
 internal proc markovGenerate (MarkovModel: model, Int: length)
 
-Note: Structural compare — distinct from (eq m1 m2), which is reference
-Note: identity per Pitfall 6.
+Note: Structural compare — distinct from (eq m1 m2), which is reference identity.
 internal proc markovEqual (MarkovModel: a, MarkovModel: b)
 
-Note: Phase 36 Plan 36-07 — GEN-02 L-system primitive (D-36-06 + D-36-08).
+Note: L-system primitive.
 Note: Pure deterministic Symbol rewriting; iteration count clamped to [0, 20]
-Note: per RESEARCH §Security Domain. Rule values accept Tuple<<Symbol, ...>>
+Note: as a DoS guard. Rule values accept Tuple<<Symbol, ...>>
 Note: (the canonical composer surface) or Symbol[] — the C# registration uses
 Note: Dict<Void, Void> as a wildcard so EITHER value-shape resolves; the proc
 Note: decl annotates the most-common composer surface (Symbol[]) but the
@@ -36,30 +35,29 @@ internal proc lsystemGenerate (LsystemModel: model, Int: iterations)
 internal proc lsystemToSequence (Symbol[]: expanded, Function: mapper)
 internal proc lsystemEqual (LsystemModel: a, LsystemModel: b)
 
-Note: Phase 36 Plan 36-08 — GEN-03 cellular automata primitives (D-36-08).
+Note: Cellular automata primitives.
 Note: 1D `cellular` uses the Wolfram-convention single-1-center default seed
 Note: pattern; the seed arg is accepted for signature uniformity but ignored.
 Note: `cellularSeeded` accepts an explicit Array[Bool] initial pattern.
 Note: 2D `life` uses a composer-supplied seed to seed a Random for 30%-density
 Note: initial fill. Both 1D and 2D primitives clamp width/height/steps to
-Note: <= 1024 (T-36-19 DoS guard) and wrap rule values via & 0xFF.
+Note: <= 1024 (DoS guard) and wrap rule values via & 0xFF.
 internal proc cellular (Int: rule, Int: width, Int: steps, Int: seed)
 internal proc cellularSeeded (Int: rule, Int: width, Int: steps, Int: seed, Bool[]: initialPattern)
 internal proc life (Int: width, Int: height, Int: steps, Int: seed)
 
-Note: Phase 36 Plan 36-09 — GEN-04 chaos-map primitives (D-36-08 + D-36-09).
+Note: Chaos-map primitives.
 Note: Lorenz attractor (forward-Euler with σ=10, ρ=28, β=8/3 canonical
 Note: butterfly) and logistic map (x_{n+1} = r * x_n * (1 - x_n)) both
 Note: return raw Array[Double]; composer quantizes to musical pitch via
 Note: (quantizeToScale series scale). length is clamped to <= 100_000
-Note: (T-36-21 DoS guard). Cross-platform FP divergence is documented as
-Note: a platform-specific limitation per D-36-09 / RESEARCH Pitfall 4 —
+Note: (DoS guard). Cross-platform FP divergence is a known limitation —
 Note: same-platform two-run cmp-clean is preserved (single-machine IEEE
 Note: 754 reproducibility); cross-platform reproducibility is NOT
 Note: guaranteed for the chaotic-system outputs of these primitives.
 internal proc lorenz (Double: sigma, Double: rho, Double: beta, Int: length, Int: seed)
 internal proc logistic (Double: r, Int: length, Int: seed)
-Note: quantizeToScale ships in two overloads (D-36-08 Claude's Discretion):
+Note: quantizeToScale ships in two overloads:
 Note: a String-form that resolves a scale name via ScaleDatabase, and an
 Note: Array[Note] form that lets composers supply the scale directly.
 internal proc quantizeToScale (Double[]: series, String: scaleName)

@@ -37,7 +37,7 @@ internal proc str (Sequence: value)
 internal proc str (Chord: value)
 internal proc str (Section: value)
 internal proc str (Song: value)
-Note: Phase 32 Plan 32-04 — Tuning ((loadScala) output) string form per CONTEXT D-04
+Note: Tuning ((loadScala) output) string form
 internal proc str (Tuning: value)
 
 internal proc concat (String: a, String: b)
@@ -46,7 +46,7 @@ Note: Type conversions
 internal proc intToDouble (Int: value)
 internal proc doubleToInt (Double: value)
 
-Note: Arithmetic — 5-type same-type fast paths per Phase 26 D-05
+Note: Arithmetic — 5-type same-type fast paths
 internal proc add (Int: a, Int: b)
 internal proc add (Long: a, Long: b)
 internal proc add (Float: a, Float: b)
@@ -65,21 +65,21 @@ internal proc mul (Float: a, Float: b)
 internal proc mul (Double: a, Double: b)
 internal proc mul (Number: a, Number: b)
 
-Note: (div Int Int) auto-promotes to Double per D-08; use (idiv) for Int truncation
+Note: (div Int Int) auto-promotes to Double; use (idiv) for Int truncation
 internal proc div (Int: a, Int: b)
 internal proc div (Long: a, Long: b)
 internal proc div (Float: a, Float: b)
 internal proc div (Double: a, Double: b)
 internal proc div (Number: a, Number: b)
 
-Note: Negation — 5-pack per Phase 26 D-07
+Note: Negation — 5-pack
 internal proc neg (Int: x)
 internal proc neg (Long: x)
 internal proc neg (Float: x)
 internal proc neg (Double: x)
 internal proc neg (Number: x)
 
-Note: Integer division (truncating) per Phase 26 D-08
+Note: Integer division (truncating)
 internal proc idiv (Int: a, Int: b)
 
 Note: String-to-number conversions
@@ -105,10 +105,10 @@ internal proc gt (Void: a, Void: b)
 internal proc lte (Void: a, Void: b)
 internal proc gte (Void: a, Void: b)
 
-Note: Tuple unpack runtime apply (Phase 26.1 TUP-11)
+Note: Tuple unpack runtime apply
 internal proc unpack (Void: tup, Function: f)
 
-Note: Dict ops (Phase 26.1 DICT-01/02/03)
+Note: Dict ops
 Note: Use Dict<Void, Void> in proc decls so the parameter type is structurally a DictType
 Note: (matches the runtime impl shape) — distinguishes from the existing Array overloads
 Note: of (each)/(map)/(filter)/(size)/(keys)/(values).
@@ -145,14 +145,14 @@ internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
 internal proc concat (Sequence: a, Sequence: b)
 
-Note: Quantize (Phase 22 DX-13) — snaps note onsets to a grid at the requested resolution.
-Note: strength=0 short-circuits to identity (Pitfall 9); swing -1..1 signed offbeat shift.
+Note: Quantize — snaps note onsets to a grid at the requested resolution.
+Note: strength=0 short-circuits to identity; swing -1..1 signed offbeat shift.
 internal proc quantize (Sequence: seq, NoteValue: resolution, Double: strength, Double: swing)
 
-Note: Articulation transforms (Phase 22 DX-14)
+Note: Articulation transforms
 Note: legato extends each note's rendered duration by overlap factor (1 + overlap), without
-Note: moving onsets — polyphonic mix in the renderer handles the additive overlap (CONTEXT D-01..D-03).
-Note: portamento emits MIDI CC65/CC5 bracket per note (audio renderer ignores; MIDI-only in v1.3).
+Note: moving onsets — polyphonic mix in the renderer handles the additive overlap.
+Note: portamento emits MIDI CC65/CC5 bracket per note (audio renderer ignores; MIDI-only).
 internal proc legato (Sequence: seq, Double: overlap)
 internal proc portamento (Sequence: seq, Millisecond: glideTime)
 
@@ -234,21 +234,21 @@ internal proc log (Double: x)
 internal proc pi ()
 internal proc tau ()
 
-Note: Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance)
+Note: Beat constructor
 internal proc beat (Double: fractionalBeats)
 
-Note: Phase 26.1 NaN production primitive (REVISION 2 — DICT-03 acceptance)
+Note: NaN production primitive
 internal proc nanFloat ()
 
-Note: Phase 32 Plan 32-04 — Scala .scl tuning loader
-Note: (loadScala "path.scl") parses the .scl + synthesizes a default linear KBM (D-05/D-07).
-Note: (loadScala "path.scl" "path.kbm") loads both files together; D-08 fires the unmapped-
+Note: Scala .scl tuning loader
+Note: (loadScala "path.scl") parses the .scl + synthesizes a default linear KBM.
+Note: (loadScala "path.scl" "path.kbm") loads both files together; fires the unmapped-
 Note: key WarnOnce advisory once per Description if any `x` mapping entries are present.
 internal proc loadScala (String: sclPath)
 internal proc loadScala (String: sclPath, String: kbmPath)
 
-Note: Phase 33 Plan 33-05 — SFZ orchestral sampler loader
-Note: Forward-declared in std.flow so the SfzEnabled gate (CONTEXT D-10) fires at the
+Note: SFZ orchestral sampler loader
+Note: Forward-declared in std.flow so the SfzEnabled gate fires at the
 Note: runtime call site, not at parse-resolution. WITHOUT `use "@sfz"`, calling
 Note: (loadSfz #violin) reaches the C# builtin and throws "loadSfz requires `use \"@sfz\"`"
 Note: (the gate's whole point — the composer gets a clear "you forgot the import" message,

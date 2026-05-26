@@ -1,0 +1,31 @@
+Note: m05.flow -- parse-bench import target #5
+Note: Plain Int decls + one proc + one print. Exercises ModuleLoader on relative path.
+
+use "@std"
+
+Int k81 = 81
+Int k82 = 82
+Int k83 = 83
+Int k84 = 84
+Int k85 = 85
+Int k86 = 86
+Int k87 = 87
+Int k88 = 88
+Int k89 = 89
+Int k90 = 90
+Int k91 = 91
+Int k92 = 92
+Int k93 = 93
+Int k94 = 94
+Int k95 = 95
+Int k96 = 96
+Int k97 = 97
+Int k98 = 98
+Int k99 = 99
+Int k100 = 100
+
+proc m05proc (Int: x)
+    (add x k81)
+end proc
+
+(print "m05 loaded")

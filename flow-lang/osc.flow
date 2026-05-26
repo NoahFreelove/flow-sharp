@@ -1,25 +1,19 @@
 Note: OSC — Open Sound Control client + server, opt-in via `use "@osc"`
-Note: Phase 38 Plan 38-06 OSC-01 + OSC-02 — single-module surface for the
-Note: 5 OSC builtins:
-Note:   oscSend(String host, Int port, String path, ...args) → Void      [OSC-01]
-Note:   oscListen(Int port, String path, Function handler) → OscHandle    [OSC-01]
-Note:   oscStop(OscHandle handle) → Void                                  [D-38-16]
-Note:   oscBundle(...packets) → OscBundle (varargs)                       [D-38-15]
-Note:   oscSendBundle(String host, Int port, OscBundle bundle) → Void     [D-38-15]
+Note: Single-module surface for the 5 OSC builtins:
+Note:   oscSend(String host, Int port, String path, ...args) → Void
+Note:   oscListen(Int port, String path, Function handler) → OscHandle
+Note:   oscStop(OscHandle handle) → Void
+Note:   oscBundle(...packets) → OscBundle (varargs)
+Note:   oscSendBundle(String host, Int port, OscBundle bundle) → Void
 Note:
-Note: Type-tag inference (D-38-13): Int→,i Long→,h Float→,f Double→,d
-Note:   String/Symbol→,s Bool→,T/,F Buffer→,b. OVERRIDES REQUIREMENTS.md
-Note:   OSC-02 strict-tag wording per D-v1.5-05 charitable interpretation
-Note:   default.
-Note: Rate limit (D-38-14): per-path drop-newest sample-and-hold at 200 Hz
+Note: Type-tag inference: Int→,i Long→,h Float→,f Double→,d
+Note:   String/Symbol→,s Bool→,T/,F Buffer→,b. Charitable smallest-tag-that-fits
+Note:   inference (composer can force via explicit cast at call site).
+Note: Rate limit: per-path drop-newest sample-and-hold at 200 Hz
 Note:   (5 ms window). No advisory on individual drops.
-Note: Bundle nesting depth cap (D-38-15): collapses at 8 with stderr
-Note:   advisory; mirrors Phase 36 T-36-17 / Phase 39 D-39-19 DoS guard.
+Note: Bundle nesting depth cap: collapses at 8 with stderr advisory (DoS guard).
 Note:
-Note: Implementation backed by Rug.Osc 1.2.5 — MIT, zero transitive deps,
-Note: verified live on NuGet flatcontainer API 2026-05-23 per RESEARCH §K +
-Note: Package Legitimacy Audit (slopcheck [SLOP] is a confirmed false
-Note: positive — Rug.Osc is .NET-only; slopcheck only queries PyPI).
+Note: Implementation backed by Rug.Osc 1.2.5 — MIT, zero transitive deps.
 
 module osc
 
@@ -38,14 +32,14 @@ internal proc oscSend (String: host, Int: port, String: path)
 internal proc oscSendBundle (String: host, Int: port, OscHandle: bundle)
 
 Note: ----- Server builtins -----
-Note: oscListen returns an OscHandle reference-identity value per D-38-16.
+Note: oscListen returns an OscHandle reference-identity value.
 Note: The handler lambda is invoked once per matching incoming message
-Note: (rate-limited per D-38-14 at 200 Hz/path drop-newest).
+Note: (rate-limited at 200 Hz/path drop-newest).
 internal proc oscListen (Int: port, String: path, Function: handler)
 internal proc oscStop (OscHandle: handle)
 
 Note: ----- Bundle constructor (varargs) -----
-Note: Returns an OscHandle-wrapped OscBundle. Per D-38-15 bundles dispatch
+Note: Returns an OscHandle-wrapped OscBundle. Bundles dispatch
 Note: both ways with timetag honored on receive; outgoing bundles use
 Note: OscTimeTag.Immediate (value 1) unless an explicit timetag is added
 Note: at the send call.
