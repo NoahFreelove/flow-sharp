@@ -313,16 +313,29 @@ public static class OscFunctions
         IPAddress addr;
         if (!IPAddress.TryParse(host, out addr!))
         {
+            IPHostEntry entry;
             try
             {
-                var entry = Dns.GetHostEntry(host);
-                addr = entry.AddressList[0];
+                entry = Dns.GetHostEntry(host);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException(
                     $"[osc] oscSend: could not resolve host '{host}': {ex.Message}");
             }
+            // Phase 44 review WR-03: Dns.GetHostEntry can return an
+            // IPHostEntry with an empty AddressList (e.g. an IPv6-only
+            // host with IPv6 disabled, or a misconfigured DNS server
+            // returning success with no A records). The previous code's
+            // entry.AddressList[0] would throw IndexOutOfRangeException
+            // which the surrounding catch then rewrapped misleadingly as
+            // "could not resolve host '...': Index was outside the bounds
+            // of the array". Detect the empty case OUTSIDE the catch and
+            // surface a composer-readable error.
+            if (entry.AddressList.Length == 0)
+                throw new InvalidOperationException(
+                    $"[osc] oscSend: hostname '{host}' resolved but returned no IP addresses");
+            addr = entry.AddressList[0];
         }
         // Rug.Osc 1.2.5 quirk: the 2-arg ctor (IPAddress, int port) binds
         // the sender's LOCAL port to the same value as the remote port,
