@@ -3,7 +3,10 @@ using FlowLang.Core;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.DSP;
+#if !FLOW_WEB
+// Phase 47 D-47-08: SFZ namespace stripped from Web build (Plan 47-01 strip-list).
 using FlowLang.StandardLibrary.Audio.Sfz;
+#endif
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.StandardLibrary.Harmony;
@@ -166,7 +169,16 @@ public static class SongRenderer
         // execution falls through to the existing Phase 29 dispatch verbatim).
         if (synthType.StartsWith("sampler:", StringComparison.Ordinal))
         {
+#if !FLOW_WEB
             return RenderSongWithSfz(song, synthType);
+#else
+            // Phase 47 D-47-08: SFZ subsystem stripped on Web target. Composers
+            // who reach this branch on Web bypassed the ModuleLoader gate
+            // somehow (e.g. direct API call with "sampler:NAME") — charitable
+            // failure with a target-aware message pointing at the right fix.
+            throw new InvalidOperationException(
+                $"sampler:NAME dispatch requires Desktop target — build with FlowTarget=Desktop to enable SFZ.");
+#endif
         }
 
         // Phase 29 REQ-4 — eager-load instrument samples for this song. Idempotent
@@ -542,11 +554,15 @@ public static class SongRenderer
         return (MixVoicesToStereoBuffer(allVoices, bpm, DefaultSampleRate, maxBeats), timelineMap);
     }
 
+#if !FLOW_WEB
     /// <summary>
     /// Phase 33 D-13 — handles the <c>sampler:NAME</c> dispatch branch from
     /// <see cref="RenderSong"/>. Resolves <paramref name="synthType"/> (which
     /// must start with <c>"sampler:"</c>) against the active engine's
     /// <see cref="FlowLang.Runtime.ExecutionContext.SfzPatchRegistry"/>:
+    ///
+    /// Phase 47 D-47-08: stripped on Web target (SfzData/SfzRenderer types
+    /// absent there).
     ///
     /// <list type="bullet">
     ///   <item><description>If the engine is not running or the patch name is
@@ -714,6 +730,7 @@ public static class SongRenderer
             return _renderer.Render(note, sampleRate, durationBeats, bpm, _patch, SectionPan);
         }
     }
+#endif // !FLOW_WEB — Phase 47 D-47-08 SFZ dispatch + adapter stripped on Web target.
 
     /// <summary>
     /// Concatenates two AudioBuffers end-to-end via Array.Copy.

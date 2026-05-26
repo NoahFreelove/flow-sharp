@@ -74,6 +74,7 @@ public sealed class AudioPlaybackManager : IDisposable
     {
         try
         {
+#if !FLOW_WEB
             // On macOS, prefer CoreAudio (AudioToolbox.framework is always present on
             // a standard install). Fall through to PulseAudio for the rare case where
             // a composer runs PulseAudio under Homebrew on a Mac.
@@ -83,6 +84,13 @@ public sealed class AudioPlaybackManager : IDisposable
             // On Linux (and other non-macOS platforms), PulseAudio Simple covers both
             // native PulseAudio and PipeWire's compatibility layer.
             return PulseAudioSimpleBackend.IsAvailable();
+#else
+            // Phase 47 D-47-08: PulseAudio + CoreAudio backends stripped from
+            // Web build. The WebAudioBackend stub is unavailable for playback
+            // until Phase 48 — IsAudioAvailable returns false so feature
+            // detection is honest about the gap.
+            return WebAudioBackend.IsAvailable();
+#endif
         }
         catch
         {

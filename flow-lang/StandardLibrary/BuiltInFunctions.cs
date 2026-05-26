@@ -1024,7 +1024,15 @@ public static class BuiltInFunctions
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
         Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
         Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
+#if !FLOW_WEB
+        // Phase 47 D-47-08: Audio/InputFunctions.cs is csproj-stripped on Web
+        // (per Plan 47-01) because it depends on PulseAudioCaptureBackend.cs
+        // which is itself a P/Invoke target unavailable in browser sandbox.
+        // (micBuffer) is composer-invoked, so Web-target composers see a
+        // "Function not found" error if they call it; the v1.6 backlog item
+        // is to add a getUserMedia-backed WebMicBuffer surface here.
         Audio.InputFunctions.RegisterContextDependent(registry, context);  // Phase 44 Plan 44-07 — strict-mode advisory elevation
+#endif
         // Phase 35 Plan 35-04 TEST-01 — (test "name" body) defers via Lazy<Void>
         // wrap (Pitfall 10 LOAD-BEARING) + 5 assertion primitives. Context-
         // dependent because (test ...) appends a TestRecord to

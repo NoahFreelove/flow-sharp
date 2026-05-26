@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using FlowLang.Core;
 using FlowLang.Runtime;
+#if !FLOW_WEB
+// Phase 47 D-47-08: SFZ namespace stripped from Web build (Plan 47-01 strip-list).
 using FlowLang.StandardLibrary.Audio.Sfz;
+#endif
 
 namespace FlowLang.StandardLibrary.TestFramework;
 
@@ -55,9 +58,15 @@ public sealed record TestSnapshot
 
     // 7-10. Phase 33 SFZ statics — SfzEnabled + SfzInstruments +
     //       SfzPatchRegistry + SfzDiagnostics + ResolvedSfzRoot.
+    // Phase 47 D-47-08: SfzData type is stripped from Web build, so the
+    //   SfzPatchRegistry shape uses #if to avoid type-resolution errors.
+    //   The other SFZ-state fields use builtin types (bool / Value / string)
+    //   and survive across both targets.
     public required bool SfzEnabled { get; init; }
     public required IReadOnlyDictionary<Value, string> SfzInstruments { get; init; }
+#if !FLOW_WEB
     public required IReadOnlyDictionary<string, SfzData> SfzPatchRegistry { get; init; }
+#endif
     public required IReadOnlySet<string> SfzDiagnostics { get; init; }
     public required string? ResolvedSfzRoot { get; init; }
 
