@@ -544,12 +544,17 @@ Plans:
 **Acceptance**: `dotnet build flow-lang -p:FlowTarget=Web` succeeds with no errors. Resulting assembly contains zero references to `libpulse-simple`/`AudioToolbox`/`Rug.Osc`/`FileSystemWatcher`/`RtMidi.Core` (verified via `ildasm` or `Mono.Cecil` reference scan in the test). `dotnet build flow-lang -p:FlowTarget=Desktop` (default) preserves byte-identical behavior for every existing test under the v1.5 two-run cmp-clean determinism contract (Phase 28 RMS baselines + 287/287 test fixtures + every `tests/test_*.flow` script). Web-target assembly size measured + recorded as Plan 47-05 baseline for Phase 48 budget tracking.
 
 **Depends on**: Nothing (Phase 47 is a pure refactor of build-time conditioning). Foundation for Phase 48 (which needs the FLOW_WEB define to ship its WebAudioBackend implementation). Phase 47 ↔ Phase 49 are commutative; we order 47 first because Phase 48 depends on it and Phase 49 consumes Phase 48.
-**Requirements**: TBD (defined at plan-phase — anchor candidates: REQ-WEB-TARGET-01..08 for the 8 strip-list items, REQ-WEB-TARGET-09 for IAudioBackend probing, REQ-WEB-TARGET-10 for assembly-reference scan acceptance test).
-**Plans:** 0 plans
+**Requirements**: REQ-WEB-TARGET-01..10 (closed progressively across Plans 47-01..47-06; 47-01 closed REQ-WEB-TARGET-01..03, 47-02 closed REQ-WEB-TARGET-04 + REQ-WEB-TARGET-09).
+**Plans:** 2 of 6 complete
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 47 to break down)
+- [x] 47-01 — MSBuild FlowTarget=Desktop|Web conditioning foundation (commits `635cbda` + `883c894`)
+- [x] 47-02 — WebAudioBackend stub + AudioPlaybackManager Web-first probe (commits `7021d8a` + `156dbd4` + `ba4d3fb`)
+- [ ] 47-03 — FlowEngine + ExecutionContext + Value + SongRenderer + TestSnapshot #if !FLOW_WEB guards (closes remaining 13 Web errors)
+- [ ] 47-04 — DryWetMidi WASM-compat smoke + [FlowTargetFact] attribute + Desktop-only tag sweep
+- [ ] 47-05 — Mono.Cecil AssemblyReferenceScanTests
+- [ ] 47-06 — Phase 47 closer (ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep)
 
 ### Phase 48: WASM Runtime + WebAudioBackend
 
