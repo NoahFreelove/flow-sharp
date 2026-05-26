@@ -128,7 +128,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [ ] **Phase 41: Reach + v1.5 Closer** — WASM playground (Mono-WASM jiterpreter, ≤15 MB compressed), cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal)
 - [x] **Phase 42: Type System & Stdlib Audit** — Reflective audit of FlowType ↔ FunctionSignature graph + clamp/advisory/charitable inventory + .flow caller cross-reference; ships `42-AUDIT.md` deliverable with 7 gap-class sections + 53 routing tags (→ Phase 43 module/naming, → Phase 44 strict-mode Axis B sites, → v1.6-backlog); anchor finding: `BeatType` is the sole coercible orphan. **Zero production code touched — read-only audit phase** (invariant gate-enforced via empty production diff). Closed 9 REQ-AUDIT-NN across 4 plans; 26/26 Phase 42 fixtures GREEN. (completed 2026-05-24)
 - [x] **Phase 43: Module Names & Qualified Imports** — file-level `module math` declaration + qualified `math.sin` access; depends on Phase 42 AUDIT.md §1/§2/§5a routing (completed 2026-05-24)
-- [ ] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites
+- [x] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites (completed 2026-05-25)
 
 ### Phase Details
 
@@ -346,7 +346,7 @@ Plans:
 | 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
-| 44. Strict Mode | v1.5 | 11/12 | In Progress|  |
+| 44. Strict Mode | v1.5 | 12/12 | Complete   | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 0/0 | Not started | - |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 
@@ -407,7 +407,7 @@ Plans:
 
 **Depends on**: Phase 42 (audit provides the clamp/advisory site inventory needed to confidently enumerate Axis B sites — missing any one regresses the strict contract). Phase 43 optional but useful for organizing strict-mode test files.
 **Requirements**: REQ-STRICT-01, REQ-STRICT-02, REQ-STRICT-03, REQ-STRICT-04, REQ-STRICT-05, REQ-STRICT-06, REQ-STRICT-07, REQ-STRICT-08, REQ-STRICT-09, REQ-STRICT-10, REQ-STRICT-11, REQ-STRICT-12, REQ-STRICT-13, REQ-STRICT-14, REQ-STRICT-15
-**Plans:** 11/12 plans executed
+**Plans:** 12/12 plans complete
 
 Plans:
 
@@ -439,7 +439,7 @@ Plans:
 
 **Wave 6** *(blocked on Wave 5 completion)*
 
-- [ ] 44-11-PLAN.md — tests/strict/ positive .flow suite + showcase_strict.flow + Phase44TwoRunDeterminismTests + StrictFlowScriptSuiteTests (REQ-STRICT-14, REQ-STRICT-15)
+- [x] 44-11-PLAN.md — tests/strict/ positive .flow suite + showcase_strict.flow + Phase44TwoRunDeterminismTests + StrictFlowScriptSuiteTests (REQ-STRICT-14, REQ-STRICT-15)
 
 ### Phase 45: Beat Literal Syntax & True-to-Sig Pragma
 
