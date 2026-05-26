@@ -20,7 +20,10 @@ namespace FlowLang.Tests.Phase35;
 /// RED state: Plan 35-05's EvaluateMatch returns silent Void with no pragma
 /// awareness. Task 4 wires the pragma lookup at the marker comment.
 /// </summary>
-[Collection("RenderingDiagnostics")]
+// Joins "FlowScripts" so this class serializes with every other test that
+// calls RenderingDiagnostics.ResetForTesting() (Phase23/32/33/36) — see
+// MatchExhaustivenessDefaultTests.cs for rationale.
+[Collection("FlowScripts")]
 public class MatchExhaustivePragmaTests
 {
     [Fact]

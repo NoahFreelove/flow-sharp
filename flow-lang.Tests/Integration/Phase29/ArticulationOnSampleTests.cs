@@ -202,18 +202,25 @@ public class ArticulationOnSampleTests
                 noteName: 'C', octave: 4, alteration: 0,
                 durationValue: 4, isRest: false, velocity: 0.7, articulation: art);
             var buf = renderer.Render(note, SampleRate, DurationBeats, Bpm, RenderTuning.Default);
-            Assert.Equal(ExpectedFrames, buf.Frames);
+            // Phase 37 PIANO-01 added a post-authored tail window (default 1.5s) on top
+            // of the authored duration, so buf.Frames is now ExpectedFrames + tail. The
+            // envelope-shape assertion below intentionally only looks at the authored
+            // window — the tail beyond is natural sample decay, not envelope shape.
+            Assert.True(buf.Frames >= ExpectedFrames,
+                $"Expected >= {ExpectedFrames} frames (authored), got {buf.Frames}");
 
             // Audible-content ratio: highest frame index with |sample| > threshold,
-            // divided by total frames. This catches the envelope's release/cutoff
+            // divided by AUTHORED frames. This catches the envelope's release/cutoff
             // shape — Staccato/Marcato drop to silence early; others hold until the
-            // sample's natural decay or the release ramp.
+            // sample's natural decay or the release ramp. Scan limited to the authored
+            // window (Phase 37 PIANO-01 tail is post-envelope sample decay).
+            int scanLimit = Math.Min(buf.Frames, ExpectedFrames);
             int lastAudible = 0;
-            for (int i = 0; i < buf.Frames; i++)
+            for (int i = 0; i < scanLimit; i++)
             {
                 if (Math.Abs(buf.Data[i]) > AudibleThreshold) lastAudible = i + 1;
             }
-            double ratio = lastAudible / (double)buf.Frames;
+            double ratio = lastAudible / (double)ExpectedFrames;
 
             Assert.InRange(ratio, minRatio, maxRatio);
         }

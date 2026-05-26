@@ -74,8 +74,43 @@ public record FunctionSignature(
 
     /// <summary>
     /// Checks if the given argument types match this signature.
+    ///
+    /// <para>
+    /// Phase 44 Plan 44-03 (D-01 + RESEARCH Pitfall 1): when
+    /// <paramref name="strictMode"/> is <c>true</c>, the two implicit-conversion
+    /// clauses are DROPPED from the per-slot acceptance test:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><c>argTypes[i].CanConvertTo(InputTypes[i])</c> — numeric
+    ///         widening (Int → Long → Float → Double). The naive "+100 tier"
+    ///         clause.</item>
+    ///   <item><c>InputTypes[i].IsCompatibleWith(argTypes[i])</c> — inverse
+    ///         direction music-type widening (e.g.,
+    ///         <c>Semitone.IsCompatibleWith(Int) = true</c> makes
+    ///         <c>(transpose seq 2)</c> match
+    ///         <c>transpose(Sequence, Semitone)</c> in non-strict). This is
+    ///         the most-dangerous Pitfall 1 landmine — a naive read of
+    ///         "+100 tier" would miss this clause and silently leave strict
+    ///         test fixtures passing on the inverse-direction path.</item>
+    /// </list>
+    /// <para>
+    /// Strict mode preserves the exact (+1000) tier
+    /// (<c>argTypes[i].Equals(InputTypes[i])</c>) and the compatible (+500)
+    /// tier (<c>argTypes[i].IsCompatibleWith(InputTypes[i])</c>). Scoring is
+    /// UNCHANGED (see <see cref="CalculateSpecificity"/>) — strict only
+    /// filters acceptance, not scoring. This preserves the ambiguous-overload
+    /// diagnostic in <see cref="OverloadResolver"/> (Pattern 4 rationale).
+    /// </para>
+    /// <para>
+    /// Default <c>strictMode = false</c> preserves byte-identical behavior at
+    /// every existing call site; <see cref="OverloadResolver.Resolve"/>
+    /// threads the bit through from <see cref="Runtime.ExecutionContext.ResolveFunction"/>
+    /// which reads <see cref="Runtime.ExecutionContext.StrictMode"/> (the
+    /// currently-executing frame's strict bit, set by Plan 44-02's per-proc
+    /// push/pop in <c>Interpreter.ExecuteUserFunctionWithCaptures</c>).
+    /// </para>
     /// </summary>
-    public bool Matches(IReadOnlyList<FlowType> argTypes)
+    public bool Matches(IReadOnlyList<FlowType> argTypes, bool strictMode = false)
     {
         if (IsVarArgs)
         {
@@ -86,12 +121,8 @@ public record FunctionSignature(
             // Check fixed parameters
             for (int i = 0; i < InputTypes.Count - 1; i++)
             {
-                if (!argTypes[i].IsCompatibleWith(InputTypes[i])
-                    && !argTypes[i].CanConvertTo(InputTypes[i])
-                    && !InputTypes[i].IsCompatibleWith(argTypes[i]))
-                {
+                if (!SlotMatches(argTypes[i], InputTypes[i], strictMode))
                     return false;
-                }
             }
 
             // Check varargs parameters (if any)
@@ -102,12 +133,8 @@ public record FunctionSignature(
                 {
                     for (int i = InputTypes.Count - 1; i < argTypes.Count; i++)
                     {
-                        if (!argTypes[i].IsCompatibleWith(arrayType.ElementType)
-                            && !argTypes[i].CanConvertTo(arrayType.ElementType)
-                            && !arrayType.ElementType.IsCompatibleWith(argTypes[i]))
-                        {
+                        if (!SlotMatches(argTypes[i], arrayType.ElementType, strictMode))
                             return false;
-                        }
                     }
                 }
             }
@@ -122,16 +149,41 @@ public record FunctionSignature(
 
             for (int i = 0; i < InputTypes.Count; i++)
             {
-                if (!argTypes[i].IsCompatibleWith(InputTypes[i])
-                    && !argTypes[i].CanConvertTo(InputTypes[i])
-                    && !InputTypes[i].IsCompatibleWith(argTypes[i]))
-                {
+                if (!SlotMatches(argTypes[i], InputTypes[i], strictMode))
                     return false;
-                }
             }
 
             return true;
         }
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-03 — shared per-slot acceptance helper.
+    /// <para>
+    /// Non-strict accepts when ANY of three clauses holds:
+    /// <c>IsCompatibleWith</c> (compatible +500 tier),
+    /// <c>CanConvertTo</c> (numeric widening clause a),
+    /// inverse <c>IsCompatibleWith</c> (music-type widening clause b).
+    /// </para>
+    /// <para>
+    /// Strict accepts ONLY when arg equals param OR
+    /// <c>arg.IsCompatibleWith(param)</c>. Both implicit-conversion clauses
+    /// (CanConvertTo + inverse IsCompatibleWith) are dropped. See
+    /// <see cref="Matches(IReadOnlyList{FlowType}, bool)"/> XML doc for the
+    /// full Pitfall 1 rationale.
+    /// </para>
+    /// </summary>
+    private static bool SlotMatches(FlowType argType, FlowType paramType, bool strictMode)
+    {
+        bool exactOrCompat = argType.Equals(paramType)
+                          || argType.IsCompatibleWith(paramType);
+        if (strictMode)
+        {
+            return exactOrCompat;
+        }
+        return exactOrCompat
+            || argType.CanConvertTo(paramType)
+            || paramType.IsCompatibleWith(argType);
     }
 
     /// <summary>
