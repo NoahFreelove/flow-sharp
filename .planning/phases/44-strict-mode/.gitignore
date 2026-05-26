@@ -1,0 +1,4 @@
+# Phase 44 Plan 44-00 — re-runnable extractor output.
+# Re-emitted by scripts/audit/strict-site-grep.sh on every invocation.
+# The curated source-of-truth manifest is strict-error-manifest.csv (committed).
+strict-site-raw.txt
