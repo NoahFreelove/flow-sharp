@@ -90,6 +90,25 @@
            it's not reflection-heavy and reachability analysis already covers it
            through FlowEngine's static call chain. -->
       <TrimmerRootDescriptor Include="wasm\trim-roots.xml" />
+      <!-- Phase 48 Plan 48-04: ship the runtime ES module + dev-smoke harness into
+           the AppBundle. flow-runtime.js sits next to dotnet.js at publish time —
+           the runtime's top-of-file relative `import '../_framework/dotnet.js'`
+           resolves correctly from AppBundle/wasm/flow-runtime.js. index.html is
+           dev-only; bundle consumers (Phase 49 SvelteKit) ignore it. -->
+      <None Update="wasm\flow-runtime.js">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <None Update="wasm\index.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <!-- trim-roots.xml is referenced by <TrimmerRootDescriptor> above at
+           BUILD time only — explicitly skip copying it to the publish output
+           so it doesn't bloat the AppBundle. -->
+      <None Update="wasm\trim-roots.xml">
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </None>
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
