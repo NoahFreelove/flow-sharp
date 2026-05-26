@@ -332,7 +332,7 @@ public class Interpreter : IFunctionInvoker
                     break;
             }
 
-            _context.CurrentFrame.MusicalContext = musicalCtx;
+            _context.SetCurrentFrameMusicalContext(musicalCtx);
 
             foreach (var stmt in ctx.Body)
             {

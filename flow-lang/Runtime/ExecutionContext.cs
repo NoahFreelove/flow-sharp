@@ -28,6 +28,18 @@ public class ExecutionContext
         set => _maxIterations = value > 0 ? value : throw new ArgumentException("MaxIterations must be positive");
     }
 
+    /// <summary>
+    /// Bundle E (quick task 260524-sa3) — memoizes the result of <see cref="GetMusicalContext"/>
+    /// between mutation events. Invalidated by any call to <see cref="PushFrame"/> /
+    /// <see cref="PopFrame"/> / <see cref="PushTuning"/> / <see cref="PopTuning"/> /
+    /// <see cref="SetFileScopeTuning"/> / <see cref="ResetBlockTuningStack"/> /
+    /// <see cref="SetCurrentFrameMusicalContext"/>, and by <see cref="RestoreState"/>
+    /// during hermetic-test boundaries. SAFE because the read-only-return contract holds
+    /// (audit recorded in 260524-sa3-PLAN.md &lt;invalidation_surface_audit&gt;) — no caller
+    /// of <see cref="GetMusicalContext"/> mutates the returned <see cref="MusicalContext"/>.
+    /// </summary>
+    private MusicalContext? _cachedMusicalContext;
+
     // ===== Random Number Generation State =====
     
     public int FixedRandSeed { get; set; } = 0;
@@ -453,6 +465,7 @@ public class ExecutionContext
 
         var newFrame = new StackFrame(CurrentFrame);
         _callStack.Push(newFrame);
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -465,6 +478,7 @@ public class ExecutionContext
 
         _callStack.Pop();
         _callDepth--;
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -539,6 +553,13 @@ public class ExecutionContext
     /// </summary>
     public MusicalContext GetMusicalContext()
     {
+        // Bundle E (260524-sa3) — cached fast-return. Invalidation is wired at every
+        // mutation entry point (PushFrame / PopFrame / PushTuning / PopTuning /
+        // SetFileScopeTuning / ResetBlockTuningStack / SetCurrentFrameMusicalContext /
+        // RestoreState) so a non-null cache is guaranteed to equal a fresh resolution.
+        if (_cachedMusicalContext != null)
+            return _cachedMusicalContext;
+
         var resolved = new MusicalContext();
         bool tuningResolved = false;
         foreach (var frame in _callStack)
@@ -590,7 +611,27 @@ public class ExecutionContext
             : 120.0;
         resolved.TimeSignature ??= ParseTimesigOrDefault(FlowConfig.Active.DefaultTimesig);
         resolved.Swing ??= 0.5;
+        _cachedMusicalContext = resolved;
         return resolved;
+    }
+
+    /// <summary>
+    /// Bundle E (260524-sa3) — drops the memoized <see cref="GetMusicalContext"/> result.
+    /// See <see cref="_cachedMusicalContext"/> for the invalidation contract.
+    /// </summary>
+    private void InvalidateMusicalContextCache() => _cachedMusicalContext = null;
+
+    /// <summary>
+    /// Bundle E (260524-sa3) — the single chokepoint used by
+    /// <see cref="FlowLang.Interpreter.Interpreter"/>'s <c>ExecuteMusicalContext</c>
+    /// branch (Interpreter.cs:335) to write the just-pushed frame's
+    /// <see cref="StackFrame.MusicalContext"/>. The wrapper keeps the cache-invalidation
+    /// discipline LOCAL to <see cref="ExecutionContext"/> so callers cannot forget it.
+    /// </summary>
+    public void SetCurrentFrameMusicalContext(MusicalContext? musicalContext)
+    {
+        CurrentFrame.MusicalContext = musicalContext;
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -680,6 +721,7 @@ public class ExecutionContext
         while (stack.Count > 0)
             stack.Pop();
         stack.Push(renderTuning);
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -694,6 +736,7 @@ public class ExecutionContext
         if (CurrentFrame.MusicalContext == null)
             CurrentFrame.MusicalContext = new MusicalContext();
         CurrentFrame.MusicalContext.TuningStack.Push(renderTuning);
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -708,6 +751,7 @@ public class ExecutionContext
             throw new InvalidOperationException(
                 "PopTuning called with an empty TuningStack — push/pop must be balanced (Phase 32 D-12).");
         CurrentFrame.MusicalContext.TuningStack.Pop();
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -726,6 +770,7 @@ public class ExecutionContext
         var stack = GlobalFrame.MusicalContext.TuningStack;
         while (stack.Count > 1)
             stack.Pop();
+        InvalidateMusicalContextCache();
     }
 
     /// <summary>
@@ -884,6 +929,7 @@ public class ExecutionContext
 
         // 6. Musical-context stack on the global frame.
         GlobalFrame.MusicalContext = snap.GlobalFrameMusicalContext;
+        InvalidateMusicalContextCache();
 
         // 7-10. Phase 33 SFZ statics.
         SfzEnabled = snap.SfzEnabled;
