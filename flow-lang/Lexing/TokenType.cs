@@ -65,6 +65,7 @@ public enum TokenType
     HertzLiteral,       // 800Hz, 1.5kHz (Phase 26.2 ERG-04)
     ChordLiteral,       // Cmaj7, Dm, Gsus4
     SymbolLiteral,      // #foo (Phase 26.1 SYM-01) — the leading '#' is a token boundary; lexeme is the body without '#'
+    BeatLiteral,        // 0.5b, 2b, +1b, -2b (Phase 45 D-06/D-07) — eval-time pragma multiplier in ExpressionEvaluator.EvaluateBeatLiteral
     InterpolatedStringStart,   // $"
     InterpolatedStringEnd,     // " (closing an interpolated string)
     InterpolatedStringText,    // Text segments between { } in interpolated strings
