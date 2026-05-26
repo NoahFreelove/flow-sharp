@@ -132,26 +132,36 @@ public static class InputFunctions
     /// </summary>
     private static AudioBuffer? MicBuffer(double durationSeconds, FlowLang.Runtime.ExecutionContext? ctx)
     {
-        // (1) Always emit the attenuation advisory — composer must know feedback
-        //     guard is engaged (UI-SPEC line 335).
-        // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+        // Phase 44 review WR-04: short-circuit zero-duration before any
+        // advisory — (micBuffer 0s) is a composer no-op (no device opened,
+        // no feedback risk), so neither the WarnOnce advisory nor the
+        // [strict] error should fire.
+        if (durationSeconds <= 0.0)
+        {
+            return new AudioBuffer(0, DefaultChannels, TargetSampleRate);
+        }
+
+        // (1) Emit the attenuation advisory — composer must know feedback
+        //     guard is engaged (UI-SPEC line 335). Phase 44 review CR-03:
+        //     gate the [strict] elevation on StrictAdvisoryDedup so hot
+        //     loops (every 50ms in a `live` block) report at most once per
+        //     process — parallel to the WarnOnce sentinel dedup in the
+        //     non-strict path.
         if (ctx is not null && ctx.CallerStrictMode)
         {
-            ctx.ErrorReporter.ReportError(
-                $"[strict] [audio-in] mic stream attenuated -20 dB on open at {ctx.CurrentCallSite}",
-                ctx.CurrentCallSite);
+            const string sentinel = "audio-in-attenuate:open";
+            if (ctx.StrictAdvisoryDedup.Add(sentinel))
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [audio-in] mic stream attenuated -20 dB on open at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
         }
         else
         {
             RenderingDiagnostics.WarnOnce(
                 "audio-in-attenuate:open",
                 "[audio-in] mic stream attenuated -20 dB on open to prevent feedback");
-        }
-
-        if (durationSeconds <= 0.0)
-        {
-            // Zero-duration capture is a composer no-op (e.g. (micBuffer 0s)).
-            return new AudioBuffer(0, DefaultChannels, TargetSampleRate);
         }
 
         int channels = DefaultChannels;
@@ -182,11 +192,16 @@ public static class InputFunctions
         if (nativeRate != TargetSampleRate)
         {
             // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            // Phase 44 review CR-03: gate strict elevation on dedup set.
             if (ctx is not null && ctx.CallerStrictMode)
             {
-                ctx.ErrorReporter.ReportError(
-                    $"[strict] [audio-in] resampling capture stream from {nativeRate} Hz to {TargetSampleRate} Hz (linear interpolation) at {ctx.CurrentCallSite}",
-                    ctx.CurrentCallSite);
+                var sentinel = $"audio-in-resample:{nativeRate}";
+                if (ctx.StrictAdvisoryDedup.Add(sentinel))
+                {
+                    ctx.ErrorReporter.ReportError(
+                        $"[strict] [audio-in] resampling capture stream from {nativeRate} Hz to {TargetSampleRate} Hz (linear interpolation) at {ctx.CurrentCallSite}",
+                        ctx.CurrentCallSite);
+                }
             }
             else
             {

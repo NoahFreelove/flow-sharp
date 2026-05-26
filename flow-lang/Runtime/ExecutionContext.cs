@@ -495,6 +495,33 @@ public class ExecutionContext
     public bool CallerStrictMode { get; set; } = false;
 
     /// <summary>
+    /// Phase 44 review CR-03 — per-process dedup set for strict-elevated
+    /// advisory sites. Mirrors the WarnOnce sentinel discipline used by
+    /// <see cref="Diagnostics.RenderingDiagnostics"/>: every strict-elevation
+    /// site that historically emitted <c>RenderingDiagnostics.WarnOnce(key, body)</c>
+    /// in the non-strict path should now gate its
+    /// <see cref="ErrorReporter.ReportError"/> on
+    /// <c>!ctx.StrictAdvisoryDedup.Add(sentinelKey)</c> so each strict error
+    /// is reported AT MOST ONCE per ExecutionContext lifetime.
+    ///
+    /// <para>Without this gate, hot-loop sites — <c>(micBuffer 0.05s)</c>
+    /// inside a <c>live</c> block, every grain in
+    /// <c>(granular buf grain=1ms ...)</c>, every bar processed by
+    /// <c>(every 4 cb seq)</c> with a degenerate sequence — produce one
+    /// strict error per call within seconds the reporter buries any real
+    /// problem the composer was looking for.</para>
+    ///
+    /// <para>The dedup pairs with the existing
+    /// <c>RenderingDiagnostics.WarnOnce(_emitted)</c> set: same sentinel key
+    /// gates BOTH paths so the composer sees exactly one diagnostic per
+    /// process per (key, mode) pair. Reset via
+    /// <see cref="ErrorReporter.Clear"/>-adjacent <c>RestoreState</c>
+    /// boundary is intentionally NOT performed — composer-facing dedup is
+    /// per-process by design (matches WarnOnce's <c>_emitted</c> lifetime).</para>
+    /// </summary>
+    public HashSet<string> StrictAdvisoryDedup { get; } = new();
+
+    /// <summary>
     /// Phase 33 — 19-entry GM-orchestral Symbol → relative-path map populated
     /// from <c>flow-lang/sfz.flow</c> via <c>__enableSfzModule</c> per CONTEXT
     /// D-09 / D-11 (the dict lives in Flow source, not C#, so composers can
@@ -1222,5 +1249,15 @@ public class ExecutionContext
         // purpose. We piggyback on them rather than maintaining duplicates.
         FlowLang.StandardLibrary.Audio.Synthesizers.SynthUtils.ResetNoiseRng();
         FlowLang.Diagnostics.RenderingDiagnostics.ResetForTesting();
+
+        // Phase 44 review CR-03 — per-test reset of the strict-advisory dedup
+        // set. Mirrors the RenderingDiagnostics.ResetForTesting call above so
+        // strict-elevated advisories see the same "fresh slate per test" the
+        // WarnOnce sentinels enjoy. Without this, the FIRST test to fire a
+        // strict-elevated site would record it and subsequent tests asserting
+        // the same site fires would see ZERO errors (the dedup hides the
+        // emission). Per-process dedup is the composer-facing contract; tests
+        // need per-engine isolation.
+        StrictAdvisoryDedup.Clear();
     }
 }

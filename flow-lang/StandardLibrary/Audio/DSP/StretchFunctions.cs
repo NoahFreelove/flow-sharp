@@ -163,16 +163,23 @@ public static class StretchFunctions
     private static StretchMode FallbackToAuto(string sym, ExecutionContext ctx)
     {
         // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        // Phase 44 review CR-03: dedup strict-elevated advisory per
+        // ExecutionContext lifetime — hot stretch callers must not
+        // accumulate one ErrorReporter entry per call.
+        var sentinel = $"stretch:mode:{sym}";
         if (ctx.CallerStrictMode)
         {
-            ctx.ErrorReporter.ReportError(
-                $"[strict] [stretch] unknown mode symbol '#{sym}' — falling back to #auto. " +
-                "Valid options: #vocoder | #psola | #auto.",
-                ctx.CurrentCallSite);
+            if (ctx.StrictAdvisoryDedup.Add(sentinel))
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [stretch] unknown mode symbol '#{sym}' — falling back to #auto. " +
+                    "Valid options: #vocoder | #psola | #auto.",
+                    ctx.CurrentCallSite);
+            }
             return StretchMode.Auto;
         }
         RenderingDiagnostics.WarnOnce(
-            $"stretch:mode:{sym}",
+            sentinel,
             $"[stretch] unknown mode symbol '#{sym}' — falling back to #auto. " +
             "Valid options: #vocoder | #psola | #auto.");
         return StretchMode.Auto;

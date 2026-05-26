@@ -135,15 +135,25 @@ public static class PatternFunctions
     private static bool IsEmptySeqAdvisory(SequenceData seq, string name, ExecutionContext ctx)
     {
         if (seq.Bars.Count > 0) return false;
+        // Phase 44 review CR-03: dedup strict-elevated advisory per
+        // ExecutionContext lifetime. Each combinator-name + call-site pair
+        // emits at most one [strict] error per process — mirrors the WarnOnce
+        // sentinel discipline in the non-strict path. Critical because higher-
+        // order combinators (`each chunks (fn s => (every 4 cb s))` with
+        // some degenerate chunk) record one strict error per iteration.
+        var sentinel = $"{name}:empty:{ctx.CurrentCallSite}";
         if (ctx.CallerStrictMode)
         {
-            ctx.ErrorReporter.ReportError(
-                $"[strict] [{name}] empty sequence at {ctx.CurrentCallSite}",
-                ctx.CurrentCallSite);
+            if (ctx.StrictAdvisoryDedup.Add(sentinel))
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [{name}] empty sequence at {ctx.CurrentCallSite}",
+                    ctx.CurrentCallSite);
+            }
             return true;
         }
         RenderingDiagnostics.WarnOnce(
-            $"{name}:empty:{ctx.CurrentCallSite}",
+            sentinel,
             $"[{name}] empty sequence at {ctx.CurrentCallSite}; returned unchanged");
         return true;
     }

@@ -152,16 +152,25 @@ public static class GranularFunctions
     private static WindowKind FallbackToHann(string sym, ExecutionContext ctx)
     {
         // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        // Phase 44 review CR-03: dedup strict-elevated advisory per
+        // ExecutionContext lifetime, mirroring the WarnOnce sentinel in
+        // the non-strict path. Without this, every grain in
+        // `(granular buf grain=1ms ...)` would record a fresh
+        // ErrorReporter entry.
+        var sentinel = $"granular:windowing:{sym}";
         if (ctx.CallerStrictMode)
         {
-            ctx.ErrorReporter.ReportError(
-                $"[strict] [granular] unknown windowing symbol '#{sym}' — falling back to #hann. " +
-                "Valid options: #hann | #gaussian | #tukey.",
-                ctx.CurrentCallSite);
+            if (ctx.StrictAdvisoryDedup.Add(sentinel))
+            {
+                ctx.ErrorReporter.ReportError(
+                    $"[strict] [granular] unknown windowing symbol '#{sym}' — falling back to #hann. " +
+                    "Valid options: #hann | #gaussian | #tukey.",
+                    ctx.CurrentCallSite);
+            }
             return WindowKind.Hann;
         }
         RenderingDiagnostics.WarnOnce(
-            $"granular:windowing:{sym}",
+            sentinel,
             $"[granular] unknown windowing symbol '#{sym}' — falling back to #hann. " +
             "Valid options: #hann | #gaussian | #tukey.");
         return WindowKind.Hann;
