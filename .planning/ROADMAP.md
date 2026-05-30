@@ -349,7 +349,7 @@ Plans:
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 6/6 | Complete    | 2026-05-30 |
-| 46. Codebase Bloat Removal | v1.5 | 6/6 | Complete   | 2026-05-30 |
+| 46. Codebase Bloat Removal | v1.5 | 6/6 | Complete    | 2026-05-30 |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
