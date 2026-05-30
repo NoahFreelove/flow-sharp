@@ -4,8 +4,8 @@ milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
 stopped_at: Phase 45 context gathered
-last_updated: "2026-05-26T03:52:00Z"
-last_activity: "2026-05-26 -- Phase 48 Plan 05 shipped (bundle size budget + two-run determinism: BundleSizeBudgetTests measures 3.07 MB Brotli-compressed publish output well under 15 MB D-48-05 target; MONOLITHIC SHIP decision branch selected; 48-BUNDLE-SIZE.md self-generated; WasmDeterminismTests pins D-48-16 two-run cmp-clean via byte-identical RunResult JSON across two RunFromJs calls; Rule 1 auto-fix on BrotliStream leaveOpen=true; 4 new Facts; Phase 48 fixture 19/19 PASS)"
+last_updated: "2026-05-30T02:05:14.160Z"
+last_activity: 2026-05-30
 progress:
   total_phases: 15
   completed_phases: 8
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 48 (WASM Runtime + WebAudioBackend) — Plans 01-05 SHIPPED 2026-05-26; Plans 06-07 pending
+**Current focus:** Phase 45 — beat-literal-syntax-true-to-sig-pragma
 
 ## Current Position
 
-Phase: 48 -- executing
-Plan: 5/7 complete (48-01 + 48-02 + 48-03 + 48-04 + 48-05 shipped)
+Phase: 45 (beat-literal-syntax-true-to-sig-pragma) — EXECUTING
+Plan: 2 of 6
 Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-5 — 48-06 HUMAN-UAT + 48-07 closer)
 
-Status: Phase 48 executing — Plans 01 + 02 + 03 + 04 + 05 closed
-Last activity: 2026-05-26 -- Phase 48 Plan 05 shipped (bundle size budget + two-run determinism: BundleSizeBudgetTests measures 3.07 MB Brotli-compressed publish output well under 15 MB D-48-05 target; MONOLITHIC SHIP decision branch selected; 48-BUNDLE-SIZE.md self-generated; WasmDeterminismTests pins D-48-16 two-run cmp-clean via byte-identical RunResult JSON across two RunFromJs calls; Rule 1 auto-fix on BrotliStream leaveOpen=true; 4 new Facts; Phase 48 fixture 19/19 PASS)
+Status: Ready to execute
+Last activity: 2026-05-30
 
 **Phase 48 Plan 05 highlights (2026-05-26):**
 
@@ -442,6 +442,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 43 P05 | ~Xmin | 2 tasks | 16 files (12 stdlib `.flow` files migrated to `module <name>` per D-07 + notation.flow duplicate-decl cleanup + 43-VERIFICATION.md + ROADMAP + STATE + REQUIREMENTS) |
 | Phase 47 P05 | ~3min | 3 tasks (Task 0 PRE-APPROVED checkpoint + Task 1 csproj edit + Task 2 test file) | 2 files (flow-lang.Tests.csproj +6 lines for Mono.Cecil 0.11.5 PackageReference + AssemblyReferenceScanTests.cs 120 LOC NEW with 2 [FlowTargetFact("Web")] Facts) |
 | Phase 48 P03 | 9m | 3 tasks | 5 files |
+| Phase 45 P02 | 18 | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -623,6 +624,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 48 Plan 03 — Span<byte> + MemoryMarshal.AsBytes workaround for SYSLIB1072: source-generated JS interop supports only Span<byte>/Span<int>/Span<double> for [JSMarshalAs<JSType.MemoryView>]; Float32 marshalling reinterprets via byte view + JS-side new Float32Array(buffer, offset, length/4); zero-copy preserved per RESEARCH §5
 - [Phase ?]: Phase 48 Plan 03 — <AllowUnsafeBlocks>true</AllowUnsafeBlocks> at top-level PropertyGroup (not FlowTarget=Web conditional): [JSImport] source generator emits unsafe marshalling shim on every target; Desktop never EXECUTES it (every callsite OperatingSystem.IsBrowser()-gated per Pattern B)
 - [Phase ?]: Phase 48 Plan 03 — Phase 47 WebAudioBackendStubTests.cs DELETED outright: 3 of 7 facts inverted under Phase 48; 4 still-valid Desktop invariants re-covered in new Phase 48 IntegrationTests
+- [Phase ?]: Phase 45 D-09: Parser emits BeatLiteralExpression own AST record (not flat LiteralExpression) so raw double survives to Wave-4 eval-time multiplier
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -839,7 +841,7 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-26T03:25:45.375Z
+Last session: 2026-05-30T02:05:09.331Z
 Stopped at: Phase 45 context gathered
 Resume file: None
 
