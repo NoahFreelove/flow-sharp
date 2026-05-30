@@ -94,7 +94,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
         }
 
         // Clamp samples to [-1.0, 1.0] to prevent distortion
-        var clamped = ClampSamples(samples);
+        var clamped = AudioUtils.ClampSamples(samples);
 
         // Pin the float array and write in chunks to support cancellation
         var handle = GCHandle.Alloc(clamped, GCHandleType.Pinned);
@@ -263,12 +263,6 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
             _connection = IntPtr.Zero;
         }
     }
-
-    /// <summary>
-    /// Clamp all samples to the valid range [-1.0, 1.0] and handle NaN/Infinity.
-    /// Delegates to the shared AudioUtils implementation.
-    /// </summary>
-    private static float[] ClampSamples(float[] samples) => AudioUtils.ClampSamples(samples);
 
     // --- PulseAudio Simple API P/Invoke bindings ---
 

@@ -186,7 +186,7 @@ public static class PlaybackFunctions
             if (!backend.IsInitialized)
                 backend.Initialize(buffer.SampleRate, buffer.Channels);
 
-            var clamped = ClampSamples(buffer.Data);
+            var clamped = AudioUtils.ClampSamples(buffer.Data);
 
             while (!ct.IsCancellationRequested)
             {
@@ -240,7 +240,7 @@ public static class PlaybackFunctions
             if (!backend.IsInitialized)
                 backend.Initialize(buffer.SampleRate, buffer.Channels);
 
-            var clamped = ClampSamples(buffer.Data);
+            var clamped = AudioUtils.ClampSamples(buffer.Data);
 
             for (int i = 0; i < count && !ct.IsCancellationRequested; i++)
             {
@@ -366,12 +366,6 @@ public static class PlaybackFunctions
                 "No audio output available. Install PipeWire or PulseAudio.");
         }
     }
-
-    /// <summary>
-    /// Clamps samples to [-1.0, 1.0] and handles NaN/Infinity.
-    /// Delegates to the shared AudioUtils implementation.
-    /// </summary>
-    private static float[] ClampSamples(float[] samples) => AudioUtils.ClampSamples(samples);
 
     /// <summary>
     /// Mixes a list of voices into a single AudioBuffer.
