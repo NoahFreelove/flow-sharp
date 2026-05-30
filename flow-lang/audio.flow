@@ -221,11 +221,6 @@ internal proc resetPhase(OscillatorState: state)
 Note: ===== Musical Note utilities =====
 internal proc noteToFrequency(Note: n)
 
-internal proc createSineTone(Double: duration, Double: freq, Double: amp)
-
-Note: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
-internal proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
-
 Note: Granular synthesis with composable jitter PRNG.
 Note: Composer-facing: (granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)
 Note: Returns a Buffer of the SAME length as input (granular is texture, not stretch).
