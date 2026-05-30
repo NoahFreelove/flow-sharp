@@ -1,192 +1,246 @@
 ---
 phase: 45-beat-literal-syntax-true-to-sig-pragma
+verified: 2026-05-29T00:00:00Z
 status: passed
-nyquist_compliant: true
-ships: Nb-beat-literal + beat-true-to-sig-pragma + (beat N)-constructor-migration + 2-composer-tutorials
-production_code_changes: lexer (TokenType + 2 suffix branches + PragmaScanner hyphen) + BeatLiteralExpression AST + Parser arm + ExpressionEvaluator switch arm + ExecutionContext.BeatTrueToSig + FlowEngine.ApplyBeatTrueToSigPragma + ModuleLoader save-set-restore + BeatConstructorFunctions.RegisterContextDependent + str(Beat) overload + ProcDeclaration.IsBeatTrueToSig per-proc capture + Interpreter push/pop
-date: 2026-05-29
-plans_complete: 6
-plans_total: 6
-requirements:
-  - REQ-BEAT-LEX-01
-  - REQ-BEAT-LEX-02
-  - REQ-BEAT-LEX-03
-  - REQ-BEAT-LEX-04
-  - REQ-BEAT-PRAGMA-HYPHEN-01
-  - REQ-BEAT-AST-01
-  - REQ-BEAT-AST-02
-  - REQ-BEAT-AST-03
-  - REQ-BEAT-AST-04
-  - REQ-BEAT-PRAGMA-01
-  - REQ-BEAT-PRAGMA-02
-  - REQ-BEAT-PRAGMA-03
-  - REQ-BEAT-PRAGMA-04
-  - REQ-BEAT-CONSTRUCTOR-01
-  - REQ-BEAT-CONSTRUCTOR-02
-  - REQ-BEAT-TEST-01
-  - REQ-BEAT-TEST-02
-  - REQ-BEAT-TEST-03
-  - REQ-BEAT-TEST-04
-  - REQ-BEAT-TEST-05
-  - REQ-BEAT-TEST-06
-  - REQ-BEAT-TEST-07
-  - REQ-BEAT-DOC-01
-  - REQ-BEAT-DOC-02
-  - REQ-BEAT-DOC-03
-  - REQ-BEAT-DOC-04
-phase_45_fixture_count: 66
-flow_smoke_scripts: 4
-tutorial_files: 2
-committed_baselines: 2
+score: 26/26 must-haves verified
+overrides_applied: 0
+re_verification: false
 ---
 
-# Phase 45: Beat Literal Syntax & True-to-Sig Pragma — Verification
+# Phase 45: Beat Literal Syntax & True-to-Sig Pragma — Independent Verification Report
+
+**Phase Goal:** Close the Beat-ergonomics gap left by Phase 43 by adding (1) first-class `Nb` Beat literal syntax (`0.5b`/`2b`/`-1b`) following the existing `Nms`/`Ns`/`Nc`/`Nst`/`NdB`/`NHz` lexer precedent, and (2) an opt-in, file-scoped, last-wins `enable beat-true-to-sig;` pragma that retunes BOTH `Nb` literals AND the `(beat N)` constructor to the active timesig's beat unit at evaluation/construction time.
 
 **Verified:** 2026-05-29
-**Status:** CLOSED — all 26 REQ-BEAT-NN requirements shipped; 66/66 Phase 45 fixtures GREEN; zero regression to Phase 44 strict (275/275) or Phase 26.1 DICT (33/33).
-**Plans completed:** 6 / 6 (45-01 + 45-02 + 45-03 + 45-04 + 45-05 + 45-06 this closer)
-**Branch:** sequential executor on `dev`.
+**Status:** PASSED — all 26 REQ-BEAT-NN requirements verified independently in the codebase; 66/66 Phase 45 xUnit fixtures GREEN confirmed by running `dotnet test`; 4 smoke scripts PASSED; 2 tutorials produce output and render; WAV baselines SHA-256 match fresh renders.
+**Re-verification:** No — initial independent verification (previous file was executor self-report; this overwrites it).
 
-## Closure Summary
+---
 
-Phase 45 closed the Beat-ergonomics gap Phase 43 left open. Composers can now write Beat values with a first-class `Nb` literal (`0.5b` / `2b` / `-1b`) — matching the rest of the music-type family (`100ms` / `2.5s` / `+50c` / `+2st` / `440Hz`) — and opt into the `enable beat-true-to-sig;` file pragma that retunes both the literal and the `(beat N)` constructor to the active time signature's beat unit.
+## Goal Achievement
 
-- **Wave 1 (45-01):** Lexer foundation — `TokenType.BeatLiteral` + signed/unsigned suffix branches + PragmaScanner hyphen-gap closure.
-- **Wave 2 (45-02 + 45-03):** `BeatLiteralExpression` AST + Parser arm; pragma plumbing (`PragmaRegistry` + `ExecutionContext.BeatTrueToSig` + `FlowEngine.ApplyBeatTrueToSigPragma` + `ModuleLoader` save-set-restore).
-- **Wave 3 (45-04 + 45-05):** `EvaluateBeatLiteral` switch arm + multiplier formula + `str(Beat)` overload; `(beat N)` constructor migration to `RegisterContextDependent` + DICT-01 regression.
-- **Wave 4 (45-06, this closer):** Cross-file boundary pair + 2 composer tutorials + committed WAV baselines + CLAUDE.md edits + tracking sweep + this deliverable. **Plus a Rule 1 fix** that was load-bearing for the cross-file boundary (see §5).
+### Observable Truths
 
-After this phase:
+| # | Truth | Status | Evidence |
+|---|-------|--------|----------|
+| 1 | `Nb` Beat literal syntax (`0.5b`/`2b`/`-1b`) lexes to a single `BeatLiteral` token carrying the parsed double | VERIFIED | `TokenType.BeatLiteral` at `flow-lang/Lexing/TokenType.cs:68`; two `SimpleLexer.cs` branches at lines 632-644 (signed) and 804-816 (unsigned `else if`); `grep -c "TokenType.BeatLiteral" SimpleLexer.cs` = 3 |
+| 2 | Identifier-guard keeps `1bar`/`beats`/`bpm`/`b1`/`Bb`/`B4`/`Bmaj7` from consuming the `b` suffix | VERIFIED | `!char.IsLetter(PeekNext())` guard confirmed in both branches; xUnit `BeatLiteralParserTests` identifier-guard Facts GREEN |
+| 3 | `PragmaScanner` accepts hyphens so `enable beat-true-to-sig;` parses cleanly | VERIFIED | `PragmaScanner.cs:246` widens continuation predicate to `\|\| lineText[p] == '-'`; confirmed `PragmaScannerHyphenTests` GREEN |
+| 4 | `BeatLiteralExpression(SourceLocation, double RawValue, Span?)` AST record exists with Parser arm emitting it | VERIFIED | `flow-lang/Ast/Expressions/BeatLiteralExpression.cs` confirmed; `Parser.cs:1395-1398` `Match(TokenType.BeatLiteral)` arm; `IsArgumentStart` extended at line 2147 |
+| 5 | `EvaluateBeatLiteral` applies multiplier formula `final = pragma_on ? raw × (4.0 / denom) : raw` | VERIFIED | `ExpressionEvaluator.cs:1034-1042` confirmed: `denom = _context.GetMusicalContext().TimeSignature?.Denominator ?? 4`; `multiplier = _context.BeatTrueToSig ? (4.0 / denom) : 1.0`; `Value.Beat(beatLit.RawValue * multiplier)` |
+| 6 | `(beat N)` constructor uses the byte-identical multiplier formula via `RegisterContextDependent` | VERIFIED | `BeatConstructorFunctions.cs:19-33` formula identical: `denom = context.GetMusicalContext().TimeSignature?.Denominator ?? 4`; `multiplier = context.BeatTrueToSig ? (4.0 / denom) : 1.0` |
+| 7 | `ExecutionContext.BeatTrueToSig` single bool field, default false | VERIFIED | `ExecutionContext.cs:550`: `public bool BeatTrueToSig { get; set; } = false;` |
+| 8 | `FlowEngine.ApplyBeatTrueToSigPragma` sets context bit on `Execute` | VERIFIED | `FlowEngine.cs:425-428` confirmed; called at line 351 within `Execute` |
+| 9 | `PragmaRegistry["beat-true-to-sig"]` entry exists with D-03 verbatim description | VERIFIED | `PragmaRegistry.cs:37` confirmed |
+| 10 | `ModuleLoader` save-set-restore is leak-safe via `finally` across import boundary | VERIFIED | `ModuleLoader.cs:170-171` saves `prevBeatTrueToSig` + sets pragma bit; `finally` at line 251 restores it regardless of thrown exception |
+| 11 | Per-proc `IsBeatTrueToSig` capture at parse time + Interpreter push/pop across proc invocation boundary | VERIFIED | `ProcDeclaration.cs:70` captures `IsBeatTrueToSig = false` default; `Parser.cs:421` sets it from `_pragmaSet?.Has("beat-true-to-sig")`; `Interpreter.cs:1149-1150` pushes; `finally` at 1244 restores |
+| 12 | Cross-file declaring-file semantics: pragma-off helper's `(beat 1)` returns 1.0 even when called from a pragma-on 6/8 file | VERIFIED | `tests/test_beat_cross_file.flow` script exits 0; stdout contains `"helper (beat 1) called from 6/8 pragma-on = 1"` (confirmed live run) |
+| 13 | `(str someBeat)` emits plain quarter-relative double, no `b` suffix in any mode (D-14 round-trip lock) | VERIFIED | `BuiltInFunctions.cs:238-244` dedicated `str(Beat)` overload; smoke scripts confirm `str 0.5b` prints `"0.5"` |
+| 14 | 4 smoke scripts exit 0 with PASSED: `test_beat_literal.flow`, `test_beat_pragma_off.flow`, `test_beat_pragma_on.flow`, `test_beat_cross_file.flow` | VERIFIED | All 4 confirmed running live: exit 0 + PASSED end marker |
+| 15 | `examples/beat/intro.flow` 6/8 jig tutorial runs to completion, renders `/tmp/beat_intro.{wav,mid}`, prints PASSED | VERIFIED | Live run confirmed: `Rendered: /tmp/beat_intro.wav + /tmp/beat_intro.mid` + `examples/beat/intro: PASSED` |
+| 16 | `examples/beat/cut-time.flow` 2/2 cut-time tutorial runs to completion, renders `/tmp/beat_cut_time.{wav,mid}`, prints PASSED | VERIFIED | Live run confirmed: `Rendered: /tmp/beat_cut_time.wav + /tmp/beat_cut_time.mid` + `examples/beat/cut-time: PASSED` |
+| 17 | Two-run cmp-clean: freshly rendered WAVs SHA-256 match committed baselines | VERIFIED | `intro.wav` SHA-256 `d401374c…` matches both `/tmp/beat_intro.wav` and committed baseline; `cut-time.wav` SHA-256 `d3e0e832…` matches both |
+| 18 | 66 Phase 45 xUnit Facts GREEN | VERIFIED | `dotnet test --filter "FullyQualifiedName~Phase45"` → `Passed: 66, Failed: 0, Total: 66` |
+| 19 | Phase 44 strict suite unregressed (shared per-proc push/pop change) | VERIFIED | `dotnet test --filter "FullyQualifiedName~Phase44"` → `Passed: 275, Failed: 0, Total: 275` |
+| 20 | Phase 26.1 DICT suite unregressed (DICT-01 Tuple-of-hashables key regression pinned) | VERIFIED | `dotnet test --filter "FullyQualifiedName~Phase26"` → `Passed: 125, Failed: 0, Total: 125` |
+| 21 | CLAUDE.md Music Types table has `0.5b` Beat literal row replacing old `1.5 (Beat-tagged)` row | VERIFIED | `CLAUDE.md:189` confirmed: `\| \`0.5b\` (Beat literal) \| \`Beat\` \| \`Double\`, \`Float\` \| beat-position arithmetic; \`enable beat-true-to-sig;\` opt-in ...` |
+| 22 | CLAUDE.md Music-Specific section has pragma-family bullet including `beat-true-to-sig` | VERIFIED | `CLAUDE.md:201` confirmed with full `beat-true-to-sig` documentation including per-proc capture note |
+| 23 | REQUIREMENTS.md has Phase 45 section with all 25 REQ-BEAT-NN entries | VERIFIED | `grep -c "REQ-BEAT-" .planning/REQUIREMENTS.md` = 53 (entries appear in both the body section and the cross-reference tracking table) |
+| 24 | Committed baselines exist and are substantive WAVs | VERIFIED | `flow-lang.Tests/baselines/Phase45/intro.wav` = 2,116,844 bytes; `cut-time.wav` = 641,496 bytes |
+| 25 | No debt markers (`TBD`/`FIXME`/`XXX`) in Phase 45 production files | VERIFIED | Scanned `BeatLiteralExpression.cs`, `BeatConstructorFunctions.cs`, `SimpleLexer.cs` (beat sections), `PragmaScanner.cs`, `ExpressionEvaluator.cs` (beat section), `ModuleLoader.cs` (beat section), `Interpreter.cs` (beat section): no unresolved debt markers found |
+| 26 | No Phase 45-induced regressions in full suite (4 Phase 48 WASM failures are pre-existing environment-sensitive) | VERIFIED | Full suite `dotnet test`: `Passed: 2188, Failed: 2, Skipped: 9`; the 2-4 failures are `Phase48.WasmBuildPipeline*/BundleSize*/DryWetMidiWasmPublish*` (pre-existing from commit `5562a61`, fail only under parallel execution due to ILLink NETSDK1144 resource contention, pass in isolation) |
 
-- `Beat b = 0.5b` works at expression-start, as a function argument, in flow-op chains, as an arithmetic operand, and as a tuple element.
-- `enable beat-true-to-sig;` + `timesig 6/8 { Beat b = 1b }` constructs `Value.Beat(0.5)` (one eighth); `timesig 2/2` constructs `Value.Beat(2.0)` (one half); default 4/4 is identity.
-- A pragma-OFF helper proc's `(beat N)` stays raw quarters even when called from a pragma-ON file (file-scope per D-04 / Pitfall 3).
-- `(str someBeat)` prints the plain quarter-relative double — no `b` suffix (D-14 round-trip lock).
+**Score:** 26/26 truths verified
 
-## §1 Phase 45 Requirements Closure Table
+---
 
-| Req ID | Description | Plan | Evidence | Status |
-|--------|-------------|------|----------|--------|
-| REQ-BEAT-LEX-01 | `TokenType.BeatLiteral` enum case | 45-01 | `BeatLiteralParserTests` (lex Facts) | ✅ |
-| REQ-BEAT-LEX-02 | Unsigned `Nb` lexes via `ScanNumberOrSpecialLiteral` w/ identifier-guard | 45-01 | `BeatLiteralParserTests.Lexes_*` + `tests/test_beat_literal.flow` | ✅ |
-| REQ-BEAT-LEX-03 | Signed `+Nb`/`-Nb` lexes via `TryLexTypedLiteral`; negatives accepted (D-08) | 45-01 | `BeatTrueToSigPragmaTests.MultiplierFormula_NegativePassthrough` | ✅ |
-| REQ-BEAT-LEX-04 | 7 lexer-shape Facts (accept + reject identifier collisions) | 45-01 | `BeatLiteralParserTests` (7 lex Facts) | ✅ |
-| REQ-BEAT-PRAGMA-HYPHEN-01 | `PragmaScanner` accepts hyphens in pragma identifiers | 45-01 | `PragmaScannerHyphenTests` (4 Facts) | ✅ |
-| REQ-BEAT-AST-01 | `BeatLiteralExpression(SourceLocation, double RawValue, Span?)` own record | 45-02 | `BeatLiteralParserTests.AstShape*` | ✅ |
-| REQ-BEAT-AST-02 | Parser emits `BeatLiteralExpression` (raw double survives to eval) | 45-02 | `BeatLiteralParserTests.AstShapeAssignedToVariable` | ✅ |
-| REQ-BEAT-AST-03 | `IsArgumentStart` + tuple-close token-sets extended w/ BeatLiteral | 45-02 | `BeatLiteralParserTests.AstShapeAsFunctionArg` / `AstShapeInTuple` | ✅ |
-| REQ-BEAT-AST-04 | `EvaluateBeatLiteral` switch arm + multiplier formula | 45-04 | `BeatTrueToSigPragmaTests.MultiplierFormula_*` (13 Facts) | ✅ |
-| REQ-BEAT-PRAGMA-01 | `PragmaRegistry["beat-true-to-sig"]` D-03 verbatim | 45-03 | `BeatTrueToSigPragmaTests.PragmaRegistryEntry` / `LevenshteinSuggestion` | ✅ |
-| REQ-BEAT-PRAGMA-02 | `ExecutionContext.BeatTrueToSig` single bool field | 45-03 | `BeatTrueToSigPragmaTests.BeatTrueToSig_DefaultsFalse` / `_Settable` | ✅ |
-| REQ-BEAT-PRAGMA-03 | `FlowEngine.ApplyBeatTrueToSigPragma` helper + Execute call | 45-03 | `BeatTrueToSigPragmaTests.PragmaSetsContextBit` / `AbsenceLeavesBitFalse` | ✅ |
-| REQ-BEAT-PRAGMA-04 | `ModuleLoader` save-set-restore (finally, file-scope) | 45-03 | `BeatTrueToSigPragmaTests.CrossFileRestore*` (4 Facts) | ✅ |
-| REQ-BEAT-CONSTRUCTOR-01 | `(beat N)` → `RegisterContextDependent` pragma-aware | 45-05 | `BeatConstructorTests.BeatConstructor_PragmaOn_*` | ✅ |
-| REQ-BEAT-CONSTRUCTOR-02 | DICT-01 Tuple-of-hashables key regression (pragma × timesig) | 45-05 | `BeatConstructorTests.Dict01Regression_*` | ✅ |
-| REQ-BEAT-TEST-01 | `tests/test_beat_literal.flow` lex+parse+eval smoke | 45-04 | script exit 0 + PASSED | ✅ |
-| REQ-BEAT-TEST-02 | `tests/test_beat_pragma_off.flow` identity across timesigs | 45-04 | script exit 0 + PASSED | ✅ |
-| REQ-BEAT-TEST-03 | `tests/test_beat_pragma_on.flow` multiplier matrix | 45-04 | script exit 0 + PASSED | ✅ |
-| REQ-BEAT-TEST-04 | Cross-file pragma-on entry + pragma-off helper pair | 45-06 | `BeatTrueToSigPragmaTests.CrossFileSmokeFact` + `tests/test_beat_cross_file{,_helper}.flow` | ✅ |
-| REQ-BEAT-TEST-05 | 13 multiplier-matrix xUnit Facts | 45-04 | `BeatTrueToSigPragmaTests.MultiplierFormula_*` | ✅ |
-| REQ-BEAT-TEST-06 | 4 `(str Beat)` round-trip Facts + 9 constructor/DICT Facts | 45-05 + 45-06 | `BeatTrueToSigPragmaTests.Str*` + `BeatConstructorTests` | ✅ |
-| REQ-BEAT-TEST-07 | Two-run cmp-clean tutorial WAVs + committed baselines | 45-06 | `BeatTrueToSigPragmaTests.TutorialTwoRunCmpClean_*` / `TutorialMatchesBaseline_*` | ✅ |
-| REQ-BEAT-DOC-01 | CLAUDE.md Music Types table — D-13 `0.5b` row REPLACE | 45-06 | `grep '0.5b.*Beat literal' CLAUDE.md` | ✅ |
-| REQ-BEAT-DOC-02 | CLAUDE.md Music-Specific pragma family bullet | 45-06 | `grep 'beat-true-to-sig' CLAUDE.md` | ✅ |
-| REQ-BEAT-DOC-03 | `examples/beat/intro.flow` 6/8 jig tutorial | 45-06 | script exit 0 + PASSED + WAV/MIDI | ✅ |
-| REQ-BEAT-DOC-04 | `examples/beat/cut-time.flow` 2/2 cut-time tutorial | 45-06 | script exit 0 + PASSED + WAV/MIDI | ✅ |
+### Required Artifacts
 
-## §2 xUnit Fact Counts
+| Artifact | Expected | Status | Details |
+|----------|---------|--------|---------|
+| `flow-lang/Lexing/TokenType.cs` | `BeatLiteral` enum case | VERIFIED | Line 68 confirmed |
+| `flow-lang/Lexing/SimpleLexer.cs` | Signed + unsigned `b` suffix branches | VERIFIED | 3 `TokenType.BeatLiteral` references; signed at ~632, unsigned `else if` at ~804 |
+| `flow-lang/Lexing/PragmaScanner.cs` | Hyphen-aware identifier continuation | VERIFIED | Line 246 widened predicate confirmed |
+| `flow-lang/Ast/Expressions/BeatLiteralExpression.cs` | Own record AST node | VERIFIED | Substantive record with `RawValue` field |
+| `flow-lang/Parsing/Parser.cs` | `BeatLiteral` Parser arm + `IsArgumentStart` extension | VERIFIED | Lines 1391-1398 + 2147 confirmed |
+| `flow-lang/Interpreter/ExpressionEvaluator.cs` | `EvaluateBeatLiteral` switch arm + method | VERIFIED | Line 47 dispatch; method at 1034 with full multiplier formula |
+| `flow-lang/Runtime/ExecutionContext.cs` | `BeatTrueToSig` bool field | VERIFIED | Line 550 |
+| `flow-lang/Core/FlowEngine.cs` | `ApplyBeatTrueToSigPragma` helper + Execute call | VERIFIED | Lines 425-428 + call at 351 |
+| `flow-lang/Runtime/ModuleLoader.cs` | Save-set-restore in `finally` | VERIFIED | Lines 170-171 + 251 in finally |
+| `flow-lang/Ast/Statements/ProcDeclaration.cs` | `IsBeatTrueToSig` field | VERIFIED | Line 70 (default false) |
+| `flow-lang/Parsing/Parser.cs` | Parse-time `IsBeatTrueToSig` capture | VERIFIED | Line 421 from `_pragmaSet?.Has("beat-true-to-sig")` |
+| `flow-lang/Interpreter/Interpreter.cs` | Per-proc push/pop in `try/finally` | VERIFIED | Lines 1149-1150 push; 1244 restore in finally |
+| `flow-lang/StandardLibrary/Audio/BeatConstructorFunctions.cs` | `RegisterContextDependent` with byte-identical formula | VERIFIED | Full file verified; formula byte-identical to `EvaluateBeatLiteral` |
+| `flow-lang/Runtime/PragmaRegistry.cs` | `beat-true-to-sig` entry | VERIFIED | Line 37 confirmed |
+| `flow-lang/StandardLibrary/BuiltInFunctions.cs` | `str(Beat)` overload + constructor migration | VERIFIED | Lines 238-244 (str); line 1025 RegisterContextDependent call |
+| `tests/test_beat_literal.flow` | Lex+parse+eval smoke | VERIFIED | Exists; runs; exits 0 with PASSED |
+| `tests/test_beat_pragma_off.flow` | Identity smoke | VERIFIED | Exists; runs; exits 0 with PASSED |
+| `tests/test_beat_pragma_on.flow` | Multiplier matrix smoke | VERIFIED | Exists; runs; exits 0 with PASSED |
+| `tests/test_beat_cross_file.flow` | Pragma-on entry with `enable beat-true-to-sig;` | VERIFIED | Exists; `use "./test_beat_cross_file_helper.flow"` link confirmed; runs; exits 0 with PASSED; cross-file boundary behavior correct |
+| `tests/test_beat_cross_file_helper.flow` | Pragma-off helper with `proc bumpBeat` | VERIFIED | Exists; `proc bumpBeat (Beat: b)` confirmed |
+| `examples/beat/intro.flow` | 6/8 jig tutorial (≥50 lines) | VERIFIED | 83 lines; contains `enable beat-true-to-sig;`; renders WAV+MIDI; prints PASSED |
+| `examples/beat/cut-time.flow` | 2/2 cut-time tutorial (≥30 lines) | VERIFIED | Contains `timesig 2/2`; renders WAV+MIDI; prints PASSED |
+| `flow-lang.Tests/baselines/Phase45/intro.wav` | Reference baseline (≥10 KB) | VERIFIED | 2,116,844 bytes; SHA-256 `d401374c2f84bd142a8af85ace98e1ad2e580316118a25b1d78d9f6455fb3394` matches fresh render |
+| `flow-lang.Tests/baselines/Phase45/cut-time.wav` | Reference baseline (≥10 KB) | VERIFIED | 641,496 bytes; SHA-256 `d3e0e832c5c17d1943986036bcbe0093a2e5c30c7c2ca9306e063886d054362d` matches fresh render |
+| `flow-lang.Tests/Integration/Phase45/BeatLiteralParserTests.cs` | Lexer + AST Facts | VERIFIED | Exists; contributes to 66/66 Phase 45 GREEN |
+| `flow-lang.Tests/Integration/Phase45/PragmaScannerHyphenTests.cs` | Hyphen Facts | VERIFIED | Exists; contributes to 66/66 Phase 45 GREEN |
+| `flow-lang.Tests/Integration/Phase45/BeatTrueToSigPragmaTests.cs` | Pragma/multiplier/str/cross-file/tutorial Facts | VERIFIED | Exists; contributes to 66/66 Phase 45 GREEN |
+| `flow-lang.Tests/Integration/Phase45/BeatConstructorTests.cs` | Constructor + DICT-01 Facts | VERIFIED | Exists; contributes to 66/66 Phase 45 GREEN |
 
-**Total Phase 45 fixtures: 66 GREEN** (across 4 test files + 1 category constant class):
+---
 
-| File | Facts | Coverage |
-|------|-------|----------|
-| `BeatLiteralParserTests.cs` | 21 | 7 lexer-shape (REQ-BEAT-LEX-01..04) + 5 AST-shape (REQ-BEAT-AST-01..03) + 9 supporting |
-| `PragmaScannerHyphenTests.cs` | 4 | hyphen-gap closure (REQ-BEAT-PRAGMA-HYPHEN-01) |
-| `BeatTrueToSigPragmaTests.cs` | 27 | 6 registry/context + 4 cross-file restore (PRAGMA-01..04) + 13 multiplier matrix (AST-04 / TEST-05) + 4 str round-trip (TEST-06) + 1 cross-file smoke (TEST-04) + 4 tutorial (TEST-07) — note Theory rows expand the raw `[Fact]`/`[Theory]` declaration count |
-| `BeatConstructorTests.cs` | 7 declarations → 9 Theory-expanded | 4 constructor multiplier (CONSTRUCTOR-01) + 3 DICT-01 (CONSTRUCTOR-02) |
-| `Phase45TestCategory.cs` | 0 | category constant |
+### Key Link Verification
 
-Regression baselines preserved: Phase 44 strict **275/275 GREEN** (the shared per-proc `BeatTrueToSig` push/pop introduced zero strict regression); Phase 26.1 DICT **33/33 GREEN**; Phase 43 Beat conversion/companion **12/12 GREEN**.
+| From | To | Via | Status | Details |
+|------|----|-----|--------|---------|
+| `SimpleLexer.cs` | `TokenType.cs` | `TokenType.BeatLiteral` reference | WIRED | 3 references in SimpleLexer.cs |
+| `Parser.cs` | `BeatLiteralExpression.cs` | `new BeatLiteralExpression(...)` emission | WIRED | Line 1398 confirmed |
+| `ExpressionEvaluator.cs` | `ExecutionContext.BeatTrueToSig` | `_context.BeatTrueToSig` read | WIRED | Line 1040 |
+| `ExpressionEvaluator.cs` | `MusicalContext.TimeSignature` | `_context.GetMusicalContext().TimeSignature?.Denominator ?? 4` | WIRED | Line 1039 |
+| `BeatConstructorFunctions.cs` | `ExecutionContext.BeatTrueToSig` | `context.BeatTrueToSig` read at call time | WIRED | Line 29 |
+| `FlowEngine.cs` | `ApplyBeatTrueToSigPragma` | Call in `Execute` method | WIRED | Line 351 → method at 425 |
+| `ModuleLoader.cs` | `ExecutionContext.BeatTrueToSig` | Save-set-restore in `try/finally` | WIRED | Lines 170-171, 251 |
+| `Interpreter.cs` | `ProcDeclaration.IsBeatTrueToSig` | Push/pop in `ExecuteUserFunctionWithCaptures` | WIRED | Lines 1149-1150, 1244 |
+| `Parser.cs` | `PragmaSet.Has("beat-true-to-sig")` | Capture into `ProcDeclaration.IsBeatTrueToSig` at line 421 | WIRED | `_pragmaSet?.Has("beat-true-to-sig") ?? false` |
+| `tests/test_beat_cross_file.flow` | `tests/test_beat_cross_file_helper.flow` | `use "./test_beat_cross_file_helper.flow"` | WIRED | Confirmed in file |
+| `BuiltInFunctions.cs` | `BeatConstructorFunctions.RegisterContextDependent` | Call at line 1025 | WIRED | `Audio.BeatConstructorFunctions.RegisterContextDependent(registry, context)` |
 
-## §3 .flow Smoke Inventory
+---
 
-**4 composer-facing smoke scripts** (runner `for t in tests/test_beat_*.flow; do dotnet run --project flow-interpreter "$t"; done` — all exit 0 with `PASSED`):
+### Data-Flow Trace (Level 4)
 
-| Script | Purpose |
-|--------|---------|
-| `tests/test_beat_literal.flow` | lex+parse+eval of `0.5b`/`2b`/`1b`/`-2b` |
-| `tests/test_beat_pragma_off.flow` | identity (`1b = 1`) across 4/4 / 6/8 / 2/2 |
-| `tests/test_beat_pragma_on.flow` | multiplier matrix across 4/4 / 6/8 / 2/2 / 5/4 / 7/8 |
-| `tests/test_beat_cross_file.flow` + `_helper.flow` | cross-file boundary (pragma-on entry imports pragma-off helper; helper's `(beat 1)` = raw 1.0) |
+| Artifact | Data Variable | Source | Produces Real Data | Status |
+|----------|--------------|--------|--------------------|--------|
+| `EvaluateBeatLiteral` | `multiplier` | `_context.BeatTrueToSig` + `GetMusicalContext().TimeSignature?.Denominator` | Yes — reads live context state | FLOWING |
+| `BeatConstructorFunctions` | `multiplier` | `context.BeatTrueToSig` + `GetMusicalContext().TimeSignature?.Denominator` | Yes — reads live context state at call time | FLOWING |
+| `ModuleLoader` save-set-restore | `prevBeatTrueToSig` | Caller's `context.BeatTrueToSig` at import time | Yes — saves real flag, restores in finally | FLOWING |
+| `Interpreter` per-proc push/pop | `prevBeatTrueToSig` | `_context.BeatTrueToSig` at invocation time | Yes — pushes `proc.IsBeatTrueToSig`, restores in finally | FLOWING |
 
-**2 tutorial files** (run end-to-end, render MIDI + WAV, print PASSED):
+---
 
-| Tutorial | Demonstrates |
-|----------|-------------|
-| `examples/beat/intro.flow` | 6/8 jig — 4/4 identity vs 6/8 `1b = eighth`; renders a jig melody + bass to `/tmp/beat_intro.{wav,mid}` |
-| `examples/beat/cut-time.flow` | 2/2 cut time — `1b = half`, `0.5b = quarter`; renders a march to `/tmp/beat_cut_time.{wav,mid}` |
+### Behavioral Spot-Checks
 
-## §4 Two-Run Cmp-Clean Evidence
+| Behavior | Command (run live) | Result | Status |
+|----------|--------------------|--------|--------|
+| `0.5b` lexes and evals to `0.5` quarters, pragma off | `dotnet run --project flow-interpreter tests/test_beat_literal.flow` | `0.5` printed; PASSED | PASS |
+| `1b` in 6/8 with pragma ON = `0.5` quarters | `dotnet run --project flow-interpreter tests/test_beat_pragma_on.flow` | `0.5` printed for 6/8 row; PASSED | PASS |
+| Cross-file: helper's `(beat 1)` = `1.0` from pragma-on caller in 6/8 | `dotnet run --project flow-interpreter tests/test_beat_cross_file.flow` | `"helper (beat 1) called from 6/8 pragma-on = 1"` printed; PASSED | PASS |
+| Tutorial renders WAV byte-identical to baseline | SHA-256 comparison | Both tutorials produce SHA-256 matching committed baselines | PASS |
+| Phase 45 xUnit suite: 66/66 GREEN | `dotnet test --filter "FullyQualifiedName~Phase45"` | `Passed: 66, Failed: 0` | PASS |
+| Phase 44 strict suite: 275/275 GREEN | `dotnet test --filter "FullyQualifiedName~Phase44"` | `Passed: 275, Failed: 0` | PASS |
 
-Phase 45 adds NO PRNG sites (no `granular`/`markov`/`lsystem`/`jam`); tutorial WAVs are pure deterministic synthesis. Both tutorials produce byte-identical WAV across two runs (verified at closer; SHA-256 over file bytes):
+---
 
-| Tutorial | WAV | SHA-256 (committed baseline) |
-|----------|-----|------------------------------|
-| `examples/beat/intro.flow` | `flow-lang.Tests/baselines/Phase45/intro.wav` | `d401374c2f84bd142a8af85ace98e1ad2e580316118a25b1d78d9f6455fb3394` |
-| `examples/beat/cut-time.flow` | `flow-lang.Tests/baselines/Phase45/cut-time.wav` | `d3e0e832c5c17d1943986036bcbe0093a2e5c30c7c2ca9306e063886d054362d` |
+### Requirements Coverage
 
-**Matching policy:** raw SHA-256 byte equality (NOT RMS-windowed tolerance) — Phase 45 has no stochastic compute, so exact determinism is the contract. `TutorialTwoRunCmpClean_*` Facts SHA-equate two consecutive renders; `TutorialMatchesBaseline_*` Facts SHA-equate a fresh render against the committed baseline. Per the T-45-15 disposition (`accept`): if a FUTURE phase legitimately changes synth output (Phase 28 articulation-rewrite precedent), that phase's plan regenerates these Phase 45 baselines.
+| Requirement | Source Plan | Description | Status | Evidence |
+|-------------|------------|-------------|--------|---------|
+| REQ-BEAT-LEX-01 | 45-01 | `TokenType.BeatLiteral` enum case | SATISFIED | `TokenType.cs:68` confirmed |
+| REQ-BEAT-LEX-02 | 45-01 | Unsigned `Nb` via `ScanNumberOrSpecialLiteral` with identifier-guard | SATISFIED | `SimpleLexer.cs:804-816` `else if` branch |
+| REQ-BEAT-LEX-03 | 45-01 | Signed `+/-Nb` via `TryLookAheadSpecialLiteral` | SATISFIED | `SimpleLexer.cs:632-644` `if` branch |
+| REQ-BEAT-LEX-04 | 45-01 | 7 lexer-shape Facts | SATISFIED | `BeatLiteralParserTests.cs` GREEN |
+| REQ-BEAT-PRAGMA-HYPHEN-01 | 45-01 | `PragmaScanner` accepts hyphens in identifiers | SATISFIED | `PragmaScanner.cs:246` |
+| REQ-BEAT-AST-01 | 45-02 | Own `BeatLiteralExpression` AST record | SATISFIED | `Ast/Expressions/BeatLiteralExpression.cs` |
+| REQ-BEAT-AST-02 | 45-02 | Parser emits `BeatLiteralExpression` with raw double | SATISFIED | `Parser.cs:1395-1398` |
+| REQ-BEAT-AST-03 | 45-02 | `IsArgumentStart` + tuple-close extended with `BeatLiteral` | SATISFIED | `Parser.cs:2147` |
+| REQ-BEAT-AST-04 | 45-04 | `EvaluateBeatLiteral` switch arm + multiplier formula | SATISFIED | `ExpressionEvaluator.cs:1034-1042` |
+| REQ-BEAT-PRAGMA-01 | 45-03 | `PragmaRegistry["beat-true-to-sig"]` entry | SATISFIED | `PragmaRegistry.cs:37` |
+| REQ-BEAT-PRAGMA-02 | 45-03 | `ExecutionContext.BeatTrueToSig` single bool field | SATISFIED | `ExecutionContext.cs:550` |
+| REQ-BEAT-PRAGMA-03 | 45-03 | `FlowEngine.ApplyBeatTrueToSigPragma` helper + Execute call | SATISFIED | `FlowEngine.cs:351, 425-428` |
+| REQ-BEAT-PRAGMA-04 | 45-03 | `ModuleLoader` save-set-restore with `finally` | SATISFIED | `ModuleLoader.cs:170-171, 251` |
+| REQ-BEAT-CONSTRUCTOR-01 | 45-05 | `(beat N)` constructor via `RegisterContextDependent` | SATISFIED | `BeatConstructorFunctions.cs:19-33`; wired at `BuiltInFunctions.cs:1025` |
+| REQ-BEAT-CONSTRUCTOR-02 | 45-05 | DICT-01 Tuple-of-hashables key regression preserved | SATISFIED | `BeatConstructorTests` GREEN |
+| REQ-BEAT-TEST-01 | 45-04 | `tests/test_beat_literal.flow` smoke | SATISFIED | Runs; PASSED |
+| REQ-BEAT-TEST-02 | 45-04 | `tests/test_beat_pragma_off.flow` smoke | SATISFIED | Runs; PASSED |
+| REQ-BEAT-TEST-03 | 45-04 | `tests/test_beat_pragma_on.flow` smoke | SATISFIED | Runs; PASSED |
+| REQ-BEAT-TEST-04 | 45-06 | Cross-file boundary pair | SATISFIED | Both files exist; live run confirms cross-file semantics |
+| REQ-BEAT-TEST-05 | 45-04 | 13 multiplier-matrix xUnit Facts | SATISFIED | `BeatTrueToSigPragmaTests.MultiplierFormula_*` GREEN |
+| REQ-BEAT-TEST-06 | 45-05/06 | `(str Beat)` round-trip Facts + constructor/DICT Facts | SATISFIED | `BeatTrueToSigPragmaTests.Str*` + `BeatConstructorTests` GREEN |
+| REQ-BEAT-TEST-07 | 45-06 | Two-run cmp-clean tutorial WAVs + committed baselines | SATISFIED | SHA-256 match confirmed live |
+| REQ-BEAT-DOC-01 | 45-06 | CLAUDE.md Music Types table Beat row replaced | SATISFIED | `CLAUDE.md:189` |
+| REQ-BEAT-DOC-02 | 45-06 | CLAUDE.md Music-Specific pragma family bullet | SATISFIED | `CLAUDE.md:201` |
+| REQ-BEAT-DOC-03 | 45-06 | `examples/beat/intro.flow` tutorial | SATISFIED | 83 lines; runs; PASSED |
+| REQ-BEAT-DOC-04 | 45-06 | `examples/beat/cut-time.flow` tutorial | SATISFIED | Runs; PASSED |
 
-## §5 Known Caveats
+**All 26 requirements (25 REQ-BEAT-NN + REQ-BEAT-PRAGMA-HYPHEN-01) SATISFIED.**
 
-### Cross-file boundary required a Rule 1 fix (Plan 45-06)
+---
 
-The plan's load-bearing must-have truth — *"calling `(bumpBeat (beat 0))` from the entry returns `Value.Beat(1.0)` regardless of entry's 6/8 timesig"* — was **broken at plan-spawn**. Plan 45-03 wired the pragma bit through `ModuleLoader`'s file-LOAD save-set-restore, but NOT through proc-INVOCATION. Because `(beat N)` is a `RegisterContextDependent` builtin reading the LIVE `ctx.BeatTrueToSig`, a helper proc declared in a pragma-off file but invoked from a pragma-on file read the caller's (wrong) bit — the helper's `(beat 1)` returned 0.5, not 1.0.
+### Anti-Patterns Found
 
-**Fixed (Rule 1):** Added `ProcDeclaration.IsBeatTrueToSig` (parse-time capture from the declaring file's `PragmaSet`, mirroring Phase 44 `ProcDeclaration.IsStrict`) + per-proc push/pop in `Interpreter.ExecuteUserFunctionWithCaptures` (same try/finally as the strict-bit push/pop) + lexical capture on synthetic lambda ProcDeclarations in `EvaluateLambda`. This is the EXACT pattern Phase 44 established for strict mode — not an architectural change. Verified: `tests/test_beat_cross_file.flow` now prints `helper (beat 1) ... = 1`. Phase 44 strict 275/275 GREEN confirms the shared proc-execution-path change did not regress strict.
+No blockers. Scanned all Phase 45 production files (`BeatLiteralExpression.cs`, `SimpleLexer.cs` beat sections, `PragmaScanner.cs`, `ExpressionEvaluator.cs` beat section, `ModuleLoader.cs` beat section, `Interpreter.cs` beat section, `BeatConstructorFunctions.cs`, tutorial files, smoke scripts):
 
-### `(str Beat)` round-trip lock (D-14) reconfirmed
+| File | Line | Pattern | Severity | Impact |
+|------|------|---------|----------|--------|
+| (none) | — | — | — | No unresolved TBD/FIXME/XXX markers found in any Phase 45 file |
 
-`(str someBeat)` emits the plain quarter-relative double (no `b` suffix) in every mode. This is a deliberate lock, NOT an omission: emitting `"0.5b"` would break round-trip under the pragma (re-parsing `"0.25b"` in 6/8 re-multiplies to 0.125). Deferred per D-14 — a literal-form printer (`strFull`?) ships in a one-commit follow-up only if a composer reports needing it.
+---
 
-### Deferred ideas re-tracked for v1.6
+### Human Verification Required
 
-Per CONTEXT.md decisions, these stay deferred (no Phase 45 implementation): `(beatRaw N)` escape hatch (D-05), `(str)` `"0.5b"` literal-form printing (D-14), REPL `:beat-true-to-sig on/off` sticky toggle (D-15), dotted-rhythm `Nb.` syntax (D-17 — composers write `0.75b` directly), tied-Beat-literal `Nb~` (deferred indefinitely). D-16 (Phase 44 strict interaction) is documentary carry-forward — strict's Axis A already covers `Nb` as the canonical Beat form in strict files; no Phase 45 implementation task.
+(None — all observable behaviors verified programmatically.)
 
-## §6 Phase 45 Metrics
+---
 
-| Plan | Tasks | Commits | Net surface |
-|------|-------|---------|-------------|
-| 45-01 | 2 | `d6d0731` / `fffd82f` | TokenType + 2 lexer branches + PragmaScanner hyphen + 7 lex Facts |
-| 45-02 | 1 | `121eb30` | BeatLiteralExpression AST + Parser arm + 5 AST Facts (+ Rule 1 tuple-close fix) |
-| 45-03 | 2 | `7372ce3` / `84df903` | PragmaRegistry + ExecutionContext field + FlowEngine helper + ModuleLoader save-set-restore + 10 Facts |
-| 45-04 | 2 | `8ec7145` / `d62c64d` | EvaluateBeatLiteral + str(Beat) overload + 13 Facts + 3 smokes (+ 2 stale-test Rule 1 fixes) |
-| 45-05 | 1 | `5fe8566` | BeatConstructorFunctions.RegisterContextDependent + 9 Facts |
-| 45-06 | 3 | `4a0a041` / `308c37a` / (this closer) | ProcDeclaration.IsBeatTrueToSig + cross-file pair + 4 str Facts + cross-file smoke + 2 tutorials + 2 baselines + 4 tutorial Facts + CLAUDE.md + tracking sweep + this deliverable |
+### Key Risk Areas: Independent Confirmation
 
-**Totals:** 6 plans, 11 tasks, 66 Phase 45 xUnit Facts GREEN, 4 `.flow` smokes, 2 tutorials, 2 committed WAV baselines, 26 REQ-BEAT-NN closed. Zero new NuGet packages. Two-run cmp-clean preserved.
+**1. Multiplier formula byte-identity between EvaluateBeatLiteral and BeatConstructorFunctions:**
 
-## Verification commands (reproducibility)
-
-```bash
-# Phase 45 xUnit fixtures (66 Facts)
-dotnet test flow-lang.Tests/ --filter "FullyQualifiedName~Phase45" --no-build
-
-# Phase 44 strict regression (shared per-proc push/pop change)
-dotnet test flow-lang.Tests/ --filter "FullyQualifiedName~Phase44" --no-build
-
-# 4 composer .flow smokes
-for t in tests/test_beat_*.flow; do dotnet run --project flow-interpreter "$t"; done
-
-# 2 tutorials (render WAV + MIDI)
-dotnet run --project flow-interpreter examples/beat/intro.flow
-dotnet run --project flow-interpreter examples/beat/cut-time.flow
-
-# Two-run cmp-clean (baselines committed)
-sha256sum flow-lang.Tests/baselines/Phase45/intro.wav flow-lang.Tests/baselines/Phase45/cut-time.wav
-
-# Doc grep pins
-grep -c "0.5b" CLAUDE.md
-grep -c "beat-true-to-sig" CLAUDE.md
-grep -c "REQ-BEAT-LEX-01" .planning/REQUIREMENTS.md
+`EvaluateBeatLiteral` (`ExpressionEvaluator.cs:1039-1041`):
 ```
+int denom = _context.GetMusicalContext().TimeSignature?.Denominator ?? 4;
+double multiplier = _context.BeatTrueToSig ? (4.0 / denom) : 1.0;
+return Value.Beat(beatLit.RawValue * multiplier);
+```
+
+`BeatConstructorFunctions.RegisterContextDependent` (`BeatConstructorFunctions.cs:28-30`):
+```
+int denom = context.GetMusicalContext().TimeSignature?.Denominator ?? 4;
+double multiplier = context.BeatTrueToSig ? (4.0 / denom) : 1.0;
+return Value.Beat(raw * multiplier);
+```
+
+CONFIRMED byte-identical formula.
+
+**2. Pragma save-set-restore leak-safety:**
+
+- Import boundary (`ModuleLoader.cs`): `prevBeatTrueToSig` saved before `try`; set in `try`; restored in `finally` (lines 170, 171, 251). Paired with `prevStrict` restore at line 248 — same pattern. CONFIRMED leak-safe.
+- Proc/lambda invocation boundary (`Interpreter.cs`): `prevBeatTrueToSig` saved before `PushFrame()`; `_context.BeatTrueToSig = proc.IsBeatTrueToSig` set; restored in the `finally` block that also calls `PopFrame()` and restores `StrictMode` (lines 1149, 1150, 1244). CONFIRMED leak-safe.
+
+**3. Cross-file declaring-file semantics:**
+
+Live run of `tests/test_beat_cross_file.flow` stdout:
+```
+test_beat_cross_file_helper: loaded
+local 1b in 6/8 pragma-on = 0.5
+helper (beat 1) called from 6/8 pragma-on = 1
+test_beat_cross_file: PASSED
+```
+
+The helper's `(beat 1)` correctly returns `1.0` (not `0.5`) because `ProcDeclaration.IsBeatTrueToSig = false` was captured at the helper's parse time. CONFIRMED working.
+
+**4. WAV baseline two-run cmp-clean:**
+
+- `intro.wav` fresh render SHA-256: `d401374c2f84bd142a8af85ace98e1ad2e580316118a25b1d78d9f6455fb3394` — matches committed baseline exactly.
+- `cut-time.wav` fresh render SHA-256: `d3e0e832c5c17d1943986036bcbe0093a2e5c30c7c2ca9306e063886d054362d` — matches committed baseline exactly.
+
+CONFIRMED two-run cmp-clean deterministic.
+
+**5. Phase 44 strict regression (shared per-proc push/pop path):**
+
+`dotnet test --filter "FullyQualifiedName~Phase44"` → `Passed: 275, Failed: 0, Total: 275`. CONFIRMED no regression.
+
+**6. Full suite failures are pre-existing and unrelated to Phase 45:**
+
+The 2-4 failures in the full `dotnet test` run are all `Phase48.Wasm*` tests (NETSDK1144 ILLink resource contention under parallel execution). These pass in isolation (`Passed: 19, Failed: 0` when run via `--filter "FullyQualifiedName~Phase48"`). They originate from commit `5562a61` which predates Phase 45 work.
+
+---
+
+### Gaps Summary
+
+No gaps. All 26 must-have truths verified against the codebase. Phase goal achieved.
+
+---
+
+_Verified: 2026-05-29_
+_Verifier: Claude (gsd-verifier) — independent of executor self-report_
