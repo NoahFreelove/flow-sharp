@@ -235,6 +235,14 @@ public static class BuiltInFunctions
             ParameterNames: ["value"]);
         registry.Register("str", strDecibelSignature, StdLib.StrDecibel);
 
+        // Phase 45 D-14: dedicated str(Beat) overload — plain double, no "b" suffix.
+        // Without it, (str someBeat) is ambiguous between str(Float)/str(Double)
+        // (BeatType.IsCompatibleWith covers both), which blocks the Nb literal's
+        // composer-facing print path used by the Phase 45 smoke scripts + Facts.
+        var strBeatSignature = new FunctionSignature("str", [BeatType.Instance],
+            ParameterNames: ["value"]);
+        registry.Register("str", strBeatSignature, StdLib.StrBeat);
+
         var strArraySignature = new FunctionSignature("str", [new ArrayType(VoidType.Instance)],
             ParameterNames: ["value"]);
         registry.Register("str", strArraySignature, StdLib.StrArray);

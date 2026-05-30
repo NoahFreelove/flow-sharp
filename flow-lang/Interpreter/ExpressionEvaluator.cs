@@ -44,6 +44,7 @@ public class ExpressionEvaluator
             TupleLiteralExpression tupLit => EvaluateTupleLiteral(tupLit),
             ChordLiteralExpression chordLit => EvaluateChordLiteral(chordLit),
             SymbolLiteralExpression symLit => EvaluateSymbolLiteral(symLit),
+            BeatLiteralExpression beatLit => EvaluateBeatLiteral(beatLit),
             LambdaExpression lambda => EvaluateLambda(lambda),
             MemberAccessExpression member => EvaluateMemberAccess(member),
             LazyExpression lazy => EvaluateLazy(lazy),
@@ -1007,6 +1008,31 @@ public class ExpressionEvaluator
     private Value EvaluateSymbolLiteral(SymbolLiteralExpression symLit)
     {
         return Value.Symbol(symLit.Name, _context);
+    }
+
+    /// <summary>
+    /// Phase 45 D-10 — evaluates a <see cref="BeatLiteralExpression"/> (<c>Nb</c>)
+    /// applying the eval-time true-to-sig multiplier:
+    /// <code>final = pragma_on ? raw × (4.0 / denom) : raw</code>
+    /// where <c>denom</c> is the active <see cref="MusicalContext.TimeSignature"/>
+    /// denominator (defaulting to 4 — i.e. 4/4 identity — when no timesig is set,
+    /// per D-02 / Pitfall 4). The pragma bit lives on
+    /// <see cref="FlowLang.Runtime.ExecutionContext.BeatTrueToSig"/> (set by
+    /// the declaring file's <c>enable beat-true-to-sig;</c>, file-scoped per D-04).
+    /// With pragma OFF the multiplier is always 1.0 (raw passes through); with
+    /// pragma ON in 4/4 (or no timesig) the multiplier is 4/4 = 1.0 (identity) —
+    /// activation never corrupts scripts that never set a non-quarter meter.
+    /// Internal storage stays quarter-relative (<see cref="Value.Beat(double)"/>),
+    /// so every downstream Beat consumer is unaffected (construction-only desugar).
+    /// </summary>
+    private Value EvaluateBeatLiteral(BeatLiteralExpression beatLit)
+    {
+        // D-02 three-tier fallback: GetMusicalContext() resolves call-stack →
+        // FlowConfig → default 4/4. TimeSignature?.Denominator ?? 4 keeps the
+        // divide-by-zero-proof identity default (T-45-09 mitigation).
+        int denom = _context.GetMusicalContext().TimeSignature?.Denominator ?? 4;
+        double multiplier = _context.BeatTrueToSig ? (4.0 / denom) : 1.0;
+        return Value.Beat(beatLit.RawValue * multiplier);
     }
 
     private Value EvaluateNoteStream(NoteStreamExpression noteStream)

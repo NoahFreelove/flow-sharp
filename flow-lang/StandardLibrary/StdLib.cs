@@ -163,6 +163,20 @@ public static class StdLib
     }
 
     /// <summary>
+    /// Converts a Beat to string as a PLAIN double — NO "b" suffix (Phase 45 D-14).
+    /// Emitting "0.5b" would break round-trip under <c>enable beat-true-to-sig;</c>
+    /// (e.g. 0.5b in 6/8 evaluates to 0.25 quarters; re-parsing "0.25b" under the
+    /// same pragma re-multiplies to 0.125 — a different value). Composers treat
+    /// Beat as a tagged double for printing. A dedicated overload is REQUIRED:
+    /// without it, <c>(str someBeat)</c> is ambiguous between str(Float)/str(Double)
+    /// because BeatType.IsCompatibleWith covers both at equal specificity.
+    /// </summary>
+    public static Value StrBeat(IReadOnlyList<Value> args)
+    {
+        return Value.String($"{args[0].As<double>()}");
+    }
+
+    /// <summary>
     /// Converts an Array to string.
     /// </summary>
     public static Value StrArray(IReadOnlyList<Value> args)

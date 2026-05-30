@@ -228,4 +228,109 @@ public class BeatTrueToSigPragmaTests : IDisposable
             "pragma-on entry file's BeatTrueToSig must remain true after a " +
             "pragma-less stdlib `use \"@audio\"` (finally restore-to-true).");
     }
+
+    // ===== Plan 45-04 Task 1 — EvaluateBeatLiteral multiplier matrix (D-10) =====
+
+    /// <summary>
+    /// End-to-end helper: executes <paramref name="source"/> through a fresh
+    /// <see cref="FlowEngine"/> with stdout captured, returns the trimmed
+    /// console output. Exercises lex → parse → eval together (mirrors the
+    /// Phase 44 strict-mode test style). <c>(str Beat)</c> emits the plain
+    /// quarter-relative double per D-14, so the printed value IS the post-
+    /// multiplier result.
+    /// </summary>
+    private static string RunCapture(string source)
+    {
+        var prev = Console.Out;
+        var sw = new StringWriter();
+        try
+        {
+            Console.SetOut(sw);
+            using var engine = new FlowEngine();
+            var ok = engine.Execute(source, "<test>");
+            Assert.True(ok, $"execute failed: {engine.ErrorReporter.FormatErrors()}");
+        }
+        finally
+        {
+            Console.SetOut(prev);
+        }
+        return sw.ToString().Trim();
+    }
+
+    [Theory]
+    [InlineData("4/4")]
+    [InlineData("6/8")]
+    [InlineData("2/2")]
+    public void MultiplierFormula_PragmaOff_Identity(string timesig)
+    {
+        // Pragma OFF → multiplier is always 1.0 (raw passes through) in EVERY
+        // timesig. `1b` prints "1" regardless of denominator (D-02 / D-10).
+        var src = $"timesig {timesig} {{ Beat b = 1b; (print (str b)) }}";
+        Assert.Equal("1", RunCapture(src));
+    }
+
+    [Fact]
+    public void MultiplierFormula_PragmaOn_4Over4()
+    {
+        // denom=4 → multiplier = 4/4 = 1.0 (identity). Pragma activation does
+        // NOT corrupt 4/4 scripts (D-02 Pitfall-4 default-meter safety).
+        var src = "enable beat-true-to-sig;\ntimesig 4/4 { Beat b = 1b; (print (str b)) }";
+        Assert.Equal("1", RunCapture(src));
+    }
+
+    [Theory]
+    [InlineData("1b", "0.5")]
+    [InlineData("2b", "1")]
+    [InlineData("0.5b", "0.25")]
+    public void MultiplierFormula_PragmaOn_6Over8(string literal, string expected)
+    {
+        // denom=8 → multiplier = 4/8 = 0.5. `1b` = half a quarter (one eighth).
+        var src = $"enable beat-true-to-sig;\ntimesig 6/8 {{ Beat b = {literal}; (print (str b)) }}";
+        Assert.Equal(expected, RunCapture(src));
+    }
+
+    [Theory]
+    [InlineData("1b", "2")]
+    [InlineData("0.5b", "1")]
+    public void MultiplierFormula_PragmaOn_2Over2(string literal, string expected)
+    {
+        // denom=2 → multiplier = 4/2 = 2.0. `1b` = two quarters (one half).
+        var src = $"enable beat-true-to-sig;\ntimesig 2/2 {{ Beat b = {literal}; (print (str b)) }}";
+        Assert.Equal(expected, RunCapture(src));
+    }
+
+    [Fact]
+    public void MultiplierFormula_PragmaOn_5Over4()
+    {
+        // denom=4 → multiplier = 4/4 = 1.0 (identity — quarter-denominator meter).
+        var src = "enable beat-true-to-sig;\ntimesig 5/4 { Beat b = 1b; (print (str b)) }";
+        Assert.Equal("1", RunCapture(src));
+    }
+
+    [Fact]
+    public void MultiplierFormula_PragmaOn_7Over8()
+    {
+        // denom=8 → multiplier = 4/8 = 0.5 (irregular meter, eighth-beat unit).
+        var src = "enable beat-true-to-sig;\ntimesig 7/8 { Beat b = 1b; (print (str b)) }";
+        Assert.Equal("0.5", RunCapture(src));
+    }
+
+    [Fact]
+    public void MultiplierFormula_NegativePassthrough()
+    {
+        // D-08: negative Beat values are valid doubles, no rejection guard.
+        // Pragma ON in 4/4 → multiplier 1.0 → -2b stays -2.0.
+        var src = "enable beat-true-to-sig;\ntimesig 4/4 { Beat b = -2b; (print (str b)) }";
+        Assert.Equal("-2", RunCapture(src));
+    }
+
+    [Fact]
+    public void MultiplierFormula_NoActiveTimesig()
+    {
+        // Pragma ON, NO timesig block at all → GetMusicalContext() three-tier
+        // fallback resolves to the default 4/4 → denom=4 → multiplier 1.0.
+        // Pitfall 4 / D-02: identity-in-default protects timesig-less scripts.
+        var src = "enable beat-true-to-sig;\nBeat b = 1b; (print (str b))";
+        Assert.Equal("1", RunCapture(src));
+    }
 }

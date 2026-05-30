@@ -49,23 +49,27 @@ public class PragmaScannerHyphenTests : IDisposable
     public void Fact_PragmaScanner_AcceptsHyphenatedName_BeatTrueToSig()
     {
         // REQ-BEAT-PRAGMA-HYPHEN-01: the identifier parser at PragmaScanner.cs:239
-        // must accept hyphens in CONTINUATION position. Wave 1 closes the gap
-        // BEFORE Wave 2/3 registers the pragma — so the scanner extracts the
-        // full hyphenated name, then reports it as unknown.
+        // must accept hyphens in CONTINUATION position. Wave 1 closed the
+        // scanner gap; Wave 2 (Plan 45-03 D-03) REGISTERED the pragma in
+        // PragmaRegistry — so `enable beat-true-to-sig;` now scans cleanly with
+        // NO error and the FULL hyphenated name lands in the PragmaSet. (This
+        // Fact originally asserted an unknown-pragma error pre-registration; it
+        // is updated to the post-registration reality per Plan 45-04 — the
+        // scanner-accepts-hyphens invariant is now proven via successful
+        // recognition rather than via a full-name unknown-pragma message.)
         var reporter = new ErrorReporter();
-        var (_, _) = PragmaScanner.Scan("enable beat-true-to-sig;\n", "<test>", reporter);
+        var (pragmas, _) = PragmaScanner.Scan("enable beat-true-to-sig;\n", "<test>", reporter);
 
-        Assert.True(reporter.HasErrors,
-            "Wave 1 expects unknown-pragma error because beat-true-to-sig " +
-            "is not yet registered in PragmaRegistry — Wave 2/3 wires that. " +
-            "But the error message MUST cite the full hyphenated name, " +
-            "proving the scanner's identifier parser accepted the hyphens.");
-
-        var msg = reporter.Errors[0].Message;
-        Assert.Contains("beat-true-to-sig", msg);
-        // Belt-and-suspenders: the message must NOT cite a truncated 'beat' prefix
-        // as the pragma name (that would prove the hyphen broke the identifier scan).
-        Assert.Contains("unknown pragma 'beat-true-to-sig'", msg);
+        Assert.False(reporter.HasErrors,
+            "beat-true-to-sig is registered (Plan 45-03 D-03) — the scanner must " +
+            "extract the full hyphenated name and recognize it with NO error. " +
+            "A truncated 'beat' prefix would fail registry lookup and error here, " +
+            "so a clean parse proves the hyphen identifier scan worked: " +
+            reporter.FormatErrors());
+        Assert.True(pragmas.Has("beat-true-to-sig"),
+            "the PragmaSet must contain the FULL hyphenated name 'beat-true-to-sig' " +
+            "(not a truncated 'beat'), proving the scanner's identifier parser " +
+            "accepted the hyphens in continuation position.");
     }
 
     [Fact]
