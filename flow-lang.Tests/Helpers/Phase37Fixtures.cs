@@ -26,7 +26,7 @@ namespace FlowLang.Tests.Helpers;
 ///
 /// <para>
 /// Generation uses <see cref="FileIO.LoadWav"/>-compatible WAV writes via
-/// <c>FileIO.ExportWav</c>. Two-run cmp-clean determinism is preserved because
+/// <see cref="FileIO.WriteWav"/>. Two-run cmp-clean determinism is preserved because
 /// the contents are pure mathematical functions of the buffer size — no PRNG
 /// is consulted for fixture generation.
 /// </para>

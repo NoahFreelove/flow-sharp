@@ -1,4 +1,4 @@
-Note: Test writeWav (path-first) and exportWav (backwards compat)
+Note: Test writeWav (path-first arg order, matches writeMidi convention)
 use "@std"
 use "@audio"
 
@@ -9,17 +9,9 @@ Note: Test 1: writeWav with path-first arg order
 (writeWav "test_writewav_output1.wav" testBuf)
 (print "PASS: writeWav(String, Buffer) succeeded")
 
-Note: Test 2: exportWav with original arg order (backwards compat)
-(exportWav testBuf "test_writewav_output2.wav")
-(print "PASS: exportWav(Buffer, String) backwards compat succeeded")
-
-Note: Test 3: Load back and verify non-empty
+Note: Test 2: Load back and verify non-empty
 Buffer loaded1 = (loadWav "test_writewav_output1.wav")
 Int frames1 = (getFrames loaded1)
 (print (concat "writeWav frames: " (str frames1)))
-
-Buffer loaded2 = (loadWav "test_writewav_output2.wav")
-Int frames2 = (getFrames loaded2)
-(print (concat "exportWav frames: " (str frames2)))
 
 (print "All writeWav tests passed")

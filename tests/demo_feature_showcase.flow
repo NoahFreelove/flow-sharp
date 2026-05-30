@@ -234,7 +234,7 @@ tempo 100 {
             (print (concat "Total frames: " (str totalFrames)))
             (print (concat "Duration:     ~" (concat (str durationSec) " seconds")))
 
-            (exportWav final "feature_showcase.wav")
+            (writeWav "feature_showcase.wav" final)
             (print "")
             (print "Exported to: feature_showcase.wav")
         }

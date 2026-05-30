@@ -156,7 +156,7 @@ Int mixFrames = (getFrames mixed)
 
 Note: Export final mix
 String outPath = "tests/output/test_full_song.wav"
-(exportWav mixed outPath)
+(writeWav outPath mixed)
 (print (concat "  exported to: " outPath))
 
 Note: Close all musical context blocks

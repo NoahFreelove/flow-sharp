@@ -25,31 +25,6 @@ public static class FileIO
     private static Random Random = new Random(DitherSeed);
 
     /// <summary>
-    /// Exports an AudioBuffer to a WAV file with default 16-bit PCM format.
-    /// </summary>
-    public static Value ExportWav(IReadOnlyList<Value> args)
-    {
-        var buffer = args[0].As<AudioBuffer>();
-        string filepath = args[1].As<string>();
-
-        ExportWavInternal(buffer, filepath, 16);
-        return Value.Void();
-    }
-
-    /// <summary>
-    /// Exports an AudioBuffer to a WAV file with specified bit depth.
-    /// </summary>
-    public static Value ExportWavWithBitDepth(IReadOnlyList<Value> args)
-    {
-        var buffer = args[0].As<AudioBuffer>();
-        string filepath = args[1].As<string>();
-        int bitDepth = args[2].As<int>();
-
-        ExportWavInternal(buffer, filepath, bitDepth);
-        return Value.Void();
-    }
-
-    /// <summary>
     /// Core WAV export implementation.
     /// </summary>
     private static void ExportWavInternal(AudioBuffer buffer, string filepath, int bitDepth)
@@ -75,7 +50,7 @@ public static class FileIO
         int fileSize = 36 + dataSize; // 44 bytes header - 8 bytes = 36
 
         // Ensure parent directory exists (idempotent — no-op if present).
-        // Benefits both exportWav and writeWav via this shared helper.
+        // Shared by all writeWav overloads via this core helper.
         var dir = Path.GetDirectoryName(filepath);
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
