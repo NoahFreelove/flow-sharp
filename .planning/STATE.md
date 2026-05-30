@@ -4,13 +4,13 @@ milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
 stopped_at: Phase 45 context gathered
-last_updated: "2026-05-30T02:10:09.583Z"
+last_updated: "2026-05-30T02:22:58.474Z"
 last_activity: 2026-05-30
 progress:
   total_phases: 15
   completed_phases: 8
   total_plans: 78
-  completed_plans: 68
+  completed_plans: 69
   percent: 53
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 ## Current Position
 
 Phase: 45 (beat-literal-syntax-true-to-sig-pragma) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-5 — 48-06 HUMAN-UAT + 48-07 closer)
 
 Status: Ready to execute
@@ -443,6 +443,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 47 P05 | ~3min | 3 tasks (Task 0 PRE-APPROVED checkpoint + Task 1 csproj edit + Task 2 test file) | 2 files (flow-lang.Tests.csproj +6 lines for Mono.Cecil 0.11.5 PackageReference + AssemblyReferenceScanTests.cs 120 LOC NEW with 2 [FlowTargetFact("Web")] Facts) |
 | Phase 48 P03 | 9m | 3 tasks | 5 files |
 | Phase 45 P02 | 18 | 1 tasks | 4 files |
+| Phase 45 P04 | 9 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -625,6 +626,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 48 Plan 03 — <AllowUnsafeBlocks>true</AllowUnsafeBlocks> at top-level PropertyGroup (not FlowTarget=Web conditional): [JSImport] source generator emits unsafe marshalling shim on every target; Desktop never EXECUTES it (every callsite OperatingSystem.IsBrowser()-gated per Pattern B)
 - [Phase ?]: Phase 48 Plan 03 — Phase 47 WebAudioBackendStubTests.cs DELETED outright: 3 of 7 facts inverted under Phase 48; 4 still-valid Desktop invariants re-covered in new Phase 48 IntegrationTests
 - [Phase ?]: Phase 45 D-09: Parser emits BeatLiteralExpression own AST record (not flat LiteralExpression) so raw double survives to Wave-4 eval-time multiplier
+- [Phase ?]: Plan 45-04: EvaluateBeatLiteral switch arm + multiplier formula final = pragma_on ? raw x (4/denom) : raw; dedicated str(Beat) overload added (D-14, plain double) to resolve str(Float)/str(Double) ambiguity
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -841,7 +843,7 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-30T02:10:09.573Z
+Last session: 2026-05-30T02:22:53.788Z
 Stopped at: Phase 45 context gathered
 Resume file: None
 
