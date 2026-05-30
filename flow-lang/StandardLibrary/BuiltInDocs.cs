@@ -107,7 +107,6 @@ public static class BuiltInDocs
             new("filepath", "Output path (created if missing)."),
             new("buffer", "Buffer to export."),
         }),
-        ["exportWav"] = new("Exports a buffer to a WAV file (buffer, path[, bitDepth]).", Array.Empty<ParamDoc>()),
         ["loadWav"] = new("Reads a WAV file into a buffer (16/24/32-bit, resamples to 44100Hz).", Array.Empty<ParamDoc>()),
 
         // ===== Audio effects =====

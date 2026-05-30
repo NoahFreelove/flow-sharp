@@ -31,7 +31,7 @@ Int frames2 = (getFrames rendered2)
 
 Note: Both must be > 0 frames -- if either is 0, the bare expression
 Note: inside the nested context was not captured and the fix regressed.
-(exportWav rendered1 "/tmp/test_section_gain_bare_expr_1.wav")
-(exportWav rendered2 "/tmp/test_section_gain_bare_expr_2.wav")
+(writeWav "/tmp/test_section_gain_bare_expr_1.wav" rendered1)
+(writeWav "/tmp/test_section_gain_bare_expr_2.wav" rendered2)
 
 (print "test_section_gain_bare_expr: PASSED")

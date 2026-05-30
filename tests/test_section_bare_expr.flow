@@ -17,7 +17,7 @@ Buffer rendered = (renderSong song "piano")
 (print "render completed")
 
 Note: Export to verify non-empty buffer - file should be > 44 bytes (WAV header)
-(exportWav rendered "/tmp/test_bare_expr_output.wav")
+(writeWav "/tmp/test_bare_expr_output.wav" rendered)
 (print "export completed")
 
 (print "test_section_bare_expr: PASSED")

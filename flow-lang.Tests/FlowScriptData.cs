@@ -116,14 +116,14 @@ public static class FlowScriptData
             "All math tests passed", // whole-script-ran gate
         },
 
-        // Phase 13-02 (DX-03): pin both writeWav + exportWav alias success.
-        // Script calls writeWav("path", buf) then exportWav(buf, "path"), then loads
-        // both back via loadWav and asserts non-zero frames. If either signature
-        // were unregistered, its PASS line would not print.
+        // Phase 13-02 (DX-03): pin writeWav (path-first) success.
+        // Phase 46 (D-06): the exportWav reversed-arg alias was removed; this
+        // script now exercises only writeWav("path", buf), loads it back via
+        // loadWav, and asserts non-zero frames. If writeWav were unregistered,
+        // its PASS line would not print.
         ["test_writewav.flow"] = new[]
         {
             "PASS: writeWav(String, Buffer) succeeded",
-            "PASS: exportWav(Buffer, String) backwards compat succeeded",
             "All writeWav tests passed",
         },
 

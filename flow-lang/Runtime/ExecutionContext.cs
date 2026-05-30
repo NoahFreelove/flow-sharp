@@ -270,7 +270,7 @@ public class ExecutionContext
     /// primitives (<c>markov</c> / <c>lsystem</c> / <c>cellular</c> / <c>lorenz</c> /
     /// <c>logistic</c> / <c>degrade</c> / <c>sparseSeq</c> / <c>sometimes</c> /
     /// <c>jam</c>) route their unseeded paths through this registry. Reseeded
-    /// at every <c>renderSong</c> / <c>writeWav</c> / <c>exportWav</c> boundary
+    /// at every <c>renderSong</c> / <c>writeWav</c> boundary
     /// to preserve the two-run cmp-clean determinism contract inherited from
     /// Phase 18/25/27/28/29/33.
     /// </summary>

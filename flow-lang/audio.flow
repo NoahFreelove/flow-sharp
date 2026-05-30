@@ -34,12 +34,6 @@ internal proc mix(Buffer: a, Buffer: b)
 
 Note: ===== File I/O Operations =====
 
-Note: Export audio buffer to WAV file with default 16-bit PCM format
-internal proc exportWav(Buffer: buffer, String: filepath)
-
-Note: Export audio buffer to WAV file with specified bit depth (16, 24, or 32)
-internal proc exportWav(Buffer: buffer, String: filepath, Int: bitDepth)
-
 Note: Primary WAV export (path-first, matches writeMidi convention)
 internal proc writeWav(String: filepath, Buffer: buffer)
 

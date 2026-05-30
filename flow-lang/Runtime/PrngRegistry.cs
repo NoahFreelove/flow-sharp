@@ -15,7 +15,7 @@ namespace FlowLang.Runtime;
 /// D-v1.5-06 + D-36-09.
 ///
 /// <para>
-/// Reseeded at every <c>renderSong</c> / <c>writeWav</c> / <c>exportWav</c>
+/// Reseeded at every <c>renderSong</c> / <c>writeWav</c>
 /// boundary via <see cref="ResetAtRenderBoundary"/> so two consecutive renders
 /// of the same source produce byte-identical WAV+MIDI output (Phase 18/25/27/28/29/33
 /// inheritance — the two-run cmp-clean determinism contract documented in
@@ -124,7 +124,7 @@ public class PrngRegistry
     public int ResetCallCount { get; private set; }
 
     /// <summary>
-    /// Called at <c>renderSong</c> / <c>writeWav</c> / <c>exportWav</c> entry.
+    /// Called at <c>renderSong</c> / <c>writeWav</c> entry.
     /// Clears the per-site cache so the next pass starts from fresh reseeded
     /// <see cref="Random"/>s. The render-boundary salt stays constant in v1.5;
     /// Phase 38's <c>live</c> opt-out (per RESEARCH Open Question 3) may turn

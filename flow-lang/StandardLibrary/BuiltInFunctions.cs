@@ -706,20 +706,6 @@ public static class BuiltInFunctions
 
         // ===== File I/O Operations =====
 
-        // exportWav(Buffer, String) - default 16-bit
-        var exportWavSignature = new FunctionSignature(
-            "exportWav",
-            [BufferType.Instance, StringType.Instance],
-            ParameterNames: ["buf", "path"]);
-        registry.Register("exportWav", exportWavSignature, Audio.FileIO.ExportWav);
-
-        // exportWav(Buffer, String, Int) - custom bit depth
-        var exportWavWithDepthSignature = new FunctionSignature(
-            "exportWav",
-            [BufferType.Instance, StringType.Instance, IntType.Instance],
-            ParameterNames: ["buf", "path", "bitDepth"]);
-        registry.Register("exportWav", exportWavWithDepthSignature, Audio.FileIO.ExportWavWithBitDepth);
-
         // writeWav(String, Buffer) - primary name, path-first arg order (matches writeMidi)
         var writeWavSignature = new FunctionSignature(
             "writeWav",
