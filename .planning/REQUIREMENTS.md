@@ -222,6 +222,37 @@ Phase 44 ships the `enable strict;` file pragma — opt-in "JS-mode-off" reliabi
 - [x] **REQ-STRICT-14**: Positive `.flow` integration smoke suite at `tests/strict/` — 6 narrow fixtures (`test_strict_axis_a_overload.flow`, `test_strict_axis_b_clamps.flow`, `test_strict_explicit_conversions.flow`, `test_strict_equality.flow`, `test_strict_with_justintonation.flow`, `test_strict_dict_typecheck.flow`) + 1 composer-facing showcase (`showcase_strict.flow`, ~16-bar single-instrument piece naturally using `(db x)`/`(hz x)`/`(cents x)`). Each begins with `enable strict;`; each ends with `(print "PASS")`. `StrictFlowScriptSuiteTests` Theory iterates all files via Process.Start dotnet run + asserts exit-0 + PASS-in-stdout. Plan 44-11.
 - [x] **REQ-STRICT-15**: Two-run cmp-clean determinism preserved across strict-mode introduction (CLAUDE.md "Conventions" contract). No PRNG sites added by Phase 44 — every site rewrite is shape `if (ctx.CallerStrictMode) er.ReportError(LITERAL_STRING_FROM_ARGS); else { existing-charitable-body }`. Error strings are deterministic concat of `args[i].As<T>()` + sentinel verbatim (no DateTime, no Random, no Guid per RESEARCH Pitfall 5). `Phase44TwoRunDeterminismTests` runs `showcase_strict.flow` + a representative narrow fixture twice via Process.Start and SHA-256-equates the captured stdout (and `writeWav` bytes if applicable). Same-platform-only deterministic for chaos-primitive sites per D-36-09 + AUDIT §8 Limitation 6 (strict error path short-circuits before chaotic compute → strict errors deterministic). Plan 44-11.
 
+### Beat Literal Syntax & True-to-Sig Pragma (Phase 45)
+
+**Phase 45 SHIPPED 2026-05-29** — closes the Beat-ergonomics gap left by Phase 43. Composers get a first-class `Nb` literal (`0.5b` / `2b` / `-1b`, lowercase `b`; `B` reserved to avoid `dB`/Decibel collision) matching the rest of the music-type family, plus the opt-in `enable beat-true-to-sig;` file pragma that retunes the literal AND the `(beat N)` constructor to the active timesig's beat unit (multiply by `4.0/denominator` at construction time). Default 4/4 → `1b = quarter` (identity); `timesig 6/8 { }` → `1b = eighth`; `timesig 2/2 { }` → `1b = half`. Pragma affects CONSTRUCTION only — internal storage stays quarter-relative, so every Phase 43 Beat builtin, the 8 `secondsPerBeat` sites, MIDI `microsPerBeat`, and `Voice.OffsetBeats` are unchanged (pure parse/eval-time desugar). File-scoped per D-04 (no propagation via `use`); the per-proc pragma bit is captured at the DECLARING file (`ProcDeclaration.IsBeatTrueToSig`) so a pragma-off helper proc's `(beat N)` stays raw quarters even when called from a pragma-on file. `(str Beat)` emits the plain quarter-relative double (no `b` suffix) per D-14. 66 Phase 45 xUnit Facts + 4 composer `.flow` smokes + 2 tutorials (`examples/beat/intro.flow` 6/8 jig + `examples/beat/cut-time.flow` 2/2) with committed two-run cmp-clean WAV baselines. See `.planning/phases/45-beat-literal-syntax-true-to-sig-pragma/45-VERIFICATION.md` for per-REQ closure evidence + D-NN decision trace.
+
+- [x] **REQ-BEAT-LEX-01**: `TokenType.BeatLiteral` enum case added alongside the existing music-literal cluster (`SemitoneLiteral`/`CentLiteral`/`TimeLiteral`/`DecibelLiteral`/`HertzLiteral`). Plan 45-01 (`d6d0731` / `fffd82f`).
+- [x] **REQ-BEAT-LEX-02**: Unsigned `Nb` (`0.5b`, `2b`, `1.0b`) lexes via `ScanNumberOrSpecialLiteral` `else if (Peek() == 'b' && !char.IsLetter(PeekNext()))` branch — identifier-disambiguation guard keeps `1bar`/`2beats` lexing as Int + identifier. Plan 45-01 (`d6d0731` / `fffd82f`).
+- [x] **REQ-BEAT-LEX-03**: Signed `+Nb` / `-Nb` lexes at expression-start via `TryLexTypedLiteral` following the `+/-Nst` / `+/-NdB` pattern; emits `Token(TokenType.BeatLiteral, ..., doubleVal)` with InvariantCulture parse. Negative beats accepted as valid doubles (D-08, no rejection guard). Plan 45-01 (`d6d0731` / `fffd82f`).
+- [x] **REQ-BEAT-LEX-04**: 7 lexer-shape Facts pin accepted forms (`0.5b`/`2b`/`1.0b`/`+1b`/`-2b`) + rejected identifier collisions (`1bar`/`2beats`); `Token.Value` carries the parsed double. Plan 45-01 (`d6d0731` / `fffd82f`).
+- [x] **REQ-BEAT-PRAGMA-HYPHEN-01**: `PragmaScanner` accepts hyphens in pragma identifier continuation position (widened character predicate) so `beat-true-to-sig` scans as one token; truncated `beat` prefix would fail registry lookup. Plan 45-01 (`d6d0731` / `fffd82f`).
+- [x] **REQ-BEAT-AST-01**: `BeatLiteralExpression(SourceLocation, double RawValue, Span?)` own AST record in `flow-lang/Ast/Expressions/`, mirroring `SymbolLiteralExpression` (own-record per D-01, NOT a flag on `LiteralExpression`). Plan 45-02 (`121eb30`).
+- [x] **REQ-BEAT-AST-02**: `Parser.ParsePrimary` emits `BeatLiteralExpression((double)PreviousToken.Value!, ...)` for `BeatLiteral` tokens — the raw source double survives to eval time (D-09), diverging from the flat `LiteralExpression(text)` routing used by Cent/Time/Decibel/Hertz. Plan 45-02 (`121eb30`).
+- [x] **REQ-BEAT-AST-03**: `IsArgumentStart` literal-token-set extended with `TokenType.BeatLiteral` so `Nb` appears at expression-start + as a function argument. Tuple-close `TryLexAngleAngle` `isExprStart` set also extended (Rule 1 fix — `<<C4, 0.5b>>` tuple close). Plan 45-02 (`121eb30`).
+- [x] **REQ-BEAT-AST-04**: `ExpressionEvaluator` `BeatLiteralExpression` switch arm + `EvaluateBeatLiteral` method — multiplier formula `final = pragma_on ? raw × (4.0 / denom) : raw` reading `_context.BeatTrueToSig` + active `MusicalContext.TimeSignature` (default 4/4 = identity, divide-by-zero-proof). Plan 45-04 (`8ec7145`).
+- [x] **REQ-BEAT-PRAGMA-01**: `PragmaRegistry.KnownPragmas["beat-true-to-sig"]` entry with D-03 verbatim description. Typo recovery via existing Levenshtein suggester closed-set. Plan 45-03 (`7372ce3`).
+- [x] **REQ-BEAT-PRAGMA-02**: `ExecutionContext.BeatTrueToSig` single bool field (default false, no companion `CallerBeatTrueToSig` per Pitfall 3 single-field design). Plan 45-03 (`7372ce3`).
+- [x] **REQ-BEAT-PRAGMA-03**: `FlowEngine.ApplyBeatTrueToSigPragma(program)` helper + `Execute` invocation (mirrors `ApplyStrictPragma`); overwrites the bit on every Execute so a prior REPL session's pragma cannot bleed into a fresh file. Plan 45-03 (`7372ce3`).
+- [x] **REQ-BEAT-PRAGMA-04**: `ModuleLoader.LoadModule` save-set-restore for `BeatTrueToSig` in the finally (Anti-Pattern 1) — file-scope per D-04, never leaks across `use` imports, restores even on import-throw. Plan 45-03 (`84df903`).
+- [x] **REQ-BEAT-CONSTRUCTOR-01**: `(beat Double) → Beat` constructor migrated from plain `Register` to `BeatConstructorFunctions.RegisterContextDependent` (Phase 43 recipe) so the lambda reads `ctx.BeatTrueToSig` + active timesig per call; multiplier formula byte-identical to `EvaluateBeatLiteral`. Old plain-Register block deleted (no double-registration). Plan 45-05 (`5fe8566`).
+- [x] **REQ-BEAT-CONSTRUCTOR-02**: Phase 26.1 DICT-01 Tuple-of-hashables Dict-key regression pinned across (pragma × timesig) — INSERT + LOOKUP keys built under the same scope round-trip correctly; signature shape preserved so OverloadResolver dispatch unregressed. Plan 45-05 (`5fe8566`).
+- [x] **REQ-BEAT-TEST-01**: `tests/test_beat_literal.flow` composer-facing lex+parse+eval smoke — `0.5b`/`2b`/`1b`/`-2b` print expected quarter-relative doubles. Plan 45-04 (`d62c64d`).
+- [x] **REQ-BEAT-TEST-02**: `tests/test_beat_pragma_off.flow` — identity behavior (`1b = 1`) across 4/4 / 6/8 / 2/2 with pragma OFF. Plan 45-04 (`d62c64d`).
+- [x] **REQ-BEAT-TEST-03**: `tests/test_beat_pragma_on.flow` — multiplier matrix with pragma ON across 4/4 / 6/8 / 2/2 / 5/4 / 7/8. Plan 45-04 (`d62c64d`).
+- [x] **REQ-BEAT-TEST-04**: `tests/test_beat_cross_file.flow` (pragma-ON entry) + `tests/test_beat_cross_file_helper.flow` (pragma-OFF helper) cross-file boundary pair — `(bumpBeat (beat 0))` returns `Value.Beat(1.0)` (raw quarters) regardless of the entry's 6/8 timesig (Pitfall 3 / D-04). Closed via `ProcDeclaration.IsBeatTrueToSig` per-proc capture + Interpreter push/pop (Plan 45-06 Rule 1 fix — the cross-file boundary was previously broken because the constructor read the caller's live bit). Plan 45-06 (`4a0a041`).
+- [x] **REQ-BEAT-TEST-05**: 13 multiplier-matrix xUnit Facts (`MultiplierFormula_*`) pinning the full (timesig × pragma) grid + negative passthrough + no-active-timesig default. Plan 45-04 (`8ec7145`).
+- [x] **REQ-BEAT-TEST-06**: 4 `(str Beat)` round-trip Facts (D-14 lock — plain double, no `b` suffix in any mode) + 9 `BeatConstructorTests` Facts (4 constructor multiplier + 3 DICT-01 + Theory-expanded). Plans 45-05 (`5fe8566`) + 45-06 (`4a0a041`).
+- [x] **REQ-BEAT-TEST-07**: Two-run cmp-clean — `examples/beat/intro.flow` + `cut-time.flow` each render byte-identical WAV across two runs (SHA-256 match); committed baselines at `flow-lang.Tests/baselines/Phase45/{intro,cut-time}.wav`; 4 tutorial Facts (two-run cmp-clean ×2 + baseline-match ×2) + 1 `CrossFileSmokeFact`. Plan 45-06 (`308c37a` / `4a0a041`).
+- [x] **REQ-BEAT-DOC-01**: CLAUDE.md Music Types Quick Reference table — `1.5 (Beat-tagged)` row REPLACED with the D-13 `0.5b (Beat literal)` row (the old row was misleading post-Phase-45 since the literal form now exists). Plan 45-06 (this closer).
+- [x] **REQ-BEAT-DOC-02**: CLAUDE.md Music-Specific section gains a Pragmas family bullet listing all 8 pragmas incl. `beat-true-to-sig` with the multiplier semantics + tutorial cross-refs + the per-proc declaring-file capture note. Plan 45-06 (this closer).
+- [x] **REQ-BEAT-DOC-03**: `examples/beat/intro.flow` — 6/8 jig tutorial demonstrating 4/4 identity vs 6/8 `1b = eighth`, rendering MIDI + WAV. Plan 45-06 (`308c37a`).
+- [x] **REQ-BEAT-DOC-04**: `examples/beat/cut-time.flow` — 2/2 cut-time tutorial demonstrating `1b = half`, rendering MIDI + WAV. Plan 45-06 (`308c37a`).
+
 ---
 
 
@@ -328,10 +359,36 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | REQ-MOD-10 | Phase 43 | Shipped (Plan 43-04 — `b0b9c6f`; D-10 atomic polarity flip) |
 | REQ-MOD-11 | Phase 43 | Shipped (Plan 43-03 — `8ee4d39`; Plan 43-05 — `578b9ab` notation duplicate-decl cleanup) |
 | REQ-MOD-12 | Phase 43 | Shipped (Plan 43-05 — Plan 43-05 closer this commit; 34/34 Phase 43 fixtures GREEN + 9/9 Phase 42 AuditHarnessTests GREEN + 123 happy-path scripts pass + pre-existing-36 baseline preserved) |
+| REQ-BEAT-LEX-01 | Phase 45 | Shipped (Plan 45-01 — `d6d0731` / `fffd82f`) |
+| REQ-BEAT-LEX-02 | Phase 45 | Shipped (Plan 45-01 — `d6d0731` / `fffd82f`) |
+| REQ-BEAT-LEX-03 | Phase 45 | Shipped (Plan 45-01 — `d6d0731` / `fffd82f`) |
+| REQ-BEAT-LEX-04 | Phase 45 | Shipped (Plan 45-01 — `d6d0731` / `fffd82f`) |
+| REQ-BEAT-PRAGMA-HYPHEN-01 | Phase 45 | Shipped (Plan 45-01 — `d6d0731` / `fffd82f`) |
+| REQ-BEAT-AST-01 | Phase 45 | Shipped (Plan 45-02 — `121eb30`) |
+| REQ-BEAT-AST-02 | Phase 45 | Shipped (Plan 45-02 — `121eb30`) |
+| REQ-BEAT-AST-03 | Phase 45 | Shipped (Plan 45-02 — `121eb30`) |
+| REQ-BEAT-AST-04 | Phase 45 | Shipped (Plan 45-04 — `8ec7145`) |
+| REQ-BEAT-PRAGMA-01 | Phase 45 | Shipped (Plan 45-03 — `7372ce3`) |
+| REQ-BEAT-PRAGMA-02 | Phase 45 | Shipped (Plan 45-03 — `7372ce3`) |
+| REQ-BEAT-PRAGMA-03 | Phase 45 | Shipped (Plan 45-03 — `7372ce3`) |
+| REQ-BEAT-PRAGMA-04 | Phase 45 | Shipped (Plan 45-03 — `84df903`) |
+| REQ-BEAT-CONSTRUCTOR-01 | Phase 45 | Shipped (Plan 45-05 — `5fe8566`) |
+| REQ-BEAT-CONSTRUCTOR-02 | Phase 45 | Shipped (Plan 45-05 — `5fe8566`) |
+| REQ-BEAT-TEST-01 | Phase 45 | Shipped (Plan 45-04 — `d62c64d`) |
+| REQ-BEAT-TEST-02 | Phase 45 | Shipped (Plan 45-04 — `d62c64d`) |
+| REQ-BEAT-TEST-03 | Phase 45 | Shipped (Plan 45-04 — `d62c64d`) |
+| REQ-BEAT-TEST-04 | Phase 45 | Shipped (Plan 45-06 — `4a0a041`; ProcDeclaration.IsBeatTrueToSig per-proc capture Rule 1 fix) |
+| REQ-BEAT-TEST-05 | Phase 45 | Shipped (Plan 45-04 — `8ec7145`) |
+| REQ-BEAT-TEST-06 | Phase 45 | Shipped (Plan 45-05 — `5fe8566`; Plan 45-06 — `4a0a041` str round-trip Facts) |
+| REQ-BEAT-TEST-07 | Phase 45 | Shipped (Plan 45-06 — `308c37a` / `4a0a041`) |
+| REQ-BEAT-DOC-01 | Phase 45 | Shipped (Plan 45-06 closer) |
+| REQ-BEAT-DOC-02 | Phase 45 | Shipped (Plan 45-06 closer) |
+| REQ-BEAT-DOC-03 | Phase 45 | Shipped (Plan 45-06 — `308c37a`) |
+| REQ-BEAT-DOC-04 | Phase 45 | Shipped (Plan 45-06 — `308c37a`) |
 
 **Coverage:**
-- v1.5 requirements: 87 total (10 in Phase 35, 9 in Phase 36, 11 in Phase 37, 11 in Phase 38, 6 in Phase 39, 9 in Phase 40, 10 in Phase 41, 9 in Phase 42, 12 in Phase 43)
-- Mapped to phases: 87/87 ✓
+- v1.5 requirements: 113 total (10 in Phase 35, 9 in Phase 36, 11 in Phase 37, 11 in Phase 38, 6 in Phase 39, 9 in Phase 40, 10 in Phase 41, 9 in Phase 42, 12 in Phase 43, 26 in Phase 45)
+- Mapped to phases: 113/113 ✓
 - Unmapped: 0 ✓
 
 ---

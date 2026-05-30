@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: executing
-stopped_at: Phase 45 context gathered
-last_updated: "2026-05-30T02:27:15.701Z"
-last_activity: 2026-05-30
+stopped_at: Phase 45 complete
+last_updated: "2026-05-29T00:00:00.000Z"
+last_activity: 2026-05-29
 progress:
   total_phases: 15
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 78
-  completed_plans: 70
-  percent: 53
+  completed_plans: 71
+  percent: 60
 ---
 
 # Project State
@@ -25,12 +25,23 @@ See: .planning/PROJECT.md (updated 2026-05-17)
 
 ## Current Position
 
-Phase: 45 (beat-literal-syntax-true-to-sig-pragma) — EXECUTING
-Plan: 5 of 6
-Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-5 — 48-06 HUMAN-UAT + 48-07 closer)
+Phase: 45 (beat-literal-syntax-true-to-sig-pragma) — COMPLETE 2026-05-29
+Plan: 6 of 6 (all complete)
+Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-5 — 48-06 HUMAN-UAT + 48-07 closer); Phase 46 (Codebase Bloat Removal) also pending
 
-Status: Ready to execute
-Last activity: 2026-05-30
+Status: Phase 45 shipped
+Last activity: 2026-05-29
+
+**Phase 45 highlights (2026-05-29):**
+
+- First-class `Nb` Beat literal (`0.5b` / `2b` / `+1b` / `-2b`, lowercase `b` — `B` reserved to dodge `dB`/Decibel) lands the full lex→parse→eval→constructor surface. `TokenType.BeatLiteral` + signed/unsigned suffix branches (identifier-guard keeps `1bar`/`2beats` lexing as Int+identifier) + `PragmaScanner` hyphen-gap closure (Plan 45-01); `BeatLiteralExpression` own AST record + `Parser.ParsePrimary` arm preserving the raw double to eval (Plan 45-02); `EvaluateBeatLiteral` switch arm with multiplier formula `final = pragma_on ? raw × (4.0/denom) : raw` (Plan 45-04).
+- `enable beat-true-to-sig;` file pragma plumbing mirrors Phase 44 `StrictMode` discipline EXACTLY: `PragmaRegistry` entry + single `ExecutionContext.BeatTrueToSig` bool (no companion field per Pitfall 3 single-field design) + `FlowEngine.ApplyBeatTrueToSigPragma` + `ModuleLoader` save-set-restore in finally (Plan 45-03).
+- `(beat N)` constructor migrated from plain `Register` to `BeatConstructorFunctions.RegisterContextDependent` (Phase 43 recipe) so both Beat-construction paths — literal `0.5b` and constructor `(beat 0.5)` — honor the pragma identically; Phase 26.1 DICT-01 Tuple-of-hashables Dict-key regression preserved across (pragma × timesig) (Plan 45-05).
+- **Cross-file boundary Rule 1 fix (Plan 45-06):** the must-have truth — a pragma-OFF helper proc's `(beat N)` must stay raw quarters when called from a pragma-ON file — was BROKEN at plan-spawn: the `RegisterContextDependent` constructor read the caller's LIVE `ctx.BeatTrueToSig`, not the declaring file's. Closed by adding `ProcDeclaration.IsBeatTrueToSig` (parse-time capture from the declaring file's PragmaSet, mirroring Phase 44 `IsStrict`) + per-proc push/pop in `Interpreter.ExecuteUserFunctionWithCaptures` (same try/finally as the strict-bit push/pop) + lexical capture on synthetic lambda ProcDeclarations. `tests/test_beat_cross_file.flow` now prints `helper (beat 1) ... = 1` (raw) while the local `1b` in 6/8 = 0.5.
+- `(str Beat)` emits the plain quarter-relative double (no `b` suffix) in EVERY mode per D-14 — pinned by 4 round-trip Facts. Emitting `"0.5b"` would break round-trip under the pragma (re-parsing re-multiplies).
+- Two composer tutorials: `examples/beat/intro.flow` (6/8 jig — 4/4 identity vs 6/8 `1b = eighth`) + `examples/beat/cut-time.flow` (2/2 — `1b = half`). Both render MIDI + WAV; committed two-run cmp-clean baselines at `flow-lang.Tests/baselines/Phase45/{intro,cut-time}.wav` (intro SHA-256 `d401374c…`, cut-time `d3e0e832…`). No PRNG sites → byte-identical across runs.
+- Phase 45 xUnit fixture suite: **66 Facts GREEN** (7 lex + 5 AST-shape + 10 pragma-plumbing + 13 multiplier-matrix + 9 constructor/DICT-01 + 4 str round-trip + 1 cross-file smoke + 4 tutorial + Phase45TestCategory). Phase 44 strict suite 275/275 GREEN — the shared per-proc push/pop change introduced zero strict-mode regression. 4 composer `.flow` smokes (`test_beat_literal` / `_pragma_off` / `_pragma_on` / `_cross_file`) all exit 0 with PASSED markers.
+- 4 commits: `4a0a041` (cross-file boundary + str Facts + Rule 1 ProcDeclaration.IsBeatTrueToSig), `308c37a` (tutorials + baselines + tutorial Facts), + tracking-file sweep commit (this closer). v1.5 milestone progress: **10/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47).
 
 **Phase 48 Plan 05 highlights (2026-05-26):**
 
@@ -144,9 +155,10 @@ Last activity (Plan 03): WebAudioBackend real [JSImport] impl — see prior STAT
 | 42 | Type System & Stdlib Audit | REQ-AUDIT-01..09 | 9 | Shipped 2026-05-24 |
 | 43 | Module Names & Qualified Imports | REQ-MOD-01..12 | 12 | **Shipped 2026-05-24** |
 | 44 | Strict Mode | REQ-STRICT-01..15 | 15 | Shipped 2026-05-25 |
+| 45 | Beat Literal Syntax & True-to-Sig Pragma | REQ-BEAT-LEX/AST/PRAGMA/CONSTRUCTOR/TEST/DOC-NN | 26 | **Shipped 2026-05-29** |
 | 47 | Compile-Target Flavors | REQ-WEB-TARGET-01..10 | 10 | **Shipped 2026-05-25** |
 
-**v1.5 progress: 9/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 47 — note: 44 + 47 shipped same day). 112 v1.5 REQs total; 93 closed + Phase 40/41/45/46/48/49 still pending.
+**v1.5 progress: 10/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 — note: 44 + 47 shipped same day; 45 shipped 2026-05-29). 138 v1.5 REQs total; 119 closed + Phase 40/41/46/48/49 still pending.
 
 **Build-order constraints from research:**
 

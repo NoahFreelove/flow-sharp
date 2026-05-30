@@ -186,7 +186,7 @@ Single source of truth for music-typed literals, their CLR type, numeric coercio
 | `2.5s` | `Second` | `Double`, `Float` | `reverb` decay; → `Millisecond` |
 | `+50c` | `Cent` | `Double`, `Float` | `transpose` cent-precision |
 | `+2st` | `Semitone` | `Int` (whole-numbers-by-design) | `transpose` semitone-precision |
-| `1.5` (Beat-tagged) | `Beat` | `Double`, `Float` | beat-position arithmetic |
+| `0.5b` (Beat literal) | `Beat` | `Double`, `Float` | beat-position arithmetic; `enable beat-true-to-sig;` opt-in retunes literal to active timesig's beat unit (default 4/4 → `1b = quarter`) |
 | `440Hz` / `1.5kHz` | `Hertz` | `Double`, `Float` | filters, `createSineTone`/etc. (kHz → canonical Hz at lex time) |
 | `#foo` | `Symbol` | strict (no Double/Float) | `Dict<Symbol, V>`, identity equality |
 | `(loadScala "x.scl")` | `Tuning` | strict (reference identity) | `tuning t { ... }` block (Phase 32) |
@@ -198,6 +198,7 @@ Notes: Decibel/ms/Second/Cent/Semitone follow the `CentType.cs:24-27` pattern (s
 
 ### Music-Specific
 - **Musical context blocks**: `tempo 120 { }`, `timesig 4/4 { }` (also `timesig C { }` = 4/4 shorthand), `key Cmajor { }`, `swing 0.6 { }`, `voicePool 32 { }` (Phase 28), `tuning t { }` (Phase 32). All six keywords (`tempo`/`timesig`/`key`/`swing`/`voicePool`/`tuning`) are reserved.
+- **Pragmas** (file-scope, top-of-file, opt-in, no propagation via `use`): `hAsB`, `justIntonation`, `pythagorean`, `equalTemperament`, `scaleLint`, `matchExhaustive`, `strict` (Phase 44), `beat-true-to-sig` (Phase 45 — `Nb` literals + `(beat N)` constructor calls multiply by `4/denominator` in the active timesig, so `1b = quarter` in 4/4, `1b = eighth` in 6/8, `1b = half` in 2/2; multiplier resolves at construction time → internal storage stays quarter-relative). Tutorials: `examples/beat/intro.flow` (6/8 jig) + `examples/beat/cut-time.flow` (2/2). Per-proc pragma bit is captured at the DECLARING file (`ProcDeclaration.IsBeatTrueToSig`), so a pragma-off helper proc's `(beat N)` stays raw quarters even when called from a pragma-on file.
 - **`tuning <expr> { }`** (Phase 32): applies a `Tuning` value scoped to the block. Surface forms (D-15): identifier (`tuning partch { }`), inline call (`tuning (loadScala "x.scl") { }`), string sugar (`tuning "x.scl" { }`, parser-desugared). Last-wins with file-scope `enable justIntonation;`/`pythagorean;`/`equalTemperament;` pragmas. Tutorial: `examples/scala/intro.flow`.
 - **Note streams**: `| C4 D4 E4 F4 |` with durations (`q`/`h`/`w`/`e`/`s`), rests (`_`), dotted (`C4q.`), tied (`C4h~`), cent offset (`C4+50c`), chord bracket (`[C4 E4 G4]q`)
 - **Chord literals**: `Cmaj7`, `Dm`, `F#dim`, `Bb7`

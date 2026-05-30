@@ -129,6 +129,7 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [x] **Phase 42: Type System & Stdlib Audit** — Reflective audit of FlowType ↔ FunctionSignature graph + clamp/advisory/charitable inventory + .flow caller cross-reference; ships `42-AUDIT.md` deliverable with 7 gap-class sections + 53 routing tags (→ Phase 43 module/naming, → Phase 44 strict-mode Axis B sites, → v1.6-backlog); anchor finding: `BeatType` is the sole coercible orphan. **Zero production code touched — read-only audit phase** (invariant gate-enforced via empty production diff). Closed 9 REQ-AUDIT-NN across 4 plans; 26/26 Phase 42 fixtures GREEN. (completed 2026-05-24)
 - [x] **Phase 43: Module Names & Qualified Imports** — file-level `module math` declaration + qualified `math.sin` access; depends on Phase 42 AUDIT.md §1/§2/§5a routing (completed 2026-05-24)
 - [x] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites (completed 2026-05-25)
+- [x] **Phase 45: Beat Literal Syntax & True-to-Sig Pragma** — first-class `Nb` Beat literal (`0.5b`/`2b`/`-1b`) + opt-in `enable beat-true-to-sig;` file pragma retuning literal + `(beat N)` constructor to active timesig's beat unit (×4/denominator at construction time); closes the Beat-ergonomics gap left by Phase 43. 26 REQ-BEAT-NN across 6 plans; 66 Phase 45 fixtures GREEN + 2 composer tutorials with two-run cmp-clean WAV baselines (completed 2026-05-29)
 
 ### Phase Details
 
@@ -347,7 +348,7 @@ Plans:
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
-| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 5/6 | In Progress|  |
+| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 6/6 | Complete    | 2026-05-29 |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
@@ -457,7 +458,7 @@ Plans:
 
 **Depends on**: Phase 43 (Beat builtins shipped). Independent of Phase 44 (Strict Mode) — ordered after 44 only because 44 planning is active in a parallel session and we want to avoid contention. Phase 45 could in principle execute in parallel with Phase 44 once 44's plans are locked.
 **Requirements**: REQ-BEAT-LEX-01..04, REQ-BEAT-AST-01..04, REQ-BEAT-PRAGMA-01..04, REQ-BEAT-PRAGMA-HYPHEN-01, REQ-BEAT-CONSTRUCTOR-01..02, REQ-BEAT-TEST-01..07, REQ-BEAT-DOC-01..04
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete — **SHIPPED 2026-05-29**
 
 Plans:
 
@@ -477,7 +478,7 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 
-- [ ] 45-06-PLAN.md — Cross-file pair + tutorials + audio baselines + CLAUDE.md + REQUIREMENTS.md / ROADMAP.md / STATE.md sweep + 45-VERIFICATION.md (REQ-BEAT-TEST-04..07, REQ-BEAT-DOC-01..04)
+- [x] 45-06-PLAN.md — Cross-file pair + tutorials + audio baselines + CLAUDE.md + REQUIREMENTS.md / ROADMAP.md / STATE.md sweep + 45-VERIFICATION.md (REQ-BEAT-TEST-04..07, REQ-BEAT-DOC-01..04)
 
 ### Phase 46: Codebase Bloat Removal
 
