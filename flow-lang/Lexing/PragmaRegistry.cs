@@ -33,7 +33,8 @@ public static class PragmaRegistry
             ["equalTemperament"] = "12-tone equal temperament (default). Explicit form for tooling-visible intent.",
             ["scaleLint"] = "Phase 31 D-03: scale-lint is now default-on; this pragma is accepted as a no-op for v1.3 backward compat.",
             ["matchExhaustive"] = "Phase 35 D-v1.5-05: promote non-exhaustive match warnings to errors. File-scope only; does NOT propagate via use imports (Pitfall 4).",
-            ["strict"] = "Opt-in strict mode: no type coercion + input-perimeter clamps become errors + Bool-required for if/and/or/not + same-type required for equals/comparisons. File-scoped, no propagation via use imports."
+            ["strict"] = "Opt-in strict mode: no type coercion + input-perimeter clamps become errors + Bool-required for if/and/or/not + same-type required for equals/comparisons. File-scoped, no propagation via use imports.",
+            ["beat-true-to-sig"] = "Opt-in: Nb literals and (beat N) constructor calls multiply by 4/denominator at eval time, reading active timesig. So in 'timesig 6/8 { }' with pragma on, 1b = 1 eighth. File-scoped, no propagation via use imports."
         };
 
     /// <summary>True iff <paramref name="name"/> is a recognized pragma.</summary>

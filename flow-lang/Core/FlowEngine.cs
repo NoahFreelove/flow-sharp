@@ -347,6 +347,8 @@ public class FlowEngine : IDisposable
             // tuning-first / strict-second by convention; the two pragmas are
             // independent and neither reads the other's state.
             ApplyStrictPragma(program);
+            // Phase 45 D-04 — file-scope beat-true-to-sig bit.
+            ApplyBeatTrueToSigPragma(program);
 
             // 4. Interpret AST
             _interpreter.Execute(program);
@@ -405,6 +407,24 @@ public class FlowEngine : IDisposable
     private void ApplyStrictPragma(Ast.Program program)
     {
         _context.StrictMode = program.Pragmas.Has("strict");
+    }
+
+    /// <summary>
+    /// Phase 45 D-04 — bridges <c>program.Pragmas</c> →
+    /// <see cref="Runtime.ExecutionContext.BeatTrueToSig"/> for the top-level
+    /// file. Mirrors <see cref="ApplyStrictPragma"/>'s parse-then-set posture.
+    /// Imported files are handled by <see cref="ModuleLoader.LoadModule"/>'s
+    /// save-set-restore (D-04 file-scope semantics).
+    ///
+    /// <para>
+    /// Overwrites on every Execute (no persistence branch): absence of
+    /// <c>enable beat-true-to-sig;</c> MUST set the bit to false so a prior REPL
+    /// session's pragma does not bleed into a fresh non-pragma file.
+    /// </para>
+    /// </summary>
+    private void ApplyBeatTrueToSigPragma(Ast.Program program)
+    {
+        _context.BeatTrueToSig = program.Pragmas.Has("beat-true-to-sig");
     }
 
     /// <summary>

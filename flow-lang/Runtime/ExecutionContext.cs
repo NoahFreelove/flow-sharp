@@ -521,6 +521,34 @@ public class ExecutionContext
     /// </summary>
     public HashSet<string> StrictAdvisoryDedup { get; } = new();
 
+    // ===== Phase 45 — beat-true-to-sig pragma (D-03 / D-04) =====
+
+    /// <summary>
+    /// Phase 45 D-04 — per-DECLARING-file beat-true-to-sig pragma bit.
+    /// Set by <see cref="Core.FlowEngine.Execute"/> for the top-level file
+    /// (<c>_context.BeatTrueToSig = pragmaSet.Has("beat-true-to-sig")</c> in
+    /// <c>ApplyBeatTrueToSigPragma</c>) and by <see cref="ModuleLoader.LoadModule"/>
+    /// for each imported file (save-set-restore around the imported
+    /// <c>interpreter.Execute(program)</c>). Default <c>false</c>.
+    ///
+    /// <para>
+    /// Read site: <see cref="FlowLang.Interpreter.ExpressionEvaluator.EvaluateBeatLiteral"/>
+    /// and <c>BeatConstructorFunctions.RegisterContextDependent</c>. Computes the
+    /// multiplier formula <c>final = pragma_on ? raw × (4.0 / denom) : raw</c>
+    /// against the active <see cref="MusicalContext.TimeSignature"/> at literal /
+    /// constructor invocation time.
+    /// </para>
+    ///
+    /// <para>
+    /// Single-field design (NO companion <c>CallerBeatTrueToSig</c>): unlike
+    /// Phase 44's strict-mode two-field design, Phase 45 has no leaf-clamp-site
+    /// asymmetry — the multiplier reads the EXECUTING file's pragma bit, which
+    /// is correct for both <c>Nb</c> literals and <c>(beat N)</c> calls
+    /// (45-PATTERNS.md Pitfall 3).
+    /// </para>
+    /// </summary>
+    public bool BeatTrueToSig { get; set; } = false;
+
     /// <summary>
     /// Phase 33 — 19-entry GM-orchestral Symbol → relative-path map populated
     /// from <c>flow-lang/sfz.flow</c> via <c>__enableSfzModule</c> per CONTEXT
