@@ -412,7 +412,13 @@ public partial class Parser
         return new ProcDeclaration(
             location, name, parameters, body, isInternal,
             Span: new Span(location, PreviousToken.Location),
-            IsStrict: _pragmaSet?.Has("strict") ?? false);
+            IsStrict: _pragmaSet?.Has("strict") ?? false,
+            // Phase 45 Plan 45-06 D-04 — capture the declaring file's
+            // `enable beat-true-to-sig;` bit onto every ProcDeclaration at parse
+            // time, mirroring IsStrict above. The Interpreter pushes/pops this
+            // around the proc body so a (beat N) call inside the proc reads the
+            // DECLARING file's pragma bit, not the caller's (Pitfall 3 / cross-file).
+            IsBeatTrueToSig: _pragmaSet?.Has("beat-true-to-sig") ?? false);
     }
 
     private VariableDeclaration ParseVariableDeclaration()

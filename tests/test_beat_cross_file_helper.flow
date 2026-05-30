@@ -1,0 +1,19 @@
+use "@std"
+use "@audio"
+
+Note: Phase 45 REQ-BEAT-TEST-04 — cross-file boundary HELPER (pragma-OFF).
+Note: This file does NOT enable beat-true-to-sig. Per D-04 the pragma bit is
+Note: per-DECLARING-file, so every (beat N) call below sees multiplier 1.0
+Note: regardless of whether the importer has the pragma enabled.
+
+proc bumpBeat (Beat: b)
+    Note: ignores its argument; always constructs (beat 1) under THIS file's
+    Note: pragma bit (off) — so the result is always raw quarters = 1.0.
+    return (beat 1)
+end proc
+
+proc helperRawBeat ()
+    return (beat 0.5)
+end proc
+
+(print "test_beat_cross_file_helper: loaded")

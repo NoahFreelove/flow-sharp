@@ -45,6 +45,20 @@ namespace FlowLang.Ast.Statements;
 /// <c>EvaluateLambda</c> for the call-chain mechanics.
 /// </para>
 /// </summary>
+/// <para>
+/// <b>Phase 45 Plan 45-06 D-04 — <c>IsBeatTrueToSig</c>:</b> captured at parse
+/// time from the declaring file's <c>PragmaSet.Has("beat-true-to-sig")</c>,
+/// mirroring <c>IsStrict</c> exactly. The Interpreter
+/// (<c>ExecuteUserFunctionWithCaptures</c>) pushes/pops
+/// <c>ExecutionContext.BeatTrueToSig = proc.IsBeatTrueToSig</c> on entry/exit
+/// in the SAME try/finally as the strict-bit push/pop. Without this, a
+/// <c>(beat N)</c> call inside a proc declared in a pragma-OFF helper file
+/// would read the CALLER's live <c>BeatTrueToSig</c> bit (the importer's),
+/// multiplying by the wrong file's pragma state. The ModuleLoader file-load
+/// save-set-restore (Plan 45-03) only covers the import boundary, not the
+/// later proc-invocation boundary — so the per-proc capture is required for
+/// the cross-file boundary (REQ-BEAT-TEST-04 / Pitfall 3) to hold.
+/// </para>
 public record ProcDeclaration(
     SourceLocation Location,
     string Name,
@@ -52,7 +66,8 @@ public record ProcDeclaration(
     IReadOnlyList<Statement> Body,
     bool IsInternal,
     Span? Span = null,
-    bool IsStrict = false) : Statement(Location);
+    bool IsStrict = false,
+    bool IsBeatTrueToSig = false) : Statement(Location);
 
 /// <summary>
 /// Represents a function parameter.

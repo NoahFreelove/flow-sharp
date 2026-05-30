@@ -333,4 +333,124 @@ public class BeatTrueToSigPragmaTests : IDisposable
         var src = "enable beat-true-to-sig;\nBeat b = 1b; (print (str b))";
         Assert.Equal("1", RunCapture(src));
     }
+
+    // ===== Plan 45-06 Task 1 — (str Beat) round-trip lock (D-14 / Signal 6) =====
+    //
+    // D-14 LOCK: (str someBeat) emits the plain quarter-relative double with NO
+    // 'b' suffix in EVERY mode. The multiplier resolves at CONSTRUCTION time, so
+    // by the time str sees the Beat it is already a quarter-relative double; str
+    // never re-applies or re-tags. Emitting "0.5b" would break round-trip under
+    // the pragma (re-parsing "0.5b" in 6/8 re-multiplies to 0.25). These 4 Facts
+    // pin that lock across the (pragma × timesig) corners.
+
+    [Fact]
+    public void StrEmitsPlainDoublePragmaOff()
+    {
+        // No pragma → multiplier 1.0 → (beat 0.5) is 0.5 quarters → str = "0.5".
+        var src = "(print (str (beat 0.5)))";
+        Assert.Equal("0.5", RunCapture(src));
+    }
+
+    [Fact]
+    public void StrEmitsPlainDoublePragmaOn4Over4()
+    {
+        // Pragma on, 4/4 → multiplier 1.0 → 0.5 quarters → str = "0.5" (no 'b').
+        var src = "enable beat-true-to-sig;\ntimesig 4/4 { (print (str (beat 0.5))) }";
+        Assert.Equal("0.5", RunCapture(src));
+    }
+
+    [Fact]
+    public void StrEmitsQuarterValuePragmaOn6Over8()
+    {
+        // Pragma on, 6/8 → multiplier 4/8 = 0.5 → (beat 1.0) constructs
+        // Value.Beat(0.5); str shows the QUARTER value "0.5", never "1b".
+        var src = "enable beat-true-to-sig;\ntimesig 6/8 { (print (str (beat 1.0))) }";
+        Assert.Equal("0.5", RunCapture(src));
+    }
+
+    [Fact]
+    public void StrEmitsQuarterValuePragmaOn2Over2()
+    {
+        // Pragma on, 2/2 → multiplier 4/2 = 2.0 → (beat 0.5) constructs
+        // Value.Beat(1.0); str shows the QUARTER value "1".
+        var src = "enable beat-true-to-sig;\ntimesig 2/2 { (print (str (beat 0.5))) }";
+        Assert.Equal("1", RunCapture(src));
+    }
+
+    // ===== Plan 45-06 Task 1 — cross-file boundary smoke (REQ-BEAT-TEST-04) =====
+    //
+    // Pitfall 3 / D-04 verification at the composer-source level: a pragma-ON
+    // entry file `use`-s a pragma-OFF helper declaring `proc bumpBeat ... (beat 1)`.
+    // Inside the entry's `timesig 6/8 { }`, a LOCAL 1b literal multiplies to 0.5,
+    // but `(bumpBeat (beat 0))` returns Value.Beat(1.0) — the helper proc's
+    // (beat 1) reads its DECLARING file's pragma bit (off), not the caller's.
+    // Mechanism: ProcDeclaration.IsBeatTrueToSig captured at parse time from the
+    // declaring file + per-proc push/pop in Interpreter.ExecuteUserFunctionWithCaptures.
+
+    private static string RepoRoot
+    {
+        get
+        {
+            var dir = new System.IO.DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "flow-sharp.sln")))
+                dir = dir.Parent;
+            if (dir == null)
+                throw new InvalidOperationException(
+                    "Could not locate flow-sharp.sln walking up from " + AppContext.BaseDirectory);
+            return dir.FullName;
+        }
+    }
+
+    private static string FlowInterpreterDll =>
+        Path.Combine(RepoRoot, "flow-interpreter", "bin", "Debug", "net10.0", "flow-interpreter.dll");
+
+    private static bool DllMissing => !File.Exists(FlowInterpreterDll);
+
+    /// <summary>
+    /// Spawns <c>dotnet exec flow-interpreter.dll &lt;repo-relative path&gt;</c>
+    /// with a 120s cap. Returns (exitCode, stdout, stderr). Mirrors Phase 44's
+    /// <c>StrictFlowScriptSuiteTests.RunInterpreter</c>.
+    /// </summary>
+    internal static (int exitCode, string stdout, string stderr) RunInterpreter(string repoRelativePath)
+    {
+        var fullPath = Path.Combine(RepoRoot, repoRelativePath);
+        var psi = new System.Diagnostics.ProcessStartInfo("dotnet",
+            $"exec \"{FlowInterpreterDll}\" \"{fullPath}\"")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = RepoRoot,
+        };
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var stdout = proc.StandardOutput.ReadToEnd();
+        var stderr = proc.StandardError.ReadToEnd();
+        if (!proc.WaitForExit(milliseconds: 120_000))
+        {
+            try { proc.Kill(entireProcessTree: true); } catch { /* best-effort */ }
+            throw new TimeoutException(
+                $"flow-interpreter timed out after 120s on {repoRelativePath}.\n" +
+                $"stdout:\n{stdout}\nstderr:\n{stderr}");
+        }
+        return (proc.ExitCode, stdout, stderr);
+    }
+
+    [Fact]
+    public void CrossFileSmokeFact()
+    {
+        if (DllMissing)
+            return;  // charitable skip when interpreter not yet built (Phase 39 precedent)
+
+        var (exitCode, stdout, stderr) = RunInterpreter("tests/test_beat_cross_file.flow");
+        Assert.True(exitCode == 0,
+            $"expected exit 0 for tests/test_beat_cross_file.flow; got {exitCode}.\n" +
+            $"stdout:\n{stdout}\nstderr:\n{stderr}");
+        // Local literal sees the multiplier (6/8 → 1b = 0.5 quarters).
+        Assert.Contains("local 1b in 6/8 pragma-on = 0.5", stdout);
+        // Cross-file boundary: helper proc's (beat 1) reads the DECLARING (pragma-off)
+        // file's bit → raw quarters = 1, NOT 0.5 (D-04 / Pitfall 3).
+        Assert.Contains("helper (beat 1) called from 6/8 pragma-on = 1", stdout);
+        Assert.Contains("test_beat_cross_file: PASSED", stdout);
+    }
 }

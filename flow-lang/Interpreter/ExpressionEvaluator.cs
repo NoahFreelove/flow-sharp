@@ -831,7 +831,13 @@ public class ExpressionEvaluator
         // creation), not DYNAMIC (file at invocation).
         var proc = new ProcDeclaration(
             lambda.Location, uniqueName, parameters, body, false,
-            IsStrict: _context.StrictMode);
+            IsStrict: _context.StrictMode,
+            // Phase 45 Plan 45-06 D-04 — lambdas inherit the beat-true-to-sig bit
+            // of the surrounding lexical scope at creation time (same LEXICAL-not-
+            // DYNAMIC rule as IsStrict above). A lambda created in a pragma-on file
+            // keeps the multiplier on (beat N) calls even when invoked from a
+            // pragma-off caller; a lambda created in a pragma-off file does not.
+            IsBeatTrueToSig: _context.BeatTrueToSig);
 
         // Snapshot capture: capture all currently visible variables at lambda creation time.
         // This ensures the lambda sees the values as they were when it was created,

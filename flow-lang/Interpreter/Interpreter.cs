@@ -1138,6 +1138,17 @@ public class Interpreter : IFunctionInvoker
         var prevStrict = _context.StrictMode;
         _context.StrictMode = proc.IsStrict;
 
+        // Phase 45 Plan 45-06 D-04 — push the declaring file's beat-true-to-sig
+        // bit around the proc body, mirroring the strict-bit discipline above.
+        // The bit was captured on the AST node at parse time
+        // (`ProcDeclaration.IsBeatTrueToSig`); reading it here means a (beat N)
+        // call inside the body sees the DECLARING file's pragma bit even when
+        // the proc is invoked from a different-pragma file (Pitfall 3 /
+        // cross-file boundary REQ-BEAT-TEST-04). Restored in the same finally
+        // as PopFrame + the strict restore so a body throw rebalances all three.
+        var prevBeatTrueToSig = _context.BeatTrueToSig;
+        _context.BeatTrueToSig = proc.IsBeatTrueToSig;
+
         // Create new stack frame
         _context.PushFrame();
 
@@ -1227,6 +1238,10 @@ public class Interpreter : IFunctionInvoker
             // the proc's bit. Restore in the SAME finally as PopFrame so a
             // body throw cannot leave StrictMode mutated on unwind.
             _context.StrictMode = prevStrict;
+            // Phase 45 Plan 45-06 D-04 — restore the beat-true-to-sig bit AFTER
+            // PopFrame, in the SAME finally as the strict restore, so a body
+            // throw cannot leak the proc's pragma bit onto unwind.
+            _context.BeatTrueToSig = prevBeatTrueToSig;
             _recursionDepth--;
         }
     }
