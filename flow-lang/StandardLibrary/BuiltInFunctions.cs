@@ -552,15 +552,8 @@ public static class BuiltInFunctions
                 ParameterNames: []),
             args => Value.Void());
 
-        // ===== Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance) =====
-        // Flow has no `Beat` literal at top level — durations like `q`, `h`, `e`, `s`, `w`
-        // exist only as note-stream suffixes (inside `| C4q D4h |`). DICT-01's
-        // Tuple-of-hashables key acceptance needs to construct Beat values in user source.
-        // (beat Double) wraps a fractional-beat double in a Beat-typed Value so that
-        // `<<C4, (beat 0.25)>>` produces a Tuple<<Note, Beat>> usable as a Dict key.
-        registry.Register("beat", new FunctionSignature("beat", [DoubleType.Instance],
-                ParameterNames: ["value"]),
-            args => Value.Beat(args[0].As<double>()));
+        // (Moved (beat Double) → Beat constructor to BeatConstructorFunctions.RegisterContextDependent
+        //  in Phase 45 D-05 — pragma-aware multiplier reads ctx.BeatTrueToSig at call time.)
 
         // ===== Phase 26.1 NaN production primitive (REVISION 2) =====
         // Flow has no `nan` literal. (div 0.0 0.0) throws "Division by zero"
@@ -1029,6 +1022,7 @@ public static class BuiltInFunctions
         RegisterEuclideanOverloads(registry, context);  // Phase 15 DX-09 (swing/humanize/seed)
         Audio.EffectsFunctions.RegisterContextDependent(registry, context);  // Phase 22-04 DX-12 (NoteValue-rate delay synced to MusicalContext.Tempo)
         Audio.BeatConversionFunctions.RegisterContextDependent(registry, context);  // Phase 43 D-08 — beatToSec + secToBeat tempo-aware conversion (closes AUDIT.md §1 Beat-orphan anchor)
+        Audio.BeatConstructorFunctions.RegisterContextDependent(registry, context);  // Phase 45 D-05 — pragma-aware (beat N) constructor
         Transforms.TransformFunctions.RegisterContextDependent(registry, context);  // Phase 22-05 DX-13 (quantize reads MusicalContext.TimeSignature)
         Audio.Vocalization.VocalizationFunctions.RegisterContextDependent(registry, context);  // Phase 23-02 Task 3 (sing reads MusicalContext.Tuning via SongRenderer.ResolveRenderTuning)
         Audio.MidiExport.RegisterContextDependent(registry, context);  // Phase 23-03 Task 2 D-13 (writeMidi reads MusicalContext.Tuning for non-12-TET advisory)
