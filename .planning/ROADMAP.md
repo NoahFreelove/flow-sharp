@@ -516,12 +516,17 @@ Plans:
 **Acceptance**: Full test suite (`flow-lang.Tests` + every `tests/test_*.flow` script + Phase 28 RMS-windowed baselines + two-run cmp-clean determinism contract) remains green post-cleanup. No behavior changes — pure removal of dead/duplicate code. Cleanup commits stay atomic per target to allow selective revert if a removal regresses something subtle.
 
 **Depends on**: None — pure cleanup. Independent of Phases 44 + 45 currently in flight; could parallelize with either once their plans lock. Bundled as one phase (vs scattered `/gsd:quick` tasks) because targets share regression-risk surface (synthesizers, song rendering, test infrastructure) and one atomic test-suite-green gate per cleanup is more economical than running it 12+ times.
-**Requirements**: TBD (defined at plan-phase)
-**Plans:** 0 plans
+**Requirements**: CLEAN-02..CLEAN-09, CLEAN-12, CLEAN-16 (derived 1:1 from confirmed CONTEXT decisions D-02..D-09, D-12, D-16; no formal REQ IDs assigned at roadmap time)
+**Plans:** 6 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 46 to break down)
+- [ ] 46-01-PLAN.md — Wave 0 prereqs: D-04 Fixtures verify (already merged) + D-09 diagnostics KEEP rationale + D-03 exact-byte synth guard
+- [ ] 46-02-PLAN.md — D-02 remove TimelineMap editor-highlighting stack (~250 LOC; zero callers)
+- [ ] 46-03-PLAN.md — D-05 remove dead internal createSineTone decls + D-08 inline ClampSamples shims
+- [ ] 46-04-PLAN.md — D-06 remove exportWav alias (migrate 7 callers) + D-07 remove test.flow legacy half (port consumer to @test)
+- [ ] 46-05-PLAN.md — D-12 Progression DSL unit tests + non-rendered showcase demo + D-16 legacy keep-notes
+- [ ] 46-06-PLAN.md — D-03 redirect NoteSynthesizer helpers to SynthUtils (byte-guard gated, with inline-retention fallback)
 
 ### Phase 47: Compile-Target Flavors — SHIPPED 2026-05-25
 
