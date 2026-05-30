@@ -4,6 +4,9 @@ Note: For classical music composition with note durations and time signatures,
 Note: see the @notation library which provides structured musical notation.
 Note:
 Note: This library provides DAW-style timeline composition with positioned audio clips.
+Note:
+Note: Legacy fluent Track wrappers (bpm/voiceAt/... below) -- superseded by
+Note: Song/Section as the canonical arrangement primitive; kept as a usable surface.
 
 module composition
 
