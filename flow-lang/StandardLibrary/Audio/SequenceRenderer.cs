@@ -119,49 +119,5 @@ namespace FlowLang.StandardLibrary.Audio
             int effectivePool = voicePoolSize ?? 32; // SPEC-7 locked default
             return VoiceAllocator.AllocateWithPool(allVoices, sampleRate, effectivePool, bpm);
         }
-
-        /// <summary>
-        /// Timeline-aware version of RenderSequenceToVoices.
-        /// </summary>
-        public static List<Voice> RenderSequenceToVoices(
-            SequenceData sequence,
-            string synthType,
-            int sampleRate,
-            double bpm,
-            TimelineMap timelineMap,
-            string scopeName = "top-level",
-            int maxVoices = 1024)
-        {
-            return RenderSequenceToVoices(sequence, SynthesizerFactory.Create(synthType), sampleRate, bpm, timelineMap, scopeName, maxVoices);
-        }
-
-        public static List<Voice> RenderSequenceToVoices(
-            SequenceData sequence,
-            INoteSynthesizer synthesizer,
-            int sampleRate,
-            double bpm,
-            TimelineMap timelineMap,
-            string scopeName = "top-level",
-            int maxVoices = 1024)
-        {
-            var allVoices = new List<Voice>();
-            var timeline = sequence.ToTimeline();
-
-            foreach (var (bar, offsetBeats) in timeline)
-            {
-                var barVoices = BarRenderer.RenderBarAtBeat(
-                    bar,
-                    offsetBeats,
-                    synthesizer,
-                    sampleRate,
-                    bpm,
-                    timelineMap,
-                    scopeName);
-
-                allVoices.AddRange(barVoices);
-            }
-
-            return VoiceAllocator.Allocate(allVoices, sampleRate, maxVoices);
-        }
     }
 }
