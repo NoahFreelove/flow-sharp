@@ -521,11 +521,16 @@ Plans:
 
 Plans:
 
+**Wave 1**
+
 - [ ] 46-01-PLAN.md — Wave 0 prereqs: D-04 Fixtures verify (already merged) + D-09 diagnostics KEEP rationale + D-03 exact-byte synth guard
 - [ ] 46-02-PLAN.md — D-02 remove TimelineMap editor-highlighting stack (~250 LOC; zero callers)
 - [ ] 46-03-PLAN.md — D-05 remove dead internal createSineTone decls + D-08 inline ClampSamples shims
-- [ ] 46-04-PLAN.md — D-06 remove exportWav alias (migrate 7 callers) + D-07 remove test.flow legacy half (port consumer to @test)
 - [ ] 46-05-PLAN.md — D-12 Progression DSL unit tests + non-rendered showcase demo + D-16 legacy keep-notes
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 46-04-PLAN.md — D-06 remove exportWav alias (migrate 7 callers) + D-07 remove test.flow legacy half (port consumer to @test)
 - [ ] 46-06-PLAN.md — D-03 redirect NoteSynthesizer helpers to SynthUtils (byte-guard gated, with inline-retention fallback)
 
 ### Phase 47: Compile-Target Flavors — SHIPPED 2026-05-25
