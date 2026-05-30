@@ -2,6 +2,7 @@ using System;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
+using SynthUtils = FlowLang.StandardLibrary.Audio.Synthesizers.SynthUtils;
 
 namespace FlowLang.StandardLibrary.Audio
 {
@@ -26,15 +27,21 @@ namespace FlowLang.StandardLibrary.Audio
         public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
-                return CreateSilence(sampleRate, durationBeats, bpm);
+                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
             double frequency = PitchConversion.NoteToFrequency(note, tuning);
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
+            double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
             double amplitude = 0.3 * note.Velocity; // Moderate amplitude to avoid clipping
 
+            // D-03 FALLBACK (Plan 46-06): oscillator loop kept inline. The Wave 0 byte
+            // guard (NoteSynthesizerByteGuardTests) went RED against SynthUtils.GenerateSine —
+            // SynthUtils' incremental phase accumulation (phase += phaseInc; wrap) diverges
+            // by ±1 ULP in IEEE-754 from this absolute-time formula (Math.Sin(2π·f·t),
+            // t = i/sampleRate). Since these generators are composer-callable builtins,
+            // the inline math IS the byte contract and stays verbatim.
             for (int i = 0; i < numSamples; i++)
             {
                 double t = i / (double)sampleRate;
@@ -43,18 +50,6 @@ namespace FlowLang.StandardLibrary.Audio
             }
 
             return buffer;
-        }
-
-        private double BeatsToSeconds(double beats, double bpm)
-        {
-            return (beats / bpm) * 60.0;
-        }
-
-        private AudioBuffer CreateSilence(int sampleRate, double durationBeats, double bpm)
-        {
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
-            int numSamples = (int)(durationSeconds * sampleRate);
-            return new AudioBuffer(numSamples, 1, sampleRate);
         }
     }
 
@@ -66,15 +61,18 @@ namespace FlowLang.StandardLibrary.Audio
         public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
-                return CreateSilence(sampleRate, durationBeats, bpm);
+                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
             double frequency = PitchConversion.NoteToFrequency(note, tuning);
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
+            double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
             double amplitude = 0.2 * note.Velocity; // Lower amplitude for sawtooth (more harmonics)
 
+            // D-03 FALLBACK (Plan 46-06): inline oscillator kept — SynthUtils.GenerateSaw
+            // incremental-phase wrap diverges in IEEE-754 from this (frequency * t) % 1.0
+            // absolute-time formula (byte guard RED). See SineSynthesizer note.
             for (int i = 0; i < numSamples; i++)
             {
                 double t = i / (double)sampleRate;
@@ -84,18 +82,6 @@ namespace FlowLang.StandardLibrary.Audio
             }
 
             return buffer;
-        }
-
-        private double BeatsToSeconds(double beats, double bpm)
-        {
-            return (beats / bpm) * 60.0;
-        }
-
-        private AudioBuffer CreateSilence(int sampleRate, double durationBeats, double bpm)
-        {
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
-            int numSamples = (int)(durationSeconds * sampleRate);
-            return new AudioBuffer(numSamples, 1, sampleRate);
         }
     }
 
@@ -107,15 +93,18 @@ namespace FlowLang.StandardLibrary.Audio
         public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
-                return CreateSilence(sampleRate, durationBeats, bpm);
+                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
             double frequency = PitchConversion.NoteToFrequency(note, tuning);
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
+            double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
             double amplitude = 0.2 * note.Velocity; // Lower amplitude for square wave (many harmonics)
 
+            // D-03 FALLBACK (Plan 46-06): inline oscillator kept — SynthUtils.GenerateSquare
+            // incremental-phase wrap diverges in IEEE-754 from this (frequency * t) % 1.0
+            // absolute-time formula (byte guard RED). See SineSynthesizer note.
             for (int i = 0; i < numSamples; i++)
             {
                 double t = i / (double)sampleRate;
@@ -125,18 +114,6 @@ namespace FlowLang.StandardLibrary.Audio
             }
 
             return buffer;
-        }
-
-        private double BeatsToSeconds(double beats, double bpm)
-        {
-            return (beats / bpm) * 60.0;
-        }
-
-        private AudioBuffer CreateSilence(int sampleRate, double durationBeats, double bpm)
-        {
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
-            int numSamples = (int)(durationSeconds * sampleRate);
-            return new AudioBuffer(numSamples, 1, sampleRate);
         }
     }
 
@@ -148,15 +125,19 @@ namespace FlowLang.StandardLibrary.Audio
         public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
         {
             if (note.IsRest)
-                return CreateSilence(sampleRate, durationBeats, bpm);
+                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
             double frequency = PitchConversion.NoteToFrequency(note, tuning);
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
+            double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
             int numSamples = (int)(durationSeconds * sampleRate);
 
             AudioBuffer buffer = new AudioBuffer(numSamples, 1, sampleRate);
             double amplitude = 0.3 * note.Velocity;
 
+            // D-03 FALLBACK (Plan 46-06): inline oscillator kept — SynthUtils.GenerateTriangle
+            // incremental-phase wrap diverges in IEEE-754 from this (frequency * t) % 1.0
+            // absolute-time formula (byte guard RED on the sine/saw/square siblings; all four
+            // share the same accumulation-vs-absolute-time class of drift). See SineSynthesizer note.
             for (int i = 0; i < numSamples; i++)
             {
                 double t = i / (double)sampleRate;
@@ -166,18 +147,6 @@ namespace FlowLang.StandardLibrary.Audio
             }
 
             return buffer;
-        }
-
-        private double BeatsToSeconds(double beats, double bpm)
-        {
-            return (beats / bpm) * 60.0;
-        }
-
-        private AudioBuffer CreateSilence(int sampleRate, double durationBeats, double bpm)
-        {
-            double durationSeconds = BeatsToSeconds(durationBeats, bpm);
-            int numSamples = (int)(durationSeconds * sampleRate);
-            return new AudioBuffer(numSamples, 1, sampleRate);
         }
     }
 
