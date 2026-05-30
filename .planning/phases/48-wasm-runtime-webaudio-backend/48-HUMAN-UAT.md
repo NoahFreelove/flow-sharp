@@ -123,18 +123,36 @@ successfully from `http://localhost:8080/wasm/index.html` → `http://localhost:
 The .NET 10 Mono-WASM loader then tried to fetch its boot manifest `dotnet.boot.js`
 relative to the served root (`http://localhost:8080/dotnet.boot.js`) and got a 404.
 
-This means the published boot manifest is **not** a sibling of `dotnet.js` at the
-served root — the "flat publish" assumption recorded in 48-04-SUMMARY.md does not
-hold for the boot manifest under this SDK, OR the bundle must be served from a
-different root. Candidate root causes to confirm against the on-disk publish layout:
+**CONFIRMED root cause (on-disk publish inspected 2026-05-30):** `dotnet.boot.js`
+(and `blazor.boot.json`) **do not exist anywhere** in the publish output. The
+`…/browser-wasm/publish/` directory contains the raw build/AOT intermediate set,
+NOT a runnable web bundle:
 
-1. `dotnet.js` + `dotnet.boot.js` + the rest of `_framework/` live under a
-   subdir (e.g. `wwwroot/_framework/` or `AppBundle/_framework/`), so serving from
-   `publish/` is the wrong root and the relative import only *appeared* to work.
-2. The boot manifest has a different filename in this SDK (`dotnet.boot.js` vs a
-   JSON variant) and `dotnet.create()` needs an explicit config/base-path.
-3. `index.html` needs a `<base href>` matching the actual framework directory.
+- Publish root has `dotnet.js` + `dotnet.native.wasm` + `dotnet.runtime.js` **AND**
+  build intermediates that a real bundle never ships: `driver.c`, `corebindings.c`,
+  `libmonosgen-2.0.a`, `emcc-link.rsp`, `*.h`, `wasm-props.json`.
+- **No `dotnet.boot.js`, no `_framework/`, no `AppBundle/`/`wwwroot/`.**
+- `flow-runtime.js`'s `import '../dotnet.js'` resolved fine (dotnet.js IS at root);
+  `dotnet.create()` then fetched its boot manifest at root → 404.
 
-**Routing (per Closure Conditions):** This is a runtime/build-config defect, NOT a
-browser-UX nit → **in-phase repair via Plan 48-06.1** before Plan 48-07 closer.
-Firefox/Safari rows deferred until the boot fix lands and re-smoke passes.
+**Why:** `flow-lang` is a **library** project. `dotnet publish` of a library with
+`RuntimeIdentifier=browser-wasm` emits the runtime + native intermediates but never
+runs the app-bundle generation step (`WasmGenerateAppBundle` / boot-manifest write),
+because a library has no WASM app head/entry. So `dotnet.js` has nothing to boot.
+
+**Why this escaped earlier plans:** 48-04 presence-checked files on disk + confirmed
+`publish` exits 0, but never *booted* the runtime in a browser. 48-05's determinism /
+bundle-size tests call `WasmEntry.RunFromJs` **in-process on Desktop**, never through
+the browser boot path — so the missing manifest was invisible to the xUnit suite.
+
+**Fix direction (for /gsd:debug):** make `FlowTarget=Web` produce a bootable WASM app
+bundle — e.g. emit `dotnet.boot.js` via the app-bundle target (a wasm app head /
+`OutputType`+`WasmGenerateAppBundle` handling), then reconcile `flow-runtime.js`'s
+`../dotnet.js` import + `wasm/` placement + `index.html` against the new bundle layout.
+Verify by **republish → serve → boot in a real browser** (the xUnit suite cannot
+catch this class of defect — add a browser/boot smoke or at least a
+"boot-manifest-exists" publish-output assertion).
+
+**Routing (per Closure Conditions):** runtime/build-config defect, NOT a browser-UX
+nit → in-phase repair before Plan 48-07 closer. Handed to `/gsd:debug` (2026-05-30).
+Firefox/Safari rows deferred until the boot fix lands and Chrome re-smoke passes.
