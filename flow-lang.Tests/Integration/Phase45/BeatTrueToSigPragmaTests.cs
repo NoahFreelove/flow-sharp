@@ -453,4 +453,70 @@ public class BeatTrueToSigPragmaTests : IDisposable
         Assert.Contains("helper (beat 1) called from 6/8 pragma-on = 1", stdout);
         Assert.Contains("test_beat_cross_file: PASSED", stdout);
     }
+
+    // ===== Plan 45-06 Task 2 — tutorial two-run cmp-clean + baseline match (REQ-BEAT-TEST-07) =====
+    //
+    // Phase 45 adds NO PRNG sites — the tutorial WAVs are pure synthesis and
+    // MUST be byte-identical across runs (CLAUDE.md "Conventions" two-run
+    // cmp-clean contract). The committed baselines under
+    // flow-lang.Tests/baselines/Phase45/ are the reference renders (Phase 28
+    // precedent — committed because no stochastic compute is invoked). Raw
+    // SHA-256 over file bytes is sufficient (no RMS tolerance needed — exact
+    // determinism, not perceptual fidelity).
+
+    private static string Sha256(string path)
+    {
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        return Convert.ToHexString(sha.ComputeHash(File.ReadAllBytes(path)));
+    }
+
+    private static void RunTutorial(string repoRelativeFlow)
+    {
+        var (exit, stdout, stderr) = RunInterpreter(repoRelativeFlow);
+        Assert.True(exit == 0,
+            $"expected exit 0 for {repoRelativeFlow}; got {exit}.\nstdout:\n{stdout}\nstderr:\n{stderr}");
+        Assert.Contains("PASSED", stdout);
+    }
+
+    [Fact]
+    public void TutorialTwoRunCmpClean_Intro()
+    {
+        if (DllMissing) return;  // charitable skip
+        RunTutorial("examples/beat/intro.flow");
+        var sha1 = Sha256("/tmp/beat_intro.wav");
+        RunTutorial("examples/beat/intro.flow");
+        var sha2 = Sha256("/tmp/beat_intro.wav");
+        Assert.Equal(sha1, sha2);
+    }
+
+    [Fact]
+    public void TutorialTwoRunCmpClean_CutTime()
+    {
+        if (DllMissing) return;  // charitable skip
+        RunTutorial("examples/beat/cut-time.flow");
+        var sha1 = Sha256("/tmp/beat_cut_time.wav");
+        RunTutorial("examples/beat/cut-time.flow");
+        var sha2 = Sha256("/tmp/beat_cut_time.wav");
+        Assert.Equal(sha1, sha2);
+    }
+
+    [Fact]
+    public void TutorialMatchesBaseline_Intro()
+    {
+        if (DllMissing) return;  // charitable skip
+        var baseline = Path.Combine(RepoRoot, "flow-lang.Tests", "baselines", "Phase45", "intro.wav");
+        if (!File.Exists(baseline)) return;  // baseline not committed yet
+        RunTutorial("examples/beat/intro.flow");
+        Assert.Equal(Sha256(baseline), Sha256("/tmp/beat_intro.wav"));
+    }
+
+    [Fact]
+    public void TutorialMatchesBaseline_CutTime()
+    {
+        if (DllMissing) return;  // charitable skip
+        var baseline = Path.Combine(RepoRoot, "flow-lang.Tests", "baselines", "Phase45", "cut-time.wav");
+        if (!File.Exists(baseline)) return;  // baseline not committed yet
+        RunTutorial("examples/beat/cut-time.flow");
+        Assert.Equal(Sha256(baseline), Sha256("/tmp/beat_cut_time.wav"));
+    }
 }

@@ -1,0 +1,53 @@
+enable beat-true-to-sig;
+
+use "@std"
+use "@audio"
+use "@composition"
+
+Note: ============================================================
+Note:  Chapter: Cut Time (2/2) with beat-true-to-sig (Phase 45)
+Note:  Run: dotnet run --project flow-interpreter examples/beat/cut-time.flow
+Note: ============================================================
+Note:
+Note:  Cut time (2/2, "alla breve") is felt in 2 — two half-note beats per
+Note:  bar. With `enable beat-true-to-sig;` the `1b` literal retunes to the
+Note:  active denominator: denom=2 -> multiplier 4/2 = 2.0, so `1b = 1 half
+Note:  note` (2 quarters) and `0.5b = 1 quarter`. The composer writes the beat
+Note:  count they FEEL (in 2) and the literal lands on the half-note pulse.
+
+(print "")
+(print "=== Cut Time (2/2): 1b = half ===")
+(print "")
+
+tempo 132 {
+    timesig 2/2 {
+
+Note: -----------------------------------------------------------
+Note: The pragma multiplier in 2/2: 1b = half (2.0 quarters), 0.5b = quarter
+Note: -----------------------------------------------------------
+Note: (str Beat) prints the quarter-relative double per D-14 — no 'b' suffix.
+        Beat halfBeat = 1b
+        (print (concat "2/2: 1b = " (str halfBeat)))
+        Beat quarterBeat = 0.5b
+        (print (concat "2/2: 0.5b = " (str quarterBeat)))
+
+Note: -----------------------------------------------------------
+Note: A short march in cut time, authored with note-stream durations.
+Note: `h` = half (the felt beat), `q` = quarter (the subdivision). Two half
+Note: beats per 2/2 bar. The rendered audio is ordinary quarter-relative
+Note: synthesis — the pragma only retunes the `1b`/`0.5b` LITERAL meaning.
+        section march {
+            Sequence melody = | C5h G4h | A4q B4q C5q D5q | E5h C5h | G5h C5h |
+            Sequence bass   = | C3h C3h | F3h F3h | C3h G2h | C3h C3h |
+        }
+
+        Song marchSong = [march]
+        Buffer marchAudio = (renderSong marchSong "brass")
+        (writeWav "/tmp/beat_cut_time.wav" marchAudio)
+        (writeMidi "/tmp/beat_cut_time.mid" marchSong)
+    }
+}
+
+(print "")
+(print "Rendered: /tmp/beat_cut_time.wav + /tmp/beat_cut_time.mid")
+(print "examples/beat/cut-time: PASSED")

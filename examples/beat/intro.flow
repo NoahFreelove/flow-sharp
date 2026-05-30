@@ -1,0 +1,82 @@
+enable beat-true-to-sig;
+
+use "@std"
+use "@audio"
+use "@composition"
+
+Note: ============================================================
+Note:  Chapter: Beat Literals & the beat-true-to-sig Pragma (Phase 45)
+Note:  Run: dotnet run --project flow-interpreter examples/beat/intro.flow
+Note: ============================================================
+Note:
+Note:  Flow gives Beat values a first-class literal `Nb` — `0.5b`, `2b`,
+Note:  `-1b` — matching the rest of the music-type family (`100ms` / `2.5s`
+Note:  / `+50c` / `+2st` / `440Hz`). By default `1b = 1 quarter note`,
+Note:  matching MIDI/DAW convention.
+Note:
+Note:  The file-top `enable beat-true-to-sig;` pragma RETUNES the literal to
+Note:  the active time signature's beat unit. In `timesig 6/8 { }` with the
+Note:  pragma on, `1b = 1 eighth` (multiplier 4/8 = 0.5) — the musician-
+Note:  intuition path for a jig "felt in 2 dotted-quarter beats / 6 eighths".
+Note:
+Note:  The multiplier resolves at CONSTRUCTION time to a quarter-relative
+Note:  double; everything downstream (tempo, MIDI ticks, WAV synthesis) stays
+Note:  quarter-relative and unchanged.
+
+(print "")
+(print "=== Beat Literals & beat-true-to-sig (6/8 jig) ===")
+(print "")
+
+tempo 120 {
+    timesig 4/4 {
+
+Note: -----------------------------------------------------------
+Note: Chapter 1: Default beat unit (4/4 context)
+Note: -----------------------------------------------------------
+Note: In 4/4 the multiplier is 4/4 = 1.0, so the literal is identity:
+Note: 1b stays one quarter. (str Beat) always prints the plain quarter-
+Note: relative double — no 'b' suffix (D-14 round-trip lock).
+        Beat oneQuarter = 1b
+        (print (concat "4/4: 1b = " (str oneQuarter)))
+        Beat halfQuarter = 0.5b
+        (print (concat "4/4: 0.5b = " (str halfQuarter)))
+    }
+
+    timesig 6/8 {
+
+Note: -----------------------------------------------------------
+Note: Chapter 2: 6/8 with the pragma — 1b becomes one eighth
+Note: -----------------------------------------------------------
+Note: denom=8 -> multiplier 4/8 = 0.5. So the SAME `1b` literal now means
+Note: one eighth (0.5 quarters); `2b` = one quarter; `0.5b` = one sixteenth.
+Note: The composer writes `1b` and gets the eighth-note beat they feel in
+Note: 6/8 — no manual `0.5b` conversion needed.
+        Beat jigBeat = 1b
+        (print (concat "6/8: 1b = " (str jigBeat)))
+        Beat twoEighths = 2b
+        (print (concat "6/8: 2b = " (str twoEighths)))
+        Beat sixteenth = 0.5b
+        (print (concat "6/8: 0.5b = " (str sixteenth)))
+
+Note: -----------------------------------------------------------
+Note: Chapter 3: render an actual 6/8 jig phrase to MIDI + WAV
+Note: -----------------------------------------------------------
+Note: The melody is authored with note-stream durations (`e` = eighth,
+Note: `q.` = dotted quarter). A 6/8 jig is two groups of three eighths per
+Note: bar. This proves the pragma is a pure parse/eval-time desugar: the
+Note: rendered audio is ordinary quarter-relative synthesis.
+        section jig {
+            Sequence melody = | D5e E5e F#5e G5e A5e B5e | A5q. D5q. | D5e E5e F#5e G5e A5e B5e | A5q. F#5q. |
+            Sequence bass   = | D3q. A3q. | D3q. A3q. | D3q. A3q. | D3q. D3q. |
+        }
+
+        Song jigSong = [jig]
+        Buffer jigAudio = (renderSong jigSong "flute")
+        (writeWav "/tmp/beat_intro.wav" jigAudio)
+        (writeMidi "/tmp/beat_intro.mid" jigSong)
+    }
+}
+
+(print "")
+(print "Rendered: /tmp/beat_intro.wav + /tmp/beat_intro.mid")
+(print "examples/beat/intro: PASSED")
