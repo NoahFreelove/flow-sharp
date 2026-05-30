@@ -347,7 +347,7 @@ Plans:
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
-| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 2/6 | In Progress|  |
+| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 3/6 | In Progress|  |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
@@ -457,7 +457,7 @@ Plans:
 
 **Depends on**: Phase 43 (Beat builtins shipped). Independent of Phase 44 (Strict Mode) — ordered after 44 only because 44 planning is active in a parallel session and we want to avoid contention. Phase 45 could in principle execute in parallel with Phase 44 once 44's plans are locked.
 **Requirements**: REQ-BEAT-LEX-01..04, REQ-BEAT-AST-01..04, REQ-BEAT-PRAGMA-01..04, REQ-BEAT-PRAGMA-HYPHEN-01, REQ-BEAT-CONSTRUCTOR-01..02, REQ-BEAT-TEST-01..07, REQ-BEAT-DOC-01..04
-**Plans:** 2/6 plans executed
+**Plans:** 3/6 plans executed
 
 Plans:
 
@@ -468,7 +468,7 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 45-02-PLAN.md — BeatLiteralExpression AST + Parser arm + literal-token-set (REQ-BEAT-AST-01..03)
-- [ ] 45-03-PLAN.md — PragmaRegistry entry + ExecutionContext.BeatTrueToSig + FlowEngine.ApplyBeatTrueToSigPragma + ModuleLoader push/pop (REQ-BEAT-PRAGMA-01..04)
+- [x] 45-03-PLAN.md — PragmaRegistry entry + ExecutionContext.BeatTrueToSig + FlowEngine.ApplyBeatTrueToSigPragma + ModuleLoader push/pop (REQ-BEAT-PRAGMA-01..04)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
