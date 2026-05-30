@@ -75,9 +75,15 @@
          WasmEntry's four [JSExport] methods are statically reachable from JS
          via getAssemblyExports; without this entry the trimmer may strip the
          partial-static class because it has no in-assembly call sites.
-         RunResult + RunError are reflected on by System.Text.Json.JsonSerializer
-         (IL2026 warning at WasmEntry.cs:283) — preserve their public properties
-         so the camelCase output matches the D-48-14 shape JS expects. -->
+         RunResult + RunError are serialized by a SOURCE-GENERATED
+         System.Text.Json context (FlowWasmJsonContext, WasmEntry.cs) — NOT the
+         reflection-based serializer (which TrimMode=full disables, throwing
+         JsonSerializerIsReflectionDisabled at runtime; see debug session
+         wasm-boot-no-app-bundle). Source-gen carries its own preserved
+         metadata, so the camelCase + null-omission D-48-14/15 shape holds
+         without reflection. Keeping these roots is still correct (the
+         [JSExport] surface is statically reachable but has no in-assembly call
+         sites). -->
     <type fullname="FlowLang.Runtime.WasmEntry" preserve="all" />
     <type fullname="FlowLang.Runtime.RunResult" preserve="all" />
     <type fullname="FlowLang.Runtime.RunError" preserve="all" />

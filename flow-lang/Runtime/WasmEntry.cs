@@ -69,6 +69,38 @@ public sealed record RunError(
     string? SourceSnippet);
 
 /// <summary>
+/// Phase 48 Plan 48-06 — source-generated <see cref="JsonSerializerContext"/>
+/// for the <see cref="RunResult"/> / <see cref="RunError"/> shape.
+/// </summary>
+/// <remarks>
+/// <para><b>Why source-gen (D-48-06 / debug session wasm-boot-no-app-bundle):</b>
+/// the <c>FlowTarget=Web</c> publish sets <c>&lt;TrimMode&gt;full&lt;/TrimMode&gt;</c>,
+/// which disables System.Text.Json's reflection-based serializer in the trimmed
+/// WASM build. A plain <c>JsonSerializer.Serialize(obj, options)</c> call therefore
+/// throws <c>JsonSerializerIsReflectionDisabled</c> at runtime in the browser —
+/// even though the identical call succeeds in the Desktop in-process test runner
+/// (where reflection-based JSON is enabled). Source generation emits the
+/// serialization metadata at compile time, sidestepping reflection entirely,
+/// keeping the trimmed graph lean (no IL2026/IL3050), and producing the same
+/// camelCase + null-omission output the D-48-14/15 JSON shape pins.</para>
+/// <para><b>Shape pin (D-48-14/15):</b> <see cref="JsonSourceGenerationOptionsAttribute"/>
+/// replicates the retired reflection-based options exactly —
+/// <c>PropertyNamingPolicy = CamelCase</c> (so <c>Stdout</c> → <c>stdout</c>,
+/// <c>DurationMs</c> → <c>durationMs</c>) and
+/// <c>DefaultIgnoreCondition = WhenWritingNull</c> (so null <c>wav</c> / <c>midi</c>
+/// are omitted). Field names + casing MUST NOT drift — JS (and
+/// <c>WasmDeterminismTests</c>) parse these keys directly.</para>
+/// </remarks>
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(RunResult))]
+[JsonSerializable(typeof(RunError))]
+internal partial class FlowWasmJsonContext : JsonSerializerContext
+{
+}
+
+/// <summary>
 /// Phase 48 Plan 48-04 — JS-callable entry-point surface. The companion
 /// of <see cref="FlowLang.Audio.FlowRuntimeInterop"/>: where
 /// <c>FlowRuntimeInterop</c> declares <c>[JSImport]</c> bindings the
@@ -123,17 +155,6 @@ public static partial class WasmEntry
 
     /// <summary>D-48-10 — 30-second wall-clock cap on a single Execute call.</summary>
     private static readonly TimeSpan RunTimeout = TimeSpan.FromSeconds(30);
-
-    /// <summary>
-    /// D-48-14 — camelCase + null-omission JSON serialization. Cached at
-    /// class init so per-call allocation is zero (the serializer instance
-    /// itself is allocation-free after the first call).
-    /// </summary>
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
 
     /// <summary>
     /// Lazy-init (under lock) the shared per-process <see cref="FlowEngine"/>.
@@ -280,7 +301,12 @@ public static partial class WasmEntry
 
         try
         {
-            return JsonSerializer.Serialize(result, _jsonOptions);
+            // D-48-06 / debug wasm-boot-no-app-bundle: serialize through the
+            // source-generated context, NOT the reflection-based serializer.
+            // TrimMode=full on the Web target disables reflection-based JSON;
+            // the generated metadata (camelCase + null-omission) sidesteps it
+            // and keeps the D-48-14/15 shape byte-stable.
+            return JsonSerializer.Serialize(result, FlowWasmJsonContext.Default.RunResult);
         }
         catch (Exception ex)
         {

@@ -38,6 +38,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 ///   the bootable AppBundle layout and falls back to the flat tree only for
 ///   resilience.
 /// </summary>
+[Collection(WasmWebPublishCollection.Name)]
 public class WasmBuildPipelineTests
 {
     private static string FindRepoRoot()

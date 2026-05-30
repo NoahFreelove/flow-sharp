@@ -46,6 +46,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 /// determinism comes from FlowEngine.Execute itself, NOT from the marshalling
 /// layer).</para>
 /// </summary>
+[Collection(WasmEntryConsoleCollection.Name)]
 public class WasmDeterminismTests
 {
     /// <summary>

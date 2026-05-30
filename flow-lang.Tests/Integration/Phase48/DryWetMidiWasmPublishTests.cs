@@ -25,6 +25,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 /// Mono.Cecil, so they run from the Desktop test runner regardless of
 /// FLOW_WEB.
 /// </summary>
+[Collection(WasmWebPublishCollection.Name)]
 public class DryWetMidiWasmPublishTests
 {
     private static string FindRepoRoot()

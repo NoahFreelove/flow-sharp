@@ -44,6 +44,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 ///         Plan 48-05.1 split needed)</item>
 /// </list>
 /// </summary>
+[Collection(WasmWebPublishCollection.Name)]
 public class BundleSizeBudgetTests
 {
     /// <summary>D-48-05 — soft target. Below this we ship monolithic.</summary>
