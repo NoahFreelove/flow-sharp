@@ -348,7 +348,7 @@ Plans:
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
-| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 6/6 | Complete    | 2026-05-29 |
+| 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 6/6 | Complete    | 2026-05-30 |
 | 46. Codebase Bloat Removal | v1.5 | 0/0 | Not started | - |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
@@ -458,7 +458,7 @@ Plans:
 
 **Depends on**: Phase 43 (Beat builtins shipped). Independent of Phase 44 (Strict Mode) — ordered after 44 only because 44 planning is active in a parallel session and we want to avoid contention. Phase 45 could in principle execute in parallel with Phase 44 once 44's plans are locked.
 **Requirements**: REQ-BEAT-LEX-01..04, REQ-BEAT-AST-01..04, REQ-BEAT-PRAGMA-01..04, REQ-BEAT-PRAGMA-HYPHEN-01, REQ-BEAT-CONSTRUCTOR-01..02, REQ-BEAT-TEST-01..07, REQ-BEAT-DOC-01..04
-**Plans:** 6/6 plans complete — **SHIPPED 2026-05-29**
+**Plans:** 6/6 plans complete
 
 Plans:
 
