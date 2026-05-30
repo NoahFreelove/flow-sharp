@@ -1,0 +1,28 @@
+Note: Phase 45 REQ-BEAT-TEST-01 — Nb literal lexer + parser + eval smoke.
+Note: NO `enable beat-true-to-sig;` — this is identity-mode coverage only
+Note: (pragma off → multiplier 1.0, so every Beat prints its raw double).
+
+use "@std"
+
+Note: Decimal literal — `(str Beat)` emits the plain double per D-14 (no "b" suffix)
+Beat b1 = 0.5b
+(print (str b1))
+
+Note: Positive integer literal
+Beat b2 = 2b
+(print (str b2))
+
+Note: Signed positive (+Nb lexes via TryLexTypedLiteral)
+Beat b3 = +1b
+(print (str b3))
+
+Note: Signed negative — D-08: negative Beats are valid doubles, no rejection guard
+Beat b4 = -2b
+(print (str b4))
+
+Note: Tuple-key Dict construction — Phase 26.1 DICT-01 acceptance shape with an Nb literal
+Note: (proves BeatLiteral survives lex+parse into a tuple element + hashable Dict key)
+Dict<Tuple<<Note, Beat>>, Int> beatMap = (dict <<C4, 0.5b>> 100)
+(print (str (size beatMap)))
+
+(print "test_beat_literal: PASSED")
