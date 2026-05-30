@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
+using FlowLang.Ast;
+using FlowLang.Ast.Expressions;
+using FlowLang.Ast.Statements;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
 using FlowLang.Lexing;
+using FlowLang.Parsing;
 using Xunit;
 
 namespace FlowLang.Tests.Integration.Phase45;
@@ -315,5 +319,124 @@ public class BeatLiteralParserTests : IDisposable
         Assert.Equal("D4", tokens[1].Text);
         Assert.Equal(TokenType.Identifier, tokens[2].Type);
         Assert.Equal("q", tokens[2].Text);
+    }
+
+    // ====================================================================
+    // SIGNAL 2 — AST-shape Facts (Plan 45-02, Wave 2).
+    //   Pin that the Parser emits a dedicated BeatLiteralExpression record
+    //   (NOT a flat LiteralExpression) for every BeatLiteral token, with
+    //   RawValue carrying the parsed double bit-identically (D-01 / D-09).
+    //
+    //   These exercise the five composer-facing surfaces enumerated in
+    //   45-RESEARCH §Signal 2: variable initializer, function arg, flow-op
+    //   chain, arithmetic operand, and tuple element.
+    // ====================================================================
+
+    /// <summary>
+    /// Parse <paramref name="source"/> with a fresh <see cref="SimpleLexer"/>
+    /// + <see cref="Parser"/>, asserting the <see cref="ErrorReporter"/>
+    /// stays error-free so AST-shape assertions act on a clean parse.
+    /// </summary>
+    private static Program Parse(string source)
+    {
+        var reporter = new ErrorReporter();
+        // Rule 3 (blocking): plan snippet used `new PragmaSet()` but PragmaSet has no
+        // parameterless ctor (requires Enabled set + declaration sites). PragmaSet.Empty
+        // is the no-pragma carrier — these AST-shape Facts exercise the pragma-OFF path
+        // (the multiplier is identity at eval time; Wave 4 adds the pragma-ON eval tests).
+        var pragmaSet = PragmaSet.Empty;
+        var lexer = new SimpleLexer(source, reporter, "<test>", pragmaSet);
+        var tokens = lexer.Tokenize();
+        var parser = new Parser(tokens, reporter, pragmaSet);
+        var program = parser.Parse();
+        Assert.False(reporter.HasErrors,
+            $"Parse of '{source}' should be error-free; got: " +
+            string.Join("; ", reporter.Errors.Select(e => e.Message)));
+        return program;
+    }
+
+    /// <summary>
+    /// Test 1 — <c>Beat b = 0.5b</c> produces a <see cref="VariableDeclaration"/>
+    /// whose initializer is a <see cref="BeatLiteralExpression"/> with
+    /// <c>RawValue == 0.5</c> (D-09 dedicated-record routing).
+    /// </summary>
+    [Fact]
+    public void AstShapeAssignedToVariable()
+    {
+        var program = Parse("Beat b = 0.5b");
+        var decl = Assert.IsType<VariableDeclaration>(program.Statements[0]);
+        var beatLit = Assert.IsType<BeatLiteralExpression>(decl.Value);
+        Assert.Equal(0.5, beatLit.RawValue);
+    }
+
+    /// <summary>
+    /// Test 2 — <c>(delay sig 0.5b 0.5 0.4)</c> parses; the <c>delay</c>
+    /// call's <c>Arguments[1]</c> is a <see cref="BeatLiteralExpression"/>
+    /// (Nb survives as a function arg at a non-leading position).
+    /// (Uses identifier <c>sig</c> rather than <c>buf</c> — the latter is the
+    /// reserved <c>Buf</c> type keyword and would not lex as an identifier arg.)
+    /// </summary>
+    [Fact]
+    public void AstShapeAsFunctionArg()
+    {
+        var program = Parse("(delay sig 0.5b 0.5 0.4)");
+        var stmt = Assert.IsType<ExpressionStatement>(program.Statements[0]);
+        var call = Assert.IsType<FunctionCallExpression>(stmt.Expression);
+        Assert.Equal("delay", call.Name);
+        var beatLit = Assert.IsType<BeatLiteralExpression>(call.Arguments[1]);
+        Assert.Equal(0.5, beatLit.RawValue);
+    }
+
+    /// <summary>
+    /// Test 3 — <c>0.5b -&gt; (delay sig 0.5 0.4)</c> parses; the parse-time
+    /// <c>-&gt;</c> transform threads the Beat literal in as
+    /// <c>Arguments[0]</c> of the <c>delay</c> call (REQ-BEAT-AST-03 — Nb at
+    /// expression-start / flow-chain head).
+    /// </summary>
+    [Fact]
+    public void AstShapeViaFlowOperator()
+    {
+        var program = Parse("0.5b -> (delay sig 0.5 0.4)");
+        var stmt = Assert.IsType<ExpressionStatement>(program.Statements[0]);
+        var call = Assert.IsType<FunctionCallExpression>(stmt.Expression);
+        Assert.Equal("delay", call.Name);
+        var beatLit = Assert.IsType<BeatLiteralExpression>(call.Arguments[0]);
+        Assert.Equal(0.5, beatLit.RawValue);
+    }
+
+    /// <summary>
+    /// Test 4 — <c>(add 0.5b 0.5b)</c> parses with both operands as
+    /// <see cref="BeatLiteralExpression"/> (Nb as an arithmetic operand).
+    /// </summary>
+    [Fact]
+    public void AstShapeAsArithmeticOperand()
+    {
+        var program = Parse("(add 0.5b 0.5b)");
+        var stmt = Assert.IsType<ExpressionStatement>(program.Statements[0]);
+        var call = Assert.IsType<FunctionCallExpression>(stmt.Expression);
+        Assert.Equal("add", call.Name);
+        var lhs = Assert.IsType<BeatLiteralExpression>(call.Arguments[0]);
+        var rhs = Assert.IsType<BeatLiteralExpression>(call.Arguments[1]);
+        Assert.Equal(0.5, lhs.RawValue);
+        Assert.Equal(0.5, rhs.RawValue);
+    }
+
+    /// <summary>
+    /// Test 5 — <c>&lt;&lt;C4, 0.5b&gt;&gt;</c> parses;
+    /// <c>TupleLiteralExpression.Elements[1]</c> is a
+    /// <see cref="BeatLiteralExpression"/> (Phase 26.1 DICT-01 tuple reuse).
+    /// Bound through the canonical <c>Tuple&lt;&lt;...&gt;&gt; name = &lt;&lt;...&gt;&gt;</c>
+    /// form (mirrors <c>tests/test_tuple_literal.flow</c>) so the initializer
+    /// <c>&lt;&lt;</c> is parsed as a tuple-literal expression rather than a
+    /// statement-start destructure (<c>&lt;&lt;a, b&gt;&gt; = expr</c>) target.
+    /// </summary>
+    [Fact]
+    public void AstShapeInTuple()
+    {
+        var program = Parse("Tuple<<Note, Beat>> entry = <<C4, 0.5b>>");
+        var decl = Assert.IsType<VariableDeclaration>(program.Statements[0]);
+        var tuple = Assert.IsType<TupleLiteralExpression>(decl.Value);
+        var beatLit = Assert.IsType<BeatLiteralExpression>(tuple.Elements[1]);
+        Assert.Equal(0.5, beatLit.RawValue);
     }
 }

@@ -442,7 +442,12 @@ public class SimpleLexer
             // a tuple literal can legitimately follow any music-typed value-end (e.g. `<<800Hz, 1200Hz>>`).
             or TokenType.HertzLiteral
             or TokenType.TimeLiteral or TokenType.DecibelLiteral
-            or TokenType.CentLiteral or TokenType.SemitoneLiteral;
+            or TokenType.CentLiteral or TokenType.SemitoneLiteral
+            // Phase 45 D-09 — Nb beat literal is a music-literal value-end too; a tuple
+            // literal can close immediately after it (e.g. `<<C4, 0.5b>>`). Without this,
+            // the trailing `>>` falls through to two single `>` tokens and the tuple
+            // never closes. Mirrors the Cent/Time/Decibel/Hertz/Semitone entries above.
+            or TokenType.BeatLiteral;
         if (!isExprStart) return null;
 
         Advance(); // consume first char

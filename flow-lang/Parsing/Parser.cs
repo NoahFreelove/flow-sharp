@@ -1382,6 +1382,17 @@ public partial class Parser
         if (Match(TokenType.HertzLiteral))
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
+        // Phase 45 D-09: BeatLiteral diverges from the flat LiteralExpression(text) routing
+        // used by Cent/Time/Decibel/Hertz — cast Token.Value to double directly so the raw
+        // payload survives to eval time (ExpressionEvaluator.EvaluateBeatLiteral) where the
+        // pragma multiplier formula reads it against the active timesig (REQ-BEAT-AST-02).
+        if (Match(TokenType.BeatLiteral))
+        {
+            double rawValue = (double)PreviousToken.Value!;
+            return new BeatLiteralExpression(PreviousToken.Location, rawValue,
+                                             Span: PreviousToken.EffectiveSpan);
+        }
+
         if (Match(TokenType.ChordLiteral))
             return new ChordLiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
 
@@ -2127,6 +2138,7 @@ public partial class Parser
             or TokenType.TimeLiteral
             or TokenType.DecibelLiteral
             or TokenType.HertzLiteral
+            or TokenType.BeatLiteral  // Phase 45 D-09 / REQ-BEAT-AST-03 — Nb at expression-start + as arg
             or TokenType.ChordLiteral
             or TokenType.SymbolLiteral
             or TokenType.InterpolatedStringStart
