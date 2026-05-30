@@ -1,6 +1,6 @@
 # Phase 48 — HUMAN-UAT: WASM Runtime Browser Smoke
 
-**Status:** Pending composer verification
+**Status:** BLOCKED — runtime fails to boot in-browser (Chrome). See Row 1 + Composer Notes.
 **Prerequisites:** Plan 48-04 shipped (flow-runtime.js + WasmEntry.cs + index.html in AppBundle).
 
 ## Setup
@@ -59,14 +59,14 @@ For each of the 3 browser rows below:
 | Field | Value |
 |-------|-------|
 | Browser version | (composer fills in) |
-| OS + version | (composer fills in) |
-| Boot time (DevTools Network → DOMContentLoaded) | (composer fills in, target <3s) |
-| Sine tone audible? | (yes/no) |
-| stdout split working? | (yes/no) |
-| errors[] structured? | (yes/no — inspect via `console.log(runtime.run(...))` in DevTools) |
-| Autoplay policy: audio blocked before Run click? | (yes/no — should be YES; if NO, D-48-09 contract violated) |
-| Composer sign-off | (initials + date OR "blocked: <reason>") |
-| Gotchas observed | (free text) |
+| OS + version | Linux |
+| Boot time (DevTools Network → DOMContentLoaded) | n/a — runtime never booted |
+| Sine tone audible? | NO — runtime boot failed |
+| stdout split working? | n/a |
+| errors[] structured? | n/a |
+| Autoplay policy: audio blocked before Run click? | n/a |
+| Composer sign-off | **BLOCKED 2026-05-30** |
+| Gotchas observed | `Flow runtime boot failed: Failed to load config file dotnet.boot.js — TypeError: error loading dynamically imported module: http://localhost:8080/dotnet.boot.js`. dotnet.js loaded (the `../dotnet.js` import resolved) but the loader then 404'd on the boot manifest at the served root. → Boot-manifest path mismatch; routed to Plan 48-06.1 repair. |
 
 ### Row 2: Firefox 121+ (Linux/macOS/Windows)
 
@@ -111,4 +111,30 @@ If any row fails with a blocking issue:
 
 ## Composer Notes
 
-(Free-form notes block — composer documents anything observed that the structured rows don't cover. Browser-specific [JSImport] quirks, AudioContext.resume() behavior differences, sample rate negotiation, etc.)
+**2026-05-30 — BLOCKING boot failure (Chrome, Linux).** First browser smoke surfaced:
+
+```
+Flow runtime boot failed: Failed to load config file dotnet.boot.js
+TypeError: error loading dynamically imported module: http://localhost:8080/dotnet.boot.js
+```
+
+**Diagnosis (in progress):** `flow-runtime.js` imports `../dotnet.js`, which resolved
+successfully from `http://localhost:8080/wasm/index.html` → `http://localhost:8080/dotnet.js`.
+The .NET 10 Mono-WASM loader then tried to fetch its boot manifest `dotnet.boot.js`
+relative to the served root (`http://localhost:8080/dotnet.boot.js`) and got a 404.
+
+This means the published boot manifest is **not** a sibling of `dotnet.js` at the
+served root — the "flat publish" assumption recorded in 48-04-SUMMARY.md does not
+hold for the boot manifest under this SDK, OR the bundle must be served from a
+different root. Candidate root causes to confirm against the on-disk publish layout:
+
+1. `dotnet.js` + `dotnet.boot.js` + the rest of `_framework/` live under a
+   subdir (e.g. `wwwroot/_framework/` or `AppBundle/_framework/`), so serving from
+   `publish/` is the wrong root and the relative import only *appeared* to work.
+2. The boot manifest has a different filename in this SDK (`dotnet.boot.js` vs a
+   JSON variant) and `dotnet.create()` needs an explicit config/base-path.
+3. `index.html` needs a `<base href>` matching the actual framework directory.
+
+**Routing (per Closure Conditions):** This is a runtime/build-config defect, NOT a
+browser-UX nit → **in-phase repair via Plan 48-06.1** before Plan 48-07 closer.
+Firefox/Safari rows deferred until the boot fix lands and re-smoke passes.
