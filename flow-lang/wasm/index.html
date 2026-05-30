@@ -6,11 +6,19 @@
   exists so a contributor can sanity-check the runtime end-to-end in any modern
   browser without setting up the full playground project.
 
-  Usage:
-    dotnet publish flow-lang -p:FlowTarget=Web -c Release
-    cd flow-lang/bin/Release/net10.0/browser-wasm/publish/AppBundle/
+  Usage (serve the GENERATED AppBundle root — verified layout per
+  .planning/debug/wasm-boot-no-app-bundle.md, fix(48-06)):
+    dotnet publish flow-lang/flow-lang.csproj -p:FlowTarget=Web -c Release
+    cd flow-lang/bin/Release/net10.0/browser-wasm/AppBundle/
     python3 -m http.server 8080
-    # then open: http://localhost:8080/wasm/index.html
+    # then open: http://localhost:8080/index.html
+    #
+    # AppBundle/ root holds index.html + flow-runtime.js + package.json;
+    # the Mono-WASM runtime (dotnet.js + dotnet.boot.js + dotnet.native.wasm +
+    # Webcil .wasm assemblies) lives under AppBundle/_framework/. index.html
+    # imports ./flow-runtime.js (same dir); flow-runtime.js imports
+    # ./_framework/dotnet.js. Serving the AppBundle root is what makes the
+    # boot manifest fetch resolve.
 
   D-48-09 user-gesture chain: the Run button's onclick handler calls
   runtime.resumeAudio() AND runtime.run(source) in the SAME async function so
@@ -63,8 +71,10 @@
     <pre id="duration"></pre>
 
     <script type="module">
-        // Import the runtime ES module — flow-runtime.js sits next to this file
-        // in AppBundle/wasm/, so the relative path is './flow-runtime.js'.
+        // Import the runtime ES module — flow-runtime.js sits next to this
+        // file at the AppBundle/ root (both copied there by the runtime pack's
+        // _WasmGenerateAppBundle target via WasmMainHTMLPath / WasmMainJSPath),
+        // so the relative path is './flow-runtime.js'.
         import { loadFlowRuntime } from './flow-runtime.js';
 
         const srcEl = document.getElementById('src');

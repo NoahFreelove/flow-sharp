@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -41,6 +41,41 @@
         <!-- Phase 48 D-48-04: symbol map gated Debug-only. Release strips it for size +
              minor security (don't leak source structure to browser). -->
         <WasmEmitSymbolMap Condition="'$(Configuration)' == 'Debug'">true</WasmEmitSymbolMap>
+        <!-- Phase 48 fix(48-06): force the Mono-WASM runtime pack's app-bundle /
+             boot-manifest target ON for this LIBRARY project.
+
+             Root cause (confirmed empirically — see .planning/debug/wasm-boot-no-app-bundle.md):
+             flow-lang uses plain Microsoft.NET.Sdk (NOT Microsoft.NET.Sdk.WebAssembly),
+             so in WasmApp.Common.targets the gate
+               _IsLibraryMode = (OutputType == 'Library' AND UsingMicrosoftNETSdkWebAssembly == 'true')
+             evaluates empty (UsingMicrosoftNETSdkWebAssembly is unset under the plain SDK),
+             which leaves IsBrowserWasmProject + WasmGenerateAppBundle defaulting to FALSE.
+             The _WasmGenerateAppBundle target therefore never runs and no
+             dotnet.boot.js / _framework/ / AppBundle/ is produced — dotnet.create()
+             404s on its boot manifest in the browser.
+
+             Forcing all three properties below fires the runtime-pack app-bundle
+             target WITHOUT swapping SDKs (the Microsoft.NET.Sdk.WebAssembly SDK
+             ships only with the Blazor stack, not the wasm-tools workload — see
+             debug-file "Eliminated" log) and WITHOUT a second project (single-
+             source-of-truth Pattern A). Output: AppBundle/_framework/dotnet.boot.js
+             (mainAssemblyName: flow-lang.dll) + dotnet.js + dotnet.native.wasm +
+             Webcil .wasm assemblies; flow-runtime.js copied to AppBundle/ root via
+             WasmMainJSPath + a package.json {"type":"module"}.
+
+             NOTE: app-bundle mode emits assemblies as Webcil (.wasm), NOT .dll —
+             the Phase48 test fixtures that enumerate the publish tree were updated
+             for the AppBundle/_framework/ + .wasm-assembly layout accordingly. -->
+        <WasmGenerateAppBundle>true</WasmGenerateAppBundle>
+        <IsBrowserWasmProject>true</IsBrowserWasmProject>
+        <WasmMainJSPath>wasm/flow-runtime.js</WasmMainJSPath>
+        <!-- index.html is the dev-smoke harness. WasmMainHTMLPath is the runtime
+             pack's supported hook for dropping the entry HTML at AppBundle/ root
+             (it is auto-added to WasmExtraFilesToDeploy by _WasmGenerateAppBundle).
+             It lands beside the WasmMainJSPath-copied flow-runtime.js so the
+             harness can import './flow-runtime.js' from the same directory.
+             Bundle consumers (Phase 49 SvelteKit) ignore it. -->
+        <WasmMainHTMLPath>wasm/index.html</WasmMainHTMLPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -90,23 +125,22 @@
            it's not reflection-heavy and reachability analysis already covers it
            through FlowEngine's static call chain. -->
       <TrimmerRootDescriptor Include="wasm\trim-roots.xml" />
-      <!-- Phase 48 Plan 48-04: ship the runtime ES module + dev-smoke harness into
-           the AppBundle. flow-runtime.js sits next to dotnet.js at publish time —
-           the runtime's top-of-file relative `import '../_framework/dotnet.js'`
-           resolves correctly from AppBundle/wasm/flow-runtime.js. index.html is
-           dev-only; bundle consumers (Phase 49 SvelteKit) ignore it. -->
-      <None Update="wasm\flow-runtime.js">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </None>
-      <None Update="wasm\index.html">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </None>
+      <!-- Phase 48 fix(48-06): the dev-smoke harness (index.html) and the runtime
+           ES module (flow-runtime.js) are deployed into the generated AppBundle/
+           root via WasmMainHTMLPath / WasmMainJSPath above — the runtime pack's
+           _WasmGenerateAppBundle target owns that copy. We therefore SKIP the old
+           flat-tree CopyToPublishDirectory hooks (they would land stale duplicates
+           divorced from the bootable AppBundle). -->
       <!-- trim-roots.xml is referenced by <TrimmerRootDescriptor> above at
            BUILD time only — explicitly skip copying it to the publish output
            so it doesn't bloat the AppBundle. -->
       <None Update="wasm\trim-roots.xml">
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </None>
+      <None Update="wasm\flow-runtime.js">
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </None>
+      <None Update="wasm\index.html">
         <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       </None>
     </ItemGroup>

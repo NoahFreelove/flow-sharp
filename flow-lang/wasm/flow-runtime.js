@@ -25,15 +25,24 @@
 // inside a user-gesture handler (the Run button's onclick) BEFORE runtime.run(...)
 // so the autoplay policy is satisfied in the same call frame.
 
-// Publish-layout note (verified against actual .NET 10 SDK publish output):
-// The Mono-WASM publish for this project is FLAT — dotnet.js lands directly at
-// the publish-root (not under _framework/ as the Microsoft docs describe for
-// Blazor projects). flow-runtime.js publishes to <publish-root>/wasm/, so the
-// relative import is one level up to find dotnet.js. Plan 48-04 chose this
-// (Option 1) over moving the file to publish-root via <Link> (Option 2 — v1.6
-// cleanup). If a future SDK reintroduces the _framework/ subdirectory, change
-// to '../_framework/dotnet.js' here only — no other surface changes needed.
-import { dotnet } from '../dotnet.js';
+// Publish-layout note (verified empirically against the generated AppBundle —
+// see .planning/debug/wasm-boot-no-app-bundle.md):
+// fix(48-06) made FlowTarget=Web emit a real bootable AppBundle. The layout is:
+//   AppBundle/
+//     flow-runtime.js        ← THIS file (copied here by WasmMainJSPath)
+//     index.html             ← dev-smoke harness (copied by WasmMainHTMLPath)
+//     package.json           ← { "type":"module" }
+//     _framework/
+//       dotnet.js            ← the loader entry point
+//       dotnet.boot.js       ← boot manifest (mainAssemblyName: flow-lang.dll)
+//       dotnet.native.wasm   ← Mono runtime
+//       flow-lang.wasm       ← Webcil-encoded main assembly (NOT .dll in this layout)
+//       System.*.wasm        ← Webcil-encoded framework assemblies
+// flow-runtime.js sits at the AppBundle ROOT and dotnet.js sits under _framework/,
+// so the relative import descends into ./_framework/dotnet.js. dotnet.create()
+// then fetches dotnet.boot.js from that same _framework/ dir — which now exists,
+// so the original "Failed to load config file dotnet.boot.js" 404 is resolved.
+import { dotnet } from './_framework/dotnet.js';
 
 let _runtime = null;
 let _audioContext = null;
@@ -59,10 +68,9 @@ export async function loadFlowRuntime() {
     try {
         // dotnet.create() loads the Mono-WASM runtime + main assembly.
         // The relative './_framework/dotnet.js' import at the top of this file
-        // is resolved by the browser against the page that loaded the module;
-        // when flow-runtime.js lives at AppBundle/wasm/flow-runtime.js the page
-        // serves dotnet.js from AppBundle/_framework/dotnet.js, so the import
-        // path uses '../_framework/dotnet.js' (one level up). See header comment.
+        // is resolved by the browser against the AppBundle root that loaded the
+        // module; dotnet.create() in turn fetches dotnet.boot.js from the same
+        // _framework/ directory. See header comment for the verified layout.
         ({ setModuleImports, getAssemblyExports, getConfig } = await dotnet.create());
     } catch (err) {
         // Bubble a clear, actionable error so the playground sees boot failures

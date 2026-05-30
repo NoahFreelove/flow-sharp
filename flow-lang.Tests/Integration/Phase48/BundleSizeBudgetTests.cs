@@ -89,20 +89,29 @@ public class BundleSizeBudgetTests
     }
 
     /// <summary>
-    /// Library publish produces flat <c>publish/</c> layout; Blazor-app
-    /// publish nests under <c>publish/AppBundle/_framework/</c>. Mirrors
-    /// the helper in <see cref="WasmBuildPipelineTests"/>.
+    /// fix(48-06): the bootable AppBundle (the actual SHIPPED artifact set) lands
+    /// at <c>browser-wasm/AppBundle/_framework/</c>. Measure that — it is the
+    /// browser-served payload. Falls back to the pre-fix flat <c>publish/</c> tree
+    /// only for resilience. Mirrors the helper in <see cref="WasmBuildPipelineTests"/>.
     /// </summary>
     private static string LocateWasmFrameworkDir(string repoRoot)
     {
-        var basePublish = Path.Combine(
-            repoRoot, "flow-lang", "bin", "Release", "net10.0", "browser-wasm", "publish");
-        if (File.Exists(Path.Combine(basePublish, "dotnet.js")))
-            return basePublish;
-        var appBundleFramework = Path.Combine(basePublish, "AppBundle", "_framework");
+        var browserWasm = Path.Combine(
+            repoRoot, "flow-lang", "bin", "Release", "net10.0", "browser-wasm");
+
+        var appBundleFramework = Path.Combine(browserWasm, "AppBundle", "_framework");
         if (File.Exists(Path.Combine(appBundleFramework, "dotnet.js")))
             return appBundleFramework;
-        return basePublish;
+
+        var publishAppBundle = Path.Combine(browserWasm, "publish", "AppBundle", "_framework");
+        if (File.Exists(Path.Combine(publishAppBundle, "dotnet.js")))
+            return publishAppBundle;
+
+        var flatPublish = Path.Combine(browserWasm, "publish");
+        if (File.Exists(Path.Combine(flatPublish, "dotnet.js")))
+            return flatPublish;
+
+        return appBundleFramework;
     }
 
     /// <summary>

@@ -66,23 +66,45 @@ public class DryWetMidiWasmPublishTests
     }
 
     /// <summary>
-    /// Locate the published flow-lang.dll. Library publish outputs to
-    /// <c>bin/Release/net10.0/browser-wasm/publish/flow-lang.dll</c> directly;
-    /// Blazor app publish nests under <c>publish/AppBundle/_framework/flow-lang.dll</c>.
-    /// Returns whichever path actually produced the dll.
+    /// Locate a REAL PE flow-lang.dll that Mono.Cecil can read for the assembly-
+    /// reference scan. fix(48-06): the bootable AppBundle encodes assemblies as
+    /// Webcil (<c>flow-lang.wasm</c>) which stock Cecil cannot parse — but the
+    /// publish step ALSO emits the flat tree with the un-Webcil'd PE
+    /// <c>publish/flow-lang.dll</c> alongside the AppBundle, so the metadata scan
+    /// keeps reading that. The <c>file</c> probe confirms it is a real PE assembly.
     /// </summary>
     private static string LocatePublishedFlowLangDll(string repoRoot)
     {
-        var basePublish = Path.Combine(
-            repoRoot, "flow-lang", "bin", "Release", "net10.0", "browser-wasm", "publish");
-        // Library layout: publish/flow-lang.dll
-        var flat = Path.Combine(basePublish, "flow-lang.dll");
+        var browserWasm = Path.Combine(
+            repoRoot, "flow-lang", "bin", "Release", "net10.0", "browser-wasm");
+        // Flat publish tree — real PE flow-lang.dll (Cecil-readable).
+        var flat = Path.Combine(browserWasm, "publish", "flow-lang.dll");
         if (File.Exists(flat)) return flat;
-        // Blazor app layout: publish/AppBundle/_framework/flow-lang.dll
-        var nested = Path.Combine(basePublish, "AppBundle", "_framework", "flow-lang.dll");
+        // Some SDK configurations nest the flat tree differently.
+        var nested = Path.Combine(browserWasm, "publish", "AppBundle", "_framework", "flow-lang.dll");
         if (File.Exists(nested)) return nested;
-        // Not found — return the flat path for diagnostic error message
+        // Last resort: the build-output flow-lang.dll (pre-publish PE).
+        var buildOutput = Path.Combine(browserWasm, "flow-lang.dll");
+        if (File.Exists(buildOutput)) return buildOutput;
+        // Not found — return the flat path for diagnostic error message.
         return flat;
+    }
+
+    /// <summary>
+    /// Locate the bootable AppBundle's Webcil main assembly (flow-lang.wasm).
+    /// fix(48-06): in the AppBundle layout the assemblies ship as Webcil .wasm,
+    /// so the presence check uses that rather than a .dll.
+    /// </summary>
+    private static string LocateBundledFlowLangWasm(string repoRoot)
+    {
+        var browserWasm = Path.Combine(
+            repoRoot, "flow-lang", "bin", "Release", "net10.0", "browser-wasm");
+        var appBundle = Path.Combine(browserWasm, "AppBundle", "_framework", "flow-lang.wasm");
+        if (File.Exists(appBundle)) return appBundle;
+        var publishAppBundle = Path.Combine(
+            browserWasm, "publish", "AppBundle", "_framework", "flow-lang.wasm");
+        if (File.Exists(publishAppBundle)) return publishAppBundle;
+        return appBundle;
     }
 
     [Fact]
@@ -93,16 +115,18 @@ public class DryWetMidiWasmPublishTests
             $"Expected publish exit 0, got {code}.\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}");
 
         var repoRoot = FindRepoRoot();
-        var publishedDll = LocatePublishedFlowLangDll(repoRoot);
 
-        Assert.True(File.Exists(publishedDll),
-            $"Published flow-lang.dll missing — expected at {publishedDll} " +
-            $"(library-publish flat layout or Blazor AppBundle/_framework/ layout).");
+        // fix(48-06): the bootable AppBundle ships the main assembly as Webcil
+        // flow-lang.wasm under AppBundle/_framework/. Assert that artifact exists.
+        var bundledWasm = LocateBundledFlowLangWasm(repoRoot);
+        Assert.True(File.Exists(bundledWasm),
+            $"Bootable AppBundle missing the Webcil main assembly flow-lang.wasm — " +
+            $"expected at {bundledWasm}.");
 
         // Sanity floor — a stripped-to-zero assembly would be < 1 KB.
-        var info = new FileInfo(publishedDll);
+        var info = new FileInfo(bundledWasm);
         Assert.True(info.Length > 1024,
-            $"Published flow-lang.dll suspiciously small: {info.Length} bytes at {publishedDll}");
+            $"Bundled flow-lang.wasm suspiciously small: {info.Length} bytes at {bundledWasm}");
     }
 
     [Fact]
