@@ -349,7 +349,7 @@ Plans:
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 6/6 | Complete    | 2026-05-30 |
-| 46. Codebase Bloat Removal | v1.5 | 4/6 | In Progress|  |
+| 46. Codebase Bloat Removal | v1.5 | 6/6 | Complete   | 2026-05-30 |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
@@ -517,7 +517,7 @@ Plans:
 
 **Depends on**: None — pure cleanup. Independent of Phases 44 + 45 currently in flight; could parallelize with either once their plans lock. Bundled as one phase (vs scattered `/gsd:quick` tasks) because targets share regression-risk surface (synthesizers, song rendering, test infrastructure) and one atomic test-suite-green gate per cleanup is more economical than running it 12+ times.
 **Requirements**: CLEAN-02..CLEAN-09, CLEAN-12, CLEAN-16 (derived 1:1 from confirmed CONTEXT decisions D-02..D-09, D-12, D-16; no formal REQ IDs assigned at roadmap time)
-**Plans:** 4/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 
@@ -530,8 +530,8 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 46-04-PLAN.md — D-06 remove exportWav alias (migrate 7 callers) + D-07 remove test.flow legacy half (port consumer to @test)
-- [ ] 46-06-PLAN.md — D-03 redirect NoteSynthesizer helpers to SynthUtils (byte-guard gated, with inline-retention fallback)
+- [x] 46-04-PLAN.md — D-06 remove exportWav alias (migrate 7 callers) + D-07 remove test.flow legacy half (port consumer to @test)
+- [x] 46-06-PLAN.md — D-03 redirect NoteSynthesizer helpers to SynthUtils (byte-guard gated, with inline-retention fallback)
 
 ### Phase 47: Compile-Target Flavors — SHIPPED 2026-05-25
 
