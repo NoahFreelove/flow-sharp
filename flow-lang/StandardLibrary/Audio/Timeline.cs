@@ -6,6 +6,11 @@ namespace FlowLang.StandardLibrary.Audio;
 
 /// <summary>
 /// Timeline and composition functions for DAW-like multitrack audio.
+///
+/// Legacy DAW-style multitrack layer (pre-Phase-25). Superseded by the Song/Section
+/// render path (<see cref="FlowLang.StandardLibrary.Audio.SongRenderer"/>) as the
+/// canonical arrangement primitive — kept as a usable lower-level manual-mixing
+/// surface (shares the <see cref="FlowLang.StandardLibrary.Audio.Voice"/> type).
 /// </summary>
 public static class Timeline
 {

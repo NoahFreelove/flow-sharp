@@ -1,5 +1,10 @@
 Note: Bar (Musical Measure) Standard Library
 Note: Provides functions for creating and manipulating musical bars
+Note:
+Note: Legacy bar/measure-construction API. Superseded by the | C4 D4 E4 | note-stream
+Note: literal syntax (NoteStreamCompiler) -- kept as a usable measure-construction
+Note: surface. Orthogonal to Phase 45 Beats (measure axis, not duration). Imported by
+Note: std.flow:6.
 
 module bars
 

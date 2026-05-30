@@ -2,6 +2,11 @@ namespace FlowLang.StandardLibrary.Audio;
 
 /// <summary>
 /// Runtime representation of a track - a collection of voices with timeline positioning.
+///
+/// Legacy DAW-style multitrack layer (pre-Phase-25). Superseded by the Song/Section
+/// render path (<see cref="FlowLang.StandardLibrary.Audio.SongRenderer"/>) as the
+/// canonical arrangement primitive — kept as a usable lower-level manual-mixing
+/// surface (shares the <see cref="Voice"/> type).
 /// </summary>
 public class Track
 {
