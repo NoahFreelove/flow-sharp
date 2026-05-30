@@ -162,6 +162,13 @@ public class ModuleLoader
             var interpreter = ParentInterpreter ?? new Interpreter.Interpreter(context, _errorReporter, this);
             var prevStrict = context.StrictMode;
             context.StrictMode = pragmaSet.Has("strict");
+            // Phase 45 Plan 45-03 D-04 — per-DECLARING-file beat-true-to-sig bit.
+            // Parallels the StrictMode save-set-restore: save the importer's bit,
+            // set it to THIS module's pragma bit for the imported Execute, then
+            // restore in the finally below (Anti-Pattern 1 — never mutate without
+            // a paired restore; the restore runs even on a thrown import).
+            var prevBeatTrueToSig = context.BeatTrueToSig;
+            context.BeatTrueToSig = pragmaSet.Has("beat-true-to-sig");
             try
             {
                 interpreter.Execute(program);
@@ -239,6 +246,9 @@ public class ModuleLoader
                 // outer try). The outer try/finally below cleans _currentlyLoading;
                 // this inner finally cleans the strict-bit save.
                 context.StrictMode = prevStrict;
+                // Phase 45 D-04 — restore the importer's beat-true-to-sig bit
+                // regardless of how the imported Execute exited (Anti-Pattern 1).
+                context.BeatTrueToSig = prevBeatTrueToSig;
             }
 
             _loadedModules.Add(resolvedPath);
