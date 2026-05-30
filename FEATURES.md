@@ -242,7 +242,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| WAV export (`writeWav` / `exportWav`) | Fully | 16 / 24 / 32-bit PCM; sample rate from buffer; auto-create parent directory |
+| WAV export (`writeWav`) | Fully | 16 / 24 / 32-bit PCM; sample rate from buffer; auto-create parent directory |
 | WAV TPDF dithering | Fully | Triangular Probability Density Function dither at 1 LSB on 16/24-bit paths; deterministic-seeded (`0xD17E2`); reseeded per export → byte-identical writes |
 | WAV import (`loadWav`) | Fully | 16 / 24 / 32-bit PCM; auto-resample to 44100 Hz; chunk-walking parser; varispeed overloads (semitones / ratio) |
 | Real-time playback | Fully | `play`, `loop`, `(loop buf count)`, `preview` (mono 22050 Hz), `stop`, `(stream buf)`/`(stream seq)` |

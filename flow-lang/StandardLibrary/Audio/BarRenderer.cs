@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using FlowLang.Audio;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 

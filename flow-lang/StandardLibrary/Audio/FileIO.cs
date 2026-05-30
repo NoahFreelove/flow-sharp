@@ -27,7 +27,7 @@ public static class FileIO
     /// <summary>
     /// Core WAV export implementation.
     /// </summary>
-    private static void ExportWavInternal(AudioBuffer buffer, string filepath, int bitDepth)
+    private static void WriteWavInternal(AudioBuffer buffer, string filepath, int bitDepth)
     {
         // Phase 36 Plan 36-01 (D-v1.5-06 / D-36-09) — reseed PrngRegistry at the
         // WAV-export boundary so any unseeded Phase 36 stochastic primitives
@@ -248,7 +248,7 @@ public static class FileIO
     {
         string filepath = args[0].As<string>();
         var buffer = args[1].As<AudioBuffer>();
-        ExportWavInternal(buffer, filepath, 16);
+        WriteWavInternal(buffer, filepath, 16);
         return Value.Void();
     }
 
@@ -260,7 +260,7 @@ public static class FileIO
         string filepath = args[0].As<string>();
         var buffer = args[1].As<AudioBuffer>();
         int bitDepth = args[2].As<int>();
-        ExportWavInternal(buffer, filepath, bitDepth);
+        WriteWavInternal(buffer, filepath, bitDepth);
         return Value.Void();
     }
 

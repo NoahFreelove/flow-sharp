@@ -1,4 +1,3 @@
-using FlowLang.Audio;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
