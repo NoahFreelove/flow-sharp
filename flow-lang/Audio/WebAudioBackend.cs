@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
-using FlowLang.Diagnostics;
 
 namespace FlowLang.Audio;
 
@@ -35,7 +34,17 @@ namespace FlowLang.Audio;
 ///   <item>D-48-08: one <c>AudioContext</c> per FlowEngine, lazy on first <see cref="Initialize"/>.</item>
 ///   <item>D-48-09: <see cref="Play"/> NEVER calls <c>resume()</c> — that's the playground's
 ///         user-gesture responsibility in Phase 49.</item>
-///   <item>D-48-10: 30-second wall-clock cap on the marshal call via <c>Task.Run + Wait</c>.</item>
+///   <item>D-48-10 (AMENDED, debug session wasm-boot-no-app-bundle cycle 7): the 30-second
+///         wall-clock cap is best-effort / NON-ENFORCEABLE in single-threaded WASM. The prior
+///         <c>Task.Run + Wait(30s)</c> wrapper DEADLOCKED the one browser main thread (Task.Run
+///         queues the marshal to that same thread, Wait then blocks it → the marshal never runs
+///         → 30s freeze → bogus "exceeded 30s cap" advisory, no audio). Same single-threaded-WASM
+///         deadlock cycle 3 fixed in <c>WasmEntry.RunFromJs</c>; this extends the synchronous
+///         treatment to the playback path. <see cref="Play"/> now calls
+///         <see cref="FlowRuntimeInterop.PlayStereoFloat32"/> SYNCHRONOUSLY on the calling thread.
+///         The marshal is fire-and-forget anyway (it builds an <c>AudioBufferSourceNode</c> and
+///         calls <c>.start()</c>, returning immediately; WebAudio plays asynchronously), so a
+///         blocking-cap wrapper was never meaningful in the browser.</item>
 ///   <item>D-48-11: <see cref="IsAvailable"/> guards both browser host AND interop reachability.</item>
 /// </list>
 ///
@@ -48,9 +57,6 @@ namespace FlowLang.Audio;
 /// </summary>
 public sealed class WebAudioBackend : IAudioBackend
 {
-    /// <summary>D-48-10: 30-second wall-clock cap on the marshal call.</summary>
-    private static readonly TimeSpan PlayTimeout = TimeSpan.FromSeconds(30);
-
     private JSObject? _audioContext;
     private JSObject? _activeSource;
     private int _sampleRate;
@@ -147,38 +153,30 @@ public sealed class WebAudioBackend : IAudioBackend
         // branching on channel count. The promoted buffer is always 2-channel.
         float[] stereo = PromoteToStereo(samples, channels);
 
-        // D-48-10: 30-second wall-clock cap. The marshal call itself is fast
-        // (one-shot Float32Array per RESEARCH §5), but the JS-side
-        // AudioContext could be in a suspended / contended state. The cap
-        // matches the Phase 38 LIVE-02 render timeout pattern at
-        // LiveReloadManager.cs:82,470-499.
-        var workerTask = Task.Run(() =>
-        {
-            if (cancellationToken.IsCancellationRequested) return;
+        // D-48-10 (AMENDED — debug session wasm-boot-no-app-bundle cycle 7):
+        // call PlayStereoFloat32 SYNCHRONOUSLY on the calling thread. The prior
+        // Task.Run + workerTask.Wait(30s) wrapper DEADLOCKED the single browser
+        // main thread (Task.Run queues the marshal to that same thread; Wait
+        // then blocks it → the marshal never runs → 30s freeze → bogus
+        // "exceeded 30s cap" advisory + no AudioBufferSourceNode). This is the
+        // exact single-threaded-WASM deadlock cycle 3 already fixed in
+        // WasmEntry.RunFromJs (commit a8c1911) for the Execute path — the same
+        // treatment now extends to the playback path it missed. The marshal is
+        // fire-and-forget anyway (it builds an AudioBufferSourceNode, calls
+        // .start(), and returns immediately; WebAudio plays asynchronously), so
+        // a blocking 30s cap was never meaningful in the browser. The 30s cap
+        // becomes best-effort / non-preemptive in single-threaded WASM, exactly
+        // like cycle 3's WasmEntry amendment.
 #pragma warning disable CA1416  // browser-only platform check — guarded by OperatingSystem.IsBrowser() above
-            // SYSLIB1072 workaround: marshal the Float32 samples as their raw byte
-            // view. JS-side reinterprets via `new Float32Array(bytes.buffer,
-            // bytes.byteOffset, byteLength / 4)`. Span<byte> is supported by the
-            // source generator's [JSMarshalAs<JSType.MemoryView>] mapping;
-            // Span<float> is not (see FlowRuntimeInterop.cs XMLdoc).
-            Span<byte> samplesAsBytes = MemoryMarshal.AsBytes(stereo.AsSpan());
-            _activeSource = FlowRuntimeInterop.PlayStereoFloat32(
-                _audioContext, samplesAsBytes, channels: 2, sampleRate);
+        // SYSLIB1072 workaround: marshal the Float32 samples as their raw byte
+        // view. JS-side reinterprets via `new Float32Array(bytes.buffer,
+        // bytes.byteOffset, byteLength / 4)`. Span<byte> is supported by the
+        // source generator's [JSMarshalAs<JSType.MemoryView>] mapping;
+        // Span<float> is not (see FlowRuntimeInterop.cs XMLdoc).
+        Span<byte> samplesAsBytes = MemoryMarshal.AsBytes(stereo.AsSpan());
+        _activeSource = FlowRuntimeInterop.PlayStereoFloat32(
+            _audioContext, samplesAsBytes, channels: 2, sampleRate);
 #pragma warning restore CA1416
-        }, cancellationToken);
-
-        if (!workerTask.Wait(PlayTimeout, cancellationToken))
-        {
-            // T-48-10 mitigation: WarnOnce so iterative playgrounds don't flood
-            // the console. Sentinel key dedups across the entire process; the
-            // hint points composers to Plan 48-05's streaming-backlog item if
-            // they hit it routinely (offline-render is by design, per D-48-01).
-            RenderingDiagnostics.WarnOnce(
-                "wasm-30s-cap",
-                "[runtime] audio playback exceeded 30s cap — Plan 48-05 streaming backlog if encountered routinely");
-            throw new OperationCanceledException(
-                "WebAudioBackend.Play exceeded 30s wall-clock cap (D-48-10).");
-        }
     }
 
     public void Stop()
