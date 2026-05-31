@@ -141,6 +141,11 @@ export async function loadFlowRuntime() {
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
+            // Defensive (cycle 8): if the context is still suspended — e.g. a caller
+            // that did not run the resumeAudio() gesture chain — kick it. A source
+            // started on a suspended context plays once the context resumes, so this
+            // recovers audio instead of silently dropping it (charitable-by-default).
+            if (ctx.state === 'suspended') { ctx.resume().catch(() => { /* ignore */ }); }
             source.start();
 
             _activeSources.add(source);
@@ -280,9 +285,18 @@ export async function loadFlowRuntime() {
          * @returns {Promise<void>}
          */
         resumeAudio: async () => {
-            if (_audioContext) {
-                try { await _audioContext.resume(); } catch (e) { /* ignore */ }
+            // Create the shared AudioContext NOW — inside the user-gesture frame —
+            // if it does not exist yet, THEN resume it. WebAudioBackend.Play creates
+            // the context lazily DURING run(), which is too late: resuming a
+            // not-yet-created context was a silent no-op, so the context that Play
+            // later created started suspended and source.start() produced no sound
+            // (debug session wasm-boot-no-app-bundle cycle 8). Creating + resuming
+            // here means the C# createAudioContext import returns THIS already-running
+            // context (it caches on `if (!_audioContext)`), so playback is audible.
+            if (!_audioContext) {
+                _audioContext = new AudioContext();
             }
+            try { await _audioContext.resume(); } catch (e) { /* ignore */ }
         },
     };
 
