@@ -76,6 +76,27 @@
              harness can import './flow-runtime.js' from the same directory.
              Bundle consumers (Phase 49 SvelteKit) ignore it. -->
         <WasmMainHTMLPath>wasm/index.html</WasmMainHTMLPath>
+        <!-- Phase 48 fix(48-06) cycle 5: gate app-bundle generation to the PUBLISH
+             phase only. Forcing IsBrowserWasmProject=true above wires the runtime
+             pack's `WasmBuildApp` AfterTargets hook (WasmApp.Common.targets:275-278),
+             which also fires during a PLAIN `dotnet build`. But the assembly set that
+             feeds `WasmAssembliesToBundle` is only gathered in the nested-publish
+             flow, so the build-phase bundle target fails with
+               "WasmAssembliesToBundle item is empty. No assemblies to process"
+             (WasmApp.Common.targets:368). That broke `dotnet build -p:FlowTarget=Web`
+             (a documented CLAUDE.md command) and turned the Phase47 invariant
+             BuildConditioningSmokeTests.WebBuild_ExitCodeIsZero RED.
+
+             `WasmBuildOnlyAfterPublish=true` is the SDK's own documented lever
+             (WasmApp.Common.targets:76 — "Causes relinking to be done only for
+             Publish"). The SDK auto-sets it when _IsPublishing / DeployOnBuild is
+             true (targets:173-174); we set it unconditionally so the `WasmBuildApp`
+             AfterTargets gate (`'$(WasmBuildOnlyAfterPublish)' != 'true'`) is skipped
+             during plain build and only the publish-time bundle is generated.
+             Verified empirically: `dotnet build -p:FlowTarget=Web` exits 0 (no bundle
+             produced) AND `dotnet publish -p:FlowTarget=Web -c Release` still emits
+             AppBundle/_framework/dotnet.boot.js with the embedded stdlib intact. -->
+        <WasmBuildOnlyAfterPublish>true</WasmBuildOnlyAfterPublish>
     </PropertyGroup>
 
     <ItemGroup>
