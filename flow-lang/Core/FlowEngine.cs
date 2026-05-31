@@ -281,6 +281,25 @@ public class FlowEngine : IDisposable
         _interpreter = new Interpreter.Interpreter(_context, _errorReporter, _moduleLoader);
         _moduleLoader.ParentInterpreter = _interpreter;
 
+        // Phase 48 fix(48-06) — EXPLICITLY bootstrap the @std builtin SURFACE at
+        // engine init. The Flow builtin call surface (print/add/str/createSineTone/
+        // play/... — declared as `internal proc` in std.flow, which in turn pulls
+        // @collections + @bars) is NOT registered by the C# Register* calls above:
+        // those register only IMPLEMENTATIONS keyed by name; the interpreter binds
+        // an impl ONLY when a matching `internal proc` surface overload exists
+        // (Interpreter.cs:845-848). On Desktop the surface happened to load as a
+        // SIDE EFFECT of StyleRegistry.LoadShippedAndUserPacks below (the improv
+        // packs `use "@improv"` -> `use "@std"`). That chain is FRAGILE and, on the
+        // Web/WASM target, does not fire at all (the style-pack directory does not
+        // exist in the Emscripten VFS), so the entire builtin surface was missing
+        // in-browser -> `[eval] Function '<name>' not found` for EVERY builtin.
+        // See debug session wasm-boot-no-app-bundle (cycle 4). Loading @std here is
+        // idempotent (ModuleLoader dedups via _loadedModules), so the later
+        // improv-pack `use "@std"` hits AlreadyLoaded and Desktop behavior is
+        // unchanged. On Web the embedded-resource fallback in ModuleLoader.LoadModule
+        // supplies the .flow source (no host filesystem in the browser).
+        _moduleLoader.LoadModule("@std", "<engine-init>", _context);
+
         // Phase 36 Plan 36-11 — load shipped + user style packs AFTER the
         // interpreter is fully wired. Each pack `use "@improv"` + declares a
         // Dict<Symbol, Value> + calls (registerStyle #name pack), so we need

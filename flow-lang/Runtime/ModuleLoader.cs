@@ -102,16 +102,35 @@ public class ModuleLoader
 
         try
         {
-            // 1. Check file exists
-            if (!File.Exists(resolvedPath))
+            // 1. Read module source — filesystem first, then embedded-resource
+            //     fallback. The fallback is what makes `use "@std"` (and every
+            //     other stdlib module) work on the Web/WASM target: there is NO
+            //     host filesystem in the Emscripten VFS, so the .flow files that
+            //     CopyToPublishDirectory ships alongside the Desktop binary are
+            //     simply absent in the browser. The csproj embeds the surviving
+            //     stdlib .flow files as <EmbeddedResource> on FlowTarget=Web, and
+            //     TryReadEmbeddedModule resolves them by bare filename. Desktop is
+            //     byte-identical (File.Exists wins; the embedded path is never
+            //     consulted because the files are on disk). See debug session
+            //     wasm-boot-no-app-bundle (cycle 4): without this, std.flow never
+            //     loads in-browser and the entire builtin SURFACE (print/add/
+            //     createSineTone/play — declared as `internal proc` in std.flow)
+            //     is missing, yielding `[eval] Function '<name>' not found`.
+            string source;
+            if (File.Exists(resolvedPath))
             {
-                _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - file not found");
+                source = File.ReadAllText(resolvedPath);
+            }
+            else if (TryReadEmbeddedModule(resolvedPath, out var embeddedSource))
+            {
+                source = embeddedSource;
+            }
+            else
+            {
+                _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - file not found (no embedded fallback)");
                 _errorReporter.ReportError($"Import file not found: {resolvedPath}", errorLocation);
                 return ModuleLoadResult.Error;
             }
-
-            // 2. Read file contents
-            var source = File.ReadAllText(resolvedPath);
 
             // Phase 21 D-06: each imported file gets its OWN PragmaSet computed
             // from THIS file's source. Pragmas declared inside the module do NOT
@@ -298,6 +317,74 @@ public class ModuleLoader
             assemblyDir = Path.GetDirectoryName(typeof(ModuleLoader).Assembly.Location) ?? Environment.CurrentDirectory;
         }
         return Path.GetFullPath(Path.Combine(assemblyDir, libraryName));
+    }
+
+    /// <summary>
+    /// Embedded-resource fallback for module source, used when the resolved
+    /// path is not on the host filesystem. This is the Web/WASM path: the
+    /// Emscripten VFS has no host filesystem, so the stdlib <c>.flow</c> files
+    /// that <c>CopyToPublishDirectory</c> ships next to the Desktop binary are
+    /// absent in the browser. On <c>FlowTarget=Web</c> the csproj embeds the
+    /// surviving stdlib modules (and the shipped improv style packs) as
+    /// <c>&lt;EmbeddedResource&gt;</c> with a stable <c>LogicalName</c> of the
+    /// form <c>FlowLang.Stdlib.&lt;relative&gt;</c> (e.g. <c>FlowLang.Stdlib.std.flow</c>,
+    /// <c>FlowLang.Stdlib.improv/styles/jazz.flow</c>). The lookup is keyed by the
+    /// stdlib-relative file name so it works for both the top-level modules and
+    /// the <c>improv/styles/</c> packs.
+    ///
+    /// <para>Desktop behavior is byte-identical: <see cref="LoadModule"/> only
+    /// consults this method when <c>File.Exists(resolvedPath)</c> is false, and
+    /// on Desktop the files are on disk. On Desktop the assembly also carries no
+    /// embedded stdlib resources (the <c>&lt;EmbeddedResource&gt;</c> ItemGroup
+    /// is gated to <c>FlowTarget=Web</c>), so this method returns false and the
+    /// original "file not found" diagnostic still fires for genuinely-missing
+    /// imports. See debug session wasm-boot-no-app-bundle (cycle 4).</para>
+    /// </summary>
+    private static bool TryReadEmbeddedModule(string resolvedPath, out string source)
+    {
+        source = string.Empty;
+
+        // Reduce the absolute resolved path back to a stdlib-relative key.
+        // ResolveStdlibPath builds {AppContext.BaseDirectory}/<name>; style
+        // packs resolve to {AppContext.BaseDirectory}/improv/styles/<name>.
+        // Strip the binary-directory prefix to recover "<relative>".
+        var baseDir = AppContext.BaseDirectory;
+        string relative = resolvedPath;
+        if (!string.IsNullOrEmpty(baseDir))
+        {
+            var fullBase = Path.GetFullPath(baseDir);
+            var fullPath = Path.GetFullPath(resolvedPath);
+            if (fullPath.StartsWith(fullBase, StringComparison.Ordinal))
+                relative = fullPath.Substring(fullBase.Length);
+        }
+        // Normalize to forward slashes + trim any leading separator so the
+        // logical-name suffix is stable across OSes.
+        relative = relative.Replace('\\', '/').TrimStart('/');
+        if (relative.Length == 0)
+            relative = Path.GetFileName(resolvedPath);
+
+        var asm = typeof(ModuleLoader).Assembly;
+        // Embedded resources are named "FlowLang.Stdlib.<relative>" via the
+        // csproj LogicalName.
+        var wanted = "FlowLang.Stdlib." + relative;
+        string? match = null;
+        foreach (var name in asm.GetManifestResourceNames())
+        {
+            if (name == wanted)
+            {
+                match = name;
+                break;
+            }
+        }
+        if (match is null)
+            return false;
+
+        using var stream = asm.GetManifestResourceStream(match);
+        if (stream is null)
+            return false;
+        using var reader = new StreamReader(stream);
+        source = reader.ReadToEnd();
+        return true;
     }
 
     private string ResolvePath(string path, string? currentFile)

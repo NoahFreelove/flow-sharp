@@ -143,6 +143,57 @@
       <None Update="wasm\index.html">
         <CopyToPublishDirectory>Never</CopyToPublishDirectory>
       </None>
+
+      <!-- Phase 48 fix(48-06): embed the surviving stdlib .flow modules into
+           flow-lang.wasm so `use "@std"` (and the transitive @collections/@bars,
+           plus the opt-in @audio/@patterns/@generative/@improv/@notation/@notation-io)
+           resolve in the BROWSER. The Emscripten VFS has no host filesystem, so
+           the CopyToPublishDirectory copies that Desktop relies on are absent in
+           WASM. ModuleLoader.TryReadEmbeddedModule resolves these by the stable
+           LogicalName "FlowLang.Stdlib.<relative>". Web-only: Desktop reads the
+           same files from disk and never touches the embedded copy. sfz.flow /
+           osc.flow are NOT embedded (stripped on Web per Phase 47 D-47-03; the
+           ModuleLoader Web strip-gate rejects @sfz/@osc before any read). See debug
+           session wasm-boot-no-app-bundle (cycle 4). -->
+      <EmbeddedResource Include="std.flow">
+        <LogicalName>FlowLang.Stdlib.std.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="collections.flow">
+        <LogicalName>FlowLang.Stdlib.collections.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="bars.flow">
+        <LogicalName>FlowLang.Stdlib.bars.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="audio.flow">
+        <LogicalName>FlowLang.Stdlib.audio.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="composition.flow">
+        <LogicalName>FlowLang.Stdlib.composition.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="generative.flow">
+        <LogicalName>FlowLang.Stdlib.generative.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="improv.flow">
+        <LogicalName>FlowLang.Stdlib.improv.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="notation.flow">
+        <LogicalName>FlowLang.Stdlib.notation.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="notation-io.flow">
+        <LogicalName>FlowLang.Stdlib.notation-io.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="patterns.flow">
+        <LogicalName>FlowLang.Stdlib.patterns.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="improv\styles\jazz.flow">
+        <LogicalName>FlowLang.Stdlib.improv/styles/jazz.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="improv\styles\blues.flow">
+        <LogicalName>FlowLang.Stdlib.improv/styles/blues.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="improv\styles\classical.flow">
+        <LogicalName>FlowLang.Stdlib.improv/styles/classical.flow</LogicalName>
+      </EmbeddedResource>
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
