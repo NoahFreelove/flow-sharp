@@ -851,6 +851,36 @@ public class Interpreter : IFunctionInvoker
                 var overload = FunctionOverload.Internal(proc.Name, registeredSignature!, impl!);
                 _context.DeclareFunction(overload);
             }
+            else if (FlowLang.Core.FlowEngine.IsWebTarget)
+            {
+                // Phase 48 (debug wasm-boot-no-app-bundle, cycle 6): on the Web
+                // target some builtin C# implementations are STRIPPED at compile
+                // time (csproj `<Compile Remove>` per Phase 47 D-47-03 — e.g.
+                // `micBuffer` from InputFunctions.cs, `loadSfz` from the Sfz/**
+                // tree). Their `internal proc` SURFACE still ships in the embedded
+                // stdlib `.flow` modules (`audio.flow`, `std.flow`), so without a
+                // charitable branch here EACH such surface overload would emit a
+                // hard "No C# implementation found" error. Those accumulated
+                // errors make ModuleLoader fail the WHOLE import (`@audio`/`@std`),
+                // taking the entire module's surface (createSineTone/play/...) down
+                // with it.
+                //
+                // Charitable interpretation + Phase 47's established "advisory at
+                // import-time for stripped features" pattern: skip the missing
+                // overload and emit a one-shot advisory (keyed per proc-name so it
+                // fires at most once per name per process). Calling the builtin
+                // in-browser then yields a normal "function not found" — acceptable,
+                // since the implementation is genuinely stripped by design.
+                //
+                // Gated on the compile-time FlowEngine.IsWebTarget const
+                // (Phase 47 D-47-10), NOT a runtime OS check, so Desktop behavior +
+                // Desktop tests are provably unchanged: under FlowTarget=Desktop
+                // this branch is unreachable and the hard ReportError below still
+                // fires for a genuinely-missing impl (a real bug there).
+                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                    $"target:stripped-builtin:{proc.Name}",
+                    $"[target] builtin '{proc.Name}' unavailable on Web target — surface declared in stdlib but implementation stripped (Phase 47). Skipping; calls will report 'function not found'.");
+            }
             else
             {
                 _errorReporter.ReportError(
