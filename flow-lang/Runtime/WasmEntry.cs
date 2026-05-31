@@ -8,7 +8,6 @@ using System.Runtime.InteropServices.JavaScript;
 using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using FlowLang.Audio;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
@@ -54,6 +53,14 @@ public sealed class RunResult
 /// Shape pinned by D-48-14. <c>Kind</c> is one of:
 /// <c>"parse" | "eval" | "runtime" | "cancel" | "platform-not-supported"</c>.
 /// </summary>
+/// <remarks>
+/// The <c>"cancel"</c> kind remains DEFINED in the D-48-14 contract (field
+/// names + kinds are PINNED — JS and tests parse them directly), but it is
+/// NOT raised by <see cref="WasmEntry.RunFromJs"/> in single-threaded WASM:
+/// the D-48-10 hard 30s wall-clock cap is unenforceable by blocking on a
+/// single-threaded runtime (see <see cref="WasmEntry"/> remarks for the
+/// debug-session amendment).
+/// </remarks>
 /// <param name="Kind">Error category (see remarks above).</param>
 /// <param name="Message">Human-readable message; no .NET stack traces leak
 /// across the JS boundary per T-48-15 mitigation.</param>
@@ -133,12 +140,25 @@ internal partial class FlowWasmJsonContext : JsonSerializerContext
 /// the prior streams in a <c>finally</c> block (T-48-14 mitigation —
 /// restoration guaranteed even on exception path).</para>
 ///
-/// <para>D-48-10 30-second wall-clock cap: <see cref="RunFromJs"/> wraps
-/// <see cref="FlowEngine.Execute"/> in <c>Task.Run + Wait(TimeSpan.FromSeconds(30))</c>
-/// (Pattern C — same shape as Phase 38 LIVE-02 LiveReloadManager.cs:82,470-499).
-/// On timeout, returns a RunResult with a single
-/// <see cref="RunError"/> of kind <c>"cancel"</c>; the worker continues
-/// running as an orphan per RESEARCH §E Option A.</para>
+/// <para><b>D-48-10 30-second wall-clock cap — AMENDED (debug session
+/// wasm-boot-no-app-bundle, cycle 3, 2026-05-30):</b> the cap is a HARD wall
+/// on Desktop only and is <b>best-effort (non-preemptive) in single-threaded
+/// WASM</b>. <see cref="RunFromJs"/> calls <see cref="FlowEngine.Execute"/>
+/// <b>synchronously on the calling (main) thread</b>. The previous
+/// <c>Task.Run + Wait(TimeSpan.FromSeconds(30))</c> shape (Pattern C, carried
+/// over from Phase 38 LIVE-02 where a real Desktop thread pool exists)
+/// DEADLOCKS under Mono-WASM, which is single-threaded by default
+/// (dotnet/runtime#85592): <c>Task.Run</c> queues the work to the one main
+/// thread and <c>Wait</c> then blocks that same thread, so <c>Execute</c> never
+/// runs and every call timed out at exactly 30s. A hard cap is fundamentally
+/// unenforceable by blocking in a single-threaded runtime (no preemption). The
+/// accepted tradeoff: a runaway Flow script hangs its own browser tab exactly
+/// like any synchronous single-threaded JS — the composer controls their own
+/// script, this matches the browser execution model, and ergonomics-first wins.
+/// The <c>"cancel"</c> RunError kind stays DEFINED in the D-48-14 contract
+/// (field names + kinds are PINNED) but is no longer raised here. The Plan
+/// 48-07 closer / 48-VERIFICATION.md should record D-48-10 as "hard cap on
+/// Desktop, best-effort (synchronous, non-preemptive) in single-threaded WASM".</para>
 ///
 /// <para>D-48-09 contract: <see cref="RunFromJs"/> does NOT call
 /// <c>resumeContext</c> on the AudioContext. The autoplay-policy
@@ -152,9 +172,6 @@ public static partial class WasmEntry
     private static readonly object _lock = new();
     private static WebAudioBackend? _sharedBackend;
     private static FlowEngine? _sharedEngine;
-
-    /// <summary>D-48-10 — 30-second wall-clock cap on a single Execute call.</summary>
-    private static readonly TimeSpan RunTimeout = TimeSpan.FromSeconds(30);
 
     /// <summary>
     /// Lazy-init (under lock) the shared per-process <see cref="FlowEngine"/>.
@@ -195,11 +212,13 @@ public static partial class WasmEntry
     /// <see cref="DiagnosticLevel"/> (Info/Warning/Error) but not a parse
     /// vs. eval vs. runtime category. The mapping below is conservative:
     /// any Error-level FlowError becomes kind=<c>"eval"</c> — the catch-all
-    /// for "the script could not run to completion". Top-level catch sites
-    /// in <see cref="RunFromJs"/> emit kind=<c>"runtime"</c> for uncaught
-    /// host-side exceptions, kind=<c>"cancel"</c> for the 30s timeout, and
-    /// kind=<c>"parse"</c> is reserved for future per-stage tagging when
-    /// the ErrorReporter grows a category field (v1.6 backlog).
+    /// for "the script could not run to completion". The top-level catch site
+    /// in <see cref="RunFromJs"/> emits kind=<c>"runtime"</c> for uncaught
+    /// host-side exceptions; kind=<c>"parse"</c> is reserved for future
+    /// per-stage tagging when the ErrorReporter grows a category field (v1.6
+    /// backlog). kind=<c>"cancel"</c> stays DEFINED in the D-48-14 contract but
+    /// is no longer raised — the 30s cap is non-preemptive in single-threaded
+    /// WASM (see <see cref="WasmEntry"/> remarks, debug-session amendment).
     /// </remarks>
     private static RunError[] MapFlowErrors(IEnumerable<FlowError> errors)
     {
@@ -220,6 +239,14 @@ public static partial class WasmEntry
     /// <see cref="RunResult"/> per D-48-14. Charitable on every error path —
     /// the JS caller ALWAYS receives a valid JSON string.
     /// </summary>
+    /// <remarks>
+    /// Runs <see cref="FlowEngine.Execute"/> SYNCHRONOUSLY on the calling
+    /// thread. Mono-WASM is single-threaded by default, so offloading to a
+    /// worker task and blocking on it (the prior Pattern C shape) deadlocks —
+    /// see the <see cref="WasmEntry"/> D-48-10 amendment. The 30s wall-clock cap
+    /// is therefore best-effort / non-preemptive in-browser (a runaway script
+    /// hangs its own tab, exactly like synchronous single-threaded JS).
+    /// </remarks>
     /// <param name="source">Flow source code (composer-authored).</param>
     /// <returns>JSON-serialized <see cref="RunResult"/> with camelCase property
     /// names and null-omission for <c>wav</c> / <c>midi</c>.</returns>
@@ -241,28 +268,17 @@ public static partial class WasmEntry
             try
             {
                 var engine = GetEngine();
-                // Pattern C 30-second wall-clock cap — Task.Run + Wait(TimeSpan).
-                // Mirrors Phase 38 LIVE-02 LiveReloadManager.cs:82,470-499. Workers
-                // that exceed the cap orphan per RESEARCH §E Option A.
-                var workerTask = Task.Run(() => engine.Execute(source ?? string.Empty, "<wasm>"));
-
-                if (!workerTask.Wait(RunTimeout))
-                {
-                    // T-48-16 mitigation: structured cancel error; do NOT throw across the boundary.
-                    errors = new[]
-                    {
-                        new RunError(
-                            Kind: "cancel",
-                            Message: "evaluation exceeded 30s cap (D-48-10)",
-                            Line: null,
-                            Column: null,
-                            SourceSnippet: null),
-                    };
-                }
-                else
-                {
-                    errors = MapFlowErrors(engine.ErrorReporter.Errors);
-                }
+                // D-48-10 (AMENDED, debug session wasm-boot-no-app-bundle cycle 3):
+                // run SYNCHRONOUSLY on the calling thread. Mono-WASM is single-
+                // threaded by default — the prior Task.Run + Wait(30s) shape
+                // deadlocked (Task.Run queues to the one main thread, Wait then
+                // blocks it, so Execute never ran → every call timed out at 30s).
+                // The hard 30s cap is unenforceable without preemption; in-browser
+                // it is best-effort (a runaway script hangs its own tab, like any
+                // synchronous single-threaded JS). The "cancel" RunError kind stays
+                // DEFINED (D-48-14 contract) but is no longer raised here.
+                engine.Execute(source ?? string.Empty, "<wasm>");
+                errors = MapFlowErrors(engine.ErrorReporter.Errors);
             }
             catch (Exception ex)
             {

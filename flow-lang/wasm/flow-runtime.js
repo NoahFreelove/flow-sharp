@@ -24,6 +24,16 @@
 // The playground (or the dev-smoke index.html) calls runtime.resumeAudio() from
 // inside a user-gesture handler (the Run button's onclick) BEFORE runtime.run(...)
 // so the autoplay policy is satisfied in the same call frame.
+//
+// D-48-10 cap is best-effort in-browser (AMENDED, debug session
+// wasm-boot-no-app-bundle cycle 3): RunFromJs runs the Flow script SYNCHRONOUSLY
+// on the single Mono-WASM main thread (the prior Task.Run+Wait(30s) shape
+// deadlocked because the runtime has no worker thread to offload to). We
+// deliberately add NO JS-side setTimeout "cap" here: a setTimeout callback cannot
+// preempt a synchronous dotnet call (the JS event loop is blocked for the whole
+// duration of RunFromJs), so a fake JS timeout would be non-functional. A runaway
+// Flow script hangs its own tab exactly like any synchronous single-threaded JS —
+// that is the accepted, honest tradeoff (the composer controls their own script).
 
 // Publish-layout note (verified empirically against the generated AppBundle —
 // see .planning/debug/wasm-boot-no-app-bundle.md):
@@ -195,6 +205,15 @@ export async function loadFlowRuntime() {
          * exports.FlowLang.Runtime.WasmEntry.RunFromJs returns a JSON STRING
          * (not an object) per D-48-14 — we parse it here so the caller sees
          * a plain JS object.
+         *
+         * NOTE (D-48-10 amendment, debug session wasm-boot-no-app-bundle cycle 3):
+         * RunFromJs executes the Flow script SYNCHRONOUSLY on the single Mono-WASM
+         * main thread and returns the JSON string directly. This `run` is kept
+         * `async` only to preserve the D-48-13 Promise-returning API surface
+         * (Phase 49 may make execution genuinely async via a worker). The 30s cap
+         * is best-effort in-browser — there is NO preemptive timeout, because no JS
+         * setTimeout can interrupt a synchronous dotnet call (the event loop is
+         * blocked for the whole call). A runaway script hangs its own tab.
          *
          * @param {string} source - Flow source code.
          * @returns {Promise<RunResult>}
