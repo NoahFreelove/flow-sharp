@@ -174,6 +174,7 @@ public sealed class WebAudioBackend : IAudioBackend
         // source generator's [JSMarshalAs<JSType.MemoryView>] mapping;
         // Span<float> is not (see FlowRuntimeInterop.cs XMLdoc).
         Span<byte> samplesAsBytes = MemoryMarshal.AsBytes(stereo.AsSpan());
+        Console.Error.WriteLine($"[flow-audio-cs] samples={samples.Length} channels={channels} stereo={stereo.Length} bytes={samplesAsBytes.Length}");
         _activeSource = FlowRuntimeInterop.PlayStereoFloat32(
             _audioContext, samplesAsBytes, channels: 2, sampleRate);
 #pragma warning restore CA1416

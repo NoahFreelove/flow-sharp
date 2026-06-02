@@ -1,110 +1,148 @@
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Collections/DictFunctions.cs:109:    /// <summary><c>(getOr d k default)</c> — fallback when absent.</summary>
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Collections/DictFunctions.cs:114:        var fallback = args[2];
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Collections/DictFunctions.cs:115:        return dict.Entries.TryGetValue(key, out var v) ? v : fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Network/OscFunctions.cs:67:    // the same 5ms window, which is acceptable per D-38-14 charitable
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Network/OscFunctions.cs:235:    /// Phase 38 Plan 38-06 D-38-13 — charitable smallest-tag-that-fits OSC
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Network/OscFunctions.cs:309:        // charitably — IPAddress.Parse first, then DNS fallback. For
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/Voicings.cs:12:/// Per Phase 22 CONTEXT D-07 (charitable interpretation): when a chord lacks enough notes
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/Voicings.cs:62:    /// Per Phase 22 CONTEXT D-07 (charitable interpretation): when n &gt;= NoteNames.Length
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/Voicings.cs:87:    /// Per Phase 22 CONTEXT D-07 (charitable interpretation): unknown names return input
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:314:    /// Unknown direction strings also fall through to <c>"up"</c> per the project's charitable
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:374:            // This keeps `(chord <Note variable>)` charitable when the note text isn't itself
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:378:                if (ChordParser.TryParseFlexible(noteText[0] + "maj", out var fallback) && fallback != null)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:379:                    return Value.Chord(fallback);
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:466:        //   in v1.3 per RESEARCH Pitfall 7 / charitable-interpretation memory; seeded random
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/ChordParser.cs:423:                return true; // unparseable bass — keep the chord, drop the slash silently (charitable)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:86:    /// Per V5 input validation (T-22-V5-17, T-22-V5-18) and CLAUDE.md charitable interpretation
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:105:            // V5: clamp out-of-range inputs (charitable D-07; threats T-22-V5-17, T-22-V5-18).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/BufferPrinter.cs:23:///         charitable-interpretation memory.</item>
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/BufferPrinter.cs:208:    /// (charitable interpretation — never throws).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Composition/VariationFunctions.cs:166:    /// Pitch mutation: diatonic when key is provided, chromatic fallback otherwise.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Composition/VariationFunctions.cs:178:        // Chromatic fallback
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Composition/VariationFunctions.cs:199:            // Note not in scale, use chromatic fallback
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:351:                    // (charitable simplification). Future v1.6 may interpret [CEG] as polyphony.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:468:        else mode = "major";  // charitable
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:530:    /// fallback (1.0) still gives a usable note (charitable per D-v1.5-05).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:553:        // Fallback: pick nearest power-of-2 (charitable)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/LilyPondExport.cs:267:    /// empty string for unrecognized keys (charitable per D-v1.5-05 — LilyPond
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcLexer.cs:293:            // Unknown character — charitable advisory + advance
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:85:        // Single Bar carrying all notes (charitable simplification — MML has
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:319:    /// NoteValue enum integer. Returns QUARTER (charitable default) for
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MusicXmlExport.cs:17:/// <c>mscore --convert-to mxl</c> structural diff (charitable-skip when
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MusicXmlExport.cs:369:                // (D-39-06: always decimal cent precision, never text-annotation fallback).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MusicXmlExport.cs:442:    /// (charitable per D-v1.5-05 — emit just <c>&lt;duration&gt;</c>).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/ArticulationEmit.cs:47:        // charitable-interpretation default (D-v1.5-05). Adding a new named
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:33:        // Defensive: only A..G accepted (charitable for anything else)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:43:            _  => string.Empty,  // charitable per D-v1.5-05
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:58:    /// back to "4" (quarter; charitable per D-v1.5-05).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:118:    // Shared utilities (charitable-interpretation + bar/note helpers)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:124:    /// unchanged after this fires (Pitfall 9 — charitable interpretation).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:228:                    // Lambda returned non-Sequence — charitable: pass through.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:394:        if (chunkStart >= barCount) return Value.Sequence(seq);  // rotation beyond actual content; charitable passthrough
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SampleCache.cs:131:                // If file missing, silently skip — render-time fallback to nearest available
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SampleCache.cs:254:            return targetMidi;  // fallback — caller handles missing-sample case
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/TuningTables.cs:18:/// Chromatic-fallback rule (Pitfall 3): non-diatonic spellings in mode tables use
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/ScalaParser.cs:65:        //    RESEARCH A1 charitable: blank lines before the description tolerated.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/ScalaParser.cs:76:            // Leading blank lines before description: charitable skip.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/ChromaticRatioTable.cs:38:    /// caller (TuningTables.LookupRatio) is responsible for fallback construction
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/ChromaticRatioTable.cs:39:    /// per RESEARCH §Pitfall 3 chromatic-fallback rule.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/Mode.cs:6:/// matches the D-02 silent C-major-default fallback.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/StretchFunctions.cs:111:    /// resolve mode Symbol (with charitable fallback to Auto), then delegate
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/StretchFunctions.cs:150:    /// 37-PATTERNS.md Pattern E (charitable interpretation).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/PitchShiftFunctions.cs:133:    /// empty buffer, resolve the mode Symbol with charitable fallback to
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:18:///   <item><description>Plain positional fallback
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:29:///   stderr advisory per RESEARCH §Pattern E charitable interpretation.</description></item>
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:98:    /// shape, resolves the windowing pick (with charitable fallback on unknown
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:139:    /// 37-RESEARCH.md Pattern E (charitable interpretation).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/MidiExport.cs:72:    /// every sampler instrument to the GM-0 fallback.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/PitchConversion.cs:48:        /// explicit key declaration — aligns with charitable-interpretation memory.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/PitchConversion.cs:53:        /// Pitfall 3 chromatic fallback: non-diatonic spellings absent from the mode-
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/PitchConversion.cs:106:                // Pitfall 3 chromatic fallback: non-diatonic chromatic spellings in mode
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/InputFunctions.cs:49:    /// returning <c>null</c> simulates a capture failure (charitable silent-buffer
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/InputFunctions.cs:50:    /// fallback). Always restore to null in test Dispose/Reset code.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/InputFunctions.cs:145:        // (3) Charitable fallback: capture failure → silent buffer + advisory.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Synthesizers/DrumSynthesizer.cs:295:        // is a fallback for MIDI numbers outside the standard kit map.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:152:            // U-Iowa MIS recording. Charitable fallback (T-37-04-02): if mp OR mf is
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/EffectsFunctions.cs:330:    /// Out-of-range enum values fall through to the quarter fallback (charitable D-07,
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzData.cs:40:///   fallback per CONTEXT D-03: when <c>Grid[pitch, vel]</c> is null, find the
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:30:///   <item><description>Nearest-pitch fallback (SPEC-4) when the grid cell is
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:34:///   velocity row for ANY covering region. On still-null after fallback,
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:35:///   emit a charitable <see cref="RenderingDiagnostics.WarnOnce"/> advisory
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:590:    /// the first hit. Used when the nearest-pitch fallback finds a pitch
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:114:    /// nearest-pitch fallback. Header inheritance + dB→linear + pan
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:174:                // as an opcode line below for charitable interpretation.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:353:                        // Opcode encountered with no active header — charitable advisory.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:408:        // Description fallback: if no non-header non-comment line found, use
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:466:        // Numeric opcodes — strict parse with charitable fallback to spec
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:509:        // loop_mode — value mapping with charitable fallback.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:553:        Dictionary<string, string> region, string key, int fallback, string patchDescription)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:555:        if (!region.TryGetValue(key, out var raw)) return fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:567:            return fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:580:        Dictionary<string, string> region, string key, int fallback, string patchDescription)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:582:        if (!region.TryGetValue(key, out var raw)) return fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:588:            return fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:594:        Dictionary<string, string> region, string key, double fallback, string patchDescription)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:596:        if (!region.TryGetValue(key, out var raw)) return fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:605:            return fallback;
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRegion.cs:75:///   hard-switch fallback applies.</description></item>
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:59:    /// handle the missing-sample case — typically via a silence fallback +
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:163:            // missing-region case via the charitable WarnOnce + silence path
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:188:            // null cells are fine — render-time nearest-pitch fallback will
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:189:            // load the fallback region's WAV on first render.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzLoopMode.cs:21:/// (the actual fallback logic lives in Plan 33-04 <c>SfzParser</c>; this enum
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SongRenderer.cs:221:    ///        Aligns with charitable-interpretation memory: rather than error or fall through
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:80:///   <item>quantizeToScale: unknown string scaleName → charitable fallback
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:43:/// return a charitable empty/clamped result + emit a one-shot stderr advisory.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:187:            //   - anything else: charitable advisory + skip
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:228:    /// non-Symbol rule values emit a charitable advisory and are dropped.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:316:    /// Lookup with reference- and data-equality fallback. The interned-Symbol
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:326:        // Cross-context fallback: compare by underlying string body.
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:59:/// (empty corpus, length &lt;= 0, order outside [1,3]) return a charitable
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:190:    /// a charitable empty <see cref="SequenceData"/> on degenerate input
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:221:        // ---- Style pack lookup with charitable fallback ----
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:228:                $"jam:no-fallback-jazz:{ctx.CurrentCallSite}",
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:280:        // ---- Read articulation distribution map (charitable defaults) ----
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:285:        // ---- Read beat-weight maps (charitable: missing → uniform 0.33 each) ----
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:364:    // Style pack lookup + charitable fallback
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:427:    // Pack field extraction (charitable — missing fields use defaults)
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:568:            // happen for ChordParser-emitted notes but charitable input is
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:651:            category = Category.ChordTone; // last-resort fallback
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:218:    /// charitable about non-<c>(registerStyle ...)</c> top-level statements).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Collections/DictFunctions.cs:109:    /// <summary><c>(getOr d k default)</c> — fallback when absent.</summary>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Collections/DictFunctions.cs:114:        var fallback = args[2];
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Collections/DictFunctions.cs:115:        return dict.Entries.TryGetValue(key, out var v) ? v : fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Network/OscFunctions.cs:68:    // the same 5ms window, which is acceptable per D-38-14 charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Network/OscFunctions.cs:236:    /// Phase 38 Plan 38-06 D-38-13 — charitable smallest-tag-that-fits OSC
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Network/OscFunctions.cs:310:        // charitably — IPAddress.Parse first, then DNS fallback. For
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/Voicings.cs:12:/// Per Phase 22 CONTEXT D-07 (charitable interpretation): when a chord lacks enough notes
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/Voicings.cs:62:    /// Per Phase 22 CONTEXT D-07 (charitable interpretation): when n &gt;= NoteNames.Length
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/Voicings.cs:87:    /// Per Phase 22 CONTEXT D-07 (charitable interpretation): unknown names return input
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:324:    /// Unknown direction strings also fall through to <c>"up"</c> per the project's charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:384:            // This keeps `(chord <Note variable>)` charitable when the note text isn't itself
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:388:                if (ChordParser.TryParseFlexible(noteText[0] + "maj", out var fallback) && fallback != null)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:389:                    return Value.Chord(fallback);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:480:        //   in v1.3 per RESEARCH Pitfall 7 / charitable-interpretation memory; seeded random
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/ChordParser.cs:423:                return true; // unparseable bass — keep the chord, drop the slash silently (charitable)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/InternalFunctionRegistry.cs:39:        // fallback fires. Backwards-compatible: the existing single-impl
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/InternalFunctionRegistry.cs:75:    /// handling so the prefer-exact pass and the wildcard-fallback pass have
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:96:    /// Per V5 input validation (T-22-V5-17, T-22-V5-18) and CLAUDE.md charitable interpretation
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:115:            // Phase 44 Plan 44-05 (D-06/D-07): strict-mode promotes the V5 charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:117:            // the pre-Phase-44 Math.Clamp + fallback shape (Pitfall 5 two-run cmp-clean).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:143:                // V5: clamp out-of-range inputs (charitable D-07; threats T-22-V5-17, T-22-V5-18).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Transforms/TransformFunctions.cs:256:    //   3. Else: existing Math.Clamp + fallback path verbatim (preserves the
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:611:    // true (charitable wildcard). Strict mode (Plan 44-09 follow-up) layers the
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:617:    /// Stringifies a <see cref="Value"/> for the non-strict <c>(print)</c> charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:668:    /// Non-strict charitable <c>(print)</c> impl backing the Void-wildcard
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:691:    /// Phase 44 Plan 44-08 Task 2 — charitable truthy-coerce helper. Mirrors
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:698:    /// charitable rule stays in one place.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:730:    /// Non-strict charitable <c>(if cond then else)</c> with truthy-coerce on
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:751:    /// Non-strict charitable <c>(not x)</c> — returns Bool but accepts any
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:772:    /// Phase 44 Plan 44-08 Task 3 — non-strict charitable <c>(and a b)</c>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:798:            // first non-Bool arg + return Bool(false) (no charitable fall-through
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:818:        // Non-strict charitable last-truthy (Plan 44-08 Task 3 unchanged).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:830:    /// Non-strict charitable <c>(or a b)</c> with D-12 last-truthy return
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:869:        // Non-strict charitable last-truthy (Plan 44-08 Task 3 unchanged).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:887:    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:900:    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:919:    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:936:    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/StdLib.cs:953:    /// Phase 44 Plan 44-09 Task 2 — context-dependent charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BufferPrinter.cs:23:///         charitable-interpretation memory.</item>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BufferPrinter.cs:208:    /// (charitable interpretation — never throws).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Composition/VariationFunctions.cs:166:    /// Pitch mutation: diatonic when key is provided, chromatic fallback otherwise.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Composition/VariationFunctions.cs:178:        // Chromatic fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Composition/VariationFunctions.cs:199:            // Note not in scale, use chromatic fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcImport.cs:416:                    // (charitable simplification). Future v1.6 may interpret [CEG] as polyphony.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcImport.cs:536:        else mode = "major";  // charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcImport.cs:599:    /// fallback (1.0) still gives a usable note (charitable per D-v1.5-05).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcImport.cs:622:        // Fallback: pick nearest power-of-2 (charitable)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondExport.cs:267:    /// empty string for unrecognized keys (charitable per D-v1.5-05 — LilyPond
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcLexer.cs:293:            // Unknown character — charitable advisory + advance.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/MmlImport.cs:126:        // Single Bar carrying all notes (charitable simplification — MML has
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/MmlImport.cs:364:    /// NoteValue enum integer. Returns QUARTER (charitable default) for
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/MusicXmlExport.cs:17:/// <c>mscore --convert-to mxl</c> structural diff (charitable-skip when
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/MusicXmlExport.cs:369:                // (D-39-06: always decimal cent precision, never text-annotation fallback).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/MusicXmlExport.cs:442:    /// (charitable per D-v1.5-05 — emit just <c>&lt;duration&gt;</c>).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/ArticulationEmit.cs:47:        // charitable-interpretation default (D-v1.5-05). Adding a new named
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:33:        // Defensive: only A..G accepted (charitable for anything else)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:43:            _  => string.Empty,  // charitable per D-v1.5-05
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:58:    /// back to "4" (quarter; charitable per D-v1.5-05).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1098:        // ===== Phase 44 Plan 44-08 — non-strict charitable overloads =====
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1108:        // (print Void) — charitable AutoStr in non-strict; [strict] error
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1124:        // path requires Bool; non-strict charitable truthy.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1139:        // (or false 42) → 42; (or "" "fallback") → "fallback"
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:123:    // Shared utilities (charitable-interpretation + bar/note helpers)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:129:    /// unchanged after this fires (Pitfall 9 — charitable interpretation).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:230:            // Axis B strict-elevation pass. Every other charitable advisory
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:270:                    // Lambda returned non-Sequence — charitable: pass through.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:460:        if (chunkStart >= barCount) return Value.Sequence(seq);  // rotation beyond actual content; charitable passthrough
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampleCache.cs:131:                // If file missing, silently skip — render-time fallback to nearest available
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampleCache.cs:254:            return targetMidi;  // fallback — caller handles missing-sample case
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/TuningTables.cs:18:/// Chromatic-fallback rule (Pitfall 3): non-diatonic spellings in mode tables use
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ScalaParser.cs:65:        //    RESEARCH A1 charitable: blank lines before the description tolerated.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ScalaParser.cs:76:            // Leading blank lines before description: charitable skip.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ChromaticRatioTable.cs:38:    /// caller (TuningTables.LookupRatio) is responsible for fallback construction
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ChromaticRatioTable.cs:39:    /// per RESEARCH §Pitfall 3 chromatic-fallback rule.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/Mode.cs:6:/// matches the D-02 silent C-major-default fallback.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ScalaBuiltins.cs:41:        // charitable WarnOnce path runs. Real composer surface goes through
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/BeatConversionFunctions.cs:39:    /// returns a three-tier-fallback context that ALWAYS reports a non-null
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/BeatConversionFunctions.cs:60:            // Read effective tempo through the three-tier fallback helper (always non-null).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/StretchEngine.cs:200:        // charitable. The mode=#auto picking decision is a legitimate dispatch
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/StretchEngine.cs:201:        // path, not a fallback error condition, so non-strict semantics fit
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/StretchFunctions.cs:111:    /// resolve mode Symbol (with charitable fallback to Auto), then delegate
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/StretchFunctions.cs:150:    /// 37-PATTERNS.md Pattern E (charitable interpretation).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/PitchShiftFunctions.cs:133:    /// empty buffer, resolve the mode Symbol with charitable fallback to
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:18:///   <item><description>Plain positional fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:29:///   stderr advisory per RESEARCH §Pattern E charitable interpretation.</description></item>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:98:    /// shape, resolves the windowing pick (with charitable fallback on unknown
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:139:    /// 37-RESEARCH.md Pattern E (charitable interpretation).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/MidiExport.cs:72:    /// every sampler instrument to the GM-0 fallback.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/PitchConversion.cs:48:        /// explicit key declaration — aligns with charitable-interpretation memory.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/PitchConversion.cs:53:        /// Pitfall 3 chromatic fallback: non-diatonic spellings absent from the mode-
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/PitchConversion.cs:106:                // Pitfall 3 chromatic fallback: non-diatonic chromatic spellings in mode
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:49:    /// returning <c>null</c> simulates a capture failure (charitable silent-buffer
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:50:    /// fallback). Always restore to null in test Dispose/Reset code.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:78:        // Phase 44 Plan 44-07: legacy entry. Same charitable-only path. Real
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:181:        // (3) Charitable fallback: capture failure → silent buffer + advisory.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Synthesizers/DrumSynthesizer.cs:295:        // is a fallback for MIDI numbers outside the standard kit map.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:152:            // U-Iowa MIS recording. Charitable fallback (T-37-04-02): if mp OR mf is
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/EffectsFunctions.cs:330:    /// Out-of-range enum values fall through to the quarter fallback (charitable D-07,
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzData.cs:40:///   fallback per CONTEXT D-03: when <c>Grid[pitch, vel]</c> is null, find the
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:30:///   <item><description>Nearest-pitch fallback (SPEC-4) when the grid cell is
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:34:///   velocity row for ANY covering region. On still-null after fallback,
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:35:///   emit a charitable <see cref="RenderingDiagnostics.WarnOnce"/> advisory
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:82:    /// SfzRenderer directly), the Render path runs charitable WarnOnce
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:124:    /// tests keep using the 1-arg overload (_strictCtx stays null → charitable).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:666:    /// the first hit. Used when the nearest-pitch fallback finds a pitch
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:114:    /// nearest-pitch fallback. Header inheritance + dB→linear + pan
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:174:                // as an opcode line below for charitable interpretation.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:393:                        // Opcode encountered with no active header — charitable advisory.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:458:        // Description fallback: if no non-header non-comment line found, use
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:516:        // Numeric opcodes — strict parse with charitable fallback to spec
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:564:        // loop_mode — value mapping with charitable fallback.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:610:        Dictionary<string, string> region, string key, int fallback, string patchDescription)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:612:        if (!region.TryGetValue(key, out var raw)) return fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:626:            return fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:639:        Dictionary<string, string> region, string key, int fallback, string patchDescription)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:641:        if (!region.TryGetValue(key, out var raw)) return fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:647:            return fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:653:        Dictionary<string, string> region, string key, double fallback, string patchDescription)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:655:        if (!region.TryGetValue(key, out var raw)) return fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:664:            return fallback;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRegion.cs:75:///   hard-switch fallback applies.</description></item>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:59:    /// handle the missing-sample case — typically via a silence fallback +
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:163:            // missing-region case via the charitable WarnOnce + silence path
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:188:            // null cells are fine — render-time nearest-pitch fallback will
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:189:            // load the fallback region's WAV on first render.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzLoopMode.cs:21:/// (the actual fallback logic lives in Plan 33-04 <c>SfzParser</c>; this enum
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SongRenderer.cs:176:            // somehow (e.g. direct API call with "sampler:NAME") — charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SongRenderer.cs:232:    ///        Aligns with charitable-interpretation memory: rather than error or fall through
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:80:///   <item>quantizeToScale: unknown string scaleName → charitable fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:43:/// return a charitable empty/clamped result + emit a one-shot stderr advisory.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:187:            //   - anything else: charitable advisory + skip
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:236:    /// non-Symbol rule values emit a charitable advisory and are dropped.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:348:    /// Lookup with reference- and data-equality fallback. The interned-Symbol
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:358:        // Cross-context fallback: compare by underlying string body.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:405:            // downstream guard handles the empty-result charitable case;
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:59:/// (empty corpus, length &lt;= 0, order outside [1,3]) return a charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:202:    /// a charitable empty <see cref="SequenceData"/> on degenerate input
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:249:        // ---- Style pack lookup with charitable fallback ----
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:264:                $"jam:no-fallback-jazz:{ctx.CurrentCallSite}",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:316:                    $"[strict] [jam] roulette fallback — unknown key '{activeKey}' at {ctx.CurrentCallSite}",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:336:        // ---- Read articulation distribution map (charitable defaults) ----
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:341:        // ---- Read beat-weight maps (charitable: missing → uniform 0.33 each) ----
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:430:    // Style pack lookup + charitable fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:503:    // Pack field extraction (charitable — missing fields use defaults)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:644:            // happen for ChordParser-emitted notes but charitable input is
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:727:            category = Category.ChordTone; // last-resort fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:218:    /// charitable about non-<c>(registerStyle ...)</c> top-level statements).

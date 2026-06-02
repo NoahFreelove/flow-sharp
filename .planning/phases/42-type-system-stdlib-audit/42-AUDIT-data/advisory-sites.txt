@@ -1,117 +1,116 @@
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Ast/Expressions/MatchExpression.cs:33:///       RenderingDiagnostics.WarnOnce, then fall through to
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Ast/Statements/LiveBlockStatement.cs:35:/// (line, process) via <see cref="FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce"/>
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Runtime/ExecutionContext.cs:287:    /// <c>RenderingDiagnostics.WarnOnce(key, message)</c> pattern (Plans 33-04 /
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Interpreter/ExpressionEvaluator.cs:510:        //   RenderingDiagnostics.WarnOnce keyed on the match Span, then
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Interpreter/ExpressionEvaluator.cs:522:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Interpreter/Interpreter.cs:441:    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/Interpreter/Interpreter.cs:466:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Network/OscFunctions.cs:350:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Network/OscFunctions.cs:379:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Network/OscFunctions.cs:445:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:63:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:67:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:173:                            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:241:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:257:                            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:403:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:422:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:446:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcImport.cs:500:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcLexer.cs:13:/// <see cref="RenderingDiagnostics.WarnOnce"/> advisory and the lexer
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/AbcLexer.cs:294:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:57:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:103:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:127:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:154:                            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Notation/MmlImport.cs:292:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:50:/// via <see cref="RenderingDiagnostics.WarnOnce"/> when called on degenerate
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:129:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:203:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:229:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:301:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:376:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:409:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:454:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:461:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:533:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:630:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:637:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:689:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:696:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:770:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:794:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:859:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/ScalaBuiltins.cs:20:/// <see cref="RenderingDiagnostics.WarnOnce"/> with a sentinel keyed by the
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Tuning/ScalaBuiltins.cs:123:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/StretchEngine.cs:195:        RenderingDiagnostics.WarnOnce(sentinel, message);
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/StretchFunctions.cs:165:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/PitchShiftFunctions.cs:196:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:154:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/MidiExport.cs:245:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/InputFunctions.cs:111:    /// (one-shot per process via <see cref="RenderingDiagnostics.WarnOnce"/>),
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/InputFunctions.cs:121:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/InputFunctions.cs:158:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:121:                RenderingDiagnostics.WarnOnce("piano:release:clamp-low",
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:127:            RenderingDiagnostics.WarnOnce("piano:release:clamp-high",
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:168:                RenderingDiagnostics.WarnOnce("piano:mp_mf:missing",
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:35:///   emit a charitable <see cref="RenderingDiagnostics.WarnOnce"/> advisory
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:169:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:188:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:226:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:240:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:259:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:39:/// <see cref="RenderingDiagnostics.WarnOnce"/>, keyed on
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:120:    /// <see cref="RenderingDiagnostics.WarnOnce"/> sentinel set —
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:252:                            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:276:                        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:322:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:331:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:354:                        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:495:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:520:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:564:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:585:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:602:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs:63:/// <see cref="RenderingDiagnostics.WarnOnce"/> with a process-global sentinel
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs:156:    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs:277:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:60:    /// <c>RenderingDiagnostics.WarnOnce</c> advisory).
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SongRenderer.cs:600:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Audio/SongRenderer.cs:606:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:223:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:288:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:296:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:331:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:403:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:413:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:439:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:488:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:496:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:194:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:241:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:260:                        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:270:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:342:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:350:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:380:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:392:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:400:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:220:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:229:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:240:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:252:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:422:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:429:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:178:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:208:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:215:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:227:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:248:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:266:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:311:                RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:383:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/JamFunctions.cs:804:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:156:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:244:            RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:258:                    RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/.claude/worktrees/agent-a6d08ee537a346f5c/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:265:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Ast/Expressions/MatchExpression.cs:33:///       RenderingDiagnostics.WarnOnce, then fall through to
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Ast/Statements/LiveBlockStatement.cs:35:/// (line, process) via <see cref="FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce"/>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ModuleLoader.cs:88:            Diagnostics.RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ModuleLoader.cs:236:                        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ModuleLoader.cs:250:                            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:326:    /// <c>RenderingDiagnostics.WarnOnce</c> keyed by
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:501:    /// site that historically emitted <c>RenderingDiagnostics.WarnOnce(key, body)</c>
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:515:    /// <c>RenderingDiagnostics.WarnOnce(_emitted)</c> set: same sentinel key
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:587:    /// <c>RenderingDiagnostics.WarnOnce(key, message)</c> pattern (Plans 33-04 /
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/ExpressionEvaluator.cs:632:        //   RenderingDiagnostics.WarnOnce keyed on the match Span, then
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/ExpressionEvaluator.cs:659:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:451:    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:476:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Audio/WebAudioBackend.cs:176:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Network/OscFunctions.cs:391:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Network/OscFunctions.cs:433:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Network/OscFunctions.cs:521:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Harmony/HarmonyFunctions.cs:72:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcImport.cs:74:        RenderingDiagnostics.WarnOnce(sentinelKey, sentinelBody);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/AbcLexer.cs:13:/// <see cref="RenderingDiagnostics.WarnOnce"/> advisory and the lexer
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/MmlImport.cs:66:        RenderingDiagnostics.WarnOnce(sentinelKey, sentinelBody);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:50:/// via <see cref="RenderingDiagnostics.WarnOnce"/> when called on degenerate
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:155:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:245:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:279:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:359:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:442:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:483:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:536:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:550:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:642:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:767:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:782:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:842:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:857:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:939:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:971:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:1044:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ScalaBuiltins.cs:20:/// <see cref="RenderingDiagnostics.WarnOnce"/> with a sentinel keyed by the
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Tuning/ScalaBuiltins.cs:154:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/BeatConversionFunctions.cs:15:/// stderr advisory via <see cref="RenderingDiagnostics.WarnOnce"/> (dedup'd
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/BeatConversionFunctions.cs:68:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/BeatConversionFunctions.cs:89:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/StretchEngine.cs:206:        RenderingDiagnostics.WarnOnce(sentinel, message);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/StretchFunctions.cs:181:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/PitchShiftFunctions.cs:212:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/DSP/GranularFunctions.cs:172:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/MidiExport.cs:254:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:127:    /// (one-shot per process via <see cref="RenderingDiagnostics.WarnOnce"/>),
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:162:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:208:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:121:                RenderingDiagnostics.WarnOnce("piano:release:clamp-low",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:127:            RenderingDiagnostics.WarnOnce("piano:release:clamp-high",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:168:                RenderingDiagnostics.WarnOnce("piano:mp_mf:missing",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/EffectsFunctions.cs:417:                Diagnostics.RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:35:///   emit a charitable <see cref="RenderingDiagnostics.WarnOnce"/> advisory
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:202:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:231:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:281:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:305:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:334:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:39:/// <see cref="RenderingDiagnostics.WarnOnce"/>, keyed on
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:120:    /// <see cref="RenderingDiagnostics.WarnOnce"/> sentinel set —
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:261:                                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:295:                            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:351:                        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:370:                        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:403:                            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:550:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:577:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:623:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:644:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzParser.cs:661:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs:63:/// <see cref="RenderingDiagnostics.WarnOnce"/> with a process-global sentinel
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs:156:    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzBuiltins.cs:292:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzSampleCache.cs:60:    /// <c>RenderingDiagnostics.WarnOnce</c> advisory).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SongRenderer.cs:519:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SongRenderer.cs:535:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:234:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:307:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:323:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:366:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:446:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:466:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:501:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:558:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/ChaosFunctions.cs:574:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:202:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:257:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:284:                        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:302:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:382:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:398:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:388:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:416:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:432:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:230:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:247:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:268:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:291:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:469:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:484:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:189:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:228:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:243:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:263:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:293:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:321:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:376:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:458:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:889:                RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:156:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:244:            RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:258:                    RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:265:                RenderingDiagnostics.WarnOnce(

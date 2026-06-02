@@ -103,6 +103,8 @@ export async function loadFlowRuntime() {
             if (!_audioContext) {
                 _audioContext = new AudioContext({ sampleRate });
             }
+            console.log('[flow-audio] createAudioContext -> state=', _audioContext.state,
+                'ctxRate=', _audioContext.sampleRate, 'requestedRate=', sampleRate);
             return _audioContext;
         },
 
@@ -116,16 +118,32 @@ export async function loadFlowRuntime() {
         // because WebAudioBackend.PromoteToStereo runs before marshal.
         // We de-interleave into the AudioBuffer's per-channel layout.
         playStereoFloat32: (ctx, samplesAsBytes, channels, sampleRate) => {
-            // The [JSMarshalAs<JSType.MemoryView>] Span<byte> arrives as
-            // a typed Uint8Array view backed by the same underlying memory
-            // as the C# Span. Reinterpret as Float32 (4 bytes per sample).
-            const samples = new Float32Array(
-                samplesAsBytes.buffer,
-                samplesAsBytes.byteOffset,
-                samplesAsBytes.byteLength / 4,
-            );
+            // The C# side marshals the PCM as a [JSMarshalAs<JSType.MemoryView>]
+            // Span<byte>. A .NET MemoryView is NOT a standard TypedArray — it has
+            // no .buffer / .byteOffset / .byteLength, so the previous
+            // `new Float32Array(samplesAsBytes.buffer, ...)` read undefined props
+            // and produced a zero-length array → silence (debug session
+            // wasm-boot-no-app-bundle cycle 9). Normalize to a real Uint8Array
+            // first: MemoryView.slice() returns a Uint8Array copy of the span.
+            let u8;
+            if (samplesAsBytes instanceof Uint8Array) {
+                u8 = samplesAsBytes;
+            } else if (samplesAsBytes && typeof samplesAsBytes.slice === 'function') {
+                u8 = samplesAsBytes.slice();
+                if (!(u8 instanceof Uint8Array)) u8 = new Uint8Array(u8.buffer || u8);
+            } else {
+                console.warn('[flow-audio] unexpected samplesAsBytes shape:', samplesAsBytes);
+                return null;
+            }
+            const samples = new Float32Array(u8.buffer, u8.byteOffset, (u8.byteLength / 4) | 0);
 
             const frames = (samples.length / channels) | 0;
+            let _maxAbs = 0;
+            for (let i = 0; i < samples.length; i++) { const a = Math.abs(samples[i]); if (a > _maxAbs) _maxAbs = a; }
+            console.log('[flow-audio] playStereoFloat32 CALLED: viewType=',
+                samplesAsBytes && samplesAsBytes.constructor && samplesAsBytes.constructor.name,
+                'ctx.state=', ctx && ctx.state, 'channels=', channels, 'sampleRate=', sampleRate,
+                'samples=', samples.length, 'frames=', frames, 'maxAbs=', _maxAbs);
             if (frames <= 0) return null;
 
             const buffer = ctx.createBuffer(channels, frames, sampleRate);
@@ -147,6 +165,8 @@ export async function loadFlowRuntime() {
             // recovers audio instead of silently dropping it (charitable-by-default).
             if (ctx.state === 'suspended') { ctx.resume().catch(() => { /* ignore */ }); }
             source.start();
+            console.log('[flow-audio] source.start() done; ctx.state now=', ctx.state,
+                'destination.channelCount=', ctx.destination && ctx.destination.channelCount);
 
             _activeSources.add(source);
             source.onended = () => _activeSources.delete(source);
@@ -296,7 +316,9 @@ export async function loadFlowRuntime() {
             if (!_audioContext) {
                 _audioContext = new AudioContext();
             }
-            try { await _audioContext.resume(); } catch (e) { /* ignore */ }
+            console.log('[flow-audio] resumeAudio: before resume, state=', _audioContext.state);
+            try { await _audioContext.resume(); } catch (e) { console.log('[flow-audio] resume threw', e); }
+            console.log('[flow-audio] resumeAudio: after resume, state=', _audioContext.state);
         },
     };
 
