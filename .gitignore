@@ -303,3 +303,6 @@ bench/results-*.txt
 !flow-site/static/audio/**
 !flow-site/static/audio/**/*.wav
 !flow-site/static/audio/**/*.mp3
+
+# `flow doc` generated reference site (regenerate with: dotnet run --project flow-cli -- doc)
+docs/reference/

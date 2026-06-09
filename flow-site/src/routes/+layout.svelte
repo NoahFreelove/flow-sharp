@@ -44,6 +44,11 @@
 	// Live pathname → drives aria-current on the active tab.
 	const current = $derived(page.url?.pathname ?? '/');
 
+	// The iOS-6 home (`/`) ships its own toolbar + bottom tab bar (see +page.svelte), so the shared
+	// Logic-Pro-wood site chrome + mobile nav are suppressed on that route only. Every other route
+	// (/docs, /playground, /showcase) keeps the existing chrome exactly as before.
+	const isHome = $derived(current === '/');
+
 	// Mobile hamburger slide-down state. Collapses again on an ACTUAL navigation — guarded by the
 	// previous pathname so the effect's mount run (and hydration's null→path transition) can't slam
 	// the menu shut right after the user opens it.
@@ -67,8 +72,9 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<header class="site-chrome surface-brushed-metal">
-	<a class="site-wordmark" href="/" aria-label="Flow — home">Flow</a>
+{#if !isHome}
+	<header class="site-chrome surface-brushed-metal">
+		<a class="site-wordmark" href="/" aria-label="Flow — home">Flow</a>
 
 	<!-- Desktop: the full 5-tab nav. (Hidden <768px via CSS; the hamburger takes over.) -->
 	<div class="site-nav-desktop">
@@ -92,34 +98,37 @@
 				<span class="site-hamburger__glyph" aria-hidden="true">{mobileOpen ? '✕' : '☰'}</span>
 			</Button>
 		</div>
-	</div>
-</header>
+		</div>
+	</header>
+{/if}
 
 <!-- Mobile slide-down nav — real <nav> landmark distinct from the desktop tabs; same routes. -->
-{#if mobileOpen}
-	<nav id="mobile-nav" class="site-mobile-nav surface-brushed-metal" aria-label="Primary mobile">
-		<ul>
-			{#each NAV_ITEMS as item (item.href)}
-				<li>
-					{#if item.external}
-						<a href={item.href} target="_blank" rel="noopener noreferrer">
-							{item.label}
-							<span aria-hidden="true">↗</span>
-							<span class="sr-only">(opens in new tab)</span>
-						</a>
-					{:else}
-						<a
-							href={item.href}
-							class:is-active={isActive(item.href)}
-							aria-current={isActive(item.href) ? 'page' : undefined}
-						>
-							{item.label}
-						</a>
-					{/if}
-				</li>
-			{/each}
-		</ul>
-	</nav>
+{#if !isHome}
+	{#if mobileOpen}
+		<nav id="mobile-nav" class="site-mobile-nav surface-brushed-metal" aria-label="Primary mobile">
+			<ul>
+				{#each NAV_ITEMS as item (item.href)}
+					<li>
+						{#if item.external}
+							<a href={item.href} target="_blank" rel="noopener noreferrer">
+								{item.label}
+								<span aria-hidden="true">↗</span>
+								<span class="sr-only">(opens in new tab)</span>
+							</a>
+						{:else}
+							<a
+								href={item.href}
+								class:is-active={isActive(item.href)}
+								aria-current={isActive(item.href) ? 'page' : undefined}
+							>
+								{item.label}
+							</a>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</nav>
+	{/if}
 {/if}
 
 {@render children()}

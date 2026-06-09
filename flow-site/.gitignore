@@ -37,3 +37,6 @@ playwright-report/
 .lighthouseci/
 
 # NOTE: static/wasm/ is INTENTIONALLY committed (the Phase 48 AppBundle) — do NOT ignore it.
+
+# Claude Design handoff prototypes (reference only — see REDESIGN-HANDOFF.md)
+.design-handoff/
