@@ -31,6 +31,49 @@ I hope my direction on where I want flow-lang to go was clear. If it has to be o
 ## Features
 See [FEATURES.md](./FEATURES.md) for a complete list of features.
 
+## Showcase
+
+Flow is **genre-agnostic** — the same language and the same buffer make a
+classical symphony, a ragtime/jazz improvisation, or a four-on-the-floor EDM
+drop. The v1.5 release ships three curated showcase pieces that prove it:
+
+| Genre | Source | What it shows off |
+|-------|--------|-------------------|
+| Classical (symphony) | [`examples/showcase.flow`](./examples/showcase.flow) | Polyrhythmic tuplets, voice-led progressions, the full effects chain |
+| Jazz (generative) | [`examples/generative/markov_jazz.flow`](./examples/generative/markov_jazz.flow) | Markov train/generate, chord-aware `jam`, `@patterns` combinators |
+| **EDM** (v1.5 closer) | [`examples/edm/pulse.flow`](./examples/edm/pulse.flow) | The five-primitive feature checklist below |
+
+**`examples/edm/pulse.flow`** is a ~60-second EDM piece (eight four-bar sections
+at 128 BPM) that exercises the v1.5 headline surface in one file:
+
+1. **Pattern matching** (Phase 35) — `(match idx ...)` selects the bassline motif per section.
+2. **Generative rhythm** (Phase 36) — a seeded `(euclidean 7 16 ...)` kick/clap groove.
+3. **Granular DSP** (Phase 37) — `(granular ...)` builds the riser texture.
+4. **Live coding** (Phase 38) — a `live 1bar { ... }` hot-swap block (demo section).
+5. **Real-time MIDI** (Phase 40) — `midiOut(song, port)` streams to hardware/DAW (demo section).
+
+The file is split into a **pinned offline render** and a **live/real-time demo**.
+The pinned render (`writeWav` + `writeMidi`) is fully seeded, so two consecutive
+renders are byte-identical (two-run cmp-clean) and the WAV holds an RMS-windowed
+regression (±0.5 dB / 100 ms, SPEC-8) against a committed baseline. The `live`
+block and real-time `midiOut` opt out of that determinism contract by design, so
+they live in a clearly-commented demo section that a headless render never runs —
+uncomment them and run under `flow watch` / a real MIDI rig to hear them.
+
+```bash
+# Render the deterministic offline version (WAV + MIDI):
+dotnet run --project flow-cli -- run examples/edm/pulse.flow
+#   → /tmp/pulse.wav + /tmp/pulse.mid
+
+# Verify two-run cmp-clean:
+bash scripts/test_two_run_determinism.sh examples/edm/pulse.flow \
+  --render-cmd "dotnet run --project flow-cli -- render <SCRIPT> -o <OUT>"
+```
+
+The rendered audio for all three pieces ships in the **v1.5.0 GitHub Release**
+alongside the cross-platform binaries (the Release itself is a human-pushed gate,
+not cut automatically).
+
 ## Install (Linux x64)
 
 Per-user install (no sudo), from a local checkout:

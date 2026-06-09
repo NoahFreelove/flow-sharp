@@ -72,6 +72,16 @@
          never run in a browser. -->
     <Compile Remove="Integration\Phase40\JackTransportTests.cs" />
     <Compile Remove="Integration\Phase40\LinkDeferralTests.cs" />
+    <!-- Phase 41 Plan 41-04 WASAPI-01 / COREAUDIO-01 T-41-04-WEBDRIFT — the audio-
+         backend availability tests reference FlowLang.Audio.WasapiBackend /
+         CoreAudioBackend, both <Compile Remove>'d from flow-lang on Web (NAudio.Wasapi
+         + AudioToolbox P/Invoke can never run in a browser). Strip them from the Web
+         test build too — they assert Linux-host probe behavior on the Desktop build.
+         (CoreAudioBackendAvailabilityTests was added in 41-01 without this entry, so
+         `dotnet test -p:FlowTarget=Web` was already failing to compile the test
+         project — Rule 3 blocking-issue fix landed alongside the WASAPI test.) -->
+    <Compile Remove="Integration\Phase41\WasapiBackendAvailabilityTests.cs" />
+    <Compile Remove="Integration\Phase41\CoreAudioBackendAvailabilityTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -92,6 +102,12 @@
     <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
     <ProjectReference Include="..\flow-midi\flow-midi.csproj" />
     <ProjectReference Include="..\flow-interpreter\flow-interpreter.csproj" />
+    <!-- Phase 41 Plan 41-03 DOC-01/02 — the flow doc generator (DocCollector /
+         DocExampleRunner / Html+MarkdownEmitter / ContentHashCache / DocCommand)
+         lives under flow-cli/Doc/. FlowDocGenTests / DocCacheTests /
+         DocExampleExecTests exercise it directly, so the test project references
+         flow-cli (an Exe project — a referencing test project is supported). -->
+    <ProjectReference Include="..\flow-cli\flow-cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

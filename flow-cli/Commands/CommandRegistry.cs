@@ -11,6 +11,9 @@ namespace FlowCli.Commands;
 // LspCommand for JetBrains plugin binary-discoverability per RESEARCH Pitfall 7.
 // Plan 35-04 Task 3 adds TestCommand — 13 subcommands total; Phase 35 TEST-01
 // wires the pure-Flow test framework into `flow test [path]`.
+// Plan 41-03 Task 3 adds DocCommand — 14 subcommands total; Phase 41 DOC-01/02
+// wires the `flow doc` reference generator (/// doc-comments + BuiltInDocs →
+// HTML + Markdown under docs/reference, examples executed as regression tests).
 internal static class CommandRegistry
 {
     public static Command[] BuildAllCommands()
@@ -29,7 +32,8 @@ internal static class CommandRegistry
             VersionCommand.Build(),
             NewCommand.Build(),
             LspCommand.Build(),     // Phase 31 REQ-7 support
-            TestCommand.Build(),    // NEW — Phase 35 Plan 35-04 TEST-01 (pure-Flow test framework)
+            TestCommand.Build(),    // Phase 35 Plan 35-04 TEST-01 (pure-Flow test framework)
+            DocCommand.Build(),     // NEW — Phase 41 Plan 41-03 DOC-01/02 (flow doc reference generator)
         };
     }
 }

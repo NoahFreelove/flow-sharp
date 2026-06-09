@@ -59,6 +59,22 @@ namespace FlowLang.Ast.Statements;
 /// later proc-invocation boundary — so the per-proc capture is required for
 /// the cross-file boundary (REQ-BEAT-TEST-04 / Pitfall 3) to hold.
 /// </para>
+/// <para>
+/// <b>Phase 41 Plan 41-02 DOC-01 / D-07 — <c>DocComment</c>:</b> the text of the
+/// <c>///</c> doc-comment block immediately preceding this declaration (leading
+/// <c>///</c> + one optional space stripped, contiguous lines newline-joined), or
+/// <c>null</c> when the proc has no <c>///</c>. Captured at parse time: the lexer
+/// emits an out-of-band <see cref="Lexing.TokenType.DocComment"/> token which the
+/// Parser buffers in <c>_pendingDocComment</c> and threads here at
+/// <c>flow-lang/Parsing/Parser.cs</c> (<c>ParseProcDeclaration</c>), clearing the
+/// buffer on consume so it never leaks to the next proc. Defaulted trailing
+/// parameter (<c>= null</c>) preserves binary back-compat with every existing
+/// positional construction site, the same rationale the <c>IsStrict</c> /
+/// <c>IsBeatTrueToSig</c> fields above cite. <b>Charitable (D-07):</b> a proc with
+/// no <c>///</c> is valid and gets a signature-only doc entry downstream (the
+/// <c>flow doc</c> generator, Plan 41-03), never an error; an orphaned <c>///</c>
+/// (no proc following) is dropped silently by the Parser.
+/// </para>
 public record ProcDeclaration(
     SourceLocation Location,
     string Name,
@@ -67,7 +83,8 @@ public record ProcDeclaration(
     bool IsInternal,
     Span? Span = null,
     bool IsStrict = false,
-    bool IsBeatTrueToSig = false) : Statement(Location);
+    bool IsBeatTrueToSig = false,
+    string? DocComment = null) : Statement(Location);
 
 /// <summary>
 /// Represents a function parameter.

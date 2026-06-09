@@ -1,0 +1,238 @@
+// =====================================================================
+// Pulse — Flow v1.5 third-genre showcase (EDM)
+// =====================================================================
+// The v1.5 closer artifact (SHOWCASE-01, D-11/D-13). Sits alongside
+// v1.4's classical *symphony* (examples/showcase.flow) and the jazz
+// *ragtime/markov* generative piece (examples/generative/markov_jazz.flow)
+// to prove Flow's genre-agnostic claim across three contrasting genres.
+//
+// Genre: EDM (four-on-the-floor, sidechained pad, granular riser).
+// Duration: ~60s of looped material (8 four-bar sections @ 128 BPM).
+//
+// ---------------------------------------------------------------------
+// FIVE-PRIMITIVE FEATURE CHECKLIST (SHOWCASE-01) — where each appears:
+// ---------------------------------------------------------------------
+//   1. Phase 35 pattern matching  — `(match ...)` over the section index
+//      drives bassline variation (see `bassFor` below, line ~70).
+//   2. Phase 36 generative        — SEEDED `(euclidean 7 16 ... seed)`
+//      kick/clap rhythm (line ~60). Seed makes it byte-identical.
+//   3. Phase 37 granular DSP       — `(granular ... )` riser texture on
+//      the rendered build-up (line ~110).
+//   4. Phase 38 live block         — `live 1bar { ... }` hot-swap loop
+//      (DEMO section, commented out — line ~150).
+//   5. Phase 40 real-time MIDI     — `midiOut(song, port)` over @midi
+//      (DEMO section, commented out — line ~160).
+//
+// ---------------------------------------------------------------------
+// RENDER / DEMO SPLIT (Pitfall 5, D-v1.5-07):
+// ---------------------------------------------------------------------
+// The file has TWO sections:
+//
+//   (A) PINNED OFFLINE RENDER — everything down to the `writeWav` +
+//       `writeMidi` calls. Every stochastic call here carries an EXPLICIT
+//       SEED, so the PrngRegistry reseeds at the writeWav boundary and two
+//       consecutive renders produce byte-identical WAV+MIDI. This is the
+//       section pinned by `scripts/test_two_run_determinism.sh` and the
+//       `Phase41ShowcaseRmsTests` RMS-windowed regression (±0.5 dB/100 ms,
+//       SPEC-8). NO `live` block, NO real-time `midiOut`, NO unseeded PRNG
+//       in this path.
+//
+//   (B) LIVE / REAL-TIME DEMO — a `live 1bar { ... }` hot-swap block and a
+//       `use "@midi"` + `midiOut(song, port)` real-time MIDI demonstration.
+//       Both opt OUT of the determinism contract (D-v1.5-07): the live block
+//       re-evaluates on file save, and real-time MIDI needs librtmidi + a
+//       hardware port. They are COMMENTED OUT so a headless `flow render`
+//       never blocks on the live loop or stalls on absent MIDI hardware —
+//       uncomment and run under `flow watch` / a real rig to hear them.
+//
+// Render (offline, deterministic):
+//   dotnet run --project flow-cli -- run examples/edm/pulse.flow
+//   → /tmp/pulse.wav + /tmp/pulse.mid
+//
+//   The writeWav/writeMidi targets below are absolute (/tmp/...) so the
+//   determinism harness — which runs the script with an arbitrary CWD —
+//   resolves them identically from any directory (same convention as
+//   examples/generative/markov_jazz.flow). Copy /tmp/pulse.wav elsewhere
+//   to keep it.
+//
+// Determinism check (exits 0 = byte-identical across two renders):
+//   bash scripts/test_two_run_determinism.sh examples/edm/pulse.flow \
+//     --render-cmd "dotnet run --project flow-cli -- render <SCRIPT> -o <OUT>"
+// =====================================================================
+
+use "@std"
+use "@audio"
+use "@patterns"
+use "@generative"
+
+// =====================================================================
+// (A) PINNED OFFLINE RENDER — seeded, deterministic.
+// =====================================================================
+
+tempo 128 {
+    timesig 4/4 {
+        key Aminor {
+
+            // -------------------------------------------------------------
+            // 1. SEEDED generative rhythm (Phase 36).
+            //    `(euclidean hits steps note humanize jitter seed)` —
+            //    a 7-in-16 four-on-the-floor-adjacent kick pattern and a
+            //    sparser 4-in-16 clap. Explicit seeds (1305 / 808) make the
+            //    humanized output byte-identical across renders (PrngRegistry
+            //    reseeds at the writeWav boundary per D-v1.5-06).
+            // -------------------------------------------------------------
+            Sequence kick = (euclidean 7 16 A1 0.12 0.06 1305)
+            Sequence clap = (euclidean 4 16 D3 0.10 0.05 808)
+
+            // -------------------------------------------------------------
+            // 2. PATTERN MATCHING (Phase 35).
+            //    `(match idx | 0 => ... | _ => ...)` selects a bassline
+            //    motif per section index — verse / build / drop variation
+            //    without an if-ladder. The match is resolved EAGERLY here
+            //    (statement-block-free) so the active key context applies.
+            // -------------------------------------------------------------
+            Sequence bassVerse = | A1q A1q E2q A1q |
+            Sequence bassBuild = | A1e A1e E2e A1e C2e A1e E2e G2e |
+            Sequence bassDrop  = | A1q E2q G2q A1q |
+
+            // Resolve the per-section bass via pattern matching on the index.
+            Sequence b0 = (match 0 | 0 => bassVerse | 1 => bassBuild | _ => bassDrop)
+            Sequence b1 = (match 1 | 0 => bassVerse | 1 => bassBuild | _ => bassDrop)
+            Sequence b2 = (match 2 | 0 => bassVerse | 1 => bassBuild | _ => bassDrop)
+
+            // -------------------------------------------------------------
+            // 3. @patterns combinator (Phase 36, bonus) — `fast` doubles the
+            //    drop bassline for the final section's energy lift. Cycle
+            //    unit = bars (D-36-04); no PRNG, fully deterministic.
+            // -------------------------------------------------------------
+            Sequence bDropFast = (fast b2 2.0)
+
+            // -------------------------------------------------------------
+            // Pad bed — sustained Am / F / C / G outlined as whole notes.
+            // -------------------------------------------------------------
+            Sequence pad = | A3w | F3w | C4w | G3w |
+
+            // Lead arp riff for the drop.
+            Sequence lead = | A4e C5e E5e A5e G5e E5e C5e A4e |
+
+            // -------------------------------------------------------------
+            // Arrange the ~60s piece: 8 four-bar sections @ 128 BPM ≈ 60s.
+            // verse → verse → build → DROP → DROP → build → verse → out.
+            // -------------------------------------------------------------
+            section verse {
+                Sequence groove = kick
+                Sequence snap = clap
+                Sequence low = b0
+                Sequence bed = pad
+            }
+            section build {
+                Sequence groove = kick
+                Sequence snap = clap
+                Sequence low = b1
+                Sequence bed = pad
+            }
+            section drop {
+                Sequence groove = kick
+                Sequence snap = clap
+                Sequence low = bDropFast
+                Sequence bed = pad
+                Sequence top = lead
+            }
+            section outro {
+                Sequence bed = pad
+            }
+
+            Song song = [verse verse build drop drop build verse outro]
+
+            // -------------------------------------------------------------
+            // Render the song to a Buffer, then shape it with the EDM
+            // effects chain: lowpass tighten → sidechain-style compression
+            // pumped against the kick energy → reverb tail → delay slap.
+            // All effects are deterministic DSP (no PRNG).
+            // -------------------------------------------------------------
+            Buffer rawMix = (renderSong song "saw")
+            Buffer tight = rawMix -> (lowpass 8kHz)
+            Buffer pumped = (compress tight -12.0 4.0 5.0 120.0)
+            Buffer spaced = pumped -> (reverb 0.4 1.6s)
+            Buffer slapped = spaced -> (delay 250ms 0.35 0.3)
+
+            // -------------------------------------------------------------
+            // 4. GRANULAR DSP (Phase 37) — a granular riser texture layered
+            //    under the mix. Source is a short sine swell; granular pulls
+            //    grain-sized chunks (Hann window) and overlap-adds them into
+            //    a cloud. The jitter PRNG routes through PrngRegistry and
+            //    reseeds at the writeWav boundary → byte-identical.
+            // -------------------------------------------------------------
+            Buffer swell = (createSineTone 2.0 220Hz 0.35)
+            Buffer riser = (granular swell 60ms 18Hz 0.4)
+            Buffer riserWet = (reverb riser 0.6)
+
+            // Final mix: pumped EDM body + granular riser, trimmed to avoid clip.
+            Buffer body = (mix slapped riserWet)
+            Buffer finalMix = (volume body 0.8)
+
+            // -------------------------------------------------------------
+            // PINNED OUTPUTS — both deterministic.
+            //   WAV: seeded render path → two-run cmp-clean (SPEC-8 RMS pin)
+            //   MIDI: writeMidi → DryWetMidi, structurally deterministic
+            // -------------------------------------------------------------
+            (writeWav "/tmp/pulse.wav" finalMix)
+            (writeMidi "/tmp/pulse.mid" song)
+        }
+    }
+}
+
+// =====================================================================
+// (B) LIVE / REAL-TIME DEMO — NOT pinned, opts OUT of determinism.
+//     (D-v1.5-07 / Pitfall 5). Commented out so a headless `flow render`
+//     never blocks on the live loop or stalls on absent MIDI hardware.
+//     Uncomment ONE block at a time to drive the interactive features.
+// =====================================================================
+//
+// ---------------------------------------------------------------------
+// 4. LIVE BLOCK (Phase 38) — hot-swap loop under `flow watch`:
+//      dotnet run --project flow-interpreter -- --watch examples/edm/pulse.flow
+//    Edit the `Sequence stab = | ... |` line and SAVE — the new content
+//    swaps in at the next bar boundary with a 64-sample equal-power
+//    crossfade. Emits `[live] entering live block ...` to stderr on entry
+//    (D-v1.5-07: live mode opts OUT of two-run cmp-clean — by design).
+// ---------------------------------------------------------------------
+//
+// tempo 128 {
+//     timesig 4/4 {
+//         key Aminor {
+//             live 1bar {
+//                 section jam {
+//                     Sequence stab = | A4e E5e A5e E5e A4e E5e A5e E5e |
+//                 }
+//                 Song loop = [jam]
+//                 Buffer out = (renderSong loop "saw")
+//                 (play out)
+//             }
+//         }
+//     }
+// }
+//
+// ---------------------------------------------------------------------
+// 5. REAL-TIME MIDI (Phase 40) — stream the drop section to a hardware
+//    synth / DAW track over ALSA-seq (needs librtmidi + an output port;
+//    absent → charitable NullMidiBackend, never throws). `midiOut` reuses
+//    the Phase 28 writeMidi GM prefix-match routing VERBATIM, so the port
+//    sounds identical to the exported pulse.mid. Discover ports first:
+//      (midiPorts)
+//    then send (replace the port name with one from midiPorts):
+// ---------------------------------------------------------------------
+//
+// use "@midi"
+//
+// tempo 128 {
+//     timesig 4/4 {
+//         key Aminor {
+//             section drop {
+//                 Sequence low = | A1q E2q G2q A1q |
+//             }
+//             Song stream = [drop]
+//             midiOut(stream, "Your MIDI Port 0")
+//         }
+//     }
+// }

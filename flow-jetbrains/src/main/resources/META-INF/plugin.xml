@@ -2,7 +2,7 @@
     <id>dev.flowlang.jetbrains</id>
     <name>Flow Language</name>
     <vendor>Flow Language</vendor>
-    <version>0.1.0</version>
+    <version>1.5.0</version>
 
     <!-- IntelliJ Platform 2024.2+ — matches LSP4IJ 0.19.3 since-build per Phase 31 CONTEXT D-09. -->
     <idea-version since-build="242"/>
@@ -14,6 +14,23 @@
         Requires the `flow` binary on PATH (provided by Phase 30's `flow install`); set
         FLOW_LSP_PATH as a fallback. See README.md for details.
     ]]></description>
+
+    <change-notes><![CDATA[
+        <h3>1.5.0 — Initial JetBrains Marketplace release</h3>
+        <p>First public release of the Flow Language plugin, shipped with the Flow v1.5
+           milestone (Stage, Studio, Web).</p>
+        <ul>
+            <li>Editor support for <code>.flow</code> files via the LSP4IJ bridge to the
+                <code>flow lsp</code> language server: completions, hovers, signature help,
+                and diagnostics — the same server that powers the VSCode extension (Phase 17).</li>
+            <li>Compatible with IntelliJ Platform IDEs build 242 and later
+                (IntelliJ IDEA Community 2024.2+; PyCharm, WebStorm, etc.).</li>
+            <li>Requires the <code>flow</code> binary on PATH (install via Phase 30's
+                <code>flow install</code>) or the <code>FLOW_LSP_PATH</code> environment
+                variable as a fallback.</li>
+        </ul>
+        <p>See CHANGELOG.md and the README for setup details.</p>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.redhat.devtools.lsp4ij</depends>

@@ -35,6 +35,12 @@ public class AssemblyReferenceScanTests
         // leak into the WASM build. RtMidi.Core was added in the D-47-14
         // forward-look; do NOT duplicate it.
         "JackSharp",
+        // Phase 41 Plan 41-04 WASAPI-01 / T-41-04-WEBDRIFT / Pitfall 3: NAudio.Wasapi
+        // (Windows WASAPI COM, Desktop-only native dep) must never reach the Web
+        // closure. Added in the SAME commit as the NAudio.Wasapi PackageReference +
+        // WasapiBackend.cs Compile-Remove so the gate and the reference ship
+        // together. Catches "NAudio" / "NAudio.Wasapi" / "NAudio.CoreAudioApi" alike.
+        "NAudio",
         "System.IO.FileSystemWatcher",
     };
 

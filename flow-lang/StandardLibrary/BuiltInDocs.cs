@@ -197,4 +197,14 @@ public static class BuiltInDocs
 
     public static Doc? TryGet(string name) =>
         _docs.TryGetValue(name, out var doc) ? doc : null;
+
+    /// <summary>
+    /// Phase 41 (DOC-01, D-08): read-only view over every built-in doc entry, so
+    /// the <c>flow doc</c> generator (Plan 41-03) can enumerate the ~104 entries
+    /// directly with no duplication. The backing <c>_docs</c> dictionary stays
+    /// private — only this immutable read view is exposed. The existing
+    /// <see cref="TryGet"/> single-name lookup (Phase 38 <c>:help fn</c> surface)
+    /// is unchanged.
+    /// </summary>
+    public static IReadOnlyDictionary<string, Doc> All => _docs;
 }

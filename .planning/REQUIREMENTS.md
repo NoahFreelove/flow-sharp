@@ -144,31 +144,33 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### WASM Playground (Phase 41)
 
-- [ ] **WASM-01**: WASM playground host — new `flow-wasm/` Blazor WebAssembly project, Mono-WASM jiterpreter (D-v1.5-02). References `flow-lang` directly. Audio out via Web Audio API through KristofferStrube.Blazor.WebAudio wrapper.
-- [ ] **WASM-02**: Browser live-coding UX — editor pane + run/play/stop controls + share-via-URL (URL-encoded source, limit 8 KB). Pairs with Phase 38 `live` block: the browser experience IS watch-mode-in-browser.
-- [ ] **WASM-03**: Bundle size ≤15 MB compressed — measured at Phase 41 Plan 01 dry-run. If exceeded, prune stdlib subset (lazy-load `@sfz`, `@notation-emit`, `@osc`) or lazy-load Phase 29 sample bundle on first sampled-instrument use.
+> **D-19 reconciliation (2026-06-07):** WASM-01/02/03 were **carved out of Phase 41 on 2026-05-25** and SHIPPED by **Phases 47-49** (Mono-WASM `flow-lang` Web target + `WebAudioBackend` + SvelteKit playground) — a *different architecture* than the original Blazor `flow-wasm/` plan below. The checkboxes are intentionally left `[ ]` because these were never delivered *as written* (no Blazor project, no KristofferStrube wrapper, no 15 MB Blazor bundle); the carve-out note records where the capability actually landed. See the traceability rows below (Shipped — carved to 47-49).
+
+- [ ] **WASM-01** *(carved to Phase 47-49 — shipped via Mono-WASM Web target + SvelteKit playground, NOT the original Blazor flow-wasm plan)*: WASM playground host — new `flow-wasm/` Blazor WebAssembly project, Mono-WASM jiterpreter (D-v1.5-02). References `flow-lang` directly. Audio out via Web Audio API through KristofferStrube.Blazor.WebAudio wrapper.
+- [x] **WASM-02** *(carved to Phase 47-49 — shipped via Mono-WASM Web target + SvelteKit playground, NOT the original Blazor flow-wasm plan)*: Browser live-coding UX — editor pane + run/play/stop controls + share-via-URL (URL-encoded source, limit 8 KB). Pairs with Phase 38 `live` block: the browser experience IS watch-mode-in-browser.
+- [ ] **WASM-03** *(carved to Phase 47-49 — shipped via Mono-WASM Web target + SvelteKit playground, NOT the original Blazor flow-wasm plan)*: Bundle size ≤15 MB compressed — measured at Phase 41 Plan 01 dry-run. If exceeded, prune stdlib subset (lazy-load `@sfz`, `@notation-emit`, `@osc`) or lazy-load Phase 29 sample bundle on first sampled-instrument use.
 
 ### Cross-Platform Audio Backends (Phase 41)
 
-- [ ] **WASAPI-01**: Windows audio backend via NAudio.Wasapi 2.3.0 — implements `IAudioBackend` for `play` / `loop` / `preview`. Single `WasapiBackend.cs` file scoped to playback. Shared-mode (default) + exclusive-mode (opt-in via config flag) supported.
-- [ ] **COREAUDIO-01**: macOS audio backend — OwnAudioSharp 1.0.68 (miniaudio binding) preferred path. Phase 41 Plan 01 smoke-test on real hardware required; fall back to hand-rolled CoreAudio P/Invoke `AudioUnit` if latency unacceptable for live coding (>20ms round-trip).
+- [x] **WASAPI-01**: Windows audio backend via NAudio.Wasapi 2.3.0 — implements `IAudioBackend` for `play` / `loop` / `preview`. Single `WasapiBackend.cs` file scoped to playback. Shared-mode (default) + exclusive-mode (opt-in via config flag) supported.
+- [x] **COREAUDIO-01**: macOS audio backend — OwnAudioSharp 1.0.68 (miniaudio binding) preferred path. Phase 41 Plan 01 smoke-test on real hardware required; fall back to hand-rolled CoreAudio P/Invoke `AudioUnit` if latency unacceptable for live coding (>20ms round-trip).
 
 ### Cross-Platform Binaries (Phase 41)
 
-- [ ] **BIN-01**: Cross-platform self-contained binaries — `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`, `win-x64` published via `dotnet publish -p:PublishSingleFile=true`. Released as v1.5.0 tarballs (Linux/macOS) + zip (Windows) alongside existing flow-linux-x64.tar.gz.
+- [x] **BIN-01**: Cross-platform self-contained binaries — `linux-x64`, `linux-arm64`, `osx-x64`, `osx-arm64`, `win-x64` published via `dotnet publish -p:PublishSingleFile=true`. Released as v1.5.0 tarballs (Linux/macOS) + zip (Windows) alongside existing flow-linux-x64.tar.gz.
 
 ### Documentation Generator (Phase 41)
 
-- [ ] **DOC-01**: `flow doc` documentation generator — extracts `///` doc-comments (new lexer grammar additive to `//`) + proc signatures + builtin metadata from `BuiltInDocs`. Output: browsable HTML reference site (`docs/reference/index.html` by default). Content-hash incremental cache for re-gen.
-- [ ] **DOC-02**: `flow doc` example execution — code examples in `///` doc-comments execute via the test framework (TEST-01 hermetic isolation). Failures surface in `flow doc` output as `[example failed]` annotations. Runnable examples double as regression tests.
+- [x] **DOC-01**: `flow doc` documentation generator — extracts `///` doc-comments (new lexer grammar additive to `//`) + proc signatures + builtin metadata from `BuiltInDocs`. Output: browsable HTML reference site (`docs/reference/index.html` by default). Content-hash incremental cache for re-gen. _(Plan 41-02 shipped the language-core infrastructure: `///` lexer grammar + `ProcDeclaration.DocComment` + `BuiltInDocs.All`. The generator — HTML/Markdown emit + content-hash cache — is Plan 41-03; DOC-01 stays Pending until then.)_
+- [x] **DOC-02**: `flow doc` example execution — code examples in `///` doc-comments execute via the test framework (TEST-01 hermetic isolation). Failures surface in `flow doc` output as `[example failed]` annotations. Runnable examples double as regression tests.
 
 ### JetBrains Marketplace Publish (Phase 41)
 
-- [ ] **JET-01**: JetBrains plugin Marketplace publish — plugin.xml metadata + build.gradle.kts signing config (JetBrains marketplace cert) + CHANGELOG.md. Plugin verifier CI checks compatibility against IntelliJ Platform 2024.3+. Direct-download fallback page (`docs/jetbrains/install.html`) if marketplace review delays.
+- [x] **JET-01**: JetBrains plugin Marketplace publish — plugin.xml metadata + build.gradle.kts signing config (JetBrains marketplace cert) + CHANGELOG.md. Plugin verifier CI checks compatibility against IntelliJ Platform 2024.3+. Direct-download fallback page (`docs/jetbrains/install.html`) if marketplace review delays.
 
 ### v1.5 Closer Showcase (Phase 41)
 
-- [ ] **SHOWCASE-01**: Third-genre showcase piece — jazz / EDM / death metal (composer's choice). ~60s curated piece in `examples/<genre>/<piece>.flow` consuming features from Phases 35-40 (at minimum: pattern matching, one generative primitive, granular DSP or time-stretch, live block, real-time MIDI playback via new IMidiBackend). README.md `## Showcase` v1.5 section embeds inline-audio. v1.5.0 GitHub Release ships the audio + cross-platform binaries. Genre choice validates Flow's genre-agnostic claim alongside v1.4's symphony + ragtime.
+- [x] **SHOWCASE-01**: Third-genre showcase piece — jazz / EDM / death metal (composer's choice). ~60s curated piece in `examples/<genre>/<piece>.flow` consuming features from Phases 35-40 (at minimum: pattern matching, one generative primitive, granular DSP or time-stretch, live block, real-time MIDI playback via new IMidiBackend). README.md `## Showcase` v1.5 section embeds inline-audio. v1.5.0 GitHub Release ships the audio + cross-platform binaries. Genre choice validates Flow's genre-agnostic claim alongside v1.4's symphony + ragtime.
 
 ### Compile-Target Flavors (Phase 47)
 
@@ -389,16 +391,16 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | LINK-01 | Phase 40 | Deferred → community/v1.6 (GPL, D-40-06) |
 | LINK-02 | Phase 40 | Complete |
 | JACK-01 | Phase 40 | Complete best-effort (hand-rolled jack_transport_query; live timebase = HUMAN-UAT) |
-| WASM-01 | Phase 41 | Pending |
-| WASM-02 | Phase 41 | Pending |
-| WASM-03 | Phase 41 | Pending |
-| WASAPI-01 | Phase 41 | Pending |
-| COREAUDIO-01 | Phase 41 | Pending |
-| BIN-01 | Phase 41 | Pending |
-| DOC-01 | Phase 41 | Pending |
-| DOC-02 | Phase 41 | Pending |
-| JET-01 | Phase 41 | Pending |
-| SHOWCASE-01 | Phase 41 | Pending |
+| WASM-01 | Phase 47-49 | Shipped (carved 2026-05-25 — Mono-WASM Web target + SvelteKit playground, not Blazor) |
+| WASM-02 | Phase 47-49 | Shipped (carved 2026-05-25 — Mono-WASM Web target + SvelteKit playground, not Blazor) |
+| WASM-03 | Phase 47-49 | Shipped (carved 2026-05-25 — Mono-WASM Web target + SvelteKit playground, not Blazor) |
+| WASAPI-01 | Phase 41 | Complete |
+| COREAUDIO-01 | Phase 41 | Complete |
+| BIN-01 | Phase 41 | Complete |
+| DOC-01 | Phase 41 | Complete (Plan 41-02 infra + Plan 41-03 generator: flow doc verb → HTML+Markdown under docs/reference, content-hash cache) |
+| DOC-02 | Phase 41 | Complete |
+| JET-01 | Phase 41 | Complete |
+| SHOWCASE-01 | Phase 41 | Complete |
 | REQ-MOD-01 | Phase 43 | Shipped (Plan 43-01 — `e156dcc` / `13c6b9e`) |
 | REQ-MOD-02 | Phase 43 | Shipped (Plan 43-02 — `2bc2905` / `f8f338f`) |
 | REQ-MOD-03 | Phase 43 | Shipped (Plan 43-03 — `c5b1120` / `1e97902`) |

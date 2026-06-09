@@ -233,6 +233,20 @@ examples/live/*.wav
 examples/live/*.mp3
 examples/live/*.mid
 
+# Phase 41 SHOWCASE-01 — the v1.5 third-genre showcase piece (EDM) under
+# examples/edm/. Mirrors the examples/{generative,dsp,live,notation,...}/
+# allow-list precedents. The composer's intended writeWav/writeMidi target is
+# /tmp/ per the determinism-harness convention (the script writes /tmp/pulse.*),
+# so the same defensive D-502 enforcement re-ignores any rendered audio that a
+# composer accidentally drops into examples/edm/.
+!examples/edm/
+!examples/edm/**
+!examples/edm/**/*.flow
+!examples/edm/**/*.md
+examples/edm/*.wav
+examples/edm/*.mp3
+examples/edm/*.mid
+
 # Phase 39 D-39-22 — composer-facing test_notation_*_example.flow regression
 # tests under tests/. The global `tests/` ignore can't be bypassed via
 # allow-list because gitignore docs say "it is not possible to re-include a
@@ -266,6 +280,13 @@ midi-to-wav.sh
 !bench/**/*.md
 !bench/**/*.txt
 !bench/run.sh
+
+# Phase 41 JET-01 — the JetBrains plugin CHANGELOG.md is a user-facing release
+# artifact and MUST be tracked despite the global *.md ignore above (same
+# precedent as flow-jetbrains/README.md, which predates the *.md rule and the
+# docs/**/*.md + examples/**/*.md allow-lists). build/ and .gradle/ stay ignored
+# via flow-jetbrains/.gitignore.
+!flow-jetbrains/CHANGELOG.md
 
 # Re-ignore per-run results files inside bench/ — only the stable-filename
 # baseline.txt is tracked. results-<label>-<timestamp>.txt are historical

@@ -81,6 +81,11 @@ public sealed class AudioPlaybackManager : IDisposable
             if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return CoreAudioBackend.IsAvailable() || PulseAudioSimpleBackend.IsAvailable();
 
+            // Phase 41 Plan 41-04 WASAPI-01 (D-17): on Windows, WASAPI is the path.
+            // Fall through to PulseAudio for the rare WSL/Homebrew-Pulse case.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return WasapiBackend.IsAvailable() || PulseAudioSimpleBackend.IsAvailable();
+
             // On Linux (and other non-macOS platforms), PulseAudio Simple covers both
             // native PulseAudio and PipeWire's compatibility layer.
             return PulseAudioSimpleBackend.IsAvailable();
@@ -165,6 +170,18 @@ public sealed class AudioPlaybackManager : IDisposable
                 return new CoreAudioBackend();
             // Fall through to PulseAudio probe — covers the (rare) macOS user
             // running PulseAudio under Homebrew.
+        }
+
+        // Phase 41 Plan 41-04 WASAPI-01 (D-17, RESEARCH Pattern 4): Windows uses
+        // WASAPI via NAudio. Probe-gated like CoreAudio — WasapiBackend.IsAvailable()
+        // returns false on non-Windows (and never crashes), so this branch only
+        // wins on real Windows. Ordered before the PulseAudio probe (the rare
+        // Windows-with-WSL-Pulse case still falls through if WASAPI is somehow
+        // unavailable).
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            if (WasapiBackend.IsAvailable())
+                return new WasapiBackend();
         }
 
         // Try PulseAudio Simple API — this also works on PipeWire systems since

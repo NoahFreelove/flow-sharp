@@ -20,7 +20,7 @@ plugins {
 }
 
 group = "dev.flowlang"
-version = "0.1.0"
+version = "1.5.0"
 
 repositories {
     mavenCentral()
@@ -55,13 +55,52 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "242"
-            // Disable the IntelliJ Platform Gradle Plugin's auto-computed
-            // `untilBuild = "<major>.*"`. Without this override the plugin
-            // is gated at 242.* and is rejected by IDEs from 243+ (e.g.
-            // PyCharm 2025.3 / build 253). LSP4IJ 0.19.3 is API-stable on
-            // IntelliJ Platform 242..253; if a newer platform breaks LSP4IJ
-            // itself, bump the LSP4IJ pin in dependencies above.
-            untilBuild = provider { "" }
+            // Override the IntelliJ Platform Gradle Plugin's auto-computed
+            // `untilBuild = "<sinceBuild-major>.*"`. Without this the plugin
+            // would be gated at 242.* and rejected by IDEs from 243+ (e.g.
+            // PyCharm 2025.3 / build 253).
+            //
+            // The upper bound is set to the WILDCARD `253.*`: LSP4IJ 0.19.3 is
+            // API-stable across IntelliJ Platform 242..253, so the plugin is
+            // declared compatible through the 253 branch. When a newer platform
+            // ships, bump this ceiling (and re-pin LSP4IJ if it breaks).
+            //
+            // Phase 41 JET-01 Rule-1 fix: the Phase 31 `provider { "" }` emitted
+            // an EMPTY `until-build=""`, which the IntelliJ Plugin Verifier
+            // rejects ("attribute with only a branch number () is not valid; use
+            // a wildcard like '.*'"). A concrete `253.*` wildcard is the
+            // verifier-valid form (plugin 2.2.0 has no `untilBuild.unset()`).
+            untilBuild = "253.*"
         }
+    }
+
+    // ── JET-01 / Phase 41 D-03 — Marketplace publish staging ──────────────
+    //
+    // pluginVerification runs AUTONOMOUSLY (`./gradlew verifyPlugin`): the
+    // IntelliJ Plugin Verifier checks binary/API compatibility against the
+    // recommended IntelliJ Platform IDEs for the declared since/until range.
+    //
+    // signing + publishing are the HUMAN gate (41-HUMAN-UAT.md row 6). Their
+    // secrets come from `providers.environmentVariable(...)` ONLY — never a
+    // literal, never committed (threat T-41-06-IDISCLOSE / V14 / V6). The
+    // autonomous build possesses no real cert or token, so `signPlugin` /
+    // `publishPlugin` are NOT run here; the composer supplies the four env
+    // vars at publish time:
+    //   CERTIFICATE_CHAIN / PRIVATE_KEY / PRIVATE_KEY_PASSWORD / PUBLISH_TOKEN
+    pluginVerification {
+        ides {
+            recommended()
+        }
+    }
+
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+        // channels = listOf("default")  // optional — default = stable Marketplace channel
     }
 }

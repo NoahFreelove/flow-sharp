@@ -21,6 +21,27 @@ public class SimpleLexer
     private readonly Queue<Token> _pendingTokens = new();
     private TokenType? _lastEmittedType = null;   // Phase 26 D-04
 
+    // Phase 41 (DOC-01, D-07): `///` doc-comment capture. Additive to `//` — see
+    // SkipWhitespaceAndComments. The captured text (leading `///` + one optional
+    // space stripped, contiguous `///` lines `\n`-joined) accumulates here; the
+    // Tokenize loop emits a single out-of-band DocComment token per contiguous
+    // block at the block's source location, which the Parser binds to the
+    // following proc. The most-recent captured block is also exposed read-only via
+    // PendingDocComment for the DOC-01 lexer contract test. `//` line comments and
+    // `/* */` (which Flow lexes as Slash/Star tokens) are untouched.
+    private StringBuilder? _docCommentBuilder = null;
+    private SourceLocation _docCommentStart = SourceLocation.Unknown;
+    private bool _docCommentPending = false;
+
+    /// <summary>
+    /// Phase 41 (DOC-01): the text of the most-recently captured <c>///</c>
+    /// doc-comment block (leading <c>///</c> + one optional space stripped,
+    /// contiguous lines newline-joined), or <c>null</c> if no <c>///</c> has been
+    /// lexed. Read-only side-channel for the doc-comment lexer contract; the
+    /// Parser binds via the in-stream <see cref="TokenType.DocComment"/> token.
+    /// </summary>
+    public string? PendingDocComment { get; private set; }
+
     public SimpleLexer(string source, ErrorReporter errorReporter, string? fileName = null,
                        PragmaSet? pragmaSet = null)
     {
@@ -39,6 +60,23 @@ public class SimpleLexer
         while (!IsAtEnd())
         {
             SkipWhitespaceAndComments();
+
+            // Phase 41 (DOC-01): a contiguous `///` block is fully consumed inside
+            // the SkipWhitespaceAndComments call above (its while-loop walks the
+            // newline whitespace between `///` lines). Flush it as ONE out-of-band
+            // DocComment token whose location is the first `///` line, so the Parser
+            // can bind it to the following proc (or charitably drop it).
+            if (_docCommentPending && _docCommentBuilder != null)
+            {
+                string docText = _docCommentBuilder.ToString();
+                PendingDocComment = docText;
+                tokens.Add(new Token(TokenType.DocComment, docText, _docCommentStart,
+                                     Span: Span.At(_docCommentStart)));
+                _lastEmittedType = TokenType.DocComment;
+                _docCommentBuilder = null;
+                _docCommentPending = false;
+            }
+
             if (IsAtEnd()) break;
 
             var token = NextToken();
@@ -1177,6 +1215,23 @@ public class SimpleLexer
             or '<' or '>' or '|' or '~' or '$';
     }
 
+    // Phase 41 (DOC-01, CR-01 fix): drop a pending `///` block that has been
+    // interrupted by a NON-`///` comment line before it could flush as a
+    // DocComment token. A doc-comment only binds to a proc that IMMEDIATELY
+    // follows it; a `///` separated from its proc by any plain comment form
+    // (`//`, `;`, `Note:`, `TODO:`, `FIXME:`) is orphaned and dropped CHARITABLY
+    // (never an error, never mis-bound to a later proc). Contiguous `///` lines
+    // never reach this — the `///` arm in SkipWhitespaceAndComments is checked
+    // first and accumulates them without entering a plain-comment arm.
+    private void DropPendingDocCommentIfInterrupted()
+    {
+        if (_docCommentPending || _docCommentBuilder != null)
+        {
+            _docCommentBuilder = null;
+            _docCommentPending = false;
+        }
+    }
+
     private void SkipWhitespaceAndComments()
     {
         while (!IsAtEnd())
@@ -1206,9 +1261,51 @@ public class SimpleLexer
                 _line--;
                 _column = 1;
             }
+            // Phase 41 (DOC-01, D-07): `///` doc-comment. MUST precede the `//`
+            // arm (Pitfall 1) so `///` is never consumed as a plain line comment.
+            // Mirrors the existing multi-char-before-single-char ordering
+            // (`~>` before `~`, `...` before `..`). Unlike `//`, this CAPTURES the
+            // text (does not merely skip it). Contiguous `///` lines accumulate
+            // newline-joined; the Tokenize loop flushes them as one DocComment token.
+            else if (c == '/' && PeekNext() == '/'
+                     && _position + 2 < _source.Length && _source[_position + 2] == '/')
+            {
+                Advance(); // first  '/'
+                Advance(); // second '/'
+                Advance(); // third  '/'
+
+                // Strip a single leading space if present (the conventional `/// `).
+                if (!IsAtEnd() && Peek() == ' ')
+                    Advance();
+
+                int textStart = _position;
+                while (!IsAtEnd() && Peek() != '\n' && Peek() != '\r')
+                    Advance();
+                // Trim a trailing '\r' region implicitly by stopping at '\r'; the
+                // CRLF newline is consumed on the next loop iteration as whitespace.
+                string line = _source.Substring(textStart, _position - textStart);
+
+                if (_docCommentBuilder == null)
+                {
+                    // Start a fresh contiguous block; remember its source origin so
+                    // the emitted DocComment token points at the first `///` line.
+                    _docCommentBuilder = new StringBuilder();
+                    _docCommentStart = new SourceLocation(_line, _column, _fileName);
+                }
+                else
+                {
+                    _docCommentBuilder.Append('\n');
+                }
+                _docCommentBuilder.Append(line);
+                _docCommentPending = true;
+                // Do NOT clear the buffer here (Pitfall 2): contiguity/binding is
+                // decided by the Tokenize loop + Parser, not by whitespace skipping.
+            }
             else if (c == '/' && PeekNext() == '/')
             {
-                // Line comment: skip to end of line
+                // Line comment: skip to end of line. CR-01: an intervening `//`
+                // orphans any pending `///` block so it cannot bind to a later proc.
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();
@@ -1217,6 +1314,7 @@ public class SimpleLexer
             else if (c == 'N' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("Note:".AsSpan()))
             {
                 // Skip comment until end of line
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();
@@ -1231,6 +1329,7 @@ public class SimpleLexer
             // contracts are preserved by construction.
             else if (c == ';' && IsStartOfLineContent())
             {
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();
@@ -1239,6 +1338,7 @@ public class SimpleLexer
             // Phase 31 REQ-4 (SPEC-4): `TODO:` lead-in line comment (mirrors the `Note:` arm above).
             else if (c == 'T' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("TODO:".AsSpan()))
             {
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();
@@ -1247,6 +1347,7 @@ public class SimpleLexer
             // Phase 31 REQ-4 (SPEC-4): `FIXME:` lead-in line comment.
             else if (c == 'F' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("FIXME:".AsSpan()))
             {
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();

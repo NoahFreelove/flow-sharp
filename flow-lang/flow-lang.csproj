@@ -109,6 +109,19 @@
          unused and would otherwise pull dead-reference into the Web build. -->
     <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
       <PackageReference Include="Rug.Osc" Version="1.2.5" />
+      <!-- Phase 41 Plan 41-04 WASAPI-01 (D-17): Windows audio output backend dep.
+           NAudio.Wasapi is referenced ONLY on the Desktop target — WasapiBackend.cs
+           is Compile-Removed on Web (below) and #if !FLOW_WEB-guarded, so this
+           managed WASAPI-COM reference must never reach the WASM closure
+           (AssemblyReferenceScanTests forbids the "NAudio" prefix, same commit).
+           Version PINNED EXACTLY to 2.3.0 (NOT a range): the NuGet registry carries
+           an anomalous 22.0.0 alongside the legitimate 2.x line — a `+`/`latest`
+           range would be a supply-chain pin trap (RESEARCH Package Legitimacy
+           Audit / Pitfall 3 / T-41-04-SC). 2.3.0 is a published stable release
+           under the naudio org (github.com/naudio/NAudio). Restores cross-platform
+           on this Linux build host (the WASAPI COM calls only fire at runtime on
+           Windows); real audible playback is a HUMAN-UAT row (D-05). -->
+      <PackageReference Include="NAudio.Wasapi" Version="2.3.0" />
       <!-- Phase 40 Plan 40-04 (ABI FIX): RtMidi.Core 1.0.53 (2018) was REMOVED. Its
            pinned binding calls the OLD `const char* rtmidi_get_port_name(device, port)`
            signature; modern librtmidi (>= 4.0; 6.0.0 / librtmidi.so.7) changed that to
@@ -147,6 +160,11 @@
       <Compile Remove="Audio\PulseAudioSimpleBackend.cs" />
       <Compile Remove="Audio\PulseAudioCaptureBackend.cs" />
       <Compile Remove="Audio\CoreAudioBackend.cs" />
+      <!-- Phase 41 Plan 41-04 WASAPI-01 / Pitfall 3: the Windows WASAPI backend.
+           Strip on Web so the NAudio.Wasapi (WASAPI COM) reference never reaches
+           the WASM closure (belt; the #if !FLOW_WEB guard inside the file is
+           suspenders; the Desktop-only PackageReference is the third layer). -->
+      <Compile Remove="Audio\WasapiBackend.cs" />
       <Compile Remove="StandardLibrary\Audio\Sfz\**\*.cs" />
       <Compile Remove="StandardLibrary\Network\OscFunctions.cs" />
       <Compile Remove="StandardLibrary\Network\OscHandleData.cs" />
@@ -379,10 +397,6 @@
       <None Update="test.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="bin\Debug\net9.0\" />
     </ItemGroup>
 
 </Project>

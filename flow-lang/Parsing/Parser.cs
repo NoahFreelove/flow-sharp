@@ -34,6 +34,13 @@ public partial class Parser
     // reach the flag-flip site because ParseStatement returns null for them.
     private bool _seenNonModuleNonCommentStatement = false;
 
+    // Phase 41 (DOC-01, D-07): the text of the most-recent `///` doc-comment block
+    // (from a TokenType.DocComment token) awaiting binding to the following proc.
+    // Buffered in ParseStatement, consumed + cleared at ParseProcDeclaration entry,
+    // and cleared (charitable orphan-drop, Pitfall 2) when any non-proc statement
+    // dispatches. Null when no `///` is pending.
+    private string? _pendingDocComment = null;
+
     // Bounds for syntax tree depth
     private int _parseDepth = 0;
     private const int MaxParseDepth = 500;
@@ -100,6 +107,30 @@ public partial class Parser
             // Skip comments
             if (Match(TokenType.Comment))
                 return null;
+
+            // Phase 41 (DOC-01, D-07): buffer a `///` doc-comment so the NEXT
+            // statement-parse can bind it. The token is out-of-band (returns null
+            // like a plain comment) — only ParseProcDeclaration consumes the buffer.
+            // Contiguous `///` lines already arrive as ONE DocComment token from the
+            // lexer; a later DocComment token simply overwrites the buffer (last
+            // block wins). We do NOT flip `_seenNonModuleNonCommentStatement` here
+            // (doc-comments, like plain comments, are not "real" statements).
+            if (Check(TokenType.DocComment))
+            {
+                _pendingDocComment = Advance().Text;
+                return null;
+            }
+
+            // Phase 41 (DOC-01, D-07, Pitfall 2): charitable orphan-drop. If a `///`
+            // is pending but the upcoming statement is NOT a proc declaration, the
+            // doc-comment has nothing to bind to — drop it silently (never an error).
+            // proc / `internal proc` consume the buffer in ParseProcDeclaration; any
+            // other dispatch path below would leak it to a later proc, so clear now.
+            if (_pendingDocComment != null
+                && !Check(TokenType.Proc) && !Check(TokenType.Internal))
+            {
+                _pendingDocComment = null;
+            }
 
             // Phase 43 D-01 — `module <name>` top-of-file declaration.
             // Must be the first non-comment statement of the file; mid-file
@@ -334,6 +365,13 @@ public partial class Parser
     private ProcDeclaration ParseProcDeclaration(bool isInternal)
     {
         var location = PreviousToken.Location;
+
+        // Phase 41 (DOC-01, D-07): consume the pending `///` doc-comment (if any)
+        // and clear the buffer IMMEDIATELY — before parsing the body — so a `///`
+        // inside the body (or a following proc) can never re-read this one
+        // (Pitfall 2). Null when this proc has no `///` (charitable signature-only).
+        string? docComment = _pendingDocComment;
+        _pendingDocComment = null;
         // Allow musical context keywords (like 'pan') as procedure names
         string name;
         if (Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)
@@ -418,7 +456,10 @@ public partial class Parser
             // time, mirroring IsStrict above. The Interpreter pushes/pops this
             // around the proc body so a (beat N) call inside the proc reads the
             // DECLARING file's pragma bit, not the caller's (Pitfall 3 / cross-file).
-            IsBeatTrueToSig: _pragmaSet?.Has("beat-true-to-sig") ?? false);
+            IsBeatTrueToSig: _pragmaSet?.Has("beat-true-to-sig") ?? false,
+            // Phase 41 Plan 41-02 DOC-01 / D-07 — the `///` doc-comment captured
+            // at entry (above), or null for a charitable signature-only entry.
+            DocComment: docComment);
     }
 
     private VariableDeclaration ParseVariableDeclaration()

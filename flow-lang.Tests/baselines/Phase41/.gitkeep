@@ -1,0 +1,6 @@
+# Phase 41 RMS-regression baselines (SHOWCASE-01).
+# This directory is tracked from Wave 0 (plan 41-01) so the showcase baseline WAV
+# dropped by plan 41-07 has a home. Phase41ShowcaseRmsTests.Showcase_RmsWithinTolerance
+# compares the third-genre showcase render against the baseline placed here
+# (SPEC-8 ±0.5 dB / 100 ms). No baseline WAV exists yet — the test is skip-stubbed
+# until 41-07.

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: ready_to_plan
-stopped_at: Phase 40 complete (4/3) — ready to discuss Phase 42
-last_updated: 2026-06-07T13:37:53.543Z
-last_activity: 2026-06-07
+status: milestone_close_pending
+stopped_at: Phase 41 closed (HUMAN-UAT deferred per composer 2026-06-08). ALL 15 v1.5 phases now executed — nothing left to plan/execute (the SDK's "next_phase 42" is the out-of-numeric-order quirk; 42-49 shipped long ago). Only the milestone-close decision + deferred human UAT (Phases 40/41/49) remain.
+last_updated: 2026-06-08T22:18:07.015Z
+last_activity: 2026-06-08
 progress:
   total_phases: 15
-  completed_phases: 13
-  total_plans: 96
-  completed_plans: 267
-  percent: 87
+  completed_phases: 14
+  total_plans: 103
+  completed_plans: 274
+  percent: 93
 ---
 
 # Project State
@@ -21,16 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 42 — type system stdlib audit
+**Current focus:** v1.5 milestone close — all 15 phases executed; human UAT DEFERRED across Phases 40/41/49 (composer chose to skip 2026-06-08)
 
 ## Current Position
 
-Phase: 42
-Plan: Not started
-Next step: Composer runs `.planning/phases/40-studio-sync/40-HUMAN-UAT.md` — real synth note-on (MIDI-RT-01/02), DAW master+slave clock lock (CLOCK-01/02), perceptual MIDI-audio alignment (MIDI-RT-04), live JACK timebase (JACK-01); Link row is a recorded deferral (no test). NOTE the native-path UAT rows are now MACHINE-PROVEN on the bench box's snd-virmidi loopback by `RealMidiLoopbackTests` (Plan 40-04) — the remaining UAT is real *synth audibility* + DAW perceptual lock + live JACK, which automation cannot cover. Per-REQ closure + caveats: `40-VERIFICATION.md` (9-ID trace). Phase 40 flips to SHIPPED after that sign-off. ALSO pending for milestone close: Phase 49 (flowlang.dev site) + Phase 41 (Reach + v1.5 Closer).
+Phase: 41 (LAST phase of v1.5) — closed 2026-06-08 with HUMAN-UAT deferred. All 15 v1.5 phases executed; no phase remains to plan or execute.
+Plan: 7 of 7 (Phase 41)
+Next step: Phase 41's autonomous plan execution is DONE (7/7 — flow doc, WASAPI/CoreAudio backends, 5-RID binaries, JetBrains build/verify, third-genre showcase). Remaining v1.5 milestone-close work is HUMAN-only (flagged, never faked): the v1.5.0 GitHub Release cut (D-04, `41-HUMAN-UAT.md` row 7), JetBrains Marketplace publish (D-03), osx/win exec smoke + Windows-WASAPI / macOS-CoreAudio audible UAT (D-05, rows 3-6). ALSO pending for milestone close: Phase 40 hardware UAT (`40-HUMAN-UAT.md`) + Phase 49 live deploy/OAuth/cross-browser audio (`49-HUMAN-UAT.md`).
 
-Status: Ready to plan
-Last activity: 2026-06-07
+**Plan 41-07 complete (2026-06-08) — third-genre showcase (SHOWCASE-01 DONE) + D-19 reconciliation:** authored `examples/edm/pulse.flow`, a ~60s (61.64s) EDM piece — the v1.5 closer artifact alongside v1.4's symphony + the jazz markov example — that exercises all five v1.5 headline primitives: Phase 35 `(match idx ...)` bassline selection, Phase 36 SEEDED `(euclidean 7 16 ... 1305)` kick/clap, Phase 37 `(granular ...)` riser, Phase 38 `live 1bar { }`, Phase 40 `midiOut(song, port)`. Clean render/demo split (Pitfall 5, D-v1.5-07): the pinned offline render (writeWav + writeMidi) is fully seeded → two-run cmp-clean holds for BOTH WAV (SHA `a2c095c4…`) and MIDI (SHA `1ad0b7f9…`); the `live` block + real-time `midiOut` live in a commented demo section a headless render never executes. Pinned the RMS baseline (`flow-lang.Tests/baselines/Phase41/showcase.wav`, byte-stable) + turned the `Phase41ShowcaseRmsTests` 41-01 Skip-stub LIVE + GREEN (SPEC-8 ±0.5 dB/100 ms; full Phase 41 subset 26/26, 0 skipped). Added README `## Showcase` (three-genre table + five-primitive checklist + v1.5.0 Release note). **D-19 reconciliation:** REQUIREMENTS.md WASM-01/02/03 flipped `Phase 41 | Pending` → `Phase 47-49 | Shipped (carved 2026-05-25)`; ROADMAP Phase 39 (`0/0 Not started` → `5/5 Complete 2026-05-23`) + Phase 48 (`5/7 In Progress` → `7/7 Complete 2026-06-05`) corrected. `dotnet build flow-lang -p:FlowTarget=Web` still 0 errors. 3 task commits `61e18bb` / `46ed735` / `799bf98`. NO production code touched (showcase `.flow` + baseline WAV + test + docs). v1.5.0 GitHub Release NOT cut (D-04 human gate).
+
+**Plan 41-05 complete (2026-06-08) — cross-platform binaries (BIN-01 DONE, autonomous half):** `scripts/publish.sh` generalized from single-RID linux-x64 to a 5-RID self-contained single-file loop (linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64). Each RID cross-compiles from this Linux host (managed-only binaries — audio backends P/Invoke SYSTEM libs that are never bundled), keeps the exact Phase 30 flag set with `-p:PublishTrimmed=false` on every RID (D-15), passes a per-RID stdlib-copy check + per-RID 120 MB SPEC-2 budget (each lands 38-39 MB published / 33-35 MB archived), and packages `flow-<rid>-v1.5.0.tar.gz` (linux/osx) or `flow-win-x64-v1.5.0.zip` (windows) + a `.sha256` sidecar each (D-16, tampered-binary mitigation). `bash scripts/publish.sh` exits 0; all 5 archives + 5 checksums verify `OK`. linux-x64 `flow version` smoke green; linux-arm64 best-effort qemu skips-with-reason (this x64 host lacks the aarch64 glibc loader — non-fatal, Rule 1 fix). osx-x64/osx-arm64/win-x64 binaries are built + checksummed but NEVER executed here — their exec smoke is `41-HUMAN-UAT.md` rows 3-5 (Pitfall 4, D-05), and the v1.5.0 GitHub Release cut is row 7 (D-04). Publish output is gitignored; only `scripts/publish.sh` committed. Commit `c1cff6f`.
+
+**Plan 41-03 complete (2026-06-08) — `flow doc` generator (DOC-01 + DOC-02 DONE):** the `flow doc` flow-cli verb now generates browsable static HTML (`docs/reference/index.html`) + a greppable Markdown sibling from `BuiltInDocs.All` (~104 builtins) + harvested `///` `ProcDeclaration.DocComment`s, executes every `///` example in-process via a hermetic per-example FlowEngine (failures annotated `[example failed]`, doubling as regression tests per DOC-02), and skips unchanged entries via a content-hash cache. The three 41-01 DOC stubs (FlowDocGen/DocCache/DocExampleExec) are LIVE + GREEN (12/12). `flow-lang -p:FlowTarget=Web` still builds (Doc code is flow-cli Desktop-only). Commits `245628f` / `3570066` / `3d71980`. New files under `flow-cli/Doc/` + `flow-cli/Commands/DocCommand.cs`.
+
+**Bookkeeping reconciliation 2026-06-07:** ROADMAP Phase Summary was missing 46/47/48/49 checkbox lines (added — 46/47/48 `[x]` shipped, 49 `[x]` execution-complete). `roadmap.analyze` had mis-reported 46/47 as incomplete and 41 as complete; disk reality: 41 is genuinely unstarted (no dir/plans/context), 46-49 all executed.
+
+Status: All 15 v1.5 phases executed — milestone close pending. Human UAT deferred by composer (Phases 40/41/49 carry deferred-debt UAT records; re-run via /gsd:verify-work or accept-as-deferred at /gsd:complete-milestone).
+Last activity: 2026-06-08
 
 **Phase 40 Plan 40-04 highlights (2026-06-07) — CRITICAL ABI fix: RtMidi.Core → direct librtmidi P/Invoke:**
 
@@ -378,7 +386,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 
 **Velocity:**
 
-- Total plans completed: 89 (v1.2 milestone)
+- Total plans completed: 96 (v1.2 milestone)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -406,6 +414,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 46 | 6 | - | - |
 | 49 | 5 (of 9) | - | 49-05 ~50min |
 | 40 | 4 | - | - |
+| 41 | 7 | - | - |
 
 **Recent Trend:**
 
@@ -554,6 +563,12 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 49 P05 | 50min | 3 tasks | 13 files |
 | Phase 49 P09 | 12min | 3 tasks | 8 files |
 | Phase 40 P40-01 | 1 session | 3 tasks | 25 files |
+| Phase 41 P01 | 6min | 2 tasks | 10 files |
+| Phase 41 P02 | 25min | 3 tasks | 7 files |
+| Phase 41 P04 | 7min | 3 tasks | 6 files |
+| Phase 41 P06 | 10min | 2 tasks | 6 files |
+| Phase 41 P05 | 12min | 1 tasks | 1 files |
+| Phase 41 P07 | 32min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -757,6 +772,16 @@ Recent decisions affecting current work:
 - [Phase ?]: 49-06: OAuth token rides #token= fragment into sessionStorage (D-49-28 ephemeral) + history.replaceState URL clean; auto-run rides &run=1 in the fragment (D-49-08)
 - [Phase ?]: Phase 40 Open Q1 resolved — strategy (a) reflection into RtMidi.Core internal SendMessage(byte[]) for clock bytes; Plan 02 builds on this
 - [Phase ?]: Clock master uses Stopwatch-deadline thread + spin-wait, bar-boundary tempo re-read; ClockHandle specificity 153; slave 8-pulse settle
+- [Phase ?]: Phase 41 Wave 0: 8 xUnit stubs seeded (5 doc skip + WASAPI skip + LIVE CoreAudio + showcase RMS skip); CoreAudio LIVE (no dup)
+- [Phase ?]: 41-HUMAN-UAT.md authored with 7 honest pending gate rows (Windows WASAPI / macOS CoreAudio+<20ms / 3 binary exec / JetBrains publish / GitHub Release) — flag-not-fake per D-05
+- [Phase ?]: Phase 41-02: `///` doc-comment grammar is additive to `//` at the lexer (ordered before the two-slash arm); binds to the following ProcDeclaration.DocComment via an out-of-band DocComment token + parser pending buffer; orphan `///` dropped charitably (zero errors); BuiltInDocs.All exposes the ~104 builtin entries read-only for the 41-03 generator.
+- [Phase ?]: Phase 41-04: NAudio.Wasapi pinned EXACTLY 2.3.0 Desktop-only (22.0.0 registry trap mitigation, T-41-04-SC); WasapiBackend.cs Web-stripped 3 ways (#if !FLOW_WEB + <Compile Remove> + Desktop-only ref) with NAudio forbidden-prefix gate in the SAME commit; AssemblyReferenceScanTests GREEN under FlowTarget=Web
+- [Phase ?]: Phase 41-04: WasapiBackend pull->push bridge via BufferedWaveProvider+WasapiOut; share-mode kept local (Shared default, no SPEC-4 FlowConfig schema change); DetectBackend Windows branch probe-gated before PulseAudio; CoreAudioBackend.cs UNMODIFIED (COREAUDIO-01 verify-not-build, D-18); Windows audible = pending HUMAN-UAT row
+- [Phase ?]: 41-06: JetBrains until-build fixed to wildcard 253.* (empty until-build is verifier-rejected); secrets env-var-only, sign+publish stay D-03 human gate
+- [Phase ?]: 41-06: JetBrains plugin build/verify proven autonomously (buildPlugin BUILD SUCCESSFUL; verifyPlugin Compatible vs IC-2024.2 under portable JDK 21); Marketplace publish remains the composer's action
+- [Phase ?]: Phase 41 Plan 05: 5-RID self-contained publish.sh (linux-x64/arm64, osx-x64/arm64, win-x64) produces flow-<rid>-v1.5.0.tar.gz/.zip + .sha256 each, no trim (D-15); linux-x64 runtime-smoked, osx/win exec honestly deferred to 41-HUMAN-UAT.md (Pitfall 4)
+- [Phase 41-07]: third-genre showcase = EDM (examples/edm/pulse.flow, ~60s) — exercises all five v1.5 primitives (match + seeded euclidean + granular + live block + midiOut); pinned offline render (writeWav/writeMidi) seeded → two-run cmp-clean + RMS baseline (flow-lang.Tests/baselines/Phase41/showcase.wav, SPEC-8); live block + midiOut isolated to a commented demo section (Pitfall 5, D-v1.5-07)
+- [Phase 41-07] (D-19): WASM-01/02/03 reconciled Pending/Phase-41 → Shipped (carved to Phase 47-49); ROADMAP Phase 39 (5/5 Complete 2026-05-23) + Phase 48 (7/7 Complete 2026-06-05) progress rows corrected; v1.5.0 GitHub Release cut left as the D-04 human gate (NOT cut)
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -974,10 +999,14 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-06-07T02:29:24.439Z
-Stopped at: Phase 40 execution complete + code-reviewed + fixed (3 blockers/7 warnings/3 info resolved); verification human_needed (6 hardware-UAT rows pending)
-Resume file: .planning/phases/40-studio-sync/40-HUMAN-UAT.md
-Stale-artifact cleanup this session: removed dead Phase-35 `.planning/HANDOFF.json` (one-shot artifact from a phase shipped 2026-05-19, superseded by current STATE).
+Last session: 2026-06-08 (resume → discuss --auto → plan → execute Phase 41 end-to-end)
+Stopped at: Phase 41 FULL autonomous pipeline complete — discuss(--auto) → research → plan (7 plans, plan-checker PASSED) → execute (7/7 plans, sequential-on-main) → code-review (3 critical + 6 warning, ALL fixed via fix(41) commits, +2 new regression tests) → full xUnit regression GREEN (2283 passed / 0 failed / 14 skipped) → verify (status human_needed, 7/7 code must-haves verified). Phase NOT marked Complete: 7 cross-platform/external HUMAN gates remain (41-HUMAN-UAT.md).
+Resume file: .planning/phases/41-reach-v1-5-closer/41-HUMAN-UAT.md (7 pending gates) + 41-VERIFICATION.md
+Stale-artifact cleanup this session: removed dead Phase-35 `.planning/HANDOFF.json` (committed the deletion this run).
+
+**Phase 41 outcome (2026-06-08):** All seven plans executed + verified in code (DOC-01/02 flow doc generator; WASAPI-01 WasapiBackend code + Web-strip; COREAUDIO-01 verify-not-build; BIN-01 5-RID publish.sh; JET-01 gradle signing/publish DSL + buildPlugin/verifyPlugin green; SHOWCASE-01 examples/edm/pulse.flow + determinism pin). WASM-01/02/03 confirmed carved-to-47-49 (D-19 reconciled). The 7 HUMAN gates blocking a `passed` re-verification: Windows-WASAPI audible, macOS-CoreAudio audible+<20ms, osx-x64/osx-arm64/win-x64 binary exec, JetBrains Marketplace publishPlugin, v1.5.0 GitHub Release cut.
+
+**v1.5 milestone-close picture:** Phase 41 is the LAST phase executed. Milestone close is now blocked ONLY by human gates across three phases: Phase 41 (`41-HUMAN-UAT.md`, 7 gates), Phase 40 (`40-HUMAN-UAT.md`, hardware/DAW), Phase 49 (`49-HUMAN-UAT.md`, live deploy/OAuth/cross-browser audio). Once a human clears these and re-verification flips Phase 41 to `passed`, run `/gsd:complete-milestone` (or `/gsd:new-milestone`).
 
 **Phase-count correction:** v1.5 is **12/15 phases SHIPPED** (35, 36, 37, 38, 39, 42, 43, 44, 45, **46**, 47, 48) — the earlier "11/15" running tally omitted Phase 46 (Codebase Bloat Removal), which PASSED verification 11/11 on 2026-05-30. Phases 44 and 46 are SHIPPED (prior Session Continuity note wrongly listed them as remaining). Stale ROADMAP summary-table rows also exist (Phase 39 shows "Not started", Phase 48 shows "5/7 In Progress") — both are actually shipped; the phase-detail sections + STATE frontmatter are authoritative.
 

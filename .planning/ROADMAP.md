@@ -125,11 +125,15 @@ Citizenship + reach milestone over the already-shipped v1.4 base. Across 7 phase
 - [x] **Phase 38: Live Coding 2.0** — `live <quantize> { ... }` block + modernized watch mode + REPL polish (LSP-backed completion, `:help fn` per D-38-09 overrides `?fn`, multiline + history search, `(inspect seq)`/`(visualize seq)` alias pair per D-38-10) + audio input via PA_STREAM_RECORD + OSC server/client (Rug.Osc 1.2.5 + PrettyPrompt 4.1.1) (completed 2026-05-24)
 - [x] **Phase 39: Notation Citizenship** — MusicXML 3.1 partwise export (MuseScore reference consumer per D-v1.5-08), LilyPond text emit, ABC 2.1 + abc2midi import, MML PC-98 common-core import (completed 2026-05-23)
 - [x] **Phase 40: Studio Sync** (execution complete 2026-06-07 — MIDI + clock spine SHIPPED machine-proven; hardware/DAW behaviors PENDING HUMAN-UAT; Link DEFERRED per D-40-06 GPL; JACK best-effort per D-40-05; **+Plan 40-04 CRITICAL ABI fix 2026-06-07**) — `IMidiBackend` abstraction mirroring `IAudioBackend` (ALSA-seq via **direct librtmidi P/Invoke** — Plan 40-04 REPLACED RtMidi.Core 1.0.53, whose 2018 ABI `free(): invalid pointer`-crashes on modern librtmidi ≥4.0 during `(midiPorts)` enumeration; CoreMIDI + WinMM deferred to Phase 41 = MIDI-RT-03), MIDI clock master + slave (24 PPQN), JACK transport best-effort (`jackSync` via hand-rolled `jack_transport_query` — JackSharp 0.4.0 has no transport API). Ableton Link DEFERRED to community/v1.6 (GPLv2+ contamination, D-40-06 / D-v1.5-04); LINK-02 determinism shipped as the offline-render invariant. Phase40 suite 45/45 GREEN, incl. `RealMidiLoopbackTests` (real snd-virmidi ALSA loopback, captured via `amidi` — proves MIDI-RT-01/02 + CLOCK-01/02 on the native path). Closure: `40-VERIFICATION.md` (9-ID trace) + `40-04-SUMMARY.md` (ABI fix) + `40-HUMAN-UAT.md` (real synth/DAW/JACK rows)
-- [ ] **Phase 41: Reach + v1.5 Closer** — cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal). **WASM playground bullet superseded 2026-05-25 by Phases 47-49** (carved into compile-target flavors + WASM runtime + flowlang.dev site track).
+- [x] **Phase 41: Reach + v1.5 Closer** — cross-platform binaries (linux-x64/arm64, osx-x64/arm64, win-x64), WASAPI + CoreAudio backends, `flow doc` generator with example execution, JetBrains Marketplace publish, third-genre showcase (jazz/EDM/death metal). **WASM playground bullet superseded 2026-05-25 by Phases 47-49** (carved into compile-target flavors + WASM runtime + flowlang.dev site track). (completed 2026-06-08)
 - [x] **Phase 42: Type System & Stdlib Audit** — Reflective audit of FlowType ↔ FunctionSignature graph + clamp/advisory/charitable inventory + .flow caller cross-reference; ships `42-AUDIT.md` deliverable with 7 gap-class sections + 53 routing tags (→ Phase 43 module/naming, → Phase 44 strict-mode Axis B sites, → v1.6-backlog); anchor finding: `BeatType` is the sole coercible orphan. **Zero production code touched — read-only audit phase** (invariant gate-enforced via empty production diff). Closed 9 REQ-AUDIT-NN across 4 plans; 26/26 Phase 42 fixtures GREEN. (completed 2026-05-24)
 - [x] **Phase 43: Module Names & Qualified Imports** — file-level `module math` declaration + qualified `math.sin` access; depends on Phase 42 AUDIT.md §1/§2/§5a routing (completed 2026-05-24)
 - [x] **Phase 44: Strict Mode** — `enable strict;` file pragma; Axis A type-coercion rejection + Axis B input-perimeter clamp errors + Bool-if/String-print discipline; depends on Phase 42 AUDIT.md §2 explicit-conversion-builtin shapes + §6a 13 input-perimeter clamps + §6b 117 advisory sites (completed 2026-05-25)
 - [x] **Phase 45: Beat Literal Syntax & True-to-Sig Pragma** — first-class `Nb` Beat literal (`0.5b`/`2b`/`-1b`) + opt-in `enable beat-true-to-sig;` file pragma retuning literal + `(beat N)` constructor to active timesig's beat unit (×4/denominator at construction time); closes the Beat-ergonomics gap left by Phase 43. 26 REQ-BEAT-NN across 6 plans; 66 Phase 45 fixtures GREEN + 2 composer tutorials with two-run cmp-clean WAV baselines (completed 2026-05-29)
+- [x] **Phase 46: Codebase Bloat Removal** — paid down accumulated cruft from 40+ phases acting on the read-only `CODEBASE-BLOAT-AUDIT-2026-05-24.md` deliverable (~1,100 LOC upper-bound across 7 deletable files + secondary items, zero high-confidence false-positives); 6/6 plans, VERIFICATION passed, one atomic test-suite-green gate (completed 2026-05-24)
+- [x] **Phase 47: Compile-Target Flavors** — `FlowTarget=Desktop|Web` MSBuild conditioning so `flow-lang.dll` compiles cleanly under WASM by stripping browser-incompatible features (P/Invoke audio backends, SFZ, OSC, mic-in, RtMidi, samples); Mono.Cecil reflective invariant gate; foundation for Phase 48. 10 REQ-WEB-TARGET-NN across 6 plans (SHIPPED 2026-05-25)
+- [x] **Phase 48: WASM Runtime + WebAudioBackend** — `flow-lang` ships under .NET 10 Mono-WASM via `FlowTarget=Web`; real `WebAudioBackend` (JSImport `AudioContext` + `AudioBufferSourceNode`); frozen 5-export `flow-runtime.js` ES module API for Phase 49; 3.07 MB Brotli monolithic bundle. 15 REQs across 7 plans; HUMAN-UAT Firefox-audible confirmed (SHIPPED 2026-06-05)
+- [x] **Phase 49: flowlang.dev Site** — greenfield SvelteKit 2 / Svelte 5 / Tailwind v4 site on Cloudflare Pages (Home/Docs/Playground/Showcase) in a skeuomorphic visual system, playground consuming the frozen Phase 48 runtime. 9/9 plans built + green in CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4, axe 0-critical); 24 REQ-SITE-* (20 automated-closed, 4 pending). EXECUTION COMPLETE — pending HUMAN-UAT + live CF deploy + GitHub OAuth gist (2026-06-05)
 
 ### Phase Details
 
@@ -280,6 +284,7 @@ Plans:
   5. Composer can opt into JACK transport sync (Linux only) — `(jackSync)` builtin; transport position drives `MusicalContext.Tempo` + bar/beat; absence of JACK server does not affect non-JACK workflows. macOS / Windows: JACK theoretically available but not shipped/tested in v1.5. (JACK-01)
 
 **Plans**: 3 plans
+
 - [x] 40-01-PLAN.md — IMidiBackend + RtMidi.Core ALSA-seq backend + @midi surface (midiPorts/openMidiOutput/midiOut/midiNoteOn/midiCC/midiSysex) + GM routing reuse + Web-strip + AudioBuffer.PlaybackStartTime alignment seam + clock-access SPIKE (Open Q1) + Wave-0 test seam + LINK-02 determinism (MIDI-RT-01/02/04, LINK-02)
 - [x] 40-02-PLAN.md — MIDI clock master (24 PPQN Stopwatch-deadline thread) + slave (8-pulse settle → MusicalContext.Tempo) + ClockHandle lifecycle (CLOCK-01/02)
 - [x] 40-03-PLAN.md — JACK transport best-effort (`jackSync` hand-rolled `jack_transport_query`, charitable absent-server no-op; JackSharp 0.4.0 spiked + rejected — no transport API) + Ableton Link deferral record (GPL, D-40-06 — no GPL ref, `LinkDeferralTests`) + LINK-02 reinforcement + MIDI-RT-03 deferral note + closer (`40-HUMAN-UAT.md` + `40-VERIFICATION.md` + tracking sweep) (JACK-01, LINK-01, LINK-02, MIDI-RT-03)
@@ -298,7 +303,31 @@ Plans:
   5. Third-genre showcase piece (jazz / EDM / death metal, composer's choice) — ~60s curated piece in `examples/<genre>/<piece>.flow` consuming features from Phases 35-40 (at minimum: pattern matching, one generative primitive, granular DSP or time-stretch, live block, real-time MIDI playback via new IMidiBackend). README.md `## Showcase` v1.5 section embeds inline-audio. v1.5.0 GitHub Release ships the audio + cross-platform binaries. Genre choice validates Flow's genre-agnostic claim alongside v1.4's symphony + ragtime. (SHOWCASE-01)
   6. Two-run cmp-clean determinism contract preserved for offline-render paths (`writeWav` / `writeMidi`) across every new platform. RMS-windowed regression (±0.5 dB / 100ms per SPEC-8) holds for the third-genre showcase across WAV + MIDI output.
 
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+**Wave 1**
+
+- [x] 41-01-PLAN.md — Wave 0 test scaffolding (8 Phase41 xUnit stubs + baseline dir) + 41-HUMAN-UAT.md honest gate ledger
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [x] 41-02-PLAN.md — flow doc language core: `///` lexer grammar + ProcDeclaration.DocComment + BuiltInDocs.All accessor (DOC-01)
+- [x] 41-04-PLAN.md — WasapiBackend.cs over NAudio.Wasapi 2.3.0 + Web-strip + forbidden-prefix gate; CoreAudio verify-not-build (WASAPI-01/COREAUDIO-01)
+- [x] 41-06-PLAN.md — JetBrains publish-prep: signing/publishing/verification DSL + CHANGELOG + install.html fallback (JET-01)
+
+**Wave 3** *(blocked on Wave 2 completion)*
+
+- [x] 41-03-PLAN.md — flow doc generator: CLI verb + DocCollector + in-process example exec + HTML/Markdown emitters + content-hash cache (DOC-01/02)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+
+- [x] 41-05-PLAN.md — publish.sh 5-RID self-contained binaries + tar/zip + .sha256, no trim (BIN-01) — `c1cff6f`
+
+**Wave 5** *(blocked on Wave 4 completion)*
+
+- [x] 41-07-PLAN.md — third-genre showcase (EDM default) + two-run/RMS determinism pin + README ## Showcase + D-19 doc reconciliation (SHOWCASE-01)
+
 **UI hint**: yes
 
 ## Progress
@@ -345,16 +374,16 @@ Plans:
 | 36. Sequence Algebra & Generative | v1.5 | 12/12 | Complete | 2026-05-22 |
 | 37. Sound Design + Sampler Polish | v1.5 | 7/7 | Complete    | 2026-05-23 |
 | 38. Live Coding 2.0 | v1.5 | 7/7 | Complete    | 2026-05-24 |
-| 39. Notation Citizenship | v1.5 | 0/0 | Not started | - |
+| 39. Notation Citizenship | v1.5 | 5/5 | Complete    | 2026-05-23 |
 | 40. Studio Sync | v1.5 | 4/3 | Complete    | 2026-06-07 |
-| 41. Reach + v1.5 Closer | v1.5 | 0/0 | Not started | - |
+| 41. Reach + v1.5 Closer | v1.5 | 7/7 | Complete (HUMAN-UAT deferred) | 2026-06-08 |
 | 42. Type System & Stdlib Audit | v1.5 | 4/4 | Complete    | 2026-05-24 |
 | 43. Module Names & Qualified Imports | v1.5 | 5/5 | Complete    | 2026-05-24 |
 | 44. Strict Mode | v1.5 | 12/12 | Complete    | 2026-05-25 |
 | 45. Beat Literal Syntax & True-to-Sig Pragma | v1.5 | 6/6 | Complete    | 2026-05-30 |
 | 46. Codebase Bloat Removal | v1.5 | 6/6 | Complete    | 2026-05-30 |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
-| 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
+| 48. WASM Runtime + WebAudioBackend | v1.5 | 7/7 | Complete    | 2026-06-05 |
 | 49. flowlang.dev SvelteKit + Playground | v1.5 | 9/9 | Built — pending HUMAN-UAT + live deploy (NOT shipped) |  |
 
 ### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24

@@ -104,5 +104,6 @@ public enum TokenType
     // Other
     Identifier,
     Comment,
+    DocComment,         // Phase 41 (DOC-01) — `/// summary` captured for the following proc (D-07 additive grammar)
     Eof
 }
