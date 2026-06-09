@@ -62,13 +62,16 @@ type FlowRuntimeModule = { loadFlowRuntime: () => Promise<FlowRuntime> };
  *   top-level boot-error pane, distinct from per-run `RunResult.errors[]`.
  */
 export async function bootRuntime(): Promise<FlowRuntime> {
-	// `@vite-ignore` keeps Vite from analyzing the opaque .NET module (RESEARCH Pattern 2). The
-	// absolute `/wasm/flow-runtime.js` path resolves against `static/` at runtime; the module
-	// then descends into its sibling `./_framework/dotnet.js` (HANDOFF Pitfall 2 layout contract).
-	// `@ts-expect-error` — this path is a runtime-only static asset (not a TS-resolvable module);
-	// the frozen runtime is `flow-runtime.js` (HANDOFF §8 do-not-edit), so no `.d.ts` ships for it.
+	// The runtime lives in `static/wasm/` (served at `/wasm/...`), which Vite treats as a public
+	// asset dir — a *literal* `import('/wasm/flow-runtime.js')` makes Vite 8's import-analysis throw
+	// "Cannot import non-asset file ... inside /public". Holding the specifier in a variable keeps
+	// the path opaque to static analysis, so Vite emits a plain runtime `import()` and the browser
+	// resolves it against the origin root at run time; the module then descends into its sibling
+	// `./_framework/dotnet.js` (HANDOFF Pitfall 2 layout contract). `@vite-ignore` is belt-and-braces.
+	// This never edits `flow-runtime.js` (HANDOFF §8 do-not-edit) — only how SvelteKit loads it.
+	const runtimeUrl = '/wasm/flow-runtime.js';
 	// @ts-expect-error runtime-only static-asset import; typed via FlowRuntimeModule below.
-	const mod: FlowRuntimeModule = await import(/* @vite-ignore */ '/wasm/flow-runtime.js');
+	const mod: FlowRuntimeModule = await import(/* @vite-ignore */ runtimeUrl);
 	// loadFlowRuntime() already wraps its own boot in try/catch and throws the friendly
 	// 'Flow runtime boot failed: ...' message (HANDOFF §2.3) — we propagate it unchanged.
 	return await mod.loadFlowRuntime();

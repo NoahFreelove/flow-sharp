@@ -20,6 +20,51 @@ namespace FlowLang.StandardLibrary.Audio
     }
 
     /// <summary>
+    /// Band-limiting residual for the Saw + Square oscillators (v1.6 "Sound Design 2.0",
+    /// D-37-09 pulled forward). The naive ramp (<c>2·phase − 1</c>) and step
+    /// (<c>phase &lt; 0.5 ? +1 : −1</c>) oscillators alias badly on low notes — the
+    /// hard discontinuity injects energy above Nyquist that folds back as harsh
+    /// inharmonic "corruption" when bassy saws stack. PolyBLEP (the 2-sample
+    /// polynomial Band-Limited stEP, Välimäki/Pekonen) rounds each discontinuity
+    /// over the two samples straddling it, removing the folded-back energy while
+    /// leaving every legitimate sub-Nyquist harmonic intact.
+    ///
+    /// DETERMINISM: this is pure deterministic float math — no RNG, no clock, no
+    /// incremental phase accumulator. The Saw/Square loops keep the absolute-time
+    /// <c>(frequency · t) % 1.0</c> phase formula (the byte-determinism contract);
+    /// the residual width <c>dt</c> is derived as <c>frequency / sampleRate</c>.
+    /// Two-run cmp-clean is preserved.
+    /// </summary>
+    internal static class BlepOscillator
+    {
+        /// <summary>
+        /// Standard PolyBLEP residual. <paramref name="t"/> is the current phase in
+        /// [0,1); <paramref name="dt"/> is the per-sample phase increment
+        /// (frequency / sampleRate). Returns the correction for a discontinuity that
+        /// jumps +1 (the downward saw reset at the 0/1 wrap, or the square's falling
+        /// edge). For a saw, SUBTRACT this from the naive ramp; for a square, the
+        /// rising and falling edges are corrected with +/- residuals respectively.
+        /// </summary>
+        public static double PolyBlep(double t, double dt)
+        {
+            if (t < dt)
+            {
+                t = t / dt;
+                return t + t - t * t - 1.0;   // start of period (just after the wrap)
+            }
+            else if (t > 1.0 - dt)
+            {
+                t = (t - 1.0) / dt;
+                return t * t + t + t + 1.0;    // end of period (just before the wrap)
+            }
+            else
+            {
+                return 0.0;
+            }
+        }
+    }
+
+    /// <summary>
     /// Sine wave synthesizer - produces pure sine wave tones.
     /// </summary>
     public class SineSynthesizer : INoteSynthesizer
@@ -73,11 +118,23 @@ namespace FlowLang.StandardLibrary.Audio
             // D-03 FALLBACK (Plan 46-06): inline oscillator kept — SynthUtils.GenerateSaw
             // incremental-phase wrap diverges in IEEE-754 from this (frequency * t) % 1.0
             // absolute-time formula (byte guard RED). See SineSynthesizer note.
+            //
+            // SOUND DESIGN 2.0 (quick 260608-wcy, D-37-09 pulled forward): the naive ramp
+            // is now PolyBLEP band-limited. The sawtooth has ONE +1 discontinuity per
+            // period at the 0/1 phase wrap; subtract the PolyBlep residual to round it over
+            // the two samples straddling the reset, killing the folded-back aliasing while
+            // keeping every legit sub-Nyquist harmonic. dt = frequency / sampleRate is the
+            // residual width. The absolute-time (frequency * t) % 1.0 phase formula is
+            // PRESERVED — only the per-sample value gains the BLEP correction (deterministic
+            // float math, two-run cmp-clean intact).
+            double dt = frequency / (double)sampleRate;
             for (int i = 0; i < numSamples; i++)
             {
                 double t = i / (double)sampleRate;
                 double phase = (frequency * t) % 1.0;
-                float sample = (float)(amplitude * (2.0 * phase - 1.0));
+                double naive = 2.0 * phase - 1.0;
+                double value = naive - BlepOscillator.PolyBlep(phase, dt);
+                float sample = (float)(amplitude * value);
                 buffer.SetSample(i, 0, sample);
             }
 
@@ -105,11 +162,24 @@ namespace FlowLang.StandardLibrary.Audio
             // D-03 FALLBACK (Plan 46-06): inline oscillator kept — SynthUtils.GenerateSquare
             // incremental-phase wrap diverges in IEEE-754 from this (frequency * t) % 1.0
             // absolute-time formula (byte guard RED). See SineSynthesizer note.
+            //
+            // SOUND DESIGN 2.0 (quick 260608-wcy, D-37-09 pulled forward): the naive step is
+            // now PolyBLEP band-limited. The square has TWO discontinuities per period — a
+            // RISING +1 edge at the 0/1 phase wrap and a FALLING −1 edge at phase 0.5. The
+            // standard band-limited square adds the residual at the rising edge and subtracts
+            // it at the falling edge (the latter measured at the half-period-shifted phase):
+            //   value = naive + PolyBlep(phase, dt) − PolyBlep((phase + 0.5) % 1, dt)
+            // dt = frequency / sampleRate is the residual width. The absolute-time
+            // (frequency * t) % 1.0 phase formula is PRESERVED — deterministic float math,
+            // two-run cmp-clean intact.
+            double dt = frequency / (double)sampleRate;
             for (int i = 0; i < numSamples; i++)
             {
                 double t = i / (double)sampleRate;
                 double phase = (frequency * t) % 1.0;
-                float sample = (float)(amplitude * (phase < 0.5 ? 1.0 : -1.0));
+                double naive = phase < 0.5 ? 1.0 : -1.0;
+                double value = naive + BlepOscillator.PolyBlep(phase, dt) - BlepOscillator.PolyBlep((phase + 0.5) % 1.0, dt);
+                float sample = (float)(amplitude * value);
                 buffer.SetSample(i, 0, sample);
             }
 

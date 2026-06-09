@@ -42,10 +42,24 @@ namespace FlowLang.Tests.Unit.Phase46;
 /// CAPTURE METHOD: the baseline is reconstructed in-test by an independent oracle that
 /// replicates the EXACT arithmetic of the current NoteSynthesizer per-synth loops
 /// (see <see cref="ExpectedSine"/> etc.). Because the oracle mirrors the current code
-/// element-for-element, the assertion is GREEN against the pre-redirect build by
-/// construction, and any deviation introduced by the redirect makes it RED. No external
+/// element-for-element, the assertion is GREEN against the current build by
+/// construction, and any unintended deviation makes it RED. No external
 /// binary baseline file is needed; <c>baselines/Phase46/.gitkeep</c> reserves the dir
 /// for any future binary capture. This test does NOT touch NoteSynthesizer.cs.
+///
+/// SAW/SQUARE REGENERATION (quick 260608-wcy — "Sound Design 2.0", D-37-09 pulled
+/// forward): the Saw + Square oscillators are now PolyBLEP band-limited to remove
+/// aliasing on low notes. That LEGITIMATELY changes their rendered bytes, so
+/// <see cref="ExpectedSaw"/> and <see cref="ExpectedSquare"/> were regenerated to mirror
+/// the NEW band-limited arithmetic element-for-element (the <see cref="PolyBlep"/> residual
+/// + the saw <c>naive − blep(phase)</c> and square <c>naive + blep(phase) − blep((phase+0.5)%1)</c>
+/// expressions). The guard stays a bit-exact compare — it is NOT loosened. Only the
+/// ORACLE math moved, in lockstep with the production loop, so the guard still fires on
+/// any unintended cross-synth or arithmetic regression.
+/// <see cref="ExpectedSine"/> + <see cref="ExpectedTriangle"/> are UNCHANGED — sine is pure
+/// and triangle's 1/n² rolloff barely aliases (needs polyBLAMP, out of scope), so both
+/// synth loops were left verbatim and their oracles stay frozen at the pre-band-limiting
+/// contract.
 ///
 /// Fixed inputs (frozen so the captured arrays are stable):
 ///   pitch       = A4  (NoteName 'A', octave 4, alteration 0) → MIDI 69 → 440.0 Hz in
@@ -82,13 +96,38 @@ public class NoteSynthesizerByteGuardTests
     }
 
     // ── Oracles: byte-for-byte mirrors of the CURRENT NoteSynthesizer.cs loops ─────────
-    // Each replicates the absolute-time formula (t = i / sampleRate) and the exact
-    // amplitude scalar used by the matching synth class. Frozen = the pre-redirect contract.
+    // Each replicates the absolute-time phase formula (t = i / sampleRate;
+    // phase = (frequency * t) % 1.0) and the exact amplitude scalar used by the matching
+    // synth class. Sine/Triangle are frozen at the pre-band-limiting contract; Saw/Square
+    // mirror the PolyBLEP band-limited math (quick 260608-wcy) element-for-element.
 
     private static int ExpectedSampleCount()
     {
         double durationSeconds = (DurationBeats / Bpm) * 60.0; // BeatsToSeconds
         return (int)(durationSeconds * SampleRate);
+    }
+
+    /// <summary>
+    /// Exact mirror of <c>BlepOscillator.PolyBlep</c> in NoteSynthesizer.cs — the standard
+    /// 2-sample PolyBLEP residual. Replicated here element-for-element so the saw/square
+    /// oracles are byte-identical to the production loop BY CONSTRUCTION.
+    /// </summary>
+    private static double PolyBlep(double t, double dt)
+    {
+        if (t < dt)
+        {
+            t = t / dt;
+            return t + t - t * t - 1.0;
+        }
+        else if (t > 1.0 - dt)
+        {
+            t = (t - 1.0) / dt;
+            return t * t + t + t + 1.0;
+        }
+        else
+        {
+            return 0.0;
+        }
     }
 
     private static float[] ExpectedSine()
@@ -104,30 +143,40 @@ public class NoteSynthesizerByteGuardTests
         return expected;
     }
 
+    // PolyBLEP band-limited saw (quick 260608-wcy). One +1 reset discontinuity per period
+    // at the 0/1 wrap → subtract the residual. dt = frequency / sampleRate.
     private static float[] ExpectedSaw()
     {
         int n = ExpectedSampleCount();
         double amplitude = 0.2 * Velocity;
+        double dt = FrequencyA4 / (double)SampleRate;
         var expected = new float[n];
         for (int i = 0; i < n; i++)
         {
             double t = i / (double)SampleRate;
             double phase = (FrequencyA4 * t) % 1.0;
-            expected[i] = (float)(amplitude * (2.0 * phase - 1.0));
+            double naive = 2.0 * phase - 1.0;
+            double value = naive - PolyBlep(phase, dt);
+            expected[i] = (float)(amplitude * value);
         }
         return expected;
     }
 
+    // PolyBLEP band-limited square (quick 260608-wcy). Rising +1 edge at the 0/1 wrap
+    // (+residual) and falling −1 edge at phase 0.5 (−residual at the half-shifted phase).
     private static float[] ExpectedSquare()
     {
         int n = ExpectedSampleCount();
         double amplitude = 0.2 * Velocity;
+        double dt = FrequencyA4 / (double)SampleRate;
         var expected = new float[n];
         for (int i = 0; i < n; i++)
         {
             double t = i / (double)SampleRate;
             double phase = (FrequencyA4 * t) % 1.0;
-            expected[i] = (float)(amplitude * (phase < 0.5 ? 1.0 : -1.0));
+            double naive = phase < 0.5 ? 1.0 : -1.0;
+            double value = naive + PolyBlep(phase, dt) - PolyBlep((phase + 0.5) % 1.0, dt);
+            expected[i] = (float)(amplitude * value);
         }
         return expected;
     }
