@@ -2105,7 +2105,10 @@ public partial class Parser
                 or "Sfz"  // Phase 33 Plan 33-05 — `Sfz v = (loadSfz #...)` annotation gate
                 or "MarkovModel"  // Phase 36 Plan 36-06 — `MarkovModel m = (markovTrain ...)` annotation gate
                 or "LsystemModel"  // Phase 36 Plan 36-07 — `LsystemModel m = (lsystemModel ...)` annotation gate
-                or "OscHandle")  // Phase 38 Plan 38-06 — `OscHandle h = (oscListen ...)` annotation gate
+                or "OscHandle"  // Phase 38 Plan 38-06 — `OscHandle h = (oscListen ...)` annotation gate
+                or "MidiDevice"  // Phase 40 Plan 40-01 — `MidiDevice dev = (openMidiOutput ...)` annotation gate (string-only check; safe on Web — @midi import rejected before any decl parses)
+                or "ClockHandle"  // Phase 40 Plan 40-02 — `ClockHandle h = (clockMaster ...)` annotation gate + the `clockStop` midi.flow decl (string-only check; safe on Web)
+                or "JackHandle")  // Phase 40 Plan 40-03 — `JackHandle h = (jackSync)` annotation gate + the jackSync jack.flow decl (string-only check; safe on Web)
                 return true;
 
             // Plural forms (array types like Ints, Strings, etc.)

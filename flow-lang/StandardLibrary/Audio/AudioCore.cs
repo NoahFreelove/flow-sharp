@@ -31,6 +31,29 @@ public class AudioBuffer
     /// </summary>
     public int Frames { get; }
 
+    /// <summary>
+    /// Phase 40 MIDI-RT-04 — buffer-relative alignment origin. <c>null</c> on a
+    /// freshly-constructed buffer; set to a <see cref="System.Diagnostics.Stopwatch"/>
+    /// tick value (<c>Stopwatch.GetTimestamp()</c>) the instant real-time playback
+    /// begins (see <c>PlaybackFunctions.PlaySamples</c>). A real-time MIDI
+    /// scheduler keys note dispatch off <c>PlaybackStartTime + bufferOffset</c>.
+    ///
+    /// <para><b>Honesty contract (40-RESEARCH Pitfall 5):</b> this enables
+    /// BUFFER-RELATIVE MILLISECOND alignment, NOT sample-accuracy. The blocking
+    /// PulseAudio Simple push API has no pull-model callback to hang
+    /// sample-accurate MIDI off. Do not treat this as a sample clock.</para>
+    ///
+    /// <para><b>IN-02 status:</b> the high-level <c>midiOut</c> scheduler (CR-03,
+    /// <c>MidiFunctions.DispatchScheduled</c>) realizes this seam's INTENT — it
+    /// anchors every NoteOn/NoteOff to a single Stopwatch origin captured the
+    /// instant before the first dispatch. It does not READ this particular field
+    /// because <c>midiOut</c> opens its own port with no audio buffer in play;
+    /// this field stays the forward seam for a future combined audio+MIDI
+    /// transport. NOTE: it mutates a composer-shared buffer Value from the
+    /// playback thread.</para>
+    /// </summary>
+    public long? PlaybackStartTime { get; set; }
+
     public AudioBuffer(int frames, int channels, int sampleRate)
     {
         if (frames < 0) throw new ArgumentException("Frame count cannot be negative", nameof(frames));

@@ -50,6 +50,28 @@
     <Compile Remove="Integration\Phase38\MicBufferAttenuationTests.cs" />
     <Compile Remove="Integration\Phase38\MicBufferResampleTests.cs" />
     <Compile Remove="Integration\Phase38\PulseAudioCaptureBackendTests.cs" />
+    <!-- Phase 40 Plan 40-01 T-40-03 — strip the @midi tests that reference
+         MidiFunctions / the @midi runtime surface (stripped on Web per the
+         flow-lang.csproj Web ItemGroup). MidiBackendTests + CaptureMidiBackend +
+         RtMidiInternalAccessSpikeTests STAY: they only touch IMidiBackend /
+         NullMidiBackend / MidiPlaybackManager / AudioBuffer (all Web-resident)
+         and reflect RtMidi.Core metadata (charitable-skip when absent). -->
+    <Compile Remove="Integration\Phase40\VirtualMidiTests.cs" />
+    <Compile Remove="Integration\Phase40\OfflineRenderDeterminismTests.cs" />
+    <!-- Phase 40 Plan 40-02 T-40-03 — the clock tests reference
+         FlowLang.StandardLibrary.Midi (MidiClockFunctions / ClockHandleData) +
+         FlowLang.Audio.MidiClock, all #if !FLOW_WEB-stripped on Web. Strip them
+         from the Web test build too (they exercise Desktop-only clock surface;
+         the clock never reaches the WASM closure). Added by Plan 40-03 closing a
+         Plan-40-02 Web test-build gap. -->
+    <Compile Remove="Integration\Phase40\ClockMasterTests.cs" />
+    <Compile Remove="Integration\Phase40\ClockSlaveTests.cs" />
+    <!-- Phase 40 Plan 40-03 T-40-03 — JackTransportTests + LinkDeferralTests
+         reference FlowLang.StandardLibrary.Midi (JackFunctions / JackHandleData),
+         #if !FLOW_WEB-stripped on Web. JACK is Linux-only native interop that can
+         never run in a browser. -->
+    <Compile Remove="Integration\Phase40\JackTransportTests.cs" />
+    <Compile Remove="Integration\Phase40\LinkDeferralTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

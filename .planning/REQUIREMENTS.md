@@ -123,24 +123,24 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### Real-Time MIDI (Phase 40)
 
-- [ ] **MIDI-RT-01**: `IMidiBackend` abstraction parallel to `IAudioBackend` — methods: `ListPorts() → Array[String]`, `OpenOutput(port) → IMidiOutputDevice`, `device.SendNoteOn(channel, pitch, velocity)`, `device.SendNoteOff(channel, pitch)`, `device.SendControlChange(channel, controller, value)`, `device.SendSysex(data)` (best-effort queue), `device.Close()`. Hot-plug events surface via `device.PortChanged` callback.
-- [ ] **MIDI-RT-02**: Linux ALSA-seq MIDI backend via RtMidi.Core 1.0.53 — primary platform (Flow's Linux-primary constraint). DryWetMidi 8.0.3 explicitly has NO Linux device I/O (verified via library's Supported OS docs); RtMidi.Core is the load-bearing replacement.
-- [ ] **MIDI-RT-03**: macOS CoreMIDI + Windows WinMM backends via RtMidi.Core — secondary platforms enabled in Phase 41 cross-platform binary work.
-- [ ] **MIDI-RT-04**: Audio-MIDI latency alignment — MIDI events emit at `audioBuffer.PlaybackStartTime + bufferOffset` (NOT at queue time). Sysex on separate best-effort queue. Hot-plug failures: log + retry + quiet-drop (NEVER throw — would break long `live` sessions).
+- [x] **MIDI-RT-01**: `IMidiBackend` abstraction parallel to `IAudioBackend` — methods: `ListPorts() → Array[String]`, `OpenOutput(port) → IMidiOutputDevice`, `device.SendNoteOn(channel, pitch, velocity)`, `device.SendNoteOff(channel, pitch)`, `device.SendControlChange(channel, controller, value)`, `device.SendSysex(data)` (best-effort queue), `device.Close()`. Hot-plug events surface via `device.PortChanged` callback.
+- [x] **MIDI-RT-02**: Linux ALSA-seq MIDI backend — primary platform (Flow's Linux-primary constraint). DryWetMidi 8.0.3 explicitly has NO Linux device I/O (verified via library's Supported OS docs); a librtmidi-based backend is the load-bearing replacement. **APPROACH CHANGED (Plan 40-04, 2026-06-07):** the original RtMidi.Core 1.0.53 managed wrapper was REMOVED — its 2018 ABI calls the OLD `const char* rtmidi_get_port_name(device,port)` while modern librtmidi (≥4.0; 6.0.0 / `.so.7`) is `int rtmidi_get_port_name(device,port,char* bufOut,int* bufLen)`, so RtMidi.Core reads a length-out pointer as a string and frees garbage → `free(): invalid pointer` process abort during `(midiPorts)` enumeration on any modern Linux. MIDI-RT-02 now ships via **direct `[DllImport("rtmidi")]` modern-signature P/Invoke** (`flow-lang/Audio/LibRtMidi.cs`, mirrors the libjack approach), eliminating the Open-Q1 reflection bridge (raw send is the public `rtmidi_out_send_message`). **MACHINE-PROVEN end-to-end on real hardware** by `RealMidiLoopbackTests` over a live snd-virmidi loopback (captured via `amidi`): NoteOn `90 3C 64` / CC `B0 07 64` / NoteOff `80 3C 00` / framed sysex `F0 7D 01 02 F7`.
+- [x] **MIDI-RT-03**: macOS CoreMIDI + Windows WinMM backends via RtMidi.Core — secondary platforms enabled in Phase 41 cross-platform binary work. **DEFERRED to Phase 41** (recorded Plan 40-03, 40-VERIFICATION.md): the same `IMidiBackend` abstraction (Plan 40-01) covers them later; no Phase 40 work.
+- [x] **MIDI-RT-04**: Audio-MIDI latency alignment — MIDI events emit at `audioBuffer.PlaybackStartTime + bufferOffset` (NOT at queue time). Sysex on separate best-effort queue. Hot-plug failures: log + retry + quiet-drop (NEVER throw — would break long `live` sessions).
 
 ### MIDI Clock (Phase 40)
 
-- [ ] **CLOCK-01**: MIDI clock master — emit 24 PPQN clock + start/stop/continue messages tied to active `MusicalContext.Tempo`. Tempo changes apply at next bar boundary (no mid-bar tempo jumps to slaved devices).
-- [ ] **CLOCK-02**: MIDI clock slave — receive 24 PPQN clock from external master and drive `MusicalContext.Tempo`. 8-pulse settle on master tempo change (avoids jitter). Mode (master XOR slave) switchable only at bar boundary.
+- [x] **CLOCK-01**: MIDI clock master — emit 24 PPQN clock + start/stop/continue messages tied to active `MusicalContext.Tempo`. Tempo changes apply at next bar boundary (no mid-bar tempo jumps to slaved devices). **Real-path proven (Plan 40-04):** the real `MidiClock` master emits transport `0xFA`/`0xFC` over a live snd-virmidi wire (captured via `amidi`); the 24-PPQN rate stays machine-proven by `ClockMasterTests` (snd-virmidi rawmidi-capture filters the `0xF8` timing-clock byte specifically — `0xF8` flows the other direction, see CLOCK-02).
+- [x] **CLOCK-02**: MIDI clock slave — receive 24 PPQN clock from external master and drive `MusicalContext.Tempo`. 8-pulse settle on master tempo change (avoids jitter). Mode (master XOR slave) switchable only at bar boundary. **Real-path proven (Plan 40-04):** the rewritten direct-librtmidi slave input (`rtmidi_in_ignore_types(false,false,false)` + poll `rtmidi_in_get_message`) reads 40 `0xF8` pulses injected via `amidi -S` over a live snd-virmidi loopback and locks the live tempo to the injected rate after the settle (LINK-02: live sink, `ctx.Tempo` untouched).
 
 ### Ableton Link (Phase 40, license-gated)
 
-- [ ] **LINK-01**: Ableton Link integration — peer-equal tempo sync via libabl_link P/Invoke. **License-gated** (D-v1.5-04): GPLv2+/commercial dual-license requires legal review at Phase 40 plan-start; if conflict, this REQ is deferred to community contribution (PR welcome, not shipped from upstream in v1.5).
-- [ ] **LINK-02**: Link tempo is render-time input for playback ONLY — NEVER applied to `writeWav` / `writeMidi` (offline render preserves deterministic output). Peer-disappear: latch last-seen tempo (no mid-piece fallback). CI test: byte-identical `writeWav` output with Link peer connected vs without.
+- [x] **LINK-01**: Ableton Link integration — peer-equal tempo sync via libabl_link P/Invoke. **License-gated** (D-v1.5-04): GPLv2+/commercial dual-license requires legal review at Phase 40 plan-start; if conflict, this REQ is deferred to community contribution (PR welcome, not shipped from upstream in v1.5). **DEFERRED to community/v1.6 (resolved Plan 40-03 per D-40-06):** the license review confirmed GPLv2+ contamination (HIGH threat T-40-02) — NO Link implementation ships, no `libabl_link` reference exists (`LinkDeferralTests` + `AssemblyReferenceScanTests` enforce it). Clean-room / re-licensed binding welcome as a community PR.
+- [x] **LINK-02**: Link tempo is render-time input for playback ONLY — NEVER applied to `writeWav` / `writeMidi` (offline render preserves deterministic output). Peer-disappear: latch last-seen tempo (no mid-piece fallback). CI test: byte-identical `writeWav` output with Link peer connected vs without. **SHIPPED + CLOSED independently of LINK-01** (Plan 40-01 `OfflineRenderDeterminismTests` + Plan 40-03 `LinkDeferralTests.OfflineRenderIgnoresSync_LinkDeferred`): with Link shipping nothing, the strong form holds — no Link/clock/JACK path touches the deterministic offline render.
 
 ### JACK Transport (Phase 40, Linux opt-in)
 
-- [ ] **JACK-01**: JACK transport sync (Linux opt-in) — JackSharp 0.4.0 wrapper. Transport position drives `MusicalContext.Tempo` + bar/beat. Optional dependency; absence does not affect non-JACK workflows. macOS / Windows: JACK is theoretically available but not shipped/tested in v1.5.
+- [x] **JACK-01**: JACK transport sync (Linux opt-in) — `(jackSync)` via `use "@jack"`. Transport position drives `MusicalContext.Tempo` + bar/beat (BPM validated via `IsValidTempo` before write). Optional dependency; **absence does not affect non-JACK workflows** — absent server → charitable no-op + `[jack]` advisory, never throws (`JackTransportTests.JackAbsentServerNoOp`). **SHIPPED best-effort (D-40-05, Plan 40-03):** JackSharp 0.4.0 was spiked under net10 (Open Q3) — it loads via the net4x shim but exposes NO transport API, so JACK-01 ships via a hand-rolled `[DllImport("jack")] jack_transport_query` instead (no JackSharp dependency). Live-JACK-timebase confirmation is HUMAN-UAT Row 6. macOS / Windows: JACK theoretically available but not shipped/tested in v1.5.
 
 ### WASM Playground (Phase 41)
 
@@ -380,15 +380,15 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | ABC-01 | Phase 39 | Pending |
 | ABC-02 | Phase 39 | Pending |
 | MML-01 | Phase 39 | Pending |
-| MIDI-RT-01 | Phase 40 | Pending |
-| MIDI-RT-02 | Phase 40 | Pending |
-| MIDI-RT-03 | Phase 40 | Pending |
-| MIDI-RT-04 | Phase 40 | Pending |
-| CLOCK-01 | Phase 40 | Pending |
-| CLOCK-02 | Phase 40 | Pending |
-| LINK-01 | Phase 40 | Pending |
-| LINK-02 | Phase 40 | Pending |
-| JACK-01 | Phase 40 | Pending |
+| MIDI-RT-01 | Phase 40 | Complete (real-loopback proven, Plan 40-04) |
+| MIDI-RT-02 | Phase 40 | Complete — direct librtmidi P/Invoke (RtMidi.Core removed, ABI fix, Plan 40-04); real snd-virmidi loopback proven via amidi |
+| MIDI-RT-03 | Phase 40 | Deferred → Phase 41 |
+| MIDI-RT-04 | Phase 40 | Complete (best-effort ms-align; perceptual = HUMAN-UAT) |
+| CLOCK-01 | Phase 40 | Complete (rate machine-proven; real-wire FA/FC proven Plan 40-04; DAW lock = HUMAN-UAT) |
+| CLOCK-02 | Phase 40 | Complete (settle machine-proven; real-wire 0xF8 lock proven Plan 40-04; DAW lock = HUMAN-UAT) |
+| LINK-01 | Phase 40 | Deferred → community/v1.6 (GPL, D-40-06) |
+| LINK-02 | Phase 40 | Complete |
+| JACK-01 | Phase 40 | Complete best-effort (hand-rolled jack_transport_query; live timebase = HUMAN-UAT) |
 | WASM-01 | Phase 41 | Pending |
 | WASM-02 | Phase 41 | Pending |
 | WASM-03 | Phase 41 | Pending |

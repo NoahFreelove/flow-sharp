@@ -58,7 +58,17 @@ public class ModuleLoader
         // Match the composer-facing import name BEFORE path resolution —
         // `use "@sfz"` is what we read at composer time. The `path` param
         // to LoadModule is the unresolved path (e.g. "@sfz" or "./other.flow").
-        return requestedPath == "@sfz" || requestedPath == "@osc";
+        // Phase 40 D-40-04: @midi joins @sfz/@osc on the Web strip-list — its
+        // RtMidi.Core-backed builtins are #if !FLOW_WEB-stripped, so loading the
+        // module on Web would fail mid-load at the __enableMidiModule marker.
+        // The existing IsWebTarget gate below emits the charitable advisory.
+        // Phase 40 Plan 40-03 D-40-04: @jack joins the Web strip-list — its
+        // hand-rolled libjack P/Invoke (JackFunctions) is #if !FLOW_WEB-stripped,
+        // so loading the module on Web would fail mid-load at the
+        // __enableJackModule marker. The IsWebTarget gate below emits the
+        // charitable advisory.
+        return requestedPath == "@sfz" || requestedPath == "@osc"
+            || requestedPath == "@midi" || requestedPath == "@jack";
     }
 
     /// <summary>

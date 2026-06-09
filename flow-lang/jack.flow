@@ -1,0 +1,40 @@
+Note: JACK transport sync — Linux pro-audio, opt-in via `use "@jack"`
+Note: Single-builtin surface (Phase 40 JACK-01, D-40-05 best-effort):
+Note:   jackSync() → JackHandle
+Note:
+Note: jackSync reads the running JACK server's transport position/tempo and drives
+Note:   the active MusicalContext.Tempo (+ bar/beat) when a server is present. The
+Note:   transport BPM is applied only when it passes MusicalContext.IsValidTempo
+Note:   (T-40-01 — out-of-range tempo is rejected, not written).
+Note:
+Note: Charitable absent-server (JACK-01 / T-40-04): with NO JACK server running (or
+Note:   libjack.so.0 absent), jackSync is a no-op — it emits a one-shot
+Note:   [jack] advisory, leaves Tempo untouched, and returns a dead JackHandle.
+Note:   It NEVER throws; non-JACK workflows are completely unaffected.
+Note:
+Note: Best-effort (D-40-05): JackSharp 0.4.0 was spiked but exposes no transport
+Note:   API, so JACK-01 ships via a hand-rolled minimal [DllImport("jack")]
+Note:   jack_transport_query (transport state + BPM only). JACK is a SEPARATE
+Note:   opt-in module from @midi at fine granularity (D-40-04) so the Linux-only
+Note:   libjack native dep is never force-loaded.
+Note:
+Note: Clock/sync tempo is a play/loop/preview-only input — NEVER reaches
+Note:   writeWav/writeMidi (LINK-02 determinism).
+
+module jack
+
+use "@std"
+
+Note: ===== Internal C# Function Declarations =====
+
+Note: Marker builtin called once at module load (last line of this file). Flips
+Note: ExecutionContext.JackEnabled = true so jackSync unlocks.
+internal proc __enableJackModule ()
+
+Note: ----- JACK transport sync -----
+internal proc jackSync ()
+
+Note: ===== Side-effecting init marker =====
+Note: Flips ExecutionContext.JackEnabled = true so jackSync above unlocks.
+Note: Without this line, calling jackSync raises "requires `use \"@jack\"`".
+(__enableJackModule)

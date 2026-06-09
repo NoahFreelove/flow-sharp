@@ -28,6 +28,13 @@ public class AssemblyReferenceScanTests
     {
         "Rug.Osc",
         "RtMidi.Core",
+        // Phase 40 D-40-04 / T-40-03: JackSharp (best-effort JACK transport,
+        // Linux-only native dep) must never reach the Web closure either.
+        // Added by Plan 40-01 Task 1 even though JACK ships best-effort later —
+        // the forbidden-prefix gate stands ready so a future @jack file cannot
+        // leak into the WASM build. RtMidi.Core was added in the D-47-14
+        // forward-look; do NOT duplicate it.
+        "JackSharp",
         "System.IO.FileSystemWatcher",
     };
 

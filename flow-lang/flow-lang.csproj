@@ -109,6 +109,33 @@
          unused and would otherwise pull dead-reference into the Web build. -->
     <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
       <PackageReference Include="Rug.Osc" Version="1.2.5" />
+      <!-- Phase 40 Plan 40-04 (ABI FIX): RtMidi.Core 1.0.53 (2018) was REMOVED. Its
+           pinned binding calls the OLD `const char* rtmidi_get_port_name(device, port)`
+           signature; modern librtmidi (>= 4.0; 6.0.0 / librtmidi.so.7) changed that to
+           `int rtmidi_get_port_name(device, port, char* bufOut, int* bufLen)`, so
+           RtMidi.Core reads the length-out pointer as a string and frees garbage —
+           `free(): invalid pointer` aborts the WHOLE process during (midiPorts)
+           enumeration on any modern Linux. The real-time MIDI layer (MIDI-RT-02) now
+           binds librtmidi DIRECTLY via Audio/LibRtMidi.cs (modern signatures),
+           mirroring the [DllImport("jack")] approach in JackFunctions.cs. There is no
+           managed NuGet to reach the WASM closure anymore — the librtmidi DllImport is
+           naturally Web-stripped via the LibRtMidi.cs / RtMidiMidiBackend.cs Compile
+           Remove in the Web ItemGroup below; AssemblyReferenceScanTests keeps
+           RtMidi.Core in its forbidden-prefix list (now trivially satisfied). The
+           native librtmidi.so is NOT shipped in any package; the backend probes
+           (NativeLibrary.TryLoad) + falls back to NullMidiBackend when absent
+           (charitable rule). -->
+      <!-- Phase 40 Plan 40-03 JACK-01 (D-40-05 best-effort): JackSharp 0.4.0 was
+           SPIKED under net10 (Open Q3) — it RESTORES + loads via the net4x compat
+           shim (NU1701, same posture as Rug.Osc), BUT its public API exposes NO
+           transport surface (no jack_transport_query / tempo / bbt — only audio /
+           MIDI ports + connection control). JACK-01 needs transport state + BPM,
+           so JackSharp cannot satisfy it. Per the Task-1 documented fallback we
+           hand-roll a minimal [DllImport("jack")] jack_transport_query
+           (JackFunctions.cs) instead — no JackSharp PackageReference (a dead dep).
+           The "JackSharp" AssemblyReferenceScan forbidden-prefix entry (added by
+           Plan 40-01) STAYS as a standing guard so a future @jack file cannot leak
+           a JackSharp ref into the Web closure. -->
     </ItemGroup>
 
     <!-- Phase 47 D-47-03: file-level exclusion when FlowTarget=Web. Strip list per
@@ -124,6 +151,40 @@
       <Compile Remove="StandardLibrary\Network\OscFunctions.cs" />
       <Compile Remove="StandardLibrary\Network\OscHandleData.cs" />
       <Compile Remove="StandardLibrary\Audio\InputFunctions.cs" />
+      <!-- Phase 40 Plan 40-04 T-40-03: the direct librtmidi P/Invoke bindings.
+           Strip on Web so the native rtmidi DllImport never reaches the WASM closure.
+           IMidiBackend / NullMidiBackend / MidiPlaybackManager are pure-managed and
+           STAY on Web (no native ref). -->
+      <Compile Remove="Audio\LibRtMidi.cs" />
+      <!-- Phase 40 T-40-03: the librtmidi-backed real-time MIDI output backend.
+           Strip on Web so the native MIDI dep never reaches the WASM closure.
+           IMidiBackend / NullMidiBackend / MidiPlaybackManager are pure-managed and
+           STAY on Web (no native ref). -->
+      <Compile Remove="Audio\RtMidiMidiBackend.cs" />
+      <!-- Phase 40 Plan 40-02 T-40-03: the MIDI clock master timing core +
+           slave listener. References IMidiOutputHandle + (real-hardware path)
+           RtMidi.Core input device reflection. #if !FLOW_WEB-guarded AND
+           Compile-Removed here so the clock never reaches the WASM closure. -->
+      <Compile Remove="Audio\MidiClock.cs" />
+      <!-- Phase 40 T-40-03: @midi builtin surface + reference-identity handle
+           type. MidiFunctions/MidiDeviceData reference RtMidiMidiBackend +
+           IMidiOutputHandle; MidiDeviceType is the ref-identity Value. All
+           #if !FLOW_WEB-guarded AND Compile-Removed here (belt + suspenders). -->
+      <Compile Remove="StandardLibrary\Midi\**\*.cs" />
+      <Compile Remove="TypeSystem\SpecialTypes\MidiDeviceType.cs" />
+      <!-- Phase 40 Plan 40-02 T-40-03: ref-identity ClockHandle FlowType. Like
+           MidiDeviceType, #if !FLOW_WEB-guarded AND Compile-Removed here. -->
+      <Compile Remove="TypeSystem\SpecialTypes\ClockHandleType.cs" />
+      <!-- Phase 40 Plan 40-03 T-40-03: ref-identity JackHandle FlowType. Like
+           MidiDeviceType / ClockHandleType, #if !FLOW_WEB-guarded AND
+           Compile-Removed here. JackFunctions.cs + JackHandleData.cs are covered
+           by the StandardLibrary\Midi\**\*.cs wildcard below. -->
+      <Compile Remove="TypeSystem\SpecialTypes\JackHandleType.cs" />
+      <None Remove="midi.flow" />
+      <!-- Phase 40 Plan 40-03: @jack opt-in module — stripped on Web (libjack
+           native dep can never run in a browser; ModuleLoader Web gate rejects
+           @jack first). -->
+      <None Remove="jack.flow" />
       <!-- Phase 47 D-47-11: belt-and-suspenders Samples strip. PATTERNS.md §Discrepancy 3
            flagged Samples/** has no <None Update> entry today; SDK implicit-include
            behavior may still copy them. Explicit Remove guarantees Web publish omits
@@ -253,6 +314,25 @@
            registers the __enableOscModule marker and 5 forward decls
            (oscSend / oscListen / oscStop / oscBundle / oscSendBundle). -->
       <None Update="osc.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <!-- Phase 40 Plan 40-01 — @midi opt-in module. Loaded via `use "@midi"`;
+           registers __enableMidiModule + the 7 forward decls (midiPorts /
+           openMidiOutput / midiOut / midiNoteOn / midiNoteOff / midiCC /
+           midiSysex). Web ItemGroup above <None Remove>s it (RtMidi.Core-backed
+           builtins are stripped — loading it on Web fails at the marker, so the
+           ModuleLoader Web gate rejects @midi first). -->
+      <None Update="midi.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <!-- Phase 40 Plan 40-03 — @jack opt-in module. Loaded via `use "@jack"`;
+           registers __enableJackModule + the jackSync forward decl. Web ItemGroup
+           above <None Remove>s it (libjack-backed jackSync is stripped — loading
+           it on Web fails at the marker, so the ModuleLoader Web gate rejects
+           @jack first). -->
+      <None Update="jack.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>

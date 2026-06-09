@@ -436,6 +436,30 @@ public class ExecutionContext
     /// </summary>
     public bool OscEnabled { get; set; } = false;
 
+    /// <summary>
+    /// Phase 40 D-40-04 — opt-in gate for the <c>@midi</c> module. Flipped
+    /// <c>true</c> by the trailing <c>(__enableMidiModule)</c> marker in
+    /// <c>flow-lang/midi.flow</c> at import time. Until then every <c>midi*</c>
+    /// builtin (<c>midiPorts</c>/<c>openMidiOutput</c>/<c>midiOut</c>/
+    /// <c>midiNoteOn</c>/<c>midiNoteOff</c>/<c>midiCC</c>/<c>midiSysex</c>) raises
+    /// a clear "requires <c>use \"@midi\"</c>" error. Mirrors
+    /// <see cref="OscEnabled"/> / <see cref="NotationIoEnabled"/>. Default
+    /// <c>false</c>.
+    /// </summary>
+    public bool MidiEnabled { get; set; } = false;
+
+    /// <summary>
+    /// Phase 40 D-40-04 / Plan 40-03 JACK-01 — opt-in gate for the <c>@jack</c>
+    /// module. Flipped <c>true</c> by the trailing <c>(__enableJackModule)</c>
+    /// marker in <c>flow-lang/jack.flow</c> at import time. Until then
+    /// <c>jackSync</c> raises a clear "requires <c>use \"@jack\"</c>" error.
+    /// SEPARATE from <see cref="MidiEnabled"/> at fine granularity (D-40-04) so the
+    /// Linux-only native JACK dep is never force-loaded by <c>use "@midi"</c>.
+    /// Mirrors <see cref="OscEnabled"/> / <see cref="MidiEnabled"/>. Default
+    /// <c>false</c>.
+    /// </summary>
+    public bool JackEnabled { get; set; } = false;
+
     // ===== Phase 44 — strict mode (D-02 / D-03 / D-05) =====
 
     /// <summary>
@@ -1163,6 +1187,12 @@ public class ExecutionContext
             // 10c. Phase 38 — OSC module gate (Plan 38-06 OSC-01).
             OscEnabled = OscEnabled,
 
+            // 10d. Phase 40 — MIDI module gate (Plan 40-01 MIDI-RT-01).
+            MidiEnabled = MidiEnabled,
+
+            // 10e. Phase 40 — JACK module gate (Plan 40-03 JACK-01).
+            JackEnabled = JackEnabled,
+
             // 11. FlowConfig.Active singleton.
             FlowConfigActive = FlowConfig.Active,
 
@@ -1257,6 +1287,12 @@ public class ExecutionContext
 
         // 10c. Phase 38 — OSC module gate restore (Plan 38-06 OSC-01).
         OscEnabled = snap.OscEnabled;
+
+        // 10d. Phase 40 — MIDI module gate restore (Plan 40-01 MIDI-RT-01).
+        MidiEnabled = snap.MidiEnabled;
+
+        // 10e. Phase 40 — JACK module gate restore (Plan 40-03 JACK-01).
+        JackEnabled = snap.JackEnabled;
 
         // 11. FlowConfig.Active singleton.
         FlowConfig.Active = snap.FlowConfigActive;

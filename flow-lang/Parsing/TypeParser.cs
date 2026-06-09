@@ -217,6 +217,24 @@ public static class TypeParser
             // Phase 38 Plan 38-06: OscHandle is the 19th SpecialType. Required so
             // `OscHandle h = (oscListen 7777 "/x" handler)` declarations parse + `use "@osc"` imports.
             TokenType.Identifier when token.Text == "OscHandle" => OscHandleType.Instance,
+#if !FLOW_WEB
+            // Phase 40 Plan 40-01: MidiDevice is the reference-identity handle for
+            // an opened MIDI output port. Required so `MidiDevice dev =
+            // (openMidiOutput "port")` declarations parse + `use "@midi"` imports.
+            // #if !FLOW_WEB — MidiDeviceType is stripped on Web (T-40-03).
+            TokenType.Identifier when token.Text == "MidiDevice" => MidiDeviceType.Instance,
+            // Phase 40 Plan 40-02: ClockHandle is the reference-identity handle for
+            // a MIDI clock master/slave. Required so `ClockHandle h =
+            // (clockMaster dev)` declarations parse + the `clockStop` decl in
+            // midi.flow type-checks. #if !FLOW_WEB — ClockHandleType is stripped
+            // on Web (T-40-03).
+            TokenType.Identifier when token.Text == "ClockHandle" => ClockHandleType.Instance,
+            // Phase 40 Plan 40-03: JackHandle is the reference-identity handle
+            // returned by (jackSync). Required so `JackHandle h = (jackSync)`
+            // declarations parse + the jackSync decl in jack.flow type-checks.
+            // #if !FLOW_WEB — JackHandleType is stripped on Web (T-40-03).
+            TokenType.Identifier when token.Text == "JackHandle" => JackHandleType.Instance,
+#endif
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -346,6 +364,11 @@ public static class TypeParser
             "MarkovModel" => MarkovModelType.Instance, // Phase 36 Plan 36-06
             "LsystemModel" => LsystemModelType.Instance, // Phase 36 Plan 36-07
             "OscHandle" => OscHandleType.Instance, // Phase 38 Plan 38-06
+#if !FLOW_WEB
+            "MidiDevice" => MidiDeviceType.Instance, // Phase 40 Plan 40-01 (#if !FLOW_WEB)
+            "ClockHandle" => ClockHandleType.Instance, // Phase 40 Plan 40-02 (#if !FLOW_WEB)
+            "JackHandle" => JackHandleType.Instance, // Phase 40 Plan 40-03 (#if !FLOW_WEB)
+#endif
             "Function" => FunctionType.Instance,
             _ => null
         };

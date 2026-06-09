@@ -41,6 +41,54 @@ public class MusicalContext
 
     public TimeSignatureData? TimeSignature { get; set; }
     public double? Tempo { get; set; }
+
+    /// <summary>
+    /// Phase 40 WR-01 / WR-02 / LINK-02 — the LIVE-SYNC tempo sink, strictly
+    /// separate from <see cref="Tempo"/>. MIDI clock slave + JACK transport sync
+    /// write the externally-driven tempo HERE (never to <see cref="Tempo"/>), and
+    /// the MIDI clock MASTER reads it back via <see cref="TryGetLiveTempo"/>. This
+    /// channel is consumed ONLY by realtime play/loop/preview-adjacent code (the
+    /// clock master loop); it is invisible to the OFFLINE render path:
+    /// <list type="bullet">
+    ///   <item><see cref="Clone"/> does NOT copy it — a section's captured context
+    ///   clone never carries a live tempo.</item>
+    ///   <item><c>SongRenderer.RenderSection</c> reads <see cref="Tempo"/>, never
+    ///   this field — so a sync-driven tempo can NEVER reach
+    ///   <c>writeWav</c>/<c>writeMidi</c> (the LINK-02 determinism contract).</item>
+    /// </list>
+    ///
+    /// <para><b>WR-02 thread-safety:</b> the value is stored as the IEEE-754 bit
+    /// pattern of a <see cref="double"/> in a backing <c>long</c>, written/read via
+    /// <see cref="System.Threading.Interlocked"/> so a cross-thread write from the
+    /// clock slave/JACK thread can never be observed torn by the interpreter
+    /// thread. A sentinel <c>long.MinValue</c> means "no live tempo set".</para>
+    /// </summary>
+    private long _liveTempoBits = LiveTempoUnset;
+
+    private const long LiveTempoUnset = long.MinValue;
+
+    /// <summary>
+    /// WR-01/WR-02: set the live-sync tempo (clock slave / JACK transport). Only
+    /// stores positive (valid) tempos; a non-positive value clears the live tempo.
+    /// Atomic — safe to call from the clock slave / JACK background thread.
+    /// </summary>
+    public void SetLiveTempo(double bpm)
+    {
+        long bits = bpm > 0 ? BitConverter.DoubleToInt64Bits(bpm) : LiveTempoUnset;
+        System.Threading.Interlocked.Exchange(ref _liveTempoBits, bits);
+    }
+
+    /// <summary>
+    /// WR-01/WR-02: read the live-sync tempo. Returns <c>true</c> + the BPM when a
+    /// live tempo has been set, <c>false</c> otherwise. Atomic read.
+    /// </summary>
+    public bool TryGetLiveTempo(out double bpm)
+    {
+        long bits = System.Threading.Interlocked.Read(ref _liveTempoBits);
+        if (bits == LiveTempoUnset) { bpm = 0; return false; }
+        bpm = BitConverter.Int64BitsToDouble(bits);
+        return true;
+    }
     public double? Swing { get; set; }  // 0.0 to 1.0 (0.5 = straight, 0.67 = triplet swing)
     public string? Key { get; set; }    // e.g., "Cmajor", "Aminor"
     public double? Velocity { get; set; }  // 0.0 to 1.0 (null = inherit, default mf = 0.63)

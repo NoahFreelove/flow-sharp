@@ -122,6 +122,44 @@ public class Value
     // Phase 47 D-47-08: OscHandleData type stripped from Web build (Plan 47-01).
     public static Value OscHandle(StandardLibrary.Network.OscHandleData handle)
         => new(handle, OscHandleType.Instance);
+
+    /// <summary>
+    /// Phase 40 MIDI-RT-01 (D-40-03) — wraps a
+    /// <see cref="StandardLibrary.Midi.MidiDeviceData"/> as a reference-identity
+    /// Flow <see cref="Value"/> typed <see cref="MidiDeviceType.Instance"/>.
+    /// Two <c>(openMidiOutput "x")</c> calls produce distinct Values (no caching
+    /// at the value layer). Mirrors <see cref="OscHandle"/>. <c>#if !FLOW_WEB</c>
+    /// — MidiDeviceData + MidiDeviceType are stripped on Web (T-40-03).
+    /// </summary>
+    public static Value MidiDevice(StandardLibrary.Midi.MidiDeviceData handle)
+        => new(handle, MidiDeviceType.Instance);
+
+    /// <summary>
+    /// Phase 40 CLOCK-01/02 (D-40-03) — wraps a
+    /// <see cref="StandardLibrary.Midi.ClockHandleData"/> as a reference-identity
+    /// Flow <see cref="Value"/> typed <see cref="ClockHandleType.Instance"/>.
+    /// Returned by <c>(clockMaster MidiDevice)</c> + <c>(clockSlave String)</c>;
+    /// consumed by <c>(clockStop ClockHandle)</c>. Two calls produce distinct
+    /// Values (each spawns its own timing thread / listener loop — no caching at
+    /// the value layer). Mirrors <see cref="OscHandle"/> / <see cref="MidiDevice"/>.
+    /// <c>#if !FLOW_WEB</c> — ClockHandleData + ClockHandleType are stripped on
+    /// Web (T-40-03).
+    /// </summary>
+    public static Value ClockHandle(StandardLibrary.Midi.ClockHandleData handle)
+        => new(handle, ClockHandleType.Instance);
+
+    /// <summary>
+    /// Phase 40 JACK-01 (D-40-03 / D-40-05 best-effort) — wraps a
+    /// <see cref="StandardLibrary.Midi.JackHandleData"/> as a reference-identity
+    /// Flow <see cref="Value"/> typed <see cref="JackHandleType.Instance"/>.
+    /// Returned by <c>(jackSync)</c> (opt-in <c>use "@jack"</c>). A handle is
+    /// returned even when no JACK server is present (a charitable dead handle) so
+    /// non-JACK workflows are never affected and <c>jackSync</c> never throws.
+    /// <c>#if !FLOW_WEB</c> — JackHandleData + JackHandleType are stripped on Web
+    /// (T-40-03).
+    /// </summary>
+    public static Value JackHandle(StandardLibrary.Midi.JackHandleData handle)
+        => new(handle, JackHandleType.Instance);
 #endif
 
     public static Value Function(FunctionOverload overload) => new(overload, TypeSystem.PrimitiveTypes.FunctionType.Instance);

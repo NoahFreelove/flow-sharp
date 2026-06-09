@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: Phase 49 execution complete — PENDING HUMAN-UAT + live deploy (3 open gates; NOT shipped)
-stopped_at: "Completed 49-09-PLAN.md (CLOSER: VERIFICATION + deployment runbook + tracking sweep) — Phase 49 build done, 3 human-action gates OPEN (live deploy, gist OAuth, audible/visual/SR UAT)"
-last_updated: "2026-06-05T00:00:00.000Z"
-last_activity: 2026-06-05
+status: ready_to_plan
+stopped_at: Phase 40 complete (4/3) — ready to discuss Phase 42
+last_updated: 2026-06-07T13:37:53.543Z
+last_activity: 2026-06-07
 progress:
   total_phases: 15
-  completed_phases: 11
-  total_plans: 93
-  completed_plans: 93
-  percent: 78
+  completed_phases: 13
+  total_plans: 96
+  completed_plans: 267
+  percent: 87
 ---
 
 # Project State
@@ -21,16 +21,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 49 — flowlang-dev-site
+**Current focus:** Phase 42 — type system stdlib audit
 
 ## Current Position
 
-Phase: 49 (flowlang-dev-site) — EXECUTION COMPLETE, PENDING HUMAN-UAT + LIVE DEPLOY (NOT shipped)
-Plan: 9 of 9 executed (49-01..49-09 built + tested). 49-09 closer is done (VERIFICATION + deployment runbook + tracking sweep). The autonomous BUILD is complete and green in CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4 both form factors, axe 0-critical) — but the phase is NOT yet shippable/verified. THREE human-action gates remain OPEN.
-Next step: Composer runs `.planning/phases/49-flowlang-dev-site/49-HUMAN-UAT.md` — the CONSOLIDATED batch folding in all three open gates into ONE pass: (1) live CF Pages deploy [49-01, REQ-SITE-IA-01 deploy + REQ-SITE-DEPLOY-01]; (2) GitHub OAuth App + live gist round-trip [49-06, REQ-SITE-SHARE-02]; (3) cross-browser AUDIBLE audio [REQ-SITE-PLAYGROUND-03] + skeuo visual fidelity [REQ-SITE-DESIGN-01..04] + screen-reader smoke [REQ-SITE-A11Y-*]. Deploy/OAuth setup: `49-DEPLOYMENT-RUNBOOK.md`. Per-REQ closure + caveats: `49-VERIFICATION.md` (status human_needed). Phase 49 flips to SHIPPED only after that sign-off. Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) also pending for milestone close.
+Phase: 42
+Plan: Not started
+Next step: Composer runs `.planning/phases/40-studio-sync/40-HUMAN-UAT.md` — real synth note-on (MIDI-RT-01/02), DAW master+slave clock lock (CLOCK-01/02), perceptual MIDI-audio alignment (MIDI-RT-04), live JACK timebase (JACK-01); Link row is a recorded deferral (no test). NOTE the native-path UAT rows are now MACHINE-PROVEN on the bench box's snd-virmidi loopback by `RealMidiLoopbackTests` (Plan 40-04) — the remaining UAT is real *synth audibility* + DAW perceptual lock + live JACK, which automation cannot cover. Per-REQ closure + caveats: `40-VERIFICATION.md` (9-ID trace). Phase 40 flips to SHIPPED after that sign-off. ALSO pending for milestone close: Phase 49 (flowlang.dev site) + Phase 41 (Reach + v1.5 Closer).
 
-Status: Phase 49 execution complete — pending HUMAN-UAT + live deploy (3 open gates; NOT shipped, NOT verified)
-Last activity: 2026-06-05
+Status: Ready to plan
+Last activity: 2026-06-07
+
+**Phase 40 Plan 40-04 highlights (2026-06-07) — CRITICAL ABI fix: RtMidi.Core → direct librtmidi P/Invoke:**
+
+- **RtMidi.Core 1.0.53 (2018) is ABI-incompatible with modern librtmidi (≥4.0; 6.0.0 / `.so.7` on the box) and was REMOVED.** It calls the OLD `const char* rtmidi_get_port_name(device,port)`; modern librtmidi is `int rtmidi_get_port_name(device,port,char* bufOut,int* bufLen)` → RtMidi.Core reads the length-out pointer as a string and frees garbage → `free(): invalid pointer` aborts the WHOLE process during `(midiPorts)` enumeration on any modern Linux. The in-process `CaptureMidiBackend` seam hid this; it crashed on real hardware. Overturns MIDI-RT-02's RtMidi.Core choice (authorized: pre-traction no-deprecation latitude + the lib provably does not work on any modern Linux).
+- **Fix: direct `[DllImport("rtmidi")]` modern-signature bindings** (`flow-lang/Audio/LibRtMidi.cs`) mirroring the libjack P/Invoke in `JackFunctions.cs`. `RtMidiMidiBackend` rewritten on it (RtMidi.Core + the Open-Q1 reflection bridge GONE — raw send is the public `rtmidi_out_send_message`). `MidiClock` slave input rewritten on direct librtmidi (`rtmidi_in_ignore_types(false,false,false)` is CRITICAL — RtMidi ignores timing by default so 0xF8 would never arrive; then poll `rtmidi_in_get_message`). `SlaveByteSource` seam + all CLOCK-01/02 logic (24-PPQN, 8-pulse settle, WR-04 `_pulseCount`, LINK-02 live-tempo isolation) unchanged. Probe via the DllImport resolver, NOT `NativeLibrary.TryLoad` (the two disagree on the bare SONAME). `RtMidi.Core` PackageReference removed; `LibRtMidi.cs` added to the Web Compile-Remove (P/Invoke naturally Web-stripped); `AssemblyReferenceScan` under Web still GREEN.
+- **Real ALSA snd-virmidi loopback verification (`RealMidiLoopbackTests`)** — the whole point. Drives the REAL backend + clock over a live VirMIDI loopback, captures wire bytes via `amidi` (charitable-skip when librtmidi/VirMIDI/amidi absent; picks the first VirMIDI pair at runtime). RAN (not skipped) + passed on the bench box: **Row 1-2** NoteOn `90 3C 64` + CC `B0 07 64` + NoteOff `80 3C 00` + framed sysex `F0 7D 01 02 F7`; **Row 3 (CLOCK-01)** transport `FA`+`FC` over the wire (snd-virmidi rawmidi-capture filters `0xF8` specifically — 24-PPQN rate stays machine-proven by `ClockMasterTests`, and `0xF8` flows the other way in Row 4); **Row 4 (CLOCK-02)** inject `0xF8` via `amidi -S` → real librtmidi input reads 40 pulses → Tempo locks to the injected rate after the 8-pulse settle (LINK-02: live sink, `ctx.Tempo` null). `RtMidiInternalAccessSpikeTests` obsoleted (reflection-internal assertions deleted → one documenting test). Rule-1 test-infra: the 3 timing/real-hardware classes joined `WasmEntryConsoleCollection`.
+- **`(midiPorts)` now prints the VirMIDI ports** (was: process abort). Desktop + Web builds 0 errors. **Phase40 suite 45/45 GREEN, 0 skipped.** 2 commits: `dcbec10` (ABI fix), `451ae1a` (real loopback test). Pre-existing intermittent WASM Console-redirection race (re-confirmed on clean `dev`) logged to `deferred-items.md` (out of scope).
+
+**Phase 40 highlights (2026-06-07) — Studio Sync, EXECUTION COMPLETE / pending HUMAN-UAT:**
+
+- **MIDI + clock spine SHIPPED machine-proven; hardware/DAW behaviors PENDING HUMAN-UAT; Ableton Link DEFERRED (GPL); JACK best-effort.** 3/3 plans. Phase40 suite **32/32 GREEN** (Desktop); `dotnet build flow-lang -p:FlowTarget=Desktop` + `-p:FlowTarget=Web` both exit 0; `AssemblyReferenceScan` under Web GREEN (RtMidi.Core + JackSharp absent from the WASM closure). Closure artifacts: `40-VERIFICATION.md` (9-ID trace, D-40-NN decision trace, threat-mitigation table) + `40-HUMAN-UAT.md` (real synth / DAW master+slave / MIDI-audio alignment / JACK / Link-deferred rows, machine-vs-human split per D-40-07).
+- **Plan 40-03 (this closer) shipped JACK + recorded the Link defer + swept tracking files.** **JACK verdict (Open Q3):** JackSharp 0.4.0 was spiked under net10 — it loads via the net4x compat shim BUT exposes NO transport API (no `jack_transport_query`/tempo/BBT — only audio/MIDI ports + connection control), so it cannot satisfy JACK-01. Per the D-40-05 best-effort fallback, `jackSync` ships via a hand-rolled `[DllImport("jack")] jack_transport_query` (transport state + BPM; `jack_position_t` ABI mirror from `jack/transport.h`) — no JackSharp PackageReference (a dead dep). Absent JACK server → charitable no-op + `[jack]` advisory, never throws (T-40-04, `JackAbsentServerNoOp`); transport BPM validated via `IsValidTempo` before write (T-40-01). `@jack` is a SEPARATE fine-grained opt-in (D-40-04) — `JackEnabled` 3-site gate parallel to `@midi`. `JackHandle` ref-identity Value (specificity 154); `JackHandle` type-name in TypeParser + Parser.
+- **Ableton Link (LINK-01) DEFERRED to community/v1.6 honestly (D-40-06, HIGH threat T-40-02):** GPLv2+ contamination — NO Link implementation ships (no `@link` module, no `libabl_link` ref). `LinkDeferralTests.LinkDeferral_NoGplReference` + the Web `AssemblyReferenceScanTests` forbidden-prefix gate are the structural enforcement. **LINK-02 determinism IS shipped + closed independently:** `OfflineRenderDeterminismTests` (40-01) + `LinkDeferralTests.OfflineRenderIgnoresSync_LinkDeferred` (40-03) pin byte-identical offline render regardless of sync state. **MIDI-RT-03 (CoreMIDI/WinMM) recorded as deferred to Phase 41** — same `IMidiBackend` abstraction covers it later.
+- **40-01 (MIDI-out spine) + 40-02 (clock master+slave) recap:** `IMidiBackend` ∥ `IAudioBackend` + RtMidi.Core 1.0.53 ALSA-seq backend + `NullMidiBackend` charitable fallback + `MidiPlaybackManager`; `@midi` surface (`midiPorts`/`openMidiOutput`/`midiOut` GM-routed + `midiNoteOn`/`midiNoteOff`/`midiCC`/`midiSysex`); `AudioBuffer.PlaybackStartTime` alignment seam (best-effort ms, NOT sample-accurate — ROADMAP wording corrected); 24-PPQN master on a Stopwatch-deadline thread + slave 8-pulse settle; `MidiDevice` (152) / `ClockHandle` (153) ref-identity handles. Open Q1 resolved via reflection into RtMidi.Core's internal raw-byte path (guard-pinned, RtMidi.Core PINNED 1.0.53).
+- **Rule 1 test-infra fix:** JackTransportTests joined `WasmEntryConsoleCollection` (process-wide Console-redirection race in the full Phase40 suite — same root cause + fix Plan 40-01 applied to VirtualMidiTests). Also closed a Plan-40-02 Web test-build gap (ClockMaster/ClockSlave Compile-Remove). **`librtmidi.so` is a native runtime prerequisite NOT in the NuGet** (`apt install librtmidi-dev`); JACK needs a running server — both absent on this dev box, so real-ALSA/real-JACK paths charitable-skip in CI.
+- **v1.5 milestone: still 11/15 phases SHIPPED** (35+36+37+38+39+42+43+44+45+47+48). Phase 40 + Phase 49 are BOTH execution-complete-pending-HUMAN-UAT (do not increment the shipped count until sign-off); Phase 41 (Reach + v1.5 Closer) remains. 3 commits: `5918762` (JACK), `9729532` (Link deferral + LINK-02), `4d47631` (test-infra race fix).
 
 **Phase 49 highlights (2026-06-05) — flowlang.dev site, EXECUTION COMPLETE / NOT shipped (pending HUMAN-UAT + live deploy):**
 
@@ -362,7 +378,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 
 **Velocity:**
 
-- Total plans completed: 85 (v1.2 milestone)
+- Total plans completed: 89 (v1.2 milestone)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -389,6 +405,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 45 | 6 | - | - |
 | 46 | 6 | - | - |
 | 49 | 5 (of 9) | - | 49-05 ~50min |
+| 40 | 4 | - | - |
 
 **Recent Trend:**
 
@@ -536,6 +553,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 49 P01 | 10min | 3 tasks | 77 files |
 | Phase 49 P05 | 50min | 3 tasks | 13 files |
 | Phase 49 P09 | 12min | 3 tasks | 8 files |
+| Phase 40 P40-01 | 1 session | 3 tasks | 25 files |
 
 ## Accumulated Context
 
@@ -737,6 +755,8 @@ Recent decisions affecting current work:
 - [Phase ?]: 49-06: URL-fragment share (fflate base64url, 256KB streaming-inflate decompression-bomb cap) is the default zero-backend path; gist OAuth via a ≤50-LOC CF Worker (crypto.getRandomValues state CSRF, server-only secret, hard-coded same-origin redirect, scope=gist) is the promote-path
 - [Phase ?]: 49-06: docs carrier uses encode-node.js (Node ESM has no .ts loader for svelte.config.js) byte-identical to encode.ts, parity-pinned — closes the cross-wave #code= contract across Home + docs + showcase carriers
 - [Phase ?]: 49-06: OAuth token rides #token= fragment into sessionStorage (D-49-28 ephemeral) + history.replaceState URL clean; auto-run rides &run=1 in the fragment (D-49-08)
+- [Phase ?]: Phase 40 Open Q1 resolved — strategy (a) reflection into RtMidi.Core internal SendMessage(byte[]) for clock bytes; Plan 02 builds on this
+- [Phase ?]: Clock master uses Stopwatch-deadline thread + spin-wait, bar-boundary tempo re-read; ClockHandle specificity 153; slave 8-pulse settle
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -954,11 +974,14 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-06-05T23:32:13.041Z
-Stopped at: Completed 49-06-PLAN.md (Share/Save: URL-fragment + gist OAuth) — Task 4 human-action checkpoint pending
-Resume file: None
+Last session: 2026-06-07T02:29:24.439Z
+Stopped at: Phase 40 execution complete + code-reviewed + fixed (3 blockers/7 warnings/3 info resolved); verification human_needed (6 hardware-UAT rows pending)
+Resume file: .planning/phases/40-studio-sync/40-HUMAN-UAT.md
+Stale-artifact cleanup this session: removed dead Phase-35 `.planning/HANDOFF.json` (one-shot artifact from a phase shipped 2026-05-19, superseded by current STATE).
 
-**Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 44 (Strict Mode) remain. Phase 44 is AUDIT.md-fed (depends on Phase 42 deliverable, shipped) and now also benefits from Phase 43's module-namespace + qualified-import work for organizing strict-mode test files; Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 44 can ship in either order with Phase 40.
+**Phase-count correction:** v1.5 is **12/15 phases SHIPPED** (35, 36, 37, 38, 39, 42, 43, 44, 45, **46**, 47, 48) — the earlier "11/15" running tally omitted Phase 46 (Codebase Bloat Removal), which PASSED verification 11/11 on 2026-05-30. Phases 44 and 46 are SHIPPED (prior Session Continuity note wrongly listed them as remaining). Stale ROADMAP summary-table rows also exist (Phase 39 shows "Not started", Phase 48 shows "5/7 In Progress") — both are actually shipped; the phase-detail sections + STATE frontmatter are authoritative.
+
+**Genuinely remaining for v1.5 close:** Phase 40 (Studio Sync) → Phase 41 (Reach + v1.5 Closer, last by construction), plus Phase 49's 3 human gates. Build order within 35-41 trajectory: 40 → 41 (Phase 41 consumes Phase 40's `IMidiBackend`). Phase 40 has NO phase dir yet → no CONTEXT.md → discuss-phase before plan. **Next milestone:** invoke `/gsd-new-milestone` once Phase 40 + 41 + the Phase 49 human gates close.
 
 ## Resume Instructions (next PC)
 

@@ -252,6 +252,29 @@ public class FlowEngine : IDisposable
         // Phase 47 D-47-08: OscFunctions.cs is csproj-stripped on Web target
         // (per Plan 47-01). Symmetric with the SfzBuiltins guard above.
         FlowLang.StandardLibrary.Network.OscFunctions.Register(internalRegistry, _context);
+        // Phase 40 D-40-04 — register the @midi stdlib surface (midiPorts /
+        // openMidiOutput / midiOut / midiNoteOn / midiNoteOff / midiCC /
+        // midiSysex + __enableMidiModule marker). All gate on
+        // ExecutionContext.MidiEnabled (flipped by the trailing init call in
+        // flow-lang/midi.flow). Direct-librtmidi-backed (Plan 40-04) → #if !FLOW_WEB
+        // stripped on Web (T-40-03), same as the OSC guard.
+        FlowLang.StandardLibrary.Midi.MidiFunctions.Register(internalRegistry, _context);
+        // Phase 40 Plan 40-02 CLOCK-01/02 — register the MIDI clock surface
+        // (clockMaster / clockSlave / clockStop) beside MidiFunctions. Master
+        // emits 24 PPQN on a dedicated Stopwatch-timed thread tied to the active
+        // MusicalContext.Tempo; slave receives 24 PPQN + 8-pulse settle → drives
+        // Tempo. Returns reference-identity ClockHandle Values (D-40-03). Same
+        // #if !FLOW_WEB strip discipline as the OSC/@midi surface (T-40-03).
+        FlowLang.StandardLibrary.Midi.MidiClockFunctions.Register(internalRegistry, _context);
+        // Phase 40 Plan 40-03 JACK-01 (D-40-05 best-effort) — register the @jack
+        // transport surface (jackSync + __enableJackModule marker) beside the
+        // @midi surface. Gates on a SEPARATE ExecutionContext.JackEnabled (D-40-04
+        // fine granularity) so the Linux-only libjack native dep is never
+        // force-loaded by `use "@midi"`. Hand-rolled [DllImport("jack")]
+        // jack_transport_query (JackSharp 0.4.0 has no transport API — Open Q3
+        // verdict). Absent JACK server → charitable no-op (T-40-04). Same
+        // #if !FLOW_WEB strip discipline (T-40-03).
+        FlowLang.StandardLibrary.Midi.JackFunctions.Register(internalRegistry, _context);
 #endif
         // Phase 36 Plan 36-11 — register the @improv stdlib surface
         // (registerStyle / listStyles / jam builtins). The jam builtin lives

@@ -89,7 +89,7 @@ public static class PlaybackFunctions
             return Value.Void();
         }
 
-        PlaySamples(buffer.Data, buffer.SampleRate, buffer.Channels, manager);
+        PlaySamples(buffer.Data, buffer.SampleRate, buffer.Channels, manager, buffer);
         return Value.Void();
     }
 
@@ -148,7 +148,7 @@ public static class PlaybackFunctions
             return Value.Void();
         }
 
-        PlaySamples(mixedBuffer.Data, mixedBuffer.SampleRate, mixedBuffer.Channels, manager);
+        PlaySamples(mixedBuffer.Data, mixedBuffer.SampleRate, mixedBuffer.Channels, manager, mixedBuffer);
         return Value.Void();
     }
 
@@ -337,13 +337,27 @@ public static class PlaybackFunctions
     /// <summary>
     /// Plays float samples through the audio backend with cancellation support.
     /// </summary>
-    private static void PlaySamples(float[] samples, int sampleRate, int channels, AudioPlaybackManager manager)
+    /// <param name="originBuffer">Phase 40 MIDI-RT-04 alignment seam. When non-null,
+    /// its <see cref="AudioBuffer.PlaybackStartTime"/> is stamped with the
+    /// <see cref="System.Diagnostics.Stopwatch"/> tick origin the instant before
+    /// <c>backend.Play</c> begins. A real-time MIDI scheduler keys note dispatch
+    /// off this origin (buffer-relative ms alignment — NOT sample-accurate;
+    /// 40-RESEARCH Pitfall 5). Null on synthesized/preview paths with no buffer.</param>
+    private static void PlaySamples(float[] samples, int sampleRate, int channels, AudioPlaybackManager manager, AudioBuffer? originBuffer = null)
     {
         var ct = manager.StartPlayback();
         var backend = GetBackendOrThrow(manager);
 
         try
         {
+            // Phase 40 MIDI-RT-04: record the alignment origin the instant before
+            // playback begins, so any midiOut scheduler dispatches events relative
+            // to the true audio start (NOT queue/enqueue time). Honest scope:
+            // buffer-relative ms accuracy on the blocking PulseAudio Simple push
+            // API — there is no pull-model callback for sample accuracy.
+            if (originBuffer != null)
+                originBuffer.PlaybackStartTime = System.Diagnostics.Stopwatch.GetTimestamp();
+
             backend.Play(samples, sampleRate, channels, ct);
         }
         catch (OperationCanceledException)

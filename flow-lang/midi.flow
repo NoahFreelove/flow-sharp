@@ -1,0 +1,74 @@
+Note: MIDI — real-time output, opt-in via `use "@midi"`
+Note: Single-module surface (Phase 40 D-40-01):
+Note:   midiPorts() → Void (prints discovered output port names)
+Note:   openMidiOutput(String port) → MidiDevice
+Note:   midiOut(Song song, String port) → Void   (high-level, GM-routed)
+Note:   midiOut(Sequence seq, String port) → Void
+Note:   midiNoteOn(MidiDevice dev, Int ch, Int pitch, Int vel) → Void
+Note:   midiNoteOff(MidiDevice dev, Int ch, Int pitch) → Void
+Note:   midiCC(MidiDevice dev, Int ch, Int ctrl, Int val) → Void
+Note:   midiSysex(MidiDevice dev, Buffer data) → Void
+Note:
+Note: midiOut reuses the Phase 28 writeMidi GM prefix-match routing VERBATIM
+Note:   (piano*→0, brass*/horn*→56, sax*→65, flute*→73, string*→48, organ*→19,
+Note:   bell*→14, drum*→ch 9) so a hardware port sounds identical to the
+Note:   exported .mid (D-40-02). An overrides= named-arg Dict (name→channel)
+Note:   remaps channels for multitimbral hardware; the program still derives
+Note:   from the name.
+Note:
+Note: Input validation (T-40-01/T-40-04): channel clamped 0..15,
+Note:   pitch/velocity/CC 0..127, sysex length-capped — clamp + [midi] advisory,
+Note:   never throw. Missing device / absent port → charitable dead handle
+Note:   (no-op), never throws (a live session never dies).
+Note:
+Note: Backed by DIRECT librtmidi P/Invoke over ALSA-seq (Plan 40-04 — replaced the
+Note:   RtMidi.Core 1.0.53 managed wrapper, whose 2018 ABI crashes on modern
+Note:   librtmidi >= 4.0). The native librtmidi.so is NOT bundled — when absent the
+Note:   backend falls back to a silent NullMidiBackend (charitable). Clock
+Note:   master/slave (Plan 40-02) route raw bytes through the same path.
+
+module midi
+
+use "@std"
+
+Note: ===== Internal C# Function Declarations =====
+
+Note: Marker builtin called once at module load (last line of this file). Flips
+Note: ExecutionContext.MidiEnabled = true so the surface builtins unlock.
+internal proc __enableMidiModule ()
+
+Note: ----- Port discovery + open -----
+internal proc midiPorts ()
+internal proc openMidiOutput (String: port)
+
+Note: ----- High-level GM-routed output -----
+Note:   overrides= named-arg Dict<String, Int> remaps per-sequence channels for
+Note:   multitimbral hardware; the GM program still derives from the name (D-40-02).
+internal proc midiOut (Song: song, String: port)
+internal proc midiOut (Song: song, String: port, Dict<Void, Void>: overrides)
+internal proc midiOut (Sequence: seq, String: port)
+internal proc midiOut (Sequence: seq, String: port, Dict<Void, Void>: overrides)
+
+Note: ----- Low-level event escape hatch (live / @improv / generative) -----
+internal proc midiNoteOn (MidiDevice: dev, Int: ch, Int: pitch, Int: vel)
+internal proc midiNoteOff (MidiDevice: dev, Int: ch, Int: pitch)
+internal proc midiCC (MidiDevice: dev, Int: ch, Int: ctrl, Int: val)
+internal proc midiSysex (MidiDevice: dev, Buffer: data)
+
+Note: ----- MIDI clock master/slave (Phase 40 Plan 40-02, CLOCK-01/02) -----
+Note:   clockMaster(MidiDevice device) → ClockHandle   (emit 24 PPQN + start/stop)
+Note:   clockSlave(String port)        → ClockHandle   (receive 24 PPQN → drive Tempo)
+Note:   clockStop(ClockHandle handle)  → Void          (stop cleanly, ≤1s)
+Note: Master timing rides a dedicated Stopwatch-deadline thread tied to the
+Note:   active MusicalContext.Tempo; tempo changes apply at the next bar boundary.
+Note:   Slave derives BPM from inter-pulse deltas with an 8-pulse settle. Master ⊕
+Note:   slave session modes switch only at a bar boundary (D-40-03). Clock tempo
+Note:   is a play/loop/preview-only input — NEVER reaches writeWav/writeMidi.
+internal proc clockMaster (MidiDevice: device)
+internal proc clockSlave (String: port)
+internal proc clockStop (ClockHandle: handle)
+
+Note: ===== Side-effecting init marker =====
+Note: Flips ExecutionContext.MidiEnabled = true so the builtins above unlock.
+Note: Without this line, every call raises "requires `use \"@midi\"`".
+(__enableMidiModule)

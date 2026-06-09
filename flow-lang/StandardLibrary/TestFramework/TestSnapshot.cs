@@ -81,6 +81,16 @@ public sealed record TestSnapshot
     //      callers).
     public bool OscEnabled { get; init; } = false;
 
+    // 10d. Phase 40 Plan 40-01 MIDI-RT-01 — @midi module activation gate.
+    //      Defaulted-false so pre-Phase-40 TestSnapshot constructions remain
+    //      backward-compatible (no new `required` keyword).
+    public bool MidiEnabled { get; init; } = false;
+
+    // 10e. Phase 40 Plan 40-03 JACK-01 — @jack module activation gate.
+    //      Defaulted-false so pre-Phase-40 TestSnapshot constructions remain
+    //      backward-compatible (no new `required` keyword).
+    public bool JackEnabled { get; init; } = false;
+
     // 11. FlowConfig.Active singleton reference. Last-write-wins reset.
     public required FlowConfigPoco FlowConfigActive { get; init; }
 
