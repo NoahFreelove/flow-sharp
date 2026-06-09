@@ -28,6 +28,18 @@ vscode-extension/server/
 !vscode-extension/tests/**/*.flow
 !vscode-extension/README.md
 
+# flow-site (Phase 49) Playwright E2E specs live under flow-site/tests/ and must be
+# tracked even though the global `tests/` rule (line 9, for C# test outputs) ignores them.
+!flow-site/tests/
+!flow-site/tests/**
+
+# flow-site (Phase 49 Plan 04) docs vitest fixtures — the synthetic [[link]] fixture
+# (markdown) must be tracked despite the global `*.md` ignore (RESEARCH Pitfall 7: the
+# real wiki has no `[[ ]]` links, so the transform is unit-tested against this fixture).
+# The build-time wiki clone at flow-site/src/docs/wiki/ stays ignored (flow-site/.gitignore).
+!flow-site/src/lib/docs/__fixtures__/
+!flow-site/src/lib/docs/__fixtures__/**
+
 # Pragma companion files for Phase 27 byte-identical determinism gates
 # must be tracked despite the global *.flow ignore.
 !examples/pragmas/
@@ -260,3 +272,13 @@ midi-to-wav.sh
 # artifacts that accumulate per re-run and should not be checked in.
 bench/results-*.txt
 
+
+# Phase 49 Plan 49-03 — flow-site curated marketing audio under static/audio/.
+# First-party rendered Flow audio (the Home "How it sounds" embeds) that CF Pages
+# serves directly — must be tracked despite the global *.wav ignore. Mirrors the
+# flow-site static/wasm/ AppBundle precedent (intentionally committed site assets)
+# and the Phase 29/33 baseline-WAV allow-list precedents above.
+!flow-site/static/audio/
+!flow-site/static/audio/**
+!flow-site/static/audio/**/*.wav
+!flow-site/static/audio/**/*.mp3

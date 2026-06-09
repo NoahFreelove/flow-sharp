@@ -16,6 +16,16 @@ Items deferred during v1.5 phases that are out of scope for the current mileston
 - `runtime.exportWav()` helper in `flow-runtime.js` (D-48-18 WAV-download parallel) — hand-rolled WAVE-header wrap for browser download; v1 plays audio live via WebAudioBackend instead.
 - v1.6 WebRTC DataChannel OSC-shaped surface; WebMIDI for live MIDI hardware; IndexedDB persistence for saved scripts; service-worker offline-PWA playground.
 
+**flowlang.dev site (Phase 49 follow-ups):**
+- Custom domain (D-49-37) — composer grabs e.g. `flowmusic.dev` / `flow-music.dev` / `composeflow.dev` (`flowlang.dev` is taken by an unrelated language) and CNAMEs it to CF Pages. v1.5 ships on `<project>.pages.dev`. Dashboard + DNS only, no code change; steps in `49-DEPLOYMENT-RUNBOOK.md` §6.
+- Wiki auto-rebuild webhook — a GitHub Action on the wiki repo that triggers a CF Pages deploy hook so wiki pushes auto-rebuild without a flow-sharp default-branch push (D-49-25; v1 rebuilds on flow-sharp push).
+- Monaco full-LSP bridge (D-49-14) — currently syntax highlighting + builtin Tab-completion via the hand-written Monarch tokenizer; wire `monaco-languageclient` to the Phase 17 `flow-lsp` for hover/diagnostics/go-to-def.
+- COOP/COEP un-scoping → AudioWorklet + SharedArrayBuffer in-browser live coding (shared with the Phase 48 D-48-02 stretch) — `_headers` already lays the scoped-to-/playground foundation.
+- AnalyserNode audio-waveform visualization in the playground (D-49-CONTEXT deferred) — a live oscilloscope/spectrum over the rendered buffer.
+- Anonymous "Save" fallback (no GitHub) + community-submitted showcase pieces (gallery curation + moderation pipeline); PWA install / IndexedDB script persistence; mobile-editing affordances (Monaco zoom + large-target buttons); inline runnable code in docs pages; i18n.
+
+> **Phase 49 status (2026-06-05): EXECUTION COMPLETE — PENDING HUMAN-UAT + LIVE DEPLOY (NOT shipped).** The greenfield `flow-site/` SvelteKit 2 / Svelte 5 / TS / Tailwind v4 site + skeuomorphic playground is built + green in CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4, axe 0-critical), but THREE human-action gates remain OPEN (live CF deploy, GitHub OAuth App + live gist, cross-browser AUDIBLE/visual/SR UAT — all in `49-HUMAN-UAT.md`). Phase 49 flips to SHIPPED only after that sign-off, and does NOT yet increment the v1.5 shipped-phase count. **v1.5 milestone status: 11/15 phases SHIPPED** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 + 48); Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) + Phase 46 + Phase 49 still pending close.
+
 ---
 
 ## v1.4 Audio Fidelity, Distribution & Public Showcase — Shipped 2026-05-16

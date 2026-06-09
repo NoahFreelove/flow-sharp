@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
-status: ready_to_plan
-stopped_at: Phase 48 SHIPPED 2026-06-05 (WASM Runtime + WebAudioBackend — Mono-WASM publish + flow-runtime.js ES module + real WebAudioBackend via JSImport + 3.07 MB compressed bundle)
-last_updated: 2026-06-05T00:00:00.000Z
-last_activity: 2026-06-05 -- Phase 48 closed (Plan 48-07 closer): 48-VERIFICATION.md + 48-PHASE49-HANDOFF.md written; STATE/ROADMAP/REQUIREMENTS/CLAUDE/MILESTONES flipped to Phase 48 SHIPPED
+status: Phase 49 execution complete — PENDING HUMAN-UAT + live deploy (3 open gates; NOT shipped)
+stopped_at: "Completed 49-09-PLAN.md (CLOSER: VERIFICATION + deployment runbook + tracking sweep) — Phase 49 build done, 3 human-action gates OPEN (live deploy, gist OAuth, audible/visual/SR UAT)"
+last_updated: "2026-06-05T00:00:00.000Z"
+last_activity: 2026-06-05
 progress:
   total_phases: 15
   completed_phases: 11
-  total_plans: 84
-  completed_plans: 78
-  percent: 93
+  total_plans: 93
+  completed_plans: 93
+  percent: 78
 ---
 
 # Project State
@@ -21,16 +21,68 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 48 SHIPPED — Phase 49 (flowlang.dev SvelteKit site) next
+**Current focus:** Phase 49 — flowlang-dev-site
 
 ## Current Position
 
-Phase: 48 SHIPPED 2026-06-05
-Plan: 7/7 complete
-Next step: `/clear` then `/gsd:plan-phase 49` (Phase 49 unblocked — SvelteKit playground consumes flow-runtime.js per `.planning/phases/48-wasm-runtime-webaudio-backend/48-PHASE49-HANDOFF.md`). Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) also pending for milestone close.
+Phase: 49 (flowlang-dev-site) — EXECUTION COMPLETE, PENDING HUMAN-UAT + LIVE DEPLOY (NOT shipped)
+Plan: 9 of 9 executed (49-01..49-09 built + tested). 49-09 closer is done (VERIFICATION + deployment runbook + tracking sweep). The autonomous BUILD is complete and green in CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4 both form factors, axe 0-critical) — but the phase is NOT yet shippable/verified. THREE human-action gates remain OPEN.
+Next step: Composer runs `.planning/phases/49-flowlang-dev-site/49-HUMAN-UAT.md` — the CONSOLIDATED batch folding in all three open gates into ONE pass: (1) live CF Pages deploy [49-01, REQ-SITE-IA-01 deploy + REQ-SITE-DEPLOY-01]; (2) GitHub OAuth App + live gist round-trip [49-06, REQ-SITE-SHARE-02]; (3) cross-browser AUDIBLE audio [REQ-SITE-PLAYGROUND-03] + skeuo visual fidelity [REQ-SITE-DESIGN-01..04] + screen-reader smoke [REQ-SITE-A11Y-*]. Deploy/OAuth setup: `49-DEPLOYMENT-RUNBOOK.md`. Per-REQ closure + caveats: `49-VERIFICATION.md` (status human_needed). Phase 49 flips to SHIPPED only after that sign-off. Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) also pending for milestone close.
 
-Status: Ready to plan
+Status: Phase 49 execution complete — pending HUMAN-UAT + live deploy (3 open gates; NOT shipped, NOT verified)
 Last activity: 2026-06-05
+
+**Phase 49 highlights (2026-06-05) — flowlang.dev site, EXECUTION COMPLETE / NOT shipped (pending HUMAN-UAT + live deploy):**
+
+- **Phase 49 is NOT shipped.** All 9/9 plans built + tested in headless CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4 both form factors, axe 0-critical), but THREE human-action gates remain OPEN, so the phase is "execution complete — pending HUMAN-UAT + live deploy", not SHIPPED. The honest closure artifacts: `49-VERIFICATION.md` (status human_needed, 24 REQ-SITE-* → 20 closed / 4 pending, D-49-01..38 trace, 7 caveats), `49-DEPLOYMENT-RUNBOOK.md` (CF Pages + OAuth App + env vars + `_headers` + custom-domain CNAME + wiki re-sync), `49-HUMAN-UAT.md` (the consolidated 3-gate composer pass), `flow-site/README.md` (greenfield-TS project README).
+- **The three OPEN gates (all in `49-HUMAN-UAT.md`):** (1) **live CF Pages deploy** — composer's CF account creates the `flow-music`/`flow-music-playground` project (D-49-36), confirms `<project>.pages.dev` serves the site [REQ-SITE-IA-01 deploy + REQ-SITE-DEPLOY-01]; (2) **GitHub OAuth App + live gist** — register the App (callback `/api/auth/github`, scope `gist`), set CF env vars, confirm a real gist round-trips [REQ-SITE-SHARE-02]; (3) **cross-browser AUDIBLE audio** (Chrome/Firefox/Safari/mobile — headless only asserts `AudioContext.state==='running'`; Phase 48 left Chrome/Safari UNVERIFIED, Firefox PASS only) + **skeuo visual fidelity** (vintage-gear, not glassmorphism) + **screen-reader smoke** [REQ-SITE-PLAYGROUND-03 + REQ-SITE-DESIGN-01..04 + REQ-SITE-A11Y-* SR portion].
+- **What is proven (headless, deterministic):** greenfield `flow-site/` SvelteKit 2 / Svelte 5 / TS / Tailwind v4 builds clean to `.svelte-kit/cloudflare/`; the frozen Phase 48 AppBundle is committed byte-identical under `static/wasm/`; the .NET-in-WASM runtime boots + runs Flow in headless chromium; Monaco mounts client-only with a hand-written Flow Monarch tokenizer; the Run gesture chain reaches `AudioContext` `running`; 26 wiki pages + Home + Showcase + /design prerender; share encode/decode round-trips with a decompression-bomb guard; the OAuth worker validates `state` + exchanges server-side (mocked GitHub); axe 0-critical on every route; single-column collapse with no 320/375 horizontal overflow; Lighthouse ≥0.90 ×4 on /, /docs, /playground both form factors (CF-accurate brotli server).
+- **9-plan build trail:** 49-01 scaffold + committed AppBundle + Wave-0 test stack; 49-02 skeuo design system (tokens + 4 surfaces + 8 components + dual theme + /design baselines); 49-03 Home + 5-tab nav; 49-04 wiki docs sync + shiki; 49-05 WASM playground (Monaco + runes + gesture Run); 49-06 share (URL-fragment + gist OAuth worker); 49-07 showcase gallery; 49-08 a11y/perf gate + HUMAN-UAT authoring; 49-09 closer (this sweep). 38 D-49-NN decisions all traced; 3 RESEARCH corrections honored (grammar path, no real wiki `[[links]]`, `_headers` at project root).
+- **v1.5 milestone: still 11/15 phases SHIPPED** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 + 48) — Phase 49 does NOT increment the shipped count until its HUMAN-UAT signs off. Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) + Phase 46 also remain. v1.6 backlog gained: live-gist webhook auto-rebuild, Monaco full-LSP, COOP/COEP un-scoping for AudioWorklet, AnalyserNode waveform, custom domain, PWA/service-worker, mobile-editing affordances (see MILESTONES.md).
+
+**Phase 49 Plan 08 highlights (2026-06-05) — a11y/perf validation gate:**
+
+- **axe 0-critical gate green** — `tests/a11y.spec.ts` (replaces Wave-0 stub) runs `@axe-core/playwright` on `/`, `/docs` (index + `/docs/flow-operator` slug), `/playground` (post-mount), `/showcase` with 0 critical/serious violations + keyboard-nav (no trap) + `aria-current`/landmark/`aria-live` contracts. **Responsive gate green** — `tests/responsive.spec.ts` (replaces stub) asserts single-column collapse <768px (nav hamburger, playground stack + Monaco read-only + banner, docs Contents disclosure, single-col showcase) AND no horizontal overflow at 320px AND 375px on every route. **54/54** across desktop/mobile/mobile-narrow.
+- **Lighthouse ≥90 ×4 on /, /docs, /playground (mobile + desktop), UNCONDITIONAL** (D-49-31/AC-6, no carve-out, no faked score). Production-accurate 3-run medians: desktop **all 1.00**; mobile `/` 0.95 · `/docs` 0.97 · `/playground` 0.95 (a11y/best/seo all 1.00). The committed `lighthouserc.cjs` serves the built CF output via new `scripts/lh-serve.mjs` (brotli + cache + SPA fallback) — the PRODUCTION condition. `vite preview` (uncompressed) had under-scored mobile /playground Perf to 0.88 as a pure dev-server artifact (text-compression alone = ~2.4 MB). WASM confirmed lazy-loaded off LCP (`/`, `/docs` never fetch `/wasm`). The ## Risks /playground-Perf concern did NOT materialise.
+- **Rule 1 bugs surfaced + fixed by the gate** (this IS the cleanup pass): (a) horizontal overflow at 320/375 on `/` + `/docs/[slug]` — `min-width:0` on `.skeuo-panel`/`.docs-sidebar`/`.docs-body`/`.home-cta__cmd`, `max-width:100%` on the install bar, playground `30% 50% 20%` cols → `minmax(0,fr)` (also fixed 12px desktop overflow); (b) axe `scrollable-region-focusable` — `highlightFlow` injects `tabindex=0`+`role=region` on the shiki `<pre>` (one focusable scroller/block) + brass focus ring; (c) axe `heading-order` h1→h3 jump — visually-hidden hero `<h2>` (lifted a11y 0.98→1.00 on `/` + `/playground`); (d) `/playground` missing meta description (SEO 0.91→1.00).
+- **Resolved the deferred `/design` visual baselines** (49-03/49-07 deferred-items): all 9 regenerated + committed (3 desktop legitimately changed by the Panel/focus-ring fixes, 6 mobile were missing) + `maxDiffPixelRatio: 0.04` for cross-env font drift. `visual.spec.ts` 9/9 green.
+- Full suite: vitest **70/70**, playwright **275/275** (1 known nav flake passes on retry; CI has retries:2), `pnpm check` **0 errors**. Zero new packages (`@axe-core/playwright` + `@lhci/cli` already scaffolded). 2 commits: `0a1ab28` (axe + responsive + Rule 1 fixes + visual baselines), `76e236a` (Lighthouse config + lh-serve.mjs + meta desc). REQ-SITE-A11Y-01/02/03 + REQ-SITE-PERF-01 + REQ-SITE-RESPONSIVE-01 closed (automated portion; SR-smoke + audible + visual + live-deploy are the pending HUMAN-UAT items in `49-HUMAN-UAT.md`).
+
+**Phase 49 Plan 07 highlights (2026-06-05) — Showcase gallery:**
+
+- `/showcase` is a prerendered grid of 10 curated `<PieceCard>` (`<Panel framed>`) cards spanning genres (classical, ragtime, jazz, granular + stretch sound design, tidal/Markov generative, parameterized song structure, Carlos Alpha microtonal, #jazz/#blues improv packs). Manifest at `src/lib/showcase/pieces.ts` is the single source of truth — gallery, prerender `entries()`, build-time shiki highlight, and the E2E all derive from it.
+- `/showcase/[slug]` detail (all 10 prerender to static HTML): hero audio behind an explicit play `<Button>` + `<LedIndicator>` (reused 49-03 `AudioEmbed`, NO autoplay D-49-01) OR a "hear it in the playground" poster when no asset exists; composer notes; a server-rendered shiki source block (build-time `highlightFlow`, D-49-15) OR a "View source on GitHub" link for absent pieces; Open-in-playground `#code=` deep-link for Web-runnable pieces (same contract as Home's CodeCard).
+- **Honest worktree reality (D-49-07-01):** the two pieces whose `.flow` was deleted from the worktree — "In Five Voices" symphony + "Stride & Stomp" ragtime — link out to GitHub (no fabricated source); the symphony reuses the real `flow-showcase.wav` multi-voice render as its hero audio. The v1.5 third-genre piece (Phase 41 SHOWCASE-01, unbuilt) is OMITTED, not invented. Carlos Alpha maps to the real `microtonal-ji.wav`.
+- **Runnable gating (D-49-07-02):** Open-in-playground only for genuinely Web-runnable pieces. The Carlos Scala piece (`loadScala` reads `.scl` off disk) and the improv style packs (engine-init content) show source for reading but no playground button. Source inlined verbatim in `sources.ts` (D-49-07-03) over `?raw` cross-root imports — keeps the CF Pages build self-contained.
+- Wiring `/showcase` resolved the 49-03 prerender warning: dropped the `svelte.config.js` warn-not-fail `/showcase` allowance (a 404 now fails the build) + added `/showcase` to `PRERENDERED` in `render-strategy.spec.ts`. `pnpm build` exit 0, zero `/showcase` 404s, 10 detail pages + gallery prerendered. `showcase.spec.ts` (19 assertions × 3 viewports) + render-strategy = 84/84 green; `pnpm check` 0 errors. Rule 1 fix: E2E asserted raw HTML against unescaped `&`-titles → added `escapeHtml()` for raw-HTML checks. 2 commits: `3cd00ef` (manifest + gallery), `e8eea45` (detail + audio + shiki + E2E). REQ-SITE-SHOWCASE-01 closed.
+
+**Phase 49 Plan 05 highlights (2026-06-05) — WASM playground (the interactive core):**
+
+- `/playground` lazy-boots the Phase 48 WASM runtime in `onMount` (D-49-34 — never on Home/Docs) via `src/lib/runtime.ts`, a thin `@vite-ignore` wrapper over the FROZEN `flow-runtime.js` (never edits it — HANDOFF §8). Boot failure surfaces the UI-SPEC "runtime didn't load" copy in a top-level pane, distinct from per-run `RunResult.errors[]`. **Verified end-to-end in headless chromium: the .NET-in-WASM engine boots and executes Flow.**
+- Monaco mounts client-only (Pitfall 1 — `ssr=false` route, all Monaco/runtime imports DYNAMIC inside `onMount`). `src/lib/monaco/index.ts` self-hosts the base `editor.worker?worker` (single custom language → no TS/JSON workers; `worker.format='es'` for Firefox) + `createFlowEditor` (flow-slate theme on `--color-slate`, JetBrains Mono, `automaticLayout`). `src/lib/monaco/flow-monarch.ts` is a hand-written Monarch tokenizer derived from the Phase 17 TextMate grammar (chord-before-note ordering, music-numeric suffixes, `-> ~> @`, symbols, note-stream/tuple delimiters) per RESEARCH Open Q3 — NO onigasm/TextMate-in-Monaco.
+- `src/lib/playground/state.svelte.ts` is the Svelte 5 runes engine: `PlaygroundState` with `$state` (editor/console/run-status/midi) + `$derived` (hasRun/hasMidi); `run(runtime, source)` splits the `RunResult` and drops the never-raised `cancel` kind (D-48-10). The Run onclick chains `await runtime.resumeAudio(); pg.run(...)` in ONE user-gesture frame (HANDOFF §5, D-48-09) — the AudioContext reaches `running` post-click (asserted via a Proxy-wrapped-AudioContext test hook). stdout (ink) / stderr ("Advisories", ink-muted) split; `errors[]` render as ESCAPED-text Rust-style boxes (Svelte curly-expr auto-escape, never `{@html}` — Security V5); conditional MIDI download via `download.ts` Blob/anchor.
+- Mobile <768px: single-column stack (controls → editor → console → status), Monaco `readOnly` + the UI-SPEC banner; **no horizontal overflow at 375px AND 320px** (E2E-asserted). Run + audio still work on mobile.
+- **Rule 1 bug (the headline landmine):** naming the page's local `PlaygroundState` instance `state` SHADOWS the `$state` rune — the Svelte compiler emits `store_get($$store_subs, "$state", state)` and the route 500s with `store.subscribe is not a function`. Renamed the instance to `pg`. Also corrected snippets to valid Web-target Flow (`(play | ... |)` note streams + `(writeMidi path Song)`; `renderSequence`/`play(Song)` don't resolve).
+- **MIDI download is forward-compatible** (Known Stub): the SHIPPED Phase 48 `WasmEntry.cs` hardcodes `Midi = null` (the in-memory `writeMidi` capture hook is reserved — HANDOFF §9 is the INTENDED contract). The button renders only `{#if pg.hasMidi}` so it lights up once a future runtime populates `midi`; the frozen runtime was NOT edited. Audibility + real MIDI bytes are 49-08 HUMAN-UAT items.
+- 5 E2E specs replace the Wave-0 stubs → **15 runs green** (wasm-boot / playground-run / playground-audio / playground-export / playground-mobile across desktop/mobile/mobile-narrow). `pnpm build` exit 0; `pnpm check` 0 errors. Zero new packages (monaco-editor 0.55.1 already scaffolded). 3 commits: `9ef9fbe` (runtime+Monaco+Monarch), `0ce8101` (runes state+snippets+download), `46828b4` (page+gesture Run+console+mobile+5 E2E). REQ-SITE-PLAYGROUND-01..05 + REQ-SITE-RESPONSIVE-01 closed.
+
+**Phase 49 Plan 04 highlights (2026-06-05) — wiki docs sync + rendering:**
+
+- `scripts/sync-wiki.sh` populates `flow-site/src/docs/wiki/` two ways (D-49-25): `git clone --depth 1 "$WIKI_REPO_URL"` for the CF build, in-repo `wiki/` seed fallback for local/CI. `set -euo pipefail` + a final non-empty assertion fail the build loudly rather than ship empty docs (threat T-49-04-SYNC). Wired into `predev`/`prebuild`.
+- `rewriteWikiLinks` (transform.js) is fence-aware (the `[[1,10],...]` array in Collections.md survives), idempotent, unit-proven against a SYNTHETIC `[[Quick-Start]]` fixture — the real wiki has ZERO `[[ ]]` links (RESEARCH Pitfall 7). **Rule 1 deviation:** extended to also rewrite the relative `[Label](Page-Name.md#anchor)` cross-links the wiki ACTUALLY uses → `/docs/<slug>(#anchor)` (remark-wiki-links.js link-node pass). Slugs are lowercase-kebab with reserved-`index` + collision guards (slug.js, D-49-27).
+- All 26 wiki pages prerender at `/docs/[slug]` (27 cloudflare HTML incl. index) in a two-column `.surface-wood` sidebar + `.surface-paper--staff` body with `aria-current` nav (UI-SPEC §Docs page). Server-rendered shiki Flow highlighting loads the REAL Phase 17 grammar at `vscode-extension/syntaxes/flow.tmLanguage.json` (RESEARCH-corrected path), copied into flow-site by `sync-grammar.mjs`, zero client JS (D-49-15). Each `flow` block carries an Open-in-playground secondary button (href → `/playground` plain fallback + `data-flow-source`; Plan 49-06 `encode.ts` fills the real `#code=` deep-link).
+- `/docs` index renders the four-category TOC (`<Panel header>` cards: Getting Started / Music Concepts / Audio + Output / Reference) from `docs-categories.json` — config-driven, not hard-coded (D-49-22). categories.ts warns + Uncategorized-groups any orphan wiki page.
+- **Architecture (Rule 3):** docs core authored as `.js` (slug/transform/highlight/remark) so the Node-loaded `svelte.config.js` mdsvex/remark chain can import it (Node ESM has no `.ts` loader); `shiki.ts` is the typed re-export shim that keeps the Plan 49-03 `highlightFlow(code, lang)` contract + the `createHighlighter`/`tmLanguage` key-link. Added `unist-util-visit` + `rehype-slug` (heading ids so `#anchor` links resolve); `prerender.handleHttpError`/`handleMissingId: warn` tolerate genuine wiki content gaps (dangling Articulations.md/Tuning.md, missing section anchors). `.gitignore` negation tracks the docs `__fixtures__` despite the global `*.md` ignore.
+- Verifications: `pnpm vitest run src/lib/docs/transform.test.ts` 15/15 (full suite 42 passed / 5 pre-existing Wave-0 skips); `pnpm build` exit 0 (26 docs + index prerendered); `playwright test docs-render.spec.ts docs-toc.spec.ts` 87 passed (system-chromium fallback); `pnpm check` 0 errors. REQ-SITE-DOCS-01..04 closed. 3 commits: `d9cd152` (sync+transform+slug+categories), `fd20b26` (shiki+mdsvex+/docs/[slug]), `704e64c` (categorized /docs index).
+
+**Phase 49 Plan 02 highlights (2026-06-05) — skeuomorphic design system:**
+
+- `flow-site/src/lib/design/tokens.css` lands the full D-49-17 token set as CSS custom properties — light `:root` (paper/walnut/brass/slate/ink/felt/danger) + a `[data-theme="dark"]` block (D-49-20 deep-walnut + amber-LED). Spacing (4/8/12/16/24/32/48/64), type scale (12→48 with line-height+tracking pairs), shadows (1/3/8/16/32 + inset + bevel), radius (2/4/8/12/24), motion curves (`--motion-press` 50ms, `--ease-overshoot`, `--motion-slide`/`-led`/`-hover`, `--ease-knob`). Mapped into Tailwind v4 via `@theme` in `app.css` (CSS-first, NO `tailwind.config.js`) — the `@theme` block REFERENCES the tokens.css custom props so one utility class re-resolves per `[data-theme]` with no Tailwind variants.
+- `surfaces.css` ships the 4 `.surface-*` material classes (D-49-18): brushed-metal (inline-SVG horizontal-brush feTurbulence), wood (walnut gradient + Sharp AVIF/WebP/PNG grain raster via `image-set`), paper (fiber speckle + optional staff-line ruling), felt (dot/weave + inset). EACH declares its flat-base fallback FIRST (D-49-33 correct first paint) + degrades under `prefers-reduced-data`.
+- 8 skeuo Svelte-5 components (D-49-19 ceiling met exactly) at `src/lib/components/skeuo/`: Button (5 variants, INSET 50ms press), Knob + Slider (WAI-ARIA `role=slider` + full Arrow/Home/End/PageUp-Down keyboard model + `aria-valuetext`; Knob renders the flat Slider under `prefers-reduced-motion`), Toggle (`role=switch` + theme persistence), Panel (framed/inset/header, elevated/seated, reduced-motion→1px walnut border), MetalRail (`aria-hidden`), LedIndicator (idle/rendering/playing/error + visually-hidden `aria-live` status mirror — status NOT by colour alone), Tabs (5-tab nav, `aria-current="page"`, external GitHub `rel="noopener noreferrer"` + visually-hidden "opens in new tab"). Every interactive element carries the brass 2px `:focus-visible` ring + 44px hit area.
+- Dual-theme persistence: `theme.ts` (localStorage wins, else `prefers-color-scheme`) + an inline `app.html` script applies `[data-theme]` before first paint (FOUC-prevention, Rule 2), CSP-hashed in `_headers` (no `unsafe-inline`). Self-hosted Inter 400/600 + **Fraunces 700** (OFL — Recoleta substitute, D-49-02-FONT) + JetBrains Mono 400 as woff2, `font-display: swap`, no Google Fonts CDN (keeps CSP `font-src 'self'`).
+- `/design` showcase renders every component in every state (theme toggle + reduced-motion preview); `tests/visual.spec.ts` replaces the Wave-0 `test.skip` and captures light/dark/reduced-motion Playwright baselines (two-run clean). Verifications: `pnpm build` 0, `pnpm vitest run` 0 (27 passed: 21 component + 6 theme; 8 pre-existing Wave-0 skips), `playwright test tests/visual.spec.ts` 0.
+- TDD (Task 2): `skeuo.test.ts` pinned the a11y contracts RED (`30b305a`) before the GREEN implementation (`594fe6e`). 4 commits: `564aafd` (tokens/surfaces/fonts), `30b305a` (test RED), `594fe6e` (components GREEN), `7f8a528` (/design + baselines). REQ-SITE-DESIGN-01..05 + REQ-SITE-A11Y-01/03 closed.
 
 **Phase 45 highlights (2026-05-29):**
 
@@ -173,7 +225,7 @@ Last activity (Plan 03): WebAudioBackend real [JSImport] impl — see prior STAT
 | 47 | Compile-Target Flavors | REQ-WEB-TARGET-01..10 | 10 | **Shipped 2026-05-25** |
 | 48 | WASM Runtime + WebAudioBackend | REQ-WASM-BUILD-01..05, REQ-WEBAUDIO-01..04, REQ-WASM-API-01..03, REQ-WASM-DRYWET-01, REQ-WASM-SIZE-01, REQ-WASM-DET-01 | 15 | **Shipped 2026-06-05** |
 
-**v1.5 progress: 11/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 + 48 — note: 44 + 47 shipped same day; 45 shipped 2026-05-29; 48 shipped 2026-06-05). 153 v1.5 REQs total; 134 closed + Phase 40/41/46/49 still pending.
+**v1.5 progress: 11/15 phases SHIPPED** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 + 48 — note: 44 + 47 shipped same day; 45 shipped 2026-05-29; 48 shipped 2026-06-05). **Phase 49 (flowlang.dev site) is execution-complete but NOT shipped — pending HUMAN-UAT + live deploy (3 open gates); it does not increment the shipped count until its UAT signs off.** Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) + Phase 46 + Phase 49 still pending milestone close.
 
 **Build-order constraints from research:**
 
@@ -336,6 +388,7 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | 44 | 12 | - | - |
 | 45 | 6 | - | - |
 | 46 | 6 | - | - |
+| 49 | 5 (of 9) | - | 49-05 ~50min |
 
 **Recent Trend:**
 
@@ -474,6 +527,15 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 | Phase 45 P02 | 18 | 1 tasks | 4 files |
 | Phase 45 P04 | 9 | 2 tasks | 10 files |
 | Phase 45 P05 | 7 | 1 tasks | 3 files |
+| Phase 49 P02 | 20min | 3 tasks | 34 files |
+| Phase 49 P04 | 50min | 3 tasks | 22 files |
+| Phase 49 P03 | 24min | 3 tasks | 12 files |
+| Phase 49 P07 | 30min | 2 tasks | 11 files |
+| Phase 49 P06 | 11min | 3 tasks | 16 files |
+| Phase 49 P08 | 95min | 2 tasks | 12 files |
+| Phase 49 P01 | 10min | 3 tasks | 77 files |
+| Phase 49 P05 | 50min | 3 tasks | 13 files |
+| Phase 49 P09 | 12min | 3 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -482,6 +544,8 @@ Phase 17 has 3 pending HUMAN-UAT items in 17-HUMAN-UAT.md (rows 1-3 of manual-sm
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [Plan 49-08]: Lighthouse measured against a CF-Pages-accurate brotli+cache+SPA-fallback server (`scripts/lh-serve.mjs`), NOT `vite preview` (uncompressed, no cache → ~11pt false-negative on WASM-heavy /playground Perf). The ≥90 ×4 bar (D-49-31/AC-6) is met UNCONDITIONALLY (desktop all 1.00; mobile 0.95/0.97/0.95) — no carve-out, no faked score. Committed config uses `numberOfRuns: 3` (median) to absorb single-run FCP/LCP CPU spikes. Do NOT revert to vite preview / staticDistDir (the latter 404s the client-only /playground).
+- [Plan 49-08]: Canonical no-horizontal-overflow fix = `min-width:0` on grid/flex items that hold overflowing content. Code blocks become ONE keyboard-accessible scroll region via `highlightFlow` injecting `tabindex=0`+`role=region` on the shiki `<pre>` (axe scrollable-region-focusable). `/design` visual baselines regenerated + `maxDiffPixelRatio:0.04` for cross-env font drift.
 - [Roadmap v1.2]: Audit Spike must be Phase 11 (own phase) because architecture and pitfalls researchers disagreed on C1-C5 reality; fixing-without-reproducing risks regressions
 - [Roadmap v1.2]: FIX-07 scope is contingent on SPIKE outcome; migration-comms work for C5 (if confirmed) bundles into Phase 12, not a separate phase
 - [Roadmap v1.2]: Nyquist validation backfill is own phase (13) to avoid bundling with bug-fix confirmation bias
@@ -658,6 +722,21 @@ Recent decisions affecting current work:
 - [Phase ?]: Phase 45 D-09: Parser emits BeatLiteralExpression own AST record (not flat LiteralExpression) so raw double survives to Wave-4 eval-time multiplier
 - [Phase ?]: Plan 45-04: EvaluateBeatLiteral switch arm + multiplier formula final = pragma_on ? raw x (4/denom) : raw; dedicated str(Beat) overload added (D-14, plain double) to resolve str(Float)/str(Double) ambiguity
 - [Phase ?]: Phase 45 D-05: (beat N) constructor migrated to RegisterContextDependent — both Beat-construction paths honor beat-true-to-sig pragma
+- [Phase ?]: D-49-02-FONT: Fraunces (OFL) self-hosted as display face — Recoleta substitute (commercial, no redistributable woff2)
+- [Phase ?]: Plan 49-02: inline app.html early-theme script (CSP-hashed) prevents theme FOUC; Tailwind v4 @theme references tokens.css custom props for runtime [data-theme] swapping
+- [Phase ?]: Plan 49-04: docs core authored as .js so svelte.config.js (Node ESM) imports it; shiki.ts is a typed re-export shim (Plan 49-03 highlightFlow contract + tmLanguage/createHighlighter key-link)
+- [Phase ?]: Plan 49-04: wiki cross-link transform handles BOTH [[Page]] and relative Page.md(#anchor) links (the wiki actually uses .md style heavily); prerender warns (not fails) on genuine content gaps
+- [Plan 49-05]: do not name a Svelte component's local state instance 'state' — it shadows the $state rune (compiler store_get → SSR 500). Renamed the playground PlaygroundState instance to 'pg'.
+- [Plan 49-05]: MIDI download wired forward-compatibly — Phase 48 ships RunResult.midi=null (frozen runtime, HANDOFF §8); the button renders only {#if hasMidi} and lights up once a future runtime populates midi; audibility + real bytes are 49-08 HUMAN-UAT.
+- [Plan 49-05]: Monaco + WASM are dynamic-imported INSIDE onMount only (ssr=false route) — the AppBundle stays opaque (@vite-ignore) and self-loads its own ./_framework/dotnet.js; the Run gesture chains resumeAudio()+run() in one async frame (HANDOFF §5 / D-48-09).
+- [Phase ?]: 49-03: CodeCard deep link uses /playground#code= + data-flow-source + data-run=1 (matches 49-04 docs carrier; 49-06 fills the encoder)
+- [Phase ?]: 49-03: Home audio embeds use first-party rendered Flow audio since examples/symphony was deleted — charitable, no fabrication
+- [Phase ?]: D-49-07-01: Showcase ships 10 curated pieces (D-49-24 6-12) — 8 embed in-repo source, symphony+ragtime link out to GitHub (deleted .flow, no fabrication)
+- [Phase ?]: D-49-07-02: Open-in-playground #code= deep-link only for genuinely Web-runnable pieces; Carlos Scala (loadScala reads disk) + improv style packs show source but no playground button
+- [Phase ?]: D-49-07-03: showcase source inlined verbatim (sources.ts) over ?raw cross-root imports to keep CF Pages build self-contained
+- [Phase ?]: 49-06: URL-fragment share (fflate base64url, 256KB streaming-inflate decompression-bomb cap) is the default zero-backend path; gist OAuth via a ≤50-LOC CF Worker (crypto.getRandomValues state CSRF, server-only secret, hard-coded same-origin redirect, scope=gist) is the promote-path
+- [Phase ?]: 49-06: docs carrier uses encode-node.js (Node ESM has no .ts loader for svelte.config.js) byte-identical to encode.ts, parity-pinned — closes the cross-wave #code= contract across Home + docs + showcase carriers
+- [Phase ?]: 49-06: OAuth token rides #token= fragment into sessionStorage (D-49-28 ephemeral) + history.replaceState URL clean; auto-run rides &run=1 in the fragment (D-49-08)
 
 ### Phase 24 Closure Anchor (2026-05-04)
 
@@ -835,6 +914,7 @@ None yet for Phase 15.
 - Phase 14 (DX-08): NoteStreamCompiler velocity propagation (647-line file) may be complete already — verification pass may obviate new-code work *(confirmed in Phase 14 Plan 03 Outcome A — zero gap-fix required)*
 - Phase 14 (DX-06) / Phase 15 (DX-07): Identifier collision grep required before landing (`H`, `Db`, `Eb`, `Fb`, `Cb`, `Bb`, `Gb`, `Ab`, `enharmonic`, `reverbTime`) *(Phase 14 slice done in 14-02-PLAN; `reverbTime` grep still owed for Phase 15)*
 - Phase 15 (DX-09): Pinned PRNG (xorshift64* / splitmix64) required — `System.Random` is not stable across .NET patch versions and would violate "code is the score" reproducibility
+- 49-06 HUMAN-ACTION CHECKPOINT (REQ-SITE-SHARE-02 live UAT): composer must register a GitHub OAuth App (callback https://<project>.pages.dev/api/auth/github from CF 49-01), set GITHUB_CLIENT_ID + GITHUB_CLIENT_SECRET as CF Pages env vars (secret encrypted), deploy, then do the live 'Save to gist' round-trip. Code is built + mocked-tested; only the OAuth-App registration + live gist creation remain (cannot run in CI without leaking a secret).
 
 ### Quick Tasks Completed
 
@@ -874,9 +954,9 @@ These are open at milestone close. Re-surface via `node $HOME/.claude/get-shit-d
 
 ## Session Continuity
 
-Last session: 2026-05-30T15:00:12.028Z
-Stopped at: Phase 46 context gathered
-Resume file: .planning/phases/46-codebase-bloat-removal/46-CONTEXT.md
+Last session: 2026-06-05T23:32:13.041Z
+Stopped at: Completed 49-06-PLAN.md (Share/Save: URL-fragment + gist OAuth) — Task 4 human-action checkpoint pending
+Resume file: None
 
 **Next milestone:** TBD — invoke `/gsd-new-milestone` to discuss v1.5+ direction once Phase 40 + 41 + 44 close. Within v1.5, Phase 40 (Studio Sync) + Phase 41 (Reach + Closer) + Phase 44 (Strict Mode) remain. Phase 44 is AUDIT.md-fed (depends on Phase 42 deliverable, shipped) and now also benefits from Phase 43's module-namespace + qualified-import work for organizing strict-mode test files; Phase 41 still consumes Phase 40's IMidiBackend abstraction so within the 35-41 trajectory the build order remains Phase 40 → Phase 41. Phase 44 can ship in either order with Phase 40.
 

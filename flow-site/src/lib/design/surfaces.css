@@ -1,0 +1,150 @@
+/*
+ * Material surfaces (D-49-18) — four .surface-* utility classes layered on Tailwind.
+ *
+ * Authoring approach (D-49-18 / D-49-33):
+ *   - brushed-metal / paper / felt → inline-SVG <feTurbulence> overlays (data-URI background,
+ *     smaller + infinitely scalable, inlinable in critical CSS). No raster.
+ *   - wood → walnut base gradient + a Sharp-optimized wood-grain RASTER (the one case SVG
+ *     can't fake; scripts/optimize-textures.mjs emits AVIF/WebP/PNG → static/textures/).
+ *
+ * EVERY class declares its FLAT-BASE fallback FIRST (a plain background-color / gradient) so
+ * first paint is correct before the overlay layer loads (D-49-33), and degrades to that flat
+ * base under prefers-reduced-data or texture-load failure. Textures are decorative only and
+ * never sit behind text (felt especially).
+ *
+ * The inline SVGs are URL-encoded data URIs (single-quoted attrs, `#` → %23) so they live
+ * inline with no extra network fetch — keeps CSP img-src tight and first paint instant.
+ */
+
+/* ---- 1. Brushed metal ------------------------------------------------- */
+/* Slate → satin linear-gradient base + horizontal-brush feTurbulence overlay. */
+.surface-brushed-metal {
+	/* flat-base fallback FIRST */
+	background-color: var(--color-slate);
+	background-image: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-slate) 86%, white) 0%,
+		var(--color-slate) 48%,
+		color-mix(in srgb, var(--color-slate) 92%, black) 100%
+	);
+	color: var(--color-ink);
+	box-shadow: var(--bevel-light);
+}
+.surface-brushed-metal::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	opacity: 0.5;
+	/* horizontal anisotropic brush: high baseFrequency on X, near-zero on Y */
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='80'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9 0.02' numOctaves='2' seed='4'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
+	background-size: 240px 80px;
+}
+
+/* ---- 2. Wood ---------------------------------------------------------- */
+/* Walnut gradient base + Sharp-optimized wood-grain raster (AVIF/WebP/PNG). */
+.surface-wood {
+	/* flat-base fallback FIRST — walnut → walnut-soft gradient if the raster fails */
+	background-color: var(--color-walnut);
+	background-image: linear-gradient(
+		90deg,
+		var(--color-walnut) 0%,
+		var(--color-walnut-soft) 50%,
+		var(--color-walnut) 100%
+	);
+	color: var(--color-paper);
+	box-shadow: var(--bevel-light);
+}
+.surface-wood::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	/* image-set picks AVIF → WebP → PNG by browser support (D-49-32) */
+	background-image: image-set(
+		url('/textures/wood-grain.avif') type('image/avif'),
+		url('/textures/wood-grain.webp') type('image/webp'),
+		url('/textures/wood-grain.png') type('image/png')
+	);
+	/* tiled vertically for rails (D-49-18) */
+	background-repeat: repeat;
+	background-size: 256px 256px;
+	opacity: 0.85;
+	mix-blend-mode: multiply;
+}
+
+/* ---- 3. Paper --------------------------------------------------------- */
+/* Cream base + paper-fiber feTurbulence speckle (very low opacity). */
+.surface-paper {
+	/* flat-base fallback FIRST */
+	background-color: var(--color-paper);
+	color: var(--color-ink);
+}
+.surface-paper::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	opacity: 0.35;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' seed='11'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.14 0 0 0 0 0.10 0 0 0 0 0.07 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+	background-size: 160px 160px;
+}
+/* Docs-background variant: faint 5-line staff ruling over the paper fiber (D-49-18). */
+.surface-paper--staff::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	opacity: 0.08;
+	background-image: repeating-linear-gradient(
+		180deg,
+		transparent 0,
+		transparent 7px,
+		var(--color-ink) 7px,
+		var(--color-ink) 8px,
+		transparent 8px,
+		transparent 15px
+	);
+	background-size: 100% 48px;
+}
+
+/* ---- 4. Felt ---------------------------------------------------------- */
+/* Felt color + dot/weave SVG overlay + recessed inner shadow. Decorative only. */
+.surface-felt {
+	/* flat-base fallback FIRST */
+	background-color: var(--color-felt);
+	box-shadow: var(--shadow-inset);
+}
+.surface-felt::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	border-radius: inherit;
+	opacity: 0.4;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Ccircle cx='3' cy='3' r='1' fill='%23000' opacity='0.35'/%3E%3Ccircle cx='9' cy='9' r='1' fill='%23000' opacity='0.35'/%3E%3Ccircle cx='9' cy='3' r='1' fill='%23fff' opacity='0.08'/%3E%3Ccircle cx='3' cy='9' r='1' fill='%23fff' opacity='0.08'/%3E%3C/svg%3E");
+	background-size: 12px 12px;
+}
+
+/* All surfaces need a positioning context for their ::before/::after overlays. */
+.surface-brushed-metal,
+.surface-wood,
+.surface-paper,
+.surface-felt {
+	position: relative;
+}
+
+/* ---- Graceful degradation: prefers-reduced-data → flat base only ------ */
+@media (prefers-reduced-data: reduce) {
+	.surface-brushed-metal::before,
+	.surface-wood::before,
+	.surface-paper::before,
+	.surface-paper--staff::after,
+	.surface-felt::before {
+		display: none;
+	}
+}

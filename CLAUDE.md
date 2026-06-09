@@ -145,6 +145,33 @@ Source files: `flow-lang/wasm/flow-runtime.js` (ES module) + `flow-lang/Runtime/
 
 See `.planning/phases/48-wasm-runtime-webaudio-backend/48-PHASE49-HANDOFF.md` for the full consumption contract (API surface, AppBundle layout, SvelteKit integration, COOP/COEP preview, MIDI/WAV download, "what Phase 49 must NOT change").
 
+## flowlang.dev Site
+
+**Phase 49 — EXECUTION COMPLETE, PENDING HUMAN-UAT + LIVE DEPLOY (NOT shipped) 2026-06-05.** A new top-level `flow-site/` directory ships the flowlang.dev website: a **greenfield SvelteKit 2 / Svelte 5 / TypeScript / Tailwind v4** project on Cloudflare Pages (`adapter-cloudflare`), sibling to `flow-lang/` + `flow-interpreter/` + `flow-cli/` + `flow-jetbrains/`. Five routes — Home / Docs / Playground / Showcase + an external GitHub link — in a composer-locked skeuomorphic visual system (D-49-06: Logic Pro wood panels, Reason racks, vintage-synth hardware; NOT glassmorphism). The `/playground` tab runs Flow in the browser by consuming the **frozen** Phase 48 `flow-runtime.js` (HANDOFF §8 — never edited).
+
+> **The repo-root C# conventions do NOT apply inside `flow-site/`.** That directory is greenfield web code: TS/Svelte conventions, pnpm, Vite, ESM — not .NET 10 / file-scoped namespaces / record AST nodes. The C# rules in this file govern `flow-lang/` + `flow-interpreter/` + `flow-cli/`, not `flow-site/`. See `flow-site/README.md`.
+
+> **Phase 49 is NOT shipped.** The autonomous BUILD is complete + green in CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4 both form factors, axe 0-critical), but THREE human-action gates remain OPEN: (1) live CF Pages deploy, (2) GitHub OAuth App + live gist round-trip, (3) cross-browser AUDIBLE audio + skeuo visual fidelity + screen-reader smoke. All three are in `.planning/phases/49-flowlang-dev-site/49-HUMAN-UAT.md`; deploy setup is in `49-DEPLOYMENT-RUNBOOK.md`; per-REQ closure (status human_needed) is in `49-VERIFICATION.md`. The phase flips to SHIPPED only after that sign-off.
+
+### Build / dev / deploy
+
+```bash
+pnpm -C flow-site install
+pnpm -C flow-site dev            # vite dev (predev runs sync-wiki.sh)
+pnpm -C flow-site build          # → flow-site/.svelte-kit/cloudflare/  (the CF Pages output dir)
+pnpm -C flow-site test           # vitest run (unit/component)
+pnpm -C flow-site test:e2e       # playwright (desktop / 375 / 320)
+pnpm -C flow-site lh             # lhci autorun (≥0.9 ×4, CF-accurate brotli server via lh-serve.mjs)
+```
+
+CF Pages build command `pnpm -C flow-site build`, output dir `flow-site/.svelte-kit/cloudflare`, project name `flow-music`/`flow-music-playground` (D-49-36). Env vars: `WIKI_REPO_URL` (wiki sync, public), `GITHUB_CLIENT_ID` (public), `GITHUB_CLIENT_SECRET` (encrypted dashboard secret). OAuth callback `https://<project>.pages.dev/api/auth/github` (scope `gist`). `flow-site/_headers` (project root) sets CSP + Permissions-Policy globally + COOP/COEP scoped to `/playground/*` (D-49-38). Custom domain deferred to post-v1.5 (D-49-37). Full guide: `49-DEPLOYMENT-RUNBOOK.md`.
+
+### Committed-AppBundle model + frozen-runtime consumption
+
+The Phase 48 WASM runtime (`flow-runtime.js` + the `_framework/` AppBundle) is **committed verbatim** under `flow-site/static/wasm/` (RESEARCH Open Q2) so the Cloudflare Pages build is **pure-Node** — CF never runs `dotnet`. The playground dynamically imports it in `onMount` (D-49-34 lazy-load — Home/Docs/Showcase never fetch it). Refresh after a future WASM-runtime phase via `bash flow-site/scripts/sync-runtime.sh` (`dotnet publish -p:FlowTarget=Web`) on a dev machine, then commit. The runtime stays frozen for v1.5 — do NOT hand-edit `flow-runtime.js`; the consumption contract is `48-PHASE49-HANDOFF.md`.
+
+Docs are synced at build time from the 26-page `wiki/` via `scripts/sync-wiki.sh` (`git clone --depth 1 "$WIKI_REPO_URL"`, in-repo `wiki/` seed fallback). Share is a default zero-backend URL-fragment path (fflate base64url `#code=`, decompression-bomb-guarded) + a "Save to gist" GitHub OAuth promote path (≤50-LOC CF Worker `workers/gist-auth.ts`, state CSRF, server-side secret, scope=gist).
+
 ## Project Structure
 
 Two projects: **flow-lang** (library, namespace `FlowLang`) and **flow-interpreter** (REPL/CLI, namespace `FlowInterpreter`).

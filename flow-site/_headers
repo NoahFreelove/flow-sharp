@@ -1,0 +1,31 @@
+# Cloudflare Pages security headers (D-49-38). This file lives at the flow-site PROJECT ROOT
+# per the official adapter-cloudflare convention (RESEARCH A4 — NOT static/_headers; the
+# adapter copies it into the build output, where static/_headers would be served as a literal
+# asset and silently ignored).
+#
+# CSP rationale (T-49-01-HDR mitigation):
+#   - script-src 'self' 'wasm-unsafe-eval' : the Phase 48 Mono-WASM runtime needs
+#     wasm-unsafe-eval to instantiate its modules. Monaco is self-hosted (bundled via Vite,
+#     RESEARCH Open Q1) so NO CDN allowance is required.
+#   - connect-src 'self' + GitHub : gist creation (api.github.com) + OAuth (github.com) only.
+#   - style-src 'unsafe-inline' : SvelteKit + Tailwind inject critical inline styles.
+#   - script-src 'sha256-...' : the ONE inline early-theme script in app.html (D-49-20
+#     FOUC-prevention — applies [data-theme] before first paint). Hashed, NOT 'unsafe-inline',
+#     so the policy stays tight. If app.html's inline script body changes, recompute the hash:
+#       node -e 'const fs=require("fs"),c=require("crypto");const b=fs.readFileSync("src/app.html","utf8").match(/<script>([\s\S]*?)<\/script>/)[1];console.log("sha256-"+c.createHash("sha256").update(b).digest("base64"))'
+#
+# COOP/COEP are SCOPED to /playground/* only (RESEARCH Open Q1) — the v1.6 AudioWorklet +
+# SharedArrayBuffer foundation — so marketing/docs fonts + assets are unaffected. v1 WASM is
+# single-threaded and needs no isolation; if these two lines cause subresource friction at
+# Plan 49-05/08 they may be removed per HANDOFF §3 with no security loss. CSP + Permissions-Policy
+# stay regardless.
+
+/*
+  Permissions-Policy: microphone=(), camera=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-zDS2B0ul9twaEUuNWgi1IThSBeH5Sa0i56x2VNYO7Lg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://api.github.com https://github.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/playground/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp

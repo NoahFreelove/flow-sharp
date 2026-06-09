@@ -352,7 +352,7 @@ Plans:
 | 46. Codebase Bloat Removal | v1.5 | 6/6 | Complete    | 2026-05-30 |
 | 47. Compile-Target Flavors | v1.5 | 6/6 | Complete | 2026-05-25 |
 | 48. WASM Runtime + WebAudioBackend | v1.5 | 5/7 | In Progress|  |
-| 49. flowlang.dev SvelteKit + Playground | v1.5 | 0/0 | Not started | - |
+| 49. flowlang.dev SvelteKit + Playground | v1.5 | 9/9 | Built — pending HUMAN-UAT + live deploy (NOT shipped) |  |
 
 ### Phase 42: Type System & Stdlib Audit — SHIPPED 2026-05-24
 
@@ -618,7 +618,9 @@ Plans:
 - [x] 48-06-PLAN.md — HUMAN-UAT browser smoke (Chrome / Firefox / Safari) — Firefox PASS; 9 `fix(48-06)` commits root-caused + fixed the `dotnet.boot.js` boot blocker (`08140bb` … `a5ae19f`)
 - [x] 48-07-PLAN.md — Closer (VERIFICATION + Phase 49 handoff + planning-artifact flips) — `9ae804a` / `9d3063d` + bookkeeping commit
 
-### Phase 49: flowlang.dev Site
+### Phase 49: flowlang.dev Site — EXECUTION COMPLETE, PENDING HUMAN-UAT + LIVE DEPLOY (NOT shipped) 2026-06-05
+
+**Outcome:** Phase 49 is **execution complete but NOT shipped.** All 9/9 plans built + tested in headless CI (vitest 70/70, playwright 275/275, lhci ≥0.9 ×4 both form factors, axe 0-critical), but THREE human-action gates remain OPEN: (1) live Cloudflare Pages deploy [49-01], (2) GitHub OAuth App + live gist round-trip [49-06], (3) cross-browser AUDIBLE audio + skeuo visual fidelity + screen-reader smoke [49-08]. All three are consolidated into ONE composer pass at `.planning/phases/49-flowlang-dev-site/49-HUMAN-UAT.md`; deploy/OAuth setup is in `49-DEPLOYMENT-RUNBOOK.md`; per-REQ closure + caveats in `49-VERIFICATION.md` (status human_needed). 24 REQ-SITE-*: **20 closed (automated), 4 pending the human gate** (IA-01 deploy portion, DEPLOY-01, PLAYGROUND-03 audible, SHARE-02 live gist). Phase 49 flips to SHIPPED only after the 49-HUMAN-UAT sign-off; it does NOT increment the v1.5 shipped-phase count until then. Phase 40 + Phase 41 + Phase 46 also remain for v1.5 close.
 
 **Goal**: Ship a SvelteKit website on Cloudflare Pages that markets Flow, hosts its docs (synced from the existing `wiki/` directory), and houses an interactive playground tab consuming the Phase 48 WASM runtime. Skeuomorphic visual design (locked 2026-05-25 — composer wants the tactile music-software tradition: Logic Pro wood panels, Reason racks, GarageBand knobs — NOT generic AI-template glassmorphism). Distribution + reach milestone closer for v1.5 alongside Phase 41's cross-platform binaries.
 
@@ -653,8 +655,30 @@ Plans:
 
 **Depends on**: Phase 48 (for `flow-runtime.js`). Phase 49 may run in parallel with Phase 48 for non-playground work (Home, Docs, Showcase, design system, gist auth worker) — wire playground tab to live runtime only after Phase 48 closer. Phase 47 not directly required (Phase 48 absorbs it) but transitively needed.
 **Requirements**: TBD (defined at plan-phase — anchor candidates: REQ-SITE-IA-01..05 for navigation + IA, REQ-SITE-DESIGN-01..04 for skeuomorphic visual system, REQ-SITE-DOCS-01..03 for wiki sync, REQ-SITE-PLAYGROUND-01..05 for editor + runtime integration, REQ-SITE-SHARE-01..02 for GitHub gist OAuth, REQ-SITE-A11Y-01..03 for accessibility, REQ-SITE-PERF-01 for Lighthouse, REQ-SITE-RESPONSIVE-01 for mobile).
-**Plans:** 0 plans
+**Plans:** 9/9 plans executed (build + tests complete; 3 human-action gates OPEN — see Outcome above)
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 49 to break down)
+**Wave 1**
+
+- [x] 49-01-PLAN.md — Scaffold flow-site (SvelteKit 2 + Svelte 5 + TS + Tailwind v4 + adapter-cloudflare) + commit Phase 48 AppBundle + _headers + the full Nyquist Wave-0 test stack + CF Pages deploy skeleton
+
+**Wave 2** *(parallel — disjoint files)*
+
+- [x] 49-02-PLAN.md — Skeuomorphic design system: tokens.css + 4 material surfaces + 8 components + dark theme + /design showcase + visual baselines
+- [x] 49-04-PLAN.md — Docs sync: sync-wiki.sh + [[link]] transform (synthetic fixture) + slug + categories + shiki Flow highlighting + /docs index + /docs/[slug]
+
+**Wave 3** *(parallel — depend on 49-02; 49-03 also on 49-04, 49-05 also on 49-01 bundle)*
+
+- [x] 49-03-PLAN.md — Home page (six D-49-21 sections) + persistent 5-tab nav + theme toggle + deep-link auto-run + no-autoplay embeds
+- [x] 49-05-PLAN.md — Playground: runtime.ts wrapper + Monaco (Flow Monarch) + Svelte-5-runes state + gesture-chained Run + stdout/stderr split + escaped error boxes + MIDI download + mobile read-only
+- [x] 49-07-PLAN.md — Showcase gallery + /showcase/[slug] detail (gesture-gated audio + shiki source + composer notes; absent-source pieces link out charitably)
+
+**Wave 4** *(depends on 49-05)*
+
+- [x] 49-06-PLAN.md — Share: URL-fragment fflate encode/decode (defensive, bomb-guarded) default path + GitHub gist OAuth CF Worker (state CSRF + secret server-side + least privilege) + client-side gist POST
+
+**Wave 5** *(validation gate + closer)*
+
+- [x] 49-08-PLAN.md — Lighthouse ≥90 ×4 axes + axe 0-critical + responsive collapse + cross-browser HUMAN-UAT (audible audio + skeuo fidelity)
+- [x] 49-09-PLAN.md — Closer: 49-VERIFICATION (status human_needed) + 49-DEPLOYMENT-RUNBOOK + flow-site README + ROADMAP/STATE/REQUIREMENTS/MILESTONES/CLAUDE sweep (HONEST — phase NOT shipped, pending HUMAN-UAT + live deploy)

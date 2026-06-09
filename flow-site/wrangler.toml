@@ -1,0 +1,34 @@
+# Cloudflare Pages / Worker config for the flow-site dev site (Plan 49-06).
+#
+# The site is built by @sveltejs/adapter-cloudflare. Almost everything is statically prerendered;
+# the ONE dynamic route is /api/auth/github (the GitHub gist OAuth handler, workers/gist-auth.ts via
+# src/routes/api/auth/github/+server.ts).
+#
+# SECRET HANDLING (T-49-SECRET): GITHUB_CLIENT_SECRET is set as an ENCRYPTED secret in the
+# Cloudflare dashboard (Pages → Settings → Environment variables → "Encrypt"), NEVER committed here.
+# GITHUB_CLIENT_ID is public (it ships in the authorize redirect). The placeholders below DOCUMENT
+# the required names; the real values are dashboard-managed.
+#
+#   GITHUB_CLIENT_ID      — GitHub → Settings → Developer settings → OAuth Apps → New OAuth App
+#   GITHUB_CLIENT_SECRET  — same OAuth App page; store ENCRYPTED in CF Pages env (secret)
+#
+# OAuth App "Authorization callback URL" MUST be:  https://<project>.pages.dev/api/auth/github
+# (the <project>.pages.dev host comes from Plan 49-01's CF Pages deploy.)
+
+name = "flow-site"
+compatibility_date = "2026-06-05"
+pages_build_output_dir = ".svelte-kit/cloudflare"
+
+# Non-secret, build-visible vars. GITHUB_CLIENT_ID is intentionally PUBLIC (it is bundled into the
+# authorize URL anyway). Set the real id in the dashboard; this placeholder keeps local builds happy.
+[vars]
+GITHUB_CLIENT_ID = "set-in-cloudflare-dashboard"
+
+# SITE_ORIGIN pins the OAuth redirect origin to a SERVER-KNOWN constant instead of the request Host
+# (CR-02 — closes the token-theft / open-redirect vector). MUST be the deployed canonical origin and
+# MUST match the OAuth App's "Authorization callback URL" host above. Set the real value in the
+# Cloudflare dashboard per environment (e.g. preview vs production). The worker rejects any callback
+# whose origin does not equal this. Local dev (vite, unset) falls back to http://localhost:5173.
+SITE_ORIGIN = "https://flow-music.pages.dev"
+
+# GITHUB_CLIENT_SECRET is deliberately ABSENT here — it is an encrypted dashboard secret only.
