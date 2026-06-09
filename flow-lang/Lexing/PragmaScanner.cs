@@ -25,11 +25,12 @@ public static class PragmaScanner
 {
     /// <summary>
     /// Phase 23 D-14 / MICR-03: single source-of-truth string appended to the unknown-pragma
-    /// error when the typed name resembles a tuning pragma. Pointer documents that the full
-    /// Scala (.scl) loader is deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.
+    /// error when the typed name resembles a tuning pragma. Originally pointed at the
+    /// then-deferred Scala loader; the loader SHIPPED in Phase 32 (v1.4), so the pointer
+    /// now directs composers to the shipped surface (audit 2026-06-09 follow-up to §7.7).
     /// </summary>
     private const string ScalaLoaderDeferralPointer =
-        "Full Scala (.scl) loader is documented as deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.";
+        "For custom tunings use the shipped Scala loader: (loadScala \"x.scl\") applied via a tuning t { ... } block.";
 
     /// <summary>
     /// Phase 23 D-14: returns true if <paramref name="typed"/> looks like a tuning pragma

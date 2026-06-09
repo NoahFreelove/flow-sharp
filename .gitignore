@@ -306,3 +306,7 @@ bench/results-*.txt
 
 # `flow doc` generated reference site (regenerate with: dotnet run --project flow-cli -- doc)
 docs/reference/
+
+# Phase 37 test fixtures — regenerated idempotently + byte-deterministically by
+# Phase37Fixtures.EnsureFixturesExist() on every test run (audit 2026-06-09 note)
+flow-lang.Tests/Fixtures/Phase37/*.wav

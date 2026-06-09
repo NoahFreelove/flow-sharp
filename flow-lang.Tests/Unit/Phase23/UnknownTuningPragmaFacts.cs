@@ -31,7 +31,7 @@ public class UnknownTuningPragmaFacts
 use ""@std""
 (print ""x"")
 ");
-        Assert.Contains("Full Scala (.scl) loader is documented as deferred to v1.4", stderr);
+        Assert.Contains("For custom tunings use the shipped Scala loader", stderr);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ use ""@std""
 (print ""x"")
 ");
         Assert.Contains("Did you mean 'justIntonation'?", stderr);
-        Assert.Contains("Full Scala (.scl) loader", stderr);
+        Assert.Contains("use the shipped Scala loader", stderr);
     }
 
     [Fact]

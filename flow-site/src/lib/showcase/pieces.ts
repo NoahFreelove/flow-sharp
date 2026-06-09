@@ -39,7 +39,12 @@ import {
 	PARAMETERIZED_SOURCE,
 	SCALA_INTRO_SOURCE,
 	JAZZ_STYLE_SOURCE,
-	BLUES_STYLE_SOURCE
+	BLUES_STYLE_SOURCE,
+	MARKOV_JAZZ_SOURCE_WEB,
+	GRANULAR_SOURCE_WEB,
+	TIDAL_SOURCE_WEB,
+	STRETCH_SOURCE_WEB,
+	PARAMETERIZED_SOURCE_WEB
 } from './sources';
 import { encode } from '$lib/share/encode';
 
@@ -68,6 +73,12 @@ export interface ShowcasePiece {
 	audioSrc?: string;
 	/** True only when the embedded `source` runs on the Phase 48 Web target (Open-in-playground). */
 	runnableOnWeb?: boolean;
+	/**
+	 * §6.2 — web-playable variant of `source` with `(play <buf>)` appended. Used for the
+	 * Open-in-playground deep-link instead of `source` so the playground produces audible output
+	 * rather than silently calling `(writeWav ...)` and producing no sound.
+	 */
+	webSource?: string;
 	/** Composer notes — "why this piece, what Flow features show up". Faithful to the actual source. */
 	notes: string;
 }
@@ -108,6 +119,7 @@ export const PIECES: ShowcasePiece[] = [
 		source: MARKOV_JAZZ_SOURCE,
 		sourcePath: 'examples/generative/markov_jazz.flow',
 		runnableOnWeb: true,
+		webSource: MARKOV_JAZZ_SOURCE_WEB,
 		notes:
 			'The headline Phase 36 generative showcase. A short C-major scale teaches a Markov chain ' +
 			'step-wise melodic motion; `(markov ...)` one-shots it, then the train/generate split ' +
@@ -124,6 +136,7 @@ export const PIECES: ShowcasePiece[] = [
 		source: GRANULAR_SOURCE,
 		sourcePath: 'examples/dsp/granular.flow',
 		runnableOnWeb: true,
+		webSource: GRANULAR_SOURCE_WEB,
 		notes:
 			'Flow’s `granular` builtin pulling grain-sized chunks from a source buffer at jittered ' +
 			'offsets, windowing each grain, and overlap-adding at a density rate. This piece sweeps the ' +
@@ -139,6 +152,7 @@ export const PIECES: ShowcasePiece[] = [
 		source: STRETCH_SOURCE,
 		sourcePath: 'examples/dsp/stretch_pitchshift.flow',
 		runnableOnWeb: true,
+		webSource: STRETCH_SOURCE_WEB,
 		notes:
 			'`stretch` changes duration without touching pitch; `pitchShift` does the inverse. This ' +
 			'piece runs a sustained tone through all three engines — `#vocoder` (phase-locked, for ' +
@@ -155,6 +169,7 @@ export const PIECES: ShowcasePiece[] = [
 		source: TIDAL_SOURCE,
 		sourcePath: 'examples/generative/tidal_combinators.flow',
 		runnableOnWeb: true,
+		webSource: TIDAL_SOURCE_WEB,
 		notes:
 			'All thirteen Tidal-style `@patterns` combinators chained on one 4-bar sequence: `rev`, ' +
 			'`palindrome`, `every`, `fast`/`slow`, `chunk`, `phase`, `iter`, `jux`, `superimpose`, then ' +
@@ -170,6 +185,7 @@ export const PIECES: ShowcasePiece[] = [
 		source: PARAMETERIZED_SOURCE,
 		sourcePath: 'examples/sections/parameterized.flow',
 		runnableOnWeb: true,
+		webSource: PARAMETERIZED_SOURCE_WEB,
 		notes:
 			'Sections that take arguments. One `verse` name carries three overloads — a `Note` binding, ' +
 			'a tuple destructure `<<Note, Int>>`, and a chord-literal extractor `Cmaj7` — and the ' +
@@ -238,12 +254,17 @@ export function isRunnable(piece: ShowcasePiece): boolean {
 	return Boolean(piece.runnableOnWeb && piece.source);
 }
 
-/** Build the playground deep-link for a runnable piece (same contract as Home's CodeCard). */
+/**
+ * Build the playground deep-link for a runnable piece (same contract as Home's CodeCard).
+ * §6.2: prefers `webSource` (the browser-audible variant with `(play ...)` appended) over
+ * the verbatim `source` (which calls `writeWav` and produces no sound in the browser).
+ */
 export function playgroundHref(piece: ShowcasePiece): string | null {
 	if (!isRunnable(piece) || !piece.source) return null;
 	// Plan 49-06: the REAL #code= fragment (fflate-deflate + base64url via encode), what the
 	// playground's decode() consumes. `&run=1` carries the auto-run signal (D-49-08).
-	return `/playground#code=${encode(piece.source)}&run=1`;
+	const src = piece.webSource ?? piece.source;
+	return `/playground#code=${encode(src)}&run=1`;
 }
 
 /** Lookup a piece by slug (detail page + entries()). */

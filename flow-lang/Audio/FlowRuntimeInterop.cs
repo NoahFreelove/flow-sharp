@@ -115,4 +115,17 @@ internal static partial class FlowRuntimeInterop
     /// </summary>
     [JSImport("resumeContext", "flow-runtime")]
     internal static partial void ResumeContext(JSObject ctx);
+
+    /// <summary>
+    /// §5.11 — stops EVERY active <c>AudioBufferSourceNode</c> tracked in the
+    /// JS-side <c>_activeSources</c> set and clears the set.  Called by
+    /// <see cref="WebAudioBackend.Stop"/> to handle overlapping plays: the
+    /// C# <c>_activeSource</c> field only tracks the most recently started
+    /// node; this drain covers all concurrently-playing nodes.
+    ///
+    /// <para>No parameter: the JS module owns <c>_activeSources</c> as module
+    /// state; no context handle is needed.</para>
+    /// </summary>
+    [JSImport("stopAllSources", "flow-runtime")]
+    internal static partial void StopAllSources();
 }

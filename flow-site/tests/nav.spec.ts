@@ -2,27 +2,32 @@ import { test, expect } from '@playwright/test';
 
 // REQ-SITE-IA-01 / REQ-SITE-A11Y-02 — the persistent 5-tab top nav.
 //
-// The desktop tab strip (<Tabs>) is hidden <768px (the hamburger takes over), so the tab
-// assertions scope to the desktop project. The mobile slide-down nav carries the same routes
-// and is asserted separately. All projects share the prerendered Home + layout chrome.
+// The `/` route ships an iOS-6 skeuomorphic page with its own chrome:
+//   - Desktop: a brushed-aluminum toolbar with `nav[aria-label="Primary"]` (the pill nav).
+//   - Mobile (<600px): the toolbar pill nav is hidden; `nav[aria-label="Tab bar"]` at the
+//     bottom carries the same 5 destinations. `nav[aria-label="Primary"]` stays attached.
+// Non-home routes (/docs, /playground, /showcase) keep the shared layout chrome as before:
+//   - Desktop: `.site-nav-desktop nav[aria-label="Primary"]` visible tab strip.
+//   - Mobile (<768px): hamburger button → slide-down `#mobile-nav`.
 
 const isMobileViewport = (width: number) => width < 768;
+
+// Whether the home page hides the toolbar nav (at ≤600px the tabbar takes over).
+const isHomeToolbarNavHidden = (width: number) => width <= 600;
 
 test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 	test('renders the persistent Primary nav landmark on Home', async ({ page }, testInfo) => {
 		await page.goto('/');
 		const width = testInfo.project.use.viewport?.width ?? 1280;
-		// Layout chrome ships a <nav aria-label="Primary"> (inside <Tabs>). On desktop the strip is
-		// visible; <768px it collapses behind the hamburger (visible only once opened), so assert
-		// the landmark is attached and the hamburger trigger is visible instead.
+		// The iOS-6 home ships `nav[aria-label="Primary"]` in the toolbar (always attached).
+		// At >600px it is visible; at ≤600px it is hidden by CSS (the bottom tabbar takes over),
+		// but it stays attached in the DOM for accessibility.
 		const primaryNav = page.locator('nav[aria-label="Primary"]').first();
-		if (isMobileViewport(width)) {
-			await expect(primaryNav).toBeAttached();
-			await expect(page.getByRole('button', { name: /open menu/i })).toBeVisible();
-		} else {
+		await expect(primaryNav).toBeAttached();
+		if (!isHomeToolbarNavHidden(width)) {
 			await expect(primaryNav).toBeVisible();
 		}
-		// The Recoleta "Flow" wordmark links home (visible in both layouts).
+		// The iOS-6 brand link doubles as the site wordmark (carries .site-wordmark for specs).
 		const wordmark = page.locator('a.site-wordmark');
 		await expect(wordmark).toBeVisible();
 		await expect(wordmark).toHaveAttribute('href', '/');
@@ -32,53 +37,55 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 		await page.goto('/');
 		const width = testInfo.project.use.viewport?.width ?? 1280;
 
-		if (isMobileViewport(width)) {
-			// Mobile: open the hamburger slide-down, then assert the same 5 routes.
-			await page.getByRole('button', { name: /open menu/i }).click();
-			const mobileNav = page.locator('#mobile-nav');
-			await expect(mobileNav.getByRole('link', { name: 'Home' })).toBeVisible();
-			await expect(mobileNav.getByRole('link', { name: 'Docs' })).toBeVisible();
-			await expect(mobileNav.getByRole('link', { name: 'Playground' })).toBeVisible();
-			await expect(mobileNav.getByRole('link', { name: 'Showcase' })).toBeVisible();
-			await expect(mobileNav.getByRole('link', { name: /github/i })).toBeVisible();
+		if (isHomeToolbarNavHidden(width)) {
+			// Mobile: the bottom tab bar carries all 5 destinations.
+			const tabbar = page.locator('nav[aria-label="Tab bar"]');
+			await expect(tabbar.getByRole('link', { name: 'Home' })).toBeVisible();
+			await expect(tabbar.getByRole('link', { name: 'Docs' })).toBeVisible();
+			await expect(tabbar.getByRole('link', { name: 'Playground' })).toBeVisible();
+			await expect(tabbar.getByRole('link', { name: 'Showcase' })).toBeVisible();
+			await expect(tabbar.getByRole('link', { name: /github/i })).toBeVisible();
 		} else {
-			const tabs = page.locator('.site-nav-desktop nav[aria-label="Primary"]');
+			// Desktop: the toolbar pill nav carries all 5 destinations.
+			const nav = page.locator('nav[aria-label="Primary"]').first();
 			for (const label of ['Home', 'Docs', 'Playground', 'Showcase']) {
-				await expect(tabs.getByRole('link', { name: label })).toBeVisible();
+				await expect(nav.getByRole('link', { name: label })).toBeVisible();
 			}
-			await expect(tabs.getByRole('link', { name: /github/i })).toBeVisible();
+			await expect(nav.getByRole('link', { name: /github/i })).toBeVisible();
 		}
 	});
 
 	test('the 4 local tabs navigate to their routes', async ({ page }, testInfo) => {
 		const width = testInfo.project.use.viewport?.width ?? 1280;
-		// Run the routing assertions on desktop where the tab strip is visible; mobile uses the
-		// hamburger panel (covered by the presence test above). Early-out on mobile viewports.
-		if (isMobileViewport(width)) return;
+		// Run routing assertions on desktop where the toolbar pill nav is visible.
+		if (isHomeToolbarNavHidden(width)) return;
 
 		await page.goto('/');
-		const tabs = page.locator('.site-nav-desktop nav[aria-label="Primary"]');
+		const nav = page.locator('nav[aria-label="Primary"]').first();
 
-		await tabs.getByRole('link', { name: 'Docs' }).click();
+		await nav.getByRole('link', { name: 'Docs' }).click();
 		await expect(page).toHaveURL(/\/docs$/);
 
-		await tabs.getByRole('link', { name: 'Home' }).click();
+		// Return home via the shared chrome tab strip (the iOS-6 home is navigated away from).
+		const sharedNav = page.locator('.site-nav-desktop nav[aria-label="Primary"]');
+		await sharedNav.getByRole('link', { name: 'Home' }).click();
 		await expect(page).toHaveURL(/\/$/);
 	});
 
-	test('GitHub is an external link: target=_blank + rel noopener noreferrer', async ({ page }) => {
+	test('GitHub is an external link: target=_blank + rel noopener noreferrer', async ({ page }, testInfo) => {
 		await page.goto('/');
-		// Scope to whichever nav is visible (desktop strip or, if collapsed, open the hamburger).
-		const desktopGh = page.locator('.site-nav-desktop').getByRole('link', { name: /github/i });
-		if (await desktopGh.count()) {
-			const gh = desktopGh.first();
+		const width = testInfo.project.use.viewport?.width ?? 1280;
+
+		if (isHomeToolbarNavHidden(width)) {
+			// Mobile: check the tabbar GitHub link.
+			const gh = page.locator('nav[aria-label="Tab bar"]').getByRole('link', { name: /github/i });
 			await expect(gh).toHaveAttribute('target', '_blank');
 			const rel = (await gh.getAttribute('rel')) ?? '';
 			expect(rel).toContain('noopener');
 			expect(rel).toContain('noreferrer');
 		} else {
-			await page.getByRole('button', { name: /open menu/i }).click();
-			const gh = page.locator('#mobile-nav').getByRole('link', { name: /github/i });
+			// Desktop: check the toolbar pill nav GitHub link.
+			const gh = page.locator('nav[aria-label="Primary"]').first().getByRole('link', { name: /github/i });
 			await expect(gh).toHaveAttribute('target', '_blank');
 			const rel = (await gh.getAttribute('rel')) ?? '';
 			expect(rel).toContain('noopener');
@@ -88,7 +95,7 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 
 	test('aria-current="page" lands on the active route', async ({ page }, testInfo) => {
 		const width = testInfo.project.use.viewport?.width ?? 1280;
-		// aria-current is asserted on the desktop tab strip; early-out on mobile viewports.
+		// aria-current on the desktop tab strip (shared chrome); early-out on mobile viewports.
 		if (isMobileViewport(width)) return;
 
 		await page.goto('/docs');
@@ -104,7 +111,7 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 		);
 	});
 
-	test('the theme toggle is present and operable (switch role)', async ({ browser }) => {
+	test('the theme toggle is present and operable (switch role)', async ({ browser }, testInfo) => {
 		// Use an isolated context with a known light start so the localStorage theme key this test
 		// mutates can't race with other parallel specs sharing the preview origin.
 		const ctx = await browser.newContext();
@@ -113,8 +120,9 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 		await page.goto('/');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Let hydration's initial theme $effect settle before driving the control (it reads
-		// getInitialTheme() once on mount; clicking before that runs can be overwritten).
+		// The iOS-6 home does not ship the shared layout chrome toggle. The theme toggle lives
+		// on non-home routes; on home, navigate to /docs to assert the operable switch.
+		await page.goto('/docs');
 		await page.waitForLoadState('networkidle');
 		const toggle = page.getByRole('switch', { name: /dark mode/i }).first();
 		await expect(toggle).toBeVisible();

@@ -19,12 +19,19 @@ namespace FlowLsp.Symbols;
 public sealed class StdlibSymbolIndex
 {
     /// <summary>
-    /// The 6 stdlib module names per D-07 (matches std.flow's `use "@collections"` +
-    /// `use "@bars"` plus the feature-specific modules loaded by the REPL and by
-    /// convention user scripts).
+    /// Every stdlib module shipped as a flow-lang/*.flow file. Originally the 6
+    /// Phase 17 modules (D-07); extended 2026-06-09 (audit §5.16) with the opt-in
+    /// modules shipped in Phases 33-40 so completion / hover / `use "` path
+    /// suggestions cover the full surface. The constructor charitable-skips any
+    /// module file not shipped beside the binary, so older deployments degrade
+    /// gracefully.
     /// </summary>
     public static readonly string[] ModuleNames = new[]
-        { "std", "audio", "collections", "bars", "notation", "composition" };
+    {
+        "std", "audio", "collections", "bars", "notation", "composition",
+        "sfz", "patterns", "generative", "improv", "osc", "notation-io",
+        "midi", "jack", "test",
+    };
 
     public sealed record StdProc(string Name, string Module, string FilePath);
 

@@ -2,7 +2,7 @@
 
 **Flow** is a statically-typed, interpreted programming language designed for music production. It combines functional programming primitives with music-specific syntax and semantics, providing a seamless path from composition to audio export and notation interchange. The interpreter is written in C# targeting .NET 10.
 
-> **Current status:** v1.4 shipped publicly with two showcase pieces ("In Five Voices" symphony and "Stride & Stomp" ragtime). The language is still pre-traction; breaking changes can still land in single commits, and there is no migration CLI yet.
+> **Current status:** v1.5 shipped publicly with three showcase pieces: "In Five Voices" (symphony), "Stride & Stomp" (ragtime), and "pulse" (EDM). The language is still pre-traction; breaking changes can still land in single commits, and there is no migration CLI yet.
 
 ## Key Features
 
@@ -32,7 +32,7 @@
 - **Playback** — blocking `play`, non-blocking `stream`, loop, preview
 - **Export** — WAV (16/24/32-bit), Standard MIDI Files, MusicXML 3.1, LilyPond 2.24+
 - **Import** — WAV, MIDI (via the `flow midi2flow` CLI), ABC 2.1, PC-98 MML
-- **Tooling** — `flow` CLI (`run` / `eval` / `repl` / `watch` / `test` / `lsp` / `new`), VSCode extension, LSP for Neovim / Helix / Emacs / Zed
+- **Tooling** — `flow` CLI (`run` / `eval` / `repl` / `watch` / `play` / `render` / `flow2midi` / `midi2flow` / `check` / `new` / `version` / `lsp` / `test` / `doc`), VSCode extension, LSP for Neovim / Helix / Emacs / Zed
 
 For the full, up-to-date inventory see [FEATURES.md](https://github.com/NoahFreelove/flow-sharp/blob/main/FEATURES.md) in the repo.
 
@@ -73,11 +73,13 @@ For the full, up-to-date inventory see [FEATURES.md](https://github.com/NoahFree
 - [Vocalization](Vocalization.md) — Formant-synthesized singing and TTS
 - [Visualization](Visualization.md) — ASCII piano-roll and waveform
 - [Playback and Export](Playback-and-Export.md) — `play`, `stream`, WAV / MIDI / MusicXML / LilyPond export, loading WAVs, ABC / MML import
+- [Live Coding](Live-Coding.md) — `live { }` blocks, `flow watch` status panel, hot-swap, determinism trade-off
+- [OSC and MIDI](OSC-and-MIDI.md) — `@osc` (send/listen/pump), `@midi` (hardware output, clock), `@jack` (transport sync)
 
 ### Reference
 
 - [Standard Library](Standard-Library.md) — Modules and complete function reference
-- [Imports and Modules](Imports-and-Modules.md) — The `use` statement, the 12 stdlib modules, runtime gates
+- [Imports and Modules](Imports-and-Modules.md) — The `use` statement, the 15 stdlib modules, runtime gates
 - [Tips and Tricks](Tips-and-Tricks.md) — Idioms, shorthands, and common pitfalls
 - [Examples](Examples.md) — Complete working programs
 

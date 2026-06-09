@@ -123,21 +123,9 @@ public class VirtualMidiTests
             return;
         }
 
-        // Absent path: advisory + PASS.
-        var originalErr = Console.Error;
-        var sw = new System.IO.StringWriter();
-        Console.SetError(sw);
-        try
-        {
-            RenderingDiagnostics.WarnOnce(
-                "midi-virtual-absent",
-                "[midi] virtual MIDI (librtmidi.so / snd-virmidi) absent — end-to-end MIDI test skipped charitably.");
-        }
-        finally
-        {
-            Console.SetError(originalErr);
-        }
-        Assert.Contains("[midi]", sw.ToString());
+        // Audit-0609 §8.1: librtmidi.so or a virtual MIDI port is absent.
+        // Assert.Skip so xUnit reports the reason rather than PASS with zero assertions.
+        Assert.Skip("librtmidi.so or virtual MIDI port (snd-virmidi) absent — install librtmidi-dev + load snd-virmidi to run end-to-end MIDI test");
     }
 
     // ===== Task 3: @midi builtin surface end-to-end (via real engine + capture seam) =====

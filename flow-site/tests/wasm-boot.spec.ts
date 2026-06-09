@@ -15,7 +15,8 @@ const DESKTOP = 'desktop';
 test('REQ-SITE-PLAYGROUND-01: WASM runtime boots (no boot error)', async ({ page }, testInfo) => {
 	if (testInfo.project.name !== DESKTOP) return;
 
-	await page.goto('/playground', { waitUntil: 'domcontentloaded' });
+	// §6.10: pass ?e2e=1 to enable the __flowRuntimeReady readiness hook.
+	await page.goto('/playground?e2e=1', { waitUntil: 'domcontentloaded' });
 
 	// The runtime boots lazily in onMount; wait for the readiness hook (generous — Mono-WASM boot
 	// can take a few seconds on a cold cache).

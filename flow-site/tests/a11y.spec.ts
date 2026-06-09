@@ -15,6 +15,11 @@ import AxeBuilder from '@axe-core/playwright';
 //
 // axe rules WCAG 2.1 A + AA. Decorative skeuo textures/screws/rails are aria-hidden by the
 // component layer (Plan 49-02), so they don't trip axe.
+//
+// The `/` route ships the iOS-6 skeuomorphic home with its own chrome:
+//   `nav[aria-label="Primary"]` in the toolbar + `nav[aria-label="Tab bar"]` at the bottom.
+//   The brand link carries `.site-wordmark` for spec compatibility.
+//   The shared layout chrome (`.site-wordmark`, `.site-nav-desktop`) is present on non-home routes.
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -72,8 +77,8 @@ test.describe('axe a11y gate — 0 critical violations (REQ-SITE-A11Y-01..03)', 
 test.describe('keyboard + ARIA landmark contracts (UI-SPEC §Accessibility Contract)', () => {
 	test('the Primary nav landmark exists and is labelled', async ({ page }) => {
 		await page.goto('/');
-		// One landmark <nav aria-label="Primary"> ships in the layout chrome (desktop tabs or,
-		// <768px, the attached hamburger nav). It is always in the DOM.
+		// The iOS-6 home ships `nav[aria-label="Primary"]` in the toolbar.
+		// It is always attached (at ≤600px it is CSS-hidden but still in the DOM).
 		await expect(page.locator('nav[aria-label="Primary"]').first()).toBeAttached();
 		// Exactly one <main> per page (landmark contract).
 		await expect(page.locator('main')).toHaveCount(1);
@@ -94,7 +99,8 @@ test.describe('keyboard + ARIA landmark contracts (UI-SPEC §Accessibility Contr
 		if (width < 768) return;
 		await page.goto('/');
 		await page.waitForLoadState('domcontentloaded');
-		// Tab from the top: the first focusable in reading order is the "Flow" wordmark home link.
+		// Tab from the top: the first focusable in reading order is the brand/wordmark home link.
+		// On the iOS-6 home this is the `.brand.site-wordmark` element in the toolbar.
 		await page.keyboard.press('Tab');
 		const firstFocused = await page.evaluate(() => {
 			const el = document.activeElement as HTMLElement | null;
@@ -103,6 +109,7 @@ test.describe('keyboard + ARIA landmark contracts (UI-SPEC §Accessibility Contr
 		// The brass :focus-visible ring is CSS — here we assert focus actually MOVED into the page
 		// (no trap on <body>) and reached an interactive element in the chrome.
 		expect(firstFocused.tag).toBe('A');
+		// The iOS-6 home brand link carries both .brand and .site-wordmark classes.
 		expect(firstFocused.cls).toContain('site-wordmark');
 
 		// A few more Tabs must keep advancing through real interactive elements (no keyboard trap):

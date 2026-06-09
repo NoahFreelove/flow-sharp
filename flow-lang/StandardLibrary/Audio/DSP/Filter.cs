@@ -1,3 +1,5 @@
+using FlowLang.Diagnostics;
+
 namespace FlowLang.StandardLibrary.Audio.DSP;
 
 /// <summary>
@@ -65,6 +67,21 @@ public static class Filter
         float centerHz = (float)Math.Sqrt(lowHz * highHz);
         float bw = highHz - lowHz;
         float q = centerHz / bw;
+
+        // Charitable clamp: ulp-narrow bands push Q to extreme values that drive
+        // the biquad pole onto the unit circle (endless ringing, output never
+        // decays).  Cap at 100 (≈0.7 cents bandwidth at 1 kHz) and warn once so
+        // the composer knows their band is narrower than the filter can realise.
+        // Mirrors the house clamp style in improv/StyleRegistry (WarnOnce pattern).
+        const float MaxQ = 100f;
+        if (q > MaxQ)
+        {
+            RenderingDiagnostics.WarnOnce(
+                $"bandpass:Q_clamp:{centerHz:F1}",
+                $"[filter] bandpass Q={q:F1} exceeds maximum ({MaxQ}); clamped to {MaxQ}. " +
+                $"The requested bandwidth ({bw:F3} Hz) is narrower than the filter can realise.");
+            q = MaxQ;
+        }
 
         ComputeBandpassCoefficients(centerHz, q, input.SampleRate,
             out float b0, out float b1, out float b2, out float a1, out float a2);

@@ -167,16 +167,33 @@ public sealed class WebAudioBackend : IAudioBackend
         // a blocking 30s cap was never meaningful in the browser. The 30s cap
         // becomes best-effort / non-preemptive in single-threaded WASM, exactly
         // like cycle 3's WasmEntry amendment.
-#pragma warning disable CA1416  // browser-only platform check — guarded by OperatingSystem.IsBrowser() above
+        // §5.11 — assign _activeSource under lock so Stop() / Dispose() racing
+        // on another thread see a consistent handle.  Dispose the REPLACED handle
+        // to release the CLR JSObject wrapper (the underlying AudioBufferSourceNode
+        // lives in JS-managed memory and is tracked by the JS-side _activeSources
+        // Set; Dispose here only releases the C# wrapper, not the audio node).
+        //
         // SYSLIB1072 workaround: marshal the Float32 samples as their raw byte
         // view. JS-side reinterprets via `new Float32Array(bytes.buffer,
         // bytes.byteOffset, byteLength / 4)`. Span<byte> is supported by the
         // source generator's [JSMarshalAs<JSType.MemoryView>] mapping;
         // Span<float> is not (see FlowRuntimeInterop.cs XMLdoc).
         Span<byte> samplesAsBytes = MemoryMarshal.AsBytes(stereo.AsSpan());
-        Console.Error.WriteLine($"[flow-audio-cs] samples={samples.Length} channels={channels} stereo={stereo.Length} bytes={samplesAsBytes.Length}");
-        _activeSource = FlowRuntimeInterop.PlayStereoFloat32(
-            _audioContext, samplesAsBytes, channels: 2, sampleRate);
+#pragma warning disable CA1416  // browser-only platform check — guarded by OperatingSystem.IsBrowser() above
+        lock (_lock)
+        {
+            var old = _activeSource;
+            _activeSource = FlowRuntimeInterop.PlayStereoFloat32(
+                _audioContext, samplesAsBytes, channels: 2, sampleRate);
+            // Dispose the replaced JSObject handle; JSObject.Dispose() is
+            // browser-only per CA1416, but old is always null on Desktop
+            // (PlayStereoFloat32 is never called off-browser), so the guard
+            // is safety-first rather than reachability.
+            if (old != null && OperatingSystem.IsBrowser())
+            {
+                try { old.Dispose(); } catch { /* idempotent */ }
+            }
+        }
 #pragma warning restore CA1416
     }
 
@@ -184,29 +201,34 @@ public sealed class WebAudioBackend : IAudioBackend
     {
         if (_disposed) return;
 
+        if (OperatingSystem.IsBrowser())
+        {
+            try
+            {
+#pragma warning disable CA1416  // browser-only platform check — guarded by OperatingSystem.IsBrowser() above
+                // §5.11 — drain ALL active nodes via the JS-side _activeSources
+                // Set so that overlapping plays (multiple (play ...) calls in one
+                // script) are also stopped, not just the most recently started one.
+                FlowRuntimeInterop.StopAllSources();
+#pragma warning restore CA1416
+            }
+            catch (JSException)
+            {
+                // Idempotent — swallow charitably.
+            }
+        }
+
         lock (_lock)
         {
-            if (_activeSource == null)
-                return;
-
-            if (OperatingSystem.IsBrowser())
-            {
-                try
-                {
-#pragma warning disable CA1416  // browser-only platform check — guarded by OperatingSystem.IsBrowser() above
-                    FlowRuntimeInterop.StopSource(_activeSource);
-#pragma warning restore CA1416
-                }
-                catch (JSException)
-                {
-                    // Idempotent — JS-side already catches the
-                    // "already stopped" exception charitably. Swallow on
-                    // C# side too so Stop() is a true no-op when called
-                    // after the source completed naturally.
-                }
-            }
-
+            // §5.11 — clear and Dispose the C# wrapper after the JS drain.
+            var old = _activeSource;
             _activeSource = null;
+            if (old != null && OperatingSystem.IsBrowser())
+            {
+#pragma warning disable CA1416  // browser-only — guarded by OperatingSystem.IsBrowser() above
+                try { old.Dispose(); } catch { /* idempotent */ }
+#pragma warning restore CA1416
+            }
         }
     }
 

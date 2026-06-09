@@ -84,6 +84,21 @@ public class ExecutionContext
     private readonly Dictionary<OverloadCacheKey, FunctionOverload?> _overloadResolveCache = new();
 
     /// <summary>
+    /// Audit §2.2 — frames that have declared at least one function overload via
+    /// <see cref="DeclareFunction"/>. The overload cache is keyed only by
+    /// <c>(name, argTypes, strictMode)</c> with no frame identity, and it is filled
+    /// during <see cref="TryResolveFunction"/> while a nested proc is in scope. When
+    /// that nested frame pops, its (possibly non-ambiguously-shadowing) overload would
+    /// otherwise stay cached and be re-dispatched at an outer call site, executing a
+    /// proc body whose frame is gone. <see cref="PopFrame"/> invalidates the cache when
+    /// the popped frame is in this set, keeping the common case (no nested <c>proc</c>
+    /// declaration in the call) free of cache clears. A <see cref="HashSet{T}"/> keyed
+    /// by frame reference identity is correct because each pushed frame is a distinct
+    /// object and the set is pruned on pop.
+    /// </summary>
+    private readonly HashSet<StackFrame> _framesThatDeclaredFunctions = new();
+
+    /// <summary>
     /// Bundle F (260524-srj) — composite key for <see cref="_overloadResolveCache"/>.
     /// Equality + hash code consume the function name AND the positional arg-type
     /// array element-wise. Every primitive/special <see cref="FlowType"/> is a sealed
@@ -663,15 +678,36 @@ public class ExecutionContext
     public TextWriter? DiagnosticOutput => _diagnosticOutput;
 
     /// <summary>
-    /// Pushes a new stack frame for a function call.
+    /// Pushes a new stack frame.
+    ///
+    /// <para>
+    /// Audit §2.5 (D5) — <paramref name="isCallBoundary"/> marks the frame as a
+    /// USER-PROC / lambda CALL BOUNDARY so variable lookup/assignment will not
+    /// walk into the caller's locals (only this frame + globals). Pass
+    /// <c>true</c> ONLY from <c>Interpreter.ExecuteUserFunctionWithCaptures</c>'s
+    /// call site; all block frames (musical-context / loop / section-call /
+    /// pattern-match / live) leave it <c>false</c> so they keep their lexical
+    /// parent-walk. Musical-context dynamic scope is unaffected either way (it
+    /// walks <see cref="_callStack"/>, not the frame <see cref="StackFrame.Parent"/>
+    /// chain).
+    /// </para>
     /// </summary>
-    public void PushFrame()
+    public void PushFrame(bool isCallBoundary = false)
     {
-        _callDepth++;
-        if (_callDepth > MaxCallDepth)
+        // Audit §2.8 — validate BEFORE incrementing. The previous code did
+        // `_callDepth++` then threw on overflow, so a depth-limit hit left the
+        // counter permanently one higher (the failed push never rolls back).
+        // FlowEngine's catch-all keeps the engine alive and the same
+        // ExecutionContext persists across REPL evals, so each overflow incident
+        // used to lower the effective max depth by one for the rest of the
+        // session. Validate-then-increment makes the counter exact.
+        if (_callDepth + 1 > MaxCallDepth)
             throw new InvalidOperationException($"Stack overflow: maximum call depth of {MaxCallDepth} exceeded");
+        _callDepth++;
 
-        var newFrame = new StackFrame(CurrentFrame);
+        var newFrame = isCallBoundary
+            ? new StackFrame(CurrentFrame) { IsCallBoundary = true, GlobalScope = GlobalFrame }
+            : new StackFrame(CurrentFrame);
         _callStack.Push(newFrame);
         InvalidateMusicalContextCache();
     }
@@ -684,8 +720,17 @@ public class ExecutionContext
         if (_callStack.Count <= 1)
             throw new InvalidOperationException("Cannot pop global frame");
 
-        _callStack.Pop();
+        var popped = _callStack.Pop();
         _callDepth--;
+
+        // Audit §2.2 — if the popped frame declared any functions, an overload
+        // resolved against one of them may be sitting in _overloadResolveCache
+        // (which carries no frame identity). Drop it so an outer call with the
+        // same (name, argTypes) re-resolves against the now-visible overloads
+        // instead of re-running a popped-scope proc body.
+        if (_framesThatDeclaredFunctions.Remove(popped))
+            InvalidateOverloadCache();
+
         InvalidateMusicalContextCache();
     }
 
@@ -731,6 +776,11 @@ public class ExecutionContext
     /// </summary>
     public void DeclareFunction(FunctionOverload overload)
     {
+        // Audit §2.2 — remember that THIS frame declared a function so PopFrame
+        // can invalidate the (frame-identity-free) overload cache when it pops.
+        // The global frame never pops, so tracking it is harmless but unnecessary;
+        // we record it uniformly for simplicity (HashSet dedups).
+        _framesThatDeclaredFunctions.Add(CurrentFrame);
         CurrentFrame.DeclareFunction(overload);
         InvalidateOverloadCache();
     }

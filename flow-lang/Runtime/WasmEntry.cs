@@ -22,12 +22,16 @@ namespace FlowLang.Runtime;
 /// <remarks>
 /// Field-by-field semantics:
 /// <list type="bullet">
-///   <item><c>Wav</c>     — rendered Float32 PCM if the source produced one
-///         (Phase 49 wires download / playback UI). Null when no buffer
-///         was rendered.</item>
-///   <item><c>Midi</c>    — encoded SMF bytes if the source called
-///         <c>writeMidi</c> via the in-memory hook (Phase 49 wires download
-///         UI per D-48-18). Null when no MIDI was emitted.</item>
+///   <item><c>Wav</c>     — reserved; currently always null from
+///         <see cref="RunFromJs"/>.  The playground calls
+///         <see cref="PlayFromJs"/> directly when a script invokes
+///         <c>(play buffer)</c>; a <c>wav</c> download path is v1.6
+///         backlog.</item>
+///   <item><c>Midi</c>    — encoded SMF bytes when the source called
+///         <c>writeMidi</c>; populated via
+///         <see cref="FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink"/>
+///         after each run (§5.4 in-memory hook, D-48-17/D-48-18).
+///         Null when no MIDI was emitted.</item>
 ///   <item><c>Stdout</c>  — captured <c>Console.Out</c> from the run
 ///         (<c>print</c> output per D-48-15).</item>
 ///   <item><c>Stderr</c>  — captured <c>Console.Error</c> from the run
@@ -262,7 +266,12 @@ public static partial class WasmEntry
         Console.SetOut(stdoutCapture);
         Console.SetError(stderrCapture);
 
+        // §5.4 two-run cmp-clean: clear any MIDI bytes from a previous run
+        // BEFORE execution so the sink always reflects THIS run only.
+        FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink();
+
         RunError[] errors;
+        byte[]? midiBytes;
         try
         {
             try
@@ -303,12 +312,15 @@ public static partial class WasmEntry
             Console.SetError(prevErr);
         }
 
+        // §5.4 — drain after Execute so midi is set for THIS run.
+        midiBytes = FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink();
+
         stopwatch.Stop();
 
         var result = new RunResult
         {
             Wav = null,
-            Midi = null,
+            Midi = midiBytes,
             Stdout = stdoutCapture.ToString(),
             Stderr = stderrCapture.ToString(),
             Errors = errors,
@@ -395,15 +407,41 @@ public static partial class WasmEntry
     }
 
     /// <summary>
-    /// Revokes any active audio source node. Idempotent — safe to call
-    /// before <see cref="PlayFromJs"/> has ever been invoked.
+    /// Stops all active audio source nodes — both the shared playground backend
+    /// (created by <see cref="PlayFromJs"/>) and the engine-owned backend that
+    /// handles script-level <c>(play ...)</c> calls.
+    ///
+    /// <para>§5.11: the original implementation only stopped <c>_sharedBackend</c>,
+    /// which is created by <c>runtime.play()</c>.  The playground never calls
+    /// <c>runtime.play()</c> directly (because <c>RunResult.wav</c> is null from
+    /// <see cref="RunFromJs"/>); script <c>(play buffer)</c> invocations route
+    /// through the engine's OWN <see cref="WebAudioBackend"/> instance obtained
+    /// from <see cref="FlowEngine.AudioManager"/>. Stopping only the shared backend
+    /// left script audio playing indefinitely after the playground Stop button click.
+    /// This overload now stops BOTH backends so the Stop button actually works.</para>
+    ///
+    /// <para>Idempotent — safe to call before any playback has been started.
+    /// Never throws across the JS boundary.</para>
     /// </summary>
     [JSExport]
     public static void StopFromJs()
     {
         try
         {
+            // §5.11 — stop the shared backend (runtime.play() path).
             _sharedBackend?.Stop();
+
+            // §5.11 — stop the engine's own backend (script (play ...) path).
+            // GetEngine() is safe here: if the engine hasn't been created yet
+            // there is nothing playing; the lazy-init is cheap.
+            try
+            {
+                _sharedEngine?.AudioManager.StopPlayback();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[runtime] StopFromJs engine backend: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {

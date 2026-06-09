@@ -1,6 +1,11 @@
 # Playback and Export
 
-Flow plays audio in real time (via PulseAudio on Linux — also works on PipeWire's PA compatibility layer) and exports to WAV, MIDI, MusicXML, and LilyPond files. Real-time playback and WAV/MIDI export live in `@audio`; notation export/import is opt-in via `use "@notation-io"`.
+Flow plays audio in real time and exports to WAV, MIDI, MusicXML, and LilyPond files. Real-time playback and WAV/MIDI export live in `@audio`; notation export/import is opt-in via `use "@notation-io"`.
+
+Real-time playback uses `IAudioBackend`, which probe-selects the best available platform backend:
+- **macOS** — CoreAudio (`AudioToolbox.framework` P/Invoke, `CoreAudioBackend`). Known issue: `play` may return slightly before the audio tail finishes (CoreAudio drain fix is pending for v1.6).
+- **Windows** — WASAPI (`NAudio.Wasapi`, `WasapiBackend`). Audible end-to-end; HUMAN-UAT pending.
+- **Linux** — PulseAudio (`libpulse-simple` P/Invoke, `PulseAudioSimpleBackend`). Also works on PipeWire via PA's compatibility layer.
 
 ## Playing Audio
 
@@ -271,10 +276,10 @@ tempo 120 {
 ## Playback Architecture
 
 - Flow uses `IAudioBackend` as a platform abstraction for real-time playback.
-- The Linux implementation is PulseAudio via P/Invoke (`PulseAudioSimpleBackend`) — uses `PA_SAMPLE_FLOAT32LE` and supports 1–8 channels. Also works on PipeWire via PA's compatibility layer.
-- `AudioPlaybackManager` manages the backend lifecycle.
+- `AudioPlaybackManager` detects and instantiates the best available backend at startup (probe order: WebAudio on WASM, CoreAudio on macOS, WASAPI on Windows, PulseAudio on Linux).
+- The Linux backend (`PulseAudioSimpleBackend`) uses `PA_SAMPLE_FLOAT32LE` and supports 1–8 channels. Also works on PipeWire via PA's compatibility layer.
 - Audio renders to stereo float buffers at 44100 Hz by default.
-- macOS and Windows backends are on the v1.5+ backlog; the `IAudioBackend` abstraction is in place.
+- macOS known issue: `play` may return before the audio tail fully finishes (CoreAudio drain fix is planned for v1.6).
 
 ## Function Reference
 

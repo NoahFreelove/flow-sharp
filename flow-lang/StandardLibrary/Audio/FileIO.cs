@@ -44,10 +44,19 @@ public static class FileIO
         if (bitDepth != 16 && bitDepth != 24 && bitDepth != 32)
             throw new ArgumentException($"Bit depth must be 16, 24, or 32 (got {bitDepth})", nameof(bitDepth));
 
-        // Calculate file sizes
+        // Calculate file sizes — must use long to avoid int overflow on long renders.
+        // RIFF format only supports up to 4 GB (uint32 size fields).  Throws a
+        // clear friendly error rather than silently writing corrupt negative fields.
         int bytesPerSample = bitDepth / 8;
-        int dataSize = buffer.Frames * buffer.Channels * bytesPerSample;
-        int fileSize = 36 + dataSize; // 44 bytes header - 8 bytes = 36
+        long dataSizeLong = (long)buffer.Frames * buffer.Channels * bytesPerSample;
+        long fileSizeLong = 36L + dataSizeLong; // 44 bytes header - 8 bytes = 36
+        if (dataSizeLong > 0xFFFFFFFFL || fileSizeLong > 0xFFFFFFFFL)
+            throw new InvalidOperationException(
+                $"WAV output is too large for the RIFF format (4 GB limit). " +
+                $"Render size: {dataSizeLong / (1024.0 * 1024.0 * 1024.0):F2} GB. " +
+                "Use shorter segments or lower bit depth.");
+        int dataSize = (int)dataSizeLong;
+        int fileSize = (int)fileSizeLong;
 
         // Ensure parent directory exists (idempotent — no-op if present).
         // Shared by all writeWav overloads via this core helper.
@@ -106,7 +115,10 @@ public static class FileIO
     /// </summary>
     private static void WriteDataChunk(BinaryWriter writer, AudioBuffer buffer, int bitDepth, int bytesPerSample)
     {
-        int dataSize = buffer.Frames * buffer.Channels * bytesPerSample;
+        // Use long arithmetic here too so it is consistent with WriteWavInternal.
+        // The 4 GB guard above already ensures this fits in int, but be explicit.
+        long dataSizeLong = (long)buffer.Frames * buffer.Channels * bytesPerSample;
+        int dataSize = (int)dataSizeLong;
 
         writer.Write(new[] { (byte)'d', (byte)'a', (byte)'t', (byte)'a' });
         writer.Write(dataSize);
@@ -391,6 +403,12 @@ public static class FileIO
                     int byteRate = reader.ReadInt32(); // read but unused
                     short blockAlign = reader.ReadInt16(); // read but unused
                     bitsPerSample = reader.ReadInt16();
+                    // Validate bitsPerSample BEFORE any arithmetic that divides by it
+                    // (bitsPerSample/8 in the data branch) to avoid DivideByZeroException
+                    // on malformed files.  Checked here while we have the fmt context.
+                    if (bitsPerSample != 16 && bitsPerSample != 24 && bitsPerSample != 32)
+                        throw new InvalidDataException(
+                            $"Unsupported bit depth: {bitsPerSample}. Only 16, 24, and 32-bit PCM are supported.");
                     // Skip extra format bytes if chunk is larger than 16
                     if (chunkSize > 16)
                         reader.ReadBytes(chunkSize - 16);
@@ -400,8 +418,18 @@ public static class FileIO
                 case "data":
                     if (!fmtFound)
                         throw new InvalidDataException("WAV file has data chunk before fmt chunk");
-                    int totalSamples = chunkSize / (bitsPerSample / 8);
+                    int bytesPerSampleLoad = bitsPerSample / 8;
+                    int totalSamples = chunkSize / bytesPerSampleLoad;
+                    int bytesRead = totalSamples * bytesPerSampleLoad;
                     samples = ReadSamples(reader, totalSamples, bitsPerSample);
+                    // Consume any remainder bytes (e.g. odd-size 24-bit data chunk or
+                    // rounding) plus the mandatory RIFF odd-chunk pad byte so that the
+                    // file position is aligned for any chunk that follows (e.g. LIST/INFO
+                    // appended by editors).  Mirrors the default: branch pad logic.
+                    int remainder = chunkSize - bytesRead;
+                    if (chunkSize % 2 != 0) remainder++; // odd-size pad byte
+                    if (remainder > 0 && fileStream.Position + remainder <= fileStream.Length)
+                        reader.ReadBytes(remainder);
                     break;
 
                 default:

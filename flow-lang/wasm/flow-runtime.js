@@ -103,8 +103,6 @@ export async function loadFlowRuntime() {
             if (!_audioContext) {
                 _audioContext = new AudioContext({ sampleRate });
             }
-            console.log('[flow-audio] createAudioContext -> state=', _audioContext.state,
-                'ctxRate=', _audioContext.sampleRate, 'requestedRate=', sampleRate);
             return _audioContext;
         },
 
@@ -138,12 +136,6 @@ export async function loadFlowRuntime() {
             const samples = new Float32Array(u8.buffer, u8.byteOffset, (u8.byteLength / 4) | 0);
 
             const frames = (samples.length / channels) | 0;
-            let _maxAbs = 0;
-            for (let i = 0; i < samples.length; i++) { const a = Math.abs(samples[i]); if (a > _maxAbs) _maxAbs = a; }
-            console.log('[flow-audio] playStereoFloat32 CALLED: viewType=',
-                samplesAsBytes && samplesAsBytes.constructor && samplesAsBytes.constructor.name,
-                'ctx.state=', ctx && ctx.state, 'channels=', channels, 'sampleRate=', sampleRate,
-                'samples=', samples.length, 'frames=', frames, 'maxAbs=', _maxAbs);
             if (frames <= 0) return null;
 
             const buffer = ctx.createBuffer(channels, frames, sampleRate);
@@ -165,9 +157,6 @@ export async function loadFlowRuntime() {
             // recovers audio instead of silently dropping it (charitable-by-default).
             if (ctx.state === 'suspended') { ctx.resume().catch(() => { /* ignore */ }); }
             source.start();
-            console.log('[flow-audio] source.start() done; ctx.state now=', ctx.state,
-                'destination.channelCount=', ctx.destination && ctx.destination.channelCount);
-
             _activeSources.add(source);
             source.onended = () => _activeSources.delete(source);
 
@@ -205,6 +194,18 @@ export async function loadFlowRuntime() {
             if (ctx) {
                 try { await ctx.resume(); } catch (e) { /* ignore */ }
             }
+        },
+
+        // [JSImport("stopAllSources", "flow-runtime")]
+        // §5.11 — drains the _activeSources set, calling stop() on every
+        // tracked AudioBufferSourceNode.  This handles overlapping plays
+        // (multiple (play ...) calls in one script) where C#'s _activeSource
+        // only tracks the most recently started node.
+        stopAllSources: () => {
+            for (const src of _activeSources) {
+                try { src.stop(); } catch (e) { /* already stopped — fine */ }
+            }
+            _activeSources.clear();
         },
     });
 
@@ -316,9 +317,7 @@ export async function loadFlowRuntime() {
             if (!_audioContext) {
                 _audioContext = new AudioContext();
             }
-            console.log('[flow-audio] resumeAudio: before resume, state=', _audioContext.state);
-            try { await _audioContext.resume(); } catch (e) { console.log('[flow-audio] resume threw', e); }
-            console.log('[flow-audio] resumeAudio: after resume, state=', _audioContext.state);
+            try { await _audioContext.resume(); } catch (e) { /* ignore — browser may reject outside gesture frame */ }
         },
     };
 

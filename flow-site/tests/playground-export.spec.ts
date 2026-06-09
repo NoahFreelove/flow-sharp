@@ -25,7 +25,8 @@ test('REQ-SITE-PLAYGROUND-04: MIDI download mechanism fires + button is conditio
 }, testInfo) => {
 	if (testInfo.project.name !== DESKTOP) return;
 
-	await page.goto('/playground', { waitUntil: 'domcontentloaded' });
+	// §6.10: pass ?e2e=1 to enable the __flowRuntimeReady hook.
+	await page.goto('/playground?e2e=1', { waitUntil: 'domcontentloaded' });
 	await page.waitForFunction(
 		() => (window as unknown as { __flowRuntimeReady?: boolean }).__flowRuntimeReady === true,
 		{ timeout: 30_000 }

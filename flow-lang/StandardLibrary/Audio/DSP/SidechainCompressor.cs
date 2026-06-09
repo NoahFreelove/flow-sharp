@@ -45,7 +45,9 @@ public static class SidechainCompressor
             ? (float)Math.Exp(-1.0 / (releaseMs * 0.001 * source.SampleRate))
             : 0f;
 
-        float envelopeDb = -96f; // Start at silence floor
+        // Applied gain in dB (0 = unity / no ducking yet) — see Compressor.Apply;
+        // starting at -96 dB muted the source's first ~450 ms (audit 2026-06-09 §3.1).
+        float envelopeDb = 0f;
 
         // Iterate over ALL source frames (not min of trigger/source)
         for (int frame = 0; frame < source.Frames; frame++)

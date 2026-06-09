@@ -14,11 +14,15 @@
 # RESEARCH-locked pattern: prebuilt-tarball model -- no .NET SDK required
 # on the user side (see .planning/phases/30-flow-cli-formal-install/30-RESEARCH.md
 # offset=520 limit=120).
+#
+# Artifact naming (D-16, publish.sh): flow-<rid>-v<VERSION>.tar.gz
+#   rid-first, version-second — matching the publish.sh naming convention.
+# Supported RIDs (publish.sh Phase 41 BIN-01):
+#   linux-x64  linux-arm64  osx-x64  osx-arm64  win-x64
 
 set -euo pipefail
 
-FLOW_VERSION="${FLOW_VERSION:-0.1.0}"
-TARBALL_URL="${FLOW_TARBALL_URL:-https://github.com/noahfreelove/flow-sharp/releases/download/v${FLOW_VERSION}/flow-v${FLOW_VERSION}-linux-x64.tar.gz}"
+FLOW_VERSION="${FLOW_VERSION:-1.5.0}"
 SYSTEM_INSTALL=0
 LOCAL_TARBALL=""
 INSTALL_ROOT=""
@@ -38,6 +42,10 @@ Flags:
   --install-root DIR  Override install root (test mode)
   --local-tarball P   Local publish dir or tarball; skips network fetch
   -h, --help          Show this help
+
+Environment:
+  FLOW_VERSION        Override the version to install (default: 1.5.0)
+  FLOW_TARBALL_URL    Override the full tarball URL (skips auto-detection)
 EOF
 }
 
@@ -50,6 +58,67 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown flag: $1" >&2; print_usage >&2; exit 1 ;;
   esac
 done
+
+# ---------------------------------------------------------------------------
+# OS / architecture detection.
+# Derive the RID (Runtime Identifier) from uname output, matching the
+# publish.sh Phase 41 BIN-01 RID set: linux-x64 linux-arm64 osx-x64 osx-arm64
+# ---------------------------------------------------------------------------
+detect_rid() {
+  local os arch
+  os=$(uname -s)
+  arch=$(uname -m)
+
+  case "$os" in
+    Linux)
+      case "$arch" in
+        x86_64)  echo "linux-x64" ;;
+        aarch64) echo "linux-arm64" ;;
+        *)
+          echo "ERROR: unsupported Linux arch: $arch" >&2
+          echo "       Supported: x86_64 (linux-x64), aarch64 (linux-arm64)." >&2
+          echo "       For other architectures build from source: dotnet publish flow-cli -r linux-<arch>" >&2
+          exit 1
+          ;;
+      esac
+      ;;
+    Darwin)
+      case "$arch" in
+        x86_64) echo "osx-x64" ;;
+        arm64)  echo "osx-arm64" ;;
+        *)
+          echo "ERROR: unsupported macOS arch: $arch" >&2
+          echo "       Supported: x86_64 (osx-x64), arm64 (osx-arm64, Apple Silicon)." >&2
+          exit 1
+          ;;
+      esac
+      ;;
+    MINGW*|MSYS*|CYGWIN*|Windows_NT)
+      echo "ERROR: Windows detected. This installer is for Linux/macOS only." >&2
+      echo "       For Windows: download flow-win-x64-v${FLOW_VERSION}.zip from" >&2
+      echo "       https://github.com/noahfreelove/flow-sharp/releases/tag/v${FLOW_VERSION}" >&2
+      echo "       and add the extracted directory to your PATH." >&2
+      exit 1
+      ;;
+    *)
+      echo "ERROR: unsupported OS: $os" >&2
+      echo "       Supported: Linux (linux-x64 / linux-arm64), macOS (osx-x64 / osx-arm64)." >&2
+      exit 1
+      ;;
+  esac
+}
+
+# Only detect RID if we'll need it (not --local-tarball, not FLOW_TARBALL_URL).
+if [[ -z "$LOCAL_TARBALL" && -z "${FLOW_TARBALL_URL:-}" ]]; then
+  DETECTED_RID=$(detect_rid)
+else
+  DETECTED_RID=""
+fi
+
+# Artifact name pattern (D-16): flow-<rid>-v<VERSION>.tar.gz
+# Example: flow-linux-x64-v1.5.0.tar.gz
+TARBALL_URL="${FLOW_TARBALL_URL:-https://github.com/noahfreelove/flow-sharp/releases/download/v${FLOW_VERSION}/flow-${DETECTED_RID}-v${FLOW_VERSION}.tar.gz}"
+SHA256_URL="${TARBALL_URL}.sha256"
 
 # Determine install paths.
 if [[ -n "$INSTALL_ROOT" ]]; then
@@ -65,6 +134,9 @@ fi
 CONFIG_ROOT="${HOME}/.config/flow"
 
 echo "==> Flow installer v${FLOW_VERSION}"
+if [[ -n "$DETECTED_RID" ]]; then
+  echo "    RID=$DETECTED_RID"
+fi
 echo "    SHARE_ROOT=$SHARE_ROOT"
 echo "    BIN_ROOT=$BIN_ROOT"
 echo "    CONFIG_ROOT=$CONFIG_ROOT"
@@ -91,11 +163,45 @@ if [[ -n "$LOCAL_TARBALL" ]]; then
   fi
 else
   command -v curl >/dev/null || { echo "ERROR: curl required for network install (or pass --local-tarball)" >&2; exit 1; }
-  echo "==> Downloading $TARBALL_URL"
+
   TMP_TAR="$(mktemp -t flow-install.XXXXXX.tar.gz)"
+  TMP_SHA="$(mktemp -t flow-install.XXXXXX.sha256)"
+  # shellcheck disable=SC2064
+  trap "rm -f '$TMP_TAR' '$TMP_SHA'" EXIT
+
+  # Download the tarball.
+  echo "==> Downloading $TARBALL_URL"
   curl -fsSL "$TARBALL_URL" -o "$TMP_TAR"
+
+  # Verify the .sha256 sidecar when available (D-16, T-41-05-TAMPER mitigation).
+  # A missing sidecar is a warning, not an error (pre-v1.5 releases may not have
+  # shipped one); a present-but-mismatched sidecar aborts the install.
+  if curl -fsSL "$SHA256_URL" -o "$TMP_SHA" 2>/dev/null; then
+    echo "==> Verifying SHA-256 sidecar..."
+    EXPECTED_SHA=$(awk '{print $1}' "$TMP_SHA")
+    if command -v sha256sum >/dev/null 2>&1; then
+      ACTUAL_SHA=$(sha256sum "$TMP_TAR" | awk '{print $1}')
+    elif command -v shasum >/dev/null 2>&1; then
+      ACTUAL_SHA=$(shasum -a 256 "$TMP_TAR" | awk '{print $1}')
+    else
+      echo "WARNING: neither sha256sum nor shasum found — skipping checksum verification." >&2
+      ACTUAL_SHA=""
+    fi
+    if [[ -n "$ACTUAL_SHA" ]]; then
+      if [[ "$ACTUAL_SHA" = "$EXPECTED_SHA" ]]; then
+        echo "    SHA-256 OK: $ACTUAL_SHA"
+      else
+        echo "ERROR: SHA-256 mismatch — aborting install (possible tampered download)." >&2
+        echo "       Expected: $EXPECTED_SHA" >&2
+        echo "       Actual:   $ACTUAL_SHA" >&2
+        exit 1
+      fi
+    fi
+  else
+    echo "NOTE: no .sha256 sidecar found at $SHA256_URL — skipping checksum verification."
+  fi
+
   tar -xzf "$TMP_TAR" -C "$VERSIONED_DIR"
-  rm -f "$TMP_TAR"
 fi
 
 # Verify payload.

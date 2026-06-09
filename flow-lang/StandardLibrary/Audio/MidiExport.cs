@@ -21,6 +21,44 @@ public static class MidiExport
 {
     private const int TicksPerQuarterNote = 480;
 
+    // -----------------------------------------------------------------------
+    // §5.4 in-memory MIDI capture sink (D-48-17 / D-48-18)
+    //
+    // ExportMidiInternal always serialises the MidiFile into a MemoryStream
+    // and stores the resulting bytes here BEFORE any file-system write.  On
+    // the Web target the file path points into the inert Emscripten VFS and
+    // the playground never downloads from there; this side-channel lets
+    // WasmEntry.RunFromJs drain the bytes into RunResult.Midi after each run.
+    //
+    // Thread-safety: Mono-WASM is single-threaded, so a plain static field
+    // is safe in browser.  On Desktop (multi-threaded test runner) the field
+    // is [ThreadStatic], giving each test thread its own slot — two-run
+    // cmp-clean contract is preserved because the slot is drained by
+    // DrainInMemorySink() at the start of every RunFromJs call.
+    // -----------------------------------------------------------------------
+    [ThreadStatic]
+    private static byte[]? _inMemorySink;
+
+    /// <summary>
+    /// Returns the SMF bytes captured by the most recent <c>writeMidi</c>
+    /// call on this thread and clears the slot.  Returns <c>null</c> if no
+    /// <c>writeMidi</c> call has been made since the last drain.
+    /// </summary>
+    /// <remarks>
+    /// Called by <see cref="FlowLang.Runtime.WasmEntry.RunFromJs"/> after
+    /// <see cref="FlowLang.Core.FlowEngine.Execute"/> returns so that the
+    /// bytes populate <see cref="FlowLang.Runtime.RunResult.Midi"/> (D-48-18).
+    /// Also called at the START of <c>RunFromJs</c> to clear any stale bytes
+    /// from a previous run — two-run cmp-clean: same source with
+    /// <c>writeMidi</c> → byte-identical <c>RunResult.Midi</c>.
+    /// </remarks>
+    public static byte[]? DrainInMemorySink()
+    {
+        var bytes = _inMemorySink;
+        _inMemorySink = null;
+        return bytes;
+    }
+
     /// <summary>
     /// TUP-06 / CONTEXT D-05 / D-USER-E: maximum TPQN supported by Flow's MIDI export.
     /// Songs whose tuplet denominator LCM forces TPQN above this cap raise a clear
@@ -229,7 +267,7 @@ public static class MidiExport
     /// <summary>
     /// Phase 23 Plan 23-03 Task 2 / D-13: context-aware overload. Emits a one-shot
     /// stderr warning when called under non-12-TET tuning so composers know that
-    /// faithful microtonal MIDI export (per-channel pitch-bend) is deferred to v1.4.
+    /// faithful microtonal MIDI export (per-channel pitch-bend) is a v1.6+ backlog item.
     /// MIDI bytes are UNCHANGED — still 12-TET output. The warning is purely advisory.
     /// </summary>
     public static Value WriteMidi(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
@@ -253,7 +291,7 @@ public static class MidiExport
             {
                 RenderingDiagnostics.WarnOnce(
                     "writemidi-non-equal-temperament",
-                    "[midi] tuning != equalTemperament; MIDI export emits 12-TET pitches without pitch-bend (faithful microtonal MIDI deferred to v1.4)");
+                    "[midi] tuning != equalTemperament; MIDI export emits 12-TET pitches without pitch-bend (faithful microtonal MIDI is a v1.6+ backlog item)");
             }
         }
         return WriteMidi(args);
@@ -592,6 +630,22 @@ public static class MidiExport
             using var manager = info.Chunk.ManageTimedEvents();
             manager.Objects.Add(info.Events);
             midiFile.Chunks.Add(info.Chunk);
+        }
+
+        // §5.4 — capture SMF bytes into the per-thread in-memory sink BEFORE
+        // any file-system write.  The MemoryStream serialization is a second
+        // pass over the already-built MidiFile (DryWetMidi is idempotent here);
+        // the allocation is cheap relative to the note-event build above.
+        try
+        {
+            using var ms = new System.IO.MemoryStream();
+            midiFile.Write(ms);
+            _inMemorySink = ms.ToArray();
+        }
+        catch
+        {
+            // Charitable: capture failure must not break the normal file write.
+            _inMemorySink = null;
         }
 
         // Write the MIDI file to disk

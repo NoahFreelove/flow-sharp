@@ -198,6 +198,14 @@ public class ModuleLoader
             // a paired restore; the restore runs even on a thrown import).
             var prevBeatTrueToSig = context.BeatTrueToSig;
             context.BeatTrueToSig = pragmaSet.Has("beat-true-to-sig");
+            // Audit §2.6 — snapshot the GLOBAL reporter's error count BEFORE the
+            // imported module runs. Flow accumulates errors (it does not throw), so
+            // any soft error reported EARLIER in the importing script (a bad index,
+            // an unknown identifier) already leaves HasErrors == true. Checking
+            // HasErrors after Execute would then misattribute those pre-existing
+            // errors to this import and falsely fail a perfectly healthy module.
+            // The post-Execute check below uses the DELTA instead.
+            int errorCountBeforeExecute = _errorReporter.Errors.Count;
             try
             {
                 interpreter.Execute(program);
@@ -281,7 +289,10 @@ public class ModuleLoader
             }
 
             _loadedModules.Add(resolvedPath);
-            if (_errorReporter.HasErrors)
+            // Audit §2.6 — Error ONLY when the imported module's own execution added
+            // errors (delta > 0), not when the shared reporter already had errors
+            // from earlier in the importing script.
+            if (_errorReporter.Errors.Count > errorCountBeforeExecute)
             {
                 _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - errors during execution");
                 return ModuleLoadResult.Error;

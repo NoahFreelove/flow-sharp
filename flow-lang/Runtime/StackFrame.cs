@@ -17,6 +17,50 @@ public class StackFrame
     /// </summary>
     public MusicalContext? MusicalContext { get; set; }
 
+    /// <summary>
+    /// Audit §2.5 (D5) — marks a frame as a USER-PROC / lambda CALL BOUNDARY.
+    /// Set only by <see cref="ExecutionContext.PushFrame(bool)"/> from
+    /// <c>Interpreter.ExecuteUserFunctionWithCaptures</c>'s call site. Block
+    /// frames (musical-context / loop / section-call / pattern-match / live)
+    /// stay <c>false</c> so they keep their lexical parent-walk.
+    ///
+    /// <para>
+    /// When <c>true</c>, variable lookup/assignment (<see cref="TryGetVariable"/>,
+    /// <see cref="GetVariable"/>, <see cref="SetVariable"/>, <see cref="HasVariable"/>)
+    /// does NOT walk into <see cref="Parent"/> (the caller's scope) — it jumps
+    /// straight to <see cref="GlobalScope"/> instead, so top-level/global
+    /// bindings stay readable + writable from procs but the caller's LOCALS are
+    /// invisible and unwritable. A proc thus has lexical (not dynamic) variable
+    /// scope: it sees its own params/locals, injected closure captures (declared
+    /// directly into this frame), and globals — nothing in-between. An
+    /// assignment to a name found in neither this frame nor the global frame
+    /// surfaces the existing composer-facing undeclared-variable diagnostic
+    /// (the SetVariable throw → ExecuteAssignment's "Variable 'X' not found").
+    /// </para>
+    ///
+    /// <para>
+    /// Musical-context dynamic scope (tempo/key/timesig/tuning) is a SEPARATE
+    /// mechanism that walks <see cref="ExecutionContext"/>'s <c>_callStack</c>,
+    /// not this <see cref="Parent"/> chain, so it is completely unaffected.
+    /// </para>
+    /// </summary>
+    public bool IsCallBoundary { get; init; }
+
+    /// <summary>
+    /// Audit §2.5 (D5) — the GLOBAL (root) frame, supplied when this frame is a
+    /// <see cref="IsCallBoundary"/>. Variable walk-up across the boundary
+    /// redirects here instead of <see cref="Parent"/> so global bindings stay
+    /// reachable. Null on non-boundary frames (they walk <see cref="Parent"/>).
+    /// </summary>
+    public StackFrame? GlobalScope { get; init; }
+
+    /// <summary>
+    /// The frame the variable parent-walk should continue into. For a call
+    /// boundary that is <see cref="GlobalScope"/> (skipping the caller's locals);
+    /// otherwise it is the lexical <see cref="Parent"/>.
+    /// </summary>
+    private StackFrame? VariableWalkParent => IsCallBoundary ? GlobalScope : Parent;
+
     public StackFrame(StackFrame? parent = null)
     {
         Parent = parent;
@@ -37,8 +81,12 @@ public class StackFrame
         if (_variables.TryGetValue(name, out var value))
             return value;
 
-        if (Parent != null)
-            return Parent.GetVariable(name);
+        // Audit §2.5 (D5) — a call boundary redirects the walk to the global
+        // frame (GlobalScope) instead of the caller's Parent, so a proc sees
+        // its own locals + globals but NOT the caller's locals (lexical scope).
+        var next = VariableWalkParent;
+        if (next != null)
+            return next.GetVariable(name);
 
         throw new InvalidOperationException($"Variable '{name}' not found");
     }
@@ -58,8 +106,10 @@ public class StackFrame
             return true;
         }
 
-        if (Parent != null)
-            return Parent.TryGetVariable(name, out value);
+        // Audit §2.5 (D5) — call-boundary redirect (see GetVariable).
+        var next = VariableWalkParent;
+        if (next != null)
+            return next.TryGetVariable(name, out value);
 
         value = default!;
         return false;
@@ -73,9 +123,16 @@ public class StackFrame
             return;
         }
 
-        if (Parent != null)
+        // Audit §2.5 (D5) — a call boundary blocks write-through to the
+        // caller's locals: the walk redirects to the global frame, so a
+        // top-level/global binding stays writable from a proc but a name
+        // declared only in the caller is NOT silently mutated. A name found
+        // in neither this frame nor globals throws (→ undeclared-variable
+        // diagnostic at the ExecuteAssignment call site).
+        var next = VariableWalkParent;
+        if (next != null)
         {
-            Parent.SetVariable(name, value);
+            next.SetVariable(name, value);
             return;
         }
 
@@ -84,7 +141,10 @@ public class StackFrame
 
     public bool HasVariable(string name)
     {
-        return _variables.ContainsKey(name) || (Parent?.HasVariable(name) ?? false);
+        if (_variables.ContainsKey(name))
+            return true;
+        // Audit §2.5 (D5) — call-boundary redirect (see GetVariable).
+        return VariableWalkParent?.HasVariable(name) ?? false;
     }
 
     /// <summary>
@@ -98,6 +158,14 @@ public class StackFrame
     /// <summary>
     /// Gets all variables accessible from this frame, including parent frames.
     /// If a variable is shadowed, only the most local version is included.
+    ///
+    /// <para>
+    /// Audit §2.5 (D5) — the walk follows <see cref="VariableWalkParent"/>, so
+    /// at a call boundary it jumps to <see cref="GlobalScope"/> rather than the
+    /// caller's <see cref="Parent"/>. This keeps lambda capture LEXICAL: a
+    /// lambda created inside a proc body snapshots that proc's locals + globals,
+    /// not the caller's locals (which were never in the lambda's lexical scope).
+    /// </para>
     /// </summary>
     public IReadOnlyDictionary<string, Value> GetAllAccessibleVariables()
     {
@@ -109,7 +177,7 @@ public class StackFrame
         while (current != null)
         {
             frames.Push(current);
-            current = current.Parent;
+            current = current.VariableWalkParent;
         }
 
         while (frames.Count > 0)

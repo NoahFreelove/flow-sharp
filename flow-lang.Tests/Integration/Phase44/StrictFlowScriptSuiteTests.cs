@@ -107,7 +107,7 @@ public class StrictFlowScriptSuiteTests
     public void Fact_StrictFlowFile_RunsToCompletion(string relativePath)
     {
         if (DllMissing)
-            return;  // charitable skip
+            Assert.Skip($"flow-interpreter.dll not built at {FlowInterpreterDll} — run `dotnet build flow-interpreter` first");
 
         var (exitCode, stdout, stderr) = RunInterpreter(relativePath);
         Assert.True(exitCode == 0,

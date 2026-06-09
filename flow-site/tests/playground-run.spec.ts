@@ -12,7 +12,8 @@ const DESKTOP = 'desktop';
 test('REQ-SITE-PLAYGROUND-02: Run produces stdout', async ({ page }, testInfo) => {
 	if (testInfo.project.name !== DESKTOP) return;
 
-	await page.goto('/playground', { waitUntil: 'domcontentloaded' });
+	// §6.10: pass ?e2e=1 to enable the __flowRuntimeReady hook.
+	await page.goto('/playground?e2e=1', { waitUntil: 'domcontentloaded' });
 	await page.waitForFunction(
 		() => (window as unknown as { __flowRuntimeReady?: boolean }).__flowRuntimeReady === true,
 		{ timeout: 30_000 }

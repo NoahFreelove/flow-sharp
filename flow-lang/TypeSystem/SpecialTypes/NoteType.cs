@@ -326,18 +326,45 @@ public class MusicalNoteData
         double? onsetOffset = null,
         double? durationOverlap = null,
         double? portamentoMs = null,
-        double? velocity = null)              // PHASE 25 (DEFER-06): velocity slot
+        double? velocity = null,              // PHASE 25 (DEFER-06): velocity slot
+        // Audit 2026-06-09 §4.2 pitch + duration slots: transforms that rebuild
+        // notes (transpose / invert / augment / diminish / trill / tremolo /
+        // fermata / repeat-transpose) used to call the 12-arg ctor and silently
+        // drop the trailing five fields (IsChordTone / DurationFraction /
+        // OnsetOffset / DurationOverlap / PortamentoMs) — re-arpeggiating chord
+        // brackets, flattening tuplets, undoing quantize/legato/portamento.
+        // Routing every rebuild through With(…) preserves untouched fields by
+        // construction. Each slot is null = "keep existing"; pass a value to
+        // override. (CentOffset is itself nullable, so the null-means-keep
+        // convention can't clear it to null — no transform needs that.)
+        char? noteName = null,
+        int? octave = null,
+        int? alteration = null,
+        int? durationValue = null,
+        double? centOffset = null,
+        Articulation? articulation = null,
+        bool? isDotted = null,
+        bool? isTied = null,
+        FlowLang.TypeSystem.Fraction? durationFraction = null,
+        bool? isChordTone = null)
     {
         return new MusicalNoteData(
-            NoteName, Octave, Alteration, DurationValue, IsRest,
-            CentOffset, IsTied,
+            noteName ?? NoteName,
+            octave ?? Octave,
+            alteration ?? Alteration,
+            durationValue ?? DurationValue,
+            IsRest,
+            centOffset ?? CentOffset,
+            isTied ?? IsTied,
             velocity ?? Velocity,             // PHASE 25 (DEFER-06): velocity override
-            Articulation, IsDotted,
-            SourceLocation, SourceLength, DurationFraction,
+            articulation ?? Articulation,
+            isDotted ?? IsDotted,
+            SourceLocation, SourceLength,
+            durationFraction ?? DurationFraction,
             onsetOffset: onsetOffset ?? OnsetOffset,
             durationOverlap: durationOverlap ?? DurationOverlap,
             portamentoMs: portamentoMs ?? PortamentoMs,
-            isChordTone: IsChordTone);
+            isChordTone: isChordTone ?? IsChordTone);
     }
 
     /// <summary>

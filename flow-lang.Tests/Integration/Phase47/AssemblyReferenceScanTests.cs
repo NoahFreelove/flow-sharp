@@ -42,6 +42,10 @@ public class AssemblyReferenceScanTests
         // together. Catches "NAudio" / "NAudio.Wasapi" / "NAudio.CoreAudioApi" alike.
         "NAudio",
         "System.IO.FileSystemWatcher",
+        // Audit 2026-06-09 §8.4: Pidgin was a dead dependency (zero `using Pidgin`
+        // anywhere — SimpleLexer/Parser are manual) removed from flow-lang.csproj.
+        // Gate it so it cannot quietly return on any target.
+        "Pidgin",
     };
 
     /// <summary>

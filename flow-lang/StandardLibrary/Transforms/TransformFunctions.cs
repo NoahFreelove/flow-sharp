@@ -493,29 +493,51 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            var newNotes = new List<MusicalNoteData>();
-            double currentBeat = 0.0;
-            int subdivIdx = 0;
-            foreach (var note in bar.MusicalNotes)
-            {
-                double targetGrid = Math.Round(currentBeat / subdivBeats) * subdivBeats;
-                // CONTEXT D-06: every other subdivision (the offbeat) receives the swing shift.
-                if (subdivIdx % 2 == 1) targetGrid += swingOffset;
-
-                // strength=1 hard-snap; strength=0 no shift; linear interpolation between.
-                double snappedBeat = currentBeat + strength * (targetGrid - currentBeat);
-                double onsetShift = snappedBeat - currentBeat;
-
-                // Builder-helper rebuild — preserves all other fields, even ones added by
-                // future Phase 22 plans, without naming them here. Rollback-independent.
-                newNotes.Add(note.With(onsetOffset: onsetShift));
-
-                currentBeat += note.GetBeats(timesig.Denominator);
-                subdivIdx++;
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature ?? timesig));
+            result.AddBar(QuantizeBar(bar, subdivBeats, swingOffset, strength, timesig));
         }
         return result;
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1: quantizes one bar, recursing into Phase 28 ParallelVoices so
+    /// voice-block sequences keep their content (each voice gets its own beat cursor — voices
+    /// are parallel, all starting at the bar onset). Before this fix QuantizeSequence rebuilt
+    /// <c>new BarData(newNotes, ts)</c> and dropped ParallelVoices, silently muting voiced
+    /// sequences. Per-note rebuild stays on <c>note.With(onsetOffset:)</c> (§4.2-clean already).
+    /// </summary>
+    private static BarData QuantizeBar(
+        BarData bar, double subdivBeats, double swingOffset, double strength, TimeSignatureData timesig)
+    {
+        var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
+        double currentBeat = 0.0;
+        int subdivIdx = 0;
+        TimeSignatureData barTs = bar.TimeSignature ?? timesig;
+        foreach (var note in bar.MusicalNotes)
+        {
+            double targetGrid = Math.Round(currentBeat / subdivBeats) * subdivBeats;
+            // CONTEXT D-06: every other subdivision (the offbeat) receives the swing shift.
+            if (subdivIdx % 2 == 1) targetGrid += swingOffset;
+
+            // strength=1 hard-snap; strength=0 no shift; linear interpolation between.
+            double snappedBeat = currentBeat + strength * (targetGrid - currentBeat);
+            double onsetShift = snappedBeat - currentBeat;
+
+            // Builder-helper rebuild — preserves all other fields, even ones added by
+            // future Phase 22 plans, without naming them here. Rollback-independent.
+            newNotes.Add(note.With(onsetOffset: onsetShift));
+
+            currentBeat += note.GetBeats(barTs.Denominator);
+            subdivIdx++;
+        }
+        var newBar = new BarData(newNotes, barTs) { IsPickup = bar.IsPickup };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(QuantizeBar(voiceBar, subdivBeats, swingOffset, strength, timesig));
+            newBar.ParallelVoices = voices;
+        }
+        return newBar;
     }
 
     /// <summary>
@@ -587,15 +609,147 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                newNotes.Add(transform(note));
-            }
-            var newBar = new BarData(newNotes, bar.TimeSignature!);
-            result.AddBar(newBar);
+            result.AddBar(TransformBar(bar, transform));
         }
         return result;
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1: applies the per-note <paramref name="transform"/> to one
+    /// bar, recursing into Phase 28 <see cref="BarData.ParallelVoices"/> so voice-block
+    /// sequences survive transpose / invert / augment / diminish / legato / portamento /
+    /// velocity-gradient. Mirrors <see cref="HumanizeBar"/> — the parent bar's
+    /// MusicalNotes list is the whole-bar-rest placeholder (left a rest by the transform's
+    /// IsRest fast-path) while the audible content lives in each voice sub-bar. Before
+    /// this fix every TransformNotes-based transform constructed
+    /// <c>new BarData(newNotes, ts)</c> and never copied ParallelVoices, silently
+    /// deleting all voice content → silent WAVs.
+    /// </summary>
+    private static BarData TransformBar(BarData bar, Func<MusicalNoteData, MusicalNoteData> transform)
+    {
+        var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
+        foreach (var note in bar.MusicalNotes)
+            newNotes.Add(transform(note));
+
+        var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
+
+        if (bar.ParallelVoices != null)
+        {
+            var newVoices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                newVoices.Add(TransformBar(voiceBar, transform));   // recurse (Phase 28 emits one level)
+            newBar.ParallelVoices = newVoices;
+        }
+
+        return newBar;
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1: deep-copies a bar preserving notes, pickup flag, and any
+    /// Phase 28 ParallelVoices (each voice sub-bar cloned recursively). Used by the
+    /// hand-rolled bar-rebuild loops in <c>repeat</c> / <c>concat</c> that previously
+    /// constructed <c>new BarData(notes, ts)</c> and dropped voice content entirely.
+    /// </summary>
+    private static BarData CloneBarWithVoices(BarData bar)
+    {
+        var clone = new BarData(new List<MusicalNoteData>(bar.MusicalNotes), bar.TimeSignature!)
+        {
+            IsPickup = bar.IsPickup,
+        };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(CloneBarWithVoices(voiceBar));
+            clone.ParallelVoices = voices;
+        }
+        return clone;
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1: retrograde-clones a bar — reverses the note order AND any
+    /// Phase 28 ParallelVoices (each voice sub-bar reversed recursively) so retrograde of
+    /// a voice-block sequence stays audible. The voice list order is preserved (voices are
+    /// parallel, not sequential); only each voice's internal note order reverses.
+    /// </summary>
+    private static BarData ReverseBar(BarData bar)
+    {
+        var reversedNotes = new List<MusicalNoteData>(bar.MusicalNotes);
+        reversedNotes.Reverse();
+        var newBar = new BarData(reversedNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(ReverseBar(voiceBar));
+            newBar.ParallelVoices = voices;
+        }
+        return newBar;
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1: counts every non-rest note in a sequence INCLUDING Phase 28
+    /// voice-block sub-bars. The velocity/tempo-shaping transforms (swell / crescendo /
+    /// decrescendo / ritardando / accelerando) index notes globally; this counts the same
+    /// set the indexed walk visits so the gradient endpoints line up.
+    /// </summary>
+    private static int CountAudibleNotes(SequenceData seq)
+    {
+        int total = 0;
+        foreach (var bar in seq.Bars)
+            total += CountAudibleNotes(bar);
+        return total;
+    }
+
+    private static int CountAudibleNotes(BarData bar)
+    {
+        int total = 0;
+        foreach (var note in bar.MusicalNotes)
+            if (!note.IsRest) total++;
+        if (bar.ParallelVoices != null)
+            foreach (var voiceBar in bar.ParallelVoices)
+                total += CountAudibleNotes(voiceBar);
+        return total;
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1: rebuilds a sequence applying a per-note function that receives
+    /// the running global non-rest index, recursing into Phase 28 ParallelVoices so voice-block
+    /// content is shaped (and preserved) instead of silently deleted. Rests pass through
+    /// untouched and do NOT advance the index (matching the pre-fix gradient counting). The
+    /// per-note function returns the rebuilt note (callers use <c>note.With(velocity:)</c> so the
+    /// trailing five fields survive — Audit §4.2). <paramref name="index"/> is threaded by ref
+    /// across bars and voices.
+    /// </summary>
+    private static SequenceData MapNotesIndexed(
+        SequenceData seq, Func<MusicalNoteData, int, MusicalNoteData> shape)
+    {
+        int index = 0;
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+            result.AddBar(MapBarIndexed(bar, shape, ref index));
+        return result;
+    }
+
+    private static BarData MapBarIndexed(
+        BarData bar, Func<MusicalNoteData, int, MusicalNoteData> shape, ref int index)
+    {
+        var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
+        foreach (var note in bar.MusicalNotes)
+        {
+            if (note.IsRest) { newNotes.Add(note); continue; }
+            newNotes.Add(shape(note, index));
+            index++;
+        }
+        var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(MapBarIndexed(voiceBar, shape, ref index));
+            newBar.ParallelVoices = voices;
+        }
+        return newBar;
     }
 
     // ===== Transpose =====
@@ -633,8 +787,45 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         int semitones = args[1].As<int>();
+        return Value.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
+    }
 
-        var result = TransformNotes(seq, note =>
+    /// <summary>
+    /// Audit 2026-06-09 §10-gap-3: true cent-precision transpose. The previous shape
+    /// rounded cents to whole semitones (<c>(int)Math.Round(cents/100)</c>), so
+    /// <c>(transpose seq +50c)</c> was a silent no-op — yet per-note cent offsets are
+    /// core syntax (<c>C4+50c</c>), MusicalNoteData carries a CentOffset that every
+    /// transform copies, and the render path honors arbitrary cents. Now the whole-semitone
+    /// part shifts pitch and the fractional remainder folds into each note's CentOffset.
+    /// <c>+50c</c> → +0st with +50c folded in; <c>+150c</c> → +1st with +50c folded in.
+    /// </summary>
+    private static Value TransposeCent(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double cents = args[1].As<double>();
+
+        // Whole-semitone part shifts the pitch; the signed remainder folds into CentOffset.
+        // Round toward nearest to keep the folded remainder in [-50, +50] when possible —
+        // but truncate-toward-zero keeps the remainder same-sign as the input so a positive
+        // request never silently flips a note's spelling downward. We use Math.Truncate so
+        // +150c → +1st + 50c and -150c → -1st - 50c (intuitive for composers).
+        int semitones = (int)Math.Truncate(cents / 100.0);
+        double centsRemainder = cents - semitones * 100.0;
+
+        return Value.Sequence(TransposeBy(seq, semitones, centsRemainder));
+    }
+
+    /// <summary>
+    /// Shared transpose core: shifts pitch by <paramref name="semitones"/> and, when
+    /// <paramref name="centsRemainder"/> is non-zero, ADDS that remainder to each note's
+    /// existing CentOffset (folding cent-precision transposition into the field the render
+    /// path already honors). Routes every rebuilt note through <c>With(...)</c> (Audit §4.2)
+    /// so IsChordTone / DurationFraction / OnsetOffset / DurationOverlap / PortamentoMs all
+    /// survive — fixing chord-bracket re-arpeggiation and tuplet/quantize/legato strip.
+    /// </summary>
+    private static SequenceData TransposeBy(SequenceData seq, int semitones, double centsRemainder)
+    {
+        return TransformNotes(seq, note =>
         {
             if (note.IsRest) return note;
 
@@ -650,26 +841,11 @@ public static class TransformFunctions
             }
 
             var (name, oct, alt) = FromMidi(midi);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
+            double? newCent = centsRemainder == 0.0
+                ? null                                          // keep existing CentOffset
+                : (note.CentOffset ?? 0.0) + centsRemainder;    // fold remainder into per-note cents
+            return note.With(noteName: name, octave: oct, alteration: alt, centOffset: newCent);
         });
-
-        return Value.Sequence(result);
-    }
-
-    private static Value TransposeCent(IReadOnlyList<Value> args)
-    {
-        var seq = args[0].As<SequenceData>();
-        double cents = args[1].As<double>();
-        int semitones = (int)Math.Round(cents / 100.0);
-
-        if (Math.Abs(cents - semitones * 100.0) > 0.01)
-        {
-            Console.Error.WriteLine(
-                $"Warning: transpose by {cents}c rounded to {semitones} semitones (not an exact multiple of 100c)");
-        }
-
-        // Delegate to semitone transpose
-        return TransposeSemitone([args[0], Value.Semitone(semitones)]);
     }
 
     // ===== Invert =====
@@ -715,7 +891,9 @@ public static class TransformFunctions
             inverted = Math.Clamp(inverted, MIDI_MIN, MIDI_MAX);
 
             var (name, oct, alt) = FromMidi(inverted);
-            return new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
+            // Audit §4.2: With(...) preserves IsChordTone / DurationFraction / OnsetOffset /
+            // DurationOverlap / PortamentoMs that the old 12-arg ctor dropped.
+            return note.With(noteName: name, octave: oct, alteration: alt);
         });
 
         return Value.Sequence(result);
@@ -735,13 +913,11 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
 
-        // True retrograde: reverse both the bar order AND the notes within each bar
+        // True retrograde: reverse both the bar order AND the notes within each bar.
         var reversedBars = new List<BarData>();
         foreach (var bar in seq.Bars)
         {
-            var reversedNotes = new List<MusicalNoteData>(bar.MusicalNotes);
-            reversedNotes.Reverse();
-            reversedBars.Add(new BarData(reversedNotes, bar.TimeSignature!));
+            reversedBars.Add(ReverseBar(bar));
         }
         reversedBars.Reverse();
 
@@ -780,12 +956,9 @@ public static class TransformFunctions
             if (note.DurationFraction.HasValue)
             {
                 var doubled = note.DurationFraction.Value * new Fraction(2, 1);
-                return new MusicalNoteData(
-                    note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    note.Velocity, note.Articulation, note.IsDotted,
-                    note.SourceLocation, note.SourceLength,
-                    durationFraction: doubled);
+                // Audit §4.2: rational branch kept durationFraction but the old 12-arg
+                // ctor still dropped OnsetOffset / DurationOverlap / PortamentoMs / IsChordTone.
+                return note.With(durationFraction: doubled);
             }
 
             if (!note.DurationValue.HasValue) return note;
@@ -797,7 +970,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.WHOLE;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
+            return note.With(durationValue: newDur);
         });
 
         return Value.Sequence(result);
@@ -817,12 +990,9 @@ public static class TransformFunctions
             if (note.DurationFraction.HasValue)
             {
                 var halved = note.DurationFraction.Value * new Fraction(1, 2);
-                return new MusicalNoteData(
-                    note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    note.Velocity, note.Articulation, note.IsDotted,
-                    note.SourceLocation, note.SourceLength,
-                    durationFraction: halved);
+                // Audit §4.2: rational branch kept durationFraction but the old 12-arg
+                // ctor still dropped OnsetOffset / DurationOverlap / PortamentoMs / IsChordTone.
+                return note.With(durationFraction: halved);
             }
 
             if (!note.DurationValue.HasValue) return note;
@@ -834,7 +1004,7 @@ public static class TransformFunctions
                 newDur = (int)NoteValueType.Value.THIRTYSECOND;
             }
 
-            return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration, newDur, note.IsRest, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
+            return note.With(durationValue: newDur);
         });
 
         return Value.Sequence(result);
@@ -849,6 +1019,24 @@ public static class TransformFunctions
 
     public static SequenceData DiminishForTesting(SequenceData seq) =>
         Diminish(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
+
+    // Audit 2026-06-09 §4.2 — direct transpose wrapper so C#-built tuplet sequences
+    // (DurationFraction set) can be transposed without routing through the note-stream
+    // lexer (which has no quarter-triplet literal). Production callers use the registry's
+    // `transpose` signatures.
+    public static SequenceData ApplyTransposeForTesting(SequenceData seq, int semitones) =>
+        TransposeSemitone(new List<Value> { Value.Sequence(seq), Value.Semitone(semitones) }).As<SequenceData>();
+
+    // Audit 2026-06-09 §4.5 — direct trill wrapper so a C#-built source note carrying a
+    // specific CentOffset + Articulation can be trilled and the upper-neighbour propagation
+    // asserted without depending on combined cent+articulation note-stream literals.
+    public static SequenceData TrillForTesting(SequenceData seq, int semitones) =>
+        Trill(new List<Value> { Value.Sequence(seq), Value.Semitone(semitones) }).As<SequenceData>();
+
+    // Audit 2026-06-09 §10-gap-3 — direct cent-transpose wrapper so a C#-built note carrying
+    // a known CentOffset can be cent-transposed and the fold-into-CentOffset behaviour asserted.
+    public static SequenceData ApplyTransposeCentForTesting(SequenceData seq, double cents) =>
+        TransposeCent(new List<Value> { Value.Sequence(seq), Value.Cent(cents) }).As<SequenceData>();
 
     // ===== Octave Shift =====
 
@@ -904,8 +1092,8 @@ public static class TransformFunctions
         {
             foreach (var bar in seq.Bars)
             {
-                var newBar = new BarData(new List<MusicalNoteData>(bar.MusicalNotes), bar.TimeSignature!);
-                result.AddBar(newBar);
+                // Audit §4.1: CloneBarWithVoices preserves Phase 28 ParallelVoices.
+                result.AddBar(CloneBarWithVoices(bar));
             }
         }
         return Value.Sequence(result);
@@ -921,24 +1109,19 @@ public static class TransformFunctions
         for (int i = 0; i < times; i++)
         {
             int cumulativeTranspose = i * semitones;
+            // Audit §4.1/§4.2: TransformBar recurses into ParallelVoices and With(...)
+            // preserves the trailing five fields the old 12-arg ctor dropped.
+            Func<MusicalNoteData, MusicalNoteData> shift = note =>
+            {
+                if (note.IsRest) return note;
+                int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + cumulativeTranspose;
+                midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
+                var (name, oct, alt) = FromMidi(midi);
+                return note.With(noteName: name, octave: oct, alteration: alt);
+            };
             foreach (var bar in seq.Bars)
             {
-                var newNotes = new List<MusicalNoteData>();
-                foreach (var note in bar.MusicalNotes)
-                {
-                    if (note.IsRest)
-                    {
-                        newNotes.Add(note);
-                        continue;
-                    }
-
-                    int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + cumulativeTranspose;
-                    midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
-                    var (name, oct, alt) = FromMidi(midi);
-                    newNotes.Add(new MusicalNoteData(name, oct, alt, note.DurationValue, isRest: false, note.CentOffset, note.IsTied, note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-                }
-                var newBar = new BarData(newNotes, bar.TimeSignature!);
-                result.AddBar(newBar);
+                result.AddBar(TransformBar(bar, shift));
             }
         }
         return Value.Sequence(result);
@@ -960,16 +1143,11 @@ public static class TransformFunctions
         var seqB = args[1].As<SequenceData>();
 
         var result = new SequenceData();
+        // Audit §4.1: CloneBarWithVoices preserves Phase 28 ParallelVoices in both halves.
         foreach (var bar in seqA.Bars)
-        {
-            var newBar = new BarData(new List<MusicalNoteData>(bar.MusicalNotes), bar.TimeSignature!);
-            result.AddBar(newBar);
-        }
+            result.AddBar(CloneBarWithVoices(bar));
         foreach (var bar in seqB.Bars)
-        {
-            var newBar = new BarData(new List<MusicalNoteData>(bar.MusicalNotes), bar.TimeSignature!);
-            result.AddBar(newBar);
-        }
+            result.AddBar(CloneBarWithVoices(bar));
         return Value.Sequence(result);
     }
 
@@ -987,92 +1165,49 @@ public static class TransformFunctions
     /// </summary>
     private static Value SwellCore(SequenceData seq, double edgeVel, double peakVel)
     {
-        int totalNotes = 0;
-        foreach (var bar in seq.Bars)
-            foreach (var note in bar.MusicalNotes)
-                if (!note.IsRest) totalNotes++;
+        // Audit §4.1: count + index include Phase 28 voice-block notes.
+        int totalNotes = CountAudibleNotes(seq);
 
         if (totalNotes <= 1)
             return Value.Sequence(seq);
 
         int midpoint = totalNotes / 2;
-        int noteIndex = 0;
+        int descendLength = totalNotes - 1 - midpoint;
 
-        var result = new SequenceData();
-        foreach (var bar in seq.Bars)
+        var result = MapNotesIndexed(seq, (note, noteIndex) =>
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest)
-                {
-                    newNotes.Add(note);
-                    continue;
-                }
+            double t;
+            if (noteIndex <= midpoint && midpoint > 0)
+                t = (double)noteIndex / midpoint;
+            else if (descendLength > 0)
+                t = 1.0 - ((double)(noteIndex - midpoint) / descendLength);
+            else
+                t = 1.0;
 
-                double t;
-                int descendLength = totalNotes - 1 - midpoint;
-                if (noteIndex <= midpoint && midpoint > 0)
-                    t = (double)noteIndex / midpoint;
-                else if (descendLength > 0)
-                    t = 1.0 - ((double)(noteIndex - midpoint) / descendLength);
-                else
-                    t = 1.0;
-
-                double velocity = Math.Clamp(edgeVel + t * (peakVel - edgeVel), 0.0, 1.0);
-
-                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-                noteIndex++;
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
-        }
+            double velocity = Math.Clamp(edgeVel + t * (peakVel - edgeVel), 0.0, 1.0);
+            // Audit §4.2: With(velocity:) preserves the trailing five fields.
+            return note.With(velocity: velocity);
+        });
         return Value.Sequence(result);
     }
 
     private static SequenceData ApplyVelocityGradient(SequenceData seq, double startVel, double endVel)
     {
-        int totalNotes = 0;
-        foreach (var bar in seq.Bars)
-            foreach (var note in bar.MusicalNotes)
-                if (!note.IsRest) totalNotes++;
+        // Audit §4.1: count + index include Phase 28 voice-block notes.
+        int totalNotes = CountAudibleNotes(seq);
 
         if (totalNotes <= 1)
         {
             return TransformNotes(seq, note =>
-            {
-                if (note.IsRest) return note;
-                return new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    startVel, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength);
-            });
+                note.IsRest ? note : note.With(velocity: startVel));
         }
 
-        int noteIndex = 0;
-        var result = new SequenceData();
-        foreach (var bar in seq.Bars)
+        return MapNotesIndexed(seq, (note, noteIndex) =>
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest)
-                {
-                    newNotes.Add(note);
-                    continue;
-                }
-
-                double t = (double)noteIndex / (totalNotes - 1);
-                double velocity = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
-
-                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-                noteIndex++;
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
-        }
-        return result;
+            double t = (double)noteIndex / (totalNotes - 1);
+            double velocity = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
+            return note.With(velocity: velocity);
+        });
     }
 
     // ===== Tempo Transforms (Phase 44 Plan 44-05: ritardando + accelerando
@@ -1100,34 +1235,18 @@ public static class TransformFunctions
     /// </summary>
     private static Value RitardandoCore(SequenceData seq, double amount)
     {
-        int totalNotes = 0;
-        foreach (var bar in seq.Bars)
-            foreach (var note in bar.MusicalNotes)
-                if (!note.IsRest) totalNotes++;
-
+        // Audit §4.1: count + index include Phase 28 voice-block notes.
+        int totalNotes = CountAudibleNotes(seq);
         if (totalNotes <= 1) return Value.Sequence(seq);
 
-        int noteIndex = 0;
-        var result = new SequenceData();
-        foreach (var bar in seq.Bars)
+        var result = MapNotesIndexed(seq, (note, noteIndex) =>
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest) { newNotes.Add(note); continue; }
-
-                double t = (double)noteIndex / (totalNotes - 1);
-                // Reduce velocity slightly for rit feel (later = softer = perceived slower)
-                double velReduction = t * amount * 0.3;
-                double newVel = Math.Clamp(note.Velocity - velReduction, 0.05, 1.0);
-
-                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    newVel, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-                noteIndex++;
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
-        }
+            double t = (double)noteIndex / (totalNotes - 1);
+            // Reduce velocity slightly for rit feel (later = softer = perceived slower)
+            double velReduction = t * amount * 0.3;
+            double newVel = Math.Clamp(note.Velocity - velReduction, 0.05, 1.0);
+            return note.With(velocity: newVel);   // Audit §4.2: preserves trailing five fields
+        });
         return Value.Sequence(result);
     }
 
@@ -1138,34 +1257,18 @@ public static class TransformFunctions
     /// </summary>
     private static Value AccelerandoCore(SequenceData seq, double amount)
     {
-        int totalNotes = 0;
-        foreach (var bar in seq.Bars)
-            foreach (var note in bar.MusicalNotes)
-                if (!note.IsRest) totalNotes++;
-
+        // Audit §4.1: count + index include Phase 28 voice-block notes.
+        int totalNotes = CountAudibleNotes(seq);
         if (totalNotes <= 1) return Value.Sequence(seq);
 
-        int noteIndex = 0;
-        var result = new SequenceData();
-        foreach (var bar in seq.Bars)
+        var result = MapNotesIndexed(seq, (note, noteIndex) =>
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest) { newNotes.Add(note); continue; }
-
-                double t = (double)noteIndex / (totalNotes - 1);
-                // Increase velocity slightly for accel feel (later = louder = perceived faster)
-                double velBoost = t * amount * 0.3;
-                double newVel = Math.Clamp(note.Velocity + velBoost, 0.05, 1.0);
-
-                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    newVel, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-                noteIndex++;
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
-        }
+            double t = (double)noteIndex / (totalNotes - 1);
+            // Increase velocity slightly for accel feel (later = louder = perceived faster)
+            double velBoost = t * amount * 0.3;
+            double newVel = Math.Clamp(note.Velocity + velBoost, 0.05, 1.0);
+            return note.With(velocity: newVel);   // Audit §4.2: preserves trailing five fields
+        });
         return Value.Sequence(result);
     }
 
@@ -1178,29 +1281,19 @@ public static class TransformFunctions
         var seq = args[0].As<SequenceData>();
         int targetIdx = args[1].As<int>();
 
-        int noteIndex = 0;
-        var result = new SequenceData();
-        foreach (var bar in seq.Bars)
+        // Audit §4.1/§4.2: MapNotesIndexed recurses into Phase 28 voice blocks and With(...)
+        // preserves the trailing five fields the old 12-arg ctor dropped. The non-rest index
+        // counts voice-block notes too, matching the pre-fix global-index semantics.
+        var result = MapNotesIndexed(seq, (note, noteIndex) =>
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
+            if (noteIndex == targetIdx && note.DurationValue.HasValue)
             {
-                if (!note.IsRest && noteIndex == targetIdx && note.DurationValue.HasValue)
-                {
-                    // Augment: move to next larger duration (e.g. quarter -> half)
-                    int newDur = Math.Max(note.DurationValue.Value - 1, (int)NoteValueType.Value.WHOLE);
-                    newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                        newDur, note.IsRest, note.CentOffset, note.IsTied,
-                        note.Velocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-                }
-                else
-                {
-                    newNotes.Add(note);
-                }
-                if (!note.IsRest) noteIndex++;
+                // Augment: move to next larger duration (e.g. quarter -> half)
+                int newDur = Math.Max(note.DurationValue.Value - 1, (int)NoteValueType.Value.WHOLE);
+                return note.With(durationValue: newDur);
             }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
-        }
+            return note;
+        });
         return Value.Sequence(result);
     }
 
@@ -1220,26 +1313,40 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest)
-                {
-                    newNotes.Add(note);
-                    continue;
-                }
-
-                // Velocity jitter: random variation scaled by amount
-                double velJitter = (HumanizeRng.NextDouble() * 2.0 - 1.0) * amount * 0.2;
-                double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);
-
-                newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                    note.DurationValue, note.IsRest, note.CentOffset, note.IsTied,
-                    newVelocity, note.Articulation, note.IsDotted, note.SourceLocation, note.SourceLength));
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+            result.AddBar(HumanizeUniformBar(bar, amount));
         }
         return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.1/§4.2: humanize one bar, recursing into Phase 28 ParallelVoices
+    /// so voice-block sequences stay audible (they rendered silent before). The frozen D-18
+    /// RNG semantics are preserved: still one <c>HumanizeRng.NextDouble()</c> draw per non-rest
+    /// note, in parent-then-voices order. For NON-voiced sequences (ParallelVoices null) the
+    /// RNG draw sequence is byte-identical to the pre-fix shape — no determinism change. Rebuilt
+    /// notes go through <c>With(velocity:)</c> so the trailing five fields survive (§4.2).
+    /// </summary>
+    private static BarData HumanizeUniformBar(BarData bar, double amount)
+    {
+        var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
+        foreach (var note in bar.MusicalNotes)
+        {
+            if (note.IsRest) { newNotes.Add(note); continue; }
+
+            // Velocity jitter: random variation scaled by amount
+            double velJitter = (HumanizeRng.NextDouble() * 2.0 - 1.0) * amount * 0.2;
+            double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);
+            newNotes.Add(note.With(velocity: newVelocity));
+        }
+        var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(HumanizeUniformBar(voiceBar, amount));
+            newBar.ParallelVoices = voices;
+        }
+        return newBar;
     }
 
     // ===== Humanize Gaussian =====
@@ -1380,35 +1487,75 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest || !note.DurationValue.HasValue)
-                {
-                    newNotes.Add(note);
-                    continue;
-                }
-
-                // Split into rapid alternation: note -> upper -> note -> upper
-                int trillDur = Math.Min(note.DurationValue.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
-                int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
-                int upperMidi = Math.Clamp(midi + semitones, MIDI_MIN, MIDI_MAX);
-                var (upperName, upperOct, upperAlt) = FromMidi(upperMidi);
-
-                // 4 alternations
-                for (int i = 0; i < 4; i++)
-                {
-                    if (i % 2 == 0)
-                        newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                            trillDur, false, note.CentOffset, false, note.Velocity, note.Articulation, sourceLocation: note.SourceLocation, sourceLength: note.SourceLength));
-                    else
-                        newNotes.Add(new MusicalNoteData(upperName, upperOct, upperAlt,
-                            trillDur, false, velocity: note.Velocity, sourceLocation: note.SourceLocation, sourceLength: note.SourceLength));
-                }
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+            result.AddBar(TrillBar(bar, semitones));
         }
         return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.5: trills one bar, recursing into Phase 28 ParallelVoices.
+    /// Fixes: (1) <b>dotted notes preserve their full duration</b> — the alternation count is
+    /// derived from the source note's actual duration (dot included) divided by the trill
+    /// subdivision, so a dotted half (3 beats) yields 6 eighths (3 beats) instead of the old
+    /// fixed 4 eighths (2 beats); (2) the <b>upper neighbour carries CentOffset + Articulation</b>
+    /// (rebuilt via <c>note.With(...)</c> off the source note, not a 12-arg ctor that defaulted
+    /// them away). Each trill note is plain (isDotted: false) — the dot's duration is absorbed by
+    /// the extra subdivision, not by dotting every subdivision.
+    /// </summary>
+    private static BarData TrillBar(BarData bar, int semitones)
+    {
+        var newNotes = new List<MusicalNoteData>();
+        foreach (var note in bar.MusicalNotes)
+        {
+            if (note.IsRest || !note.DurationValue.HasValue)
+            {
+                newNotes.Add(note);
+                continue;
+            }
+
+            // Split into rapid alternation: note -> upper -> note -> upper -> ...
+            int trillDur = Math.Min(note.DurationValue.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
+            int alternations = TrillSubdivisions(note, trillDur);
+
+            int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
+            int upperMidi = Math.Clamp(midi + semitones, MIDI_MIN, MIDI_MAX);
+            var (upperName, upperOct, upperAlt) = FromMidi(upperMidi);
+
+            for (int i = 0; i < alternations; i++)
+            {
+                if (i % 2 == 0)
+                    // Lower note: keep pitch; With(...) carries CentOffset / Articulation / Velocity.
+                    newNotes.Add(note.With(durationValue: trillDur, isDotted: false, isTied: false));
+                else
+                    // Upper neighbour: change pitch; CentOffset + Articulation carried from source.
+                    newNotes.Add(note.With(noteName: upperName, octave: upperOct, alteration: upperAlt,
+                        durationValue: trillDur, isDotted: false, isTied: false));
+            }
+        }
+        var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(TrillBar(voiceBar, semitones));
+            newBar.ParallelVoices = voices;
+        }
+        return newBar;
+    }
+
+    /// <summary>
+    /// Audit §4.5: number of trill alternations that fill the source note's full duration
+    /// (dot included) with <paramref name="trillDur"/>-length subdivisions. Plain note → its
+    /// duration / trill-subdivision (e.g. half / eighth = 4); dotted note → ×1.5 (dotted half /
+    /// eighth = 6). Always ≥ 2 (a degenerate ratio still produces an audible alternation).
+    /// </summary>
+    private static int TrillSubdivisions(MusicalNoteData note, int trillDur)
+    {
+        double baseFraction = NoteValueType.ToFraction((NoteValueType.Value)note.DurationValue!.Value);
+        if (note.IsDotted) baseFraction *= 1.5;
+        double subFraction = NoteValueType.ToFraction((NoteValueType.Value)trillDur);
+        int count = (int)Math.Round(baseFraction / subFraction);
+        return Math.Max(count, 2);
     }
 
     // Phase 44 Plan 44-05: Tremolo registration owned by
@@ -1424,25 +1571,82 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            var newNotes = new List<MusicalNoteData>();
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (note.IsRest || !note.DurationValue.HasValue)
-                {
-                    newNotes.Add(note);
-                    continue;
-                }
-
-                // Subdivide: use a smaller duration for each repetition
-                int subDur = Math.Min(note.DurationValue.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
-                for (int i = 0; i < reps; i++)
-                {
-                    newNotes.Add(new MusicalNoteData(note.NoteName, note.Octave, note.Alteration,
-                        subDur, false, note.CentOffset, false, note.Velocity, note.Articulation, sourceLocation: note.SourceLocation, sourceLength: note.SourceLength));
-                }
-            }
-            result.AddBar(new BarData(newNotes, bar.TimeSignature!));
+            result.AddBar(TremoloBar(bar, reps));
         }
         return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// Audit 2026-06-09 §4.5: tremolo one bar, recursing into Phase 28 ParallelVoices.
+    /// The subdivision is now <b>derived from <paramref name="reps"/></b> so the N repetitions
+    /// fill exactly the source note's duration (dot included) — previously a FIXED quarter
+    /// subdivision (<c>DurationValue+2</c>) only preserved total length at reps=4, doubling it
+    /// at reps=8 and halving it at reps=2. For a plain note with a power-of-2 reps the enum
+    /// path is kept (so the reps=4 doc example renders byte-identical); dotted notes and
+    /// non-power-of-2 reps use an exact <c>DurationFraction = base / reps</c> in quarter-units.
+    /// </summary>
+    private static BarData TremoloBar(BarData bar, int reps)
+    {
+        var newNotes = new List<MusicalNoteData>();
+        foreach (var note in bar.MusicalNotes)
+        {
+            if (note.IsRest || !note.DurationValue.HasValue)
+            {
+                newNotes.Add(note);
+                continue;
+            }
+
+            int dv = note.DurationValue.Value;
+            int log2 = Log2Exact(reps);
+            // Power-of-2 reps on a plain (non-dotted, non-rational) note: the subdivision is a
+            // clean enum value (base + log2(reps)). Keep this path so the reps=4 doc example and
+            // every existing power-of-2 plain-note tremolo stay byte-identical (LEDGER).
+            if (log2 >= 0 && !note.IsDotted && !note.DurationFraction.HasValue
+                && dv + log2 <= (int)NoteValueType.Value.THIRTYSECOND)
+            {
+                int subDur = dv + log2;
+                for (int i = 0; i < reps; i++)
+                    newNotes.Add(note.With(durationValue: subDur, isDotted: false, isTied: false));
+            }
+            else
+            {
+                // Exact rational subdivision = (note's quarter-unit duration) / reps. Covers
+                // dotted notes (×1.5 preserved), non-power-of-2 reps, and enum-overflow cases.
+                Fraction subFraction = BaseQuarterFraction(note) * new Fraction(1, reps);
+                for (int i = 0; i < reps; i++)
+                    newNotes.Add(note.With(durationFraction: subFraction, isDotted: false, isTied: false));
+            }
+        }
+        var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
+        if (bar.ParallelVoices != null)
+        {
+            var voices = new List<BarData>(bar.ParallelVoices.Count);
+            foreach (var voiceBar in bar.ParallelVoices)
+                voices.Add(TremoloBar(voiceBar, reps));
+            newBar.ParallelVoices = voices;
+        }
+        return newBar;
+    }
+
+    /// <summary>The source note's full duration (dot included) expressed in quarter-note units
+    /// as an exact <see cref="Fraction"/>. Mirrors <see cref="MusicalNoteData.GetBeats"/>'s
+    /// rational convention (DurationFraction is quarter-units). Enum value <c>dv</c> has
+    /// whole-fraction <c>1/2^dv</c> → quarter-units <c>4/2^dv</c>; a dot multiplies by 3/2.</summary>
+    private static Fraction BaseQuarterFraction(MusicalNoteData note)
+    {
+        if (note.DurationFraction.HasValue) return note.DurationFraction.Value;
+        int dv = note.DurationValue!.Value;
+        var qf = new Fraction(4, 1 << dv);
+        if (note.IsDotted) qf = qf * new Fraction(3, 2);
+        return qf;
+    }
+
+    /// <summary>Returns log2(n) when n is a positive power of two, else -1.</summary>
+    private static int Log2Exact(int n)
+    {
+        if (n <= 0 || (n & (n - 1)) != 0) return -1;
+        int log = 0;
+        while ((1 << log) < n) log++;
+        return log;
     }
 }

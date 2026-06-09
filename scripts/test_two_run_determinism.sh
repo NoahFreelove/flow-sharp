@@ -103,13 +103,18 @@ if [[ -z "$WRITE_TARGET" ]]; then
     exit 2
 fi
 
-# Resolve WRITE_TARGET relative to the script's directory (matches `flow render`
-# behavior: it runs the script with CWD = directory of the script).
-SCRIPT_DIR=$(dirname "$SCRIPT")
+# Resolve WRITE_TARGET relative to the INVOKING CWD (the directory from which
+# this script is called). Flow's render command does NOT chdir to the script's
+# directory before executing — RenderCommand.cs calls ScriptRunner.RunScript
+# which never calls SetCurrentDirectory, and WriteWavInternal opens the raw path
+# against the process CWD (FileIO.cs:64). Resolving against the script dir was a
+# false premise that caused the harness to look for the WAV in the wrong place
+# when invoked from a different directory (e.g. the repo root).
+INVOKE_CWD=$(pwd)
 if [[ "$WRITE_TARGET" = /* ]]; then
     RESOLVED_TARGET="$WRITE_TARGET"
 else
-    RESOLVED_TARGET="$SCRIPT_DIR/$WRITE_TARGET"
+    RESOLVED_TARGET="$INVOKE_CWD/$WRITE_TARGET"
 fi
 
 WORK_DIR=$(mktemp -d "${TMPDIR:-/tmp}/flow_det_XXXXXX")
@@ -124,21 +129,44 @@ run_once() {
     # The -o argument is honoured for `flow render` (it warns if the script's
     # writeWav target differs from --output, but still executes the script).
     # We copy the script's actual write target to $out after each run.
-    local cmd="${RENDER_CMD//<SCRIPT>/$SCRIPT}"
-    cmd="${cmd//<OUT>/$out}"
+    #
+    # Build an argv array instead of eval-on-an-interpolated-string to avoid
+    # word-splitting on paths that contain spaces.  Two cases:
+    #   (a) RENDER_CMD contains <SCRIPT>/<OUT> placeholders (custom --render-cmd):
+    #       we perform token-by-token substitution into the array.
+    #   (b) RENDER_CMD is the default "flow render" (no placeholders):
+    #       append $SCRIPT and -o $out as separate array elements.
+    local -a argv=()
 
-    # If the command doesn't contain a script substitution and doesn't include
-    # an explicit -o, append the standard `flow render` arguments.
-    if [[ "$cmd" = "$RENDER_CMD" ]]; then
-        # No substitution happened; append default args.
-        cmd="$RENDER_CMD $SCRIPT -o $out"
+    # Split RENDER_CMD on whitespace into the array.
+    read -ra _rc_tokens <<< "$RENDER_CMD"
+
+    local has_script_placeholder=0
+    for token in "${_rc_tokens[@]}"; do
+        case "$token" in
+            *"<SCRIPT>"*)
+                argv+=( "${token//<SCRIPT>/$SCRIPT}" )
+                has_script_placeholder=1
+                ;;
+            *"<OUT>"*)
+                argv+=( "${token//<OUT>/$out}" )
+                ;;
+            *)
+                argv+=( "$token" )
+                ;;
+        esac
+    done
+
+    # Case (b): no substitution happened — append default render args.
+    if [[ $has_script_placeholder -eq 0 ]]; then
+        argv+=( "$SCRIPT" -o "$out" )
     fi
 
     # Remove any prior run's WAV so a render failure doesn't silently reuse
     # stale output.
     rm -f "$RESOLVED_TARGET"
 
-    if ! eval "$cmd" >/dev/null 2>&1; then
+    if ! "${argv[@]}" >/dev/null 2>&1; then
         echo "ERROR: render failed on $label run" >&2
         exit 2
     fi

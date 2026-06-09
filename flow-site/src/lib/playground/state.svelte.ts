@@ -111,6 +111,19 @@ export class PlaygroundState {
 			// "playing" briefly, then settle to idle. We can't observe the source-node's lifetime
 			// from JS, so this is a status hint, not a precise playback clock.
 			this.runStatus = 'playing';
+			// §6.2(b): if the run produced no audio bytes (wav), no MIDI bytes, no stdout, and no
+			// errors, the script likely only called (writeWav ...) — which writes to /tmp (not
+			// audible in the browser). Surface a friendly advisory so the composer knows why they
+			// heard nothing, rather than leaving them staring at a silent playground.
+			const hasOutput =
+				result.wav != null ||
+				result.midi != null ||
+				(result.stdout && result.stdout.trim().length > 0);
+			if (!hasOutput) {
+				const hint =
+					'[playground] This script rendered to a file — add (play mix) (or the name of your final Buffer) to hear it in the browser.';
+				this.stderr = this.stderr ? `${this.stderr}\n${hint}` : hint;
+			}
 		}
 	}
 

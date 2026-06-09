@@ -16,7 +16,7 @@
 	import { PlaygroundState } from '$lib/playground/state.svelte';
 	import { ShareControls, captureOAuthToken } from '$lib/playground/share-controls.svelte';
 	import { decode, ShareDecodeError } from '$lib/share/encode';
-	import { getGistToken } from '$lib/share/gist';
+	import { getGistToken, consumePendingGistSource } from '$lib/share/gist';
 	import { SNIPPETS } from '$lib/playground/snippets';
 	import type { FlowRuntime, RunError } from '$lib/runtime';
 	// Monaco's editor type is dynamic-imported; keep a loose handle so SSR never sees the module.
@@ -39,30 +39,50 @@
 	// Set when the arrival URL signals auto-run (D-49-08 deep-link); consumed once the runtime is up.
 	let pendingAutoRun = $state(false);
 	// Test-only hook: the AudioContext state observed after the last audio-resume gesture.
+	// Only populated when ?e2e=1 is present in the URL (§6.10 — test scaffolding must not ship in prod).
 	let audioState = $state<string>('unknown');
+	// True when the page was opened with ?e2e=1 — enables test-only instrumentation.
+	let isE2eMode = $state(false);
 
 	function checkMobile(): void {
 		isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
 		editor?.updateOptions({ readOnly: isMobile });
 	}
 
+	// The AudioContext constructor we may have patched (needs restoring in onDestroy for §6.10).
+	let _savedAudioContext: (typeof window)['AudioContext'] | null = null;
+
 	onMount(() => {
 		let disposed = false;
 
-		// Wrap AudioContext (via a Proxy construct-trap) so the test hook can observe its state from
-		// a test hook after the audio-resume — the frozen runtime keeps its context module-private
-		// (HANDOFF §8, do not edit). Idempotent; a Proxy avoids a class declaration below top level.
-		const flags = window as unknown as { __flowAudioWrapped?: boolean; __flowAudioCtx?: AudioContext };
-		const NativeAudioContext = window.AudioContext;
-		if (NativeAudioContext && !flags.__flowAudioWrapped) {
-			flags.__flowAudioWrapped = true;
-			window.AudioContext = new Proxy(NativeAudioContext, {
-				construct(target, args) {
-					const ctx = Reflect.construct(target, args) as AudioContext;
-					flags.__flowAudioCtx = ctx;
-					return ctx;
-				}
-			});
+		// Detect e2e test mode from the URL (?e2e=1). Only in test mode do we install the
+		// AudioContext Proxy so the audio-state span reflects the resumed context's .state.
+		// §6.10: the Proxy must NEVER run in production — it wraps every AudioContext consumer
+		// (including the home page's tones.ts) and is never restored on normal navigation.
+		isE2eMode =
+			typeof window !== 'undefined' &&
+			new URLSearchParams(window.location.search).has('e2e');
+
+		if (isE2eMode) {
+			// Wrap AudioContext (via a Proxy construct-trap) so the test hook can observe its state
+			// after the audio-resume gesture — the frozen runtime keeps its context module-private
+			// (HANDOFF §8, do not edit). Idempotent; a Proxy avoids a class declaration below top level.
+			const flags = window as unknown as {
+				__flowAudioWrapped?: boolean;
+				__flowAudioCtx?: AudioContext;
+			};
+			const NativeAudioContext = window.AudioContext;
+			if (NativeAudioContext && !flags.__flowAudioWrapped) {
+				_savedAudioContext = NativeAudioContext;
+				flags.__flowAudioWrapped = true;
+				window.AudioContext = new Proxy(NativeAudioContext, {
+					construct(target, args) {
+						const ctx = Reflect.construct(target, args) as AudioContext;
+						flags.__flowAudioCtx = ctx;
+						return ctx;
+					}
+				});
+			}
 		}
 
 		checkMobile();
@@ -70,8 +90,12 @@
 
 		// 0) OAuth return: if we came back from the gist worker with `#token=…`, cache it into
 		//    sessionStorage and clean the URL so the token never lingers in history (T-49-SCOPE).
+		//    §6.1: also consume any stashed editor source so the composer's code is restored and
+		//    the pending save auto-fires with the correct source (no code loss on OAuth round-trip).
+		let pendingGistSource: string | null = null;
 		if (captureOAuthToken()) {
 			history.replaceState(null, '', window.location.pathname + window.location.search);
+			pendingGistSource = consumePendingGistSource();
 		}
 
 		// Resolve the initial editor value from the `#code=` fragment (decoded) BEFORE Monaco mounts.
@@ -84,14 +108,21 @@
 			try {
 				const { createFlowEditor } = await import('$lib/monaco');
 				if (disposed) return;
+				// §6.1: if we're returning from an OAuth round-trip, prefer the stashed source
+				// over the arrival URL and the default snippet so the composer's code is restored.
+				const initialValue =
+					pendingGistSource ?? arrival.source ?? pg.editorValue;
 				editor = createFlowEditor(editorContainer, {
-					value: arrival.source ?? pg.editorValue,
+					value: initialValue,
 					readOnly: isMobile
 				}) as unknown as Editor;
 				pg.editorValue = editor.getValue();
 				// Test-only hook: lets the share E2E read Monaco's value to assert a round-trip.
-				(window as unknown as { __flowEditorValue?: () => string }).__flowEditorValue = () =>
-					editor?.getValue() ?? '';
+				// §6.10: gated behind e2e mode so the global is not present in production builds.
+				if (isE2eMode) {
+					(window as unknown as { __flowEditorValue?: () => string }).__flowEditorValue = () =>
+						editor?.getValue() ?? '';
+				}
 			} catch (e) {
 				console.error('[playground] Monaco mount failed', e);
 			}
@@ -106,13 +137,36 @@
 				}
 				runtimeReady = true;
 				// Expose a test hook so the E2E can await readiness deterministically.
-				(window as unknown as { __flowRuntimeReady?: boolean }).__flowRuntimeReady = true;
+				// §6.10: gated behind e2e mode so the global is not present in production builds.
+				if (isE2eMode) {
+					(window as unknown as { __flowRuntimeReady?: boolean }).__flowRuntimeReady = true;
+				}
 
-				// 3) Honor the deep-link auto-run signal (D-49-08). Arriving via a "Play in playground"
+				// 3a) §6.1: if we returned from an OAuth round-trip with a pending gist source,
+				//     auto-resume the save now that both the token and the editor are ready.
+				if (pendingGistSource !== null && editor) {
+					pendingGistSource = null; // consume — one-shot
+					await share.saveToGist(editor.getValue());
+				}
+
+				// 3b) Honor the deep-link auto-run signal (D-49-08). Arriving via a "Play in playground"
 				//    click IS the user gesture (D-48-09), so resuming audio + running here is allowed.
+				//    §6.7: gate on navigator.userActivation?.hasBeenActive — a cold load (new tab /
+				//    pasted URL / browser-restore) has no activation and the AudioContext will be
+				//    suspended. Pre-load the code but skip the run; a 'Press Run to hear it' affordance
+				//    is shown via the `pendingAutoRun` state flag instead.
 				if (pendingAutoRun && !shareDecodeError) {
-					pendingAutoRun = false;
-					await onRun();
+					const hasActivation =
+						typeof navigator !== 'undefined' &&
+						// userActivation is not available in all browsers (Safari 16.4+, Chromium, FF 120+).
+						(navigator as Navigator & { userActivation?: { hasBeenActive: boolean } })
+							.userActivation?.hasBeenActive === true;
+					if (hasActivation) {
+						pendingAutoRun = false;
+						await onRun();
+					}
+					// else: pendingAutoRun stays true → the page shows a 'Press Run to hear it' prompt
+					// and the Run button fires normally when the user activates it.
 				}
 			} catch (e) {
 				pg.bootError =
@@ -128,7 +182,17 @@
 	});
 
 	onDestroy(() => {
-		if (typeof window !== 'undefined') window.removeEventListener('resize', checkMobile);
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('resize', checkMobile);
+			// §6.10: restore the original AudioContext if we patched it (so SPA navigation
+			// back to the home page doesn't leave a stale Proxy on window.AudioContext).
+			if (_savedAudioContext) {
+				window.AudioContext = _savedAudioContext;
+				const flags = window as unknown as { __flowAudioWrapped?: boolean };
+				delete flags.__flowAudioWrapped;
+				_savedAudioContext = null;
+			}
+		}
 		editor?.dispose();
 		runtime?.dispose();
 	});
@@ -173,11 +237,8 @@
 		}
 	}
 
-	/** Reflect whether a gist token is already cached (drives the Save button's first-click behavior). */
-	function hasGistToken(): boolean {
-		return getGistToken() != null;
-	}
-	void hasGistToken;
+	/** True when a gist token is already cached — drives the Save button label (no auth prompt needed). */
+	const gistAuthed = $derived(typeof window !== 'undefined' && getGistToken() != null);
 
 	async function onShare(): Promise<void> {
 		if (!editor) return;
@@ -198,12 +259,19 @@
 	 */
 	async function onRun(): Promise<void> {
 		if (!runtime || !editor) return;
+		// §6.7: the user pressed Run — consume any pending auto-run signal so the banner hides.
+		pendingAutoRun = false;
 		const source = editor.getValue();
 		// The MANDATORY single gesture frame: resumeAudio() THEN run() back-to-back (HANDOFF §5).
 		await runtime.resumeAudio();
 		const runPromise = pg.run(runtime, source);
 		// Reflect the resumed AudioContext state for the test hook (headless can't assert audio).
-		audioState = (window as unknown as { __flowAudioCtx?: AudioContext }).__flowAudioCtx?.state ?? 'unknown';
+		// §6.10: only in e2e mode — __flowAudioCtx is only populated when the Proxy is active.
+		if (isE2eMode) {
+			audioState =
+				(window as unknown as { __flowAudioCtx?: AudioContext }).__flowAudioCtx?.state ??
+				'unknown';
+		}
 		await runPromise;
 	}
 
@@ -311,7 +379,7 @@
 			/>
 			<Button
 				variant="primary"
-				label={share.saving ? 'Saving…' : 'Save to gist'}
+				label={share.saving ? 'Saving…' : gistAuthed ? 'Save to gist' : 'Save to gist ↗'}
 				disabled={share.saving}
 				onclick={onSaveToGist}
 			/>
@@ -374,6 +442,12 @@
 				<!-- UI-SPEC §Copywriting — friendly decode failure (NO crash); escaped text. -->
 				<p class="pg-decode-error" role="alert" data-testid="decode-error">
 					Couldn’t decode this shared snippet — the link may be incomplete or corrupted.
+				</p>
+			{/if}
+			{#if pendingAutoRun && runtimeReady && !shareDecodeError}
+				<!-- §6.7: auto-run was deferred (no user activation on cold load) — prompt instead. -->
+				<p class="pg-autorun-banner" role="status" data-testid="autorun-banner">
+					Press Run to hear it.
 				</p>
 			{/if}
 
@@ -612,6 +686,17 @@
 		border-left: 4px solid var(--color-brass);
 		border-radius: var(--radius-1, 2px);
 		color: var(--color-ink);
+	}
+	/* §6.7 — deferred auto-run prompt: a snippet arrived via deep link but no user activation */
+	.pg-autorun-banner {
+		margin: 0 0 var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		font-size: var(--text-small);
+		background: color-mix(in srgb, var(--color-brass) 12%, var(--color-paper));
+		border-left: 4px solid var(--color-brass);
+		border-radius: var(--radius-1, 2px);
+		color: var(--color-ink);
+		font-weight: 500;
 	}
 	.pg-monaco {
 		flex: 1;

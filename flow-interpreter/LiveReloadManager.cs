@@ -23,13 +23,23 @@ namespace FlowInterpreter;
 /// <param name="BlockId">Identifier — 0 = whole-script swap (Plan 38-01); &gt;0 = per-<c>live { }</c>-block (Plan 38-02).</param>
 /// <param name="Bytes">Raw PCM data ready to swap in at the next bar boundary.</param>
 /// <param name="Length">Number of valid samples in <see cref="Bytes"/>.</param>
+/// <param name="SampleRate">
+/// Sample rate of <see cref="Bytes"/>. Audit-0609 §5.7: carried alongside the
+/// buffer so the streaming loop can apply the new format AT the bar-boundary swap
+/// rather than immediately after rendering (which caused the old buffer to play
+/// at the wrong rate until the swap).
+/// </param>
+/// <param name="Channels">
+/// Channel count of <see cref="Bytes"/>. Audit-0609 §5.7: same rationale as
+/// <see cref="SampleRate"/> — applied atomically with the buffer swap.
+/// </param>
 /// <remarks>
 /// Phase 38 Plan 38-03 LIVE-03 promoted this record from <c>internal</c> to
 /// <c>public</c> so cross-assembly Wave 0 tests (PrngReseedAtSwapTests) can
 /// construct synthetic buffer dicts at the <see cref="LiveReloadManager.StagePendingBuffers"/>
 /// test seam without needing InternalsVisibleTo or reflection.
 /// </remarks>
-public sealed record LiveBlockBuffer(int BlockId, float[] Bytes, int Length);
+public sealed record LiveBlockBuffer(int BlockId, float[] Bytes, int Length, int SampleRate = 44100, int Channels = 2);
 
 /// <summary>
 /// Orchestrates file watching, background rendering, streaming playback, and
@@ -95,7 +105,13 @@ public class LiveReloadManager : IDisposable
     private readonly object _pendingLock = new();
     private MusicalContext? _pendingMusicalContext;
 
-    // Current playback state (from the playing version)
+    // Current playback state (from the playing version).
+    // Audit-0609 §5.7: _currentSampleRate/_currentChannels are now written ONLY
+    // from the streaming loop at the bar-boundary swap (not from the render thread)
+    // so they stay coherent with the buffer being streamed. They are read from the
+    // streaming thread only; the render thread writes them into LiveBlockBuffer.
+    // Both are plain ints — int reads/writes are atomic on all .NET platforms
+    // per ECMA-335 §I.12.6.6; no additional Volatile needed here.
     private double _currentTempo = 120.0;
     private int _currentBeatsPerBar = 4;
     private int _currentSampleRate = 44100;
@@ -105,6 +121,15 @@ public class LiveReloadManager : IDisposable
     private CancellationTokenSource? _cts;
     private Task? _playbackTask;
     private FileSystemWatcher? _watcher;
+
+    // Audit-0609 D3: trailing-edge debounce state.
+    // Each file-change event resets _debounceTimer; the render fires once
+    // when the timer elapses (quiesces after the last event).
+    // _lastChangeTime tracks the most recent event under _debounceLock
+    // so the old leading-edge semantics for "was anything triggered?" is
+    // preserved for tests that count render firings.
+    private readonly object _debounceLock = new();
+    private Timer? _debounceTimer;
     private DateTime _lastChangeTime = DateTime.MinValue;
 
     // Playback manager for the streaming loop (NOT capture mode)
@@ -173,8 +198,13 @@ public class LiveReloadManager : IDisposable
         // advisories route through the structured panel surface.
         _panel = new LiveStatusPanel(cliArgs: Environment.GetCommandLineArgs());
 
-        // 1. Initial execution with capture mode
-        var initialBuffer = RenderScript(_filePath, out var musicalContext, out var errors, out _);
+        // 1. Initial execution with capture mode.
+        // Audit-0609 D2-minimal: RenderScript now returns the engine so we can
+        // call StagePendingBuffers (PRNG reset + stale-closure gate) before
+        // disposing it. The initial render does not stage to _pendingPerBlock
+        // (it sets _currentBuffer directly), so we just dispose the engine here.
+        var initialBuffer = RenderScript(_filePath, out var musicalContext, out var errors, out _, out var initialEngine);
+        initialEngine?.Dispose();
 
         if (initialBuffer == null)
         {
@@ -311,13 +341,21 @@ public class LiveReloadManager : IDisposable
 
                     if (consumed != null && consumed.Count > 0)
                     {
-                        var newBuf = consumed.Values.First().Bytes;
+                        var swapped = consumed.Values.First();
+                        var newBuf = swapped.Bytes;
 
                         // Apply micro-crossfade to prevent clicks (Phase 28 primitive — preserved byte-identical).
                         ApplyCrossfade(buffer, position, newBuf, 0);
 
                         Volatile.Write(ref _currentBuffer, newBuf);
                         buffer = newBuf;
+
+                        // Audit-0609 §5.7: apply SampleRate/Channels AT the swap
+                        // boundary (not on the render thread) so WriteChunk and
+                        // CheckBarBoundary always see a consistent format for the
+                        // buffer they are currently streaming.
+                        _currentSampleRate = swapped.SampleRate;
+                        _currentChannels = swapped.Channels;
 
                         // Update tempo/timesig from pending context
                         var pendingCtx = Interlocked.Exchange(ref _pendingMusicalContext, null);
@@ -429,14 +467,52 @@ public class LiveReloadManager : IDisposable
 
     /// <summary>
     /// Triggers a background render of the script. Called when file changes are detected.
-    /// Debounces with <see cref="DebounceMs"/> minimum interval (D-38-05 — 200ms).
+    ///
+    /// Audit-0609 D3: trailing-edge debounce (overrides D-38-05 leading-edge
+    /// LOCK per owner approval 2026-06-09). Each call RESETS a
+    /// <see cref="DebounceMs"/>-ms System.Threading.Timer; the render fires
+    /// exactly once, after the burst quiesces. This ensures that a
+    /// format-on-save or atomic temp-file-rename editor's FINAL write is
+    /// always rendered rather than silently dropped.
+    ///
+    /// State (_lastChangeTime + _debounceTimer) is guarded by _debounceLock
+    /// since FileSystemWatcher fires from thread-pool threads.
     /// </summary>
     private void TriggerBackgroundRender()
     {
-        var now = DateTime.Now;
-        if ((now - _lastChangeTime).TotalMilliseconds < DebounceMs)
-            return;
-        _lastChangeTime = now;
+        lock (_debounceLock)
+        {
+            _lastChangeTime = DateTime.Now;
+
+            if (_debounceTimer == null)
+            {
+                // First event in a burst — create the restartable timer.
+                _debounceTimer = new Timer(
+                    _ => FireRenderAfterDebounce(),
+                    state: null,
+                    dueTime: DebounceMs,
+                    period: Timeout.Infinite);
+            }
+            else
+            {
+                // Subsequent event — restart the timer (trailing-edge reset).
+                _debounceTimer.Change(DebounceMs, Timeout.Infinite);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Called by the debounce timer after the burst quiesces. Disposes the
+    /// one-shot timer so the next burst allocates fresh, then forwards to
+    /// <see cref="OnRenderTriggered"/>.
+    /// </summary>
+    private void FireRenderAfterDebounce()
+    {
+        lock (_debounceLock)
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
+        }
 
         // Plan 38-01: testable seam. Real callers go through OnRenderTriggered
         // which dispatches StartRenderTask; test subclasses override
@@ -455,6 +531,10 @@ public class LiveReloadManager : IDisposable
 
         Task.Run(() =>
         {
+            // Audit-0609 D2-minimal: declare renderEngine outside the try block
+            // so the catch block can dispose it on unexpected exceptions.
+            FlowEngine? renderEngine = null;
+
             try
             {
                 _panel?.PublishAdvisory(
@@ -471,9 +551,13 @@ public class LiveReloadManager : IDisposable
                 // Workers that exceed 30s leak as orphans — acceptable for v1.5
                 // per D-38-07; Plan 38-XX may revisit if HUMAN-UAT reports
                 // worker accumulation (T-38-22 documented).
+                //
+                // Audit-0609 D2-minimal: RenderScript now returns the live engine
+                // (ownership transferred to caller). The engine is disposed after
+                // StagePendingBuffers is called below.
                 var workerTask = Task.Run(() =>
                 {
-                    capturedBuffer = RenderScript(_filePath, out musicalContext, out errors, out perBlockBuffers);
+                    capturedBuffer = RenderScript(_filePath, out musicalContext, out errors, out perBlockBuffers, out renderEngine);
                 });
 
                 if (!workerTask.Wait(RenderTimeout))
@@ -494,12 +578,19 @@ public class LiveReloadManager : IDisposable
                     // anchor. Future plans can thread per-block timeout
                     // tracking; this v1.5 cut emits the locked wording at
                     // the documented dedup format.
+                    // Audit-0609 D2-minimal: engine leaked as orphan on timeout
+                    // (same as the orphan worker — accepted per D-38-07).
                     PublishTimeoutAdvisory(line: 1);
                     return;
                 }
 
                 if (capturedBuffer == null)
                 {
+                    // Audit-0609 D2-minimal: dispose engine on non-null render
+                    // failure (parse error / no audio output).
+                    renderEngine?.Dispose();
+                    renderEngine = null;
+
                     var msg = !string.IsNullOrEmpty(errors)
                         ? $"[live] {errors} — keeping previous version"
                         : "[live] no audio output detected — keeping previous version";
@@ -517,24 +608,51 @@ public class LiveReloadManager : IDisposable
                 // sentinel BlockId=0 (whole-script swap mode per D-38-01).
                 // Plan 38-02 will pass perBlockBuffers through unchanged when
                 // the AST visitor produces a non-null dict.
+                //
+                // Audit-0609 §5.7: SampleRate + Channels are carried INSIDE the
+                // LiveBlockBuffer so they are applied atomically in the streaming
+                // loop at the bar-boundary swap — NOT here on the render thread.
+                // Applying them here (as the original code did) caused the old
+                // buffer to stream at the wrong format until the swap fired.
                 var swap = new Dictionary<int, LiveBlockBuffer>
                 {
                     [0] = new LiveBlockBuffer(
                         BlockId: 0,
                         Bytes: capturedBuffer.Data,
-                        Length: capturedBuffer.Data.Length),
+                        Length: capturedBuffer.Data.Length,
+                        SampleRate: capturedBuffer.SampleRate,
+                        Channels: capturedBuffer.Channels),
                 };
-                lock (_pendingLock)
-                {
-                    _pendingPerBlock = swap;
-                }
+                // NOTE: _currentSampleRate / _currentChannels intentionally NOT
+                // updated here — they are updated at the bar-boundary swap below
+                // (Audit-0609 §5.7 fix).
 
-                // Update sample rate/channels if they changed
-                _currentSampleRate = capturedBuffer.SampleRate;
-                _currentChannels = capturedBuffer.Channels;
+                // Audit-0609 D2-minimal: route through StagePendingBuffers so
+                // the whole-script swap path fires PrngRegistry.ResetAtRenderBoundary
+                // exactly once per swap and runs the stale-closure gate (a no-op
+                // for sentinel BlockId=0 since it has no LiveBlockRegistration).
+                // StagePendingBuffers owns the _pendingPerBlock write; we no
+                // longer set it directly.
+                if (renderEngine != null)
+                {
+                    var emptyBlocks = renderEngine.Context.LiveBlockRegistry.Snapshot();
+                    StagePendingBuffers(swap, renderEngine, emptyBlocks);
+                    renderEngine.Dispose();
+                    renderEngine = null;
+                }
+                else
+                {
+                    // Fallback: engine was null (shouldn't happen; defensive path).
+                    lock (_pendingLock)
+                    {
+                        _pendingPerBlock = swap;
+                    }
+                }
             }
             catch (Exception ex)
             {
+                // Audit-0609 D2-minimal: dispose engine on unexpected exception.
+                renderEngine?.Dispose();
                 _panel?.PublishAdvisory(
                     $"[live] {ex.Message} — keeping previous version",
                     AdvisoryLevel.Error,
@@ -592,7 +710,13 @@ public class LiveReloadManager : IDisposable
     /// captured at render-time. Passed in (rather than re-snapshotted here)
     /// so test seams can drive synthetic snapshots without booting an
     /// engine.</param>
-    protected void StagePendingBuffers(
+    /// <remarks>
+    /// Audit-0609 D2-minimal: <c>virtual</c> so test subclasses can intercept
+    /// the call to verify the production dispatch path (via
+    /// <c>D2MinimalPrngReseedTests.D2MinimalHarness</c>) without needing
+    /// InternalsVisibleTo or reflection.
+    /// </remarks>
+    protected virtual void StagePendingBuffers(
         Dictionary<int, LiveBlockBuffer> newBuffers,
         FlowEngine engine,
         IReadOnlyDictionary<int, LiveBlockRegistration> newBlocks)
@@ -830,18 +954,27 @@ public class LiveReloadManager : IDisposable
     /// (the orchestration wraps the captured buffer in a sentinel BlockId=0
     /// dict on its own per D-38-01 whole-script swap).
     ///
+    /// Audit-0609 D2-minimal: the <paramref name="engineOut"/> <c>out</c>
+    /// parameter returns the live (not-yet-disposed) FlowEngine so the caller
+    /// can pass it to <see cref="StagePendingBuffers"/> — which fires
+    /// <see cref="PrngRegistry.ResetAtRenderBoundary"/> + the stale-closure gate —
+    /// before disposing it. The caller MUST dispose <paramref name="engineOut"/>
+    /// after staging; this method no longer disposes it internally.
+    ///
     /// BODY PRESERVED BYTE-IDENTICAL from the Phase 28 baseline (D-38-06) —
-    /// only the signature grows.
+    /// only the signature and disposal responsibility change.
     /// </summary>
     private static AudioBuffer? RenderScript(
         string filePath,
         out MusicalContext? musicalContext,
         out string? errors,
-        out Dictionary<int, LiveBlockBuffer>? perBlockBuffers)
+        out Dictionary<int, LiveBlockBuffer>? perBlockBuffers,
+        out FlowEngine? engineOut)
     {
         musicalContext = null;
         errors = null;
         perBlockBuffers = null; // Plan 38-02 will fill from live{} AST visitor.
+        engineOut = null;
 
         string source;
         try
@@ -854,10 +987,23 @@ public class LiveReloadManager : IDisposable
             return null;
         }
 
-        using var engine = new FlowEngine();
+        // Audit-0609 D2-minimal: engine is NOT wrapped in a using block here;
+        // ownership is transferred to the caller (StartRenderTask or the initial
+        // Run() path) which disposes it after calling StagePendingBuffers.
+        var engine = new FlowEngine();
         engine.AudioManager.CaptureMode = true;
 
         engine.Execute(source, filePath);
+
+        // Audit-0609 §5.8: populate errors from the reporter when execute fails.
+        // Before this fix, parse/eval failures left errors == null and the caller
+        // showed "no audio output detected" with no line number — useless in a
+        // save-listen iteration loop.  All other front-ends (ScriptRunner, Repl,
+        // CheckCommand) format the reporter the same way via Program.FormatErrorsForEmit.
+        if (engine.ErrorReporter.HasErrors)
+        {
+            errors = Program.FormatErrorsForEmit(engine);
+        }
 
         // Extract musical context from the execution
         musicalContext = engine.Context.GetMusicalContext();
@@ -879,6 +1025,8 @@ public class LiveReloadManager : IDisposable
             }
         }
 
+        // Transfer ownership to caller — they call StagePendingBuffers then Dispose.
+        engineOut = engine;
         return buffer;
     }
 
@@ -893,6 +1041,13 @@ public class LiveReloadManager : IDisposable
         catch
         {
             // Best effort
+        }
+
+        // Dispose the trailing-edge debounce timer (Audit-0609 D3).
+        lock (_debounceLock)
+        {
+            _debounceTimer?.Dispose();
+            _debounceTimer = null;
         }
 
         _watcher?.Dispose();

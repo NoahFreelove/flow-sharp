@@ -7,7 +7,13 @@
 // (the page uses curly-expr interpolation, never {@html}) — T-49-XSS-SHARE.
 
 import { encode } from '$lib/share/encode';
-import { createGist, getGistToken, setGistToken, clearGistToken, beginGistAuth } from '$lib/share/gist';
+import {
+	createGist,
+	getGistToken,
+	setGistToken,
+	clearGistToken,
+	beginGistAuth
+} from '$lib/share/gist';
 
 export type ShareToastKind = 'info' | 'success' | 'error';
 
@@ -73,10 +79,10 @@ export class ShareControls {
 	async saveToGist(source: string): Promise<void> {
 		const token = getGistToken();
 		if (!token) {
-			// No session token — start OAuth. The worker redirects back with #token=…; the page reads
-			// it into sessionStorage and the composer presses Save again (or we auto-resume — page logic).
+			// No session token — start OAuth. §6.1: stash the source in sessionStorage before
+			// navigating so the playground can auto-resume the save on the #token= return.
 			this.toast = { kind: 'info', message: 'Opening GitHub sign-in to save your snippet…' };
-			beginGistAuth();
+			beginGistAuth(source);
 			return;
 		}
 

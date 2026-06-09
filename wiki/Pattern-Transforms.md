@@ -2,6 +2,8 @@
 
 Pattern transforms modify sequences in musically meaningful ways. They operate on `Sequence` values and return new `Sequence` values (or `Buffer`s for render-level transforms), making them chainable with the flow operator.
 
+All transforms preserve voice-block polyphony (`{voice ...}` content), chord brackets (`[C4 E4 G4]q`), tuplet fractions, quantize offsets, legato overlap, and portamento. Voice blocks and chords remain structurally intact after `transpose`, `invert`, `retrograde`, `repeat`, `concat`, `swell`, `crescendo`, and the rest of the core family.
+
 ## Pitch Transforms
 
 ### transpose
@@ -20,7 +22,7 @@ timesig 4/4 {
     Note: down 3 semitones
     Sequence down3 = mel -> transpose -3st
 
-    Note: cents (rounded to nearest semitone)
+    Note: true cent-precision — +50c shifts CentOffset by 50 cents; +150c = +1 semitone +50c
     Sequence upCents = mel -> transpose +200c
 }
 ```

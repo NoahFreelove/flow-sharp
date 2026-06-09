@@ -26,6 +26,13 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
 
+# NOTE: CF Pages globs do NOT match the bare path with `/*` alone — SvelteKit serves the
+# playground document at exactly /playground (trailingSlash 'never'), and only the top-level
+# DOCUMENT's COOP/COEP establish isolation. Both blocks are required (audit 2026-06-09 §6.8).
+/playground
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+
 /playground/*
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp

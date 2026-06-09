@@ -127,17 +127,23 @@ public record FunctionSignature(
                     return false;
             }
 
-            // Check varargs parameters (if any)
+            // Check varargs parameters (if any).
+            // Audit 2026-06-09 §2.9: the vararg slot's element type is either the
+            // ArrayType's element (builtins registered with T[]) or the bare last
+            // InputType itself (user procs register `T...: xs` with T; VoidType is
+            // the explicit any-type wildcard — see SlotMatches). The non-ArrayType
+            // arm previously skipped validation entirely, so every user-defined
+            // varargs proc accepted arbitrarily-typed trailing arguments that
+            // exploded later as internal cast errors instead of a composer-facing
+            // "no matching overload". Mirrors CalculateSpecificity's fallback.
             if (InputTypes.Count > 0)
             {
                 var varArgType = InputTypes[^1];
-                if (varArgType is ArrayType arrayType)
+                var elementType = (varArgType as ArrayType)?.ElementType ?? varArgType;
+                for (int i = InputTypes.Count - 1; i < argTypes.Count; i++)
                 {
-                    for (int i = InputTypes.Count - 1; i < argTypes.Count; i++)
-                    {
-                        if (!SlotMatches(argTypes[i], arrayType.ElementType, strictMode))
-                            return false;
-                    }
+                    if (!SlotMatches(argTypes[i], elementType, strictMode))
+                        return false;
                 }
             }
 

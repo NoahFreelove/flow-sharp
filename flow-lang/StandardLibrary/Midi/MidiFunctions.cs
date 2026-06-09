@@ -246,10 +246,34 @@ public static class MidiFunctions
                 $"[midi] midiOut('{port}') — no such port (or librtmidi.so absent); nothing sent");
             return;
         }
+        var usedChannels = new HashSet<int>();
         var events = new List<ScheduledEvent>();
         long seqCounter = 0;
-        ScheduleOneSequence(events, ref seqCounter, 0.0, DefaultBpm, "", seq, overrides);
-        DispatchScheduled(handle, events);
+        double lenMs = ScheduleOneSequence(events, ref seqCounter, 0.0, DefaultBpm, "", seq, overrides, usedChannels);
+        AppendAllNotesOff(events, ref seqCounter, lenMs, usedChannels);
+        // Audit §5.6 — the native output device + ALSA port leaked on every call
+        // (handle never closed; no finalizer on RtMidiOutputHandle). Close in a
+        // finally; the All-Notes-Off CC123 events appended above flush stuck
+        // notes as part of the dispatched timeline before the handle is freed.
+        try { DispatchScheduled(handle, events); }
+        finally { try { handle.Close(); } catch { /* idempotent best-effort */ } }
+    }
+
+    /// <summary>
+    /// Audit §5.6 — append an All-Notes-Off (CC123 value 0) event per used channel
+    /// at <paramref name="atMs"/> (after the last note), so the dispatched timeline
+    /// releases every voice before the handle is closed. Routing these as
+    /// scheduled events (rather than a side send) keeps them in the same
+    /// time-sorted dispatch the timing seam reports.
+    /// </summary>
+    private static void AppendAllNotesOff(
+        List<ScheduledEvent> events, ref long seqCounter, double atMs, HashSet<int> usedChannels)
+    {
+        foreach (int ch in usedChannels)
+        {
+            int c = ch;
+            events.Add(new ScheduledEvent(atMs, seqCounter++, h => h.SendControlChange(c, 123, 0)));
+        }
     }
 
     private static void RequireModuleActivated(FlowLang.Runtime.ExecutionContext context, string builtinName)
@@ -407,6 +431,7 @@ public static class MidiFunctions
             return;
         }
 
+        var usedChannels = new HashSet<int>();
         var events = new List<ScheduledEvent>();
         long seqCounter = 0;
         double sectionStartMs = 0.0;
@@ -430,7 +455,7 @@ public static class MidiFunctions
                 foreach (var (seqName, seqData) in section.Sequences)
                 {
                     double seqLenMs = ScheduleOneSequence(
-                        events, ref seqCounter, sectionStartMs, bpm, seqName, seqData, overrides);
+                        events, ref seqCounter, sectionStartMs, bpm, seqName, seqData, overrides, usedChannels);
                     if (seqLenMs > sectionLenMs) sectionLenMs = seqLenMs;
                 }
                 sectionStartMs += sectionLenMs;
@@ -445,7 +470,13 @@ public static class MidiFunctions
             if (sectionStartMs > MaxScheduleMs) break;
         }
 
-        DispatchScheduled(handle, events);
+        // Audit §5.6 — append All-Notes-Off (CC123) per used channel at the end of
+        // the timeline so the dispatched arrangement releases every voice, then
+        // Close the handle in a finally (it leaked a native device + ALSA port on
+        // every call — no finalizer on RtMidiOutputHandle).
+        AppendAllNotesOff(events, ref seqCounter, sectionStartMs, usedChannels);
+        try { DispatchScheduled(handle, events); }
+        finally { try { handle.Close(); } catch { /* idempotent best-effort */ } }
     }
 
     /// <summary>
@@ -461,7 +492,8 @@ public static class MidiFunctions
     /// </summary>
     private static double ScheduleOneSequence(
         List<ScheduledEvent> events, ref long seqCounter, double startMs, double bpm,
-        string seqName, SequenceData seq, Dictionary<string, int>? overrides)
+        string seqName, SequenceData seq, Dictionary<string, int>? overrides,
+        HashSet<int>? usedChannels = null)
     {
         var (gmProgram, channel) = InstrumentRouting.ResolveGmProgram(seqName);
         if (overrides != null && overrides.TryGetValue(seqName, out var ovCh))
@@ -469,6 +501,9 @@ public static class MidiFunctions
         channel = channel < 0 ? 0 : (channel > 15 ? 15 : channel);
 
         int ch = channel;
+        // Audit §5.6 — record the channel so the caller can send All-Notes-Off
+        // (CC123) on every used channel in its finally before closing the handle.
+        usedChannels?.Add(ch);
         int prog = gmProgram;
         // GM program select at the sequence start (D-40-02). Drums (ch9) ignore
         // program per GM, but we emit it harmlessly for symmetry with writeMidi.

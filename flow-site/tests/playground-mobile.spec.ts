@@ -14,7 +14,8 @@ test('REQ-SITE-PLAYGROUND-05: Monaco read-only + single-column, no overflow <768
 }, testInfo) => {
 	if (!NARROW_PROJECTS.has(testInfo.project.name)) return;
 
-	await page.goto('/playground', { waitUntil: 'domcontentloaded' });
+	// §6.10: pass ?e2e=1 to enable __flowRuntimeReady hook + AudioContext Proxy.
+	await page.goto('/playground?e2e=1', { waitUntil: 'domcontentloaded' });
 
 	// Runtime still boots on mobile (Run + playback work; only editing is disabled — D-49-09).
 	await page.waitForFunction(

@@ -29,6 +29,8 @@ Buffer hall = (reverb tone 0.7 2.5s)
 | `mix` | 0.0 - 1.0 | Dry/wet mix (default 0.3) |
 | `decay` | `Second` | Schroeder closed-form RT60 → damping mapping |
 
+**Reverb renders its decay tail past the input end.** The returned buffer is longer than the input so the room sound decays naturally (tail capped at 10 s). Known exception: a section's final bar clips at the section boundary (v1.6 fix pending).
+
 ## Filters
 
 Biquad filters (Direct Form I, RBJ Cookbook coefficients) with `Q=0.707` (Butterworth) by default. Cutoffs accept either bare `Double` (Hz) or a `Hertz`-typed literal:

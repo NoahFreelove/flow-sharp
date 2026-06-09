@@ -161,6 +161,17 @@ public static class PhaseVocoder
 
         var output = new float[outFrames + frameSize];
 
+        // Parallel window-energy accumulator for COLA normalization. Each OLA
+        // contribution is weighted by sqrtHann (analysis) × sqrtHann
+        // (synthesis) = Hann at that tap. Without dividing the summed output
+        // by the summed window energy, the reconstruction gain is
+        // Σₘ Hann(n − m·synthHop) ≈ frameSize/(2·synthHop) = 1/factor at the
+        // 2048/512 defaults (and develops amplitude-modulation ripple once
+        // synthHop exceeds frameSize/2). Normalizing by the accumulated window
+        // energy (with an epsilon floor at samples no frame covers) makes the
+        // output level exactly unity and INDEPENDENT of factor.
+        var windowEnergy = new float[output.Length];
+
         var frame = new float[frameSize];
 
         // Walk analysis frames at hopSize stride across the input.
@@ -275,11 +286,25 @@ public static class PhaseVocoder
                 int idx = writePos + k;
                 if (idx >= output.Length) break;
                 output[idx] += outFrame[k] * sqrtHann[k];
+                // Accumulate the window energy contributed at this tap:
+                // sqrtHann (analysis) × sqrtHann (synthesis) = Hann.
+                windowEnergy[idx] += sqrtHann[k] * sqrtHann[k];
             }
 
             // Save current frame's phase for the next iteration.
             for (int k = 0; k < halfFft; k++)
                 prevPhase[k] = ph[k];
+        }
+
+        // COLA normalization — divide each output sample by the accumulated
+        // window energy so the reconstruction gain is unity regardless of
+        // factor. Epsilon floor avoids divide-by-zero at samples no analysis
+        // frame covered (zeros stay zeros).
+        const float Epsilon = 1e-6f;
+        for (int i = 0; i < output.Length; i++)
+        {
+            if (windowEnergy[i] > Epsilon)
+                output[i] /= windowEnergy[i];
         }
 
         return output;

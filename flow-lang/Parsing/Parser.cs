@@ -1409,25 +1409,30 @@ public partial class Parser
         if (Match(TokenType.BoolLiteral))
             return new LiteralExpression(PreviousToken.Location, (bool)PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
 
+        // Audit §2.1: music-literal tokens carry their RAW TEXT as the LiteralExpression
+        // payload and are resolved to a music Value by TryParseSpecialLiteral at eval time.
+        // They MUST be tagged IsMusicLiteral: true so the evaluator distinguishes them from
+        // ordinary quoted StringLiteral tokens (which carry a genuine string and must stay
+        // a String — `"10s"` is not Second(10), `"a"` is not Note A4).
         if (Match(TokenType.NoteLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         if (Match(TokenType.SemitoneLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         if (Match(TokenType.CentLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         if (Match(TokenType.TimeLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         if (Match(TokenType.DecibelLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         // Phase 26.2 ERG-04 — HertzLiteral routes to LiteralExpression with raw text;
         // ExpressionEvaluator.TryParseSpecialLiteral resolves "800Hz" / "1.5kHz" to Value.Hertz(canonical-Hz double).
         if (Match(TokenType.HertzLiteral))
-            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan);
+            return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         // Phase 45 D-09: BeatLiteral diverges from the flat LiteralExpression(text) routing
         // used by Cent/Time/Decibel/Hertz — cast Token.Value to double directly so the raw

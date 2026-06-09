@@ -36,14 +36,37 @@ export function clearGistToken(): void {
 	sessionStorage.removeItem(GIST_TOKEN_KEY);
 }
 
+/** sessionStorage key used to stash the editor source before OAuth navigation (§6.1). */
+export const GIST_PENDING_SOURCE_KEY = 'flow_pending_gist_source';
+
 /**
  * Begin the OAuth flow by navigating to the worker's authorize leg. The worker mints the CSRF
  * `state`, stashes it httpOnly, and bounces to GitHub; on return it drops the token in the URL
  * fragment which the playground reads into sessionStorage.
+ *
+ * §6.1: before navigating, stash `source` + a pending-save flag in sessionStorage so the playground
+ * can auto-resume the save when the OAuth round-trip returns with `#token=`.
  */
-export function beginGistAuth(): void {
+export function beginGistAuth(source?: string): void {
 	if (typeof window === 'undefined') return;
+	if (source !== undefined) {
+		sessionStorage.setItem(GIST_PENDING_SOURCE_KEY, source);
+	}
 	window.location.href = '/api/auth/github';
+}
+
+/**
+ * Pop and return the pending-save source stashed before an OAuth navigation (§6.1).
+ * Returns null when no stash exists (normal page loads). Removes the key after reading
+ * so it is consumed exactly once.
+ */
+export function consumePendingGistSource(): string | null {
+	if (typeof sessionStorage === 'undefined') return null;
+	const src = sessionStorage.getItem(GIST_PENDING_SOURCE_KEY);
+	if (src !== null) {
+		sessionStorage.removeItem(GIST_PENDING_SOURCE_KEY);
+	}
+	return src;
 }
 
 /**

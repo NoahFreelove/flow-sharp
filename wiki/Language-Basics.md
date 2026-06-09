@@ -441,6 +441,10 @@ Any type name ending in `s` refers to the array form: `Ints` = `Int[]`, `Strings
 
 Variables declared inside blocks (functions, musical context blocks, sections, loops) are scoped to that block. Inner scopes can access variables from outer scopes (lexical scope).
 
+Proc calls use call-boundary frames: **a proc body cannot read or write its caller's locals** — only its own parameters, locals, and globals are in scope. Globals remain readable and writable from any proc. Lambdas capture by snapshot at the point they are created (lexical capture, not dynamic lookup).
+
+Note: quoted string literals are always `String` values — `"10s"` is the string `"10s"`, not a `Second`. Music-typed values come only from bare tokens: `10s`, `C4`, `-3dB`, `440Hz`, etc.
+
 ## Pragmas
 
 Pragmas are file-scope toggles at the top of a file. Each module has its own `PragmaSet` — pragmas don't leak across `use` imports:
@@ -461,4 +465,4 @@ Unknown pragmas error with a did-you-mean suggestion.
 - [Loops](Loops.md) - `for`, `while`, `break`, `continue`
 - [String Interpolation](String-Interpolation.md) - `$"..."` syntax
 - [Musical Context](Musical-Context.md) - Musical context blocks
-- [Imports and Modules](Imports-and-Modules.md) - All 12 stdlib modules
+- [Imports and Modules](Imports-and-Modules.md) - All 15 stdlib modules

@@ -60,15 +60,17 @@ dotnet run --project flow-interpreter hello.flow
 flow repl
 ```
 
-The REPL auto-imports `@std`, `@audio`, and `@collections`. Type Flow expressions interactively and see results immediately. Use `:help`, `:clear`, `:stop`, or `:quit` for built-in commands.
+The REPL auto-imports `@std`, `@audio`, and `@collections`. Type Flow expressions interactively and see results immediately. Use `:help`, `:clear`, `:stop`, or `:quit` for built-in commands. In a real terminal it supports Tab completion (LSP-backed), Ctrl+R reverse history search, and PrettyPrompt editing; persistent history is stored at `~/.config/flow/history`. Piped or redirected stdin falls back to the legacy line reader (CI-safe).
 
 ## Watch Mode
 
-Automatically re-render a script when the file changes — reloads quantize to the next bar boundary with a 64-sample crossfade so playback never glitches:
+Automatically re-render a script when the file changes — reloads quantize to the next bar boundary with a 64-sample crossfade so playback never glitches. The terminal shows a four-row live status panel with tempo/bar, active blocks, voice usage, and sticky advisories.
 
 ```bash
 flow watch path/to/script.flow
 ```
+
+See [Live Coding](Live-Coding.md) for `live { }` blocks, the `flow watch` status panel, and the determinism trade-off.
 
 ## Evaluate an Expression
 
@@ -184,5 +186,5 @@ for test in tests/test_*.flow; do flow run "$test"; done
 - [Note Streams](Note-Streams.md) - Write music inline
 - [Loops](Loops.md) - `for`, `while`, `break`, `continue`
 - [String Interpolation](String-Interpolation.md) - `$"..."` syntax
-- [Imports and Modules](Imports-and-Modules.md) - All 12 stdlib modules
+- [Imports and Modules](Imports-and-Modules.md) - All 15 stdlib modules
 - [Examples](Examples.md) - Complete working programs

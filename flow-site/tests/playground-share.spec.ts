@@ -25,7 +25,8 @@ test('REQ-SITE-SHARE-01: Share copies a #code= link', async ({ page, context }, 
 	if (testInfo.project.name !== DESKTOP) return;
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
-	await page.goto('/playground', { waitUntil: 'domcontentloaded' });
+	// §6.10: pass ?e2e=1 to enable __flowRuntimeReady + __flowEditorValue hooks.
+	await page.goto('/playground?e2e=1', { waitUntil: 'domcontentloaded' });
 	await waitForRuntime(page);
 
 	// Click Share.
@@ -52,7 +53,8 @@ test('REQ-SITE-SHARE-01: opening a #code= link round-trips the source into the e
 	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
 
 	// First visit: capture a real share link for the default snippet.
-	await page.goto('/playground', { waitUntil: 'domcontentloaded' });
+	// §6.10: pass ?e2e=1 to enable __flowRuntimeReady + __flowEditorValue hooks.
+	await page.goto('/playground?e2e=1', { waitUntil: 'domcontentloaded' });
 	await waitForRuntime(page);
 	const original = await page.evaluate(() =>
 		(window as unknown as { __flowEditorValue?: () => string }).__flowEditorValue?.()
@@ -62,8 +64,10 @@ test('REQ-SITE-SHARE-01: opening a #code= link round-trips the source into the e
 	const shareUrl = await page.evaluate(() => navigator.clipboard.readText());
 	expect(shareUrl).toContain('#code=');
 
-	// Open the shared link in a fresh page load — the source must reappear in the editor.
-	await page.goto(shareUrl, { waitUntil: 'domcontentloaded' });
+	// Open the shared link in a fresh page load (with ?e2e=1 so __flowEditorValue is active)
+	// — the source must reappear in the editor.
+	const shareUrlWithE2e = shareUrl.replace('/playground#', '/playground?e2e=1#');
+	await page.goto(shareUrlWithE2e, { waitUntil: 'domcontentloaded' });
 	await waitForRuntime(page);
 	// No decode error for a valid link.
 	await expect(page.locator('[data-testid="decode-error"]')).toHaveCount(0);
@@ -79,7 +83,7 @@ test('REQ-SITE-SHARE-01: a malformed #code= shows the friendly error, no crash',
 	if (testInfo.project.name !== DESKTOP) return;
 
 	// Garbage that is not a valid deflate stream → defensive decode → friendly message.
-	await page.goto('/playground#code=not-valid-deflate-data-zzzz', {
+	await page.goto('/playground?e2e=1#code=not-valid-deflate-data-zzzz', {
 		waitUntil: 'domcontentloaded'
 	});
 	await waitForRuntime(page);

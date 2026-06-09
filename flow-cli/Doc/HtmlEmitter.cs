@@ -103,15 +103,13 @@ public sealed class HtmlEmitter
         {
             sb.Append("<div class=\"example\">\n");
             sb.Append("<pre class=\"code\">").Append(Esc(m.Examples[i])).Append("</pre>\n");
-            // Failures align to examples by index when counts match; otherwise
-            // any failure is rendered under the corresponding example block.
-            if (i < m.ExampleFailures.Count)
+            // ExampleFailures is a same-length list: index i corresponds to
+            // Examples[i]. Empty string = pass (no annotation); non-empty =
+            // the [example failed] text for that specific example.
+            if (i < m.ExampleFailures.Count && !string.IsNullOrEmpty(m.ExampleFailures[i]))
                 sb.Append("<p class=\"failed\">").Append(Esc(m.ExampleFailures[i])).Append("</p>\n");
             sb.Append("</div>\n");
         }
-        // Extra failures (count mismatch) rendered at the end so none are lost.
-        for (int i = m.Examples.Count; i < m.ExampleFailures.Count; i++)
-            sb.Append("<p class=\"failed\">").Append(Esc(m.ExampleFailures[i])).Append("</p>\n");
 
         sb.Append("</article>\n");
     }

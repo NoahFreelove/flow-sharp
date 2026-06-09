@@ -8,6 +8,11 @@ import { test, expect, type Page } from '@playwright/test';
 // disclosure, hamburger, single-column showcase) gate on width < 768; the no-horizontal-overflow
 // check runs on EVERY project (it must hold at 320, 375, AND 1280 — a desktop overflow is just
 // as broken). The 320px project is the hard ROADMAP AC-7 floor.
+//
+// The `/` route ships the iOS-6 skeuomorphic home with its own chrome (no shared layout header):
+//   - Desktop (>600px): toolbar pill nav visible; no hamburger.
+//   - Mobile (≤600px): toolbar nav hidden (tabbar handles navigation); no hamburger.
+// Non-home routes keep the shared layout chrome: hamburger <768px, desktop strip ≥768px.
 
 const ROUTES = ['/', '/docs', '/docs/flow-operator', '/playground', '/showcase'];
 
@@ -28,6 +33,8 @@ test.describe('no horizontal overflow on any route (REQ-SITE-RESPONSIVE-01, 320p
 	for (const route of ROUTES) {
 		test(`no horizontal overflow: ${route}`, async ({ page }) => {
 			await page.goto(route);
+			// Wait for the first landmark (main or aside) to be visible before measuring.
+			// The iOS-6 home wraps its content in <main>; other routes also have <main>.
 			await page.locator('main, aside').first().waitFor();
 			// Let any client-only mount (playground shell) settle before measuring.
 			await page.waitForLoadState('networkidle');
@@ -37,9 +44,11 @@ test.describe('no horizontal overflow on any route (REQ-SITE-RESPONSIVE-01, 320p
 });
 
 test.describe('single-column collapse <768px (D-49-09)', () => {
-	test('nav collapses to a hamburger; the desktop tab strip is hidden', async ({ page }, testInfo) => {
+	test('nav collapses correctly; the desktop tab strip is hidden on non-home routes', async ({ page }, testInfo) => {
 		const width = testInfo.project.use.viewport?.width ?? 1280;
-		await page.goto('/');
+
+		// --- Non-home route: shared layout chrome ---
+		await page.goto('/docs');
 		if (width < 768) {
 			// Mobile: the hamburger trigger is visible; the desktop tab strip is display:none.
 			await expect(page.getByRole('button', { name: /open menu/i })).toBeVisible();
@@ -48,6 +57,19 @@ test.describe('single-column collapse <768px (D-49-09)', () => {
 			// Desktop: the tab strip is visible; the hamburger is hidden.
 			await expect(page.locator('.site-nav-desktop')).toBeVisible();
 			await expect(page.locator('.site-hamburger')).toBeHidden();
+		}
+
+		// --- Home: iOS-6 chrome (no hamburger; toolbar nav or tabbar handles navigation) ---
+		await page.goto('/');
+		if (width <= 600) {
+			// At ≤600px the toolbar pill nav is hidden; the bottom tabbar is visible.
+			const tabbar = page.locator('nav[aria-label="Tab bar"]');
+			await expect(tabbar).toBeVisible();
+			// The toolbar nav is hidden (CSS display:none) — not visible, but attached.
+			await expect(page.locator('nav[aria-label="Primary"]').first()).toBeAttached();
+		} else {
+			// Desktop: the toolbar pill nav is visible; no hamburger on the iOS-6 home.
+			await expect(page.locator('nav[aria-label="Primary"]').first()).toBeVisible();
 		}
 	});
 

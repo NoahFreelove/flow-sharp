@@ -109,7 +109,7 @@ Status: **Fully** = shipped · **Partial** = caveated or limited · **Not yet** 
 
 | Feature | Status | Notes |
 |---|---|---|
-| `transpose` (Semitone / Cent) | Fully | |
+| `transpose` (Semitone / Cent) | Fully | Cent-precision: `(transpose seq +50c)` shifts every note's `CentOffset` by 50 (150c = +1st +50c) |
 | `invert`, `retrograde`, `augment`, `diminish` | Fully | |
 | `up`, `down`, `repeat`, `concat` (sequences) | Fully | |
 | Arpeggio with rate / direction / pattern params | Fully | `(arpeggio Chord NoteValue dir pattern)` |
@@ -166,7 +166,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Raw oscillators | Fully | `sine`, `saw`/`sawtooth`, `square`, `triangle` (aliased — no anti-alias by design) |
+| Raw oscillators | Fully | `sine`, `saw`/`sawtooth` (PolyBLEP band-limited), `square` (PolyBLEP band-limited), `triangle` |
 | Wavetable synths | Fully | `warm` (boosted-mid additive saw), `bright` (DC-removed 10% pulse), `buzz` (1/√n supersaw stack) |
 | Custom wavetable registration | Fully | `(oscillator name generator [tableSize])` or `(oscillator name wavetable[])` |
 | Custom oscillator definitions (user `proc` as oscillator) | Fully | `(renderSong Song Function)` with lambda contract `(MusicalNote, dur, bpm) → Buffer` |
@@ -200,7 +200,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Schroeder reverb (4 parallel comb + 2 series allpass) | Fully | `(reverb buf roomSize [damping mix])` and `(reverb buf roomSize Second decay)`; Schroeder closed-form RT60 mapping |
+| Schroeder reverb (4 parallel comb + 2 series allpass) | Fully | `(reverb buf roomSize [damping mix])` and `(reverb buf roomSize Second decay)`; Schroeder closed-form RT60 mapping; decay tail now extends past the input end. Known caveat: a section's final bar still clips the tail at the section boundary (v1.6) |
 | Biquad filters (Direct Form I, RBJ Cookbook) | Fully | `lowpass`/`highpass`/`bandpass` with Hertz-typed overloads; default Q=0.707 (Butterworth) |
 | Peak-detect compressor with attack/release | Fully | `(compress buf thresholdDb ratio [attackMs releaseMs])`; music-typed `Decibel`/`Millisecond` overload |
 | Sidechain compression | Fully | `(sidechain buf trigger thresh ratio [attack release])`; trigger drives envelope follower |
@@ -230,7 +230,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 |---|---|---|
 | Polyphonic voice allocation | Fully | Two policies: legacy keep-loudest-N AND steal-oldest pool with deterministic tiebreaker (original input index) |
 | Voice-pool block (`voicePool N { }`) | Fully | Range [1, 256]; default 32; truncates oldest voice on overflow with 5ms fade |
-| Voice-block polyphony (`{voice ...}`) | Fully | Multiple parallel voices share onset; same render path for audio + MIDI export |
+| Voice-block polyphony (`{voice ...}`) | Fully | Multiple parallel voices share onset; same render path for audio + MIDI export; polyphony preserved through all transforms (transpose/invert/retrograde/repeat/concat/etc.) |
 | Polyrhythm | Fully | `(polyrhythm seqA seqB [beats])` |
 | Per-voice pan | Fully | Constant-power; threads through SFZ + synth paths |
 | Per-section context (tempo, pan, gain, reverbTime, voicePool, sustainPedal, tuning) | Fully | Per-section context overlays drive renderer choices |
@@ -247,10 +247,12 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | WAV import (`loadWav`) | Fully | 16 / 24 / 32-bit PCM; auto-resample to 44100 Hz; chunk-walking parser; varispeed overloads (semitones / ratio) |
 | Real-time playback | Fully | `play`, `loop`, `(loop buf count)`, `preview` (mono 22050 Hz), `stop`, `(stream buf)`/`(stream seq)` |
 | PulseAudio backend | Fully | Also works on PipeWire via PA compatibility layer; `PA_SAMPLE_FLOAT32LE`, channels 1–8 |
-| Audio backend abstraction | Fully | `IAudioBackend` ready for portability; only PulseAudio implemented |
+| CoreAudio backend (macOS) | Partial | AudioToolbox AudioQueue P/Invoke; probe-wired in `AudioPlaybackManager.DetectBackend`; audible end-to-end pending HUMAN-UAT. Known open issue: `play()` can return before the audio tail finishes (CoreAudio drain not yet landed — do not rely on blocking behaviour) |
+| WASAPI backend (Windows) | Partial | NAudio.Wasapi 2.3.0; probe-wired; audible end-to-end pending HUMAN-UAT |
+| Audio backend abstraction | Fully | `IAudioBackend`; three backends probe-wired in priority order (CoreAudio → WASAPI → PulseAudio) |
 | Audio device enumeration & selection | Partial | `(audioDevices)`, `(setAudioDevice)`, `(isAudioAvailable)` — PulseAudio Simple API returns empty / throws (use `--device` at CLI) |
 | Capture mode for headless / tests | Fully | `FLOW_SUPPRESS_PLAYBACK=1` env routes playback to capture buffer |
-| macOS / Windows playback backends | Not yet | `IAudioBackend` abstraction in place; LSP-only on these platforms today |
+| Audio input (`micBuffer`) | Fully | `(micBuffer Second)` / `(micBuffer Double)` reads from the default PulseAudio input device (`PA_STREAM_RECORD`); −20 dB feedback-guard on open; linear-interpolation resample to 44.1 kHz at capture-side; charitable fallback to silent buffer when libpulse absent. Desktop-only — stripped on `FlowTarget=Web` |
 
 ### MIDI
 
@@ -264,6 +266,48 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | MIDI file import | Partial | Standalone `flow-midi` CLI — reads `.mid`, emits `.flow` source; hand-rolled SMF Format 0/1 parser; running-status; no in-language `loadMidi` builtin |
 | `flow midi2flow` CLI subcommand | Fully | `--sustain`/`--no-sustain`, `--sfz`/`--no-sfz`, `--dump`, `-o` flags |
 | `flow flow2midi` CLI subcommand | Fully | Script must contain `(writeMidi ...)`; CLI forwards `-o` informationally |
+
+### Real-time MIDI, clock & JACK (`use "@midi"` / `use "@jack"`)
+
+Desktop-only — stripped on `FlowTarget=Web`. Direct librtmidi P/Invoke (`Audio/LibRtMidi.cs`); requires `librtmidi-dev` on Linux. `@jack` requires a running JACK server.
+
+| Feature | Status | Notes |
+|---|---|---|
+| `midiPorts()` | Fully | Returns `Array[String]` of available output port names |
+| `openMidiOutput(port) → MidiDevice` | Fully | Reference-identity `MidiDevice` value (specificity 152); probe-gated; falls back to `NullMidiBackend` when librtmidi absent |
+| `midiOut(Song\|Sequence, MidiDevice [, overrides=Dict])` | Fully | GM-routed (same prefix-match table as `writeMidi`); flushes CC 123 All-Notes-Off per used channel on close; closes native handle per call |
+| `midiNoteOn(dev, ch, pitch, vel)` / `midiNoteOff(dev, ch, pitch)` | Fully | Low-level escape hatch for live / generative use |
+| `midiCC(dev, ch, ctrl, val)` / `midiSysex(dev, data)` | Fully | CC and SysEx sending |
+| `clockMaster(MidiDevice) → ClockHandle` | Fully | Sends MIDI clock (0xF8 / 0xFA / 0xFB / 0xFC raw bytes) at the active tempo |
+| `clockSlave(String) → ClockHandle` | Fully | Drives `MusicalContext.Tempo` from incoming clock; poll loop survives oversize sysex |
+| `clockStop(ClockHandle)` | Fully | |
+| `jackSync() → JackHandle` | Partial | Reads running JACK server transport position + BPM via hand-rolled `jack_transport_query` P/Invoke; drives `MusicalContext.Tempo`; absent server → one-shot advisory + dead handle, never throws. Best-effort only — no JackSharp; no audio routing; JACK transport only |
+| Ableton Link | Not yet | Deferred to community/v1.6 — GPL contamination risk (D-40-06) |
+
+### OSC (`use "@osc"`)
+
+Desktop-only — stripped on `FlowTarget=Web`. Backed by Rug.Osc 1.2.5 (MIT).
+
+| Feature | Status | Notes |
+|---|---|---|
+| `oscSend(host, port, path, ...args)` | Fully | Smallest-tag-that-fits type inference (Int→`,i`, Long→`,h`, Float→`,f`, Double→`,d`, String/Symbol→`,s`, Bool→`,T`/`,F`, Buffer→`,b` blob) |
+| `oscListen(port, path, handler) → OscHandle` | Fully | Reference-identity `OscHandle` value; handlers queued — NOT invoked on background threads |
+| `oscPump() → Int` | Fully | Drains the pending-handler queue on the foreground thread; call in a loop after `oscListen`. Pattern: bind listener → loop with `(oscPump)` |
+| `oscStop(OscHandle)` | Fully | Stops listener; future-timetag bundles will not fire after stop |
+| `oscBundle(...packets)` + `oscSendBundle(host, port, bundle)` | Fully | Bundle construction and dispatch; timetag honored on receive; nesting depth cap 8 |
+| Per-path rate limiting | Fully | 200 Hz drop-newest sample-and-hold per path via `ConcurrentDictionary` timestamps |
+| Buffer blob round-trip | Fully | 12-byte header (magic `FLO1` + channels + sampleRate) so stereo/48 kHz buffers round-trip; headerless foreign blobs decode as mono/44 100 Hz + one advisory |
+
+### Live coding (`flow watch`)
+
+| Feature | Status | Notes |
+|---|---|---|
+| `live <quantize> { body }` block | Partial | `live` blocks parse and the quantize value is recorded, but `flow watch` currently does **whole-script** swaps at 1-bar boundaries regardless of the quantize value. Per-block independent quantize timelines are v1.6 |
+| Bar-boundary buffer swap | Fully | 64-sample equal-power crossfade at the swap point; failed renders keep the previous version |
+| File-change debounce | Fully | 200 ms trailing-edge quiesce — the final save of a burst always triggers a render |
+| Parse/eval diagnostics in watch mode | Fully | Error messages with line numbers surfaced to the `[live]` advisory on every failed reload |
+| ANSI live status panel | Fully | 4-row status (Tempo/TimeSig/Bar, active blocks, Voices N/M, sticky advisory); plain-line fallback when output is redirected or `NO_COLOR` |
+| Sample-rate/channel changes at bar boundary | Fully | Applied atomically at the swap point |
 
 ### Notation IO (`use "@notation-io"`)
 
@@ -312,9 +356,10 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | `flow midi2flow <input.mid> [-o]` | Fully | Reverses the MIDI export — emits round-trip-friendly `.flow` source |
 | `flow check <script>` | Partial | Parse-AND-execute (true parse-only mode deferred) |
 | `flow new <name> [--dir]` | Fully | Scaffolds a Flow project from embedded template |
-| `flow lsp` | Fully | Starts LSP server over stdio |
-| `flow test [path]` | Fully | Runs `test_*.flow` files via pure-Flow framework |
-| `flow version` | Fully | |
+| `flow lsp` | Fully | Starts the Flow Language Server over stdio |
+| `flow test [path]` | Fully | Runs `test_*.flow` files via pure-Flow framework (single file or directory) |
+| `flow doc [--out dir] [--format html\|md\|both]` | Fully | Generates static reference docs from `BuiltInDocs` + `///` comments |
+| `flow version` | Fully | Reports `1.5.0` |
 | Legacy `flow-interpreter` binary | Fully | Maintained for backward compat; `--watch`, `-e`, `--stdin`, `--device`, `--verbose` flags |
 
 ### REPL & script runner
@@ -326,9 +371,10 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | stdin input (`echo ... \| flow-interpreter --stdin`) | Fully | Auto-detected on `Console.IsInputRedirected` |
 | `--verbose` diagnostics on stderr | Fully | |
 | REPL multi-line input | Fully | Backslash continuation OR `proc`-detection auto-multiline |
-| REPL `:quit` / `:help` / `:clear` / `:stop` commands | Fully | |
+| REPL `:quit` / `:help [<name>]` / `:clear` / `:stop` commands | Fully | `:help <name>` looks up a builtin via `BuiltInDocs` and renders header + signature + example |
 | Rich Rust-style diagnostics in REPL | Fully | Selected automatically when source spans are available |
-| REPL tab completion / history / syntax highlighting | Not yet | |
+| REPL tab completion + persistent history | Fully | PrettyPrompt 4.1.1 + LSP-backed `CompletionHandler`; Ctrl+R reverse history search; history persisted to `~/.config/flow/history` (10 k cap). Interactive terminals only — piped/redirected stdin falls back to the plain reader (CI-safe) |
+| REPL syntax highlighting | Not yet | PrettyPrompt is wired but the syntax-highlighting callback is not connected |
 
 ### Diagnostics & error display
 
@@ -359,7 +405,7 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 | Document symbols / workspace symbols | Not yet | |
 | Inlay hints | Not yet | |
 | Formatter | Not yet | No formatter exists |
-| Stdlib completion for newer modules | Partial | `@sfz`, `@patterns`, `@generative`, `@improv`, `@notation-io` not in `StdlibSymbolIndex.ModuleNames` yet (still hard-coded to 6 original modules) |
+| Stdlib completion | Fully | `StdlibSymbolIndex` covers all 15 modules (std, audio, collections, bars, notation, composition, sfz, patterns, generative, improv, osc, notation-io, midi, jack, test); charitable-skips any module not present at the deployed binary path |
 
 ### Editor support
 
@@ -393,10 +439,10 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 |---|---|---|
 | Math stdlib | Fully | `sin`/`cos`/`tan`/`sqrt`/`floor`/`ceil`/`round`/`log`/`pow`/`abs`/`min`/`max` + `pi`/`tau` constants |
 | Buffer pretty-printing | Fully | `(prettyBuffer buf)` (60×11 ASCII waveform), `(bufferHex buf [offset length])` |
-| Documentation lookup table | Fully | `BuiltInDocs.cs` — 104 entries powering LSP hover (positioned for future `flow help <fn>`, not yet exposed) |
+| Documentation lookup table | Fully | `BuiltInDocs.cs` — 104 entries powering LSP hover, REPL `:help <name>`, and `flow doc` reference generator |
 | Wiki | Fully | 26 markdown chapters synced via `.github/workflows/wiki-sync.yml` |
-| `flow help <fn>` subcommand | Not yet | |
-| `flow` CLI binary + system install | Fully | `scripts/install.sh` per-user (`~/.local/share/flow/...` + `~/.local/bin/flow` symlink) or `--system` mode |
+| `flow doc` subcommand | Fully | Generates browsable static reference docs (HTML/Markdown/both) from `BuiltInDocs` + `///` comments |
+| `flow` CLI binary + system install | Fully | `scripts/install.sh` auto-detects RID (linux-x64/arm64, osx-x64/arm64); per-user `~/.local/share/flow/` or `--system`; sha256 sidecar verification |
 
 ### Configuration
 
@@ -423,7 +469,8 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 
 | Platform | Status | Notes |
 |---|---|---|
-| Linux x64 (primary) | Fully | PulseAudio backend; self-contained 38 MB single-file binary at GitHub Releases |
-| Windows x64 / macOS x64 / macOS arm64 | Partial | VSCode extension ships per-platform `flow-lsp.exe` (LSP-only — no playback backend) |
-| Cross-platform official builds | Not yet | v1.5+ backlog |
-| Homebrew / AUR / apt PPA / Snap / AppImage / NuGet | Not yet | Only GitHub-release `.tar.gz` consumed by `install.sh` |
+| Linux x64 / arm64 | Fully | PulseAudio backend; self-contained single-file binary built by `scripts/publish.sh` at v1.5.0; installed via `scripts/install.sh` (auto-detects RID) |
+| macOS x64 / arm64 | Partial | CoreAudio (AudioToolbox) backend probe-wired and ships in the v1.5.0 release binary; audible end-to-end pending HUMAN-UAT; `play()` drain known open (tail truncation — not yet fixed) |
+| Windows x64 | Partial | WASAPI (NAudio.Wasapi) backend probe-wired and ships in the v1.5.0 release binary; audible end-to-end pending HUMAN-UAT |
+| Official cross-platform builds (5 RIDs) | Fully | `scripts/publish.sh` builds linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64 at v1.5.0; `install.sh` auto-detects RID; Windows users pointed to the release page (no auto-download) |
+| Homebrew / AUR / apt PPA / Snap / AppImage / NuGet | Not yet | Only GitHub-release `.tar.gz` / `.zip` consumed by `install.sh` |

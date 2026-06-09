@@ -30,3 +30,40 @@ export const JAZZ_STYLE_SOURCE: string = "Note: Phase 36 IMPROV-01 — baseline 
 /** flow-lang/improv/styles/blues.flow */
 export const BLUES_STYLE_SOURCE: string = "Note: Phase 36 IMPROV-01 — baseline #blues rule pack\nNote: Loaded at FlowEngine init by StyleRegistry.LoadAtEngineInit\nNote: See flow-lang/improv/styles/README.md for the Dict shape contract.\nNote:\nNote: Blues character: relaxed chord-tone bias on strong beats (more passing\nNote: tones than jazz), heavier chromatic passing on weak beats (bent-note\nNote: feel), step-up/step-down dominate intervals, marcato/accent articulations\nNote: on offbeats and syncopated positions for the gritty groove.\n\nuse \"@improv\"\n\n(registerStyle #blues\n    (dict\n        Note: ---- Beat-strength weights — looser chord-tone grip, more chromatic ----\n        #beat_weights (dict\n            #strong (dict #chord_tone 0.55 #scale_tone 0.30 #chromatic_passing 0.15)\n            #weak   (dict #chord_tone 0.20 #scale_tone 0.45 #chromatic_passing 0.35))\n\n        Note: ---- Interval transitions — stepwise dominant, more chromatic ----\n        Note: bent-note feel via the elevated chromatic weight.\n        #interval_transitions (dict\n            #step_up 0.30 #step_down 0.30\n            #leap_up 0.05 #leap_down 0.10\n            #chromatic 0.20 #repeat 0.05)\n\n        Note: ---- Rhythmic template — eighth-note shuffle base ----\n        #rhythmic_template <<#eighth #eighth #eighth #eighth #eighth #eighth #eighth #eighth>>\n\n        Note: ---- Articulation distribution — bent / gritty articulations ----\n        #articulation_distribution (dict\n            #downbeat   #tenuto\n            #offbeat    #marcato\n            #syncopated #accent)))\n";
 
+// ─── Web-playable variants (§6.2) ────────────────────────────────────────────
+// The verbatim source constants above match the on-disk .flow files exactly.
+// The Web target cannot write to /tmp, but CAN play audio via the browser
+// AudioContext. These variants append `(play <finalBuffer>)` so showcase pieces
+// produce audible output in the playground rather than silently writing a file.
+// Each constant is named <BASE>_WEB and used by pieces.ts for `runnableOnWeb`
+// pieces that set their source via `webSource ?? source`.
+
+/** §6.2 — markov_jazz with (play mix) appended for browser playback. */
+export const MARKOV_JAZZ_SOURCE_WEB: string = MARKOV_JAZZ_SOURCE.replace(
+	/(writeWav\s+"\/tmp\/markov_jazz\.wav"\s+mix\s*\))/,
+	'$1\n(play mix)'
+);
+
+/** §6.2 — granular_demo with (play mix) appended for browser playback. */
+export const GRANULAR_SOURCE_WEB: string = GRANULAR_SOURCE.replace(
+	/(writeWav\s+"\/tmp\/granular_demo\.wav"\s+mix\s*\))/,
+	'$1\n(play mix)'
+);
+
+/** §6.2 — tidal_combinators with (play mix) appended for browser playback. */
+export const TIDAL_SOURCE_WEB: string = TIDAL_SOURCE.replace(
+	/(writeWav\s+"\/tmp\/tidal_combinators\.wav"\s+mix\s*\))/,
+	'$1\n(play mix)'
+);
+
+/** §6.2 — stretch_pitchshift with (play mix3) appended for browser playback. */
+export const STRETCH_SOURCE_WEB: string = STRETCH_SOURCE.replace(
+	/(writeWav\s+"\/tmp\/stretch_pitchshift_demo\.wav"\s+mix3\s*\))/,
+	'$1\n(play mix3)'
+);
+
+/** §6.2 — parameterized with (play mix) appended for browser playback. */
+export const PARAMETERIZED_SOURCE_WEB: string = PARAMETERIZED_SOURCE.replace(
+	/(writeWav\s+"\/tmp\/parameterized\.wav"\s+mix\s*\))/,
+	'$1\n(play mix)'
+);

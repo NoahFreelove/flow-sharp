@@ -1,0 +1,9 @@
+# Flow repo editor/style config. The C# rules below back the conventions
+# documented in CLAUDE.md ("C# Conventions") so they are compiler/IDE-enforced
+# rather than doc-enforced (audit 2026-06-09 §8.8).
+
+root = true
+
+[*.cs]
+# File-scoped namespaces are the house style (CLAUDE.md C# Conventions).
+csharp_style_namespace_declarations = file_scoped:warning

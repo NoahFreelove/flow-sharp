@@ -78,7 +78,7 @@ public class Phase44TwoRunDeterminismTests
     public void Fact_StrictFlowFile_TwoRunsSHAEqual_Stdout(string relativePath)
     {
         if (StrictFlowScriptSuiteTests.DllMissing)
-            return;  // charitable skip
+            Assert.Skip($"flow-interpreter.dll not built — run `dotnet build flow-interpreter` first");
 
         var (exit1, out1, err1) = StrictFlowScriptSuiteTests.RunInterpreter(relativePath);
         Assert.True(exit1 == 0,
@@ -108,7 +108,7 @@ public class Phase44TwoRunDeterminismTests
     public void Fact_ShowcaseStrictWav_TwoRunsByteEqual()
     {
         if (StrictFlowScriptSuiteTests.DllMissing)
-            return;  // charitable skip
+            Assert.Skip($"flow-interpreter.dll not built — run `dotnet build flow-interpreter` first");
 
         // Pre-clean: remove any stale WAV from a prior unrelated run so we
         // never compare against a different fixture's output.

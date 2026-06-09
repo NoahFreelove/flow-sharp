@@ -38,7 +38,7 @@ Next step: Phase 41's autonomous plan execution is DONE (7/7 — flow doc, WASAP
 **Bookkeeping reconciliation 2026-06-07:** ROADMAP Phase Summary was missing 46/47/48/49 checkbox lines (added — 46/47/48 `[x]` shipped, 49 `[x]` execution-complete). `roadmap.analyze` had mis-reported 46/47 as incomplete and 41 as complete; disk reality: 41 is genuinely unstarted (no dir/plans/context), 46-49 all executed.
 
 Status: All 15 v1.5 phases executed — milestone close pending. Human UAT deferred by composer (Phases 40/41/49 carry deferred-debt UAT records; re-run via /gsd:verify-work or accept-as-deferred at /gsd:complete-milestone).
-Last activity: 2026-06-09 - Completed quick task 260608-x94: iOS-6 home redesign for flow-site (/ route)
+Last activity: 2026-06-09 - Audit remediation session (GSD bypassed per composer): 56-agent codebase audit (.planning/CODEBASE-AUDIT-2026-06-09.md) + 3-wave multi-agent fix run landing 60+ confirmed findings — transforms data-loss, DSP level math, lexical proc scoping, REPL wiring, OSC thread-safety (+oscPump), WASM/playground contracts, e2e spec retargeting (276/276 green), docs truth pass (CLAUDE.md/FEATURES/README/wiki + 2 new pages). All suites green; squashed to one commit on dev. Plan + decisions: CODEBASE-AUDIT-2026-06-09-FIXPLAN.md.
 
 **Phase 40 Plan 40-04 highlights (2026-06-07) — CRITICAL ABI fix: RtMidi.Core → direct librtmidi P/Invoke:**
 

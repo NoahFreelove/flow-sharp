@@ -11,7 +11,7 @@ use "mylib.flow"   Note: import a local file (relative path)
 
 ## Standard Library Modules
 
-Prefix module names with `@` to import from the standard library directory. Flow ships 12 first-party modules:
+Prefix module names with `@` to import from the standard library directory. Flow ships 15 first-party modules:
 
 | Import | Purpose |
 |--------|---------|
@@ -21,11 +21,14 @@ Prefix module names with `@` to import from the standard library directory. Flow
 | `use "@notation"` | Musical-notation primitives (durations, rests, bar/sequence builders) |
 | `use "@audio"` | Buffer creation, signal generation, effects, playback, WAV/MIDI export |
 | `use "@composition"` | Timeline / voice / track helpers |
-| `use "@sfz"` | SFZ orchestral sampler (`loadSfz`, GM symbol dict, `"sampler:NAME"` dispatch) |
+| `use "@sfz"` | SFZ orchestral sampler (`loadSfz`, GM symbol dict, `"sampler:NAME"` dispatch) — Desktop only |
 | `use "@patterns"` | 13 Tidal-style combinators on `Sequence` (`every`, `fast`, `jux`, `degrade`, ...) |
 | `use "@generative"` | Markov chains, L-systems, cellular automata, chaos maps, `quantizeToScale` |
 | `use "@improv"` | `jam` chord-aware Markov improvisation + composer-editable style packs |
 | `use "@notation-io"` | MusicXML 3.1 + LilyPond 2.24+ export, ABC 2.1 + PC-98 MML import |
+| `use "@osc"` | Open Sound Control send/receive (`oscSend`/`oscListen`/`oscPump`/...) — Desktop only |
+| `use "@midi"` | Real-time MIDI output + clock (`midiOut`/`midiNoteOn`/`clockMaster`/...) — Desktop only |
+| `use "@jack"` | JACK transport sync (`jackSync`) — Desktop only, Linux |
 | `use "@test"` | Pure-Flow test framework (`test`, `assert`, `assertEq`, `assertWithinDb`, ...) |
 
 ### What `@std` Includes
@@ -57,14 +60,19 @@ Prefix module names with `@` to import from the standard library directory. Flow
 | Markov / L-systems / cellular automata / chaos maps | `use "@generative"` |
 | Chord-aware Markov improvisation | `use "@improv"` |
 | MusicXML / LilyPond export, ABC / MML import | `use "@notation-io"` |
+| OSC send/receive (with external apps / SuperCollider / etc.) | `use "@osc"` (Desktop only) |
+| Real-time MIDI output to hardware synths / DAW; MIDI clock | `use "@midi"` (Desktop only) |
+| JACK transport position + tempo sync | `use "@jack"` (Desktop only, Linux) |
 | Pure-Flow test framework | `use "@test"` |
 
 ### Runtime Gates
 
-Two modules flip runtime feature flags when imported, not just by declaring procs:
+Several modules flip runtime feature flags when imported, not just by declaring procs:
 
 - `@sfz` flips `ExecutionContext.SfzEnabled = true` and populates the 20-entry GM symbol dict. Without `use "@sfz"`, calls to `loadSfz` fail with `loadSfz requires \`use "@sfz"\``.
 - `@notation-io` flips `ExecutionContext.NotationIoEnabled = true`. Without `use "@notation-io"`, calls to `writeMusicXML` / `writeLilyPond` / `abc` / `mml` fail with a similar guard.
+- `@osc` flips `ExecutionContext.OscEnabled = true`. OSC builtins require this; a `__enableOscModule` marker in the module file sets it.
+- `@midi` flips `ExecutionContext.MidiEnabled = true` similarly.
 
 The marker line that flips the flag lives at the bottom of each module file — composers don't call it directly.
 

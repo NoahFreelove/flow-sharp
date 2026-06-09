@@ -440,7 +440,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     public void CrossFileSmokeFact()
     {
         if (DllMissing)
-            return;  // charitable skip when interpreter not yet built (Phase 39 precedent)
+            Assert.Skip($"flow-interpreter.dll not built at {FlowInterpreterDll} — run `dotnet build flow-interpreter` first");
 
         var (exitCode, stdout, stderr) = RunInterpreter("tests/test_beat_cross_file.flow");
         Assert.True(exitCode == 0,
@@ -481,7 +481,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     [Fact]
     public void TutorialTwoRunCmpClean_Intro()
     {
-        if (DllMissing) return;  // charitable skip
+        if (DllMissing) Assert.Skip($"flow-interpreter.dll not built at {FlowInterpreterDll} — run `dotnet build flow-interpreter` first");
         RunTutorial("examples/beat/intro.flow");
         var sha1 = Sha256("/tmp/beat_intro.wav");
         RunTutorial("examples/beat/intro.flow");
@@ -492,7 +492,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     [Fact]
     public void TutorialTwoRunCmpClean_CutTime()
     {
-        if (DllMissing) return;  // charitable skip
+        if (DllMissing) Assert.Skip($"flow-interpreter.dll not built at {FlowInterpreterDll} — run `dotnet build flow-interpreter` first");
         RunTutorial("examples/beat/cut-time.flow");
         var sha1 = Sha256("/tmp/beat_cut_time.wav");
         RunTutorial("examples/beat/cut-time.flow");
@@ -503,9 +503,9 @@ public class BeatTrueToSigPragmaTests : IDisposable
     [Fact]
     public void TutorialMatchesBaseline_Intro()
     {
-        if (DllMissing) return;  // charitable skip
+        if (DllMissing) Assert.Skip($"flow-interpreter.dll not built at {FlowInterpreterDll} — run `dotnet build flow-interpreter` first");
         var baseline = Path.Combine(RepoRoot, "flow-lang.Tests", "baselines", "Phase45", "intro.wav");
-        if (!File.Exists(baseline)) return;  // baseline not committed yet
+        if (!File.Exists(baseline)) Assert.Skip($"Phase45 intro.wav baseline not committed yet at {baseline}");
         RunTutorial("examples/beat/intro.flow");
         Assert.Equal(Sha256(baseline), Sha256("/tmp/beat_intro.wav"));
     }
@@ -513,9 +513,9 @@ public class BeatTrueToSigPragmaTests : IDisposable
     [Fact]
     public void TutorialMatchesBaseline_CutTime()
     {
-        if (DllMissing) return;  // charitable skip
+        if (DllMissing) Assert.Skip($"flow-interpreter.dll not built at {FlowInterpreterDll} — run `dotnet build flow-interpreter` first");
         var baseline = Path.Combine(RepoRoot, "flow-lang.Tests", "baselines", "Phase45", "cut-time.wav");
-        if (!File.Exists(baseline)) return;  // baseline not committed yet
+        if (!File.Exists(baseline)) Assert.Skip($"Phase45 cut-time.wav baseline not committed yet at {baseline}");
         RunTutorial("examples/beat/cut-time.flow");
         Assert.Equal(Sha256(baseline), Sha256("/tmp/beat_cut_time.wav"));
     }

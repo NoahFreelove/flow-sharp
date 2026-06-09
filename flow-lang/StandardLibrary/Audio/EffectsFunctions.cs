@@ -44,38 +44,11 @@ public static class EffectsFunctions
         registry.Register("reverb", reverbFullSig, ReverbFull);
 
         // Phase 26.2 ERG-02: reverb(Buffer, Double, Second) — decay time as Second.
-        // Per RESEARCH Pitfall 3 score arithmetic this does NOT ambiguate with
-        // reverb(Buffer, Double, Double): bare-Double third arg wins exact-match
-        // Buffer/Double/Double = 3000 over Buffer/Double/Second = 2500; Second-typed
-        // third arg wins Buffer/Double/Second = 3000 over Buffer/Double/Double = 2500.
-        //
-        // Lambda body uses ReverbSimple's body verbatim (Reverb.Apply with
-        // damping=0.5f, mix=0.3f). The per-sample-identity assertion in
-        // MusicTypeFXOverloadFacts.ReverbSecond_… compares (reverb buf 0.5 1.5s)
-        // against (reverb buf 0.5 1.5). The bare-Double 3-arg call resolves to the
-        // ReverbFull lambda which reads roomSize/damping/mix from positional args
-        // — so for byte-identical output the Second lambda must use the SAME
-        // damping/mix derivation as ReverbFull would when invoked with
-        // (roomSize, decaySec, 0.3) or any specific 3rd-double. To get
-        // per-sample identity with `(reverb buf 0.5 1.5)`, both calls must hit
-        // the same code path; we route the Second arm through Reverb.Apply with
-        // (roomSize, dampingFromArg2, mixFromArg2-or-default) — but ReverbFull
-        // expects 4 args. Simplest convergence: the Second arm calls
-        // Reverb.Apply(buffer, roomSize, damping=arg2-as-double, mix=DEFAULT_MIX).
-        // Since ReverbFull called with (buf, 0.5, 1.5, ?) needs a 4th arg and
-        // (reverb buf 0.5 1.5) only resolves if a 3-arg bare-Double form exists
-        // (it does NOT — only 2-arg ReverbSimple and 4-arg ReverbFull exist).
-        // Therefore the test source (reverb buf 0.5 1.5) actually hits
-        // ReverbSimple via its 2 leading args + a parsing-phase fallthrough?
-        // NO — 3 args won't match 2-arg or 4-arg. The Wave-0 test source for
-        // reverb-Second ASSUMES a Second 3-arg overload exists. The byte-identity
-        // claim is between (reverb buf 0.5 1.5s) and (reverb buf 0.5 1.5) — but
-        // (reverb buf 0.5 1.5) without a Second-3-arg or other 3-arg overload
-        // would error. After this Wave 3 ships, both 3-arg calls resolve to the
-        // SAME Second overload (the bare 1.5 lifts to Second via D-01-style compat
-        // — Second.IsCompatibleWith(Double) ships in Wave 1, so the Second arm
-        // accepts a Double third arg too). Thus per-sample identity holds by
-        // construction (both calls invoke this same lambda).
+        // This is the ONLY 3-arg reverb overload (siblings are 2-arg and 4-arg), and
+        // Second.IsCompatibleWith(Double) means a bare third Double also resolves
+        // here — so `(reverb buf 0.5 1.5s)` and `(reverb buf 0.5 1.5)` invoke this
+        // same lambda and per-sample identity (MusicTypeFXOverloadFacts) holds by
+        // construction. Full overload-score deliberation: Phase 26.2 decision log.
         var reverbSecondSig = new FunctionSignature("reverb",
             [BufferType.Instance, DoubleType.Instance, SecondType.Instance],
             ParameterNames: ["buf", "room", "decay"]);

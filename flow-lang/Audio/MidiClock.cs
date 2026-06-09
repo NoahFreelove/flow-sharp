@@ -567,17 +567,36 @@ internal static class RtMidiInputBridge
                         double delta;
                         try { delta = LibRtMidi.rtmidi_in_get_message(devCaptured, buf, ref size); }
                         catch { break; }
-                        _ = delta;
-                        int n = (int)size;
-                        if (n > 0)
+
+                        // Audit §5.5 — classify the native result instead of
+                        // trusting `size` unconditionally. librtmidi (a) returns
+                        // delta < 0 on error WITHOUT writing *size (stale buffer
+                        // capacity would otherwise dispatch 512 stale bytes in a
+                        // 100% busy loop) and (b) on an oversize message skips the
+                        // memcpy but still writes the FULL size to *size, so a
+                        // sysex > buf.Length made Array.Copy(buf, chunk, n) throw
+                        // ArgumentException that escaped the inner try and killed
+                        // this poll thread (sysex is un-ignored at :548). The
+                        // helper backs off on error and clamps/drops oversize.
+                        var (action, dispatchLen) = ClassifyPollResult(delta, (int)size, buf.Length);
+                        if (action == PollAction.Error)
                         {
-                            var chunk = new byte[n];
-                            Array.Copy(buf, chunk, n);
+                            // Defensive (verifier: latent in practice) — back off
+                            // with a cancellation-aware wait rather than spin.
+                            pollCts.Token.WaitHandle.WaitOne(1);
+                            continue;
+                        }
+                        if (action == PollAction.Dispatch)
+                        {
+                            var chunk = new byte[dispatchLen];
+                            Array.Copy(buf, chunk, dispatchLen);
                             try { onBytes(chunk); } catch { /* charitable per-chunk */ }
                         }
                         else
                         {
-                            // Nothing queued — brief cancellation-aware wait.
+                            // PollAction.Wait — nothing queued (or an oversize
+                            // message librtmidi did not copy, so it is DROPPED,
+                            // not dispatched). Brief cancellation-aware wait.
                             pollCts.Token.WaitHandle.WaitOne(1);
                         }
                     }
@@ -612,6 +631,55 @@ internal static class RtMidiInputBridge
             if (dev != IntPtr.Zero) { try { LibRtMidi.rtmidi_in_free(dev); } catch { } }
             return false;
         }
+    }
+
+    /// <summary>What the poll loop should do with one
+    /// <c>rtmidi_in_get_message</c> result (audit §5.5).</summary>
+    internal enum PollAction
+    {
+        /// <summary>Native error (delta &lt; 0): back off, do NOT trust size.</summary>
+        Error,
+        /// <summary>Nothing usable to dispatch this iteration (empty queue, or an
+        /// oversize message librtmidi did not copy → DROP it).</summary>
+        Wait,
+        /// <summary>A real message of the returned length is ready; dispatch it.</summary>
+        Dispatch,
+    }
+
+    /// <summary>
+    /// Audit §5.5 — decide how the poll loop should treat one native
+    /// <c>rtmidi_in_get_message</c> return, given the returned <paramref name="delta"/>,
+    /// the reported message <paramref name="size"/>, and the input
+    /// <paramref name="bufLength"/>. Pure + side-effect-free so it can be unit
+    /// tested without real <c>librtmidi</c>:
+    /// <list type="bullet">
+    /// <item><paramref name="delta"/> &lt; 0 → <see cref="PollAction.Error"/>
+    /// (native error; <paramref name="size"/> may be stale, never trust it).</item>
+    /// <item><paramref name="size"/> &lt;= 0 → <see cref="PollAction.Wait"/>
+    /// (empty queue).</item>
+    /// <item><paramref name="size"/> &gt; <paramref name="bufLength"/> →
+    /// <see cref="PollAction.Wait"/> with a DROP — librtmidi skips the memcpy for
+    /// an oversize message (e.g. a sysex &gt; 512 bytes on the clock-in port) but
+    /// still reports the full size; copying it would throw ArgumentException and
+    /// kill the poll thread. Drop it instead.</item>
+    /// <item>otherwise → <see cref="PollAction.Dispatch"/> of exactly
+    /// <c>Math.Min(size, bufLength)</c> bytes.</item>
+    /// </list>
+    /// </summary>
+    internal static (PollAction Action, int DispatchLen) ClassifyPollResult(double delta, int size, int bufLength)
+    {
+        if (delta < 0) return (PollAction.Error, 0);
+        if (size <= 0) return (PollAction.Wait, 0);
+        if (size > bufLength)
+        {
+            // Oversize — librtmidi did not copy it, so DROP (do not dispatch a
+            // truncated message either; a partial MIDI message is worse than none).
+            RenderingDiagnostics.WarnOnce(
+                "clock-input-oversize",
+                $"[clock] dropped an oversize MIDI message ({size} bytes > {bufLength}-byte poll buffer) on the clock-in port");
+            return (PollAction.Wait, 0);
+        }
+        return (PollAction.Dispatch, size);
     }
 
     private sealed class ActionDisposable : IDisposable

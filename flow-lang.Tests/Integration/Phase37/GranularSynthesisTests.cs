@@ -77,12 +77,17 @@ public class GranularSynthesisTests : IDisposable
             FlowLang.Core.SourceLocation.Unknown);
         var reverbed = Reverb.Apply(grained, roomSize: 0.5f, damping: 0.5f, mix: 0.3f);
 
-        Assert.Equal(input.Frames, reverbed.Frames);
+        // audit-0609 §3.8: Reverb.Apply now extends the output beyond the input
+        // to carry the decay tail — the output is at LEAST as long as the input.
+        Assert.True(reverbed.Frames >= input.Frames,
+            $"granular→reverb output ({reverbed.Frames} frames) must be at least as long as input ({input.Frames} frames)");
+        // Non-zero samples should cover the majority of the original-length portion.
+        int inputSamples = input.Frames * reverbed.Channels;
         int nonZero = 0;
-        for (int i = 0; i < reverbed.Data.Length; i++)
+        for (int i = 0; i < inputSamples; i++)
             if (Math.Abs(reverbed.Data[i]) > 1e-6f) nonZero++;
-        Assert.True(nonZero > reverbed.Data.Length / 2,
-            $"expected granular→reverb chain to produce non-zero output across >50% of samples; got {nonZero}/{reverbed.Data.Length}");
+        Assert.True(nonZero > inputSamples / 2,
+            $"expected granular→reverb chain to produce non-zero output across >50% of input-length samples; got {nonZero}/{inputSamples}");
     }
 
     /// <summary>

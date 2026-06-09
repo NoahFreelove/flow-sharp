@@ -225,7 +225,16 @@ public sealed class ReplLineEditor : IDisposable
             // accepts a null AST and falls through to the token-heuristic merge.
             var parseResult = _editor._parser.Parse(text, "<repl>");
             var uri = DocumentUri.From("file:///<repl>");
-            var position = new Position(line: 0, character: caret);
+            // Audit 0609 §5.1 fix: the caret is a 0-based offset into the FULL
+            // (possibly multi-line) buffer, but the LSP CompletionHandler indexes
+            // the cursor as `lines[Position.Line]` + a per-line `Substring(0,
+            // Position.Character)` (CompletionHandler.cs:387-393). Hard-coding
+            // line:0 fed the whole-buffer offset as a first-line character →
+            // wrong line / out-of-range character for any continuation line
+            // (`use "` and note-stream context detection silently mis-fired on
+            // multi-line input). Convert the offset to a real (line, character)
+            // pair instead.
+            var position = ReplCaretPosition.CaretToPosition(text, caret);
 
             var lspItems = FlowLsp.Handlers.CompletionHandler.BuildItems(
                 uri, text, parseResult.Ast, parseResult.Tokens, position,
@@ -337,5 +346,57 @@ public static class ReplInputCompleteness
         // bracket nesting (S-expression call form `(add 1` and chord/song bracket
         // literals like `[intro verse` are common composer continuation points).
         return blockDepth <= 0 && procDepth <= 0 && parenDepth <= 0 && bracketDepth <= 0;
+    }
+}
+
+/// <summary>
+/// Audit 0609 §5.1 — pure offset→(line, character) conversion for the REPL
+/// completion callback. PrettyPrompt hands <c>GetCompletionItemsAsync</c> a caret
+/// that is a 0-based offset into the FULL (possibly multi-line) input buffer, but
+/// the LSP <c>CompletionHandler</c> consumes an LSP-style <see cref="Position"/>
+/// — a 0-based (line, character-within-line) pair it indexes as
+/// <c>lines[Position.Line].Substring(0, Position.Character)</c>
+/// (CompletionHandler.cs:387-393). The previous wiring passed
+/// <c>new Position(line: 0, character: caret)</c>, which is only correct for
+/// single-line input; on a continuation line the whole-buffer offset overran the
+/// first physical line and the <c>use "</c> / note-stream context detection
+/// silently mis-fired.
+///
+/// Newlines are <c>'\n'</c> (the REPL joins continuation lines with <c>"\n"</c>;
+/// see <see cref="Repl"/> ReadCompleteInput and PrettyPrompt soft-newlines). The
+/// newline character itself is treated as the last column of the line it
+/// terminates — a caret sitting exactly on a <c>'\n'</c> maps to the end of that
+/// line, matching how a composer perceives "just after the visible text".
+/// Extracted as a pure static so xUnit can pin it without a TTY.
+/// </summary>
+public static class ReplCaretPosition
+{
+    /// <summary>
+    /// Converts a 0-based <paramref name="caret"/> offset into
+    /// <paramref name="text"/> to an LSP <see cref="Position"/>. The caret is
+    /// clamped to <c>[0, text.Length]</c> charitably (D-v1.5-05) — an
+    /// out-of-range caret never throws; it maps to the buffer start/end.
+    /// </summary>
+    public static Position CaretToPosition(string text, int caret)
+    {
+        if (string.IsNullOrEmpty(text))
+            return new Position(line: 0, character: 0);
+
+        // Charitable clamp — never throw on a stray caret.
+        if (caret < 0) caret = 0;
+        if (caret > text.Length) caret = text.Length;
+
+        int line = 0;
+        int lineStart = 0;
+        for (int i = 0; i < caret; i++)
+        {
+            if (text[i] == '\n')
+            {
+                line++;
+                lineStart = i + 1;
+            }
+        }
+
+        return new Position(line: line, character: caret - lineStart);
     }
 }

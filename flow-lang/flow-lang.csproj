@@ -101,7 +101,9 @@
 
     <ItemGroup>
       <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
-      <PackageReference Include="Pidgin" Version="3.5.1" />
+      <!-- Pidgin 3.5.1 removed 2026-06-09 (audit §8.4): zero `using Pidgin` in the
+           repo — SimpleLexer/Parser are manual. AssemblyReferenceScanTests now
+           forbids the "Pidgin" prefix so it cannot quietly return. -->
     </ItemGroup>
 
     <!-- Phase 47 D-47-03: Rug.Osc only referenced when @osc surface compiles in.
@@ -159,6 +161,9 @@
     <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
       <Compile Remove="Audio\PulseAudioSimpleBackend.cs" />
       <Compile Remove="Audio\PulseAudioCaptureBackend.cs" />
+      <!-- audit §8.7: shared P/Invoke surface extracted from the two backends above;
+           must be stripped together with them or the P/Invoke gate fires. -->
+      <Compile Remove="Audio\LibPulse.cs" />
       <Compile Remove="Audio\CoreAudioBackend.cs" />
       <!-- Phase 41 Plan 41-04 WASAPI-01 / Pitfall 3: the Windows WASAPI backend.
            Strip on Web so the NAudio.Wasapi (WASAPI COM) reference never reaches

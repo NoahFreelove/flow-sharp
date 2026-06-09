@@ -103,6 +103,12 @@ public sealed class LiveStatusPanel : IDisposable
     private int _lastVoices = -1;
     private int _lastPoolSize = -1;
 
+    // Cached last-published blocks so heartbeat redraws have access to row-count.
+    // Audit-0609 §5.14: required to compute the correct advisory row position
+    // and to trigger a full panel redraw from the heartbeat tick.
+    private IReadOnlyList<LiveBlockDisplay> _lastBlocks = Array.Empty<LiveBlockDisplay>();
+    private IReadOnlyDictionary<string, int> _lastPerInstrument = new Dictionary<string, int>();
+
     // Sticky advisory state (row 4).
     private string? _stickyAdvisory;
     private AdvisoryLevel _stickyLevel;
@@ -202,6 +208,10 @@ public sealed class LiveStatusPanel : IDisposable
             _lastBar = bar;
             _lastVoices = activeVoices;
             _lastPoolSize = poolSize;
+            // Audit-0609 §5.14: cache blocks/perInstrument so heartbeat
+            // redraws have access to the current panel layout.
+            _lastBlocks = blocks;
+            _lastPerInstrument = perInstrumentCount;
 
             if (_isColorEnabled)
             {
@@ -224,10 +234,14 @@ public sealed class LiveStatusPanel : IDisposable
 
     /// <summary>
     /// Publishes a one-line advisory. In ANSI mode the row 4 sticky updates;
-    /// in plain-line mode the body emits unchanged. When
-    /// <paramref name="dedupKey"/> is non-null, also routes through
-    /// <see cref="RenderingDiagnostics.WarnOnce"/> so the stderr advisory and
-    /// the row-4 sticky stay in sync per UI-SPEC line 367.
+    /// in plain-line mode the body emits to stderr only (house contract:
+    /// advisories → stderr, matching D-48-15 and the WarnOnce convention).
+    ///
+    /// Audit-0609 §5.14 fix: advisories were previously written to stdout
+    /// (_out defaults to Console.Out) AND duplicated to stderr via WarnOnce.
+    /// Now they are emitted to stderr exclusively; the WarnOnce call is
+    /// dropped because WarnOnce itself already writes to stderr, and calling
+    /// it from here created a duplicate on first emission.
     /// </summary>
     public void PublishAdvisory(
         string body,
@@ -249,16 +263,19 @@ public sealed class LiveStatusPanel : IDisposable
             }
             else
             {
-                // Plain-line: advisory body emits unchanged (the [prefix] is
-                // baked into the body by the caller — UI-SPEC §"Structured
-                // Stderr Advisory Format").
-                _out.WriteLine(body);
-                _out.Flush();
-            }
-
-            if (dedupKey != null)
-            {
-                RenderingDiagnostics.WarnOnce(dedupKey, body);
+                // Plain-line mode: advisories go to stderr per the house contract
+                // (D-48-15: "advisories → stderr").
+                //
+                // Audit-0609 §5.14 fix: the original code wrote to _out (stdout)
+                // AND called WarnOnce (stderr) → advisory appeared on both streams.
+                // The _out.WriteLine call is removed. WarnOnce is kept because it:
+                //  1. Registers the dedupKey in RenderingDiagnostics so test
+                //     instrumentation (WasWarnedForTesting / TimeoutRevertTests) works.
+                //  2. Suppresses duplicate advisory spam per live-session.
+                // When dedupKey is null (single-shot advisories) we dedup by body.
+                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                    dedupKey ?? body,
+                    body);
             }
         }
     }
@@ -267,9 +284,17 @@ public sealed class LiveStatusPanel : IDisposable
     /// 2 Hz heartbeat — refreshes the "Xs ago" suffix in row 2 and clears
     /// the sticky advisory if the 8-second window has elapsed. Runs on a
     /// dedicated Timer thread (off the audio thread per Pitfall #21).
+    ///
+    /// Audit-0609 §5.14 fix: the original implementation only set
+    /// _stickyAdvisory = null but never repainted, so the cleared advisory
+    /// persisted on the terminal until a subsequent PublishState call. Now
+    /// a full panel redraw is triggered whenever the advisory is cleared
+    /// (which blanks the advisory row) or whenever live blocks exist (to keep
+    /// the "Xs ago" suffix current).
     /// </summary>
     private void OnHeartbeatTick()
     {
+        bool needsRedraw = false;
         lock (_gate)
         {
             if (_disposed) return;
@@ -279,6 +304,18 @@ public sealed class LiveStatusPanel : IDisposable
                 && (DateTime.UtcNow - _stickyEmittedUtc) >= StickyAdvisoryClearAfter)
             {
                 _stickyAdvisory = null;
+                needsRedraw = true;
+            }
+
+            // Refresh "Xs ago" suffix in the live-blocks row.
+            if (_lastBlocks.Count > 0)
+            {
+                needsRedraw = true;
+            }
+
+            if (needsRedraw && _isColorEnabled)
+            {
+                RenderAnsiPanel(_lastBlocks, _lastPerInstrument);
             }
         }
     }
@@ -344,14 +381,20 @@ public sealed class LiveStatusPanel : IDisposable
         sb.Append('\n');
         currentTerminalRow++;
 
-        // Row 4 — Sticky advisory (only if one is active).
+        // Row 4 (or 3 if no blocks row) — Sticky advisory.
+        // Audit-0609 §5.14 fix: always emit this row — if the advisory is null
+        // we clear the line so stale text from a previous advisory does not
+        // persist on the terminal. Previously this block was skipped when null,
+        // so the heartbeat's clear of _stickyAdvisory had no visual effect.
+        if (_writesToStdout) sb.Append($"\x1b[{currentTerminalRow};1H").Append(AnsiClearLine);
         if (_stickyAdvisory != null)
         {
-            if (_writesToStdout) sb.Append($"\x1b[{currentTerminalRow};1H").Append(AnsiClearLine);
             sb.Append(LevelToColor(_stickyLevel))
               .Append(_stickyAdvisory)
-              .Append(AnsiReset).Append('\n');
+              .Append(AnsiReset);
         }
+        // When _stickyAdvisory == null, AnsiClearLine above already blanked the row.
+        sb.Append('\n');
 
         _out.Write(sb.ToString());
         _out.Flush();
@@ -360,17 +403,27 @@ public sealed class LiveStatusPanel : IDisposable
     /// <summary>
     /// Incremental row-4 redraw used by <see cref="PublishAdvisory"/> in
     /// ANSI mode (cheaper than a full panel redraw).
+    ///
+    /// Audit-0609 §5.14 fix: the original implementation hardcoded row 4
+    /// which is wrong when the live-blocks row (row 2) is absent — the
+    /// advisory would then render on row 4 instead of row 3, leaving a
+    /// blank row between the Voices row and the advisory. Now we compute
+    /// the advisory row dynamically from _lastBlocks.Count:
+    ///   row 1: Tempo/TimeSig/Bar (always present)
+    ///   row 2: Live blocks (present only when _lastBlocks.Count > 0)
+    ///   row 3 (or 2 if no blocks): Voices N/M breakdown
+    ///   row 4 (or 3 if no blocks): Advisory
     /// </summary>
     private void WriteAnsiAdvisoryRow(string body, AdvisoryLevel level)
     {
         var sb = new StringBuilder();
-        // In real-terminal mode, jump to row 4 (or row 3 if no live blocks
-        // existed — we conservatively address row 4 since the cold-start
-        // omits row 2 and we always have rows 1+3, so this lands one row
-        // too low without state. The full RenderAnsiPanel handles correct
-        // positioning; this incremental write is for tests + cheap repaint
-        // and tolerates the offset gracefully).
-        if (_writesToStdout) sb.Append("\x1b[4;1H").Append(AnsiClearLine);
+        if (_writesToStdout)
+        {
+            // Row layout: 1=header, (2=blocks if present), N=voices, N+1=advisory.
+            // _lastBlocks is cached by PublishState so we always have current data.
+            int advisoryRow = _lastBlocks.Count > 0 ? 4 : 3;
+            sb.Append($"\x1b[{advisoryRow};1H").Append(AnsiClearLine);
+        }
         sb.Append(LevelToColor(level)).Append(body).Append(AnsiReset).Append('\n');
         _out.Write(sb.ToString());
         _out.Flush();

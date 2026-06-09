@@ -73,23 +73,21 @@ jobs:
       - name: Copy stdlib .flow files beside binary (Pitfall 6)
         shell: bash
         run: |
-          cp flow-lang/std.flow vscode-extension/server/${{ matrix.target }}/
-          cp flow-lang/collections.flow vscode-extension/server/${{ matrix.target }}/
-          cp flow-lang/audio.flow vscode-extension/server/${{ matrix.target }}/
-          cp flow-lang/bars.flow vscode-extension/server/${{ matrix.target }}/
-          cp flow-lang/notation.flow vscode-extension/server/${{ matrix.target }}/
-          cp flow-lang/composition.flow vscode-extension/server/${{ matrix.target }}/
+          # Glob, not an explicit list: the packaged set must track every shipped
+          # stdlib module (audit 2026-06-09 §5.16 — the old 6-file list left
+          # @sfz/@patterns/@generative/@improv/@osc/@notation-io/@midi/@jack/@test
+          # out of the VSIX, starving StdlibSymbolIndex even after its fix).
+          cp flow-lang/*.flow vscode-extension/server/${{ matrix.target }}/
 
       - name: Verify stdlib .flow files present (Pitfall 6 gate)
         shell: bash
         run: |
-          test -f vscode-extension/server/${{ matrix.target }}/std.flow
-          test -f vscode-extension/server/${{ matrix.target }}/collections.flow
-          test -f vscode-extension/server/${{ matrix.target }}/audio.flow
-          test -f vscode-extension/server/${{ matrix.target }}/bars.flow
-          test -f vscode-extension/server/${{ matrix.target }}/notation.flow
-          test -f vscode-extension/server/${{ matrix.target }}/composition.flow
-          echo "OK: all 6 stdlib .flow files present beside flow-lsp binary"
+          for mod in std collections audio bars notation composition sfz patterns \
+                     generative improv osc notation-io midi jack test; do
+            test -f "vscode-extension/server/${{ matrix.target }}/${mod}.flow" \
+              || { echo "MISSING: ${mod}.flow"; exit 1; }
+          done
+          echo "OK: all 15 stdlib .flow files present beside flow-lsp binary"
 
       - name: Ensure binary is executable (POSIX)
         if: runner.os != 'Windows'

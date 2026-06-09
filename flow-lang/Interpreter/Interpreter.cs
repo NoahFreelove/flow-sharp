@@ -36,6 +36,66 @@ public class Interpreter : IFunctionInvoker
     private int _recursionDepth = 0;
     private const int MaxRecursionDepth = 1000;
 
+    /// <summary>
+    /// Audit §2.3 — true when we are executing inside a user-proc call (where an
+    /// explicit <c>return X</c> legitimately propagates up to the proc boundary).
+    /// At <c>_recursionDepth == 0</c> a <c>return</c> is at top level (or inside a
+    /// definitional section/context/live block) where it must NOT silently skip the
+    /// rest of the program — those sites report a charitable diagnostic and clear
+    /// the flag instead of leaking it.
+    /// </summary>
+    internal bool InsideProcCall => _recursionDepth > 0;
+
+    /// <summary>
+    /// Audit §2.3 — saves and clears the pending return flag. Used by the
+    /// section-call dispatcher in <see cref="ExpressionEvaluator"/> to fence a
+    /// parameterized section's body re-execution: a <c>return</c> inside the called
+    /// section must NOT become the enclosing proc's return value (mirrors the
+    /// save/restore discipline in <see cref="ExecuteUserFunctionWithCaptures"/>).
+    /// </summary>
+    internal Value? SaveAndClearReturnValue()
+    {
+        var saved = _returnValue;
+        _returnValue = null;
+        return saved;
+    }
+
+    /// <summary>
+    /// Audit §2.3 — restores a previously saved return flag (companion to
+    /// <see cref="SaveAndClearReturnValue"/>). Also consumes (clears + reports) any
+    /// return that leaked out of the fenced body: a <c>return</c> inside a called
+    /// section is a composer error, not a way to abort song rendering.
+    /// </summary>
+    internal void RestoreReturnValueAfterSection(Value? saved, Core.SourceLocation location)
+    {
+        if (_returnValue != null)
+        {
+            _errorReporter.ReportError(
+                "'return' is not allowed inside a section body — a section is a definition, not a function. The return was ignored.",
+                location);
+        }
+        _returnValue = saved;
+    }
+
+    /// <summary>
+    /// Audit §2.3 — clears a return flag that leaked out of a definitional/context
+    /// block body (section declaration, live block, or a top-level musical-context /
+    /// tuning block) so the top-of-<see cref="ExecuteStatement"/> guard does not
+    /// silently skip every subsequent statement of the program. Inside a proc call a
+    /// <c>return</c> in a transparent context block must still propagate, so callers
+    /// only invoke this when the return must NOT escape (definitional sites always;
+    /// context/tuning blocks only at top level).
+    /// </summary>
+    private void ClearLeakedReturn(string blockKind, Core.SourceLocation location)
+    {
+        if (_returnValue == null)
+            return;
+        _errorReporter.ReportError(
+            $"'return' is not allowed inside a {blockKind} block at top level — the return was ignored so the rest of the program still runs.",
+            location);
+        _returnValue = null;
+    }
+
     public Interpreter(RuntimeContext context, ErrorReporter errorReporter, ModuleLoader? moduleLoader = null)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -66,6 +126,13 @@ public class Interpreter : IFunctionInvoker
     public void Execute(Program program)
     {
         _lastExpressionValue = null;  // Clear previous value
+        // Audit §2.3 — reset _returnValue at the top of every Execute. The
+        // Interpreter is long-lived (one instance per FlowEngine, reused across
+        // REPL evals), and a leaked return flag from a previous eval would make
+        // the top-of-ExecuteStatement guard silently skip every statement of the
+        // next eval. ReturnStatement sets the flag; nothing else should carry it
+        // across an Execute boundary.
+        _returnValue = null;
 
         foreach (var statement in program.Statements)
         {
@@ -349,6 +416,14 @@ public class Interpreter : IFunctionInvoker
 
                 if (_returnValue != null) break;
             }
+
+            // Audit §2.3 — a musical-context block is a transparent statement
+            // wrapper: a `return` inside it propagates to an enclosing proc.
+            // But at TOP LEVEL (no proc on the stack) a leaked return would make
+            // the top-of-ExecuteStatement guard silently skip the rest of the
+            // program. Report + clear so the program keeps running.
+            if (!InsideProcCall)
+                ClearLeakedReturn("musical-context", ctx.Location);
         }
         finally
         {
@@ -436,6 +511,11 @@ public class Interpreter : IFunctionInvoker
 
                 if (_returnValue != null) break;
             }
+
+            // Audit §2.3 — same transparent-wrapper rule as ExecuteMusicalContext:
+            // a leaked top-level return must not silently truncate the program.
+            if (!InsideProcCall)
+                ClearLeakedReturn("tuning", tctx.Location);
         }
         finally
         {
@@ -511,6 +591,11 @@ public class Interpreter : IFunctionInvoker
 
                 if (_returnValue != null) break;
             }
+
+            // Audit §2.3 — a live block runs once at this lexical level; a leaked
+            // top-level return must not silently skip the rest of the program.
+            if (!InsideProcCall)
+                ClearLeakedReturn("live", live.Location);
         }
         finally
         {
@@ -732,6 +817,19 @@ public class Interpreter : IFunctionInvoker
                     }
 
                     if (_returnValue != null) break;
+                }
+
+                // Audit §2.3 — a section declaration is purely definitional: its
+                // body runs once to collect named/bare sequences. A `return` inside
+                // it never propagates to an enclosing proc (the section is collected,
+                // not called here), so a leaked flag would silently skip the rest of
+                // the program. Always report + clear, regardless of nesting.
+                if (_returnValue != null)
+                {
+                    _errorReporter.ReportError(
+                        $"'return' is not allowed inside section '{section.Name}' — a section is a definition, not a function. The return was ignored.",
+                        section.Location);
+                    _returnValue = null;
                 }
             }
             finally
@@ -1179,8 +1277,17 @@ public class Interpreter : IFunctionInvoker
         var prevBeatTrueToSig = _context.BeatTrueToSig;
         _context.BeatTrueToSig = proc.IsBeatTrueToSig;
 
-        // Create new stack frame
-        _context.PushFrame();
+        // Create new stack frame. Audit §2.5 (D5) — mark it a CALL BOUNDARY so
+        // the proc/lambda body has LEXICAL variable scope: variable
+        // lookup/assignment sees this frame's params + locals + injected closure
+        // captures + globals, but NOT the caller's locals. This blocks the
+        // dynamic-scope write-through bug (a typo'd name in the body no longer
+        // silently mutates a caller's same-named local) and the dynamic read
+        // (the body no longer reads caller locals). Globals stay readable +
+        // writable from procs (scripts rely on top-level mutation), reached via
+        // the boundary frame's GlobalScope redirect. Musical-context dynamic
+        // scope is a separate mechanism (walks _callStack) and is unaffected.
+        _context.PushFrame(isCallBoundary: true);
 
         try
         {

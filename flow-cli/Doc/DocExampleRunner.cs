@@ -43,10 +43,12 @@ public sealed class DocExampleRunner
     }
 
     /// <summary>
-    /// Returns the same models with each model's ExampleFailures populated: one
-    /// failure annotation per example that did not execute cleanly, in example
-    /// order. A model whose examples all pass keeps an empty failure list (the
-    /// emitters render no `[example failed]` for it).
+    /// Returns the same models with each model's ExampleFailures populated: a
+    /// per-example nullable list of the same length as Examples (null = pass,
+    /// non-null = the [example failed] annotation text). Both emitters index
+    /// ExampleFailures[i] directly under Examples[i] so a failure is always
+    /// rendered beneath the example that caused it, regardless of how many
+    /// other examples pass.
     /// </summary>
     public DocModel[] RunAll(IReadOnlyList<DocModel> models)
     {
@@ -60,14 +62,33 @@ public sealed class DocExampleRunner
                 continue;
             }
 
-            var failures = new List<string>();
-            foreach (var example in model.Examples)
+            // Build a per-example nullable list: same length as Examples,
+            // null at index j = example j passed, non-null = failure text.
+            var perExample = new string?[model.Examples.Count];
+            bool anyFailed = false;
+            for (int j = 0; j < model.Examples.Count; j++)
             {
-                var failure = RunOne(example);
+                var failure = RunOne(model.Examples[j]);
+                perExample[j] = failure;
                 if (failure is not null)
-                    failures.Add(failure);
+                    anyFailed = true;
             }
-            result[i] = failures.Count == 0 ? model : model.WithFailures(failures);
+
+            if (!anyFailed)
+            {
+                result[i] = model;
+                continue;
+            }
+
+            // Convert to IReadOnlyList<string> using empty string for passes
+            // so emitters can use the index directly without a null check.
+            // The emitters already guard `!string.IsNullOrEmpty` / present
+            // the annotation only when non-empty.
+            var failures = new string[model.Examples.Count];
+            for (int j = 0; j < model.Examples.Count; j++)
+                failures[j] = perExample[j] ?? string.Empty;
+
+            result[i] = model.WithFailures(failures);
         }
         return result;
     }

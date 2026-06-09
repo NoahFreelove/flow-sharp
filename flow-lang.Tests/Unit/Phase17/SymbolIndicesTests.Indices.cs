@@ -77,12 +77,19 @@ public partial class SymbolIndicesTests
     }
 
     [Fact]
-    public void StdlibSymbolIndex_UseStringPathItems_HasSixPaths()
+    public void StdlibSymbolIndex_UseStringPathItems_CoversAllStdlibModules()
     {
+        // Audit 2026-06-09 §5.16: ModuleNames grew from the Phase 17 six to the
+        // full 15-module stdlib (adding @sfz @patterns @generative @improv @osc
+        // @notation-io @midi @jack @test). Pin the new contract: one use-path
+        // item per ModuleNames entry, all '@'-prefixed.
         var si = new StdlibSymbolIndex(new ParseSession());
         var items = si.UseStringPathItems().ToList();
-        Assert.Equal(6, items.Count);
+        Assert.Equal(StdlibSymbolIndex.ModuleNames.Length, items.Count);
+        Assert.Equal(15, items.Count);
         Assert.All(items, i => Assert.StartsWith("@", i.Label));
+        Assert.Contains(items, i => i.Label == "@patterns");
+        Assert.Contains(items, i => i.Label == "@midi");
     }
 
     [Fact]

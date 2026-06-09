@@ -7,8 +7,8 @@
     <AssemblyName>flow</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.1.0</Version>
-    <InformationalVersion>0.1.0-phase30</InformationalVersion>
+    <Version>1.5.0</Version>
+    <InformationalVersion>1.5.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

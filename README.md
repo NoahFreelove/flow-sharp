@@ -74,7 +74,9 @@ The rendered audio for all three pieces ships in the **v1.5.0 GitHub Release**
 alongside the cross-platform binaries (the Release itself is a human-pushed gate,
 not cut automatically).
 
-## Install (Linux x64)
+## Install (Linux & macOS)
+
+`scripts/install.sh` auto-detects your platform (linux-x64, linux-arm64, osx-x64, osx-arm64) and verifies the sha256 sidecar from the GitHub release.
 
 Per-user install (no sudo), from a local checkout:
 
@@ -88,7 +90,9 @@ System-wide install:
 sudo bash scripts/install.sh --system
 ```
 
-The script copies a self-contained `flow` binary (~38 MB) to either `~/.local/share/flow/` + symlink at `~/.local/bin/flow` (per-user, default) or `/usr/local/share/flow/` + symlink at `/usr/local/bin/flow` (system-wide). Re-running upgrades in place; `scripts/uninstall.sh` removes everything except your `~/.config/flow/config.toml`.
+The script downloads the matching `flow-<rid>-v1.5.0.tar.gz` from GitHub Releases (or uses `--local-tarball` for offline), verifies the sha256 sidecar, and installs a self-contained `flow` binary to either `~/.local/share/flow/` + symlink at `~/.local/bin/flow` (per-user, default) or `/usr/local/share/flow/` + symlink at `/usr/local/bin/flow` (system-wide). Re-running upgrades in place; `scripts/uninstall.sh` removes everything except your `~/.config/flow/config.toml`.
+
+**Windows:** download `flow-win-x64-v1.5.0.zip` from the [GitHub Releases page](../../releases) and add the extracted directory to your PATH.
 
 ## CLI subcommands
 
@@ -98,13 +102,16 @@ The script copies a self-contained `flow` binary (~38 MB) to either `~/.local/sh
 | `flow eval "expr"` | Evaluate one expression |
 | `flow repl` | Interactive REPL (auto-imports `@std @audio @collections`) |
 | `flow watch script.flow` | Auto-reload on file change |
-| `flow play script.flow` | Render + play via PulseAudio |
+| `flow play script.flow` | Render + play via audio backend |
 | `flow render script.flow -o out.wav` | Render to WAV |
 | `flow flow2midi script.flow -o out.mid` | Render to MIDI |
 | `flow midi2flow input.mid -o out.flow` | Convert MIDI → round-trippable Flow source |
 | `flow check script.flow` | Parse + type-check only |
 | `flow new piece-name` | Scaffold a new piece |
-| `flow version` | Print version |
+| `flow lsp` | Start the Flow Language Server (stdio) |
+| `flow test [path]` | Run `test_*.flow` files via the pure-Flow test framework |
+| `flow doc [--out dir]` | Generate browsable reference docs |
+| `flow version` | Print version (reports 1.5.0) |
 
 Config lives at `~/.config/flow/config.toml`. Optional keys: `default_tempo`, `default_timesig`, `default_audio_device`, `stdlib_search_path`. See `scripts/install.sh` for the schema.
 

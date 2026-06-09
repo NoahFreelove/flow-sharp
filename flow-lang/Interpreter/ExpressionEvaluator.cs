@@ -68,7 +68,12 @@ public class ExpressionEvaluator
             System.Numerics.BigInteger n => Value.Number(n),  // Phase 26: long-overflow lex path
             double d => Value.Double(d),
             bool b => Value.Bool(b),
-            string s => TryParseSpecialLiteral(s) ?? Value.String(s),
+            // Audit §2.1: only RE-TYPE a string payload as a music value when it came
+            // from a music-literal token (Note/Semitone/Cent/Time/Decibel/Hertz). An
+            // ordinary quoted StringLiteral (IsMusicLiteral == false) stays a String even
+            // when its content happens to look like a music literal — `String s = "10s"`
+            // is a String, `"a"` is a String, and a dict keyed by `"10s"` round-trips.
+            string s => lit.IsMusicLiteral ? (TryParseSpecialLiteral(s) ?? Value.String(s)) : Value.String(s),
             _ => throw new NotSupportedException($"Literal type {lit.Value.GetType()} not supported")
         };
     }
@@ -670,22 +675,57 @@ public class ExpressionEvaluator
     private Value EvaluateTupleUnpackFlow(TupleUnpackFlowExpression unpack)
     {
         var leftVal = Evaluate(unpack.Left);
-        var rightVal = Evaluate(unpack.Right);
 
-        if (rightVal.Type is not FunctionType && rightVal.Data is not FunctionOverload)
+        // Audit §2.4 — build the positional argument list FIRST so we can resolve
+        // the RHS function against the ACTUAL argument types. Tuple LHS unpacks into
+        // positional args (CONTEXT spec); a non-tuple LHS uses single-arg `->`
+        // semantics (charitable fallthrough per ROADMAP success criterion 3).
+        List<Value> args =
+            (leftVal.Type is TupleType && leftVal.Data is IReadOnlyList<Value> components)
+                ? components.ToList()
+                : new List<Value> { leftVal };
+
+        // Audit §2.4 — when the RHS is a BARE function name, resolve the overload
+        // against the unpacked arg types instead of eagerly evaluating it as a
+        // value. Evaluating a bare function variable would (a) auto-invoke a 0-arg
+        // overload (EvaluateVariable) — turning `t ~> f` into a call to f() — or
+        // (b) blindly return overloads[0], the first registered overload regardless
+        // of the piped value's type, then dispatch it with no signature match
+        // (internal As<T> casts then throw). Resolving by arg type fixes both.
+        FunctionOverload? overload = null;
+        if (unpack.Right is VariableExpression rhsVar
+            && !_context.CurrentFrame.TryGetVariable(rhsVar.Name, out _)
+            && _context.CurrentFrame.GetFunctionOverloads(rhsVar.Name).Count > 0)
         {
-            _errorReporter.ReportError(
-                $"Right side of ~> must be a function, got {rightVal.Type}",
-                unpack.Location);
-            return Value.Void();
+            var argTypes = args.Select(a => a.Type).ToArray();
+            overload = _context.TryResolveFunction(rhsVar.Name, argTypes);
+            if (overload == null)
+            {
+                // Emit the rich "no matching overload" / "ambiguous" diagnostic.
+                _context.ResolveFunction(rhsVar.Name, argTypes, unpack.Location);
+                return Value.Void();
+            }
         }
-        var overload = rightVal.Data as FunctionOverload;
-        if (overload == null)
+        else
         {
-            _errorReporter.ReportError(
-                $"Right side of ~> resolved to non-FunctionOverload value",
-                unpack.Location);
-            return Value.Void();
+            // RHS is a lambda, a variable holding a function value, or any other
+            // expression — evaluate it and require a FunctionOverload payload.
+            var rightVal = Evaluate(unpack.Right);
+            if (rightVal.Type is not FunctionType && rightVal.Data is not FunctionOverload)
+            {
+                _errorReporter.ReportError(
+                    $"Right side of ~> must be a function, got {rightVal.Type}",
+                    unpack.Location);
+                return Value.Void();
+            }
+            overload = rightVal.Data as FunctionOverload;
+            if (overload == null)
+            {
+                _errorReporter.ReportError(
+                    $"Right side of ~> resolved to non-FunctionOverload value",
+                    unpack.Location);
+                return Value.Void();
+            }
         }
 
         // Phase 44 review CR-02: snapshot CallerStrictMode around the dispatch
@@ -699,27 +739,46 @@ public class ExpressionEvaluator
         _context.CallerStrictMode = _context.StrictMode;
         try
         {
-            // Tuple LHS: unpack components into positional args (CONTEXT spec).
-            if (leftVal.Type is TupleType && leftVal.Data is IReadOnlyList<Value> components)
+            if (overload.IsInternal)
             {
-                var args = components.ToList();
-                return overload.IsInternal
-                    ? overload.Implementation!(args)
-                    : _invoker.ExecuteUserFunctionWithCaptures(
-                        overload.Declaration!, args, overload.CapturedVariables);
+                // Audit §2.4 — coerce args at the impl boundary (mirrors
+                // EvaluateFunctionCall) so an overload resolved via convertible
+                // scoring reaches the impl with the expected CLR types instead of
+                // throwing InvalidCastException inside As<T>.
+                CoerceArgsForInternal(overload, args);
+                return overload.Implementation!(args);
             }
-
-            // Charitable fallthrough: non-tuple LHS uses single-arg `->` semantics
-            // (per ROADMAP success criterion 3, ergonomics-priority memory).
-            var singleArg = new List<Value> { leftVal };
-            return overload.IsInternal
-                ? overload.Implementation!(singleArg)
-                : _invoker.ExecuteUserFunctionWithCaptures(
-                    overload.Declaration!, singleArg, overload.CapturedVariables);
+            return _invoker.ExecuteUserFunctionWithCaptures(
+                overload.Declaration!, args, overload.CapturedVariables);
         }
         finally
         {
             _context.CallerStrictMode = prevCallerStrict;
+        }
+    }
+
+    /// <summary>
+    /// Audit §2.4 — boundary coercion for internal (builtin) overloads, factored
+    /// from <see cref="EvaluateFunctionCall"/>'s impl-boundary loop. Wildcard slots
+    /// (Void[], Dict&lt;Void,Void&gt;, any-arity Tuple) pass through unchanged;
+    /// convertible slots are converted in place.
+    /// </summary>
+    private static void CoerceArgsForInternal(FunctionOverload overload, List<Value> args)
+    {
+        var sig = overload.Signature;
+        for (int i = 0; i < args.Count && i < sig.InputTypes.Count; i++)
+        {
+            if (sig.InputTypes[i] is ArrayType { ElementType: VoidType })
+                continue;
+            if (sig.InputTypes[i] is DictType { KeyType: VoidType, ValueType: VoidType })
+                continue;
+            if (sig.InputTypes[i] is TupleType { IsAnyArity: true })
+                continue;
+            if (!args[i].Type.Equals(sig.InputTypes[i])
+                && args[i].Type.CanConvertTo(sig.InputTypes[i]))
+            {
+                args[i] = args[i].ConvertTo(sig.InputTypes[i]);
+            }
         }
     }
 
@@ -1074,10 +1133,13 @@ public class ExpressionEvaluator
         foreach (var part in expr.Parts)
         {
             var val = Evaluate(part);
-            if (val.Data is string s)
+            // Raw String values append verbatim (no added quotes). Everything else —
+            // including Symbol, whose underlying CLR Data is also a string — renders
+            // via Value.ToString so interpolation matches (str x) output.
+            if (val.Type is StringType && val.Data is string s)
                 sb.Append(s);
             else
-                sb.Append(val.Data?.ToString() ?? "");
+                sb.Append(val.ToString());
         }
         return Value.String(sb.ToString());
     }
@@ -1233,22 +1295,40 @@ public class ExpressionEvaluator
             // the ExpressionEvaluator. The section body's bare-expression
             // sequences are captured via the local-variable scan + a manual
             // post-pass.
-            if (section.Body != null)
-            {
-                foreach (var stmt in section.Body)
-                {
-                    // Use the parent Interpreter via _context.Invoker indirection;
-                    // Since we don't have direct Interpreter ref here, fall through
-                    // to a dispatched re-execution by invoking ExecuteStatement
-                    // through the ExecutionContext's invoker.
-                    _context.Invoker!.ExecuteStatement(stmt);
 
-                    if (stmt is ExpressionStatement
-                        && _context.Invoker.LastExpressionValue?.Data is SequenceData exprSeq)
+            // Audit §2.3 — fence the body re-execution against return-flag leakage.
+            // This re-execution happens during SONG evaluation, which may itself be
+            // inside a user proc. Without save/restore, (a) a return flag leaked from
+            // BEFORE this call would make ExecuteStatement's top guard skip the whole
+            // section body, and (b) a `return` INSIDE the called section would become
+            // the enclosing proc's return value. Save+clear before, restore (and
+            // report any in-section return) after — mirroring
+            // Interpreter.ExecuteUserFunctionWithCaptures' discipline.
+            var interp = _invoker as Interpreter;
+            Value? savedReturn = interp?.SaveAndClearReturnValue();
+            try
+            {
+                if (section.Body != null)
+                {
+                    foreach (var stmt in section.Body)
                     {
-                        bareExprSeqs.Add(exprSeq);
+                        // Use the parent Interpreter via _context.Invoker indirection;
+                        // Since we don't have direct Interpreter ref here, fall through
+                        // to a dispatched re-execution by invoking ExecuteStatement
+                        // through the ExecutionContext's invoker.
+                        _context.Invoker!.ExecuteStatement(stmt);
+
+                        if (stmt is ExpressionStatement
+                            && _context.Invoker.LastExpressionValue?.Data is SequenceData exprSeq)
+                        {
+                            bareExprSeqs.Add(exprSeq);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                interp?.RestoreReturnValueAfterSection(savedReturn, call.Location);
             }
 
             var sequences = new Dictionary<string, SequenceData>();

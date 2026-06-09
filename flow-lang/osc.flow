@@ -38,6 +38,14 @@ Note: (rate-limited at 200 Hz/path drop-newest).
 internal proc oscListen (Int: port, String: path, Function: handler)
 internal proc oscStop (OscHandle: handle)
 
+Note: oscPump runs any queued listener-handler invocations on the calling
+Note: (foreground) thread and returns how many fired. Handlers from a real
+Note: listener never run on the background receive thread — they are queued and
+Note: drained here / on the next osc* call, serialized with the rest of the
+Note: script so they cannot corrupt the interpreter. Call (oscPump) inside a
+Note: poll loop that does not otherwise call osc* builtins.
+internal proc oscPump ()
+
 Note: ----- Bundle constructor (varargs) -----
 Note: Returns an OscHandle-wrapped OscBundle. Bundles dispatch
 Note: both ways with timetag honored on receive; outgoing bundles use

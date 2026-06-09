@@ -25,6 +25,12 @@ namespace FlowLang.Audio;
 /// (macOS/Windows/CI containers) never crash the engine — they just receive
 /// silence + an advisory.
 /// </para>
+///
+/// <para>
+/// P/Invoke declarations are in <see cref="LibPulse"/> (audit §8.7 — extracted
+/// from the private copy that previously lived here to share with
+/// <see cref="PulseAudioSimpleBackend"/>).
+/// </para>
 /// </summary>
 public sealed class PulseAudioCaptureBackend : IDisposable
 {
@@ -59,13 +65,13 @@ public sealed class PulseAudioCaptureBackend : IDisposable
 
     /// <summary>
     /// Checks whether libpulse-simple is available on this system. Mirrors the
-    /// playback sibling's <c>IsAvailable</c> static probe (lines 23-34).
+    /// playback sibling's <c>IsAvailable</c> static probe.
     /// </summary>
     public static bool IsAvailable()
     {
         try
         {
-            pa_strerror(0);
+            LibPulse.GetErrorString(0);
             return true;
         }
         catch (DllNotFoundException)
@@ -76,7 +82,7 @@ public sealed class PulseAudioCaptureBackend : IDisposable
 
     /// <summary>
     /// Opens the capture stream against the default input device. Mirrors
-    /// <c>PulseAudioSimpleBackend.Initialize</c> at lines 36-78 with:
+    /// <c>PulseAudioSimpleBackend.Initialize</c> with:
     ///   <list type="bullet">
     ///     <item><c>dir = PA_STREAM_RECORD</c> (was <c>PA_STREAM_PLAYBACK</c>)</item>
     ///     <item><c>streamName = "capture"</c> (was "playback")</item>
@@ -92,9 +98,9 @@ public sealed class PulseAudioCaptureBackend : IDisposable
         {
             CloseConnection();
 
-            var sampleSpec = new pa_sample_spec
+            var sampleSpec = new LibPulse.PaSampleSpec
             {
-                format = PA_SAMPLE_FLOAT32LE,
+                format = LibPulse.PA_SAMPLE_FLOAT32LE,
                 rate = (uint)_sampleRate,
                 channels = (byte)_channels
             };
@@ -102,15 +108,15 @@ public sealed class PulseAudioCaptureBackend : IDisposable
             int errorCode;
             try
             {
-                _connection = pa_simple_new(
-                    IntPtr.Zero,        // Use default server
-                    "flow-lang",        // Application name (matches playback sibling)
-                    PA_STREAM_RECORD,   // <-- direction-swapped vs playback
-                    IntPtr.Zero,        // Use default device (composer can override via PulseAudio mixer)
-                    _streamName,        // <-- "capture" by default
+                _connection = LibPulse.pa_simple_new(
+                    IntPtr.Zero,                   // Use default server
+                    "flow-lang",                   // Application name (matches playback sibling)
+                    LibPulse.PA_STREAM_RECORD,     // <-- direction-swapped vs playback
+                    IntPtr.Zero,                   // Use default device (composer can override via PulseAudio mixer)
+                    _streamName,                   // <-- "capture" by default
                     ref sampleSpec,
-                    IntPtr.Zero,        // Use default channel map
-                    IntPtr.Zero,        // Use default buffering attributes
+                    IntPtr.Zero,                   // Use default channel map
+                    IntPtr.Zero,                   // Use default buffering attributes
                     out errorCode);
             }
             catch (DllNotFoundException)
@@ -122,7 +128,7 @@ public sealed class PulseAudioCaptureBackend : IDisposable
 
             if (_connection == IntPtr.Zero)
             {
-                var errMsg = Marshal.PtrToStringAnsi(pa_strerror(errorCode));
+                var errMsg = LibPulse.GetErrorString(errorCode);
                 error = $"PulseAudio capture failed to connect: {errMsg}";
                 Console.Error.WriteLine(error);
                 return false;
@@ -140,7 +146,7 @@ public sealed class PulseAudioCaptureBackend : IDisposable
     ///
     /// <para>
     /// Implementation mirrors the playback sibling's
-    /// <c>PulseAudioSimpleBackend.Play</c> at lines 80-156 — pin the managed
+    /// <c>PulseAudioSimpleBackend.Play</c> — pin the managed
     /// buffer with <see cref="GCHandle"/>, chunk the read in 4 KB units to stay
     /// friendly with PulseAudio's internal buffer, take the lock around every
     /// touch of <c>_connection</c>. The implementation path mirrors
@@ -188,12 +194,12 @@ public sealed class PulseAudioCaptureBackend : IDisposable
                     }
 
                     var ptr = handle.AddrOfPinnedObject() + byteOffset;
-                    result = pa_simple_read(_connection, ptr, (nuint)readSize, out errorCode);
+                    result = LibPulse.pa_simple_read(_connection, ptr, (nuint)readSize, out errorCode);
                 }
 
                 if (result < 0)
                 {
-                    var errMsg = Marshal.PtrToStringAnsi(pa_strerror(errorCode));
+                    var errMsg = LibPulse.GetErrorString(errorCode);
                     error = $"PulseAudio read error: {errMsg}";
                     return null;
                 }
@@ -224,49 +230,8 @@ public sealed class PulseAudioCaptureBackend : IDisposable
     {
         if (_connection != IntPtr.Zero)
         {
-            pa_simple_free(_connection);
+            LibPulse.pa_simple_free(_connection);
             _connection = IntPtr.Zero;
         }
     }
-
-    // --- PulseAudio Simple API P/Invoke bindings ---
-    //
-    // Mirrors flow-lang/Audio/PulseAudioSimpleBackend.cs:273-311 with:
-    //   PA_STREAM_PLAYBACK = 1  →  PA_STREAM_RECORD = 2  (per pulseaudio/src/pulse/def.h)
-    //   pa_simple_write        →  pa_simple_read
-    // All other bindings carry identical Cdecl + LPStr marshalling so the
-    // PulseAudio runtime cannot tell sibling instances apart at the ABI layer.
-
-    private const int PA_STREAM_RECORD = 2;       // <-- direction-swapped vs playback (was PA_STREAM_PLAYBACK = 1)
-    private const int PA_SAMPLE_FLOAT32LE = 5;    // matches playback sibling
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct pa_sample_spec
-    {
-        public int format;
-        public uint rate;
-        public byte channels;
-    }
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr pa_simple_new(
-        IntPtr server,
-        [MarshalAs(UnmanagedType.LPStr)] string name,
-        int dir,
-        IntPtr dev,
-        [MarshalAs(UnmanagedType.LPStr)] string streamName,
-        ref pa_sample_spec ss,
-        IntPtr channelMap,
-        IntPtr attr,
-        out int error);
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void pa_simple_free(IntPtr s);
-
-    // <-- NEW: capture-direction primitive (mirror of pa_simple_write at PulseAudioSimpleBackend.cs:301-302)
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int pa_simple_read(IntPtr s, IntPtr data, nuint bytes, out int error);
-
-    [DllImport("libpulse.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr pa_strerror(int error);
 }

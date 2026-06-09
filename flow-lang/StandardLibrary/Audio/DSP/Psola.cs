@@ -189,17 +189,34 @@ public static class Psola
         var output = new float[outFrames];
         if (input.Length == 0) return output;
 
-        // Locate input epochs.
+        // Locate input epochs (period-spaced peak positions).
         int[] epochs = FindEpochs(input, sampleRate, defaultPeriod, pitchPeriodOverride);
         if (epochs.Length == 0) return output;
 
-        for (int e = 0; e < epochs.Length; e++)
-        {
-            int inEpoch = epochs[e];
-            int outEpoch = (int)Math.Round(inEpoch * factor);
+        // Correct TD-PSOLA time-stretch (Moulines-Charpentier 1990): output
+        // epochs are placed on a uniform ONE-PERIOD grid over the output
+        // length, and each output epoch sources its grain from the NEAREST
+        // input epoch (mapped back via outEpoch / factor). This duplicates
+        // grains for factor > 1 and decimates them for factor < 1 while
+        // keeping output epochs ONE period apart — so the Hann grains (spanning
+        // 2 × period) always overlap at 50%, giving constant overlap and unity
+        // level at EVERY factor.
+        //
+        // The previous mapping (outEpoch = round(inEpoch × factor)) spaced
+        // output epochs period × factor apart, so at factor 2 adjacent grains
+        // abutted at their near-zero Hann tails → amplitude nulls at the pitch
+        // rate (buzzy tremolo), and at factor < 1 grains piled up above unity.
 
-            // Effective period for THIS epoch — when override present, the
-            // override wins; otherwise re-detect via a local frame.
+        int outPos = 0;
+        while (outPos < outFrames)
+        {
+            // Map this output position back to input time, then snap to the
+            // nearest input epoch to source the grain.
+            double inPos = outPos / factor;
+            int srcEpoch = NearestEpoch(epochs, inPos);
+
+            // Effective period for THIS source epoch — override wins, else
+            // re-detect via a local frame anchored at the source epoch.
             int effectivePeriod;
             if (pitchPeriodOverride.HasValue)
             {
@@ -207,26 +224,57 @@ public static class Psola
             }
             else
             {
-                int frameLen = Math.Min(1024, input.Length - inEpoch);
+                int frameLen = Math.Min(1024, input.Length - srcEpoch);
                 if (frameLen < 256) effectivePeriod = defaultPeriod;
                 else
                 {
                     var frame = new float[frameLen];
-                    Array.Copy(input, inEpoch, frame, 0, frameLen);
+                    Array.Copy(input, srcEpoch, frame, 0, frameLen);
                     int detected = DetectPitchPeriod(frame, sampleRate);
                     effectivePeriod = detected > 0 ? detected : defaultPeriod;
                 }
             }
+            if (effectivePeriod < 1) effectivePeriod = defaultPeriod;
 
             // W4 LOCK — grain length is windowSizeOverride OR 2 × effectivePeriod.
             int grainLen = windowSizeOverride ?? (2 * effectivePeriod);
             if (grainLen < 2) grainLen = 2;
 
-            float[] grain = ExtractWindowedGrain(input, inEpoch, grainLen);
-            OverlapAddGrain(output, grain, outEpoch);
+            float[] grain = ExtractWindowedGrain(input, srcEpoch, grainLen);
+            OverlapAddGrain(output, grain, outPos);
+
+            // Advance the output cursor by ONE pitch period — independent of
+            // factor. Constant one-period spacing keeps grain overlap at 50%.
+            outPos += effectivePeriod;
         }
 
         return output;
+    }
+
+    /// <summary>
+    /// Returns the input epoch nearest to <paramref name="inPos"/> (samples).
+    /// <paramref name="epochs"/> is ascending; a linear scan with an early
+    /// exit past the crossover is adequate at the epoch counts PSOLA produces.
+    /// </summary>
+    private static int NearestEpoch(int[] epochs, double inPos)
+    {
+        int best = epochs[0];
+        double bestDist = Math.Abs(epochs[0] - inPos);
+        for (int i = 1; i < epochs.Length; i++)
+        {
+            double dist = Math.Abs(epochs[i] - inPos);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = epochs[i];
+            }
+            else if (epochs[i] > inPos)
+            {
+                // epochs ascending → once past inPos, distance only grows.
+                break;
+            }
+        }
+        return best;
     }
 
     /// <summary>

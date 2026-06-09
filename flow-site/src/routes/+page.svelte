@@ -14,6 +14,8 @@
 <script lang="ts">
 	import { highlightFlow } from '$lib/home/flow-highlight';
 	import { playTone, playMelody, playChord, type ToneType } from '$lib/home/tones';
+	import { encode } from '$lib/share/encode';
+	import Toggle from '$lib/components/skeuo/Toggle.svelte';
 
 	const REPO_URL = 'https://github.com/noahfreelove/flow-sharp';
 
@@ -38,6 +40,14 @@ key Cmajor {
 	const hello = highlightFlow(HELLO);
 	const scale = highlightFlow(SCALE);
 	const cadence = highlightFlow(CADENCE);
+
+	// D-49-08 playground deep-links: encode each snippet as a #code= fragment so clicking
+	// "Open in playground →" loads the exact code the user is looking at (§6.6 fix).
+	// encode() is fflate-deflate + base64url — safe at prerender time (no window/DOM access).
+	// &run=1 is intentionally omitted here: cold-load auto-run is gated by another packet.
+	const helloHref = `/playground#code=${encode(HELLO)}`;
+	const scaleHref = `/playground#code=${encode(SCALE)}`;
+	const cadenceHref = `/playground#code=${encode(CADENCE)}`;
 
 	// Hero card Play handlers — Web-Audio tones, fired only inside onclick (autoplay-safe).
 	function playHello(): void {
@@ -119,21 +129,35 @@ key Cmajor {
 		name="description"
 		content="Flow is an interpreted, statically-typed language for music production. Write musical ideas as code — note streams, chords, musical-context blocks — and hear them the instant you press play."
 	/>
+	<!-- REQ-SITE-RESPONSIVE-01: prevent horizontal overflow at the document level on the home
+	     page. Only the iOS-6 marketing page sets this; other routes are unaffected. -->
+	<style>
+		html:has(.ios6-page) {
+			overflow-x: hidden;
+		}
+	</style>
 </svelte:head>
 
 <div class="ios6-page">
 	<div class="toolbar">
-		<a class="brand" href="/"><span class="glyph"></span><span class="word">Flow</span></a>
-		<nav class="nav">
-			<a href="/" class="active">Home</a>
+		<a class="brand site-wordmark" href="/"><span class="glyph" aria-hidden="true"></span><span class="word">Flow</span></a>
+		<nav class="nav" aria-label="Primary">
+			<a href="/" class="active" aria-current="page">Home</a>
 			<a href="/docs">Docs</a>
 			<a href="/playground">Playground</a>
 			<a href="/showcase">Showcase</a>
-			<a href={REPO_URL} class="ext" target="_blank" rel="noopener">GitHub</a>
+			<a href={REPO_URL} class="ext" target="_blank" rel="noopener noreferrer"
+				>GitHub<span class="sr-only"> (opens in new tab)</span></a
+			>
 		</nav>
+		<!-- Theme toggle — honors the persisted [data-theme] from app.html so dark-mode
+		     users are not locked into the light palette with no control (§6.9 fix). The
+		     theme store is already initialised by +layout.svelte's $effect (which runs on
+		     all routes, including home — only the layout HTML is suppressed via isHome). -->
+		<Toggle theme withIcons label="Dark mode" />
 	</div>
 
-	<div class="layout">
+	<main class="layout">
 		<!-- HERO -->
 		<section class="plate hero">
 			<span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span
@@ -170,7 +194,7 @@ key Cmajor {
 					</div>
 					<div class="row">
 						<button class="btn sm green" onclick={playHello}>▶ Play</button>
-						<a class="open" href="/playground">Open in playground →</a>
+						<a class="open" href={helloHref}>Open in playground →</a>
 					</div>
 				</div>
 
@@ -187,7 +211,7 @@ key Cmajor {
 					</div>
 					<div class="row">
 						<button class="btn sm green" onclick={playScale}>▶ Play</button>
-						<a class="open" href="/playground">Open in playground →</a>
+						<a class="open" href={scaleHref}>Open in playground →</a>
 					</div>
 				</div>
 
@@ -204,7 +228,7 @@ key Cmajor {
 					</div>
 					<div class="row">
 						<button class="btn sm green" onclick={playCadence}>▶ Play</button>
-						<a class="open" href="/playground">Open in playground →</a>
+						<a class="open" href={cadenceHref}>Open in playground →</a>
 					</div>
 				</div>
 			</div>
@@ -261,15 +285,20 @@ key Cmajor {
 					class:playing={playingIndex === i}
 					style="background:linear-gradient(#3a2a18,#241608); border-color:#1a0f04;"
 				>
-					<div class="led"></div>
+					<!-- Decorative status LED — aria-hidden so AT ignores the colour change;
+					     the playing state is conveyed by the button text and page context (§6.9). -->
+					<div class="led" aria-hidden="true"></div>
 					<button class="btn sm amber" onclick={() => playLeather(i)}>▶ Play</button>
 					<div class="meta">
 						<div class="t">{p.title}</div>
 						<div class="s">{p.sub}</div>
 					</div>
-					<div class="vu">
+					<!-- Decorative VU meter — purely visual animation, aria-hidden (§6.9). -->
+					<div class="vu" aria-hidden="true">
 						{#if playingIndex === i}
-							{#each vu as h (h)}
+							<!-- keyed by index, NOT value: vu initializes to 14 identical
+							     heights, and duplicate keys throw each_key_duplicate -->
+							{#each vu as h, b (b)}
 								<i style="height:{h}px"></i>
 							{/each}
 						{:else}
@@ -284,13 +313,13 @@ key Cmajor {
 
 		<div class="footer">
 			Flow v1.4 · written in C# on .NET 10 · <a href="/docs">Docs</a> ·
-			<a href={REPO_URL} target="_blank" rel="noopener">GitHub ⌃</a><br />
+			<a href={REPO_URL} target="_blank" rel="noopener noreferrer">GitHub ⌃</a><br />
 			Press <kbd>Play</kbd> anywhere to hear real Web Audio tones.
 		</div>
-	</div>
+	</main>
 
 	<!-- bottom tab bar -->
-	<nav class="tabbar">
+	<nav class="tabbar" aria-label="Tab bar">
 		<a href="/" class="active"
 			><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
 				><path d="M3 11l9-8 9 8M5 9v11h14V9" /></svg
@@ -312,12 +341,12 @@ key Cmajor {
 				/></svg
 			>Showcase</a
 		>
-		<a href={REPO_URL} target="_blank" rel="noopener"
-			><svg class="ic" viewBox="0 0 24 24" fill="currentColor"
+		<a href={REPO_URL} target="_blank" rel="noopener noreferrer"
+			><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
 				><path
 					d="M12 2a10 10 0 00-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.1-1.47-1.1-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 015 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0012 2z"
 				/></svg
-			>GitHub</a
+			>GitHub<span class="sr-only"> (opens in new tab)</span></a
 		>
 	</nav>
 </div>
@@ -327,11 +356,19 @@ key Cmajor {
 	   iOS-6 skeuomorphic home — ported from flow.css + index.html inline <style>.
 	   Component-scoped (HANDOFF §4.1 option a): Svelte auto-scopes these generic
 	   class names to .ios6-page descendants, so they cannot leak to the other
-	   routes. :root tokens stay global (don't collide with app.css's --color-*).
+	   routes. Design tokens are declared on .ios6-page (NOT :root) so they inherit
+	   to all descendants here but do NOT override tokens.css on other routes (§6.5).
 	   The {@html} code-token classes are :global() because that output is NOT scoped.
 	   ========================================================================= */
 
-	:root {
+	/* =========================================================================
+	   iOS-6 design tokens scoped to .ios6-page so they do NOT leak globally.
+	   Custom properties inherit through all descendants (same reach as :root for
+	   this component), but Svelte does NOT emit them as a bare :root rule —
+	   previously this was :root which overrode tokens.css's JetBrains Mono
+	   --font-mono on every other route after the user visited / (§6.5 fix).
+	   ========================================================================= */
+	.ios6-page {
 		--ink: #2b2722;
 		--ink-soft: #5c554c;
 		--ink-faint: #8a8278;
@@ -373,12 +410,19 @@ key Cmajor {
 		--r-card: 14px;
 		--r-btn: 9px;
 		--font-ui: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		/* Scoped here (not :root) so this does NOT override tokens.css's JetBrains
+		   Mono --font-mono on /docs, /playground, /showcase, etc. (§6.5). */
 		--font-mono: Menlo, Monaco, Consolas, 'Courier New', monospace;
 	}
 
 	/* Linen ground as a full-viewport wrapper (NOT the shared <body>; app.css owns body). */
 	.ios6-page {
 		min-height: 100dvh;
+		/* REQ-SITE-RESPONSIVE-01: prevent horizontal overflow at all viewport widths (320px floor).
+		   position:relative + overflow-x:clip acts as a stacking-context clipping container so that
+		   no child element's intrinsic width expands the document scrollWidth past the viewport. */
+		position: relative;
+		overflow-x: clip;
 		font-family: var(--font-ui);
 		color: var(--ink);
 		-webkit-font-smoothing: antialiased;
@@ -868,7 +912,8 @@ key Cmajor {
 	}
 	.hero-blurb {
 		flex: 1;
-		min-width: 280px;
+		/* min-width clamps to 0 at narrow viewports so flex-wrap can collapse the hero-top row. */
+		min-width: min(280px, 100%);
 	}
 	.hero-blurb p {
 		font-size: 16.5px;
@@ -1050,5 +1095,32 @@ key Cmajor {
 		.hero-word {
 			font-size: 74px;
 		}
+	}
+
+	/* At narrow viewports the bottom tab bar handles navigation; hide the toolbar pill nav to
+	   prevent horizontal overflow. The brand stays visible in the toolbar. */
+	@media (max-width: 600px) {
+		.nav {
+			display: none;
+		}
+	}
+
+	/* Screen-reader-only utility (mirrors app.css .sr-only). Component-scoped so it applies
+	   only inside .ios6-page where this file's styles are active. */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	/* <main> wrapping .layout — purely a landmark, no extra visual. */
+	main {
+		display: contents;
 	}
 </style>

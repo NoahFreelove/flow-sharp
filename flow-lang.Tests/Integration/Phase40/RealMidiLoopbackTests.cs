@@ -28,9 +28,10 @@ namespace FlowLang.Tests.Integration.Phase40;
 /// probes <see cref="LibRtMidi.IsAvailable"/> AND for a VirMIDI port pair (a librtmidi
 /// port whose name contains "VirMIDI" / "Virtual Raw MIDI" with a parseable
 /// <c>card-sub</c> suffix) AND for the <c>amidi</c> binary. When any is absent the
-/// Fact PASSES with an advisory (Assert.True(true)) so CI without <c>snd-virmidi</c>
-/// stays green. On the bench box (snd-virmidi loaded + librtmidi 6.0.0) they RUN and
-/// assert the captured bytes.</para>
+/// Fact calls <c>Assert.Skip</c> with a specific reason (audit-0609 §8.1 — prior
+/// pattern was Assert.True(true) which reported PASS with zero assertions exercised)
+/// so CI without <c>snd-virmidi</c> stays green. On the bench box (snd-virmidi
+/// loaded + librtmidi 6.0.0) they RUN and assert the captured bytes.</para>
 ///
 /// <para><b>VirMIDI mapping:</b> the librtmidi ALSA-seq port "Virtual Raw MIDI 3-0"
 /// (seq client 28:0) is the same device as rawmidi <c>hw:3,0</c>. The "3-0" suffix is
@@ -138,23 +139,15 @@ public class RealMidiLoopbackTests
         }
     }
 
-    private bool SkipIfUnavailable(out VirMidiPair pair)
+    private static void SkipIfUnavailable(out VirMidiPair pair)
     {
         pair = default;
         if (!AmidiAvailable())
-        {
-            _out.WriteLine("[skip] amidi CLI not runnable — real MIDI loopback test skipped charitably.");
-            return true;
-        }
+            Assert.Skip("amidi CLI absent — real MIDI loopback requires amidi (ALSA utils)");
         var found = FindVirMidiPair();
         if (found == null)
-        {
-            _out.WriteLine("[skip] librtmidi or a VirMIDI port absent — real MIDI loopback test skipped charitably.");
-            return true;
-        }
+            Assert.Skip("librtmidi or snd-virmidi VirMIDI loopback port absent — load snd-virmidi + install librtmidi-dev");
         pair = found.Value;
-        _out.WriteLine($"[run] VirMIDI loopback: librtmidi port '{pair.PortName}' <-> rawmidi {pair.RawDevice}");
-        return false;
     }
 
     // =========================================================================
@@ -254,7 +247,7 @@ public class RealMidiLoopbackTests
     [Fact]
     public void RealOutput_NoteCcSysex_CapturedByteForByte()
     {
-        if (SkipIfUnavailable(out var pair)) { Assert.True(true); return; }
+        SkipIfUnavailable(out var pair);
 
         using var capture = new AmidiCapture(pair.RawDevice);
         Thread.Sleep(300); // let amidi attach before we send
@@ -310,7 +303,7 @@ public class RealMidiLoopbackTests
     [Fact]
     public void RealClockMaster_EmitsTransportStartStopOverWire()
     {
-        if (SkipIfUnavailable(out var pair)) { Assert.True(true); return; }
+        SkipIfUnavailable(out var pair);
 
         using var capture = new AmidiCapture(pair.RawDevice);
         Thread.Sleep(300);
@@ -345,7 +338,7 @@ public class RealMidiLoopbackTests
     [Fact]
     public void RealClockSlave_LocksTempoFromInjected24Ppqn()
     {
-        if (SkipIfUnavailable(out var pair)) { Assert.True(true); return; }
+        SkipIfUnavailable(out var pair);
 
         // Ensure no test seam is active — exercise the REAL librtmidi input path.
         MidiClock.SlaveSourceOverride = null;

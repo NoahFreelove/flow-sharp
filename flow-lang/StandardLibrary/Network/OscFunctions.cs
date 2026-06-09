@@ -75,6 +75,39 @@ public static class OscFunctions
     // ===== Bundle nesting depth cap (D-38-15 / mirrors T-36-17 / D-39-19) =====
     private const int BundleDepthCap = 8;
 
+    // ===== Foreground handler-dispatch queue (audit §5.3) =====
+    //
+    // The OSC receive loop runs on a ThreadPool thread (StartListener's
+    // Task.Run). A composer's handler lambda mutates the SHARED, non-thread-safe
+    // Interpreter/ExecutionContext (_recursionDepth, StrictMode, the
+    // Stack<StackFrame> call stack, _returnValue). The foreground evaluator —
+    // which keeps running after oscListen returns (subsequent statements, a
+    // render, a live session) — is NOT lock-aware: it never takes an OSC lock,
+    // so an OSC-side lock alone cannot stop it racing the listener thread and
+    // corrupting the frame stack.
+    //
+    // Smallest correct fix: real user-proc handler invocations are NEVER run on
+    // the listener thread. They are enqueued here and DRAINED synchronously on
+    // the foreground evaluator thread — from each osc* builtin's own call site
+    // (which the composer's foreground code invokes) and from the explicit
+    // (oscPump) / oscStop drains. This guarantees ExecuteUserFunctionWithCaptures
+    // only ever runs on the one evaluator thread, serialized-not-parallel with
+    // the rest of the script. Latency tradeoff: a handler fires on the next
+    // foreground osc* call (or pump), not the instant the packet arrives — an
+    // acceptable cost for not corrupting the interpreter (a real-time MIDI/clock
+    // sink would want a different design, but Flow's @osc surface is composer
+    // scripting, not a hot audio path).
+    //
+    // Internal handlers (test stubs) and the HandlerInvokeOverride seam still
+    // fire inline on the dispatch thread — they touch no shared interpreter
+    // state, so the existing Phase 38 tests/seams are unaffected.
+    private sealed record PendingHandlerInvocation(
+        FunctionOverload Handler,
+        IReadOnlyList<Value> Args,
+        FlowLang.Runtime.ExecutionContext Context);
+
+    private static readonly ConcurrentQueue<PendingHandlerInvocation> _pendingHandlers = new();
+
     /// <summary>
     /// Test-only: clear the rate-limit gate state. Required so per-test
     /// isolation (xUnit Facts under
@@ -84,6 +117,59 @@ public static class OscFunctions
     public static void ResetForTesting()
     {
         _lastFireTimeMs.Clear();
+        while (_pendingHandlers.TryDequeue(out _)) { }
+    }
+
+    /// <summary>Test-only: number of user-proc handler invocations currently
+    /// queued for the foreground drain (audit §5.3 pinning test seam).</summary>
+    public static int PendingHandlerCountForTesting => _pendingHandlers.Count;
+
+    /// <summary>
+    /// Test-only (audit §5.3): enqueue a user-proc handler invocation exactly as
+    /// the production <see cref="InvokeHandler"/> does for the
+    /// <c>context.Invoker</c> path — a thread-safe <c>ConcurrentQueue.Enqueue</c>
+    /// and nothing else. Lets a background "listener" thread model the production
+    /// receive loop (which only ever ENQUEUES; it never runs the proc nor reads
+    /// live interpreter state) so the pinning stress test races the foreground
+    /// evaluator without a test-harness-only data race.
+    /// </summary>
+    public static void EnqueueHandlerForTesting(
+        FunctionOverload handler, IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
+        => _pendingHandlers.Enqueue(new PendingHandlerInvocation(handler, args, context));
+
+    /// <summary>
+    /// Audit §5.3 — drain every queued user-proc handler invocation on the
+    /// CALLING (foreground evaluator) thread, serialized-not-parallel with the
+    /// rest of the script. Called at the head of every osc* builtin and exposed
+    /// to composers as <c>(oscPump)</c> so a script that binds a listener and
+    /// then loops (rather than calling further osc* builtins) can still flush
+    /// pending handlers without racing the interpreter. Idempotent; an empty
+    /// queue is a no-op. Returns the number of handlers drained (composer-
+    /// visible count for <c>(oscPump)</c>).
+    /// </summary>
+    public static int DrainPendingHandlers()
+    {
+        int drained = 0;
+        // Snapshot the count BEFORE the loop so a handler that enqueues another
+        // packet (rare, but possible via a nested osc call) cannot livelock the
+        // drain — anything enqueued during this pass waits for the next.
+        int budget = _pendingHandlers.Count;
+        while (budget-- > 0 && _pendingHandlers.TryDequeue(out var pending))
+        {
+            try
+            {
+                pending.Context.Invoker!.ExecuteUserFunctionWithCaptures(
+                    pending.Handler.Declaration!, pending.Args, pending.Handler.CapturedVariables);
+            }
+            catch (Exception ex)
+            {
+                // Charitable per Pitfall #12 — a handler exception never kills
+                // the drain; surface to stderr and continue.
+                Console.Error.WriteLine($"[osc] handler error: {ex.Message}");
+            }
+            drained++;
+        }
+        return drained;
     }
 
     /// <summary>
@@ -112,13 +198,20 @@ public static class OscFunctions
         // Varargs: args after `path` are inferred per D-38-13. Per RESEARCH §K,
         // Rug.Osc accepts CLR-boxed args via OscMessage(string, params object[])
         // and encodes the OSC 1.0 type-tag string automatically.
+        // Audit §2.9 follow-up: the trailing VoidType is the vararg ELEMENT slot
+        // (explicit any-type wildcard) so host/port/path are validated as fixed
+        // params while the heterogeneous payload stays unconstrained. Previously
+        // the signature ended at `path`, which made String the implied vararg
+        // element type — only the (pre-§2.9) skip-validation hole let mixed
+        // Int/Double/Bool/Buffer payloads through.
         var sigSend = new FunctionSignature("oscSend",
-            new FlowType[] { StringType.Instance, IntType.Instance, StringType.Instance },
+            new FlowType[] { StringType.Instance, IntType.Instance, StringType.Instance, VoidType.Instance },
             IsVarArgs: true,
-            ParameterNames: new[] { "host", "port", "path" });
+            ParameterNames: new[] { "host", "port", "path", "args" });
         registry.Register("oscSend", sigSend, args =>
         {
             RequireModuleActivated(context, "oscSend");
+            DrainPendingHandlers();   // audit §5.3 — flush queued handlers on the foreground thread
             string host = args[0].As<string>();
             int port = args[1].As<int>();
             string path = args[2].As<string>();
@@ -142,6 +235,7 @@ public static class OscFunctions
         registry.Register("oscListen", sigListen, args =>
         {
             RequireModuleActivated(context, "oscListen");
+            DrainPendingHandlers();   // audit §5.3
             int port = args[0].As<int>();
             string path = args[1].As<string>();
             var handler = args[2].As<FunctionOverload>();
@@ -157,7 +251,25 @@ public static class OscFunctions
             RequireModuleActivated(context, "oscStop");
             var handle = args[0].As<OscHandleData>();
             StopListener(handle);
+            // audit §5.3 — drain AFTER stop so any handler that was already
+            // queued before the stop still runs; the future-timetag fix (§5.10)
+            // guarantees nothing NEW is enqueued for a stopped handle.
+            DrainPendingHandlers();
             return Value.Void();
+        });
+
+        // ----- oscPump() -> Int (count of handlers drained) -----
+        //
+        // Audit §5.3: composer-facing flush of any queued OSC handler
+        // invocations on the foreground evaluator thread. A script that binds a
+        // listener and then loops (rather than calling further osc* builtins)
+        // calls (oscPump) inside the loop to run pending handlers without
+        // racing the interpreter. Returns the number drained.
+        var sigPump = new FunctionSignature("oscPump", System.Array.Empty<FlowType>());
+        registry.Register("oscPump", sigPump, _ =>
+        {
+            RequireModuleActivated(context, "oscPump");
+            return Value.Int(DrainPendingHandlers());
         });
 
         // ----- oscBundle(...packets) -> OscHandle wrapping OscBundle -----
@@ -176,6 +288,7 @@ public static class OscFunctions
         registry.Register("oscBundle", sigBundle, args =>
         {
             RequireModuleActivated(context, "oscBundle");
+            DrainPendingHandlers();   // audit §5.3
             var packets = new List<Rug.Osc.OscPacket>(args.Count);
             for (int i = 0; i < args.Count; i++)
             {
@@ -212,6 +325,7 @@ public static class OscFunctions
         registry.Register("oscSendBundle", sigSendBundle, args =>
         {
             RequireModuleActivated(context, "oscSendBundle");
+            DrainPendingHandlers();   // audit §5.3
             string host = args[0].As<string>();
             int port = args[1].As<int>();
             var hd = args[2].As<OscHandleData>();
@@ -283,16 +397,40 @@ public static class OscFunctions
         return oscArgs;
     }
 
+    // ===== Buffer blob header (audit §5.13) =====
+    //
+    // The pre-fix blob was a bare flatten of Frames × Channels floats with NO
+    // metadata, so BlobToBuffer could only guess mono/44100 — a stereo 48 kHz
+    // buffer came back as a double-length mono buffer at the wrong rate (silent
+    // corruption of a well-formed input). We now prefix a tiny 12-byte header:
+    //   bytes 0..3 : ASCII magic "FLO1"
+    //   bytes 4..7 : channels   (int32, little-endian)
+    //   bytes 8..11: sampleRate (int32, little-endian)
+    // then the float payload (little-endian IEEE-754, Frames × Channels).
+    // BlobToBuffer parses the header; a blob WITHOUT the magic (a foreign OSC
+    // ,b blob from another app) still decodes — charitably as mono/44100 with a
+    // one-shot advisory — so interop is preserved.
+    private static readonly byte[] BlobMagic = { (byte)'F', (byte)'L', (byte)'O', (byte)'1' };
+    private const int BlobHeaderBytes = 12; // 4 magic + 4 channels + 4 sampleRate
+
     /// <summary>
-    /// Phase 38 Plan 38-06 — flatten an <see cref="AudioBuffer"/> to a
-    /// <c>byte[]</c> blob suitable for OSC <c>,b</c> (blob) transport.
-    /// Little-endian IEEE-754 (4 bytes per float sample, Frames × Channels).
+    /// Audit §5.13 — flatten an <see cref="AudioBuffer"/> to a <c>byte[]</c> blob
+    /// for OSC <c>,b</c> transport, PREFIXED with a 12-byte header (magic +
+    /// channels + sampleRate, little-endian) so the receive side can reconstruct
+    /// the exact channel count + sample rate instead of guessing mono/44100.
+    /// Payload is little-endian IEEE-754 (4 bytes per float, Frames × Channels).
     /// </summary>
     public static byte[] AudioBufferToBlob(AudioBuffer buf)
     {
         if (buf is null) throw new ArgumentNullException(nameof(buf));
-        var blob = new byte[buf.Data.Length * 4];
-        System.Buffer.BlockCopy(buf.Data, 0, blob, 0, blob.Length);
+        int payloadBytes = buf.Data.Length * 4;
+        var blob = new byte[BlobHeaderBytes + payloadBytes];
+        System.Buffer.BlockCopy(BlobMagic, 0, blob, 0, 4);
+        // BitConverter is little-endian on every platform Flow targets; the
+        // BlobToBuffer reader uses the matching ToInt32 so this round-trips.
+        System.Buffer.BlockCopy(BitConverter.GetBytes(buf.Channels), 0, blob, 4, 4);
+        System.Buffer.BlockCopy(BitConverter.GetBytes(buf.SampleRate), 0, blob, 8, 4);
+        System.Buffer.BlockCopy(buf.Data, 0, blob, BlobHeaderBytes, payloadBytes);
         return blob;
     }
 
@@ -454,7 +592,7 @@ public static class OscFunctions
                     Console.Error.WriteLine($"[osc] receive error on port {port}: {ex.Message}");
                     continue;
                 }
-                DispatchPacket(packet, path, handler, context, 0, listenerStrict, listenerSite);
+                DispatchPacket(packet, path, handler, context, 0, listenerStrict, listenerSite, cts.Token);
             }
         }, cts.Token);
 
@@ -504,8 +642,15 @@ public static class OscFunctions
         FlowLang.Runtime.ExecutionContext context,
         int depth,
         bool listenerStrict,
-        SourceLocation listenerSite)
+        SourceLocation listenerSite,
+        CancellationToken cancel)
     {
+        // Audit §5.10 — a stopped handle must not invoke handlers. If the
+        // listener was already cancelled (oscStop), drop this packet entirely;
+        // this also short-circuits a future-timetag continuation that fires
+        // after the stop.
+        if (cancel.IsCancellationRequested) return;
+
         if (depth > BundleDepthCap)
         {
             // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
@@ -537,12 +682,24 @@ public static class OscFunctions
                 var delay = when - DateTime.UtcNow;
                 if (delay > TimeSpan.Zero)
                 {
-                    Task.Delay(delay).ContinueWith(_ =>
-                        DispatchBundleContents(bundle, targetPath, handler, context, depth + 1, listenerStrict, listenerSite));
+                    // Audit §5.10 — thread the listener's CancellationToken into
+                    // BOTH the Delay (so oscStop cancels the pending fire) AND
+                    // the continuation (re-check on the off chance the token
+                    // cancels between the delay completing and the continuation
+                    // running). A cancelled Delay completes faulted/cancelled, so
+                    // guard the continuation against ALL completion states and
+                    // re-check the token before dispatching. Stop semantics win:
+                    // a handle that was stopped must NOT invoke handlers, even
+                    // for an already-received future-timetag bundle.
+                    Task.Delay(delay, cancel).ContinueWith(t =>
+                    {
+                        if (t.IsCanceled || cancel.IsCancellationRequested) return;
+                        DispatchBundleContents(bundle, targetPath, handler, context, depth + 1, listenerStrict, listenerSite, cancel);
+                    }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
                     return;
                 }
             }
-            DispatchBundleContents(bundle, targetPath, handler, context, depth + 1, listenerStrict, listenerSite);
+            DispatchBundleContents(bundle, targetPath, handler, context, depth + 1, listenerStrict, listenerSite, cancel);
             return;
         }
 
@@ -559,11 +716,12 @@ public static class OscFunctions
         FlowLang.Runtime.ExecutionContext context,
         int depth,
         bool listenerStrict,
-        SourceLocation listenerSite)
+        SourceLocation listenerSite,
+        CancellationToken cancel)
     {
         for (int i = 0; i < bundle.Count; i++)
         {
-            DispatchPacket(bundle[i], targetPath, handler, context, depth, listenerStrict, listenerSite);
+            DispatchPacket(bundle[i], targetPath, handler, context, depth, listenerStrict, listenerSite, cancel);
         }
     }
 
@@ -617,12 +775,19 @@ public static class OscFunctions
         }
         if (handler.IsInternal)
         {
+            // Internal handlers touch no shared interpreter state — safe to run
+            // inline on the dispatch thread (keeps test stubs synchronous).
             handler.Implementation!(args);
         }
         else
         {
-            context.Invoker!.ExecuteUserFunctionWithCaptures(
-                handler.Declaration!, args, handler.CapturedVariables);
+            // Audit §5.3: a user proc mutates the shared, non-thread-safe
+            // ExecutionContext (call stack, _returnValue, strict bit). NEVER run
+            // it on the listener/dispatch thread — enqueue for the foreground
+            // evaluator thread to drain via DrainPendingHandlers (osc* call
+            // sites + (oscPump)). Serialized-not-parallel with the rest of the
+            // script; see the _pendingHandlers field doc for the tradeoff.
+            _pendingHandlers.Enqueue(new PendingHandlerInvocation(handler, args, context));
         }
     }
 
@@ -654,12 +819,60 @@ public static class OscFunctions
             $"[osc] received unsupported Rug.Osc arg type: {arg.GetType().Name}")
     };
 
+    /// <summary>
+    /// Audit §5.13 — reconstruct an <see cref="AudioBuffer"/> from an OSC <c>,b</c>
+    /// blob. A blob written by <see cref="AudioBufferToBlob"/> carries a 12-byte
+    /// header (magic + channels + sampleRate) so channel count + rate round-trip
+    /// exactly. A blob WITHOUT the magic (a foreign OSC blob from another app)
+    /// still decodes — charitably as mono/44100 with a one-shot advisory — so
+    /// interop is preserved per the charitable-interpretation philosophy.
+    /// </summary>
     private static Value BlobToBuffer(byte[] bytes)
     {
-        int frames = bytes.Length / 4;
-        var buf = new AudioBuffer(frames, 1, 44100);
-        System.Buffer.BlockCopy(bytes, 0, buf.Data, 0, frames * 4);
-        return Value.Buffer(buf);
+        // Header present? Require the full 12-byte header AND the magic match.
+        bool hasHeader = bytes.Length >= BlobHeaderBytes
+            && bytes[0] == BlobMagic[0] && bytes[1] == BlobMagic[1]
+            && bytes[2] == BlobMagic[2] && bytes[3] == BlobMagic[3];
+
+        if (hasHeader)
+        {
+            int channels = BitConverter.ToInt32(bytes, 4);
+            int sampleRate = BitConverter.ToInt32(bytes, 8);
+            int payloadBytes = bytes.Length - BlobHeaderBytes;
+            int sampleCount = payloadBytes / 4;
+
+            // Defend charitably against a malformed/hostile header rather than
+            // throwing on the listener thread: clamp degenerate channels/rate
+            // and only honor a channel count the payload actually divides into.
+            if (channels < 1 || (sampleCount % channels) != 0)
+            {
+                RenderingDiagnostics.WarnOnce(
+                    "osc-blob-bad-channels",
+                    $"[osc] blob header declared channels={channels} incompatible with {sampleCount} samples — decoding as mono");
+                channels = 1;
+            }
+            if (sampleRate < 1)
+            {
+                RenderingDiagnostics.WarnOnce(
+                    "osc-blob-bad-rate",
+                    $"[osc] blob header declared sampleRate={sampleRate} — decoding at 44100 Hz");
+                sampleRate = 44100;
+            }
+
+            int frames = sampleCount / channels;
+            var buf = new AudioBuffer(frames, channels, sampleRate);
+            System.Buffer.BlockCopy(bytes, BlobHeaderBytes, buf.Data, 0, sampleCount * 4);
+            return Value.Buffer(buf);
+        }
+
+        // Headerless (foreign) blob — charitable mono/44100 fallback + advisory.
+        RenderingDiagnostics.WarnOnce(
+            "osc-blob-no-header",
+            "[osc] received a Buffer blob without Flow channel/rate metadata — decoding as mono at 44100 Hz");
+        int monoFrames = bytes.Length / 4;
+        var monoBuf = new AudioBuffer(monoFrames, 1, 44100);
+        System.Buffer.BlockCopy(bytes, 0, monoBuf.Data, 0, monoFrames * 4);
+        return Value.Buffer(monoBuf);
     }
 
     /// <summary>
@@ -672,7 +885,8 @@ public static class OscFunctions
         Rug.Osc.OscPacket packet,
         string targetPath,
         FunctionOverload handler,
-        FlowLang.Runtime.ExecutionContext context)
+        FlowLang.Runtime.ExecutionContext context,
+        CancellationToken cancel = default)
     {
         // Phase 44 review CR-01: tests still invoke dispatch on the caller
         // thread, so the synchronous context.CallerStrictMode /
@@ -680,7 +894,10 @@ public static class OscFunctions
         // to race the foreground). Production listeners route through
         // StartListener which captures these into immutable locals before
         // the Task.Run boundary.
+        //
+        // Audit §5.10: the optional cancel token lets a test feed a cancelled
+        // listener token so a post-oscStop future-timetag bundle is dropped.
         DispatchPacket(packet, targetPath, handler, context, 0,
-            context.CallerStrictMode, context.CurrentCallSite);
+            context.CallerStrictMode, context.CurrentCallSite, cancel);
     }
 }

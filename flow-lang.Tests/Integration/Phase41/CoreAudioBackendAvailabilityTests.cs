@@ -1,4 +1,5 @@
 using FlowLang.Audio;
+using FlowLang.Tests.Helpers;
 using Xunit;
 
 namespace FlowLang.Tests.Integration.Phase41;
@@ -14,11 +15,15 @@ namespace FlowLang.Tests.Integration.Phase41;
 ///
 /// (Confirmed no pre-existing duplicate of this test before creating it, per the
 /// 41-VALIDATION.md confirm-before-add note.)
+///
+/// Audit-0609 §8.1: the Fact asserts Linux-specific behavior (AudioToolbox.framework
+/// absent) and must skip on non-Linux platforms (macOS, Windows) where it would
+/// incorrectly FAIL — CoreAudioBackend.IsAvailable() returns <c>true</c> on macOS.
 /// </summary>
 [Trait("Category", "Phase41")]
 public class CoreAudioBackendAvailabilityTests
 {
-    [Fact]
+    [PrereqFact("linux")]
     public void IsAvailable_FalseOnLinux_NoThrow()
     {
         // On the Linux build host, AudioToolbox.framework does not resolve, so the

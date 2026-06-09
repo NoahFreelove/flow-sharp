@@ -70,7 +70,10 @@ public class OscTypeTagInferenceTests : IDisposable
 
     /// <summary>
     /// Send_BufferAsBlob: pass an AudioBuffer Value; assert the resulting
-    /// object is a non-empty <c>byte[]</c> blob (4 bytes per float sample).
+    /// object is a non-empty <c>byte[]</c> blob (4 bytes per float sample plus
+    /// the 12-byte channels/sampleRate header added by audit §5.13 so the
+    /// receive side can reconstruct the exact format instead of guessing
+    /// mono/44100 — see OscBlobRoundTripTests).
     /// </summary>
     [Fact]
     public void Send_BufferAsBlob()
@@ -83,7 +86,9 @@ public class OscTypeTagInferenceTests : IDisposable
 
         Assert.Single(oscArgs);
         var blob = Assert.IsType<byte[]>(oscArgs[0]);
-        Assert.Equal(buf.Data.Length * 4, blob.Length);
+        // Audit §5.13: 12-byte header ("FLO1" + channels:int32 + sampleRate:int32)
+        // precedes the float payload (4 bytes per sample).
+        Assert.Equal(buf.Data.Length * 4 + 12, blob.Length);
     }
 
     /// <summary>

@@ -1,122 +1,121 @@
 using System;
 using System.Collections.Generic;
 
-namespace FlowLang.TypeSystem.SpecialTypes
+namespace FlowLang.TypeSystem.SpecialTypes;
+
+public sealed class NoteValueType : FlowType
 {
-    public sealed class NoteValueType : FlowType
+    private NoteValueType() { }
+
+    public static NoteValueType Instance { get; } = new();
+
+    public override string Name => "NoteValue";
+
+    public override int GetSpecificity() => 132;
+
+    public override bool IsCompatibleWith(FlowType other)
     {
-        private NoteValueType() { }
+        // NoteValue is backed by int, allow Int values to be used as NoteValue
+        return other is NoteValueType || other is PrimitiveTypes.IntType || base.IsCompatibleWith(other);
+    }
 
-        public static NoteValueType Instance { get; } = new();
+    public enum Value
+    {
+        WHOLE = 0,
+        HALF = 1,
+        QUARTER = 2,
+        EIGHTH = 3,
+        SIXTEENTH = 4,
+        THIRTYSECOND = 5,
+        SIXTYFOURTH = 6,
+        ONETWENTYEIGHTH = 7
+    }
 
-        public override string Name => "NoteValue";
-
-        public override int GetSpecificity() => 132;
-
-        public override bool IsCompatibleWith(FlowType other)
+    public static Value Parse(string str)
+    {
+        switch (str.ToLowerInvariant().Trim())
         {
-            // NoteValue is backed by int, allow Int values to be used as NoteValue
-            return other is NoteValueType || other is PrimitiveTypes.IntType || base.IsCompatibleWith(other);
+            case "whole":
+            case "1":
+                return Value.WHOLE;
+            case "half":
+            case "2":
+                return Value.HALF;
+            case "quarter":
+            case "4":
+                return Value.QUARTER;
+            case "eighth":
+            case "8":
+                return Value.EIGHTH;
+            case "sixteenth":
+            case "16":
+                return Value.SIXTEENTH;
+            case "thirtysecond":
+            case "32":
+                return Value.THIRTYSECOND;
+            case "sixtyfourth":
+            case "64":
+                return Value.SIXTYFOURTH;
+            case "onetwentyeighth":
+            case "128":
+                return Value.ONETWENTYEIGHTH;
+            default:
+                throw new ArgumentException($"Invalid note value: {str}");
         }
+    }
 
-        public enum Value
+    public static double ToFraction(Value noteValue)
+    {
+        switch (noteValue)
         {
-            WHOLE = 0,
-            HALF = 1,
-            QUARTER = 2,
-            EIGHTH = 3,
-            SIXTEENTH = 4,
-            THIRTYSECOND = 5,
-            SIXTYFOURTH = 6,
-            ONETWENTYEIGHTH = 7
+            case Value.WHOLE:
+                return 1.0;
+            case Value.HALF:
+                return 0.5;
+            case Value.QUARTER:
+                return 0.25;
+            case Value.EIGHTH:
+                return 0.125;
+            case Value.SIXTEENTH:
+                return 0.0625;
+            case Value.THIRTYSECOND:
+                return 0.03125;
+            case Value.SIXTYFOURTH:
+                return 0.015625;
+            case Value.ONETWENTYEIGHTH:
+                return 0.0078125;
+            default:
+                throw new ArgumentException($"Invalid note value: {noteValue}");
         }
+    }
 
-        public static Value Parse(string str)
+    public static string Format(Value noteValue)
+    {
+        switch (noteValue)
         {
-            switch (str.ToLowerInvariant().Trim())
-            {
-                case "whole":
-                case "1":
-                    return Value.WHOLE;
-                case "half":
-                case "2":
-                    return Value.HALF;
-                case "quarter":
-                case "4":
-                    return Value.QUARTER;
-                case "eighth":
-                case "8":
-                    return Value.EIGHTH;
-                case "sixteenth":
-                case "16":
-                    return Value.SIXTEENTH;
-                case "thirtysecond":
-                case "32":
-                    return Value.THIRTYSECOND;
-                case "sixtyfourth":
-                case "64":
-                    return Value.SIXTYFOURTH;
-                case "onetwentyeighth":
-                case "128":
-                    return Value.ONETWENTYEIGHTH;
-                default:
-                    throw new ArgumentException($"Invalid note value: {str}");
-            }
+            case Value.WHOLE:
+                return "whole";
+            case Value.HALF:
+                return "half";
+            case Value.QUARTER:
+                return "quarter";
+            case Value.EIGHTH:
+                return "eighth";
+            case Value.SIXTEENTH:
+                return "sixteenth";
+            case Value.THIRTYSECOND:
+                return "thirtysecond";
+            case Value.SIXTYFOURTH:
+                return "sixtyfourth";
+            case Value.ONETWENTYEIGHTH:
+                return "onetwentyeighth";
+            default:
+                return noteValue.ToString().ToLowerInvariant();
         }
+    }
 
-        public static double ToFraction(Value noteValue)
-        {
-            switch (noteValue)
-            {
-                case Value.WHOLE:
-                    return 1.0;
-                case Value.HALF:
-                    return 0.5;
-                case Value.QUARTER:
-                    return 0.25;
-                case Value.EIGHTH:
-                    return 0.125;
-                case Value.SIXTEENTH:
-                    return 0.0625;
-                case Value.THIRTYSECOND:
-                    return 0.03125;
-                case Value.SIXTYFOURTH:
-                    return 0.015625;
-                case Value.ONETWENTYEIGHTH:
-                    return 0.0078125;
-                default:
-                    throw new ArgumentException($"Invalid note value: {noteValue}");
-            }
-        }
-
-        public static string Format(Value noteValue)
-        {
-            switch (noteValue)
-            {
-                case Value.WHOLE:
-                    return "whole";
-                case Value.HALF:
-                    return "half";
-                case Value.QUARTER:
-                    return "quarter";
-                case Value.EIGHTH:
-                    return "eighth";
-                case Value.SIXTEENTH:
-                    return "sixteenth";
-                case Value.THIRTYSECOND:
-                    return "thirtysecond";
-                case Value.SIXTYFOURTH:
-                    return "sixtyfourth";
-                case Value.ONETWENTYEIGHTH:
-                    return "onetwentyeighth";
-                default:
-                    return noteValue.ToString().ToLowerInvariant();
-            }
-        }
-
-        public override string ToString()
-        {
-            return "NoteValue";
-        }
+    public override string ToString()
+    {
+        return "NoteValue";
     }
 }

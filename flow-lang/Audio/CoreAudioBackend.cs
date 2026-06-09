@@ -221,6 +221,11 @@ public sealed class CoreAudioBackend : IAudioBackend
             throw new InvalidOperationException("No audio output available. CoreAudio init failed.");
     }
 
+    // Reusable scratch for WriteChunk — called continuously from the single
+    // streaming thread during live playback; a per-call allocation is steady-state
+    // Gen0 garbage on the audio-feed path (audit 2026-06-09 §8.6).
+    private float[] _chunkScratch = Array.Empty<float>();
+
     public void WriteChunk(float[] samples, int offset, int count, int sampleRate, int channels)
     {
         if (count <= 0)
@@ -229,12 +234,13 @@ public sealed class CoreAudioBackend : IAudioBackend
         EnsureInitialized(sampleRate, channels);
 
         // Build a clamped sub-buffer to avoid copying the entire source array.
-        var chunk = new float[count];
+        if (_chunkScratch.Length < count)
+            _chunkScratch = new float[count];
+        var chunk = _chunkScratch;
         for (int i = 0; i < count; i++)
         {
             int srcIdx = offset + i;
-            if (srcIdx >= samples.Length) break;
-            float s = samples[srcIdx];
+            float s = srcIdx < samples.Length ? samples[srcIdx] : 0f;
             if (float.IsNaN(s) || float.IsInfinity(s))
                 chunk[i] = 0f;
             else

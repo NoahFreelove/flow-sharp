@@ -8,11 +8,13 @@ using Xunit;
 namespace FlowLang.Tests.Integration.Phase38;
 
 /// <summary>
-/// Phase 38 Plan 38-01 — Wave 0 debounce coalescing tests.
+/// Phase 38 / Audit-0609 D3 — debounce coalescing tests.
 ///
-/// Asserts that <see cref="LiveReloadManager.DebounceMs"/> is 200ms (D-38-05 /
-/// Pitfall #21) and that rapid file-change events within 200ms coalesce into a
-/// single render trigger.
+/// Audit-0609 D3 replaced the D-38-05 leading-edge gate with a trailing-edge
+/// restartable timer (owner approval 2026-06-09). Each file-change event resets
+/// a <see cref="LiveReloadManager.DebounceMs"/>-ms timer; the render fires once
+/// after the burst quiesces. This ensures the FINAL write of a format-on-save
+/// or atomic-rename editor is never dropped.
 ///
 /// The tests subclass <see cref="LiveReloadManager"/> via a testable seam to
 /// count <c>OnRenderTriggered()</c> invocations without booting <c>FlowEngine</c>.
@@ -33,8 +35,9 @@ public class WatchDebounceTests : IDisposable
     }
 
     /// <summary>
-    /// D-38-05 LOCK: the debounce constant on <see cref="LiveReloadManager"/>
-    /// MUST be 200ms (down from the Phase 28 500ms baseline).
+    /// The debounce constant MUST remain 200ms (D-38-05 value — Audit-0609 D3
+    /// changed the debounce SHAPE from leading-edge to trailing-edge but kept
+    /// the 200ms window).
     /// </summary>
     [Fact]
     public void DebounceMs_Is200_NotLegacy500()
@@ -43,8 +46,31 @@ public class WatchDebounceTests : IDisposable
     }
 
     /// <summary>
-    /// Two synthetic Changed events 50ms apart MUST coalesce — the debounce
-    /// gate fires the render trigger exactly once.
+    /// A burst of three events all within 200ms MUST yield exactly ONE render
+    /// reading the FINAL content (trailing-edge contract). We wait >200ms after
+    /// the last event to let the timer fire, then assert count == 1.
+    /// </summary>
+    [Fact]
+    public void BurstOfThreeEventsWithin200ms_YieldsExactlyOneRender()
+    {
+        using var harness = new CountingLiveReloadHarness();
+
+        // Simulate a format-on-save burst: 3 events within ~60ms.
+        harness.SimulateChange();
+        Thread.Sleep(20);
+        harness.SimulateChange();
+        Thread.Sleep(20);
+        harness.SimulateChange(); // ← this is the "FINAL write"
+
+        // Wait for the trailing-edge timer to fire (200ms from last event).
+        Thread.Sleep(350);
+
+        Assert.Equal(1, harness.RenderTriggerCount);
+    }
+
+    /// <summary>
+    /// Two events 50ms apart MUST coalesce — the debounce timer resets on the
+    /// second event so only one render fires.
     /// </summary>
     [Fact]
     public void RapidSaves_Within200ms_CoalesceIntoOneRender()
@@ -55,26 +81,29 @@ public class WatchDebounceTests : IDisposable
         Thread.Sleep(50);
         harness.SimulateChange();
 
-        // Give the debounce gate a moment to settle (gate operates on wall-clock).
-        Thread.Sleep(50);
+        // Wait for the trailing-edge timer to fire.
+        Thread.Sleep(350);
 
         Assert.Equal(1, harness.RenderTriggerCount);
     }
 
     /// <summary>
-    /// Two Changed events 220ms apart cross the 200ms threshold and MUST fire
-    /// the render trigger twice.
+    /// Two events 220ms apart produce TWO renders: the first timer fires at
+    /// T+200ms (before the second event at T+220ms), the second event starts a
+    /// new timer that fires at T+420ms.
     /// </summary>
     [Fact]
-    public void RapidSaves_220msApart_TriggerTwoRenders()
+    public void TwoSaves_220msApart_TriggerTwoRenders()
     {
         using var harness = new CountingLiveReloadHarness();
 
         harness.SimulateChange();
-        Thread.Sleep(220);
-        harness.SimulateChange();
+        Thread.Sleep(220); // first timer fires at T+200ms; second event at T+220ms
 
-        Thread.Sleep(50);
+        Assert.Equal(1, harness.RenderTriggerCount); // first render already fired
+
+        harness.SimulateChange();
+        Thread.Sleep(350); // wait for second timer
 
         Assert.Equal(2, harness.RenderTriggerCount);
     }

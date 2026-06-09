@@ -79,12 +79,13 @@ public sealed class MarkdownEmitter
         for (int i = 0; i < m.Examples.Count; i++)
         {
             sb.Append("```flow\n").Append(EscFenced(m.Examples[i])).Append("\n```\n");
-            if (i < m.ExampleFailures.Count)
+            // ExampleFailures is a same-length list: index i corresponds to
+            // Examples[i]. Empty string = pass (no annotation); non-empty =
+            // the [example failed] text for that specific example.
+            if (i < m.ExampleFailures.Count && !string.IsNullOrEmpty(m.ExampleFailures[i]))
                 sb.Append("> ").Append(m.ExampleFailures[i]).Append("\n");
             sb.Append('\n');
         }
-        for (int i = m.Examples.Count; i < m.ExampleFailures.Count; i++)
-            sb.Append("> ").Append(m.ExampleFailures[i]).Append("\n\n");
     }
 
     private static string EscCell(string s) =>

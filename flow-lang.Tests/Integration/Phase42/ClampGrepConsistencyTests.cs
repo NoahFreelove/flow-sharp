@@ -39,7 +39,7 @@ public class ClampGrepConsistencyTests
     [Fact]
     public void ClampGrep_ProducesAllInventoryFiles()
     {
-        if (!IsBashAvailable()) return;
+        if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
 
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
@@ -76,7 +76,7 @@ public class ClampGrepConsistencyTests
     [Fact]
     public void AllClamps_CountWithinTolerance()
     {
-        if (!IsBashAvailable()) return;
+        if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
 
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
@@ -98,7 +98,7 @@ public class ClampGrepConsistencyTests
     [Fact]
     public void AdvisorySites_CountWithinTolerance()
     {
-        if (!IsBashAvailable()) return;
+        if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
 
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
@@ -120,7 +120,7 @@ public class ClampGrepConsistencyTests
     [Fact]
     public void AdvisorySites_ContainsKnownSentinels()
     {
-        if (!IsBashAvailable()) return;
+        if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
 
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
@@ -152,7 +152,11 @@ public class ClampGrepConsistencyTests
     [Fact]
     public void FlowCallers_DeclaresKnownStdlibProcs()
     {
-        if (!IsBashAvailable()) return;
+        if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
+        // flow-callers.sh uses `shopt -s globstar` which requires bash 4+.
+        // macOS ships bash 3.2 (GPLv2 — Apple does not update it); skip on bash < 4.
+        if (BashMajorVersion() < 4)
+            Assert.Skip("bash < 4 (no globstar) — flow-callers.sh requires bash 4+; macOS ships bash 3.2");
 
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "flow-callers.sh"));
@@ -196,7 +200,11 @@ public class ClampGrepConsistencyTests
     [Fact]
     public void InventoryFiles_LandInPhase42DataDir()
     {
-        if (!IsBashAvailable()) return;
+        if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
+        // flow-callers.sh (run inside this test) uses `shopt -s globstar` (bash 4+).
+        // macOS ships bash 3.2 — skip the combined inventory test on bash < 4.
+        if (BashMajorVersion() < 4)
+            Assert.Skip("bash < 4 (no globstar) — flow-callers.sh requires bash 4+; macOS ships bash 3.2");
 
         string repoRoot = FindRepoRoot();
         string expectedDir = Path.Combine(
@@ -269,13 +277,47 @@ public class ClampGrepConsistencyTests
     }
 
     /// <summary>
-    /// Bash is required for the audit shell scripts. On a hypothetical Windows
-    /// CI run we skip the test bodies (early return from the caller).
+    /// Bash is required for the audit shell scripts. On Windows, bash is not
+    /// guaranteed; on Linux/macOS bash is always present.
     /// </summary>
     private static bool IsBashAvailable()
     {
         return RuntimeInformation.IsOSPlatform(OSPlatform.Linux)
             || RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+    }
+
+    /// <summary>
+    /// Audit-0609 §8.1: returns the major version of the system bash (e.g. 3
+    /// on macOS which ships bash 3.2, 5 on modern Linux). Returns 0 if bash
+    /// cannot be queried. Used to gate scripts that require bash 4+
+    /// (shopt -s globstar).
+    /// </summary>
+    private static int BashMajorVersion()
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "bash",
+                Arguments = "--version",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            using var proc = Process.Start(psi);
+            if (proc == null) return 0;
+            string output = proc.StandardOutput.ReadToEnd();
+            proc.WaitForExit(3000);
+            // Output starts with "GNU bash, version M.m.p..." — grab M.
+            var match = System.Text.RegularExpressions.Regex.Match(
+                output, @"version\s+(\d+)\.");
+            return match.Success ? int.Parse(match.Groups[1].Value) : 0;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     /// <summary>

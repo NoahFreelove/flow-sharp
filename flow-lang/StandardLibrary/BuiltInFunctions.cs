@@ -1637,6 +1637,7 @@ public static class BuiltInFunctions
 
             if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
             if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
+            if (steps > 1024) throw new InvalidOperationException("euclidean: steps exceeds safety limit of 1024");
             if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
 
             var (noteName, octave, alteration) = NoteType.Parse(noteStr);

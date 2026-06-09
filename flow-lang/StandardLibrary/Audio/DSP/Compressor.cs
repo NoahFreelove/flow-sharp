@@ -39,8 +39,11 @@ public static class Compressor
             ? (float)Math.Exp(-1.0 / (releaseMs * 0.001 * input.SampleRate))
             : 0f;
 
-        // Process using peak detection across all channels per frame
-        float envelopeDb = -96f; // Start at silence floor
+        // Process using peak detection across all channels per frame.
+        // envelopeDb is the APPLIED GAIN in dB (0 = unity / no reduction), not a
+        // signal-level follower — it must start at unity or the release curve
+        // fades the buffer in from silence over ~450 ms (audit 2026-06-09 §3.1).
+        float envelopeDb = 0f;
 
         for (int frame = 0; frame < input.Frames; frame++)
         {

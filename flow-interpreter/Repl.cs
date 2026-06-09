@@ -60,17 +60,36 @@ public class Repl
             Console.Write("> ");
         };
 
+        // Audit 0609 §5.1 — wire the Phase 38 ReplLineEditor (PrettyPrompt +
+        // in-process flow-lsp Tab completion + Ctrl+R + persistent history) into
+        // the production loop. PrettyPrompt REQUIRES a real interactive console:
+        // when stdin/stdout are redirected (pipes, CI, the existing
+        // redirected-stdin REPL tests) — or when construction throws on a host
+        // without a usable terminal — we fall back to the legacy
+        // Console.ReadLine path so scripted/piped usage stays byte-identical to
+        // before. Construction is lazy + guarded so a fallback host never pays
+        // the index-build cost or crashes.
+        if (ShouldUseInteractiveEditor())
+        {
+            _lineEditor = TryCreateLineEditor();
+        }
+
         try
         {
             while (true)
             {
-                var input = ReadCompleteInput();
+                var input = ReadNextInput();
 
                 if (input == null)
                     break; // EOF (e.g., Ctrl+D)
 
                 if (string.IsNullOrWhiteSpace(input))
                     continue;
+
+                // Audit 0609 §5.1 — persist every non-blank submission to the
+                // on-disk history so Ctrl+R reverse-search (and the next session)
+                // can see it. No-op on the legacy path (_lineEditor == null).
+                _lineEditor?.AppendHistory(input);
 
                 // Handle special commands
                 if (input.StartsWith(':'))
@@ -125,10 +144,67 @@ public class Repl
         }
         finally
         {
+            _lineEditor?.Dispose();
             _engine.Dispose();
         }
 
         Console.WriteLine("Goodbye!");
+    }
+
+    /// <summary>
+    /// Audit 0609 §5.1 — decides whether the interactive PrettyPrompt editor can
+    /// drive this session. PrettyPrompt needs a real terminal for both input
+    /// (raw key reads) and output (cursor positioning), so a redirected stdin OR
+    /// stdout disqualifies it. Extracted as a pure static so the decision is
+    /// unit-testable without a TTY (the interactive path itself cannot be).
+    /// </summary>
+    public static bool ShouldUseInteractiveEditor(bool inputRedirected, bool outputRedirected)
+        => !inputRedirected && !outputRedirected;
+
+    /// <summary>Production overload — reads the real Console redirection flags.</summary>
+    private static bool ShouldUseInteractiveEditor()
+        => ShouldUseInteractiveEditor(Console.IsInputRedirected, Console.IsOutputRedirected);
+
+    /// <summary>
+    /// Audit 0609 §5.1 — lazily constructs the line editor, swallowing any
+    /// construction failure (a host that reports a non-redirected console but
+    /// cannot actually back PrettyPrompt, missing $HOME for the history file,
+    /// etc.). On failure the caller falls back to the legacy Console.ReadLine
+    /// path (charitable D-v1.5-05 — the REPL must never refuse to start).
+    /// </summary>
+    private static ReplLineEditor? TryCreateLineEditor()
+    {
+        try
+        {
+            return new ReplLineEditor(promptText: "> ", continuationPrompt: "... ");
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Audit 0609 §5.1 — reads one complete composer submission. Routes through
+    /// the PrettyPrompt editor when it was successfully constructed (interactive
+    /// console), otherwise the legacy multi-line <see cref="ReadCompleteInput"/>.
+    /// PrettyPrompt OWNS multi-line submission for the interactive path: bare
+    /// Enter on unbalanced input is transformed into a soft-newline by
+    /// <c>FlowPromptCallbacks.TransformKeyPressAsync</c> (which calls the same
+    /// <see cref="ReplInputCompleteness"/> completeness check the legacy path
+    /// uses), so <c>ReadLineAsync</c> returns the whole balanced buffer. Returns
+    /// null on EOF / Ctrl+D in both paths.
+    /// </summary>
+    private string? ReadNextInput()
+    {
+        if (_lineEditor is null)
+            return ReadCompleteInput();
+
+        // PrettyPrompt is async; the REPL loop is synchronous. GetAwaiter().GetResult()
+        // is the standard sync-over-async bridge here — there is no SynchronizationContext
+        // on the console host, so no deadlock risk (unlike a UI thread).
+        return _lineEditor.ReadLineAsync(System.Threading.CancellationToken.None)
+                          .GetAwaiter().GetResult();
     }
 
     private void AutoImportStandardModules()
