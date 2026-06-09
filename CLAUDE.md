@@ -86,6 +86,65 @@ dotnet build flow-lang/flow-lang.csproj -p:FlowTarget=Web
 
 When adding new audio/network/IO features that may not work in the browser: (1) add a `#if !FLOW_WEB` guard at the actual call site (NOT a wrapper method); (2) if composer-invoked at parse-time or import-time, add a charitable advisory at Parser or ModuleLoader; (3) tag exercising tests with `[FlowTargetFact("Desktop")]`; (4) if a new package is pulled, add it to `AssemblyReferenceScanTests.ForbiddenTypeRefPrefixes` so Web build drift is caught.
 
+## WASM Runtime
+
+**Phase 48 SHIPPED 2026-06-05** — `flow-lang` ships under .NET 10 Mono-WASM via `FlowTarget=Web`. Browser audio out routes through a real `WebAudioBackend` (JSImport-driven `AudioContext` + `AudioBufferSourceNode`). The `flow-runtime.js` ES module exposes a frozen 5-export API for Phase 49 SvelteKit consumption. Built on the Phase 47 compile-target conditioning. First runnable browser build of Flow; HUMAN-UAT-confirmed audible in Firefox.
+
+### Publish
+
+```bash
+dotnet publish flow-lang/flow-lang.csproj -p:FlowTarget=Web -c Release
+# AppBundle: flow-lang/bin/Release/net10.0/browser-wasm/AppBundle/
+#   flow-runtime.js + index.html + package.json at root; dotnet.js + dotnet.boot.js
+#   + flow-lang.wasm + System.*.wasm under _framework/. Serve the AppBundle root
+#   (python3 -m http.server) and visit /index.html.
+```
+
+`wasm-tools` workload is a machine-level prerequisite for the Web build: `dotnet workload install wasm-tools`.
+
+### flow-runtime.js API surface (D-48-13 frozen)
+
+```js
+import { loadFlowRuntime } from "./wasm/flow-runtime.js";
+const runtime = await loadFlowRuntime();
+const result = await runtime.run('use "@audio"\n(play (createSineTone 440Hz 1.0 0.5))');
+// result: { wav?, midi?, stdout, stderr, errors[], durationMs }
+runtime.play(wav, sampleRate, channels);
+runtime.stop();
+runtime.dispose();
+await runtime.resumeAudio(); // convenience — call from a user-gesture frame
+```
+
+Source files: `flow-lang/wasm/flow-runtime.js` (ES module) + `flow-lang/Runtime/WasmEntry.cs` (4 `[JSExport]` methods + `RunResult`/`RunError` POCOs + source-gen `FlowWasmJsonContext`) + `flow-lang/Audio/FlowRuntimeInterop.cs` (5 `[JSImport]` audio bindings).
+
+### Key contracts
+
+- **Autoplay policy (D-48-09)**: Phase 49 must call `resumeAudio()` from inside a user-gesture (button onclick) frame, in the same async frame as `run()`. `WebAudioBackend` never calls `resume()` itself.
+- **30s wall-clock cap (D-48-10)**: hard cap on Desktop; **best-effort/non-preemptive in single-threaded WASM** — `RunFromJs` runs Flow eval SYNCHRONOUSLY on the one Mono-WASM thread (Task.Run+Wait deadlocks it). A runaway script hangs its own tab. The `"cancel"` `RunError.kind` stays DEFINED but is not raised in-browser.
+- **stdout/stderr split (D-48-15)**: Flow `print` → `RunResult.stdout`. Advisories (`[tuning] ...`, `[live] ...`, etc.) → `RunResult.stderr` (per-call StringWriter redirect, finally-restore).
+- **Structured errors (D-48-14)**: `RunError = { kind, message, line?, column?, sourceSnippet? }`, `kind ∈ parse|eval|runtime|cancel|platform-not-supported`. Phase 49 renders Rust-style diagnostic boxes.
+- **Stereo always (D-48-07)**: `WebAudioBackend.PromoteToStereo` dupes mono to L+R (constant-power) before the JSImport marshal. Matches Phase 37 B2 LOCK.
+- **One AudioContext per FlowEngine (D-48-08)**: lazy-created on first play; closed on Dispose. Cached JS-side in `_audioContext`.
+- **Two-run cmp-clean (D-48-16)**: same source → byte-identical `RunResult` JSON (excluding `durationMs`). Pinned by `WasmDeterminismTests`.
+- **Bundle size budget (D-48-05)**: 3.07 MB compressed Brotli at the canonical Plan 48-05 measurement (post-boot-fix Webcil AppBundle re-measures 1.63 MB) — MONOLITHIC SHIP, no lazy-load. `48-BUNDLE-SIZE.md` self-regenerates per test run. v1.6 lazy-load reserved if a single stdlib grows past budget.
+- **DryWetMidi retained on Web (D-48-17 confirmed)**: `writeMidi` works on the Web target → `RunResult.midi` as Uint8Array. Phase 49 wires the Blob download (D-48-18).
+- **Trim roots (D-48-02)**: `wasm/trim-roots.xml` preserves FlowType subclasses + SpecialTypes + PrimitiveTypes + ArrayType + AudioBuffer + Value + WebAudioBackend — NOT InternalFunctionRegistry (zero reflection use). JSON is source-generated because TrimMode=full disables reflection-based System.Text.Json.
+
+### Composer-facing behavior on Web target (extends Phase 47)
+
+- `(play buffer)` → audible via browser `AudioContext`.
+- `(print ...)` → `RunResult.stdout`.
+- `(writeMidi ...)` → `RunResult.midi` (Uint8Array; download via Phase 49 UI).
+- Advisories → `RunResult.stderr`.
+- Parse / eval / runtime errors → `RunResult.errors[]` structured.
+- `use "@sfz"`, `use "@osc"` → ModuleLoader charitable advisory (Phase 47 D-47-09); stripped stdlib procs (`micBuffer`/`loadSfz`) charitably skipped on Web.
+- `live { }` block → parse-time error (Phase 47 D-47-09).
+- `(micBuffer ...)` → function not found (InputFunctions stripped per Phase 47).
+
+### Hand-off to Phase 49
+
+See `.planning/phases/48-wasm-runtime-webaudio-backend/48-PHASE49-HANDOFF.md` for the full consumption contract (API surface, AppBundle layout, SvelteKit integration, COOP/COEP preview, MIDI/WAV download, "what Phase 49 must NOT change").
+
 ## Project Structure
 
 Two projects: **flow-lang** (library, namespace `FlowLang`) and **flow-interpreter** (REPL/CLI, namespace `FlowInterpreter`).

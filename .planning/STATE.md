@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Stage, Studio, Web
 status: ready_to_plan
-stopped_at: Phase 46 complete (6/6) — ready to discuss Phase 47
-last_updated: 2026-05-30T16:21:36.061Z
-last_activity: 2026-05-30 -- Phase 46 execution started
+stopped_at: Phase 48 SHIPPED 2026-06-05 (WASM Runtime + WebAudioBackend — Mono-WASM publish + flow-runtime.js ES module + real WebAudioBackend via JSImport + 3.07 MB compressed bundle)
+last_updated: 2026-06-05T00:00:00.000Z
+last_activity: 2026-06-05 -- Phase 48 closed (Plan 48-07 closer): 48-VERIFICATION.md + 48-PHASE49-HANDOFF.md written; STATE/ROADMAP/REQUIREMENTS/CLAUDE/MILESTONES flipped to Phase 48 SHIPPED
 progress:
   total_phases: 15
-  completed_phases: 9
+  completed_phases: 11
   total_plans: 84
-  completed_plans: 252
-  percent: 60
+  completed_plans: 78
+  percent: 93
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-17)
 
 **Core value:** Users can write musical ideas as code and hear them immediately -- the language must faithfully translate musical notation into correct, playable audio.
-**Current focus:** Phase 47 — compile target flavors
+**Current focus:** Phase 48 SHIPPED — Phase 49 (flowlang.dev SvelteKit site) next
 
 ## Current Position
 
-Phase: 47
-Plan: Not started
-Next step: `/clear` then `/gsd:execute-phase 48` (resumes wave-5 — 48-06 HUMAN-UAT + 48-07 closer); Phase 46 (Codebase Bloat Removal) also pending
+Phase: 48 SHIPPED 2026-06-05
+Plan: 7/7 complete
+Next step: `/clear` then `/gsd:plan-phase 49` (Phase 49 unblocked — SvelteKit playground consumes flow-runtime.js per `.planning/phases/48-wasm-runtime-webaudio-backend/48-PHASE49-HANDOFF.md`). Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) also pending for milestone close.
 
 Status: Ready to plan
-Last activity: 2026-05-30
+Last activity: 2026-06-05
 
 **Phase 45 highlights (2026-05-29):**
 
@@ -42,6 +42,20 @@ Last activity: 2026-05-30
 - Two composer tutorials: `examples/beat/intro.flow` (6/8 jig — 4/4 identity vs 6/8 `1b = eighth`) + `examples/beat/cut-time.flow` (2/2 — `1b = half`). Both render MIDI + WAV; committed two-run cmp-clean baselines at `flow-lang.Tests/baselines/Phase45/{intro,cut-time}.wav` (intro SHA-256 `d401374c…`, cut-time `d3e0e832…`). No PRNG sites → byte-identical across runs.
 - Phase 45 xUnit fixture suite: **66 Facts GREEN** (7 lex + 5 AST-shape + 10 pragma-plumbing + 13 multiplier-matrix + 9 constructor/DICT-01 + 4 str round-trip + 1 cross-file smoke + 4 tutorial + Phase45TestCategory). Phase 44 strict suite 275/275 GREEN — the shared per-proc push/pop change introduced zero strict-mode regression. 4 composer `.flow` smokes (`test_beat_literal` / `_pragma_off` / `_pragma_on` / `_cross_file`) all exit 0 with PASSED markers.
 - 4 commits: `4a0a041` (cross-file boundary + str Facts + Rule 1 ProcDeclaration.IsBeatTrueToSig), `308c37a` (tutorials + baselines + tutorial Facts), + tracking-file sweep commit (this closer). v1.5 milestone progress: **10/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47).
+
+**Phase 48 highlights (2026-06-05) — SHIPPED:**
+
+- Mono-WASM publish pipeline lands at `flow-lang.csproj` (jiterpreter + InvariantGlobalization + HybridGlobalization=false + TrimMode=full + Debug-only WasmEmitSymbolMap). `TrimmerRootDescriptor` (`wasm/trim-roots.xml`) preserves FlowType singletons + 21 SpecialTypes + 16 PrimitiveTypes + ArrayType + AudioBuffer + Value + WebAudioBackend per PATTERNS.md Discrepancy 3 — NOT InternalFunctionRegistry (zero reflection use, audit-confirmed).
+- `WebAudioBackend` real implementation swaps Phase 47's 7 stub-throw bodies for JSImport-driven AudioContext lifecycle (one context per engine, lazy — D-48-08) + constant-power mono→stereo promotion before marshal (D-48-07) + charitable Desktop fallback (D-48-11). `FlowRuntimeInterop.cs` declares the 5 `[JSImport(..., "flow-runtime")]` audio bindings.
+- `flow-runtime.js` ES module ships the frozen 5-export API surface per D-48-13 (`loadFlowRuntime` + `run` + `play` + `stop` + `dispose` + `resumeAudio` convenience). `WasmEntry.cs` exposes 4 `[JSExport]` methods + `RunResult`/`RunError` POCOs with structured-error marshalling (D-48-14) + stdout/stderr split (D-48-15), serialized through a source-generated `JsonSerializerContext` so camelCase + null-omission survive TrimMode=full.
+- Bundle size: **3.07 MB compressed Brotli** (10.99 MB uncompressed) at the canonical Plan 48-05 measurement, vs. the 15 MB D-48-05 target → MONOLITHIC SHIP, no lazy-load. Post-boot-fix Webcil AppBundle re-measures even smaller (1.63 MB Brotli / 5.38 MB uncompressed in `48-BUNDLE-SIZE.md`).
+- DryWetMidi 8.0.3 WASM-compat confirmed (D-48-17 "compatible" branch) — `flow-lang.dll` retains the reference reachably (Mono.Cecil post-publish scan); `writeMidi` is callable from the Web target and surfaces as `RunResult.midi` (Uint8Array).
+- 3 culture-sensitive call sites fixed for invariant-globalization mode (HarmonyFunctions:441 + ScaleDatabase:182,233; Turkish-I hazard closed, D-48-03); `CultureInvariantSweepTests` CI gate prevents regression.
+- **Plan 48-06 in-phase boot-blocker repair (9 `fix(48-06)` commits):** the first browser smoke surfaced a `dotnet.boot.js` 404 — a `FlowTarget=Web` *library* publish skipped app-bundle generation entirely. Root-caused + fixed: `08140bb` emits a bootable AppBundle, `35dd537` gates it to the publish phase, `5b80c01` source-gen JSON (trim-safe), `5ccc10e` embeds stdlib `.flow` as resources, `a8c1911` + `805269c` run Flow eval + `WebAudioBackend.Play` synchronously (Task.Run+Wait deadlocks single-threaded WASM — D-48-10 amended to best-effort non-preemptive in-browser), `b46589c` charitably skips stripped-impl stdlib procs (`micBuffer`/`loadSfz`), `941ef0a` prepends `use "@audio"` default, `a5ae19f` create+resume AudioContext inside `resumeAudio()`. Boot manifest now serves HTTP 200.
+- HUMAN-UAT outcome: **1/3 browser rows PASS** — Firefox (Linux) audible 440 Hz tone on Run click, autoplay-correct (D-48-09 satisfied) — proving .NET-in-WASM → browser AudioContext audio end-to-end. Chrome audio re-smoke DEFERRED (boot blocker fixed + HTTP-verified; Firefox proves the engine path), Safari SKIPPED (no macOS). Both follow-ups logged to `.planning/MILESTONES.md` v1.6 backlog. See `48-HUMAN-UAT.md`.
+- Phase 48 xUnit additions: **19 new Facts** (3 WasmBuildPipeline + 4 DryWetMidi/CultureSweep + 8 WebAudioBackendIntegration + 4 BundleSize/Determinism); full Desktop test suite remains green (Phase 47 baseline preserved; Plan 48-03 retired 7 inverted stub Facts, added 8 — coverage strictly improved).
+- Zero new NuGet packages across all 7 plans (Mono-WASM ships in the .NET 10 SDK; Brotli + System.Text.Json + JsonNode + `[JSImport]`/`[JSExport]` all BCL). v1.5 milestone progress: **11/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 + 48).
+- Both build targets verified at closer: `dotnet build flow-lang -p:FlowTarget=Desktop` exits 0; `-p:FlowTarget=Web` exits 0. No production code touched by the closer.
 
 **Phase 48 Plan 05 highlights (2026-05-26):**
 
@@ -157,8 +171,9 @@ Last activity (Plan 03): WebAudioBackend real [JSImport] impl — see prior STAT
 | 44 | Strict Mode | REQ-STRICT-01..15 | 15 | Shipped 2026-05-25 |
 | 45 | Beat Literal Syntax & True-to-Sig Pragma | REQ-BEAT-LEX/AST/PRAGMA/CONSTRUCTOR/TEST/DOC-NN | 26 | **Shipped 2026-05-29** |
 | 47 | Compile-Target Flavors | REQ-WEB-TARGET-01..10 | 10 | **Shipped 2026-05-25** |
+| 48 | WASM Runtime + WebAudioBackend | REQ-WASM-BUILD-01..05, REQ-WEBAUDIO-01..04, REQ-WASM-API-01..03, REQ-WASM-DRYWET-01, REQ-WASM-SIZE-01, REQ-WASM-DET-01 | 15 | **Shipped 2026-06-05** |
 
-**v1.5 progress: 10/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 — note: 44 + 47 shipped same day; 45 shipped 2026-05-29). 138 v1.5 REQs total; 119 closed + Phase 40/41/46/48/49 still pending.
+**v1.5 progress: 11/15 phases complete** (35 + 36 + 37 + 38 + 39 + 42 + 43 + 44 + 45 + 47 + 48 — note: 44 + 47 shipped same day; 45 shipped 2026-05-29; 48 shipped 2026-06-05). 153 v1.5 REQs total; 134 closed + Phase 40/41/46/49 still pending.
 
 **Build-order constraints from research:**
 

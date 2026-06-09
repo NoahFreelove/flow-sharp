@@ -4,6 +4,20 @@ Historical record of shipped versions. Full details archived in `.planning/miles
 
 ---
 
+## v1.6 Backlog (forward-deferred, not yet scheduled)
+
+Items deferred during v1.5 phases that are out of scope for the current milestone but should not be lost. Scheduled into a v1.6 milestone when one is opened.
+
+**WASM runtime + browser (Phase 48 follow-ups):**
+- Chrome (+ other Chromium) WASM audio re-smoke — the original 2026-05-30 boot blocker (`dotnet.boot.js` 404 / no AppBundle) was root-caused + FIXED + HTTP-verified in Phase 48 (curl `/_framework/dotnet.boot.js` → HTTP 200); the human audio ear-check was deferred because Firefox already passed on the same engine path. Re-smoke audio in Chrome/Chromium early in Phase 49.
+- Safari WASM smoke — no macOS available during Phase 48 (Linux-only dev machine); verify under Phase 49 / v1.6. Safari historically has the strictest autoplay policy; the D-48-09 gesture chain should satisfy it but confirm.
+- AudioWorklet + SharedArrayBuffer ring-buffer streaming (D-48-02) for live-coding-in-browser — requires COOP/COEP headers (Cloudflare Pages supports natively; Phase 49 may wire preemptively) + un-stripping `live { }` blocks for Web. Multi-week stretch; also unlocks a real preemptive 30s cap via a worker thread (D-48-10).
+- NativeAOT-LLVM via a source-generator pass on `InternalFunctionRegistry` (D-v1.5-02) — would let `flow-lang.dll` AOT-link, dropping bundle size 50%+. Source-gen authoring is non-trivial.
+- `runtime.exportWav()` helper in `flow-runtime.js` (D-48-18 WAV-download parallel) — hand-rolled WAVE-header wrap for browser download; v1 plays audio live via WebAudioBackend instead.
+- v1.6 WebRTC DataChannel OSC-shaped surface; WebMIDI for live MIDI hardware; IndexedDB persistence for saved scripts; service-worker offline-PWA playground.
+
+---
+
 ## v1.4 Audio Fidelity, Distribution & Public Showcase — Shipped 2026-05-16
 
 **Goal:** Ship the v1.4 audio-fidelity rewrite (per-voice polyphony + articulation envelopes + sampled tonal instruments), the distribution wedge (self-contained `flow` CLI + install + XDG config + MIDI↔Flow round-trip), LSP polish + JetBrains plugin scaffolding, full Scala (`.scl`) microtonal tuning loader, SFZ orchestral sampler (blessed library: VSCO Community CE 1.1.0), and the curated symphony showcase + ragtime companion as the milestone closer — flipping Flow from pre-public to public.

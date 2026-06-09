@@ -584,7 +584,7 @@ Plans:
 
 - [x] 47-06-PLAN.md — Closer: 47-VERIFICATION.md + ROADMAP/STATE/REQUIREMENTS/CLAUDE.md sweep + 18-file test-project Web build closer — `4ce8074` (VERIFICATION) + closer commits (this plan)
 
-### Phase 48: WASM Runtime + WebAudioBackend
+### Phase 48: WASM Runtime + WebAudioBackend — SHIPPED 2026-06-05
 
 **Goal**: Build flow-lang under .NET 10 Mono-WASM with `FlowTarget=Web`, ship a `WebAudioBackend` that pushes rendered audio through the browser's `AudioContext`, and produce a deployable JS bundle that Phase 49 consumes from its SvelteKit playground tab. Single biggest feasibility risk in the v1.5 milestone — research surfaced no .NET-in-WASM prior art for AudioWorklet driving, so v1 ships the conservative offline-render → `AudioBuffer` → `AudioBufferSourceNode` pattern.
 
@@ -605,17 +605,18 @@ Plans:
 
 **Depends on**: Phase 47 (needs FlowTarget=Web build to exist). Phase 48 ↔ Phase 49 are commutative for SCAFFOLDING work (Phase 49 can build the SvelteKit shell + docs sync independently), but Phase 49's playground tab cannot wire to a real runtime until Phase 48 ships `flow-runtime.js`. Ordering: 48 fully completes before Phase 49 starts the playground-tab work; Phase 49 may run in parallel for non-playground work (marketing pages, docs, navigation, design system).
 **Requirements**: REQ-WASM-BUILD-01..05 (build pipeline), REQ-WEBAUDIO-01..04 (backend), REQ-WASM-API-01..03 (JS glue), REQ-WASM-SIZE-01 (bundle budget), REQ-WASM-DET-01 (determinism), REQ-WASM-DRYWET-01 (DryWetMidi compat).
-**Plans:** 4/7 plans executed
+**Outcome:** Phase 48 SHIPPED 2026-06-05. 15 REQs closed. Bundle: 3.07 MB compressed Brotli (MONOLITHIC SHIP, no lazy-load — under the 15 MB D-48-05 target; post-boot-fix Webcil AppBundle re-measures 1.63 MB). flow-runtime.js API frozen for Phase 49 (see `.planning/phases/48-wasm-runtime-webaudio-backend/48-PHASE49-HANDOFF.md`). HUMAN-UAT APPROVED-WITH-FOLLOWUP: Firefox PASS (audible 440 Hz tone, autoplay-correct) proves the runtime; Chrome audio re-smoke + Safari smoke deferred to v1.6 backlog. 19 new xUnit Facts; Phase 47 baseline preserved; zero new NuGet packages. v1.5 milestone progress: 11/15 phases complete.
+**Plans:** 7/7 plans complete
 
 Plans:
 
-- [x] 48-01-PLAN.md — WASM build pipeline foundation (csproj + trim-roots.xml + WasmBuildPipelineTests)
-- [x] 48-02-PLAN.md — DryWetMidi WASM publish smoke + culture-invariant sweep (D-48-17 closed: DryWetMidi reference retained per Mono.Cecil scan of published flow-lang.dll; 3 ToUpper/ToLower sites converted to *Invariant; 4/4 new Facts PASS)
-- [x] 48-03-PLAN.md — WebAudioBackend real implementation ([JSImport] + stereo promotion + 30s cap)
-- [x] 48-04-PLAN.md — flow-runtime.js ES module + WasmEntry.cs [JSExport] + index.html dev harness
-- [ ] 48-05-PLAN.md — Bundle size budget + two-run determinism pin
-- [ ] 48-06-PLAN.md — HUMAN-UAT browser smoke (Chrome / Firefox / Safari) — autonomous:false
-- [ ] 48-07-PLAN.md — Closer (VERIFICATION + Phase 49 handoff + planning-artifact flips)
+- [x] 48-01-PLAN.md — WASM build pipeline foundation (csproj + trim-roots.xml + WasmBuildPipelineTests) — `74ac158` / `c6dc20d` / `447662f`
+- [x] 48-02-PLAN.md — DryWetMidi WASM publish smoke + culture-invariant sweep (D-48-17 closed: DryWetMidi reference retained per Mono.Cecil scan of published flow-lang.dll; 3 ToUpper/ToLower sites converted to *Invariant; 4/4 new Facts PASS) — `8ab1de6` / `a4f726d`
+- [x] 48-03-PLAN.md — WebAudioBackend real implementation ([JSImport] + stereo promotion + 30s cap) — `2e15d22` / `4c7792a` / `028a5e5`
+- [x] 48-04-PLAN.md — flow-runtime.js ES module + WasmEntry.cs [JSExport] + index.html dev harness — `dad84b9` / `9afdb26`
+- [x] 48-05-PLAN.md — Bundle size budget + two-run determinism pin (3.07 MB Brotli → MONOLITHIC SHIP) — `b2645d5` / `538834c`
+- [x] 48-06-PLAN.md — HUMAN-UAT browser smoke (Chrome / Firefox / Safari) — Firefox PASS; 9 `fix(48-06)` commits root-caused + fixed the `dotnet.boot.js` boot blocker (`08140bb` … `a5ae19f`)
+- [x] 48-07-PLAN.md — Closer (VERIFICATION + Phase 49 handoff + planning-artifact flips) — `9ae804a` / `9d3063d` + bookkeeping commit
 
 ### Phase 49: flowlang.dev Site
 
