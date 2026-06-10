@@ -86,10 +86,14 @@ public class Repl
                 if (string.IsNullOrWhiteSpace(input))
                     continue;
 
-                // Audit 0609 §5.1 — persist every non-blank submission to the
-                // on-disk history so Ctrl+R reverse-search (and the next session)
-                // can see it. No-op on the legacy path (_lineEditor == null).
-                _lineEditor?.AppendHistory(input);
+                // Quick 260610-gl4 Findings 5 + 6 — PrettyPrompt is the SOLE owner of
+                // history persistence. It auto-saves each submitted line (base64) to
+                // its persistentHistoryFilepath, which is the same ~/.config/flow/history
+                // file. The previous manual AppendHistory(input) here wrote a SECOND
+                // (plaintext) copy, interleaving base64 + plaintext pairs and poisoning
+                // PrettyPrompt's base64-only loader → Ctrl+R / up-arrow recall died.
+                // The manual append is removed; ReplLineEditor sanitizes any pre-existing
+                // mixed file on construction.
 
                 // Handle special commands
                 if (input.StartsWith(':'))

@@ -39,10 +39,14 @@ public class ReplHistorySearchTests : IDisposable
         }
     }
 
+    private static string B64(string s) =>
+        Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(s));
+
     /// <summary>
     /// Pointing the editor at a pre-populated history file MUST surface ALL entries
-    /// via LoadHistory() in most-recent-first order. The file format is one entry per
-    /// line per UI-SPEC line 298.
+    /// via LoadHistory() in most-recent-first order. Quick 260610-gl4: the on-disk
+    /// format is now base64-per-line (PrettyPrompt-compatible, single-owner), so the
+    /// fixture is written base64-encoded.
     /// </summary>
     [Fact]
     public void LoadHistoryFromConfig_ReturnsEntries()
@@ -50,9 +54,9 @@ public class ReplHistorySearchTests : IDisposable
         var historyFile = Path.Combine(_tempDir!, "history");
         File.WriteAllLines(historyFile, new[]
         {
-            "(add 1 2)",
-            "Int x = 5",
-            "x -> (mul 3)",
+            B64("(add 1 2)"),
+            B64("Int x = 5"),
+            B64("x -> (mul 3)"),
         });
 
         using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
@@ -64,6 +68,66 @@ public class ReplHistorySearchTests : IDisposable
         Assert.Equal("x -> (mul 3)", entries[0]);
         Assert.Equal("Int x = 5", entries[1]);
         Assert.Equal("(add 1 2)", entries[2]);
+    }
+
+    /// <summary>
+    /// Quick 260610-gl4 Findings 5 + 6 — a history file that MIXES PrettyPrompt base64
+    /// lines with the legacy manual-append plaintext lines (the exact corruption the
+    /// composer found) MUST be repaired on editor construction: the original is backed
+    /// up (*.corrupt-*.bak) and the file is rewritten with only the base64 lines that
+    /// cleanly round-trip, so PrettyPrompt's loader sees a single-format file and
+    /// Ctrl+R works. The plaintext pollution is dropped, real history preserved.
+    /// </summary>
+    [Fact]
+    public void SanitizeHistoryFile_MixedBase64AndPlaintext_StripsPlaintextAndBacksUp()
+    {
+        var historyFile = Path.Combine(_tempDir!, "history");
+        // Interleaved exactly like the composer's corrupt file: a base64 line from
+        // PrettyPrompt followed by a plaintext line from the old manual append.
+        File.WriteAllLines(historyFile, new[]
+        {
+            B64("(add 1 2)"),
+            "(add 1 2)",            // plaintext pollution — NOT valid base64 round-trip
+            B64("Int x = 5"),
+            "Int x = 5",            // plaintext pollution
+        });
+
+        // Construction runs SanitizeHistoryFile.
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: historyFile);
+
+        // The file now contains ONLY the two valid base64 lines.
+        var onDisk = File.ReadAllLines(historyFile);
+        Assert.Equal(2, onDisk.Length);
+        Assert.Equal(B64("(add 1 2)"), onDisk[0]);
+        Assert.Equal(B64("Int x = 5"), onDisk[1]);
+
+        // A backup of the original mixed file was written.
+        var backups = Directory.GetFiles(_tempDir!, "history.corrupt-*.bak");
+        Assert.Single(backups);
+        Assert.Equal(4, File.ReadAllLines(backups[0]).Length);
+
+        // LoadHistory now decodes cleanly, most-recent-first.
+        var entries = editor.LoadHistory();
+        Assert.Equal(new[] { "Int x = 5", "(add 1 2)" }, entries);
+    }
+
+    /// <summary>
+    /// A history file that is ALREADY clean (every line base64) must be left untouched —
+    /// no spurious *.bak files on every REPL launch.
+    /// </summary>
+    [Fact]
+    public void SanitizeHistoryFile_AllBase64_LeavesFileUntouchedNoBackup()
+    {
+        var historyFile = Path.Combine(_tempDir!, "history");
+        var clean = new[] { B64("(add 1 2)"), B64("Int x = 5") };
+        File.WriteAllLines(historyFile, clean);
+
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: historyFile);
+
+        Assert.Equal(clean, File.ReadAllLines(historyFile));
+        Assert.Empty(Directory.GetFiles(_tempDir!, "history.corrupt-*.bak"));
     }
 
     /// <summary>
@@ -109,7 +173,13 @@ public class ReplHistorySearchTests : IDisposable
             editor.AppendHistory("Int y = 42");
         }
 
+        // Quick 260610-gl4: on-disk format is base64-per-line (single-owner, PrettyPrompt-
+        // compatible). The raw line is the base64 encoding; LoadHistory decodes it back.
         var lines = File.ReadAllLines(historyFile);
-        Assert.Contains("Int y = 42", lines);
+        Assert.Contains(B64("Int y = 42"), lines);
+
+        using var reader = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: historyFile);
+        Assert.Contains("Int y = 42", reader.LoadHistory());
     }
 }

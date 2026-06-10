@@ -64,6 +64,18 @@ public sealed class ReplLineEditor : IDisposable
         _historyFilePath = historyFilePath ?? DefaultHistoryFilePath();
         EnsureHistoryDirectoryExists(_historyFilePath);
 
+        // Quick 260610-gl4 Findings 5 + 6 — single-owner history persistence.
+        // PrettyPrompt persists its own base64-per-line history to this same file
+        // (via persistentHistoryFilepath) and our old Repl loop ALSO manually
+        // appended plaintext lines, so the file ended up with INTERLEAVED base64 +
+        // plaintext pairs. PrettyPrompt's loader keeps only lines that base64-decode,
+        // so the plaintext pollution (and any plaintext line that happens to be valid
+        // base64) corrupted the loaded history — killing Ctrl+R reverse-search and
+        // up-arrow recall. Repl.cs no longer manual-appends; PrettyPrompt is the sole
+        // writer. Here we sanitize a pre-existing mixed/corrupt file BEFORE PrettyPrompt
+        // reads it: back it up and strip every line that does not cleanly base64-decode.
+        SanitizeHistoryFile(_historyFilePath);
+
         // RESEARCH §G lines 871-901 — instantiate the 4 indices ONCE at ctor time.
         // RegisterSignaturesOnly is the audio-free registry sweep (D-07 full coverage,
         // stubs throw NotSupportedException on invocation but expose every signature).
@@ -99,17 +111,21 @@ public sealed class ReplLineEditor : IDisposable
     }
 
     /// <summary>
-    /// Appends a submitted entry to the on-disk history file. Triggers a rotation
-    /// when the file exceeds <see cref="HistoryCap"/> entries (keeps the most-recent
-    /// 10k per UI-SPEC line 299). Mode 0600 set on Linux/macOS per line 300.
+    /// Appends a submitted entry to the on-disk history file. Quick 260610-gl4: the
+    /// on-disk format is now ONE base64-encoded UTF-8 line per entry, byte-compatible
+    /// with PrettyPrompt's <c>SavePersistentHistoryAsync</c> so the file stays
+    /// single-format and PrettyPrompt's Ctrl+R reverse-search can read every line.
+    /// (The production REPL loop no longer calls this — PrettyPrompt auto-saves on
+    /// submit; it remains as a tested utility + a manual-import surface.) Triggers a
+    /// rotation when the file exceeds <see cref="HistoryCap"/> entries (keeps the
+    /// most-recent 10k per UI-SPEC line 299). Mode 0600 set on Linux/macOS per line 300.
     /// </summary>
     public void AppendHistory(string entry)
     {
         if (string.IsNullOrEmpty(entry)) return;
         EnsureHistoryDirectoryExists(_historyFilePath);
 
-        var serialised = entry.Replace("\n", "\\n"); // UI-SPEC line 298: literal \n escape
-        File.AppendAllLines(_historyFilePath, new[] { serialised });
+        File.AppendAllLines(_historyFilePath, new[] { Base64Encode(entry) });
         ApplyUnixPermissions(_historyFilePath);
 
         // Rotate when over cap — keep most-recent HistoryCap entries.
@@ -123,8 +139,10 @@ public sealed class ReplLineEditor : IDisposable
     }
 
     /// <summary>
-    /// Reads the on-disk history in MOST-RECENT-FIRST order. Returns an empty list
-    /// when the file does not yet exist (cold-start REPL session).
+    /// Reads the on-disk history in MOST-RECENT-FIRST order. Quick 260610-gl4: lines
+    /// are base64-decoded (PrettyPrompt's format). Any line that does not cleanly
+    /// decode is skipped charitably (D-v1.5-05) — a corrupt entry never throws. Returns
+    /// an empty list when the file does not yet exist (cold-start REPL session).
     /// </summary>
     public IReadOnlyList<string> LoadHistory()
     {
@@ -132,7 +150,81 @@ public sealed class ReplLineEditor : IDisposable
         var lines = File.ReadAllLines(_historyFilePath);
         // Most-recent-first — reverse the on-disk append order.
         Array.Reverse(lines);
-        return lines.Select(l => l.Replace("\\n", "\n")).ToArray();
+        var result = new List<string>(lines.Length);
+        foreach (var l in lines)
+        {
+            if (TryBase64Decode(l, out var decoded))
+                result.Add(decoded);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Quick 260610-gl4 Findings 5 + 6 — on startup, repair a history file that mixes
+    /// PrettyPrompt base64 lines with the legacy manual-append plaintext lines (or is
+    /// otherwise corrupt). If EVERY non-empty line already base64-decodes, the file is
+    /// clean and left untouched (no spurious backups). Otherwise the original is copied
+    /// to <c>&lt;path&gt;.corrupt-&lt;timestamp&gt;.bak</c> and the file is rewritten with only
+    /// the lines that cleanly decode — preserving real history while dropping the
+    /// plaintext pollution that was poisoning PrettyPrompt's loader. Fully charitable:
+    /// any IO failure is swallowed (the REPL must never refuse to start over history).
+    /// </summary>
+    internal static void SanitizeHistoryFile(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return;
+            var lines = File.ReadAllLines(path);
+
+            bool allClean = true;
+            var kept = new List<string>(lines.Length);
+            foreach (var line in lines)
+            {
+                if (string.IsNullOrEmpty(line)) { allClean = false; continue; }
+                if (TryBase64Decode(line, out _))
+                    kept.Add(line);
+                else
+                    allClean = false;
+            }
+
+            if (allClean) return; // nothing to repair
+
+            // Back up the original mixed/corrupt file before rewriting.
+            var backup = $"{path}.corrupt-{DateTime.UtcNow:yyyyMMddHHmmssfff}.bak";
+            try { File.Copy(path, backup, overwrite: false); } catch { /* best-effort */ }
+
+            File.WriteAllLines(path, kept);
+            ApplyUnixPermissions(path);
+        }
+        catch
+        {
+            // Charitable per D-v1.5-05 — a history repair failure must not block REPL startup.
+        }
+    }
+
+    private static string Base64Encode(string s) =>
+        Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(s));
+
+    /// <summary>
+    /// Mirrors PrettyPrompt's internal TryBase64Decode: a line is "clean" only if it
+    /// base64-decodes AND round-trips back to the same string (rejects coincidental
+    /// base64-shaped plaintext like a bare 4-char token).
+    /// </summary>
+    private static bool TryBase64Decode(string line, out string decoded)
+    {
+        decoded = string.Empty;
+        if (string.IsNullOrEmpty(line)) return false;
+        try
+        {
+            var bytes = Convert.FromBase64String(line);
+            decoded = System.Text.Encoding.UTF8.GetString(bytes);
+            // Round-trip guard — re-encoding must reproduce the exact on-disk line.
+            return Convert.ToBase64String(bytes) == line;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>
