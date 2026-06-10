@@ -177,6 +177,66 @@ public class ReplWiringTests : IDisposable
             string.Equals(i.DisplayText.ToString(), "transpose", StringComparison.Ordinal));
     }
 
+    // ────────────────────────────────────────────────────────────────────────
+    // 4. Quick 260610-gl4 — PrettyPrompt callback overrides (Findings 1, 2, 3).
+    //    The live completion-window OPEN trigger + the span-to-replace WIDTH are
+    //    PrettyPrompt-layer concerns that the BuildItems unit tests bypass, so the
+    //    composer's real-terminal smoke saw dead/empty completion despite green
+    //    BuildItems tests. These pin the overrides without a TTY.
+    // ────────────────────────────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("(transp", 7)]   // Finding 1 — partial identifier on a FRESH line must open
+    [InlineData("a", 1)]         // single identifier char at caret==1
+    [InlineData("(", 1)]         // open-paren
+    [InlineData("seq.", 4)]      // member access dot
+    [InlineData("use \"@", 6)]   // Finding 2 — inside use-string, right after '@'
+    [InlineData("use \"", 5)]    // Finding 2 — inside use-string, right after the opening quote
+    public void ShouldOpenCompletionWindow_OpensOnIdentifierContext(string text, int caret)
+    {
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: System.IO.Path.GetTempFileName());
+        Assert.True(editor.ShouldOpenCompletionWindowForTesting(text, caret),
+            $"window should auto-open for '{text}' at caret {caret}");
+    }
+
+    [Theory]
+    [InlineData("", 0)]          // empty buffer — nothing to complete
+    [InlineData("(add 1 ", 7)]   // trailing whitespace — no identifier context
+    public void ShouldOpenCompletionWindow_StaysClosedWithoutContext(string text, int caret)
+    {
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: System.IO.Path.GetTempFileName());
+        Assert.False(editor.ShouldOpenCompletionWindowForTesting(text, caret),
+            $"window should stay closed for '{text}' at caret {caret}");
+    }
+
+    [Fact]
+    public void GetSpanToReplace_PlainIdentifier_CoversWordOnly()
+    {
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: System.IO.Path.GetTempFileName());
+        // "(transp" — caret at end. Span covers "transp" (offsets 1..7), NOT the '('.
+        var (start, length) = editor.GetSpanToReplaceForTesting("(transp", caret: 7);
+        Assert.Equal(1, start);
+        Assert.Equal(6, length);
+    }
+
+    [Fact]
+    public void GetSpanToReplace_ModulePath_SwallowsLeadingAtSign()
+    {
+        // Finding 2 root cause: with the stock word-char-only span, "@aud" → span "aud",
+        // so module item "@audio" (ReplacementText) never matched/inserted. The widened
+        // span must include the leading '@' so "@audio" replaces "@aud" cleanly.
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: System.IO.Path.GetTempFileName());
+        const string buf = "use \"@aud";   // '@' at offset 5, "aud" at 6..8, caret at end
+        var (start, length) = editor.GetSpanToReplaceForTesting(buf, caret: buf.Length);
+        Assert.Equal(5, start);                 // includes the '@'
+        Assert.Equal(buf.Length - 5, length);   // "@aud"
+        Assert.Equal("@aud", buf.Substring(start, length));
+    }
+
     [Fact]
     public async System.Threading.Tasks.Task Completion_InsideUseStringOnSecondLine_ReturnsModulePathsNotBuiltins()
     {

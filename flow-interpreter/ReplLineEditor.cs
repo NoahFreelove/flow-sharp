@@ -146,6 +146,21 @@ public sealed class ReplLineEditor : IDisposable
         return await _callbacks.GetCompletionItemsAsyncForTesting(text, caret, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Quick 260610-gl4 test seam — exposes the <c>ShouldOpenCompletionWindowAsync</c>
+    /// override (Findings 1 + 3) so xUnit can pin the auto-open trigger without a TTY.
+    /// </summary>
+    public bool ShouldOpenCompletionWindowForTesting(string text, int caret)
+        => _callbacks.ShouldOpenCompletionWindowForTesting(text, caret);
+
+    /// <summary>
+    /// Quick 260610-gl4 test seam — exposes the <c>GetSpanToReplaceByCompletionAsync</c>
+    /// override (Finding 2) as a (start, length) pair so xUnit can pin the span widening
+    /// across a leading <c>@</c> without a TTY.
+    /// </summary>
+    public (int Start, int Length) GetSpanToReplaceForTesting(string text, int caret)
+        => _callbacks.GetSpanToReplaceForTesting(text, caret);
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -242,6 +257,98 @@ public sealed class ReplLineEditor : IDisposable
 
             var converted = lspItems.Select(i => ConvertLspToPretty(i)).ToList();
             return Task.FromResult<IReadOnlyList<CompletionItem>>(converted);
+        }
+
+        /// <summary>
+        /// Quick 260610-gl4 Findings 1 + 3 — controls when the completion window
+        /// auto-opens (Tab always force-opens via CompletionPane regardless of this).
+        ///
+        /// PrettyPrompt's stock heuristic only auto-opens after <c>(</c> / <c>.</c>, or
+        /// a letter that immediately follows whitespace, or a single non-space char at
+        /// caret==1. On a fresh first prompt line the heuristic mis-fires (composer saw
+        /// "completion dead on the first line"), and after accepting a completion +
+        /// pressing Backspace it never reopened (Finding 3). We widen the trigger:
+        /// open whenever the char to the LEFT of the caret is something a Flow
+        /// identifier/path can grow from — a letter/digit/underscore, <c>(</c>,
+        /// <c>.</c>, <c>@</c> (stdlib module path), or a <c>"</c> that opens a
+        /// <c>use "</c> string. Backspace is included so deleting a char reopens the
+        /// list against the now-shorter prefix. Charitable: never throws; closed
+        /// (returns false) only when there is genuinely no identifier context.
+        /// </summary>
+        protected override Task<bool> ShouldOpenCompletionWindowAsync(
+            string text, int caret, KeyPress keyPress, CancellationToken ct)
+        {
+            if (caret <= 0 || caret > text.Length)
+                return Task.FromResult(false);
+
+            char left = text[caret - 1];
+
+            // Identifier growth — letters/digits/underscore, plus the punctuation that
+            // begins a completable token in Flow.
+            bool openable =
+                char.IsLetterOrDigit(left) || left == '_' ||
+                left == '(' || left == '.' || left == '@';
+
+            // Inside an open `use "..."` string the next char the composer types is a
+            // module path — open the window so @std/@audio/... surface immediately,
+            // including right after the opening quote (left == '"').
+            if (!openable)
+            {
+                var pos = ReplCaretPosition.CaretToPosition(text, caret);
+                if (FlowLsp.Handlers.CompletionHandler.IsInsideUseStringLiteral(text, pos))
+                    openable = true;
+            }
+
+            return Task.FromResult(openable);
+        }
+
+        /// <summary>
+        /// Quick 260610-gl4 Finding 2 — determines the span the accepted completion
+        /// REPLACES, which PrettyPrompt also uses to FILTER the candidate list against
+        /// what the composer has typed. PrettyPrompt's stock implementation only walks
+        /// over <c>[A-Za-z0-9_]</c>, so after <c>use "@aud</c> the span is just
+        /// <c>aud</c> — and the module-path completion items (ReplacementText
+        /// <c>@audio</c>) do NOT start with <c>aud</c>, so the live window showed
+        /// NOTHING even though the in-process unit test (which calls BuildItems
+        /// directly, bypassing this span/filter layer) passed. We extend the span
+        /// LEFT across a leading <c>@</c> so the module path matches and replaces
+        /// cleanly. The trailing edge keeps the stock word-char walk.
+        /// </summary>
+        protected override Task<TextSpan> GetSpanToReplaceByCompletionAsync(
+            string text, int caret, CancellationToken ct)
+        {
+            static bool IsWordChar(char c) => char.IsLetterOrDigit(c) || c == '_';
+
+            int start = caret;
+            while (start > 0 && IsWordChar(text[start - 1]))
+                start--;
+            // Swallow a leading '@' so `@audio` matches a typed `@aud` (stdlib module
+            // path completion). Only the single sigil — the opening `use "` quote is
+            // NOT part of the replaced span (the inserted @module sits after it).
+            if (start > 0 && text[start - 1] == '@')
+                start--;
+
+            int end = caret;
+            while (end < text.Length && IsWordChar(text[end]))
+                end++;
+
+            return Task.FromResult(TextSpan.FromBounds(start, end));
+        }
+
+        /// <summary>Test seam mirroring <see cref="ShouldOpenCompletionWindowAsync"/>.</summary>
+        public bool ShouldOpenCompletionWindowForTesting(string text, int caret)
+            => ShouldOpenCompletionWindowAsync(
+                   text, caret,
+                   new KeyPress(new ConsoleKeyInfo('\0', ConsoleKey.NoName, false, false, false)),
+                   CancellationToken.None)
+               .GetAwaiter().GetResult();
+
+        /// <summary>Test seam mirroring <see cref="GetSpanToReplaceByCompletionAsync"/>.</summary>
+        public (int Start, int Length) GetSpanToReplaceForTesting(string text, int caret)
+        {
+            var span = GetSpanToReplaceByCompletionAsync(text, caret, CancellationToken.None)
+                .GetAwaiter().GetResult();
+            return (span.Start, span.Length);
         }
 
         protected override Task<KeyPress> TransformKeyPressAsync(
