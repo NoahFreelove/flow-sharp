@@ -34,10 +34,26 @@ HUMAN-UAT smoke testing which surfaced more bugs (some fixed, some in flight).
   e2e 276/276 (first green since the iOS-6 redesign); Desktop+Web builds; two-run
   determinism byte-stable.
 
-## In flight RIGHT NOW
+## REPL interactive fixes — LANDED (2026-06-10, commits f946bdb..4434266)
 
-An Opus agent (working in the MAIN checkout, committing as `fix(repl): ...`) is fixing
-the composer's interactive smoke-test findings:
+All six smoke-test findings fixed (root causes found by decompiling PrettyPrompt 4.1.1):
+Tab was never a force-open trigger → custom ShouldOpenCompletionWindowAsync (fixes
+first-line + backspace-reopen); span walker ate the leading `@` → use-string module
+completion works; BuiltInDocs gained tone-constructor entries (Hertz-first signatures)
++ runnable :help examples; `:`-lines suppress completion auto-open; PrettyPrompt has NO
+built-in Ctrl+R → hand-wired reverse-i-search; history corruption = double persistence
+(manual plaintext append removed; base64 single-owner + startup sanitizer that backs up
+corrupt files). Gates: Repl 57/57, Phase38+Repl+Completion 318/318, legacy stdin
+fallback intact, flow doc exit 0. PTY harness for future REPL work: /tmp/pty_drive.py
+pattern — `script -q /dev/null` does NOT work (zero-size viewport crashes PrettyPrompt);
+need pty.fork + TIOCSWINSZ + answering the ESC[6n DSR query.
+
+COMPOSER RETEST (real terminal): first-line completion; `use "` + Tab → @modules;
+backspace-after-accept reopens; `:help createSineTone`; Ctrl+R reverse-i-search feel;
+fresh ~/.config/flow/history is base64-only (old corrupt file auto-backed-up as
+*.corrupt-<ts>.bak); `(play (createSineTone 440Hz 1.0 0.5))` = clean 1 s beep.
+
+Original finding list for reference:
 1. Completion dead on first prompt line (works after first Enter).
 2. `use "` + Tab → no module suggestions live (unit test passes; live path differs).
 3. Backspace after accepting a completion doesn't reopen suggestions.
