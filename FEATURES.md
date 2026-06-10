@@ -247,7 +247,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 | WAV import (`loadWav`) | Fully | 16 / 24 / 32-bit PCM; auto-resample to 44100 Hz; chunk-walking parser; varispeed overloads (semitones / ratio) |
 | Real-time playback | Fully | `play`, `loop`, `(loop buf count)`, `preview` (mono 22050 Hz), `stop`, `(stream buf)`/`(stream seq)` |
 | PulseAudio backend | Fully | Also works on PipeWire via PA compatibility layer; `PA_SAMPLE_FLOAT32LE`, channels 1–8 |
-| CoreAudio backend (macOS) | Partial | AudioToolbox AudioQueue P/Invoke; probe-wired in `AudioPlaybackManager.DetectBackend`; audible end-to-end pending HUMAN-UAT. Known open issue: `play()` can return before the audio tail finishes (CoreAudio drain not yet landed — do not rely on blocking behaviour) |
+| CoreAudio backend (macOS) | Fully | AudioToolbox AudioQueue P/Invoke; probe-wired in `AudioPlaybackManager.DetectBackend`; `play()` blocks until the queue drains (two-stage: all buffers returned + `kAudioQueueProperty_IsRunning`), verified audible end-to-end 2026-06-10 |
 | WASAPI backend (Windows) | Partial | NAudio.Wasapi 2.3.0; probe-wired; audible end-to-end pending HUMAN-UAT |
 | Audio backend abstraction | Fully | `IAudioBackend`; three backends probe-wired in priority order (CoreAudio → WASAPI → PulseAudio) |
 | Audio device enumeration & selection | Partial | `(audioDevices)`, `(setAudioDevice)`, `(isAudioAvailable)` — PulseAudio Simple API returns empty / throws (use `--device` at CLI) |
@@ -470,7 +470,7 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 | Platform | Status | Notes |
 |---|---|---|
 | Linux x64 / arm64 | Fully | PulseAudio backend; self-contained single-file binary built by `scripts/publish.sh` at v1.5.0; installed via `scripts/install.sh` (auto-detects RID) |
-| macOS x64 / arm64 | Partial | CoreAudio (AudioToolbox) backend probe-wired and ships in the v1.5.0 release binary; audible end-to-end pending HUMAN-UAT; `play()` drain known open (tail truncation — not yet fixed) |
+| macOS x64 / arm64 | Fully | CoreAudio (AudioToolbox) backend probe-wired and ships in the v1.5.0 release binary; `play()` drains fully (tail-truncation fix verified audibly 2026-06-10 on arm64) |
 | Windows x64 | Partial | WASAPI (NAudio.Wasapi) backend probe-wired and ships in the v1.5.0 release binary; audible end-to-end pending HUMAN-UAT |
 | Official cross-platform builds (5 RIDs) | Fully | `scripts/publish.sh` builds linux-x64, linux-arm64, osx-x64, osx-arm64, win-x64 at v1.5.0; `install.sh` auto-detects RID; Windows users pointed to the release page (no auto-download) |
 | Homebrew / AUR / apt PPA / Snap / AppImage / NuGet | Not yet | Only GitHub-release `.tar.gz` / `.zip` consumed by `install.sh` |

@@ -198,7 +198,23 @@ public sealed class CoreAudioBackend : IAudioBackend
             srcOffset += chunkSamples;
         }
 
-        // Drain — AudioQueueStop with immediate=false blocks until the queue runs dry.
+        // Drain (audit 2026-06-09 §3.3). AudioQueueStop(inImmediate: false) does
+        // NOT block — it returns immediately and the queue stops asynchronously
+        // after its queued buffers play (the previous comment here claimed
+        // otherwise, so Play returned up to BufferCount × FramesPerBuffer
+        // (~280 ms) early and script-exit disposal truncated the tail). A real
+        // drain is two-stage:
+        //   1. Wait until the output callback has returned ALL buffers to the
+        //      free pool — a buffer only comes back once the queue has consumed
+        //      its audio.
+        //   2. Issue the deferred stop, then poll kAudioQueueProperty_IsRunning
+        //      until the queue reports stopped — covering the final device-side
+        //      latency between "last buffer consumed" and "last sample audible".
+        // Both stages are deadline-bounded so a wedged device can never hang a
+        // composer's script. Mirrors the PulseAudio sibling's pa_simple_drain
+        // contract ("Blocks until playback completes", PlaybackFunctions).
+        DrainQueuedBuffers(cancellationToken);
+
         lock (_lock)
         {
             if (IsInitialized && _started)
@@ -207,6 +223,8 @@ public sealed class CoreAudioBackend : IAudioBackend
                 _started = false;
             }
         }
+
+        WaitUntilQueueStopped(cancellationToken);
     }
 
     public void EnsureInitialized(int sampleRate, int channels)
@@ -334,6 +352,63 @@ public sealed class CoreAudioBackend : IAudioBackend
     }
 
     /// <summary>
+    /// Audit §3.3 stage 1: block until every allocated buffer is back in the free
+    /// pool (i.e. the queue has consumed all queued audio). Deadline-bounded to
+    /// 3× the worst-case in-flight duration + 1 s; polls with a plain sleep
+    /// because _bufferAvailable is set whenever ANY buffer is free, not all.
+    /// Cancellation stops playback immediately, matching the enqueue loop.
+    /// </summary>
+    private void DrainQueuedBuffers(CancellationToken cancellationToken)
+    {
+        double inFlightSeconds = (double)BufferCount * FramesPerBuffer / Math.Max(1, _sampleRate);
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(inFlightSeconds * 3 + 1.0);
+
+        while (DateTime.UtcNow < deadline)
+        {
+            lock (_lock)
+            {
+                if (!IsInitialized || _freeBuffers.Count >= BufferCount)
+                    return;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Stop();
+                return;
+            }
+            if (_disposed)
+                return;
+
+            Thread.Sleep(10);
+        }
+    }
+
+    /// <summary>
+    /// Audit §3.3 stage 2: after the deferred AudioQueueStop, poll
+    /// kAudioQueueProperty_IsRunning until the queue reports stopped (or a short
+    /// deadline elapses). This covers the last few milliseconds of device-side
+    /// latency after the final buffer is consumed.
+    /// </summary>
+    private void WaitUntilQueueStopped(CancellationToken cancellationToken)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromMilliseconds(500);
+        while (DateTime.UtcNow < deadline && !cancellationToken.IsCancellationRequested && !_disposed)
+        {
+            lock (_lock)
+            {
+                if (!IsInitialized)
+                    return;
+                uint size = 4;
+                int status = AudioQueueGetProperty(
+                    _audioQueue, kAudioQueueProperty_IsRunning, out uint running, ref size);
+                if (status != 0 || running == 0)
+                    return;
+            }
+            Thread.Sleep(5);
+        }
+    }
+
+    /// <summary>
     /// Wait for a free AudioQueueBuffer from the recycle pool. Returns IntPtr.Zero
     /// if the wait is cancelled.
     /// </summary>
@@ -453,6 +528,7 @@ public sealed class CoreAudioBackend : IAudioBackend
     private const uint kAudioFormatLinearPCM = 0x6C70636D; // 'lpcm'
     private const uint kAudioFormatFlagIsFloat = 1;
     private const uint kAudioFormatFlagIsPacked = 8;
+    private const uint kAudioQueueProperty_IsRunning = 0x6171726E; // 'aqrn'
 
     [StructLayout(LayoutKind.Sequential)]
     private struct AudioStreamBasicDescription
@@ -507,4 +583,7 @@ public sealed class CoreAudioBackend : IAudioBackend
 
     [DllImport(AudioToolbox, CallingConvention = CallingConvention.Cdecl)]
     private static extern int AudioQueueFreeBuffer(IntPtr inAQ, IntPtr inBuffer);
+
+    [DllImport(AudioToolbox, CallingConvention = CallingConvention.Cdecl)]
+    private static extern int AudioQueueGetProperty(IntPtr inAQ, uint inID, out uint outData, ref uint ioDataSize);
 }
