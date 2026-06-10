@@ -13,7 +13,7 @@ namespace FlowLang.StandardLibrary;
 /// </summary>
 public static class BuiltInDocs
 {
-    public sealed record Doc(string Summary, IReadOnlyList<ParamDoc> Params);
+    public sealed record Doc(string Summary, IReadOnlyList<ParamDoc> Params, string? Example = null);
     public sealed record ParamDoc(string Name, string Description);
 
     private static readonly IReadOnlyDictionary<string, Doc> _docs = new Dictionary<string, Doc>
@@ -94,6 +94,29 @@ public static class BuiltInDocs
         ["saw"] = new("Generates a sawtooth-wave buffer.", Array.Empty<ParamDoc>()),
         ["square"] = new("Generates a square-wave buffer.", Array.Empty<ParamDoc>()),
         ["triangle"] = new("Generates a triangle-wave buffer.", Array.Empty<ParamDoc>()),
+        // Tone constructors. Canonical Hertz-first form (frequency, duration-seconds, amplitude):
+        //   (createSineTone 440Hz 1.0 0.5).  Duration-first forms also exist:
+        //   (createSineTone 1.0 440.0 0.5) and (createSineTone 1.0 440Hz 0.5).
+        ["createSineTone"] = new("Generates a band-limited sine-wave buffer. Canonical form: (createSineTone freqHz durationSeconds amplitude).", new ParamDoc[] {
+            new("frequency", "Pitch — Hertz literal (440Hz) or a Double in Hz."),
+            new("duration", "Length in seconds (Double)."),
+            new("amplitude", "Peak level 0.0..1.0."),
+        }, "(play (createSineTone 440Hz 1.0 0.5))"),
+        ["createSawTone"] = new("Generates a PolyBLEP band-limited sawtooth-wave buffer. Canonical form: (createSawTone freqHz durationSeconds amplitude).", new ParamDoc[] {
+            new("frequency", "Pitch — Hertz literal (220Hz) or a Double in Hz."),
+            new("duration", "Length in seconds (Double)."),
+            new("amplitude", "Peak level 0.0..1.0."),
+        }, "(play (createSawTone 220Hz 1.0 0.5))"),
+        ["createSquareTone"] = new("Generates a PolyBLEP band-limited square-wave buffer. Canonical form: (createSquareTone freqHz durationSeconds amplitude).", new ParamDoc[] {
+            new("frequency", "Pitch — Hertz literal (330Hz) or a Double in Hz."),
+            new("duration", "Length in seconds (Double)."),
+            new("amplitude", "Peak level 0.0..1.0."),
+        }, "(play (createSquareTone 330Hz 1.0 0.5))"),
+        ["createTriangleTone"] = new("Generates a triangle-wave buffer. Canonical form: (createTriangleTone freqHz durationSeconds amplitude).", new ParamDoc[] {
+            new("frequency", "Pitch — Hertz literal (262Hz) or a Double in Hz."),
+            new("duration", "Length in seconds (Double)."),
+            new("amplitude", "Peak level 0.0..1.0."),
+        }, "(play (createTriangleTone 262Hz 1.0 0.5))"),
         ["noise"] = new("Generates a white-noise buffer.", Array.Empty<ParamDoc>()),
         ["adsr"] = new("Builds an ADSR envelope with the given attack/decay/sustain/release.", new ParamDoc[] {
             new("a", "Attack in ms."),
@@ -113,8 +136,11 @@ public static class BuiltInDocs
         ["reverb"] = new("Applies a reverb effect with room size (and optional damping + mix).", new ParamDoc[] {
             new("buffer", "Input buffer."),
             new("roomSize", "0.0 small room, 1.0 large hall."),
-        }),
-        ["lowpass"] = new("Low-pass filter — removes frequencies above cutoff Hz.", Array.Empty<ParamDoc>()),
+        }, "(reverb (createSineTone 440Hz 1.0 0.5) 0.8)"),
+        ["lowpass"] = new("Low-pass filter — removes frequencies above cutoff Hz.", new ParamDoc[] {
+            new("buffer", "Input buffer."),
+            new("cutoff", "Cutoff frequency in Hz."),
+        }, "(lowpass (createSawTone 220Hz 1.0 0.5) 800Hz)"),
         ["highpass"] = new("High-pass filter — removes frequencies below cutoff Hz.", Array.Empty<ParamDoc>()),
         ["bandpass"] = new("Band-pass filter — keeps frequencies between low and high cutoffs.", Array.Empty<ParamDoc>()),
         ["compress"] = new("Dynamic range compressor (threshold dB, ratio, optional attack/release ms).", new ParamDoc[] {
@@ -128,7 +154,9 @@ public static class BuiltInDocs
         ["pan"] = new("Constant-power stereo panning (-1.0 hard left, 1.0 hard right).", Array.Empty<ParamDoc>()),
 
         // ===== Playback =====
-        ["play"] = new("Plays a buffer (or sequence) through the audio backend. Blocks.", Array.Empty<ParamDoc>()),
+        ["play"] = new("Plays a buffer (or sequence) through the audio backend. Blocks.", new ParamDoc[] {
+            new("buffer", "Buffer (or sequence) to play."),
+        }, "(play (createSineTone 440Hz 1.0 0.5))"),
         ["loop"] = new("Loops a buffer indefinitely or N times (non-blocking).", Array.Empty<ParamDoc>()),
         ["stream"] = new("Plays a buffer in the background without blocking the interpreter.", Array.Empty<ParamDoc>()),
         ["preview"] = new("Low-quality mono preview playback (22050 Hz).", Array.Empty<ParamDoc>()),

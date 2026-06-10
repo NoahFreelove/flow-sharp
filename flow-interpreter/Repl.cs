@@ -448,12 +448,20 @@ public class Repl
             // Example label — dim per UI-SPEC line 276.
             Console.WriteLine();
             Console.WriteLine($"  \x1b[2mExample:\x1b[0m");
-            // BuiltInDocs.Doc has no Example field today — render a generic one-liner
-            // sourced from the param names per UI-SPEC line 277 example pattern.
-            var exampleArgs = entry.Params.Count > 0
-                ? string.Join(' ', entry.Params.Select(p => p.Name))
-                : string.Empty;
-            Console.WriteLine($"    ({name}{(exampleArgs.Length > 0 ? " " + exampleArgs : string.Empty)})");
+            // Prefer a curated runnable Example (BuiltInDocs.Doc.Example); otherwise
+            // fall back to a generic one-liner synthesized from the param names per
+            // UI-SPEC line 277 example pattern.
+            if (!string.IsNullOrEmpty(entry.Example))
+            {
+                Console.WriteLine($"    {entry.Example}");
+            }
+            else
+            {
+                var exampleArgs = entry.Params.Count > 0
+                    ? string.Join(' ', entry.Params.Select(p => p.Name))
+                    : string.Empty;
+                Console.WriteLine($"    ({name}{(exampleArgs.Length > 0 ? " " + exampleArgs : string.Empty)})");
+            }
             Console.WriteLine();
         }
         finally

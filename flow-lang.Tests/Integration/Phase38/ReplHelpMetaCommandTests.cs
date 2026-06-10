@@ -65,6 +65,43 @@ public class ReplHelpMetaCommandTests : IDisposable
     }
 
     /// <summary>
+    /// Quick 260610-gl4 Finding 4 regression — `:help createSineTone` MUST resolve a
+    /// doc entry (the tone constructors were absent from BuiltInDocs, so the composer's
+    /// real-terminal smoke saw "[help] no documentation entry for 'createSineTone'").
+    /// Asserts the header, the canonical Hertz-first runnable Example, and the ABSENCE
+    /// of the no-documentation advisory. Same assertion for the other three tone
+    /// constructors so a regression that drops any of them is caught.
+    /// </summary>
+    [Theory]
+    [InlineData("createSineTone", "(play (createSineTone 440Hz 1.0 0.5))")]
+    [InlineData("createSawTone", "(play (createSawTone 220Hz 1.0 0.5))")]
+    [InlineData("createSquareTone", "(play (createSquareTone 330Hz 1.0 0.5))")]
+    [InlineData("createTriangleTone", "(play (createTriangleTone 262Hz 1.0 0.5))")]
+    public void HelpWithToneConstructor_ResolvesEntryAndRunnableExample(string name, string expectedExample)
+    {
+        var repl = new Repl();
+
+        using var sw = new StringWriter();
+        var originalOut = Console.Out;
+        Console.SetOut(sw);
+        try
+        {
+            var result = repl.HandleCommandForTesting($":help {name}");
+            Assert.True(result, $":help {name} should not exit the REPL");
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+
+        var rendered = sw.ToString();
+        Assert.Contains(name, rendered);
+        Assert.Contains("Example:", rendered);
+        Assert.Contains(expectedExample, rendered);
+        Assert.DoesNotContain($"[help] no documentation entry for '{name}'", rendered);
+    }
+
+    /// <summary>
     /// `:help fooBar` MUST emit the locked yellow advisory wording per UI-SPEC line 289
     /// — exact text is part of the composer-facing contract.
     /// </summary>
