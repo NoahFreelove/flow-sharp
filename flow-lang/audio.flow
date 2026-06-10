@@ -357,6 +357,17 @@ proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
     b
 end proc
 
+Note: createSineTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createSineTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createSineTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc freq) amplitude)
+    b
+end proc
+
 Note: Create sawtooth tone
 proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -369,6 +380,17 @@ Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompati
 proc createSawTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSaw b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createSawTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createSawTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createSawTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc freq) amplitude)
     b
 end proc
 
@@ -386,6 +408,17 @@ proc createSquareTone(Double: duration, Hertz: freqHz, Double: amplitude)
     b
 end proc
 
+Note: createSquareTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createSquareTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createSquareTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc freq) amplitude)
+    b
+end proc
+
 Note: Create triangle tone
 proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -397,6 +430,17 @@ Note: createTriangleTone(Double, Hertz, Double) — explicit frequency-type ergo
 proc createTriangleTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateTriangle b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createTriangleTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createTriangleTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createTriangleTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc freq) amplitude)
     b
 end proc
 

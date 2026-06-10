@@ -762,6 +762,19 @@ public static class BuiltInFunctions
             ParameterNames: ["duration", "frequency", "amplitude"]);
         registry.Register("createSineTone", createSineToneHzSig, Audio.SignalGeneration.CreateSineTone);
 
+        // 2026-06-10 hello-world fix: frequency-FIRST Hertz overload. The documented
+        // canonical call is (createSineTone 440Hz 1.0 0.5) — README, CLAUDE.md music-types
+        // table, the playground hello snippet — but only duration-first overloads existed,
+        // so 440Hz coerced into the DURATION slot (Hertz.IsCompatibleWith(Double), +500
+        // compatible tier) and the hello-world silently built 440 SECONDS of an inaudible
+        // 1 Hz wave. The exact Hertz match in slot 0 (+1000) makes this overload win every
+        // Hertz-first call; both duration-first forms are unchanged. The lambda reorders
+        // into the positional (duration, frequency, amplitude) shape CreateSineTone reads.
+        var createSineToneHzFirstSig = new FunctionSignature("createSineTone", [HertzType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["frequency", "duration", "amplitude"]);
+        registry.Register("createSineTone", createSineToneHzFirstSig,
+            args => Audio.SignalGeneration.CreateSineTone([args[1], args[0], args[2]]));
+
         var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance],
             ParameterNames: ["duration", "amplitude"]);
         registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
