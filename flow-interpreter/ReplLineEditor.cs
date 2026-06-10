@@ -298,6 +298,27 @@ public sealed class ReplLineEditor : IDisposable
     }
 
     /// <summary>
+    /// Quick 260610-gl4 Finding 5 — pure reverse-search over the on-disk history.
+    /// PrettyPrompt 4.1.1 has NO Ctrl+R reverse-search keybinding (its history
+    /// navigation is Up/DownArrow only; the completion trigger is Ctrl+Space), so the
+    /// composer's Ctrl+R genuinely did nothing. We wire Ctrl+R ourselves (see
+    /// <see cref="FlowPromptCallbacks.GetKeyPressCallbacks"/>); this helper does the
+    /// matching. Most-recent-first, case-insensitive substring, returns the first
+    /// entry containing <paramref name="query"/>, or null when none match / query is
+    /// empty. Extracted as a pure static so xUnit can pin it without a TTY.
+    /// </summary>
+    public string? ReverseSearchHistory(string query)
+    {
+        if (string.IsNullOrEmpty(query)) return null;
+        foreach (var entry in LoadHistory()) // already most-recent-first
+        {
+            if (entry.Contains(query, StringComparison.OrdinalIgnoreCase))
+                return entry;
+        }
+        return null;
+    }
+
+    /// <summary>
     /// FlowPromptCallbacks routes Tab through CompletionHandler.BuildItems and
     /// drives multi-line continuation via the lexer-based paren-balance check
     /// that the existing Repl.cs:182-208 path uses (preserved per UI-SPEC line
@@ -311,6 +332,73 @@ public sealed class ReplLineEditor : IDisposable
         public FlowPromptCallbacks(ReplLineEditor editor)
         {
             _editor = editor;
+        }
+
+        /// <summary>
+        /// Quick 260610-gl4 Finding 5 — register Ctrl+R reverse history search.
+        /// PrettyPrompt 4.1.1 ships NO reverse-search binding, so we add one here via
+        /// the documented key-press-callback surface. On Ctrl+R we render an
+        /// incremental <c>(reverse-i-search)`query':</c> prompt and read the search
+        /// term key-by-key (PrettyPrompt has handed us control), matching against the
+        /// on-disk history most-recent-first. Enter submits the matched entry; Escape /
+        /// Ctrl+C / Ctrl+G aborts (returns null → composer stays on the current line).
+        /// Charitable: any failure aborts the search rather than crashing the REPL.
+        /// </summary>
+        protected override IEnumerable<(KeyPressPattern Pattern, KeyPressCallbackAsync Callback)> GetKeyPressCallbacks()
+        {
+            yield return (
+                new KeyPressPattern(ConsoleModifiers.Control, ConsoleKey.R),
+                (text, caret, ct) => Task.FromResult<KeyPressCallbackResult?>(RunReverseSearch()));
+        }
+
+        /// <summary>
+        /// Interactive reverse-i-search loop. Returns a non-null
+        /// <see cref="KeyPressCallbackResult"/> (which PrettyPrompt SUBMITS) when the
+        /// composer accepts a match with Enter, or null to abort. Writes the prompt +
+        /// running match directly to the console — PrettyPrompt is paused inside the
+        /// callback so direct Console IO is safe.
+        /// </summary>
+        private KeyPressCallbackResult? RunReverseSearch()
+        {
+            try
+            {
+                var query = new System.Text.StringBuilder();
+                string? match = null;
+                while (true)
+                {
+                    // (reverse-i-search)`query': match
+                    Console.Write($"\r\x1b[K(reverse-i-search)`{query}': {match ?? string.Empty}");
+                    var key = Console.ReadKey(intercept: true);
+
+                    if (key.Key == ConsoleKey.Enter)
+                    {
+                        Console.Write("\r\x1b[K");
+                        return match is not null ? new KeyPressCallbackResult(match, null) : null;
+                    }
+                    if (key.Key == ConsoleKey.Escape
+                        || (key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                            && (key.Key == ConsoleKey.C || key.Key == ConsoleKey.G)))
+                    {
+                        Console.Write("\r\x1b[K");
+                        return null;
+                    }
+                    if (key.Key == ConsoleKey.Backspace)
+                    {
+                        if (query.Length > 0) query.Remove(query.Length - 1, 1);
+                    }
+                    else if (!char.IsControl(key.KeyChar))
+                    {
+                        query.Append(key.KeyChar);
+                    }
+                    match = _editor.ReverseSearchHistory(query.ToString());
+                }
+            }
+            catch
+            {
+                // Charitable — abort the search, never crash the session.
+                try { Console.Write("\r\x1b[K"); } catch { }
+                return null;
+            }
         }
 
         protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(

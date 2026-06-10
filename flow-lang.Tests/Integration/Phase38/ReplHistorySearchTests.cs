@@ -131,6 +131,34 @@ public class ReplHistorySearchTests : IDisposable
     }
 
     /// <summary>
+    /// Quick 260610-gl4 Finding 5 — Ctrl+R reverse-search matching. PrettyPrompt 4.1.1
+    /// has no reverse-search binding, so we wired one; this pins the matching helper:
+    /// most-recent-first, case-insensitive substring, null on no-match/empty-query.
+    /// </summary>
+    [Fact]
+    public void ReverseSearchHistory_FindsMostRecentCaseInsensitiveSubstring()
+    {
+        var historyFile = Path.Combine(_tempDir!, "history");
+        File.WriteAllLines(historyFile, new[]
+        {
+            B64("(print \"alpha\")"),
+            B64("Int x = 5"),
+            B64("(print \"beta\")"),   // most recent of the two prints
+        });
+
+        using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",
+            historyFilePath: historyFile);
+
+        // Most-recent-first: "print" matches the LAST-written print line first.
+        Assert.Equal("(print \"beta\")", editor.ReverseSearchHistory("print"));
+        // Case-insensitive (use an unambiguous substring — "x = " only occurs in the Int line).
+        Assert.Equal("Int x = 5", editor.ReverseSearchHistory("X = "));
+        // No match / empty query → null (search stays open / aborts charitably).
+        Assert.Null(editor.ReverseSearchHistory("zzz"));
+        Assert.Null(editor.ReverseSearchHistory(""));
+    }
+
+    /// <summary>
     /// On Linux/macOS the history file MUST be created with mode 0600 per UI-SPEC line 300
     /// (composer may type secrets into the REPL; the file is private to the user).
     /// On Windows this test is a no-op (mode bits don't apply).
