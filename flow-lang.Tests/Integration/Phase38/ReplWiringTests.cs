@@ -201,8 +201,10 @@ public class ReplWiringTests : IDisposable
     }
 
     [Theory]
-    [InlineData("", 0)]          // empty buffer — nothing to complete
-    [InlineData("(add 1 ", 7)]   // trailing whitespace — no identifier context
+    [InlineData("", 0)]                       // empty buffer — nothing to complete
+    [InlineData("(add 1 ", 7)]                // trailing whitespace — no identifier context
+    [InlineData(":help createSineTone", 20)]  // meta-command — must NOT open (Enter would commit, not submit)
+    [InlineData(":quit", 5)]                   // meta-command
     public void ShouldOpenCompletionWindow_StaysClosedWithoutContext(string text, int caret)
     {
         using var editor = new ReplLineEditor(promptText: "> ", continuationPrompt: "... ",

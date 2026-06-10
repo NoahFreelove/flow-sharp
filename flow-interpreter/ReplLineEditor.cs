@@ -373,6 +373,15 @@ public sealed class ReplLineEditor : IDisposable
             if (caret <= 0 || caret > text.Length)
                 return Task.FromResult(false);
 
+            // Quick 260610-gl4 — never auto-open completion on a REPL meta-command line
+            // (`:help`, `:quit`, `:strict on`, ...). Otherwise the completion window
+            // intercepts Enter to COMMIT an item instead of submitting the command, so
+            // `:help createSineTone` never executes. Detect the leading ':' on the
+            // current (last) physical line of the buffer.
+            int lineStart = text.LastIndexOf('\n', caret - 1) + 1;
+            if (lineStart < text.Length && text[lineStart] == ':')
+                return Task.FromResult(false);
+
             char left = text[caret - 1];
 
             // Identifier growth — letters/digits/underscore, plus the punctuation that
