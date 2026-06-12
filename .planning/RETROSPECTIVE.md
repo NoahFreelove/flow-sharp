@@ -54,6 +54,47 @@
 
 ---
 
+## Milestone: v1.5 — Stage, Studio, Web
+
+**Shipped:** 2026-06-12
+**Phases:** 15 (35–49) | **Plans:** 103 | **Audit:** tech_debt (0 unsatisfied, integration CLEAN)
+
+### What Was Built
+- Language foundation (35): pattern matching + music-aware extractors, Rust-style diagnostics, pure-Flow `flow test` framework, `-> as name`.
+- Generative + algebra (36): 13 Tidal combinators, Markov/L-system/cellular/chaos, parameterized sections, `jam` improv, `PrngRegistry` determinism foundation.
+- Sound design (37): granular + hand-rolled vocoder/PSOLA stretch+pitch-shift, per-voice stereo pan, SFZ/sampler polish.
+- Live + interop (38–40): `live { }` + watch + REPL polish + mic + OSC; MusicXML/LilyPond/ABC/MML; real-time MIDI + 24-PPQN clock + JACK.
+- Consolidation (42–46): type/stdlib audit → strict mode + module names + Beat literals; bloat removal.
+- Reach (41, 47–49): `flow doc`, 5-RID binaries, JetBrains plugin; `FlowTarget=Desktop|Web` → Mono-WASM runtime + real WebAudioBackend → flowlang.dev SvelteKit site. First audible .NET-in-WASM Flow.
+
+### What Worked
+- **The 47→48→49 compile-target chain held cleanly.** Conditioning the library first (47) de-risked WASM (48) and the site (49); the integration checker confirmed all 7 cross-phase seams wired with byte-identical E2E renders.
+- **Determinism foundations paid forward.** `PrngRegistry` laid in 36 kept 37/38 two-run cmp-clean; the read-only `42-AUDIT.md` fed 43/44 as a concrete routing artifact.
+- **Inline re-verification caught real gaps before close** — Phase 37 PIANO-01 cross-validation, Phase 38 `OscHandle` TypeParser — fixed and re-verified rather than shipped broken.
+- **Honest human-gate discipline.** Phases 40/41/48/49 marked `human_needed` (hardware/deploy/marketplace/cross-browser) instead of faked passes; the milestone shipped on machine-verified evidence + tracked debt.
+
+### What Was Inefficient
+- **Bookkeeping lag.** 16 traceability checkboxes (Phase 35 + 39) stayed `Pending` for weeks despite passing verification; Phase 39 shipped with **0 SUMMARY.md**. Both needed a reconciliation pass at milestone-close audit.
+- **Mid-milestone phase churn.** Phases 42–46 added 2026-05-24/25 and the WASM bullet was carved 41 → 47-49; STATE/ROADMAP summary rows drifted (Phase 39 "Not started", Phase 48 "5/7") and took several reconciliation passes.
+- **In-process seams hid a native bug.** RtMidi.Core 1.0.53's ABI crash (`free(): invalid pointer` on `(midiPorts)`) only surfaced on real hardware — the `CaptureMidiBackend` seam masked it; cost a full Plan 40-04 rework to direct librtmidi P/Invoke.
+- **One large fix run bypassed GSD** (2026-06-09, 56-agent audit + 3-wave fix, 60+ findings) — valuable but outside the planning trail.
+
+### Patterns Established
+- `FlowTarget=Desktop|Web` MSBuild conditioning + `#if !FLOW_WEB` at call sites + Mono.Cecil reflective gate = the cross-platform feature-strip pattern.
+- Frozen-runtime contract: Phase 48 `flow-runtime.js` committed verbatim under `flow-site/static/wasm/` → CF build stays pure-Node, runtime never hand-edited.
+- Read-only audit phase (42) emitting a routing deliverable consumed by downstream phases.
+- Deferred-HUMAN-UAT: machine-verify what's verifiable, flag the rest, ship on evidence + STATE-tracked debt.
+
+### Key Lessons
+- **Flip traceability checkboxes at phase close, not milestone close** — stale `Pending` rows masquerade as coverage gaps.
+- **Write a SUMMARY.md even for "obvious" phases** — VERIFICATION alone (Phase 39) leaves no per-plan artifact trail.
+- **Pair in-process test seams with a real-target loopback test** (skip-when-absent) — seams hide ABI/native bugs.
+- **Reconcile ROADMAP/STATE immediately on mid-milestone phase insertion** or the bookkeeping compounds.
+
+### Cost Observations
+- Model mix / session count not instrumented this milestone.
+- Largest GSD milestone to date (15 phases); executed largely via autonomous chain with multiple re-verification loops. Notable: the reach track (47–49) carried most of the feasibility risk and absorbed the most rework.
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
