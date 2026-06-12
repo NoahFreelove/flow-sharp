@@ -10,35 +10,26 @@ Users can write musical ideas as code and hear them immediately — the language
 
 ## Current State
 
-**Shipped:** v1.4 Audio Fidelity, Distribution & Public Showcase (2026-05-16)
+**Shipped:** v1.5 Stage, Studio, Web (2026-06-12) — 15 phases (35–49), 103 plans, 205 tasks. Milestone audit: `tech_debt` (0 unsatisfied requirements, cross-phase integration CLEAN). Tagged v1.5.0.
 
-**Current milestone:** v1.5 Stage, Studio, Web (started 2026-05-17)
+**Headline:** Flow became a real citizen of the music-software world — pattern matching + Rust-style diagnostics + a pure-Flow test framework, Tidal-style sequence algebra + generative + improv, granular/stretch/pitch-shift + stereo pan + sampler polish, a `live { }` block + modernized watch + REPL polish + mic input + OSC, MusicXML/LilyPond/ABC/MML interop, real-time MIDI + clock + JACK, module names + strict mode + Beat literals, and — the reach track — a Mono-WASM browser runtime with a real WebAudioBackend behind the greenfield flowlang.dev SvelteKit site (first audible .NET-in-WASM Flow, Firefox-confirmed).
 
-**Latest phase complete:** Phase 37 — Sound Design + Sampler Polish (2026-05-23). DSP-01..03 + MIX-01..02 + SAMP-01..03 + PIANO-01 + FLUTE-01 + DRUM-01 closed (11 REQs): granular synthesis (Hann/Gaussian/Tukey + GranularEngine), independent time-stretch + pitch-shift via hand-rolled PhaseVocoder (Laroche-Dolson identity phase-locking) + Psola (YIN + epoch-OLA) + `#auto` HPS-driven per-frame mode dispatch, SFZ per-voice pan retrofit + channel-aware mix, SAMP round-robin + velocity-layer crossfade + per-articulation envelope multipliers for the sample path, PIANO-01 4-way velocity crossfade (pp + synthesized mp via RmsInterpolate α=0.6 + real mf + ff) + `release=` named arg, FLUTE-01 A4 sample point closing the D5 timbre crossover gap, DRUM-01 VSCO-CE GM-StylePerc sampled drums via `#drums` symbol + W7 LOCK `IsPercussion` gate routing off-center pitch-shifts through PitchShiftEngine `#auto` (transient-preserving).
+**Deferred at close (composer-chosen 2026-06-08; shipped on machine-verified evidence + these as deferred debt):** real hardware MIDI/DAW/JACK UAT (Phase 40); JetBrains Marketplace publish + osx/win exec smoke + the v1.5.0 GitHub Release cut (Phase 41); Chrome/Safari audible audio (Phase 48); live Cloudflare Pages deploy + GitHub OAuth gist + cross-browser audio/visual/SR smoke (Phase 49). By-design defers: MIDI-RT-03 (CoreMIDI/WinMM) + LINK-01 (Ableton Link, GPL) → v1.6. Full list: STATE.md `## Deferred Items` + `.planning/milestones/v1.5-MILESTONE-AUDIT.md`.
 
-**Prior v1.5 phases:** Phase 35 Language Foundation (2026-05-19, LANG/TEST/HK), Phase 36 Sequence Algebra & Generative (2026-05-22, PAT/GEN/IMPROV/SECT + universal named args + PrngRegistry).
+**Next milestone:** not yet started — run `/gsd:new-milestone` (questioning → research → requirements → roadmap). Candidate v1.6 themes in `.planning/MILESTONES.md` `## v1.6 Backlog`.
 
-## Current Milestone: v1.5 Stage, Studio, Web
+<details>
+<summary>v1.5 Stage, Studio, Web (shipped 2026-06-12)</summary>
 
-**Goal:** Take Flow from "credible single-author public language" to "real citizen of the music-software world" — extending creative reach (live coding revamp, generative algebra, improv API), ecosystem interop (notation export, real-time MIDI, transport sync), and distribution (WASM playground, cross-platform binaries, docs generator). Plus a language-foundation phase that unblocks the rest and a sound-design phase that pays down sampler-polish debt.
+**Goal:** Take Flow from "credible single-author public language" to "real citizen of the music-software world" — extending creative reach (live coding revamp, generative algebra, improv API), ecosystem interop (notation export, real-time MIDI, transport sync), and distribution (WASM runtime + browser site, cross-platform binaries, docs generator).
 
-**Target features:**
-- Language foundation: pattern matching, `-> as name` chain naming, Rust-style diagnostics, pure-Flow test framework
-- Sequence algebra & generative: Tidal-style pattern algebra, Markov/L-system/cellular/Lorenz primitives, parameterized sections, improvisation API
-- Sound design: granular synthesis, independent time-stretch + pitch-shift, stereo pan across instruments, sampler polish (warmer piano, velocity layers, SFZ round-robin, articulation envelope multipliers, more flute samples, sampled drums)
-- Live coding 2.0: `live { ... }` block + modernized watch mode, REPL polish (LSP-backed completion, inline help, pretty piano-roll), audio input, OSC server/client
-- Notation citizenship: MusicXML export, LilyPond export, ABC / MML notation import
-- Studio sync: real-time MIDI output (new `IMidiBackend`), MIDI clock + Ableton Link + JACK transport sync
-- Reach + closer: WASM playground (paired with `live` block — browser live-coding), cross-platform binaries (WASAPI / CoreAudio), `flow doc` generator, JetBrains Marketplace publish, third-genre showcase piece
+Delivered across Phases 35–49: pattern matching + `-> as name` + Rust-style diagnostics + pure-Flow test framework (35); 13 Tidal combinators + Markov/L-system/cellular/chaos generative + parameterized sections + `jam` improv + PrngRegistry (36); granular + time-stretch/pitch-shift + stereo pan + SFZ/sampler polish (37); `live { }` + watch + REPL polish + mic + OSC (38); MusicXML/LilyPond/ABC/MML notation interop (39); real-time MIDI + 24-PPQN clock + JACK transport (40); `flow doc` + WASAPI/CoreAudio + 5-RID binaries + JetBrains plugin + EDM showcase (41); type/stdlib audit (42); module names + qualified imports (43); `enable strict;` (44); Beat literal `Nb` + `beat-true-to-sig` pragma (45); bloat removal (46); `FlowTarget=Desktop|Web` (47); Mono-WASM runtime + WebAudioBackend (48); flowlang.dev SvelteKit site + skeuo playground (49).
 
-**Key context:**
-- Phases: 35–41 (continues numbering from v1.4; no reset)
-- Pre-traction no-deprecation latitude is ACTIVE — breaking changes ship in one commit; in-repo migrators sufficient. See `project_pre_public_no_legacy_burden` external memory (rewritten 2026-05-17).
-- Phase 35 includes housekeeping: humanizeGaussian voice-block bug, Phase 17 HUMAN-UAT rows 1-3, Phase 04 VERIFICATION gaps, CLAUDE.md "Public as of v1.4" footnote revision.
-- Phase 37 is the largest phase (8 sub-items) — roadmapper may subdivide plans.
-- Phase 38's modernized watch mode is a prerequisite for Phase 41's WASM live-coding-in-browser demo.
-- Phase 40's `IMidiBackend` mirrors the v1.0 `IAudioBackend` abstraction pattern.
-- Phase 41 closes the milestone with a third-genre showcase (jazz / EDM / death metal) validating the genre-agnostic claim, mirroring v1.4 Phase 34's shape.
+- 104 tracked requirements; 0 unsatisfied at close; 2 by-design defers (MIDI-RT-03, LINK-01)
+- Cross-phase integration CLEAN (7/7 seams wired; E2E flows byte-identical ×2)
+- See: `.planning/MILESTONES.md` and `.planning/milestones/v1.5-*.md`
+
+</details>
 
 <details>
 <summary>v1.4 Audio Fidelity, Distribution & Public Showcase (shipped 2026-05-16)</summary>
@@ -145,35 +136,30 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - ✓ Tutorial + showcase refresh demonstrating v1.1 + v1.2 features end-to-end (`examples/tutorial.flow` 348→635 lines, `examples/showcase.flow` rewritten as ambient mood piece, paired WAV+MIDI export to `examples/output/`) — v1.2 Phase 16 (QOL-03)
 - ✓ Scala (`.scl`) tuning loader with `(loadScala "path")` builtin + `tuning t { ... }` musical-context block, full Scala feature subset (cents + ratio steps, `.kbm` keyboard mapping, non-octave scales, negative cents, `!` line comments), 5 canonical archive fixtures + 3 malformed parser-error fixtures, ±0.1¢ Carlos Alpha / Bohlen-Pierce acceptance, last-wins integration with Phase 23 pragmas, D-13 MIDI-export dual-axis advisory, byte-identical two-run determinism — v1.4 Phase 32 (SPEC-1..SPEC-7)
 - ✓ SFZ orchestral sampler: `Sfz` first-class type + `(loadSfz #symbol)` / `(loadSfz "path")` builtins + 19-entry GM dict in `@sfz` opt-in stdlib module + `"sampler:NAME"` instrument string dispatched in SongRenderer + 12 new GM-program entries in MidiExport + SfzParser (14-opcode whitelist with `<control>` + `default_path` cascade) + SfzRenderer (equal-power 441-frame crossfade, Phase 28 articulation envelope hook) + SfzSampleCache (per-engine, ordinal-sorted deterministic eager-load) + synthetic 19 KB smoke fixture for CI + VSCO-CE 1.1.0 path audit — v1.4 Phase 33 (SPEC-1..SPEC-8; HUMAN-UAT pending for real-library playback)
+- ✓ Pattern matching (`(match … | pat => body | _ => …)` literal/wildcard/binding/guard + music-aware chord/numeral/articulation extractors; charitable non-exhaustive WARN, `enable matchExhaustive;` to error) + `-> as name` chain naming + Rust-style multi-line diagnostics + pure-Flow test framework (`flow test`) — v1.5 Phase 35 (LANG-01..04, TEST-01/02, HK-01..04)
+- ✓ Tidal-style sequence algebra (13 `@patterns` combinators) + generative primitives (Markov/L-system/cellular/Lorenz-logistic in `@generative`) + parameterized sections + chord-aware `jam` improv + universal named args + `PrngRegistry` determinism — v1.5 Phase 36 (PAT-01/02, GEN-01..05, SECT-01, IMPROV-01)
+- ✓ Granular synthesis + hand-rolled time-stretch/pitch-shift (`#vocoder`/`#psola`/`#auto`) + per-voice constant-power stereo pan + SFZ stereo retrofit + sampler polish (round-robin, velocity crossfade, per-articulation envelopes, warmer piano, more flute, sampled drums) — v1.5 Phase 37 (DSP-01..03, MIX-01/02, SAMP-01..03, PIANO-01, FLUTE-01, DRUM-01)
+- ✓ Live coding 2.0: `live <quantize> { }` hot-swap + modernized `flow watch` panel + PrettyPrompt REPL (LSP completion, `:help fn`, history, `(visualize seq)`) + mic input (PA_STREAM_RECORD) + OSC client/server (Rug.Osc) — v1.5 Phase 38 (LIVE-01..03, REPL-01..04, AUDIO-IN-01/02, OSC-01/02)
+- ✓ Notation interop: MusicXML 3.1 + LilyPond export, ABC 2.1 + MML PC-98 import (`@notation-io`) — v1.5 Phase 39 (XML-01/02, LILY-01, ABC-01/02, MML-01)
+- ✓ Real-time MIDI output + 24-PPQN clock master/slave (direct librtmidi P/Invoke) + best-effort JACK transport — v1.5 Phase 40 (MIDI-RT-01/02/04, CLOCK-01/02, LINK-02, JACK-01; MIDI-RT-03 + LINK-01 deferred by design)
+- ✓ `flow doc` generator + WASAPI/CoreAudio backends + 5-RID self-contained binaries + JetBrains plugin build + EDM showcase — v1.5 Phase 41 (DOC-01/02, WASAPI-01, COREAUDIO-01, BIN-01, JET-01, SHOWCASE-01; Marketplace publish + osx/win smoke = deferred HUMAN-UAT)
+- ✓ Type/stdlib audit (`42-AUDIT.md`) + `module math` names + qualified imports + `enable strict;` mode + Beat literal `Nb` + `enable beat-true-to-sig;` + codebase bloat removal — v1.5 Phases 42–46 (REQ-AUDIT-*, REQ-MOD-*, REQ-STRICT-*, REQ-BEAT-*)
+- ✓ `FlowTarget=Desktop|Web` compile-target conditioning + Mono-WASM `flow-lang` runtime + real JSImport `WebAudioBackend` + frozen `flow-runtime.js` API + flowlang.dev SvelteKit site (Home/Docs/Playground/Showcase, skeuomorphic) — v1.5 Phases 47–49 (REQ-WEB-TARGET-*, REQ-WASM-*/WEBAUDIO-*, REQ-SITE-*; live deploy + cross-browser audio = deferred HUMAN-UAT)
 
 ### Active
 
-**v1.4 shipped 2026-05-16.** v1.5 Stage, Studio, Web started 2026-05-17 — active requirements will be populated by the v1.5 requirements step of `/gsd-new-milestone`.
+**v1.5 shipped 2026-06-12.** No active milestone — run `/gsd:new-milestone` to populate v1.6 requirements. Candidate themes parked in `.planning/MILESTONES.md` `## v1.6 Backlog` (e.g. pattern-match decision-tree backend, AudioWorklet/AnalyserNode, live-gist auto-rebuild, full-LSP Monaco, custom domain, piano EQ/sympathetic resonance, per-live-block quantize timelines).
 
-**Deferred candidates (post-v1.2):**
-- Triplet/tuplet syntax + arbitrary fractional note durations (conversation trigger 2026-04-26)
-- DEFER-01: `range(Int, Int) → Array[Int]` stdlib registration
-- DEFER-02/03: `H` note-stream-only `B` alias via pragma system
-- DEFER-04: Multi-letter enharmonic edges (E↔Fb, F↔E#, B↔Cb, C↔B#)
-- DEFER-05: Slice negative-from-end indexing
-- DEFER-06: Gaussian humanize distribution
-- Tier B/C composer DX (arpeggio params, chord inversions, delay sync to note values, microtonal ratios, scale linting, legato/portamento, snap-to-grid)
-- Audit §2 hardening (overload ambiguity, bandpass Q unbounded, stereo voices played as mono, ChordParser sharp formatting, scale database brittleness, OverloadResolver top-2 tie check)
-- Pidgin parser combinator dependency removal (referenced but unused)
-- Extended audio formats (FLAC, OGG)
-- Per-voice effects chains
-- Real-time MIDI output to external devices
-- Type inference for `var` declarations
-- Pattern matching / switch expressions
-- User-defined types / structs
-- Cross-platform audio backend (WASAPI, CoreAudio)
+**Deferred by design (→ v1.6):**
+- MIDI-RT-03: CoreMIDI (macOS) + WinMM (Windows) real-time MIDI backends — same `IMidiBackend` abstraction
+- LINK-01: Ableton Link transport sync — GPLv2+ contamination hazard; awaits clean-room/re-licensed binding (D-40-06)
 
 ### Out of Scope
 
 - GUI/DAW interface — Flow is a text-first language; visual editing is a separate project
 - VST/AU plugin hosting — too complex for interpreter; focus on built-in synthesis
 - Multi-user collaboration — single-user tool
-- Cloud/web deployment — desktop CLI tool
+- ~~Cloud/web deployment~~ — **revised v1.5**: Flow now runs in the browser (Mono-WASM runtime + flowlang.dev playground, Phases 47–49). The CLI remains the primary surface; the web playground is a reach/demo surface, not a hosted multi-tenant service.
 
 ## Context
 
@@ -185,14 +171,15 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 - v1.2 close (2026-04-26): 41 plans across Phases 11–17 shipped — interpreter stability, Tier A + Tier B composer DX, retroactive Nyquist validation for v1.1 phases, tutorial+showcase exercising every v1.1 + v1.2 feature with byte-identical determinism, and Flow Language Server + VSCode extension
 - Codebase at v1.2 close: ~83K LOC C# + 312 .flow files, 287/287 tests green
 - Open at v1.2 close: 4 deferred items (1 debug session, 1 quick task, 3 Phase 17 HUMAN-UAT rows, 1 Phase 04 verification gap) — recorded in STATE.md Deferred Items
+- v1.5 close (2026-06-12): 103 plans across Phases 35–49; `flow-lang` now compiles for both Desktop and Web (Mono-WASM) targets; greenfield `flow-site/` SvelteKit project added (TS/pnpm conventions, NOT C#); 7 primary C# projects (flow-lang/-interpreter/-cli/-lsp/-midi + two test suites). Milestone audit `tech_debt`: 0 unsatisfied requirements, integration CLEAN. ~36 pre-existing Phase 28/29/35/38 xUnit failures predate the v1.5 base (c4cd738); 0 new introduced by any v1.5 phase. Deferred human-UAT on Phases 40/41/48/49 recorded in STATE.md `## Deferred Items`.
 
 ## Constraints
 
 - **Runtime**: .NET 10 — all code must target net10.0
-- **Platform**: Linux primary (PulseAudio dependency), but IAudioBackend abstraction exists for portability
-- **Dependencies**: Minimal — only Pidgin parser combinator (referenced but not used for main parser)
+- **Platform**: Linux primary (PulseAudio); macOS via CoreAudio, Windows via WASAPI (NAudio.Wasapi); browser via Mono-WASM WebAudioBackend (`FlowTarget=Web` strips P/Invoke/SFZ/OSC/MIDI/mic). IAudioBackend / IMidiBackend abstractions gate per-platform selection.
+- **Dependencies**: Minimal & pinned — DryWetMidi 8.0.3 (MIDI SMF I/O, also retained on Web), Rug.Osc 1.2.5 (OSC, Desktop-only), NAudio.Wasapi 2.3.0 (Windows audio, Desktop-only), PrettyPrompt 4.1.1 (REPL). Pidgin removed 2026-06-09 (never used). librtmidi.so is a system prerequisite for `@midi` (not bundled). `flow-site/` uses pnpm/Vite/Svelte 5.
 - **Performance**: Real-time audio playback requires efficient buffer operations; no GC pressure in hot paths
-- **Compatibility**: Existing .flow scripts and test suite must continue to work
+- **Compatibility**: Existing .flow scripts and test suite must continue to work; two-run cmp-clean determinism preserved for non-`live` render paths
 
 ## Key Decisions
 
@@ -222,6 +209,17 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 | Determinism contract end-to-end | Synth white-noise + TPDF dither RNGs reseeded at renderSong/writeWav boundaries; byte-identical WAV+MIDI two consecutive runs | ✓ Good (v1.2) |
 | LSP project references flow-lang directly | `flow-lsp` reuses lexer/parser/error reporter; no shadow language model | ✓ Good (v1.2) |
 | Per-platform self-contained VSIX with bundled stdlib | Avoids server-locator complexity; users get one .vsix per platform | ✓ Good (v1.2) |
+| Pattern-match backend = naive linear scan (D-v1.5-11) | Composer-visible semantics fixed; decision-tree compile is internal swap | ✓ Good (v1.5) — deferred to v1.6 |
+| `PrngRegistry` keyed by (SourceLocation, name) (D-v1.5-06) | Unseeded generative calls stay two-run cmp-clean; reseed at render boundary | ✓ Good (v1.5) |
+| Hand-rolled DSP (vocoder/PSOLA/granular), reject RubberBand (D-v1.5-03) | GPL contamination hazard for MIT flow-lang.dll | ✓ Good (v1.5) |
+| `live { }` opts OUT of determinism with stderr advisory (D-v1.5-07) | Honest: real-time hot-swap can't be byte-pinned; offline render stays deterministic | ✓ Good (v1.5) |
+| Mono-WASM jiterpreter, NOT NativeAOT-LLVM (D-v1.5-02) | Reflection-heavy registry needs no source-gen pass; ships today | ✓ Good (v1.5) |
+| `FlowTarget=Desktop|Web` MSBuild conditioning (Phase 47) | One codebase, browser-incompatible features `#if !FLOW_WEB`-stripped + Cecil-gated | ✓ Good (v1.5) |
+| WebAudio via offline-render → AudioBuffer, NOT AudioWorklet | No .NET-in-WASM prior art for AudioWorklet driving; AudioBufferSourceNode works | ✓ Good (v1.5) |
+| Frozen `flow-runtime.js` 5-export API consumed verbatim by flow-site | Phase 49 never edits the runtime; committed AppBundle → pure-Node CF build | ✓ Good (v1.5) |
+| Ableton Link DEFERRED, not implemented (D-40-06) | GPLv2+ derivative-work hazard; clean-room community PR welcome | — Pending (v1.6) |
+| Direct librtmidi P/Invoke, drop RtMidi.Core (Plan 40-04) | RtMidi.Core 1.0.53 ABI crashes modern librtmidi during port enum | ✓ Good (v1.5) |
+| Ship v1.5 on machine-verified evidence + deferred human-UAT | Composer chose 2026-06-08 to defer hardware/deploy/marketplace gates | ✓ Good (v1.5) — debt tracked in STATE |
 
 ## Evolution
 
@@ -241,4 +239,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-23 — Phase 37 Sound Design + Sampler Polish complete (3/7 v1.5 phases shipped: 35 + 36 + 37; 26/26 plans; 43%)*
+*Last updated: 2026-06-12 — after v1.5 Stage, Studio, Web milestone close (15 phases 35–49 shipped; 103 plans; audit tech_debt, 0 unsatisfied; tagged v1.5.0). Next: `/gsd:new-milestone`.*
