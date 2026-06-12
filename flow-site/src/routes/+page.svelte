@@ -1,19 +1,19 @@
 <!--
   Home `/` — the iOS-6 skeuomorphic marketing page (REDESIGN-HANDOFF §4).
 
-  Linen ground · brushed-aluminum toolbar · Aqua jelly buttons · inset code wells · leather
-  audio rack · bottom tab bar. Ported faithfully from `.design-handoff/project/index.html`
-  (markup + landing-inline <style>) + `.design-handoff/project/flow.css` (the skeuo system).
+  Linen ground · brushed-aluminum toolbar · Aqua jelly buttons · inset code wells. Ported
+  faithfully from `.design-handoff/project/index.html` (markup + landing-inline <style>) +
+  `.design-handoff/project/flow.css` (the skeuo system).
 
   Prerendered (prerender = true in +page.ts): the 3 hero snippets are Flow-highlighted at
   script init via the pure `highlightFlow` (no client highlight JS, no window/DOM at module
   top). The Play buttons make Web-Audio sound via the `tones` helper (NOT the WASM runtime —
   the real engine lives on /playground). The layout's old chrome is suppressed on `/` via the
-  +layout.svelte `isHome` guard, so this page owns its own toolbar + tab bar.
+  +layout.svelte `isHome` guard, so this page owns its own toolbar.
 -->
 <script lang="ts">
 	import { highlightFlow } from '$lib/home/flow-highlight';
-	import { playTone, playMelody, playChord, type ToneType } from '$lib/home/tones';
+	import { playTone, playMelody, playChord } from '$lib/home/tones';
 	import { encode } from '$lib/share/encode';
 
 	const REPO_URL = 'https://github.com/noahfreelove/flow-sharp';
@@ -60,65 +60,6 @@ key Cmajor {
 		playChord(['D4', 'F4', 'A4'], 1.0);
 		setTimeout(() => playChord(['G3', 'B3', 'D4'], 1.0), 900);
 		setTimeout(() => playChord(['C4', 'E4', 'G4'], 1.0), 1800);
-	}
-
-	// Leather "How it sounds" rack — melodies/types from index.html L185/192/199.
-	const PLAYERS: { melody: string[]; type: ToneType; title: string; sub: string }[] = [
-		{
-			melody: ['C4', 'E4', 'G4', 'C5', 'G4', 'E4'],
-			type: 'sine',
-			title: 'In Five Voices — symphony excerpt',
-			sub: 'multi-voice render · 0:42'
-		},
-		{
-			melody: ['G4', 'A4', 'B4', 'C5', 'B4', 'G4', 'E4'],
-			type: 'square',
-			title: 'Stride & Stomp — ragtime',
-			sub: 'stride piano · 0:38'
-		},
-		{
-			melody: ['C4', 'Db4', 'Eb4', 'E4', 'Gb4', 'G4'],
-			type: 'triangle',
-			title: 'Just-intonation microtonal sketch',
-			sub: 'cent-offset tuning · 0:24'
-		}
-	];
-
-	const VU_BARS = 14;
-	let playingIndex = $state(-1);
-	let vu = $state<number[]>(new Array(VU_BARS).fill(6));
-
-	// Guarded timers so a second click can't leak the prior animation interval/timeout.
-	let vuInterval: ReturnType<typeof setInterval> | null = null;
-	let vuTimeout: ReturnType<typeof setTimeout> | null = null;
-
-	function clearVuTimers(): void {
-		if (vuInterval !== null) {
-			clearInterval(vuInterval);
-			vuInterval = null;
-		}
-		if (vuTimeout !== null) {
-			clearTimeout(vuTimeout);
-			vuTimeout = null;
-		}
-	}
-
-	function playLeather(i: number): void {
-		clearVuTimers();
-		playingIndex = i;
-		const p = PLAYERS[i];
-		const dur = playMelody(p.melody, 0.34, p.type);
-		vuInterval = setInterval(() => {
-			vu = Array.from({ length: VU_BARS }, () => 6 + Math.random() * 20);
-		}, 90);
-		vuTimeout = setTimeout(
-			() => {
-				clearVuTimers();
-				vu = new Array(VU_BARS).fill(6);
-				playingIndex = -1;
-			},
-			dur * 1000
-		);
 	}
 </script>
 
@@ -260,54 +201,6 @@ key Cmajor {
 			</div>
 		</div>
 
-		<!-- HOW IT SOUNDS -->
-		<div class="h-rule"><h2>How it sounds</h2><span class="line"></span></div>
-		<div class="leather">
-			<span
-				class="screw tl"
-				style="background:radial-gradient(circle at 35% 30%,#e8c79a,#7a5230 55%,#3a2410)"
-			></span>
-			<span
-				class="screw tr"
-				style="background:radial-gradient(circle at 35% 30%,#e8c79a,#7a5230 55%,#3a2410)"
-			></span>
-			<p style="margin:2px 0 16px; font-size:13.5px; color:#e7d4b4; max-width:60ch;">
-				Every example below is rendered straight from Flow source. Nothing plays automatically —
-				press play to listen.
-			</p>
-
-			{#each PLAYERS as p, i (p.title)}
-				<div
-					class="player plate"
-					class:playing={playingIndex === i}
-					style="background:linear-gradient(#3a2a18,#241608); border-color:#1a0f04;"
-				>
-					<!-- Decorative status LED — aria-hidden so AT ignores the colour change;
-					     the playing state is conveyed by the button text and page context (§6.9). -->
-					<div class="led" aria-hidden="true"></div>
-					<button class="btn sm amber" onclick={() => playLeather(i)}>▶ Play</button>
-					<div class="meta">
-						<div class="t">{p.title}</div>
-						<div class="s">{p.sub}</div>
-					</div>
-					<!-- Decorative VU meter — purely visual animation, aria-hidden (§6.9). -->
-					<div class="vu" aria-hidden="true">
-						{#if playingIndex === i}
-							<!-- keyed by index, NOT value: vu initializes to 14 identical
-							     heights, and duplicate keys throw each_key_duplicate -->
-							{#each vu as h, b (b)}
-								<i style="height:{h}px"></i>
-							{/each}
-						{:else}
-							{#each new Array(VU_BARS) as _, b (b)}
-								<i style="height:6px"></i>
-							{/each}
-						{/if}
-					</div>
-				</div>
-			{/each}
-		</div>
-
 		<div class="footer">
 			Flow v1.4 · written in C# on .NET 10 · <a href="/docs">Docs</a> ·
 			<a href={REPO_URL} target="_blank" rel="noopener noreferrer">GitHub ⌃</a><br />
@@ -348,11 +241,6 @@ key Cmajor {
 		--aqua-2: #3f86d8;
 		--aqua-3: #2e6cba;
 		--aqua-4: #235aa0;
-
-		--leather-1: #7a5230;
-		--leather-2: #5c3c20;
-		--leather-3: #43290f;
-		--stitch: #d9b483;
 
 		--felt-1: #2f6a44;
 		--felt-2: #245538;
@@ -663,48 +551,6 @@ key Cmajor {
 		overflow: hidden;
 	}
 
-	.leather {
-		position: relative;
-		color: #f3e6d2;
-		background:
-			radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 60%),
-			linear-gradient(var(--leather-1), var(--leather-2) 55%, var(--leather-3));
-		border: 1px solid #2c1a09;
-		border-radius: var(--r-card);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.18),
-			inset 0 -10px 26px rgba(0, 0, 0, 0.4),
-			0 8px 18px rgba(0, 0, 0, 0.32);
-		padding: 24px;
-	}
-	.leather::before {
-		content: '';
-		position: absolute;
-		inset: 9px;
-		border-radius: 9px;
-		border: 2px dashed var(--stitch);
-		opacity: 0.55;
-		pointer-events: none;
-	}
-	.leather::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		border-radius: var(--r-card);
-		pointer-events: none;
-		background: repeating-linear-gradient(
-			115deg,
-			rgba(0, 0, 0, 0.05) 0 2px,
-			rgba(255, 255, 255, 0.02) 2px 4px
-		);
-		opacity: 0.5;
-		mix-blend-mode: overlay;
-	}
-	.leather > * {
-		position: relative;
-		z-index: 1;
-	}
-
 	/* ---- code blocks ---- */
 	.code {
 		margin: 0;
@@ -938,65 +784,6 @@ key Cmajor {
 		line-height: 1.55;
 		color: #5c554b;
 		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-	}
-
-	/* audio player rows */
-	.player {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		margin-bottom: 14px;
-		padding: 14px 16px;
-	}
-	.player .led {
-		width: 13px;
-		height: 13px;
-		border-radius: 50%;
-		flex: 0 0 auto;
-		background: radial-gradient(circle at 35% 30%, #ff7a6a, #8e241a);
-		box-shadow:
-			inset 0 1px 1px rgba(255, 255, 255, 0.4),
-			0 0 6px rgba(220, 60, 40, 0.5);
-	}
-	.player.playing .led {
-		background: radial-gradient(circle at 35% 30%, #8ff0a0, #1c7a36);
-		box-shadow:
-			inset 0 1px 1px rgba(255, 255, 255, 0.5),
-			0 0 10px rgba(60, 220, 90, 0.8);
-		animation: blink 1s infinite;
-	}
-	@keyframes blink {
-		50% {
-			opacity: 0.5;
-		}
-	}
-	.player .meta {
-		flex: 1;
-	}
-	.player .meta .t {
-		font-size: 14.5px;
-		font-weight: 800;
-		color: #f4e6cf;
-		text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
-	}
-	.player .meta .s {
-		font-size: 12px;
-		color: #d9c3a0;
-		opacity: 0.8;
-	}
-	.vu {
-		display: flex;
-		gap: 3px;
-		align-items: flex-end;
-		height: 26px;
-	}
-	.vu i {
-		width: 5px;
-		border-radius: 1px;
-		background: linear-gradient(#9be6a6, #2f8a55);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
-		height: 6px;
-		transition: height 0.1s;
 	}
 
 	.footer {

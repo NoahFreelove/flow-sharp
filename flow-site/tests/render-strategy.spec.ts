@@ -103,7 +103,7 @@ test.describe('Home + nav a11y labels (REQ-SITE-A11Y-02)', () => {
 
 		// Defensive sweep: no <button> on the Home page may be unlabelled (text content OR
 		// aria-label). Catches a regression where a future icon button forgets its label.
-		// Scope to main + nav (covers play buttons in the hero + leather section).
+		// Scope to main + nav (covers the hero "▶ Play" buttons).
 		const buttons = await page.locator('main button, nav button').all();
 		for (const btn of buttons) {
 			const ariaLabel = await btn.getAttribute('aria-label');

@@ -4,7 +4,9 @@
  * The redesign (94df2ed) introduced four landmark/a11y regressions:
  *  1. No <main> landmark — all content lived in <div class="layout">.
  *  2. Two <nav> landmarks with no aria-label to distinguish them.
- *  3. Decorative VU-meter bars and LED exposed to assistive technology.
+ *  3. Decorative VU-meter bars and LED exposed to assistive technology. (The whole
+ *     "How it sounds" leather rack — VU + LED included — was later removed; the test now
+ *     asserts those decorative elements are gone rather than merely aria-hidden.)
  *  4. No dark-mode toggle — persisted [data-theme="dark"] from app.html was
  *     silently ignored, locking dark-mode users to the light palette.
  *
@@ -52,14 +54,13 @@ describe('§6.9 — home page landmark / a11y fixes', () => {
 		expect(src).not.toContain('class="tabbar"');
 	});
 
-	it('the VU meter container has aria-hidden="true"', () => {
-		// The <div class="vu"> must carry aria-hidden so the decorative bars are hidden from AT.
-		expect(src).toMatch(/<div[^>]*class="vu"[^>]*aria-hidden="true"/);
-	});
-
-	it('the LED indicator has aria-hidden="true"', () => {
-		// The <div class="led"> is a decorative colour-only indicator — must be hidden from AT.
-		expect(src).toMatch(/<div[^>]*class="led"[^>]*aria-hidden="true"/);
+	it('ships no decorative VU meter or LED (the "How it sounds" rack was removed)', () => {
+		// The leather "How it sounds" audio rack — and its decorative VU-meter bars + status
+		// LED (the §6.9 aria-hidden concern) — was removed from the home page. Assert the
+		// elements are gone entirely, so the a11y concern can no longer regress.
+		expect(src).not.toContain('class="vu"');
+		expect(src).not.toContain('class="led"');
+		expect(src).not.toContain('How it sounds');
 	});
 
 	it('there is exactly one nav and it is labelled', () => {
