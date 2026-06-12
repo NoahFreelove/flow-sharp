@@ -115,23 +115,18 @@ test.describe('Home + nav a11y labels (REQ-SITE-A11Y-02)', () => {
 		const _ = width; // suppress unused-var lint — width is available for conditional logic if needed
 	});
 
-	test('the GitHub external link announces "opens in new tab"', async ({ page }, testInfo) => {
+	test('the GitHub external link announces "opens in new tab"', async ({ page }) => {
 		await page.goto('/');
 		await page.waitForLoadState('domcontentloaded');
-		const width = testInfo.project.use.viewport?.width ?? 1280;
 
-		// The iOS-6 home has `nav[aria-label="Primary"]` in the toolbar (visible >600px) and
-		// `nav[aria-label="Tab bar"]` at the bottom (always visible). Both GitHub links carry
-		// sr-only "(opens in new tab)" text. Check whichever GitHub link is visible.
-		if (width <= 600) {
-			// At very narrow widths the toolbar nav is hidden; the tabbar carries the GitHub link.
-			const gh = page.locator('nav[aria-label="Tab bar"]').getByRole('link', { name: /github/i });
-			await expect(gh).toContainText(/opens in new tab/i);
-		} else {
-			// Desktop: toolbar pill nav GitHub link.
-			const gh = page.locator('nav[aria-label="Primary"]').first().getByRole('link', { name: /github/i });
-			await expect(gh).toContainText(/opens in new tab/i);
-		}
+		// The iOS-6 home has a single top nav `nav[aria-label="Primary"]` in the toolbar at every
+		// width (it scrolls horizontally ≤600px; there is no bottom tab bar). Its GitHub link
+		// carries the sr-only "(opens in new tab)" text.
+		const gh = page
+			.locator('nav[aria-label="Primary"]')
+			.first()
+			.getByRole('link', { name: /github/i });
+		await expect(gh).toContainText(/opens in new tab/i);
 	});
 
 	test('play buttons are not auto-playing (D-49-01 — nothing autoplays on home)', async ({ page }) => {

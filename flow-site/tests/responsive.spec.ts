@@ -10,8 +10,7 @@ import { test, expect, type Page } from '@playwright/test';
 // as broken). The 320px project is the hard ROADMAP AC-7 floor.
 //
 // The `/` route ships the iOS-6 skeuomorphic home with its own chrome (no shared layout header):
-//   - Desktop (>600px): toolbar pill nav visible; no hamburger.
-//   - Mobile (≤600px): toolbar nav hidden (tabbar handles navigation); no hamburger.
+//   - All widths: toolbar pill nav visible (scrolls horizontally ≤600px); no hamburger, no tabbar.
 // Non-home routes keep the shared layout chrome: hamburger <768px, desktop strip ≥768px.
 
 const ROUTES = ['/', '/docs', '/docs/flow-operator', '/playground', '/showcase'];
@@ -59,18 +58,12 @@ test.describe('single-column collapse <768px (D-49-09)', () => {
 			await expect(page.locator('.site-hamburger')).toBeHidden();
 		}
 
-		// --- Home: iOS-6 chrome (no hamburger; toolbar nav or tabbar handles navigation) ---
+		// --- Home: iOS-6 chrome (single top nav at every width; no hamburger, no bottom tabbar) ---
 		await page.goto('/');
-		if (width <= 600) {
-			// At ≤600px the toolbar pill nav is hidden; the bottom tabbar is visible.
-			const tabbar = page.locator('nav[aria-label="Tab bar"]');
-			await expect(tabbar).toBeVisible();
-			// The toolbar nav is hidden (CSS display:none) — not visible, but attached.
-			await expect(page.locator('nav[aria-label="Primary"]').first()).toBeAttached();
-		} else {
-			// Desktop: the toolbar pill nav is visible; no hamburger on the iOS-6 home.
-			await expect(page.locator('nav[aria-label="Primary"]').first()).toBeVisible();
-		}
+		// The toolbar pill nav is visible at all widths (it scrolls horizontally ≤600px).
+		await expect(page.locator('nav[aria-label="Primary"]').first()).toBeVisible();
+		// The bottom tab bar was removed — it must not exist at any width.
+		await expect(page.locator('nav[aria-label="Tab bar"]')).toHaveCount(0);
 	});
 
 	test('playground stacks controls→editor→console + Monaco read-only + mobile banner', async ({

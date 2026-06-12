@@ -45,9 +45,11 @@ describe('§6.9 — home page landmark / a11y fixes', () => {
 		expect(src).toMatch(/<nav[^>]*class="nav"[^>]*aria-label="Primary"/);
 	});
 
-	it('the tabbar nav has aria-label="Tab bar"', () => {
-		expect(src).toContain('aria-label="Tab bar"');
-		expect(src).toMatch(/<nav[^>]*class="tabbar"[^>]*aria-label="Tab bar"/);
+	it('there is no bottom tab bar (single top nav, site-wide)', () => {
+		// The iOS-6 bottom tab bar was removed so every route uses one top nav. The home
+		// page must not reintroduce a `.tabbar`/"Tab bar" nav.
+		expect(src).not.toContain('aria-label="Tab bar"');
+		expect(src).not.toContain('class="tabbar"');
 	});
 
 	it('the VU meter container has aria-hidden="true"', () => {
@@ -60,10 +62,11 @@ describe('§6.9 — home page landmark / a11y fixes', () => {
 		expect(src).toMatch(/<div[^>]*class="led"[^>]*aria-hidden="true"/);
 	});
 
-	it('there are exactly two navs and both are labelled', () => {
-		// Count nav elements and assert each has an aria-label.
+	it('there is exactly one nav and it is labelled', () => {
+		// Count nav elements and assert each has an aria-label. After removing the bottom
+		// tab bar, the home page ships a single top nav (the toolbar Primary pill nav).
 		const navMatches = [...src.matchAll(/<nav\b([^>]*)>/g)];
-		expect(navMatches.length, 'expected exactly 2 <nav> elements').toBe(2);
+		expect(navMatches.length, 'expected exactly 1 <nav> element').toBe(1);
 		for (const match of navMatches) {
 			expect(
 				match[1],

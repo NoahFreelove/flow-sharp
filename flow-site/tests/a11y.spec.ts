@@ -17,8 +17,8 @@ import AxeBuilder from '@axe-core/playwright';
 // component layer (Plan 49-02), so they don't trip axe.
 //
 // The `/` route ships the iOS-6 skeuomorphic home with its own chrome:
-//   `nav[aria-label="Primary"]` in the toolbar + `nav[aria-label="Tab bar"]` at the bottom.
-//   The brand link carries `.site-wordmark` for spec compatibility.
+//   a single `nav[aria-label="Primary"]` in the toolbar (scrolls horizontally on mobile;
+//   no bottom tab bar). The brand link carries `.site-wordmark` for spec compatibility.
 //   The shared layout chrome (`.site-wordmark`, `.site-nav-desktop`) is present on non-home routes.
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];

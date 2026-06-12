@@ -318,37 +318,6 @@ key Cmajor {
 		</div>
 	</main>
 
-	<!-- bottom tab bar -->
-	<nav class="tabbar" aria-label="Tab bar">
-		<a href="/" class="active"
-			><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-				><path d="M3 11l9-8 9 8M5 9v11h14V9" /></svg
-			>Home</a
-		>
-		<a href="/docs"
-			><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-				><path d="M5 4h11l3 3v13H5z" /><path d="M8 9h8M8 13h8M8 17h5" /></svg
-			>Docs</a
-		>
-		<a href="/playground"
-			><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-				><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></svg
-			>Playground</a
-		>
-		<a href="/showcase"
-			><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-				><path d="M9 18V5l9-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3"
-				/></svg
-			>Showcase</a
-		>
-		<a href={REPO_URL} target="_blank" rel="noopener noreferrer"
-			><svg class="ic" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
-				><path
-					d="M12 2a10 10 0 00-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.45-1.16-1.1-1.47-1.1-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.36 1.09 2.94.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 015 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0012 2z"
-				/></svg
-			>GitHub<span class="sr-only"> (opens in new tab)</span></a
-		>
-	</nav>
 </div>
 
 <style>
@@ -825,49 +794,6 @@ key Cmajor {
 		box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 	}
 
-	/* ---- bottom tab bar ---- */
-	.tabbar {
-		position: fixed;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 40;
-		height: 56px;
-		display: flex;
-		align-items: stretch;
-		background: linear-gradient(#5b554c, #37332c 50%, #2a2722);
-		border-top: 1px solid #1b1815;
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.14),
-			0 -2px 8px rgba(0, 0, 0, 0.3);
-	}
-	.tabbar a {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 3px;
-		text-decoration: none;
-		color: #b9b2a4;
-		font-size: 10.5px;
-		font-weight: 600;
-		letter-spacing: 0.2px;
-	}
-	.tabbar a .ic {
-		width: 24px;
-		height: 24px;
-		opacity: 0.8;
-	}
-	.tabbar a.active {
-		color: #9fc6f4;
-		text-shadow: 0 0 8px rgba(80, 150, 240, 0.5);
-	}
-	.tabbar a.active .ic {
-		opacity: 1;
-		filter: drop-shadow(0 0 4px rgba(80, 150, 240, 0.6));
-	}
-
 	/* ---- reflection under hero word ---- */
 	.reflect {
 		position: relative;
@@ -1080,7 +1006,7 @@ key Cmajor {
 		color: #6b6458;
 		font-size: 12.5px;
 		margin-top: 40px;
-		padding-bottom: 70px;
+		padding-bottom: 24px;
 		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 	}
 	.footer a {
@@ -1097,11 +1023,26 @@ key Cmajor {
 		}
 	}
 
-	/* At narrow viewports the bottom tab bar handles navigation; hide the toolbar pill nav to
-	   prevent horizontal overflow. The brand stays visible in the toolbar. */
+	/* No bottom tab bar — the toolbar pill nav is the only navigation at every width.
+	   On narrow viewports it scrolls horizontally INSIDE the bar so the row never overflows
+	   the document (min-width:0 lets the flex item shrink below its content width). */
 	@media (max-width: 600px) {
+		.toolbar {
+			gap: 10px;
+			padding: 0 12px;
+		}
 		.nav {
+			min-width: 0;
+			overflow-x: auto;
+			overflow-y: hidden;
+			scrollbar-width: none;
+			-webkit-overflow-scrolling: touch;
+		}
+		.nav::-webkit-scrollbar {
 			display: none;
+		}
+		.nav a {
+			white-space: nowrap;
 		}
 	}
 
