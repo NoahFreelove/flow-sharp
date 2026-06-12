@@ -1,7 +1,7 @@
 export const config = /*json-start*/{
   "mainAssemblyName": "flow-lang.dll",
   "resources": {
-    "hash": "sha256-tNfrAIiUD0C06miNzrRDahcfe5PAk36xyvmcSUsKNPU=",
+    "hash": "sha256-P6fKaO0bB0aT1Z1t7LAlGkskQgjLkVwVP+Juo51AIgM=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.js"
@@ -15,7 +15,7 @@ export const config = /*json-start*/{
     "wasmNative": [
       {
         "name": "dotnet.native.wasm",
-        "hash": "sha256-rJewr3XmN+0HDGd7anfiOO5mGz0ltrEYJ9LnX5EsfJk="
+        "hash": "sha256-/S8bM3LSaEtns83b/Jt/vftlwA8/9qjlHjxngxMxStA="
       }
     ],
     "wasmSymbols": [
@@ -27,7 +27,7 @@ export const config = /*json-start*/{
       {
         "virtualPath": "System.Private.CoreLib.wasm",
         "name": "System.Private.CoreLib.wasm",
-        "hash": "sha256-cg0DHdZ0Eyu7/T+rp5xnP1tQpeqxAC1G55ZOQoSTUGU="
+        "hash": "sha256-T1r48E8C6KHWyfnjpml69ePWC+8KddiT/P/gL3/Ev/o="
       },
       {
         "virtualPath": "System.Runtime.InteropServices.JavaScript.wasm",
@@ -39,7 +39,7 @@ export const config = /*json-start*/{
       {
         "virtualPath": "flow-lang.wasm",
         "name": "flow-lang.wasm",
-        "hash": "sha256-Wdt+PUXNSCdHlFlgmSfU2f6YNCpjo24QSMOTS+qjYEI="
+        "hash": "sha256-NeeMzX5lJ6jz/anyqDQ64CXYJod+JGUT3mre6+5ZmPE="
       },
       {
         "virtualPath": "Melanchall.DryWetMidi.wasm",
@@ -119,7 +119,7 @@ export const config = /*json-start*/{
       {
         "virtualPath": "System.Runtime.wasm",
         "name": "System.Runtime.wasm",
-        "hash": "sha256-8AdT813L43oWCebMiHVEnJwaSlScrGRxoCUMl8W1crM="
+        "hash": "sha256-UFs470YqsOIRp8i9ms8KpY8q4IjQoBbA1qgwz5sPoq8="
       },
       {
         "virtualPath": "System.Runtime.Numerics.wasm",
