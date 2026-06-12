@@ -25,15 +25,15 @@ REQ-ID numbering continues from v1.4 close. New categories `LANG-*`, `TEST-*`, `
 
 ### Language Foundation (Phase 35)
 
-- [ ] **LANG-01**: Pattern matching expression `(match expr | pattern => body | pattern => body | _ => body)` with literal / constructor / wildcard / guard pattern forms. Non-exhaustive matches WARN to stderr and fall through to `Void` (D-v1.5-05). `enable matchExhaustive;` pragma promotes warnings to errors. Arms are independent — no C-style fall-through. Pattern AST lives in new `Ast/Patterns/` folder distinct from `Expressions/`/`Statements/`. Backend ships as naive linear scan in v1.5 (D-v1.5-11); Jacobs/Peterse decision-tree compile deferred to v1.6.
-- [ ] **LANG-02**: Music-aware pattern extractors — match on chord quality (`Cmaj7`, `Dm`, `F#dim`), scale degree (`I`, `V7`, `vi`), note pitch class (guarded — `| n when (= (pitchClass n) 0) => ...`), articulation token (`#staccato`, `#legato`, `#accent`). Patterns orthogonal to `OverloadResolver` (no participation in function dispatch).
-- [ ] **LANG-03**: `-> as name` mid-chain naming — `seq -> (transpose 2) as melody -> (legato 0.5) as legato-melody -> render`. Names the intermediate value WITHOUT breaking the chain; equivalent to `Sequence melody = (transpose seq 2); ...` but inline. Parses as a parser-level transform (no new AST node — annotates `FlowExpression`).
-- [ ] **LANG-04**: Rust-style multi-line diagnostics — `Diagnostics/SnippetRenderer` with source-quoted span pointers, secondary notes (`note:` rows), "did you mean?" suggestions for unknown identifiers (closest Levenshtein match in scope). Span field retrofitted across 16 expression + 14 statement AST records via defaulted-parameter (v1.3 Phase 22 pattern). All existing tests must remain green during the Span migration.
+- [x] **LANG-01**: Pattern matching expression `(match expr | pattern => body | pattern => body | _ => body)` with literal / constructor / wildcard / guard pattern forms. Non-exhaustive matches WARN to stderr and fall through to `Void` (D-v1.5-05). `enable matchExhaustive;` pragma promotes warnings to errors. Arms are independent — no C-style fall-through. Pattern AST lives in new `Ast/Patterns/` folder distinct from `Expressions/`/`Statements/`. Backend ships as naive linear scan in v1.5 (D-v1.5-11); Jacobs/Peterse decision-tree compile deferred to v1.6. **Shipped via Plan 35-05 (`b9aa4c7` / `3e6fe49`); 35-VERIFICATION passed.**
+- [x] **LANG-02**: Music-aware pattern extractors — match on chord quality (`Cmaj7`, `Dm`, `F#dim`), scale degree (`I`, `V7`, `vi`), note pitch class (guarded — `| n when (= (pitchClass n) 0) => ...`), articulation token (`#staccato`, `#legato`, `#accent`). Patterns orthogonal to `OverloadResolver` (no participation in function dispatch). **Shipped via Plan 35-06 (`46ec548` / `66bc6dd`); 35-VERIFICATION passed.**
+- [x] **LANG-03**: `-> as name` mid-chain naming — `seq -> (transpose 2) as melody -> (legato 0.5) as legato-melody -> render`. Names the intermediate value WITHOUT breaking the chain; equivalent to `Sequence melody = (transpose seq 2); ...` but inline. Parses as a parser-level transform (no new AST node — annotates `FlowExpression`). **Shipped via Plan 35-07 (`d3dc6b5` / `eaefe81`); 35-VERIFICATION passed.**
+- [x] **LANG-04**: Rust-style multi-line diagnostics — `Diagnostics/SnippetRenderer` with source-quoted span pointers, secondary notes (`note:` rows), "did you mean?" suggestions for unknown identifiers (closest Levenshtein match in scope). Span field retrofitted across 16 expression + 14 statement AST records via defaulted-parameter (v1.3 Phase 22 pattern). All existing tests must remain green during the Span migration. **Shipped via Plan 35-01 + 35-03 (`fa889b8` / `209748d`); 35-VERIFICATION passed.**
 
 ### Test Framework (Phase 35)
 
-- [ ] **TEST-01**: Pure-Flow test framework — `(test "name" body)` declares a test block. Assert primitives ship in new `@test` stdlib module: `(assert cond)`, `(assertEq a b)`, `(assertNotesMatch seqA seqB)`, `(assertBytesEqual buf1 buf2)`, `(assertWithinDb buf1 buf2 0.5dB)`. `flow test [path]` CLI subcommand discovers `test_*.flow` files by convention and runs all `(test ...)` blocks they contain.
-- [ ] **TEST-02**: Test hermetic isolation — `FlowEngine.SnapshotState()` / `RestoreState()` reset musical context stack, voice pool, PRNG state, ExecutionContext bindings between `(test ...)` blocks. No shared state leakage. Tests run sequentially in a single FlowEngine process (per-test subprocesses rejected as anti-pattern).
+- [x] **TEST-01**: Pure-Flow test framework — `(test "name" body)` declares a test block. Assert primitives ship in new `@test` stdlib module: `(assert cond)`, `(assertEq a b)`, `(assertNotesMatch seqA seqB)`, `(assertBytesEqual buf1 buf2)`, `(assertWithinDb buf1 buf2 0.5dB)`. `flow test [path]` CLI subcommand discovers `test_*.flow` files by convention and runs all `(test ...)` blocks they contain. **Shipped via Plan 35-04 (`aab2ed6` / `b8889dc`); 35-VERIFICATION passed.**
+- [x] **TEST-02**: Test hermetic isolation — `FlowEngine.SnapshotState()` / `RestoreState()` reset musical context stack, voice pool, PRNG state, ExecutionContext bindings between `(test ...)` blocks. No shared state leakage. Tests run sequentially in a single FlowEngine process (per-test subprocesses rejected as anti-pattern). **Shipped via Plan 35-04 (`aab2ed6` / `b8889dc`); 35-VERIFICATION passed.**
 
 ### v1.5 Housekeeping (Phase 35)
 
@@ -335,16 +335,16 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LANG-01 | Phase 35 | Pending |
-| LANG-02 | Phase 35 | Pending |
-| LANG-03 | Phase 35 | Pending |
-| LANG-04 | Phase 35 | Pending |
-| TEST-01 | Phase 35 | Pending |
-| TEST-02 | Phase 35 | Pending |
-| HK-01 | Phase 35 | Pending |
-| HK-02 | Phase 35 | Pending |
-| HK-03 | Phase 35 | Pending |
-| HK-04 | Phase 35 | Pending |
+| LANG-01 | Phase 35 | Shipped (Plan 35-05 — `b9aa4c7` / `3e6fe49`; checkbox reconciled at v1.5 audit 2026-06-11) |
+| LANG-02 | Phase 35 | Shipped (Plan 35-06 — `46ec548` / `66bc6dd`; checkbox reconciled at v1.5 audit 2026-06-11) |
+| LANG-03 | Phase 35 | Shipped (Plan 35-07 — `d3dc6b5` / `eaefe81`; checkbox reconciled at v1.5 audit 2026-06-11) |
+| LANG-04 | Phase 35 | Shipped (Plan 35-01 + 35-03 — `fa889b8` / `209748d`; checkbox reconciled at v1.5 audit 2026-06-11) |
+| TEST-01 | Phase 35 | Shipped (Plan 35-04 — `aab2ed6` / `b8889dc`; checkbox reconciled at v1.5 audit 2026-06-11) |
+| TEST-02 | Phase 35 | Shipped (Plan 35-04 — `aab2ed6` / `b8889dc`; checkbox reconciled at v1.5 audit 2026-06-11) |
+| HK-01 | Phase 35 | Shipped (Plan 35-02 — humanizeGaussian voice-block fix) |
+| HK-02 | Phase 35 | Shipped (Plan 35-02 — Phase 17 UAT rows 1-3 closed via 31-08) |
+| HK-03 | Phase 35 | Shipped (Plan 35-02 — Phase 04 VERIFICATION gaps closed) |
+| HK-04 | Phase 35 | Shipped (Plan 35-02 — CLAUDE.md footnote rewrite) |
 | PAT-01 | Phase 36 | Shipped (Plan 36-05 — `a0f9882` / `4ddbf86` / `c823c83`) |
 | PAT-02 | Phase 36 | Shipped (Plan 36-05 — `a0f9882` / `c823c83`) |
 | GEN-01 | Phase 36 | Shipped (Plan 36-06 — `3628c64` / `89bd359` / `2a9067a`) |
@@ -376,12 +376,12 @@ Populated by `gsd-roadmapper` on 2026-05-18 — 66 v1.5 requirements mapped 1:1 
 | AUDIO-IN-02 | Phase 38 | Shipped (Plan 38-05 — `34bb251` / `2a2146a`) |
 | OSC-01 | Phase 38 | Shipped (Plan 38-06 — `525d1a2` / `465056e`) |
 | OSC-02 | Phase 38 | Shipped (Plan 38-06 — `465056e`; D-38-13 charitable smallest-tag-that-fits per D-v1.5-05 + D-v1.5-01) |
-| XML-01 | Phase 39 | Pending |
-| XML-02 | Phase 39 | Pending |
-| LILY-01 | Phase 39 | Pending |
-| ABC-01 | Phase 39 | Pending |
-| ABC-02 | Phase 39 | Pending |
-| MML-01 | Phase 39 | Pending |
+| XML-01 | Phase 39 | Shipped (Plan 39-01 — `4a838b4`; 39-VERIFICATION PASS) |
+| XML-02 | Phase 39 | Shipped (Plan 39-01 — `4a838b4`; charitable skip when mscore absent) |
+| LILY-01 | Phase 39 | Shipped (Plan 39-02 — `dfd719f`; 39-VERIFICATION PASS) |
+| ABC-01 | Phase 39 | Shipped (Plan 39-03 — `c196023`; 39-VERIFICATION PASS) |
+| ABC-02 | Phase 39 | Shipped (Plan 39-03 — `c196023`; charitable [abc] advisory) |
+| MML-01 | Phase 39 | Shipped (Plan 39-04 — `474595e`; 39-VERIFICATION PASS) |
 | MIDI-RT-01 | Phase 40 | Complete (real-loopback proven, Plan 40-04) |
 | MIDI-RT-02 | Phase 40 | Complete — direct librtmidi P/Invoke (RtMidi.Core removed, ABI fix, Plan 40-04); real snd-virmidi loopback proven via amidi |
 | MIDI-RT-03 | Phase 40 | Deferred → Phase 41 |
