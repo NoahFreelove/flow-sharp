@@ -37,7 +37,34 @@ public class SequenceData
         }
 
         Bars.Add(bar);
-        TotalBeats += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
+        TotalBeats += BarLengthBeats(bar);
+    }
+
+    /// <summary>
+    /// The length, in beats, that a bar contributes to the sequence timeline.
+    ///
+    /// A monophonic note stream packs all its notes into a single bar, which can
+    /// legitimately exceed the time-signature numerator (e.g.
+    /// <c>| C4q D4q E4q F4q G4q A4q B4q C5h |</c> is 9 beats in 4/4). Reporting the bare
+    /// numerator under-counted such bars, so MixVoicesToBuffer truncated the render to one
+    /// bar and trailing notes were dropped — the "note streams cut off after ~1 bar" bug.
+    /// <see cref="BarData.GetActualBeats"/> gives the true sequential length, and Math.Max
+    /// preserves full-bar padding for underfull bars (no layout regression / two-run
+    /// determinism preserved).
+    ///
+    /// Bars containing parallel <c>{voice}</c> blocks keep the time-signature length:
+    /// GetActualBeats() SUMS the simultaneous voices (plus the placeholder full-bar rest
+    /// the compiler inserts for voice-only bars), which over-counts a bar whose voices
+    /// actually fit. Overfull parallel voices are out of scope for this fix.
+    /// </summary>
+    private static double BarLengthBeats(BarData bar)
+    {
+        if (bar.IsPickup)
+            return bar.GetActualBeats();
+        double numerator = bar.TimeSignature!.Numerator;
+        if (bar.ParallelVoices is { Count: > 0 })
+            return numerator;
+        return Math.Max(numerator, bar.GetActualBeats());
     }
 
     /// <summary>
@@ -53,7 +80,9 @@ public class SequenceData
             timeline.Add((bar, offset));
             if (bar.TimeSignature != null)
             {
-                offset += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
+                // Mirror AddBar: an overfull monophonic bar must advance the next bar's
+                // offset by its real length, not the numerator. (See BarLengthBeats.)
+                offset += BarLengthBeats(bar);
             }
         }
 
