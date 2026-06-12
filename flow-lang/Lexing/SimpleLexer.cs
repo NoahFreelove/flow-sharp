@@ -1311,9 +1311,17 @@ public class SimpleLexer
                     Advance();
                 }
             }
-            else if (c == 'N' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("Note:".AsSpan()))
+            else if (c == 'N' && _source.AsSpan(_position).StartsWith("Note:".AsSpan())
+                     && !IsTypeAnnotationColonPosition())
             {
-                // Skip comment until end of line
+                // `Note:` lead-in line comment — to end of line. It is a comment WHEREVER it
+                // appears as leading trivia: at line start OR trailing a statement
+                // (`(play x)   Note: this plays the tone`). The ONE exception is a proc
+                // parameter TYPE ANNOTATION (`proc f(Note: x)` / `proc f(String s, Note: y)`),
+                // where `Note:` means "param of type Note" — IsTypeAnnotationColonPosition()
+                // excludes that case (it sits right after `(` or `,`). Quoted strings lex via
+                // the `"` path before this check, so `"Note: ..."` stays a String.
+                // (`TODO:`/`FIXME:` below keep their line-start guard — not Flow type names.)
                 DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
@@ -1370,6 +1378,27 @@ public class SimpleLexer
             if (!char.IsWhiteSpace(ch)) return false; // Non-whitespace found before us
         }
         return true; // Reached start of source
+    }
+
+    /// <summary>
+    /// True when a <c>Note:</c> at the current position is a proc-parameter TYPE ANNOTATION
+    /// (<c>proc f(Note: x)</c> / <c>proc f(String s, Note: y)</c>) rather than a <c>Note:</c>
+    /// lead-in comment. A <c>Type:</c> annotation is the only place a type name is immediately
+    /// followed by <c>:</c>, and it always sits right after <c>(</c> or <c>,</c> in the
+    /// parameter list. Scanning back over spaces/tabs/<c>\r</c>: the first non-whitespace char
+    /// being <c>(</c> or <c>,</c> marks the annotation position; a newline (line start) or any
+    /// other character means it is a comment (and is treated as such).
+    /// </summary>
+    private bool IsTypeAnnotationColonPosition()
+    {
+        for (int i = _position - 1; i >= 0; i--)
+        {
+            char ch = _source[i];
+            if (ch == '(' || ch == ',') return true;  // proc-parameter type-annotation slot
+            if (ch == '\n') return false;             // reached line start → comment
+            if (!char.IsWhiteSpace(ch)) return false; // trailing content → comment
+        }
+        return false;
     }
 
     private char Peek() => IsAtEnd() ? '\0' : _source[_position];
