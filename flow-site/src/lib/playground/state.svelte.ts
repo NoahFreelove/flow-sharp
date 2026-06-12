@@ -12,6 +12,16 @@ import { DEFAULT_SNIPPET_ID, snippetById } from './snippets';
 
 export type RunStatus = 'idle' | 'rendering' | 'playing' | 'error';
 
+/**
+ * How long the LED shows 'playing' after a successful run before settling back to 'idle'.
+ * The frozen runtime (D-48-09) plays audio internally during `run()` and exposes NO
+ * playback-ended signal — `result.wav` comes back null and there is no onended callback — so
+ * the 'playing' LED is a brief post-run HINT, not a live playback clock. Without this, the LED
+ * stuck on 'playing' forever. (A precise clock would need a runtime-ended event; reserved for a
+ * future non-frozen runtime.)
+ */
+const PLAYING_SETTLE_MS = 2000;
+
 export class PlaygroundState {
 	/** Current editor contents (mirrored from Monaco on Run). */
 	editorValue = $state(snippetById(DEFAULT_SNIPPET_ID).source);
@@ -38,6 +48,18 @@ export class PlaygroundState {
 	/** Which snippet is currently loaded (left-rail highlight). */
 	activeSnippetId = $state<string>(DEFAULT_SNIPPET_ID);
 
+	/** Pending timer that settles the LED from 'playing' back to 'idle' (see PLAYING_SETTLE_MS).
+	 *  Not $state — it's plumbing, never rendered. Guarded so a new run/stop/load supersedes it. */
+	private settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+	/** Cancel any pending 'playing' → 'idle' settle (idempotent). */
+	private clearSettleTimer(): void {
+		if (this.settleTimer !== null) {
+			clearTimeout(this.settleTimer);
+			this.settleTimer = null;
+		}
+	}
+
 	/** True once at least one run has produced output (empty-state gating). */
 	hasRun = $derived(
 		this.stdout.length > 0 ||
@@ -57,6 +79,7 @@ export class PlaygroundState {
 	 */
 	loadSnippet(id: string): void {
 		const snip = snippetById(id);
+		this.clearSettleTimer();
 		this.editorValue = snip.source;
 		this.activeSnippetId = id;
 		this.stdout = '';
@@ -77,6 +100,8 @@ export class PlaygroundState {
 	 */
 	async run(runtime: FlowRuntime, source: string): Promise<void> {
 		this.editorValue = source;
+		// A new run supersedes a prior run's pending LED settle.
+		this.clearSettleTimer();
 		this.runStatus = 'rendering';
 		this.errors = [];
 		this.midi = null;
@@ -109,8 +134,15 @@ export class PlaygroundState {
 		} else {
 			// The (play ...) tone already went out through WebAudioBackend during run(); reflect
 			// "playing" briefly, then settle to idle. We can't observe the source-node's lifetime
-			// from JS, so this is a status hint, not a precise playback clock.
+			// from JS (frozen runtime: no playback-ended signal), so this is a status hint, not a
+			// precise playback clock — settle to 'idle' after PLAYING_SETTLE_MS so the LED never
+			// stays lit forever. The guard ensures a newer run/stop/load that moved us off
+			// 'playing' is not clobbered by a stale timer.
 			this.runStatus = 'playing';
+			this.settleTimer = setTimeout(() => {
+				if (this.runStatus === 'playing') this.runStatus = 'idle';
+				this.settleTimer = null;
+			}, PLAYING_SETTLE_MS);
 			// §6.2(b): if the run produced no audio bytes (wav), no MIDI bytes, no stdout, and no
 			// errors, the script likely only called (writeWav ...) — which writes to /tmp (not
 			// audible in the browser). Surface a friendly advisory so the composer knows why they
@@ -145,11 +177,13 @@ export class PlaygroundState {
 	/** Stop any active playback + settle the LED to idle (idempotent). */
 	stop(runtime: FlowRuntime | null): void {
 		runtime?.stop();
+		this.clearSettleTimer();
 		this.runStatus = 'idle';
 	}
 
 	/** Clear to a blank snippet (the destructive "New blank" — caller owns the unsaved-edits confirm). */
 	newBlank(): void {
+		this.clearSettleTimer();
 		this.editorValue = '';
 		this.activeSnippetId = '';
 		this.stdout = '';
