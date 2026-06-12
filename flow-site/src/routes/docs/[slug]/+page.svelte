@@ -142,13 +142,65 @@
 		line-height: 1.6;
 		min-width: 0;
 	}
-	/* Code blocks (shiki <pre>, plus the highlighter's <figure class="docs-codeblock">) scroll
-	   horizontally inside a keyboard-accessible region rather than overflowing the page. The
-	   highlighter already wraps flow blocks in a focusable figure; bare prose <pre> get tabindex
-	   via the rule below so axe scrollable-region-focusable stays satisfied. */
+
+	/* Heading hierarchy — serif display face, heavier weight, and a hairline under h2 so the
+	   document structure reads clearly above body prose (composer: headers were too weak to tell
+	   apart from text). Sizes/leadings come from the type scale tokens. */
+	.docs-prose :global(h1) {
+		font-family: var(--font-display);
+		font-size: var(--text-h1);
+		line-height: var(--text-h1-lh);
+		letter-spacing: var(--text-h1-ls);
+		font-weight: 800;
+		margin: 0 0 var(--space-4);
+		color: var(--color-ink);
+	}
+	.docs-prose :global(h2) {
+		font-family: var(--font-display);
+		font-size: var(--text-h2);
+		line-height: var(--text-h2-lh);
+		letter-spacing: var(--text-h2-ls);
+		font-weight: 700;
+		margin: var(--space-8) 0 var(--space-3);
+		padding-bottom: var(--space-2);
+		border-bottom: 1px solid color-mix(in srgb, var(--color-walnut) 22%, transparent);
+		color: var(--color-ink);
+	}
+	.docs-prose :global(h3) {
+		font-family: var(--font-display);
+		font-size: var(--text-h3);
+		line-height: var(--text-h3-lh);
+		letter-spacing: var(--text-h3-ls);
+		font-weight: 700;
+		margin: var(--space-6) 0 var(--space-2);
+		color: var(--color-ink);
+	}
+
+	/* Inline code — a subtle tinted chip so it stands apart from surrounding prose. Scoped to
+	   `code` NOT inside a `pre` (shiki block code keeps its own theme styling). */
+	.docs-prose :global(:not(pre) > code) {
+		font-family: var(--font-mono);
+		font-size: 0.9em;
+		background: color-mix(in srgb, var(--color-walnut) 12%, transparent);
+		padding: 0.1em 0.36em;
+		border-radius: var(--radius-2);
+	}
+
+	/* Code blocks (shiki <pre>) get a clear boxed container — border + padding + radius + a soft
+	   lift — so they no longer blend into the .surface-paper body (composer: code vs text was hard
+	   to tell apart). The shiki theme keeps its own background so the syntax colors stay readable;
+	   the box is the border/shadow around it. They also scroll horizontally inside a
+	   keyboard-accessible region (tabindex added by the highlighter) rather than overflowing. */
 	.docs-prose :global(pre) {
 		max-width: 100%;
 		overflow-x: auto;
+		margin: var(--space-5, 20px) 0;
+		padding: var(--space-4);
+		border: 1px solid color-mix(in srgb, var(--color-walnut) 26%, transparent);
+		border-radius: var(--radius-3);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+		font-size: var(--text-code);
+		line-height: var(--text-code-lh);
 	}
 	.docs-prose :global(pre:focus-visible),
 	.docs-prose :global(.docs-codeblock:focus-visible) {
