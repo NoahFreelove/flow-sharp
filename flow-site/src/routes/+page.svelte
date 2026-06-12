@@ -15,7 +15,6 @@
 	import { highlightFlow } from '$lib/home/flow-highlight';
 	import { playTone, playMelody, playChord, type ToneType } from '$lib/home/tones';
 	import { encode } from '$lib/share/encode';
-	import Toggle from '$lib/components/skeuo/Toggle.svelte';
 
 	const REPO_URL = 'https://github.com/noahfreelove/flow-sharp';
 
@@ -150,11 +149,9 @@ key Cmajor {
 				>GitHub<span class="sr-only"> (opens in new tab)</span></a
 			>
 		</nav>
-		<!-- Theme toggle — honors the persisted [data-theme] from app.html so dark-mode
-		     users are not locked into the light palette with no control (§6.9 fix). The
-		     theme store is already initialised by +layout.svelte's $effect (which runs on
-		     all routes, including home — only the layout HTML is suppressed via isHome). -->
-		<Toggle theme withIcons label="Dark mode" />
+		<!-- No theme toggle on home: the iOS-6 home is light-only, so a toggle here would be a
+		     dead switch (design decision A). The toggle lives in the shared <SiteToolbar> on the
+		     other routes, which do have a dark mode. -->
 	</div>
 
 	<main class="layout">
@@ -611,7 +608,8 @@ key Cmajor {
 	.layout {
 		max-width: 1080px;
 		margin: 0 auto;
-		padding: 34px 22px 90px;
+		/* generous, viewport-scaling side buffer so content never sits flush to the edge */
+		padding: 34px clamp(20px, 4vw, 48px) 90px;
 	}
 
 	.plate {

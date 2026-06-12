@@ -97,9 +97,9 @@ test.describe('Home + nav a11y labels (REQ-SITE-A11Y-02)', () => {
 		await page.goto('/');
 		const width = testInfo.project.use.viewport?.width ?? 1280;
 
-		// The iOS-6 home page has no hamburger (it ships its own toolbar nav + bottom tab bar).
-		// The play buttons inside <main> all carry visible text ("▶ Play"), so they pass the
-		// label sweep below. There is no icon-only button on the iOS-6 home.
+		// The iOS-6 home page has no hamburger (the shared toolbar pill nav scrolls on mobile;
+		// no bottom tab bar). The play buttons inside <main> all carry visible text ("▶ Play"),
+		// so they pass the label sweep below. There is no icon-only button on the iOS-6 home.
 
 		// Defensive sweep: no <button> on the Home page may be unlabelled (text content OR
 		// aria-label). Catches a regression where a future icon button forgets its label.

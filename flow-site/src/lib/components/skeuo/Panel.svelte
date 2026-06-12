@@ -104,7 +104,7 @@
 		font-family: var(--font-body);
 		font-weight: 600;
 		font-size: var(--text-small);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 	}
 
 	.skeuo-panel__body {

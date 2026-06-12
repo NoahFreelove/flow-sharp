@@ -567,7 +567,7 @@
 	.pg-rail-title {
 		font-family: var(--font-display);
 		font-size: var(--text-h4, 18px);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		margin: 0;
 	}
 	.pg-snippets {
@@ -587,7 +587,7 @@
 		padding: var(--space-2) var(--space-3);
 		min-height: 44px;
 		background: color-mix(in srgb, var(--color-walnut) 70%, black);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		border: 1px solid color-mix(in srgb, var(--color-walnut) 40%, black);
 		border-radius: var(--radius-2);
 		cursor: pointer;

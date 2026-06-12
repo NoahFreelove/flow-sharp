@@ -106,7 +106,7 @@
 			color-mix(in srgb, var(--color-slate) 84%, white) 0%,
 			var(--color-slate) 100%
 		);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 	}
 
 	.skeuo-btn--ghost {
@@ -124,7 +124,7 @@
 		height: 44px;
 		padding: 0;
 		background-color: var(--color-slate);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 	}
 
 	.skeuo-btn--danger {

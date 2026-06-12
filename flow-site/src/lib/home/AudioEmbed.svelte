@@ -86,11 +86,11 @@
 	.audio-embed__title {
 		font-size: var(--text-small);
 		font-weight: 600;
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 	}
 	.audio-embed__caption {
 		font-size: var(--text-caption);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		opacity: 0.8;
 	}
 	.audio-embed__cta-text {

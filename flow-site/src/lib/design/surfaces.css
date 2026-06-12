@@ -53,7 +53,7 @@
 		var(--color-walnut-soft) 50%,
 		var(--color-walnut) 100%
 	);
-	color: var(--color-paper);
+	color: var(--color-on-chrome);
 	box-shadow: var(--bevel-light);
 }
 .surface-wood::before {

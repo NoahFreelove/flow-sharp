@@ -11,7 +11,7 @@ import { test, expect, type Page } from '@playwright/test';
 //
 // The `/` route ships the iOS-6 skeuomorphic home with its own chrome (no shared layout header):
 //   - All widths: toolbar pill nav visible (scrolls horizontally ≤600px); no hamburger, no tabbar.
-// Non-home routes keep the shared layout chrome: hamburger <768px, desktop strip ≥768px.
+// Non-home routes now render the SAME shared <SiteToolbar> — identical bar, no hamburger.
 
 const ROUTES = ['/', '/docs', '/docs/flow-operator', '/playground', '/showcase'];
 
@@ -43,27 +43,15 @@ test.describe('no horizontal overflow on any route (REQ-SITE-RESPONSIVE-01, 320p
 });
 
 test.describe('single-column collapse <768px (D-49-09)', () => {
-	test('nav collapses correctly; the desktop tab strip is hidden on non-home routes', async ({ page }, testInfo) => {
-		const width = testInfo.project.use.viewport?.width ?? 1280;
-
-		// --- Non-home route: shared layout chrome ---
-		await page.goto('/docs');
-		if (width < 768) {
-			// Mobile: the hamburger trigger is visible; the desktop tab strip is display:none.
-			await expect(page.getByRole('button', { name: /open menu/i })).toBeVisible();
-			await expect(page.locator('.site-nav-desktop')).toBeHidden();
-		} else {
-			// Desktop: the tab strip is visible; the hamburger is hidden.
-			await expect(page.locator('.site-nav-desktop')).toBeVisible();
-			await expect(page.locator('.site-hamburger')).toBeHidden();
+	test('the shared toolbar nav is the single nav at every width (no hamburger, no tab bar)', async ({ page }) => {
+		// Both non-home and home render the SAME iOS-6 toolbar: one pill nav, visible at every
+		// width (it scrolls horizontally ≤600px). There is no hamburger and no bottom tab bar.
+		for (const route of ['/docs', '/']) {
+			await page.goto(route);
+			await expect(page.locator('nav[aria-label="Primary"]').first()).toBeVisible();
+			await expect(page.getByRole('button', { name: /open menu/i })).toHaveCount(0);
+			await expect(page.locator('nav[aria-label="Tab bar"]')).toHaveCount(0);
 		}
-
-		// --- Home: iOS-6 chrome (single top nav at every width; no hamburger, no bottom tabbar) ---
-		await page.goto('/');
-		// The toolbar pill nav is visible at all widths (it scrolls horizontally ≤600px).
-		await expect(page.locator('nav[aria-label="Primary"]').first()).toBeVisible();
-		// The bottom tab bar was removed — it must not exist at any width.
-		await expect(page.locator('nav[aria-label="Tab bar"]')).toHaveCount(0);
 	});
 
 	test('playground stacks controls→editor→console + Monaco read-only + mobile banner', async ({

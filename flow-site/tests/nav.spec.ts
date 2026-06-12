@@ -6,9 +6,9 @@ import { test, expect } from '@playwright/test';
 //   - The brushed-aluminum toolbar carries `nav[aria-label="Primary"]` (the pill nav)
 //     at EVERY width. On narrow viewports (≤600px) the pill nav scrolls horizontally
 //     inside the bar instead of being hidden — there is no longer a bottom tab bar.
-// Non-home routes (/docs, /playground, /showcase) keep the shared layout chrome:
-//   - Desktop: `.site-nav-desktop nav[aria-label="Primary"]` visible tab strip.
-//   - Mobile (<768px): hamburger button → slide-down `#mobile-nav`.
+// Non-home routes (/docs, /playground, /showcase) render the SAME shared <SiteToolbar> —
+// one `nav[aria-label="Primary"]` (the pill nav) at every width, scrollable on mobile. There
+// is no separate desktop strip and no hamburger; the bar is identical to home's.
 
 const isMobileViewport = (width: number) => width < 768;
 
@@ -37,8 +37,7 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 
 	test('the 4 local tabs navigate to their routes', async ({ page }, testInfo) => {
 		const width = testInfo.project.use.viewport?.width ?? 1280;
-		// The return trip uses the shared desktop tab strip (`.site-nav-desktop`), which is
-		// hidden behind the hamburger on mobile — so run the routing round-trip on desktop.
+		// Routing round-trip on desktop (keeps clicks off the mobile horizontal-scroll nav).
 		if (isMobileViewport(width)) return;
 
 		await page.goto('/');
@@ -47,8 +46,8 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 		await nav.getByRole('link', { name: 'Docs' }).click();
 		await expect(page).toHaveURL(/\/docs$/);
 
-		// Return home via the shared chrome tab strip (the iOS-6 home is navigated away from).
-		const sharedNav = page.locator('.site-nav-desktop nav[aria-label="Primary"]');
+		// Return home via the shared toolbar nav (rendered on every non-home route).
+		const sharedNav = page.locator('nav[aria-label="Primary"]');
 		await sharedNav.getByRole('link', { name: 'Home' }).click();
 		await expect(page).toHaveURL(/\/$/);
 	});
@@ -72,7 +71,7 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 		if (isMobileViewport(width)) return;
 
 		await page.goto('/docs');
-		const tabs = page.locator('.site-nav-desktop nav[aria-label="Primary"]');
+		const tabs = page.locator('nav[aria-label="Primary"]');
 		await expect(tabs.getByRole('link', { name: 'Docs' })).toHaveAttribute(
 			'aria-current',
 			'page'

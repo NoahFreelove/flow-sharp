@@ -19,7 +19,8 @@ import AxeBuilder from '@axe-core/playwright';
 // The `/` route ships the iOS-6 skeuomorphic home with its own chrome:
 //   a single `nav[aria-label="Primary"]` in the toolbar (scrolls horizontally on mobile;
 //   no bottom tab bar). The brand link carries `.site-wordmark` for spec compatibility.
-//   The shared layout chrome (`.site-wordmark`, `.site-nav-desktop`) is present on non-home routes.
+//   The same shared <SiteToolbar> (`a.site-wordmark` + `nav[aria-label="Primary"]`) renders on
+//   every non-home route, identical to home's inline bar.
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
@@ -85,12 +86,12 @@ test.describe('keyboard + ARIA landmark contracts (UI-SPEC §Accessibility Contr
 	});
 
 	test('aria-current="page" lands on the active route (desktop nav)', async ({ page }, testInfo) => {
-		// aria-current is asserted on the desktop tab strip; the mobile hamburger panel mirrors it
-		// (covered by nav.spec.ts). Early-out on the <768px viewport projects.
+		// aria-current is asserted on the shared toolbar pill nav. Early-out on the <768px
+		// viewport projects (the nav scrolls horizontally there; covered by nav.spec.ts).
 		const width = testInfo.project.use.viewport?.width ?? 1280;
 		if (width < 768) return;
 		await page.goto('/docs');
-		const tabs = page.locator('.site-nav-desktop nav[aria-label="Primary"]');
+		const tabs = page.locator('nav[aria-label="Primary"]');
 		await expect(tabs.getByRole('link', { name: 'Docs' })).toHaveAttribute('aria-current', 'page');
 	});
 

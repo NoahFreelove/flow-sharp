@@ -174,11 +174,11 @@
 	.piece__poster-title {
 		font-size: var(--text-small);
 		font-weight: 600;
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 	}
 	.piece__poster-caption {
 		font-size: var(--text-caption);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		opacity: 0.85;
 	}
 

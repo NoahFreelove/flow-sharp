@@ -89,7 +89,7 @@
 		font-family: var(--font-body);
 		font-size: var(--text-small);
 		font-weight: 400;
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		text-decoration: none;
 		border-radius: var(--radius-2);
 		transition: filter var(--motion-hover) ease-out;

@@ -56,6 +56,7 @@
 :root {
 	/* Color — light (paper + walnut + brass), UI-SPEC §Color */
 	--color-paper: #f5f0e6; /* 60% dominant surface */
+	--color-on-chrome: #f5f0e6; /* light text for ALWAYS-dark metal/wood chrome; theme-stable (no dark override) */
 	--color-walnut: #5c3a21; /* 30% structural secondary */
 	--color-walnut-soft: #7a5235; /* bevel light edge / grain highlight */
 	--color-brass: #c9a567; /* 10% reserved accent */

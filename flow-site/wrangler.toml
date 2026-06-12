@@ -15,7 +15,7 @@
 # OAuth App "Authorization callback URL" MUST be:  https://<project>.pages.dev/api/auth/github
 # (the <project>.pages.dev host comes from Plan 49-01's CF Pages deploy.)
 
-name = "flow-site"
+name = "flow-music"
 compatibility_date = "2026-06-05"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 

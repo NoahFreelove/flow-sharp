@@ -75,13 +75,10 @@ describe('§6.9 — home page landmark / a11y fixes', () => {
 		}
 	});
 
-	it('imports the Toggle component for the dark-mode switch', () => {
-		// The Toggle component must be imported so the toolbar can render the theme switch.
-		expect(src).toContain("import Toggle from '$lib/components/skeuo/Toggle.svelte'");
-	});
-
-	it('renders a <Toggle theme> in the toolbar for dark-mode users', () => {
-		// The Toggle with theme prop must be present so persisted dark-mode preference is honored.
-		expect(src).toMatch(/<Toggle[^>]*theme[^>]*>/);
+	it('ships no theme toggle on the light-only home (decision A)', () => {
+		// The iOS-6 home is light-only, so a theme toggle here would be a dead switch. The toggle
+		// lives in the shared <SiteToolbar> on the other (dark-capable) routes, not on home.
+		expect(src).not.toContain("import Toggle from '$lib/components/skeuo/Toggle.svelte'");
+		expect(src).not.toMatch(/<Toggle\b/);
 	});
 });

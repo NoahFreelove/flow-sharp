@@ -132,7 +132,7 @@
 	.skeuo-toggle__icon {
 		font-size: 12px;
 		line-height: 1;
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		opacity: 0.55;
 		z-index: 0;
 	}

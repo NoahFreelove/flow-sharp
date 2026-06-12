@@ -91,7 +91,7 @@
 	}
 	.piece-card__play-glyph {
 		font-size: 20px;
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		opacity: 0.85;
 	}
 

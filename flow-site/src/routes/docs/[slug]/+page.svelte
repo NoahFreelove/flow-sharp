@@ -81,7 +81,7 @@
 	.docs-toc-disclosure > summary {
 		display: none;
 		font-weight: 600;
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		cursor: pointer;
 		padding: var(--space-2) 0;
 	}
@@ -109,7 +109,7 @@
 		display: block;
 		padding: 4px var(--space-2);
 		border-radius: var(--radius-2);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		text-decoration: none;
 		font-size: var(--text-small);
 	}
@@ -119,7 +119,7 @@
 	}
 	.docs-cat__list a.is-current {
 		background: color-mix(in srgb, var(--color-brass) 24%, transparent);
-		color: var(--color-paper);
+		color: var(--color-on-chrome);
 		font-weight: 600;
 	}
 	.docs-cat__list a:focus-visible {
