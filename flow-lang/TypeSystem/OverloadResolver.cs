@@ -182,8 +182,19 @@ public class OverloadResolver
             // on first rejection. The success path (first candidate wins
             // immediately) never allocates a local ErrorReporter.
             ErrorReporter? localReporter = null;
-            FunctionSignature? namedArgCandidate = null;
-            IReadOnlyList<FlowType>? reorderedArgTypes = null;
+            // sweep-0614: accumulate EVERY candidate that passes the
+            // name/duplicate/arity/reorder validation, each paired with its OWN
+            // reordered FlowType vector. The previous code broke at the first
+            // survivor and collapsed `candidates` to that single signature, so
+            // an overload set sharing parameter names + arity but differing by
+            // TYPE (e.g. transpose(Sequence, Semitone) vs (Sequence, Cent);
+            // db(Int)/db(Double)/...) locked onto whichever was registered
+            // first and never tried the others — `(transpose s amount=+50c)`
+            // and `(db x=12.0)` then failed "No matching overload" even though
+            // a later overload matched exactly. We now run per-slot type
+            // matching + specificity ranking against EACH candidate's own
+            // reordered vector, mirroring the positional path below.
+            var namedArgSurvivors = new List<(FunctionSignature Sig, FlowType[] Reordered)>();
 
             foreach (var sig in candidates)
             {
@@ -293,15 +304,15 @@ public class OverloadResolver
                 }
                 if (!reorderOk) continue;
 
-                // First survivor wins — caller is responsible for registering
-                // distinct ParameterNames-bearing overloads (the backfill
-                // plans 36-03/04 will not produce ambiguous re-registrations).
-                namedArgCandidate = sig;
-                reorderedArgTypes = reordered;
-                break;
+                // sweep-0614: this candidate passed name/duplicate/arity/reorder
+                // validation — keep it (with its OWN reordered vector) and try
+                // the rest. Type matching + specificity ranking happen below
+                // against each survivor's own vector, since different overloads
+                // may map the same parameter names to different slots.
+                namedArgSurvivors.Add((sig, reordered));
             }
 
-            if (namedArgCandidate is null)
+            if (namedArgSurvivors.Count == 0)
             {
                 // Flush rejection diagnostics — these are the actionable
                 // messages for the composer.
@@ -315,15 +326,56 @@ public class OverloadResolver
                 return null;
             }
 
-            // Re-ordered arg types flow through the existing
-            // specificity-scoring path verbatim (single-candidate fast path).
-            argTypes = reorderedArgTypes!;
-            candidates = new[] { namedArgCandidate };
+            // Per-slot TYPE matching against each survivor's own reordered
+            // vector (mirrors the positional `sig.Matches` filter below).
+            var namedArgMatches = namedArgSurvivors
+                .Where(s => s.Sig.Matches(s.Reordered, strictMode))
+                .ToList();
+
+            if (namedArgMatches.Count == 0)
+            {
+                // None of the name-eligible candidates type-checks. Report
+                // against the first survivor's reordered vector so the
+                // composer sees concrete argument types.
+                reporter.ReportError(
+                    $"No matching overload for function '{functionName}' with argument types " +
+                    $"({string.Join(", ", namedArgSurvivors[0].Reordered)})",
+                    location);
+                return null;
+            }
+
+            if (namedArgMatches.Count == 1)
+            {
+                return namedArgMatches[0].Sig;
+            }
+
+            // Multiple type-matching survivors — rank by specificity scored
+            // against EACH candidate's own reordered vector.
+            var rankedNamed = namedArgMatches
+                .Select(s => new
+                {
+                    s.Sig,
+                    Specificity = s.Sig.CalculateSpecificity(s.Reordered),
+                    s.Reordered
+                })
+                .OrderByDescending(x => x.Specificity)
+                .ToList();
+
+            if (rankedNamed.Count > 1
+                && rankedNamed[0].Specificity == rankedNamed[1].Specificity)
+            {
+                reporter.ReportError(
+                    $"Ambiguous overload for function '{functionName}' with argument types " +
+                    $"({string.Join(", ", rankedNamed[0].Reordered)}). " +
+                    $"Candidates: {rankedNamed[0].Sig}, {rankedNamed[1].Sig}",
+                    location);
+                return null;
+            }
+
+            return rankedNamed[0].Sig;
         }
-        else
-        {
-            argTypes = positionalArgTypes;
-        }
+
+        argTypes = positionalArgTypes;
 
         // Filter candidates that match the argument types.
         // Phase 44 Plan 44-03: strictMode drops the two implicit-conversion

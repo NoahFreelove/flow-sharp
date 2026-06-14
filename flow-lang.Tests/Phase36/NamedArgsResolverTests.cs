@@ -152,6 +152,70 @@ public class NamedArgsResolverTests
     }
 
     [Fact]
+    public void NamedArg_MultiOverload_PicksTypeMatchingCandidate_NotFirstRegistered()
+    {
+        // sweep-0614: an overload set sharing parameter names + arity but
+        // differing by TYPE. transpose registers (Sequence, Semitone) FIRST,
+        // (Sequence, Cent) second — both named [seq, amount]. A `amount=+50c`
+        // (Cent) named call previously locked onto the first survivor
+        // (Semitone), failed its type check, and reported "No matching overload
+        // (Sequence, Cent)". The resolver must now try BOTH and pick the
+        // type-matching Cent overload.
+        var semitoneSig = new FunctionSignature(
+            "transpose",
+            new List<FlowType> { SequenceType.Instance, SemitoneType.Instance },
+            ParameterNames: new[] { "seq", "amount" });
+        var centSig = new FunctionSignature(
+            "transpose",
+            new List<FlowType> { SequenceType.Instance, CentType.Instance },
+            ParameterNames: new[] { "seq", "amount" });
+
+        var resolver = MakeResolver(out var reporter);
+        var match = resolver.Resolve(
+            "transpose",
+            new[] { semitoneSig, centSig }, // Semitone registered FIRST
+            positionalArgTypes: new[] { (FlowType)SequenceType.Instance },
+            namedArgTypes: new Dictionary<string, FlowType>
+            {
+                ["amount"] = CentType.Instance, // a Cent arg
+            });
+
+        Assert.NotNull(match);
+        Assert.Same(centSig, match); // the LATER-registered Cent overload wins
+        Assert.False(reporter.HasErrors, reporter.FormatErrors());
+    }
+
+    [Fact]
+    public void NamedArg_MultiOverload_StillPicksFirstWhenItMatches()
+    {
+        // Mirror image: a Semitone arg against the same [Semitone, Cent] set
+        // must still pick the Semitone overload (the first-registered one),
+        // confirming the fix did not invert selection.
+        var semitoneSig = new FunctionSignature(
+            "transpose",
+            new List<FlowType> { SequenceType.Instance, SemitoneType.Instance },
+            ParameterNames: new[] { "seq", "amount" });
+        var centSig = new FunctionSignature(
+            "transpose",
+            new List<FlowType> { SequenceType.Instance, CentType.Instance },
+            ParameterNames: new[] { "seq", "amount" });
+
+        var resolver = MakeResolver(out var reporter);
+        var match = resolver.Resolve(
+            "transpose",
+            new[] { semitoneSig, centSig },
+            positionalArgTypes: new[] { (FlowType)SequenceType.Instance },
+            namedArgTypes: new Dictionary<string, FlowType>
+            {
+                ["amount"] = SemitoneType.Instance,
+            });
+
+        Assert.NotNull(match);
+        Assert.Same(semitoneSig, match);
+        Assert.False(reporter.HasErrors, reporter.FormatErrors());
+    }
+
+    [Fact]
     public void SignatureWithoutParameterNamesFallsBackToPositionalOnly()
     {
         // Backfill safety net (RESEARCH Pitfall 5): a pre-Phase-36 signature
