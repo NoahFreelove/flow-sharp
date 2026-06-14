@@ -3,6 +3,7 @@ namespace FlowLang.Parsing;
 using FlowLang.Ast;
 using FlowLang.Ast.Expressions;
 using FlowLang.Core;
+using FlowLang.Diagnostics;
 using FlowLang.Lexing;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -392,6 +393,32 @@ public partial class Parser
                             centOffset = (double)Advance().Value!;
                         currentBarElements.Add(new VariableReferenceElement(
                             elemLoc, identText, durSuffix, isDotted, isTied, centOffset));
+                        continue;
+                    }
+
+                    // sweep-0614: an UPPERCASE non-roman-numeral identifier here is the
+                    // shape of a mistyped note name (e.g. `Z9`, `H4`) — the lexer only
+                    // emits NoteLiteral when the first char is A-G. Recover charitably
+                    // (CLAUDE.md charitable-interpretation), MIRRORING the lowercase
+                    // variable-reference → rest path: emit a located one-shot advisory,
+                    // render the typo as a rest (honoring its duration suffix), and keep
+                    // parsing so the SURROUNDING notes are NOT silently dropped. Without
+                    // this, the loop `break`s, abandons the rest of the stream, and the
+                    // diagnostic points at the closing pipe instead of the offending token.
+                    if (identText.Length > 0 && char.IsUpper(identText[0]))
+                    {
+                        var badToken = Advance();
+                        var elemLoc = badToken.Location;
+                        RenderingDiagnostics.WarnOnce(
+                            $"note-stream-bad-note:{identText}:{elemLoc.Line}:{elemLoc.Column}",
+                            $"{elemLoc.FileName}:{elemLoc.Line}:{elemLoc.Column}: [note-stream] unrecognized note name '{identText}' — rendered as rest");
+                        string? durSuffix = TryParseDurationSuffix();
+                        bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                        // Consume a trailing tie/cent so the typo's adornments don't
+                        // re-enter the loop as stray tokens.
+                        Match(TokenType.Tilde);
+                        if (Check(TokenType.CentLiteral)) Advance();
+                        currentBarElements.Add(new RestElement(elemLoc, durSuffix, isDotted));
                         continue;
                     }
                 }

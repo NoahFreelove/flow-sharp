@@ -35,7 +35,7 @@ public sealed class DecibelType : FlowType
 
         string valueStr = dbStr[..^2]; // Remove "dB"
 
-        if (!double.TryParse(valueStr, out double value))
+        if (!double.TryParse(valueStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value))
             throw new ArgumentException($"Invalid decibel value: {valueStr}");
 
         return value;

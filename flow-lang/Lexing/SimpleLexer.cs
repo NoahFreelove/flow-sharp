@@ -200,6 +200,22 @@ public class SimpleLexer
                 // Phase 33 internal-marker naming) it's part of an identifier.
                 if (IsAtEnd() || (!char.IsLetterOrDigit(PeekNext()) && PeekNext() != '_'))
                     return SingleChar(TokenType.Underscore);
+                // sweep-0614: rest-with-duration-suffix `_q`/`_h`/`_e`/`_w`/`_s`/`_t`.
+                // Notes attach their duration directly (`C4q`), so a composer
+                // naturally writes `_q` for a quarter rest. Emit a standalone
+                // Underscore (consuming ONLY the `_`) when it is followed by EXACTLY
+                // one duration-suffix letter that does not begin a longer word — the
+                // suffix re-scans as its own Identifier token so the existing
+                // RestElement path (Parser.NoteStream.cs:90-96 → TryParseDurationSuffix)
+                // picks it up. This mirrors the suffix-split applied to note literals
+                // at ScanNumberOrSpecialLiteral. The `__`-prefixed internal-marker
+                // carve-out above still fires first (PeekNext() == '_').
+                if (IsRestDurationLetter(PeekNext()))
+                {
+                    char afterSuffix = _position + 2 < _source.Length ? _source[_position + 2] : '\0';
+                    if (afterSuffix == '\0' || (!char.IsLetterOrDigit(afterSuffix) && afterSuffix != '_'))
+                        return SingleChar(TokenType.Underscore);
+                }
                 break; // Fall through to identifier scanning
             case ',': return SingleChar(TokenType.Comma);
             case ';': return SingleChar(TokenType.Semicolon);
@@ -233,6 +249,13 @@ public class SimpleLexer
 
         throw new Exception($"Unexpected end of input at {start}");
     }
+
+    // sweep-0614: the note-stream duration-suffix letters (Parser.NoteStream.cs
+    // TryParseDurationSuffix accepts w/h/q/e/s/t/x/y). Used by the `_q`-rest split
+    // in the `_` lexer arm. Restricted to the single-letter forms a composer would
+    // attach to a rest; `x`/`y` are included for parity with TryParseDurationSuffix.
+    private static bool IsRestDurationLetter(char ch) =>
+        ch is 'w' or 'h' or 'q' or 'e' or 's' or 't' or 'x' or 'y';
 
     private Token SingleChar(TokenType type)
     {
@@ -529,7 +552,31 @@ public class SimpleLexer
             // less common. Both keywords are added to the expression-start
             // set so the lexer produces a single signed-IntLiteral token.
             or TokenType.Match
-            or TokenType.When;
+            or TokenType.When
+            // sweep-0614: value-end tokens. A space-separated arg list places a
+            // negative literal directly after the PREVIOUS argument's value-end
+            // token, e.g. `(add 5 -3)` (after IntLiteral), `(transpose C4 -2)`
+            // (after NoteLiteral), `(transpose (| C4 D4 |) -2)` (after RParen),
+            // and the documented negative index `xs@-1` (after At). Phase 26
+            // removed infix arithmetic — ParseFlowExpression only matches
+            // Arrow/TildeArrow, never Minus — so there is no infix-subtraction
+            // ambiguity to protect against. Music-context sign paths
+            // (tempo/swing/pan/gain/reverbTime) follow their KEYWORD token, not a
+            // value-end token, so their dedicated Match(Minus) parsers are
+            // unaffected. Typed-literal forms (`-3dB`/`+50c`) are already handled
+            // by TryLookAheadSpecialLiteral (Step 1) before this method runs.
+            or TokenType.IntLiteral
+            or TokenType.FloatLiteral
+            or TokenType.NoteLiteral
+            or TokenType.SemitoneLiteral
+            or TokenType.CentLiteral
+            or TokenType.TimeLiteral
+            or TokenType.DecibelLiteral
+            or TokenType.HertzLiteral
+            or TokenType.BeatLiteral
+            or TokenType.ChordLiteral
+            or TokenType.RParen
+            or TokenType.At;
         if (!isExprStart) return null;
 
         int savePos = _position;
@@ -657,7 +704,7 @@ public class SimpleLexer
 
             // Parse as semitone
             string numberPart = text.Substring(0, text.Length - 2);
-            if (int.TryParse(numberPart, out int semitoneValue))
+            if (int.TryParse(numberPart, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int semitoneValue))
             {
                 return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue, Span: new Span(start, CurrentLocation()));
             }
@@ -687,9 +734,10 @@ public class SimpleLexer
             sb.Append(Advance());
             text = sb.ToString();
 
-            // Parse as cent
+            // Parse as cent. InvariantCulture pinned (see ExpressionEvaluator note)
+            // so '.' is the decimal point in every locale, not a thousands group.
             string numberPart = text.Substring(0, text.Length - 1);
-            if (double.TryParse(numberPart, out double centValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
             {
                 return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
             }
@@ -704,7 +752,7 @@ public class SimpleLexer
 
             // Parse as decibel
             string numberPart = text.Substring(0, text.Length - 2);
-            if (double.TryParse(numberPart, out double decibelValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double decibelValue))
             {
                 return new Token(TokenType.DecibelLiteral, text, start, decibelValue, Span: new Span(start, CurrentLocation()));
             }
@@ -719,7 +767,7 @@ public class SimpleLexer
 
             // Parse as milliseconds
             string numberPart = text.Substring(0, text.Length - 2);
-            if (double.TryParse(numberPart, out double msValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double msValue))
             {
                 return new Token(TokenType.TimeLiteral, text, start, msValue, Span: new Span(start, CurrentLocation()));
             }
@@ -733,7 +781,7 @@ public class SimpleLexer
 
             // Parse as seconds
             string numberPart = text.Substring(0, text.Length - 1);
-            if (double.TryParse(numberPart, out double sValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double sValue))
             {
                 return new Token(TokenType.TimeLiteral, text, start, sValue, Span: new Span(start, CurrentLocation()));
             }
@@ -805,7 +853,7 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 2);
-                if (double.TryParse(numberPart, out double msValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double msValue))
                 {
                     return new Token(TokenType.TimeLiteral, text, start, msValue, Span: new Span(start, CurrentLocation()));
                 }
@@ -818,7 +866,7 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 2);
-                if (double.TryParse(numberPart, out double dbValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dbValue))
                 {
                     return new Token(TokenType.DecibelLiteral, text, start, dbValue, Span: new Span(start, CurrentLocation()));
                 }
@@ -830,7 +878,7 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 1);
-                if (double.TryParse(numberPart, out double centValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
                 {
                     return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
                 }
@@ -859,7 +907,7 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 1);
-                if (double.TryParse(numberPart, out double sValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double sValue))
                 {
                     return new Token(TokenType.TimeLiteral, text, start, sValue, Span: new Span(start, CurrentLocation()));
                 }

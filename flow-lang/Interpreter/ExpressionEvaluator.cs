@@ -95,17 +95,20 @@ public class ExpressionEvaluator
         if (text.EndsWith("st"))
         {
             string numberPart = text.Substring(0, text.Length - 2);
-            if (int.TryParse(numberPart, out int semitoneValue))
+            if (int.TryParse(numberPart, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int semitoneValue))
             {
                 return Value.Semitone(semitoneValue);
             }
         }
 
         // Try to parse as Cent (+/-Nc)
+        // InvariantCulture pinned so '.' always reads as the decimal point —
+        // in comma-decimal locales (de-DE/fr-FR/...) a bare TryParse reads '.'
+        // as a thousands separator and silently 10x-corrupts the value.
         if (text.EndsWith("c") && text.Length > 1)
         {
             string numberPart = text.Substring(0, text.Length - 1);
-            if (double.TryParse(numberPart, out double centValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
             {
                 return Value.Cent(centValue);
             }
@@ -115,7 +118,7 @@ public class ExpressionEvaluator
         if (text.EndsWith("ms"))
         {
             string numberPart = text.Substring(0, text.Length - 2);
-            if (double.TryParse(numberPart, out double msValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double msValue))
             {
                 return Value.Millisecond(msValue);
             }
@@ -123,7 +126,7 @@ public class ExpressionEvaluator
         else if (text.EndsWith("s") && !text.EndsWith("ms"))
         {
             string numberPart = text.Substring(0, text.Length - 1);
-            if (double.TryParse(numberPart, out double sValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double sValue))
             {
                 return Value.Second(sValue);
             }
@@ -133,7 +136,7 @@ public class ExpressionEvaluator
         if (text.EndsWith("dB"))
         {
             string numberPart = text.Substring(0, text.Length - 2);
-            if (double.TryParse(numberPart, out double dbValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dbValue))
             {
                 return Value.Decibel(dbValue);
             }
