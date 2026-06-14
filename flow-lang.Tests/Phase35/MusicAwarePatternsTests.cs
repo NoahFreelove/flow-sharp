@@ -114,6 +114,75 @@ public class MusicAwarePatternsTests
         Assert.Equal("normal", v!.As<string>());
     }
 
+    // ── sweep-0614 regressions ──────────────────────────────────────────────
+
+    [Fact]
+    public void NoteLiteralPatternMatchesNoteScrutinee()
+    {
+        // Regression: a note-literal pattern (`| C4 => ...`) carried its raw text
+        // as a String-typed comparison value, so LooseEquals(Note, String) always
+        // returned false and a note pattern could NEVER match a Note scrutinee.
+        var hit = Eval("Note n = C4\n(match n | C4 => \"is C4\" | _ => \"other\")");
+        Assert.NotNull(hit);
+        Assert.Equal("is C4", hit!.As<string>());
+    }
+
+    [Fact]
+    public void NoteLiteralPatternSelectsCorrectArm()
+    {
+        // A different note must route to its own arm, not the wildcard.
+        var hit = Eval("Note n = D4\n(match n | C4 => \"is C4\" | D4 => \"is D4\" | _ => \"other\")");
+        Assert.NotNull(hit);
+        Assert.Equal("is D4", hit!.As<string>());
+    }
+
+    [Fact]
+    public void NoteLiteralPatternMissesNonMatchingNote()
+    {
+        // A note with no matching arm falls through charitably to the wildcard.
+        var miss = Eval("Note n = E4\n(match n | C4 => \"is C4\" | _ => \"other\")");
+        Assert.NotNull(miss);
+        Assert.Equal("other", miss!.As<string>());
+    }
+
+    [Fact]
+    public void SymbolLiteralPatternMatchesSymbolScrutinee()
+    {
+        // Regression: a general `#symbol` pattern was routed to the articulation
+        // extractor (Enum.TryParse<Articulation> fails for #kick), so it always
+        // fell through to `| _ =>`. It must now match a Symbol value by name.
+        var hit = Eval("Symbol s = #kick\n(match s | #kick => \"matched\" | _ => \"missed\")");
+        Assert.NotNull(hit);
+        Assert.Equal("matched", hit!.As<string>());
+    }
+
+    [Fact]
+    public void SymbolLiteralPatternSelectsCorrectArm()
+    {
+        var hit = Eval("Symbol s = #snare\n(match s | #kick => \"kick\" | #snare => \"snare\" | _ => \"missed\")");
+        Assert.NotNull(hit);
+        Assert.Equal("snare", hit!.As<string>());
+    }
+
+    [Fact]
+    public void SymbolLiteralPatternMissesNonMatchingSymbol()
+    {
+        var miss = Eval("Symbol s = #hat\n(match s | #kick => \"kick\" | _ => \"missed\")");
+        Assert.NotNull(miss);
+        Assert.Equal("missed", miss!.As<string>());
+    }
+
+    [Fact]
+    public void ArticulationNamedSymbolMatchesAsSymbolValue()
+    {
+        // An articulation-keyword symbol (`#staccato`) used as a plain Symbol
+        // value must still match a Symbol scrutinee by name (not be hijacked by
+        // the articulation-on-MusicalNote extractor).
+        var hit = Eval("Symbol s = #staccato\n(match s | #staccato => \"matched\" | _ => \"missed\")");
+        Assert.NotNull(hit);
+        Assert.Equal("matched", hit!.As<string>());
+    }
+
     [Fact]
     public void PitchClassViaGuardComposes()
     {

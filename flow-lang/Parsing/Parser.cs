@@ -301,7 +301,14 @@ public partial class Parser
             // `<<Type? name, Type? name, ...>> = expr`. Must come BEFORE the IsTypeKeyword
             // check because `<<` is not a type-keyword token but is the only
             // statement-start position where LessLess can occur.
-            if (Check(TokenType.LessLess))
+            //
+            // sweep-0614: a statement can ALSO begin with a tuple LITERAL —
+            // `<<3, 4>> ~> add` (the headline `~>` tuple-unpack form) or a bare
+            // `<<1, 2>>`. Disambiguate by scanning to the matching `>>` and only
+            // committing to the destructure grammar when the token immediately
+            // AFTER it is `=`. Otherwise fall through to the expression-statement
+            // path so ParsePrimary builds a TupleLiteralExpression.
+            if (Check(TokenType.LessLess) && IsTupleDestructureTarget())
             {
                 return ParseTupleDestructureStatement();
             }
@@ -498,6 +505,45 @@ public partial class Parser
         }
 
         return new VariableDeclaration(value.Location, varType, name, value, Span: new Span(location, PreviousToken.Location));
+    }
+
+    /// <summary>
+    /// sweep-0614: non-consuming lookahead that decides whether a statement-start
+    /// <c>&lt;&lt;</c> opens a tuple-destructure target (<c>&lt;&lt;...&gt;&gt; = expr</c>)
+    /// or a tuple LITERAL used as an expression (e.g. <c>&lt;&lt;3, 4&gt;&gt; ~&gt; add</c>
+    /// or a bare <c>&lt;&lt;1, 2&gt;&gt;</c>). Scans from the current <c>&lt;&lt;</c> to its
+    /// matching <c>&gt;&gt;</c> (depth-counting nested tuple literals) and returns true only
+    /// when the token immediately after the matching <c>&gt;&gt;</c> is <c>=</c>.
+    /// </summary>
+    private bool IsTupleDestructureTarget()
+    {
+        // _current points at the opening LessLess.
+        int depth = 0;
+        for (int i = _current; i < _tokens.Count; i++)
+        {
+            var t = _tokens[i].Type;
+            if (t == TokenType.LessLess)
+            {
+                depth++;
+            }
+            else if (t == TokenType.GreaterGreater)
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    // Token immediately after the matching `>>`.
+                    int next = i + 1;
+                    return next < _tokens.Count && _tokens[next].Type == TokenType.Assign;
+                }
+            }
+            else if (t == TokenType.Eof)
+            {
+                break;
+            }
+        }
+        // Unbalanced `<<` — let ParseTupleDestructureStatement produce the
+        // existing diagnostic rather than silently swallowing it.
+        return true;
     }
 
     /// <summary>
@@ -1736,7 +1782,7 @@ public partial class Parser
         Expect(TokenType.FatArrow, "Expected '=>' in lambda expression");
 
         List<Statement> body;
-        if (Check(TokenType.LParen) && _current + 1 < _tokens.Count && IsTypeKeyword(_tokens[_current + 1].Type))
+        if (Check(TokenType.LParen) && IsMultiStatementLambdaBody())
         {
             // Multi-statement lambda body: ( stmt1 stmt2 ... )
             Advance(); // consume '('
@@ -1758,6 +1804,112 @@ public partial class Parser
             body = new List<Statement> { new ExpressionStatement(expr.Location, expr, Span: new Span(expr.Location, PreviousToken.Location)) };
         }
         return new LambdaExpression(location, parameters, body, Span: new Span(location, PreviousToken.Location));
+    }
+
+    /// <summary>
+    /// sweep-0614: structural lookahead deciding whether a lambda body that begins
+    /// with <c>(</c> is a multi-statement block <c>( stmt1 stmt2 ... )</c> or a single
+    /// parenthesized expression. Called with CurrentToken pointing at the body's opening
+    /// <c>(</c>; non-consuming. Replaces the old type-keyword-only heuristic, which only
+    /// recognized declaration-first blocks and mis-parsed expression-first bodies such as
+    /// <c>fn Int x =&gt; ((print "side") x)</c>.
+    ///
+    /// Rules (in order):
+    ///   1. A depth-1 <c>;</c> separator anywhere inside the outer parens ⇒ multi-statement
+    ///      (covers both declaration-first and expression-first semicolon-separated bodies).
+    ///   2. First inner token is a type keyword ⇒ multi-statement (declaration block —
+    ///      preserves the prior behavior even with no semicolon, e.g. <c>(Int y = 5)</c>).
+    ///   3. First inner token is an identifier / call-head keyword ⇒ single function-call
+    ///      expression (prefix-only Flow has no bare-identifier statement, so an
+    ///      identifier-first body with no semicolon is unambiguously one call).
+    ///   4. Otherwise ⇒ count top-level units inside the outer parens; 2+ ⇒ multi-statement,
+    ///      exactly 1 ⇒ single parenthesized expression (e.g. <c>((add 1 2))</c>).
+    /// </summary>
+    private bool IsMultiStatementLambdaBody()
+    {
+        // CurrentToken is the opening '('. Find its matching ')' tracking nesting.
+        int open = _current;
+        int depth = 0;
+        int close = -1;
+        bool hasTopLevelSemicolon = false;
+        for (int i = open; i < _tokens.Count; i++)
+        {
+            var t = _tokens[i].Type;
+            if (t == TokenType.LParen || t == TokenType.LBracket || t == TokenType.LessLess)
+            {
+                depth++;
+            }
+            else if (t == TokenType.RParen || t == TokenType.RBracket || t == TokenType.GreaterGreater)
+            {
+                depth--;
+                if (depth == 0)
+                {
+                    close = i;
+                    break;
+                }
+            }
+            else if (t == TokenType.Semicolon && depth == 1)
+            {
+                hasTopLevelSemicolon = true;
+            }
+            else if (t == TokenType.Eof)
+            {
+                break;
+            }
+        }
+
+        // Unbalanced — let the single-expression path produce the existing diagnostic.
+        if (close < 0) return false;
+
+        // Rule 1: a top-level statement separator forces a block.
+        if (hasTopLevelSemicolon) return true;
+
+        int firstInner = open + 1;
+        if (firstInner >= close) return false; // empty `()` — treat as single expr.
+
+        var firstType = _tokens[firstInner].Type;
+
+        // Rule 2: declaration-first block (keeps prior behavior).
+        if (IsTypeKeyword(firstType)) return true;
+
+        // Rule 3: identifier / call-head keyword ⇒ single call expression.
+        if (firstType is TokenType.Identifier or TokenType.Tempo or TokenType.Swing
+            or TokenType.Key or TokenType.Timesig or TokenType.Pan or TokenType.Gain)
+        {
+            return false;
+        }
+
+        // Rule 4: count top-level units inside the outer parens.
+        int units = 0;
+        int j = firstInner;
+        while (j < close)
+        {
+            var tt = _tokens[j].Type;
+            if (tt == TokenType.LParen || tt == TokenType.LBracket || tt == TokenType.LessLess)
+            {
+                // Skip the balanced group.
+                int d = 0;
+                while (j < close)
+                {
+                    var gt = _tokens[j].Type;
+                    if (gt == TokenType.LParen || gt == TokenType.LBracket || gt == TokenType.LessLess) d++;
+                    else if (gt == TokenType.RParen || gt == TokenType.RBracket || gt == TokenType.GreaterGreater)
+                    {
+                        d--;
+                        if (d == 0) { j++; break; }
+                    }
+                    j++;
+                }
+            }
+            else
+            {
+                // Single standalone token unit.
+                j++;
+            }
+            units++;
+            if (units >= 2) return true;
+        }
+        return units >= 2;
     }
 
     /// <summary>
@@ -2054,13 +2206,27 @@ public partial class Parser
             // just the symbol body. PatternMatcher.MatchArticulation maps
             // the body string to an <see cref="Articulation"/> enum value
             // and compares against the scrutinee's note articulation.
+            //
+            // sweep-0614: a `#symbol` pattern can match TWO kinds of scrutinee
+            // and the parser can't know which the scrutinee will be:
+            //   - a Symbol value (`#kick`, `#jazz`, even `#staccato`) → symbol
+            //     equality on the interned name;
+            //   - a MusicalNote scrutinee whose articulation is named by the
+            //     symbol (`#staccato`, `#legato`, …) → articulation extractor.
+            // Previously ALL symbols set ONLY IsArticulationSymbol, so a general
+            // symbol (and any Symbol-typed scrutinee) silently fell through to
+            // `| _ =>`. Now EVERY symbol literal sets IsSymbolLiteral; an
+            // articulation-keyword name ADDITIONALLY sets IsArticulationSymbol.
+            // PatternMatcher dispatches on the runtime scrutinee type.
+            var symbolBody = PreviousToken.Text;
             inner = new ConstructorPattern(
                 location,
-                PreviousToken.Text,
+                symbolBody,
                 new List<Pattern>(),
                 Span: PreviousToken.EffectiveSpan)
             {
-                IsArticulationSymbol = true,
+                IsSymbolLiteral = true,
+                IsArticulationSymbol = IsArticulationName(symbolBody),
             };
         }
         else if (Match(TokenType.Identifier))
@@ -2118,6 +2284,16 @@ public partial class Parser
     }
 
     // Helper methods
+
+    // sweep-0614: lowercase set of Articulation enum member names, computed once.
+    // Used in pattern position to decide whether a `#symbol` is an articulation
+    // keyword (→ IsArticulationSymbol) or a general symbol literal
+    // (→ IsSymbolLiteral / Symbol-equality match).
+    private static readonly HashSet<string> _articulationNames =
+        new(Enum.GetNames<Articulation>().Select(n => n.ToLowerInvariant()));
+
+    private static bool IsArticulationName(string symbolBody)
+        => _articulationNames.Contains(symbolBody.ToLowerInvariant());
 
     private bool IsTypeKeyword(TokenType type)
     {

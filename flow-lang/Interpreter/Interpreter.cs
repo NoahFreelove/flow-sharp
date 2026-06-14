@@ -910,6 +910,7 @@ public class Interpreter : IFunctionInvoker
                 if (cpA.IsChordLiteral != cpB.IsChordLiteral) return false;
                 if (cpA.IsRomanNumeral != cpB.IsRomanNumeral) return false;
                 if (cpA.IsArticulationSymbol != cpB.IsArticulationSymbol) return false;
+                if (cpA.IsSymbolLiteral != cpB.IsSymbolLiteral) return false; // sweep-0614
                 // Tuple-destructure shape: arity matters
                 if (cpA.Name == "Tuple" && cpB.Name == "Tuple")
                 {

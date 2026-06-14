@@ -168,4 +168,59 @@ Tuple<<Int>> t = <<5>>
         Assert.Equal(0, e3);
         Assert.Contains("5", out3);
     }
+
+    /// <summary>
+    /// sweep-0614 regression: a tuple LITERAL must be allowed to start a
+    /// statement — the headline `~>` tuple-unpack form `&lt;&lt;3, 4&gt;&gt; ~&gt; f`
+    /// and a bare `&lt;&lt;1, 2&gt;&gt;`. Previously ParseStatement committed ANY
+    /// statement-start `&lt;&lt;` to the destructure grammar, so these reported
+    /// "Expected identifier in destructure pattern". The disambiguation peeks for
+    /// a `=` after the matching `&gt;&gt;`; only then is it a destructure target.
+    /// </summary>
+    [Fact]
+    public void TupleLiteral_CanStartStatement_ViaUnpackFlow()
+    {
+        using var runner = new FlowEngineRunner();
+        var (success, stdout, stderr, errCount) = runner.RunSource(@"
+use ""@std""
+<<3, 4>> ~> add -> print
+");
+        Assert.True(success, $"engine reported failure. stderr={stderr}");
+        Assert.Equal(0, errCount);
+        Assert.Contains("7", stdout);
+    }
+
+    [Fact]
+    public void TupleLiteral_CanStartStatement_Bare()
+    {
+        // A bare tuple-literal statement must parse without a destructure error.
+        using var runner = new FlowEngineRunner();
+        var (success, stdout, stderr, errCount) = runner.RunSource(@"
+use ""@std""
+(print ""before"")
+<<1, 2>>
+(print ""after"")
+");
+        Assert.True(success, $"engine reported failure. stderr={stderr}");
+        Assert.Equal(0, errCount);
+        Assert.Contains("before", stdout);
+        Assert.Contains("after", stdout);
+    }
+
+    [Fact]
+    public void TupleDestructure_StillParses_AfterLiteralDisambiguation()
+    {
+        // Regression guard: the disambiguation must NOT break the destructure form.
+        using var runner = new FlowEngineRunner();
+        var (success, stdout, stderr, errCount) = runner.RunSource(@"
+use ""@std""
+<<Int a, Int b>> = <<10, 20>>
+(print (str a))
+(print (str b))
+");
+        Assert.True(success, $"engine reported failure. stderr={stderr}");
+        Assert.Equal(0, errCount);
+        Assert.Contains("10", stdout);
+        Assert.Contains("20", stdout);
+    }
 }

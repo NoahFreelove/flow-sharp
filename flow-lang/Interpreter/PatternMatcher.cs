@@ -85,6 +85,20 @@ public static class PatternMatcher
 
     private static bool MatchLiteral(LiteralPattern lit, Value scrutinee)
     {
+        // sweep-0614: a Note-literal pattern (`| C4 => ...`) carries the raw
+        // note text "C4" as a string payload. Value.From would wrap it as a
+        // String-typed Value, so LooseEquals(Note, String) takes its cross-type
+        // fallthrough and returns false unconditionally — a note pattern could
+        // never match a Note scrutinee. Build a Note-typed comparison value
+        // when the scrutinee is a Note so both sides hit the same-type
+        // StrictEquals branch (verbatim note-text compare). Both the scrutinee
+        // (Value.Note(text)) and the pattern payload store the raw note text,
+        // so a direct text compare fires for the common case.
+        if (scrutinee.Type is NoteType && lit.Value is string noteText)
+        {
+            return Utils.LooseEquals(scrutinee, Value.Note(noteText));
+        }
+
         // Wrap the embedded literal payload (int / double / bool / string)
         // in a Value so it routes through Utils.LooseEquals — which already
         // handles cross-type numeric comparison (Int vs. Double per the
@@ -114,10 +128,38 @@ public static class PatternMatcher
             return MatchChordQuality(ctor.Name, scrutinee);
         if (ctor.IsRomanNumeral)
             return MatchRomanNumeral(ctor.Name, scrutinee, context);
+
+        // sweep-0614: a `#symbol` pattern may carry BOTH flags (an articulation
+        // keyword like `#staccato`). Dispatch on the scrutinee's runtime type:
+        //   - Symbol scrutinee → symbol-name equality (covers `#kick`, `#jazz`,
+        //     and an articulation-keyword symbol used as a plain Symbol value);
+        //   - MusicalNote scrutinee → articulation extractor (only when the
+        //     symbol names an Articulation enum member).
+        if (ctor.IsSymbolLiteral && scrutinee.Type is SymbolType)
+            return MatchSymbol(ctor.Name, scrutinee);
         if (ctor.IsArticulationSymbol)
             return MatchArticulation(ctor.Name, scrutinee);
+        if (ctor.IsSymbolLiteral)
+            return MatchSymbol(ctor.Name, scrutinee);
 
         return false;
+    }
+
+    /// <summary>
+    /// sweep-0614 — matches a general symbol-literal pattern (e.g. <c>#kick</c>,
+    /// <c>#jazz</c>) against a Symbol scrutinee. Requires the scrutinee to
+    /// actually be a Symbol value and compares the interned symbol name for
+    /// ordinal equality, matching <see cref="Value.Symbol"/> /
+    /// <c>SymbolInternTable</c> semantics (SYM-01 pointer-equality is exactly
+    /// name-equality for interned symbols). A non-Symbol scrutinee (e.g. a Note
+    /// carrying an articulation) misses charitably — this cannot collide with
+    /// articulation matching, which is gated on a separate flag.
+    /// </summary>
+    private static bool MatchSymbol(string symbolName, Value scrutinee)
+    {
+        return scrutinee.Type is SymbolType
+            && scrutinee.Data is string scrutineeName
+            && string.Equals(scrutineeName, symbolName, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -245,7 +287,8 @@ public static class PatternMatcher
             // Tuple destructure: ConstructorPattern with Name="Tuple".
             // Tuples are stored as IReadOnlyList<Value> tagged with TupleType.
             if (pat is ConstructorPattern cp && cp.Name == "Tuple"
-                && !cp.IsChordLiteral && !cp.IsRomanNumeral && !cp.IsArticulationSymbol)
+                && !cp.IsChordLiteral && !cp.IsRomanNumeral && !cp.IsArticulationSymbol
+                && !cp.IsSymbolLiteral)
             {
                 if (arg.Type is not TypeSystem.SpecialTypes.TupleType
                     || arg.Data is not IReadOnlyList<Value> tupleElements)
@@ -263,12 +306,13 @@ public static class PatternMatcher
                 continue;
             }
 
-            // Music-aware ConstructorPattern (chord literal / roman numeral / articulation):
-            if (pat is ConstructorPattern cpMusic && (cpMusic.IsChordLiteral || cpMusic.IsRomanNumeral || cpMusic.IsArticulationSymbol))
+            // Music-aware ConstructorPattern (chord literal / roman numeral /
+            // articulation / general symbol literal, sweep-0614):
+            if (pat is ConstructorPattern cpMusic && (cpMusic.IsChordLiteral || cpMusic.IsRomanNumeral || cpMusic.IsArticulationSymbol || cpMusic.IsSymbolLiteral))
             {
                 if (!PatternMatches(cpMusic, arg, bindings, evaluator, context))
                     return (false, bindings, 0);
-                totalSpecificity += 800;
+                totalSpecificity += cpMusic.IsSymbolLiteral ? 1000 : 800;
                 continue;
             }
 
@@ -293,6 +337,10 @@ public static class PatternMatcher
     private static int SpecificityOf(Pattern pattern) => pattern switch
     {
         LiteralPattern => 1000,
+        // sweep-0614: a general symbol literal is an exact-value match like any
+        // other literal, so it scores at the literal level (above articulation /
+        // roman-numeral extractors, which are looser by-property matches).
+        ConstructorPattern cp when cp.IsSymbolLiteral => 1000,
         ConstructorPattern cp when cp.IsChordLiteral || cp.IsRomanNumeral || cp.IsArticulationSymbol => 800,
         ConstructorPattern cp when cp.Name == "Tuple" => 600,
         BindingPattern bp when bp.TypeAnnotation != null => 500,

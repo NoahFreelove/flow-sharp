@@ -41,4 +41,16 @@ public record ConstructorPattern(
     /// <c>Articulation</c> enum value and compares against the symbol name.
     /// </summary>
     public bool IsArticulationSymbol { get; init; }
+
+    /// <summary>
+    /// sweep-0614: when true, the pattern is a general <c>#symbol</c> literal
+    /// (e.g. <c>#kick</c>, <c>#jazz</c>) — NOT an articulation keyword.
+    /// PatternMatcher requires the scrutinee to be a Symbol value and compares
+    /// the interned symbol name for equality (matching Value.Symbol /
+    /// SymbolInternTable semantics). The articulation-keyword symbols
+    /// (<c>#staccato</c>, <c>#legato</c>, …) still set
+    /// <see cref="IsArticulationSymbol"/> instead, so a Symbol arm cannot
+    /// collide with articulation matching on a note scrutinee.
+    /// </summary>
+    public bool IsSymbolLiteral { get; init; }
 }
