@@ -137,6 +137,25 @@ public class Interpreter : IFunctionInvoker
         foreach (var statement in program.Statements)
         {
             ExecuteStatement(statement);
+            // sweep-0614: a bare top-level `return` (or a `return` that
+            // propagated out of a top-level for/while loop) sets _returnValue
+            // with no proc on the stack to consume it. Without this, the
+            // top-of-ExecuteStatement guard silently skips EVERY subsequent
+            // top-level statement — lost output / lost audio with no
+            // diagnostic. Mirror the ClearLeakedReturn discipline already
+            // applied to musical-context / tuning / live / section blocks:
+            // report a charitable advisory and clear the flag so the rest of
+            // the program still runs. Gated on !InsideProcCall so in-proc
+            // returns are untouched (Execute only runs at top level anyway,
+            // but the guard documents intent).
+            if (_returnValue != null && !InsideProcCall)
+            {
+                _errorReporter.ReportError(
+                    "'return' at top level is not allowed — 'return' only exits a proc. " +
+                    "The return was ignored so the rest of the program still runs.",
+                    statement.Location);
+                _returnValue = null;
+            }
         }
     }
 
@@ -939,7 +958,17 @@ public class Interpreter : IFunctionInvoker
         var inputTypes = proc.Parameters.Select(p => p.Type).ToList();
         var isVarArgs = proc.Parameters.Any(p => p.IsVarArgs);
 
-        var signature = new FunctionSignature(proc.Name, inputTypes, isVarArgs);
+        // sweep-0614: thread parameter NAMES through to the signature so user
+        // procs (and every Flow-defined stdlib proc) honour the documented
+        // universal named-arg surface (D-36-11). Previously names were dropped,
+        // so `(addThem a=3 b=4)` and `(createSineTone duration=1.0 ...)` failed
+        // with the misleading "does not yet support named arguments" error even
+        // though the names ARE declared on the Parameter records. Safe because
+        // FunctionSignature.Equals/GetHashCode intentionally exclude
+        // ParameterNames (overload identity + registry de-dup unperturbed), and
+        // the named-args+varargs combo is rejected earlier in OverloadResolver.
+        var paramNames = proc.Parameters.Select(p => p.Name).ToList();
+        var signature = new FunctionSignature(proc.Name, inputTypes, isVarArgs, paramNames);
 
         if (proc.IsInternal)
         {

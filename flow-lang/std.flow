@@ -267,6 +267,7 @@ internal proc ??set(Int: seed)
 Note: Pattern transforms
 internal proc transpose (Sequence: seq, Semitone: interval)
 internal proc transpose (Sequence: seq, Cent: interval)
+internal proc transpose (Sequence: seq, Long: interval)
 internal proc invert (Sequence: seq)
 internal proc retrograde (Sequence: seq)
 internal proc augment (Sequence: seq)

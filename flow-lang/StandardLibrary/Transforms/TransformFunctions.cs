@@ -771,6 +771,16 @@ public static class TransformFunctions
             [SequenceType.Instance, CentType.Instance],
             ParameterNames: ["seq", "amount"]);
         registry.Register("transpose", transposeCentSig, TransposeCent);
+
+        // sweep-0614: transpose(Sequence, Long) — a whole-number Long acts as a
+        // semitone count, consistent with the Int → Long widening chain (Int and
+        // Double already work; Long previously failed "No matching overload").
+        // Scoped here rather than via a global SemitoneType widening so the D-08
+        // "(semitones x) is Int-ONLY" carve-out stays intact.
+        var transposeLongSig = new FunctionSignature("transpose",
+            [SequenceType.Instance, LongType.Instance],
+            ParameterNames: ["seq", "amount"]);
+        registry.Register("transpose", transposeLongSig, TransposeLong);
     }
 
     /// <remarks>
@@ -787,6 +797,26 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         int semitones = args[1].As<int>();
+        return Value.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
+    }
+
+    /// <summary>
+    /// sweep-0614: explicit transpose(Sequence, Long) overload. A whole-number
+    /// Long sits in the documented Int → Long widening chain, and Semitone is
+    /// whole-numbers-by-design, so a composer reasonably expects
+    /// <c>(transpose seq longVal)</c> to behave like a semitone count — exactly
+    /// as the Int and Double paths already do. Scoped to transpose (NOT a global
+    /// SemitoneType widening) so the D-08 "(semitones x) is Int-ONLY" carve-out
+    /// is untouched. A Long beyond int range is clamped (transpose past ±127
+    /// semitones is meaningless anyway).
+    /// </summary>
+    private static Value TransposeLong(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        long raw = args[1].As<long>();
+        int semitones = raw > int.MaxValue ? int.MaxValue
+                      : raw < int.MinValue ? int.MinValue
+                      : (int)raw;
         return Value.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
     }
 
