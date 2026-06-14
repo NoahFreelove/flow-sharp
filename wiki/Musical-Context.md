@@ -201,31 +201,33 @@ sustainPedal {
 Pair with the `release=` named arg on `renderSong` for finer-grained control over the decay tail length:
 
 ```flow
-Buffer buf = (renderSong song "piano" release=3.0s)
+Buffer result = (renderSong song "piano" release=3.0s)
 ```
 
 ## Tuning
 
 Applies a non-12-TET tuning to its body — Scala `.scl` files load into a `Tuning` value, then a `tuning { ... }` block scopes that tuning to the contained code. Three composer-facing surface forms:
 
+The paths below use the bundled test-fixture `.scl` files. Supply any valid `.scl` path from your own tuning library or from the [Scala scale archive](http://www.huygens-fokker.org/scala/scales.zip).
+
 ```flow
 use "@std"
 use "@audio"
 
 Note: 1. identifier-bound variable
-Tuning partch = (loadScala "partch43.scl")
+Tuning partch = (loadScala "flow-lang.Tests/fixtures/scala/partch_43.scl")
 tuning partch {
     section microtonal { Sequence mel = | C4 D4 E4 F4 | }
 }
 
 Note: 2. inline call
-tuning (loadScala "carlos_alpha.scl") {
+tuning (loadScala "flow-lang.Tests/fixtures/scala/carlos_alpha.scl") {
     section nonOctave { Sequence climb = | C4 D4 E4 F4 G4 A4 B4 C5 | }
 }
 
 Note: 3. string-literal sugar (desugars to form 2 at parse time)
-tuning "bohlen_pierce.scl" {
-    section thirteenStep { Sequence mel = | C4 D4 E4 F4 | }
+tuning "flow-lang.Tests/fixtures/scala/just_5limit.scl" {
+    section justIntonationBlock { Sequence mel = | C4 D4 E4 F4 | }
 }
 ```
 
@@ -308,13 +310,13 @@ tempo 100 {
 - Musical context is **push/pop scoped**: entering a block pushes new settings, exiting pops them.
 - Unspecified fields inherit from the parent scope.
 - Code outside any context block uses defaults (120 BPM, 4/4, no key, no swing).
-- Note streams require a `timesig` context to determine bar duration.
+- Note streams use the active `timesig` context to determine bar duration; if none is set, the default 4/4 applies silently.
 
 ## When to Use Each Block
 
 | Block | When Required |
 |-------|---------------|
-| `timesig` | When using note streams (determines beat count per bar) |
+| `timesig` | When you want a meter other than the default 4/4 (note streams default to 4/4 if none is set) |
 | `tempo` | When rendering audio (determines actual playback speed) |
 | `key` | When using roman numerals, progressions, or `scaleNotes` |
 | `swing` | When you want swing feel applied to rhythms |

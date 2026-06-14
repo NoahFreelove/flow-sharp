@@ -199,19 +199,20 @@ timesig 4/4 {
 
 ## Quantize
 
-Snap notes to a metric grid with adjustable strength and optional swing. Requires a `timesig` context (the active time signature drives subdivision math):
+Snap notes to a metric grid with adjustable strength and optional swing. Requires a `timesig` context (the active time signature drives subdivision math). The resolution argument must be a `NoteValue` constant — import `use "@notation"` to get `EIGHTH`, `SIXTEENTH`, etc.:
 
 ```flow
 use "@std"
+use "@notation"
 
 timesig 4/4 {
     Sequence loose = | C4 D4q. E4e F4 |
 
     Note: hard-quantize to eighth-note grid
-    Sequence tight = (quantize loose e 1.0 0.0)
+    Sequence tight = (quantize loose EIGHTH 1.0 0.0)
 
     Note: 50% pull to sixteenths, with light swing
-    Sequence laidback = (quantize loose s 0.5 0.2)
+    Sequence laidback = (quantize loose SIXTEENTH 0.5 0.2)
 }
 ```
 
@@ -282,11 +283,11 @@ See [Generative Music](Generative.md) for details.
 
 ### polyrhythm (buffer-level)
 
-Overlay two sequences with different time signatures. Returns a `Buffer`:
+Overlay two sequences with different time signatures. Returns a `Buffer`. `polyrhythm` lives in `@composition` (not `@audio`):
 
 ```flow
 use "@std"
-use "@audio"
+use "@composition"
 
 tempo 120 {
     timesig 3/4 {
@@ -294,7 +295,7 @@ tempo 120 {
         timesig 4/4 {
             Sequence quarters = | C4 C4 C4 C4 |
             Buffer mixed = (polyrhythm waltz quarters)
-            (exportWav mixed "poly.wav")
+            (writeWav "poly.wav" mixed)
         }
     }
 }
@@ -302,16 +303,18 @@ tempo 120 {
 
 ## Tidal-Style Combinators
 
-Beyond the core transforms above, a separate `@patterns` module ships 13 Tidal-style combinators (`every`, `fast`, `slow`, `chunk`, `phase`, `rev`, `iter`, `palindrome`, `jux`, `superimpose`, `sometimes`, `degrade`, `sparseSeq`). They operate on whole sequences in units of bars and chain naturally with `->`:
+Beyond the core transforms above, a separate `@patterns` module ships 13 Tidal-style combinators (`every`, `fast`, `slow`, `chunk`, `phase`, `rev`, `iter`, `palindrome`, `jux`, `superimpose`, `sometimes`, `degrade`, `sparseSeq`). They operate on whole sequences in units of bars.
+
+> **Note on argument order:** Tidal combinators like `every`, `chunk`, and `phase` take the `Sequence` as their **last** parameter. Use a direct function call with the sequence at the end — the flow operator (`->`) inserts the left-hand value as the *first* argument and will not work for these combinators.
 
 ```flow
 use "@patterns"
 
 timesig 4/4 {
-    Sequence base = | C4 D4 E4 F4 | G4 A4 B4 C5 |
+    Sequence base = | C4 D4 E4 F4 |
 
-    Note: every 4th bar, double-speed it
-    Sequence shifted = base -> (every 4 (fn Sequence s => (fast s 2.0)))
+    Note: every 4th bar, double-speed it — sequence is the last argument
+    Sequence shifted = (every 4 (fn Sequence s => (fast s 2.0)) base)
 
     Note: probabilistic drop
     Sequence sparse  = (sometimes 0.3 (fn Sequence s => (degrade s)) base)

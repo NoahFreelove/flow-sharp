@@ -109,7 +109,7 @@ tempo 100 {
             Song song = [hook*4]
             Buffer rendered = (renderSong song "piano")
             Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
-            (exportWav final "ivvi_iv_v.wav")
+            (writeWav "ivvi_iv_v.wav" final)
         }
     }
 }

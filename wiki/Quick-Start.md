@@ -94,8 +94,8 @@ tempo 120 {
             }
 
             Song song = [intro]
-            Buffer buf = (renderSong song "piano")
-            (exportWav buf "melody.wav")
+            Buffer audioBuf = (renderSong song "piano")
+            (writeWav "melody.wav" audioBuf)
             (print "Exported melody.wav!")
         }
     }
@@ -131,15 +131,11 @@ String label = (match Cmaj7
 (print label)
 ```
 
-## Standalone Flow Editor (Optional)
+## Standalone Flow Editor (Planned)
 
-A desktop GUI for editing and running Flow scripts is included in the repo as `flow-editor`:
+A dedicated desktop GUI editor for Flow scripts is planned as a community or future contribution. It is not yet included in the repository.
 
-```bash
-dotnet run --project flow-editor
-```
-
-This is optional — everything in the language is usable from the CLI.
+Everything in the language is fully usable from the CLI or the playground at [flowlang.dev](https://flowlang.dev).
 
 ## Important: The Standard Library
 

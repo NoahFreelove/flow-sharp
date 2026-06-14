@@ -50,7 +50,7 @@ Chord fs = Fsmaj7    Note: F# major 7th
 
 > This is **different** from note literal accidentals, which use `+` and `-` (e.g., `C4+` = C# at octave 4). See [Note Streams](Note-Streams.md).
 
-> `G7` is parsed as the note G at octave 7, not a G dominant 7th chord. Use `Gdom7` (or `G7` in a context where a chord is explicit, like inside a note stream) for the chord.
+> `G7` is parsed as the note G at octave 7 in **all** contexts — including inside note streams. Use `Gdom7` for the dominant 7th chord.
 
 ## Chord Functions
 
@@ -61,8 +61,8 @@ Chord c = Cmaj7
 
 String root = (chordRoot c)                 Note: "C"
 String quality = (chordQuality c)           Note: "maj7"
-String[] notes = (chordNotes c)             Note: ["C", "E", "G", "B"]
-(print $"root: {root}, quality: {quality}, count: {notes -> length}")
+String[] notes = (chordNotes c)             Note: ["C4", "E4", "G4", "B4"]
+(print $"root: {root}, quality: {quality}, count: {notes -> len}")
 ```
 
 ## Chords in Note Streams
@@ -76,11 +76,11 @@ timesig 4/4 {
 }
 ```
 
-Append duration suffixes (and dots) to a named chord element to control its rhythm:
+Append duration suffixes (and dots) to a named chord element to control its rhythm. A chord symbol and its duration token must be separated by a space (the lexer only fuses note+duration for single note literals like `C4q`, not for chord names):
 
 ```flow
 timesig 4/4 {
-    Sequence rhythmic = | Cmaj7q Am7q Dm7h | G7h. Cmaj7q |
+    Sequence rhythmic = | Cmaj7 q Am7 q Dm7 h G7 h. Cmaj7 q |
 }
 ```
 
@@ -153,15 +153,15 @@ Sequence down   = (arpeggio Cmaj "down")
 Sequence updown = (arpeggio Cmaj "updown")
 ```
 
-The 4-arg form gives full control over rate, direction, and pattern:
+The 4-arg form gives full control over rate, direction, and pattern. Rate is a `NoteValue` constant from `@notation` (`QUARTER`, `EIGHTH`, `SIXTEENTH`, etc.) — bare `q`/`e`/`s` are only valid as duration suffixes inside note streams:
 
 ```flow
 use "@std"
+use "@notation"
 
-Note: rate is a NoteValue (q, e, s, etc. as keywords), direction is up/down/updown/downup/random,
-Note: pattern is linear/chord-tone/scale-tone
-Sequence triplets = (arpeggio Cmaj7 q "updown" "linear")
-Sequence rolling  = (arpeggio Cmaj7 s "down" "linear")
+Note: direction is up/down/updown/downup/random; pattern is linear/chord-tone/scale-tone
+Sequence triplets = (arpeggio Cmaj7 QUARTER "updown" "linear")
+Sequence rolling  = (arpeggio Cmaj7 SIXTEENTH "down" "linear")
 ```
 
 > `downup` and `random` are accepted today; `chord-tone` and `scale-tone` currently behave the same as `linear` (placeholders for future expansion).
@@ -209,6 +209,7 @@ String[] aMinor = (scaleNotes "Aminor")      Note: 7 notes
 Scales are useful for constraining diatonic mutation with `vary`:
 
 ```flow
+Note: snippet - not standalone; mel must be defined first, e.g.: Sequence mel = | C4 D4 E4 F4 G4 |
 Sequence varied = (vary mel 0.3 "pitch" "Cmajor")
 ```
 
@@ -237,8 +238,8 @@ Song mySong = [intro verse]
 String[] sections = (getSections mySong)
 (print (str sections))               Note: ["intro", "verse"]
 
-String[] seqs = (sectionSequences intro)
-(print (str seqs))                   Note: ["mel"]
+Note: sectionSequences is not currently accessible from composer code — section names live in an
+Note: internal registry, not variable scope. Use getSections to inspect song structure.
 ```
 
 ## See Also

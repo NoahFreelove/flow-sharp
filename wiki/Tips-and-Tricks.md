@@ -4,13 +4,13 @@ Practical advice, idioms, and gotchas for writing Flow code.
 
 ## Always Import @std
 
-Almost every program needs:
+Import `@std` when you need collection functions:
 
 ```flow
 use "@std"
 ```
 
-Without it, you can't use `print`, `str`, `concat`, `add`, `sub`, `list`, `map`, `filter`, or any other standard library function.
+`print`, `str`, and arithmetic (`add`, `sub`, `mul`, `div`) are always available without any import. `@std` brings in `list`, `map`, `filter`, `reduce`, `concat`, and other collection utilities.
 
 ## Optional Parentheses
 
@@ -21,8 +21,9 @@ proc square (Int: n)
     (mul n n)
 end proc
 
-Int s = square 4    Note: works with literal
-Int s = (square x)  Note: parens needed for variable args
+Int x = 4
+Int s1 = square 4    Note: works with literal
+Int s2 = (square x)  Note: parens needed for variable args
 ```
 
 This is syntactic sugar — the parser recognizes bare identifier followed by literals.
@@ -50,7 +51,7 @@ Int a = 1; Int b = 2; Int c = (add a b)
 Flow recognizes several comment styles — pick whichever fits the surrounding context:
 
 ```flow
-Note: Chapter divider or longer prose — must start at column 0 of the line's content.
+Note: Chapter divider or longer prose — works at line start OR as a trailing inline comment.
 // C-style line comment, works anywhere on a line.
 Int x = 5  // inline comment
 Int y = 7  Note: inline `Note:` comment is fine after a statement
@@ -60,7 +61,7 @@ FIXME: this transpose is one semitone off
 ; classic Lisp-style — only when in column 0; mid-line `;` is a statement separator
 ```
 
-`Note:`, `TODO:`, and `FIXME:` all run to end of line and are equivalent to `//` for the lexer. `;` is BOTH a column-0 comment marker AND a mid-line statement separator — context decides.
+`Note:` works both at the start of a line and as a trailing inline comment after any statement. `TODO:` and `FIXME:` are line-start-only. `;` is BOTH a column-0 comment marker AND a mid-line statement separator — context decides.
 
 ## Prefix-Only Arithmetic
 
@@ -103,15 +104,26 @@ Use `print` liberally for debugging:
 
 ```flow
 use "@std"
+use "@audio"
 
 Sequence mel = | C4 D4 E4 F4 |
 (print (str mel))  Note: see the sequence representation
 
-Buffer buf = (renderSong song "piano")
-(print (concat "Frames: " (str (getFrames buf))))
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section intro {
+                Sequence s = | C4 E4 G4 C5 |
+            }
+            Song song = [intro]
+            Buffer audio = (renderSong song "piano")
+            (print (concat "Frames: " (str (getFrames audio))))
+        }
+    }
+}
 ```
 
-For waveforms or sequences, `(visualize buf)` and `(visualize seq)` render ASCII piano rolls / waveforms straight to stdout.
+For waveforms or sequences, `(visualize audio)` and `(visualize seq)` render ASCII piano rolls / waveforms straight to stdout. (`buf` is a reserved token — use any other name for your Buffer variable.)
 
 ## `flow check` Before Committing
 
@@ -150,12 +162,19 @@ When a later step in a chain needs to reuse the value from an earlier step, bind
 ```flow
 Int x = 5 -> (mul 2) as doubled
             -> (add doubled)     Note: 10 + 10 = 20
-
-Buffer mix = dry -> (gain -3dB) as quiet
-                -> (mix quiet)   Note: quiet self-mixed back in
 ```
 
 The bound name is visible from its `as` clause forward in the same chain AND to the next statement in the same block.
+
+For audio chains, `as` lets a later step reference an earlier result:
+
+```flow
+Note: snippet — supply a real Buffer `dry` (e.g. from renderSong) to run this
+use "@audio"
+
+Buffer mix = dry -> (gain -3dB) as quiet
+                -> (add 0 0)     Note: illustrative — quiet is accessible here
+```
 
 ### Tuple-Unpack with `~>`
 
@@ -180,33 +199,49 @@ Most builtins now accept named arguments. Reach for them when:
 - the call is part of a config file and clarity beats brevity.
 
 ```flow
-Note: positional form — concise once you know the signature
-Sequence solo = (jam chords #jazz 4 "Cmajor" 1234 2)
+use "@std"
+use "@audio"
+use "@improv"
 
-Note: named form — self-documenting; safe to reorder
-Sequence solo = (jam over=chords style=#blues seed=42 length=8 key="Cmajor")
+key Cmajor {
+    timesig 4/4 {
+        Sequence chords = | Cmaj Fmaj Gmaj |
 
-Note: skip middle defaults
-Buffer g = (granular tone 50ms 20Hz 0.3 windowing=#gaussian)
+        Note: positional form — concise once you know the signature
+        Note: jam(over, style, length, key, seed, order)
+        Sequence solo1 = (jam chords #jazz 4 "Cmajor" 1234 2)
+
+        Note: named form — self-documenting; safe to reorder
+        Note: key= is a reserved keyword so use the positional form for key/seed
+        Sequence solo2 = (jam chords #blues 8 "Cmajor" 42)
+
+        Note: granular with named windowing arg
+        Buffer tone = (createSineTone 440Hz 2.0 0.5)
+        Buffer g = (granular tone 50ms 20Hz 0.3 windowing=#gaussian)
+    }
+}
 ```
 
-Positional + named can mix in one call as long as positional come first.
+Positional + named can mix in one call as long as positional come first. Note: `key` is a reserved keyword and cannot be used as a named-argument label in any call; pass the key string positionally or use a `key Cmajor { }` context block instead.
 
 ## Match Expressions
 
 Use `match` for clean discriminated dispatch — way more readable than nested `if`:
 
 ```flow
-String tonality = (match (chord "G")
-                    | V => "dominant"
-                    | I => "tonic"
-                    | _ => "other")
+key Cmajor {
+    String tonality = (match (chord "G")
+                        | V => "dominant"
+                        | I => "tonic"
+                        | _ => "other")
 
-Note: bindings + guards
-String sign = (match n
-                | x when (gt x 0) => "pos"
-                | 0 => "zero"
-                | _ => "neg")
+    Note: bindings + guards
+    Int n = 5
+    String sign = (match n
+                    | x when (gt x 0) => "pos"
+                    | 0 => "zero"
+                    | _ => "neg")
+}
 ```
 
 Patterns: literal (`1`, `"hello"`, `Cmaj7`, `V7`), wildcard (`_`), binding (bare identifier `n`), and guards (`pat when (predicate)`). Music-aware constructor patterns include chord literals and roman numerals.
@@ -240,8 +275,8 @@ tempo 120 {
 ```
 
 You only need the blocks you actually use:
-- `timesig` is required for note streams
-- `key` is required for roman numerals
+- `timesig` is recommended for note streams (the engine defaults to 4/4 when omitted, but explicit context is clearer)
+- `key` is required for roman numerals (`I`, `IV`, `V7`, etc.)
 - `tempo` is required for audio rendering
 
 Other available context blocks: `swing 0.6 { }`, `voicePool 32 { }`, `sustainPedal { }`, `tuning t { }`, `pan { }`, `gain { }`, `reverbTime { }`, `dynamics { }`, `rit { }`, `accel { }`. They all nest the same way and inherit from outer scopes.
@@ -251,17 +286,21 @@ Other available context blocks: `swing 0.6 { }`, `voicePool 32 { }`, `sustainPed
 Both scale a Buffer's amplitude. The function NAME documents the unit:
 
 ```flow
-Buffer attenuated = (gain buf -6dB)       Note: decibels
-Buffer half       = (volume buf 0.5)      Note: linear multiplier
+use "@audio"
+
+Buffer src = (createSineTone 440Hz 1.0 0.5)
+Buffer attenuated = (gain src -6dB)       Note: decibels
+Buffer half       = (volume src 0.5)      Note: linear multiplier
 ```
 
-Footgun: `(gain buf 0.5)` is 0.5 dB attenuation (about 5.9% softer), NOT 50% volume. Use `volume` when you mean a linear factor, `gain` when you mean dB. `volume` rejects negative values — for dB attenuation, use `gain` with a negative number or a `-NdB` literal.
+Footgun: `(gain src 0.5)` is 0.5 dB attenuation (about 5.9% softer), NOT 50% volume. Use `volume` when you mean a linear factor, `gain` when you mean dB. `volume` rejects negative values — for dB attenuation, use `gain` with a negative number or a `-NdB` literal.
 
 ## Piano Sustain Pedal Simulation
 
 When rendering piano, lengthen the release tail with the `release=` named arg:
 
 ```flow
+Note: snippet — supply a Song value (from a section + Song expression) to run this
 Buffer warm = (renderSong song "piano" release=2.5s)
 ```
 
@@ -281,7 +320,7 @@ Both voices share the bar's onset and mix additively. Same render path for audio
 
 Flow's stdlib follows a "charitable" philosophy: degenerate inputs return reasonable defaults plus a one-shot stderr advisory, rather than throwing. You can prototype without paranoid input validation:
 
-- `(stretch buf 0.0)` → returns input + advisory (NOT a divide-by-zero crash)
+- `(stretch audio 0.001)` → near-identity; note that `0.0` is rejected with an error (`stretch factor must be positive`); use a small positive value for near-zero cases
 - `(every 0 cb seq)` → returns input + advisory
 - `(jam unknownChords #fakestyle 0 "Cmajor" 0 9)` → falls back to a usable Sequence
 - `(abc malformedInput)` → drops unrecognized tokens with `[abc]` advisory; never throws
@@ -293,6 +332,13 @@ This means stdlib functions almost never need to be wrapped in `try`-like guards
 All stochastic builtins route their random number generators through a single registry keyed by `(SourceLocation, generator-name)`. Two runs of the same script at the same git SHA produce byte-identical WAV output — even when calls like `(sometimes 0.5 cb seq)` or `(humanize seq 0.1)` are unseeded.
 
 ```flow
+use "@std"
+use "@patterns"
+use "@generative"
+
+Sequence seq    = | C4 E4 G4 A4 |
+Sequence corpus = | C4 D4 E4 F4 G4 A4 B4 |
+
 Note: Unseeded — Flow picks a stable seed from the source position.
 Sequence varied = (sometimes 0.4 (fn Sequence s => (rev s)) seq)
 
@@ -309,9 +355,14 @@ Exception: `lorenz` and `logistic` (chaos maps) preserve same-platform two-run d
 Several Phase 37 builtins return the input buffer byte-identical when called with no-op parameters. Safe to write generic code that conditionally stretches / pitch-shifts:
 
 ```flow
-Buffer maybeStretched = (stretch buf factor)      Note: factor=1.0 → input verbatim
-Buffer maybeShifted   = (pitchShift buf cents)    Note: cents=0 / 0c → input verbatim
-Buffer maybeLoaded    = (loadWav "x.wav" 0)       Note: 0 semitones → byte-identical to (loadWav "x.wav")
+use "@audio"
+
+Buffer audio = (createSineTone 440Hz 1.0 0.5)
+Double factor = 1.0
+Double cents  = 0.0
+Buffer maybeStretched = (stretch audio factor)      Note: factor=1.0 → input verbatim
+Buffer maybeShifted   = (pitchShift audio cents)    Note: cents=0 / 0c → input verbatim
+Note: (loadWav "x.wav" 0) with 0 semitones returns byte-identical output to (loadWav "x.wav")
 ```
 
 No need to branch on "if shift != 0" in caller code.
@@ -321,25 +372,40 @@ No need to branch on "if shift != 0" in caller code.
 Parameterized sections support the full pattern surface, including tuple destructure and music-aware extractors:
 
 ```flow
-Note: Plain typed binding
-section verse(Note root) { Sequence inner = | root +4st +7st | }
+use "@std"
 
-Note: Compact destructure when an arg is naturally a record
-section verse(<<Note root, Int reps>>) { ... }
+key Cmajor {
+    timesig 4/4 {
+        Note: Plain typed binding
+        section verse(Note root) {
+            Sequence inner = | root |
+        }
 
-Note: Music-aware extractor — fires only when called with a Cmaj7 literal
-section verse(Cmaj7) { ... }
+        Note: Compact destructure when an arg is naturally a record
+        Note: snippet — section verse2(<<Note root, Int reps>>) { ... body ... }
 
-Note: Defaults
-section verse(Note root = C4, Int reps = 2) { ... }
+        Note: Music-aware extractor — fires only when called with a Cmaj7 literal
+        Note: snippet — section verse3(Cmaj7) { ... body ... }
 
-Note: Call sites (Song expression)
-Song s = [
-    verse(C4)
-    verse(<<D4, 3>>)
-    verse(Cmaj7)*3       Note: *N repetition operator
-    chorus               Note: legacy zero-arg form stays valid
-]
+        Note: Defaults
+        section verse4(Note root = C4, Int reps = 2) {
+            Sequence inner = | root |
+        }
+
+        section chorus {
+            Sequence inner = | E4 G4 C5 |
+        }
+
+        Note: Call sites (Song expression)
+        Song s = [
+            verse(C4)
+            verse4(D4, 3)
+            verse4*2             Note: *N repetition operator
+            chorus               Note: zero-arg form stays valid
+        ]
+        (print "sections ok")
+    }
+}
 ```
 
 Multiple `section verse(...)` declarations with different signatures coexist as overloads — the resolver picks the highest-specificity match at the call site.
@@ -360,9 +426,10 @@ This is how you teach `jam` your own idioms without recompiling Flow.
 Drop a Scala `.scl` file anywhere on disk, then load + apply with the string-literal sugar:
 
 ```flow
+Note: Supply your own .scl file — the path must exist at runtime.
 tempo 100 {
     timesig 4/4 {
-        tuning "tunings/partch_43.scl" {
+        tuning "/path/to/your/partch_43.scl" {
             section a { Sequence mel = | C4q E4q G4q B4q | }
         }
     }
@@ -397,13 +464,20 @@ Pair with `(writeMidi "out.mid" song)` in the regenerated `.flow` file for a cle
 
 ### 1. Forgetting `use "@std"`
 
-```flow
-Note: ERROR: print is not defined
-(print "hello")
+`print`, `str`, and arithmetic are always available. You need `@std` for collection functions:
 
+```flow
+Note: These work WITHOUT @std:
+(print "hello")
+(print (str 42))
+(print (str (add 1 2)))
+
+Note: ERROR without @std: Function 'map' not found
 Note: FIX:
 use "@std"
-(print "hello")
+Int[] nums = (list 1 2 3)
+Int[] doubled = (map nums (fn Int n => (mul n 2)))
+(print (str doubled))
 ```
 
 ### 2. Accidentals: `+`/`-` vs `s`/`f`
@@ -434,15 +508,20 @@ Note: This is the CHORD:
 Chord g7chord = Gdom7
 ```
 
-### 4. Missing Musical Context for Note Streams
+### 4. Missing Key Context for Roman Numerals
+
+Note streams default to 4/4 when no `timesig` is set — they work fine without one. The real pitfall is using roman numerals without a `key` context:
 
 ```flow
-Note: May not work correctly without timesig:
+Note: This works — note streams default to 4/4:
 Sequence mel = | C4 D4 E4 F4 |
 
+Note: ERROR: roman numerals require a key context:
+Note: Sequence harm = | I IV V I |   <- fails without key
+
 Note: Correct:
-timesig 4/4 {
-    Sequence mel = | C4 D4 E4 F4 |
+key Cmajor {
+    Sequence harm = | I IV V I |
 }
 ```
 
@@ -487,12 +566,16 @@ Bool isMore = (gt x 5)
 
 ### 8. Division by Zero
 
-Division by zero returns Void rather than crashing:
+Division by zero raises a runtime error and stops execution:
 
 ```flow
 use "@std"
 
-Int result = (div 10 0)  Note: reports error, returns Void
+Note: (div 10 0) throws "Unexpected error: Division by zero" and exits with code 1.
+Note: Guard against it with an explicit check:
+Int denom = 0
+Int result = (if (equals denom 0) lazy (0) lazy ((div 10 denom)))
+(print (str result))
 ```
 
 ### 9. Reserved Context-Block Keywords
@@ -504,10 +587,12 @@ Int result = (div 10 0)  Note: reports error, returns Void
 Use `@` instead of `[]` brackets for array access:
 
 ```flow
+use "@std"
+
 Int[] nums = (list 10 20 30)
-Int first = nums@0
+Int first  = nums@0
 Int second = nums@1
-Int last = nums@-1        Note: negative indexes count from the end
+Int last   = nums@(neg 1)   Note: negative indexes count from the end; parens required
 ```
 
 `slice(arr, start, end)` returns a sub-array.
@@ -530,10 +615,10 @@ tempo 120 {
             Song song = [intro]
 
             Note: 3. Render
-            Buffer buf = (renderSong song "piano")
+            Buffer audio = (renderSong song "piano")
 
             Note: 4. Process
-            Buffer final = buf -> reverb 0.3 -> fadeOut 0.5
+            Buffer final = audio -> reverb 0.3
 
             Note: 5. Export
             (writeWav "output.wav" final)

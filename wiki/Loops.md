@@ -98,21 +98,21 @@ while (lt count 5) {
 (print (str count))    Note: 5
 ```
 
-### Infinite Loop + `break`
+### Counting to a Target
 
-A common pattern is `while true` combined with `break`:
+Encode the exit condition directly in the `while` guard — this is the idiomatic pattern in Flow:
 
 ```flow
 use "@std"
 
 Int i = 0
-while true {
+while (lt i 5) {
     i = (add i 1)
-    (if (equals i 5) lazy (break) lazy ((Nothing)))
 }
+(print (str i))
 ```
 
-Note that `if` requires both branches to be `lazy ()` — for a side-effect-only branch that does nothing, `lazy ((Nothing))` is the canonical no-op.
+> **Note:** `break` and `continue` are statements and cannot appear inside `lazy()`. The `while true` + `lazy(break)` pattern from older tutorials is a parse error. Always encode the exit condition in the `while` guard instead.
 
 ### Countdown
 
@@ -127,13 +127,12 @@ while (gt counter 0) {
 
 ## `break`
 
-`break` exits the innermost enclosing loop immediately:
+`break` exits the innermost enclosing loop immediately. Because `break` is a statement (not an expression), it cannot appear inside `lazy()` or as an `if` argument — use the loop guard or a bounded range instead:
 
 ```flow
 use "@std"
 
-for Int i in (range 0 100) {
-    (if (gt i 5) lazy (break) lazy ((Nothing)))
+for Int i in (range 0 6) {
     (print (str i))
 }
 Note: prints 0 through 5 then exits

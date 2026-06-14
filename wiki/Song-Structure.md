@@ -107,11 +107,13 @@ section verse(Note root) {
 
 section verse(Note root, Int reps) {
     Sequence mel = | root D4 E4 F4 |
-    Sequence echo = | (root) |
+    Sequence echo = | root |
 }
 
 Song s = [verse(C4) verse(C4, 3)]      Note: dispatches to each overload
 ```
+
+> **Note:** same-name section overloading is partially implemented; the arity-dispatch path in the current engine may emit an error when both overloads are registered. If you hit that, use distinct section names (`verseShort` / `verseFull`) until the resolver is fixed.
 
 Per-call args bind in a fresh stack frame that **inherits the call-site's musical context**, so a `verse(C4)` call inside a `key Aminor { ... }` block sees Aminor as its active key.
 
@@ -124,13 +126,18 @@ Get the section names from a song:
 ```flow
 use "@std"
 
+section intro { Sequence mel = | C4 E4 G4 C5 | }
+section verse { Sequence mel = | E4 E4 F4 G4 | }
+section chorus { Sequence mel = | G4 A4 G4 E4 | }
+
+Song mySong = [intro verse chorus]
 Strings sections = (getSections mySong)
 (print (str sections))  Note: ["intro", "verse", "chorus"]
 ```
 
 ### sectionSequences
 
-Get the sequence names within a section:
+`sectionSequences` accepts a `Section` value and returns the sequence names within it. Section declarations are not first-class values that you can pass directly by name; retrieve them via `getSections` on a `Song`, or query the song's section list and inspect it:
 
 ```flow
 use "@std"
@@ -140,9 +147,12 @@ section mySection {
     Sequence bass = | C3 G3 C3 G3 |
 }
 
-Strings seqs = (sectionSequences mySection)
-(print (str seqs))
+Song mySong = [mySection]
+Strings sections = (getSections mySong)
+(print (str sections))  Note: ["mySection"]
 ```
+
+> **Note:** `sectionSequences(section)` requires a runtime `Section` value. A bare section identifier (e.g. `mySection`) is not a first-class `Section` value outside a `Song [...]` expression. A `getSection(Song, String) -> Section` accessor is planned for a future engine version.
 
 ### str
 
@@ -151,6 +161,9 @@ Convert a song or section to its string representation:
 ```flow
 use "@std"
 
+section intro { Sequence mel = | C4 E4 G4 C5 | }
+section verse { Sequence mel = | E4 E4 F4 G4 | }
+Song mySong = [intro verse]
 (print (str mySong))
 ```
 
@@ -173,8 +186,8 @@ tempo 120 {
             }
 
             Song song = [intro chorus]
-            Buffer buf = (renderSong song "piano")
-            (exportWav buf "song.wav")
+            Buffer audio = (renderSong song "piano")
+            (writeWav "song.wav" audio)
         }
     }
 }
@@ -231,7 +244,7 @@ tempo 120 {
             Song fullSong = [intro verse*2 chorus bridge outro]
             Buffer rendered = (renderSong fullSong "piano")
             Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
-            (exportWav final "full_song.wav")
+            (writeWav "full_song.wav" final)
             (print "Song exported!")
         }
     }
@@ -249,7 +262,18 @@ tempo 120 {
 A `Song` can also be exported to a Standard MIDI File, preserving tempo, time signature, and key:
 
 ```flow
-(writeMidi "my_song.mid" fullSong)
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section intro { Sequence mel = | C4 E4 G4 C5 | }
+            section verse { Sequence lead = | E4 E4 F4 G4 | }
+            Song fullSong = [intro verse*2]
+            (writeMidi "my_song.mid" fullSong)
+        }
+    }
+}
 ```
 
 See [Playback and Export](Playback-and-Export.md).

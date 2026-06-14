@@ -122,13 +122,12 @@ See [Collections](Collections.md) for the deep-dive.
 |----------|-----------|-------------|
 | `list` | `(...T) -> T[]` | Create array from varargs |
 | `head` / `tail` / `last` / `init` | array operations | Common destructuring |
-| `empty` / `length` / `len` | predicates / size | |
+| `empty` / `len` | predicates / size | |
 | `reverse` / `take` / `drop` | array ops | |
 | `append` / `prepend` / `concat` | array building | |
 | `contains` | `(T[], T) -> Bool` | Membership |
 | `map` / `filter` / `reduce` / `each` | `(T[], …) -> …` | Higher-order ops |
 | `range` | `(Int, Int) -> Int[]` | Integer range `[lo, hi)` |
-| `zip` | `(T[], U[]) -> [T, U][]` | Pair elements |
 
 ### Dict — 14-op surface
 
@@ -160,7 +159,7 @@ See [Audio and Synthesis](Audio-and-Synthesis.md), [Effects](Effects.md), and [P
 | Function | Signature | Notes |
 |----------|-----------|-------|
 | `createBuffer` | `(Int frames, Int channels, Int sampleRate) -> Buffer` | |
-| `silence` | `(Double seconds) -> Buffer` | Zero-filled buffer |
+| `createSilence` | `(Double seconds) -> Buffer` | Zero-filled buffer |
 | `getFrames` / `getChannels` / `getSampleRate` | `(Buffer) -> Int` | |
 | `getSample` / `setSample` | sample I/O | |
 | `fillBuffer` / `copyBuffer` / `sliceBuffer` | buffer mutation / copy | |
@@ -174,6 +173,7 @@ See [Audio and Synthesis](Audio-and-Synthesis.md), [Effects](Effects.md), and [P
 | `createSineTone` / `createSawTone` / `createSquareTone` / `createTriangleTone` | `(Double dur, Double freq, Double amp)` |
 | `generateSine` / `generateSaw` / `generateSquare` / `generateTriangle` | `(Buffer, OscillatorState, Double freq)` |
 | `oscillator` | Register a custom wavetable: `(String name, Function gen[, Int tableSize])` or `(String name, Array table)` |
+| `noteToFrequency` | `(Note) -> Double` — A4 = 440 |
 
 `createSineTone` and friends also accept a `Hertz` literal: `(createSineTone 0.5 440Hz 0.5)`.
 
@@ -219,7 +219,6 @@ See [Effects](Effects.md).
 | Function | Signature | Notes |
 |----------|-----------|-------|
 | `writeWav` | `(String path, Buffer)` + bit-depth overload | Path-first |
-| `exportWav` | `(Buffer, String path)` + bit-depth overload | Buffer-first |
 | `loadWav` | `(String path)` + semitone / ratio varispeed overloads | Identity short-circuit at semitones=0 / ratio=1.0 |
 | `writeMidi` | `(String path, Song)` | Multi-track Standard MIDI File export |
 
@@ -266,7 +265,6 @@ See [Note Streams](Note-Streams.md) for the inline `| ... |` syntax; `@notation`
 | `createTimeSignature` | `(Int, Int) -> TimeSignature` | |
 | `createMusicalBar` / `createEmptyMusicalBar` | `(...) -> Bar` | |
 | `createSequence` / `addBarToSequence` | `(...) -> Sequence` | |
-| `noteToFrequency` | `(Note) -> Double` | A4 = 440 |
 | `noteValueToBeats` / `validateBarDuration` / `getRemainingBeats` / `wouldFit` | bar arithmetic | |
 
 Plus note-value constants `WHOLE`, `HALF`, `QUARTER`, `EIGHTH`, `SIXTEENTH`, `THIRTYSECOND` and time-signature presets `TS_4_4`, `TS_3_4`, `TS_6_8`, `TS_2_4`, `TS_5_4`, `TS_9_8`, `TS_12_8`.
@@ -402,8 +400,6 @@ Phase 35 test framework. See `tests/test_test_library.flow` for the legacy pure-
 | `assertNotesMatch` | `(Sequence, Sequence) -> Void` | Structural sequence compare |
 | `assertBytesEqual` | `(Buffer, Buffer) -> Void` | Byte-identical buffer compare |
 | `assertWithinDb` | `(Buffer, Buffer, Decibel tolerance) -> Void` | Perceptual tolerance for things that legitimately change bytes |
-
-Legacy procs `assertTrue`, `assertEqual`, `runTest(String, Function)`, and `summary` remain available for older test suites.
 
 ## See Also
 

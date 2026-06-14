@@ -37,7 +37,8 @@ Status: **Fully** = shipped · **Partial** = caveated or limited · **Not yet** 
 | String interpolation `$"..."` | Fully | `{expr}` segments; escapes include `\{`, `\}` |
 | Loops (`for` / `while`) | Fully | `for Type x in collection { }`; `while cond { }`; `break` / `continue`; MaxIterations safety cap (10000 default) |
 | `// ` line comments | Fully | |
-| `Note:` / `TODO:` / `FIXME:` line-start comments | Fully | Recognized as comments to EOL |
+| `Note:` / `note` inline or line-start comments | Fully | Recognized as comments to EOL at any position — inline, trailing, or line-start |
+| `TODO:` / `FIXME:` line-start comments | Fully | Recognized as comments to EOL only when at the start of a line |
 | Column-0 `;` Lisp-style line comments | Fully | Mid-line `;` remains a statement separator |
 | Line continuation `\<newline>` | Fully | Joins lines while preserving logical line numbers |
 | Optional-paren function calls | Fully | Bare-identifier same-line `print x` lowers to `(print x)` |

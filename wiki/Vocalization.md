@@ -56,7 +56,7 @@ Buffer sa = (sing "sa" G4 0.3)
 Buffer noo = (sing "noo" C5 0.5)
 ```
 
-Other consonants are not yet supported — passing e.g. `"la"` will be treated as an unknown phoneme.
+Other consonants are not yet supported — passing an unsupported phoneme (e.g. `"la"`) raises a runtime error: `Unknown vowel phoneme: 'la'. Valid: ah, ee, eh, oh, oo`.
 
 ## Mixing Vocals with Instruments
 

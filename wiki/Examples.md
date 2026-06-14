@@ -1,6 +1,6 @@
 # Examples
 
-Complete, runnable Flow programs demonstrating various features. Every snippet on this page parses and runs against the current Flow build — if one doesn't, please file an issue.
+Complete, runnable Flow programs demonstrating various features. The Flow snippets on this page have been verified against the current desktop engine build. If you find one that has regressed, please file an issue.
 
 For longer chapter-style tutorials, see the `examples/` directory in the repo (linked at the bottom of this page).
 
@@ -75,8 +75,8 @@ use "@std"
 
 String name = "Flow"
 Int bpm = 120
-String key = "Cmajor"
-(print $"playing at {bpm} bpm in {key} on {name}")
+String keyName = "Cmajor"
+(print $"playing at {bpm} bpm in {keyName} on {name}")
 ```
 
 ### For Loop: Summing a Range
@@ -96,10 +96,10 @@ for Int n in (range 1 11) {
 ```flow
 use "@std"
 
+Note: Encode the exit condition in the while guard — break is not valid inside lazy().
 Int i = 0
-while true {
+while (lt i 5) {
     i = (add i 1)
-    if (equals i 5) lazy (break) lazy (0)
 }
 (print $"stopped at {i}")
 ```
@@ -203,7 +203,13 @@ Int sum = <<1, 2, 3>> ~> add3       Note: lowers to (add3 1 2 3)
 (print $"sum = {sum}")
 
 Note: On a non-tuple LHS, ~> falls through to -> semantics.
+Note: double proc must be defined before use.
+proc double(Int: x)
+    (mul x 2)
+end proc
+
 Int chained = 5 ~> double           Note: same as 5 -> double
+(print $"chained = {chained}")
 ```
 
 ### Dicts
@@ -273,8 +279,8 @@ tempo 120 {
         }
 
         Song song = [melody]
-        Buffer buf = (renderSong song "piano")
-        (writeWav "simple_melody.wav" buf)
+        Buffer audio = (renderSong song "piano")
+        (writeWav "simple_melody.wav" audio)
         (print "Exported simple_melody.wav!")
     }
 }
@@ -289,14 +295,14 @@ use "@audio"
 tempo 100 {
     timesig 4/4 {
         key Cmajor {
-            section progression {
+            section chordProg {
                 Note: Using roman numerals
                 Sequence chords = | I IV V I |
             }
 
-            Song song = [progression]
-            Buffer buf = (renderSong song "piano")
-            (writeWav "chords.wav" buf)
+            Song song = [chordProg]
+            Buffer audio = (renderSong song "piano")
+            (writeWav "chords.wav" audio)
             (print "Exported chords.wav!")
         }
     }
@@ -339,7 +345,7 @@ tempo 120 {
             (writeWav "full_song.wav" final)
 
             Int frames = (getFrames final)
-            Int duration = (div frames 44100)
+            Int duration = (idiv frames 44100)
             (print (concat "Duration: ~" (concat (str duration) "s")))
         }
     }
@@ -405,8 +411,8 @@ tempo 110 {
                 Sequence bar = | {voice C3w} {voice C5q D5q E5q F5q} |
             }
             Song song = [stride*2]
-            Buffer buf = (renderSong song "piano")
-            (writeWav "stride.wav" buf)
+            Buffer audio = (renderSong song "piano")
+            (writeWav "stride.wav" audio)
         }
     }
 }
@@ -617,6 +623,7 @@ Lindenmayer-system Symbol rewriting → notes:
 use "@std"
 use "@audio"
 use "@generative"
+use "@notation"
 
 tempo 120 {
     timesig 4/4 {
@@ -628,12 +635,12 @@ tempo 120 {
         Note: Iteration 4 produces an 8-Symbol sequence
         Symbol[] expanded = (lsystem #A rules 4)
 
-        Note: Map each Symbol to a note
+        Note: Map each Symbol to a note using (quarter C4) from @notation
         Sequence music = (lsystemToSequence expanded
                             (fn Symbol s =>
                               (if (equals s #A)
-                                  (createMusicalNote C4 4)
-                                  (createMusicalNote E4 4))))
+                                  (quarter C4)
+                                  (quarter E4))))
 
         section main { Sequence v = music }
         Song song = [main]
@@ -660,10 +667,10 @@ tempo 120 {
             Note: A ii-V-I-VI progression
             Sequence chords = | Dm7 | G7 | Cmaj7 | Am7 |
 
-            Note: Named-arg form — usually clearer than 6-position call
-            Sequence solo = (jam over=chords style=#jazz length=4 seed=42)
+            Note: 3-named-arg form — seed is not available as a named arg (key is reserved)
+            Sequence solo = (jam over=chords style=#jazz length=4)
 
-            Note: Or full positional: (jam over style length key seed order)
+            Note: Full positional form: (jam over style length key seed order)
             Sequence soloAlt = (jam chords #blues 4 "Cmajor" 100 2)
 
             section A { Sequence v = solo }
@@ -675,7 +682,7 @@ tempo 120 {
 }
 ```
 
-Style packs ship at `flow-lang/improv/styles/*.flow` (`#jazz`, `#blues`, `#classical`). Override by dropping a same-named file at `~/.config/flow/styles/`.
+Style packs ship at `flow-lang/improv/styles/*.flow` (`#jazz`, `#blues`, `#classical`). Override by dropping a same-named file at `~/.config/flow/styles/`. Named args `over=`, `style=`, `length=` work; `key=` is a reserved keyword so the key argument must be passed positionally, and `seed=` is only available in the fully-positional call form.
 
 ---
 
@@ -722,11 +729,11 @@ Buffer g1 = (granular tone 50ms 20Hz 0.3)
 Note: Heavier jitter + Gaussian windowing — cloudier texture
 Buffer g2 = (granular tone 80ms 15Hz 0.7 #gaussian)
 
-Note: Compose with reverb + pan
-Buffer wet = (reverb g2 0.5) -> pan -0.3
+Note: Compose with reverb + pan (negative literals in arg position need (neg ...))
+Buffer wet = (reverb g2 0.5) -> pan (neg 0.3)
 
-Buffer mix = (mix g1 wet)
-(writeWav "granular.wav" mix)
+Buffer out = (mix g1 wet)
+(writeWav "granular.wav" out)
 ```
 
 Knobs: `grain` (Millisecond), `density` (Hertz), `jitter` (Double in [0, 1]), `windowing` (`#hann` default, `#gaussian`, `#tukey`). Unknown windowing Symbol falls back to Hann + stderr advisory.
@@ -767,15 +774,15 @@ Note: Create an oscillator
 OscillatorState osc = (createOscillatorState 440Hz 44100)
 
 Note: Generate a buffer of sine wave
-Buffer buf = (createBuffer 44100 2 44100)
-(generateSine buf osc 0.5)
+Buffer audio = (createBuffer 44100 2 44100)
+(generateSine audio osc 0.5)
 
 Note: Apply an ADSR envelope
 Envelope env = (createADSR 0.01 0.1 0.7 0.3 44100)
-(applyEnvelope buf env)
+(applyEnvelope audio env)
 
 Note: Add some reverb
-Buffer wet = (reverb buf 0.4)
+Buffer wet = (reverb audio 0.4)
 
 (writeWav "synth_from_scratch.wav" wet)
 (print "Exported synth_from_scratch.wav!")
@@ -1051,8 +1058,8 @@ tempo 90 {
             }
 
             Song piece = [waltz*4 middle*2 waltz*2]
-            Buffer buf = (renderSong piece "piano")
-            Buffer final = buf -> reverb 0.4 -> fadeOut 0.5
+            Buffer audio = (renderSong piece "piano")
+            Buffer final = audio -> reverb 0.4 -> fadeOut 0.5
             (writeWav "waltz.wav" final)
             (print "Exported waltz.wav!")
         }
@@ -1094,6 +1101,8 @@ tempo 120 {
 ```
 
 ### SFZ Orchestral Sampler
+
+> **Desktop build only.** `use "@sfz"` is stripped on the web playground (`FlowTarget=Web`). Running this example also requires `sfz_root` set in `~/.config/flow/config.toml` pointing to your VSCO-CE (or compatible) sample library install.
 
 For large external sample libraries (blessed: VSCO Community CE 1.1.0), use `@sfz`:
 

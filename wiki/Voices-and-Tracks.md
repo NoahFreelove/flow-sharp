@@ -2,7 +2,7 @@
 
 Below the `Song` / `section` abstraction, Flow exposes a lower-level multi-track timeline built around `Voice` and `Track` values. Use this layer when you want precise control over beat placement, per-voice gain and pan, and polyphonic mixing.
 
-Most voice/track functions live in `@audio` (some convenience helpers are in `@composition`).
+Most voice/track functions live in `@composition` (add `use "@composition"`). The sequence-to-voice render helpers (`renderSequenceToVoices`, `renderBarToVoices`, `renderBarAtBeat`, `renderBarAtTime`) and `setMaxVoices` live in `@audio`.
 
 ## The Model
 
@@ -19,6 +19,7 @@ Buffer → Voice (at beat offset) → Track (collection) → rendered Buffer
 ```flow
 use "@std"
 use "@audio"
+use "@composition"
 
 Buffer note = (createSineTone 0.5 440.0 0.5)
 
@@ -43,7 +44,12 @@ Per-voice pan threads through both the synth path and the SFZ sampler path. In t
 ## Creating Tracks
 
 ```flow
+use "@std"
 use "@audio"
+use "@composition"
+
+Buffer note = (createSineTone 0.5 440.0 0.5)
+Voice v = (createVoice note 0.0)
 
 Track t = (createTrack 44100 2)     Note: sample rate, channels
 
@@ -66,7 +72,14 @@ Track t = (createTrack 44100 2)     Note: sample rate, channels
 ## Rendering a Track
 
 ```flow
+use "@std"
 use "@audio"
+use "@composition"
+
+Buffer note = (createSineTone 0.5 440.0 0.5)
+Voice v = (createVoice note 0.0)
+Track t = (createTrack 44100 2)
+(addVoice t v)
 
 Buffer rendered = (renderTrack t 8.0)    Note: render 8 beats worth of audio
 ```
@@ -78,7 +91,9 @@ The renderer sums all voices at their beat positions, applies per-voice and per-
 Beat placement depends on the global BPM. Set it before building a track timeline:
 
 ```flow
+use "@std"
 use "@audio"
+use "@composition"
 
 (setBPM 120.0)
 Double bpm = (getBPM)
@@ -179,10 +194,18 @@ sustainPedal {
 Overlay two sequences with different time signatures, aligned at LCM (or an explicit beat count):
 
 ```flow
-Sequence three = | C4q E4q G4q |       Note: 3-beat pattern
-Sequence four  = | D4q D4q D4q D4q |   Note: 4-beat pattern
-Sequence poly  = (polyrhythm three four)         Note: LCM = 12 beats
-Sequence poly8 = (polyrhythm three four 8.0)     Note: explicit length
+use "@std"
+use "@audio"
+use "@composition"
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence three = | C4q E4q G4q |       Note: 3-beat pattern
+        Sequence four  = | D4q D4q D4q D4q |   Note: 4-beat pattern
+        Buffer poly  = (polyrhythm three four)         Note: LCM = 12 beats
+        Buffer poly8 = (polyrhythm three four 8)       Note: explicit length (Int, not Double)
+    }
+}
 ```
 
 ## Multi-Track Example
@@ -192,6 +215,7 @@ Build a two-track piece by hand:
 ```flow
 use "@std"
 use "@audio"
+use "@composition"
 
 (setBPM 120.0)
 

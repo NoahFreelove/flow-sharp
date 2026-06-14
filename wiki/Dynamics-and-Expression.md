@@ -27,7 +27,7 @@ timesig 4/4 {
 | `f`   | 0.75  | Forte |
 | `ff`  | 0.875 | Fortissimo |
 | `fff` | 1.0   | Fortississimo |
-| `sfz` | 0.95  | Sforzando — also drives an envelope spike (see below) |
+| `sfz` | 0.95  | Sforzando — sets velocity only in note streams (see note below) |
 | `fp`  | 0.75  | Forte-piano |
 
 Dynamic markings are **sticky**: once set, they apply to every following note in the stream until the next marking. They propagate through pitch transforms (`transpose`, `retrograde`, etc.) — see [Velocity Preservation](#velocity-preservation) below.
@@ -98,11 +98,13 @@ timesig 4/4 {
 | Marcato | `marc` | 25% duration + Accent's +0.30 velocity boost |
 | Tenuto | `ten` | 100% duration, release × 1.2 (soft tail) |
 | Legato | `leg` | 110% duration + crossfade overlap into next note |
-| Sforzando | `sfz` (dynamic) | Velocity 0.95 + 1.5×→1.0× envelope spike over the first 15% of frames |
+| Sforzando | `sfz` (dynamic) | Velocity 0.95 + 1.5×→1.0× envelope spike over the first 15% of frames (spike fires only via the `Articulation.Sforzando` internal path; see note below) |
 
 The envelope rules are **locked** across all 9 shipping synthesizers (piano, brass, sax, drums, bell, flute, organ, strings, wavetable) — drums opt out of articulation shaping. The sampled-instrument path (piano, brass, sax, strings, flute, bell, SFZ) additionally applies per-articulation A/D/S/R multipliers on top of the locked shape, so e.g. a sampled-piano staccato gets the duration cut plus a brighter decay shaping.
 
 > The per-note `leg` articulation is distinct from the `legato(seq, overlap)` transform — the articulation drives envelope shaping per note; the transform sets `DurationOverlap` for the whole sequence. They compose: a note with `leg` AND `legato(seq, 0.5)` applied renders at 1.0 × 1.10 × 1.5 = 1.65 of its authored duration.
+
+> **`sfz` as a dynamic marking vs. articulation:** Writing `| sfz C4q |` in a note stream sets the note's velocity to 0.95 via the dynamic-marking path (`TryParseDynamicMarking`). The 1.5×→1.0× envelope spike in the table above fires only through the `Articulation.Sforzando` internal enum path — that path is not currently exposed as an in-stream prefix keyword. In practice, `| sfz C4q |` gives you the loud attack; the envelope spike shape is applied by the synthesizer only for notes that arrive with `Articulation.Sforzando` set.
 
 ## Ornaments
 
@@ -271,6 +273,7 @@ Two buffer-level gain primitives ship — they differ only in how they interpret
 ```flow
 use "@audio"
 
+Note: snippet — rendered must already be defined (e.g. from renderSong or createSineTone)
 Buffer quieter = rendered -> gain -6dB         Note: half loudness (perceptual)
 Buffer doubled = rendered -> volume 2.0        Note: double the sample magnitude
 ```
@@ -322,7 +325,7 @@ tempo 72 {
             }
 
             Song piece = [intro development climax ending]
-            Buffer buf = (renderSong piece "piano")
+            Buffer result = (renderSong piece "piano")
         }
     }
 }

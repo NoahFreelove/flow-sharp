@@ -95,15 +95,19 @@ The output buffer matches the source's frame count — it is not truncated to th
 
 ## Delay
 
-Feedback delay with three input forms — bare milliseconds, `Millisecond` literal, or tempo-synced `NoteValue`:
+Feedback delay with three input forms — bare milliseconds, `Millisecond` literal, or tempo-synced `NoteValue`. NoteValue constants (`EIGHTH`, `QUARTER`, `HALF`, `WHOLE`, `SIXTEENTH`) live in `@notation`:
 
 ```flow
+use "@notation"   Note: brings EIGHTH/QUARTER/HALF/WHOLE/SIXTEENTH into scope
+
 Buffer delayed   = (delay tone 250.0 0.4 0.5)        Note: 250 ms (Double)
 Buffer delayedMs = (delay tone 250ms 0.4 0.5)        Note: Millisecond literal
 tempo 120 {
     Buffer synced = (delay tone EIGHTH 0.4 0.5)      Note: tempo-synced — reads active BPM
 }
 ```
+
+> **Snippet** — `tone` must be defined before this block (e.g. `Buffer tone = (createSineTone 0.5 440.0 0.5)`).
 
 | Parameter | Unit | Description |
 |-----------|------|-------------|
@@ -230,15 +234,18 @@ use "@std"
 use "@audio"
 
 Buffer tone = (createSineTone 0.5 440.0 0.5)
+Double panLeft = (sub 0.0 0.2)     Note: negative bare literals cannot start a parenthesised pipe arg; bind first
 
 Buffer processed = tone
     -> lowpass 1kHz
     -> reverb 0.3
-    -> (pan -0.2)
+    -> (pan panLeft)
     -> gain -3dB
 ```
 
 Which reads: filter, then reverb, then pan, then gain.
+
+> **Note on negative literals in pipe calls:** `-> (pan -0.2)` does not parse because `-0.2` is not valid as the first argument of a parenthesised pipe call. Bind the value to a variable first, or use `(sub 0.0 0.2)` inline.
 
 ### A Longer Chain
 

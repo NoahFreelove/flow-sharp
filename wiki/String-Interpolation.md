@@ -31,12 +31,12 @@ Int y = 10
 (print $"y doubled is {(mul y 2)}")        Note: y doubled is 20
 
 Int[] items = (list 1 2 3)
-(print $"count: {items -> length}")        Note: count: 3
+(print $"count: {items -> len}")           Note: count: 3
 ```
 
 ## Supported Value Types
 
-Any value that can be converted to a string works inside an interpolation. The expression is automatically stringified via `str`:
+Any value that can be converted to a string works inside an interpolation. The expression is converted to its string representation automatically. Note that for `Note` values, direct interpolation (`{pitch}`) includes surrounding quotes (e.g. `"C4"`); use `(str pitch)` inside the braces to get the bare name (`C4`) instead:
 
 ```flow
 use "@std"
@@ -49,7 +49,7 @@ Symbol style = #jazz
 Note pitch = C4
 
 (print $"count: {count}, pi: {pi}, active: {active}")
-(print $"name: {name}, style: {style}, pitch: {pitch}")
+(print $"name: {name}, style: {style}, pitch: {(str pitch)}")
 ```
 
 ## Multiple Interpolations
@@ -150,13 +150,21 @@ use "@std"
 use "@std"
 use "@audio"
 
-Buffer buf = (createSineTone 0.5 440.0 0.5)
-(print $"frames: {(getFrames buf)}, channels: {(getChannels buf)}")
+Buffer myBuf = (createSineTone 0.5 440.0 0.5)
+(print $"frames: {(getFrames myBuf)}, channels: {(getChannels myBuf)}")
 ```
 
 ### Render Status
 
 ```flow
+use "@std"
+use "@audio"
+
+section verse {
+    | C4q D4q E4q F4q |
+}
+
+Song song = [verse]
 Buffer rendered = (renderSong song "piano")
 Int frames = (getFrames rendered)
 Int seconds = (idiv frames 44100)

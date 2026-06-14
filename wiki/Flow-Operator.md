@@ -141,7 +141,7 @@ proc renderHit (Note: pitch, Note: dur)
     (print $"hit: {pitch} {dur}")
 end proc
 
-<<Note, Note>> entry = <<C4, D4>>
+Tuple<<Note, Note>> entry = <<C4, D4>>
 entry ~> renderHit                    Note: (renderHit C4 D4)
 
 Note: Non-tuple LHS — falls through to `->`
@@ -152,10 +152,12 @@ end proc
 Int r = x ~> doubleIt                 Note: (doubleIt 5) — same as `->`
 ```
 
+> **Tuple type annotations** require the `Tuple<<T1, T2>>` prefix — bare `<<T1, T2>>` on the left-hand side of an assignment is parsed as a destructure pattern, not a typed declaration.
+
 There is also a runtime equivalent — `(unpack tuple func)` — which mirrors Lisp's `(apply f args)`:
 
 ```flow
-<<Int, Int, Int>> trip = <<1, 2, 3>>
+Tuple<<Int, Int, Int>> trip = <<1, 2, 3>>
 proc add3 (Int: a, Int: b, Int: c)
     (add a (add b c))
 end proc

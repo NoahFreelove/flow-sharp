@@ -28,14 +28,15 @@ The last non-void expression in a `proc` body is automatically the return value.
 ```flow
 use "@std"
 
-proc add (Int: a, Int: b)
+proc myAdd (Int: a, Int: b)
     (add a b)
 end proc
 
-Int sum = (add 3 4)  Note: 7
+Int sum = (myAdd 3 4)
+(print (str sum))  Note: 7
 ```
 
-To return `Void` implicitly from a body that would otherwise collect something, end with a void expression (like a `(print ...)` call) or use the explicit `(Nothing)` builtin.
+To force a `Void` return from a body that would otherwise collect non-void expressions, use the explicit `(Nothing)` builtin as the last statement. A trailing void expression (like `(print ...)`) returns `Void` **only when no prior non-void expression was already collected** — if one was, the collected value(s) are still returned (1 collected → that value, 2+ collected → an array). When in doubt, use `(Nothing)` to be explicit.
 
 ### Explicit Returns
 
@@ -45,11 +46,14 @@ Use `return` to return early with a value. An explicit `return X` clears the col
 use "@std"
 
 proc abs (Int: x)
-    (if (lt x 0) lazy ((return (sub 0 x))) lazy (x))
+    (if (lt x 0) lazy ((sub 0 x)) lazy (x))
 end proc
+
+Int a = (abs (neg 5))
+(print (str a))  Note: 5
 ```
 
-There is **no** bare `return` (without a value) — write `(return (Nothing))` to return Void explicitly.
+`return` is **not** valid inside `lazy((...))` — use the implicit-return form above instead. An explicit `return X` at the top level of a proc body works; there is **no** bare `return` (without a value) — write `(return (Nothing))` to return Void explicitly.
 
 ### Multiple Parameters
 
@@ -75,7 +79,7 @@ Int result = (double 5)
 
 ### Optional Parentheses
 
-For zero-arg builtin/proc calls used as statements, the parens are optional:
+Function calls can omit outer parentheses when arguments are simple literals or identifiers on the same line. This works at statement position for both builtins and user procs:
 
 ```flow
 use "@std"
@@ -88,7 +92,7 @@ Int s1 = (square 4)
 print "hello"            Note: same as (print "hello") at statement position
 ```
 
-A bare identifier with a zero-arg overload also auto-calls — `print` works as both a value reference and a call.
+Complex parenthesized expressions as arguments still require explicit call syntax. A bare identifier with a zero-arg overload also auto-calls — `print` works as both a value reference and a call.
 
 ## Named Arguments
 
@@ -97,20 +101,23 @@ Any function with named parameters can be called using `name=value` syntax. Posi
 ```flow
 use "@std"
 use "@generative"
+use "@notation"
 
-Note: All-named call
-Sequence m = (markov corpus=base 2 16 seed=42 features=#pitch)
+Sequence base = | C4 D4 E4 F4 G4 |
+
+Note: All-named call (once a named arg appears, all remaining args must be named)
+Sequence m = (markov corpus=base order=2 length=8 seed=42)
 
 Note: All-positional — also fine
-Sequence m2 = (markov base 2 16 42)
+Sequence m2 = (markov base 2 8 42)
 
-Note: Mixed — positional first
+Note: Mixed — positional args first, then named
 Sequence m3 = (markov base 2 length=8 seed=1)
 ```
 
 About 150 builtin signatures have parameter names backfilled. Named args dispatch through the same `OverloadResolver` as positional ones — names are matched against `FunctionSignature.ParameterNames`.
 
-Duplicate named args and "positional after named" are both reported as errors.
+Duplicate named args and "positional after named" are both reported as errors. The `features=` named arg belongs on `markovTrain`, not the one-shot `markov` overload.
 
 ## Lambda Functions
 

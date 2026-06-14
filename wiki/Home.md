@@ -103,7 +103,7 @@ tempo 120 {
             Buffer rendered = (renderSong mySong "piano")
             Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
 
-            (exportWav final "my_song.wav")
+            (writeWav "my_song.wav" final)
             (writeMidi "my_song.mid" mySong)
             (print $"rendered {(getFrames final)} frames")
         }

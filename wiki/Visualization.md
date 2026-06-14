@@ -87,15 +87,19 @@ Sample output:
 ```
 Buffer:
   frames      : 22050
-  channels    : 1 (mono)
+  channels    : 2 (stereo)
   sample rate : 44100 Hz
   duration    : 0.500 s
   peak        : 0.5000 (-6.02 dBFS)
   rms         : 0.3536  (-9.03 dBFS)
 |                                                            |
-|         **               **               **               |
-| ...                                                        |
+|************************************************************|
+|************************************************************|
+|************************************************************|
+|                                                            |
 ```
+
+> Note: `use "@audio"` shadows the C# builtin `createSineTone` with a Flow proc that promotes to stereo, so `prettyBuffer` reports `channels: 2 (stereo)`. If you import only the C# builtins (no `use "@audio"`), the output would show `channels: 1 (mono)`.
 
 Peak and RMS are reported both in linear amplitude and in dBFS, with `-inf` shown for silent buffers (floor at 1e-12 ≈ -240 dBFS).
 
@@ -114,6 +118,10 @@ Buffer tone = (createSineTone 0.01 440.0 0.5)
 Use the slice overload to focus on a region:
 
 ```flow
+use "@std"
+use "@audio"
+
+Buffer tone = (createSineTone 0.01 440.0 0.5)
 Note: dump 64 bytes starting at byte offset 256
 (bufferHex tone 256 64)
 ```
@@ -145,7 +153,7 @@ use "@std"
 use "@audio"
 
 Buffer raw  = (createSineTone 1.0 440.0 0.8)
-Buffer wet  = raw -> (reverb 2.5) -> (gain -3.0)
+Buffer wet  = raw -> (reverb 2.5) -> (gain -3dB)
 (prettyBuffer wet)         Note: header + waveform
 (bufferHex wet 0 128)      Note: first 128 bytes if something looks wrong
 ```

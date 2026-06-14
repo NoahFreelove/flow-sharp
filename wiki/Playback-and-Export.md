@@ -24,6 +24,8 @@ Buffer tone = (createSineTone 0.5 440.0 0.5)
 You can also pass a sequence directly (it renders with a sine synth):
 
 ```flow
+use "@audio"
+
 timesig 4/4 {
     Sequence mel = | C4 D4 E4 F4 |
     (play mel)
@@ -37,8 +39,8 @@ Plays audio asynchronously so your script continues executing:
 ```flow
 use "@audio"
 
-Buffer buf = (createSineTone 5.0 440.0 0.5)
-(stream buf)
+Buffer tone = (createSineTone 5.0 440.0 0.5)
+(stream tone)
 Note: returns immediately; audio plays in the background
 ```
 
@@ -49,8 +51,11 @@ Note: returns immediately; audio plays in the background
 Loops a buffer indefinitely (non-blocking), or a specific number of times:
 
 ```flow
-(loop buf)          Note: forever (until (stop) is called)
-(loop buf 4)        Note: 4 times
+use "@audio"
+
+Buffer tone = (createSineTone 1.0 440.0 0.5)
+(loop tone)          Note: forever (until (stop) is called)
+(loop tone 4)        Note: 4 times
 ```
 
 ### preview
@@ -58,7 +63,10 @@ Loops a buffer indefinitely (non-blocking), or a specific number of times:
 Low-quality preview (mono, 22050 Hz) for fast iteration:
 
 ```flow
-(preview buf)
+use "@audio"
+
+Buffer tone = (createSineTone 1.0 440.0 0.5)
+(preview tone)
 ```
 
 ### stop
@@ -100,32 +108,26 @@ If the audio backend is unavailable, `play` / `stream` / `loop` become no-ops wi
 
 ## WAV Export
 
-`writeWav` and `exportWav` write 16/24/32-bit PCM at the buffer's sample rate. Parent directories are auto-created. The 16/24-bit paths apply TPDF (Triangular Probability Density Function) dither at 1 LSB — the dither RNG is seeded deterministically per export, so consecutive writes of the same buffer produce byte-identical WAVs.
+`writeWav` writes 16/24/32-bit PCM at the buffer's sample rate. Parent directories are auto-created. The 16/24-bit paths apply TPDF (Triangular Probability Density Function) dither at 1 LSB — the dither RNG is seeded deterministically per export, so consecutive writes of the same buffer produce byte-identical WAVs.
 
 ### Basic Export
 
 ```flow
 use "@audio"
 
-Buffer buf = (createSineTone 1.0 440.0 0.5)
-(writeWav "output.wav" buf)
+Buffer tone = (createSineTone 1.0 440.0 0.5)
+(writeWav "output.wav" tone)
 ```
 
 ### Custom Bit Depth
 
 ```flow
-(writeWav "output_16.wav" buf 16)        Note: default
-(writeWav "output_24.wav" buf 24)
-(writeWav "output_32.wav" buf 32)
-```
+use "@audio"
 
-### exportWav (buffer-first)
-
-The buffer-first variant is also available:
-
-```flow
-(exportWav buf "output.wav")
-(exportWav buf "output_24.wav" 24)
+Buffer tone = (createSineTone 1.0 440.0 0.5)
+(writeWav "output_16.wav" tone 16)        Note: default
+(writeWav "output_24.wav" tone 24)
+(writeWav "output_32.wav" tone 32)
 ```
 
 ## WAV Loading
@@ -135,6 +137,7 @@ Load an existing WAV back into a buffer (supports 16/24/32-bit PCM; auto-resampl
 ```flow
 use "@audio"
 
+Note: replace "sample.wav" with the path to an existing WAV file on disk
 Buffer loaded   = (loadWav "sample.wav")
 Buffer up5      = (loadWav "sample.wav" 5)         Note: +5 semitones (Int)
 Buffer halfRate = (loadWav "sample.wav" 0.5)       Note: half-speed = down one octave
@@ -142,7 +145,7 @@ Int frames      = (getFrames loaded)
 Int channels    = (getChannels loaded)
 
 Note: works with effects pipeline like any other buffer
-Buffer processed = loaded -> gain -6dB -> reverb 0.2
+Buffer processed = loaded -> (gain -6dB) -> (reverb 0.2)
 ```
 
 ## MIDI Export
@@ -266,7 +269,7 @@ tempo 120 {
             (writeLilyPond  "my_song.ly"        mySong)
 
             Int frames = (getFrames mix)
-            Int duration = (div frames 44100)
+            Int duration = (idiv frames 44100)
             (print $"duration: ~{duration}s")
         }
     }
@@ -297,8 +300,6 @@ tempo 120 {
 | `isAudioAvailable` | `() -> Bool` | Check backend availability |
 | `writeWav` | `(String, Buffer) -> Void` | Path-first WAV export (16-bit) |
 | `writeWav` | `(String, Buffer, Int) -> Void` | Path-first with bit depth (16/24/32) |
-| `exportWav` | `(Buffer, String) -> Void` | Buffer-first WAV export (16-bit) |
-| `exportWav` | `(Buffer, String, Int) -> Void` | Buffer-first with bit depth |
 | `loadWav` | `(String) -> Buffer` | Load WAV file (auto-resample to 44100 Hz) |
 | `loadWav` | `(String, Int) -> Buffer` | Load with semitone varispeed |
 | `loadWav` | `(String, Double) -> Buffer` | Load with ratio varispeed |

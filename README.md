@@ -12,10 +12,12 @@ Flow-lang is a statically moderately-strongly typed functional interpreted langu
 Flow-lang prioritizes ergonomics over almost everything. This language is interpreted, its not fast, and its not trying to be fast (though it takes the easy wins where possible). 
 
 Many operations that would be errors in some languages are not in flow-lang because it always takes the most cheritable interpretation of your code. You could call this the JavaScript approach though I don't think we're as vulgar as JavaScript's type coercion. For example:
-```
-  Buffer wet = reverb(input, 5.0, 5.0, 5.0)      
-  //                          ^    ^    ^ 
-  //                       roomSize, damping, mix. flow-lang clamps all to [0, 1.0]
+```flow
+use "@audio"
+Buffer input = (createSineTone 440Hz 1.0 0.5)
+Buffer wet = (reverb input 5.0 5.0 0.3)
+//                          ^    ^    ^
+//                       roomSize, damping, mix. flow-lang clamps all to [0, 1.0]
 ```
 Flow-lang will silently fix this stuff for you. So you can use variables in position of arguments pretty freely without worrying about adjusting one variable means it being out of domain for some other function where you use it.
 

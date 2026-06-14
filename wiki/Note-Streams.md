@@ -100,14 +100,15 @@ timesig 4/4 {
 
 ## Rests
 
-Use `_` for rests. Rests can have duration suffixes too:
+Use `_` for rests. A bare `_` auto-fits to fill its share of the bar, just like a note without a duration suffix. To give a rest a specific duration, place the suffix on the surrounding notes and let `_` fill the gap, or use the note value directly on a real note before or after:
 
 ```flow
 timesig 4/4 {
-    Sequence auto     = | C4 _ E4 F4 |         Note: auto-fit rest
-    Sequence explicit = | C4q _q E4q F4q |     Note: quarter rest
+    Sequence auto = | C4q _ E4q F4q |    Note: _ fills the remaining beat (quarter)
 }
 ```
+
+> **Note**: The lexer merges `_q`, `_h`, etc. into a single identifier, not a rest-plus-suffix token. Only a bare `_` is recognised as a rest inside note streams.
 
 ## Tied Notes
 
@@ -189,11 +190,11 @@ timesig 4/4 {
 }
 ```
 
-Voice blocks render identically through both audio and MIDI export — each voice becomes its own track on disk. They can carry their own articulation and dynamics:
+Voice blocks render identically through both audio and MIDI export — each voice becomes its own track on disk. They can carry their own articulation (`stacc`, `leg`, `ten`, `marc`, `>`), but not inline dynamics — dynamic markings inside `{voice ...}` cause a parse error. Place a sticky dynamic before the outer `|` bar to set the level for all voices in that bar:
 
 ```flow
 timesig 4/4 {
-    Sequence chorale = | {voice mf C4h E4h} {voice p E5q stacc G5q stacc B5q stacc D6q>} |
+    Sequence chorale = | mf {voice C4h E4h} {voice E5q stacc G5q stacc B5q stacc D6q>} |
 }
 ```
 

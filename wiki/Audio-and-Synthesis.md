@@ -13,7 +13,7 @@ use "@std"
 use "@audio"
 
 Note: raw buffer (frames, channels, sample rate)
-Buffer buf = (createBuffer 44100 2 44100)    Note: 1 second of stereo
+Buffer mybuf = (createBuffer 44100 2 44100)    Note: 1 second of stereo
 
 Note: convenience tone generators (duration seconds, frequency Hz, amplitude)
 Buffer sine     = (createSineTone     0.5 440.0 0.5)
@@ -26,33 +26,39 @@ Buffer hi = (createSineTone 0.5 1.5kHz 0.5)
 Buffer lo = (createSineTone 0.5 220Hz  0.5)
 ```
 
+> **Note:** `buf` is a reserved lexer token. Use any other name (`mybuf`, `tone`, `sig`, `result`, etc.) for Buffer variables throughout your code.
+
 ### Buffer Properties
 
 ```flow
-Int sr       = (getSampleRate buf)
-Int frames   = (getFrames buf)
-Int channels = (getChannels buf)
+Int sr       = (getSampleRate mybuf)
+Int frames   = (getFrames mybuf)
+Int channels = (getChannels mybuf)
 ```
 
 ### Sample Access
 
 ```flow
-Float s = (getSample buf 0 0)            Note: frame 0, channel 0
-(setSample buf 0 0 0.5)
-(fillBuffer buf 0.0)
+Float s = (getSample mybuf 0 0)            Note: frame 0, channel 0
+(setSample mybuf 0 0 0.5)
+(fillBuffer mybuf 0.0)
 ```
 
 ### Buffer Manipulation
 
+`scaleBuffer` modifies a buffer in place and returns `Void` — do not assign its result. Copy first with `(copyBuffer mybuf)` if you need to preserve the original.
+
 ```flow
-Buffer c       = (copyBuffer buf)
-Buffer slice   = (sliceBuffer buf 0 22050)
-Buffer joined  = (appendBuffers buf1 buf2)
-Buffer scaled  = (scaleBuffer buf 0.5)
-Buffer mixed   = (mix buf1 buf2)
-Buffer mixed2  = (mixBuffers buf1 buf2 0.7 0.3)
-Buffer fadedIn = buf -> fadeIn 0.5
-Buffer fadedOt = buf -> fadeOut 0.5
+Buffer mybuf1  = (createSineTone 0.5 440.0 0.5)
+Buffer mybuf2  = (createSineTone 0.5 880.0 0.5)
+Buffer c       = (copyBuffer mybuf1)
+Buffer slice   = (sliceBuffer mybuf1 0 22050)
+Buffer joined  = (appendBuffers mybuf1 mybuf2)
+(scaleBuffer mybuf1 0.5)                   Note: mutates in place, returns Void
+Buffer mixed   = (mix mybuf1 mybuf2)
+Buffer mixed2  = (mixBuffers mybuf1 mybuf2 0.7 0.3)
+Buffer fadedIn = mybuf1 -> fadeIn 0.5
+Buffer fadedOt = mybuf1 -> fadeOut 0.5
 ```
 
 ### Loading WAV Files
@@ -76,12 +82,12 @@ Generate basic waveforms by stepping an oscillator through a buffer:
 use "@audio"
 
 OscillatorState osc = (createOscillatorState 440.0 44100)
-Buffer buf = (createBuffer 44100 1 44100)
+Buffer mybuf = (createBuffer 44100 1 44100)
 
-(generateSine     buf osc 0.5)
-(generateSaw      buf osc 0.5)
-(generateSquare   buf osc 0.5)
-(generateTriangle buf osc 0.5)
+(generateSine     mybuf osc 0.5)
+(generateSaw      mybuf osc 0.5)
+(generateSquare   mybuf osc 0.5)
+(generateTriangle mybuf osc 0.5)
 
 (resetPhase osc)
 ```
@@ -94,6 +100,8 @@ Register your own wavetable-based oscillator and use it by name in `renderSong` 
 
 ### From an Array
 
+All arithmetic in Flow is prefix-only — no infix `+`, `-`, `*`, `/`:
+
 ```flow
 use "@std"
 use "@audio"
@@ -104,7 +112,7 @@ Float[] sawTable = []
 Int i = 0
 while (lt i tableSize) {
     Double id = (intToDouble i)
-    Double sample = (id / tableSizeD) * 2.0 - 1.0
+    Double sample = (sub (mul (div id tableSizeD) 2.0) 1.0)
     sawTable = (append sawTable sample)
     i = (add i 1)
 }
@@ -116,7 +124,7 @@ while (lt i tableSize) {
 
 ```flow
 Function triGen = fn Int sz => (map (range 0 sz)
-    (fn Int idx => ((idx -> intToDouble) / (sz -> intToDouble) * 4.0 - 2.0)))
+    (fn Int idx => (sub (mul (div (idx -> intToDouble) (sz -> intToDouble)) 4.0) 2.0)))
 
 (oscillator "customtri" triGen)
 ```
@@ -133,7 +141,7 @@ Once registered, the name works anywhere a built-in synth name is accepted:
 
 ```flow
 Song song = [mySection]
-Buffer buf = (renderSong song "customsaw")
+Buffer myresult = (renderSong song "customsaw")
 ```
 
 ## Envelopes
@@ -145,8 +153,9 @@ Shape the amplitude of a buffer over time.
 ```flow
 use "@audio"
 
+Buffer mybuf = (createSineTone 0.5 440.0 0.5)
 Envelope ar = (createAR 0.01 0.5 44100)     Note: attack, release (s), sample rate
-(applyEnvelope buf ar)
+(applyEnvelope mybuf ar)
 ```
 
 ### ADSR (Attack-Decay-Sustain-Release)
@@ -154,11 +163,12 @@ Envelope ar = (createAR 0.01 0.5 44100)     Note: attack, release (s), sample ra
 ```flow
 use "@audio"
 
+Buffer mybuf = (createSineTone 0.5 440.0 0.5)
 Envelope adsr = (createADSR 0.01 0.1 0.7 0.3 44100)
-(applyEnvelope buf adsr)
+(applyEnvelope mybuf adsr)
 ```
 
-`applyEnvelope` returns a new buffer.
+`applyEnvelope` modifies the buffer **in place** and returns `Void`. Use `(copyBuffer mybuf)` first if you need to keep the original unmodified.
 
 When you render through `renderSong`, every note also receives an articulation-aware envelope on top of the synth's natural amplitude curve — see [Articulations](Articulations.md) for the per-articulation shaping table (Staccato shortens + drops sustain, Marcato boosts velocity, Sforzando spikes the attack, etc.).
 
@@ -257,11 +267,15 @@ See [Voices and Tracks](Voices-and-Tracks.md) for assembling voices into a final
 
 ```flow
 Function myInstr = fn MusicalNote pitch, Double seconds, Double bpm =>
-    (createSineTone seconds (noteToFrequency pitch) 0.5)
-Buffer buf = (renderSong song myInstr)
+    (createSineTone seconds 440.0 0.5)
+Buffer myresult = (renderSong song myInstr)
 ```
 
+> **Current limitation:** `noteToFrequency` expects a `Note` literal but the lambda receives a `MusicalNote` (rendered note with timing data). Calling `(noteToFrequency pitch)` inside the lambda currently fails with a type-conversion error. As a workaround, use a hardcoded frequency or compute it from pitch data another way. A `MusicalNote → Note` conversion is a planned engine addition.
+
 ### SFZ Orchestral Sampler (Opt-In)
+
+> **Desktop-only:** `use "@sfz"` is stripped on the Web target. This example requires the Desktop build with `sfz_root` configured in `~/.config/flow/config.toml` pointing to a VSCO Community Edition 1.1.0 install. It will not run in the web playground.
 
 For higher-fidelity orchestral parts, opt in to the SFZ surface and bind a patch to a name, then dispatch via the `"sampler:NAME"` prefix:
 
@@ -280,7 +294,7 @@ tempo 120 {
                 Sequence mel = | D4 F4 A4 D5 |
             }
             Song song = [opening]
-            Buffer buf = (renderSong song "sampler:violin")
+            Buffer myresult = (renderSong song "sampler:violin")
         }
     }
 }
@@ -290,8 +304,10 @@ The 20-entry GM dict covers strings (`#violin`, `#viola`, `#cello`, `#contrabass
 
 ## BPM and Timeline
 
+BPM and timeline conversion functions are provided by `@composition`:
+
 ```flow
-use "@audio"
+use "@composition"
 
 (setBPM 120.0)
 Double bpm = (getBPM)
@@ -302,9 +318,13 @@ Double beats = (framesToBeats 88200 44100)
 
 ## Voice and Track System
 
-For lower-level control, Flow exposes a voice/track timeline. See [Voices and Tracks](Voices-and-Tracks.md) for a full walkthrough.
+For lower-level control, Flow exposes a voice/track timeline. Voice and Track functions require `use "@composition"`. See [Voices and Tracks](Voices-and-Tracks.md) for a full walkthrough.
 
 ```flow
+use "@audio"
+use "@composition"
+
+Buffer myBuffer = (createSineTone 0.5 440.0 0.5)
 Voice v = (createVoice myBuffer 0.0)
 (setVoiceGain v 0.8)
 (setVoicePan v -0.5)

@@ -18,13 +18,13 @@ Int[] spaceSep = [10 20 30]
 
 ## Array Indexing
 
-Use `@` to access elements by index (0-based). Negative indices count from the end:
+Use `@` to access elements by index (0-based). `@` indexing is a core feature — no import needed. Negative indices count from the end; use `(neg N)` because bare `-N` does not parse:
 
 ```flow
 Int[] nums = (list 10 20 30)
-Int first = nums@0    Note: 10
-Int second = nums@1   Note: 20
-Int last = nums@-1    Note: 30
+Int first = nums@0       Note: 10
+Int second = nums@1      Note: 20
+Int last = nums@(neg 1)  Note: 30 (negative index via (neg 1))
 ```
 
 ## Inspection
@@ -34,7 +34,7 @@ use "@std"
 
 Int[] nums = (list 1 2 3 4 5)
 
-Int count    = (length nums)        Note: 5 (alias: len)
+Int count    = (len nums)           Note: 5
 Bool isEmpty = (empty nums)         Note: false
 Bool has3    = (contains nums 3)    Note: true
 ```
@@ -88,12 +88,18 @@ Int[] evens     = (range 0 20 2)     Note: [0, 2, ..., 18] (3-arg step)
 
 ## Zip
 
+`zip` is not yet registered in the engine. Pair elements manually via `range` + index access until it ships:
+
 ```flow
 use "@std"
 
 Int[] a = (list 1 2 3)
 Int[] b = (list 10 20 30)
-Int[][] zipped = (zip a b)    Note: [[1,10], [2,20], [3,30]]
+
+Note: zip is not yet available — pair elements by index using range
+Int[] indices = (range 0 (len a))
+(each indices (fn Int i => (print $"{a@i} -> {b@i}")))
+Note: prints "1 -> 10", "2 -> 20", "3 -> 30"
 ```
 
 ## Higher-Order Functions
@@ -292,7 +298,7 @@ The standard library uses both. For example:
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `list` | `(...T) -> T[]` | Create array from arguments |
-| `length` / `len` | `(T[]) -> Int` | Array length |
+| `len` | `(T[]) -> Int` | Array length |
 | `head` | `(T[]) -> T` | First element |
 | `tail` | `(T[]) -> T[]` | All except first |
 | `last` | `(T[]) -> T` | Last element |
@@ -311,7 +317,6 @@ The standard library uses both. For example:
 | `reduce` | `(T[], U, (U, T) => U) -> U` | Fold with accumulator |
 | `each` | `(T[], T => Void) -> Void` | Apply for side effects |
 | `range` | `(Int, Int[, Int]) -> Int[]` | Half-open integer range with optional step |
-| `zip` | `(T[], U[]) -> [T,U][]` | Pair elements |
 
 ## See Also
 

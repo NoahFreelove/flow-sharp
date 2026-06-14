@@ -10,7 +10,7 @@ This page is a tour of the algorithmic surface. For deterministic transforms (tr
 |---------|--------|------------|
 | Euclidean, `vary`, `humanize`, random choice | `use "@std"` + `use "@composition"` | Always-on basics — no extra import |
 | Tidal-style combinators | `use "@patterns"` | 13 combinators on `Sequence` (`every`, `fast`, `slow`, `jux`, `sometimes`, …) |
-| Markov / L-system / cellular / chaos | `use "@generative"` | Algorithmic generators returning `Sequence` or `Array[Double]` |
+| Markov / L-system / cellular / chaos | `use "@generative"` | Algorithmic generators returning `Sequence` or `Double[]` |
 | `jam` chord-aware improv + style packs | `use "@improv"` | Style-pack-driven Markov, composer-editable rule packs |
 
 ## PRNG and Determinism
@@ -161,6 +161,8 @@ Every combinator is **charitable** on degenerate input: zero / negative factors,
 
 ### Composing combinators
 
+> **Note:** Tidal combinators take the `Sequence` as their **last** argument, so the `->` pipe operator (which inserts its left-hand value as the **first** argument) does not work with `every`, `sometimes`, `jux`, `chunk`, or `superimpose`. Use explicit nesting instead:
+
 ```flow
 use "@std"
 use "@patterns"
@@ -168,10 +170,13 @@ use "@patterns"
 tempo 120 {
     timesig 4/4 {
         Sequence base = | C4 D4 E4 F4 |
-        Sequence pat  = base
-            -> (every 4 (fn Sequence s => (fast s 2.0)))
-            -> (sometimes 0.3 (fn Sequence s => (rev s)))
-            -> (jux (fn Sequence s => (transpose s 7st)))
+        Sequence pat  = (jux
+            (fn Sequence s => (transpose s +7st))
+            (sometimes 0.3
+                (fn Sequence s => (rev s))
+                (every 4
+                    (fn Sequence s => (fast s 2.0))
+                    base)))
     }
 }
 ```
@@ -239,25 +244,27 @@ See `examples/generative/markov_jazz.flow` for a runnable jazz-corpus walkthroug
 Pure deterministic Symbol rewriting. Useful for fractal-like melodic structures.
 
 ```flow
+use "@std"
+use "@notation"
 use "@generative"
 
-Dict<Symbol, Tuple> rules = (dict
-    #A <<#A #B>>
-    #B <<#A>>)
+Dict<Symbol, Symbol[]> rules = (dict
+    #A (list #A #B)
+    #B (list #A))
 
-Array[Symbol] expanded = (lsystem #A rules 5)
+Symbol[] expanded = (lsystem #A rules 5)
 
-Note: bridge to musical Sequence
+Note: bridge to musical Sequence — mapper must return a MusicalNote (not a bare Note)
 Sequence mel = (lsystemToSequence expanded
-    (fn Symbol s => (if (eq s #A) C4 E4)))
+    (fn Symbol s => (if (equals s #A) (createMusicalNote C4 2) (createMusicalNote E4 2))))
 ```
 
 | Signature | Notes |
 |-----------|-------|
-| `(lsystem Symbol axiom, Dict rules, Int iterations) -> Array[Symbol]` | One-shot |
+| `(lsystem Symbol axiom, Dict rules, Int iterations) -> Symbol[]` | One-shot |
 | `(lsystemModel Symbol axiom, Dict rules) -> LsystemModel` | Train |
-| `(lsystemGenerate LsystemModel, Int iterations) -> Array[Symbol]` | Generate |
-| `(lsystemToSequence Array[Symbol], Function mapper) -> Sequence` | Map symbols to notes |
+| `(lsystemGenerate LsystemModel, Int iterations) -> Symbol[]` | Generate |
+| `(lsystemToSequence Symbol[], Function mapper) -> Sequence` | Map symbols to notes; mapper must return a `MusicalNote` via `(createMusicalNote pitch duration)` |
 | `(lsystemEqual LsystemModel a, LsystemModel b) -> Bool` | Structural compare |
 
 **Iteration count is clamped to `[0, 20]`** as a DoS guard — at iteration 20 the alphabet has already grown past 10^6 symbols, well beyond any musical use. Terminal symbols (symbols that aren't rule keys) pass through unchanged each iteration — standard Lindenmayer semantics.
@@ -271,18 +278,18 @@ Note: 1D Wolfram-style — Rule 30, width 16, 8 steps
 Sequence rule30 = (cellular 30 16 8 0)
 
 Note: 1D with explicit seed pattern
-Array[Bool] initial = (list false false false true true false false false)
+Bool[] initial = (list false false false true true false false false)
 Sequence custom = (cellularSeeded 30 8 8 0 initial)
 
 Note: 2D Conway's Game of Life — 8 wide, 8 tall, 16 steps, seed 1
-Array[Sequence] life = (life 8 8 16 1)
+Sequence[] life = (life 8 8 16 1)
 ```
 
 | Signature | Notes |
 |-----------|-------|
 | `(cellular Int rule, Int width, Int steps, Int seed) -> Sequence` | 1D elementary CA, Wolfram-canonical single-1-center initial; `seed` is accepted but ignored |
-| `(cellularSeeded Int rule, Int width, Int steps, Int seed, Array[Bool] initial) -> Sequence` | Explicit initial pattern |
-| `(life Int width, Int height, Int steps, Int seed) -> Array[Sequence]` | 2D Conway with wrap-around; seeded fill at 30% density |
+| `(cellularSeeded Int rule, Int width, Int steps, Int seed, Bool[] initial) -> Sequence` | Explicit initial pattern |
+| `(life Int width, Int height, Int steps, Int seed) -> Sequence[]` | 2D Conway with wrap-around; seeded fill at 30% density |
 
 Per-dimension cap of 1024 (DoS guard). Rule values outside `[0, 255]` wrap via `(rule & 0xFF)` with an advisory. The 1D grid maps to one bar per step: live cells become C4 notes, dead cells become rests. The 2D `life` grid returns one `Sequence` per row, with higher row indices mapped to lower pitches (so visually the "top" of the grid corresponds to the top of a piano roll).
 
@@ -291,8 +298,8 @@ Per-dimension cap of 1024 (DoS guard). Rule values outside `[0, 255]` wrap via `
 ```flow
 use "@generative"
 
-Array[Double] traj    = (lorenz 10.0 28.0 2.667 256 42)
-Array[Double] series  = (logistic 3.9 256 42)
+Double[] traj    = (lorenz 10.0 28.0 2.667 256 42)
+Double[] series  = (logistic 3.9 256 42)
 
 Note: bridge raw values into a Sequence
 Sequence quantized1 = (quantizeToScale traj "Cmajor")
@@ -301,10 +308,10 @@ Sequence quantized2 = (quantizeToScale series (list C4 D4 E4 G4 A4))
 
 | Signature | Notes |
 |-----------|-------|
-| `(lorenz Double σ, Double ρ, Double β, Int length, Int seed) -> Array[Double]` | Forward-Euler integration; returns the x-axis trajectory |
-| `(logistic Double r, Int length, Int seed) -> Array[Double]` | `x_{n+1} = r × x_n × (1 - x_n)`, values in `[0, 1]` |
-| `(quantizeToScale Array[Double], String scaleName) -> Sequence` | Normalize to `[0, 1]`, snap to the named scale, emit quarter notes |
-| `(quantizeToScale Array[Double], Array[Note] scaleNotes) -> Sequence` | Same, with an explicit note set |
+| `(lorenz Double σ, Double ρ, Double β, Int length, Int seed) -> Double[]` | Forward-Euler integration; returns the x-axis trajectory |
+| `(logistic Double r, Int length, Int seed) -> Double[]` | `x_{n+1} = r × x_n × (1 - x_n)`, values in `[0, 1]` |
+| `(quantizeToScale Double[], String scaleName) -> Sequence` | Normalize to `[0, 1]`, snap to the named scale, emit quarter notes |
+| `(quantizeToScale Double[], Note[] scaleNotes) -> Sequence` | Same, with an explicit note set |
 
 **Important determinism caveat:** as noted at the top of this page, chaos outputs are same-platform deterministic only. Don't pin cross-platform fixtures against chaos primitives. Bad params (Lorenz σ ≤ 0, logistic r outside `[0, 4]`) fall back to canonical butterfly / clamp with a one-shot advisory; lengths above 100,000 are clamped.
 
@@ -326,8 +333,11 @@ key Cmajor {
     Note: only `over` is required
     Sequence solo1 = (jam chords)
 
-    Note: name args anywhere
-    Sequence solo2 = (jam over=chords style=#blues length=16 seed=7)
+    Note: named style and length; seed requires key as the preceding positional arg
+    Sequence solo2 = (jam over=chords style=#blues length=16)
+
+    Note: to pass seed, supply key first — positional form: (jam over style length key seed)
+    Sequence solo3 = (jam chords #blues 16 "Cmajor" 7)
 }
 ```
 
@@ -342,7 +352,7 @@ jam(Sequence over,
     Int order = 2) -> Sequence
 ```
 
-Only `over` is required. The `key=` override pushes a synthetic musical-context frame for the jam, then pops — useful for chromatic pivot bars that break the surrounding key. The `order` argument is clamped to `[1, 3]` just like `markov`.
+Only `over` is required. The remaining arguments are **positional from left to right** — `seed` is only available when `key` is also supplied (no `(over, style, length, seed)` shortcut overload exists). Use positional form to pass a seed: `(jam chords #jazz 8 "Cmajor" 42)`. Because `key` is a reserved word in the parser, it cannot be used as a named-argument label; pass it positionally. The `key=` override (when used positionally) pushes a synthetic musical-context frame for the jam, then pops — useful for chromatic pivot bars that break the surrounding key. The `order` argument is clamped to `[1, 3]` just like `markov`.
 
 ### Style packs
 
@@ -361,7 +371,7 @@ User packs live at `~/.config/flow/styles/*.flow` and override shipped packs on 
 | Function | Signature | Notes |
 |----------|-----------|-------|
 | `registerStyle` | `(Symbol name, Dict pack) -> Void` | Register or replace a style pack |
-| `listStyles` | `() -> Array[Symbol]` | All currently registered style names, insertion order |
+| `listStyles` | `() -> Symbol[]` | All currently registered style names, insertion order |
 
 A minimal pack looks like:
 
@@ -397,6 +407,7 @@ Overlay two sequences with different time signatures. `polyrhythm` figures out t
 ```flow
 use "@std"
 use "@audio"
+use "@composition"
 
 tempo 120 {
     timesig 3/4 {
@@ -412,7 +423,7 @@ tempo 120 {
 
 | Signature | Notes |
 |-----------|-------|
-| `(polyrhythm Sequence, Sequence) -> Buffer` | Auto-align via LCM of time signatures |
+| `(polyrhythm Sequence, Sequence) -> Buffer` | Auto-align via LCM of time signatures; requires `use "@composition"` |
 | `(polyrhythm Sequence, Sequence, Int) -> Buffer` | Explicit beat count override |
 
 ## Microtonal / Tuning
@@ -443,22 +454,24 @@ tempo 120 {
             Note: a Euclidean hi-hat
             Sequence hat = (euclidean 5 8 C5)
 
-            Note: chord progression for jam
+            Note: chord progression for jam — positional: (jam over style length key seed)
             Sequence chords = | Cmaj7 Am7 Dm7 G7 |
-            Sequence lead = (jam over=chords style=#jazz length=8 seed=7)
+            Sequence lead = (jam chords #jazz 8 "Cmajor" 7)
 
-            Note: roll dice on the lead each cycle
-            Sequence shaped = lead
-                -> (sometimes 0.3 (fn Sequence s => (rev s)))
-                -> (jux (fn Sequence s => (transpose s 7st)))
+            Note: roll dice on the lead each cycle — combinators take Sequence last, so use nesting
+            Sequence shaped = (jux
+                (fn Sequence s => (transpose s +7st))
+                (sometimes 0.3
+                    (fn Sequence s => (rev s))
+                    lead))
 
             section groove {
                 Sequence a = hat
                 Sequence b = shaped
             }
             Song song = [groove*4]
-            Buffer buf = (renderSong song "piano")
-            (writeWav "generative.wav" buf)
+            Buffer output = (renderSong song "piano")
+            (writeWav "generative.wav" output)
         }
     }
 }

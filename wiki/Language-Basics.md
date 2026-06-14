@@ -7,16 +7,16 @@ Flow is a statically-typed, interpreted language. Every variable has a type, sta
 Flow accepts five comment markers. All five run from their marker to the end of the line:
 
 ```flow
-Note: This is a comment (must start the line content)
-TODO: also a comment to EOL (start of line content)
-FIXME: same — recognized at line start
+Note: This is a comment — works at line start AND as a trailing inline comment
+TODO: also a comment to EOL (must start at line content)
+FIXME: same — must start at line content
 // This is also a comment, anywhere on the line
 ; A Lisp-style line comment — must be at column 0 (mid-line `;` is a statement separator)
-Int x = 5  Note: inline comment
+Int x = 5  Note: inline comment — trailing Note: works anywhere on the line
 Int y = 7  // inline comment
 ```
 
-`Note:`, `TODO:`, `FIXME:`, and column-0 `;` must start at the beginning of a line's content (leading whitespace allowed). `//` works anywhere on the line.
+`TODO:` and `FIXME:` must start at the beginning of a line's content (leading whitespace allowed). `Note:` and `//` work anywhere on the line — both at line start and as trailing inline comments. Column-0 `;` must be at column 0.
 
 A backslash at end-of-line is a **line continuation** — it joins the next physical line into the current logical line while preserving line numbers for diagnostics:
 
@@ -168,11 +168,12 @@ String[] names = (list "Alice" "Bob" "Charlie")
 Int[] inline = [10, 20, 30]      Note: array literal — comma OR space separated
 ```
 
-Array indexing uses `@` (supports negative-from-end):
+Array indexing uses `@`. For negative (from-end) indices, bind the value to a variable first — bare negative literals after `@` do not parse:
 
 ```flow
 Int first = nums@0
-Int last = nums@-1
+Int negOne = (sub 0 1)
+Int last = nums@negOne    // last element
 ```
 
 Plural type names are shorthand for arrays: `Ints` = `Int[]`, `Notes` = `Note[]`, `Strings` = `String[]`, `Voids` = `Void[]` (any), etc.
@@ -186,17 +187,19 @@ Tuples group fixed-arity heterogeneous values. They're written with `<<` and `>>
 ```flow
 use "@std"
 
-<<Int, Int>> point = <<3, 4>>
-<<String, Note, Bool>> mix = <<"snare", C4, true>>
+Tuple<<Int, Int>> point = <<3, 4>>
+Tuple<<String, Note, Bool>> mix = <<"snare", C4, true>>
 
 Note: Empty and singleton arities are both valid
-<<>> nothing = <<>>
-<<Int>> solo = <<42>>
+Tuple<<>> nothing = <<>>
+Tuple<<Int>> solo = <<42>>
 
 Note: Index with @N
 Int x = point@0
 Int y = point@1
 ```
+
+> **Typed tuple declarations require the `Tuple<<...>>` prefix.** Bare `<<Type, Type>> name = ...` is parsed as a destructure assignment — the `Tuple<<...>>` prefix is required when you want a typed variable binding.
 
 Tuples compare by **structural equality** (`(equals <<1, 2>> <<1, 2>>)` is true).
 
@@ -221,7 +224,7 @@ proc renderHit (Note: pitch, Note: dur)
     (print $"hit: {pitch} {dur}")
 end proc
 
-<<Note, Note>> entry = <<C4, D4>>
+Tuple<<Note, Note>> entry = <<C4, D4>>
 entry ~> renderHit                    Note: equivalent to (renderHit C4 D4)
 ```
 
@@ -414,12 +417,17 @@ use "@improv"
 
 Sequence chords = | Cmaj7 Am7 Dm7 G7 |
 
-Note: All named
-Sequence solo = (jam over=chords style=#jazz length=8 seed=42)
+Note: All named (3-arg form — no seed)
+Sequence solo = (jam over=chords style=#jazz length=8)
 
-Note: Mixed — positional first
+Note: Positional with seed — (jam over style length key seed)
+Sequence seeded = (jam chords #jazz 8 "Cmajor" 42)
+
+Note: Mixed — positional first, rest named
 Sequence solo2 = (jam chords style=#blues length=16)
 ```
+
+> `seed=` is not a valid standalone named argument for `jam` — it requires `key` to also be provided. Use `(jam over style length key seed)` positionally when you need a seed, or omit it to get a random result.
 
 About 150 builtin signatures have parameter names backfilled. See [Functions](Functions.md#named-arguments).
 
@@ -450,10 +458,12 @@ Note: quoted string literals are always `String` values — `"10s"` is the strin
 Pragmas are file-scope toggles at the top of a file. Each module has its own `PragmaSet` — pragmas don't leak across `use` imports:
 
 ```flow
-enable hAsB;             Note: H aliases to B in note streams (German notation)
-enable justIntonation;   Note: 5-limit JI tuning rooted at active key tonic
-enable matchExhaustive;  Note: promote non-exhaustive match warnings to errors
+enable hAsB;             // H aliases to B in note streams (German notation)
+enable justIntonation;   // 5-limit JI tuning rooted at active key tonic
+enable matchExhaustive;  // promote non-exhaustive match warnings to errors
 ```
+
+> `Note:` comments do not work as trailing inline comments on `enable` pragma lines. The pragma scanner only recognizes `//` after `enable NAME;` — use `//` for all trailing comments on pragma lines.
 
 Unknown pragmas error with a did-you-mean suggestion.
 
