@@ -36,6 +36,12 @@ public static class VisualizationFunctions
         var sig3 = new FunctionSignature("inspect", [SequenceType.Instance],
             ParameterNames: ["seq"]);
         registry.Register("inspect", sig3, Visualize);
+
+        // (inspect buf) alias mirrors (visualize buf) so the documented alias
+        // pair holds for both overloads.
+        var sig4 = new FunctionSignature("inspect", [BufferType.Instance],
+            ParameterNames: ["buf"]);
+        registry.Register("inspect", sig4, VisualizeBuffer);
     }
 
     /// <summary>
@@ -66,21 +72,25 @@ public static class VisualizationFunctions
             if (bar.Mode != BarMode.Musical || bar.TimeSignature == null)
                 continue;
 
-            int timeSigDenom = bar.TimeSignature.Denominator;
-            double beatCursor = 0;
-
-            foreach (var note in bar.MusicalNotes)
+            // Voice-block bars carry their audible content exclusively in
+            // ParallelVoices; the parent bar's MusicalNotes holds a single
+            // whole-bar rest placeholder (NoteStreamCompiler). Mirror the audio
+            // / MIDI / MusicXML / LilyPond paths (BarRenderer.cs:62) and stack
+            // every voice on the shared bar onset so overlapping voices show on
+            // their own pitch rows. When ParallelVoices is present the parent
+            // MusicalNotes is just the placeholder rest, so the two passes do
+            // not double-count.
+            if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
             {
-                double noteDuration = note.GetBeats(timeSigDenom);
-
-                if (!note.IsRest)
+                foreach (var voiceBar in bar.ParallelVoices)
                 {
-                    int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
-                    string label = FormatNoteLabel(note.NoteName, note.Octave, note.Alteration);
-                    noteEvents.Add((midi, label, offsetBeats + beatCursor, noteDuration, note.Articulation));
+                    var voiceSig = voiceBar.TimeSignature ?? bar.TimeSignature;
+                    CollectNoteEvents(voiceBar.MusicalNotes, voiceSig.Denominator, offsetBeats, noteEvents);
                 }
-
-                beatCursor += noteDuration;
+            }
+            else
+            {
+                CollectNoteEvents(bar.MusicalNotes, bar.TimeSignature.Denominator, offsetBeats, noteEvents);
             }
 
             double barBeats = bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
@@ -290,6 +300,35 @@ public static class VisualizationFunctions
 
         Console.Write(sb.ToString());
         return Value.Void();
+    }
+
+    /// <summary>
+    /// Collects note events from a flat list of musical notes, advancing a fresh
+    /// per-list beat cursor that starts at <paramref name="offsetBeats"/>. Shared by
+    /// the single-voice and parallel-voice (voice-block) passes — each parallel
+    /// voice starts at the same bar onset so overlapping voices stack correctly.
+    /// Rests advance the cursor but emit no event.
+    /// </summary>
+    private static void CollectNoteEvents(
+        IReadOnlyList<MusicalNoteData> notes,
+        int timeSigDenom,
+        double offsetBeats,
+        List<(int midiPitch, string label, double startBeat, double durationBeats, Articulation articulation)> noteEvents)
+    {
+        double beatCursor = 0;
+        foreach (var note in notes)
+        {
+            double noteDuration = note.GetBeats(timeSigDenom);
+
+            if (!note.IsRest)
+            {
+                int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
+                string label = FormatNoteLabel(note.NoteName, note.Octave, note.Alteration);
+                noteEvents.Add((midi, label, offsetBeats + beatCursor, noteDuration, note.Articulation));
+            }
+
+            beatCursor += noteDuration;
+        }
     }
 
     /// <summary>

@@ -162,6 +162,12 @@ public static class BuiltInFunctions
         var lenStrSignature = new FunctionSignature("len", [StringType.Instance],
             ParameterNames: ["s"]);
         registry.Register("len", lenStrSignature, StdLib.LenString);
+
+        // `length` is a documented alias of `len` for the String overload —
+        // welcomes composers reaching for the longer name (ergonomics-first).
+        var lengthStrSignature = new FunctionSignature("length", [StringType.Instance],
+            ParameterNames: ["s"]);
+        registry.Register("length", lengthStrSignature, StdLib.LenString);
         
         // ===== I/O Functions =====
         var printSignature = new FunctionSignature(
@@ -588,7 +594,12 @@ public static class BuiltInFunctions
         var lenSignature = new FunctionSignature("len", [new ArrayType(VoidType.Instance)],
             ParameterNames: ["arr"]);
         registry.Register("len", lenSignature, Collections.Len);
-        
+
+        // `length` is a documented alias of `len` for the Array overload.
+        var lengthSignature = new FunctionSignature("length", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
+        registry.Register("length", lengthSignature, Collections.Len);
+
         var headSignature = new FunctionSignature("head", [new ArrayType(VoidType.Instance)],
             ParameterNames: ["arr"]);
         registry.Register("head", headSignature, Collections.Head);
@@ -1084,6 +1095,11 @@ public static class BuiltInFunctions
         var reduceSignature = new FunctionSignature("reduce", [new ArrayType(VoidType.Instance), VoidType.Instance, FunctionType.Instance],
             ParameterNames: ["arr", "initial", "fn"]);
         registry.Register("reduce", reduceSignature, args => Collections.Reduce(args, context));
+
+        var zipSignature = new FunctionSignature("zip",
+            [new ArrayType(VoidType.Instance), new ArrayType(VoidType.Instance)],
+            ParameterNames: ["a", "b"]);
+        registry.Register("zip", zipSignature, Collections.Zip);
 
         // ===== Custom Oscillator Registration (Higher Order) =====
 

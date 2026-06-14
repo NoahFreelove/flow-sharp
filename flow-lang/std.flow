@@ -21,6 +21,8 @@ internal proc Nothing ()
 
 internal proc len (Voids: arr)
 internal proc len(String: s)
+internal proc length (Voids: arr)
+internal proc length (String: s)
 
 Note: str overloads for all types
 internal proc str (Int: value)
@@ -331,6 +333,8 @@ internal proc tremolo (Sequence: seq, Int: repetitions)
 Note: Visualization
 internal proc visualize (Sequence: seq)
 internal proc visualize (Buffer: b)
+internal proc inspect (Sequence: seq)
+internal proc inspect (Buffer: b)
 
 Note: Buffer pretty-printing + hex dump (260502-lum)
 internal proc prettyBuffer (Buffer: b)

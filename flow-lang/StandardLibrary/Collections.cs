@@ -388,6 +388,35 @@ public static class Collections
         return Value.Array(results, elementType);
     }
 
+    /// <summary>
+    /// Combines two arrays into an array of 2-tuples, stopping at the shorter
+    /// length (charitable on mismatched lengths — no error, the extra tail is
+    /// simply dropped). Each element is a <c>&lt;&lt;a@i, b@i&gt;&gt;</c> tuple.
+    /// </summary>
+    public static Value Zip(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<IReadOnlyList<Value>>();
+        var b = args[1].As<IReadOnlyList<Value>>();
+
+        int n = Math.Min(a.Count, b.Count);
+        var results = new List<Value>(n);
+        for (int i = 0; i < n; i++)
+        {
+            results.Add(Value.Tuple([a[i], b[i]], [a[i].Type, b[i].Type]));
+        }
+
+        // The array element type is the (uniform) tuple type when all pairs share
+        // a shape; otherwise Void[] for the mixed case (mirrors List/Map).
+        if (results.Count == 0)
+            return Value.Array(results, VoidType.Instance);
+
+        var elementType = results[0].Type;
+        if (!results.All(r => r.Type.Equals(elementType)))
+            elementType = VoidType.Instance;
+
+        return Value.Array(results, elementType);
+    }
+
     public static Value Reduce(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var arr = args[0].As<IReadOnlyList<Value>>();
