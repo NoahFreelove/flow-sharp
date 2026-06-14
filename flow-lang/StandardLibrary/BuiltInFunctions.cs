@@ -235,6 +235,15 @@ public static class BuiltInFunctions
             ParameterNames: ["value"]);
         registry.Register("str", strDecibelSignature, StdLib.StrDecibel);
 
+        // sweep-0614: dedicated str(Hertz) overload — "Hz" suffix. Without it,
+        // (str 440Hz) is ambiguous between str(Float)/str(Double) because
+        // HertzType.IsCompatibleWith covers both at equal specificity (the exact
+        // ambiguity class the str(Beat) overload below already handles). Mirrors
+        // the AutoStr Hertz branch so (str 440Hz) -> "440Hz" matches (print 440Hz).
+        var strHertzSignature = new FunctionSignature("str", [HertzType.Instance],
+            ParameterNames: ["value"]);
+        registry.Register("str", strHertzSignature, StdLib.StrHertz);
+
         // Phase 45 D-14: dedicated str(Beat) overload — plain double, no "b" suffix.
         // Without it, (str someBeat) is ambiguous between str(Float)/str(Double)
         // (BeatType.IsCompatibleWith covers both), which blocks the Nb literal's
@@ -1637,7 +1646,41 @@ public static class BuiltInFunctions
         });
 
         // ===== Euclidean Rhythm =====
+        // sweep-0614: the base 3-arg (Int, Int, Note) overload moved to
+        // RegisterEuclideanOverloads so it can thread ExecutionContext for the
+        // charitable degenerate-input handling (D-v1.5-05) shared with the
+        // swing/humanize overloads. See TryValidateEuclideanInputs.
+    }
 
+    // ===== Phase 15 DX-09: euclidean swing + humanize + seed overloads =====
+    //
+    // Two additional euclidean overloads that accent hit velocities based on swing
+    // and optionally perturb them with a seeded uniform-random humanize factor.
+    //
+    // Semantics (from 15-CONTEXT.md):
+    //   D-05  swing clamped to [-1.0, 1.0]
+    //   D-06  on-beat = step index divisible by gridStep = max(1, steps / hits)
+    //   D-07  accent is a raw velocity delta (no multiplier)
+    //   D-08  asymmetric accent: only the accented set moves; the other set stays at base
+    //         (positive swing accents on-beats; negative swing accents off-beats)
+    //   D-09  humanize unit = fractional velocity on [0, 1] scale
+    //   D-10  humanize clamped to [0, 1]
+    //   D-11  uniform distribution over [-humanize, +humanize]
+    //   D-12  perturbed velocity clamped to [0, 1] (NOT reflected)
+    //   D-17  seed constructs a LOCAL new Random(seed) per-call; does NOT touch
+    //         ExecutionContext.GetRand — isolates the PRNG from global seeded state.
+    //
+    // Security: steps > 1024 raises InvalidOperationException (15-RESEARCH §Security Domain).
+    //
+    // Base velocity: reads MusicalContext.Velocity ?? 0.63 (matches
+    // NoteStreamCompiler.cs:341 default-mf semantics).
+    private static void RegisterEuclideanOverloads(
+        InternalFunctionRegistry registry,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        // euclidean(Int, Int, Note) -> Sequence (base overload — sweep-0614 moved
+        // here from RegisterMusicalNotationFunctions to thread ExecutionContext for
+        // the charitable degenerate-input contract).
         var euclideanSignature = new FunctionSignature(
             "euclidean",
             [IntType.Instance, IntType.Instance, NoteType.Instance],
@@ -1648,10 +1691,8 @@ public static class BuiltInFunctions
             int steps = (int)args[1].Data!;
             string noteStr = (string)args[2].Data!;
 
-            if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
-            if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
-            if (steps > 1024) throw new InvalidOperationException("euclidean: steps exceeds safety limit of 1024");
-            if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
+            if (!TryValidateEuclideanInputs(ref hits, ref steps, context))
+                return Value.Sequence(new SequenceData());
 
             var (noteName, octave, alteration) = NoteType.Parse(noteStr);
 
@@ -1682,34 +1723,7 @@ public static class BuiltInFunctions
             sequence.AddBar(bar);
             return Value.Sequence(sequence);
         });
-    }
 
-    // ===== Phase 15 DX-09: euclidean swing + humanize + seed overloads =====
-    //
-    // Two additional euclidean overloads that accent hit velocities based on swing
-    // and optionally perturb them with a seeded uniform-random humanize factor.
-    //
-    // Semantics (from 15-CONTEXT.md):
-    //   D-05  swing clamped to [-1.0, 1.0]
-    //   D-06  on-beat = step index divisible by gridStep = max(1, steps / hits)
-    //   D-07  accent is a raw velocity delta (no multiplier)
-    //   D-08  asymmetric accent: only the accented set moves; the other set stays at base
-    //         (positive swing accents on-beats; negative swing accents off-beats)
-    //   D-09  humanize unit = fractional velocity on [0, 1] scale
-    //   D-10  humanize clamped to [0, 1]
-    //   D-11  uniform distribution over [-humanize, +humanize]
-    //   D-12  perturbed velocity clamped to [0, 1] (NOT reflected)
-    //   D-17  seed constructs a LOCAL new Random(seed) per-call; does NOT touch
-    //         ExecutionContext.GetRand — isolates the PRNG from global seeded state.
-    //
-    // Security: steps > 1024 raises InvalidOperationException (15-RESEARCH §Security Domain).
-    //
-    // Base velocity: reads MusicalContext.Velocity ?? 0.63 (matches
-    // NoteStreamCompiler.cs:341 default-mf semantics).
-    private static void RegisterEuclideanOverloads(
-        InternalFunctionRegistry registry,
-        FlowLang.Runtime.ExecutionContext context)
-    {
         // euclidean(Int, Int, Note, Double) -> Sequence
         var euclideanSwingSig = new FunctionSignature(
             "euclidean",
@@ -1722,10 +1736,8 @@ public static class BuiltInFunctions
             string noteStr = (string)args[2].Data!;
             double swing = (double)args[3].Data!;
 
-            if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
-            if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
-            if (steps > 1024) throw new InvalidOperationException("euclidean: steps exceeds safety limit of 1024");
-            if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
+            if (!TryValidateEuclideanInputs(ref hits, ref steps, context))
+                return Value.Sequence(new SequenceData());
 
             return BuildEuclideanSequence(hits, steps, noteStr, swing, humanize: 0.0, rng: null, context);
         });
@@ -1745,16 +1757,92 @@ public static class BuiltInFunctions
             double humanize = (double)args[4].Data!;
             int seed = (int)args[5].Data!;
 
-            if (hits <= 0) throw new InvalidOperationException("euclidean: hits must be > 0");
-            if (steps <= 0) throw new InvalidOperationException("euclidean: steps must be > 0");
-            if (steps > 1024) throw new InvalidOperationException("euclidean: steps exceeds safety limit of 1024");
-            if (hits > steps) throw new InvalidOperationException("euclidean: hits must be <= steps");
+            if (!TryValidateEuclideanInputs(ref hits, ref steps, context))
+                return Value.Sequence(new SequenceData());
 
             // D-17: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
             // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
             var rng = new Random(seed);
             return BuildEuclideanSequence(hits, steps, noteStr, swing, humanize, rng, context);
         });
+    }
+
+    /// <summary>
+    /// sweep-0614 — charitable degenerate-input handling for all three
+    /// <c>euclidean</c> overloads (D-v1.5-05 generative contract). Previously each
+    /// overload threw <see cref="InvalidOperationException"/> on hits&lt;=0 / steps&lt;=0 /
+    /// steps&gt;1024 / hits&gt;steps, which propagated to FlowEngine's catch-all and
+    /// rendered as a location-less "0:0: error: Unexpected error: ...". This brings
+    /// euclidean in line with its sibling generative primitives (cellular/markov/
+    /// lsystem/lorenz) which clamp/empty + WarnOnce and never throw.
+    ///
+    /// <para>Returns <c>true</c> to PROCEED (with possibly-clamped <paramref name="hits"/>
+    /// / <paramref name="steps"/>), <c>false</c> to return an empty Sequence. Follows
+    /// Phase-44 Pattern S3: strict-mode elevates the advisory to a located
+    /// <c>ctx.ErrorReporter.ReportError</c>; otherwise <see cref="RenderingDiagnostics.WarnOnce"/>.
+    /// Preserves the Phase-15 T-15-08 DoS guard (steps&gt;1024 → clamp to 1024).</para>
+    /// </summary>
+    private static bool TryValidateEuclideanInputs(
+        ref int hits, ref int steps,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        var site = context.CurrentCallSite;
+
+        // hits <= 0 or steps <= 0 → empty sequence + advisory.
+        if (hits <= 0 || steps <= 0)
+        {
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [euclidean] hits/steps must be > 0 — got hits={hits}, steps={steps} at {site}; returning empty sequence",
+                    site);
+            }
+            else
+            {
+                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                    $"euclidean:nonpositive:{site}:{hits}:{steps}",
+                    $"[euclidean] hits/steps must be > 0 — got hits={hits}, steps={steps} at {site}; returning empty sequence");
+            }
+            return false;
+        }
+
+        // steps > 1024 → clamp (T-15-08 / T-36-19 DoS guard, kept as a clamp).
+        if (steps > 1024)
+        {
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [euclidean] steps clamped to 1024 — got steps={steps} (> 1024) at {site}",
+                    site);
+            }
+            else
+            {
+                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                    $"euclidean:steps-cap:{site}:{steps}",
+                    $"[euclidean] steps {steps} > 1024 at {site}; clamped to 1024 (T-36-19 DoS guard)");
+            }
+            steps = 1024;
+        }
+
+        // hits > steps → clamp hits down to steps.
+        if (hits > steps)
+        {
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [euclidean] hits clamped to steps — got hits={hits} > steps={steps} at {site}",
+                    site);
+            }
+            else
+            {
+                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                    $"euclidean:hits-cap:{site}:{hits}:{steps}",
+                    $"[euclidean] hits {hits} > steps {steps} at {site}; clamped to {steps}");
+            }
+            hits = steps;
+        }
+
+        return true;
     }
 
     private static Value BuildEuclideanSequence(

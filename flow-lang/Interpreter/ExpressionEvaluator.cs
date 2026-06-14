@@ -297,19 +297,55 @@ public class ExpressionEvaluator
             // "Function '<mod.fn>' not found" error message fires.
         }
 
-        // Evaluate all arguments — Bundle A (260524-r4o) Task 4: single
-        // pre-sized loop builds argValues (List<Value>) + argTypes (FlowType[])
-        // in one pass. FlowType[] satisfies IReadOnlyList<FlowType> at every
-        // downstream consumer (TryResolveFunction / ResolveFunction), avoiding
-        // the legacy double-LINQ allocation (2 iterators + 2 boxed enumerators
-        // + 2 growable Lists).
+        // sweep-0614 fix — short-circuit / lazy-param deferral.
+        //
+        // BUG: (if cond then else) evaluated BOTH branches. The lazy `if`
+        // overload [Bool, Lazy<Void>, Lazy<Void>] relied on the parser
+        // auto-wrapping the then/else branches in LazyExpression so it would win,
+        // but the parser never auto-wraps. The eager loop below evaluated every
+        // argument before overload resolution — firing the side-effects (and
+        // errors) of the UNTAKEN branch — and the strict/charitable overload then
+        // merely SELECTED the already-computed value (right value, wrong effects).
+        //
+        // FIX (suggestedFix approach 2, name-decoupled): before the eager loop,
+        // peek the registered overloads for this function name and defer (wrap in a
+        // Thunk) any positional slot that is Lazy<T>/Void in EVERY candidate
+        // overload (see ComputeLazyDeferralSlots). For `if`, slots 1/2 qualify, so
+        // only the taken branch is forced by the impl (StdLib.If/IfStrict/IfTruthy
+        // via ForceIfLazy) — the proven Thunk/Force path, identical to `lazy(...)`.
+        //
+        // The "every candidate" guard is resolution-preserving: deferring re-types
+        // an arg as Lazy<Void>, which would change overload selection if any
+        // candidate discriminated on that slot's concrete type. `and`/`or` operand
+        // slots carry Bool in the AndBool/OrBool overloads (Phase 44 Bool-vs-
+        // charitable dispatch), so they are NOT deferred — and/or keep their exact
+        // Phase 44 resolution and value semantics (operand short-circuit of
+        // side-effects is a separate follow-up).
+        //
+        // Safety: an argument that is ALREADY a LazyExpression is left to the eager
+        // path (it evaluates to a Value.Lazy itself — double-wrapping would break
+        // `(eval lazy(...))`).
+        bool[]? lazySlots = ComputeLazyDeferralSlots(call);
+
         var argValues = new List<Value>(call.Arguments.Count);
         var argTypes = new FlowType[call.Arguments.Count];
         for (int i = 0; i < call.Arguments.Count; i++)
         {
-            var v = Evaluate(call.Arguments[i]);
-            argValues.Add(v);
-            argTypes[i] = v.Type;
+            if (lazySlots is not null && i < lazySlots.Length && lazySlots[i]
+                && call.Arguments[i] is not LazyExpression)
+            {
+                var thunk = new Thunk(call.Arguments[i], this);
+                var innerType = call.Arguments[i].ResolvedType ?? VoidType.Instance;
+                var v = Value.Lazy(thunk, innerType);
+                argValues.Add(v);
+                argTypes[i] = v.Type;
+            }
+            else
+            {
+                var v = Evaluate(call.Arguments[i]);
+                argValues.Add(v);
+                argTypes[i] = v.Type;
+            }
         }
 
         // Phase 36 Plan 36-02 (D-36-11): evaluate named-arg values up-front
@@ -421,6 +457,16 @@ public class ExpressionEvaluator
                 {
                     continue;
                 }
+                // sweep-0614: Lazy<T> parameter slots receive a Thunk-backed Lazy value
+                // (auto-deferred short-circuit args OR explicit lazy(...)). The inner
+                // types may differ (e.g. arg Lazy<Void> vs param Lazy<Bool>), and there
+                // is no Value-level Thunk→Thunk conversion — ConvertTo would throw. The
+                // builtin impl (If/And/Or/Eval/test) forces the Thunk and validates the
+                // forced value, so pass the Lazy value through untouched.
+                if (sig.InputTypes[i] is LazyType)
+                {
+                    continue;
+                }
                 if (!argValues[i].Type.Equals(sig.InputTypes[i])
                     && argValues[i].Type.CanConvertTo(sig.InputTypes[i]))
                 {
@@ -448,6 +494,21 @@ public class ExpressionEvaluator
             {
                 // Call internal implementation
                 return overload.Implementation!(argValues);
+            }
+            catch (InvalidOperationException ex)
+                when (ex.Message.Contains("ivision by zero", StringComparison.Ordinal))
+            {
+                // sweep-0614: every div/idiv builtin (StdLib.DivInt/DivIntPromote/
+                // DivFloat/DivDouble/DivLong/DivNumber/IDivInt) throws
+                // InvalidOperationException("Division by zero" / "Integer division
+                // by zero") on a zero divisor. Previously this propagated to
+                // FlowEngine.Execute's catch-all and rendered as a location-less
+                // "0:0: error: Unexpected error: ..." that read like an interpreter
+                // bug. Route it through the purpose-built located handler instead —
+                // `file:line: error: Division by zero` + report-and-continue (Void),
+                // mirroring ReportUnknownMember's charitable contract. Covers all
+                // six div builtins at one site.
+                return ReportDivisionByZero(call.Location);
             }
             finally
             {
@@ -1036,6 +1097,93 @@ public class ExpressionEvaluator
     {
         _errorReporter.ReportError("Division by zero", location);
         return Value.Void();
+    }
+
+    /// <summary>
+    /// sweep-0614 — computes which positional argument slots of a function call
+    /// should be DEFERRED (wrapped in a <see cref="Thunk"/>) rather than eagerly
+    /// evaluated, so short-circuit / lazy-parameter builtins (<c>if</c>/<c>and</c>/
+    /// <c>or</c>/<c>eval</c>) only evaluate the branch that is actually taken.
+    ///
+    /// <para>
+    /// A slot is deferrable when SOME registered overload of the callee declares a
+    /// <see cref="LazyType"/> parameter at that position. The deferral makes the
+    /// argument arrive as a <c>Lazy&lt;T&gt;</c> value, so the overload resolver
+    /// selects the lazy overload (which forces only the taken branch) instead of the
+    /// strict Void-wildcard overload (which selected an already-computed value AFTER
+    /// every branch's side-effects had already fired).
+    /// </para>
+    ///
+    /// <para>Returns <c>null</c> when no slot is deferrable — the common case —
+    /// so the hot eager-eval path pays nothing extra for ordinary calls.</para>
+    /// </summary>
+    private bool[]? ComputeLazyDeferralSlots(FunctionCallExpression call)
+    {
+        // Named-arg calls re-order at the value level after resolution; the lazy
+        // builtins (if/eval) are positional-only in practice, so skip the
+        // deferral analysis when named args are present to avoid slot-index drift.
+        if (call.NamedArgs is { Count: > 0 })
+            return null;
+        if (call.Arguments.Count == 0)
+            return null;
+
+        var overloads = _context.CurrentFrame.GetFunctionOverloads(call.Name);
+        if (overloads.Count == 0)
+            return null;
+
+        // A slot is deferrable ONLY when:
+        //   (a) at least one candidate overload declares Lazy<T> at that slot, AND
+        //   (b) EVERY candidate overload declares Lazy<T> OR Void at that slot
+        //       (never a concrete discriminating type like Bool).
+        //
+        // Rule (b) is the resolution-preservation guard. Deferring an argument
+        // re-types it as Lazy<Void>, which would change which overload wins if any
+        // candidate discriminates on that slot's concrete type. For `if`, slots 1/2
+        // (then/else) are Lazy<Void> or Void in EVERY overload — so deferring them
+        // never changes which `if` overload is selected (the Bool/Void cond at slot 0
+        // decides). For `and`/`or`, the operand slots carry Bool in the AndBool/OrBool
+        // overloads, so deferring them WOULD break Phase 44's Bool-vs-charitable
+        // dispatch — rule (b) correctly excludes them, leaving and/or eager.
+        //
+        // This makes `if` only evaluate the taken branch (the confirmed bug) while
+        // keeping every other builtin's resolution byte-identical.
+        bool[]? hasLazy = null;
+        bool[]? allLazyOrVoid = null;
+        int n = call.Arguments.Count;
+        foreach (var ov in overloads)
+        {
+            var inputs = ov.Signature.InputTypes;
+            // Only consider overloads whose arity matches this call (so e.g. a
+            // 6-arg variant doesn't taint a 3-arg call's slot analysis).
+            if (inputs.Count != n)
+                continue;
+            for (int i = 0; i < n; i++)
+            {
+                bool isLazy = inputs[i] is LazyType;
+                bool isLazyOrVoid = isLazy || inputs[i] is VoidType;
+                if (isLazy)
+                    (hasLazy ??= new bool[n])[i] = true;
+                // Track AND across overloads: start true, clear on first non-(lazy|void).
+                if (allLazyOrVoid == null)
+                {
+                    allLazyOrVoid = new bool[n];
+                    for (int k = 0; k < n; k++) allLazyOrVoid[k] = true;
+                }
+                if (!isLazyOrVoid)
+                    allLazyOrVoid[i] = false;
+            }
+        }
+
+        if (hasLazy == null || allLazyOrVoid == null)
+            return null;
+
+        bool[]? slots = null;
+        for (int i = 0; i < n; i++)
+        {
+            if (hasLazy[i] && allLazyOrVoid[i])
+                (slots ??= new bool[n])[i] = true;
+        }
+        return slots;
     }
 
     private Value EvaluateLazy(LazyExpression lazy)

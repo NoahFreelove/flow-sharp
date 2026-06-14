@@ -1048,7 +1048,23 @@ public class Interpreter : IFunctionInvoker
             // Convert if needed
             if (!value.Type.Equals(varDecl.Type) && value.Type.CanConvertTo(varDecl.Type))
             {
-                value = value.ConvertTo(varDecl.Type);
+                // sweep-0614: Void is the charitable report-and-continue sentinel
+                // returned by handlers like ReportDivisionByZero / ReportUnknownMember
+                // after they have ALREADY reported a located error. VoidType.CanConvertTo
+                // returns true (wildcard), but Value.ConvertTo throws because the
+                // underlying CLR value is null — and that throw would propagate to
+                // FlowEngine's catch-all as a SECOND, location-less "Unexpected error"
+                // on top of the good diagnostic. Bind a type-default instead so the
+                // program keeps running with exactly one clean diagnostic.
+                if (value.Type is TypeSystem.PrimitiveTypes.VoidType
+                    && varDecl.Type is not TypeSystem.PrimitiveTypes.VoidType)
+                {
+                    value = CreateDefaultValue(varDecl.Type);
+                }
+                else
+                {
+                    value = value.ConvertTo(varDecl.Type);
+                }
             }
         }
 

@@ -163,6 +163,19 @@ public static class StdLib
     }
 
     /// <summary>
+    /// Converts a Hertz to string with "Hz" suffix (sweep-0614).
+    /// A dedicated overload is REQUIRED for the same reason as StrBeat:
+    /// HertzType.IsCompatibleWith covers BOTH Double and Float at equal
+    /// specificity, so without this overload <c>(str 440Hz)</c> is ambiguous
+    /// between str(Float)/str(Double). Mirrors the AutoStr Hertz branch
+    /// (StdLib.cs <c>v.Type is HertzType</c>) so (str 440Hz) == (str-via-print 440Hz).
+    /// </summary>
+    public static Value StrHertz(IReadOnlyList<Value> args)
+    {
+        return Value.String($"{args[0].As<double>()}Hz");
+    }
+
+    /// <summary>
     /// Converts a Beat to string as a PLAIN double — NO "b" suffix (Phase 45 D-14).
     /// Emitting "0.5b" would break round-trip under <c>enable beat-true-to-sig;</c>
     /// (e.g. 0.5b in 6/8 evaluates to 0.25 quarters; re-parsing "0.25b" under the
@@ -453,6 +466,17 @@ public static class StdLib
     }
 
     /// <summary>
+    /// sweep-0614 — forces a value if it is a deferred <see cref="Thunk"/> (a
+    /// Lazy value produced by the interpreter's lazy-slot deferral or an explicit
+    /// <c>lazy(...)</c>), otherwise returns it as-is. Used by IfStrict / IfTruthy
+    /// so that, after the deferral fix wraps the then/else branches in Thunks, they
+    /// return the FORCED branch value rather than a raw Thunk. Only the SELECTED
+    /// branch is forced — the untaken branch is never evaluated.
+    /// </summary>
+    private static Value ForceIfLazy(Value v)
+        => v.Type is LazyType && v.Data is Thunk t ? t.Force() : v;
+
+    /// <summary>
     /// Strict (non-Lazy) if overload. Both branches are eagerly evaluated
     /// at the call site (the interpreter resolves args before dispatch),
     /// but only the selected value is returned. Matches the Lazy-if contract
@@ -461,20 +485,26 @@ public static class StdLib
     public static Value IfStrict(IReadOnlyList<Value> args)
     {
         var cond = args[0].As<bool>();
-        return cond ? args[1] : args[2];
+        // sweep-0614: then/else now arrive as deferred Thunks (interpreter lazy-slot
+        // deferral) so only the taken branch is evaluated. Force the selected one.
+        return ForceIfLazy(cond ? args[1] : args[2]);
     }
 
 
     public static Value And(IReadOnlyList<Value> args)
     {
-        var leftLazy = args[0];                                                                                         
+        var leftLazy = args[0];
         var rightLazy = args[1];
-        
-        if (leftLazy.Type is not LazyType { InnerType: BoolType })                                                      
-            throw new InvalidOperationException($"Expected Lazy<Bool>, got {leftLazy.Type}");                           
-        if (rightLazy.Type is not LazyType { InnerType: BoolType })                                                     
-            throw new InvalidOperationException($"Expected Lazy<Bool>, got {rightLazy.Type}");  
-        
+
+        // sweep-0614: accept Lazy<Bool> OR Lazy<Void>. The interpreter now
+        // auto-defers short-circuit args into Thunks typed Lazy<innerType>,
+        // and most expressions carry no static ResolvedType → innerType is the
+        // Void wildcard. The forced value is still bool-checked below.
+        if (leftLazy.Type is not LazyType { InnerType: BoolType or VoidType })
+            throw new InvalidOperationException($"Expected Lazy<Bool>, got {leftLazy.Type}");
+        if (rightLazy.Type is not LazyType { InnerType: BoolType or VoidType })
+            throw new InvalidOperationException($"Expected Lazy<Bool>, got {rightLazy.Type}");
+
         var left = args[0].As<Thunk>();
         var right = args[1].As<Thunk>();
 
@@ -497,14 +527,15 @@ public static class StdLib
     
     public static Value Or(IReadOnlyList<Value> args)
     {
-        var leftLazy = args[0];                                                                                         
+        var leftLazy = args[0];
         var rightLazy = args[1];
-        
-        if (leftLazy.Type is not LazyType { InnerType: BoolType })                                                      
-            throw new InvalidOperationException($"Expected Lazy<Bool>, got {leftLazy.Type}");                           
-        if (rightLazy.Type is not LazyType { InnerType: BoolType })                                                     
-            throw new InvalidOperationException($"Expected Lazy<Bool>, got {rightLazy.Type}");  
-        
+
+        // sweep-0614: accept Lazy<Bool> OR Lazy<Void> — see And() for rationale.
+        if (leftLazy.Type is not LazyType { InnerType: BoolType or VoidType })
+            throw new InvalidOperationException($"Expected Lazy<Bool>, got {leftLazy.Type}");
+        if (rightLazy.Type is not LazyType { InnerType: BoolType or VoidType })
+            throw new InvalidOperationException($"Expected Lazy<Bool>, got {rightLazy.Type}");
+
         var left = args[0].As<Thunk>();
         var right = args[1].As<Thunk>();
 
@@ -744,7 +775,9 @@ public static class StdLib
                 ctx.CurrentCallSite);
             return Value.Void();
         }
-        return TruthyCoerce(args[0]) ? args[1] : args[2];
+        // sweep-0614: then/else may arrive as deferred Thunks; only the taken
+        // branch is forced (untaken branch never evaluated).
+        return ForceIfLazy(TruthyCoerce(args[0]) ? args[1] : args[2]);
     }
 
     /// <summary>
