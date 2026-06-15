@@ -18,8 +18,10 @@ namespace FlowLang.Tests.Unit.Phase31;
 /// `LiteralExpression(4)` so every downstream consumer (renderer, MIDI export,
 /// musical-context stack) sees the same shape as the explicit form.
 ///
-/// Out of scope (intentional): `cut`/`Ȼ` shorthand for 2/2, lowercase `c`,
-/// trailing-`o` (`C.` for compound time). Composer writes `2/2` explicitly.
+/// Cut-time shorthand (`C/`, `¢`, `C|` → 2/2) shipped later in the 0615 sweep —
+/// see CutTimeShorthandTests. Still out of scope (intentional): lowercase `c`,
+/// trailing-`o` (`C.` for compound time). Composer writes those time signatures
+/// explicitly.
 /// </summary>
 public class CommonTimeShorthandTests
 {

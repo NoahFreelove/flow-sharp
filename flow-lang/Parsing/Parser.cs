@@ -856,11 +856,34 @@ public partial class Parser
         {
             case MusicalContextType.Timesig:
                 // Parse numerator / denominator (e.g., 4/4, 3/4, 7/8), OR the
-                // common-time shorthand `C` which lowers to 4/4.
+                // common-time shorthand `C` which lowers to 4/4, OR the cut-time
+                // shorthands `C/` / `C|` / `¢` (U+00A2 cent sign) which lower to 2/2.
+                // The cent sign `¢` lexes as a standalone Identifier token (it is
+                // neither whitespace nor a token boundary). `C/` is the Identifier
+                // `C` followed by a Slash token; `C|` is `C` followed by a Pipe
+                // token — the trailing glyph is consumed ONLY here in the timesig
+                // position, so fractional/division lexing elsewhere is untouched.
+                if (Check(TokenType.Identifier) && CurrentToken.Text == "¢")
+                {
+                    var centLoc = CurrentToken.Location;
+                    Advance(); // consume `¢`
+                    value = new LiteralExpression(centLoc, 2, Span: Span.At(centLoc));
+                    value2 = new LiteralExpression(centLoc, 2, Span: Span.At(centLoc));
+                    break;
+                }
                 if (Check(TokenType.Identifier) && CurrentToken.Text == "C")
                 {
                     var cLoc = CurrentToken.Location;
                     Advance(); // consume `C`
+                    // Cut-time: `C/` or `C|` immediately after the `C` → 2/2.
+                    if (Check(TokenType.Slash) || Check(TokenType.Pipe))
+                    {
+                        Advance(); // consume the `/` or `|` cut glyph
+                        value = new LiteralExpression(cLoc, 2, Span: Span.At(cLoc));
+                        value2 = new LiteralExpression(cLoc, 2, Span: Span.At(cLoc));
+                        break;
+                    }
+                    // Bare `C` → common time 4/4.
                     value = new LiteralExpression(cLoc, 4, Span: Span.At(cLoc));
                     value2 = new LiteralExpression(cLoc, 4, Span: Span.At(cLoc));
                     break;
