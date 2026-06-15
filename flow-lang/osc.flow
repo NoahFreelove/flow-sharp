@@ -1,10 +1,11 @@
 Note: OSC — Open Sound Control client + server, opt-in via `use "@osc"`
-Note: Single-module surface for the 5 OSC builtins:
+Note: Single-module surface for the OSC builtins:
 Note:   oscSend(String host, Int port, String path, ...args) → Void
 Note:   oscListen(Int port, String path, Function handler) → OscHandle
 Note:   oscStop(OscHandle handle) → Void
+Note:   oscMsg(String path, ...args) → OscHandle (single-message packet)
 Note:   oscBundle(...packets) → OscBundle (varargs)
-Note:   oscSendBundle(String host, Int port, OscBundle bundle) → Void
+Note:   oscSendBundle(String host, Int port, OscHandle bundle) → Void
 Note:
 Note: Type-tag inference: Int→,i Long→,h Float→,f Double→,d
 Note:   String/Symbol→,s Bool→,T/,F Buffer→,b. Charitable smallest-tag-that-fits
@@ -45,6 +46,13 @@ Note: drained here / on the next osc* call, serialized with the rest of the
 Note: script so they cannot corrupt the interpreter. Call (oscPump) inside a
 Note: poll loop that does not otherwise call osc* builtins.
 internal proc oscPump ()
+
+Note: ----- Message constructor (varargs) -----
+Note: oscMsg builds a single OSC message packet (path + inferred-type payload)
+Note: and returns it as an OscHandle, so it can be placed inside a bundle:
+Note:   (oscBundle (oscMsg "/a" 1) (oscMsg "/b" 2.5))
+Note: A bare (oscMsg ...) handle can also be sent directly via oscSendBundle.
+internal proc oscMsg (String: path)
 
 Note: ----- Bundle constructor (varargs) -----
 Note: Returns an OscHandle-wrapped OscBundle. Bundles dispatch

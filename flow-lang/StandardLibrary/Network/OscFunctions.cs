@@ -17,13 +17,15 @@ namespace FlowLang.StandardLibrary.Network;
 
 /// <summary>
 /// Phase 38 Plan 38-06 OSC-01 + OSC-02 — registration entry point for the
-/// <c>@osc</c> stdlib module surface. Ships 5 surface builtins
-/// (<c>oscSend</c> / <c>oscListen</c> / <c>oscStop</c> / <c>oscBundle</c> /
-/// <c>oscSendBundle</c>) + 1 marker builtin (<c>__enableOscModule</c>) per
-/// D-38-16 + RESEARCH §K + PATTERNS lines 580-674.
+/// <c>@osc</c> stdlib module surface. Ships the surface builtins
+/// (<c>oscSend</c> / <c>oscListen</c> / <c>oscStop</c> / <c>oscPump</c> /
+/// <c>oscMsg</c> / <c>oscBundle</c> / <c>oscSendBundle</c>) + 1 marker builtin
+/// (<c>__enableOscModule</c>) per D-38-16 + RESEARCH §K + PATTERNS lines
+/// 580-674. (sweep-0614 added <c>oscMsg</c>, the leaf-message constructor that
+/// makes <c>(oscBundle (oscMsg ...) ...)</c> constructible.)
 ///
 /// <para>
-/// All 5 surface builtins gate on
+/// All surface builtins gate on
 /// <see cref="ExecutionContext.OscEnabled"/>. The gate flips <c>true</c>
 /// when the <c>__enableOscModule</c> marker runs at import time
 /// (per the trailing init call in <c>flow-lang/osc.flow</c>). Calling any
@@ -185,7 +187,7 @@ public static class OscFunctions
         //
         // Called by the trailing `(__enableOscModule)` line in
         // flow-lang/osc.flow. Flips ExecutionContext.OscEnabled = true so
-        // the 5 surface builtins unlock. Composer never calls directly.
+        // the surface builtins unlock. Composer never calls directly.
         var sigMarker = new FunctionSignature("__enableOscModule", System.Array.Empty<FlowType>());
         registry.Register("__enableOscModule", sigMarker, _ =>
         {
@@ -272,15 +274,44 @@ public static class OscFunctions
             return Value.Int(DrainPendingHandlers());
         });
 
+        // ----- oscMsg(String path, ...args) -> OscHandle wrapping OscMessage -----
+        //
+        // The leaf-message constructor that makes (oscBundle ...) usable: it
+        // produces a pending-packet OscHandle carrying a single OscMessage
+        // (Receiver=null discriminator, same shape oscBundle uses for a nested
+        // bundle). Payload args (slot 1+) are type-inferred per D-38-13 via the
+        // shared InferOscArgs plumbing. Compose as
+        // (oscBundle (oscMsg "/a" 1) (oscMsg "/b" 2)) then (oscSendBundle ...).
+        var sigMsg = new FunctionSignature("oscMsg",
+            new FlowType[] { StringType.Instance, VoidType.Instance },
+            IsVarArgs: true,
+            ParameterNames: new[] { "path", "args" });
+        registry.Register("oscMsg", sigMsg, args =>
+        {
+            RequireModuleActivated(context, "oscMsg");
+            string path = args[0].As<string>();
+            var payload = new List<Value>(args.Count - 1);
+            for (int i = 1; i < args.Count; i++) payload.Add(args[i]);
+            var oscArgs = InferOscArgs(payload);
+            var msg = new Rug.Osc.OscMessage(path, oscArgs);
+            return Value.OscHandle(new OscHandleData
+            {
+                Port = 0,
+                Path = path,
+                Receiver = null,
+                Cts = new CancellationTokenSource(),
+                ListenerTask = Task.CompletedTask,
+                PendingPacket = msg,
+            });
+        });
+
         // ----- oscBundle(...packets) -> OscHandle wrapping OscBundle -----
         //
         // Varargs: each arg must be either an OscHandle-wrapped OscMessage
-        // (rare; bundles of messages typically constructed via oscSend's
-        // building block) OR an OscHandle wrapping an OscBundle (recursive
-        // nesting). For v1.5 simplicity we wrap the result as a SINGLE
-        // OscHandleData with `Receiver=null` discriminator — the value
-        // carries the OscBundle in a stash field. Future v1.6 may
-        // introduce a dedicated OscBundleType.
+        // (built via oscMsg) OR an OscHandle wrapping an OscBundle (recursive
+        // nesting). We wrap the result as a SINGLE OscHandleData with
+        // `Receiver=null` discriminator — the value carries the OscBundle in a
+        // stash field. Future v1.6 may introduce a dedicated OscBundleType.
         var sigBundle = new FunctionSignature("oscBundle",
             new FlowType[] { OscHandleType.Instance },
             IsVarArgs: true,
@@ -295,7 +326,7 @@ public static class OscFunctions
                 var hd = args[i].As<OscHandleData>();
                 if (hd.PendingPacket == null)
                     throw new ArgumentException(
-                        $"[osc] oscBundle arg {i}: OscHandle must carry a packet built via oscSendMessage or oscBundle — got listener handle");
+                        $"[osc] oscBundle arg {i}: OscHandle must carry a packet built via oscMsg or oscBundle — got listener handle");
                 packets.Add(hd.PendingPacket);
             }
             // OSC 1.0 immediate timetag = value 1 per spec; Rug.Osc 1.2.5
@@ -329,10 +360,12 @@ public static class OscFunctions
             string host = args[0].As<string>();
             int port = args[1].As<int>();
             var hd = args[2].As<OscHandleData>();
-            if (hd.PendingPacket is not Rug.Osc.OscBundle bundle)
+            // Accept either an OscBundle handle (oscBundle) or a bare
+            // OscMessage handle (oscMsg) — both are valid OSC packets to send.
+            if (hd.PendingPacket is not Rug.Osc.OscPacket packet)
                 throw new ArgumentException(
-                    "[osc] oscSendBundle: arg 2 must be an OscHandle built via (oscBundle ...) — got non-bundle handle");
-            SendOscPacket(host, port, bundle);
+                    "[osc] oscSendBundle: arg 2 must be an OscHandle built via (oscBundle ...) or (oscMsg ...) — got listener handle");
+            SendOscPacket(host, port, packet);
             return Value.Void();
         });
     }
@@ -545,9 +578,12 @@ public static class OscFunctions
         var cts = new CancellationTokenSource();
         // Pitfall #5 per RESEARCH line 1445: Cts.Cancel() alone won't break
         // the blocked Receive() call. Register a callback that disposes the
-        // receiver, which forces ObjectDisposedException in Receive() and
-        // breaks the loop charitably. try/catch around Dispose for
-        // idempotency.
+        // receiver, which unblocks Receive() in the loop below. In Rug.Osc
+        // 1.2.5 the unblocked Receive() throws a GENERIC Exception ("The
+        // receiver socket has been disconnected"), NOT ObjectDisposedException
+        // — the `when (cts.IsCancellationRequested)` guard in the loop catches
+        // that clean-shutdown case and breaks silently. try/catch around
+        // Dispose for idempotency.
         var receiverRef = receiver;
         cts.Token.Register(() => { try { receiverRef.Dispose(); } catch { } });
 
@@ -583,12 +619,21 @@ public static class OscFunctions
                 }
                 catch (OperationCanceledException) { break; }
                 catch (ObjectDisposedException) { break; }
+                // Clean teardown: (oscStop) cancels the token and disposes the
+                // receiver to unblock Receive(). In Rug.Osc 1.2.5 that surfaces
+                // as a GENERIC Exception ("The receiver socket has been
+                // disconnected"), NOT ObjectDisposedException — so a Receive()
+                // failure WHILE cancellation is requested is normal shutdown,
+                // not an error. Break silently rather than logging the scary
+                // socket-closed message on every clean oscStop.
+                catch (Exception) when (cts.IsCancellationRequested) { break; }
                 catch (Exception ex)
                 {
                     // Charitable per Pitfall #12 "live session never dies mid-set"
                     // — log + continue. Non-dedup'd so flooding errors stay
                     // visible (this is the catastrophic path, not the normal
-                    // sample-and-hold drop).
+                    // sample-and-hold drop). Only genuine mid-session receive
+                    // errors reach here (cancellation NOT requested).
                     Console.Error.WriteLine($"[osc] receive error on port {port}: {ex.Message}");
                     continue;
                 }
