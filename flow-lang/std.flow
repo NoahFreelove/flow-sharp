@@ -352,6 +352,12 @@ internal proc euclidean (Int: hits, Int: steps, Note: pitch, Double: swing, Doub
 Note: Iteration guard
 internal proc setMaxIterations (Int: limit)
 
+Note: break-control (0615) — (break) / (continue) call-position loop control.
+Note: Valid inside while/for bodies including lazy-wrapped positions (if/and/or).
+Note: (break) outside any loop is a charitable no-op + one-shot advisory.
+internal proc break ()
+internal proc continue ()
+
 // Math functions
 internal proc sin (Double: x)
 internal proc cos (Double: x)

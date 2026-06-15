@@ -30,6 +30,18 @@ public class ExecutionContext
     }
 
     /// <summary>
+    /// break-control (0615) — dynamic loop-nesting depth. Incremented on entry to a
+    /// for/while loop body and decremented on exit (in a finally so it stays balanced
+    /// even when a BreakSignal/ContinueSignal/ReturnStatement unwinds the body). The
+    /// `(break)` call-position builtin reads this to decide whether it is INSIDE a loop:
+    /// &gt; 0 → throw BreakSignal (caught by the innermost loop); 0 → charitable no-op +
+    /// one-shot advisory (ergonomics-first / charitable house style — never an exception).
+    /// Unlike the `break` keyword (parse-time `_inLoop` gate), the builtin works inside
+    /// lazy-wrapped positions (if/and/or branches) because it is resolved at eval time.
+    /// </summary>
+    public int LoopDepth { get; set; } = 0;
+
+    /// <summary>
     /// Bundle E (quick task 260524-sa3) — memoizes the result of <see cref="GetMusicalContext"/>
     /// between mutation events. Invalidated by any call to <see cref="PushFrame"/> /
     /// <see cref="PopFrame"/> / <see cref="PushTuning"/> / <see cref="PopTuning"/> /

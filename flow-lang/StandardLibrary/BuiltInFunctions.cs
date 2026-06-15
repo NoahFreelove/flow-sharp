@@ -27,6 +27,49 @@ public static class BuiltInFunctions
             context.MaxIterations = args[0].As<int>();
             return Value.Void();
         });
+
+        // break-control (0615) — the `(break)` call-position builtin for loop control.
+        // Valid inside while/for bodies INCLUDING lazy-wrapped positions (if/and/or
+        // branches), because it resolves at eval time rather than parse time like the
+        // `break` keyword. Throws a BreakSignal that the innermost loop's
+        // `catch (BreakSignal)` consumes (nested-loop break affects the INNERMOST loop —
+        // the signal unwinds to the first enclosing catch). `context.LoopDepth` is the
+        // dynamic loop-nesting counter maintained by Execute{For,While}Statement and
+        // zeroed across proc-call boundaries.
+        //
+        // CHARITABLE house style (D-v1.5-05): `(break)` outside any loop is a NO-OP plus
+        // a one-shot stderr advisory — NEVER an exception. A stray break in dead code or
+        // a copy-pasted snippet shouldn't crash a composer's render.
+        var breakSig = new FunctionSignature("break", [], ParameterNames: []);
+        registry.Register("break", breakSig, args =>
+        {
+            if (context.LoopDepth > 0)
+                throw new FlowLang.Interpreter.BreakSignal();
+
+            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                "break-outside-loop",
+                "[break] (break) called outside any loop — ignored. " +
+                "(break) only exits a for/while loop body.");
+            return Value.Void();
+        });
+
+        // break-control (0615) — `(continue)` is the call-position sibling of `(break)`,
+        // registered so the now-parseable prefix form has a home (the parser recognizes
+        // both keyword tokens as call names). Throws a ContinueSignal that the innermost
+        // loop's `catch (ContinueSignal)` consumes — skip to the next iteration.
+        // Charitable no-op + one-shot advisory outside any loop, matching `(break)`.
+        var continueSig = new FunctionSignature("continue", [], ParameterNames: []);
+        registry.Register("continue", continueSig, args =>
+        {
+            if (context.LoopDepth > 0)
+                throw new FlowLang.Interpreter.ContinueSignal();
+
+            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                "continue-outside-loop",
+                "[continue] (continue) called outside any loop — ignored. " +
+                "(continue) only skips to the next for/while iteration.");
+            return Value.Void();
+        });
     }
 
     /// <summary>

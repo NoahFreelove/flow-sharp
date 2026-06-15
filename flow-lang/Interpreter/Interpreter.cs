@@ -683,60 +683,74 @@ public class Interpreter : IFunctionInvoker
             return;
         }
         int iterations = 0;
-        foreach (var item in items)
+        // break-control (0615): track dynamic loop-nesting depth so the `(break)`
+        // call-position builtin knows it is inside a loop. Balanced via finally so a
+        // BreakSignal / ContinueSignal / return unwinding the body never leaks depth.
+        _context.LoopDepth++;
+        try
         {
-            if (++iterations > _context.MaxIterations)
+            foreach (var item in items)
             {
-                _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in for loop", stmt.Location);
-                break;
-            }
-            _context.PushFrame();
-            try
-            {
-                _context.CurrentFrame.DeclareVariable(stmt.VariableName, item);
-                foreach (var bodyStmt in stmt.Body)
+                if (++iterations > _context.MaxIterations)
                 {
-                    ExecuteStatement(bodyStmt);
-                    if (_returnValue != null) return;
+                    _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in for loop", stmt.Location);
+                    break;
                 }
+                _context.PushFrame();
+                try
+                {
+                    _context.CurrentFrame.DeclareVariable(stmt.VariableName, item);
+                    foreach (var bodyStmt in stmt.Body)
+                    {
+                        ExecuteStatement(bodyStmt);
+                        if (_returnValue != null) return;
+                    }
+                }
+                catch (BreakSignal) { break; }
+                catch (ContinueSignal) { continue; }
+                finally { _context.PopFrame(); }
             }
-            catch (BreakSignal) { break; }
-            catch (ContinueSignal) { continue; }
-            finally { _context.PopFrame(); }
         }
+        finally { _context.LoopDepth--; }
     }
 
     private void ExecuteWhileStatement(WhileStatement stmt)
     {
         int iterations = 0;
-        while (true)
+        // break-control (0615): see ExecuteForStatement — same balanced depth tracking.
+        _context.LoopDepth++;
+        try
         {
-            if (++iterations > _context.MaxIterations)
+            while (true)
             {
-                _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in while loop", stmt.Location);
-                break;
-            }
-            var condValue = _evaluator.Evaluate(stmt.Condition);
-            if (condValue.Data is not bool condBool)
-            {
-                _errorReporter.ReportError("While condition must evaluate to Bool", stmt.Location);
-                return;
-            }
-            if (!condBool) break;
-
-            _context.PushFrame();
-            try
-            {
-                foreach (var bodyStmt in stmt.Body)
+                if (++iterations > _context.MaxIterations)
                 {
-                    ExecuteStatement(bodyStmt);
-                    if (_returnValue != null) return;
+                    _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in while loop", stmt.Location);
+                    break;
                 }
+                var condValue = _evaluator.Evaluate(stmt.Condition);
+                if (condValue.Data is not bool condBool)
+                {
+                    _errorReporter.ReportError("While condition must evaluate to Bool", stmt.Location);
+                    return;
+                }
+                if (!condBool) break;
+
+                _context.PushFrame();
+                try
+                {
+                    foreach (var bodyStmt in stmt.Body)
+                    {
+                        ExecuteStatement(bodyStmt);
+                        if (_returnValue != null) return;
+                    }
+                }
+                catch (BreakSignal) { break; }
+                catch (ContinueSignal) { continue; }
+                finally { _context.PopFrame(); }
             }
-            catch (BreakSignal) { break; }
-            catch (ContinueSignal) { continue; }
-            finally { _context.PopFrame(); }
         }
+        finally { _context.LoopDepth--; }
     }
 
     private void ExecuteSectionDeclaration(SectionDeclaration section)
@@ -1323,6 +1337,17 @@ public class Interpreter : IFunctionInvoker
         var prevBeatTrueToSig = _context.BeatTrueToSig;
         _context.BeatTrueToSig = proc.IsBeatTrueToSig;
 
+        // break-control (0615) — reset the dynamic loop-nesting depth across the
+        // proc-call boundary, mirroring the strict-bit discipline above. A proc
+        // body must NOT be able to `(break)` a caller's loop just because the proc
+        // happened to be CALLED from inside one (that would leak control flow via
+        // dynamic scope). Parity with the `break` keyword, whose parse-time
+        // `_inLoop` gate is already proc-body-lexical. The body re-counts its OWN
+        // loops from zero; restored in the SAME finally as PopFrame so a body throw
+        // (including a BreakSignal escaping a malformed body) rebalances atomically.
+        var prevLoopDepth = _context.LoopDepth;
+        _context.LoopDepth = 0;
+
         // Create new stack frame. Audit §2.5 (D5) — mark it a CALL BOUNDARY so
         // the proc/lambda body has LEXICAL variable scope: variable
         // lookup/assignment sees this frame's params + locals + injected closure
@@ -1425,6 +1450,10 @@ public class Interpreter : IFunctionInvoker
             // PopFrame, in the SAME finally as the strict restore, so a body
             // throw cannot leak the proc's pragma bit onto unwind.
             _context.BeatTrueToSig = prevBeatTrueToSig;
+            // break-control (0615) — restore the caller's loop depth AFTER PopFrame,
+            // in the SAME finally as the strict/beat restores, so a body throw cannot
+            // leak the proc's zeroed depth onto the unwinding caller's loop.
+            _context.LoopDepth = prevLoopDepth;
             _recursionDepth--;
         }
     }

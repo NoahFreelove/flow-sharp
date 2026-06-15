@@ -379,11 +379,16 @@ public partial class Parser
         // (Pitfall 2). Null when this proc has no `///` (charitable signature-only).
         string? docComment = _pendingDocComment;
         _pendingDocComment = null;
-        // Allow musical context keywords (like 'pan') as procedure names
+        // Allow musical context keywords (like 'pan') as procedure names.
+        // break-control (0615): also allow the loop-control keyword tokens so the
+        // `internal proc break ()` / `internal proc continue ()` surface declarations
+        // in std.flow parse — these bind the prefix-only `(break)` / `(continue)`
+        // builtins (registered in BuiltInFunctions.RegisterIterationGuard) into the
+        // global frame. The keyword tokens carry their literal text ("break"/"continue").
         string name;
         if (Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)
             || Check(TokenType.Tempo) || Check(TokenType.Swing) || Check(TokenType.Key)
-            || Check(TokenType.Timesig))
+            || Check(TokenType.Timesig) || Check(TokenType.Break) || Check(TokenType.Continue))
         {
             name = Advance().Text;
         }
@@ -1623,7 +1628,16 @@ public partial class Parser
 
             // Check if this is a function call like (func arg1 arg2)
             // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
-            if ((Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)) && _current + 1 < _tokens.Count
+            //
+            // break-control (0615): TokenType.Break / TokenType.Continue are recognized
+            // as call names here so the prefix-only `(break)` / `(continue)` builtins
+            // parse (they lex as keyword tokens, same situation as Pan/Gain). The bare
+            // `break` / `continue` STATEMENT form is handled earlier at statement-start
+            // (ParseStatement) and never reaches ParsePrimary — these two forms coexist.
+            // The keyword tokens carry their literal text ("break"/"continue") so
+            // `Advance().Text` resolves the builtin name correctly.
+            if ((Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)
+                 || Check(TokenType.Break) || Check(TokenType.Continue)) && _current + 1 < _tokens.Count
                 && _tokens[_current + 1].Type != TokenType.Arrow
                 && _tokens[_current + 1].Type != TokenType.Dot
                 && _tokens[_current + 1].Type != TokenType.At)
