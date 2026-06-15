@@ -46,6 +46,12 @@ public class AssemblyReferenceScanTests
         // anywhere — SimpleLexer/Parser are manual) removed from flow-lang.csproj.
         // Gate it so it cannot quietly return on any target.
         "Pidgin",
+        // sweep-0614 config fix: Tomlyn 2.3.2 (TOML reader for
+        // ~/.config/flow/config.toml) moved from flow-cli into flow-lang as a
+        // Desktop-only PackageReference. Runtime/FlowConfigLoader.cs is
+        // #if !FLOW_WEB-guarded; the browser sandbox has no ~/.config. Gate the
+        // "Tomlyn" type-reference prefix so it can never reach the WASM closure.
+        "Tomlyn",
     };
 
     /// <summary>

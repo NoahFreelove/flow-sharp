@@ -110,6 +110,13 @@
          Web target strips OscFunctions.cs + OscHandleData.cs below, so Rug.Osc is
          unused and would otherwise pull dead-reference into the Web build. -->
     <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
+      <!-- Tomlyn 2.3.2: TOML reader for ~/.config/flow/config.toml, consumed by
+           Runtime/FlowConfigLoader.cs (moved here from flow-cli in the sweep-0614
+           config fix so flow-interpreter can load config too). Desktop-only —
+           FlowConfigLoader.cs is #if !FLOW_WEB-guarded and the browser sandbox has
+           no ~/.config; AssemblyReferenceScanTests forbids the "Tomlyn" prefix on
+           the Web closure (PINNED EXACTLY to 2.3.2, not a range). -->
+      <PackageReference Include="Tomlyn" Version="2.3.2" />
       <PackageReference Include="Rug.Osc" Version="1.2.5" />
       <!-- Phase 41 Plan 41-04 WASAPI-01 (D-17): Windows audio output backend dep.
            NAudio.Wasapi is referenced ONLY on the Desktop target — WasapiBackend.cs

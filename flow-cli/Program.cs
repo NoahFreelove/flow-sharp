@@ -1,6 +1,6 @@
 using System.CommandLine;
 using FlowCli.Commands;
-using FlowCli.Config;
+using FlowLang.Runtime;
 
 namespace FlowCli;
 

@@ -20,7 +20,10 @@
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" Version="2.0.7" />
-    <PackageReference Include="Tomlyn" Version="2.3.2" />
+    <!-- Tomlyn 2.3.2 moved to flow-lang.csproj (sweep-0614 config fix) so the
+         bare interpreter (flow-interpreter) can also load ~/.config/flow/config.toml
+         via the now-shared FlowLang.Runtime.FlowConfigLoader. flow-cli still uses
+         it transitively through the flow-lang ProjectReference. -->
   </ItemGroup>
 
   <ItemGroup>

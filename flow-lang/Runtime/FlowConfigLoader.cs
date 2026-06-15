@@ -1,14 +1,33 @@
+#if !FLOW_WEB
 using System.Text.Json;
-using FlowLang.Runtime;
 using Tomlyn;
 
-namespace FlowCli.Config;
+namespace FlowLang.Runtime;
 
 /// <summary>
 /// REQ-4 (Plan 30-03 Task 2): reads <c>~/.config/flow/config.toml</c> via Tomlyn
-/// 2.3.2 and populates the engine-side <see cref="FlowConfig.Active"/> singleton
-/// (which lives in <c>flow-lang/Runtime/</c> so the interpreter can read it
-/// without a circular dependency on flow-cli).
+/// 2.3.2 and populates the engine-side <see cref="FlowConfig.Active"/> singleton.
+///
+/// <para>
+/// Lives in <c>flow-lang/Runtime/</c> (moved here from <c>flow-cli/Config/</c> in
+/// the sweep-0614 fix) so BOTH the <c>flow</c> CLI (<c>flow-cli</c>) AND the
+/// bare interpreter (<c>flow-interpreter</c>, the <c>dotnet run --project
+/// flow-interpreter</c> path) can load the user's config before any
+/// <see cref="FlowLang.Core.FlowEngine"/> is constructed. Previously only
+/// flow-cli called this, so the interpreter silently ignored
+/// <c>~/.config/flow/config.toml</c> — <c>sfz_root</c> stayed null and
+/// <c>loadSfz #violin</c> hard-failed under the interpreter even with a valid
+/// config file. flow-interpreter references flow-lang (no circular dependency),
+/// so the loader belongs here.
+/// </para>
+///
+/// <para>
+/// Tomlyn 2.3.2 is a Desktop-only dependency (added to flow-lang.csproj with
+/// <c>Condition="'$(FlowTarget)' != 'Web'"</c>). This whole file is
+/// <c>#if !FLOW_WEB</c>-guarded so the Web/WASM build never references Tomlyn
+/// (AssemblyReferenceScanTests forbids the "Tomlyn" type-reference prefix on
+/// the Web target). The browser sandbox has no <c>~/.config</c> anyway.
+/// </para>
 ///
 /// Charitable behavior per CLAUDE.md feedback_charitable_interpretation memory:
 ///
@@ -53,9 +72,19 @@ public static class FlowConfigLoader
     /// constructor reads <see cref="FlowConfig.ConfiguredStdlibSearchPaths"/> at
     /// ModuleLoader-seed time, so the config must be active by then.
     /// </summary>
-    public static void LoadFromXdg()
+    public static void LoadFromXdg() => LoadFromFile(ConfigPath);
+
+    /// <summary>
+    /// Reads <paramref name="path"/>, parses, and assigns to
+    /// <see cref="FlowConfig.Active"/>. Factored out of <see cref="LoadFromXdg"/>
+    /// so the sweep-0614 regression test can exercise the parse/populate logic
+    /// against a temp file without touching the real <c>~/.config/flow/config.toml</c>.
+    /// Same charitable contract as <see cref="LoadFromXdg"/>: missing file →
+    /// silent fallback; malformed/IO → warn once + defaults.
+    /// </summary>
+    internal static void LoadFromFile(string path)
     {
-        if (!File.Exists(ConfigPath))
+        if (!File.Exists(path))
         {
             // Silent fallback per SPEC-4 acceptance — no warning, no error.
             return;
@@ -63,16 +92,17 @@ public static class FlowConfigLoader
 
         try
         {
-            var text = File.ReadAllText(ConfigPath);
+            var text = File.ReadAllText(path);
             var model = TomlSerializer.Deserialize<FlowConfigPoco>(text, SerializerOptions);
             FlowConfig.Active = model ?? FlowConfigPoco.Defaults;
         }
         catch (Exception ex) when (ex is TomlException || ex is IOException)
         {
             // Charitable per CLAUDE.md memory: warn once + continue with defaults.
-            Console.Error.WriteLine($"Warning: {ConfigPath} could not be parsed: {ex.Message}");
+            Console.Error.WriteLine($"Warning: {path} could not be parsed: {ex.Message}");
             Console.Error.WriteLine("Falling back to baked-in defaults.");
             FlowConfig.Active = FlowConfigPoco.Defaults;
         }
     }
 }
+#endif

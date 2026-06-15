@@ -17,6 +17,12 @@
     <RootNamespace>flow_interpreter</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- sweep-0614 banner fix: stamp the interpreter version so the interactive
+         REPL banner reads the real version (1.5.x), not the old hardcoded "v0.1".
+         Matches flow-cli.csproj's stamping. Program.ResolveVersion() reads this
+         via AssemblyInformationalVersionAttribute. -->
+    <Version>1.5.0</Version>
+    <InformationalVersion>1.5.0</InformationalVersion>
   </PropertyGroup>
 
 </Project>
