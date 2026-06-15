@@ -88,6 +88,22 @@ public sealed class LiveStatusPanel : IDisposable
     // Sticky-advisory clear timeout per UI-SPEC line 158.
     private static readonly TimeSpan StickyAdvisoryClearAfter = TimeSpan.FromSeconds(8);
 
+    // sweep-0614 (cli-repl-watch): the panel owns the top PanelReservedRows of the
+    // terminal via absolute cursor moves (\x1b[1;1H .. \x1b[4;1H). The max panel
+    // height is 4 (header + optional blocks + voices + advisory). We reserve those
+    // rows with a DECSTBM scroll region so LiveReloadManager's scrolling log lines
+    // ("Watching ...", "Stopping playback...", "Live reload ended.") land in the
+    // scrollable region BELOW the panel instead of colliding with the fixed rows.
+    private const int PanelReservedRows = 4;
+    // DECSTBM: set scroll region from row (PanelReservedRows+1) to end of screen.
+    private static readonly string AnsiSetScrollRegion = $"\x1b[{PanelReservedRows + 1};r";
+    // DECSTBM reset: restore full-screen scroll region.
+    private const string AnsiResetScrollRegion = "\x1b[r";
+    // Home the cursor to the first row below the reserved panel.
+    private static readonly string AnsiHomeBelowPanel = $"\x1b[{PanelReservedRows + 1};1H";
+
+    private bool _scrollRegionActive;
+
     private readonly TextWriter _out;
     private readonly bool _isColorEnabled;
     private readonly bool _writesToStdout;
@@ -172,6 +188,46 @@ public sealed class LiveStatusPanel : IDisposable
                 state: null,
                 dueTime: TimeSpan.FromMilliseconds(500),
                 period: TimeSpan.FromMilliseconds(500));
+        }
+    }
+
+    /// <summary>
+    /// sweep-0614 (cli-repl-watch): reserves the top <see cref="PanelReservedRows"/>
+    /// terminal rows via a DECSTBM scroll region so the host's scrolling log output
+    /// (LiveReloadManager's "Watching ..." / "Stopping playback..." / "Live reload
+    /// ended." lines) scrolls in the region BELOW the fixed panel instead of
+    /// colliding with the absolute-positioned panel rows. No-op outside ANSI+stdout
+    /// mode (the StringWriter test seam still records the escapes when forceTtyMode
+    /// is set so the fix is pinnable). Call once at session start, before any log
+    /// output. Idempotent.
+    /// </summary>
+    public void BeginScrollRegion()
+    {
+        lock (_gate)
+        {
+            if (_disposed || !_isColorEnabled || _scrollRegionActive) return;
+            // Set the scroll region, then home the cursor below the reserved
+            // panel so the first scrolling log line lands inside the region.
+            _out.Write(AnsiSetScrollRegion);
+            _out.Write(AnsiHomeBelowPanel);
+            _out.Flush();
+            _scrollRegionActive = true;
+        }
+    }
+
+    /// <summary>
+    /// Restores the full-screen scroll region (DECSTBM reset). Called on
+    /// <see cref="Dispose"/> so the terminal is left in a sane state. No-op if
+    /// the scroll region was never set.
+    /// </summary>
+    public void EndScrollRegion()
+    {
+        lock (_gate)
+        {
+            if (!_scrollRegionActive) return;
+            _out.Write(AnsiResetScrollRegion);
+            _out.Flush();
+            _scrollRegionActive = false;
         }
     }
 
@@ -472,6 +528,10 @@ public sealed class LiveStatusPanel : IDisposable
 
     public void Dispose()
     {
+        // sweep-0614: restore the full-screen scroll region BEFORE marking
+        // disposed (EndScrollRegion no-ops once _disposed is set elsewhere, but
+        // here we want the reset to actually emit so the terminal is left sane).
+        EndScrollRegion();
         lock (_gate)
         {
             if (_disposed) return;

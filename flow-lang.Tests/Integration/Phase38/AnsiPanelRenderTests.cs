@@ -120,6 +120,46 @@ public class AnsiPanelRenderTests : IDisposable
         Assert.DoesNotContain("Live blocks:", visible);
     }
 
+    /// <summary>
+    /// sweep-0614 (cli-repl-watch): the panel must reserve the top rows via a
+    /// DECSTBM scroll region (<c>\x1b[5;r</c>) BEFORE the first absolute
+    /// cursor-positioned panel paint (<c>\x1b[1;1H</c>), so the host's scrolling
+    /// log lines land below the fixed panel instead of colliding with it.
+    /// Pins <see cref="LiveStatusPanel.BeginScrollRegion"/> + the Dispose reset.
+    /// </summary>
+    [Fact]
+    public void BeginScrollRegion_EmitsDecstbmBeforeFirstAbsolutePanelPaint()
+    {
+        var sw = new StringWriter();
+        // _writesToStdout is false for a StringWriter, so the panel does NOT emit
+        // absolute \x1b[1;1H cursor moves in this seam. We instead assert the
+        // scroll-region escape itself is emitted by BeginScrollRegion (forceTtyMode
+        // keeps ANSI on), and is reset on Dispose.
+        var panel = new LiveStatusPanel(@out: sw, forceTtyMode: true);
+
+        panel.BeginScrollRegion();
+        // Idempotent: a second call must not double-emit.
+        panel.BeginScrollRegion();
+        string afterBegin = sw.ToString();
+        Assert.Contains("\x1b[5;r", afterBegin); // DECSTBM: region from row 5 to end
+        Assert.Equal(1, CountOccurrences(afterBegin, "\x1b[5;r"));
+
+        panel.Dispose();
+        string afterDispose = sw.ToString();
+        Assert.Contains("\x1b[r", afterDispose); // DECSTBM reset on teardown
+    }
+
+    private static int CountOccurrences(string haystack, string needle)
+    {
+        int count = 0, idx = 0;
+        while ((idx = haystack.IndexOf(needle, idx, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            idx += needle.Length;
+        }
+        return count;
+    }
+
     [Fact]
     public void PublishAdvisory_PopulatesRow4_WithSurfacePrefix()
     {
