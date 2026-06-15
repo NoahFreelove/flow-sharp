@@ -178,9 +178,53 @@ public static partial class WasmEntry
     private static FlowEngine? _sharedEngine;
 
     /// <summary>
+    /// Last run's encoded SMF bytes, cached so the JS consumer can pull a REAL
+    /// <c>Uint8Array</c> via <see cref="GetLastMidiBytes"/> instead of the
+    /// base64 STRING that System.Text.Json emits for <c>byte[]</c> inside the
+    /// serialized <see cref="RunResult"/> (sweep-0614 wasm-web). Set at the end
+    /// of every <see cref="RunFromJs"/> call (null when the run emitted no MIDI).
+    /// </summary>
+    private static byte[]? _lastMidiBytes;
+
+    /// <summary>
+    /// Builds a FRESH per-run <see cref="FlowEngine"/> (under lock), disposing
+    /// any previous one. sweep-0614 wasm-web: <see cref="FlowEngine.Execute"/>
+    /// runs every statement against a PERSISTENT global scope + section
+    /// registry — so re-running a script with a top-level <c>Buffer x = ...</c>
+    /// / <c>Song s = [...]</c> / <c>section ...</c> through a reused engine
+    /// throws "Variable X already declared" / reports "Section X is already
+    /// defined" on the SECOND run. The common playground loop (edit → click Run
+    /// again) hit this on every declaring script. A fresh engine re-runs the
+    /// constructor's full stdlib bootstrap (@std import + StyleRegistry shipped/
+    /// user packs) and starts with a clean GlobalFrame + empty SectionRegistry —
+    /// exactly the semantics WasmContractTests emulated with DisposeFromJs()
+    /// before each RunFromJs(). A plain "clear GlobalFrame" reset would wipe the
+    /// stdlib bindings the constructor loads, so fresh-engine-per-run is the
+    /// correct (and cheapest-to-reason-about) reset path.
+    /// </summary>
+    private static FlowEngine NewEngineForRun()
+    {
+        lock (_lock)
+        {
+            if (_sharedEngine != null)
+            {
+                try { _sharedEngine.Dispose(); }
+                catch (Exception ex) { Console.Error.WriteLine($"[runtime] engine recycle: {ex.Message}"); }
+                _sharedEngine = null;
+            }
+            _sharedEngine = new FlowEngine(verbose: false);
+            return _sharedEngine;
+        }
+    }
+
+    /// <summary>
     /// Lazy-init (under lock) the shared per-process <see cref="FlowEngine"/>.
     /// Mono-WASM runs single-threaded by default, but the lock is cheap and
     /// guards against future v1.6 multi-threaded WASM (dotnet/runtime#85592).
+    /// Used by the playback / stop paths that must reach the SAME engine
+    /// <see cref="RunFromJs"/> last executed against (so script <c>(play ...)</c>
+    /// audio can be stopped). <see cref="RunFromJs"/> itself uses
+    /// <see cref="NewEngineForRun"/> for a clean scope per run.
     /// </summary>
     private static FlowEngine GetEngine()
     {
@@ -224,19 +268,46 @@ public static partial class WasmEntry
     /// is no longer raised — the 30s cap is non-preemptive in single-threaded
     /// WASM (see <see cref="WasmEntry"/> remarks, debug-session amendment).
     /// </remarks>
-    private static RunError[] MapFlowErrors(IEnumerable<FlowError> errors)
+    private static RunError[] MapFlowErrors(IEnumerable<FlowError> errors, SourceMap? sourceMap = null)
     {
         if (errors == null) return Array.Empty<RunError>();
         return errors
             .Where(e => e.Level == DiagnosticLevel.Error)
-            .Select(e => new RunError(
-                Kind: "eval",
-                Message: e.Message ?? string.Empty,
-                Line: e.Location?.Line > 0 ? e.Location.Line : null,
-                Column: e.Location?.Column > 0 ? e.Location.Column : null,
-                SourceSnippet: null))
+            .Select(e =>
+            {
+                int? line = e.Location?.Line > 0 ? e.Location.Line : null;
+                return new RunError(
+                    Kind: "eval",
+                    Message: e.Message ?? string.Empty,
+                    Line: line,
+                    Column: e.Location?.Column > 0 ? e.Location.Column : null,
+                    SourceSnippet: SnippetFor(sourceMap, line));
+            })
             .ToArray();
     }
+
+    /// <summary>
+    /// sweep-0614 wasm-web: quote the offending source line for the playground's
+    /// Rust-style diagnostic box. <see cref="FlowEngine.Execute"/> registers the
+    /// full source under the <c>"&lt;wasm&gt;"</c> key (the <c>fileName</c> passed
+    /// from <see cref="RunFromJs"/>), so the line is reachable via
+    /// <see cref="SourceMap.TryGetSource"/>. Returns null when no source map, no
+    /// line, or the line is out of range — matching the documented "null when no
+    /// snippet is available" semantics on <see cref="RunError.SourceSnippet"/>.
+    /// </summary>
+    private static string? SnippetFor(SourceMap? sourceMap, int? line)
+    {
+        if (sourceMap == null || line is not int ln || ln < 1) return null;
+        if (!sourceMap.TryGetSource(WasmSourceKey, out var src) || string.IsNullOrEmpty(src))
+            return null;
+        var lines = src.Split('\n');
+        if (ln > lines.Length) return null;
+        // Trim a trailing CR so CRLF-authored snippets render cleanly.
+        return lines[ln - 1].TrimEnd('\r');
+    }
+
+    /// <summary>Source-map key <see cref="RunFromJs"/> registers the run source under.</summary>
+    private const string WasmSourceKey = "<wasm>";
 
     /// <summary>
     /// Executes a Flow source string and returns a JSON-serialized
@@ -270,13 +341,25 @@ public static partial class WasmEntry
         // BEFORE execution so the sink always reflects THIS run only.
         FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink();
 
+        // sweep-0614 wasm-web (D-48-16): WarnOnce dedups on a process-static set.
+        // The long-lived WASM runtime would suppress an advisory on the SECOND
+        // run of identical source — so RunResult.stderr would DIFFER across two
+        // runs, breaking the "same source → byte-identical RunResult" contract.
+        // Reset per-run (mirrors the per-run MIDI-sink drain above) so the
+        // advisory channel is run-scoped, not process-scoped.
+        FlowLang.Diagnostics.RenderingDiagnostics.ResetForTesting();
+
         RunError[] errors;
         byte[]? midiBytes;
         try
         {
             try
             {
-                var engine = GetEngine();
+                // sweep-0614 wasm-web: build a FRESH engine per run so a clean
+                // GlobalFrame + empty SectionRegistry receive this run's top-level
+                // declarations. A reused engine threw "already declared" on the
+                // second run of any declaring script (the common edit→Run loop).
+                var engine = NewEngineForRun();
                 // D-48-10 (AMENDED, debug session wasm-boot-no-app-bundle cycle 3):
                 // run SYNCHRONOUSLY on the calling thread. Mono-WASM is single-
                 // threaded by default — the prior Task.Run + Wait(30s) shape
@@ -286,8 +369,11 @@ public static partial class WasmEntry
                 // it is best-effort (a runaway script hangs its own tab, like any
                 // synchronous single-threaded JS). The "cancel" RunError kind stays
                 // DEFINED (D-48-14 contract) but is no longer raised here.
-                engine.Execute(source ?? string.Empty, "<wasm>");
-                errors = MapFlowErrors(engine.ErrorReporter.Errors);
+                engine.Execute(source ?? string.Empty, WasmSourceKey);
+                // sweep-0614 wasm-web: thread the engine SourceMap so parse /
+                // runtime errors carry the quoted source line for the
+                // playground's Rust-style diagnostic box (D-48-14).
+                errors = MapFlowErrors(engine.ErrorReporter.Errors, engine.SourceMap);
             }
             catch (Exception ex)
             {
@@ -314,6 +400,14 @@ public static partial class WasmEntry
 
         // §5.4 — drain after Execute so midi is set for THIS run.
         midiBytes = FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink();
+
+        // sweep-0614 wasm-web: cache for GetLastMidiBytes() so the JS consumer
+        // can pull a REAL Uint8Array. System.Text.Json serializes the Midi byte[]
+        // inside RunResult as a Base64 STRING (not a number array) — so a
+        // consumer doing `new Blob([result.midi])` would write the literal
+        // base64 text and produce a corrupt .mid. The byte[] stays in the JSON
+        // for back-compat, but GetLastMidiBytes() is the typed-array path.
+        lock (_lock) { _lastMidiBytes = midiBytes; }
 
         stopwatch.Stop();
 
@@ -344,6 +438,47 @@ public static partial class WasmEntry
             return "{\"wav\":null,\"midi\":null,\"stdout\":\"\",\"stderr\":\"\",\"errors\":[{\"kind\":\"runtime\",\"message\":\"" +
                    (ex.Message ?? "JSON serialization failed").Replace("\"", "'") +
                    "\",\"line\":null,\"column\":null,\"sourceSnippet\":null}],\"durationMs\":0}";
+        }
+    }
+
+    /// <summary>
+    /// sweep-0614 wasm-web: returns the LAST run's encoded SMF bytes as a real
+    /// <c>byte[]</c>, which marshals across the <c>[JSExport]</c> boundary as a
+    /// JS <c>Uint8Array</c> — the type the D-48-18 contract + the
+    /// <c>flow-runtime.js</c> typedef advertise for <c>RunResult.midi</c>.
+    ///
+    /// <para><b>Why this exists:</b> <see cref="RunResult.Midi"/> is a
+    /// <c>byte[]</c>, and System.Text.Json (including the source-generated
+    /// <see cref="FlowWasmJsonContext"/>) serializes <c>byte[]</c> as a
+    /// Base64-encoded STRING — never a JSON number array. So <c>result.midi</c>
+    /// arrives JS-side as a base64 string; a consumer doing
+    /// <c>new Blob([result.midi])</c> writes the literal base64 TEXT and produces
+    /// a corrupt, unplayable <c>.mid</c>. This getter hands the consumer the raw
+    /// bytes directly so the download Blob is correct.</para>
+    ///
+    /// <para><b>Owner action (frozen-runtime constraint):</b>
+    /// <c>flow-lang/wasm/flow-runtime.js</c> is frozen (Phase 48/49); its
+    /// <c>run()</c> does only <c>JSON.parse</c> and never calls this getter, so
+    /// the typed bytes only reach the consumer after the runtime/consumer is
+    /// wired to prefer <c>getLastMidiBytes()</c> over the base64 <c>result.midi</c>.
+    /// Until then, the consumer wrapper must base64-decode <c>result.midi</c>
+    /// (<c>Uint8Array.from(atob(midi), c =&gt; c.charCodeAt(0))</c>).</para>
+    ///
+    /// <para>Returns an empty array (never null) when the last run emitted no
+    /// MIDI, so the JS side always receives a typed array. Never throws across
+    /// the boundary.</para>
+    /// </summary>
+    [JSExport]
+    public static byte[] GetLastMidiBytes()
+    {
+        try
+        {
+            lock (_lock) { return _lastMidiBytes ?? Array.Empty<byte>(); }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"[runtime] GetLastMidiBytes: {ex.Message}");
+            return Array.Empty<byte>();
         }
     }
 
@@ -468,6 +603,7 @@ public static partial class WasmEntry
 
                 _sharedBackend = null;
                 _sharedEngine = null;
+                _lastMidiBytes = null;
             }
         }
         catch (Exception ex)
