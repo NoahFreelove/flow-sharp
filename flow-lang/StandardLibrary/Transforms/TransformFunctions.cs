@@ -417,7 +417,13 @@ public static class TransformFunctions
         {
             amount = Math.Clamp(amountRaw, 0.0, 1.0);
         }
-        return HumanizeCore(seq, amount);
+        // Sweep 2026-06-14: route the velocity-jitter RNG through PrngRegistry keyed by
+        // (CurrentCallSite, "humanize") so the unseeded uniform humanize reseeds at the
+        // renderSong/writeWav boundary (ResetAtRenderBoundary) and is byte-identical across
+        // two consecutive renders. The old process-global wall-clock `new Random()` made
+        // (humanize seq amount) -> writeWav non-deterministic, violating two-run cmp-clean.
+        var rng = ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "humanize");
+        return HumanizeCore(seq, amount, rng);
     }
 
     private static Value HumanizeGaussianStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
@@ -713,6 +719,29 @@ public static class TransformFunctions
     }
 
     /// <summary>
+    /// Sweep 2026-06-14: returns the MIDI number of the first non-rest note in a bar,
+    /// scanning <c>bar.MusicalNotes</c> first then recursing into Phase 28
+    /// <see cref="BarData.ParallelVoices"/> in order (matching <see cref="CountAudibleNotes"/>'s
+    /// parent-then-voices traversal so the chosen axis is deterministic / two-run cmp-clean).
+    /// Used by <c>invert</c> so a voice-block-only sequence — whose parent MusicalNotes hold
+    /// only a whole-bar rest placeholder — still finds an inversion axis instead of degenerating
+    /// to an identity clone.
+    /// </summary>
+    private static int? FindFirstNonRestMidi(BarData bar)
+    {
+        foreach (var note in bar.MusicalNotes)
+            if (!note.IsRest)
+                return ToMidi(note.NoteName, note.Octave, note.Alteration);
+        if (bar.ParallelVoices != null)
+            foreach (var voiceBar in bar.ParallelVoices)
+            {
+                var found = FindFirstNonRestMidi(voiceBar);
+                if (found.HasValue) return found;
+            }
+        return null;
+    }
+
+    /// <summary>
     /// Audit 2026-06-09 §4.1: rebuilds a sequence applying a per-note function that receives
     /// the running global non-rest index, recursing into Phase 28 ParallelVoices so voice-block
     /// content is shaped (and preserved) instead of silently deleted. Rests pass through
@@ -892,18 +921,15 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
 
-        // Find the first non-rest note across all bars (the axis)
+        // Find the first non-rest note across all bars (the axis). Sweep 2026-06-14:
+        // recurse into Phase 28 ParallelVoices so a voice-block-only sequence (whose parent
+        // bar.MusicalNotes hold only a whole-bar rest placeholder, with the audible notes in
+        // ParallelVoices) finds an axis. Before this fix axisMidi stayed null for voice blocks,
+        // so invert hit the all-rest early return and returned a byte-identical clone (no-op).
         int? axisMidi = null;
         foreach (var bar in seq.Bars)
         {
-            foreach (var note in bar.MusicalNotes)
-            {
-                if (!note.IsRest)
-                {
-                    axisMidi = ToMidi(note.NoteName, note.Octave, note.Alteration);
-                    break;
-                }
-            }
+            axisMidi = FindFirstNonRestMidi(bar);
             if (axisMidi.HasValue) break;
         }
 
@@ -1332,31 +1358,32 @@ public static class TransformFunctions
     // RegisterHumanize + Humanize private methods were deleted along with the
     // other pre-strict shapes.) =====
 
-    private static readonly Random HumanizeRng = new();
-
     /// <summary>
     /// Shared body of humanize extracted Phase 44 Plan 44-05. The strict-aware
-    /// HumanizeStrict delegates here directly.
+    /// HumanizeStrict delegates here directly. Sweep 2026-06-14: the jitter RNG is now
+    /// passed in (a PrngRegistry-backed <see cref="Random"/> keyed by the call site) so
+    /// the unseeded uniform humanize reseeds at the render boundary and stays two-run
+    /// cmp-clean — it used to draw from a process-global wall-clock <c>Random</c>.
     /// </summary>
-    private static Value HumanizeCore(SequenceData seq, double amount)
+    private static Value HumanizeCore(SequenceData seq, double amount, Random rng)
     {
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            result.AddBar(HumanizeUniformBar(bar, amount));
+            result.AddBar(HumanizeUniformBar(bar, amount, rng));
         }
         return Value.Sequence(result);
     }
 
     /// <summary>
     /// Audit 2026-06-09 §4.1/§4.2: humanize one bar, recursing into Phase 28 ParallelVoices
-    /// so voice-block sequences stay audible (they rendered silent before). The frozen D-18
-    /// RNG semantics are preserved: still one <c>HumanizeRng.NextDouble()</c> draw per non-rest
-    /// note, in parent-then-voices order. For NON-voiced sequences (ParallelVoices null) the
-    /// RNG draw sequence is byte-identical to the pre-fix shape — no determinism change. Rebuilt
-    /// notes go through <c>With(velocity:)</c> so the trailing five fields survive (§4.2).
+    /// so voice-block sequences stay audible (they rendered silent before). Still one
+    /// <c>rng.NextDouble()</c> draw per non-rest note, in parent-then-voices order. The RNG
+    /// is the PrngRegistry-backed deterministic stream threaded from HumanizeStrict (sweep
+    /// 2026-06-14) so it reseeds at the renderSong/writeWav boundary and preserves two-run
+    /// cmp-clean. Rebuilt notes go through <c>With(velocity:)</c> so the trailing fields survive.
     /// </summary>
-    private static BarData HumanizeUniformBar(BarData bar, double amount)
+    private static BarData HumanizeUniformBar(BarData bar, double amount, Random rng)
     {
         var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
         foreach (var note in bar.MusicalNotes)
@@ -1364,7 +1391,7 @@ public static class TransformFunctions
             if (note.IsRest) { newNotes.Add(note); continue; }
 
             // Velocity jitter: random variation scaled by amount
-            double velJitter = (HumanizeRng.NextDouble() * 2.0 - 1.0) * amount * 0.2;
+            double velJitter = (rng.NextDouble() * 2.0 - 1.0) * amount * 0.2;
             double newVelocity = Math.Clamp(note.Velocity + velJitter, 0.05, 1.0);
             newNotes.Add(note.With(velocity: newVelocity));
         }
@@ -1373,7 +1400,7 @@ public static class TransformFunctions
         {
             var voices = new List<BarData>(bar.ParallelVoices.Count);
             foreach (var voiceBar in bar.ParallelVoices)
-                voices.Add(HumanizeUniformBar(voiceBar, amount));
+                voices.Add(HumanizeUniformBar(voiceBar, amount, rng));
             newBar.ParallelVoices = voices;
         }
         return newBar;
@@ -1413,7 +1440,7 @@ public static class TransformFunctions
 
         // D-03: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
         // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
-        var rng = new Random(seed);
+        var rng = new Random(seed); // PRNG-SANCTIONED: explicit-seed humanizeGaussian overload (D-03)
 
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
@@ -1531,36 +1558,57 @@ public static class TransformFunctions
     /// (rebuilt via <c>note.With(...)</c> off the source note, not a 12-arg ctor that defaulted
     /// them away). Each trill note is plain (isDotted: false) — the dot's duration is absorbed by
     /// the extra subdivision, not by dotting every subdivision.
+    ///
+    /// <para>Sweep 2026-06-14 fixes two more:</para>
+    /// <para>(3) <b>chord brackets trill as a unit</b> — bar notes are grouped into
+    /// (lead, [following IsChordTone notes]) runs. Each subdivision emits a fresh lead (and its
+    /// upper neighbour on odd subdivisions) followed by the chord tones (and their own upper
+    /// neighbours on odd subdivisions), all carrying IsChordTone=true so they stack on THAT
+    /// subdivision's lead onset in <c>BarType.ToTimeline</c>. Previously every chord tone was
+    /// expanded independently with IsChordTone=true, so all its subdivisions piled onto the
+    /// lead's last onset — only the lead actually trilled, the upper voices collapsed to a
+    /// single-onset cluster.</para>
+    /// <para>(4) <b>tuplet notes honour DurationFraction</b> — when a source note carries a
+    /// rational DurationFraction (e.g. a 2/3-quarter triplet), the subdivision is computed as an
+    /// exact <see cref="Fraction"/> and emitted via <c>With(durationFraction:)</c>. The old enum
+    /// path passed only <c>durationValue:</c>, so <c>With</c>'s null-coalesce preserved the OLD
+    /// DurationFraction and every alternation kept the full tuplet-note duration — overflowing
+    /// the bar (GetBeats takes the DurationFraction branch whenever it HasValue).</para>
     /// </summary>
     private static BarData TrillBar(BarData bar, int semitones)
     {
         var newNotes = new List<MusicalNoteData>();
-        foreach (var note in bar.MusicalNotes)
+        var src = bar.MusicalNotes;
+        for (int idx = 0; idx < src.Count; idx++)
         {
+            var note = src[idx];
             if (note.IsRest || !note.DurationValue.HasValue)
             {
                 newNotes.Add(note);
                 continue;
             }
 
-            // Split into rapid alternation: note -> upper -> note -> upper -> ...
-            int trillDur = Math.Min(note.DurationValue.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
-            int alternations = TrillSubdivisions(note, trillDur);
+            // Group the lead note with any immediately-following chord tones ([C4 E4 G4]q →
+            // C4 is the lead, E4/G4 carry IsChordTone=true). The whole chord trills in lockstep.
+            int groupEnd = idx + 1;
+            while (groupEnd < src.Count && src[groupEnd].IsChordTone)
+                groupEnd++;
 
-            int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
-            int upperMidi = Math.Clamp(midi + semitones, MIDI_MIN, MIDI_MAX);
-            var (upperName, upperOct, upperAlt) = FromMidi(upperMidi);
+            int alternations = TrillAlternationCount(note);
 
             for (int i = 0; i < alternations; i++)
             {
-                if (i % 2 == 0)
-                    // Lower note: keep pitch; With(...) carries CentOffset / Articulation / Velocity.
-                    newNotes.Add(note.With(durationValue: trillDur, isDotted: false, isTied: false));
-                else
-                    // Upper neighbour: change pitch; CentOffset + Articulation carried from source.
-                    newNotes.Add(note.With(noteName: upperName, octave: upperOct, alteration: upperAlt,
-                        durationValue: trillDur, isDotted: false, isTied: false));
+                bool upperStep = i % 2 != 0;
+                // Lead (or its upper neighbour on odd subdivisions): NOT a chord tone, so it
+                // advances the timeline cursor for this subdivision.
+                newNotes.Add(BuildTrillNote(note, semitones, upperStep, isChordTone: false));
+                // Chord tones stack on THIS subdivision's lead onset (isChordTone:true) and
+                // trill in lockstep — same subdivision duration, same alternation step.
+                for (int c = idx + 1; c < groupEnd; c++)
+                    newNotes.Add(BuildTrillNote(src[c], semitones, upperStep, isChordTone: true));
             }
+
+            idx = groupEnd - 1; // skip the chord tones consumed by this group
         }
         var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
         if (bar.ParallelVoices != null)
@@ -1574,19 +1622,78 @@ public static class TransformFunctions
     }
 
     /// <summary>
-    /// Audit §4.5: number of trill alternations that fill the source note's full duration
-    /// (dot included) with <paramref name="trillDur"/>-length subdivisions. Plain note → its
-    /// duration / trill-subdivision (e.g. half / eighth = 4); dotted note → ×1.5 (dotted half /
-    /// eighth = 6). Always ≥ 2 (a degenerate ratio still produces an audible alternation).
+    /// Sweep 2026-06-14: build one trill subdivision of <paramref name="note"/>. When
+    /// <paramref name="upperStep"/> is true the pitch is raised by <paramref name="semitones"/>
+    /// (the upper neighbour); otherwise the source pitch is kept. The per-subdivision duration
+    /// honours a rational DurationFraction (tuplet notes) via the exact-fraction path so
+    /// GetBeats sees the new shortened duration; plain power-of-2 notes keep the byte-identical
+    /// enum path. <paramref name="isChordTone"/> stamps chord tones so they stack on the lead's
+    /// onset in <see cref="BarType.ToTimeline"/>.
     /// </summary>
-    private static int TrillSubdivisions(MusicalNoteData note, int trillDur)
+    private static MusicalNoteData BuildTrillNote(
+        MusicalNoteData note, int semitones, bool upperStep, bool isChordTone)
     {
-        double baseFraction = NoteValueType.ToFraction((NoteValueType.Value)note.DurationValue!.Value);
-        if (note.IsDotted) baseFraction *= 1.5;
+        // Pitch override only on the upper-neighbour step; CentOffset / Articulation / Velocity
+        // are carried by With(...) off the source note in both cases.
+        char? name = null;
+        int? oct = null;
+        int? alt = null;
+        if (upperStep)
+        {
+            int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
+            int upperMidi = Math.Clamp(midi + semitones, MIDI_MIN, MIDI_MAX);
+            (name, oct, alt) = FromMidi(upperMidi);
+        }
+
+        if (note.DurationFraction.HasValue)
+        {
+            // Tuplet / rational note: emit an exact fraction = (base quarter-units) / alternations
+            // so the whole trill fills exactly the source note's duration. Passing
+            // durationFraction OVERRIDES the preserved old fraction (With coalesces non-null).
+            int alternations = TrillAlternationCount(note);
+            Fraction subFraction = BaseQuarterFraction(note) * new Fraction(1, alternations);
+            return note.With(noteName: name, octave: oct, alteration: alt,
+                durationFraction: subFraction, isDotted: false, isTied: false,
+                isChordTone: isChordTone);
+        }
+
+        // Plain power-of-2 path — byte-identical to the pre-sweep enum shape.
+        int trillDur = Math.Min(note.DurationValue!.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
+        return note.With(noteName: name, octave: oct, alteration: alt,
+            durationValue: trillDur, isDotted: false, isTied: false,
+            isChordTone: isChordTone);
+    }
+
+    /// <summary>
+    /// Sweep 2026-06-14: the alternation count for one trilled note, valid for both the
+    /// enum and the rational (tuplet) paths. For plain notes it equals duration /
+    /// trill-subdivision (e.g. half / eighth = 4; dotted half / eighth = 6), always ≥ 2.
+    /// For rational notes the subdivision target is the same enum-derived trill duration, so
+    /// the count matches a non-tuplet note of the nearest enum duration (≥ 2). This supersedes
+    /// the old TrillSubdivisions helper, which ignored DurationFraction entirely.
+    /// </summary>
+    private static int TrillAlternationCount(MusicalNoteData note)
+    {
+        int trillDur = Math.Min(note.DurationValue!.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
         double subFraction = NoteValueType.ToFraction((NoteValueType.Value)trillDur);
+        double baseFraction;
+        if (note.DurationFraction.HasValue)
+        {
+            // Rational duration in quarter-units → whole-note units (÷4) to match ToFraction.
+            var f = note.DurationFraction.Value;
+            baseFraction = (double)f.Num / (f.Denom * 4.0);
+        }
+        else
+        {
+            baseFraction = NoteValueType.ToFraction((NoteValueType.Value)note.DurationValue!.Value);
+            if (note.IsDotted) baseFraction *= 1.5;
+        }
         int count = (int)Math.Round(baseFraction / subFraction);
         return Math.Max(count, 2);
     }
+
+    // Sweep 2026-06-14: TrillSubdivisions was superseded by TrillAlternationCount (which
+    // also handles the rational tuplet path); removed as pure redundancy.
 
     // Phase 44 Plan 44-05: Tremolo registration owned by
     // RegisterTremoloContextDependent + TremoloStrict wrapper. The legacy
@@ -1614,38 +1721,43 @@ public static class TransformFunctions
     /// at reps=8 and halving it at reps=2. For a plain note with a power-of-2 reps the enum
     /// path is kept (so the reps=4 doc example renders byte-identical); dotted notes and
     /// non-power-of-2 reps use an exact <c>DurationFraction = base / reps</c> in quarter-units.
+    ///
+    /// <para>Sweep 2026-06-14: <b>chord brackets tremolo as a unit</b> — bar notes are grouped
+    /// into (lead, [following IsChordTone notes]) runs. Each repetition emits a fresh lead
+    /// followed by the chord tones (IsChordTone=true) so they stack on THAT repetition's lead
+    /// onset in <see cref="BarType.ToTimeline"/> and repeat in lockstep. Previously each chord
+    /// tone was expanded independently with IsChordTone=true, so all its repeats piled onto the
+    /// lead's last onset — only the lead actually tremolo'd, the upper voices collapsed to a
+    /// single-onset cluster.</para>
     /// </summary>
     private static BarData TremoloBar(BarData bar, int reps)
     {
         var newNotes = new List<MusicalNoteData>();
-        foreach (var note in bar.MusicalNotes)
+        var src = bar.MusicalNotes;
+        for (int idx = 0; idx < src.Count; idx++)
         {
+            var note = src[idx];
             if (note.IsRest || !note.DurationValue.HasValue)
             {
                 newNotes.Add(note);
                 continue;
             }
 
-            int dv = note.DurationValue.Value;
-            int log2 = Log2Exact(reps);
-            // Power-of-2 reps on a plain (non-dotted, non-rational) note: the subdivision is a
-            // clean enum value (base + log2(reps)). Keep this path so the reps=4 doc example and
-            // every existing power-of-2 plain-note tremolo stay byte-identical (LEDGER).
-            if (log2 >= 0 && !note.IsDotted && !note.DurationFraction.HasValue
-                && dv + log2 <= (int)NoteValueType.Value.THIRTYSECOND)
+            // Group the lead note with any immediately-following chord tones.
+            int groupEnd = idx + 1;
+            while (groupEnd < src.Count && src[groupEnd].IsChordTone)
+                groupEnd++;
+
+            for (int i = 0; i < reps; i++)
             {
-                int subDur = dv + log2;
-                for (int i = 0; i < reps; i++)
-                    newNotes.Add(note.With(durationValue: subDur, isDotted: false, isTied: false));
+                // Lead repetition (NOT a chord tone — advances the timeline cursor).
+                newNotes.Add(BuildTremoloNote(note, reps, isChordTone: false));
+                // Chord tones stack on THIS repetition's lead onset and repeat in lockstep.
+                for (int c = idx + 1; c < groupEnd; c++)
+                    newNotes.Add(BuildTremoloNote(src[c], reps, isChordTone: true));
             }
-            else
-            {
-                // Exact rational subdivision = (note's quarter-unit duration) / reps. Covers
-                // dotted notes (×1.5 preserved), non-power-of-2 reps, and enum-overflow cases.
-                Fraction subFraction = BaseQuarterFraction(note) * new Fraction(1, reps);
-                for (int i = 0; i < reps; i++)
-                    newNotes.Add(note.With(durationFraction: subFraction, isDotted: false, isTied: false));
-            }
+
+            idx = groupEnd - 1; // skip the chord tones consumed by this group
         }
         var newBar = new BarData(newNotes, bar.TimeSignature!) { IsPickup = bar.IsPickup };
         if (bar.ParallelVoices != null)
@@ -1656,6 +1768,33 @@ public static class TransformFunctions
             newBar.ParallelVoices = voices;
         }
         return newBar;
+    }
+
+    /// <summary>
+    /// Sweep 2026-06-14: build one tremolo repetition of <paramref name="note"/>. Keeps the
+    /// pre-sweep byte-identical enum path for plain power-of-2-reps notes; dotted / non-power-of-2
+    /// / rational notes use the exact <c>DurationFraction = base / reps</c> path.
+    /// <paramref name="isChordTone"/> stamps chord tones so they stack on the lead's onset.
+    /// </summary>
+    private static MusicalNoteData BuildTremoloNote(MusicalNoteData note, int reps, bool isChordTone)
+    {
+        int dv = note.DurationValue!.Value;
+        int log2 = Log2Exact(reps);
+        // Power-of-2 reps on a plain (non-dotted, non-rational) note: the subdivision is a
+        // clean enum value (base + log2(reps)). Keep this path so the reps=4 doc example and
+        // every existing power-of-2 plain-note tremolo stay byte-identical (LEDGER).
+        if (log2 >= 0 && !note.IsDotted && !note.DurationFraction.HasValue
+            && dv + log2 <= (int)NoteValueType.Value.THIRTYSECOND)
+        {
+            int subDur = dv + log2;
+            return note.With(durationValue: subDur, isDotted: false, isTied: false,
+                isChordTone: isChordTone);
+        }
+        // Exact rational subdivision = (note's quarter-unit duration) / reps. Covers dotted
+        // notes (×1.5 preserved), non-power-of-2 reps, and enum-overflow cases.
+        Fraction subFraction = BaseQuarterFraction(note) * new Fraction(1, reps);
+        return note.With(durationFraction: subFraction, isDotted: false, isTied: false,
+            isChordTone: isChordTone);
     }
 
     /// <summary>The source note's full duration (dot included) expressed in quarter-note units

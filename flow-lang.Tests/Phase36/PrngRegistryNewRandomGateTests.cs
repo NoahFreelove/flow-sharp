@@ -32,6 +32,12 @@ public class PrngRegistryNewRandomGateTests
     [InlineData("Patterns")]
     [InlineData("Generative")]
     [InlineData("Improv")]
+    // Sweep 2026-06-14: Transforms/ slipped past the original gate, letting the uniform
+    // `humanize` builtin draw from a process-global wall-clock `new Random()` (broke
+    // two-run cmp-clean on offline writeWav). humanize now routes through PrngRegistry;
+    // this row keeps future Transforms/ wall-clock Randoms out (humanizeGaussian's
+    // explicit-seed `new Random(seed)` is marked // PRNG-SANCTIONED:).
+    [InlineData("Transforms")]
     public void NoNewRandomUnderGenerativeDirectories(string subDir)
     {
         string repoRoot = FindRepoRoot();

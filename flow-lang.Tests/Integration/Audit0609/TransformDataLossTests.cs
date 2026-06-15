@@ -335,6 +335,197 @@ Sequence moved = (transpose q +2st)
     }
 
     // ==================================================================
+    // Sweep 2026-06-14 — trill / tremolo on chord brackets + tuplets;
+    //                    invert on voice blocks; humanize determinism.
+    // ==================================================================
+
+    [Fact]
+    public void Trill_ChordBracket_UpperTonesGetDistinctOnsets()
+    {
+        // (trill | [C4 E4 G4]h | +2st): the chord must trill AS A UNIT — every subdivision
+        // is a full stacked chord. Pre-fix, only the lead (C4) trilled over time while the
+        // upper tones (E4/G4) all piled onto the lead's LAST onset (single-onset cluster).
+        var trilled = EvalSequence(
+            "Sequence src = | [C4 E4 G4]h |\nSequence t = (trill src +2st)", "t", out _);
+
+        var bar = trilled.Bars[0];
+        var timeline = bar.ToTimeline();
+
+        // Half-note lead → 4 eighth-note subdivisions; each is C+E+G → 12 timeline entries.
+        Assert.Equal(12, timeline.Count);
+
+        // The bar still totals exactly 2 beats (a half) — chord tones don't advance the cursor.
+        Assert.Equal(2.0, bar.GetActualBeats(), 6);
+
+        // Group the timeline by pitch class of the UPPER (transposed) chord tones. E4 trills
+        // E<->F#, G4 trills G<->A. Collect onsets for the non-C entries and assert they span
+        // MORE THAN ONE distinct onset (the bug collapsed them all to a single tick).
+        var nonLeadOnsets = timeline
+            .Where(e => e.note.NoteName != 'C')  // C is the lead's own trill (C<->D)
+            .Select(e => Math.Round(e.offsetBeats, 6))
+            .Distinct()
+            .ToArray();
+        Assert.True(nonLeadOnsets.Length >= 4,
+            $"upper chord tones collapsed to {nonLeadOnsets.Length} onset(s) — expected ≥4 " +
+            "(one per trill subdivision)");
+    }
+
+    [Fact]
+    public void Tremolo_ChordBracket_UpperTonesGetDistinctOnsets()
+    {
+        // (tremolo | [C4 E4 G4]q | 4): each of the 4 repetitions is a full C+E+G chord.
+        // Pre-fix, the upper tones piled onto the lead's last onset.
+        var trem = EvalSequence(
+            "Sequence src = | [C4 E4 G4]q |\nSequence t = (tremolo src 4)", "t", out _);
+
+        var bar = trem.Bars[0];
+        var timeline = bar.ToTimeline();
+
+        // Quarter lead at reps=4 → 4 sixteenth repetitions; each is C+E+G → 12 entries.
+        Assert.Equal(12, timeline.Count);
+        // Quarter chord = 1 beat, chord tones share onsets → still 1 beat total.
+        Assert.Equal(1.0, bar.GetActualBeats(), 6);
+
+        var upperOnsets = timeline
+            .Where(e => e.note.NoteName != 'C')   // E and G repetitions
+            .Select(e => Math.Round(e.offsetBeats, 6))
+            .Distinct()
+            .ToArray();
+        Assert.True(upperOnsets.Length >= 4,
+            $"upper chord tones collapsed to {upperOnsets.Length} onset(s) — expected ≥4 reps");
+    }
+
+    [Fact]
+    public void Trill_Tuplet_HonoursDurationFraction_AndStaysInBar()
+    {
+        // A triplet quarter (DurationFraction = 1/3 quarter-units) trilled must keep its
+        // tuplet timing: each alternation's duration = base/alternations, summing back to the
+        // source note's 1/3 quarter. Pre-fix, With(durationValue:) left the OLD DurationFraction
+        // intact → every alternation kept the full 1/3 quarter → the trill overflowed the bar.
+        var input = BuildTripletSequence();
+        var trilled = FlowLang.StandardLibrary.Transforms.TransformFunctions
+            .TrillForTesting(input, 2);
+
+        var notes = trilled.Bars[0].MusicalNotes;
+        // 3 source triplet notes, each → ≥2 alternations.
+        Assert.True(notes.Count >= 6, $"too few alternations: {notes.Count}");
+
+        // Every emitted note must carry a (shortened) DurationFraction, NOT the stale 1/3.
+        Assert.All(notes, n => Assert.True(n.DurationFraction.HasValue,
+            "trill dropped DurationFraction on a tuplet alternation"));
+        Assert.All(notes, n => Assert.NotEqual(new FlowLang.TypeSystem.Fraction(1, 3),
+            n.DurationFraction!.Value));
+
+        // The whole bar still totals exactly 1 beat (three triplet quarters = 1 quarter).
+        double beats = notes.Sum(n => n.GetBeats(trilled.Bars[0].TimeSignature!.Denominator));
+        Assert.Equal(1.0, beats, 6);
+    }
+
+    [Fact]
+    public void Trill_Tuplet_NoBarOverflow_EndToEnd()
+    {
+        // End-to-end guard mirroring the repro: a triplet followed by plain quarters, trilled,
+        // must not overflow one 4/4 bar. We assert the rendered bar's total beats == 4.
+        var input = new SequenceData();
+        var notes = new[]
+        {
+            new MusicalNoteData('C', 4, 0, (int)NoteValueType.Value.QUARTER, false,
+                durationFraction: new FlowLang.TypeSystem.Fraction(1, 3)),
+            new MusicalNoteData('D', 4, 0, (int)NoteValueType.Value.QUARTER, false,
+                durationFraction: new FlowLang.TypeSystem.Fraction(1, 3)),
+            new MusicalNoteData('E', 4, 0, (int)NoteValueType.Value.QUARTER, false,
+                durationFraction: new FlowLang.TypeSystem.Fraction(1, 3)),
+            new MusicalNoteData('D', 4, 0, (int)NoteValueType.Value.QUARTER, false),
+            new MusicalNoteData('E', 4, 0, (int)NoteValueType.Value.QUARTER, false),
+            new MusicalNoteData('F', 4, 0, (int)NoteValueType.Value.QUARTER, false),
+        };
+        input.AddBar(new BarData(notes, new TimeSignatureData(4, 4)));
+
+        var trilled = FlowLang.StandardLibrary.Transforms.TransformFunctions
+            .TrillForTesting(input, 2);
+        var bar = trilled.Bars[0];
+        double beats = bar.MusicalNotes.Sum(n => n.GetBeats(bar.TimeSignature!.Denominator));
+        // Triplet = 1 quarter, three plain quarters = 3 → 4 beats. Pre-fix this ran to ~6.75.
+        Assert.Equal(4.0, beats, 6);
+    }
+
+    [Fact]
+    public void Invert_VoiceBlockSequence_ActuallyInverts()
+    {
+        // (invert | {voice C4w} {voice E4q F4q G4q A4q} |): the axis must be found inside the
+        // voice blocks (the parent bar holds only a whole-bar rest placeholder). Pre-fix,
+        // axisMidi stayed null → invert returned a byte-identical clone (silent no-op).
+        var vb = EvalSequence(
+            "Sequence src = | {voice C4w} {voice E4q F4q G4q A4q} |\n" +
+            "Sequence inv = (invert src)", "inv", out _);
+
+        // Axis is the first non-rest note in document order = C4 (whole). Inversion is
+        // 2*axis - midi. C4 inverts to itself; the running voice (E F G A above C4) inverts
+        // DOWN below C4. Assert at least one voice note ended up below the original C4.
+        Assert.NotNull(vb.Bars[0].ParallelVoices);
+        var allVoiceNotes = vb.Bars[0].ParallelVoices!
+            .SelectMany(v => v.MusicalNotes)
+            .Where(n => !n.IsRest)
+            .ToArray();
+        Assert.NotEmpty(allVoiceNotes);
+
+        const int c4 = 60; // MIDI C4
+        // The running voice (E4=64, F4=65, G4=67, A4=69 — all ABOVE the C4 axis) must invert
+        // DOWN to pitches < C4. Pre-fix the no-op clone left them all at their original (>C4)
+        // pitches, so no pitch landed below the axis.
+        var inverted = allVoiceNotes.Select(NoteMidi).ToArray();
+        Assert.True(inverted.Any(m => m < c4),
+            "invert was a no-op on the voice-block sequence (no pitch landed below the C4 axis)");
+    }
+
+    private static int NoteMidi(MusicalNoteData n)
+    {
+        // Mirror TransformFunctions.ToMidi: (octave+1)*12 + semitone(noteName)+alteration.
+        int[] baseSemitone = { 9, 11, 0, 2, 4, 5, 7 }; // A B C D E F G
+        int idx = n.NoteName - 'A';
+        return (n.Octave + 1) * 12 + baseSemitone[idx] + n.Alteration;
+    }
+
+    [Fact]
+    public void Humanize_Uniform_IsDeterministicAcrossRenders()
+    {
+        // Sweep 2026-06-14: uniform humanize used a process-global wall-clock new Random(),
+        // so two renders of the same (humanize seq amount) -> writeWav produced different
+        // bytes (violating two-run cmp-clean). Now it routes through PrngRegistry (reseeded
+        // at the render boundary), so two independent renders are byte-identical.
+        const string body = @"
+tempo 120 { timesig 4/4 {
+  Sequence mel = | C4q D4q E4q F4q |
+  Sequence h = (humanize mel 0.5)
+  section a { Sequence v = h }
+  Song sa = [a]
+  Buffer b = (renderSong sa ""organ"")
+  (writeWav ""{{WAV}}"" b)
+} }";
+        var first = RenderToWav(body, "humanize_det1");
+        var second = RenderToWav(body, "humanize_det2");
+
+        Assert.Equal(first.Frames, second.Frames);
+        Assert.Equal(first.Channels, second.Channels);
+        for (int f = 0; f < first.Frames; f++)
+            for (int ch = 0; ch < first.Channels; ch++)
+                Assert.Equal(first.GetSample(f, ch), second.GetSample(f, ch));
+    }
+
+    [Fact]
+    public void Humanize_Uniform_ActuallyJittersVelocity()
+    {
+        // Guard the fix didn't accidentally neuter humanize: with amount=1.0 the velocities
+        // must spread (not all identical to the un-humanized base).
+        var seq = EvalSequence(
+            "Sequence src = | C4q C4q C4q C4q C4q C4q C4q C4q |\n" +
+            "Sequence h = (humanize src 1.0)", "h", out _);
+        var vels = seq.Bars[0].MusicalNotes.Where(n => !n.IsRest).Select(n => n.Velocity).ToArray();
+        Assert.Equal(8, vels.Length);
+        Assert.True(vels.Distinct().Count() > 1, "humanize produced no velocity variation");
+    }
+
+    // ==================================================================
     // §10-gap-3 — true cent-precision transpose
     // ==================================================================
 
