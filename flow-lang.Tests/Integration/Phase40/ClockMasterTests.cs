@@ -194,6 +194,71 @@ public class ClockMasterTests
             Assert.False(clock.AtBarBoundary());
     }
 
+    /// <summary>
+    /// sweep-0614 (CLOCK-01 propagation): a LIVE tempo reader (the delegate
+    /// clockMaster now wires to <c>() => context.GetMusicalContext().Tempo</c>)
+    /// must retune the running clock at the next bar boundary when the composer's
+    /// resolved tempo changes AFTER start. Before the fix the master held a frozen
+    /// memoized snapshot a later <c>tempo N { }</c> block could never mutate, so the
+    /// 0xF8 rate was stuck at the start tempo forever. This exercises the real
+    /// delegate path (not a hand-mutated MusicalContext, which masked the bug).
+    /// </summary>
+    [Fact]
+    public void ClockMaster_LiveTempoReader_RetunesAtBarBoundary()
+    {
+        // 4/4 at 60 BPM → quarter = 1000 ms, bar = 4000 ms, pulse ≈ 41.67 ms.
+        const double slowBpm = 60.0;
+        const double fastBpm = 240.0;
+        var handle = new TimestampingHandle();
+        // The snapshot seeds the bar length (4/4) + the first bar's tempo.
+        var snapshot = new MusicalContext
+        {
+            Tempo = slowBpm,
+            TimeSignature = new FlowLang.TypeSystem.SpecialTypes.TimeSignatureData(4, 4),
+        };
+        // Simulate the composer's resolved tempo: starts slow, flips to fast partway
+        // through bar 1 — exactly what a new `tempo 240 { }` block produces (a fresh
+        // resolved MusicalContext the clock never directly holds).
+        double liveBpm = slowBpm;
+        var clock = MidiClock.StartMaster(snapshot, handle, liveTempoReader: () => liveBpm);
+
+        // Let bar 1 run partway, then change the LIVE resolved tempo mid-bar.
+        Thread.Sleep(1500);
+        liveBpm = fastBpm;
+
+        // Run well past the bar-1 boundary (4000 ms) into bar 2 so the re-read fires.
+        Thread.Sleep(3500);
+        clock.Stop();
+
+        var sent = handle.Snapshot();
+        var pulseTimes = sent.Where(e => e.status == MidiClock.ClockPulse).Select(e => e.atMs).ToList();
+
+        double slowPulseMs = 60000.0 / (slowBpm * MidiClock.PulsesPerQuarter); // ~41.67
+        double fastPulseMs = 60000.0 / (fastBpm * MidiClock.PulsesPerQuarter); // ~10.42
+
+        // Pulses inside bar 1 after the change (1600..3900 ms) must STILL be slow
+        // (deferred to bar boundary — CLOCK-01 contract preserved).
+        var inBar1 = new List<double>();
+        // Pulses well into bar 2 (atMs > 4300 ms) must reflect the FAST rate — proving
+        // the live composer tempo edit actually reached the running clock.
+        var inBar2 = new List<double>();
+        for (int i = 1; i < pulseTimes.Count; i++)
+        {
+            double at = pulseTimes[i];
+            double d = pulseTimes[i] - pulseTimes[i - 1];
+            if (at > 1600 && at < 3900) inBar1.Add(d);
+            else if (at > 4300) inBar2.Add(d);
+        }
+
+        Assert.True(inBar1.Count >= 3, $"expected ≥3 post-change in-bar-1 deltas, got {inBar1.Count}");
+        Assert.InRange(inBar1.Average(), slowPulseMs - 5.0, slowPulseMs + 5.0);
+
+        Assert.True(inBar2.Count >= 5, $"expected ≥5 bar-2 deltas (live tempo must have propagated), got {inBar2.Count}");
+        // Bar 2 must be near the FAST rate, NOT the slow rate — the bug was the
+        // rate staying at slow forever.
+        Assert.InRange(inBar2.Average(), fastPulseMs - 4.0, fastPulseMs + 4.0);
+    }
+
     [Fact]
     public void ClockHandle_RefIdentity_AndCleanDispose()
     {

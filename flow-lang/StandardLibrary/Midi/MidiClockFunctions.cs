@@ -51,11 +51,18 @@ public static class MidiClockFunctions
         {
             RequireModuleActivated(context, "clockMaster");
             var dev = args[0].As<MidiDeviceData>();
-            // Snapshot the active musical context (tempo + timesig) at start. The
-            // master re-reads its .Tempo at each bar boundary (CLOCK-01); pass the
-            // resolved snapshot so the active tempo seeds the first bar.
+            // Snapshot the active musical context (tempo + timesig) at start so the
+            // first bar's tempo + the bar length (_pulsesPerBar) seed correctly.
             var mctx = context.GetMusicalContext();
-            var clock = MidiClock.StartMaster(mctx, dev.Handle);
+            // sweep-0614 (CLOCK-01 propagation): pass a LIVE tempo reader, not just the
+            // frozen snapshot. GetMusicalContext() re-resolves the call stack on each
+            // call, so a later composer `tempo N { }` (or a file-scope tempo edit)
+            // reaches the running clock at the next bar boundary — honoring the
+            // documented "tempo changes apply at the NEXT bar boundary" contract.
+            // Previously the master held a memoized snapshot a new tempo block could
+            // never mutate, so only slave/JACK SetLiveTempo could change the rate.
+            var clock = MidiClock.StartMaster(mctx, dev.Handle,
+                liveTempoReader: () => context.GetMusicalContext().Tempo);
             if (dev.Handle == null)
             {
                 RenderingDiagnostics.WarnOnce(

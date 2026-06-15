@@ -60,6 +60,17 @@ public sealed class MidiClock
     private readonly MusicalContext _context;
     private readonly CancellationTokenSource _cts = new();
 
+    /// <summary>
+    /// sweep-0614 (CLOCK-01 propagation): optional live tempo reader, set by
+    /// <see cref="StartMaster"/>. When non-null, the master re-evaluates it at each
+    /// bar boundary so a later composer <c>tempo N { }</c> / file-scope tempo edit
+    /// actually retunes the running clock — the frozen <see cref="_context"/>
+    /// snapshot alone could never change (a new <c>tempo</c> block builds a fresh
+    /// resolved MusicalContext object the clock never holds). Returns null when no
+    /// tempo is currently in scope (charitable → keep the last good value).
+    /// </summary>
+    private readonly Func<double?>? _liveTempoReader;
+
     // ===== Master state =====
     private readonly IMidiOutputHandle? _output;
     private Thread? _masterThread;
@@ -91,11 +102,13 @@ public sealed class MidiClock
     /// <summary>Whether the timing thread / listener is still running.</summary>
     public bool IsRunning => !_cts.IsCancellationRequested;
 
-    private MidiClock(ClockMode mode, MusicalContext context, IMidiOutputHandle? output)
+    private MidiClock(ClockMode mode, MusicalContext context, IMidiOutputHandle? output,
+        Func<double?>? liveTempoReader = null)
     {
         Mode = mode;
         _context = context;
         _output = output;
+        _liveTempoReader = liveTempoReader;
         int beatsPerBar = context.TimeSignature?.Numerator ?? 4;
         if (beatsPerBar <= 0) beatsPerBar = 4;
         _pulsesPerBar = PulsesPerQuarter * beatsPerBar;
@@ -109,10 +122,20 @@ public sealed class MidiClock
     /// Start a clock master: emit 0xFA, then 24 PPQN 0xF8 pulses at the active
     /// tempo on a dedicated <see cref="Stopwatch"/>-timed thread until
     /// <see cref="Stop"/>. Tempo is re-read at each bar boundary (no mid-bar jumps).
+    ///
+    /// <para><paramref name="liveTempoReader"/> (sweep-0614, CLOCK-01 propagation):
+    /// when supplied, the master polls it at each bar boundary so a later composer
+    /// tempo edit retunes the running clock. The clockMaster builtin wires this to
+    /// <c>() => context.GetMusicalContext().Tempo</c>, which re-resolves the live
+    /// call stack on each read (a transient block frame the interpreter has since
+    /// popped is naturally invisible, but file-scope / still-active block tempo
+    /// edits propagate). When null, the master falls back to the
+    /// <paramref name="context"/> snapshot + live-sync sink as before.</para>
     /// </summary>
-    public static MidiClock StartMaster(MusicalContext context, IMidiOutputHandle? output)
+    public static MidiClock StartMaster(MusicalContext context, IMidiOutputHandle? output,
+        Func<double?>? liveTempoReader = null)
     {
-        var clock = new MidiClock(ClockMode.Master, context, output);
+        var clock = new MidiClock(ClockMode.Master, context, output, liveTempoReader);
         clock._masterThread = new Thread(clock.RunMasterLoop)
         {
             IsBackground = true,
@@ -230,6 +253,15 @@ public sealed class MidiClock
         // the master timing thread; neither path touches offline render.
         if (_context.TryGetLiveTempo(out double live) && MusicalContext.IsValidTempo(live))
             return live;
+        // sweep-0614: re-resolve the composer's live MusicalContext each bar boundary
+        // so a tempo block / file-scope tempo edit after clockMaster actually retunes
+        // the running clock (the frozen snapshot below could never change). Charitable:
+        // a null / out-of-range read falls through to the snapshot, then the default.
+        if (_liveTempoReader != null)
+        {
+            double? lt = _liveTempoReader();
+            if (lt.HasValue && MusicalContext.IsValidTempo(lt.Value)) return lt.Value;
+        }
         double? t = _context.Tempo;
         if (t.HasValue && MusicalContext.IsValidTempo(t.Value)) return t.Value;
         return 120.0; // charitable default when no tempo is in scope

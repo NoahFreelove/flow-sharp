@@ -376,8 +376,27 @@ public static class MidiFunctions
         var map = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var kv in dict.Entries)
         {
-            if (kv.Key.Data is string name && kv.Value.Data is int ch)
-                map[name] = ch;
+            if (kv.Key.Data is not string name) continue;
+            // sweep-0614: charitable numeric coercion. Flow's numeric widening means
+            // a channel value produced by arithmetic or `(long 3)` can be a Long (or
+            // Double/Float), which the old strict `is int` silently dropped — the
+            // documented overrides= remap then became a confusing no-op. Coerce any
+            // numeric to an int channel; WarnOnce on a genuinely non-numeric value so
+            // a typo isn't swallowed silently.
+            int? ch = kv.Value.Data switch
+            {
+                int i => i,
+                long l => (int)l,
+                double d => (int)Math.Round(d),
+                float f => (int)Math.Round(f),
+                _ => null
+            };
+            if (ch is int c)
+                map[name] = Math.Clamp(c, 0, 15);
+            else
+                RenderingDiagnostics.WarnOnce(
+                    $"midi-override-nonnumeric:{name}",
+                    $"[midi] midiOut overrides: channel for '{name}' is not numeric — ignored");
         }
         return map.Count > 0 ? map : null;
     }
@@ -517,6 +536,53 @@ public static class MidiFunctions
         {
             int denom = bar.TimeSignature?.Denominator ?? 4;
             double barBeats = 0.0;
+
+            // sweep-0614: voice-block bars (`| {voice ...} {voice ...} |`) put a
+            // single whole-bar REST in MusicalNotes (so ToTimeline yields nothing
+            // audible) and store the real content in ParallelVoices. Before this
+            // fix midiOut skipped that rest and sent NONE of the voice notes,
+            // contradicting the D-40-02 contract that the port sounds identical to
+            // the exported .mid. Mirror MidiExport.cs:483-521: walk each voice's
+            // MusicalNotes resetting a per-voice beat cursor to the shared bar
+            // start, honoring rests (advance), chord-tones (stack on saved lead),
+            // and OnsetOffset — emitting NoteOn/NoteOff at the same quarter-relative
+            // beat math the .mid uses.
+            if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
+            {
+                foreach (var voiceBar in bar.ParallelVoices)
+                {
+                    int voiceDenom = voiceBar.TimeSignature?.Denominator ?? denom;
+                    double voiceBeats = 0.0;
+                    double voiceLeadBeats = 0.0;
+                    foreach (var vnote in voiceBar.MusicalNotes)
+                    {
+                        double vnoteBeats = vnote.GetBeats(voiceDenom);
+                        double vEffectiveBeats = vnote.IsChordTone ? voiceLeadBeats : voiceBeats;
+                        if (!vnote.IsChordTone) voiceLeadBeats = voiceBeats;
+                        double vOnset = vEffectiveBeats + vnote.OnsetOffset;
+
+                        if (!vnote.IsChordTone)
+                        {
+                            voiceBeats += vnoteBeats;
+                            if (voiceBeats > barBeats) barBeats = voiceBeats;
+                        }
+                        if (vnote.IsRest) continue;
+
+                        int vpitch = NoteType.ToMidiNote(vnote.NoteName, vnote.Octave, vnote.Alteration);
+                        vpitch = vpitch < 0 ? 0 : (vpitch > 127 ? 127 : vpitch);
+                        int vvel = (int)Math.Round(vnote.Velocity * 127.0);
+                        vvel = vvel < 1 ? 1 : (vvel > 127 ? 127 : vvel);
+
+                        double vOnMs = startMs + (barStartBeats + vOnset) * msPerBeat;
+                        double vOffMs = vOnMs + Math.Max(vnoteBeats, 0.0) * msPerBeat;
+
+                        int vp = vpitch, vv = vvel, vc = ch;
+                        events.Add(new ScheduledEvent(vOnMs, seqCounter++, h => h.SendNoteOn(vc, vp, vv)));
+                        events.Add(new ScheduledEvent(vOffMs, seqCounter++, h => h.SendNoteOff(vc, vp)));
+                    }
+                }
+            }
+
             foreach (var (note, offsetBeats) in bar.ToTimeline())
             {
                 double noteBeats = note.GetBeats(denom);

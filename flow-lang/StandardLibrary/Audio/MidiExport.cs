@@ -413,11 +413,18 @@ public static class MidiExport
                 new KeySignatureEvent(keySig.sharpsFlats, keySig.minor), 0));
         }
 
-        using (var manager = conductorChunk.ManageTimedEvents())
-        {
-            manager.Objects.Add(conductorEvents);
-        }
+        // sweep-0614: conductor events are committed AFTER the section walk so we
+        // can append per-section SetTempoEvents at section boundaries (multi-tempo
+        // songs previously played every section after the first at the first
+        // section's tempo, diverging from the audio renderer + midiOut which both
+        // honor per-section tempo — D-40-02 parity). The chunk is added to the file
+        // here to keep it at track-0 position; its events are filled below.
         midiFile.Chunks.Add(conductorChunk);
+
+        // Track the last-emitted tempo so single-tempo songs stay byte-identical
+        // (no redundant SetTempoEvent) and so dedup of consecutive equal tempos
+        // keeps the output minimal.
+        double lastEmittedBpm = bpm;
 
         // Phase 28 SPEC-6: multi-track — one TrackChunk per uniqueSequenceName.
         // Insertion-ordered dictionary so the resulting track order matches the
@@ -442,9 +449,30 @@ public static class MidiExport
             // offsets stay aligned when TPQN auto-elevates above 480.
             long sectionLengthTicks = CalculateSectionLengthTicks(sectionData, sectionTimeSigDenom, ticksPerQuarter);
 
+            // sweep-0614: section bpm computed the same way the audio renderer
+            // (SongRenderer) + midiOut do — per-section tempo. Validate, fall back
+            // to the global bpm on a bad value.
+            double sectionBpm = sectionData.Context?.Tempo ?? bpm;
+            if (!MusicalContext.IsValidTempo(sectionBpm))
+                sectionBpm = bpm;
+
             for (int repeat = 0; repeat < sectionRef.RepeatCount; repeat++)
             {
                 long sectionStartTick = absoluteTick;
+
+                // sweep-0614: emit a SetTempoEvent at the section boundary whenever
+                // the section tempo differs from the previously emitted one (dedup of
+                // consecutive equal tempos keeps single-tempo output byte-identical —
+                // the tick-0 tempo from the first section already sits in
+                // conductorEvents). This makes a multi-tempo .mid play sections after
+                // the first at the correct speed, matching the audio + midiOut paths.
+                if (sectionBpm != lastEmittedBpm)
+                {
+                    int secMicrosPerBeat = (int)(60_000_000.0 / sectionBpm);
+                    conductorEvents.Add(new TimedEvent(
+                        new SetTempoEvent(secMicrosPerBeat), sectionStartTick));
+                    lastEmittedBpm = sectionBpm;
+                }
 
                 foreach (var (seqName, sequence) in sectionData.Sequences)
                 {
@@ -633,6 +661,15 @@ public static class MidiExport
 
                 absoluteTick += sectionLengthTicks;
             }
+        }
+
+        // sweep-0614: commit the conductor events now that section-boundary
+        // SetTempoEvents have been appended during the walk. The manager sorts by
+        // tick, so the tick-0 meta events stay first and per-section tempo changes
+        // land at their section start.
+        using (var conductorManager = conductorChunk.ManageTimedEvents())
+        {
+            conductorManager.Objects.Add(conductorEvents);
         }
 
         // Phase 28 SPEC-6: append per-sequence tracks in insertion order. Each

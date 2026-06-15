@@ -254,6 +254,71 @@ Song s = [main]
     }
 
     /// <summary>
+    /// sweep-0614: midiOut must emit the notes inside voice blocks
+    /// (`| {voice C4w} {voice C5q D5q E5q F5q} |`). Before the fix ScheduleOneSequence
+    /// built the timeline only from bar.ToTimeline(), which for a voice-block bar
+    /// yields a single whole-bar REST (the real content lives in bar.ParallelVoices),
+    /// so the port received ONLY a program-change + the trailing CC123 and NONE of
+    /// the 5 voice notes — silently breaking the D-40-02 ".mid parity" contract.
+    /// Now the voice walk mirrors MidiExport so every voice note reaches the port.
+    /// </summary>
+    [Fact]
+    public void MidiOut_VoiceBlockNotes_AreScheduled()
+    {
+        const string script = @"use ""@midi""
+section main {
+    Sequence piano = | {voice C4w} {voice C5q D5q E5q F5q} |
+}
+Song s = [main]
+(midiOut s ""Synth"")
+";
+        var capture = RunWithCapture(script, "Synth");
+
+        // Collect NoteOn pitches (status 0x9n, velocity > 0).
+        var noteOnPitches = capture.Sent
+            .Where(b => (b[0] & 0xF0) == 0x90 && b[2] > 0)
+            .Select(b => (int)b[1])
+            .ToList();
+
+        // Expect all 5 voice-block notes: C4=60 (voice 1 whole note) + the
+        // C5/D5/E5/F5 run (72/74/76/77) in voice 2. Before the fix this list was
+        // EMPTY (only a program change + CC123 reached the port).
+        Assert.Contains(60, noteOnPitches);   // C4 (voice 1)
+        Assert.Contains(72, noteOnPitches);   // C5 (voice 2)
+        Assert.Contains(74, noteOnPitches);   // D5
+        Assert.Contains(76, noteOnPitches);   // E5
+        Assert.Contains(77, noteOnPitches);   // F5
+        Assert.Equal(5, noteOnPitches.Count);
+    }
+
+    /// <summary>
+    /// sweep-0614: the documented `overrides=` remap must work when the channel
+    /// value is a Long (Flow numeric widening — e.g. via `(long N)` or Long
+    /// arithmetic), not just an Int literal. The old ReadOverrides used a strict
+    /// `is int` pattern that silently dropped a boxed Long, so the override became a
+    /// confusing no-op and the sequence fell back to its GM default channel. Now any
+    /// numeric is charitably coerced + clamped to 0..15.
+    /// </summary>
+    [Fact]
+    public void MidiOut_OverridesNamedArg_AcceptsLongChannel()
+    {
+        const string script = @"use ""@midi""
+section main {
+    Sequence drums = | C2q C2q |
+}
+Song s = [main]
+(midiOut s ""Synth"" overrides=(dict ""drums"" (long 5)))
+";
+        var capture = RunWithCapture(script, "Synth");
+        Assert.NotEmpty(capture.Sent);
+
+        // Every note-on/off lands on the OVERRIDDEN channel 5 (Long-coerced), not GM ch9.
+        var notes = capture.Sent.Where(b => (b[0] & 0xF0) == 0x90 || (b[0] & 0xF0) == 0x80).ToList();
+        Assert.NotEmpty(notes);
+        Assert.All(notes, b => Assert.Equal(5, b[0] & 0x0F));
+    }
+
+    /// <summary>
     /// CR-03: the high-level midiOut path schedules NoteOn/NoteOff with REAL
     /// ms-aligned timing — every note has a non-zero duration (NoteOff later than
     /// NoteOn) and consecutive notes are spaced by their duration. The original
