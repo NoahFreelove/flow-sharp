@@ -306,6 +306,141 @@ public class MarkovModelTests
         Assert.Equal("pitch", modelSym.FeatureMode);
     }
 
+    // ====================================================================
+    // markov-corpus (0615) — Note[] / Int[] corpus overloads
+    // ====================================================================
+
+    [Fact]
+    public void MarkovOverNoteArrayRenders()
+    {
+        // The documented call form from the feature brief:
+        // (markov (list C4 D4 E4 F4 G4) order length seed) used to error
+        // "No matching overload"; it must now produce a non-empty Sequence.
+        var result = GenerateViaScript("""
+            Note[] corpus = (list C4 D4 E4 F4 G4 F4 E4 D4 C4)
+            Sequence result = (markov corpus 2 16 42)
+            """);
+
+        Assert.NotEmpty(result.Bars);
+        int noteCount = result.Bars.Sum(b => b.MusicalNotes.Count);
+        Assert.Equal(16, noteCount);
+    }
+
+    [Fact]
+    public void MarkovOverNoteArrayInlineListRenders()
+    {
+        // The exact brief form — list literal inline at the call site.
+        var result = GenerateViaScript("""
+            Sequence result = (markov (list C4 D4 E4 F4 G4) 2 12 7)
+            """);
+        Assert.NotEmpty(result.Bars);
+        Assert.Equal(12, result.Bars.Sum(b => b.MusicalNotes.Count));
+    }
+
+    [Fact]
+    public void MarkovOverIntArrayRenders()
+    {
+        // Int[] corpus — raw MIDI pitches (C4=60 .. G4=67-ish ascending).
+        var result = GenerateViaScript("""
+            Int[] corpus = (list 60 62 64 65 67 65 64 62 60)
+            Sequence result = (markov corpus 2 16 42)
+            """);
+        Assert.NotEmpty(result.Bars);
+        Assert.Equal(16, result.Bars.Sum(b => b.MusicalNotes.Count));
+    }
+
+    [Fact]
+    public void MarkovOverNoteArraySeedDeterministicTwoRuns()
+    {
+        // Two-run cmp-clean: same source + seed → identical pitch sequence
+        // across two FRESH engines.
+        const string body = """
+            Note[] corpus = (list C4 D4 E4 F4 G4 F4 E4 D4 C4)
+            Sequence result = (markov corpus 2 16 42)
+            """;
+        var a = GenerateViaScript(body);
+        var b = GenerateViaScript(body);
+
+        var aNotes = a.Bars.SelectMany(bar => bar.MusicalNotes).ToList();
+        var bNotes = b.Bars.SelectMany(bar => bar.MusicalNotes).ToList();
+        Assert.Equal(aNotes.Count, bNotes.Count);
+        for (int i = 0; i < aNotes.Count; i++)
+        {
+            Assert.Equal(aNotes[i].NoteName, bNotes[i].NoteName);
+            Assert.Equal(aNotes[i].Octave, bNotes[i].Octave);
+            Assert.Equal(aNotes[i].Alteration, bNotes[i].Alteration);
+        }
+    }
+
+    [Fact]
+    public void MarkovNoteArrayEquivalentToSequenceCorpus()
+    {
+        // A Note[] corpus and the equivalent inline note-stream Sequence corpus
+        // must train the SAME pitch-feature model → identical seeded output.
+        var fromArray = GenerateViaScript("""
+            Note[] corpus = (list C4 D4 E4 F4 G4 F4 E4 D4 C4)
+            Sequence result = (markov corpus 2 16 42)
+            """);
+        var fromSequence = GenerateViaScript("""
+            Sequence corpus = | C4q D4q E4q F4q G4q F4q E4q D4q C4q |
+            Sequence result = (markov corpus 2 16 42)
+            """);
+
+        var arrNotes = fromArray.Bars.SelectMany(b => b.MusicalNotes).ToList();
+        var seqNotes = fromSequence.Bars.SelectMany(b => b.MusicalNotes).ToList();
+        Assert.Equal(seqNotes.Count, arrNotes.Count);
+        for (int i = 0; i < arrNotes.Count; i++)
+        {
+            Assert.Equal(seqNotes[i].NoteName, arrNotes[i].NoteName);
+            Assert.Equal(seqNotes[i].Octave, arrNotes[i].Octave);
+        }
+    }
+
+    [Fact]
+    public void MarkovTrainOverNoteArrayBuildsModel()
+    {
+        // The split-shape array surface: train a reusable model from a Note[].
+        var model = TrainViaScript("""
+            Note[] corpus = (list C4 D4 E4 F4 G4 F4 E4 D4 C4)
+            MarkovModel model = (markovTrain corpus 2)
+            """);
+        Assert.Equal(2, model.Order);
+        Assert.Equal("pitch", model.FeatureMode);
+        Assert.Contains(60, model.StateAlphabet);  // C4
+        Assert.Contains(62, model.StateAlphabet);  // D4
+        Assert.Contains(64, model.StateAlphabet);  // E4
+    }
+
+    [Fact]
+    public void MarkovTrainOverIntArrayBuildsModel()
+    {
+        var model = TrainViaScript("""
+            Int[] corpus = (list 60 62 64 65 67)
+            MarkovModel model = (markovTrain corpus 1)
+            """);
+        Assert.Equal(1, model.Order);
+        Assert.Contains(60, model.StateAlphabet);
+        Assert.Contains(67, model.StateAlphabet);
+    }
+
+    [Fact]
+    public void MarkovOverNoteArrayUnseededReproducibleCrossEngines()
+    {
+        // Unseeded array form routes through PrngRegistry keyed by call site →
+        // same source on two fresh engines yields identical output.
+        const string body = """
+            Note[] corpus = (list C4 D4 E4 F4 G4 F4 E4 D4 C4)
+            Sequence result = (markov corpus 2 12)
+            """;
+        var a = GenerateViaScript(body);
+        var b = GenerateViaScript(body);
+        var aNotes = a.Bars.SelectMany(bar => bar.MusicalNotes).ToList();
+        var bNotes = b.Bars.SelectMany(bar => bar.MusicalNotes).ToList();
+        Assert.Equal(aNotes.Count, bNotes.Count);
+        for (int i = 0; i < aNotes.Count; i++)
+            Assert.Equal(aNotes[i].NoteName, bNotes[i].NoteName);
+    }
+
     [Fact]
     public void MarkovEncodeDecodePitchDurationRoundTrip()
     {

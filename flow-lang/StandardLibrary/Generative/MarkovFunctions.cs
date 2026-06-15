@@ -21,9 +21,12 @@ namespace FlowLang.StandardLibrary.Generative;
 /// <code>
 ///   (markov corpus order length)             ; one-shot, unseeded → PrngRegistry
 ///   (markov corpus order length seed)        ; one-shot, explicit seed
+///   (markov noteOrIntArray order length)     ; one-shot over a Note[]/Int[] corpus (0615)
+///   (markov noteOrIntArray order length seed); seeded variant of the same
 ///   (markovTrain corpus order)               ; default features=#pitch
 ///   (markovTrain corpus order features=#pitch)
 ///   (markovTrain corpus order features=&lt;&lt;#pitch, #duration&gt;&gt;)
+///   (markovTrain noteOrIntArray order)       ; train from a Note[]/Int[] corpus (0615)
 ///   (markovGenerate model length)            ; unseeded → PrngRegistry
 ///   (markovGenerate model length seed)       ; explicit seed
 ///   (markovEqual a b)                        ; structural compare → Bool
@@ -37,7 +40,9 @@ namespace FlowLang.StandardLibrary.Generative;
 /// <c>(CurrentCallSite, "markov" | "markovGenerate")</c>. The source-grep CI
 /// gate (<c>PrngRegistryNewRandomGateTests</c> + this plan's
 /// <c>MarkovDeterminismTests.NoNewRandomInMarkovFunctions</c>) enforces zero
-/// unsanctioned <c>new Random(</c> constructions outside the seeded overloads.
+/// unsanctioned <c>new Random(</c> constructions outside the seeded overloads
+/// (markovGenerate-seeded, markov-seeded-one-shot over a Sequence, and
+/// markov-seeded-one-shot over a Note[]/Int[] array corpus — three sanctioned sites).
 /// </para>
 ///
 /// <para>
@@ -159,6 +164,52 @@ public static class MarkovFunctions
             [SequenceType.Instance, IntType.Instance, IntType.Instance],
             ParameterNames: ["corpus", "order", "length"]);
         registry.Register("markov", oneShotUnseededSig, args => MarkovOneShotUnseeded(args, context));
+
+        // ---- markov (one-shot over a Note[] / Int[] corpus — feature #1 0615) ----
+        // Composers can train directly off an array of pitches without first
+        // wrapping them in a Sequence: (markov (list C4 D4 E4) order length [seed]).
+        // A Note[] element parses each note string to a MIDI pitch state; an
+        // Int[] element is taken as a raw MIDI pitch. Both feed the identical
+        // pitch-feature Markov path, so determinism + the train/generate split
+        // stay byte-identical with the Sequence form.
+        var oneShotNoteArraySeededSig = new FunctionSignature("markov",
+            [new ArrayType(NoteType.Instance), IntType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["corpus", "order", "length", "seed"]);
+        registry.Register("markov", oneShotNoteArraySeededSig,
+            args => MarkovOneShotFromArraySeeded(args, context, ArrayCorpusKind.Note));
+
+        var oneShotNoteArrayUnseededSig = new FunctionSignature("markov",
+            [new ArrayType(NoteType.Instance), IntType.Instance, IntType.Instance],
+            ParameterNames: ["corpus", "order", "length"]);
+        registry.Register("markov", oneShotNoteArrayUnseededSig,
+            args => MarkovOneShotFromArrayUnseeded(args, context, ArrayCorpusKind.Note));
+
+        var oneShotIntArraySeededSig = new FunctionSignature("markov",
+            [new ArrayType(IntType.Instance), IntType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["corpus", "order", "length", "seed"]);
+        registry.Register("markov", oneShotIntArraySeededSig,
+            args => MarkovOneShotFromArraySeeded(args, context, ArrayCorpusKind.Int));
+
+        var oneShotIntArrayUnseededSig = new FunctionSignature("markov",
+            [new ArrayType(IntType.Instance), IntType.Instance, IntType.Instance],
+            ParameterNames: ["corpus", "order", "length"]);
+        registry.Register("markov", oneShotIntArrayUnseededSig,
+            args => MarkovOneShotFromArrayUnseeded(args, context, ArrayCorpusKind.Int));
+
+        // ---- markovTrain over a Note[] / Int[] corpus (feature #1 0615) ----
+        // Mirrors the one-shot array surface so composers can pre-train a reusable
+        // model from a raw pitch array, then call markovGenerate as usual.
+        var trainNoteArraySig = new FunctionSignature("markovTrain",
+            [new ArrayType(NoteType.Instance), IntType.Instance],
+            ParameterNames: ["corpus", "order"]);
+        registry.Register("markovTrain", trainNoteArraySig,
+            args => MarkovTrainFromArray(args, context, ArrayCorpusKind.Note));
+
+        var trainIntArraySig = new FunctionSignature("markovTrain",
+            [new ArrayType(IntType.Instance), IntType.Instance],
+            ParameterNames: ["corpus", "order"]);
+        registry.Register("markovTrain", trainIntArraySig,
+            args => MarkovTrainFromArray(args, context, ArrayCorpusKind.Int));
 
         // ---- markovEqual (structural compare) ----
         var markovEqualSig = new FunctionSignature("markovEqual",
@@ -351,6 +402,96 @@ public static class MarkovFunctions
     }
 
     // ====================================================================
+    // markov / markovTrain over a Note[] / Int[] corpus (feature #1 0615)
+    // ====================================================================
+
+    /// <summary>
+    /// Which array element shape an array-corpus overload was registered for.
+    /// </summary>
+    private enum ArrayCorpusKind { Note, Int }
+
+    private static Value MarkovOneShotFromArraySeeded(
+        IReadOnlyList<Value> args, ExecutionContext ctx, ArrayCorpusKind kind)
+    {
+        int order = ClampOrderWithAdvisory(args[1].As<int>(), ctx);
+        int length = args[2].As<int>();
+        int seed = args[3].As<int>();
+        var states = ExtractStatesFromArray(args[0], kind, ctx);
+        var model = TrainMarkovFromStates(states, order, FeatureModePitch);
+        var rng = new Random(seed); // PRNG-SANCTIONED: explicit-seed overload per D-36-06
+        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+    }
+
+    private static Value MarkovOneShotFromArrayUnseeded(
+        IReadOnlyList<Value> args, ExecutionContext ctx, ArrayCorpusKind kind)
+    {
+        int order = ClampOrderWithAdvisory(args[1].As<int>(), ctx);
+        int length = args[2].As<int>();
+        var states = ExtractStatesFromArray(args[0], kind, ctx);
+        var model = TrainMarkovFromStates(states, order, FeatureModePitch);
+        var rng = ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "markov");
+        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+    }
+
+    private static Value MarkovTrainFromArray(
+        IReadOnlyList<Value> args, ExecutionContext ctx, ArrayCorpusKind kind)
+    {
+        int order = ClampOrderWithAdvisory(args[1].As<int>(), ctx);
+        var states = ExtractStatesFromArray(args[0], kind, ctx);
+        return Value.MarkovModel(TrainMarkovFromStates(states, order, FeatureModePitch));
+    }
+
+    /// <summary>
+    /// Converts a Flow array Value (Note[] or Int[]) into the list of MIDI-pitch
+    /// state ints the Markov training core consumes. Note elements parse their
+    /// stored note string; Int elements are taken as raw MIDI pitches. Charitable
+    /// per D-v1.5-05: an unparseable / null element is skipped with a one-shot
+    /// advisory (or a [strict] error under strict mode) rather than throwing.
+    /// </summary>
+    private static List<int> ExtractStatesFromArray(
+        Value arrayValue, ArrayCorpusKind kind, ExecutionContext ctx)
+    {
+        var elements = arrayValue.As<IReadOnlyList<Value>>();
+        var states = new List<int>(elements.Count);
+        foreach (var element in elements)
+        {
+            if (kind == ArrayCorpusKind.Int)
+            {
+                if (element.Data is int midi)
+                {
+                    states.Add(midi);
+                }
+                continue;
+            }
+
+            // Note element — stored as the original note string (e.g. "C4", "G#3").
+            if (element.Data is string noteStr)
+            {
+                try
+                {
+                    var (letter, octave, alteration) = NoteType.Parse(noteStr);
+                    states.Add(NoteType.ToMidiNote(letter, octave, alteration));
+                }
+                catch (Exception)
+                {
+                    if (ctx.CallerStrictMode)
+                    {
+                        ctx.ErrorReporter.ReportError(
+                            $"[strict] [markov] unparseable Note '{noteStr}' in corpus at {ctx.CurrentCallSite}",
+                            ctx.CurrentCallSite);
+                        continue;
+                    }
+                    RenderingDiagnostics.WarnOnce(
+                        $"markov:unparseable-corpus-note:{ctx.CurrentCallSite}:{noteStr}",
+                        $"[markov] unparseable Note '{noteStr}' in corpus at "
+                        + $"{ctx.CurrentCallSite}; skipped");
+                }
+            }
+        }
+        return states;
+    }
+
+    // ====================================================================
     // markovEqual — structural compare
     // ====================================================================
 
@@ -375,6 +516,19 @@ public static class MarkovFunctions
     internal static MarkovModelData TrainMarkov(SequenceData corpus, int order, string featureMode)
     {
         var states = ExtractStates(corpus, featureMode);
+        return TrainMarkovFromStates(states, order, featureMode);
+    }
+
+    /// <summary>
+    /// Markov training core over an already-extracted list of integer states.
+    /// Shared by the Sequence-corpus path (<see cref="TrainMarkov"/>) and the
+    /// Note[]/Int[]-corpus path (<see cref="MarkovTrainFromArray"/> /
+    /// <see cref="MarkovOneShotFromArraySeeded"/>). The feature mode is recorded
+    /// on the model; array corpora always use <c>"pitch"</c> states.
+    /// </summary>
+    internal static MarkovModelData TrainMarkovFromStates(
+        List<int> states, int order, string featureMode)
+    {
         var alphabet = new List<int>();
         var alphabetSet = new HashSet<int>();
         foreach (var s in states)

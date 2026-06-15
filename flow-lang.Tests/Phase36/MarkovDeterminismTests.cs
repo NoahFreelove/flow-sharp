@@ -27,9 +27,11 @@ public class MarkovDeterminismTests
     public void NoNewRandomInMarkovFunctions()
     {
         // Phase 36 generative primitives ONLY use `new Random(` inside the
-        // explicit-seed overloads (markovGenerate seeded + markov seeded
-        // one-shot). The gate caps hits at 2.
-        const int permittedNewRandomHits = 2;
+        // explicit-seed overloads: markovGenerate seeded + markov seeded
+        // one-shot (Sequence corpus) + markov seeded one-shot (Note[]/Int[]
+        // array corpus, added 0615 — both array element shapes share one
+        // MarkovOneShotFromArraySeeded body). The gate caps hits at 3.
+        const int permittedNewRandomHits = 3;
 
         string repoRoot = FindRepoRoot();
         string targetFile = Path.Combine(repoRoot,
