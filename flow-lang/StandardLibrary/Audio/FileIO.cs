@@ -49,7 +49,15 @@ public static class FileIO
         // clear friendly error rather than silently writing corrupt negative fields.
         int bytesPerSample = bitDepth / 8;
         long dataSizeLong = (long)buffer.Frames * buffer.Channels * bytesPerSample;
-        long fileSizeLong = 36L + dataSizeLong; // 44 bytes header - 8 bytes = 36
+        // RIFF requires every chunk to end on an even byte boundary; an odd
+        // data chunk (only possible at 24-bit / 3-bytes-per-sample with an odd
+        // total sample count) is followed by a single 0x00 pad byte that is
+        // part of the FILE but NOT counted in the data chunk's own size field.
+        // Include that pad byte in the RIFF top-level size so the header stays
+        // consistent with the file on disk (the reader at LoadWavInternal:429-431
+        // already compensates for the pad — this makes the writer symmetric).
+        long padByte = dataSizeLong & 1L;
+        long fileSizeLong = 36L + dataSizeLong + padByte; // 44 bytes header - 8 bytes = 36
         if (dataSizeLong > 0xFFFFFFFFL || fileSizeLong > 0xFFFFFFFFL)
             throw new InvalidOperationException(
                 $"WAV output is too large for the RIFF format (4 GB limit). " +
@@ -124,6 +132,14 @@ public static class FileIO
         writer.Write(dataSize);
 
         WriteSamples(writer, buffer, bitDepth);
+
+        // RIFF spec — pad an odd-size data chunk to an even byte boundary with
+        // a single 0x00 pad byte (not counted in dataSize). Only 24-bit
+        // (3 bytes/sample) with an odd total sample count can be odd; 16/32-bit
+        // totals are always even. The pad is a constant 0x00 so two-run
+        // byte-identical determinism is preserved.
+        if ((dataSizeLong & 1L) == 1L)
+            writer.Write((byte)0);
     }
 
     /// <summary>

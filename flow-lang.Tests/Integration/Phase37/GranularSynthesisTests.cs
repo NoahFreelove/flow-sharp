@@ -114,6 +114,46 @@ public class GranularSynthesisTests : IDisposable
     }
 
     /// <summary>
+    /// sweep-0614 regression — a grain LONGER than the source buffer must not
+    /// collapse to near-silence. Pre-fix grainSamples was unclamped, so the
+    /// Hann window's unity peak (at grainSamples/2) landed far past the buffer
+    /// end; OverlapAddGrain only ever applied the near-zero leading edge of the
+    /// window, attenuating a constant-0.5 buffer to a peak of ~0.0006. After
+    /// the clamp-to-buffer-length fix the window spans the buffer and energy is
+    /// preserved (peak near the input amplitude). Also asserts the charitable
+    /// one-shot advisory fires.
+    /// </summary>
+    [Fact]
+    public void Granular_GrainLongerThanBuffer_PreservesEnergy_AndWarns()
+    {
+        // 500-sample constant-0.5 buffer; grain = 1.0s (= 44100 samples >> 500).
+        const int frames = 500;
+        var input = new AudioBuffer(frames, 1, 44100);
+        for (int i = 0; i < frames; i++) input.Data[i] = 0.5f;
+
+        var prng = new PrngRegistry();
+        var site = new FlowLang.Core.SourceLocation(7, 3);
+        var result = GranularEngine.Apply(
+            input, grainSeconds: 1.0, densityHz: 10.0, jitter: 0.0,
+            window: WindowKind.Hann, prng, site);
+
+        Assert.Equal(frames, result.Frames);
+
+        float peak = 0f;
+        for (int i = 0; i < result.Data.Length; i++)
+            peak = Math.Max(peak, Math.Abs(result.Data[i]));
+
+        // Pre-fix peak ~0.0006 (effective silence). Post-fix the Hann peak
+        // (~1.0) lands mid-buffer on real 0.5 samples → peak near 0.5.
+        Assert.True(peak > 0.25f,
+            $"expected grain-clamp to preserve energy (peak near input 0.5); got peak {peak:F6}");
+
+        Assert.True(
+            RenderingDiagnostics.WasWarnedForTesting($"granular:grain-clamp:{site.Line}:{site.Column}"),
+            "expected a one-shot [granular] grain-clamp advisory to fire");
+    }
+
+    /// <summary>
     /// jitter = 0.0 produces deterministic non-stochastic output — grains
     /// land at exact density intervals, identical source offset each pass.
     /// (The PRNG IS consulted — the jitter multiplier zeros the draw

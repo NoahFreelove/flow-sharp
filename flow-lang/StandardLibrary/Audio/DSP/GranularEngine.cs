@@ -79,7 +79,22 @@ public static class GranularEngine
         int sampleRate = input.SampleRate;
         int frames = input.Frames;
 
-        int grainSamples = Math.Max(1, (int)(grainSeconds * sampleRate));
+        // Clamp the grain to the buffer length. A grain longer than the source
+        // would put the window's unity peak (at grainSamples/2) far PAST the
+        // buffer end, so OverlapAddGrain — which reads from the grain start and
+        // breaks at the buffer boundary — would only ever apply the near-zero
+        // LEADING edge of the window, collapsing the output to near-silence.
+        // Clamping to `frames` keeps the window peak inside the available
+        // material and preserves energy. Charitable per house style: emit a
+        // one-shot advisory rather than throwing or silently mangling audio.
+        int rawGrainSamples = Math.Max(1, (int)(grainSeconds * sampleRate));
+        int grainSamples = Math.Min(rawGrainSamples, frames);
+        if (rawGrainSamples > frames)
+        {
+            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                $"granular:grain-clamp:{site.Line}:{site.Column}",
+                $"[granular] grain longer than buffer — clamped to buffer length ({frames} frames) at line {site.Line}.");
+        }
         int grainPeriodSamples = Math.Max(1, (int)(sampleRate / densityHz));
 
         // Pre-compute the window curve once per call — the same envelope shape
