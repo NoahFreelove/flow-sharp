@@ -496,6 +496,12 @@ public static class MidiExport
                                     }
                                     long vEffectiveTick = vnote.IsChordTone ? voiceLeadTick : voiceTick;
                                     if (!vnote.IsChordTone) voiceLeadTick = voiceTick;
+                                    // sweep-0614: honor the per-note onset displacement
+                                    // (swing context / quantize transform) on the MIDI tick,
+                                    // mirroring BarType.ToTimeline on the audio path. Default
+                                    // OnsetOffset=0 keeps non-swung/non-quantized export
+                                    // byte-identical.
+                                    vEffectiveTick += (long)(vnote.OnsetOffset * ticksPerQuarter);
                                     int vMidi = PitchConversion.GetMidiNote(vnote.NoteName, vnote.Octave, vnote.Alteration);
                                     byte vVel = (byte)Math.Clamp((int)(vnote.Velocity * 127), 1, 127);
                                     double vBeats = vnote.GetBeats(voiceTimeSigDenom);
@@ -545,6 +551,13 @@ public static class MidiExport
                                 effectiveTick = barTick;
                                 leadBarTick = barTick;
                             }
+                            // sweep-0614: honor the per-note onset displacement (swing
+                            // context / quantize transform) on the MIDI tick, mirroring
+                            // BarType.ToTimeline on the audio path so a swing/quantized
+                            // sequence sounds the same exported to .mid as it does rendered
+                            // to WAV. Default OnsetOffset=0 keeps the export byte-identical
+                            // for un-displaced notes.
+                            effectiveTick += (long)(note.OnsetOffset * ticksPerQuarter);
 
                             int midiNote = PitchConversion.GetMidiNote(
                                 note.NoteName, note.Octave, note.Alteration);

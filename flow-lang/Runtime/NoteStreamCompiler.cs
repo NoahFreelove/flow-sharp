@@ -73,14 +73,72 @@ public class NoteStreamCompiler
         var sequence = new SequenceData();
         var timeSig = context.TimeSignature ?? new TimeSignatureData(4, 4);
 
+        // sweep-0614: resolve the active swing once. Context Swing is in [0.0, 1.0]
+        // with 0.5 == straight; the onset-shift math (shared with the `quantize`
+        // builtin) uses [-1.0, 1.0] with 0 == straight, so bridge the convention.
+        // Short-circuit at exactly straight (or absent) so non-swing renders stay
+        // byte-identical / two-run cmp-clean.
+        double transformSwing = context.Swing.HasValue ? (context.Swing.Value - 0.5) * 2.0 : 0.0;
+
         foreach (var bar in noteStream.Bars)
         {
             var barData = CompileBar(bar, timeSig, context, executionContext);
             barData.IsPickup = bar.IsPickup;
+            if (transformSwing != 0.0)
+                ApplyContextSwing(barData, transformSwing);
             sequence.AddBar(barData);
         }
 
         return sequence;
+    }
+
+    /// <summary>
+    /// sweep-0614: applies the active <c>swing N { }</c> context to a compiled bar by
+    /// delaying every offbeat eighth-note onset, mirroring the eighth-note swing grid
+    /// used by the <c>quantize</c> builtin (TransformFunctions.QuantizeBar — CONTEXT
+    /// D-04/D-06). Before this fix <see cref="MusicalContext.Swing"/> was written/cloned
+    /// but never read by any render path, so a <c>swing 0.62 { }</c> block produced
+    /// straight eighths. The shift is ADDED to each note's existing
+    /// <see cref="MusicalNoteData.OnsetOffset"/> (so it composes with tuplets); a later
+    /// explicit <c>quantize</c> transform still overwrites it. Recurses into Phase 28
+    /// parallel voices so voiced bars swing too.
+    /// </summary>
+    private static void ApplyContextSwing(BarData bar, double transformSwing)
+    {
+        var ts = bar.TimeSignature ?? new TimeSignatureData(4, 4);
+        // Eighth-note subdivision length in denominator-unit beats (matches the
+        // QuantizeBar/NoteValueToBeats convention: 1 beat == 1/denominator whole).
+        double subdivBeats = ts.Denominator / 8.0;
+        double swingOffset = transformSwing * (subdivBeats / 2.0);
+
+        var notes = bar.MusicalNotes;
+        double currentBeat = 0.0;
+        // Whether the most recent LEAD note landed on an offbeat eighth — its stacked
+        // chord tones inherit the same shift so the chord stays together.
+        bool leadOffbeat = false;
+        for (int i = 0; i < notes.Count; i++)
+        {
+            var note = notes[i];
+            // Snap the running onset to the nearest eighth-note slot to decide
+            // on/offbeat, then delay the offbeats. Chord tones (isChordTone) ride
+            // the leading note's onset, so only the lead note advances the cursor.
+            if (!note.IsChordTone)
+            {
+                int slot = (int)Math.Round(currentBeat / subdivBeats);
+                leadOffbeat = (slot % 2 == 1);
+                if (leadOffbeat)
+                    notes[i] = note.With(onsetOffset: note.OnsetOffset + swingOffset);
+                currentBeat += note.GetBeats(ts.Denominator);
+            }
+            else if (leadOffbeat)
+            {
+                notes[i] = note.With(onsetOffset: note.OnsetOffset + swingOffset);
+            }
+        }
+
+        if (bar.ParallelVoices != null)
+            foreach (var voice in bar.ParallelVoices)
+                ApplyContextSwing(voice, transformSwing);
     }
 
     /// <summary>
