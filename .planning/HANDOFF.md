@@ -1,7 +1,22 @@
-# Handoff — comprehensive codebase sweep + fix (2026-06-14)
+# Handoff — comprehensive sweep + documented-features round (2026-06-14 → 06-15)
 
-Branch `dev`. A full multi-agent audit → docs-fix → code-fix sweep ran end-to-end. **~41 commits**
-this session (`f8f5fd6`..HEAD), all local (**git not pushed**). Build green Desktop + Web.
+Branch `dev`. Two rounds: (1) a full audit → docs-fix → code-fix sweep, then (2) a documented-features
+round. All local (**git not pushed**). Build green Desktop + Web; full suite 2720 pass / 1 pre-existing fail.
+
+> **2026-06-15 ROUND 2 — documented-but-missing features + composer fixes (DEPLOYED LIVE).**
+> 11 `0615` commits implemented 9 features + 2 fixes: `markov` Note[]/Int[] corpus · `getSection`/
+> `sectionSequences(Song,String)` · section N-arg overload dispatch · **`(play song)`** + `writeWav(path,song)` ·
+> `Cmaj7q` chord+duration fusion (bare-digit chords like `Bb7` stay note+octave) · bare note-values
+> `e/q/h/w/s` as shadowable NoteValue constants · `(break)`/`(continue)` (need the 3-arg `(if c t e)` form) ·
+> **`jam` sparse named-args** (`over=`/`style=`/`seed=`/`key=`) via OverloadResolver default-fill · **progression
+> now renders stacked block chords in a sensible register** (was sequential single notes, bass at C2) ·
+> **cut-time shorthand `C/` `¢` `C|` → 2/2**. +180 tests. Docs reconciled (the stale `zip`/`jam`-seed notes
+> flipped; new features documented). WASM bundle regenerated (`7ae032a`, flow-lang.wasm 969493 B) + redeployed
+> to https://flow-music.pages.dev — all routes 200, fresh bundle + reconciled docs (e.g. `/docs/collections`)
+> confirmed live. **PENDING owner browser-UAT** (see round-1 note below + the new features).
+
+> **2026-06-15 ROUND 1 — sweep fixes (DEPLOYED LIVE).** WASM bundle regenerated (`98410e3`) so the
+> playground runs the 83 sweep engine fixes; docs carry the 100 example + 70 prose fixes. All routes 200.
 
 > **DEPLOYED LIVE 2026-06-15** to https://flow-music.pages.dev (`wrangler pages deploy`, authed
 > noahfreelove@gmail.com). The WASM bundle was regenerated (`98410e3`, flow-lang.wasm 957205 B) so the
