@@ -811,7 +811,7 @@ evidence + these as deferred debt):
 | Category | Item | Status |
 |----------|------|--------|
 | requirement | MIDI-RT-03 (CoreMIDI/WinMM real-time MIDI) → future phase | deferred-by-design |
-| requirement | LINK-01 (Ableton Link) → community/v1.6 — GPL contamination (D-40-06) | deferred-by-design |
+| requirement | LINK-01 (Ableton Link) — **CANCELLED per owner 2026-06-14** (was deferred-to-v1.6). GPL contamination (D-40-06) + owner only targets hardware they own, so no Link demand. No `@link` module ships; `LinkDeferralTests` + Web forbidden-prefix gate stay as the permanent guard. A clean-room community PR remains welcome but is no longer a roadmap item. | cancelled |
 
 **Bookkeeping / artifact debt** (non-blocking):
 

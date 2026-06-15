@@ -6,6 +6,13 @@
 
 Machine-readable bug array: `.planning/sweep-2026-06-14-findings.json` (consumed by the fix wave).
 
+> **RESOLUTION (2026-06-14):** **83 of 88 fixed** (74 main wave + 9 follow-up), **175 regression tests added**,
+> committed to `dev` with `fix(sweep-0614):` prefixes. Suite: `flow-lang.Tests` 2624 pass / 1 pre-existing fail
+> (`Phase41ShowcaseRmsTests`, not this sweep). Deferred: `(str 1.0)` decimal (shifts Phase41 baseline — owner
+> call), WASM MIDI typed-array download (C# done; frozen `flow-runtime.js` needs republish/consumer wiring),
+> `jam` sparse named-args (v1.6 OverloadResolver work), 1 hardware-gated `openMidiOutput` leak (owner UAT).
+> Ableton Link **cancelled** per owner. Full detail: `.planning/HANDOFF.md`.
+
 ---
 
 ## 1. Top-priority synthesis (read this if nothing else)
