@@ -94,25 +94,44 @@ public static class PitchConversion
             return eqFreq;
         }
 
-        // Non-12-TET path: tonic Hz × ratio × cent multiplier (D-10).
+        // Non-12-TET path: tonic Hz × tonic-relative ratio × cent multiplier (D-10).
+        //
+        // The ratio tables in TuningTables are C-RELATIVE (every table has ['C']=1.0
+        // and lists each letter's ratio measured from C). The tonic anchor, however,
+        // is the 12-TET frequency of the TONIC LETTER. For a non-C tonic these two
+        // reference points disagree: e.g. for key Gmajor, tonicHz = 12-TET-G and the
+        // raw lookup for G is its C-relative 3/2 — multiplying them renders the tonic
+        // G a fifth too high (a D). Normalize by dividing every looked-up ratio by the
+        // tonic's OWN C-relative ratio so the result is tonic-relative:
+        //   freq = tonicHz × (note_C_ratio / tonic_C_ratio)
+        // The tonic then renders at exactly its 12-TET reference Hz, and intervals are
+        // measured from the tonic. C major stays byte-identical (tonicRatio = 1.0).
         double tonicHz = RatioMath.TonicHzFromKey(tuning.TonicLetter, tuning.TonicAlteration, note.Octave);
-        double ratio;
-        try
-        {
-            ratio = TuningTables.LookupRatio(tuning.System, tuning.Mode, note.NoteName, note.Alteration);
-        }
-        catch (KeyNotFoundException)
-        {
-            // Pitfall 3 chromatic fallback: non-diatonic chromatic spellings in mode
-            // tables fall back to the Major (Ionian) table for the same tuning
-            // system. Charitable interpretation: rather than throw on an obscure
-            // chromatic spelling, route it through the closest authoritative table.
-            ratio = TuningTables.LookupRatio(tuning.System, Mode.Major, note.NoteName, note.Alteration);
-        }
+        double tonicRatio = LookupRatioWithFallback(tuning, tuning.TonicLetter, tuning.TonicAlteration);
+        double ratio = LookupRatioWithFallback(tuning, note.NoteName, note.Alteration) / tonicRatio;
         double freq = tonicHz * ratio;
         if (note.CentOffset.HasValue && note.CentOffset.Value != 0.0)
             freq *= RatioMath.CentOffsetMultiplier(note.CentOffset.Value);
         return freq;
+    }
+
+    /// <summary>
+    /// Looks up the (letter, alteration) ratio for the active tuning's (system, mode),
+    /// applying the Pitfall 3 chromatic fallback: non-diatonic spellings absent from
+    /// the mode-specific table route through the Major (Ionian) table for the same
+    /// tuning system. Charitable interpretation — rather than throw on an obscure
+    /// chromatic spelling, fall back to the closest authoritative table.
+    /// </summary>
+    private static double LookupRatioWithFallback(RenderTuning tuning, char letter, int alteration)
+    {
+        try
+        {
+            return TuningTables.LookupRatio(tuning.System, tuning.Mode, letter, alteration);
+        }
+        catch (KeyNotFoundException)
+        {
+            return TuningTables.LookupRatio(tuning.System, Mode.Major, letter, alteration);
+        }
     }
 
     /// <summary>
