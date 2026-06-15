@@ -47,9 +47,12 @@ public class StretchVocoderTests : IDisposable
         var stretched = PhaseVocoder.Process(input, factor: 2.0,
             frameSize: FrameSize, hopSize: 512, overlap: 4);
 
-        // Length: roughly 2× input ± frameSize slack.
+        // Length: exactly round(input.Frames * 2) now that PhaseVocoder trims
+        // the internal OLA +frameSize headroom off the returned buffer (sweep
+        // fix 0614 — was previously expected + frameSize). Pin the contract:
+        // round-half-away-from-zero on an even product is exact, so allow ±1.
         int expected = input.Frames * 2;
-        Assert.InRange(stretched.Frames, expected - FrameSize, expected + 2 * FrameSize);
+        Assert.InRange(stretched.Frames, expected - 1, expected + 1);
 
         // Pitch: dominant FFT bin in a representative slice should land on
         // the 440 Hz bin (20 ± 2 at frameSize=2048, sr=44100).
@@ -140,7 +143,37 @@ public class StretchVocoderTests : IDisposable
         Assert.Equal(input.SampleRate, result.SampleRate);
         Assert.Equal(input.Channels, result.Channels);
         int expected = input.Frames * 2;
-        // 4096-sized frame doubles the boundary slack.
-        Assert.InRange(result.Frames, expected - 4096, expected + 2 * 4096);
+        // Trimmed to exactly round(input.Frames * 2) regardless of frameSize
+        // (sweep fix 0614 — the +frameSize OLA headroom no longer leaks out).
+        Assert.InRange(result.Frames, expected - 1, expected + 1);
+    }
+
+    /// <summary>
+    /// Sweep fix 0614 (gap-dsp): PhaseVocoder.Process used to return
+    /// <c>round(inFrames * factor) + frameSize</c>, leaking ~46 ms (2048 frames
+    /// @ 44.1 kHz) of OLA tail past the factor-implied length, so a #vocoder
+    /// stretch ran longer than the equivalent #psola stretch. The two engines
+    /// must now agree on output length for the same factor — proving the
+    /// +frameSize headroom is trimmed.
+    /// </summary>
+    [Theory]
+    [InlineData(1.5)]
+    [InlineData(2.0)]
+    [InlineData(0.5)]
+    public void Vocoder_OutputLength_MatchesPsola_NoFrameSizeLeak(double factor)
+    {
+        var input = FileIO.LoadWavInternal(Phase37Fixtures.FixturePath("sine_440.wav"));
+
+        var voc = PhaseVocoder.Process(input, factor, frameSize: 2048, hopSize: 512, overlap: 4);
+        var pso = Psola.Process(input, factor, defaultPeriodSamples: 441);
+
+        int expected = (int)Math.Round(input.Frames * factor);
+        Assert.Equal(expected, voc.Frames);
+
+        // Vocoder must NOT be frameSize longer than PSOLA (the bug signature was
+        // exactly voc.Frames - pso.Frames == 2048).
+        Assert.True(voc.Frames <= pso.Frames + 1,
+            $"vocoder ({voc.Frames}) must not exceed psola ({pso.Frames}) by the " +
+            $"+frameSize OLA tail; delta={voc.Frames - pso.Frames}");
     }
 }

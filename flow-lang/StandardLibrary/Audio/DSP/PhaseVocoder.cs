@@ -54,9 +54,11 @@ public static class PhaseVocoder
     /// <summary>
     /// Time-stretch <paramref name="input"/> by <paramref name="factor"/>
     /// while preserving pitch. <c>factor &gt; 1</c> = longer output;
-    /// <c>factor &lt; 1</c> = shorter output. Output length is roughly
-    /// <c>round(input.Frames * factor)</c> plus a single-frame boundary
-    /// slack to absorb tail-end OLA accumulation.
+    /// <c>factor &lt; 1</c> = shorter output. Output length is exactly
+    /// <c>round(input.Frames * factor)</c> — the internal OLA accumulator
+    /// keeps its own <c>+ frameSize</c> headroom for tail-end accumulation,
+    /// but that slack is trimmed off the returned buffer (matching
+    /// <see cref="Psola"/>.Process).
     /// </summary>
     /// <param name="input">Source buffer. Channels preserved.</param>
     /// <param name="factor">Stretch factor. Must be positive.</param>
@@ -96,7 +98,16 @@ public static class PhaseVocoder
         int inFrames = input.Frames;
 
         int synthHop = Math.Max(1, (int)Math.Round(hopSize * factor));
-        int outFrames = (int)Math.Round(inFrames * factor) + frameSize;
+        // Returned length is exactly round(inFrames * factor) — matching
+        // Psola.Process. The internal OLA accumulator in ProcessChannel adds
+        // its own +frameSize headroom (new float[outFrames + frameSize]) so the
+        // final synthesis windows still land safely; the re-interleave copy
+        // below then trims the returned buffer to outFrames, dropping the
+        // ~frameSize of trailing OLA fade-out tail (the reconstruction of the
+        // zero-padded last analysis frame). Previously this added + frameSize,
+        // leaking ~46 ms of tail (2048 samples @ 44.1 kHz) into the result so
+        // stretch(buf, f, #vocoder) ran longer than the factor implied.
+        int outFrames = (int)Math.Round(inFrames * factor);
 
         // Pre-compute sqrt(Hann) once — used both at analysis and synthesis
         // per CCRMA OLA convention (analysis × synthesis = Hann²/2 → smooth

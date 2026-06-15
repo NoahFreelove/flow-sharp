@@ -17,7 +17,7 @@ public static class Filter
     /// <returns>A new buffer with the filter applied.</returns>
     public static AudioBuffer Lowpass(AudioBuffer input, float cutoffHz, float q = 0.707f)
     {
-        ValidateCutoff(cutoffHz, input.SampleRate);
+        cutoffHz = ClampCutoff(cutoffHz, input.SampleRate);
         if (q <= 0f) q = 0.707f;
 
         ComputeLowpassCoefficients(cutoffHz, q, input.SampleRate,
@@ -35,7 +35,7 @@ public static class Filter
     /// <returns>A new buffer with the filter applied.</returns>
     public static AudioBuffer Highpass(AudioBuffer input, float cutoffHz, float q = 0.707f)
     {
-        ValidateCutoff(cutoffHz, input.SampleRate);
+        cutoffHz = ClampCutoff(cutoffHz, input.SampleRate);
         if (q <= 0f) q = 0.707f;
 
         ComputeHighpassCoefficients(cutoffHz, q, input.SampleRate,
@@ -53,15 +53,38 @@ public static class Filter
     /// <returns>A new buffer with the filter applied.</returns>
     public static AudioBuffer Bandpass(AudioBuffer input, float lowHz, float highHz)
     {
-        if (lowHz <= 0f)
-            throw new ArgumentException("Lower cutoff frequency must be positive.");
-        if (highHz <= lowHz)
-            throw new ArgumentException("Upper cutoff frequency must be greater than lower cutoff.");
-
         float nyquist = input.SampleRate / 2f;
+
+        // Charitable clamps (CLAUDE.md charitable-interpretation policy): a
+        // degenerate band must yield a sane filter + WarnOnce advisory, never a
+        // session-killing throw. Mirrors the FormantSynthesizer convention
+        // (pre-clamp highHz to nyquist - 1) and the Q-clamp WarnOnce below.
+        if (lowHz <= 0f)
+        {
+            RenderingDiagnostics.WarnOnce(
+                "bandpass:low_clamp",
+                $"[filter] bandpass lower cutoff ({lowHz} Hz) <= 0 — clamped to 20 Hz.");
+            lowHz = 20f;
+        }
         if (highHz >= nyquist)
-            throw new ArgumentException(
-                $"Upper cutoff frequency ({highHz} Hz) must be below Nyquist frequency ({nyquist} Hz).");
+        {
+            RenderingDiagnostics.WarnOnce(
+                "bandpass:high_nyquist_clamp",
+                $"[filter] bandpass upper cutoff ({highHz} Hz) >= Nyquist ({nyquist} Hz) — " +
+                $"clamped to {nyquist - 1f} Hz.");
+            highHz = nyquist - 1f;
+        }
+        if (highHz <= lowHz)
+        {
+            // Widen to a minimal realisable band rather than throwing. One ULP
+            // above lowHz then routes through the existing Q clamp below.
+            float widened = MathF.Min(MathF.BitIncrement(lowHz), nyquist - 1f);
+            RenderingDiagnostics.WarnOnce(
+                "bandpass:band_inverted",
+                $"[filter] bandpass upper cutoff ({highHz} Hz) <= lower ({lowHz} Hz) — " +
+                $"widened to a minimal band at {lowHz} Hz.");
+            highHz = widened;
+        }
 
         // Bandpass: center frequency and bandwidth
         float centerHz = (float)Math.Sqrt(lowHz * highHz);
@@ -90,17 +113,35 @@ public static class Filter
     }
 
     /// <summary>
-    /// Validates cutoff frequency is positive and below Nyquist.
+    /// Charitably clamps the cutoff frequency into the realisable
+    /// (0, Nyquist) range, emitting a one-shot stderr advisory when it has to.
+    /// Per CLAUDE.md charitable-interpretation policy a degenerate cutoff must
+    /// produce a sane filter + WarnOnce, never a throw that kills the
+    /// interpreter session. Mirrors the FormantSynthesizer convention of
+    /// pre-clamping to <c>sampleRate / 2 - 1</c>.
     /// </summary>
-    private static void ValidateCutoff(float cutoffHz, int sampleRate)
+    /// <returns>The clamped cutoff frequency to feed the coefficient math.</returns>
+    private static float ClampCutoff(float cutoffHz, int sampleRate)
     {
         if (cutoffHz <= 0f)
-            throw new ArgumentException("Cutoff frequency must be positive.");
+        {
+            RenderingDiagnostics.WarnOnce(
+                "filter:cutoff_low_clamp",
+                $"[filter] cutoff ({cutoffHz} Hz) <= 0 — clamped to 20 Hz.");
+            return 20f;
+        }
 
         float nyquist = sampleRate / 2f;
         if (cutoffHz >= nyquist)
-            throw new ArgumentException(
-                $"Cutoff frequency ({cutoffHz} Hz) must be below Nyquist frequency ({nyquist} Hz).");
+        {
+            RenderingDiagnostics.WarnOnce(
+                "filter:cutoff_nyquist_clamp",
+                $"[filter] cutoff ({cutoffHz} Hz) >= Nyquist ({nyquist} Hz) — " +
+                $"clamped to {nyquist - 1f} Hz.");
+            return nyquist - 1f;
+        }
+
+        return cutoffHz;
     }
 
     /// <summary>
