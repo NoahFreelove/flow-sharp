@@ -310,14 +310,16 @@ public class MarkovModelTests
     public void MarkovEncodeDecodePitchDurationRoundTrip()
     {
         // The internal pack/unpack helper round-trips losslessly for valid pitch
-        // (0..127 fits in 12 bits, and small duration values fit in 20 bits).
+        // (0..127 fits in 12 bits, and the NoteValueType enum slot 0..7 fits in
+        // the 20 high bits). NOTE: the duration component is an enum slot
+        // (QUARTER=2, ONETWENTYEIGHTH=7), NOT a quarter-note count.
         var (p, d) = MarkovFunctions.DecodePitchDurationState(
-            MarkovFunctions.EncodePitchDurationState(60, 2));
+            MarkovFunctions.EncodePitchDurationState(60, 2)); // 2 = QUARTER enum slot
         Assert.Equal(60, p);
         Assert.Equal(2, d);
 
         (p, d) = MarkovFunctions.DecodePitchDurationState(
-            MarkovFunctions.EncodePitchDurationState(127, 7));
+            MarkovFunctions.EncodePitchDurationState(127, 7)); // 7 = ONETWENTYEIGHTH enum slot
         Assert.Equal(127, p);
         Assert.Equal(7, d);
     }

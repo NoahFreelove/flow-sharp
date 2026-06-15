@@ -47,10 +47,12 @@ namespace FlowLang.StandardLibrary.Generative;
 ///   <item><c>features=#pitch</c> (the implicit default): each state is a raw
 ///     MIDI pitch int. Lowest-cost mode.</item>
 ///   <item><c>features=&lt;&lt;#pitch, #duration&gt;&gt;</c>: each state is
-///     <c>(pitch &lt;&lt; 20) | duration_quarter_units</c>. Pitch occupies the
-///     low 12 bits; duration in quarter-note units occupies the high 20 bits.
-///     Generation unpacks the state back into a typed note with the encoded
-///     duration. Higher fidelity at the cost of sparser transitions table.</item>
+///     <c>(durationEnumSlot &lt;&lt; 12) | (pitch &amp; 0xFFF)</c>. Pitch occupies
+///     the low 12 bits; the NoteValueType enum slot (0..7: WHOLE=0 ..
+///     ONETWENTYEIGHTH=7, e.g. QUARTER=2 — NOT a quarter-note count) occupies
+///     the next 20 bits. Generation unpacks the state back into a typed note
+///     with the encoded duration. Higher fidelity at the cost of sparser
+///     transitions table.</item>
 /// </list>
 /// </para>
 ///
@@ -72,8 +74,11 @@ public static class MarkovFunctions
     private const string FeatureModePitch = "pitch";
 
     /// <summary>
-    /// Combined feature mode — state is <c>(pitch &lt;&lt; 20) | duration</c>.
-    /// 12 bits for pitch (low), 20 bits for duration in quarter-note units (high).
+    /// Combined feature mode — state is
+    /// <c>(durationEnumSlot &lt;&lt; 12) | (pitch &amp; 0xFFF)</c>: pitch in the
+    /// low 12 bits, the NoteValueType enum slot (0..7: WHOLE=0 ..
+    /// ONETWENTYEIGHTH=7, e.g. QUARTER=2 — NOT a quarter-note count) shifted up
+    /// by 12.
     /// </summary>
     private const string FeatureModePitchDuration = "pitch+duration";
 
@@ -81,22 +86,25 @@ public static class MarkovFunctions
     private const int DefaultDurationValue = (int)NoteValueType.Value.QUARTER;
 
     /// <summary>
-    /// Encodes a (pitch, durationQuarters) pair into a single state int for the
-    /// <c>"pitch+duration"</c> feature mode. See the class xmldoc for the bit layout.
+    /// Encodes a (pitch, durationEnumSlot) pair into a single state int for the
+    /// <c>"pitch+duration"</c> feature mode. The duration component is a
+    /// <c>NoteValueType.Value</c> enum slot (WHOLE=0 .. ONETWENTYEIGHTH=7), NOT
+    /// a quarter-note count. See the class xmldoc for the bit layout.
     /// </summary>
-    internal static int EncodePitchDurationState(int midiPitch, int durationQuarterUnits)
+    internal static int EncodePitchDurationState(int midiPitch, int durationEnumSlot)
     {
-        // Mask pitch into 12 bits; clamp duration units into [0, 2^20).
+        // Mask pitch into 12 bits; clamp the duration enum slot into [0, 2^20).
         int p = midiPitch & 0xFFF;
-        int d = Math.Max(0, durationQuarterUnits) & 0xFFFFF;
+        int d = Math.Max(0, durationEnumSlot) & 0xFFFFF;
         return (d << 12) | p;
     }
 
     /// <summary>
     /// Decodes a packed state int produced by <see cref="EncodePitchDurationState"/>.
-    /// Returns the raw 12-bit pitch and 20-bit duration components.
+    /// Returns the raw 12-bit pitch and the 20-bit NoteValueType enum-slot
+    /// duration components.
     /// </summary>
-    internal static (int MidiPitch, int DurationQuarterUnits) DecodePitchDurationState(int state)
+    internal static (int MidiPitch, int DurationEnumSlot) DecodePitchDurationState(int state)
     {
         int p = state & 0xFFF;
         int d = (state >> 12) & 0xFFFFF;
