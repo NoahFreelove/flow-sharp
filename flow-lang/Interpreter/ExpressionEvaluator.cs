@@ -410,15 +410,23 @@ public class ExpressionEvaluator
         // no slot is doubly bound, so the lookup-by-name pass is safe here.
         if (namedArgValues is { Count: > 0 } && overload.Signature.ParameterNames is { } paramNames)
         {
-            var reorderedArgs = new List<Value>(overload.Signature.InputTypes.Count);
+            var sig = overload.Signature;
+            int slotCount = sig.InputTypes.Count;
+            var reorderedArgs = new List<Value>(slotCount);
+            // Track which slots a real argument filled so default-fill only
+            // touches the genuinely-uncovered ones.
+            var filled = new bool[slotCount];
             // Positional args fill slots 0..argValues.Count-1.
-            for (int i = 0; i < argValues.Count; i++)
+            for (int i = 0; i < argValues.Count && i < slotCount; i++)
+            {
                 reorderedArgs.Add(argValues[i]);
+                filled[i] = true;
+            }
             // Named args fill the remaining slots by parameter-name lookup.
             // Add placeholders to grow the list, then assign by index — we can't
             // assume the named-arg dictionary iteration order matches the
             // signature's slot order (it's source-text order, not declaration order).
-            while (reorderedArgs.Count < overload.Signature.InputTypes.Count)
+            while (reorderedArgs.Count < slotCount)
                 reorderedArgs.Add(Value.Void());
             foreach (var (name, val) in namedArgValues)
             {
@@ -428,7 +436,46 @@ public class ExpressionEvaluator
                     if (paramNames[i] == name) { slot = i; break; }
                 }
                 if (slot >= 0)
+                {
                     reorderedArgs[slot] = val;
+                    filled[slot] = true;
+                }
+            }
+            // jam-named-args (0615): default-fill any slot left uncovered by
+            // both positional and named args (the sparse middle-skip case,
+            // e.g. `(jam over=chords style=#jazz seed=42)` leaves length + key
+            // uncovered). The resolver already proved every such slot has a
+            // non-null default, so DefaultForSlot is non-null here.
+            if (sig.HasParameterDefaults)
+            {
+                for (int i = 0; i < slotCount; i++)
+                {
+                    if (filled[i]) continue;
+                    var dflt = sig.DefaultForSlot(i);
+                    if (dflt is not null)
+                        reorderedArgs[i] = dflt;
+                }
+            }
+            argValues = reorderedArgs;
+        }
+        // jam-named-args (0615): purely-positional sparse call — fewer
+        // positionals than the resolved signature has slots, with the trailing
+        // slots default-filled (e.g. `(jam chords)` against the collapsed
+        // 6-param signature). The named-arg branch above already covers the
+        // mixed case; this branch handles the no-named-args case so we don't
+        // disturb the namedArgValues fast-path. Inert for every signature
+        // without defaults (HasParameterDefaults == false).
+        else if (overload.Signature.HasParameterDefaults
+                 && argValues.Count < overload.Signature.InputTypes.Count)
+        {
+            var sig = overload.Signature;
+            var reorderedArgs = new List<Value>(sig.InputTypes.Count);
+            for (int i = 0; i < argValues.Count; i++)
+                reorderedArgs.Add(argValues[i]);
+            for (int i = argValues.Count; i < sig.InputTypes.Count; i++)
+            {
+                var dflt = sig.DefaultForSlot(i);
+                reorderedArgs.Add(dflt ?? Value.Void());
             }
             argValues = reorderedArgs;
         }
@@ -479,6 +526,26 @@ public class ExpressionEvaluator
                 // builtin impl (If/And/Or/Eval/test) forces the Thunk and validates the
                 // forced value, so pass the Lazy value through untouched.
                 if (sig.InputTypes[i] is LazyType)
+                {
+                    continue;
+                }
+                // jam-named-args (0615): a Void-typed ARGUMENT in a signature
+                // that carries per-parameter defaults is a sentinel — it
+                // arrives only via OverloadResolver default-fill of an optional
+                // slot whose registered default is Value.Void() (e.g. jam's
+                // `key` / `seed` "omitted" markers). VoidType.CanConvertTo
+                // returns true for EVERY target (it is the wildcard type), so
+                // without this guard the next clause would call
+                // Value.Void().ConvertTo(String/Int) and throw "Cannot convert
+                // Flow type 'Void' ... to 'String'". The receiving builtin is
+                // responsible for interpreting a Void slot as "default" (jam
+                // does: `args[i].Type is VoidType` → no override). Pass it
+                // through untouched. Gated on sig.HasParameterDefaults so the
+                // error surface for every OTHER builtin (a genuinely-wrong Void
+                // arg into a typed slot) is byte-identical to before.
+                if (sig.HasParameterDefaults
+                    && argValues[i].Type is VoidType
+                    && sig.InputTypes[i] is not VoidType)
                 {
                     continue;
                 }

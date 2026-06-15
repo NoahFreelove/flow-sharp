@@ -52,8 +52,3 @@ Note: by (CurrentCallSite, "jam") — two consecutive renders of the same source
 Note: at the same git SHA produce byte-identical output (two-run cmp-clean
 Note: determinism preserved).
 internal proc jam (Sequence: over, Symbol: style, Int: length, String: key, Int: seed, Int: order)
-internal proc jam (Sequence: over, Symbol: style, Int: length, String: key, Int: seed)
-internal proc jam (Sequence: over, Symbol: style, Int: length, String: key)
-internal proc jam (Sequence: over, Symbol: style, Int: length)
-internal proc jam (Sequence: over, Symbol: style)
-internal proc jam (Sequence: over)

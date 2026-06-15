@@ -1,3 +1,4 @@
+using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
 
 namespace FlowLang.TypeSystem;
@@ -33,8 +34,45 @@ public record FunctionSignature(
     string Name,
     IReadOnlyList<FlowType> InputTypes,
     bool IsVarArgs = false,
-    IReadOnlyList<string>? ParameterNames = null)
+    IReadOnlyList<string>? ParameterNames = null,
+    IReadOnlyList<Value?>? ParameterDefaults = null)
 {
+    /// <summary>
+    /// jam-named-args (0615): true when at least one parameter carries a
+    /// non-null default value in <see cref="ParameterDefaults"/>. Signatures
+    /// registered WITHOUT defaults (the overwhelming majority — every builtin
+    /// except <c>jam</c>'s collapsed 6-param signature) report false here, so
+    /// the per-slot default-fill paths in <see cref="Matches"/>,
+    /// <see cref="OverloadResolver"/>, and the runtime arg-materialization in
+    /// <c>ExpressionEvaluator</c> are entirely inert for them. This keeps
+    /// positional + fully-named resolution byte-identical for every other
+    /// builtin (the FEATURE brief's "must not change positional or fully-named
+    /// resolution" gate).
+    /// </summary>
+    public bool HasParameterDefaults
+    {
+        get
+        {
+            if (ParameterDefaults is null) return false;
+            for (int i = 0; i < ParameterDefaults.Count; i++)
+                if (ParameterDefaults[i] is not null) return true;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// jam-named-args (0615): returns the default <see cref="Value"/> for the
+    /// parameter at <paramref name="slot"/>, or null when that slot is required
+    /// (no default) or out of range. Used by the default-fill paths to
+    /// materialize skipped middle/trailing slots.
+    /// </summary>
+    public Value? DefaultForSlot(int slot)
+    {
+        if (ParameterDefaults is null) return null;
+        if (slot < 0 || slot >= ParameterDefaults.Count) return null;
+        return ParameterDefaults[slot];
+    }
+
     public override string ToString()
     {
         var inputs = IsVarArgs
@@ -151,11 +189,35 @@ public record FunctionSignature(
         }
         else
         {
-            // Fixed parameter count
-            if (argTypes.Count != InputTypes.Count)
+            // Fixed parameter count.
+            //
+            // jam-named-args (0615): default-fill for sparse POSITIONAL calls.
+            // When the signature carries per-parameter defaults, a call may
+            // supply FEWER positionals than InputTypes.Count as long as every
+            // unsupplied trailing slot has a non-null default (e.g. the
+            // collapsed `jam(over, style, length, key, seed, order)` resolves
+            // `(jam chords)` by default-filling slots 1..5). Supplying MORE
+            // than InputTypes.Count is still a hard mismatch. Signatures
+            // without defaults keep the exact `== InputTypes.Count` contract,
+            // so every other builtin's positional dispatch is byte-identical.
+            if (argTypes.Count > InputTypes.Count)
                 return false;
+            if (argTypes.Count != InputTypes.Count)
+            {
+                if (!HasParameterDefaults)
+                    return false;
+                // Every unsupplied slot must have a default.
+                for (int i = argTypes.Count; i < InputTypes.Count; i++)
+                {
+                    if (DefaultForSlot(i) is null)
+                        return false;
+                }
+            }
 
-            for (int i = 0; i < InputTypes.Count; i++)
+            // Type-check only the slots that were actually supplied; the
+            // default-filled trailing slots are type-correct by construction
+            // (the registrant supplied a Value of the parameter's type).
+            for (int i = 0; i < argTypes.Count; i++)
             {
                 if (!SlotMatches(argTypes[i], InputTypes[i], strictMode))
                     return false;

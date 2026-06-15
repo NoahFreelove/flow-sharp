@@ -1662,12 +1662,17 @@ public partial class Parser
                 _inFuncCallArgs = true;
                 while (!Check(TokenType.RParen) && !IsAtEnd())
                 {
-                    // 2-token peek for named-arg form `Identifier = Expression`.
-                    if (Check(TokenType.Identifier)
+                    // 2-token peek for named-arg form `Label = Expression`.
+                    // jam-named-args (0615): the label may be an Identifier OR a
+                    // musical-context keyword token (e.g. `key=`), so that
+                    // `(jam over=chords key="Cmajor")` parses — `key` lexes as
+                    // TokenType.Key, not Identifier. The trailing `=` is the
+                    // decisive disambiguator from a `key Cmajor { }` block.
+                    if (IsNamedArgLabel(CurrentToken.Type)
                         && _current + 1 < _tokens.Count
                         && _tokens[_current + 1].Type == TokenType.Assign)
                     {
-                        var argNameTok = Advance(); // Identifier
+                        var argNameTok = Advance(); // label
                         Advance();                  // Assign
                         var argName = argNameTok.Text;
                         var argLoc = argNameTok.Location;
@@ -2364,6 +2369,31 @@ public partial class Parser
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// jam-named-args (0615) — true when <paramref name="type"/> can serve as a
+    /// named-argument LABEL on the left of <c>=</c> in a call. Identifiers are
+    /// the common case, but the musical-context keyword tokens
+    /// (<c>tempo</c>/<c>swing</c>/<c>key</c>/<c>timesig</c>/<c>pan</c>/<c>gain</c>)
+    /// also lex as their own token types rather than <c>Identifier</c>, so a
+    /// label like <c>key=</c> would otherwise be invisible to the
+    /// 2-token-peek named-arg detector. These keywords already carry their
+    /// literal text and are accepted as call-head names elsewhere (see the
+    /// function-name dispatch), so accepting them as labels is consistent.
+    /// The decisive disambiguator stays the trailing <c>=</c>: a bare
+    /// <c>key Cmajor { }</c> context block is a STATEMENT and never reaches the
+    /// call-arg loop, so there is no collision at expression position.
+    /// </summary>
+    private static bool IsNamedArgLabel(TokenType type)
+    {
+        return type is TokenType.Identifier
+            or TokenType.Tempo
+            or TokenType.Swing
+            or TokenType.Key
+            or TokenType.Timesig
+            or TokenType.Pan
+            or TokenType.Gain;
     }
 
     private bool IsArgumentStart(TokenType type)

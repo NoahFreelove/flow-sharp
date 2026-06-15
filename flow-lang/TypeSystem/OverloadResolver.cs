@@ -266,8 +266,28 @@ public class OverloadResolver
                 }
                 if (duplicate) continue;
 
-                // Validate arity: positional + named must cover the whole signature.
-                if (positionalArgTypes.Count + namedArgTypes.Count != sig.InputTypes.Count)
+                // Validate arity. Without per-parameter defaults the supplied
+                // positional + named args must cover the whole signature
+                // exactly (legacy contract). jam-named-args (0615): when the
+                // signature carries defaults, slots left uncovered by
+                // positional-or-named may be default-filled — so the only
+                // hard arity errors are "too many args" or "a required
+                // (default-less) slot is uncovered". This is what lets the
+                // collapsed `jam(over, style, length, key, seed, order)`
+                // resolve sparse middle-skip calls like
+                // `(jam over=chords style=#jazz seed=42)` (length + key
+                // default-filled).
+                if (positionalArgTypes.Count + namedArgTypes.Count > sig.InputTypes.Count)
+                {
+                    (localReporter ??= new ErrorReporter()).ReportError(
+                        $"function '{functionName}' expects {sig.InputTypes.Count} arguments, " +
+                        $"got {positionalArgTypes.Count} positional + {namedArgTypes.Count} named",
+                        location);
+                    continue;
+                }
+                bool hasDefaults = sig.HasParameterDefaults;
+                if (positionalArgTypes.Count + namedArgTypes.Count != sig.InputTypes.Count
+                    && !hasDefaults)
                 {
                     (localReporter ??= new ErrorReporter()).ReportError(
                         $"function '{functionName}' expects {sig.InputTypes.Count} arguments, " +
@@ -278,11 +298,19 @@ public class OverloadResolver
 
                 // Build the re-ordered FlowType[] matching the signature's
                 // positional order. Slots 0..positionalArgTypes.Count-1 keep
-                // their positional types; the remaining slots are filled from
-                // namedArgTypes by parameter-name lookup.
+                // their positional types; the named-arg slots are filled from
+                // namedArgTypes by parameter-name lookup. Any slot that ends up
+                // covered by neither positional nor named is default-filled
+                // (jam-named-args 0615) — its type comes from the registered
+                // default Value; a slot with no default and no supplied arg is
+                // a required-parameter-uncovered error.
                 var reordered = new FlowType[sig.InputTypes.Count];
+                var slotCovered = new bool[sig.InputTypes.Count];
                 for (int i = 0; i < positionalArgTypes.Count; i++)
+                {
                     reordered[i] = positionalArgTypes[i];
+                    slotCovered[i] = true;
+                }
                 bool reorderOk = true;
                 foreach (var (name, type) in namedArgTypes)
                 {
@@ -301,8 +329,30 @@ public class OverloadResolver
                         break;
                     }
                     reordered[slot] = type;
+                    slotCovered[slot] = true;
                 }
                 if (!reorderOk) continue;
+
+                // Default-fill any uncovered slots from the registered defaults.
+                bool requiredSlotMissing = false;
+                for (int i = 0; i < sig.InputTypes.Count; i++)
+                {
+                    if (slotCovered[i]) continue;
+                    var dflt = sig.DefaultForSlot(i);
+                    if (dflt is null)
+                    {
+                        // A slot with no positional/named arg AND no default —
+                        // the call genuinely under-supplies a required param.
+                        (localReporter ??= new ErrorReporter()).ReportError(
+                            $"function '{functionName}' is missing a value for required parameter " +
+                            $"'{sig.ParameterNames[i]}'",
+                            location);
+                        requiredSlotMissing = true;
+                        break;
+                    }
+                    reordered[i] = dflt.Type;
+                }
+                if (requiredSlotMissing) continue;
 
                 // sweep-0614: this candidate passed name/duplicate/arity/reorder
                 // validation — keep it (with its OWN reordered vector) and try

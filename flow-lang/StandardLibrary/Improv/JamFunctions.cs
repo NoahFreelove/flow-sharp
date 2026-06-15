@@ -110,38 +110,38 @@ public static class JamFunctions
         InternalFunctionRegistry registry,
         ExecutionContext context)
     {
-        // jam(over, style, length, key, seed, order) — full 6-arity surface.
-        var sig6 = new FunctionSignature("jam",
+        // jam-named-args (0615) — COLLAPSED to a SINGLE 6-param signature with
+        // per-parameter defaults (D-36-10 surface). The old six positional
+        // arity overloads are gone: with OverloadResolver default-fill, this one
+        // signature resolves every documented call form —
+        //   (jam chords)                                   positional, 5 defaulted
+        //   (jam chords #jazz 8 "Cmajor" 42 2)             fully positional
+        //   (jam over=chords style=#jazz seed=42)          sparse middle-skip named
+        //   (jam over=chords key="Cmajor" length=4)        sparse named, key= label
+        //
+        // Default sentinels (D-v1.5-05 charitable):
+        //   over   — required (null default → resolver errors if omitted)
+        //   style  — #jazz (interned Symbol)
+        //   length — 8
+        //   key    — Void sentinel → handler treats as "no override; use the
+        //            active MusicalContext.Key, else Cmajor + advisory"
+        //   seed   — Void sentinel → handler routes through PrngRegistry
+        //            (unseeded, two-run cmp-clean preserved)
+        //   order  — 2 (clamped to [1, 3] in the handler)
+        var sig = new FunctionSignature("jam",
             [SequenceType.Instance, SymbolType.Instance, IntType.Instance,
              StringType.Instance, IntType.Instance, IntType.Instance],
-            ParameterNames: ["over", "style", "length", "key", "seed", "order"]);
-        registry.Register("jam", sig6, args => Jam(args, context, hasOrder: true, hasSeed: true, hasKey: true));
-
-        var sig5 = new FunctionSignature("jam",
-            [SequenceType.Instance, SymbolType.Instance, IntType.Instance,
-             StringType.Instance, IntType.Instance],
-            ParameterNames: ["over", "style", "length", "key", "seed"]);
-        registry.Register("jam", sig5, args => Jam(args, context, hasOrder: false, hasSeed: true, hasKey: true));
-
-        var sig4 = new FunctionSignature("jam",
-            [SequenceType.Instance, SymbolType.Instance, IntType.Instance, StringType.Instance],
-            ParameterNames: ["over", "style", "length", "key"]);
-        registry.Register("jam", sig4, args => Jam(args, context, hasOrder: false, hasSeed: false, hasKey: true));
-
-        var sig3 = new FunctionSignature("jam",
-            [SequenceType.Instance, SymbolType.Instance, IntType.Instance],
-            ParameterNames: ["over", "style", "length"]);
-        registry.Register("jam", sig3, args => Jam(args, context, hasOrder: false, hasSeed: false, hasKey: false));
-
-        var sig2 = new FunctionSignature("jam",
-            [SequenceType.Instance, SymbolType.Instance],
-            ParameterNames: ["over", "style"]);
-        registry.Register("jam", sig2, args => Jam(args, context, hasOrder: false, hasSeed: false, hasKey: false));
-
-        var sig1 = new FunctionSignature("jam",
-            [SequenceType.Instance],
-            ParameterNames: ["over"]);
-        registry.Register("jam", sig1, args => Jam(args, context, hasOrder: false, hasSeed: false, hasKey: false));
+            ParameterNames: ["over", "style", "length", "key", "seed", "order"],
+            ParameterDefaults:
+            [
+                null,                              // over — required
+                Value.Symbol("jazz", context),    // style
+                Value.Int(8),                      // length
+                Value.Void(),                      // key — Void = no override
+                Value.Void(),                      // seed — Void = PrngRegistry
+                Value.Int(2),                      // order
+            ]);
+        registry.Register("jam", sig, args => Jam(args, context));
     }
 
     // ====================================================================
@@ -150,39 +150,50 @@ public static class JamFunctions
 
     private static Value Jam(
         IReadOnlyList<Value> args,
-        ExecutionContext ctx,
-        bool hasOrder, bool hasSeed, bool hasKey)
+        ExecutionContext ctx)
     {
-        // Argument layout (positionals only; named-arg surface synthesizes
-        // these positions before dispatch per Phase 36 Plan 36-02):
-        //   args[0] = over (Sequence)         — required
-        //   args[1] = style (Symbol)          — defaults to #jazz when missing
-        //   args[2] = length (Int)            — defaults to 8 when missing
-        //   args[3] = key (String) IF hasKey  — defaults to ctx.MusicalContext.Key
-        //   args[4 / args[5]] = seed (Int)    — present iff hasSeed; defaults to PrngRegistry routing
-        //   args[5] = order (Int) IF hasOrder — defaults to 2; clamped to [1, 3]
+        // jam-named-args (0615): the collapsed single 6-param signature always
+        // arrives with all six slots materialized — positional + named args
+        // first, then OverloadResolver default-fill for the rest (in
+        // ExpressionEvaluator). So args is always exactly:
+        //   args[0] = over   (Sequence)  — required
+        //   args[1] = style  (Symbol)    — default #jazz
+        //   args[2] = length (Int)       — default 8
+        //   args[3] = key    (String)    — default Void sentinel → no override
+        //   args[4] = seed   (Int)       — default Void sentinel → PrngRegistry
+        //   args[5] = order  (Int)       — default 2; clamped to [1, 3]
+        //
+        // The `key` / `seed` slots default to a Void sentinel (rather than a
+        // concrete String/Int) precisely so the handler can distinguish
+        // "composer omitted it" (→ context-driven / PrngRegistry) from "composer
+        // explicitly passed it". A guard keeps the handler safe even if a
+        // future caller under-fills (charitable: treat short arg lists as
+        // all-default).
         var over = args[0].As<SequenceData>();
 
         // Default style = #jazz when no Symbol arg supplied.
-        Value styleSymbol = args.Count >= 2 ? args[1] : Value.Symbol("jazz", ctx);
+        Value styleSymbol = args.Count >= 2 && args[1].Type is not VoidType
+            ? args[1]
+            : Value.Symbol("jazz", ctx);
 
         // Default length = 8 bars when no Int arg supplied.
-        int length = args.Count >= 3 ? args[2].As<int>() : 8;
+        int length = args.Count >= 3 && args[2].Type is not VoidType ? args[2].As<int>() : 8;
 
-        // Optional key override — only present when hasKey == true.
-        string? keyOverride = hasKey ? args[3].As<string>() : null;
+        // Optional key override — Void sentinel (the registered default) means
+        // "no override; resolve from MusicalContext".
+        string? keyOverride = args.Count >= 4 && args[3].Type is not VoidType
+            ? args[3].As<string>()
+            : null;
 
-        // Optional explicit seed — present when hasSeed == true. Position
-        // depends on whether key was also supplied: key=3, seed=4 (5-arity)
-        // or seed=3 (3-arity hypothetical). With our six registered overloads,
-        // hasKey is true whenever hasSeed is true, so seed is always args[4].
+        // Optional explicit seed — Void sentinel means "unseeded; route through
+        // PrngRegistry" (two-run cmp-clean preserved).
         int? seed = null;
-        if (hasSeed) seed = args[4].As<int>();
+        if (args.Count >= 5 && args[4].Type is not VoidType)
+            seed = args[4].As<int>();
 
-        // Optional order — present when hasOrder == true. Always args[5] since
-        // hasOrder only appears in the 6-arity overload.
+        // Optional order — default 2; clamped to [1, 3].
         int order = 2;
-        if (hasOrder)
+        if (args.Count >= 6 && args[5].Type is not VoidType)
         {
             int requestedOrder = args[5].As<int>();
             order = Math.Clamp(requestedOrder, 1, 3);
