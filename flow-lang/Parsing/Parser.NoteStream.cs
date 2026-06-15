@@ -261,7 +261,8 @@ public partial class Parser
                 continue;
             }
 
-            // Named chord element in note stream: Cmaj7, Dm, etc.
+            // Named chord element in note stream: Cmaj7, Dm, Cmaj7q (chord-duration-
+            // fusion 0615 #5), Bb7w~ (tied), etc.
             if (Check(TokenType.ChordLiteral))
             {
                 var chordToken = Advance();
@@ -269,7 +270,8 @@ public partial class Parser
                 string chordSymbol = chordToken.Text;
                 string? durSuffix = TryParseDurationSuffix();
                 bool isDotted = durSuffix != null && Match(TokenType.Dot);
-                currentBarElements.Add(new NamedChordElement(elemLoc, chordSymbol, durSuffix, isDotted));
+                bool isTied = Match(TokenType.Tilde);
+                currentBarElements.Add(new NamedChordElement(elemLoc, chordSymbol, durSuffix, isDotted, isTied));
                 continue;
             }
 
@@ -725,13 +727,14 @@ public partial class Parser
                 continue;
             }
 
-            // ChordLiteral: Cmaj7, Dm
+            // ChordLiteral: Cmaj7, Dm, Cmaj7q (chord-duration-fusion 0615 #5)
             if (Check(TokenType.ChordLiteral))
             {
                 var chordToken = Advance();
                 string? chordSuffix = TryParseDurationSuffix();
                 bool chordDotted = chordSuffix != null && Match(TokenType.Dot);
-                children.Add(new NamedChordElement(chordToken.Location, chordToken.Text, chordSuffix, chordDotted));
+                bool chordTied = Match(TokenType.Tilde);
+                children.Add(new NamedChordElement(chordToken.Location, chordToken.Text, chordSuffix, chordDotted, chordTied));
                 continue;
             }
 
@@ -872,13 +875,14 @@ public partial class Parser
                 continue;
             }
 
-            // Named chord: Cmaj7, Dm
+            // Named chord: Cmaj7, Dm, Cmaj7q (chord-duration-fusion 0615 #5)
             if (Check(TokenType.ChordLiteral))
             {
                 var chordToken = Advance();
                 string? chordSuffix = TryParseDurationSuffix();
                 bool chordDotted = chordSuffix != null && Match(TokenType.Dot);
-                children.Add(new NamedChordElement(chordToken.Location, chordToken.Text, chordSuffix, chordDotted));
+                bool chordTied = Match(TokenType.Tilde);
+                children.Add(new NamedChordElement(chordToken.Location, chordToken.Text, chordSuffix, chordDotted, chordTied));
                 continue;
             }
 

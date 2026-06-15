@@ -1079,6 +1079,27 @@ public class SimpleLexer
                 return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText, Span: new Span(start, CurrentLocation()));
             }
 
+            // chord-duration-fusion (feature-addition 0615 #5): a chord name
+            // immediately followed by a single duration letter — Cmaj7q, Dm7e,
+            // F#dim7h, Bb7w — fuses into a ChordLiteral + a separate duration
+            // Identifier, mirroring the note+duration split below (C4q). Greedily
+            // matches the LONGEST valid chord quality, THEN one trailing duration
+            // letter; the optional dot `.` / tie `~` lex as their own tokens, so
+            // the Parser.NoteStream NamedChordElement path (durSuffix → dot → tie)
+            // picks those up unchanged. MUST precede the note+duration split so
+            // the chord reading wins over the exotic "Bb7 = B octave-7 note"
+            // interpretation (CLAUDE.md "Chord literals" lists Bb7 as a chord).
+            // TryMatchChordWithDuration is conservative — empty/bare-digit-without-
+            // accidental qualities (Bbq, G7q, C4q) fall through to the note paths.
+            if (ChordParser.TryMatchChordWithDuration(text, out var chordCore, out _))
+            {
+                // Rewind one char so the trailing duration letter re-scans as its
+                // own Identifier token (same mechanism as the note+duration split).
+                _position--;
+                _column--;
+                return new Token(TokenType.ChordLiteral, chordCore, start, chordCore, Span: new Span(start, CurrentLocation()));
+            }
+
             // Check for note + duration suffix (e.g., C4h, D5q, E3w, F4x for 64th, G5y for 128th)
             // The duration suffix gets consumed as part of the identifier but should be a
             // separate token for the parser's TryParseDurationSuffix.

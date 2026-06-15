@@ -238,6 +238,105 @@ public static class ChordParser
     }
 
     /// <summary>
+    /// The note-stream duration-suffix letters recognized by
+    /// Parser.NoteStream.cs <c>TryParseDurationSuffix</c>
+    /// (w=whole, h=half, q=quarter, e=eighth, s=sixteenth, t=thirty-second,
+    /// x=64th, y=128th). Single-letter forms only — a chord+duration fusion
+    /// token carries exactly one trailing duration letter (the optional dot
+    /// <c>.</c> and tie <c>~</c> lex as their own tokens, so they are NOT part
+    /// of the identifier and never reach this method).
+    /// </summary>
+    private static bool IsDurationSuffixLetter(char ch) =>
+        ch is 'w' or 'h' or 'q' or 'e' or 's' or 't' or 'x' or 'y';
+
+    /// <summary>
+    /// chord-duration-fusion (feature-addition 0615 #5): tries to read
+    /// <paramref name="text"/> as a CHORD NAME immediately followed by a single
+    /// trailing duration letter — e.g. <c>Cmaj7q</c>, <c>Dm7e</c>,
+    /// <c>F#dim7h</c>, <c>Bb7w</c> — mirroring the existing note+duration fusion
+    /// (<c>C4q</c>). The lexer calls this AFTER whole-token chord/note checks
+    /// fail and BEFORE the note+duration split, so a recognized chord+duration
+    /// wins over the exotic "<c>Bb7</c> = B-flat octave-7 note" reading per the
+    /// CLAUDE.md "Chord literals" doc (which lists <c>Bb7</c> as a chord).
+    ///
+    /// <para>On success, <paramref name="chordCore"/> is the canonical chord
+    /// symbol (root accidentals normalized <c>b</c>/<c>#</c> → <c>f</c>/<c>s</c>
+    /// so the parser/ChordParser.TryParse path consumes it unchanged) and
+    /// <paramref name="durationLetter"/> is the single suffix letter.</para>
+    ///
+    /// <para>Conservatism (so plain notes are NEVER stolen):</para>
+    /// <list type="bullet">
+    ///   <item>The chord part must carry a NON-EMPTY known quality — a bare root
+    ///   (<c>Bbq</c> → <c>Bb</c>, empty quality) falls through to the plain-note
+    ///   path (B-flat quarter), not a B-flat major chord.</item>
+    ///   <item>A BARE-DIGIT quality (<c>5</c>/<c>6</c>/<c>7</c>/<c>9</c>/<c>11</c>/
+    ///   <c>13</c>) is ALWAYS rejected — it is structurally indistinguishable from
+    ///   a note octave (<c>F#5</c> = F-sharp octave 5, <c>G7</c> = G octave 7,
+    ///   <c>Cs5</c>/<c>Df7</c> — the documented tests/test_chords.flow +
+    ///   <see cref="IsChordSymbol"/> convention). So <c>F#5e</c>/<c>G7q</c>/
+    ///   <c>Bb7w</c> stay NOTES; only QUALITIES CONTAINING A LETTER
+    ///   (<c>maj7</c>/<c>m7</c>/<c>dim7</c>/<c>sus4</c>/<c>add9</c>/<c>m</c>/…) fuse.</item>
+    /// </list>
+    /// </summary>
+    public static bool TryMatchChordWithDuration(string text, out string chordCore, out char durationLetter)
+    {
+        chordCore = string.Empty;
+        durationLetter = '\0';
+
+        // Need at least root(1) + quality(1) + duration(1) = 3 chars.
+        if (text.Length < 3)
+            return false;
+
+        char last = text[^1];
+        if (!IsDurationSuffixLetter(last))
+            return false;
+
+        string core = text[..^1];
+        if (core.Length < 2)
+            return false;
+
+        char first = core[0];
+        if (first < 'A' || first > 'G')
+            return false;
+
+        // Normalize a leading b/# root accidental to f/s so both common-practice
+        // (Bb7, F#dim7) and Flow-native (Bf7, Fsdim7) spellings resolve. Only the
+        // root accidental at position 1 is normalized — quality alterations are
+        // already dual-listed (b5/f5 etc.) in QualityIntervals.
+        bool hasAccidental = false;
+        string norm = core;
+        if (core.Length >= 2 && (core[1] == 'b' || core[1] == '#'))
+        {
+            norm = core[0] + (core[1] == 'b' ? "f" : "s") + core[2..];
+            hasAccidental = true;
+        }
+        else if (core.Length >= 2 && (core[1] == 's' || core[1] == 'f'))
+        {
+            hasAccidental = true;
+        }
+
+        // Split root (letter + optional s/f accidental) from quality.
+        int rootLen = hasAccidental ? 2 : 1;
+        if (norm.Length <= rootLen)
+            return false; // empty quality (e.g. "Bb" → bare flat note, not a chord)
+        string quality = norm[rootLen..];
+
+        if (!QualityIntervals.ContainsKey(quality))
+            return false;
+
+        // Bare-digit quality (5/6/7/9/11/13) is ALWAYS rejected: it collides with a
+        // note octave (F#5 = F-sharp octave 5, G7 = note G octave 7, Cs5/Df7). This
+        // mirrors the IsChordSymbol IsAllDigits gate. Only letter-bearing qualities
+        // (maj7/m7/dim7/sus4/add9/m/…) are unambiguous enough to fuse.
+        if (IsAllDigits(quality))
+            return false;
+
+        chordCore = norm;
+        durationLetter = last;
+        return true;
+    }
+
+    /// <summary>
     /// Returns true iff <paramref name="s"/> is non-empty and every char is a digit 0-9.
     /// Used by IsChordSymbol to reject ambiguous bare-digit quality suffixes that
     /// collide with note octaves (e.g., "6" in "D6", "7" in "G7").

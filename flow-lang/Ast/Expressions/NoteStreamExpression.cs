@@ -54,7 +54,8 @@ public record NamedChordElement(
     SourceLocation Location,
     string ChordSymbol,
     string? DurationSuffix,
-    bool IsDotted
+    bool IsDotted,
+    bool IsTied = false
 ) : NoteStreamElement(Location);
 
 /// <summary>

@@ -944,7 +944,7 @@ public class NoteStreamCompiler
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
             // See CompileChordElement above: first tone leads, rest stack on its onset.
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isTied: namedChord.IsTied, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
             firstNamed = false;
         }
 
@@ -1155,7 +1155,8 @@ public class NoteStreamCompiler
                 + (c.IsDotted ? 1 : 0),
             NamedChordElement nc => nc.ChordSymbol.Length
                 + (nc.DurationSuffix?.Length ?? 0)
-                + (nc.IsDotted ? 1 : 0),
+                + (nc.IsDotted ? 1 : 0)
+                + (nc.IsTied ? 1 : 0),
             RomanNumeralElement rn => rn.Numeral.Length
                 + (rn.DurationSuffix?.Length ?? 0)
                 + (rn.IsDotted ? 1 : 0),
