@@ -74,7 +74,7 @@ public static class SectionOverloadDispatch
 
             // Build the final positional arg list by folding named args + defaults
             var (finalArgs, bindFailed) = BuildFinalArgs(
-                candidate, positionalArgs, namedArgs, evaluator, errorReporter, sectionName, location);
+                candidate, positionalArgs, namedArgs, evaluator);
             if (bindFailed) continue;
 
             // Pattern-match the candidate's parameter list against the final args
@@ -115,31 +115,34 @@ public static class SectionOverloadDispatch
     /// <summary>
     /// Builds the final positional arg list for a candidate, folding named
     /// args into slot positions and applying default-value expressions for
-    /// un-supplied slots (D-36-15). Returns <c>bindFailed=true</c> when:
+    /// un-supplied slots (D-36-15). Returns <c>bindFailed=true</c> (a SILENT
+    /// per-candidate disqualification — mirrors OverloadResolver, never a hard
+    /// error, so sibling overloads stay eligible) when:
+    /// - more positional args than this candidate has parameters,
     /// - a named arg targets an unknown slot (no matching BindingPattern name),
     /// - a named arg collides with a positional slot,
     /// - no default exists for an un-supplied slot.
-    /// On bindFailed=true the diagnostic has already been emitted.
+    /// The aggregate "no overload matches" diagnostic in <see cref="Resolve"/>
+    /// fires only when EVERY candidate is disqualified.
     /// </summary>
     private static (IReadOnlyList<Value> finalArgs, bool bindFailed) BuildFinalArgs(
         SectionData candidate,
         IReadOnlyList<Value> positionalArgs,
         IReadOnlyDictionary<string, Value>? namedArgs,
-        ExpressionEvaluator evaluator,
-        ErrorReporter errorReporter,
-        string sectionName,
-        SourceLocation? location)
+        ExpressionEvaluator evaluator)
     {
         var paramCount = candidate.Parameters!.Count;
         var finalArgs = new Value[paramCount];
         var bound = new bool[paramCount];
 
         // 1. Place positional args left-to-right.
+        //    Too many positional args for THIS candidate is NOT a hard error:
+        //    a sibling overload with more parameters may accept them. Disqualify
+        //    this candidate silently so OverloadResolver-style dispatch can pick
+        //    the arity-correct overload (the "no overload matches" diagnostic at
+        //    Resolve() fires only when EVERY candidate is disqualified).
         if (positionalArgs.Count > paramCount)
         {
-            errorReporter.ReportError(
-                $"section '{sectionName}' expects {paramCount} arguments, got {positionalArgs.Count} positional",
-                location);
             return (Array.Empty<Value>(), true);
         }
         for (int i = 0; i < positionalArgs.Count; i++)
@@ -170,17 +173,16 @@ public static class SectionOverloadDispatch
                 }
                 if (slot < 0)
                 {
-                    errorReporter.ReportError(
-                        $"unknown parameter '{name}' for section '{sectionName}'",
-                        location);
+                    // Unknown slot for THIS candidate — a sibling overload may
+                    // carry the named slot. Disqualify silently (aggregate
+                    // "no overload matches" fires if every candidate fails).
                     return (Array.Empty<Value>(), true);
                 }
                 if (bound[slot])
                 {
-                    errorReporter.ReportError(
-                        $"parameter '{name}' bound by both positional and named argument " +
-                        $"in call to section '{sectionName}'",
-                        location);
+                    // Named arg collides with a positional slot for THIS
+                    // candidate — disqualify silently; a sibling overload with a
+                    // different parameter shape may still accept the call.
                     return (Array.Empty<Value>(), true);
                 }
                 finalArgs[slot] = value;
