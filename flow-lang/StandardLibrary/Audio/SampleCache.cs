@@ -285,10 +285,32 @@ public class SampleCache
     }
 
     /// <summary>
-    /// True if Phase 29 ships sample coverage for <paramref name="instrument"/>.
+    /// True if Phase 29 declares sample coverage for <paramref name="instrument"/>
+    /// in the static manifest. NOTE: this reflects the manifest only — it does
+    /// NOT mean any WAV actually loaded into the cache (the Web target strips
+    /// <c>Samples/**</c>, and a fresh clone may not have fetched the bundle).
+    /// Gate playable-sample decisions on <see cref="HasLoadedSamples"/> instead.
     /// </summary>
     public bool HasInstrument(string instrument) =>
         InstrumentManifest.ContainsKey((instrument ?? string.Empty).ToLowerInvariant());
+
+    /// <summary>
+    /// sweep-0614 fix — true when at least one sample pitch ACTUALLY loaded into
+    /// the cache for <paramref name="instrument"/> (reflects real loaded state
+    /// after <see cref="EagerLoad"/>, unlike <see cref="HasInstrument"/> which
+    /// reads only the static manifest). When the WAV bundle is absent (Web
+    /// target / partial install) this returns false even though
+    /// <c>HasInstrument</c> is true — letting callers warn-and-rest instead of
+    /// rendering diagnostic-free silence.
+    /// </summary>
+    public bool HasLoadedSamples(string instrument)
+    {
+        instrument = (instrument ?? string.Empty).ToLowerInvariant();
+        return _availablePitches.TryGetValue(instrument, out var pitches) && pitches.Count > 0
+               && pitches.Exists(p => _rawCache.ContainsKey((instrument, p, "mf"))
+                                   || _rawCache.ContainsKey((instrument, p, "ff"))
+                                   || _rawCache.ContainsKey((instrument, p, "pp")));
+    }
 
     /// <summary>
     /// Diagnostic: number of raw samples loaded into the cache. Used by tests to

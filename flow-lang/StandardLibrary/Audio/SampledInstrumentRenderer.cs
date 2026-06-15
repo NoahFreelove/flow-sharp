@@ -156,8 +156,12 @@ public class SampledInstrumentRenderer
             var ff = _cache.GetVarispeed(_instrument, sampleMidi, "ff", semitonesShift);
             if (pp is null || ff is null)
             {
-                // Sample missing — return silence (caller's responsibility to populate bundle).
-                // The render still respects the authored duration so downstream mixing is unaffected.
+                // sweep-0614 fix — sample missing (Web target strips Samples/**;
+                // a fresh clone may not have fetched the bundle). Render as a rest
+                // so downstream mixing keeps the authored duration, but advise once
+                // per instrument so the silent render isn't diagnostic-free
+                // (mirrors SfzRenderer's missing-sample contract).
+                WarnMissingSamples(sampleMidi);
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
             }
             var mp = _cache.GetVarispeed(_instrument, sampleMidi, "mp", semitonesShift);
@@ -179,7 +183,12 @@ public class SampledInstrumentRenderer
             // Single-velocity path: linear amplitude scaling
             var mf = _cache.GetVarispeed(_instrument, sampleMidi, "mf", semitonesShift);
             if (mf is null)
+            {
+                // sweep-0614 fix — see velocity-layer branch above. Warn once
+                // instead of returning diagnostic-free silence.
+                WarnMissingSamples(sampleMidi);
                 return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+            }
             mono = new float[mf.Data.Length];
             double v = Math.Clamp(note.Velocity, 0.0, 1.0);
             for (int i = 0; i < mono.Length; i++) mono[i] = (float)(mf.Data[i] * v);
@@ -205,14 +214,27 @@ public class SampledInstrumentRenderer
             fitted[i] *= envelope[i];
 
         // Phase 37 SAMP-03 (Pitfall 10) — sample-path articulation multiplier overlay.
-        // Identical wire-up to SfzRenderer.cs:240-245 (Plan 37-03 Task 2). Stacks AFTER
-        // the Phase 28 envelope; Phase 28's SynthUtils.GenerateArticulationADSR is
-        // unchanged so synth-path regression baselines stay green.
+        // Stacks AFTER the Phase 28 envelope; Phase 28's
+        // SynthUtils.GenerateArticulationADSR is unchanged so synth-path
+        // regression baselines stay green.
+        //
+        // sweep-0614 fix — bound the multiplier to the AUTHORED window and sample
+        // its A/D/S/R quartiles against authoredFrames (NOT fitted.Length). The
+        // Phase 28 envelope above is shaped over authoredFrames, but the buffer
+        // carries an extra release tail (up to 1.5s for piano). Sampling the
+        // quartile buckets over the full fitted.Length smeared the staccato
+        // 'attack' bucket (0.5×) across the authored note PLUS the start of the
+        // tail, and landed the 'decay' (1.2×) / 'release' (0.8×) buckets deep in
+        // the tail — overlaying a non-monotonic bump on what should be a smooth
+        // exponential ring-out. Bounding the window aligns the quartiles with the
+        // ADSR stages they reshape and matches the SFZ path (where the multiplier
+        // window equals the note duration).
         var sampleMult = SamplePathArticulationMultipliers.For(note.Articulation);
         if (sampleMult.IsNontrivial)
         {
-            for (int i = 0; i < fitted.Length; i++)
-                fitted[i] *= sampleMult.Sample(i, fitted.Length);
+            int multFrames = Math.Min(authoredFrames, fitted.Length);
+            for (int i = 0; i < multFrames; i++)
+                fitted[i] *= sampleMult.Sample(i, authoredFrames);
         }
 
         // Phase 37 PIANO-01 — tail fade decay time-constant scales with releaseSec
@@ -312,6 +334,24 @@ public class SampledInstrumentRenderer
         if (v <= VelocityTransitionLow) return 0.0;
         if (v >= VelocityTransitionHigh) return 1.0;
         return (v - VelocityTransitionLow) / (VelocityTransitionHigh - VelocityTransitionLow);
+    }
+
+    /// <summary>
+    /// sweep-0614 fix — one-shot advisory when no WAV is loaded for this
+    /// instrument (Web target strips the U-Iowa MIS bundle; a fresh clone may
+    /// not have fetched <c>flow-lang/Samples/</c>). Keyed by instrument so it
+    /// fires once per process per instrument, matching the
+    /// <c>SfzRenderer</c> missing-sample contract. Charitable: the render still
+    /// returns a duration-correct silence buffer (a rest), it just stops being
+    /// diagnostic-free.
+    /// </summary>
+    private void WarnMissingSamples(int sampleMidi)
+    {
+        RenderingDiagnostics.WarnOnce(
+            $"sample:missing:{_instrument}",
+            $"[sample] no WAV loaded for '{_instrument}' (nearest MIDI {sampleMidi}) — rendered as rest. " +
+            "On the Web target the U-Iowa MIS bundle is stripped; build with FlowTarget=Desktop " +
+            "or fetch flow-lang/Samples/ to enable sampled playback.");
     }
 
     private static double Rms(float[] samples, int n)
