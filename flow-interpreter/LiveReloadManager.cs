@@ -140,6 +140,17 @@ public class LiveReloadManager : IDisposable
     // Run() (e.g. WatchDebounceTests) don't allocate a heartbeat Timer.
     private LiveStatusPanel? _panel;
 
+    // sweep-0614 (cli-repl-watch): monotonically-increasing render counter. In
+    // plain-line mode every advisory routes through RenderingDiagnostics.WarnOnce,
+    // which dedups by sentinel for the WHOLE process lifetime. The per-render
+    // diagnostics (re-render notice + parse/render-failure) used path-only or
+    // constant dedup keys, so after the FIRST emission every SUBSEQUENT save was
+    // silently swallowed (composer fixes error A, introduces error B, sees
+    // nothing). We salt the per-render dedup keys with this counter so each save
+    // gets a distinct sentinel and always reaches stderr. (The timeout path keeps
+    // its line-keyed dedup — repeated identical timeouts SHOULD coalesce.)
+    private long _renderSeq;
+
     // Phase 38 Plan 38-03 LIVE-03: most-recent voices snapshot used by
     // PreserveVoiceState across live-block swaps. Populated from the
     // RenderScript output once VoiceAllocator surfaces the per-section voice
@@ -197,6 +208,13 @@ public class LiveReloadManager : IDisposable
         // Plan 38-01: install LiveStatusPanel at Run() entry so all subsequent
         // advisories route through the structured panel surface.
         _panel = new LiveStatusPanel(cliArgs: Environment.GetCommandLineArgs());
+
+        // sweep-0614 (cli-repl-watch): reserve the top panel rows via a DECSTBM
+        // scroll region so the scrolling log lines below ("Watching ...",
+        // "Stopping playback...", "Live reload ended.") land in the region below
+        // the fixed panel instead of colliding with the absolute-positioned panel
+        // rows. No-op in plain-line / redirected mode. Reset on _panel.Dispose().
+        _panel.BeginScrollRegion();
 
         // 1. Initial execution with capture mode.
         // Audit-0609 D2-minimal: RenderScript now returns the engine so we can
@@ -535,12 +553,18 @@ public class LiveReloadManager : IDisposable
             // so the catch block can dispose it on unexpected exceptions.
             FlowEngine? renderEngine = null;
 
+            // sweep-0614: salt per-render dedup keys with a per-save sequence so
+            // the process-lifetime WarnOnce dedup doesn't swallow later saves in
+            // plain-line mode. Captured once per render task so the re-render
+            // notice and the parse-failure advisory below share the same save id.
+            long renderSeq = Interlocked.Increment(ref _renderSeq);
+
             try
             {
                 _panel?.PublishAdvisory(
                     "[watch] change detected, re-rendering...",
                     AdvisoryLevel.Info,
-                    dedupKey: null);
+                    dedupKey: $"watch-rerender:{renderSeq}");
 
                 AudioBuffer? capturedBuffer = null;
                 MusicalContext? musicalContext = null;
@@ -594,10 +618,7 @@ public class LiveReloadManager : IDisposable
                     var msg = !string.IsNullOrEmpty(errors)
                         ? $"[live] {errors} — keeping previous version"
                         : "[live] no audio output detected — keeping previous version";
-                    _panel?.PublishAdvisory(
-                        msg,
-                        AdvisoryLevel.Error,
-                        dedupKey: $"live-parse:{_filePath}");
+                    PublishParseFailureAdvisory(msg, renderSeq);
                     return;
                 }
 
@@ -931,6 +952,27 @@ public class LiveReloadManager : IDisposable
             $"[live] evaluation timed out at 30s at line {line} — keeping previous version",
             AdvisoryLevel.Error,
             dedupKey: $"live-timeout:{line}");
+    }
+
+    /// <summary>
+    /// sweep-0614 (cli-repl-watch) — parse/render-failure advisory emitter.
+    /// Encapsulates the dedup-key construction so the StartRenderTask failure
+    /// branch and the regression test share one source of truth.
+    ///
+    /// The dedup key is salted with <paramref name="renderSeq"/> (the per-save
+    /// counter) so a DISTINCT parse/render error on a later save is NOT swallowed
+    /// by the process-lifetime <c>RenderingDiagnostics.WarnOnce</c> dedup in
+    /// plain-line mode. Before the fix this was path-only
+    /// (<c>live-parse:{filePath}</c>), so after the first error on a file every
+    /// subsequent distinct error was silently dropped — the composer fixed error A,
+    /// introduced error B, and saw nothing.
+    /// </summary>
+    protected void PublishParseFailureAdvisory(string message, long renderSeq)
+    {
+        _panel?.PublishAdvisory(
+            message,
+            AdvisoryLevel.Error,
+            dedupKey: $"live-parse:{_filePath}:{renderSeq}");
     }
 
     /// <summary>
