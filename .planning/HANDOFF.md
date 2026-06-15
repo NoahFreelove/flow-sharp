@@ -1,7 +1,14 @@
 # Handoff — comprehensive codebase sweep + fix (2026-06-14)
 
-Branch `dev`. A full multi-agent audit → docs-fix → code-fix sweep ran end-to-end. **38 commits**
-this session (`f8f5fd6`..HEAD), all local (**not pushed**). Build green Desktop + Web.
+Branch `dev`. A full multi-agent audit → docs-fix → code-fix sweep ran end-to-end. **~41 commits**
+this session (`f8f5fd6`..HEAD), all local (**git not pushed**). Build green Desktop + Web.
+
+> **DEPLOYED LIVE 2026-06-15** to https://flow-music.pages.dev (`wrangler pages deploy`, authed
+> noahfreelove@gmail.com). The WASM bundle was regenerated (`98410e3`, flow-lang.wasm 957205 B) so the
+> live playground now runs the sweep engine fixes, and the docs (built from the in-repo `wiki/` seed)
+> carry the 100 example + 70 prose fixes. All routes 200; new `.wasm` + fixed docs confirmed served.
+> **PENDING owner browser-UAT:** audible playground audio + a fixed-bug piece (e.g. 6/8 tempo, upward
+> pitchShift) + corrected docs rendering, across browsers. Git push still pending.
 
 ## What this session did
 
