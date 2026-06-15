@@ -128,4 +128,72 @@ public class ProgressionDslTests
         Assert.NotEmpty(pitchesA);
         Assert.Equal(pitchesA, pitchesB);
     }
+
+    // (6) FIX 0615: `progression | I IV V |` in Cmajor renders STACKED block chords,
+    // not a sequential arpeggio. Each of the 3 bars must place >=3 voices at the SAME
+    // onset (offsetBeats == 0 via BarData.ToTimeline), and the whole chord must sit in a
+    // sensible register — no over-bassy C2 (every voice >= MIDI 48 / C3).
+    [Fact]
+    public void Progression_RendersStackedChords_InSensibleRegister()
+    {
+        using var runner = new FlowEngineRunner();
+        var seq = RunProg(runner, "progression | I IV V |");
+
+        Assert.Equal(3, seq.Bars.Count);
+
+        foreach (var bar in seq.Bars)
+        {
+            // ToTimeline gives the authoritative onset-per-note view. A block chord =
+            // every voice emitted at the same beat offset.
+            var timeline = bar.ToTimeline().Where(t => !t.note.IsRest).ToList();
+            Assert.True(timeline.Count >= 3,
+                $"expected >=3 voices in the bar, got {timeline.Count}");
+
+            // All voices share ONE onset (simultaneous strike, not an arpeggio).
+            double firstOnset = timeline[0].offsetBeats;
+            Assert.All(timeline, t => Assert.Equal(firstOnset, t.offsetBeats, 6));
+
+            // Exactly one lead voice (IsChordTone=false); the rest stack on it.
+            int leads = timeline.Count(t => !t.note.IsChordTone);
+            Assert.Equal(1, leads);
+
+            // Sensible register: nothing below C3 (MIDI 48) — the old bass sat at C2 (~36).
+            foreach (var (note, _) in timeline)
+            {
+                int midi = NoteType.ToMidiNote(note.NoteName, note.Octave, note.Alteration);
+                Assert.True(midi >= 48,
+                    $"voice at MIDI {midi} is below C3 (over-bassy); expected >= 48");
+            }
+        }
+    }
+
+    // (7) FIX 0615: a progression chord is timing-identical to the equivalent note-stream
+    // chord bracket [..] — both place every voice at onset 0 of the bar (one shared onset).
+    // This pins the progression onto the SAME simultaneity mechanism brackets use.
+    [Fact]
+    public void Progression_ChordTiming_MatchesBracketChord()
+    {
+        using var runner = new FlowEngineRunner();
+
+        // First bar of `progression | I |` in Cmajor.
+        var prog = RunProg(runner, "progression | I |", "p");
+        var progOnsets = prog.Bars[0].ToTimeline()
+            .Where(t => !t.note.IsRest)
+            .Select(t => Math.Round(t.offsetBeats, 6))
+            .Distinct()
+            .ToList();
+
+        // A bracket chord [C4 E4 G4]w sounds all three at the bar's single onset.
+        var bracket = RunProg(runner, "| [C4 E4 G4]w |", "b");
+        var bracketOnsets = bracket.Bars[0].ToTimeline()
+            .Where(t => !t.note.IsRest)
+            .Select(t => Math.Round(t.offsetBeats, 6))
+            .Distinct()
+            .ToList();
+
+        // Both collapse to a single shared onset — no arpeggiation in either path.
+        Assert.Single(progOnsets);
+        Assert.Single(bracketOnsets);
+        Assert.Equal(bracketOnsets, progOnsets);
+    }
 }

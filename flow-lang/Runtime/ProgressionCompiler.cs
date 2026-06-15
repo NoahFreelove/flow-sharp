@@ -96,16 +96,18 @@ public class ProgressionCompiler
 
     /// <summary>
     /// Initializes voice pitches for the first chord in root position.
-    /// Bass voice at octave 3, upper voices spread in octave 4.
+    /// Bass voice at octave 3 (MIDI 48-59), upper voices spread in octave 4 —
+    /// keeping the whole chord within a ~octave span so it reads as a block chord
+    /// rather than a wide, bassy spread. (FIX 0615: bass was at octave 2 / MIDI 36.)
     /// </summary>
     private int[] InitializeVoices(ChordData chord, int voiceCount)
     {
         var chordTones = GetChordMidiPitches(chord);
         var pitches = new int[voiceCount];
 
-        // Bass voice: root at octave 3
+        // Bass voice: root at octave 3 (C3 = MIDI 48, bass range ~48-59)
         int rootSemitone = GetRootSemitone(chord);
-        pitches[0] = 36 + rootSemitone; // C3 = MIDI 48, but we want bass range ~36-55
+        pitches[0] = 48 + rootSemitone;
 
         // Upper voices: spread chord tones in octave 4 (MIDI 60-72)
         for (int v = 1; v < voiceCount; v++)
@@ -140,8 +142,9 @@ public class ProgressionCompiler
         var chordTones = GetChordMidiPitches(chord);
         int rootSemitone = GetRootSemitone(chord);
 
-        // Bass voice: find nearest root pitch in range 36-55
-        newPitches[0] = FindNearestPitchClass(prevPitches[0], rootSemitone, 36, 55);
+        // Bass voice: find nearest root pitch in octave-3 range 48-59
+        // (FIX 0615: was 36-55, which dipped into octave 2 and sounded over-bassy).
+        newPitches[0] = FindNearestPitchClass(prevPitches[0], rootSemitone, 48, 59);
 
         // Track which target pitches are used to avoid unison
         var usedPitches = new HashSet<int> { newPitches[0] };
@@ -202,8 +205,18 @@ public class ProgressionCompiler
 
     /// <summary>
     /// Builds a musical bar from MIDI pitches, with all notes sounding simultaneously
-    /// for the full bar duration.
+    /// (as a block chord) for the full bar duration.
     /// </summary>
+    /// <remarks>
+    /// FIX 0615: the first voice is the chord lead (IsChordTone=false — it advances the
+    /// bar's beat cursor); every remaining voice carries IsChordTone=true so it shares the
+    /// lead's onset rather than being played sequentially. This is the SAME simultaneity
+    /// mechanism a note-stream chord bracket <c>[C4 E4 G4]</c> uses
+    /// (see <see cref="NoteStreamCompiler"/> / <see cref="MusicalNoteData.IsChordTone"/> /
+    /// <c>BarType.ToTimeline</c>). Before this fix the voices were sequential
+    /// MusicalNoteData with no chord marking, so a progression arpeggiated instead of
+    /// striking a block chord.
+    /// </remarks>
     private static BarData BuildBar(int[] pitches, TimeSignatureData timeSig)
     {
         var notes = new List<MusicalNoteData>();
@@ -214,6 +227,7 @@ public class ProgressionCompiler
         // gives 1.0 * 4 = 4 beats. For other time sigs, we adjust.
         int durationValue = (int)NoteValueType.Value.WHOLE; // whole note
 
+        bool first = true;
         foreach (int midi in pitches)
         {
             var (noteName, alteration) = FromMidi(midi);
@@ -225,8 +239,11 @@ public class ProgressionCompiler
                 alteration: alteration,
                 durationValue: durationValue,
                 isRest: false,
-                velocity: 0.63
+                velocity: 0.63,
+                // Lead voice keeps IsChordTone=false; the rest stack on its onset.
+                isChordTone: !first
             ));
+            first = false;
         }
 
         return new BarData(notes, timeSig);
