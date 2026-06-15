@@ -74,6 +74,11 @@ public class MusicalContext
     /// </summary>
     public void SetLiveTempo(double bpm)
     {
+        // sweep-0614 defense-in-depth: clamp the high end so an out-of-range
+        // transport value (even if a future caller forgets the IsValidTransportTempo
+        // gate) can never collapse the MIDI clock master's pulse interval toward
+        // zero and busy-spin a CPU core. A non-positive value still clears the sink.
+        if (bpm > MaxTransportTempo) bpm = MaxTransportTempo;
         long bits = bpm > 0 ? BitConverter.DoubleToInt64Bits(bpm) : LiveTempoUnset;
         System.Threading.Interlocked.Exchange(ref _liveTempoBits, bits);
     }
@@ -228,6 +233,30 @@ public class MusicalContext
     public static bool IsValidTempo(double tempo)
     {
         return tempo > 0;
+    }
+
+    /// <summary>
+    /// sweep-0614: musically-sane upper bound for tempos arriving from EXTERNAL
+    /// transport sources (JACK transport query, MIDI clock slave delta). Unlike a
+    /// composer's deliberate <c>tempo N { }</c> block, these values come from
+    /// untrusted/glitchy peers — a server reporting e.g. 1e9 BPM (or a single
+    /// jittery clock delta) must be rejected, NOT written to the live-tempo sink.
+    /// An unbounded value collapses the MIDI clock master's pulse interval toward
+    /// zero and busy-spins a CPU core flooding the port. 1000 BPM is far above any
+    /// real musical tempo while still rejecting pathological transport readings.
+    /// This is the documented T-40-01 "out-of-range tempo is rejected" contract.
+    /// </summary>
+    public const double MaxTransportTempo = 1000.0;
+
+    /// <summary>
+    /// sweep-0614: transport-tempo validation with both a low and high bound
+    /// (see <see cref="MaxTransportTempo"/>). Gates the JACK + clock-slave live
+    /// tempo writes; the composer-facing <see cref="IsValidTempo"/> stays bound
+    /// only on the low end (a deliberate <c>tempo N { }</c> block is trusted).
+    /// </summary>
+    public static bool IsValidTransportTempo(double tempo)
+    {
+        return tempo > 0 && tempo <= MaxTransportTempo;
     }
 
     /// <summary>

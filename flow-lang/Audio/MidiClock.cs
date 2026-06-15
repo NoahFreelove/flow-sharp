@@ -216,6 +216,10 @@ public sealed class MidiClock
     {
         // 24 PPQN → one pulse every (60 / BPM / 24) seconds = 60000 / (BPM*24) ms.
         if (bpm <= 0) bpm = 120.0;
+        // sweep-0614 defense-in-depth: cap the BPM here too so a stale/out-of-range
+        // tempo that somehow reached this point cannot collapse the pulse interval
+        // toward zero and peg a CPU core in the master spin loop.
+        if (bpm > MusicalContext.MaxTransportTempo) bpm = MusicalContext.MaxTransportTempo;
         return 60000.0 / (bpm * PulsesPerQuarter);
     }
 
@@ -377,7 +381,11 @@ public sealed class MidiClock
                         // tempo into the deterministic offline render path. SetLiveTempo
                         // is Interlocked (thread-safe) and consumed only by the realtime
                         // clock master — never by SongRenderer/writeWav/writeMidi.
-                        if (MusicalContext.IsValidTempo(bpm))
+                        // sweep-0614: bounded transport-tempo gate (T-40-01). A
+                        // single glitched inter-pulse delta can compute a wild BPM;
+                        // reject it rather than write it to the live sink (which the
+                        // master reads back, where an unbounded value busy-spins).
+                        if (MusicalContext.IsValidTransportTempo(bpm))
                             _context.SetLiveTempo(bpm);
                     }
                 }

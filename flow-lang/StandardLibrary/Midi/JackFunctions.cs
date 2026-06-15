@@ -36,8 +36,8 @@ namespace FlowLang.StandardLibrary.Midi;
 /// <para><b>Tempo validation (T-40-01):</b> a transport tempo is written to the
 /// live-sync sink (<see cref="MusicalContext.SetLiveTempo"/>) only when the
 /// BBT-valid bit is set AND the derived BPM passes
-/// <see cref="MusicalContext.IsValidTempo"/>; out-of-range tempo is rejected, not
-/// written.</para>
+/// <see cref="MusicalContext.IsValidTransportTempo"/> (bounded ≤0 AND >1000 BPM,
+/// sweep-0614); out-of-range tempo is rejected, not written.</para>
 ///
 /// <para><c>#if !FLOW_WEB</c> — Compile-Removed on Web (T-40-03), like every other
 /// MIDI/JACK file. JACK is Linux-only native interop that can never run in a
@@ -207,7 +207,10 @@ public static class JackFunctions
             // deterministic render path. The handle still records the applied tempo
             // so the composer can read it back.
             double? appliedTempo = null;
-            if (bpm.HasValue && MusicalContext.IsValidTempo(bpm.Value))
+            // sweep-0614: gate on the bounded transport-tempo predicate (T-40-01).
+            // A JACK server reporting a pathological BPM (e.g. 1e9) must be rejected
+            // here, not written to the live sink where it would busy-spin the master.
+            if (bpm.HasValue && MusicalContext.IsValidTransportTempo(bpm.Value))
             {
                 var mctx = context.GetMusicalContext();
                 mctx.SetLiveTempo(bpm.Value);

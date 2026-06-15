@@ -134,6 +134,62 @@ JackHandle h = (jackSync)
     }
 
     /// <summary>
+    /// sweep-0614 (T-40-01 high end): a pathological transport BPM (e.g. a glitched
+    /// server reporting 1e9) used to PASS the unbounded IsValidTempo gate and get
+    /// written to the live-tempo sink — the clock master then computed a near-zero
+    /// pulse interval and busy-spun a CPU core. It must now be REJECTED (bounded by
+    /// <see cref="MusicalContext.MaxTransportTempo"/>) with an advisory, exactly
+    /// like the ≤0 case, and never applied to the handle Tempo.
+    /// </summary>
+    [Fact]
+    public void JackPathologicalHighTransportTempo_Rejected()
+    {
+        JackFunctions.TransportQueryOverride = () => (true, 1e9, 1, 1);
+        try
+        {
+            using var runner = new FlowEngineRunner();
+            var (ok, _, stderr, _) = runner.RunSource(@"use ""@jack""
+JackHandle h = (jackSync)
+", "<jack-huge-tempo>");
+
+            Assert.True(ok, $"jackSync with huge transport tempo must not error: {stderr}");
+            Assert.Contains("[jack]", stderr); // out-of-range advisory surfaced
+
+            var handle = runner.GetVariable("h").As<JackHandleData>();
+            Assert.NotNull(handle);
+            Assert.True(handle.ServerPresent);
+            Assert.Null(handle.Tempo); // pathological tempo not applied
+        }
+        finally
+        {
+            JackFunctions.TransportQueryOverride = null;
+        }
+    }
+
+    /// <summary>
+    /// sweep-0614 unit-level pin of the bounded transport predicate + the
+    /// SetLiveTempo defense-in-depth clamp: <see cref="MusicalContext.IsValidTransportTempo"/>
+    /// rejects ≤0 and >1000 while accepting sane tempos, and SetLiveTempo clamps a
+    /// huge value to <see cref="MusicalContext.MaxTransportTempo"/> rather than
+    /// storing it raw (so the master pulse interval can never collapse to ~0).
+    /// </summary>
+    [Fact]
+    public void TransportTempoBounds_RejectAndClamp()
+    {
+        Assert.False(MusicalContext.IsValidTransportTempo(0));
+        Assert.False(MusicalContext.IsValidTransportTempo(-5));
+        Assert.False(MusicalContext.IsValidTransportTempo(1e9));
+        Assert.False(MusicalContext.IsValidTransportTempo(MusicalContext.MaxTransportTempo + 0.1));
+        Assert.True(MusicalContext.IsValidTransportTempo(120));
+        Assert.True(MusicalContext.IsValidTransportTempo(MusicalContext.MaxTransportTempo));
+
+        var ctx = new MusicalContext();
+        ctx.SetLiveTempo(1e9);
+        Assert.True(ctx.TryGetLiveTempo(out double clamped));
+        Assert.Equal(MusicalContext.MaxTransportTempo, clamped, 6);
+    }
+
+    /// <summary>
     /// Non-JACK workflows are demonstrably unaffected by JACK absence: a program
     /// that NEVER imports @jack runs identically whether or not a JACK server is
     /// present. (No @jack import means jackSync is never registered as active and

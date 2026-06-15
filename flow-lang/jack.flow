@@ -4,8 +4,8 @@ Note:   jackSync() → JackHandle
 Note:
 Note: jackSync reads the running JACK server's transport position/tempo and drives
 Note:   the active MusicalContext.Tempo (+ bar/beat) when a server is present. The
-Note:   transport BPM is applied only when it passes MusicalContext.IsValidTempo
-Note:   (T-40-01 — out-of-range tempo is rejected, not written).
+Note:   transport BPM is applied only when it passes MusicalContext.IsValidTransportTempo
+Note:   (T-40-01 — out-of-range tempo, ≤0 OR >1000 BPM, is rejected, not written).
 Note:
 Note: Charitable absent-server (JACK-01 / T-40-04): with NO JACK server running (or
 Note:   libjack.so.0 absent), jackSync is a no-op — it emits a one-shot
