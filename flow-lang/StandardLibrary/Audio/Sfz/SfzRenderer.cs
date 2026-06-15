@@ -236,6 +236,99 @@ public class SfzRenderer
             }
         }
 
+        // Phase 37 SAMP-02 (sweep-0614 fix) — equal-power velocity crossfade.
+        // The Phase 33 design rendered exactly ONE region per (pitch, vel)
+        // cell and applied its xfin/xfout gain, which produces a guaranteed
+        // dropout (silence at the band edge where sin()/cos() hits 0) because
+        // the complementary layer never summed in. The correct equal-power
+        // crossfade renders ALL overlapping layers whose xfin/xfout band
+        // includes vel and sums them: cos²+sin² = 1 holds constant power.
+        //
+        // We only take the multi-layer summing path when the PICKED region's
+        // own xfade gain is non-trivial AND at least one OTHER region also
+        // covers (pitch, vel) with a non-trivial xfade gain. Otherwise we
+        // fall through to the single-region path below (Phase 33 byte-identical
+        // for hard-switch patches; no spurious 0.7071 sibling factor).
+        double pickedXfadeGain = ComputeXfadeGain(region, vel);
+        if (pickedXfadeGain != 1.0)
+        {
+            var xfadeLayers = new List<SfzRegion>();
+            foreach (var r in patch.Regions)
+            {
+                if (r.LoKey > targetMidi || r.HiKey < targetMidi) continue;
+                if (r.LoVel > vel || r.HiVel < vel) continue;
+                if (ComputeXfadeGain(r, vel) != 1.0) xfadeLayers.Add(r);
+            }
+
+            if (xfadeLayers.Count >= 2)
+            {
+                float[]? summed = RenderAndSumXfadeLayers(
+                    patch, xfadeLayers, targetMidi, vel, sampleRate,
+                    durationBeats, bpm, targetFrames);
+                if (summed is null)
+                    return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+                return FinishMono(summed, note, region, targetFrames, sampleRate, voicePan);
+            }
+            // Only one xfade layer covers this cell — there is no complementary
+            // layer to sum, so applying sin()/cos() would create a dropout at
+            // the band edge with nothing to fill it. Fall back to the Phase 33
+            // hard-switch full-level behavior (treat as gain 1.0) so the note
+            // never vanishes; the single-region path below skips the xfade gain.
+        }
+
+        float[]? single = RenderRegionToMono(
+            patch, region, targetMidi, sampleRate, durationBeats, bpm, targetFrames);
+        if (single is null)
+            return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+
+        return FinishMono(single, note, region, targetFrames, sampleRate, voicePan);
+    }
+
+    /// <summary>
+    /// Phase 37 SAMP-02 (sweep-0614 fix) — render each velocity-crossfade layer
+    /// covering <paramref name="targetMidi"/>/<paramref name="vel"/>, scale by
+    /// its own equal-power <see cref="ComputeXfadeGain"/>, and additively sum.
+    /// The sin/cos gains of complementary xfin/xfout layers satisfy
+    /// <c>cos²+sin² = 1</c>, so the summed buffer holds constant power across
+    /// the crossfade band instead of dropping to silence at a band edge.
+    /// Returns null only when EVERY contributing layer's sample is missing
+    /// (caller renders a rest); a partially-loaded set still sums the layers
+    /// that did load.
+    /// </summary>
+    private float[]? RenderAndSumXfadeLayers(
+        SfzData patch, List<SfzRegion> layers, int targetMidi, int vel,
+        int sampleRate, double durationBeats, double bpm, int targetFrames)
+    {
+        float[]? acc = null;
+        foreach (var layer in layers)
+        {
+            double gain = ComputeXfadeGain(layer, vel);
+            float[]? mono = RenderRegionToMono(
+                patch, layer, targetMidi, sampleRate, durationBeats, bpm, targetFrames);
+            if (mono is null) continue; // missing sample for this layer — already advised inside
+
+            float g = (float)gain;
+            if (acc is null) acc = new float[targetFrames];
+            int n = Math.Min(acc.Length, mono.Length);
+            for (int i = 0; i < n; i++) acc[i] += mono[i] * g;
+        }
+        return acc;
+    }
+
+    /// <summary>
+    /// Render a single region's mono body (source load → varispeed/pitch-shift
+    /// → AssembleBody → region.Volume) for <paramref name="targetMidi"/>/
+    /// <paramref name="vel"/>. The equal-power xfade gain is NOT applied here —
+    /// the caller scales each layer in <see cref="RenderAndSumXfadeLayers"/>, or
+    /// (single-region hard-switch path) intentionally renders at full level.
+    /// Returns null when the region's sample isn't loaded (emits the charitable
+    /// WarnOnce / strict-mode advisory, mirroring the Phase 33 missing-sample
+    /// contract).
+    /// </summary>
+    private float[]? RenderRegionToMono(
+        SfzData patch, SfzRegion region, int targetMidi,
+        int sampleRate, double durationBeats, double bpm, int targetFrames)
+    {
         int semitonesShift = targetMidi - region.PitchKeycenter;
 
         // Phase 37 DRUM-01 (D-37-14 + W7 LOCK) — percussion patches use
@@ -293,20 +386,8 @@ public class SfzRenderer
             AudioBuffer? raw = _cache.GetVarispeed(patch, region.SamplePath, 0);
             if (raw is null)
             {
-                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-                {
-                    _strictCtx.ErrorReporter.ReportError(
-                        $"[strict] [sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest",
-                        _strictCtx.CurrentCallSite);
-                }
-                else
-                {
-                    RenderingDiagnostics.WarnOnce(
-                        $"sfz:nosample:{patch.Description}:{region.SamplePath}",
-                        $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
-                }
-                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+                ReportMissingSample(patch, region);
+                return null;
             }
             double cents = semitonesShift * 100.0;
             source = PitchShiftEngine.Process(raw, cents, StretchMode.Auto);
@@ -322,20 +403,8 @@ public class SfzRenderer
             source = _cache.GetVarispeed(patch, region.SamplePath, semitonesShift);
             if (source is null)
             {
-                // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
-                if (_strictCtx is not null && _strictCtx.CallerStrictMode)
-                {
-                    _strictCtx.ErrorReporter.ReportError(
-                        $"[strict] [sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest",
-                        _strictCtx.CurrentCallSite);
-                }
-                else
-                {
-                    RenderingDiagnostics.WarnOnce(
-                        $"sfz:nosample:{patch.Description}:{region.SamplePath}",
-                        $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
-                }
-                return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
+                ReportMissingSample(patch, region);
+                return null;
             }
         }
 
@@ -347,22 +416,44 @@ public class SfzRenderer
             for (int i = 0; i < fitted.Length; i++) fitted[i] *= volScale;
         }
 
-        double xfadeGain = ComputeXfadeGain(region, vel);
-        if (xfadeGain != 1.0)
-        {
-            bool siblingInBand = false;
-            foreach (var sibling in patch.Regions)
-            {
-                if (ReferenceEquals(sibling, region)) continue;
-                if (sibling.LoKey > targetMidi || sibling.HiKey < targetMidi) continue;
-                if (sibling.LoVel > vel || sibling.HiVel < vel) continue;
-                if (ComputeXfadeGain(sibling, vel) != 1.0) { siblingInBand = true; break; }
-            }
-            if (siblingInBand) xfadeGain *= 0.7071;
-            float xfadeScale = (float)xfadeGain;
-            for (int i = 0; i < fitted.Length; i++) fitted[i] *= xfadeScale;
-        }
+        return fitted;
+    }
 
+    /// <summary>
+    /// Emit the charitable missing-sample advisory (or strict-mode error) for
+    /// <paramref name="region"/> under <paramref name="patch"/>. Extracted from
+    /// the Phase 33 inline sites so the velocity-crossfade summing path reuses
+    /// the identical message + dedup key.
+    /// </summary>
+    private void ReportMissingSample(SfzData patch, SfzRegion region)
+    {
+        // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
+        if (_strictCtx is not null && _strictCtx.CallerStrictMode)
+        {
+            _strictCtx.ErrorReporter.ReportError(
+                $"[strict] [sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest",
+                _strictCtx.CurrentCallSite);
+        }
+        else
+        {
+            RenderingDiagnostics.WarnOnce(
+                $"sfz:nosample:{patch.Description}:{region.SamplePath}",
+                $"[sfz] sample '{region.SamplePath}' under '{patch.Description}' not loaded — rendered as rest");
+        }
+    }
+
+    /// <summary>
+    /// Shared post-body stage: Phase 28 articulation envelope, SAMP-03
+    /// multiplier overlay, then stereo pan. Used by both the single-region
+    /// path and the velocity-crossfade summing path so the two produce
+    /// identical downstream shaping. The xfade gain is already baked into
+    /// <paramref name="fitted"/> by the caller (per-layer in the summing path;
+    /// intentionally omitted in the single-region hard-switch path).
+    /// </summary>
+    private AudioBuffer FinishMono(
+        float[] fitted, MusicalNoteData note, SfzRegion region,
+        int targetFrames, int sampleRate, double voicePan)
+    {
         float[] envelope = SynthUtils.GenerateArticulationADSR(
             note.Articulation,
             baseAttack:  region.AmpegAttack  > 0 ? region.AmpegAttack  : 0.005,
@@ -579,18 +670,14 @@ public class SfzRenderer
         // crossfade tail (the "B" channel), so skipping them avoids the
         // discontinuity.
         //
-        // First iteration is special: it plays the FULL body once (LoopStart
-        // .. effectiveLoopEnd) including the entire pre-crossfade region,
-        // but the last xfade frames blend with samples starting at
-        // LoopStart. After that first crossfade, every subsequent iteration
-        // begins at LoopStart + xfade.
+        // The first/subsequent-iteration distinction is carried by
+        // srcReadPos, not a flag: it starts at region.LoopStart so the FIRST
+        // iteration straight-reads the full body from LoopStart, and is only
+        // advanced to LoopStart + xfade at the end of each pass (below) so
+        // EVERY subsequent iteration resumes there.
         int srcReadPos = region.LoopStart;
-        bool firstIteration = true;
         while (dst < targetFrames)
         {
-            int iterStartSrc = srcReadPos;
-            int iterStartDst = dst;
-
             // Straight-read region inside this iteration.
             int straightEnd = effectiveLoopEnd - xfade; // exclusive upper bound of straight read in source
             while (srcReadPos < straightEnd && dst < targetFrames)
@@ -621,7 +708,6 @@ public class SfzRenderer
             // xfade samples have already played as the B channel of the
             // crossfade we just emitted.
             srcReadPos = region.LoopStart + xfade;
-            firstIteration = false;
         }
         return fitted;
     }
