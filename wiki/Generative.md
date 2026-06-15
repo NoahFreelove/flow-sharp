@@ -204,6 +204,16 @@ Sequence gen2   = (markov corpus 2 16 42)         Note: explicit seed
 | `(markov Sequence corpus, Int order, Int length) -> Sequence` | Unseeded; PRNG via the registry |
 | `(markov Sequence corpus, Int order, Int length, Int seed) -> Sequence` | Explicit seed |
 
+The corpus doesn't have to be a note-stream `Sequence` — a `Note[]` or an `Int[]` (MIDI / scale-degree numbers) works too, so you can train straight off a `(list ...)`:
+
+```flow
+Note[] notes = (list C4 D4 E4 F4 G4 F4 E4 D4 C4)
+Sequence fromNotes = (markov notes 2 16 42)
+
+Int[] midi = (list 60 62 64 65 67 65 64 62 60)
+Sequence fromInts = (markov midi 2 16 42)
+```
+
 ### Train + generate split
 
 ```flow
@@ -214,7 +224,7 @@ Sequence run2 = (markovGenerate model 16 42)
 
 | Signature | Notes |
 |-----------|-------|
-| `(markovTrain Sequence corpus, Int order) -> MarkovModel` | Defaults to `features=#pitch` |
+| `(markovTrain Sequence corpus, Int order) -> MarkovModel` | Defaults to `features=#pitch`; corpus may also be `Note[]` or `Int[]` |
 | `(markovTrain ..., Symbol features) -> MarkovModel` | `features=#pitch` (default) or use named-arg form for tuple features |
 | `(markovGenerate MarkovModel model, Int length) -> Sequence` | Unseeded |
 | `(markovGenerate MarkovModel model, Int length, Int seed) -> Sequence` | Explicit seed |
@@ -333,10 +343,10 @@ key Cmajor {
     Note: only `over` is required
     Sequence solo1 = (jam chords)
 
-    Note: named style and length; seed requires key as the preceding positional arg
-    Sequence solo2 = (jam over=chords style=#blues length=16)
+    Note: any subset of named args, in any order — including key= and seed=
+    Sequence solo2 = (jam over=chords style=#blues length=16 key="Cmajor" seed=7)
 
-    Note: to pass seed, supply key first — positional form: (jam over style length key seed)
+    Note: the fully-positional form still works: (jam over style length key seed order)
     Sequence solo3 = (jam chords #blues 16 "Cmajor" 7)
 }
 ```
@@ -352,7 +362,7 @@ jam(Sequence over,
     Int order = 2) -> Sequence
 ```
 
-Only `over` is required. The remaining arguments are **positional from left to right** — `seed` is only available when `key` is also supplied (no `(over, style, length, seed)` shortcut overload exists). Use positional form to pass a seed: `(jam chords #jazz 8 "Cmajor" 42)`. Because `key` is a reserved word in the parser, it cannot be used as a named-argument label; pass it positionally. The `key=` override (when used positionally) pushes a synthetic musical-context frame for the jam, then pops — useful for chromatic pivot bars that break the surrounding key. The `order` argument is clamped to `[1, 3]` just like `markov`.
+Only `over` is required. Every other parameter accepts a **named argument** — `style=`, `length=`, `key=`, `seed=`, `order=` — and you can pass any subset in any order; the rest fall back to their defaults. So `(jam over=chords style=#blues seed=7)` works without supplying `length` or `key`. The fully-positional form (`(jam chords #jazz 8 "Cmajor" 42)`) is still valid. The `key=` override pushes a synthetic musical-context frame for the jam, then pops — useful for chromatic pivot bars that break the surrounding key. The `order` argument is clamped to `[1, 3]` just like `markov`.
 
 ### Style packs
 

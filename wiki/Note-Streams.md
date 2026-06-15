@@ -210,6 +210,19 @@ timesig 4/4 {
 }
 ```
 
+### Chord + Duration Fusion
+
+A chord symbol with a **letter-bearing quality** (`maj7`, `m7`, `dim7`, `sus4`, `m`, `add9`, …) fuses with a trailing duration letter exactly like a note literal does — `Cmaj7q` is the Cmaj7 chord as a quarter, no space needed. Dots and ties attach as usual:
+
+```flow
+timesig 4/4 {
+    Sequence prog = | Cmaj7q Am7q Dm7q Fsmaj7q |
+    Sequence dotted = | Cmaj7q. Am7e Dm7h |
+}
+```
+
+> **Bare-digit qualities do not fuse.** `Bb7`, `G7`, `C6` etc. are read as a note + octave (`Bb7` = B-flat in octave 7), because a bare number is ambiguous with an octave. So `Bb7q` is the *note* Bb7 as a quarter — write `Bfdom7 q` (note the space) if you mean the chord. Letter qualities like `Bbm7q` are unambiguous and fuse fine.
+
 See [Chords and Harmony](Chords-and-Harmony.md) for all chord types.
 
 ## Roman Numerals

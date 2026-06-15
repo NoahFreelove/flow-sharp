@@ -46,6 +46,26 @@ Note: returns immediately; audio plays in the background
 
 `stream` also works with sequences.
 
+### Playing a Song directly
+
+`play` also accepts a `Song` — it renders the song to a buffer (defaulting to the piano synth) and plays it, so you don't have to call `renderSong` first. An optional second argument picks the synth by name:
+
+```flow
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section verse { Sequence mel = | C4 E4 G4 C5 | }
+            Song song = [verse]
+            (play song)            Note: render + play with the default piano
+            (play song "sine")     Note: render + play with an explicit synth
+        }
+    }
+}
+```
+
 ### loop
 
 Loops a buffer indefinitely (non-blocking), or a specific number of times:
@@ -129,6 +149,28 @@ Buffer tone = (createSineTone 1.0 440.0 0.5)
 (writeWav "output_24.wav" tone 24)
 (writeWav "output_32.wav" tone 32)
 ```
+
+### Exporting a Song Directly
+
+`writeWav` also takes a `Song` in the buffer position — it renders the song (defaulting to the piano synth) and writes the WAV in one step, so you can skip the explicit `renderSong`. An optional third argument names the synth:
+
+```flow
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section verse { Sequence mel = | C4 E4 G4 C5 | }
+            Song song = [verse]
+            (writeWav "song.wav" song)            Note: render + export, piano default
+            (writeWav "song_sine.wav" song "sine") Note: explicit synth
+        }
+    }
+}
+```
+
+Reach for the explicit `renderSong` + effects-chain form when you need to post-process the buffer (reverb, fades, gain) before writing.
 
 ## WAV Loading
 
@@ -289,6 +331,8 @@ tempo 120 {
 |----------|-----------|-------------|
 | `play` | `(Buffer) -> Void` | Play buffer (blocking) |
 | `play` | `(Sequence) -> Void` | Render and play sequence (blocking) |
+| `play` | `(Song) -> Void` | Render (piano default) and play song (blocking) |
+| `play` | `(Song, String) -> Void` | Render with named synth and play song |
 | `stream` | `(Buffer) -> Void` | Play asynchronously (non-blocking) |
 | `stream` | `(Sequence) -> Void` | Render and stream sequence |
 | `loop` | `(Buffer) -> Void` | Loop indefinitely |
@@ -300,6 +344,8 @@ tempo 120 {
 | `isAudioAvailable` | `() -> Bool` | Check backend availability |
 | `writeWav` | `(String, Buffer) -> Void` | Path-first WAV export (16-bit) |
 | `writeWav` | `(String, Buffer, Int) -> Void` | Path-first with bit depth (16/24/32) |
+| `writeWav` | `(String, Song) -> Void` | Render (piano default) and export song to WAV |
+| `writeWav` | `(String, Song, String) -> Void` | Render with named synth and export song to WAV |
 | `loadWav` | `(String) -> Buffer` | Load WAV file (auto-resample to 44100 Hz) |
 | `loadWav` | `(String, Int) -> Buffer` | Load with semitone varispeed |
 | `loadWav` | `(String, Double) -> Buffer` | Load with ratio varispeed |

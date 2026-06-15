@@ -112,7 +112,7 @@ while (lt i 5) {
 (print (str i))
 ```
 
-> **Note:** `break` and `continue` are statements and cannot appear inside `lazy()`. The `while true` + `lazy(break)` pattern from older tutorials is a parse error. Always encode the exit condition in the `while` guard instead.
+> **Note:** `break` and `continue` come in two forms — the bare statement keywords (`break` / `continue` on their own line) and the prefix-call builtins `(break)` / `(continue)`. The call form is what lets you gate them with `(if ...)` (see below). Encoding the exit condition directly in the `while` guard is still the cleanest pattern when it fits.
 
 ### Countdown
 
@@ -127,29 +127,41 @@ while (gt counter 0) {
 
 ## `break`
 
-`break` exits the innermost enclosing loop immediately. Because `break` is a statement (not an expression), it cannot appear inside `lazy()` or as an `if` argument — use the loop guard or a bounded range instead:
+`break` exits the innermost enclosing loop immediately. As a bare statement it sits on its own line; as the `(break)` call form it can be conditionally fired from inside an `(if cond then else)` — use the **3-argument** `if` so both branches are lazy-wrapped (a 2-arg `if` won't resolve):
 
 ```flow
 use "@std"
 
-for Int i in (range 0 6) {
-    (print (str i))
+Int seen = 0
+for Int n in (range 1 100) {
+    (if (gt n 5) (break) (print (str n)))   Note: stop once n exceeds 5
+    seen = (add seen 1)
 }
-Note: prints 0 through 5 then exits
+(print (concat "saw " (str seen)))          Note: 5
 ```
+
+In nested loops, `(break)` only exits the innermost loop. Called outside any loop it is a charitable no-op with a one-shot `[break]` advisory — it never crashes the script.
 
 ## `continue`
 
-`continue` skips the rest of the current iteration and proceeds to the next:
+`continue` skips the rest of the current iteration and proceeds to the next. Like `break`, it has a bare-statement form and a `(continue)` call form for conditional use:
 
 ```flow
 use "@std"
 
+Note: keep only the last three iterations
+Int kept = 0
+for Int n in (range 1 11) {
+    (if (lt n 8) (continue) (print "tail"))
+    kept = (add kept 1)
+}
+(print (concat "kept " (str kept)))         Note: 3 (n = 8, 9, 10)
+
+Note: bare-statement form — anything after `continue` is skipped
 Int ci = 0
 while (lt ci 3) {
     ci = (add ci 1)
     continue
-    Note: anything after continue is skipped
     (print "never runs")
 }
 ```

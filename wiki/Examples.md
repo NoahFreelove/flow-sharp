@@ -667,8 +667,8 @@ tempo 120 {
             Note: A ii-V-I-VI progression
             Sequence chords = | Dm7 | G7 | Cmaj7 | Am7 |
 
-            Note: 3-named-arg form — seed is not available as a named arg (key is reserved)
-            Sequence solo = (jam over=chords style=#jazz length=4)
+            Note: Sparse named args — any subset, in any order (incl. seed= and key=)
+            Sequence solo = (jam over=chords style=#jazz length=4 key="Cmajor" seed=42)
 
             Note: Full positional form: (jam over style length key seed order)
             Sequence soloAlt = (jam chords #blues 4 "Cmajor" 100 2)
@@ -682,7 +682,7 @@ tempo 120 {
 }
 ```
 
-Style packs ship at `flow-lang/improv/styles/*.flow` (`#jazz`, `#blues`, `#classical`). Override by dropping a same-named file at `~/.config/flow/styles/`. Named args `over=`, `style=`, `length=` work; `key=` is a reserved keyword so the key argument must be passed positionally, and `seed=` is only available in the fully-positional call form.
+Style packs ship at `flow-lang/improv/styles/*.flow` (`#jazz`, `#blues`, `#classical`). Override by dropping a same-named file at `~/.config/flow/styles/`. All parameters accept named args — `over=`, `style=`, `length=`, `key=`, `seed=`, `order=` — and you can pass any subset in any order; the rest fall back to their defaults. Positional calls still work too.
 
 ---
 

@@ -76,13 +76,19 @@ timesig 4/4 {
 }
 ```
 
-Append duration suffixes (and dots) to a named chord element to control its rhythm. A chord symbol and its duration token must be separated by a space (the lexer only fuses note+duration for single note literals like `C4q`, not for chord names):
+Append duration suffixes (and dots) to a named chord element to control its rhythm. A chord with a **letter-bearing quality** (`maj7`, `m7`, `dim7`, `sus4`, `m`, …) fuses directly with the duration letter — `Cmaj7q` — just like a note literal. The space-separated form also works and is required for chords whose quality is a bare digit (`Gdom7`, `C6`):
 
 ```flow
 timesig 4/4 {
-    Sequence rhythmic = | Cmaj7 q Am7 q Dm7 h G7 h. Cmaj7 q |
+    Note: fused — letter-quality chord + duration
+    Sequence fused = | Cmaj7q Am7q Dm7h Fsmaj7h |
+
+    Note: space-separated — works for any chord, required for bare-digit qualities
+    Sequence spaced = | Cmaj7 q Am7 q Gdom7 h Dsus4 h |
 }
 ```
+
+> **Bare-digit chords don't fuse.** `G7`, `Bb7`, and `C6` parse as a note + octave (so `Bb7q` is the *note* Bb7 as a quarter, not the Bb dominant 7th — see the warning at the top of this page). When you mean the chord, use a letter-quality spelling (`Gdom7`, `Bfdom7`) so it fuses, or write the dominant explicitly.
 
 ## Roman Numerals
 
@@ -238,8 +244,9 @@ Song mySong = [intro verse]
 String[] sections = (getSections mySong)
 (print (str sections))               Note: ["intro", "verse"]
 
-Note: sectionSequences is not currently accessible from composer code — section names live in an
-Note: internal registry, not variable scope. Use getSections to inspect song structure.
+Note: sectionSequences(Song, String) returns the sequence names of one named section.
+String[] introSeqs = (sectionSequences mySong "intro")
+(print (str introSeqs))              Note: ["mel"]
 ```
 
 ## See Also

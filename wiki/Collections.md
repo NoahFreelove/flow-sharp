@@ -88,18 +88,19 @@ Int[] evens     = (range 0 20 2)     Note: [0, 2, ..., 18] (3-arg step)
 
 ## Zip
 
-`zip` is not yet registered in the engine. Pair elements manually via `range` + index access until it ships:
+`zip` pairs two arrays element-wise, producing an array of `<<a, b>>` tuples. It stops at the shorter array's length. Index each pair with `tup@0` / `tup@1`:
 
 ```flow
 use "@std"
 
 Int[] a = (list 1 2 3)
-Int[] b = (list 10 20 30)
+String[] b = (list "one" "two" "three")
 
-Note: zip is not yet available — pair elements by index using range
-Int[] indices = (range 0 (len a))
-(each indices (fn Int i => (print $"{a@i} -> {b@i}")))
-Note: prints "1 -> 10", "2 -> 20", "3 -> 30"
+(print (str (zip a b)))   Note: [<<1, "one">>, <<2, "two">>, <<3, "three">>]
+
+Note: iterate the pairs directly
+(each (zip a b) (fn Void pair => (print $"{pair@0} = {pair@1}")))
+Note: prints "1 = one", "2 = two", "3 = three"
 ```
 
 ## Higher-Order Functions
@@ -317,6 +318,7 @@ The standard library uses both. For example:
 | `reduce` | `(T[], U, (U, T) => U) -> U` | Fold with accumulator |
 | `each` | `(T[], T => Void) -> Void` | Apply for side effects |
 | `range` | `(Int, Int[, Int]) -> Int[]` | Half-open integer range with optional step |
+| `zip` | `(A[], B[]) -> Tuple<<A, B>>[]` | Pair two arrays element-wise (stops at shorter) |
 
 ## See Also
 

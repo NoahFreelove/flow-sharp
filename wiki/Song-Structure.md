@@ -113,7 +113,7 @@ section verse(Note root, Int reps) {
 Song s = [verse(C4) verse(C4, 3)]      Note: dispatches to each overload
 ```
 
-> **Note:** same-name section overloading is partially implemented; the arity-dispatch path in the current engine may emit an error when both overloads are registered. If you hit that, use distinct section names (`verseShort` / `verseFull`) until the resolver is fixed.
+The resolver dispatches by argument count and types at call time, so `verse(C4)` selects the single-`Note` overload and `verse(C4, 3)` selects the two-argument one.
 
 Per-call args bind in a fresh stack frame that **inherits the call-site's musical context**, so a `verse(C4)` call inside a `key Aminor { ... }` block sees Aminor as its active key.
 
@@ -135,9 +135,9 @@ Strings sections = (getSections mySong)
 (print (str sections))  Note: ["intro", "verse", "chorus"]
 ```
 
-### sectionSequences
+### getSection
 
-`sectionSequences` accepts a `Section` value and returns the sequence names within it. Section declarations are not first-class values that you can pass directly by name; retrieve them via `getSections` on a `Song`, or query the song's section list and inspect it:
+`getSection(Song, String)` pulls one named `Section` back out of a `Song` so you can inspect it:
 
 ```flow
 use "@std"
@@ -148,11 +148,28 @@ section mySection {
 }
 
 Song mySong = [mySection]
-Strings sections = (getSections mySong)
-(print (str sections))  Note: ["mySection"]
+Section s = (getSection mySong "mySection")
+(print (str s))         Note: Section[mySection, 2 sequences]
 ```
 
-> **Note:** `sectionSequences(section)` requires a runtime `Section` value. A bare section identifier (e.g. `mySection`) is not a first-class `Section` value outside a `Song [...]` expression. A `getSection(Song, String) -> Section` accessor is planned for a future engine version.
+### sectionSequences
+
+`sectionSequences(Song, String)` returns the **sequence names** within a named section, as a `String[]`. (A `sectionSequences(Section)` overload taking a runtime `Section` value also exists.)
+
+```flow
+use "@std"
+
+section mySection {
+    Sequence lead = | C4 D4 E4 F4 |
+    Sequence bass = | C3 G3 C3 G3 |
+}
+
+Song mySong = [mySection]
+String[] names = (sectionSequences mySong "mySection")
+(print (str names))     Note: ["lead", "bass"]
+```
+
+An unknown section name returns an empty array with a one-shot `[sectionSequences]` advisory rather than erroring.
 
 ### str
 

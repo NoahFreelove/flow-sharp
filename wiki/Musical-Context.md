@@ -42,7 +42,7 @@ timesig 6/8 {
 
 Default: **4/4**.
 
-### Common-Time Shorthand
+### Common-Time and Cut-Time Shorthand
 
 The capital `C` is shorthand for 4/4 — it lowers to 4/4 at parse time so the renderer, MIDI export, and musical-context stack all see identical data to the explicit form:
 
@@ -51,6 +51,16 @@ timesig C {
     Sequence sameAs44 = | C4 D4 E4 F4 |
 }
 ```
+
+Cut time (alla breve, 2/2) has three interchangeable shorthands — `C/`, `C|`, and the cent sign `¢` — all of which lower to `2/2`:
+
+```flow
+timesig C/ { Sequence a = | C4 D4 | }    Note: 2/2
+timesig C| { Sequence b = | C4 D4 | }    Note: 2/2
+timesig ¢  { Sequence c = | C4 D4 | }    Note: 2/2
+```
+
+These glyphs are only consumed in the `timesig` position, so `/` and `|` keep their normal meaning everywhere else.
 
 ## Key
 

@@ -218,6 +218,22 @@ timesig 4/4 {
 
 `strength` is clamped to `[0, 1]` and `swing` to `[-1, 1]`. At `strength=0, swing=0` the transform is a byte-identical no-op.
 
+### Bare note-values as the resolution
+
+You don't need to import `@notation` for the named constants — the bare duration letters `w` / `h` / `q` / `e` / `s` are `NoteValue` constants in ordinary expression position, so they work directly as the quantize resolution:
+
+```flow
+use "@std"
+
+timesig 4/4 {
+    Sequence loose = | C4 D4q. E4e F4 |
+    Sequence tight = (quantize loose q 1.0 0.0)   Note: quarter grid, no @notation import
+    Sequence laidback = (quantize loose e 0.5 0.2) Note: eighth grid + light swing
+}
+```
+
+These are global constants, so they're shadowable — a local `Int e = 5` still binds `e` to `5` in that scope. (`EIGHTH` / `SIXTEENTH` from `@notation` remain available and are equivalent.)
+
 ## Texture and Ornamentation
 
 ### humanize / humanizeGaussian
