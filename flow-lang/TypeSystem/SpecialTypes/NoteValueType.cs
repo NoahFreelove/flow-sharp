@@ -31,6 +31,42 @@ public sealed class NoteValueType : FlowType
         ONETWENTYEIGHTH = 7
     }
 
+    /// <summary>
+    /// 0615 bare-notevalues — predefined GLOBAL NoteValue constant names. Maps the
+    /// canonical single-letter duration short-forms (the SAME table
+    /// <see cref="FlowLang.Runtime.NoteStreamCompiler"/> uses for note-stream
+    /// duration suffixes) to their <see cref="Value"/> enum. Resolved by
+    /// <c>ExpressionEvaluator.EvaluateVariable</c> ONLY when no variable or
+    /// function with that name is in scope, so a composer's <c>Int e = 5</c>
+    /// (or a proc param named <c>q</c>) shadows the constant naturally — the
+    /// frame-chain lookup hits first. This is the least-breaking path to the
+    /// documented <c>(quantize seq e 1.0 0.0)</c> call form: e/q/h/w/s (and the
+    /// finer t/x/y) are NOT reserved keywords. Dotted variants (<c>q.</c>) are
+    /// intentionally absent — a dot is a note-stream duration modifier, not a
+    /// distinct NoteValue enum member, and would not lex as a bare identifier.
+    /// </summary>
+    private static readonly Dictionary<string, Value> PredefinedConstants = new(StringComparer.Ordinal)
+    {
+        { "w", Value.WHOLE },
+        { "h", Value.HALF },
+        { "q", Value.QUARTER },
+        { "e", Value.EIGHTH },
+        { "s", Value.SIXTEENTH },
+        { "t", Value.THIRTYSECOND },
+        { "x", Value.SIXTYFOURTH },
+        { "y", Value.ONETWENTYEIGHTH }
+    };
+
+    /// <summary>
+    /// 0615 bare-notevalues — resolves a bare identifier to a predefined NoteValue
+    /// constant. Returns <c>true</c> + the enum value for the canonical duration
+    /// short-forms (w/h/q/e/s/t/x/y); <c>false</c> for anything else. Single source
+    /// of truth for the bare-notevalue feature; mirrors NoteStreamCompiler's
+    /// duration-suffix table so a bare <c>e</c> and a note-stream <c>C4e</c> agree.
+    /// </summary>
+    public static bool TryGetPredefinedConstant(string name, out Value value)
+        => PredefinedConstants.TryGetValue(name, out value);
+
     public static Value Parse(string str)
     {
         switch (str.ToLowerInvariant().Trim())

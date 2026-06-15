@@ -199,6 +199,18 @@ public class ExpressionEvaluator
             return Value.Function(overloads[0]);
         }
 
+        // 0615 bare-notevalues — a bare e/q/h/w/s (+ t/x/y) in expression position
+        // resolves to a predefined NoteValue constant (eighth/quarter/half/whole/
+        // sixteenth/...). Checked AFTER the variable + function lookups so a
+        // composer's `Int e = 5` (or a proc param / global named `q`) shadows the
+        // constant — the frame-chain TryGetVariable above hits first. This makes
+        // the documented `(quantize seq e 1.0 0.0)` call form work WITHOUT
+        // reserving these letters as keywords. Single source of truth:
+        // NoteValueType.TryGetPredefinedConstant (mirrors NoteStreamCompiler's
+        // duration-suffix table so `e` and a note-stream `C4e` agree).
+        if (NoteValueType.TryGetPredefinedConstant(var.Name, out var nvEnum))
+            return Value.NoteValue((int)nvEnum);
+
         // Not a variable or function — Phase 35 LANG-04 Wave 2a: emit rich
         // FlowDiagnostic with Levenshtein-derived did-you-mean suggestion
         // pulled from the union of all in-scope variable names and known
