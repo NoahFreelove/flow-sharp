@@ -397,7 +397,7 @@ public partial class Parser
                     }
 
                     // sweep-0614: an UPPERCASE non-roman-numeral identifier here is the
-                    // shape of a mistyped note name (e.g. `Z9`, `H4`) — the lexer only
+                    // shape of a mistyped note name (e.g. `Z9`) — the lexer only
                     // emits NoteLiteral when the first char is A-G. Recover charitably
                     // (CLAUDE.md charitable-interpretation), MIRRORING the lowercase
                     // variable-reference → rest path: emit a located one-shot advisory,
@@ -405,7 +405,27 @@ public partial class Parser
                     // parsing so the SURROUNDING notes are NOT silently dropped. Without
                     // this, the loop `break`s, abandons the rest of the stream, and the
                     // diagnostic points at the closing pipe instead of the offending token.
-                    if (identText.Length > 0 && char.IsUpper(identText[0]))
+                    //
+                    // sweep-0614 follow-up (regression-notestream-hasb): scope this
+                    // NARROWLY to genuinely note-SHAPED typos. The unconditional
+                    // `char.IsUpper` form was too aggressive on two fronts:
+                    //   (a) It consumed the closing of a multi-line stream's NEXT
+                    //       declaration — `| ... |` followed by `Sequence b = | ... |`
+                    //       saw `Sequence` (an uppercase type name) and ate it as a rest,
+                    //       so the stream never terminated and `=` was an "unexpected
+                    //       token". A type name / statement keyword must instead `break`
+                    //       (IsEndOfNoteStream already classifies it as end-of-stream).
+                    //   (b) It bypassed the hAsB pragma: `H4q` WITHOUT `enable hAsB;`
+                    //       reaches this branch (the lexer only canonicalizes H→B when the
+                    //       pragma is set), and the charitable rest silently ACCEPTED it.
+                    //       An H note without the pragma must STILL be rejected, so we
+                    //       exclude H-prefixed tokens here and let the loop `break` →
+                    //       parse error (PRAG-02 / DEFER-02 contract).
+                    // A genuine note-name typo is "note-like-shaped": a single letter, OR
+                    // it contains a digit (octave), OR its second char is an accidental
+                    // (`b`/`#`). Pure-alpha multi-char words (type names, keywords) fail
+                    // this test and fall through to the break.
+                    if (IsNoteLikeTypoShape(identText))
                     {
                         var badToken = Advance();
                         var elemLoc = badToken.Location;
@@ -502,6 +522,35 @@ public partial class Parser
     /// Checks if the current position looks like the end of a note stream.
     /// Returns true if the next token is not a note-stream element.
     /// </summary>
+    /// <summary>
+    /// regression-notestream-hasb: true when <paramref name="text"/> is an uppercase
+    /// identifier shaped like a mistyped NOTE NAME — the only shape the charitable
+    /// "unrecognized note → rest" recovery may consume. Distinguishes a genuine typo
+    /// (`Z9`, `Q5`, `Xb3`) from a type name / statement keyword (`Sequence`, `Song`,
+    /// `Int`) that must terminate the stream, and from an H-prefixed token that must be
+    /// rejected by the hAsB pragma gate (H reaches this branch only when the pragma is
+    /// OFF; charitably swallowing it would silently accept an H note without
+    /// `enable hAsB;`).
+    /// </summary>
+    private static bool IsNoteLikeTypoShape(string text)
+    {
+        if (text.Length == 0 || !char.IsUpper(text[0]))
+            return false;
+        // H-prefixed tokens are governed by the hAsB pragma, NOT charitable typo
+        // recovery. Without `enable hAsB;`, an `H<digit>` must still be rejected
+        // (break → parse error), preserving PRAG-02 / DEFER-02. (With the pragma set,
+        // the lexer already canonicalized H→B, so it never arrives here as an Identifier.)
+        if (text[0] == 'H')
+            return false;
+        // Note-like shapes: a single letter, OR contains a digit (octave),
+        // OR second char is an accidental (b/#). Mirrors TryParseNote's accepted
+        // shapes (SimpleLexer) and the WR-01 looksNoteLike pickup gate.
+        return text.Length == 1
+            || text.Any(char.IsDigit)
+            || text[1] == 'b'
+            || text[1] == '#';
+    }
+
     private bool IsEndOfNoteStream()
     {
         var type = CurrentToken.Type;

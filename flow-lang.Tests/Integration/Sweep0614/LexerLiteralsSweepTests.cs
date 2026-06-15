@@ -195,4 +195,67 @@ public class LexerLiteralsSweepTests
             RenderingDiagnostics.WasWarnedForTesting("note-stream-bad-note:Z9:1:36"),
             "expected a located one-shot advisory naming 'Z9' at line 1 col 36");
     }
+
+    // ===== Regression (regression-notestream-hasb): the charitable typo recovery
+    //       above must NOT be so aggressive that it (a) swallows the closing of a
+    //       multi-line stream's NEXT declaration, nor (b) bypasses the hAsB pragma. =====
+
+    [Fact]
+    public void MultiLineStreams_BackToBackDeclarations_BothParseClean()
+    {
+        // Two consecutive multi-line note-stream declarations. Before the fix, the
+        // charitable uppercase-typo branch consumed the SECOND declaration's type
+        // name `Sequence` as a rest, so the first stream never terminated and the
+        // parser then choked on `=` ("Unexpected token Assign"). A type name must
+        // instead terminate the stream (IsEndOfNoteStream / break).
+        RenderingDiagnostics.ResetForTesting();
+        using var engine = new FlowEngine(verbose: false);
+        engine.Execute(
+            "use \"@std\"\n" +
+            "Sequence a = |\n" +
+            "  [E4 G4 B4]h B4q> [C4 E4 G4]q |\n" +
+            "|\n" +
+            "Sequence b = |\n" +
+            "  [E4 G4 B4]h D5q> [E3 G3 C4]q |\n" +
+            "|\n" +
+            "(print \"ok-complex\")\n");
+        Assert.False(engine.ErrorReporter.HasErrors,
+            $"back-to-back multi-line streams must parse clean; got: {engine.ErrorReporter.FormatErrors()}");
+        // The type name `Sequence` must NOT have been charitably swallowed as a typo.
+        Assert.False(
+            RenderingDiagnostics.WasWarnedForTesting("note-stream-bad-note:Sequence:5:1"),
+            "the type keyword 'Sequence' must terminate the stream, not be eaten as a rest");
+    }
+
+    [Fact]
+    public void HNote_WithoutHAsBPragma_StillRejected_NotCharitablyAccepted()
+    {
+        // PRAG-02 / DEFER-02 contract: `H4q` WITHOUT `enable hAsB;` reaches the
+        // note-stream Identifier branch (the lexer only canonicalizes H→B when the
+        // pragma is set). The charitable typo recovery must NOT swallow it as a rest
+        // — an H note without the pragma must STILL be rejected (parse error).
+        using var engine = new FlowEngine(verbose: false);
+        engine.Execute(
+            "use \"@std\"\n" +
+            "Sequence seq = | H4q B4q |\n" +
+            "(print (str seq))\n");
+        Assert.True(engine.ErrorReporter.HasErrors,
+            "H4q without 'enable hAsB;' must be rejected, not charitably rendered as a rest");
+    }
+
+    [Fact]
+    public void HNote_WithHAsBPragma_StillAccepted_AsBNote()
+    {
+        // The companion direction: WITH `enable hAsB;`, H4q canonicalizes to B4q at
+        // lex time and parses clean — the regression fix must not break the pragma's
+        // accept path.
+        using var engine = new FlowEngine(verbose: false);
+        engine.Execute(
+            "enable hAsB;\n" +
+            "use \"@std\"\n" +
+            "Sequence seq = | H4q B4q |\n" +
+            "(print (str seq))\n");
+        Assert.False(engine.ErrorReporter.HasErrors,
+            $"H4q WITH 'enable hAsB;' must parse clean; got: {engine.ErrorReporter.FormatErrors()}");
+    }
 }
