@@ -573,5 +573,42 @@ public static class HarmonyFunctions
             var names = section.Sequences.Keys.Select(k => Value.String(k)).ToArray();
             return Value.Array(names, StringType.Instance);
         });
+
+        // getSection(Song, String) -> Section (the single named section).
+        // Charitable (D-v1.5-05): unknown name -> WarnOnce + empty Section, never throws.
+        var getSectionSignature = new FunctionSignature("getSection", [SongType.Instance, StringType.Instance],
+            ParameterNames: ["song", "name"]);
+        registry.Register("getSection", getSectionSignature, args =>
+        {
+            var song = args[0].As<SongData>();
+            var name = args[1].As<string>();
+            if (song.SectionRegistry.TryGetValue(name, out var section))
+            {
+                return Value.Section(section);
+            }
+            RenderingDiagnostics.WarnOnce(
+                $"getSection-unknown:{name}",
+                $"[getSection] no section named '{name}' in song — returning empty section");
+            return Value.Section(new SectionData(name, new Dictionary<string, SequenceData>(), context: null));
+        });
+
+        // sectionSequences(Song, String) -> Strings (sequence names of ONE named section).
+        // Charitable (D-v1.5-05): unknown name -> WarnOnce + empty array, never throws.
+        var sectionSequencesByNameSignature = new FunctionSignature("sectionSequences", [SongType.Instance, StringType.Instance],
+            ParameterNames: ["song", "name"]);
+        registry.Register("sectionSequences", sectionSequencesByNameSignature, args =>
+        {
+            var song = args[0].As<SongData>();
+            var name = args[1].As<string>();
+            if (song.SectionRegistry.TryGetValue(name, out var section))
+            {
+                var found = section.Sequences.Keys.Select(k => Value.String(k)).ToArray();
+                return Value.Array(found, StringType.Instance);
+            }
+            RenderingDiagnostics.WarnOnce(
+                $"sectionSequences-unknown:{name}",
+                $"[sectionSequences] no section named '{name}' in song — returning empty array");
+            return Value.Array([], StringType.Instance);
+        });
     }
 }

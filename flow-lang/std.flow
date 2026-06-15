@@ -315,7 +315,9 @@ internal proc voicing (Chord: chord, String: name)
 internal proc scaleNotes (String: keyName)
 internal proc resolveNumeral (String: numeral, String: keyName)
 internal proc getSections (Song: s)
+internal proc getSection (Song: s, String: name)
 internal proc sectionSequences (Section: s)
+internal proc sectionSequences (Song: s, String: name)
 internal proc enharmonic (Note: n)
 
 Note: Tempo expression transforms
