@@ -68,6 +68,13 @@ public static class LsystemFunctions
     /// </summary>
     internal const int MaxIterations = 20;
 
+    /// <summary>
+    /// Default duration for a bare Note literal returned by a
+    /// <c>lsystemToSequence</c> mapper (the bare-Note Value carries no duration
+    /// slot). Quarter note — mirrors <c>MarkovFunctions.DefaultDurationValue</c>.
+    /// </summary>
+    private const int DefaultDurationValue = (int)NoteValueType.Value.QUARTER;
+
     // ====================================================================
     // Registration entry point
     // ====================================================================
@@ -182,12 +189,31 @@ public static class LsystemFunctions
             var lambdaResult = InvokeCallback(ctx, mapper, new List<Value> { sym });
             // The composer's mapper can return:
             //   - a MusicalNote (typical): append to the bar
-            //   - a Note literal (e.g. C4q): the parser binds the duration; convert
-            //   - a rest: append as rest
+            //   - a bare Note literal (e.g. C4): convert to a quarter-note
+            //     MusicalNote (the bare-Note Value carries no duration slot, so
+            //     it defaults to QUARTER — mirrors MarkovFunctions' default)
             //   - anything else: charitable advisory + skip
             if (lambdaResult.Data is MusicalNoteData note)
             {
                 notes.Add(note);
+            }
+            else if (lambdaResult.Type is NoteType && lambdaResult.Data is string noteStr)
+            {
+                // Bare Note literal (C4, D4, ...) — deterministic conversion (no RNG),
+                // so two-run cmp-clean is preserved. Charitable on an unparseable
+                // note string: skip with an advisory rather than throwing.
+                try
+                {
+                    var (nm, oct, alt) = NoteType.Parse(noteStr);
+                    notes.Add(new MusicalNoteData(nm, oct, alt, DefaultDurationValue, isRest: false));
+                }
+                catch (ArgumentException)
+                {
+                    RenderingDiagnostics.WarnOnce(
+                        $"lsystemToSequence:bad-note:{ctx.CurrentCallSite}",
+                        $"[lsystemToSequence] mapper returned unparseable Note '{noteStr}' at "
+                        + $"{ctx.CurrentCallSite} — skipped");
+                }
             }
             else
             {

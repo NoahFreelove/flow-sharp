@@ -286,4 +286,33 @@ public class LsystemModelTests
         Assert.Equal('E', seq.Bars[0].MusicalNotes[1].NoteName);
         Assert.Equal('C', seq.Bars[0].MusicalNotes[2].NoteName);
     }
+
+    [Fact]
+    public void LsystemToSequence_BareNoteMapper_ProducesNotes()
+    {
+        // sweep-0614: a mapper returning a BARE Note literal (C4, D4, ...) —
+        // the most natural documented pattern — used to be charitably SKIPPED
+        // for every symbol, yielding an EMPTY sequence + per-symbol advisory.
+        // The bare-Note path now converts to a quarter-note MusicalNote.
+        using var runner = new FlowEngineRunner();
+        var source = """
+            use "@std"
+            use "@generative"
+            Symbol[] expanded = (list #A #B #A)
+            Sequence result = (lsystemToSequence expanded (fn Symbol s => (if (equals s #A) C4 D4)))
+            """;
+        var (success, _, stderr, errorCount) = runner.RunSource(source);
+        Assert.True(success && errorCount == 0,
+            $"Script failed: errorCount={errorCount}\nstderr:\n{stderr}\nsource:\n{source}");
+
+        var seq = runner.GetVariable("result").As<SequenceData>();
+        Assert.Single(seq.Bars);                          // was: empty (zero bars)
+        Assert.Equal(3, seq.Bars[0].MusicalNotes.Count);  // was: 0 — every note dropped
+        // #A → C4, #B → D4, #A → C4
+        Assert.Equal('C', seq.Bars[0].MusicalNotes[0].NoteName);
+        Assert.Equal('D', seq.Bars[0].MusicalNotes[1].NoteName);
+        Assert.Equal('C', seq.Bars[0].MusicalNotes[2].NoteName);
+        // No skip advisory should have fired for the well-formed bare notes.
+        Assert.DoesNotContain("expected MusicalNote — skipped", stderr);
+    }
 }
