@@ -12,13 +12,23 @@ namespace FlowLang.StandardLibrary.Audio.DSP;
 /// <list type="number">
 ///   <item><description>Compute pitch-shift ratio <c>r = 2^(cents/1200)</c>
 ///   (cent-precision semitone formula).</description></item>
-///   <item><description>Time-stretch by <c>1/r</c> via
-///   <see cref="StretchEngine"/> — shorter for upshift, longer for
+///   <item><description>Time-stretch by <c>r</c> via
+///   <see cref="StretchEngine"/> — longer for upshift, shorter for
 ///   downshift.</description></item>
 ///   <item><description>Resample by <c>r</c> back to the original length via
 ///   linear interpolation — frequency content shifts by <c>r</c> after the
 ///   resample.</description></item>
 /// </list>
+/// </para>
+///
+/// <para>
+/// Both operations use <c>r</c> (NOT <c>1/r</c>): an upshift stretches the
+/// buffer LONGER, then the resample reads <c>outFrame × r</c> over the
+/// original frame count, staying in-bounds and yielding correct pitch at
+/// ~unity level. A prior revision stretched by <c>1/r</c>, which made the
+/// stretched buffer SHORTER than the resample read region for upshifts — the
+/// resample then clamped to the last frame (flat DC tail) for most of the
+/// output, producing near-silent / wrong-pitch upward shifts.
 /// </para>
 ///
 /// <para>
@@ -55,9 +65,14 @@ public static class PitchShiftEngine
 
         double ratio = Math.Pow(2.0, cents / 1200.0);
 
-        // W4 LOCK — stretch by 1/ratio with full knob bag forwarded.
+        // W4 LOCK — stretch by ratio with full knob bag forwarded.
+        // Pitch-shift-via-resample identity: stretch by r (LONGER for an
+        // upshift), then resample by r below. Both legs use r — stretching by
+        // 1/r here would leave the stretched buffer shorter than the resample
+        // read region for upshifts, clamping most of the output to a flat DC
+        // tail (near-silent, wrong pitch).
         AudioBuffer stretched = StretchEngine.Process(
-            input, factor: 1.0 / ratio, mode: mode,
+            input, factor: ratio, mode: mode,
             frameSize: frameSize, hopSize: hopSize, overlap: overlap,
             transientThreshold: transientThreshold,
             pitchPeriod: pitchPeriod, windowSize: windowSize,
@@ -65,8 +80,10 @@ public static class PitchShiftEngine
 
         // Linear-interpolation resample by ratio back to the input length.
         // Walk each output frame and sample the stretched buffer at
-        // outFrame * ratio (mapping the long stretched buffer back to the
-        // short output length).
+        // outFrame * ratio. With factor=ratio, an upshift's stretched buffer
+        // (~inFrames*ratio long) is exactly the region this loop reads
+        // (outFrames*ratio = inFrames*ratio), so it stays in-bounds and the
+        // pitch shifts up by ratio at ~unity level.
         int channels = input.Channels;
         int outFrames = input.Frames;
         var result = new AudioBuffer(outFrames, channels, input.SampleRate);
