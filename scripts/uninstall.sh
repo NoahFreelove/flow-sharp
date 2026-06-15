@@ -7,7 +7,6 @@
 
 set -euo pipefail
 
-FLOW_VERSION="${FLOW_VERSION:-0.1.0}"
 SYSTEM_INSTALL=0
 INSTALL_ROOT=""
 

@@ -5,8 +5,11 @@ namespace FlowCli.Commands;
 
 // `flow version` — the only fully-wired subcommand in Plan 30-01.
 // Prints the assembly's InformationalVersion (set in flow-cli.csproj to
-// `0.1.0-phase30`); falls back to the AssemblyName.Version if absent and
+// `1.5.0`); falls back to the AssemblyName.Version if absent and
 // finally to the literal string "unknown" if both are unavailable.
+// Note: the .NET SDK appends a `+<commit>` suffix to InformationalVersion
+// by default (IncludeSourceRevisionInInformationalVersion) — that suffix is
+// SDK behavior, not SourceLink — so `flow version` prints `flow 1.5.0+<commit>`.
 internal static class VersionCommand
 {
     public static Command Build()
