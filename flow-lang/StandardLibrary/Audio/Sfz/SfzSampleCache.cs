@@ -168,12 +168,21 @@ public class SfzSampleCache
     }
 
     /// <summary>
-    /// Walk a bar's notes (and any parallel voice sub-bars) and add the
-    /// dereferenced <c>patch.Grid[midi, vel]</c> region for each note to
-    /// <paramref name="needed"/>. Non-rest notes only — rests have no
-    /// region. Velocity is clamped to <c>[1, 127]</c> per Pitfall 9
-    /// (matches <c>SfzRenderer.Render</c>'s clamp so the eager-load and
-    /// render-time lookup hit the same cell).
+    /// Walk a bar's notes (and any parallel voice sub-bars) and add EVERY
+    /// region that could be selected for each note to <paramref name="needed"/>
+    /// — not just the grid winner. Non-rest notes only; velocity is clamped to
+    /// <c>[1, 127]</c> per Pitfall 9 (matches <c>SfzRenderer.Render</c>'s clamp
+    /// so the eager-load and render-time lookup hit the same cell).
+    ///
+    /// <para><b>sweep-0614 fix</b>: the render path calls
+    /// <c>PickRoundRobinCandidate</c> FIRST, which walks <c>patch.Regions</c>
+    /// and selects round-robin alternates by <c>seq_position</c> — and those
+    /// alternates normally point at DISTINCT sample files. Collecting only
+    /// <c>patch.Grid[midi, vel]</c> (the last-declared region per D-02) loaded
+    /// just the grid winner's WAV, so every non-winner alternate rendered as
+    /// silence at trigger time. We now union ALL regions whose key+vel range
+    /// covers the note (the same predicate the round-robin picker uses) so
+    /// every selectable alternate's sample is pre-loaded.</para>
     /// </summary>
     private static void CollectRegionsFromBar(BarData bar, SfzData patch, HashSet<SfzRegion> needed)
     {
@@ -183,10 +192,40 @@ public class SfzSampleCache
             int midi = PitchConversion.GetMidiNote(note.NoteName, note.Octave, note.Alteration);
             if (midi < 0 || midi > 127) continue;
             int vel = Math.Clamp((int)Math.Round(note.Velocity * 127.0), 1, 127);
-            var region = patch.Grid[midi, vel];
-            if (region is not null) needed.Add(region);
-            // null cells are fine — render-time nearest-pitch fallback will
-            // load the fallback region's WAV on first render.
+
+            // Union every region covering (midi, vel) — round-robin alternates
+            // and velocity-crossfade layers all share the same key+vel span, so
+            // the grid winner alone is NOT enough (it drops the other RR
+            // alternates' / xfade layers' distinct sample files).
+            bool anyExact = false;
+            foreach (var region in patch.Regions)
+            {
+                if (region.LoKey > midi || region.HiKey < midi) continue;
+                if (region.LoVel > vel || region.HiVel < vel) continue;
+                needed.Add(region);
+                anyExact = true;
+            }
+
+            // No exact coverage at this (midi, vel) — mirror the renderer's
+            // nearest-pitch fallback so the fallback-selected region's WAV is
+            // also pre-loaded (SfzRenderer.FindNearestPitch / FindAnyRegionAtPitch).
+            if (!anyExact && patch.SortedByPitch is { Length: > 0 })
+            {
+                int nearestPitch = FindNearestPitch(patch.SortedByPitch, midi);
+                foreach (var region in patch.Regions)
+                {
+                    if (region.LoKey > nearestPitch || region.HiKey < nearestPitch) continue;
+                    if (region.LoVel > vel || region.HiVel < vel) continue;
+                    needed.Add(region);
+                }
+                // Still nothing at the exact velocity slot for the nearest
+                // pitch — pull any region covering that pitch (FindAnyRegionAtPitch).
+                foreach (var region in patch.Regions)
+                {
+                    if (region.LoKey > nearestPitch || region.HiKey < nearestPitch) continue;
+                    needed.Add(region);
+                }
+            }
         }
 
         // Phase 28 voice blocks: recurse into parallel sub-bars so polyphonic
@@ -198,6 +237,24 @@ public class SfzSampleCache
                 CollectRegionsFromBar(voice, patch, needed);
             }
         }
+    }
+
+    /// <summary>
+    /// Returns the entry of <paramref name="sortedAscending"/> closest to
+    /// <paramref name="target"/>. Mirrors <c>SfzRenderer.FindNearestPitch</c>
+    /// so the eager-load pre-loads exactly the region the renderer's
+    /// nearest-pitch fallback will select.
+    /// </summary>
+    private static int FindNearestPitch(int[] sortedAscending, int target)
+    {
+        int nearest = sortedAscending[0];
+        int bestDist = Math.Abs(target - nearest);
+        for (int i = 1; i < sortedAscending.Length; i++)
+        {
+            int d = Math.Abs(target - sortedAscending[i]);
+            if (d < bestDist) { nearest = sortedAscending[i]; bestDist = d; }
+        }
+        return nearest;
     }
 
     /// <summary>
