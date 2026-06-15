@@ -626,6 +626,7 @@ public static class ReplInputCompleteness
         int procDepth = 0;
         int parenDepth = 0;
         int bracketDepth = 0;
+        int pipeCount = 0;
         foreach (var token in tokens)
         {
             if (token.Type == TokenType.LBrace) blockDepth++;
@@ -636,12 +637,23 @@ public static class ReplInputCompleteness
             else if (token.Type == TokenType.RParen) parenDepth--;
             else if (token.Type == TokenType.LBracket) bracketDepth++;
             else if (token.Type == TokenType.RBracket) bracketDepth--;
+            // sweep-0614 (cli-repl-watch): note-stream delimiter. '|' is exclusively
+            // a balanced delimiter in Flow — a note stream opens and closes with the
+            // same '|' (`| C4 D4 |`, `pickup | ... |`, `progression | ... |`); there
+            // is no infix bitwise-or (arithmetic is prefix-only). So an odd pipe count
+            // means an unterminated note stream → the input is incomplete and the
+            // composer is mid-stream across lines. Without this, the parser charitably
+            // auto-closed the truncated bar (Parser.NoteStream.cs) and silently
+            // orphaned the intended continuation as a separate broken statement.
+            else if (token.Type == TokenType.Pipe) pipeCount++;
         }
 
-        // Phase 38 Plan 38-04 — multi-line continuation honours brace AND paren AND
-        // bracket nesting (S-expression call form `(add 1` and chord/song bracket
-        // literals like `[intro verse` are common composer continuation points).
-        return blockDepth <= 0 && procDepth <= 0 && parenDepth <= 0 && bracketDepth <= 0;
+        // Phase 38 Plan 38-04 — multi-line continuation honours brace AND proc AND
+        // paren AND bracket nesting (S-expression call form `(add 1` and chord/song
+        // bracket literals like `[intro verse` are common composer continuation
+        // points). sweep-0614 adds the note-stream pipe balance (odd = incomplete).
+        return blockDepth <= 0 && procDepth <= 0 && parenDepth <= 0
+               && bracketDepth <= 0 && (pipeCount % 2 == 0);
     }
 }
 
