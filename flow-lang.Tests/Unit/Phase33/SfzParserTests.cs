@@ -204,6 +204,41 @@ public class SfzParserTests : IDisposable
     }
 
     // ----------------------------------------------------------------
+    // CharitableIgnoreOpcodes_NoAdvisory — sweep-0614 gap-routing-tuning-format
+    // ----------------------------------------------------------------
+
+    [Fact]
+    public void CharitableIgnoreOpcodes_NoAdvisory()
+    {
+        // ampeg_dynamic + tune are whitelisted as charitable-ignore (e.g. the
+        // VSCO-CE SViolinVib patch declares both). They must parse WITHOUT
+        // firing the unrecognized-opcode WarnOnce advisory, while every other
+        // recognized opcode still applies.
+        var content = string.Join('\n', new[]
+        {
+            "<region>",
+            "sample=foo.wav",
+            "ampeg_dynamic=1",
+            "tune=-7",
+            "lokey=60",
+            "hikey=72",
+        });
+
+        using var capture = new CapturedStderr();
+        var sfz = SfzParser.Parse(content, "/tmp/charitable.sfz", "charitablePatch");
+
+        Assert.Single(sfz.Regions);
+        Assert.Equal(60, sfz.Regions[0].LoKey);
+        Assert.Equal(72, sfz.Regions[0].HiKey);
+
+        // No "unrecognized opcode" advisory for ampeg_dynamic / tune.
+        var stderr = capture.Buffer.ToString();
+        Assert.DoesNotContain("unrecognized opcode", stderr);
+        Assert.DoesNotContain("ampeg_dynamic", stderr);
+        Assert.DoesNotContain("tune", stderr);
+    }
+
+    // ----------------------------------------------------------------
     // HeaderInheritance
     // ----------------------------------------------------------------
 

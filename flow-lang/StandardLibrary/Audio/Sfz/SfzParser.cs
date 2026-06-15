@@ -76,10 +76,12 @@ public static class SfzParser
         NumberStyles.Float & ~NumberStyles.AllowExponent & ~NumberStyles.AllowThousands;
 
     /// <summary>
-    /// 20-opcode whitelist — Phase 33's 14 plus the Phase 37 SAMP-01/02 six
-    /// (round-robin pair + velocity-crossfade quad). Case-sensitive Ordinal
-    /// compare per T-33-OPCODE-01 — rejects unicode tricks and case-fold
-    /// variants.
+    /// 22-opcode whitelist — Phase 33's 14 plus the Phase 37 SAMP-01/02 six
+    /// (round-robin pair + velocity-crossfade quad) plus the sweep-0614
+    /// charitable-ignore pair (<c>ampeg_dynamic</c>, <c>tune</c>). Case-sensitive
+    /// Ordinal compare per T-33-OPCODE-01 — rejects unicode tricks and case-fold
+    /// variants. Whitelisted-but-unread opcodes are accepted silently (no
+    /// WarnOnce) but have no rendering effect.
     /// </summary>
     private static readonly HashSet<string> KnownOpcodes = new(StringComparer.Ordinal)
     {
@@ -105,6 +107,16 @@ public static class SfzParser
         "xfin_hivel",
         "xfout_lovel",
         "xfout_hivel",
+        // sweep-0614 (gap-routing-tuning-format) — charitable-ignore opcodes.
+        // These appear in real-world libraries (e.g. VSCO-CE SViolinVib) but the
+        // common-subset renderer has no behavior for them. Whitelisting them
+        // (without reading them in BuildRegion) silences the WarnOnce stderr
+        // noise per the charitable-interpretation contract while leaving the
+        // rendered output byte-identical (no opcode-value read = no effect):
+        //   ampeg_dynamic — dynamic-envelope flag (whole-region toggle)
+        //   tune          — fine pitch tune in cents (pitch nuance, not modeled)
+        "ampeg_dynamic",
+        "tune",
     };
 
     /// <summary>

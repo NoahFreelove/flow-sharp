@@ -73,7 +73,7 @@ public static class ScalaBuiltins
 
     private static Value LoadScalaOneArg(System.Collections.Generic.IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
-        string sclPath = args[0].As<string>();
+        string sclPath = ResolveScriptRelative(args[0].As<string>(), ctx);
         string sclContent = File.ReadAllText(sclPath);
         var parsedScl = ScalaParser.Parse(sclContent, sclPath);
         var kbm = ScalaKbmParser.Default(parsedScl);
@@ -84,8 +84,8 @@ public static class ScalaBuiltins
 
     private static Value LoadScalaTwoArg(System.Collections.Generic.IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
-        string sclPath = args[0].As<string>();
-        string kbmPath = args[1].As<string>();
+        string sclPath = ResolveScriptRelative(args[0].As<string>(), ctx);
+        string kbmPath = ResolveScriptRelative(args[1].As<string>(), ctx);
         string sclContent = File.ReadAllText(sclPath);
         var parsedScl = ScalaParser.Parse(sclContent, sclPath);
         string kbmContent = File.ReadAllText(kbmPath);
@@ -112,6 +112,44 @@ public static class ScalaBuiltins
     {
         var resolved = args[0].As<ResolvedTuning>();
         return Value.String(resolved.ToString());
+    }
+
+    /// <summary>
+    /// sweep-0614 (gap-routing-tuning-format): resolve a <c>.scl</c>/<c>.kbm</c>
+    /// path SCRIPT-relative (relative to the <c>.flow</c> file that contains the
+    /// <c>loadScala</c> call) to match <c>use</c> / relative-import behavior — a
+    /// composer writing <c>(loadScala "tunings/partch43.scl")</c> next to their
+    /// script no longer has to run from a specific CWD.
+    ///
+    /// <para>Resolution order (charitable — never throws here; a genuinely missing
+    /// file surfaces from <see cref="File.ReadAllText(string)"/> downstream exactly
+    /// as before):</para>
+    /// <list type="number">
+    ///   <item>Absolute paths and the no-call-site case (<c>ctx == null</c> or
+    ///   unknown <c>FileName</c>) pass through verbatim — preserves every existing
+    ///   test/example that feeds an absolute or CWD-relative path with no source
+    ///   file attribution.</item>
+    ///   <item>If a sibling-of-the-script candidate EXISTS on disk, use it. This is
+    ///   the new behavior the composer expects.</item>
+    ///   <item>Otherwise fall back to the original string (CWD-relative) so prior
+    ///   behavior and its error messages are unchanged.</item>
+    /// </list>
+    /// </summary>
+    private static string ResolveScriptRelative(string path, FlowLang.Runtime.ExecutionContext? ctx)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+        if (Path.IsPathRooted(path)) return path;
+
+        string? scriptFile = ctx?.CurrentCallSite.FileName;
+        if (string.IsNullOrEmpty(scriptFile)) return path;
+
+        string? scriptDir = Path.GetDirectoryName(scriptFile);
+        if (string.IsNullOrEmpty(scriptDir)) return path;
+
+        string candidate = Path.Combine(scriptDir, path);
+        // Only prefer the script-relative candidate when it actually exists, so a
+        // path that only resolves CWD-relative keeps working unchanged.
+        return File.Exists(candidate) ? candidate : path;
     }
 
     /// <summary>

@@ -11,10 +11,11 @@ namespace FlowLang.StandardLibrary.Notation;
 /// Ordering significance: the more-specific Phase 33 entries (violin, viola, cello,
 /// contrabass, oboe, clarinet, bassoon, horn, trombone, tuba, timpani, choir, harp,
 /// guitar, harpsichord, celeste) MUST be checked BEFORE the Phase 28 generic entries
-/// (piano, brass, sax, flute, string, organ, bell, drum). In particular,
+/// (piano, brass, bass, sax, flute, string, organ, bell, drum). In particular,
 /// <c>horn</c> MUST precede <c>brass</c> because the Phase 28 <c>brass</c> entry
 /// historically also matched <c>horn*</c>; Phase 33 D-16 reassigns <c>horn → 60</c>
-/// (French horn).
+/// (French horn). Likewise <c>bassoon</c> (GM 70) MUST precede the sweep-0614
+/// generic <c>bass</c> entry (GM 32) since both share the <c>bass</c> prefix.
 /// </para>
 ///
 /// <para>
@@ -73,6 +74,12 @@ public static class InstrumentRouting
         // horn/violin/etc. don't fall through to brass etc.)
         if (lower.StartsWith("piano"))  return (0, 0);
         if (lower.StartsWith("brass"))  return (56, 0);
+        // sweep-0614 (gap-routing-tuning-format): a `bass*`-named sequence
+        // previously fell through to GM 0 (acoustic grand piano). Route it to
+        // GM 32 (Acoustic Bass). MUST come after the Phase 33 `bassoon` entry
+        // (program 70) above — `bassoon` shares the `bass` prefix, and the
+        // more-specific check is ordered first so it isn't swallowed here.
+        if (lower.StartsWith("bass"))   return (32, 0);
         if (lower.StartsWith("sax"))    return (65, 0);
         if (lower.StartsWith("flute"))  return (73, 0);
         if (lower.StartsWith("string")) return (48, 0);
