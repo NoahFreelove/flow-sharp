@@ -490,9 +490,13 @@ public static class TransformFunctions
         SequenceData seq, NoteValueType.Value resolution,
         double strength, double swing, TimeSignatureData timesig)
     {
-        // resolution → subdivision length in beats (where 1 beat == 1/timesig.Denominator whole).
-        // QUARTER at 4/4 = 1 beat per subdivision; EIGHTH at 4/4 = 0.5 beats; SIXTEENTH = 0.25 beats.
-        double subdivBeats = NoteValueToBeats(resolution, timesig.Denominator);
+        // sweep-0614: the quantize grid is compared against the per-note onset cursor,
+        // which accumulates GetBeats in QUARTER-note units. The subdivision length must
+        // therefore be quarter-units too (QUARTER = 1.0, EIGHTH = 0.5, SIXTEENTH = 0.25 —
+        // independent of the time-signature denominator). In 4/4 this equals the old
+        // denominator-unit value, so 4/4 quantize stays byte-identical; in non-4/4 the
+        // grid now lines up with the (now quarter-units) timeline.
+        double subdivBeats = NoteValueToQuarters(resolution);
         // CONTEXT D-04: linear swing offset = swing × (subdivBeats / 2).
         double swingOffset = swing * (subdivBeats / 2.0);
 
@@ -551,19 +555,23 @@ public static class TransformFunctions
     /// time signature. Charitable D-07: out-of-range enum values fall through to the
     /// default arm and are treated as a quarter note (no exception, no crash).
     /// </summary>
-    private static double NoteValueToBeats(NoteValueType.Value nv, int denom)
+    /// <summary>
+    /// sweep-0614: converts a NoteValue resolution into QUARTER-note units (the universal
+    /// duration unit used by GetBeats / the render + MIDI timeline). QUARTER = 1.0, EIGHTH
+    /// = 0.5, etc. — meter-independent. Charitable D-07: out-of-range enum values fall
+    /// through to the quarter-note default (no exception).
+    /// </summary>
+    private static double NoteValueToQuarters(NoteValueType.Value nv)
     {
-        // 1 beat == 1/denom whole. So WHOLE = denom beats; QUARTER = denom/4 beats.
-        double whole = denom;
         return nv switch
         {
-            NoteValueType.Value.WHOLE        => whole,
-            NoteValueType.Value.HALF         => whole / 2,
-            NoteValueType.Value.QUARTER      => whole / 4,
-            NoteValueType.Value.EIGHTH       => whole / 8,
-            NoteValueType.Value.SIXTEENTH    => whole / 16,
-            NoteValueType.Value.THIRTYSECOND => whole / 32,
-            _                                => whole / 4,
+            NoteValueType.Value.WHOLE        => 4.0,
+            NoteValueType.Value.HALF         => 2.0,
+            NoteValueType.Value.QUARTER      => 1.0,
+            NoteValueType.Value.EIGHTH       => 0.5,
+            NoteValueType.Value.SIXTEENTH    => 0.25,
+            NoteValueType.Value.THIRTYSECOND => 0.125,
+            _                                => 1.0,
         };
     }
 

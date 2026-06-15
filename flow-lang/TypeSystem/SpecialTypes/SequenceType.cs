@@ -61,7 +61,10 @@ public class SequenceData
     {
         if (bar.IsPickup)
             return bar.GetActualBeats();
-        double numerator = bar.TimeSignature!.Numerator;
+        // sweep-0614: bar length feeds the seconds/tick timeline, which is in
+        // quarter-note units. Use the quarter-units capacity (Numerator × 4 /
+        // Denominator), not the bare denominator-unit numerator.
+        double numerator = bar.TimeSignature!.BarCapacityQuarters;
         if (bar.ParallelVoices is { Count: > 0 })
             return numerator;
         return Math.Max(numerator, bar.GetActualBeats());

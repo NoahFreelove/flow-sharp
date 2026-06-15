@@ -336,11 +336,16 @@ Sequence atSixteenth = (quantize src SIXTEENTH 1.0 1.0)
     [Fact]
     public void Quantize_ReadsTimesigFromMusicalContext()
     {
-        // 4/4 vs 6/8 produce different beat-per-measure math. Since quantize works in beats
-        // and beats = 1/denom whole, EIGHTH at 4/4 has subdivBeats=0.5; EIGHTH at 6/8 has
-        // subdivBeats=1.0 (1 beat per 8th). The grid-snap math differs measurably.
-        // Use the pre-declared placeholder pattern so block-scoped assignments propagate
-        // back to the global frame (Flow's StackFrame walks the parent chain on SetVariable).
+        // sweep-0614: quantize now works in QUARTER-note units (matching GetBeats /
+        // the render + MIDI timeline). An EIGHTH-note grid is 0.5 quarters in EVERY
+        // meter, so quantizing the SAME eighth-note material at EIGHTH resolution
+        // yields the SAME grid-snap in 4/4 and 6/8. Previously quantize used
+        // denominator-unit beats (EIGHTH = 0.5 beats in 4/4 but 1.0 beat in 6/8),
+        // which made identical material snap to a different grid per meter — that
+        // was the same unit-mismatch that made non-4/4 render at the wrong speed.
+        // Use the pre-declared placeholder pattern so block-scoped assignments
+        // propagate back to the global frame (Flow's StackFrame walks the parent
+        // chain on SetVariable).
         using var runner = new FlowEngineRunner();
         var (_, _, stderr, errorCount) = runner.RunSource(SmokePrelude + @"
 Sequence src = | C4e D4e E4e F4e |
@@ -360,7 +365,10 @@ timesig 6/8 {
         var q4Notes = runner.GetVariable("q4").As<SequenceData>().Bars[0].MusicalNotes;
         var q6Notes = runner.GetVariable("q6").As<SequenceData>().Bars[0].MusicalNotes;
 
-        // The odd-indexed offsets differ between 4/4 (0.25 at EIGHTH) and 6/8 (0.5 at EIGHTH).
-        Assert.NotEqual(q4Notes[1].OnsetOffset, q6Notes[1].OnsetOffset);
+        // EIGHTH-note input on an EIGHTH grid: the odd index gets the swing shift of
+        // half a subdivision = 0.25 quarters, the SAME in both meters (quarter-units
+        // grid is meter-independent).
+        Assert.Equal(0.25, q4Notes[1].OnsetOffset, 6);
+        Assert.Equal(q4Notes[1].OnsetOffset, q6Notes[1].OnsetOffset, 6);
     }
 }

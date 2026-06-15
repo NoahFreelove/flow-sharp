@@ -44,7 +44,7 @@ public static class ClassicalComposition
         {
             double totalBeats = notes.Sum(n => n.GetBeats(timeSignature.Denominator));
             throw new InvalidOperationException(
-                $"Bar duration ({totalBeats} beats) exceeds time signature {timeSignature} ({timeSignature.Numerator} beats)"
+                $"Bar duration ({totalBeats} quarter-beats) exceeds time signature {timeSignature} ({timeSignature.BarCapacityQuarters} quarter-beats)"
             );
         }
 
@@ -76,8 +76,8 @@ public static class ClassicalComposition
         double noteBeats = note.GetBeats(bar.TimeSignature.Denominator);
         double newTotal = currentBeats + noteBeats;
 
-        // Check if adding this note would exceed capacity
-        if (newTotal > bar.TimeSignature.Numerator)
+        // sweep-0614: GetBeats + capacity are quarter-units now.
+        if (newTotal > bar.TimeSignature.BarCapacityQuarters)
         {
             return false;
         }
@@ -105,8 +105,8 @@ public static class ClassicalComposition
             double newTotal = currentBeats + noteBeats;
 
             throw new InvalidOperationException(
-                $"Adding note ({noteBeats} beats) would exceed bar capacity. " +
-                $"Current: {currentBeats} beats, Would be: {newTotal} beats, Maximum: {bar.TimeSignature.Numerator} beats"
+                $"Adding note ({noteBeats} quarter-beats) would exceed bar capacity. " +
+                $"Current: {currentBeats} quarter-beats, Would be: {newTotal} quarter-beats, Maximum: {bar.TimeSignature.BarCapacityQuarters} quarter-beats"
             );
         }
     }

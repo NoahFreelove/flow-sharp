@@ -653,7 +653,7 @@ public static class MidiExport
                         {
                             double barBeats = bar.IsPickup
                                 ? bar.GetActualBeats()
-                                : bar.TimeSignature.Numerator;
+                                : bar.TimeSignature.BarCapacityQuarters;
                             seqTick += (long)(barBeats * ticksPerQuarter);
                         }
                     }
@@ -721,7 +721,7 @@ public static class MidiExport
                 {
                     seqBeats += bar.IsPickup
                         ? bar.GetActualBeats()
-                        : bar.TimeSignature.Numerator;
+                        : bar.TimeSignature.BarCapacityQuarters;
                 }
             }
             if (seqBeats > maxBeats)

@@ -144,8 +144,12 @@ public class BarData
     /// </summary>
     public double GetActualBeats()
     {
+        // sweep-0614: all beat totals are quarter-note units. The bar-capacity
+        // fallback must be quarter-units too (Numerator × 4 / Denominator), not the
+        // bare denominator-unit numerator, otherwise non-4/4 bars advance the
+        // wall-clock / MIDI timeline at the wrong rate.
         if (Mode != BarMode.Musical || TimeSignature == null)
-            return TimeSignature?.Numerator ?? 4;
+            return TimeSignature?.BarCapacityQuarters ?? 4;
 
         // Chord-tones share the leading tone's slot — they must not
         // contribute again to the bar's actual beat count. See
@@ -164,10 +168,11 @@ public class BarData
             return true;
 
         // Chord-tones share the leading tone's slot — see GetActualBeats above.
+        // sweep-0614: GetBeats and capacity are both quarter-units now.
         double totalBeats = MusicalNotes
             .Where(n => !n.IsChordTone)
             .Sum(n => n.GetBeats(TimeSignature.Denominator));
-        return totalBeats <= TimeSignature.Numerator;
+        return totalBeats <= TimeSignature.BarCapacityQuarters;
     }
 
     /// <summary>

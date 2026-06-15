@@ -19,6 +19,21 @@ public class TimeSignatureData
         Denominator = denominator;
     }
 
+    /// <summary>
+    /// The capacity of one bar expressed in quarter-note units — the universal
+    /// duration unit used by <see cref="MusicalNoteData.GetBeats"/>, the wall-clock
+    /// (BeatsToSeconds) and tick (ticksPerQuarter) conversions, and the
+    /// ValidateBarFit quarter-units truncation path.
+    ///
+    /// One denominator-unit beat equals (4 / Denominator) quarter notes, so a bar
+    /// holds Numerator × 4 / Denominator quarters:
+    ///   4/4 → 16/4 = 4 quarters; 6/8 → 24/8 = 3 quarters; 2/2 → 8/2 = 4 quarters.
+    /// Bare <c>Numerator</c> (denominator-unit beats) is wrong everywhere a beat
+    /// total is converted to seconds or ticks — use this instead. (sweep-0614:
+    /// non-4/4 wall-clock + MIDI speed fix.)
+    /// </summary>
+    public double BarCapacityQuarters => Numerator * 4.0 / Denominator;
+
     private static bool IsValidTimeSignature(int numerator, int denominator)
     {
         // Numerator must be positive

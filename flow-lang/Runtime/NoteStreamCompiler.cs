@@ -106,9 +106,12 @@ public class NoteStreamCompiler
     private static void ApplyContextSwing(BarData bar, double transformSwing)
     {
         var ts = bar.TimeSignature ?? new TimeSignatureData(4, 4);
-        // Eighth-note subdivision length in denominator-unit beats (matches the
-        // QuantizeBar/NoteValueToBeats convention: 1 beat == 1/denominator whole).
-        double subdivBeats = ts.Denominator / 8.0;
+        // sweep-0614: currentBeat now accumulates GetBeats in QUARTER-note units,
+        // so the eighth-note subdivision must also be quarter-units (an eighth is
+        // 4/8 = 0.5 quarters in every meter). Previously this was denominator-units
+        // (ts.Denominator / 8.0); in 4/4 both forms equal 0.5, so 4/4 swing stays
+        // byte-identical while non-4/4 swing now snaps to the correct eighth grid.
+        double subdivBeats = 4.0 / 8.0;
         double swingOffset = transformSwing * (subdivBeats / 2.0);
 
         var notes = bar.MusicalNotes;

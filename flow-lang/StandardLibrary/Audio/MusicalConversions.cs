@@ -18,11 +18,13 @@ public static class MusicalConversions
     }
 
     /// <summary>
-    /// Returns the number of beats per bar based on the time signature numerator.
+    /// Returns the number of beats per bar in QUARTER-note units (sweep-0614).
+    /// All beat totals in the render + MIDI pipeline are quarter-units, so a bar's
+    /// capacity is Numerator × 4 / Denominator (4/4 → 4; 6/8 → 3; 2/2 → 4).
     /// </summary>
     public static double BeatsPerBar(TimeSignatureData timeSignature)
     {
-        return timeSignature.Numerator;
+        return timeSignature.BarCapacityQuarters;
     }
 
     /// <summary>
@@ -39,7 +41,7 @@ public static class MusicalConversions
             totalBeats += note.GetBeats(timeSignature.Denominator);
         }
 
-        return totalBeats <= timeSignature.Numerator;
+        return totalBeats <= timeSignature.BarCapacityQuarters;
     }
 
     /// <summary>
@@ -48,7 +50,7 @@ public static class MusicalConversions
     public static double CalculateBarDuration(BarData bar, TimeSignatureData timeSignature)
     {
         if (bar.Mode != BarMode.Musical)
-            return timeSignature.Numerator; // Default to full bar
+            return timeSignature.BarCapacityQuarters; // Default to full bar (quarter-units)
 
         double totalBeats = 0;
         foreach (var note in bar.MusicalNotes)
@@ -76,7 +78,7 @@ public static class MusicalConversions
             totalBeats += note.GetBeats(bar.TimeSignature.Denominator);
         }
 
-        double remaining = bar.TimeSignature.Numerator - totalBeats;
+        double remaining = bar.TimeSignature.BarCapacityQuarters - totalBeats;
         return Math.Max(0, remaining);
     }
 
@@ -97,7 +99,7 @@ public static class MusicalConversions
         }
 
         double noteBeats = note.GetBeats(bar.TimeSignature.Denominator);
-        return (currentBeats + noteBeats) <= bar.TimeSignature.Numerator;
+        return (currentBeats + noteBeats) <= bar.TimeSignature.BarCapacityQuarters;
     }
 
     /// <summary>
@@ -118,7 +120,7 @@ public static class MusicalConversions
             totalBeats += note.GetBeats(bar.TimeSignature.Denominator);
         }
 
-        double overflow = totalBeats - bar.TimeSignature.Numerator;
+        double overflow = totalBeats - bar.TimeSignature.BarCapacityQuarters;
         return Math.Max(0, overflow);
     }
 }

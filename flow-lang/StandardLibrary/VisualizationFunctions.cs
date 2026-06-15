@@ -93,7 +93,10 @@ public static class VisualizationFunctions
                 CollectNoteEvents(bar.MusicalNotes, bar.TimeSignature.Denominator, offsetBeats, noteEvents);
             }
 
-            double barBeats = bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
+            // sweep-0614: note cursors are quarter-units (GetBeats), so the bar span
+            // must be quarter-units too (Numerator × 4 / Denominator) — otherwise the
+            // ASCII piano-roll's bar boundaries drift from the notes in non-4/4 meters.
+            double barBeats = bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.BarCapacityQuarters;
             totalBeats = Math.Max(totalBeats, offsetBeats + barBeats);
         }
 

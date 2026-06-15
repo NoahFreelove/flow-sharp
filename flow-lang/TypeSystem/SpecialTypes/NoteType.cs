@@ -368,30 +368,38 @@ public class MusicalNoteData
     }
 
     /// <summary>
-    /// Calculates the duration of this note in beats based on the time signature denominator.
+    /// Calculates the duration of this note in QUARTER-NOTE units.
+    ///
+    /// sweep-0614: this returns quarter-note units (1 quarter = 1.0), NOT
+    /// denominator-unit beats. Every wall-clock (SynthUtils.BeatsToSeconds,
+    /// SongRenderer.secondsPerBeat) and tick (MidiExport ticksPerQuarter)
+    /// conversion treats BPM as quarters-per-minute, so GetBeats MUST be
+    /// quarter-relative for non-4/4 meters to render at the correct speed.
+    /// (Prior to this fix the power-of-2 path returned denominator-units, which
+    /// is accidentally correct only for 4/4 — 6/8 rendered 2× too slow, 2/2 2×
+    /// too fast.) The <paramref name="timeSigDenominator"/> parameter is retained
+    /// for signature compatibility but no longer scales the result: a quarter note
+    /// is 1.0 quarters in every meter.
     /// </summary>
     public double GetBeats(int timeSigDenominator)
     {
         if (DurationFraction.HasValue)
         {
-            // FRAC-02 rational override path. DurationFraction is in quarter-note units
-            // (music21 convention). Convert to beats for the active time signature:
-            //   beats = quarterNotes × (timeSigDenominator / 4)
-            // Per D-USER-01: keep existing GetBeats signature (double); sibling
-            // GetBeatsFraction deferred to Phase 19 if needed.
-            // Per D-USER-04: this branch is DORMANT in Phase 18 (no code path sets
-            // DurationFraction yet). Wired-but-unreached.
+            // FRAC-02 rational override path. DurationFraction is already stored in
+            // quarter-note units (music21 convention; e.g. a tuplet leaf of 2/3
+            // quarter). Quarter-units is exactly what every consumer now expects,
+            // so return it verbatim — no per-meter rescale.
             var f = DurationFraction.Value;
-            return (double)f.Num * timeSigDenominator / (f.Denom * 4.0);
+            return (double)f.Num / f.Denom;
         }
 
-        // Existing power-of-2 path — UNCHANGED from pre-Phase-18.
         if (!DurationValue.HasValue)
-            return 1.0; // Default to 1 beat if no duration specified
+            return 1.0; // Default to 1 quarter if no duration specified
 
+        // ToFraction is fraction-of-a-WHOLE-note (quarter=0.25); × 4 → quarter-units.
         double fraction = NoteValueType.ToFraction((NoteValueType.Value)DurationValue.Value);
         if (IsDotted) fraction *= 1.5;
-        return fraction * timeSigDenominator;
+        return fraction * 4.0;
     }
 
     public override string ToString()

@@ -224,8 +224,9 @@ public static class BarRenderer
                 allVoices.Add(voice);
             }
 
-            // Move to next bar position
-            currentOffset += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
+            // Move to next bar position (sweep-0614: quarter-units capacity, not the
+            // bare denominator-unit numerator, so non-4/4 bars advance correctly).
+            currentOffset += bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.BarCapacityQuarters;
         }
 
         return allVoices;
