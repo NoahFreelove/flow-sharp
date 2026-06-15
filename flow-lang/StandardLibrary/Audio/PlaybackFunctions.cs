@@ -101,6 +101,14 @@ public static class PlaybackFunctions
         var sequence = args[0].As<SequenceData>();
         if (sequence.Count == 0) return Value.Void();
 
+        // sweep-0614 wasm-web: Mono-WASM is single-threaded; Task.Run queues to
+        // the one main thread that RunFromJs already blocks synchronously, so the
+        // body NEVER runs (silent no audio). Fall back to a synchronous single
+        // play (WebAudio.Play is fire-and-forget — returns immediately) + an
+        // advisory, so composers get audio + a diagnostic instead of silence.
+        if (WebPlaybackFallbackUsed())
+            return PlaySequence(args, manager);
+
         Task.Run(() => PlaySequence(args, manager));
         return Value.Void();
     }
@@ -112,6 +120,10 @@ public static class PlaybackFunctions
     {
         var buffer = args[0].As<AudioBuffer>();
         if (buffer.Frames == 0) return Value.Void();
+
+        // sweep-0614 wasm-web: see StreamSequence — synchronous fallback on Web.
+        if (WebPlaybackFallbackUsed())
+            return PlayBuffer(args, manager);
 
         Task.Run(() => PlayBuffer(args, manager));
         return Value.Void();
@@ -160,6 +172,16 @@ public static class PlaybackFunctions
         var buffer = args[0].As<AudioBuffer>();
         if (buffer.Frames == 0) return Value.Void();
 
+        // sweep-0614 wasm-web: on the single-threaded Web target the Task.Run
+        // body never runs (silent), and LoopBufferInfinite's tight
+        // while(!ct.IsCancellationRequested) over a fire-and-forget Play would
+        // either no-op or spawn unbounded overlapping source nodes / hang the
+        // tab. Fall back to a single synchronous play + advisory (audio +
+        // diagnostic instead of silence). True looping is v1.6 (native
+        // source.loop=true via a new JSImport).
+        if (WebPlaybackFallbackUsed())
+            return PlayBuffer(args, manager);
+
         Task.Run(() => LoopBufferInfinite(args, manager));
         return Value.Void();
     }
@@ -207,6 +229,17 @@ public static class PlaybackFunctions
     {
         var buffer = args[0].As<AudioBuffer>();
         if (buffer.Frames == 0) return Value.Void();
+
+        // sweep-0614 wasm-web: synchronous single-play fallback on Web (see
+        // LoopBufferInfiniteAsync). Validate the count arg the same way
+        // LoopBufferN does so degenerate input behaves identically across targets.
+        if (WebPlaybackFallbackUsed())
+        {
+            int requested = args[1].As<int>();
+            if (requested <= 0)
+                throw new ArgumentException("Loop count must be positive.");
+            return PlayBuffer(args, manager);
+        }
 
         Task.Run(() => LoopBufferN(args, manager));
         return Value.Void();
@@ -333,6 +366,27 @@ public static class PlaybackFunctions
     }
 
     // --- Helper methods ---
+
+    /// <summary>
+    /// sweep-0614 wasm-web: true on the browser (single-threaded Mono-WASM)
+    /// target, where the non-blocking <c>loop</c>/<c>stream</c> builtins cannot
+    /// use <c>Task.Run</c> (no background thread — the body would never run, or a
+    /// blocking loop would hang the tab). When true the caller routes to a
+    /// synchronous single play; this helper emits the one-shot advisory once.
+    /// Returns false on Desktop (constant-folded), so the existing Task.Run path
+    /// is byte-identical there.
+    /// </summary>
+    private static bool WebPlaybackFallbackUsed()
+    {
+        if (!OperatingSystem.IsBrowser())
+            return false;
+
+        FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+            "web-loop-stream-sync-fallback",
+            "[target] loop/stream fall back to a single synchronous play under " +
+            "FlowTarget=Web (no background thread); native looping is v1.6");
+        return true;
+    }
 
     /// <summary>
     /// Plays float samples through the audio backend with cancellation support.

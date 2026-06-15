@@ -328,8 +328,39 @@ public sealed class WebAudioBackend : IAudioBackend
     public static float[] PromoteToStereo(float[] samples, int channels)
     {
         if (samples is null) return Array.Empty<float>();
-        if (channels >= 2) return samples;  // already stereo (or multi-channel) — pass-through
+        if (channels == 2) return samples;  // already stereo — reference-equal pass-through
 
+        if (channels > 2)
+        {
+            // sweep-0614 wasm-web: a >2-channel buffer is user-constructible
+            // (e.g. `(buffer N 3 44100)` / `(noise dur amp 3 44100)`; Initialize
+            // accepts 1..8). The JS marshal hard-codes channels:2 and
+            // de-interleaves with stride 2 (flow-runtime.js), so passing an
+            // N-channel interleave through UNCHANGED garbles/mistimes playback.
+            // Charitable default (D-48-07 "stereo always"): downmix to true
+            // stereo by averaging all channels into both L and R, so the JS-side
+            // channels:2 assumption holds. One-shot stderr advisory per the
+            // charitable-default convention (never an exception).
+            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                $"webaudio-downmix:{channels}",
+                $"[webaudio] downmixed {channels}-channel buffer to stereo for browser playback");
+
+            int frames = samples.Length / channels;
+            var downmixed = new float[frames * 2];
+            for (int f = 0; f < frames; f++)
+            {
+                float sum = 0f;
+                int baseIdx = f * channels;
+                for (int ch = 0; ch < channels; ch++)
+                    sum += samples[baseIdx + ch];
+                float avg = sum / channels;
+                downmixed[f * 2]     = avg;
+                downmixed[f * 2 + 1] = avg;
+            }
+            return downmixed;
+        }
+
+        // channels <= 1 — mono → stereo dupe (L == R).
         var stereo = new float[samples.Length * 2];
         for (int i = 0; i < samples.Length; i++)
         {

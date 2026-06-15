@@ -61,6 +61,46 @@ public class WebAudioBackendIntegrationTests
             "Stereo input should pass through without allocation (cheap-stereo optimization).");
     }
 
+    [Fact]
+    public void PromoteToStereo_ThreeChannelInput_DownmixesToStereo()
+    {
+        // sweep-0614 wasm-web regression: a >2-channel interleaved buffer used to
+        // pass through UNCHANGED (the old `channels >= 2` guard), but the JS
+        // marshal hard-codes channels:2 and de-interleaves with stride 2 — so a
+        // 3-channel buffer played back garbled/mistimed. The fix downmixes
+        // (average all channels into both L and R) so output is true stereo.
+        //
+        // PromoteToStereo emits a one-shot [webaudio] advisory via Console.Error
+        // on the >2-channel path. xUnit runs this (parallel) class alongside the
+        // serial WasmEntryConsoleCollection, whose tests redirect process-wide
+        // Console.Error; an unguarded write here would race into their capture.
+        // Redirect to a local sink (restore in finally) to stay isolated.
+        var prevErr = Console.Error;
+        var localErr = new System.IO.StringWriter();
+        Console.SetError(localErr);
+        try
+        {
+            // 2 frames, 3 channels, interleaved [L0 C0 R0 | L1 C1 R1].
+            var threeCh = new float[] { 0.3f, 0.6f, 0.9f, -0.3f, -0.6f, -0.9f };
+
+            float[] promoted = WebAudioBackend.PromoteToStereo(threeCh, channels: 3);
+
+            // Must be a true 2-channel buffer: frames(2) * 2 = 4 samples.
+            Assert.Equal(4, promoted.Length);
+
+            // Frame 0 average = (0.3 + 0.6 + 0.9) / 3 = 0.6 → both L and R.
+            Assert.Equal(0.6f, promoted[0], 5);
+            Assert.Equal(0.6f, promoted[1], 5);
+            // Frame 1 average = (-0.3 + -0.6 + -0.9) / 3 = -0.6 → both L and R.
+            Assert.Equal(-0.6f, promoted[2], 5);
+            Assert.Equal(-0.6f, promoted[3], 5);
+        }
+        finally
+        {
+            Console.SetError(prevErr);
+        }
+    }
+
     // ---------------------------------------------------------------
     // Dispose-safety contract (carryforward from Phase 47 D-47-05)
     // ---------------------------------------------------------------
