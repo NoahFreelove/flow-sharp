@@ -1,7 +1,7 @@
 export const config = /*json-start*/{
   "mainAssemblyName": "flow-lang.dll",
   "resources": {
-    "hash": "sha256-AU/0dSK5HUfOf66IE+XLLA1WFtTiOPRYqS1IiLAB0Uc=",
+    "hash": "sha256-SbhyZHJJLnmeZaPAKxvPBWNULWFUOfzgrg50d6jjl68=",
     "jsModuleNative": [
       {
         "name": "dotnet.native.js"
@@ -39,7 +39,7 @@ export const config = /*json-start*/{
       {
         "virtualPath": "flow-lang.wasm",
         "name": "flow-lang.wasm",
-        "hash": "sha256-H0AKZl/Css4HUX6VqnCT1G3MKsn4r3TPMh8yqcRRIy4="
+        "hash": "sha256-OP2S/HR3N3QgZARaNyrahQ2H5I5r5e4pP7VwgG2igmw="
       },
       {
         "virtualPath": "Melanchall.DryWetMidi.wasm",
@@ -59,7 +59,7 @@ export const config = /*json-start*/{
       {
         "virtualPath": "System.Collections.wasm",
         "name": "System.Collections.wasm",
-        "hash": "sha256-L9giTIwUX/eOufBCrQCEirO4/Qy7NYqYJXTkRSGRo9s="
+        "hash": "sha256-c0ON1wS09lrryo/YMbYQ6GfsdUN2QS0ISyb5xgdecig="
       },
       {
         "virtualPath": "System.Collections.Immutable.wasm",
