@@ -292,6 +292,34 @@ public static class FileIO
         return Value.Void();
     }
 
+    /// <summary>
+    /// play-song (#9): writeWav(String, Song) — convenience export that renders the
+    /// whole arrangement with per-sequence instrument routing (via
+    /// <see cref="SongRenderer.RenderSongAuto"/>) then writes the mix to disk, so a
+    /// composer no longer has to write <c>(writeWav "out.wav" (renderSong song "piano"))</c>.
+    /// </summary>
+    public static Value WriteWavSong(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var song = args[1].As<TypeSystem.SpecialTypes.SongData>();
+        var buffer = SongRenderer.RenderSongAuto(song);
+        WriteWavInternal(buffer, filepath, 16);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// play-song (#9): writeWav(String, Song, String) — same as
+    /// <see cref="WriteWavSong"/> but forces ONE synth for every sequence.
+    /// </summary>
+    public static Value WriteWavSongWithSynth(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var renderArgs = new List<Value> { args[1], args[2] };
+        var buffer = SongRenderer.RenderSong(renderArgs).As<AudioBuffer>();
+        WriteWavInternal(buffer, filepath, 16);
+        return Value.Void();
+    }
+
     // ===== WAV Loading =====
 
     /// <summary>

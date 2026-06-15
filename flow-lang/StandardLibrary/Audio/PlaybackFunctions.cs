@@ -29,6 +29,20 @@ public static class PlaybackFunctions
             ParameterNames: ["seq"]);
         registry.Register("play", playSeqSig, args => PlaySequence(args, manager));
 
+        // play-song (#9): play(Song) -> Void — renders the whole arrangement with
+        // per-sequence instrument routing (each named sequence picks its own
+        // timbre; unknown names fall back to piano + advisory) then plays the mix.
+        // So (play song) Just Works without (play (renderSong song "piano")).
+        var playSongSig = new FunctionSignature("play", [SongType.Instance],
+            ParameterNames: ["song"]);
+        registry.Register("play", playSongSig, args => PlaySong(args, manager));
+
+        // play-song (#9): play(Song, String) -> Void — forces ONE synth for every
+        // sequence in the song (e.g. (play song "sine")) then plays the mix.
+        var playSongSynthSig = new FunctionSignature("play", [SongType.Instance, StringType.Instance],
+            ParameterNames: ["song", "synthType"]);
+        registry.Register("play", playSongSynthSig, args => PlaySongWithSynth(args, manager));
+
         // loop(Buffer) -> Void — loops indefinitely (non-blocking)
         var loopBufferSig = new FunctionSignature("loop", [BufferType.Instance],
             ParameterNames: ["buf"]);
@@ -161,6 +175,50 @@ public static class PlaybackFunctions
         }
 
         PlaySamples(mixedBuffer.Data, mixedBuffer.SampleRate, mixedBuffer.Channels, manager, mixedBuffer);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// play-song (#9): renders a Song with per-sequence instrument routing
+    /// (via <see cref="SongRenderer.RenderSongAuto"/>) and plays the mixed buffer.
+    /// Empty / silent songs are a no-op. Web-target safe — RenderSongAuto +
+    /// PlaySamples both run synchronously on the single Mono-WASM thread and the
+    /// audible path routes through WebAudioBackend.
+    /// </summary>
+    private static Value PlaySong(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    {
+        var song = args[0].As<SongData>();
+        var buffer = SongRenderer.RenderSongAuto(song);
+        return PlayRenderedBuffer(buffer, manager);
+    }
+
+    /// <summary>
+    /// play-song (#9): renders a Song forcing ONE synth for every sequence, then
+    /// plays the mixed buffer.
+    /// </summary>
+    private static Value PlaySongWithSynth(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    {
+        var renderArgs = new List<Value> { args[0], args[1] };
+        var buffer = SongRenderer.RenderSong(renderArgs).As<AudioBuffer>();
+        return PlayRenderedBuffer(buffer, manager);
+    }
+
+    /// <summary>
+    /// Shared tail for the play(Song...) overloads: honors capture mode and
+    /// no-ops on empty buffers, otherwise routes through the backend.
+    /// </summary>
+    private static Value PlayRenderedBuffer(AudioBuffer buffer, AudioPlaybackManager manager)
+    {
+        if (buffer.Frames == 0 || buffer.Data.Length == 0)
+            return Value.Void();
+
+        if (manager.CaptureMode)
+        {
+            manager.SetCapturedBuffer(buffer);
+            return Value.Void();
+        }
+
+        PlaySamples(buffer.Data, buffer.SampleRate, buffer.Channels, manager, buffer);
         return Value.Void();
     }
 

@@ -207,6 +207,122 @@ public static class SongRenderer
     }
 
     /// <summary>
+    /// play-song (#9) — renders a Song with PER-SEQUENCE instrument routing and
+    /// returns the mixed stereo buffer. Each named sequence picks its own
+    /// synthesizer from its label (e.g. a <c>piano</c> sequence renders with the
+    /// piano synth, <c>drums</c> with the drum kit, etc.). Sequence names that
+    /// don't map to a known synth fall back to the default piano synth and a
+    /// one-shot advisory naming the default (charitable interpretation — a song
+    /// always sounds rather than throwing).
+    ///
+    /// This is the engine behind <c>(play Song)</c> and <c>(writeWav String Song)</c>
+    /// so a composer no longer has to write <c>(renderSong song "piano")</c> by hand.
+    /// </summary>
+    public static AudioBuffer RenderSongAuto(SongData song)
+    {
+        // Same render-boundary reseed as RenderSong so unseeded stochastic
+        // primitives stay byte-identical across renders (two-run cmp-clean).
+        FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
+        SynthUtils.ResetNoiseRng();
+
+        // Eager-load samples for every distinct sequence-name-derived instrument
+        // so the sampled-tonal path (piano/brass/sax/strings/flute/bell) has its
+        // WAVs ready. EagerLoad no-ops for unknown / synthesis-only instruments.
+        var sampleCache = FlowEngine.CurrentSampleCache;
+        if (sampleCache is not null)
+        {
+            foreach (var distinctSynth in DistinctResolvedSynths(song))
+                sampleCache.EagerLoad(song, distinctSynth);
+        }
+
+        // Cache one synthesizer instance per resolved synth type per render so we
+        // don't reconstruct a synth for every sequence occurrence across sections.
+        var synthCache = new Dictionary<string, INoteSynthesizer>(StringComparer.Ordinal);
+        INoteSynthesizer Resolve(string sequenceName)
+        {
+            string synthType = ResolveSynthForSequenceName(sequenceName);
+            if (!synthCache.TryGetValue(synthType, out var synth))
+            {
+                synth = SynthesizerFactory.Create(synthType);
+                synthCache[synthType] = synth;
+            }
+            return synth;
+        }
+
+        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        foreach (var sectionRef in song.Sections)
+        {
+            if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
+                throw new InvalidOperationException(
+                    $"renderSong: section '{sectionRef.Name}' not found in song registry");
+
+            var sectionBuffer = RenderSection(sectionData, (Func<string, INoteSynthesizer>)Resolve);
+            for (int r = 0; r < sectionRef.RepeatCount; r++)
+                result = AppendBuffers(result, sectionBuffer);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// play-song (#9) — enumerates the distinct resolved synth types across every
+    /// sequence in every section of the song (used to eager-load samples once per
+    /// instrument). Deterministic ordinal ordering preserves two-run cmp-clean.
+    /// </summary>
+    private static IEnumerable<string> DistinctResolvedSynths(SongData song)
+    {
+        var seen = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var sectionRef in song.Sections)
+        {
+            if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
+                continue;
+            foreach (var name in sectionData.Sequences.Keys)
+                seen.Add(ResolveSynthForSequenceName(name));
+        }
+        return seen;
+    }
+
+    /// <summary>
+    /// play-song (#9) — maps a sequence's label to a known synthesizer type via
+    /// case-insensitive prefix matching (mirrors the GM-program ordering in
+    /// <see cref="FlowLang.StandardLibrary.Notation.InstrumentRouting"/>). The
+    /// label may itself be a bare synth name (<c>sine</c>/<c>saw</c>/...) or an
+    /// instrument prefix (<c>violin</c>, <c>guitar</c>, <c>bass</c>, ...). Unknown
+    /// names fall back to <c>piano</c> with a one-shot advisory naming the default
+    /// so a song always sounds (charitable interpretation).
+    /// </summary>
+    internal static string ResolveSynthForSequenceName(string sequenceName)
+    {
+        string stripped = FlowLang.StandardLibrary.Notation.InstrumentRouting
+            .StripSamplerPrefix(sequenceName ?? string.Empty);
+        string lower = stripped.ToLowerInvariant();
+
+        // Bare synth/instrument names that the SynthesizerFactory recognizes directly.
+        if (lower.StartsWith("piano"))       return "piano";
+        if (lower.StartsWith("brass"))       return "brass";
+        if (lower.StartsWith("horn"))        return "brass";
+        if (lower.StartsWith("sax"))         return "sax";
+        if (lower.StartsWith("flute"))       return "flute";
+        if (lower.StartsWith("strings"))     return "strings";
+        if (lower.StartsWith("string"))      return "strings";
+        if (lower.StartsWith("organ"))       return "organ";
+        if (lower.StartsWith("bell"))        return "bell";
+        if (lower.StartsWith("drum"))        return "drums";
+        if (lower.StartsWith("perc"))        return "drums";
+        if (lower.StartsWith("sine"))        return "sine";
+        if (lower.StartsWith("saw"))         return "saw";
+        if (lower.StartsWith("square"))      return "square";
+        if (lower.StartsWith("triangle"))    return "triangle";
+
+        // Charitable default: unknown instrument labels (bass, violin, guitar,
+        // lead, pad, etc.) render with piano so the song still sounds.
+        RenderingDiagnostics.WarnOnce(
+            $"play-song:default-synth:{lower}",
+            $"[play] sequence '{stripped}' has no matching synth — rendering with default 'piano'. " +
+            $"Pass an explicit synth, e.g. (play song \"sine\"), to override.");
+        return "piano";
+    }
+
+    /// <summary>
     /// Renders all sequences in a section simultaneously, mixing their voices
     /// into one stereo buffer.
     /// </summary>
@@ -274,6 +390,21 @@ public static class SongRenderer
 
     private static AudioBuffer RenderSection(SectionData section, INoteSynthesizer synthesizer)
     {
+        // Single-synth path: every named sequence uses the same synthesizer.
+        // Byte-identical to the historical behavior (the resolver ignores the
+        // sequence name and returns the one shared synth).
+        return RenderSection(section, _ => synthesizer);
+    }
+
+    /// <summary>
+    /// play-song (#9) — per-sequence routing. The <paramref name="synthForSequence"/>
+    /// resolver picks an <see cref="INoteSynthesizer"/> from each named sequence's
+    /// label, so a song with <c>piano</c> / <c>drums</c> / <c>bass</c> sequences
+    /// renders each with its own timbre and mixes them. Single-synth callers pass a
+    /// constant resolver (see the overload above) and stay byte-identical.
+    /// </summary>
+    private static AudioBuffer RenderSection(SectionData section, Func<string, INoteSynthesizer> synthForSequence)
+    {
         double bpm = section.Context?.Tempo ?? DefaultBpm;
         double pan = section.Context?.Pan ?? 0.0;
         double gain = section.Context?.Gain ?? 1.0;
@@ -294,6 +425,12 @@ public static class SongRenderer
 
         foreach (var (name, sequence) in section.Sequences)
         {
+            // play-song (#9): resolve the synthesizer per sequence from the
+            // resolver. Single-synth callers return the same instance for every
+            // name (byte-identical to the pre-#9 path); the (play Song) auto path
+            // maps each sequence name to its own timbre.
+            var synthesizer = synthForSequence(name);
+
             // Phase 28 SPEC-7: route through the voice-pool overload — uses the
             // section's `voicePool N { ... }` override when one is in scope, else
             // the locked default of 32 voices via steal-oldest. Legacy loudest-N

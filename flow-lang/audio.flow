@@ -40,6 +40,12 @@ internal proc writeWav(String: filepath, Buffer: buffer)
 Note: Primary WAV export with custom bit depth (path-first, matches writeMidi convention)
 internal proc writeWav(String: filepath, Buffer: buffer, Int: bitDepth)
 
+Note: writeWav(String, Song) — render the whole arrangement (per-sequence routing) then export
+internal proc writeWav(String: filepath, Song: song)
+
+Note: writeWav(String, Song, String) — force one synth for every sequence, then export
+internal proc writeWav(String: filepath, Song: song, String: synthType)
+
 Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
 internal proc loadWav(String: filepath)
 
@@ -553,6 +559,13 @@ internal proc play(Buffer: buffer)
 
 Note: Play a sequence (renders to audio then plays)
 internal proc play(Sequence: seq)
+
+Note: Play a whole Song — renders the arrangement with per-sequence instrument routing then plays
+Note: (each named sequence picks its own timbre; unknown names fall back to piano + advisory)
+internal proc play(Song: song)
+
+Note: Play a whole Song forcing one synth for every sequence, e.g. (play song "sine")
+internal proc play(Song: song, String: synthType)
 internal proc stream(Buffer: buffer)
 internal proc stream(Sequence: seq)
 

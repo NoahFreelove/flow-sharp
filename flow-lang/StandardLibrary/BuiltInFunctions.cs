@@ -740,6 +740,21 @@ public static class BuiltInFunctions
             ParameterNames: ["path", "buf", "bitDepth"]);
         registry.Register("writeWav", writeWavWithDepthSignature, Audio.FileIO.WriteWavWithBitDepth);
 
+        // play-song (#9): writeWav(String, Song) — convenience export. Renders the
+        // arrangement with per-sequence instrument routing, then writes the mix.
+        var writeWavSongSignature = new FunctionSignature(
+            "writeWav",
+            [StringType.Instance, SongType.Instance],
+            ParameterNames: ["path", "song"]);
+        registry.Register("writeWav", writeWavSongSignature, Audio.FileIO.WriteWavSong);
+
+        // play-song (#9): writeWav(String, Song, String) — forces ONE synth for all.
+        var writeWavSongSynthSignature = new FunctionSignature(
+            "writeWav",
+            [StringType.Instance, SongType.Instance, StringType.Instance],
+            ParameterNames: ["path", "song", "synthType"]);
+        registry.Register("writeWav", writeWavSongSynthSignature, Audio.FileIO.WriteWavSongWithSynth);
+
         // loadWav(String) -> Buffer - load WAV file
         var loadWavSignature = new FunctionSignature("loadWav", [StringType.Instance],
             ParameterNames: ["path"]);

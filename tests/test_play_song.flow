@@ -1,0 +1,54 @@
+Note: play-song (#9) — (play Song) + (writeWav String Song) ergonomics
+Note: Verifies the documented call forms work: a composer no longer needs
+Note: (play (renderSong song "piano")) — (play song) Just Works.
+
+use "std.flow"
+use "@audio"
+
+Note: === A song with per-sequence instrument labels ===
+tempo 120 {
+    section verse {
+        Sequence piano = | C4 E4 G4 C5 |
+        Sequence bass = | C3 G3 C3 G3 |
+        Sequence drums = | C2 C2 C2 C2 |
+    }
+}
+
+Song mySong = [verse verse]
+
+Note: === play(Song) — per-sequence routing then play (capture-suppressed in CI) ===
+(play mySong)
+(print "PASS: (play song) executed")
+
+Note: === play(Song, String) — force one synth then play ===
+(play mySong "sine")
+(print "PASS: (play song \"sine\") executed")
+
+Note: === writeWav(String, Song) — convenience export, per-sequence routing ===
+(writeWav "/tmp/flow_play_song_auto.wav" mySong)
+(print "PASS: writeWav(String, Song) exported")
+
+Note: === writeWav(String, Song, String) — force one synth for all ===
+(writeWav "/tmp/flow_play_song_sine.wav" mySong "sine")
+(print "PASS: writeWav(String, Song, String) exported")
+
+Note: === Round-trip: load the exported WAV and confirm it is non-silent ===
+Buffer loaded = (loadWav "/tmp/flow_play_song_auto.wav")
+Int frames = (getFrames loaded)
+(print (concat "frames: " (str frames)))
+
+Note: peak-detect over the first 800 frames (kept under the recursion-depth
+Note: cap); the rendered song fills every frame so an early window is enough
+Note: to prove non-silence.
+proc scan(Int: idx, Int: limit, Double: best)
+    Double s = (if (lt idx limit) (sampleAt loaded idx 0) 0.0)
+    Double mag = (if (lt s 0.0) (neg s) s)
+    Double newBest = (if (gt mag best) mag best)
+    (if (lt idx limit) (scan (add idx 1) limit newBest) best)
+end proc
+
+Double measuredPeak = (scan 0 800 0.0)
+(print (concat "peak: " (str measuredPeak)))
+(print (concat "non-silent: " (str (gt measuredPeak 0.001))))
+
+(print "play-song tests done")
