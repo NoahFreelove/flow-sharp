@@ -111,6 +111,21 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- sweep-0614 regression-wasm-determinism: WasmEntry.RunFromJs redirects the
+         PROCESS-GLOBAL Console.Out/Error to capture Flow `print` + advisory output
+         (D-48-15). ~60 test files across the suite also swap Console.Out/Error
+         (the shared FlowEngineRunner fixture included). With xUnit's default
+         cross-collection parallelism those swaps interleave with the WASM
+         redirect window, so the captured stdout/stderr — and thus the
+         RunResult JSON — diverges run-to-run (D-48-16 two-run cmp-clean
+         violation). The [Collection] serial-group only serializes the WASM
+         Console tests AMONG THEMSELVES, not against the rest of the suite.
+         Disabling cross-collection parallelism is the only guarantee on a
+         shared-process runner; the browser is single-threaded so this changes
+         nothing about runtime behavior. -->
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="fixtures\midi\ragtime_q_ee.mid">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

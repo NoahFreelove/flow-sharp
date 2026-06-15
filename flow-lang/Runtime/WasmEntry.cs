@@ -331,6 +331,30 @@ public static partial class WasmEntry
         var stopwatch = Stopwatch.StartNew();
         var stdoutCapture = new StringWriter();
         var stderrCapture = new StringWriter();
+
+        // sweep-0614 regression-wasm-determinism: build the FRESH per-run engine
+        // BEFORE redirecting Console. NewEngineForRun re-runs the full @std +
+        // style-pack bootstrap (a non-trivial amount of work); the constructor
+        // emits ZERO Console.Out/Error output the run needs to capture (verified —
+        // ctor stdout/stderr length is 0). Keeping that bootstrap OUTSIDE the
+        // Console-redirect window shrinks the window to just engine.Execute, so
+        // the process-global Console.SetOut/SetError redirect is held for the
+        // minimum time — narrowing the cross-test race that an in-window bootstrap
+        // (the 1f31a5e shape) widened enough to flip RunResult stdout/stderr to
+        // empty under a parallel runner (D-48-16 two-run cmp-clean). The
+        // assembly-level parallelizeTestCollections=false in the test project is
+        // the hard guarantee; this is the defense-in-depth narrowing.
+        FlowEngine engine;
+        Exception? engineBuildError = null;
+        try { engine = NewEngineForRun(); }
+        catch (Exception ex)
+        {
+            // Engine construction failed before any redirect — surface as a
+            // structured runtime error without ever having touched Console.
+            engine = null!;
+            engineBuildError = ex;
+        }
+
         var prevOut = Console.Out;
         var prevErr = Console.Error;
 
@@ -355,11 +379,13 @@ public static partial class WasmEntry
         {
             try
             {
-                // sweep-0614 wasm-web: build a FRESH engine per run so a clean
-                // GlobalFrame + empty SectionRegistry receive this run's top-level
-                // declarations. A reused engine threw "already declared" on the
-                // second run of any declaring script (the common edit→Run loop).
-                var engine = NewEngineForRun();
+                if (engineBuildError != null)
+                    throw engineBuildError;
+                // sweep-0614 wasm-web: a FRESH engine per run gives a clean
+                // GlobalFrame + empty SectionRegistry for this run's top-level
+                // declarations (built above, outside the Console window). A reused
+                // engine threw "already declared" on the second run of any
+                // declaring script (the common edit→Run loop).
                 // D-48-10 (AMENDED, debug session wasm-boot-no-app-bundle cycle 3):
                 // run SYNCHRONOUSLY on the calling thread. Mono-WASM is single-
                 // threaded by default — the prior Task.Run + Wait(30s) shape
