@@ -6,7 +6,7 @@
 
 ## Key Features
 
-- **Static typing** with 16 primitive and 22 music-aware types (`Note`, `Chord`, `Sequence`, `Song`, `Bar`, `Buffer`, `Tuning`, `Sfz`, `MarkovModel`, `LsystemModel`, etc.)
+- **Static typing** with 16 primitive and 26 music-aware types (`Note`, `Chord`, `Sequence`, `Song`, `Bar`, `Tuple`, `Tuning`, `Sfz`, `MarkovModel`, `LsystemModel`, `OscHandle`, `MidiDevice`, `ClockHandle`, `JackHandle`, etc.)
 - **Flow operator (`->`)** for elegant function chaining; **tuple-unpack flow (`~>`)** for multi-arg dispatch
 - **Inline note streams** (`| C4 D4 E4 F4 |`) with durations, dynamics, articulation, ornaments
 - **Musical context blocks** — `tempo`, `timesig`, `key`, `swing`, `voicePool`, `tuning`, `pan`, `gain`, `dynamics`, `rit`, `accel`
@@ -73,8 +73,8 @@ For the full, up-to-date inventory see [FEATURES.md](https://github.com/NoahFree
 - [Vocalization](Vocalization.md) — Formant-synthesized singing and TTS
 - [Visualization](Visualization.md) — ASCII piano-roll and waveform
 - [Playback and Export](Playback-and-Export.md) — `play`, `stream`, WAV / MIDI / MusicXML / LilyPond export, loading WAVs, ABC / MML import
-- [Live Coding](Live-Coding.md) — `live { }` blocks, `flow watch` status panel, hot-swap, determinism trade-off
-- [OSC and MIDI](OSC-and-MIDI.md) — `@osc` (send/listen/pump), `@midi` (hardware output, clock), `@jack` (transport sync)
+- Live Coding — `live { }` blocks, `flow watch` status panel, hot-swap, determinism trade-off *(wiki page pending)*
+- OSC and MIDI — `@osc` (send/listen/pump), `@midi` (hardware output, clock), `@jack` (transport sync) *(wiki page pending)*
 
 ### Reference
 

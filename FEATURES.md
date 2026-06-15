@@ -8,7 +8,7 @@ Status: **Fully** = shipped · **Partial** = caveated or limited · **Not yet** 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Static typing with music-aware types | Fully | 16 primitives + 22 special types (Note, Chord, Sequence, Song, Beat, Bar, Tuning, Sfz, MarkovModel, LsystemModel, etc.) |
+| Static typing with music-aware types | Fully | 16 primitives + 26 special types (Note, Chord, Sequence, Song, Beat, Bar, Tuning, Sfz, MarkovModel, LsystemModel, OscHandle, MidiDevice, ClockHandle, JackHandle, etc.) |
 | Type inference | Partial | Inferred in some contexts; explicit annotations elsewhere |
 | Numeric widening chain | Fully | `Int → Long → Float → Double → Number` (BigInteger); IntLiteral overflow auto-fallthrough |
 | Flow operator `->` for chaining | Fully | Parse-time transform — no runtime cost |
@@ -167,7 +167,7 @@ Opt-in via `use "@patterns"`. Cycle unit is bars; transform-arg combinators are 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Raw oscillators | Fully | `sine`, `saw`/`sawtooth` (PolyBLEP band-limited), `square` (PolyBLEP band-limited), `triangle` |
+| Raw oscillators | Fully | `sine`, `saw`/`sawtooth`, `square`, `triangle` — aliased/naive, no anti-aliasing by design (chiptune-safe); PolyBLEP band-limiting applies only to the `"saw"`/`"square"` synthesizer instruments in `renderSong`, not these raw builtins |
 | Wavetable synths | Fully | `warm` (boosted-mid additive saw), `bright` (DC-removed 10% pulse), `buzz` (1/√n supersaw stack) |
 | Custom wavetable registration | Fully | `(oscillator name generator [tableSize])` or `(oscillator name wavetable[])` |
 | Custom oscillator definitions (user `proc` as oscillator) | Fully | `(renderSong Song Function)` with lambda contract `(MusicalNote, dur, bpm) → Buffer` |
@@ -432,7 +432,7 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 | Two-run determinism script | Fully | `scripts/test_two_run_determinism.sh` — renders twice and compares SHA-256s |
 | Source-grep CI gates | Fully | PRNG routing, named-arg coverage, sample-bundle license audit |
 | xUnit C# test project | Fully | `flow-lang.Tests/` — standard `dotnet test` |
-| Legacy `.flow`-as-test scripts | Fully | 123 `test_*.flow` files in `tests/` (run-and-check-exit-code style) |
+| Legacy `.flow`-as-test scripts | Fully | 133 `test_*.flow` files in `tests/` (run-and-check-exit-code style) |
 
 ### Tooling & DX
 
@@ -440,7 +440,7 @@ LSP 3.17 over stdio. Reachable via `flow lsp` subcommand. OmniSharp `LanguageSer
 |---|---|---|
 | Math stdlib | Fully | `sin`/`cos`/`tan`/`sqrt`/`floor`/`ceil`/`round`/`log`/`pow`/`abs`/`min`/`max` + `pi`/`tau` constants |
 | Buffer pretty-printing | Fully | `(prettyBuffer buf)` (60×11 ASCII waveform), `(bufferHex buf [offset length])` |
-| Documentation lookup table | Fully | `BuiltInDocs.cs` — 104 entries powering LSP hover, REPL `:help <name>`, and `flow doc` reference generator |
+| Documentation lookup table | Fully | `BuiltInDocs.cs` — 107 entries powering LSP hover, REPL `:help <name>`, and `flow doc` reference generator |
 | Wiki | Fully | 26 markdown chapters synced via `.github/workflows/wiki-sync.yml` |
 | `flow doc` subcommand | Fully | Generates browsable static reference docs (HTML/Markdown/both) from `BuiltInDocs` + `///` comments |
 | `flow` CLI binary + system install | Fully | `scripts/install.sh` auto-detects RID (linux-x64/arm64, osx-x64/arm64); per-user `~/.local/share/flow/` or `--system`; sha256 sidecar verification |

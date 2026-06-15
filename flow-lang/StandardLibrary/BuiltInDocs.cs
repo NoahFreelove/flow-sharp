@@ -102,12 +102,12 @@ public static class BuiltInDocs
             new("duration", "Length in seconds (Double)."),
             new("amplitude", "Peak level 0.0..1.0."),
         }, "(play (createSineTone 440Hz 1.0 0.5))"),
-        ["createSawTone"] = new("Generates a PolyBLEP band-limited sawtooth-wave buffer. Canonical form: (createSawTone freqHz durationSeconds amplitude).", new ParamDoc[] {
+        ["createSawTone"] = new("Generates a naive (aliased) sawtooth-wave buffer. Canonical form: (createSawTone freqHz durationSeconds amplitude). Use the \"saw\" renderSong instrument for PolyBLEP band-limited rendering.", new ParamDoc[] {
             new("frequency", "Pitch — Hertz literal (220Hz) or a Double in Hz."),
             new("duration", "Length in seconds (Double)."),
             new("amplitude", "Peak level 0.0..1.0."),
         }, "(play (createSawTone 220Hz 1.0 0.5))"),
-        ["createSquareTone"] = new("Generates a PolyBLEP band-limited square-wave buffer. Canonical form: (createSquareTone freqHz durationSeconds amplitude).", new ParamDoc[] {
+        ["createSquareTone"] = new("Generates a naive (aliased) square-wave buffer. Canonical form: (createSquareTone freqHz durationSeconds amplitude). Use the \"square\" renderSong instrument for PolyBLEP band-limited rendering.", new ParamDoc[] {
             new("frequency", "Pitch — Hertz literal (330Hz) or a Double in Hz."),
             new("duration", "Length in seconds (Double)."),
             new("amplitude", "Peak level 0.0..1.0."),

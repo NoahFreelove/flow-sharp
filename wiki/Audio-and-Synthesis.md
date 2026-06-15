@@ -179,8 +179,8 @@ Pass one of these names to `renderSong`, `renderSequenceToVoices`, or `tempoRamp
 | Name | Aliases | Character |
 |------|---------|-----------|
 | `"sine"` | — | Clean sine; useful for testing |
-| `"saw"` | `"sawtooth"` | Naive sawtooth (no anti-alias) |
-| `"square"` | — | Naive square (no anti-alias) |
+| `"saw"` | `"sawtooth"` | PolyBLEP band-limited sawtooth (Phase 46) |
+| `"square"` | — | PolyBLEP band-limited square (Phase 46) |
 | `"triangle"` | — | Naive triangle (no anti-alias) |
 | `"piano"` | — | Sample-based — 4 velocity layers (pp / mp / mf / ff) at 5 pitch points |
 | `"brass"` | `"horn"` | Sample-based — mf layer with linear velocity scaling |
