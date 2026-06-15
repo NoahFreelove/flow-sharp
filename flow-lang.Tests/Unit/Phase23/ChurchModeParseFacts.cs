@@ -10,10 +10,13 @@ namespace FlowLang.Tests.Unit.Phase23;
 /// the 5 church modes (dorian, phrygian, lydian, mixolydian, locrian). Longer-suffix-first
 /// ordering avoids prefix collisions (`lydian` is a substring of `mixolydian`).
 ///
-/// Per WARNING-6: the original <c>TryParseKey(out bool isMajor)</c> entry is
-/// strictly preserved — <see cref="ScaleDatabase.ResolveRomanNumeral"/> and
-/// <see cref="ScaleDatabase.GetScaleNotes"/> still call it. Verified end-to-end
-/// here by <see cref="ExistingTryParseKey_StillWorks_ForChordResolution"/>.
+/// sweep-0614: <see cref="ScaleDatabase.ResolveRomanNumeral"/> and
+/// <see cref="ScaleDatabase.GetScaleNotes"/> now route through this mode-aware
+/// parser (the legacy bool-isMajor <c>TryParseKey</c> was removed — it ignored the
+/// 5 church-mode suffixes, so a valid <c>key Ddorian { }</c> context resolved every
+/// roman numeral to a rest). Verified end-to-end by
+/// <see cref="ExistingKeyParse_StillWorks_ForChordResolution"/> +
+/// <see cref="RomanNumerals_ResolveInChurchModeKeys"/>.
 /// </summary>
 public class ChurchModeParseFacts
 {
@@ -55,17 +58,78 @@ public class ChurchModeParseFacts
     }
 
     [Fact]
-    public void ExistingTryParseKey_StillWorks_ForChordResolution()
+    public void ExistingKeyParse_StillWorks_ForChordResolution()
     {
-        // WARNING-6: the original TryParseKey(out bool isMajor) callers at
-        // ResolveRomanNumeral (line ~118) + GetScaleNotes (line ~234) must still
-        // route through the legacy entry. We can't call private TryParseKey
-        // directly, but the public surfaces that depend on it must still resolve
-        // major/minor inputs.
+        // sweep-0614: ResolveRomanNumeral + GetScaleNotes now route through
+        // TryParseKeyWithMode. Major/minor inputs must still resolve unchanged.
         Assert.NotNull(ScaleDatabase.GetScaleNotes("Cmajor"));
         Assert.NotNull(ScaleDatabase.GetScaleNotes("Aminor"));
-        // ResolveRomanNumeral uses TryParseKey too — V in C major should resolve.
         Assert.NotNull(ScaleDatabase.ResolveRomanNumeral("V", "Cmajor"));
+    }
+
+    [Theory]
+    // sweep-0614 (harmony case bug): numeral CASE carries triad-quality intent.
+    // Uppercase = major triad, lowercase = minor triad. Borrowed `iv` in C major
+    // was silently rendered F-A-C (major); it must be F-Ab-C (minor).
+    [InlineData("iv", "Cmajor", "F", "m")]   // borrowed minor iv — the headline bug
+    [InlineData("IV", "Cmajor", "F", "maj")] // diatonic-correct major IV unchanged
+    [InlineData("v",  "Cmajor", "G", "m")]   // borrowed minor v
+    [InlineData("V",  "Cmajor", "G", "maj")] // diatonic-correct dominant
+    [InlineData("i",  "Cmajor", "C", "m")]   // borrowed minor tonic
+    [InlineData("I",  "Cmajor", "C", "maj")] // diatonic tonic
+    public void RomanNumeralCase_DeterminesTriadQuality(string numeral, string key, string expectedRoot, string expectedQuality)
+    {
+        var chord = ScaleDatabase.ResolveRomanNumeral(numeral, key);
+        Assert.NotNull(chord);
+        Assert.Equal(expectedRoot, chord!.Root);
+        Assert.Equal(expectedQuality, chord.Quality);
+    }
+
+    [Fact]
+    public void RomanNumeral_LowercaseDiminished_StaysDiminished()
+    {
+        // Case alone cannot express a diminished triad — `vii` in major must remain
+        // the diminished leading-tone triad, not be flattened to a plain minor.
+        var chord = ScaleDatabase.ResolveRomanNumeral("vii", "Cmajor");
+        Assert.NotNull(chord);
+        Assert.Equal("B", chord!.Root);
+        Assert.Equal("dim", chord.Quality);
+    }
+
+    [Fact]
+    public void RomanNumeral_ExplicitExtension_OverridesCase()
+    {
+        // An explicit quality extension (V7) always wins over the case heuristic.
+        var chord = ScaleDatabase.ResolveRomanNumeral("V7", "Cmajor");
+        Assert.NotNull(chord);
+        Assert.Equal("G", chord!.Root);
+        Assert.Equal("7", chord.Quality);
+    }
+
+    [Theory]
+    // sweep-0614 (church-mode bug): roman numerals + scale notes used to resolve to
+    // null/empty in modal keys because the resolver called the major/minor-only
+    // legacy parser. They must now resolve against the modal interval/quality table.
+    [InlineData("i",  "Ddorian", "D", "m")]   // dorian tonic minor
+    [InlineData("iv", "Ddorian", "G", "m")]   // dorian iv minor
+    [InlineData("I",  "Glydian", "G", "maj")] // lydian tonic major
+    [InlineData("i",  "Aphrygian", "A", "m")] // phrygian tonic minor
+    public void RomanNumerals_ResolveInChurchModeKeys(string numeral, string key, string expectedRoot, string expectedQuality)
+    {
+        var chord = ScaleDatabase.ResolveRomanNumeral(numeral, key);
+        Assert.NotNull(chord);
+        Assert.Equal(expectedRoot, chord!.Root);
+        Assert.Equal(expectedQuality, chord.Quality);
+    }
+
+    [Fact]
+    public void ScaleNotes_ResolveInChurchModeKey()
+    {
+        // (scaleNotes "Ddorian") used to return [] (silent note loss). It must now
+        // return the 7 modal pitches: D E F G A B C.
+        var notes = ScaleDatabase.GetScaleNotes("Ddorian");
+        Assert.NotNull(notes);
+        Assert.Equal(new[] { "D", "E", "F", "G", "A", "B", "C" }, notes);
     }
 
     [Fact]

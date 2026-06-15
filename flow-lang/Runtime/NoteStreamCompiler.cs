@@ -910,6 +910,12 @@ public class NoteStreamCompiler
         var chordData = ScaleDatabase.ResolveRomanNumeral(romanNumeral.Numeral, context.Key);
         if (chordData == null)
         {
+            // sweep-0614: surface the silent-rest fallback so a composer whose
+            // numeral fails to resolve in the active key sees WHY notes vanished
+            // instead of getting a mysteriously empty bar. One-shot per (numeral, key).
+            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                $"harmony-rn-unresolved:{romanNumeral.Numeral}:{context.Key}",
+                $"[harmony] roman numeral '{romanNumeral.Numeral}' unresolved in key '{context.Key}' — rendered as rest");
             notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
             return notes;
         }

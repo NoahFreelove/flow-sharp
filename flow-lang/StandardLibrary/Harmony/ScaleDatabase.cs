@@ -28,6 +28,42 @@ public static class ScaleDatabase
     private static readonly string[] MinorQualities = { "m", "dim", "maj", "m", "m", "maj", "maj" };
 
     /// <summary>
+    /// Per-mode scale interval tables (semitone offsets from the tonic). Each church
+    /// mode is a rotation of the major scale; sweep-0614 wires these into
+    /// <see cref="ResolveRomanNumeral"/> + <see cref="GetScaleNotes"/> so a valid
+    /// <c>key Ddorian { ... }</c> context no longer silently resolves every roman
+    /// numeral to a rest. Major/Minor reuse the existing arrays.
+    /// </summary>
+    private static readonly Dictionary<FlowLang.StandardLibrary.Audio.Tuning.Mode, int[]> ModeIntervals = new()
+    {
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Major,      MajorIntervals },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Minor,      MinorIntervals },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Dorian,     new[] { 0, 2, 3, 5, 7, 9, 10 } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Phrygian,   new[] { 0, 1, 3, 5, 7, 8, 10 } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Lydian,     new[] { 0, 2, 4, 6, 7, 9, 11 } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Mixolydian, new[] { 0, 2, 4, 5, 7, 9, 10 } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Locrian,    new[] { 0, 1, 3, 5, 6, 8, 10 } },
+    };
+
+    /// <summary>
+    /// Per-mode diatonic chord-quality tables (degree I..VII). Used only as the
+    /// fallback when the numeral carries no explicit quality extension AND the
+    /// composer's case does not already pin the triad quality (the case override in
+    /// <see cref="ResolveRomanNumeral"/> wins for maj/m; dim is taken from here when
+    /// the numeral is lowercase). Standard diatonic triad qualities for each mode.
+    /// </summary>
+    private static readonly Dictionary<FlowLang.StandardLibrary.Audio.Tuning.Mode, string[]> ModeQualities = new()
+    {
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Major,      MajorQualities },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Minor,      MinorQualities },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Dorian,     new[] { "m", "m", "maj", "maj", "m", "dim", "maj" } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Phrygian,   new[] { "m", "maj", "maj", "m", "dim", "maj", "m" } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Lydian,     new[] { "maj", "maj", "m", "dim", "maj", "m", "m" } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Mixolydian, new[] { "maj", "m", "dim", "maj", "m", "m", "maj" } },
+        { FlowLang.StandardLibrary.Audio.Tuning.Mode.Locrian,    new[] { "dim", "maj", "m", "m", "maj", "maj", "m" } },
+    };
+
+    /// <summary>
     /// Map note names to semitone offsets from C.
     /// </summary>
     private static readonly Dictionary<string, int> NoteToSemitone = new(StringComparer.OrdinalIgnoreCase)
@@ -115,7 +151,9 @@ public static class ScaleDatabase
         if (baseNumeral == null)
             return null;
 
-        if (!TryParseKey(keyName, out string? rootNote, out bool isMajor))
+        // sweep-0614: route through the mode-aware parser so church-mode keys
+        // (Ddorian/Aphrygian/...) resolve instead of returning null → all-rests.
+        if (!TryParseKeyWithMode(keyName, out string? rootNote, out var mode))
             return null;
 
         if (!NoteToSemitone.TryGetValue(rootNote!, out int keySemitone))
@@ -124,19 +162,29 @@ public static class ScaleDatabase
         if (!RomanNumeralValues.TryGetValue(baseNumeral, out int degree))
             return null;
 
-        var intervals = isMajor ? MajorIntervals : MinorIntervals;
-        var defaultQualities = isMajor ? MajorQualities : MinorQualities;
+        var intervals = ModeIntervals.TryGetValue(mode, out var modeIv) ? modeIv : MajorIntervals;
+        var defaultQualities = ModeQualities.TryGetValue(mode, out var modeQ) ? modeQ : MajorQualities;
 
         int chordRootSemitone = (keySemitone + intervals[degree]) % 12;
 
         string quality;
         if (extension != null)
         {
+            // Explicit quality extension (V7, iv7, ...) always wins — untouched.
             quality = extension;
         }
         else
         {
-            quality = defaultQualities[degree];
+            // sweep-0614: honor the composer's case as triad-quality intent
+            // (uppercase = major triad, lowercase = minor triad — the standard
+            // Roman-numeral-analysis convention). This fixes borrowed/chromatic
+            // chords like minor `iv` in a major key (F-Ab-C, not F-A-C). The
+            // diatonic-default `dim` is preserved ONLY for a lowercase numeral on
+            // a degree whose diatonic triad is diminished (so `vii` in major stays
+            // the diminished leading-tone triad), since case alone cannot express it.
+            quality = char.IsUpper(baseNumeral[0])
+                ? "maj"
+                : (defaultQualities[degree] == "dim" ? "dim" : "m");
         }
 
         string chordRoot = ChromaticNotes[chordRootSemitone];
@@ -149,64 +197,17 @@ public static class ScaleDatabase
     }
 
     /// <summary>
-    /// Parses a key name like "Cmajor", "Aminor", "Fsharpmajor" into root note and mode.
-    /// </summary>
-    private static bool TryParseKey(string keyName, out string? rootNote, out bool isMajor)
-    {
-        rootNote = null;
-        isMajor = true;
-
-        if (string.IsNullOrEmpty(keyName))
-            return false;
-
-        string lower = keyName.ToLowerInvariant();
-
-        if (lower.EndsWith("major"))
-        {
-            isMajor = true;
-            rootNote = keyName[..^5];
-        }
-        else if (lower.EndsWith("minor"))
-        {
-            isMajor = false;
-            rootNote = keyName[..^5];
-        }
-        else
-        {
-            return false;
-        }
-
-        if (rootNote.Length == 0)
-            return false;
-
-        // Phase 48 D-48-03 (invariant globalization): char.ToUpperInvariant +
-        // string.ToLowerInvariant match the ASCII root-note alphabet
-        // (A..G, a..g, plus '#'/'b' accidentals) regardless of host locale.
-        // Avoids Turkish-I problem under <InvariantGlobalization>true</InvariantGlobalization>.
-        rootNote = char.ToUpperInvariant(rootNote[0]) + rootNote[1..].ToLowerInvariant();
-
-        if (!NoteToSemitone.ContainsKey(rootNote))
-        {
-            rootNote = null;
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
     /// Phase 23 D-04 / WARNING-8: canonical key parser entry returning a
     /// <see cref="FlowLang.StandardLibrary.Audio.Tuning.Mode"/> rather than the
-    /// legacy bool isMajor. Wave 2 ships only the major/minor branch — Wave 3
-    /// (Plan 23-03 Task 1) will widen the same method's mode-detection branch
-    /// to recognize the 5 additional church-mode suffixes (dorian, phrygian,
-    /// lydian, mixolydian, locrian), with longer-suffix-first ordering to
-    /// avoid false-suffix-match (e.g. "lydian" is a substring of "mixolydian").
+    /// legacy bool isMajor. Recognizes all 7 mode suffixes (major, minor + the 5
+    /// church modes: dorian, phrygian, lydian, mixolydian, locrian), with
+    /// longer-suffix-first ordering to avoid false-suffix-match (e.g. "lydian" is a
+    /// substring of "mixolydian").
     ///
-    /// Existing <see cref="TryParseKey"/> stays unchanged (per WARNING-6) — its
-    /// callers in <see cref="ResolveRomanNumeral"/> and <see cref="GetScaleNotes"/>
-    /// continue to work with the bool isMajor protocol; this method is the
-    /// canonical entry for Phase 23+ tuning-aware code paths.
+    /// sweep-0614: <see cref="ResolveRomanNumeral"/> and <see cref="GetScaleNotes"/>
+    /// now route through this mode-aware parser (the legacy bool-isMajor
+    /// <c>TryParseKey</c> was removed — it ignored the 5 church-mode suffixes, so a
+    /// valid <c>key Ddorian { }</c> context resolved every roman numeral to a rest).
     /// </summary>
     public static bool TryParseKeyWithMode(string keyName, out string? rootNote, out FlowLang.StandardLibrary.Audio.Tuning.Mode mode)
     {
@@ -248,13 +249,15 @@ public static class ScaleDatabase
     /// </summary>
     public static string[]? GetScaleNotes(string keyName)
     {
-        if (!TryParseKey(keyName, out string? rootNote, out bool isMajor))
+        // sweep-0614: mode-aware so (scaleNotes "Ddorian") returns the 7 modal
+        // pitches instead of [] (which silently dropped notes in modal contexts).
+        if (!TryParseKeyWithMode(keyName, out string? rootNote, out var mode))
             return null;
 
         if (!NoteToSemitone.TryGetValue(rootNote!, out int keySemitone))
             return null;
 
-        var intervals = isMajor ? MajorIntervals : MinorIntervals;
+        var intervals = ModeIntervals.TryGetValue(mode, out var modeIv) ? modeIv : MajorIntervals;
         var notes = new string[7];
 
         for (int i = 0; i < 7; i++)
