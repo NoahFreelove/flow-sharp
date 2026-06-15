@@ -184,23 +184,56 @@ static class Quantizer
         }
         else
         {
-            // Format 1/2: each track is separate.
+            // Format 1/2: each track is separate. sweep-0614: a Format-1 MTrk may MERGE
+            // a percussion part (ch9) with a melodic part, or carry a stray ch9 hit.
+            // The old code flagged the WHOLE track IsDrumTrack on a single ch9 noteOn,
+            // and FlowGenerator then dropped every melodic note on it — silent melody
+            // loss. Make the path channel-aware like Format 0: split each track by
+            // channel, route ch9 spans to a `drums` track (isDrum) and every other
+            // channel's spans to melodic track(s). A pure-melodic or pure-drum track is
+            // unchanged (one channel → one classification), so this only affects the
+            // mixed case it used to corrupt.
             int trackIndex = 0;
             foreach (var track in midi.Tracks)
             {
-                var spans = PairNotes(track.Events);
-                if (spans.Count == 0)
+                var byChannel = SplitByChannel(track);
+                if (byChannel.Count == 0)
                 {
                     trackIndex++;
                     continue;
                 }
 
-                bool isDrum = track.Events.OfType<NoteOnEvent>().Any(e => e.Channel == 9);
-                string name = !string.IsNullOrWhiteSpace(track.Name) ? SanitizeName(track.Name) : $"track_{trackIndex + 1}";
-                if (isDrum) name = "drums";
+                string trackBase = !string.IsNullOrWhiteSpace(track.Name)
+                    ? SanitizeName(track.Name)
+                    : $"track_{trackIndex + 1}";
 
-                int channel = track.Events.OfType<NoteOnEvent>().FirstOrDefault()?.Channel ?? 0;
-                EmitTrackAsVoices(result, name, spans, tpqn, timeSigNum, timeSigDen, useFlats, channel, isDrum, globalFirstBarIdx);
+                // The dominant melodic channel (most spans) inherits the track's
+                // name/index; secondary melodic channels get a channel suffix so two
+                // melodic channels in one MTrk don't collide. ch9 always → "drums".
+                int dominantMelodicChannel = byChannel
+                    .Where(kv => kv.Key != 9)
+                    .OrderByDescending(kv => kv.Value.Count)
+                    .ThenBy(kv => kv.Key)                     // deterministic tiebreak
+                    .Select(kv => (int?)kv.Key)
+                    .FirstOrDefault() ?? -1;
+
+                // Sorted channel iteration → deterministic emit order (two-run cmp-clean).
+                foreach (var channel in byChannel.Keys.OrderBy(c => c))
+                {
+                    var spans = byChannel[channel];
+                    if (spans.Count == 0) continue;
+
+                    bool isDrum = channel == 9;
+                    string name;
+                    if (isDrum)
+                        name = "drums";
+                    else if (channel == dominantMelodicChannel)
+                        name = trackBase;
+                    else
+                        name = $"{trackBase}_ch{channel + 1}";
+
+                    EmitTrackAsVoices(result, name, spans, tpqn, timeSigNum, timeSigDen, useFlats, channel, isDrum, globalFirstBarIdx);
+                }
 
                 trackIndex++;
             }

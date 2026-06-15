@@ -38,7 +38,23 @@ static class FlowGenerator
         { (-7, false), "Cbmajor" },   { (-7, true), "Abminor" },
     };
 
+    /// <summary>
+    /// sweep-0614: the conversion result, so callers can tell a genuine success from a
+    /// comment-only "no playable tracks" artifact (which `check`s OK and renders
+    /// silence) — previously folded into the source string and reported as exit 0,
+    /// hiding total content loss.
+    /// </summary>
+    public readonly record struct GenerateResult(string Source, int PlayableTrackCount, int DroppedDrumTrackCount);
+
+    /// <summary>
+    /// Backward-compatible string entry point. Existing callers / tests that only
+    /// need the source keep working; the CLIs use <see cref="GenerateWithStats"/> to
+    /// inspect PlayableTrackCount for an honest exit code (sweep-0614).
+    /// </summary>
     public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false)
+        => GenerateWithStats(midi, quantizeResult, sourceFileName, roundTrip, sustainPedal, useSfz).Source;
+
+    public static GenerateResult GenerateWithStats(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false)
     {
         var sb = new StringBuilder();
         var tracks = quantizeResult.Tracks;
@@ -53,7 +69,7 @@ static class FlowGenerator
         if (playableTracks.Count == 0)
         {
             sb.AppendLine($"Note: Converted from {sourceFileName} — no playable tracks found");
-            return sb.ToString();
+            return new GenerateResult(sb.ToString(), 0, drumTracks.Count);
         }
 
         // Gather metadata from MIDI and quantizer
@@ -210,7 +226,7 @@ static class FlowGenerator
         sb.AppendLine($"{indent}}}");
         sb.AppendLine("}");
 
-        return sb.ToString();
+        return new GenerateResult(sb.ToString(), playableTracks.Count, drumTracks.Count);
     }
 
     static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track, bool forceExplicitDurations = false)
@@ -277,9 +293,36 @@ static class FlowGenerator
         return FormatElements(bar.Elements, useAutoFit);
     }
 
+    /// <summary>
+    /// sweep-0614: bucket a MIDI 0–127 velocity onto the eight-step dynamic ladder the
+    /// Flow note-stream parser recognizes (<c>TryParseDynamicMarking</c>:
+    /// ppp/pp/p/mp/mf/f/ff/fff → 0.125/0.25/0.375/0.5/0.625/0.75/0.875/1.0). Bucket
+    /// edges are chosen so the eight emitted tokens straddle the parser's eight
+    /// velocity values, restoring dynamic fidelity on midi2flow round-trip without any
+    /// new syntax. Pure + integer-thresholded → deterministic (two-run cmp-clean).
+    /// </summary>
+    static string VelocityToDynamic(int velocity) => velocity switch
+    {
+        < 16  => "ppp",
+        < 32  => "pp",
+        < 48  => "p",
+        < 64  => "mp",
+        < 80  => "mf",
+        < 96  => "f",
+        < 112 => "ff",
+        _     => "fff",
+    };
+
     static string FormatElements(List<IBarElement> elements, bool useAutoFit)
     {
         var parts = new List<string>();
+        // sweep-0614: per-bar sticky dynamic. Starts null at each bar (FormatElements
+        // is called once per bar) to MATCH the parser's stickyVelocity=null reset at
+        // every pipe (Parser.NoteStream.cs:79), so a re-parse reconstructs the same
+        // per-note velocities. A leading dynamic token is emitted before a note/chord
+        // only when its bucket DIFFERS from the running sticky — so a uniform-velocity
+        // bar carries exactly one token and the rest inherit it.
+        string? stickyDynamic = null;
 
         foreach (var elem in elements)
         {
@@ -287,6 +330,12 @@ static class FlowGenerator
             {
                 case NoteElement note:
                 {
+                    string dyn = VelocityToDynamic(note.Velocity);
+                    if (dyn != stickyDynamic)
+                    {
+                        parts.Add(dyn);
+                        stickyDynamic = dyn;
+                    }
                     string s = note.NoteName;
                     if (!useAutoFit)
                     {
@@ -300,6 +349,12 @@ static class FlowGenerator
 
                 case ChordElement chord:
                 {
+                    string dyn = VelocityToDynamic(chord.Velocity);
+                    if (dyn != stickyDynamic)
+                    {
+                        parts.Add(dyn);
+                        stickyDynamic = dyn;
+                    }
                     string notes = string.Join(" ", chord.NoteNames);
                     string s = $"[{notes}]";
                     if (!useAutoFit)

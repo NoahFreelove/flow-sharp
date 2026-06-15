@@ -90,16 +90,28 @@ class Program
             }
 
             var quantizeResult = Conversion.Quantizer.Quantize(midiFile);
-            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath), sustainPedal: sustainPedal, useSfz: useSfz);
+            var result = Conversion.FlowGenerator.GenerateWithStats(midiFile, quantizeResult, Path.GetFileName(inputPath), sustainPedal: sustainPedal, useSfz: useSfz);
 
             if (outputPath != null)
             {
-                File.WriteAllText(outputPath, flowCode);
+                File.WriteAllText(outputPath, result.Source);
                 Console.Error.WriteLine($"Converted {inputPath} -> {outputPath}");
             }
             else
             {
-                Console.Write(flowCode);
+                Console.Write(result.Source);
+            }
+
+            // sweep-0614: honest exit code — a comment-only "no playable tracks"
+            // artifact renders silence; warn + return 2 rather than reporting success.
+            if (result.PlayableTrackCount == 0)
+            {
+                string detail = result.DroppedDrumTrackCount > 0
+                    ? $" ({result.DroppedDrumTrackCount} drum track(s) skipped — Flow uses different drum notation)"
+                    : " (all tracks were drums/empty/rests)";
+                Console.Error.WriteLine(
+                    $"Warning: no playable tracks found in {Path.GetFileName(inputPath)} — output is a comment-only file{detail}");
+                return 2;
             }
 
             return 0;

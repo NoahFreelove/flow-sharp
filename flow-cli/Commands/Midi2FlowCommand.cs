@@ -42,16 +42,31 @@ internal static class Midi2FlowCommand
                 var bytes = File.ReadAllBytes(input.FullName);
                 var midi = MidiParser.Parse(bytes);
                 var qr = Quantizer.Quantize(midi);
-                var flowSource = FlowGenerator.Generate(midi, qr, input.Name, roundTrip: true);
+                var result = FlowGenerator.GenerateWithStats(midi, qr, input.Name, roundTrip: true);
 
                 if (output != null)
                 {
-                    File.WriteAllText(output.FullName, flowSource);
+                    File.WriteAllText(output.FullName, result.Source);
                     Console.Error.WriteLine($"Converted {input.FullName} -> {output.FullName}");
                 }
                 else
                 {
-                    Console.Write(flowSource);
+                    Console.Write(result.Source);
+                }
+
+                // sweep-0614: an honest exit code. When every track was dropped
+                // (drums/empty/all-rest) the output is a comment-only file that
+                // `check`s OK and renders SILENCE — previously reported as exit 0,
+                // hiding total content loss. Still write the file (charitable) but
+                // warn + return a distinct non-zero code so scripts/users notice.
+                if (result.PlayableTrackCount == 0)
+                {
+                    string detail = result.DroppedDrumTrackCount > 0
+                        ? $" ({result.DroppedDrumTrackCount} drum track(s) skipped — Flow uses different drum notation)"
+                        : " (all tracks were drums/empty/rests)";
+                    Console.Error.WriteLine(
+                        $"Warning: no playable tracks found in {input.Name} — output is a comment-only file{detail}");
+                    return 2;
                 }
 
                 return 0;
