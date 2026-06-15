@@ -36,6 +36,13 @@ Note: jam(over=chords) chord-aware Markov improvisation.
 Note: Only `over` is required; defaults: style=#jazz, length=8, key=null (uses
 Note: active musical-context key), seed=null (PrngRegistry-routed), order=2.
 Note:
+Note: Named-arg calls must name a CONTIGUOUS prefix matching one overload
+Note:   below — (jam over=chords), (jam over=chords style=#blues), etc.
+Note:   Skipping a middle param (e.g. (jam over=chords style=#blues seed=42),
+Note:   omitting length+key) does NOT resolve yet (OverloadResolver default-fill
+Note:   is the v1.6 backlog item). To seed today: go positional
+Note:   (jam chords #jazz 8 "Cmajor" 42) or name the full prefix up to seed.
+Note:
 Note: The String? key= argument pushes a synthetic MusicalContext frame for
 Note: the jam evaluation when non-null (popped after). Use it for chromatic
 Note: pivot bars that break the surrounding key context.

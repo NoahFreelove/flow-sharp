@@ -24,8 +24,21 @@ namespace FlowLang.StandardLibrary.Improv;
 ///       Int? seed = null, Int order = 2) → Sequence
 /// </code>
 /// Only <c>over</c> is required. Six arity overloads cover the positional
-/// composer-call surface; named-arg dispatch (Phase 36 Plan 36-02) lets
-/// composers call <c>(jam over=chords style=#blues seed=42)</c> directly.
+/// composer-call surface, and named-arg dispatch (Phase 36 Plan 36-02) works
+/// for a CONTIGUOUS named prefix that matches one of those overloads:
+/// <c>(jam over=chords)</c>, <c>(jam over=chords style=#blues)</c>,
+/// <c>(jam over=chords style=#blues length=8)</c>, and so on. Skipping a
+/// middle parameter — e.g. <c>(jam over=chords style=#blues seed=42)</c>,
+/// which omits <c>length</c> and <c>key</c> — does NOT resolve: the
+/// OverloadResolver requires the supplied names to exactly cover one
+/// overload's parameter list and does not yet default-fill skipped slots. To
+/// pass a seed today, either go fully positional —
+/// <c>(jam chords #jazz 8 "Cmajor" 42)</c> — or name the full contiguous
+/// prefix up to <c>seed</c>. Sparse middle-skip named args are the v1.6
+/// "OverloadResolver relaxation" backlog item (CLAUDE.md § Known status).
+/// (Aside: <c>key=</c> as a named-arg label additionally collides with the
+/// reserved <c>key</c> musical-context keyword at PARSE time — a separate
+/// tracked defect.)
 /// </para>
 ///
 /// <para>
