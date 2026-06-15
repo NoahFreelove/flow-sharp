@@ -401,11 +401,12 @@ public static class PatternFunctions
     // 4. chunk — (Int n, Function fn, Sequence seq) -> Sequence  (D-36-04 BARS)
     // ====================================================================
 
-    // Per-call-site rotation counter for `chunk`. Each unique source position
-    // tracks its own "which chunk gets fn this cycle" index. Reset at
-    // render-boundary by piggybacking off PrngRegistry (counter map cleared
-    // alongside the PRNG state).
-    private static readonly Dictionary<Core.SourceLocation, int> _chunkRotationCounters = new();
+    // Per-call-site rotation counter for `chunk` lives on the per-context
+    // ExecutionContext.PrngRegistry (NOT a process-static field), so it is
+    // reset at every render boundary alongside the PRNG state — see
+    // PrngRegistry.NextChunkRotation / ResetAtRenderBoundary. This makes
+    // chunk two-run cmp-clean (a re-render restarts the rotation from chunk 0)
+    // and stops the counter leaking across independent FlowEngine instances.
 
     private static void RegisterChunk(InternalFunctionRegistry registry, ExecutionContext context)
     {
@@ -446,18 +447,29 @@ public static class PatternFunctions
         }
         if (IsEmptySeqAdvisory(seq, "chunk", ctx)) return Value.Sequence(seq);
 
-        // Per-call-site rotation counter — advances on each invocation.
-        int counter = 0;
-        if (_chunkRotationCounters.TryGetValue(ctx.CurrentCallSite, out var c)) counter = c;
+        // Per-call-site rotation counter — advances on each invocation. Lives
+        // on the per-context PrngRegistry so it is reset at every render
+        // boundary (two-run cmp-clean) and never leaks across FlowEngines.
+        int counter = ctx.PrngRegistry.NextChunkRotation(ctx.CurrentCallSite);
         int activeChunk = counter % n;
-        _chunkRotationCounters[ctx.CurrentCallSite] = counter + 1;
 
         int barCount = seq.Bars.Count;
-        int chunkSize = (barCount + n - 1) / n;  // ceil-divide so n=4 with 5 bars makes chunks of 2,1,1,1
-        int chunkStart = activeChunk * chunkSize;
-        int chunkEnd = Math.Min(chunkStart + chunkSize, barCount);
+        // Distribute bars EVENLY across n chunks (matching Tidal): the first
+        // (barCount % n) chunks get one extra bar. e.g. 5 bars / n=4 → sizes
+        // 2,1,1,1 — every rotation index transforms a real (non-empty) chunk,
+        // so there is no silent dead cycle. (The old ceil-divide front-loaded
+        // bars into the early chunks: 5/4 → 2,2,1 plus a dead 4th chunk.)
+        int baseSize = barCount / n;
+        int rem = barCount % n;
+        // chunkStart = sum of the sizes of all chunks before activeChunk.
+        int chunkStart = activeChunk * baseSize + Math.Min(activeChunk, rem);
+        int thisSize = baseSize + (activeChunk < rem ? 1 : 0);
+        int chunkEnd = Math.Min(chunkStart + thisSize, barCount);
 
-        if (chunkStart >= barCount) return Value.Sequence(seq);  // rotation beyond actual content; charitable passthrough
+        // Only reachable when barCount < n (some trailing chunks legitimately
+        // have zero bars); charitable passthrough applies the transform to
+        // nothing for those genuinely-empty rotation indices.
+        if (chunkStart >= barCount) return Value.Sequence(seq);
 
         // Build a sub-Sequence of the active chunk, invoke fn, splice result back.
         var chunkSeq = new SequenceData();
@@ -490,14 +502,18 @@ public static class PatternFunctions
     }
 
     /// <summary>
-    /// Test-only hook: clears the per-site rotation state so consecutive
-    /// xUnit Facts that exercise <c>chunk</c> at the same notional call site
-    /// start from index 0 each time. Mirrors
-    /// <c>PrngRegistry.ResetAtRenderBoundary</c> semantics.
+    /// Compatibility shim — now a no-op. The <c>chunk</c> rotation counter
+    /// moved off this class's process-static field onto the per-context
+    /// <see cref="PrngRegistry"/> (reset at every render boundary, fresh per
+    /// FlowEngine), so each test that builds its own engine already starts
+    /// from rotation index 0 without an explicit reset. Retained so the three
+    /// Phase 36 facts that call it keep compiling; safe to delete once those
+    /// call sites are removed.
     /// </summary>
     public static void ResetChunkRotationForTesting()
     {
-        _chunkRotationCounters.Clear();
+        // No-op: per-context PrngRegistry owns the counter and is fresh per
+        // FlowEngine / cleared at each render boundary.
     }
 
     // ====================================================================

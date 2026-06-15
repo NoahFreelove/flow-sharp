@@ -231,6 +231,48 @@ public class PatternEveryTests
     }
 
     [Fact]
+    public void ChunkEvenSplit_FiveBarsChunk4_EveryCycleTransformsRealChunk()
+    {
+        // sweep-0614: chunk used to ceil-divide (front-loading bars), so 5
+        // bars / chunk 4 produced sizes {2,2,1,0} and rotation index 3 hit a
+        // DEAD CYCLE (chunkStart=6 >= barCount → transformed nothing). The
+        // even-split fix gives sizes {2,1,1,1}: every one of the 4 rotation
+        // indices transforms a real, non-empty chunk. We call chunk at the
+        // SAME call site 4 times (rotation 0,1,2,3) and assert each cycle
+        // transposed at least one bar up an octave (octave 5+).
+        //
+        // The note-stream is 5 single-note bars C4..G4. transpose +12st lifts
+        // touched notes to octave 5.
+        using var runner = new FlowEngineRunner();
+        var src = Prelude + "\n" + """
+            Sequence src = | C4q | D4q | E4q | F4q | G4q |
+            proc go ()
+              (chunk 4 (fn Sequence x => (transpose x +12st)) src)
+            end proc
+            Sequence r0 = (go)
+            Sequence r1 = (go)
+            Sequence r2 = (go)
+            Sequence r3 = (go)
+            """;
+        var (success, _, stderr, errorCount) = runner.RunSource(src);
+        Assert.True(success && errorCount == 0,
+            $"Script failed: errorCount={errorCount}\nstderr:\n{stderr}\nsource:\n{src}");
+
+        // For each of the 4 rotations, count how many bars contain an
+        // octave-5 note (i.e. were touched by the transpose). No rotation may
+        // touch ZERO bars — that would be the dead cycle.
+        foreach (var varName in new[] { "r0", "r1", "r2", "r3" })
+        {
+            var seq = runner.GetVariable(varName).As<SequenceData>();
+            Assert.Equal(5, seq.Bars.Count); // structure preserved
+            int touchedBars = seq.Bars.Count(
+                b => b.MusicalNotes.Any(n => n.Octave >= 5));
+            Assert.True(touchedBars >= 1,
+                $"{varName}: dead cycle — chunk transposed nothing (even-split fix should guarantee every rotation hits a real chunk)");
+        }
+    }
+
+    [Fact]
     public void PhaseRotatesBars()
     {
         // 4 bars; phase 0.5 → rotate by round(0.5 × 4) = 2.

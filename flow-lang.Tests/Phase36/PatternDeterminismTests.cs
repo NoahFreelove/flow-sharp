@@ -150,6 +150,75 @@ public class PatternDeterminismTests
         Assert.Equal(firstA, firstB);
     }
 
+    [Fact]
+    public void ChunkRotationResetsAtRenderBoundary()
+    {
+        // sweep-0614: the chunk rotation counter used to live in a process-
+        // static field that was NEVER cleared at a render boundary, so a
+        // second render of the same source rotated chunk to a different bar →
+        // byte-different audio (broke two-run cmp-clean). It now lives on the
+        // per-context PrngRegistry and is cleared by ResetAtRenderBoundary,
+        // so the FIRST rotation after each boundary is identical.
+        using var engine = new FlowEngine(verbose: false);
+        var loc = new SourceLocation(7, 3, "chunk-renders.flow");
+
+        engine.Context.PrngRegistry.ResetAtRenderBoundary();
+        int firstPassA = engine.Context.PrngRegistry.NextChunkRotation(loc); // 0
+        int firstPassB = engine.Context.PrngRegistry.NextChunkRotation(loc); // 1 — advances within a pass
+
+        engine.Context.PrngRegistry.ResetAtRenderBoundary();
+        int secondPassA = engine.Context.PrngRegistry.NextChunkRotation(loc); // 0 again
+
+        Assert.Equal(0, firstPassA);
+        Assert.Equal(1, firstPassB);              // advances within one render pass
+        Assert.Equal(firstPassA, secondPassA);    // boundary reset restarts at 0
+    }
+
+    [Fact]
+    public void ChunkProducesByteIdenticalAudioAcrossTwoRendersInOneProcess()
+    {
+        // End-to-end two-run cmp-clean: building + rendering the SAME chunk-
+        // using source twice in ONE process must produce byte-identical WAV.
+        // Before the fix the static rotation counter advanced between renders,
+        // transposing a different bar the second time (cmp differ at byte 49).
+        const string body = """
+            use "@std"
+            use "@patterns"
+            use "@audio"
+            Sequence s = | C4q C4q | D4q D4q | E4q E4q | F4q F4q |
+            proc buildSeq ()
+              Sequence r = (chunk 4 (fn Sequence x => (transpose x +12st)) s)
+              r
+            end proc
+            """;
+
+        byte[] RenderOnce(string outPath)
+        {
+            using var runner = new FlowEngineRunner();
+            string script = body + "\n"
+                + "section A { Sequence v = (buildSeq) }\n"
+                + "Song song = [A]\n"
+                + "(writeWav \"" + outPath + "\" (renderSong song \"sine\"))\n";
+            var (ok, _, stderr, errCount) = runner.RunSource(script, "<chunk-twrun>");
+            Assert.True(ok && errCount == 0, $"render failed: errCount={errCount}\n{stderr}");
+            return File.ReadAllBytes(outPath);
+        }
+
+        string tmpA = Path.Combine(Path.GetTempPath(), $"flow_chunk_a_{Guid.NewGuid():N}.wav");
+        string tmpB = Path.Combine(Path.GetTempPath(), $"flow_chunk_b_{Guid.NewGuid():N}.wav");
+        try
+        {
+            byte[] a = RenderOnce(tmpA);
+            byte[] b = RenderOnce(tmpB);
+            Assert.Equal(a, b);
+        }
+        finally
+        {
+            if (File.Exists(tmpA)) File.Delete(tmpA);
+            if (File.Exists(tmpB)) File.Delete(tmpB);
+        }
+    }
+
     // ====================================================================
     // Source-grep gate — Phase 36 PRNG routing enforcement
     // ====================================================================

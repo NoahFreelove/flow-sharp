@@ -55,6 +55,16 @@ public class PrngRegistry
     // depending on Random's non-serializable internal state.
     private readonly Dictionary<(SourceLocation Site, string Name), long> _drawCounts = new();
 
+    // Phase 36 `chunk` per-call-site rotation counter. NOT a PRNG draw — it is a
+    // deterministic "which chunk gets the transform this cycle" index that
+    // advances by one on each invocation at a given source position. It lives
+    // here (rather than as a process-static field in PatternFunctions) so it
+    // is (a) per-ExecutionContext like the rest of this registry — no
+    // cross-FlowEngine leak — and (b) cleared at every render boundary by
+    // ResetAtRenderBoundary, preserving the two-run cmp-clean contract: a
+    // re-render of the same source rotates from the same starting chunk.
+    private readonly Dictionary<SourceLocation, int> _chunkRotationCounters = new();
+
     private int _renderBoundarySalt = 0;
 
     /// <summary>
@@ -134,7 +144,22 @@ public class PrngRegistry
     {
         _registry.Clear();
         _drawCounts.Clear();
+        _chunkRotationCounters.Clear();
         ResetCallCount++;
+    }
+
+    /// <summary>
+    /// Phase 36 <c>chunk</c> rotation accessor. Returns the current rotation
+    /// index for the given call site and advances it by one. Deterministic
+    /// (no RNG) — same site advances by exactly one per call. Cleared at every
+    /// render boundary by <see cref="ResetAtRenderBoundary"/>, so re-rendering
+    /// the same source restarts the rotation from index 0 (two-run cmp-clean).
+    /// </summary>
+    public int NextChunkRotation(SourceLocation site)
+    {
+        int counter = _chunkRotationCounters.TryGetValue(site, out var c) ? c : 0;
+        _chunkRotationCounters[site] = counter + 1;
+        return counter;
     }
 
     /// <summary>
