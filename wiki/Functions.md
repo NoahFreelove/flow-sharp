@@ -21,9 +21,9 @@ Int result = (double 7)
 
 The last non-void expression in a `proc` body is automatically the return value. Flow collects **every** non-void expression evaluated; the rules are:
 
-- 0 collected → `Void`
-- 1 collected → that value
-- 2+ collected → an **array** of all collected values
+- 0 collected -> `Void`
+- 1 collected -> that value
+- 2+ collected -> an **array** of all collected values
 
 ```flow
 use "@std"
@@ -36,7 +36,7 @@ Int sum = (myAdd 3 4)
 (print (str sum))  Note: 7
 ```
 
-To force a `Void` return from a body that would otherwise collect non-void expressions, use the explicit `(Nothing)` builtin as the last statement. A trailing void expression (like `(print ...)`) returns `Void` **only when no prior non-void expression was already collected** — if one was, the collected value(s) are still returned (1 collected → that value, 2+ collected → an array). When in doubt, use `(Nothing)` to be explicit.
+To force a `Void` return from a body that would otherwise collect non-void expressions, use the explicit `(Nothing)` builtin as the last statement. A trailing void expression (like `(print ...)`) returns `Void` **only when no prior non-void expression was already collected** — if one was, the collected value(s) are still returned (1 collected -> that value, 2+ collected -> an array). When in doubt, use `(Nothing)` to be explicit.
 
 ### Explicit Returns
 

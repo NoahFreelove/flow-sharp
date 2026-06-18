@@ -146,7 +146,7 @@ Every combinator is **charitable** on degenerate input: zero / negative factors,
 | `phase` | `(Double offset, Sequence seq) -> Sequence` | Rotate bar order by `round(offset × seq.Bars.Count)` |
 | `rev` | `(Sequence seq) -> Sequence` | Reverse bar order (within-bar note order preserved — compare to `retrograde`) |
 | `iter` | `(Int n, Sequence seq) -> Sequence` | Rotate note list by `totalNotes / n` positions |
-| `palindrome` | `(Sequence seq) -> Sequence` | `[A B C] → [A B C C B A]` |
+| `palindrome` | `(Sequence seq) -> Sequence` | `[A B C] -> [A B C C B A]` |
 | `jux` | `(Function cb, Sequence seq) -> Sequence` | Layer original with `cb(seq)` as a voice block (mono mix today; L/R stereo placement planned) |
 | `superimpose` | `(Function cb, Sequence seq) -> Sequence` | Mono voice-block overlay; functionally identical to `jux` in current builds |
 
@@ -243,8 +243,8 @@ The tuple form encodes both pitch and quarter-note duration into a single state 
 
 ### Charitable interpretation
 
-- **Order is clamped to `[1, 3]`.** Order 5 → order 3 + advisory.
-- **Empty corpus or non-positive length** → empty sequence + advisory.
+- **Order is clamped to `[1, 3]`.** Order 5 -> order 3 + advisory.
+- **Empty corpus or non-positive length** -> empty sequence + advisory.
 - **First `order` notes are alphabet-seeded** so the cold start is deterministic.
 
 See `examples/generative/markov_jazz.flow` for a runnable jazz-corpus walkthrough.
@@ -408,7 +408,7 @@ The full Dict-shape contract — every required field and its semantics — is d
 
 ### Charitable behaviour
 
-Unknown style → falls back to `#jazz` + advisory. Empty `over` or `length <= 0` → empty Sequence + advisory. Style + key incompatibility (e.g. `#blues` over a chromatic key) is a soft advisory, not an error — Flow keeps producing music.
+Unknown style -> falls back to `#jazz` + advisory. Empty `over` or `length <= 0` -> empty Sequence + advisory. Style + key incompatibility (e.g. `#blues` over a chromatic key) is a soft advisory, not an error — Flow keeps producing music.
 
 ## Polyrhythms
 

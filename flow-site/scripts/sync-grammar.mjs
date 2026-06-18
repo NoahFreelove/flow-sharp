@@ -9,8 +9,10 @@
 // the grammar changes; it is also wired into `prebuild` so CI/CF always have a fresh copy when
 // the sibling project is present, and is a no-op (keeps the committed copy) when it is not.
 //
-// It normalizes `name` to `flow` and ensures the `flow` alias so shiki registers the language
-// id as `flow` (shiki derives the lang id from the grammar `name`/aliases).
+// It normalizes `name` to `flow` so shiki registers the language id as `flow` (shiki derives the
+// lang id from the grammar `name`). It must NOT add a `flow` alias: an alias equal to the name
+// makes shiki register `flow -> flow`, which throws `Circular alias 'flow -> flow'` and silently
+// breaks ALL highlighting (every block falls back to plain text).
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -34,11 +36,10 @@ if (!existsSync(SOURCE)) {
 
 const grammar = JSON.parse(readFileSync(SOURCE, 'utf8'));
 
-// shiki registers the language under `name` + `aliases`. Pin both to `flow`.
+// shiki derives the language id from `name`. Pin it to `flow` and strip any self-referential
+// alias (an alias === name => shiki "Circular alias 'flow -> flow'", which kills highlighting).
 grammar.name = 'flow';
-const aliases = new Set(grammar.aliases ?? []);
-aliases.add('flow');
-grammar.aliases = [...aliases];
+grammar.aliases = [...new Set(grammar.aliases ?? [])].filter((a) => a !== grammar.name);
 
 writeFileSync(DEST, JSON.stringify(grammar, null, 2) + '\n', 'utf8');
 console.log(`[sync-grammar] copied ${SOURCE} -> ${DEST} (name=flow, scopeName=${grammar.scopeName})`);

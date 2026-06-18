@@ -154,7 +154,7 @@ timesig 4/4 {
 }
 ```
 
-Or use the **music21 shorthand** `{N ...}q` — the ratio is inferred from a small lookup table (3→2, 5→4, 6→4, 7→4, 9→8, etc.; counts 2..11 supported):
+Or use the **music21 shorthand** `{N ...}q` — the ratio is inferred from a small lookup table (3->2, 5->4, 6->4, 7->4, 9->8, etc.; counts 2..11 supported):
 
 ```flow
 timesig 4/4 {
@@ -293,7 +293,7 @@ timesig 4/4 {
 | Marcato | `marc` | 25% duration + Accent's +0.30 velocity boost |
 | Tenuto | `ten` | 100% duration, release × 1.2 (soft tail) |
 | Legato | `leg` | 110% duration + crossfade overlap into next note |
-| Sforzando | `sfz` dynamic | 1.5×→1.0× envelope spike over first 15% of frames |
+| Sforzando | `sfz` dynamic | 1.5×->1.0× envelope spike over first 15% of frames |
 
 Articulation marks accept on the same note as a duration suffix. Per-note articulations and dynamics propagate through pitch transforms (`transpose`, `retrograde`, etc.) — see [Dynamics and Expression](Dynamics-and-Expression.md) for the full reference.
 

@@ -5,19 +5,15 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
 		<script>
-			// Apply the persisted / preferred theme BEFORE first paint (no FOUC, no flash of
-			// the wrong skeuo theme). Mirrors theme.ts getInitialTheme(): localStorage wins,
-			// else prefers-color-scheme. Inline + synchronous so [data-theme] is set before the
-			// tokens.css dark-block custom-property overrides resolve (D-49-20).
+			// Apply the persisted theme BEFORE first paint (no FOUC, no flash of the wrong skeuo
+			// theme). Mirrors theme.ts getInitialTheme(): a stored choice wins, otherwise default
+			// to LIGHT (the OS prefers-color-scheme is intentionally NOT honoured — dark is opt-in
+			// via the toggle). Inline + synchronous so [data-theme] is set before the tokens.css
+			// dark-block custom-property overrides resolve (D-49-20).
 			(function () {
 				try {
 					var stored = localStorage.getItem('flow-theme');
-					var theme =
-						stored === 'light' || stored === 'dark'
-							? stored
-							: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-								? 'dark'
-								: 'light';
+					var theme = stored === 'light' || stored === 'dark' ? stored : 'light';
 					document.documentElement.setAttribute('data-theme', theme);
 				} catch (e) {
 					document.documentElement.setAttribute('data-theme', 'light');

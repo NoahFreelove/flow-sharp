@@ -241,7 +241,7 @@ See [Vocalization](Vocalization.md).
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `sing` | `(String, Note, Double) -> Buffer` | Formant-synthesized vowel / syllable |
-| `tts` | `(String) -> Buffer` | External TTS → buffer |
+| `tts` | `(String) -> Buffer` | External TTS -> buffer |
 | `setTtsCommand` | `(String) -> Void` | Configure TTS command template |
 
 ### Visualization
@@ -288,7 +288,7 @@ Always-on (registered as C# builtins).
 | `chordRoot` / `chordQuality` | `(Chord) -> String` | Chord parts |
 | `arpeggio` | `(Chord, String) -> Sequence` | `"up"`, `"down"`, `"updown"` |
 | `scaleNotes` | `(String) -> String[]` | Scale note names |
-| `resolveNumeral` | `(String, String) -> Chord` | Roman numeral → chord |
+| `resolveNumeral` | `(String, String) -> Chord` | Roman numeral -> chord |
 | `getSections` / `sectionSequences` | `(Song) -> String[]` / `(Section) -> String[]` | Song introspection |
 
 See [Chords and Harmony](Chords-and-Harmony.md) and [Chord Progressions](Chord-Progressions.md).

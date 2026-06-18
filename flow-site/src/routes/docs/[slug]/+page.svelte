@@ -49,7 +49,7 @@
 		</details>
 	</aside>
 
-	<main class="docs-body surface-paper surface-paper--staff">
+	<main class="docs-body surface-paper">
 		<article class="docs-prose">
 			<DocComponent />
 		</article>
@@ -77,6 +77,15 @@
 		min-width: 0;
 	}
 
+	/* Lift the nav content above the wood-grain ::before texture. The .surface-wood overlay is a
+	   positioned ::before painted ON TOP of in-flow content (multiply blend), which was muddying
+	   the headings + links into the wood. A stacking context (position + z-index) puts the text
+	   back on top so cream + brass read at full contrast. */
+	.docs-toc-disclosure {
+		position: relative;
+		z-index: 1;
+	}
+
 	/* On desktop the disclosure is always open (it's the persistent sidebar nav). */
 	.docs-toc-disclosure > summary {
 		display: none;
@@ -91,10 +100,12 @@
 	}
 	.docs-cat__name {
 		font-size: var(--text-small);
-		font-weight: 600;
+		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
-		color: var(--color-brass);
+		/* Brightened brass so the category labels read clearly on the dark wood (plain --color-brass
+		   was too low-contrast). */
+		color: color-mix(in srgb, var(--color-brass) 78%, white);
 		margin: 0 0 var(--space-2);
 	}
 	.docs-cat__list {
@@ -201,6 +212,23 @@
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 		font-size: var(--text-code);
 		line-height: var(--text-code-lh);
+	}
+
+	/* Light-mode code wells sit a touch DARKER than the cream page so a code block reads as a
+	   distinct surface, not just bordered prose (shiki's own light bg is near-white = barely
+	   different). `!important` overrides shiki's inline background-color. */
+	.docs-prose :global(pre.shiki) {
+		background-color: #ece4d1 !important;
+	}
+	/* Dark mode: activate shiki's github-dark variant. With defaultColor:'light' shiki ships the
+	   dark colors as inert `--shiki-dark*` CSS vars; swap them in here so dark-theme code blocks
+	   render dark (and distinct from the deep-walnut page) instead of a glaring light box. */
+	:global([data-theme='dark']) .docs-prose :global(pre.shiki) {
+		background-color: var(--shiki-dark-bg) !important;
+		color: var(--shiki-dark) !important;
+	}
+	:global([data-theme='dark']) .docs-prose :global(pre.shiki span) {
+		color: var(--shiki-dark) !important;
 	}
 	.docs-prose :global(pre:focus-visible),
 	.docs-prose :global(.docs-codeblock:focus-visible) {

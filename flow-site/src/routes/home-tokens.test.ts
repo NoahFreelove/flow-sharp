@@ -5,7 +5,7 @@
  * in :root inside a component leaks to every route once the user visits /. The fix
  * moves the iOS-6 token set from :root onto .ios6-page, where they inherit to all
  * descendants but cannot override tokens.css's JetBrains Mono --font-mono on other
- * routes (/docs, /playground, /showcase).
+ * routes (/docs, /playground).
  *
  * This test reads the raw component source and asserts:
  *  1. No :root block contains --font-mono.

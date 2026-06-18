@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test';
 
-// REQ-SITE-IA-01 / REQ-SITE-A11Y-02 — the persistent 5-tab top nav.
+// REQ-SITE-IA-01 / REQ-SITE-A11Y-02 — the persistent 4-tab top nav.
 //
 // The `/` route ships an iOS-6 skeuomorphic page with its own chrome:
 //   - The brushed-aluminum toolbar carries `nav[aria-label="Primary"]` (the pill nav)
 //     at EVERY width. On narrow viewports (≤600px) the pill nav scrolls horizontally
 //     inside the bar instead of being hidden — there is no longer a bottom tab bar.
-// Non-home routes (/docs, /playground, /showcase) render the SAME shared <SiteToolbar> —
+// Non-home routes (/docs, /playground) render the SAME shared <SiteToolbar> —
 // one `nav[aria-label="Primary"]` (the pill nav) at every width, scrollable on mobile. There
 // is no separate desktop strip and no hamburger; the bar is identical to home's.
 
 const isMobileViewport = (width: number) => width < 768;
 
-test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
+test.describe('4-tab top nav (REQ-SITE-IA-01)', () => {
 	test('renders the persistent Primary nav landmark on Home', async ({ page }) => {
 		await page.goto('/');
 		// The iOS-6 home ships `nav[aria-label="Primary"]` in the toolbar, visible at every
@@ -25,17 +25,17 @@ test.describe('5-tab top nav (REQ-SITE-IA-01)', () => {
 		await expect(wordmark).toHaveAttribute('href', '/');
 	});
 
-	test('the 5 tabs are present (4 local + GitHub external)', async ({ page }) => {
+	test('the 4 tabs are present (3 local + GitHub external)', async ({ page }) => {
 		await page.goto('/');
-		// The toolbar pill nav carries all 5 destinations at every width.
+		// The toolbar pill nav carries all 4 destinations at every width.
 		const nav = page.locator('nav[aria-label="Primary"]').first();
-		for (const label of ['Home', 'Docs', 'Playground', 'Showcase']) {
+		for (const label of ['Home', 'Docs', 'Playground']) {
 			await expect(nav.getByRole('link', { name: label })).toBeVisible();
 		}
 		await expect(nav.getByRole('link', { name: /github/i })).toBeVisible();
 	});
 
-	test('the 4 local tabs navigate to their routes', async ({ page }, testInfo) => {
+	test('the 3 local tabs navigate to their routes', async ({ page }, testInfo) => {
 		const width = testInfo.project.use.viewport?.width ?? 1280;
 		// Routing round-trip on desktop (keeps clicks off the mobile horizontal-scroll nav).
 		if (isMobileViewport(width)) return;

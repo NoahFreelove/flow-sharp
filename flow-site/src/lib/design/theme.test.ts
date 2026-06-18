@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getInitialTheme, setTheme, toggleTheme, applyTheme } from './theme';
 
-// theme.ts persistence contract (D-49-20): localStorage wins, else prefers-color-scheme.
+// theme.ts persistence contract (D-49-20, revised): a stored choice wins, otherwise default to
+// LIGHT. The OS prefers-color-scheme is intentionally NOT honoured (dark is opt-in via the toggle).
 
 describe('theme.ts persistence (D-49-20)', () => {
 	// jsdom does not implement matchMedia — install a controllable stub per test.
@@ -20,9 +21,9 @@ describe('theme.ts persistence (D-49-20)', () => {
 		expect(getInitialTheme()).toBe('light');
 	});
 
-	it('honours prefers-color-scheme: dark on first visit', () => {
+	it('defaults to light on first visit even when the OS prefers dark (dark is opt-in)', () => {
 		stubMatchMedia(true);
-		expect(getInitialTheme()).toBe('dark');
+		expect(getInitialTheme()).toBe('light');
 	});
 
 	it('a stored choice wins over the OS preference', () => {

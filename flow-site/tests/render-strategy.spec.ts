@@ -13,15 +13,11 @@ import { test, expect } from '@playwright/test';
 // the content is already in the bytes. We assert the playground's client-only nature by confirming
 // its raw response carries no WASM/Monaco-mounted content, and that the editor mounts only after
 // `page.goto` lets it hydrate.
-//
-// `/showcase` is also prerendered (Plan 49-07): the curated gallery is static at build time, so it
-// ships server-rendered content and emits static HTML, like Home + Docs.
 
 const PRERENDERED = [
 	// Home marker: "Open the Playground" is in the iOS-6 hero CTA (prerendered static content).
 	{ path: '/', marker: 'Open the Playground', name: 'Home' },
-	{ path: '/docs', marker: 'Documentation', name: 'Docs index' },
-	{ path: '/showcase', marker: 'Showcase', name: 'Showcase gallery' }
+	{ path: '/docs', marker: 'Documentation', name: 'Docs index' }
 ];
 
 test.describe('per-route render strategy (REQ-SITE-IA-02)', () => {

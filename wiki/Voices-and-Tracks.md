@@ -11,7 +11,7 @@ Most voice/track functions live in `@composition` (add `use "@composition"`). Th
 - A **Song** rendered through `renderSong` internally produces voices and tracks for you, but you can also build them yourself.
 
 ```
-Buffer → Voice (at beat offset) → Track (collection) → rendered Buffer
+Buffer -> Voice (at beat offset) -> Track (collection) -> rendered Buffer
 ```
 
 ## Creating Voices

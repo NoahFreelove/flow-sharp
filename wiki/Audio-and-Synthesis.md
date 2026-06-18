@@ -238,7 +238,7 @@ Other instruments accept the knob harmlessly (ignored).
 The rendering pipeline converts musical structures to audio:
 
 ```
-Song → Sections → Sequences → Bars → MusicalNotes → Synthesizer → Voices → Track → Buffer
+Song -> Sections -> Sequences -> Bars -> MusicalNotes -> Synthesizer -> Voices -> Track -> Buffer
 ```
 
 1. A **Song** is split into its section arrangement.
@@ -248,7 +248,7 @@ Song → Sections → Sequences → Bars → MusicalNotes → Synthesizer → Vo
 5. The **Synthesizer** renders each note to audio samples.
 6. Notes are placed on a timeline as voices, gathered into tracks, mixed, and written out.
 
-### Direct Sequence → Buffer
+### Direct Sequence -> Buffer
 
 If you don't need the `Song` layer, you can render a sequence directly:
 
@@ -271,7 +271,7 @@ Function myInstr = fn MusicalNote pitch, Double seconds, Double bpm =>
 Buffer myresult = (renderSong song myInstr)
 ```
 
-> **Current limitation:** `noteToFrequency` expects a `Note` literal but the lambda receives a `MusicalNote` (rendered note with timing data). Calling `(noteToFrequency pitch)` inside the lambda currently fails with a type-conversion error. As a workaround, use a hardcoded frequency or compute it from pitch data another way. A `MusicalNote → Note` conversion is a planned engine addition.
+> **Current limitation:** `noteToFrequency` expects a `Note` literal but the lambda receives a `MusicalNote` (rendered note with timing data). Calling `(noteToFrequency pitch)` inside the lambda currently fails with a type-conversion error. As a workaround, use a hardcoded frequency or compute it from pitch data another way. A `MusicalNote -> Note` conversion is a planned engine addition.
 
 ### SFZ Orchestral Sampler (Opt-In)
 
@@ -300,7 +300,7 @@ tempo 120 {
 }
 ```
 
-The 20-entry GM dict covers strings (`#violin`, `#viola`, `#cello`, `#contrabass`), woodwinds (`#flute`, `#oboe`, `#clarinet`, `#bassoon`), brass (`#trumpet`, `#horn`, `#trombone`, `#tuba`), keys/plucked (`#piano`, `#harp`), and percussion (`#timpani`, `#drums` → VSCO-CE `GM-StylePerc.sfz` with transient-preserving pitch shift). Symbol lookups resolve against the `sfz_root` directory configured in `~/.config/flow/config.toml`; the blessed external library is VSCO Community Edition 1.1.0 (CC-BY 4.0, not vendored — composer installs separately). Four GM slots (`#choir`, `#guitar`, `#harpsichord`, `#celeste`) are not bundled with VSCO-CE 1.1.0 and require the absolute-path overload.
+The 20-entry GM dict covers strings (`#violin`, `#viola`, `#cello`, `#contrabass`), woodwinds (`#flute`, `#oboe`, `#clarinet`, `#bassoon`), brass (`#trumpet`, `#horn`, `#trombone`, `#tuba`), keys/plucked (`#piano`, `#harp`), and percussion (`#timpani`, `#drums` -> VSCO-CE `GM-StylePerc.sfz` with transient-preserving pitch shift). Symbol lookups resolve against the `sfz_root` directory configured in `~/.config/flow/config.toml`; the blessed external library is VSCO Community Edition 1.1.0 (CC-BY 4.0, not vendored — composer installs separately). Four GM slots (`#choir`, `#guitar`, `#harpsichord`, `#celeste`) are not bundled with VSCO-CE 1.1.0 and require the absolute-path overload.
 
 ## BPM and Timeline
 

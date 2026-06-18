@@ -26,13 +26,25 @@ const BUILTIN_LANGS = ['bash'];
 /** @type {Promise<import('shiki').Highlighter> | null} */
 let highlighterPromise = null;
 
+/**
+ * Shiki derives the language id from the grammar `name` and ALSO registers every entry in
+ * `aliases`. If `aliases` contains the name itself (`name: 'flow'` + `aliases: ['flow']`) shiki
+ * registers `flow -> flow`, throws `Circular alias 'flow -> flow'`, and EVERY code block silently
+ * falls back to plain unhighlighted text. Strip any self-referential alias defensively so a stale
+ * synced grammar can never break highlighting again.
+ */
+const safeFlowGrammar = {
+	...flowGrammar,
+	aliases: (flowGrammar.aliases ?? []).filter((a) => a !== flowGrammar.name)
+};
+
 /** Lazily create (and memoize) the shiki highlighter with the Flow grammar loaded. */
 function getHighlighter() {
 	if (!highlighterPromise) {
 		highlighterPromise = createHighlighter({
 			themes: [LIGHT_THEME, DARK_THEME],
-			// `flowGrammar.name === 'flow'`, scopeName 'source.flow' — registers lang id `flow`.
-			langs: [flowGrammar, ...BUILTIN_LANGS]
+			// `safeFlowGrammar.name === 'flow'`, scopeName 'source.flow' — registers lang id `flow`.
+			langs: [safeFlowGrammar, ...BUILTIN_LANGS]
 		});
 	}
 	return highlighterPromise;

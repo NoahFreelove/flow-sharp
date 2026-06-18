@@ -287,7 +287,7 @@ tempo 120 {
 
 ## Typical Pattern
 
-Most musical code wraps everything in `tempo` → `timesig` → `key`:
+Most musical code wraps everything in `tempo` -> `timesig` -> `key`:
 
 ```flow
 tempo 120 {

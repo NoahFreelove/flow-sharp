@@ -617,7 +617,7 @@ Order is clamped to [1, 3]. Feature extraction via `features=#pitch` (default) o
 
 ### L-Systems
 
-Lindenmayer-system Symbol rewriting → notes:
+Lindenmayer-system Symbol rewriting -> notes:
 
 ```flow
 use "@std"
@@ -628,8 +628,8 @@ use "@notation"
 tempo 120 {
     timesig 4/4 {
         Note: Canonical "algae" rules:
-        Note:   #A → #A #B
-        Note:   #B → #A
+        Note:   #A -> #A #B
+        Note:   #B -> #A
         Dict<Symbol, Symbol[]> rules = (dict #A (list #A #B) #B (list #A))
 
         Note: Iteration 4 produces an 8-Symbol sequence
@@ -1039,7 +1039,7 @@ tempo 140 {
 }
 ```
 
-Multi-track export with GM-program routing: sequence names prefix-match to instruments (`piano*`→0, `brass*`→56, `sax*`→65, `flute*`→73, `violin*`→40, `cello*`→42, `drum*`→0 on channel 9). One track per unique sequence name + a conductor track.
+Multi-track export with GM-program routing: sequence names prefix-match to instruments (`piano*`->0, `brass*`->56, `sax*`->65, `flute*`->73, `violin*`->40, `cello*`->42, `drum*`->0 on channel 9). One track per unique sequence name + a conductor track.
 
 ### Waltz in 3/4
 
@@ -1092,7 +1092,7 @@ tempo 120 {
             Sequence trem = mel -> tremolo 4
             (print (concat "Tremolo: " (str trem)))
 
-            Note: Humanize for natural feel (Gaussian, seeded → deterministic)
+            Note: Humanize for natural feel (Gaussian, seeded -> deterministic)
             Sequence natural = (humanizeGaussian | C4 D4 E4 F4 | 0.15 42)
             (print (concat "Humanized: " (str natural)))
         }

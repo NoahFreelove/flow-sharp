@@ -21,8 +21,11 @@ function hasWindow(): boolean {
 }
 
 /**
- * Resolve the initial theme: an explicit localStorage choice wins; otherwise fall back to
- * the OS `prefers-color-scheme`; default to light when nothing else is available.
+ * Resolve the initial theme: an explicit localStorage choice wins; otherwise default to LIGHT.
+ *
+ * Light is Flow's primary skeuo theme, so a first visit always opens light — the OS
+ * `prefers-color-scheme: dark` is intentionally NOT honoured here (it was making the docs open
+ * dark for dark-OS users who never asked for it). Dark is opt-in via the toggle, which persists.
  */
 export function getInitialTheme(): Theme {
 	if (!hasWindow()) return 'light';
@@ -31,9 +34,6 @@ export function getInitialTheme(): Theme {
 		if (stored === 'light' || stored === 'dark') return stored;
 	} catch {
 		/* localStorage may be unavailable (private mode / blocked) — fall through */
-	}
-	if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-		return 'dark';
 	}
 	return 'light';
 }

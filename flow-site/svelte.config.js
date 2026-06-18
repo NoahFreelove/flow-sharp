@@ -90,9 +90,7 @@ const config = {
 					console.warn(`[prerender] dangling docs link ${path} (from ${referrer}) — ${message}`);
 					return;
 				}
-				// /showcase + /showcase/[slug] ship in Plan 49-07 and prerender fully — the wave-3
-				// warn-not-fail allowance for the not-yet-routed nav tab is removed, so a /showcase 404
-				// now fails the build (it would signal a real routing/manifest bug).
+				// Any non-/docs prerender error is a real routing/manifest bug — fail the build.
 				throw new Error(message);
 			},
 			// Some wiki anchors point at sections that don't exist in the page content (a content

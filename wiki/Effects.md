@@ -27,7 +27,7 @@ Buffer hall = (reverb tone 0.7 2.5s)
 | `roomSize` | 0.0 - 1.0 | Simulated room size (0=small, 1=large) |
 | `damping` | 0.0 - 1.0 | High-frequency absorption (default 0.5) |
 | `mix` | 0.0 - 1.0 | Dry/wet mix (default 0.3) |
-| `decay` | `Second` | Schroeder closed-form RT60 → damping mapping |
+| `decay` | `Second` | Schroeder closed-form RT60 -> damping mapping |
 
 **Reverb renders its decay tail past the input end.** The returned buffer is longer than the input so the room sound decays naturally (tail capped at 10 s). Known exception: a section's final bar clips at the section boundary (v1.6 fix pending).
 
@@ -171,7 +171,7 @@ Render a sequence with linearly-interpolated per-bar BPM — useful for ritardan
 
 ```flow
 Sequence build = | C4 E4 G4 C5 E5 G5 |
-Buffer ramp = (tempoRamp build 100.0 160.0)         Note: 100 → 160 BPM over the sequence
+Buffer ramp = (tempoRamp build 100.0 160.0)         Note: 100 -> 160 BPM over the sequence
 Buffer rampOrgan = (tempoRamp build 100.0 160.0 "organ")
 ```
 

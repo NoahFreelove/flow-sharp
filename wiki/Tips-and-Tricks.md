@@ -320,10 +320,10 @@ Both voices share the bar's onset and mix additively. Same render path for audio
 
 Flow's stdlib follows a "charitable" philosophy: degenerate inputs return reasonable defaults plus a one-shot stderr advisory, rather than throwing. You can prototype without paranoid input validation:
 
-- `(stretch audio 0.001)` → near-identity; note that `0.0` is rejected with an error (`stretch factor must be positive`); use a small positive value for near-zero cases
-- `(every 0 cb seq)` → returns input + advisory
-- `(jam unknownChords #fakestyle 0 "Cmajor" 0 9)` → falls back to a usable Sequence
-- `(abc malformedInput)` → drops unrecognized tokens with `[abc]` advisory; never throws
+- `(stretch audio 0.001)` -> near-identity; note that `0.0` is rejected with an error (`stretch factor must be positive`); use a small positive value for near-zero cases
+- `(every 0 cb seq)` -> returns input + advisory
+- `(jam unknownChords #fakestyle 0 "Cmajor" 0 9)` -> falls back to a usable Sequence
+- `(abc malformedInput)` -> drops unrecognized tokens with `[abc]` advisory; never throws
 
 This means stdlib functions almost never need to be wrapped in `try`-like guards.
 
@@ -360,8 +360,8 @@ use "@audio"
 Buffer audio = (createSineTone 440Hz 1.0 0.5)
 Double factor = 1.0
 Double cents  = 0.0
-Buffer maybeStretched = (stretch audio factor)      Note: factor=1.0 → input verbatim
-Buffer maybeShifted   = (pitchShift audio cents)    Note: cents=0 / 0c → input verbatim
+Buffer maybeStretched = (stretch audio factor)      Note: factor=1.0 -> input verbatim
+Buffer maybeShifted   = (pitchShift audio cents)    Note: cents=0 / 0c -> input verbatim
 Note: (loadWav "x.wav" 0) with 0 semitones returns byte-identical output to (loadWav "x.wav")
 ```
 

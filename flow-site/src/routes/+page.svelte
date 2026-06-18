@@ -40,6 +40,15 @@ key Cmajor {
 	const scale = highlightFlow(SCALE);
 	const cadence = highlightFlow(CADENCE);
 
+	// "Why Flow" feature examples — small, one-idea snippets highlighted at prerender time. They
+	// illustrate each pillar concretely (note streams, harmony, the flow operator, generative).
+	const exStream = highlightFlow(`| C4q E4q G4q C5h |`);
+	const exChords = highlightFlow(`key Cmajor {
+  (play | I vi IV V |)
+}`);
+	const exFlow = highlightFlow(`riff -> (transpose +7st) -> (retrograde)`);
+	const exGen = highlightFlow(`(jam over=chords style=#jazz length=8)`);
+
 	// D-49-08 playground deep-links: encode each snippet as a #code= fragment so clicking
 	// "Open in playground →" loads the exact code the user is looking at (§6.6 fix).
 	// encode() is fflate-deflate + base64url — safe at prerender time (no window/DOM access).
@@ -85,7 +94,6 @@ key Cmajor {
 			<a href="/" class="active" aria-current="page">Home</a>
 			<a href="/docs">Docs</a>
 			<a href="/playground">Playground</a>
-			<a href="/showcase">Showcase</a>
 			<a href={REPO_URL} class="ext" target="_blank" rel="noopener noreferrer"
 				>GitHub<span class="sr-only"> (opens in new tab)</span></a
 			>
@@ -98,11 +106,8 @@ key Cmajor {
 	<main class="layout">
 		<!-- HERO -->
 		<section class="plate hero">
-			<span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span
-			><span class="screw br"></span>
 			<div class="hero-top">
 				<div class="reflect" data-text="Flow">
-					<p class="tagline">Interpreted · functional · strongly typed</p>
 					<h1 class="hero-word">Flow</h1>
 				</div>
 				<div class="hero-blurb">
@@ -174,37 +179,73 @@ key Cmajor {
 
 		<!-- WHY -->
 		<div class="h-rule"><h2>Why Flow</h2><span class="line"></span></div>
+		<p class="why-intro">
+			Flow turns musical ideas into code you can hear instantly. It reads like notation, chains
+			like a pipeline, and speaks every genre. Three principles guide the whole language — and
+			each one shows up directly in the syntax.
+		</p>
+
 		<div class="feat">
 			<div class="plate">
 				<div class="ic">✎</div>
 				<h3>Ergonomics first</h3>
 				<p>
-					Composer ergonomics override runtime efficiency and type strictness. Easy cases stay fast;
-					flexible cases stay flexible.
+					Composer ergonomics beat runtime efficiency and type strictness, every time. Common
+					patterns stay terse and the awkward cases stay possible — you write what you mean
+					musically, not what the machine needs to hear.
 				</p>
 			</div>
 			<div class="plate">
 				<div class="ic">◷</div>
 				<h3>Genre-agnostic</h3>
 				<p>
-					Classical, EDM, jazz, pop, metal — all in one language. Designed for every kind of music,
-					never tuned for one.
+					Classical, EDM, jazz, pop, metal — one language for all of them. Nothing in Flow is
+					tuned for a single style; chords, scales, grooves and synthesis are neutral building
+					blocks you assemble however the piece wants.
 				</p>
 			</div>
 			<div class="plate">
 				<div class="ic">♪</div>
 				<h3>Notation roots</h3>
 				<p>
-					Notes, chords, note streams and musical-context blocks are first-class. Write musical ideas
-					as code and hear them at once.
+					Notes, chords, note streams and musical-context blocks — tempo, key, time signature,
+					swing — are part of the syntax. A score-shaped idea stays score-shaped in code, then
+					renders straight to audio or MIDI.
 				</p>
 			</div>
 		</div>
 
+		<!-- concrete examples — one idea each, highlighted at prerender time -->
+		<div class="why-examples">
+			<div class="plate exf">
+				<h3>Note streams</h3>
+				<p>Melodies are first-class. Pitches, durations, rests and chords go inline between bars.</p>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				<pre class="code mini flow-code">{@html exStream}</pre>
+			</div>
+			<div class="plate exf">
+				<h3>Chords &amp; roman numerals</h3>
+				<p>Inside a key, write the harmony you hear — roman numerals resolve to real chords.</p>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				<pre class="code mini flow-code">{@html exChords}</pre>
+			</div>
+			<div class="plate exf">
+				<h3>The flow operator</h3>
+				<p>Chain transforms left-to-right with <code>-&gt;</code> — transpose, then reverse, then play.</p>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				<pre class="code mini flow-code">{@html exFlow}</pre>
+			</div>
+			<div class="plate exf">
+				<h3>Generative &amp; improv</h3>
+				<p>Hand a chord chart to <code>jam</code> and get a chord-aware solo back, in any style.</p>
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+				<pre class="code mini flow-code">{@html exGen}</pre>
+			</div>
+		</div>
+
 		<div class="footer">
-			Flow v1.4 · written in C# on .NET 10 · <a href="/docs">Docs</a> ·
-			<a href={REPO_URL} target="_blank" rel="noopener noreferrer">GitHub ⌃</a><br />
-			Press <kbd>Play</kbd> anywhere to hear real Web Audio tones.
+			<a href="/">Flow</a> · <a href="/docs">Docs</a> ·
+			<a href={REPO_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
 		</div>
 	</main>
 
@@ -299,6 +340,18 @@ key Cmajor {
 
 	.ios6-page :global(a) {
 		color: #235aa0;
+	}
+
+	/* The Aqua jelly buttons are <a> elements, so the generic .ios6-page anchor color above
+	   (which includes the descendant `a` selector) out-specifies the plain `.btn` rule and was
+	   tinting the primary button's label blue-on-blue. Name the button anchors explicitly so the
+	   label color + (no) underline win, per variant. */
+	.ios6-page :global(a.btn) {
+		color: #fff;
+		text-decoration: none;
+	}
+	.ios6-page :global(a.btn.gray) {
+		color: #3c3830;
 	}
 
 	/* ---- top bar — brushed aluminum ---- */
@@ -441,6 +494,7 @@ key Cmajor {
 		border: 1px solid var(--aqua-4);
 		border-radius: var(--r-btn);
 		color: #fff;
+		text-decoration: none;
 		text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
 		position: relative;
 		overflow: hidden;
@@ -477,12 +531,6 @@ key Cmajor {
 		border-color: #1d4a30;
 		background: linear-gradient(#6bbf8b, #2f8a55 48%, #247046 52%, #1d5d39);
 	}
-	.btn.amber {
-		border-color: #8a6a25;
-		background: linear-gradient(#f4d690, #e0b24f 48%, #cf9a35 52%, #b9842a);
-		color: #4a3a14;
-		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-	}
 	.btn.lg {
 		font-size: 16px;
 		padding: 13px 26px;
@@ -511,33 +559,6 @@ key Cmajor {
 			0 1px 0 rgba(255, 255, 255, 0.55),
 			0 6px 16px rgba(0, 0, 0, 0.22);
 		padding: 22px;
-	}
-
-	.screw {
-		position: absolute;
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background: radial-gradient(circle at 35% 30%, #fff, #b9b3a4 55%, #7d776a);
-		box-shadow:
-			inset 0 0 0 1px rgba(0, 0, 0, 0.25),
-			0 1px 0 rgba(255, 255, 255, 0.6);
-	}
-	.screw.tl {
-		top: 8px;
-		left: 8px;
-	}
-	.screw.tr {
-		top: 8px;
-		right: 8px;
-	}
-	.screw.bl {
-		bottom: 8px;
-		left: 8px;
-	}
-	.screw.br {
-		bottom: 8px;
-		right: 8px;
 	}
 
 	.well {
@@ -698,21 +719,17 @@ key Cmajor {
 		gap: 12px;
 		flex-wrap: wrap;
 	}
-	.tagline {
-		font-size: 13px;
-		font-weight: 700;
-		letter-spacing: 0.5px;
-		text-transform: uppercase;
-		color: #8a6a3a;
-		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-		margin: 0 0 2px;
-	}
-
 	.cards3 {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		/* minmax(0, 1fr) (not 1fr) so a long code line can't force its track wider than its share —
+		   the line scrolls inside its own .well instead of overflowing the hero card. */
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 16px;
 		margin-top: 26px;
+	}
+	.ex {
+		/* let the grid item shrink below its content's intrinsic (min-content) width */
+		min-width: 0;
 	}
 	.ex h3 {
 		margin: 0 0 4px;
@@ -750,7 +767,7 @@ key Cmajor {
 
 	.feat {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 16px;
 	}
 	.feat .plate {
@@ -786,6 +803,60 @@ key Cmajor {
 		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 	}
 
+	/* lead paragraph under the "Why Flow" rule */
+	.why-intro {
+		max-width: 70ch;
+		margin: 0 0 22px;
+		font-size: 15.5px;
+		line-height: 1.6;
+		color: #5c554b;
+		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+
+	/* concrete example cards (each = label + blurb + a small highlighted code well) */
+	.why-examples {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 16px;
+		margin-top: 16px;
+	}
+	.exf {
+		padding: 18px 20px;
+		/* shrink below content width so the mini code well scrolls instead of overflowing */
+		min-width: 0;
+	}
+	.exf h3 {
+		margin: 0 0 5px;
+		font-size: 15px;
+		font-weight: 800;
+		color: #36302a;
+		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+	}
+	.exf p {
+		margin: 0 0 12px;
+		font-size: 13px;
+		line-height: 1.5;
+		color: #6a6256;
+		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+	}
+	.exf :global(code) {
+		font-family: var(--font-mono);
+		font-size: 0.9em;
+		color: #7a5230;
+	}
+	/* small inset code well (inherits the well look, tighter padding) */
+	.code.mini {
+		font-size: 12.5px;
+		line-height: 1.6;
+		padding: 12px 14px;
+		background: var(--code-bg);
+		border: 1px solid #c9c0a8;
+		border-radius: 10px;
+		box-shadow:
+			inset 0 2px 5px rgba(0, 0, 0, 0.18),
+			inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+	}
+
 	.footer {
 		text-align: center;
 		color: #6b6458;
@@ -800,7 +871,8 @@ key Cmajor {
 
 	@media (max-width: 820px) {
 		.cards3,
-		.feat {
+		.feat,
+		.why-examples {
 			grid-template-columns: 1fr;
 		}
 		.hero-word {
@@ -845,8 +917,10 @@ key Cmajor {
 		border: 0;
 	}
 
-	/* <main> wrapping .layout — purely a landmark, no extra visual. */
-	main {
-		display: contents;
+	/* <main> IS the .layout container (the landmark + the centered, side-padded column). It must
+	   generate a box for .layout's max-width / margin:auto / padding to apply — `display: contents`
+	   removed the box entirely, which let every section bleed to the viewport edges. */
+	main.layout {
+		display: block;
 	}
 </style>

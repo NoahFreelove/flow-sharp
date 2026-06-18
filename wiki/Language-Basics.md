@@ -92,7 +92,7 @@ Int a = 1; Int b = 2; Int c = 3
 Flow supports implicit numeric widening:
 
 ```
-Int → Long → Float → Double → Number
+Int -> Long -> Float -> Double -> Number
 ```
 
 An `Int` can be used wherever a `Double` is expected. Integer literals that exceed `Int` range automatically fall through to `Long`, then `BigInteger` (`Number`) — no overflow error.

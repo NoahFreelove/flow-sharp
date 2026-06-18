@@ -36,7 +36,6 @@
 		{ label: 'Home', href: '/' },
 		{ label: 'Docs', href: '/docs' },
 		{ label: 'Playground', href: '/playground' },
-		{ label: 'Showcase', href: '/showcase' },
 		{ label: 'GitHub', href: 'https://github.com/noahfreelove/flow-sharp', external: true }
 	];
 </script>

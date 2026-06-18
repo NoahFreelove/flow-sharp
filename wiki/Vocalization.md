@@ -138,7 +138,7 @@ Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `sing` | `(String, Note, Double) -> Buffer` | Formant-synthesized vowel or syllable (tuning-aware) |
-| `tts` | `(String) -> Buffer` | External TTS → buffer (defaults to `espeak-ng --stdout`) |
+| `tts` | `(String) -> Buffer` | External TTS -> buffer (defaults to `espeak-ng --stdout`) |
 | `setTtsCommand` | `(String) -> Void` | Configure the TTS command template |
 
 ## See Also

@@ -19,8 +19,7 @@
 	const NAV = [
 		{ label: 'Home', href: '/' },
 		{ label: 'Docs', href: '/docs' },
-		{ label: 'Playground', href: '/playground' },
-		{ label: 'Showcase', href: '/showcase' }
+		{ label: 'Playground', href: '/playground' }
 	];
 
 	function isActive(href: string): boolean {

@@ -67,12 +67,6 @@ test.describe('axe a11y gate — 0 critical violations (REQ-SITE-A11Y-01..03)', 
 		await page.getByTestId('console').waitFor();
 		await expectNoCriticalAxe(page, 'Playground /playground');
 	});
-
-	test('Showcase (/showcase) has no critical/serious axe violations', async ({ page }) => {
-		await page.goto('/showcase');
-		await page.locator('main').waitFor();
-		await expectNoCriticalAxe(page, 'Showcase /showcase');
-	});
 });
 
 test.describe('keyboard + ARIA landmark contracts (UI-SPEC §Accessibility Contract)', () => {

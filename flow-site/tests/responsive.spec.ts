@@ -5,15 +5,15 @@ import { test, expect, type Page } from '@playwright/test';
 //
 // This spec runs under all three viewport projects (desktop 1280 / mobile 375 / mobile-narrow
 // 320). The mobile-specific assertions (single-column stack, Monaco read-only, Contents
-// disclosure, hamburger, single-column showcase) gate on width < 768; the no-horizontal-overflow
-// check runs on EVERY project (it must hold at 320, 375, AND 1280 — a desktop overflow is just
-// as broken). The 320px project is the hard ROADMAP AC-7 floor.
+// disclosure, hamburger) gate on width < 768; the no-horizontal-overflow check runs on EVERY
+// project (it must hold at 320, 375, AND 1280 — a desktop overflow is just as broken). The 320px
+// project is the hard ROADMAP AC-7 floor.
 //
 // The `/` route ships the iOS-6 skeuomorphic home with its own chrome (no shared layout header):
 //   - All widths: toolbar pill nav visible (scrolls horizontally ≤600px); no hamburger, no tabbar.
 // Non-home routes now render the SAME shared <SiteToolbar> — identical bar, no hamburger.
 
-const ROUTES = ['/', '/docs', '/docs/flow-operator', '/playground', '/showcase'];
+const ROUTES = ['/', '/docs', '/docs/flow-operator', '/playground'];
 
 /** No route may scroll horizontally: the document's scrollWidth must fit its clientWidth. */
 async function expectNoHorizontalOverflow(page: Page, route: string): Promise<void> {
@@ -101,25 +101,6 @@ test.describe('single-column collapse <768px (D-49-09)', () => {
 		if (width < 768) {
 			// On mobile the summary is an interactive disclosure control.
 			await expect(disclosure.locator('summary')).toBeVisible();
-		}
-	});
-
-	test('showcase cards are single-column <768px', async ({ page }, testInfo) => {
-		const width = testInfo.project.use.viewport?.width ?? 1280;
-		await page.goto('/showcase');
-		await page.locator('main').waitFor();
-		const cards = page.locator('.showcase__grid > li');
-		const count = await cards.count();
-		expect(count).toBeGreaterThan(1);
-		if (width < 768) {
-			// Single column → every card shares (approximately) the same left edge x.
-			const first = await cards.nth(0).boundingBox();
-			const second = await cards.nth(1).boundingBox();
-			expect(first, 'first card visible').not.toBeNull();
-			expect(second, 'second card visible').not.toBeNull();
-			// Same left edge (within 2px) AND stacked vertically (second is below the first).
-			expect(Math.abs(first!.x - second!.x)).toBeLessThanOrEqual(2);
-			expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height - 2);
 		}
 	});
 });

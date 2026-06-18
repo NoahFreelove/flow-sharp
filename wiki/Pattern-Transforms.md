@@ -73,7 +73,7 @@ Doubles the duration of each note (toward whole notes):
 ```flow
 timesig 4/4 {
     Sequence mel = | C4q D4q E4q F4q |
-    Sequence aug = (augment mel)        Note: each quarter → half
+    Sequence aug = (augment mel)        Note: each quarter -> half
 }
 ```
 
@@ -84,7 +84,7 @@ Halves the duration of each note (toward 32nd notes):
 ```flow
 timesig 4/4 {
     Sequence mel = | C4h D4h |
-    Sequence dim = (diminish mel)       Note: each half → quarter
+    Sequence dim = (diminish mel)       Note: each half -> quarter
 }
 ```
 
@@ -353,10 +353,10 @@ timesig 4/4 {
     key Cmajor {
         Sequence seq = | C4 D4 E4 F4 |
 
-        Note: ritardando (120 → 80)
+        Note: ritardando (120 -> 80)
         Buffer slowing   = (tempoRamp seq 120.0 80.0)
 
-        Note: accelerando (80 → 120)
+        Note: accelerando (80 -> 120)
         Buffer speeding  = (tempoRamp seq 80.0 120.0)
 
         Note: with instrument override

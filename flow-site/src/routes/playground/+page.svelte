@@ -11,7 +11,6 @@
 	import { onMount, onDestroy } from 'svelte';
 	import Button from '$lib/components/skeuo/Button.svelte';
 	import Panel from '$lib/components/skeuo/Panel.svelte';
-	import Toggle from '$lib/components/skeuo/Toggle.svelte';
 	import LedIndicator from '$lib/components/skeuo/LedIndicator.svelte';
 	import { PlaygroundState } from '$lib/playground/state.svelte';
 	import { ShareControls, captureOAuthToken } from '$lib/playground/share-controls.svelte';
@@ -404,10 +403,6 @@
 				{/if}
 			</div>
 		{/if}
-		<div class="pg-rail-theme">
-			<Toggle theme={true} label="Toggle dark mode" />
-		</div>
-
 		{#if confirmingBlank}
 			<div class="pg-confirm surface-paper" role="dialog" aria-label="Start a blank snippet?">
 				<p class="pg-confirm-title">Start a blank snippet?</p>
@@ -564,6 +559,13 @@
 		gap: var(--space-3);
 		min-width: 0;
 	}
+	/* Lift the rail content above the .surface-wood ::before grain texture (a positioned overlay
+	   painted on top of in-flow content with a multiply blend) so labels + blurbs read at full
+	   contrast instead of muddied into the wood. */
+	.pg-rail > * {
+		position: relative;
+		z-index: 1;
+	}
 	.pg-rail-title {
 		font-family: var(--font-display);
 		font-size: var(--text-h4, 18px);
@@ -586,11 +588,24 @@
 		gap: 2px;
 		padding: var(--space-2) var(--space-3);
 		min-height: 44px;
-		background: color-mix(in srgb, var(--color-walnut) 70%, black);
+		/* Light theme: espresso — clearly DARKER than the walnut wood rail so each snippet reads as
+		   a distinct card (was brown-on-brown). */
+		background: #2a1c10;
 		color: var(--color-on-chrome);
-		border: 1px solid color-mix(in srgb, var(--color-walnut) 40%, black);
+		border: 1px solid color-mix(in srgb, var(--color-on-chrome) 16%, transparent);
 		border-radius: var(--radius-2);
 		cursor: pointer;
+	}
+	.pg-snippet:hover {
+		background: #35240f;
+	}
+	/* Dark theme: the wood rail is near-black, so make the cards LIGHTER (milk chocolate) to pop. */
+	:global([data-theme='dark']) .pg-snippet {
+		background: #34261a;
+		border-color: color-mix(in srgb, var(--color-on-chrome) 22%, transparent);
+	}
+	:global([data-theme='dark']) .pg-snippet:hover {
+		background: #40301f;
 	}
 	.pg-snippet.is-active {
 		border-color: var(--color-brass);
@@ -606,7 +621,8 @@
 	}
 	.pg-snippet-blurb {
 		font-size: var(--text-caption, 12px);
-		color: var(--color-ink-muted);
+		/* Muted CREAM (not ink-muted, which is a dark brown that vanished on the dark cards). */
+		color: color-mix(in srgb, var(--color-on-chrome) 72%, transparent);
 	}
 	.pg-rail-controls {
 		display: flex;
