@@ -358,9 +358,9 @@ Int mainSec = (idiv mainFrames 44100)
 
 Note: --- 36. Buffer-level effect chain ---
 Note: compress(Buffer, threshold_dB, ratio) — negatives via (sub 0.0 N).
-(print "[36] effect chain  — reverb 0.18 -> lowpass 4500 -> compress -12dB 4:1")
+(print "[36] effect chain  — reverb 0.18 -> lowpass 4500Hz -> compress -12dB 4:1")
 Double compThresh = (sub 0.0 12.0)
-Buffer mainProc = mainBuf -> (reverb 0.18) -> (lowpass 4500.0) -> (compress compThresh 4.0)
+Buffer mainProc = mainBuf -> (reverb 0.18) -> (lowpass 4500Hz) -> (compress compThresh 4.0)
 
 Note: ============================================================
 Note: SYNTH GALLERY: render small sub-songs with each preset and
@@ -432,8 +432,8 @@ tempo 100 {
             Buffer chain7 = (appendBuffers chain6 ritBuf)
 
             Note: --- 45. fadeIn / fadeOut ---
-            (print "[45] fadeIn 1.5 / fadeOut 4.0  — smooth bookends")
-            Buffer faded = chain7 -> fadeIn 1.5 -> fadeOut 4.0
+            (print "[45] fadeIn 1.5s / fadeOut 4.0s  — smooth bookends")
+            Buffer faded = chain7 -> fadeIn 1.5s -> fadeOut 4.0s
 
             Int totalFrames = (getFrames faded)
             Int sampleRate  = 44100

@@ -28,7 +28,7 @@ use "@audio"
 Note: -----------------------------------------------------------
 Note: 1. Build a harmonic Buffer (2-second 440 Hz sine)
 Note: -----------------------------------------------------------
-Buffer base = (createSineTone 2.0 440Hz 0.4)
+Buffer base = (createSineTone 2.0s 440Hz 0.4)
 
 Note: -----------------------------------------------------------
 Note: 2. Stretch 2x in #vocoder mode — phase locking on the sine

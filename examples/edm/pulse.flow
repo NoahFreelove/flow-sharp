@@ -152,7 +152,7 @@ tempo 128 {
             // -------------------------------------------------------------
             Buffer rawMix = (renderSong song "saw")
             Buffer tight = rawMix -> (lowpass 8kHz)
-            Buffer pumped = (compress tight -12.0 4.0 5.0 120.0)
+            Buffer pumped = (compress tight -12dB 4.0 5ms 120ms)
             Buffer spaced = pumped -> (reverb 0.4 1.6s)
             Buffer slapped = spaced -> (delay 250ms 0.35 0.3)
 
@@ -163,7 +163,7 @@ tempo 128 {
             //    a cloud. The jitter PRNG routes through PrngRegistry and
             //    reseeds at the writeWav boundary → byte-identical.
             // -------------------------------------------------------------
-            Buffer swell = (createSineTone 2.0 220Hz 0.35)
+            Buffer swell = (createSineTone 2.0s 220Hz 0.35)
             Buffer riser = (granular swell 60ms 18Hz 0.4)
             Buffer riserWet = (reverb riser 0.6)
 

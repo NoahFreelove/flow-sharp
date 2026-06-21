@@ -396,8 +396,8 @@ Note: -----------------------------------------------------------
 (print "")
 
 Note: 'mix' combines two buffers into one -- sum the samples, output stereo.
-Buffer toneA = (createSineTone 0.5 440.0 0.4)    // A4 = 440 Hz
-Buffer toneB = (createSineTone 0.5 660.0 0.4)    // E5 = 660 Hz, a 5th up
+Buffer toneA = (createSineTone 440Hz 0.5 0.4)    // A4 = 440 Hz
+Buffer toneB = (createSineTone 660Hz 0.5 0.4)    // E5 = 660 Hz, a 5th up
 Buffer combined = (mix toneA toneB)              // Mix two buffers into one
 (print $"toneA frames:    {(str (getFrames toneA))}")
 (print $"toneB frames:    {(str (getFrames toneB))}")
@@ -844,7 +844,7 @@ tempo 120 {
             Note: The Hertz literal 440Hz IS demoed here via createSineTone -- the same
             Note: Hertz overload pattern applies to createSawTone / createSquareTone /
             Note: createTriangleTone (mechanically equivalent, not separately demoed).
-            Buffer src = (createSineTone 0.5 440Hz 0.3)              // 0.5s sine at 440Hz, amp=0.3
+            Buffer src = (createSineTone 0.5s 440Hz 0.3)             // 0.5s sine at 440Hz, amp=0.3
             (print $"createSineTone 0.5s @ 440Hz: {(str (getFrames src))} frames")
         }
     }
