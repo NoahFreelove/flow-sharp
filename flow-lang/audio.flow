@@ -53,6 +53,9 @@ Note: Varispeed: load a WAV and pitch-shift by semitones via linear-interpolatio
 Note: 12 semitones = octave up = ratio 2.0 = sample count halved; semitones=0 short-circuits.
 internal proc loadWav(String: filepath, Int: semitones)
 
+Note: sweep-260620 — Semitone-typed varispeed surface (SemitoneType backing is int)
+internal proc loadWav(String: filepath, Semitone: semitones)
+
 Note: Varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample.
 Note: ratio > 1.0 raises pitch (fewer frames); ratio == 1.0 short-circuits; ratio <= 0 errors.
 internal proc loadWav(String: filepath, Double: ratio)
@@ -111,8 +114,21 @@ proc createBufferStereo(Double: seconds)
     (createBuffer frames DEFAULT_CHANNELS DEFAULT_SAMPLE_RATE)
 end proc
 
+Note: sweep-260620 — Second-duration form (Second auto-coerces to the Double seconds slot)
+proc createBufferStereo(Second: seconds)
+    Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
+    (createBuffer frames DEFAULT_CHANNELS DEFAULT_SAMPLE_RATE)
+end proc
+
 Note: Create mono buffer with default sample rate
 proc createBufferMono(Double: seconds)
+    Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
+    Int mono = 1
+    (createBuffer frames mono DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createBufferMono(Second: seconds)
     Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
     Int mono = 1
     (createBuffer frames mono DEFAULT_SAMPLE_RATE)
@@ -125,8 +141,22 @@ proc createBufferStereoCustom(Double: seconds, Int: sampleRate)
     (createBuffer frames stereo sampleRate)
 end proc
 
+Note: sweep-260620 — Second-duration form
+proc createBufferStereoCustom(Second: seconds, Int: sampleRate)
+    Int frames = (secondsToFrames seconds sampleRate)
+    Int stereo = 2
+    (createBuffer frames stereo sampleRate)
+end proc
+
 Note: Create mono buffer with custom sample rate
 proc createBufferMonoCustom(Double: seconds, Int: sampleRate)
+    Int frames = (secondsToFrames seconds sampleRate)
+    Int mono = 1
+    (createBuffer frames mono sampleRate)
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createBufferMonoCustom(Second: seconds, Int: sampleRate)
     Int frames = (secondsToFrames seconds sampleRate)
     Int mono = 1
     (createBuffer frames mono sampleRate)
@@ -142,8 +172,24 @@ proc createSilence(Double: seconds)
     b
 end proc
 
+Note: sweep-260620 — Second-duration form
+proc createSilence(Second: seconds)
+    Buffer b = (createBufferStereo seconds)
+    Double zero = (intToDouble 0)
+    (fillBuffer b zero)
+    b
+end proc
+
 Note: Create silent mono buffer
 proc createSilenceMono(Double: seconds)
+    Buffer b = (createBufferMono seconds)
+    Double zero = (intToDouble 0)
+    (fillBuffer b zero)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createSilenceMono(Second: seconds)
     Buffer b = (createBufferMono seconds)
     Double zero = (intToDouble 0)
     (fillBuffer b zero)
@@ -216,6 +262,8 @@ Note: ===== Oscillator State Management =====
 
 Note: Creates a new oscillator state with specified frequency and sample rate
 internal proc createOscillatorState(Double: freq, Int: sampleRate)
+Note: sweep-260620 — Hertz-frequency surface (HertzType backing is double)
+internal proc createOscillatorState(Hertz: freq, Int: sampleRate)
 internal proc resetPhase(OscillatorState: state)
 
 Note: ===== Musical Note utilities =====
@@ -278,18 +326,25 @@ internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSi
 internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
 
 internal proc createClip(Double: duration, Double: amp)
+Note: sweep-260620 — Second-duration surface (SecondType backing is double)
+internal proc createClip(Second: duration, Double: amp)
 
 Note: White noise -- 1s mono buffer at 44100 Hz, amplitude 1.0
 internal proc noise(Double: seconds)
+Note: sweep-260620 — Second-duration surfaces for all 4 noise arities
+internal proc noise(Second: seconds)
 
 Note: White noise -- mono 44100 Hz, custom amplitude
 internal proc noise(Double: seconds, Double: amplitude)
+internal proc noise(Second: seconds, Double: amplitude)
 
 Note: White noise -- 44100 Hz, custom amplitude and channels
 internal proc noise(Double: seconds, Double: amplitude, Int: channels)
+internal proc noise(Second: seconds, Double: amplitude, Int: channels)
 
 Note: White noise -- fully parameterized
 internal proc noise(Double: seconds, Double: amplitude, Int: channels, Int: sampleRate)
+internal proc noise(Second: seconds, Double: amplitude, Int: channels, Int: sampleRate)
 
 Note: ===== Basic Generators =====
 
@@ -321,14 +376,20 @@ internal proc scaleBuffer(Buffer: buffer, Double: gain)
 
 Note: Applies a linear fade-in from silence over the specified duration (seconds)
 internal proc fadeIn(Buffer: buffer, Double: duration)
+Note: sweep-260620 — Second-duration surface
+internal proc fadeIn(Buffer: buffer, Second: duration)
 
 Note: Applies a linear fade-out to silence over the specified duration (seconds) at the end
 internal proc fadeOut(Buffer: buffer, Double: duration)
+Note: sweep-260620 — Second-duration surface
+internal proc fadeOut(Buffer: buffer, Second: duration)
 
 Note: ===== Envelope Creation and Application =====
 
 Note: Creates an AR (Attack-Release) envelope
 internal proc createAR(Double: attackSec, Double: releaseSec, Int: sampleRate)
+Note: sweep-260620 — Second-typed attack/release surface
+internal proc createAR(Second: attackSec, Second: releaseSec, Int: sampleRate)
 
 Note: Creates an ADSR (Attack-Decay-Sustain-Release) envelope
 internal proc createADSR(Double: attack, Double: decay, Double: sustain, Double: release, Int: sr)
@@ -343,10 +404,29 @@ proc createOsc(Double: frequency)
     (createOscillatorState frequency DEFAULT_SAMPLE_RATE)
 end proc
 
+Note: sweep-260620 — Hertz-frequency form (Hertz auto-coerces to the Double freq slot)
+proc createOsc(Hertz: frequency)
+    (createOscillatorState frequency DEFAULT_SAMPLE_RATE)
+end proc
+
 Note: Create sine tone with specified duration, frequency, and amplitude
 proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSine b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration form (Second auto-coerces to the duration slot)
+proc createSineTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form ((createSineTone 1.0s 440Hz 0.5))
+proc createSineTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc freqHz) amplitude)
     b
 end proc
 
@@ -381,6 +461,20 @@ proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
+Note: sweep-260620 — Second-duration form
+proc createSawTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form
+proc createSawTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc freqHz) amplitude)
+    b
+end proc
+
 Note: createSawTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompatibleWith(Double) + Value.ConvertTo Double-arm.
 proc createSawTone(Double: duration, Hertz: freqHz, Double: amplitude)
@@ -407,6 +501,20 @@ proc createSquareTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
+Note: sweep-260620 — Second-duration form
+proc createSquareTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form
+proc createSquareTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc freqHz) amplitude)
+    b
+end proc
+
 Note: createSquareTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 proc createSquareTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -429,6 +537,20 @@ Note: Create triangle tone
 proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateTriangle b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createTriangleTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form
+proc createTriangleTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc freqHz) amplitude)
     b
 end proc
 
@@ -541,8 +663,14 @@ internal proc delay(Buffer: buffer, Beat: beats, Double: feedback, Double: mix)
 Note: compress(Buffer, Decibel threshold, ratio, Millisecond attack, Millisecond release) — full music-typed
 internal proc compress(Buffer: buffer, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
 
+Note: sweep-260620 — simple Decibel compress(Buffer, Decibel, Double)
+internal proc compress(Buffer: buffer, Decibel: thresholdDb, Double: ratio)
+
 Note: sidechain(Buffer source, Buffer trigger, Decibel threshold, ratio, Millisecond attack, Millisecond release)
 internal proc sidechain(Buffer: source, Buffer: trigger, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
+
+Note: sweep-260620 — simple Decibel sidechain(Buffer, Buffer, Decibel, Double)
+internal proc sidechain(Buffer: source, Buffer: trigger, Decibel: thresholdDb, Double: ratio)
 
 Note: reverb(Buffer, Double mix, Second decay) — decay time as Second (typical 0.3s-3.0s)
 internal proc reverb(Buffer: buffer, Double: roomSize, Second: decaySec)
