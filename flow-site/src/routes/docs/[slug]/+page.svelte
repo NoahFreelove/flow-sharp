@@ -236,6 +236,79 @@
 		outline-offset: var(--focus-ring-offset);
 	}
 
+	/* Prose typography — Tailwind v4 Preflight (app.css `@import 'tailwindcss'`) zeroes list/para
+	   margins and strips list markers globally, so every wiki page rendered through mdsvex needs the
+	   block-level rhythm restored here. All colors resolve through theme-swappable custom props so
+	   these rules re-resolve under [data-theme='dark'] with no separate dark block. Links are
+	   intentionally NOT styled — the global `a` rule in app.css owns prose-link color (UI-SPEC §Color). */
+	.docs-prose :global(p) {
+		margin: 0 0 var(--space-4);
+	}
+	.docs-prose :global(ul) {
+		list-style: disc;
+		padding-left: var(--space-6);
+		margin: var(--space-4) 0;
+	}
+	.docs-prose :global(ol) {
+		list-style: decimal;
+		padding-left: var(--space-6);
+		margin: var(--space-4) 0;
+	}
+	.docs-prose :global(li) {
+		margin-bottom: var(--space-2);
+		line-height: 1.6;
+	}
+	/* Loose-list markdown wraps each item's text in a <p>; collapse its margins so loose lists
+	   don't double-space. */
+	.docs-prose :global(li > p) {
+		margin: 0 0 var(--space-2);
+	}
+	/* Nested lists tighten so nesting doesn't inherit the top-level list's full vertical margin. */
+	.docs-prose :global(li > ul),
+	.docs-prose :global(li > ol) {
+		margin: var(--space-2) 0;
+	}
+	.docs-prose :global(blockquote) {
+		border-left: 3px solid color-mix(in srgb, var(--color-walnut) 40%, var(--color-brass));
+		padding-left: var(--space-4);
+		color: var(--color-ink-muted);
+		margin: var(--space-4) 0;
+	}
+	.docs-prose :global(table) {
+		border-collapse: collapse;
+		width: 100%;
+		margin: var(--space-4) 0;
+		font-size: var(--text-small);
+	}
+	.docs-prose :global(th),
+	.docs-prose :global(td) {
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid color-mix(in srgb, var(--color-walnut) 22%, transparent);
+	}
+	.docs-prose :global(th) {
+		font-weight: 700;
+		text-align: left;
+	}
+	.docs-prose :global(hr) {
+		border: 0;
+		border-top: 1px solid color-mix(in srgb, var(--color-walnut) 22%, transparent);
+		margin: var(--space-6) 0;
+	}
+	.docs-prose :global(strong) {
+		font-weight: 700;
+	}
+	.docs-prose :global(em) {
+		font-style: italic;
+	}
+	/* De-edge the prose container so the first/last block doesn't add stray vertical space against
+	   the .surface-paper padding (h1 already zeroes its top margin; this generalizes it). */
+	.docs-prose > :global(*:first-child) {
+		margin-top: 0;
+	}
+	.docs-prose > :global(*:last-child) {
+		margin-bottom: 0;
+	}
+
 	/* Mobile: sidebar becomes a "Contents" disclosure above a full-width body (UI-SPEC). */
 	@media (max-width: 767px) {
 		.docs-shell {
