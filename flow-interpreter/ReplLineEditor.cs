@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FlowLang.Diagnostics;
 using FlowLang.Lexing;
 using FlowLang.StandardLibrary;
+using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
 using FlowLsp;
 using FlowLsp.Symbols;
@@ -626,9 +627,21 @@ public static class ReplInputCompleteness
         int procDepth = 0;
         int parenDepth = 0;
         int bracketDepth = 0;
-        int pipeCount = 0;
-        foreach (var token in tokens)
+        // Note-stream state. The earlier sweep-0614 `pipeCount % 2 == 0` parity check
+        // was WRONG: the lexer emits one TokenType.Pipe per `|` INCLUDING bar
+        // separators, so a single-line N-bar stream `| bar1 | ... | barN |` carries
+        // N+1 pipes. A 4-bar stream is 5 pipes = odd = wrongly judged "incomplete" →
+        // the REPL froze forever in continuation mode. (It also false-positived the
+        // other way: `| C4 | D4` is 2 pipes = even = wrongly "complete".) This scan
+        // mirrors Parser.NoteStream.IsEndOfNoteStream(): a pipe seen while not in a
+        // stream OPENS it; a pipe seen while in a stream is the CLOSING pipe unless
+        // the next token can continue a note stream (then it is a bar separator). A
+        // still-open stream at end of buffer means the composer is mid-stream →
+        // request continuation.
+        bool inStream = false;
+        for (int i = 0; i < tokens.Count; i++)
         {
+            var token = tokens[i];
             if (token.Type == TokenType.LBrace) blockDepth++;
             else if (token.Type == TokenType.RBrace) blockDepth--;
             else if (token.Type == TokenType.Proc) procDepth++;
@@ -637,23 +650,72 @@ public static class ReplInputCompleteness
             else if (token.Type == TokenType.RParen) parenDepth--;
             else if (token.Type == TokenType.LBracket) bracketDepth++;
             else if (token.Type == TokenType.RBracket) bracketDepth--;
-            // sweep-0614 (cli-repl-watch): note-stream delimiter. '|' is exclusively
-            // a balanced delimiter in Flow — a note stream opens and closes with the
-            // same '|' (`| C4 D4 |`, `pickup | ... |`, `progression | ... |`); there
-            // is no infix bitwise-or (arithmetic is prefix-only). So an odd pipe count
-            // means an unterminated note stream → the input is incomplete and the
-            // composer is mid-stream across lines. Without this, the parser charitably
-            // auto-closed the truncated bar (Parser.NoteStream.cs) and silently
-            // orphaned the intended continuation as a separate broken statement.
-            else if (token.Type == TokenType.Pipe) pipeCount++;
+            else if (token.Type == TokenType.Pipe)
+            {
+                if (!inStream)
+                {
+                    // Opening pipe.
+                    inStream = true;
+                }
+                else if (i + 1 < tokens.Count)
+                {
+                    // Inside a stream with a following token: bar separator if the
+                    // next token continues the stream, otherwise the closing pipe.
+                    if (!ContinuesNoteStream(tokens[i + 1]))
+                        inStream = false;
+                }
+                // else: pipe is the very last token — ambiguous mid-typing, leave
+                // inStream = true so the REPL requests continuation.
+            }
         }
 
         // Phase 38 Plan 38-04 — multi-line continuation honours brace AND proc AND
         // paren AND bracket nesting (S-expression call form `(add 1` and chord/song
         // bracket literals like `[intro verse` are common composer continuation
-        // points). sweep-0614 adds the note-stream pipe balance (odd = incomplete).
+        // points). A still-open note stream (inStream) also requests continuation.
         return blockDepth <= 0 && procDepth <= 0 && parenDepth <= 0
-               && bracketDepth <= 0 && (pipeCount % 2 == 0);
+               && bracketDepth <= 0 && !inStream;
+    }
+
+    /// <summary>
+    /// Returns true when <paramref name="next"/> — the token immediately AFTER a pipe
+    /// inside a note stream — can continue that stream (so the pipe is a bar
+    /// separator, not the closing pipe). Mirrors the INVERSE of
+    /// Parser.NoteStream.IsEndOfNoteStream() (Parser.NoteStream.cs:556): a token that
+    /// would NOT end the stream means the stream continues. TryParseDynamicMarking is
+    /// parser-private and intentionally omitted — the duration-letter set (c) and the
+    /// lowercase-identifier rule (d) already cover the common dynamic-marked
+    /// (`p`/`mp`/`mf`/`f`/`ff`) and single-letter overlaps without a parser-private
+    /// dependency.
+    /// </summary>
+    private static bool ContinuesNoteStream(Token next)
+    {
+        var type = next.Type;
+        if (type is TokenType.NoteLiteral or TokenType.Underscore
+            or TokenType.LBracket or TokenType.Pipe or TokenType.ChordLiteral
+            or TokenType.LParen or TokenType.GreaterThan or TokenType.LBrace)
+            return true;
+
+        if (type == TokenType.Identifier)
+        {
+            var text = next.Text;
+            // (a) roman numeral inside the stream (`| I IV V |`).
+            if (ScaleDatabase.IsRomanNumeral(text))
+                return true;
+            // (b) articulation mark.
+            if (text is "stacc" or "ten" or "marc" or "leg" or "cresc" or "decresc")
+                return true;
+            // (c) duration letter.
+            if (text is "w" or "h" or "q" or "e" or "s" or "t")
+                return true;
+            // (d) lowercase-initial identifier (variable ref) that is NOT one of the
+            // duration letters already covered by (c).
+            if (text.Length > 0 && char.IsLower(text[0])
+                && text is not ("w" or "h" or "q" or "e" or "s" or "t"))
+                return true;
+        }
+
+        return false;
     }
 }
 
