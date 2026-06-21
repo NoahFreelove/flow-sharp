@@ -809,6 +809,14 @@ public static class BuiltInFunctions
             ParameterNames: ["path", "semitones"]);
         registry.Register("loadWav", loadWavSemiSig, Audio.FileIO.LoadWavSemitones);
 
+        // sweep-260620 soft-overload: loadWav(String, Semitone) — SemitoneType backing IS int
+        // (whole-numbers-by-design), so the existing LoadWavSemitones lambda reads args[1].As<int>()
+        // directly, exactly as the loadWav(String, Int) path does.
+        var loadWavSemitoneSig = new FunctionSignature("loadWav",
+            [StringType.Instance, SemitoneType.Instance],
+            ParameterNames: ["path", "semitones"]);
+        registry.Register("loadWav", loadWavSemitoneSig, Audio.FileIO.LoadWavSemitones);
+
         // DX-15: loadWav(String, Double) -> Buffer — varispeed by ratio (Phase 22 plan 22-02)
         var loadWavRatioSig = new FunctionSignature("loadWav",
             [StringType.Instance, DoubleType.Instance],
@@ -827,6 +835,14 @@ public static class BuiltInFunctions
             [DoubleType.Instance, IntType.Instance],
             ParameterNames: ["frequency", "sampleRate"]);
         registry.Register("createOscillatorState", createOscillatorStateSignature, Audio.SignalGeneration.CreateOscillatorState);
+
+        // sweep-260620 soft-overload: createOscillatorState(Hertz, Int) — Hertz CLR backing IS
+        // double, so the existing CreateOscillatorState lambda reads args[0].As<double>() directly.
+        var createOscillatorStateHzSig = new FunctionSignature(
+            "createOscillatorState",
+            [HertzType.Instance, IntType.Instance],
+            ParameterNames: ["frequency", "sampleRate"]);
+        registry.Register("createOscillatorState", createOscillatorStateHzSig, Audio.SignalGeneration.CreateOscillatorState);
 
         var createSineToneSig = new FunctionSignature("createSineTone", [DoubleType.Instance, DoubleType.Instance, DoubleType.Instance],
             ParameterNames: ["duration", "frequency", "amplitude"]);
@@ -853,9 +869,28 @@ public static class BuiltInFunctions
         registry.Register("createSineTone", createSineToneHzFirstSig,
             args => Audio.SignalGeneration.CreateSineTone([args[1], args[0], args[2]]));
 
+        // sweep-260620 soft-overload: duration-first Second-typed forms. Second's CLR backing
+        // IS double and the duration sits in slot 0 (the positional shape CreateSineTone reads),
+        // so both reuse the same lambda with no reorder.
+        var createSineToneSecSig = new FunctionSignature("createSineTone",
+            [SecondType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["duration", "frequency", "amplitude"]);
+        registry.Register("createSineTone", createSineToneSecSig, Audio.SignalGeneration.CreateSineTone);
+
+        var createSineToneSecHzSig = new FunctionSignature("createSineTone",
+            [SecondType.Instance, HertzType.Instance, DoubleType.Instance],
+            ParameterNames: ["duration", "frequency", "amplitude"]);
+        registry.Register("createSineTone", createSineToneSecHzSig, Audio.SignalGeneration.CreateSineTone);
+
         var createClipSig = new FunctionSignature("createClip", [DoubleType.Instance, DoubleType.Instance],
             ParameterNames: ["duration", "amplitude"]);
         registry.Register("createClip", createClipSig, Audio.SignalGeneration.CreateClip);
+
+        // sweep-260620 soft-overload: createClip(Second, Double) — Second backing IS double,
+        // reuses the same CreateClip lambda (duration in slot 0).
+        var createClipSecSig = new FunctionSignature("createClip", [SecondType.Instance, DoubleType.Instance],
+            ParameterNames: ["duration", "amplitude"]);
+        registry.Register("createClip", createClipSecSig, Audio.SignalGeneration.CreateClip);
 
         // White noise -- wraps SynthUtils.GenerateWhiteNoise. Four arities; resolver disambiguates by arg count.
         var noise1Sig = new FunctionSignature("noise", [DoubleType.Instance],
@@ -873,6 +908,24 @@ public static class BuiltInFunctions
         var noise4Sig = new FunctionSignature("noise", [DoubleType.Instance, DoubleType.Instance, IntType.Instance, IntType.Instance],
             ParameterNames: ["seconds", "amplitude", "channels", "sampleRate"]);
         registry.Register("noise", noise4Sig, Audio.SignalGeneration.Noise);
+
+        // sweep-260620 soft-overload: Second-in-seconds-slot variants for all 4 noise arities.
+        // Second backing IS double → each reuses the matching Noise lambda directly.
+        var noise1SecSig = new FunctionSignature("noise", [SecondType.Instance],
+            ParameterNames: ["seconds"]);
+        registry.Register("noise", noise1SecSig, Audio.SignalGeneration.Noise1);
+
+        var noise2SecSig = new FunctionSignature("noise", [SecondType.Instance, DoubleType.Instance],
+            ParameterNames: ["seconds", "amplitude"]);
+        registry.Register("noise", noise2SecSig, Audio.SignalGeneration.Noise2);
+
+        var noise3SecSig = new FunctionSignature("noise", [SecondType.Instance, DoubleType.Instance, IntType.Instance],
+            ParameterNames: ["seconds", "amplitude", "channels"]);
+        registry.Register("noise", noise3SecSig, Audio.SignalGeneration.Noise3);
+
+        var noise4SecSig = new FunctionSignature("noise", [SecondType.Instance, DoubleType.Instance, IntType.Instance, IntType.Instance],
+            ParameterNames: ["seconds", "amplitude", "channels", "sampleRate"]);
+        registry.Register("noise", noise4SecSig, Audio.SignalGeneration.Noise);
 
         var resetPhaseSignature = new FunctionSignature(
             "resetPhase",
@@ -936,11 +989,25 @@ public static class BuiltInFunctions
             ParameterNames: ["buf", "duration"]);
         registry.Register("fadeIn", fadeInSignature, Audio.BufferHelpers.FadeIn);
 
+        // sweep-260620 soft-overload: fadeIn(Buffer, Second) — Second backing IS double, reuses FadeIn.
+        var fadeInSecSignature = new FunctionSignature(
+            "fadeIn",
+            [BufferType.Instance, SecondType.Instance],
+            ParameterNames: ["buf", "duration"]);
+        registry.Register("fadeIn", fadeInSecSignature, Audio.BufferHelpers.FadeIn);
+
         var fadeOutSignature = new FunctionSignature(
             "fadeOut",
             [BufferType.Instance, DoubleType.Instance],
             ParameterNames: ["buf", "duration"]);
         registry.Register("fadeOut", fadeOutSignature, Audio.BufferHelpers.FadeOut);
+
+        // sweep-260620 soft-overload: fadeOut(Buffer, Second) — Second backing IS double, reuses FadeOut.
+        var fadeOutSecSignature = new FunctionSignature(
+            "fadeOut",
+            [BufferType.Instance, SecondType.Instance],
+            ParameterNames: ["buf", "duration"]);
+        registry.Register("fadeOut", fadeOutSecSignature, Audio.BufferHelpers.FadeOut);
 
         // ===== Envelope Operations =====
 
@@ -949,6 +1016,14 @@ public static class BuiltInFunctions
             [DoubleType.Instance, DoubleType.Instance, IntType.Instance],
             ParameterNames: ["attack", "release", "sampleRate"]);
         registry.Register("createAR", createARSignature, Audio.EnvelopeProcessor.CreateAR);
+
+        // sweep-260620 soft-overload: createAR(Second, Second, Int) — both attack/release are
+        // time slots; Second backing IS double, so the existing CreateAR lambda reads them directly.
+        var createARSecSignature = new FunctionSignature(
+            "createAR",
+            [SecondType.Instance, SecondType.Instance, IntType.Instance],
+            ParameterNames: ["attack", "release", "sampleRate"]);
+        registry.Register("createAR", createARSecSignature, Audio.EnvelopeProcessor.CreateAR);
 
         var createADSRSignature = new FunctionSignature(
             "createADSR",
@@ -980,6 +1055,15 @@ public static class BuiltInFunctions
             ParameterNames: ["beats", "sampleRate"]);
         registry.Register("beatsToFrames", beatsToFramesSignature, Audio.Timeline.BeatsToFrames);
 
+        // sweep-260620 soft-overload: beatsToFrames(Beat, Int). CRITICAL — reads the RAW
+        // As<double>() beat count with NO beat-true-to-sig 4/denom multiplier (storage is
+        // already quarter-relative). Reuses the existing BeatsToFrames lambda directly.
+        var beatsToFramesBeatSignature = new FunctionSignature(
+            "beatsToFrames",
+            [BeatType.Instance, IntType.Instance],
+            ParameterNames: ["beats", "sampleRate"]);
+        registry.Register("beatsToFrames", beatsToFramesBeatSignature, Audio.Timeline.BeatsToFrames);
+
         var framesToBeatsSignature = new FunctionSignature(
             "framesToBeats",
             [IntType.Instance, IntType.Instance],
@@ -991,6 +1075,15 @@ public static class BuiltInFunctions
             [BufferType.Instance, DoubleType.Instance],
             ParameterNames: ["buf", "offset"]);
         registry.Register("createVoice", createVoiceSignature, Audio.Timeline.CreateVoice);
+
+        // sweep-260620 soft-overload: createVoice(Buffer, Beat). CRITICAL — reads the RAW
+        // As<double>() beat offset with NO timesig multiplier (quarter-relative storage).
+        // Reuses the existing CreateVoice lambda directly.
+        var createVoiceBeatSignature = new FunctionSignature(
+            "createVoice",
+            [BufferType.Instance, BeatType.Instance],
+            ParameterNames: ["buf", "offset"]);
+        registry.Register("createVoice", createVoiceBeatSignature, Audio.Timeline.CreateVoice);
 
         var setVoiceGainSignature = new FunctionSignature(
             "setVoiceGain",
@@ -1010,6 +1103,14 @@ public static class BuiltInFunctions
             ParameterNames: ["voice", "offset"]);
         registry.Register("setVoiceOffset", setVoiceOffsetSignature, Audio.Timeline.SetVoiceOffset);
 
+        // sweep-260620 soft-overload: setVoiceOffset(Voice, Beat). CRITICAL — RAW As<double>()
+        // beat offset, NO timesig multiplier. Reuses the existing SetVoiceOffset lambda directly.
+        var setVoiceOffsetBeatSignature = new FunctionSignature(
+            "setVoiceOffset",
+            [VoiceType.Instance, BeatType.Instance],
+            ParameterNames: ["voice", "offset"]);
+        registry.Register("setVoiceOffset", setVoiceOffsetBeatSignature, Audio.Timeline.SetVoiceOffset);
+
         var createTrackSignature = new FunctionSignature(
             "createTrack",
             [IntType.Instance, IntType.Instance],
@@ -1028,6 +1129,14 @@ public static class BuiltInFunctions
             ParameterNames: ["track", "offset"]);
         registry.Register("setTrackOffset", setTrackOffsetSignature, Audio.Timeline.SetTrackOffset);
 
+        // sweep-260620 soft-overload: setTrackOffset(Track, Beat). CRITICAL — RAW As<double>()
+        // beat offset, NO timesig multiplier. Reuses the existing SetTrackOffset lambda directly.
+        var setTrackOffsetBeatSignature = new FunctionSignature(
+            "setTrackOffset",
+            [TrackType.Instance, BeatType.Instance],
+            ParameterNames: ["track", "offset"]);
+        registry.Register("setTrackOffset", setTrackOffsetBeatSignature, Audio.Timeline.SetTrackOffset);
+
         var setTrackGainSignature = new FunctionSignature(
             "setTrackGain",
             [TrackType.Instance, DoubleType.Instance],
@@ -1045,6 +1154,14 @@ public static class BuiltInFunctions
             [TrackType.Instance, DoubleType.Instance],
             ParameterNames: ["track", "duration"]);
         registry.Register("renderTrack", renderTrackSignature, Audio.Timeline.RenderTrack);
+
+        // sweep-260620 soft-overload: renderTrack(Track, Beat). CRITICAL — RAW As<double>()
+        // duration-in-beats, NO timesig multiplier. Reuses the existing RenderTrack lambda directly.
+        var renderTrackBeatSignature = new FunctionSignature(
+            "renderTrack",
+            [TrackType.Instance, BeatType.Instance],
+            ParameterNames: ["track", "duration"]);
+        registry.Register("renderTrack", renderTrackBeatSignature, Audio.Timeline.RenderTrack);
 
         // ===== Voice Allocation =====
 

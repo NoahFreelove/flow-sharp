@@ -276,6 +276,8 @@ internal proc up (Sequence: seq, Int: octaves)
 internal proc down (Sequence: seq, Int: octaves)
 internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
+Note: sweep-260620 soft-overload — cent-precision repeat transpose (folds remainder into CentOffset)
+internal proc repeat (Sequence: seq, Int: times, Cent: interval)
 internal proc concat (Sequence: a, Sequence: b)
 
 Note: Quantize — snaps note onsets to a grid at the requested resolution.
@@ -331,6 +333,8 @@ internal proc humanizeGaussian (Sequence: seq, Double: amount, Int: seed)
 
 Note: Ornament transforms
 internal proc trill (Sequence: seq, Semitone: interval)
+Note: sweep-260620 soft-overload — cent-precision trill (folds remainder into CentOffset)
+internal proc trill (Sequence: seq, Cent: interval)
 internal proc tremolo (Sequence: seq, Int: repetitions)
 
 Note: Visualization

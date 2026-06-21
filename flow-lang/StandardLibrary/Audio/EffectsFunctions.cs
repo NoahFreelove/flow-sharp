@@ -223,6 +223,15 @@ public static class EffectsFunctions
              MillisecondType.Instance, MillisecondType.Instance],
             ParameterNames: ["buf", "threshold", "ratio", "attack", "release"]);
         registry.Register("compress", compressMusicTypedSig, CompressFull);
+
+        // sweep-260620 soft-overload: simple Decibel compress(Buffer, Decibel, Double)
+        // (CORRECTNESS — only the full 5-arg form was dB-typed; the simple 3-arg form
+        // forced a raw Double threshold). Decibel's CLR backing IS double, so the existing
+        // CompressSimple lambda reads args[1].As<double>() directly.
+        var compressSimpleDbSig = new FunctionSignature("compress",
+            [BufferType.Instance, DecibelType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "threshold", "ratio"]);
+        registry.Register("compress", compressSimpleDbSig, CompressSimple);
     }
 
     /// <summary>
@@ -499,6 +508,14 @@ public static class EffectsFunctions
              MillisecondType.Instance, MillisecondType.Instance],
             ParameterNames: ["buf", "sidechain", "threshold", "ratio", "attack", "release"]);
         registry.Register("sidechain", sidechainMusicTypedSig, SidechainFull);
+
+        // sweep-260620 soft-overload: simple Decibel sidechain(Buffer, Buffer, Decibel, Double)
+        // (CORRECTNESS — only the full 6-arg form was dB-typed). Decibel's CLR backing IS double,
+        // so the existing SidechainSimple lambda reads args[2].As<double>() directly.
+        var sidechainSimpleDbSig = new FunctionSignature("sidechain",
+            [BufferType.Instance, BufferType.Instance, DecibelType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "sidechain", "threshold", "ratio"]);
+        registry.Register("sidechain", sidechainSimpleDbSig, SidechainSimple);
     }
 
     /// <summary>

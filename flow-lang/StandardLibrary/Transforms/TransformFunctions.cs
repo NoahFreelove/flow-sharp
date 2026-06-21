@@ -1144,6 +1144,13 @@ public static class TransformFunctions
             [SequenceType.Instance, IntType.Instance, SemitoneType.Instance],
             ParameterNames: ["seq", "times", "transposeBy"]);
         registry.Register("repeat", repeatTransposeSig, RepeatTranspose);
+
+        // sweep-260620 soft-overload: Cent slot routes to RepeatTransposeCent with remainder
+        // folding (CORRECTNESS — the Semitone slot previously threw for `(repeat seq 3 +50c)`).
+        var repeatTransposeCentSig = new FunctionSignature("repeat",
+            [SequenceType.Instance, IntType.Instance, CentType.Instance],
+            ParameterNames: ["seq", "times", "transposeBy"]);
+        registry.Register("repeat", repeatTransposeCentSig, RepeatTransposeCent);
     }
 
     private static Value Repeat(IReadOnlyList<Value> args)
@@ -1182,6 +1189,43 @@ public static class TransformFunctions
                 midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
                 var (name, oct, alt) = FromMidi(midi);
                 return note.With(noteName: name, octave: oct, alteration: alt);
+            };
+            foreach (var bar in seq.Bars)
+            {
+                result.AddBar(TransformBar(bar, shift));
+            }
+        }
+        return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// sweep-260620 soft-overload: cent-precision repeat-transpose. Per iteration the cumulative
+    /// amount is i*cents; each iteration's cumulative cents splits into a whole-semitone pitch
+    /// shift + a remainder folded into CentOffset (models RepeatTranspose + the TransposeBy fold).
+    /// </summary>
+    private static Value RepeatTransposeCent(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        int times = args[1].As<int>();
+        double cents = args[2].As<double>();
+
+        var result = new SequenceData();
+        for (int i = 0; i < times; i++)
+        {
+            double cumulativeCents = i * cents;
+            int cumulativeSemitones = (int)Math.Truncate(cumulativeCents / 100.0);
+            double centsRemainder = cumulativeCents - cumulativeSemitones * 100.0;
+
+            Func<MusicalNoteData, MusicalNoteData> shift = note =>
+            {
+                if (note.IsRest) return note;
+                int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + cumulativeSemitones;
+                midi = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
+                var (name, oct, alt) = FromMidi(midi);
+                double? newCent = centsRemainder == 0.0
+                    ? null
+                    : (note.CentOffset ?? 0.0) + centsRemainder;
+                return note.With(noteName: name, octave: oct, alteration: alt, centOffset: newCent);
             };
             foreach (var bar in seq.Bars)
             {
@@ -1539,6 +1583,14 @@ public static class TransformFunctions
             ParameterNames: ["seq", "interval"]);
         registry.Register("trill", trillSig, Trill);
 
+        // sweep-260620 soft-overload: Cent slot routes to TrillCent with remainder folding
+        // (CORRECTNESS — the Semitone/Int-strict slot previously threw "no matching overload"
+        // for `(trill seq +50c)`). Models the Math.Truncate split on TransposeCent.
+        var trillCentSig = new FunctionSignature("trill",
+            [SequenceType.Instance, CentType.Instance],
+            ParameterNames: ["seq", "interval"]);
+        registry.Register("trill", trillCentSig, TrillCent);
+
         // Phase 44 Plan 44-05: tremolo registration moved to
         // RegisterContextDependent so its reps-clamp can read
         // context.CallerStrictMode at the leaf site.
@@ -1553,6 +1605,29 @@ public static class TransformFunctions
         foreach (var bar in seq.Bars)
         {
             result.AddBar(TrillBar(bar, semitones));
+        }
+        return Value.Sequence(result);
+    }
+
+    /// <summary>
+    /// sweep-260620 soft-overload: cent-precision trill. CentType's CLR backing IS double,
+    /// so args[1].As&lt;double&gt;() reads the raw cents. The whole-semitone part drives the
+    /// upper-neighbour interval; the fractional remainder folds into every emitted
+    /// subdivision's CentOffset (mirrors the TransposeCent split + the TransposeBy fold).
+    /// </summary>
+    private static Value TrillCent(IReadOnlyList<Value> args)
+    {
+        var seq = args[0].As<SequenceData>();
+        double cents = args[1].As<double>();
+
+        // Same truncate-toward-zero split as TransposeCent: +150c → +1st + 50c remainder.
+        int semitones = (int)Math.Truncate(cents / 100.0);
+        double centsRemainder = cents - semitones * 100.0;
+
+        var result = new SequenceData();
+        foreach (var bar in seq.Bars)
+        {
+            result.AddBar(TrillBar(bar, semitones, centsRemainder));
         }
         return Value.Sequence(result);
     }
@@ -1583,7 +1658,7 @@ public static class TransformFunctions
     /// DurationFraction and every alternation kept the full tuplet-note duration — overflowing
     /// the bar (GetBeats takes the DurationFraction branch whenever it HasValue).</para>
     /// </summary>
-    private static BarData TrillBar(BarData bar, int semitones)
+    private static BarData TrillBar(BarData bar, int semitones, double centsRemainder = 0.0)
     {
         var newNotes = new List<MusicalNoteData>();
         var src = bar.MusicalNotes;
@@ -1609,11 +1684,11 @@ public static class TransformFunctions
                 bool upperStep = i % 2 != 0;
                 // Lead (or its upper neighbour on odd subdivisions): NOT a chord tone, so it
                 // advances the timeline cursor for this subdivision.
-                newNotes.Add(BuildTrillNote(note, semitones, upperStep, isChordTone: false));
+                newNotes.Add(BuildTrillNote(note, semitones, upperStep, isChordTone: false, centsRemainder));
                 // Chord tones stack on THIS subdivision's lead onset (isChordTone:true) and
                 // trill in lockstep — same subdivision duration, same alternation step.
                 for (int c = idx + 1; c < groupEnd; c++)
-                    newNotes.Add(BuildTrillNote(src[c], semitones, upperStep, isChordTone: true));
+                    newNotes.Add(BuildTrillNote(src[c], semitones, upperStep, isChordTone: true, centsRemainder));
             }
 
             idx = groupEnd - 1; // skip the chord tones consumed by this group
@@ -1623,7 +1698,7 @@ public static class TransformFunctions
         {
             var voices = new List<BarData>(bar.ParallelVoices.Count);
             foreach (var voiceBar in bar.ParallelVoices)
-                voices.Add(TrillBar(voiceBar, semitones));
+                voices.Add(TrillBar(voiceBar, semitones, centsRemainder));
             newBar.ParallelVoices = voices;
         }
         return newBar;
@@ -1639,7 +1714,7 @@ public static class TransformFunctions
     /// onset in <see cref="BarType.ToTimeline"/>.
     /// </summary>
     private static MusicalNoteData BuildTrillNote(
-        MusicalNoteData note, int semitones, bool upperStep, bool isChordTone)
+        MusicalNoteData note, int semitones, bool upperStep, bool isChordTone, double centsRemainder = 0.0)
     {
         // Pitch override only on the upper-neighbour step; CentOffset / Articulation / Velocity
         // are carried by With(...) off the source note in both cases.
@@ -1653,6 +1728,12 @@ public static class TransformFunctions
             (name, oct, alt) = FromMidi(upperMidi);
         }
 
+        // sweep-260620: fold a cent-precision remainder (from the Cent trill overload) into
+        // each emitted subdivision's CentOffset (default 0.0 keeps the Semitone path byte-identical).
+        double? newCent = centsRemainder == 0.0
+            ? null
+            : (note.CentOffset ?? 0.0) + centsRemainder;
+
         if (note.DurationFraction.HasValue)
         {
             // Tuplet / rational note: emit an exact fraction = (base quarter-units) / alternations
@@ -1662,14 +1743,14 @@ public static class TransformFunctions
             Fraction subFraction = BaseQuarterFraction(note) * new Fraction(1, alternations);
             return note.With(noteName: name, octave: oct, alteration: alt,
                 durationFraction: subFraction, isDotted: false, isTied: false,
-                isChordTone: isChordTone);
+                isChordTone: isChordTone, centOffset: newCent);
         }
 
         // Plain power-of-2 path — byte-identical to the pre-sweep enum shape.
         int trillDur = Math.Min(note.DurationValue!.Value + 2, (int)NoteValueType.Value.THIRTYSECOND);
         return note.With(noteName: name, octave: oct, alteration: alt,
             durationValue: trillDur, isDotted: false, isTied: false,
-            isChordTone: isChordTone);
+            isChordTone: isChordTone, centOffset: newCent);
     }
 
     /// <summary>
