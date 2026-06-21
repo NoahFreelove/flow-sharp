@@ -150,7 +150,7 @@ use "@std"
 use "@std"
 use "@audio"
 
-Buffer myBuf = (createSineTone 0.5 440.0 0.5)
+Buffer myBuf = (createSineTone 440Hz 0.5 0.5)
 (print $"frames: {(getFrames myBuf)}, channels: {(getChannels myBuf)}")
 ```
 

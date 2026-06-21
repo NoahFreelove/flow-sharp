@@ -341,7 +341,7 @@ tempo 120 {
 
             Song fullSong = [intro verse*2 chorus bridge verse chorus*2 outro]
             Buffer rendered = (renderSong fullSong "piano")
-            Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
+            Buffer final = rendered -> fadeIn 0.3s -> fadeOut 0.5s
             (writeWav "full_song.wav" final)
 
             Int frames = (getFrames final)
@@ -386,7 +386,7 @@ tempo 72 {
 
             Song piece = [intro development climax resolution]
             Buffer rendered = (renderSong piece "piano" release=2.5s)
-            Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
+            Buffer final = rendered -> fadeIn 0.3s -> fadeOut 0.5s
             (writeWav "expressive_piano.wav" final)
         }
     }
@@ -837,7 +837,7 @@ tempo 100 {
             }
             Song song = [hook*4]
             Buffer rendered = (renderSong song "piano")
-            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
+            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5s
             (writeWav "progression.wav" final)
         }
     }
@@ -854,7 +854,7 @@ Note: Plain load — 16/24/32-bit PCM, auto-resampled to 44.1 kHz
 Buffer sample = (loadWav "kick.wav")
 
 Note: Varispeed load — semitones or ratio overload
-Buffer up3 = (loadWav "kick.wav" 3)           Note: +3 semitones
+Buffer up3 = (loadWav "kick.wav" +3st)        Note: +3 semitones (Semitone literal)
 Buffer half = (loadWav "kick.wav" 0.5)        Note: half-speed (octave down)
 
 Buffer processed = sample -> pan 0.0 -> gain 0dB -> reverb 0.2
@@ -1059,7 +1059,7 @@ tempo 90 {
 
             Song piece = [waltz*4 middle*2 waltz*2]
             Buffer audio = (renderSong piece "piano")
-            Buffer final = audio -> reverb 0.4 -> fadeOut 0.5
+            Buffer final = audio -> reverb 0.4 -> fadeOut 0.5s
             (writeWav "waltz.wav" final)
             (print "Exported waltz.wav!")
         }

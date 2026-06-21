@@ -175,7 +175,7 @@ See [Audio and Synthesis](Audio-and-Synthesis.md), [Effects](Effects.md), and [P
 | `oscillator` | Register a custom wavetable: `(String name, Function gen[, Int tableSize])` or `(String name, Array table)` |
 | `noteToFrequency` | `(Note) -> Double` — A4 = 440 |
 
-`createSineTone` and friends also accept a `Hertz` literal: `(createSineTone 0.5 440Hz 0.5)`.
+`createSineTone` and friends also accept typed music literals — a `Hertz` frequency and a `Second` duration: `(createSineTone 0.5s 440Hz 0.5)`. The canonical frequency-first form is `(createSineTone 440Hz 0.5 0.5)`.
 
 ### Envelopes
 

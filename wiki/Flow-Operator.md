@@ -83,7 +83,7 @@ Audio effects chain naturally with `->`:
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 
 Buffer processed = tone -> lowpass 1000Hz -> reverb 0.3 -> gain -3dB
 ```
@@ -117,7 +117,7 @@ A chain step followed by `as NAME` binds the result of that step to a name in th
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 
 Buffer final = tone
             -> lowpass 1200Hz as filtered

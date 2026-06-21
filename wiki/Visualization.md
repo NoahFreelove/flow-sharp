@@ -64,7 +64,7 @@ tempo 120 {
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 (visualize tone)
 ```
 
@@ -78,7 +78,7 @@ Stereo buffers are downmixed to mono for the display. This is handy for sanity-c
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 (prettyBuffer tone)
 ```
 
@@ -111,7 +111,7 @@ Peak and RMS are reported both in linear amplitude and in dBFS, with `-inf` show
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.01 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.01 0.5)
 (bufferHex tone)
 ```
 
@@ -121,7 +121,7 @@ Use the slice overload to focus on a region:
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.01 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.01 0.5)
 Note: dump 64 bytes starting at byte offset 256
 (bufferHex tone 256 64)
 ```
@@ -152,7 +152,7 @@ For audio diagnosis, `prettyBuffer` is usually the first stop:
 use "@std"
 use "@audio"
 
-Buffer raw  = (createSineTone 1.0 440.0 0.8)
+Buffer raw  = (createSineTone 440Hz 1.0 0.8)
 Buffer wet  = raw -> (reverb 2.5) -> (gain -3dB)
 (prettyBuffer wet)         Note: header + waveform
 (bufferHex wet 0 128)      Note: first 128 bytes if something looks wrong

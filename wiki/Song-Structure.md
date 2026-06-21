@@ -260,7 +260,7 @@ tempo 120 {
 
             Song fullSong = [intro verse*2 chorus bridge outro]
             Buffer rendered = (renderSong fullSong "piano")
-            Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
+            Buffer final = rendered -> fadeIn 0.3s -> fadeOut 0.5s
             (writeWav "full_song.wav" final)
             (print "Song exported!")
         }

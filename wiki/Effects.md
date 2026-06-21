@@ -10,7 +10,7 @@ Schroeder-style reverb (4 parallel comb filters + 2 series allpass filters) with
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 
 Note: simple (room size only)
 Buffer wet = (reverb tone 0.5)
@@ -50,7 +50,7 @@ Peak-detect compressor with attack/release envelopes. Reduces dynamic range by a
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 
 Note: simple (threshold dB, ratio)
 Buffer comp = (compress tone -12dB 4.0)
@@ -78,8 +78,8 @@ Compress one source using a separate control signal (e.g., duck a bass under a k
 use "@std"
 use "@audio"
 
-Buffer kick = (createSineTone 0.1 60.0 0.9)
-Buffer bass = (createSineTone 1.0 80.0 0.8)
+Buffer kick = (createSineTone 60Hz 0.1 0.9)
+Buffer bass = (createSineTone 80Hz 1.0 0.8)
 
 Note: basic sidechain (bass ducks under kick)
 Buffer ducked = (sidechain bass kick -12dB 4.0)
@@ -107,7 +107,7 @@ tempo 120 {
 }
 ```
 
-> **Snippet** — `tone` must be defined before this block (e.g. `Buffer tone = (createSineTone 0.5 440.0 0.5)`).
+> **Snippet** — `tone` must be defined before this block (e.g. `Buffer tone = (createSineTone 440Hz 0.5 0.5)`).
 
 | Parameter | Unit | Description |
 |-----------|------|-------------|
@@ -135,7 +135,7 @@ Constant-power stereo panning (`cos²(θ) + sin²(θ) = 1`). Range is `-1.0` (ha
 ```flow
 use "@audio"
 
-Buffer tone   = (createSineTone 0.5 440.0 0.8)
+Buffer tone   = (createSineTone 440Hz 0.5 0.8)
 Buffer center = (pan tone 0.0)
 Buffer left   = (pan tone -1.0)
 Buffer right  = (pan tone 1.0)
@@ -162,7 +162,7 @@ Linear amplitude fades (duration in seconds):
 
 ```flow
 Buffer faded    = tone -> fadeIn  0.5
-Buffer fadedOut = tone -> fadeOut 0.5
+Buffer fadedOut = tone -> fadeOut 0.5s
 ```
 
 ## Tempo Ramp
@@ -233,7 +233,7 @@ Effects chain naturally left-to-right with `->`:
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 Double panLeft = (sub 0.0 0.2)     Note: negative bare literals cannot start a parenthesised pipe arg; bind first
 
 Buffer processed = tone
@@ -266,8 +266,8 @@ tempo 120 {
                 -> lowpass 2.0kHz
                 -> reverb 0.3
                 -> (pan 0.1)
-                -> fadeIn 0.3
-                -> fadeOut 0.5
+                -> fadeIn 0.3s
+                -> fadeOut 0.5s
         }
     }
 }

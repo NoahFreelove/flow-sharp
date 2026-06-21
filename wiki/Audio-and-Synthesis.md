@@ -16,14 +16,14 @@ Note: raw buffer (frames, channels, sample rate)
 Buffer mybuf = (createBuffer 44100 2 44100)    Note: 1 second of stereo
 
 Note: convenience tone generators (duration seconds, frequency Hz, amplitude)
-Buffer sine     = (createSineTone     0.5 440.0 0.5)
-Buffer saw      = (createSawTone      0.5 440.0 0.5)
-Buffer square   = (createSquareTone   0.5 440.0 0.5)
-Buffer triangle = (createTriangleTone 0.5 440.0 0.5)
+Buffer sine     = (createSineTone     0.5s 440Hz 0.5)
+Buffer saw      = (createSawTone      0.5s 440Hz 0.5)
+Buffer square   = (createSquareTone   0.5s 440Hz 0.5)
+Buffer triangle = (createTriangleTone 0.5s 440Hz 0.5)
 
 Note: tone generators also accept Hertz-typed frequencies
-Buffer hi = (createSineTone 0.5 1.5kHz 0.5)
-Buffer lo = (createSineTone 0.5 220Hz  0.5)
+Buffer hi = (createSineTone 0.5s 1.5kHz 0.5)
+Buffer lo = (createSineTone 0.5s 220Hz  0.5)
 ```
 
 > **Note:** `buf` is a reserved lexer token. Use any other name (`mybuf`, `tone`, `sig`, `result`, etc.) for Buffer variables throughout your code.
@@ -49,16 +49,16 @@ Float s = (getSample mybuf 0 0)            Note: frame 0, channel 0
 `scaleBuffer` modifies a buffer in place and returns `Void` — do not assign its result. Copy first with `(copyBuffer mybuf)` if you need to preserve the original.
 
 ```flow
-Buffer mybuf1  = (createSineTone 0.5 440.0 0.5)
-Buffer mybuf2  = (createSineTone 0.5 880.0 0.5)
+Buffer mybuf1  = (createSineTone 440Hz 0.5 0.5)
+Buffer mybuf2  = (createSineTone 880Hz 0.5 0.5)
 Buffer c       = (copyBuffer mybuf1)
 Buffer slice   = (sliceBuffer mybuf1 0 22050)
 Buffer joined  = (appendBuffers mybuf1 mybuf2)
 (scaleBuffer mybuf1 0.5)                   Note: mutates in place, returns Void
 Buffer mixed   = (mix mybuf1 mybuf2)
 Buffer mixed2  = (mixBuffers mybuf1 mybuf2 0.7 0.3)
-Buffer fadedIn = mybuf1 -> fadeIn 0.5
-Buffer fadedOt = mybuf1 -> fadeOut 0.5
+Buffer fadedIn = mybuf1 -> fadeIn 0.5s
+Buffer fadedOt = mybuf1 -> fadeOut 0.5s
 ```
 
 ### Loading WAV Files
@@ -67,7 +67,7 @@ Buffer fadedOt = mybuf1 -> fadeOut 0.5
 
 ```flow
 Buffer loaded   = (loadWav "sample.wav")
-Buffer up5      = (loadWav "sample.wav" 5)        Note: +5 semitones (Int)
+Buffer up5      = (loadWav "sample.wav" +5st)     Note: +5 semitones (Semitone literal)
 Buffer downOct  = (loadWav "sample.wav" 0.5)      Note: half-speed = down one octave (Double ratio)
 Int frames      = (getFrames loaded)
 ```
@@ -153,8 +153,8 @@ Shape the amplitude of a buffer over time.
 ```flow
 use "@audio"
 
-Buffer mybuf = (createSineTone 0.5 440.0 0.5)
-Envelope ar = (createAR 0.01 0.5 44100)     Note: attack, release (s), sample rate
+Buffer mybuf = (createSineTone 440Hz 0.5 0.5)
+Envelope ar = (createAR 0.01s 0.5s 44100)     Note: attack, release (Second), sample rate
 (applyEnvelope mybuf ar)
 ```
 
@@ -163,7 +163,7 @@ Envelope ar = (createAR 0.01 0.5 44100)     Note: attack, release (s), sample ra
 ```flow
 use "@audio"
 
-Buffer mybuf = (createSineTone 0.5 440.0 0.5)
+Buffer mybuf = (createSineTone 440Hz 0.5 0.5)
 Envelope adsr = (createADSR 0.01 0.1 0.7 0.3 44100)
 (applyEnvelope mybuf adsr)
 ```
@@ -267,7 +267,7 @@ See [Voices and Tracks](Voices-and-Tracks.md) for assembling voices into a final
 
 ```flow
 Function myInstr = fn MusicalNote pitch, Double seconds, Double bpm =>
-    (createSineTone seconds 440.0 0.5)
+    (createSineTone seconds 440Hz 0.5)
 Buffer myresult = (renderSong song myInstr)
 ```
 
@@ -324,7 +324,7 @@ For lower-level control, Flow exposes a voice/track timeline. Voice and Track fu
 use "@audio"
 use "@composition"
 
-Buffer myBuffer = (createSineTone 0.5 440.0 0.5)
+Buffer myBuffer = (createSineTone 440Hz 0.5 0.5)
 Voice v = (createVoice myBuffer 0.0)
 (setVoiceGain v 0.8)
 (setVoicePan v -0.5)

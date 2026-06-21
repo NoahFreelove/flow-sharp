@@ -95,8 +95,8 @@ public static class BuiltInDocs
         ["square"] = new("Generates a square-wave buffer.", Array.Empty<ParamDoc>()),
         ["triangle"] = new("Generates a triangle-wave buffer.", Array.Empty<ParamDoc>()),
         // Tone constructors. Canonical Hertz-first form (frequency, duration-seconds, amplitude):
-        //   (createSineTone 440Hz 1.0 0.5).  Duration-first forms also exist:
-        //   (createSineTone 1.0 440.0 0.5) and (createSineTone 1.0 440Hz 0.5).
+        //   (createSineTone 440Hz 1.0 0.5).  Typed duration-first forms also exist:
+        //   (createSineTone 1.0s 440Hz 0.5) and (createSineTone 1.0s 440.0 0.5).
         ["createSineTone"] = new("Generates a band-limited sine-wave buffer. Canonical form: (createSineTone freqHz durationSeconds amplitude).", new ParamDoc[] {
             new("frequency", "Pitch — Hertz literal (440Hz) or a Double in Hz."),
             new("duration", "Length in seconds (Double)."),

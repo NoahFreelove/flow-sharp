@@ -1,29 +1,46 @@
 # Flow Language Wiki
 
-**Flow** is a statically-typed, interpreted programming language designed for music production. It combines functional programming primitives with music-specific syntax and semantics, providing a seamless path from composition to audio export and notation interchange. The interpreter is written in C# targeting .NET 10.
-
-> **Current status:** v1.5 shipped publicly with three showcase pieces: "In Five Voices" (symphony), "Stride & Stomp" (ragtime), and "pulse" (EDM). The language is still pre-traction; breaking changes can still land in single commits, and there is no migration CLI yet.
+**Flow** is a statically-typed, interpreted programming language designed for music production. It combines functional programming primitives with music-specific syntax and semantics, providing a great path from composition to audio export and notation interchange. The interpreter is written in C# targeting .NET 10.
 
 ## Key Features
 
-- **Static typing** with 16 primitive and 26 music-aware types (`Note`, `Chord`, `Sequence`, `Song`, `Bar`, `Tuple`, `Tuning`, `Sfz`, `MarkovModel`, `LsystemModel`, `OscHandle`, `MidiDevice`, `ClockHandle`, `JackHandle`, etc.)
-- **Flow operator (`->`)** for elegant function chaining; **tuple-unpack flow (`~>`)** for multi-arg dispatch
+- **Static typing** with several primitive and music-aware types
+
+
+- **Flow operator (`->`)** for function chaining; **tuple-unpack flow (`~>`)** for tuple unpacking
+
 - **Inline note streams** (`| C4 D4 E4 F4 |`) with durations, dynamics, articulation, ornaments
+
 - **Musical context blocks** — `tempo`, `timesig`, `key`, `swing`, `voicePool`, `tuning`, `pan`, `gain`, `dynamics`, `rit`, `accel`
+
 - **Pattern transforms** — transpose, invert, retrograde, augment, diminish, humanize, trill, tremolo, vary, polyrhythm, and more
+
 - **Tidal-style combinators** — `every`, `fast`, `slow`, `jux`, `degrade`, `sometimes`, `palindrome` (via `@patterns`)
+
 - **Generative primitives** — Markov chains, L-systems, cellular automata, chaos maps, Euclidean rhythms (via `@generative`)
+
 - **Chord-aware improvisation** — `(jam over=chords style=#jazz)` with composer-editable style packs (via `@improv`)
+
 - **Tuples** `<<a, b, c>>` with per-position types, structural equality, and destructuring assignment
+
 - **Generic `Dict<K, V>`** with insertion-order preservation and 14-op surface
+
 - **Symbol primitive** `#foo` — interned, pointer-equality, distinct from String
+
 - **Pattern matching** — `(match scrutinee | pat => body | _ => default)` with music-aware patterns
+
 - **Universal named arguments** — `(jam over=chords style=#jazz length=8)` works on any function with named params
+
 - **Built-in synthesizers** — sample-based piano (4 velocity layers), brass, sax, flute, strings, bell, organ, drums; raw oscillators; user-defined wavetables
+
 - **SFZ orchestral sampler** — load VSCO Community Edition or any SFZ patch via `loadSfz`
+
 - **Microtonal tuning** — cent offsets in note streams, Scala `.scl` loader, named-tuning pragmas, `tuning { }` blocks
+
 - **Audio effects** — Schroeder reverb, biquad filters, compressor, sidechain, delay, gain, constant-power panning, fades; granular synthesis, time-stretch, pitch-shift
+
 - **Song structure** — sections (parameterized + overloaded), arrangements with `*N` repeats, multi-track voices, polyphony
+
 - **Harmony** — chord literals, roman numerals, scales, arpeggios, voice-led `progression | I IV V I |`
 - **Vocalization** — formant-synthesized vowels/syllables and a TTS hook
 - **Loops** — `for` / `while` with `break` / `continue`
@@ -34,7 +51,6 @@
 - **Import** — WAV, MIDI (via the `flow midi2flow` CLI), ABC 2.1, PC-98 MML
 - **Tooling** — `flow` CLI (`run` / `eval` / `repl` / `watch` / `play` / `render` / `flow2midi` / `midi2flow` / `check` / `new` / `version` / `lsp` / `test` / `doc`), VSCode extension, LSP for Neovim / Helix / Emacs / Zed
 
-For the full, up-to-date inventory see [FEATURES.md](https://github.com/NoahFreelove/flow-sharp/blob/main/FEATURES.md) in the repo.
 
 ## Wiki Pages
 
@@ -101,7 +117,7 @@ tempo 120 {
 
             Song mySong = [intro hook*2]
             Buffer rendered = (renderSong mySong "piano")
-            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
+            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5s
 
             (writeWav "my_song.wav" final)
             (writeMidi "my_song.mid" mySong)

@@ -140,7 +140,7 @@ It parses (and currently also executes) the script and exits with a non-zero cod
 ### Effect Chain (most common)
 
 ```flow
-Buffer final = raw -> lowpass 2000.0 -> reverb 0.3 -> fadeOut 0.5
+Buffer final = raw -> lowpass 2000.0 -> reverb 0.3 -> fadeOut 0.5s
 ```
 
 ### Transform Chain

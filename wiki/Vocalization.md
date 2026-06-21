@@ -67,7 +67,7 @@ use "@std"
 use "@audio"
 
 Buffer vocal  = (sing "ah" C4 1.0)
-Buffer tone   = (createSineTone 1.0 440.0 0.5)
+Buffer tone   = (createSineTone 440Hz 1.0 0.5)
 Buffer mixed  = (mix vocal tone)
 
 Buffer wet = mixed -> reverb 0.4 -> gain 0dB
@@ -122,7 +122,7 @@ Since the result is a standard buffer, it can be processed and exported:
 use "@audio"
 
 Buffer words = (tts "welcome to the piece")
-Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5
+Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5s
 (writeWav "intro_voice.wav" wet)
 ```
 

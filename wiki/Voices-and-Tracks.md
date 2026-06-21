@@ -21,7 +21,7 @@ use "@std"
 use "@audio"
 use "@composition"
 
-Buffer note = (createSineTone 0.5 440.0 0.5)
+Buffer note = (createSineTone 440Hz 0.5 0.5)
 
 Note: place the buffer at beat 0
 Voice v = (createVoice note 0.0)
@@ -48,7 +48,7 @@ use "@std"
 use "@audio"
 use "@composition"
 
-Buffer note = (createSineTone 0.5 440.0 0.5)
+Buffer note = (createSineTone 440Hz 0.5 0.5)
 Voice v = (createVoice note 0.0)
 
 Track t = (createTrack 44100 2)     Note: sample rate, channels
@@ -76,7 +76,7 @@ use "@std"
 use "@audio"
 use "@composition"
 
-Buffer note = (createSineTone 0.5 440.0 0.5)
+Buffer note = (createSineTone 440Hz 0.5 0.5)
 Voice v = (createVoice note 0.0)
 Track t = (createTrack 44100 2)
 (addVoice t v)

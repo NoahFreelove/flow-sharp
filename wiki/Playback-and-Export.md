@@ -17,7 +17,7 @@ Plays a buffer or sequence and blocks until playback finishes:
 use "@std"
 use "@audio"
 
-Buffer tone = (createSineTone 0.5 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 0.5 0.5)
 (play tone)
 ```
 
@@ -39,7 +39,7 @@ Plays audio asynchronously so your script continues executing:
 ```flow
 use "@audio"
 
-Buffer tone = (createSineTone 5.0 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 5.0 0.5)
 (stream tone)
 Note: returns immediately; audio plays in the background
 ```
@@ -73,7 +73,7 @@ Loops a buffer indefinitely (non-blocking), or a specific number of times:
 ```flow
 use "@audio"
 
-Buffer tone = (createSineTone 1.0 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 1.0 0.5)
 (loop tone)          Note: forever (until (stop) is called)
 (loop tone 4)        Note: 4 times
 ```
@@ -85,7 +85,7 @@ Low-quality preview (mono, 22050 Hz) for fast iteration:
 ```flow
 use "@audio"
 
-Buffer tone = (createSineTone 1.0 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 1.0 0.5)
 (preview tone)
 ```
 
@@ -135,7 +135,7 @@ If the audio backend is unavailable, `play` / `stream` / `loop` become no-ops wi
 ```flow
 use "@audio"
 
-Buffer tone = (createSineTone 1.0 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 1.0 0.5)
 (writeWav "output.wav" tone)
 ```
 
@@ -144,7 +144,7 @@ Buffer tone = (createSineTone 1.0 440.0 0.5)
 ```flow
 use "@audio"
 
-Buffer tone = (createSineTone 1.0 440.0 0.5)
+Buffer tone = (createSineTone 440Hz 1.0 0.5)
 (writeWav "output_16.wav" tone 16)        Note: default
 (writeWav "output_24.wav" tone 24)
 (writeWav "output_32.wav" tone 32)
@@ -181,8 +181,8 @@ use "@audio"
 
 Note: replace "sample.wav" with the path to an existing WAV file on disk
 Buffer loaded   = (loadWav "sample.wav")
-Buffer up5      = (loadWav "sample.wav" 5)         Note: +5 semitones (Int)
-Buffer halfRate = (loadWav "sample.wav" 0.5)       Note: half-speed = down one octave
+Buffer up5      = (loadWav "sample.wav" +5st)      Note: +5 semitones (Semitone literal)
+Buffer halfRate = (loadWav "sample.wav" 0.5)       Note: half-speed = down one octave (Double ratio)
 Int frames      = (getFrames loaded)
 Int channels    = (getChannels loaded)
 
@@ -303,7 +303,7 @@ tempo 120 {
             Song mySong = [intro verse*2 chorus]
 
             Buffer raw = (renderSong mySong "piano")
-            Buffer mix = raw -> reverb 0.3 -> fadeIn 0.2 -> fadeOut 0.5
+            Buffer mix = raw -> reverb 0.3 -> fadeIn 0.2s -> fadeOut 0.5s
 
             (writeWav       "my_song.wav"       mix)
             (writeMidi      "my_song.mid"       mySong)
