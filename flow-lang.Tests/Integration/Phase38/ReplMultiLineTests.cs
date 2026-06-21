@@ -97,4 +97,64 @@ public class ReplMultiLineTests : IDisposable
             ReplInputCompleteness.IsInputComplete("Sequence s = | C4q D4q E4q F4q |"),
             "Closed note-stream assignment should submit immediately");
     }
+
+    /// <summary>
+    /// quick-260621-n9y — the REPORTED FREEZE. A single-line N-bar stream emits
+    /// N+1 pipes (the lexer emits one TokenType.Pipe per `|` INCLUDING the bar
+    /// separators), so a 4-bar stream is 5 pipes = odd. The old
+    /// `pipeCount % 2 == 0` parity check judged it "incomplete" and the REPL hung
+    /// forever in continuation mode. Single-bar streams (2 pipes = even) happened
+    /// to pass under both the old parity check and the new scan, which is why the
+    /// existing tests did NOT catch the multi-bar freeze. The note-stream-aware
+    /// scan now correctly judges any closed multi-bar stream COMPLETE.
+    /// </summary>
+    [Fact]
+    public void MultiBarSingleLineStream_DoesNotRequestContinuation()
+    {
+        Assert.True(
+            ReplInputCompleteness.IsInputComplete(
+                "| C4q E4q G4q C5q | D4q F4q A4q D5q | E4q G4q B4q E5q | F4q A4q C5q F5q |"),
+            "Reported 4-bar freeze (5 pipes, odd parity) must submit immediately");
+        Assert.True(
+            ReplInputCompleteness.IsInputComplete("| C4 D4 | E4 F4 |"),
+            "Closed two-bar stream (3 pipes, odd parity) must submit immediately");
+    }
+
+    /// <summary>
+    /// quick-260621-n9y — mid-typing a multi-bar stream must request continuation.
+    /// `Sequence s = | C4 | D4` is 2 pipes = even, which the old parity check
+    /// wrongly judged "complete" (false positive); the second `|` is a bar
+    /// separator (the next token `D4` continues the stream) so the stream is still
+    /// open at end of buffer.
+    /// </summary>
+    [Fact]
+    public void MidTypedMultiBarStream_RequestsContinuation()
+    {
+        Assert.False(
+            ReplInputCompleteness.IsInputComplete("Sequence s = | C4 | D4"),
+            "Mid-typing across a bar boundary (2 pipes, even parity) must request continuation");
+        Assert.False(
+            ReplInputCompleteness.IsInputComplete("Sequence s = | C4 D4"),
+            "Single open bar mid-typing must request continuation");
+    }
+
+    /// <summary>
+    /// quick-260621-n9y — a balanced block containing a multi-bar stream must
+    /// submit. The stream closes mid-buffer and the trailing `}` after the closing
+    /// pipe must NOT re-open inStream (it is not a note-stream token), and the brace
+    /// balances. The inner 4-bar stream is 5 pipes (odd) which the old parity check
+    /// would have frozen even though every brace was closed. An OPEN block with a
+    /// closed stream still requests continuation because the `{` is unbalanced.
+    /// </summary>
+    [Fact]
+    public void BalancedBlockWithMultiBarStream_DoesNotRequestContinuation()
+    {
+        Assert.True(
+            ReplInputCompleteness.IsInputComplete(
+                "tempo 120 { Sequence s = | C4q D4q | E4q F4q | G4q A4q | B4q C5q | }"),
+            "Balanced block with a multi-bar stream (closing pipe then '}') must submit");
+        Assert.False(
+            ReplInputCompleteness.IsInputComplete("tempo 120 { Sequence s = | C4 D4 |"),
+            "Closed stream inside an unbalanced '{' must request continuation");
+    }
 }
