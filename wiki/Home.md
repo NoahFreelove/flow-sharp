@@ -7,67 +7,44 @@
 ### Language Core
 
 - **Static typing** with several primitive and music-aware types
-
 - **Flow operator (`->`)** for function chaining; **tuple-unpack flow (`~>`)** for tuple unpacking
-
 - **Tuples** `<<a, b, c>>` with per-position types, structural equality, and destructuring assignment
-
 - **Generic `Dict<K, V>`** with insertion-order preservation and 14-op surface
-
 - **Symbol primitive** `#foo` — interned, pointer-equality, distinct from String
-
 - **Pattern matching** — `(match scrutinee | pat => body | _ => default)` with music-aware patterns
-
 - **Universal named arguments** — `(jam over=chords style=#jazz length=8)` works on any function with named params
-
 - **Loops** — `for` / `while` with `break` / `continue`
-
 - **String interpolation** — `$"text {expr}"` with escape support
-
 - **Lambdas, closures, higher-order functions, function-type annotations**
 
 ### Notation & Composition
 
 - **Inline note streams** (`| C4 D4 E4 F4 |`) with durations, dynamics, articulation, ornaments
-
 - **Musical context blocks** — `tempo`, `timesig`, `key`, `swing`, `voicePool`, `tuning`, `pan`, `gain`, `dynamics`, `rit`, `accel`
-
 - **Harmony** — chord literals, roman numerals, scales, arpeggios, voice-led `progression | I IV V I |`
-
 - **Song structure** — sections (parameterized + overloaded), arrangements with `*N` repeats, multi-track voices, polyphony
 
 ### Generative & Expression
 
 - **Pattern transforms** — transpose, invert, retrograde, augment, diminish, humanize, trill, tremolo, vary, polyrhythm, and more
-
 - **Tidal-style combinators** — `every`, `fast`, `slow`, `jux`, `degrade`, `sometimes`, `palindrome` (via `@patterns`)
-
 - **Generative primitives** — Markov chains, L-systems, cellular automata, chaos maps, Euclidean rhythms (via `@generative`)
-
 - **Chord-aware improvisation** — `(jam over=chords style=#jazz)` with composer-editable style packs (via `@improv`)
 
 ### Synthesis & Audio
 
 - **Built-in synthesizers** — sample-based piano (4 velocity layers), brass, sax, flute, strings, bell, organ, drums; raw oscillators; user-defined wavetables
-
 - **SFZ orchestral sampler** — load VSCO Community Edition or any SFZ patch via `loadSfz`
-
 - **Microtonal tuning** — cent offsets in note streams, Scala `.scl` loader, named-tuning pragmas, `tuning { }` blocks
-
 - **Audio effects** — Schroeder reverb, biquad filters, compressor, sidechain, delay, gain, constant-power panning, fades; granular synthesis, time-stretch, pitch-shift
-
 - **Vocalization** — formant-synthesized vowels/syllables and a TTS hook
 
 ### Export, Playback & Tooling
 
 - **Playback** — blocking `play`, non-blocking `stream`, loop, preview
-
 - **Export** — WAV (16/24/32-bit), Standard MIDI Files, MusicXML 3.1, LilyPond 2.24+
-
 - **Import** — WAV, MIDI (via the `flow midi2flow` CLI), ABC 2.1, PC-98 MML
-
 - **Tooling** — `flow` CLI (`run` / `eval` / `repl` / `watch` / `play` / `render` / `flow2midi` / `midi2flow` / `check` / `new` / `version` / `lsp` / `test` / `doc`), VSCode extension, LSP for Neovim / Helix / Emacs / Zed
-
 
 ## Wiki Pages
 
