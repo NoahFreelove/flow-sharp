@@ -542,7 +542,9 @@ key Cmajor {
 
 	/* ---- panels / cards ---- */
 	.layout {
-		max-width: 1080px;
+		/* desktop content column — widened from 1080px (260621-vb6); the cap only
+		   binds above ~1080px so narrower viewports are unaffected. */
+		max-width: 1440px;
 		margin: 0 auto;
 		/* generous, viewport-scaling side buffer so content never sits flush to the edge */
 		padding: 34px clamp(20px, 4vw, 48px) 90px;
