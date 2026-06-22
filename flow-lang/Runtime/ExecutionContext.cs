@@ -951,6 +951,15 @@ public class ExecutionContext
                 // null means "no override" — SequenceRenderer.RenderSequenceToVoicesWithPool
                 // applies the SPEC-7 locked default of 32 at the render call.
                 resolved.VoicePoolSize ??= frame.MusicalContext.VoicePoolSize;
+                // sustainPedal { ... } sets SustainPedal=true on its own pushed
+                // frame; a `section` (or note stream) nested inside snapshots
+                // context via GetMusicalContext, so the flag MUST inherit down
+                // the frame chain like every other context field — otherwise
+                // SongRenderer's `section.Context?.SustainPedal == true` reads
+                // null and the BarRenderer tail-extension never fires. null means
+                // "no pedal" → render-side default-false → byte-identical to a
+                // script with no sustainPedal block (determinism preserved).
+                resolved.SustainPedal ??= frame.MusicalContext.SustainPedal;
             }
             if (resolved.TimeSignature != null && resolved.Tempo != null
                 && resolved.Swing != null && resolved.Key != null
