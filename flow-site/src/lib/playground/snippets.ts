@@ -75,6 +75,51 @@ export const SNIPPETS: Snippet[] = [
 		label: 'Print arithmetic',
 		blurb: 'No audio — prefix arithmetic + str, straight to stdout.',
 		source: 'use "@std"\n(print (str (mul 6 7)))\n(print (str (add 1 (mul 2 3))))\n'
+	},
+	{
+		id: 'abide-with-me',
+		label: 'Abide With Me (hymn)',
+		blurb: 'A faithful 5-voice hymn arrangement, converted from MIDI and rendered as piano.',
+		source:
+			'use "@std"\n' +
+			'use "@audio"\n\n' +
+			'tempo 88 {\n' +
+			'    timesig 4/4 {\n' +
+			'        key Ebmajor {\n\n' +
+			'            section roundtrip {\n' +
+			'                Sequence track1_seq = | mf G4h G4q F4q | mf E4-h B4-h | mf C5q B4-q B4-q A4-q |\n' +
+			'                                      mf G4w | mf G4h A4-q B4-q | mf C5h B4-h |\n' +
+			'                                      mf A4-q F4q G4q A4q | mf B4-w | mf G4h G4q F4q |\n' +
+			'                                      mf E4-h B4-h | mf B4-q A4-q A4-q G4q | mf F4w |\n' +
+			'                                      mf F4h G4q A4-q | mf G4q F4q E4-q A4-q | mf G4h F4h |\n' +
+			'                                      mf E4-w | mf A4-h G4h |\n' +
+			'                Sequence track2_seq = | mf E4-h D4q D4q | mf E4-h E4-h | mf C4q D4q E4-q F4q |\n' +
+			'                                      mf E4-w | mf E4-h E4-q E4-q | mf E4-h E4-h |\n' +
+			'                                      mf E4-q F4q E4-q E4-q | mf D4w | mf E4-h D4q D4q |\n' +
+			'                                      mf E4-h E4-h | mf E4-q E4-q E4q E4q | mf F4w |\n' +
+			'                                      mf D4h E4-q D4q | mf E4-q D4q E4-q F4q | mf E4-h D4h |\n' +
+			'                                      mf E4-w | mf E4-h E4-h |\n' +
+			'                Sequence track3_seq = | _ w | _ w | _ w | _ w | _ w | _ w | mf C4q _ h . | _ w |\n' +
+			'                                      _ w | _ h mf E4-q D4q | mf C4q C4q C4q _ q | _ w | _ w |\n' +
+			'                                      _ h . mf C4q | _ w | _ w | mf C4h _ h |\n' +
+			'                Sequence track4_seq = | mf B3-h B3-q A3-q | mf G3h E3-h | mf E3-q B3-q B3-q B3-q |\n' +
+			'                                      mf B3-w | mf B3-h A3-q G3q | mf A3-h G3h |\n' +
+			'                                      _ q mf B3-q B3-q E3-q | mf F3w | mf G3q A3-q B3-q A3-q |\n' +
+			'                                      mf G3h _ h | _ h . mf B3-q | mf A3-w | mf B3-h B3-q B3-q |\n' +
+			'                                      mf B3-q A3-q G3q _ q | mf B3-h. A3-q | mf G3w | _ h mf B3-h |\n' +
+			'                Sequence track5_seq = | mf E3-h B2-q B2-q | mf C3h G2h | mf A2-q B2-q C3q D3q |\n' +
+			'                                      mf E3-w | mf E3-q D3q C3q B2-q | mf A2-h E3-h |\n' +
+			'                                      mf F3q D3q E3-q C3q | mf B2-w | mf E3-h B2-q B2-q |\n' +
+			'                                      mf C3h G2h | mf A2-q. B2-e C3q C3q | mf F3w |\n' +
+			'                                      mf A3-h G3q F3q | mf E3-q B2-q C3q A2-q | mf B2-h B2-h |\n' +
+			'                                      mf E3-w | mf A2-h E3-h |\n' +
+			'            }\n\n' +
+			'            Song s = [roundtrip]\n\n' +
+			'            Buffer mix = (renderSong s "piano")\n' +
+			'            (play mix)\n\n' +
+			'        }\n' +
+			'    }\n' +
+			'}\n'
 	}
 ];
 
