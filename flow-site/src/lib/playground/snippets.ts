@@ -79,7 +79,7 @@ export const SNIPPETS: Snippet[] = [
 	{
 		id: 'abide-with-me',
 		label: 'Abide With Me (hymn)',
-		blurb: 'A faithful 5-voice hymn arrangement, converted from MIDI and rendered as piano.',
+		blurb: 'A faithful 5-voice hymn arrangement, converted from MIDI and rendered on a sustaining organ with a gentle reverb tail.',
 		source:
 			'use "@std"\n' +
 			'use "@audio"\n\n' +
@@ -115,8 +115,9 @@ export const SNIPPETS: Snippet[] = [
 			'                                      mf E3-w | mf A2-h E3-h |\n' +
 			'            }\n\n' +
 			'            Song s = [roundtrip]\n\n' +
-			'            Buffer mix = (renderSong s "piano")\n' +
-			'            (play mix)\n\n' +
+			'            Buffer mix = (renderSong s "organ")\n' +
+			'            Buffer wet = (reverb mix 0.5 0.4 0.25)\n' +
+			'            (play wet)\n\n' +
 			'        }\n' +
 			'    }\n' +
 			'}\n'
