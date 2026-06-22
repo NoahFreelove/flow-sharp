@@ -591,11 +591,17 @@ Note: Render an entire Song arrangement to a stereo Buffer
 internal proc renderSong(Song: song, String: synthType)
 internal proc renderSong(Song: song, Function: synth)
 
+Note: Additive Symbol-instrument forms (quick-260621-x21).
+Note: (renderSong song #piano) — unwraps the symbol's interned name to a
+Note: String and delegates to the String path (byte-identical output).
+internal proc renderSong(Song: song, Symbol: synthType)
+
 Note: Piano release-tail knob (Second).
 Note: Composer-facing: (renderSong song "piano" release=2.0s).
 Note: Default 1.5s (Lehtonen 2007 reference);
 Note: clamped to [0.05s, 10.0s] at the renderer (charitable clamp).
 internal proc renderSong(Song: song, String: synthType, Second: release)
+internal proc renderSong(Song: song, Symbol: synthType, Second: release)
 internal proc createSong(String: title)
 internal proc addBarToSong(Song: song, String: sectionName)
 internal proc addBarToSong(Song: song, String: sectionName, Int: count)
