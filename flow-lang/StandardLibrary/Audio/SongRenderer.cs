@@ -44,6 +44,57 @@ public static class SongRenderer
             IsVarArgs: false,
             ParameterNames: new[] { "song", "instrument", "release" });
         registry.Register("renderSong", releaseSig, RenderSongWithRelease);
+
+        // Quick 260621-x21 — additive Phase-26.1-Symbol ergonomic overloads.
+        // Composers already use #piano-style symbols for instrument identity
+        // elsewhere (e.g. (loadSfz #violin)); these let renderSong accept the
+        // same symbol form. Both unwrap the symbol's interned name to a String
+        // and delegate to the existing String render path, so output is
+        // byte-identical (this repo pins two-run cmp-clean + RMS baselines).
+        var symbolSig = new FunctionSignature(
+            "renderSong",
+            [SongType.Instance, SymbolType.Instance]);
+        registry.Register("renderSong", symbolSig, RenderSongFromSymbol);
+
+        var symbolReleaseSig = new FunctionSignature(
+            "renderSong",
+            [SongType.Instance, SymbolType.Instance, SecondType.Instance],
+            IsVarArgs: false,
+            ParameterNames: new[] { "song", "instrument", "release" });
+        registry.Register("renderSong", symbolReleaseSig, RenderSongFromSymbolWithRelease);
+    }
+
+    /// <summary>
+    /// Quick 260621-x21 — Phase-26.1-Symbol ergonomic overload of
+    /// <c>renderSong(Song, Symbol)</c>. Unwraps the symbol in slot 1 to its
+    /// interned name string (via the established <see cref="Value.As{T}"/>
+    /// accessor — a Symbol Value's <c>.Data</c> is the name string, mirroring
+    /// SfzBuiltins.LoadSfzSymbol) and delegates to the existing
+    /// <see cref="RenderSong"/> String path. Additive — the String /
+    /// String+Second / Function overloads are untouched; delegation guarantees
+    /// byte-identical output to the String form.
+    /// </summary>
+    private static Value RenderSongFromSymbol(IReadOnlyList<Value> args)
+    {
+        string synthType = args[1].As<string>();
+        var stringArgs = new List<Value> { args[0], Value.String(synthType) };
+        return RenderSong(stringArgs);
+    }
+
+    /// <summary>
+    /// Quick 260621-x21 — Phase-26.1-Symbol ergonomic overload of
+    /// <c>renderSong(Song, Symbol, Second)</c>. Unwraps the symbol in slot 1 to
+    /// its interned name string, carries the Second <c>release=</c> arg through
+    /// unchanged in slot 2, and delegates to the existing
+    /// <see cref="RenderSongWithRelease"/> String+Second path. Additive +
+    /// delegation-only — no rendering logic is duplicated, so output stays
+    /// byte-identical to the String+Second form.
+    /// </summary>
+    private static Value RenderSongFromSymbolWithRelease(IReadOnlyList<Value> args)
+    {
+        string synthType = args[1].As<string>();
+        var stringArgs = new List<Value> { args[0], Value.String(synthType), args[2] };
+        return RenderSongWithRelease(stringArgs);
     }
 
     /// <summary>
