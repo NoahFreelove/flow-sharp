@@ -517,18 +517,6 @@
 		</div>
 	</aside>
 
-	<!-- Bottom status bar — runtime version · bundle size · last-run timestamp. -->
-	<div class="pg-status surface-brushed-metal" data-testid="status-bar">
-		<span>Flow WASM · Phase 48 runtime</span>
-		<span aria-hidden="true">·</span>
-		<span>~1.6 MB bundle</span>
-		<span aria-hidden="true">·</span>
-		<span
-			>{pg.lastRunAt
-				? `last run ${new Date(pg.lastRunAt).toLocaleTimeString()}${pg.lastDurationMs != null ? ` (${Math.round(pg.lastDurationMs)} ms)` : ''}`
-				: 'no runs yet'}</span
-		>
-	</div>
 </main>
 
 <style>
