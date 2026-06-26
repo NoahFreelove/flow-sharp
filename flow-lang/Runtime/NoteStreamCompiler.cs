@@ -521,9 +521,16 @@ public class NoteStreamCompiler
             {
                 double t = (double)noteIdx / (nonRestCount - 1);
                 double vel = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
-                var n = notes[i];
-                notes[i] = new MusicalNoteData(n.NoteName, n.Octave, n.Alteration,
-                    n.DurationValue, n.IsRest, n.CentOffset, n.IsTied, vel, n.Articulation, n.IsDotted, n.SourceLocation, n.SourceLength);
+                // Rebuild via With(...) so the velocity override is the ONLY change.
+                // The 12-arg ctor used to be called here, which silently reset the 5
+                // trailing fields — IsChordTone / DurationFraction / OnsetOffset /
+                // DurationOverlap / PortamentoMs — to their defaults. Dropping
+                // IsChordTone in particular made interpolated chord tones advance the
+                // bar cursor in BarType.ToTimeline, doubling any bar that mixed a
+                // dynamic (→ velocity variation → interpolation runs) with chords.
+                // Same drop-on-reconstruct pattern the 2026-06-09 audit fixed for
+                // transforms (NoteType.cs With(...) docs); this path was missed.
+                notes[i] = notes[i].With(velocity: vel);
             }
             noteIdx++;
         }
