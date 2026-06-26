@@ -172,18 +172,22 @@ export async function loadFlowRuntime() {
         },
 
         // [JSImport("closeContext", "flow-runtime")]
-        // Stops every tracked source then closes the AudioContext.
-        // The await on ctx.close() is honored by the JS engine; the C#
-        // side fires-and-forgets (return type is void).
+        // D-48-08: the AudioContext is ONE-PER-TAB and must persist for the tab's
+        // lifetime (resumed/suspended, never torn down per-run) — it is GC'd when the
+        // tab closes. WebAudioBackend.Dispose() fires this on EVERY per-run engine
+        // recycle (WasmEntry.NewEngineForRun), so calling ctx.close() + nulling
+        // _audioContext here closed the SHARED context mid-run: the next run's
+        // createAudioContext then returned a CLOSED context and source.start() was
+        // silent — the every-other-run silence (debug session
+        // playground-every-other-run-silence, confirmed in-browser). So we STOP active
+        // sources but DO NOT close the context and DO NOT null _audioContext; the
+        // persistent context is reused (and resumed in the gesture frame) on the next
+        // run. (stop)/stopAllSources and DisposeFromJs are unaffected.
         closeContext: async (ctx) => {
             for (const src of _activeSources) {
                 try { src.stop(); } catch (e) { /* ignore */ }
             }
             _activeSources.clear();
-            if (ctx) {
-                try { await ctx.close(); } catch (e) { /* ignore */ }
-            }
-            _audioContext = null;
         },
 
         // [JSImport("resumeContext", "flow-runtime")]
