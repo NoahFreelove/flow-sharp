@@ -147,15 +147,32 @@ public static class EnvelopeProcessor
         int requestedAdr = attackFrames + decayFrames + releaseFrames;
         if (requestedAdr > totalFrames)
         {
+            // Whether the caller actually asked for a release ramp. This governs
+            // where the floor-rounding leftover goes (see below).
+            bool hasRelease = releaseFrames > 0;
+
             double scale = (double)totalFrames / requestedAdr;
             attackFrames = (int)(attackFrames * scale);
             decayFrames = (int)(decayFrames * scale);
             releaseFrames = (int)(releaseFrames * scale);
 
-            // Floor-rounding can leave 1-3 frames unallocated; give them to release
-            // so the envelope ends at exactly 0 on the final sample (no cliff).
+            // Floor-rounding can leave 1-3 frames unallocated. Where they go depends
+            // on whether a release was requested:
+            //   • release > 0 (synth / SFZ / drum paths — the note ends at 0 because
+            //     NO tail follows): give the leftover to release so the envelope ends
+            //     at exactly 0 on the final sample (QUICK-260504-v6j — no cliff).
+            //   • release == 0 (sampled-instrument path — an exponential release TAIL
+            //     is appended downstream that restarts at the sustain level): the
+            //     leftover must STAY IN SUSTAIN so the envelope ends at the sustain
+            //     level and meets that tail CONTINUOUSLY. Routing it to release here
+            //     would dip the last 1-3 authored frames to ~0 while the tail jumps
+            //     back to full amplitude — a per-note step discontinuity that stacks
+            //     into audible per-beat static on dense short-note passages (debug
+            //     session varispeed-aliasing-static, 2026-06-26).
             int leftover = totalFrames - (attackFrames + decayFrames + releaseFrames);
-            releaseFrames += leftover;
+            if (hasRelease)
+                releaseFrames += leftover;
+            // else: sustainFrames (computed below) absorbs the leftover; release stays 0.
         }
         // (No clamps needed in the else branch — sustain absorbs the remainder.)
 

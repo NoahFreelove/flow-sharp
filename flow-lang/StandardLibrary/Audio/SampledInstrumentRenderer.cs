@@ -42,11 +42,23 @@ namespace FlowLang.StandardLibrary.Audio;
 ///
 /// Baseline ADSR choice for sampled instruments: the recorded WAV already carries the
 /// instrument's natural attack/decay envelope, so we pick a near-transparent baseline
-/// (fast attack, full sustain, short release) and let the articulation rules layer cleanly
+/// (fast attack, full sustain, NO release) and let the articulation rules layer cleanly
 /// on top without double-shaping the natural sample envelope:
-///   <c>baseAttack = 0.005s, baseDecay = 0.05s, baseSustain = 1.0, baseRelease = 0.05s</c>.
+///   <c>baseAttack = 0.005s, baseDecay = 0.05s, baseSustain = 1.0, baseRelease = 0.0s</c>.
 /// With Articulation.Normal this is effectively unity gain through the sample's body;
-/// Staccato/Marcato fast-truncate; Tenuto softens the release; Sforzando spikes the head.
+/// Staccato/Marcato fast-truncate (sustain = 0); Sforzando spikes the head.
+///
+/// <para>baseRelease is 0.0 by design (debug session <c>varispeed-aliasing-static</c>,
+/// 2026-06-26). A non-zero ADSR release ramped sustained notes DOWN to ~0 at the
+/// authored-end frame, but the exponential release tail below restarts at level=1.0
+/// on the RAW sample — so the signal jumped from ~0 back to full amplitude in a single
+/// sample, a per-note step discontinuity that stacked into an audible per-beat "static"
+/// in dense short-note passages (ragtime RH). With baseRelease=0 the envelope holds at
+/// the sustain level through the authored end (1.0 for sustained articulations), meeting
+/// the tail's level=1.0 start CONTINUOUSLY. The exponential tail IS the release for
+/// sustained notes; its length stays composer-controlled via the <c>release=</c> knob.
+/// Staccato/Marcato keep sustain=0 (their short, detached character) and are unchanged by
+/// this — they already ended at 0 regardless of the release ramp.</para>
 /// </summary>
 public class SampledInstrumentRenderer
 {
@@ -206,9 +218,16 @@ public class SampledInstrumentRenderer
         // the release ramp lands at the authored end-of-note; the additional tail past
         // that point fades exponentially via a separate post-envelope ramp that lets the
         // natural sample decay ring out (piano-pedal-like sustain).
+        // baseRelease = 0.0: the envelope holds the sustain level through the authored
+        // end so it meets the exponential release tail (which restarts at level=1.0 on
+        // the raw sample) CONTINUOUSLY. A non-zero release used to ramp sustained notes
+        // to ~0 right before the tail jumped back to full amplitude — a per-note step
+        // discontinuity that stacked into audible per-beat "static" (debug session
+        // varispeed-aliasing-static, 2026-06-26). The tail is the release for sustained
+        // notes; Staccato/Marcato keep their sustain=0 short character (unaffected).
         float[] envelope = SynthUtils.GenerateArticulationADSR(
             note.Articulation,
-            baseAttack: 0.005, baseDecay: 0.05, baseSustain: 1.0, baseRelease: 0.05,
+            baseAttack: 0.005, baseDecay: 0.05, baseSustain: 1.0, baseRelease: 0.0,
             frames: authoredFrames, sampleRate: sampleRate, isPercussion: false);
         for (int i = 0; i < authoredFrames && i < fitted.Length; i++)
             fitted[i] *= envelope[i];
