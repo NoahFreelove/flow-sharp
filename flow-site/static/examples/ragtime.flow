@@ -1,6 +1,6 @@
 // "Ragtime" - opening 24 bars, converted from a MIDI file with `flow midi2flow`.
-// Full six-voice arrangement; short release keeps the piano crisp and true to the
-// original. On the web playground this renders with the synthesized piano.
+// Full six-voice arrangement. Rendered with the synthesized "organ" so it plays
+// in the browser playground (the sampled piano isn't bundled on the web target).
 use "@std"
 use "@audio"
 
@@ -16,7 +16,7 @@ tempo 175 {
         Sequence v6 = | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w |
       }
       Song s = [ragtime]
-      (play (renderSong s "piano" 0.4s))
+      (play (renderSong s "organ"))
     }
   }
 }
