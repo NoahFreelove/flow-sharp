@@ -22,14 +22,17 @@ internal static class Midi2FlowCommand
     {
         var inputArg = new Argument<FileInfo>("input") { Description = "Input .mid file" };
         var outputOpt = new Option<FileInfo?>("--output", "-o") { Description = "Output .flow file (omit to write to stdout)" };
+        var noDynamicsOpt = new Option<bool>("--no-dynamics") { Description = "Omit dynamic markings (ppp..fff) from the generated source" };
 
         var cmd = new Command("midi2flow", "Convert a MIDI file to round-trippable Flow source");
         cmd.Add(inputArg);
         cmd.Add(outputOpt);
+        cmd.Add(noDynamicsOpt);
         cmd.SetAction(parseResult =>
         {
             var input = parseResult.GetValue(inputArg)!;
             var output = parseResult.GetValue(outputOpt);
+            var noDynamics = parseResult.GetValue(noDynamicsOpt);
 
             if (!input.Exists)
             {
@@ -42,7 +45,7 @@ internal static class Midi2FlowCommand
                 var bytes = File.ReadAllBytes(input.FullName);
                 var midi = MidiParser.Parse(bytes);
                 var qr = Quantizer.Quantize(midi);
-                var result = FlowGenerator.GenerateWithStats(midi, qr, input.Name, roundTrip: true);
+                var result = FlowGenerator.GenerateWithStats(midi, qr, input.Name, roundTrip: true, emitDynamics: !noDynamics);
 
                 if (output != null)
                 {

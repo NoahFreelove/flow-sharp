@@ -51,10 +51,10 @@ static class FlowGenerator
     /// need the source keep working; the CLIs use <see cref="GenerateWithStats"/> to
     /// inspect PlayableTrackCount for an honest exit code (sweep-0614).
     /// </summary>
-    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false)
-        => GenerateWithStats(midi, quantizeResult, sourceFileName, roundTrip, sustainPedal, useSfz).Source;
+    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false, bool emitDynamics = true)
+        => GenerateWithStats(midi, quantizeResult, sourceFileName, roundTrip, sustainPedal, useSfz, emitDynamics).Source;
 
-    public static GenerateResult GenerateWithStats(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false)
+    public static GenerateResult GenerateWithStats(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false, bool emitDynamics = true)
     {
         var sb = new StringBuilder();
         var tracks = quantizeResult.Tracks;
@@ -186,7 +186,7 @@ static class FlowGenerator
                 seqVar = uniqueName + "_seq";
             }
 
-            WriteSequence(sb, sectionIndent, seqVar, track, forceExplicitDurations: roundTrip);
+            WriteSequence(sb, sectionIndent, seqVar, track, forceExplicitDurations: roundTrip, emitDynamics: emitDynamics);
         }
 
         sb.AppendLine($"{indent}}}");
@@ -229,7 +229,7 @@ static class FlowGenerator
         return new GenerateResult(sb.ToString(), playableTracks.Count, drumTracks.Count);
     }
 
-    static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track, bool forceExplicitDurations = false)
+    static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track, bool forceExplicitDurations = false, bool emitDynamics = true)
     {
         if (track.Bars.Count == 0) return;
 
@@ -245,7 +245,7 @@ static class FlowGenerator
         var barStrings = new List<string>();
         foreach (var bar in track.Bars)
         {
-            barStrings.Add(FormatBar(bar, useAutoFit));
+            barStrings.Add(FormatBar(bar, useAutoFit, emitDynamics));
         }
 
         // Build the note stream as one continuous expression.
@@ -279,7 +279,7 @@ static class FlowGenerator
         sb.AppendLine(streamBuilder.ToString());
     }
 
-    static string FormatBar(QuantizedBar bar, bool useAutoFit)
+    static string FormatBar(QuantizedBar bar, bool useAutoFit, bool emitDynamics = true)
     {
         // Single flat note stream per bar — true polyphony is expressed at the
         // Sequence level (one Sequence per voice in a section), not at the bar
@@ -290,7 +290,7 @@ static class FlowGenerator
         // voice allocator in Quantizer.cs now produces one stable Sequence per
         // voice and the FlowGenerator emits them as parallel sequences in one
         // section — Flow's SongRenderer mixes them additively.
-        return FormatElements(bar.Elements, useAutoFit);
+        return FormatElements(bar.Elements, useAutoFit, emitDynamics);
     }
 
     /// <summary>
@@ -313,7 +313,7 @@ static class FlowGenerator
         _     => "fff",
     };
 
-    static string FormatElements(List<IBarElement> elements, bool useAutoFit)
+    static string FormatElements(List<IBarElement> elements, bool useAutoFit, bool emitDynamics = true)
     {
         var parts = new List<string>();
         // sweep-0614: per-bar sticky dynamic. Starts null at each bar (FormatElements
@@ -330,11 +330,14 @@ static class FlowGenerator
             {
                 case NoteElement note:
                 {
-                    string dyn = VelocityToDynamic(note.Velocity);
-                    if (dyn != stickyDynamic)
+                    if (emitDynamics)
                     {
-                        parts.Add(dyn);
-                        stickyDynamic = dyn;
+                        string dyn = VelocityToDynamic(note.Velocity);
+                        if (dyn != stickyDynamic)
+                        {
+                            parts.Add(dyn);
+                            stickyDynamic = dyn;
+                        }
                     }
                     string s = note.NoteName;
                     if (!useAutoFit)
@@ -349,11 +352,14 @@ static class FlowGenerator
 
                 case ChordElement chord:
                 {
-                    string dyn = VelocityToDynamic(chord.Velocity);
-                    if (dyn != stickyDynamic)
+                    if (emitDynamics)
                     {
-                        parts.Add(dyn);
-                        stickyDynamic = dyn;
+                        string dyn = VelocityToDynamic(chord.Velocity);
+                        if (dyn != stickyDynamic)
+                        {
+                            parts.Add(dyn);
+                            stickyDynamic = dyn;
+                        }
                     }
                     string notes = string.Join(" ", chord.NoteNames);
                     string s = $"[{notes}]";
