@@ -1,19 +1,26 @@
 // Quick-Start snippet set for the playground (UI-SPEC §Playground left rail / D-49-23).
 //
-// Every snippet is authored to run on the Phase 48 WEB target — so NO sampler/OSC modules
+// The example SOURCES no longer live in this module — they ship as plain files under
+// `static/examples/*.flow` and are loaded at runtime via `static/examples/manifest.json`
+// (composer request: "move examples to a /public folder and load them in from there instead
+// of hardcoding"). On Cloudflare Pages those files are served straight from the built static
+// output, so the playground stays a pure-static SPA (no new backend, no new dependency).
+//
+// Every example is authored to run on the Phase 48 WEB target — so NO sampler/OSC modules
 // (stripped on Web per Phase 47), no `(micBuffer ...)` (InputFunctions stripped), no `live { }`
 // blocks (parse-time error on Web). The default starter matches the dev-smoke harness + HANDOFF §10:
 // `use "@audio"` then `(play (createSineTone 440Hz 1.0 0.5))` → audible 440 Hz tone on Run.
 
-export interface Snippet {
-	/** Stable id (used as the list key + the New-blank sentinel). */
+/** Metadata for one playground example (the editor source is fetched lazily from `file`). */
+export interface SnippetMeta {
+	/** Stable id (used as the list key + the active-rail highlight). */
 	id: string;
 	/** Human-facing label in the snippet list. */
 	label: string;
 	/** One-line description shown under the label. */
 	blurb: string;
-	/** The Flow source loaded into the editor. */
-	source: string;
+	/** The `static/examples/` filename whose contents load into the editor. */
+	file: string;
 }
 
 /** The default snippet loaded on first mount (HANDOFF §10 — audible 440 Hz tone on Run). */
@@ -22,109 +29,41 @@ export const DEFAULT_SNIPPET_ID = 'sine-440';
 /** An empty blank-snippet sentinel for "New blank" (UI-SPEC destructive confirm). */
 export const BLANK_SOURCE = '';
 
-export const SNIPPETS: Snippet[] = [
-	{
-		id: DEFAULT_SNIPPET_ID,
-		label: 'Sine tone (440 Hz)',
-		blurb: 'The hello-world — a one-second A4 sine. Press Run to hear it.',
-		source: 'use "@audio"\n(play (createSineTone 440Hz 1.0 0.5))\n'
-	},
-	{
-		id: 'print-hello',
-		label: 'Print to console',
-		blurb: 'No audio — just stdout. Shows the console split.',
-		source: 'use "@std"\n(print "hello flow")\n(print (str (add 1 2)))\n'
-	},
-	{
-		id: 'note-stream',
-		label: 'Note stream melody',
-		blurb: 'A C-major run played straight from an inline note stream.',
-		source:
-			'use "@std"\nuse "@audio"\nuse "@composition"\n\n' +
-			'tempo 120 {\n' +
-			'  (play | C4q D4q E4q F4q G4q A4q B4q C5h |)\n' +
-			'}\n'
-	},
-	{
-		id: 'chord-progression',
-		label: 'Chord progression',
-		blurb: 'A ii–V–I in C with chord brackets, played as audio.',
-		source:
-			'use "@std"\nuse "@audio"\nuse "@composition"\n\n' +
-			'key Cmajor {\n' +
-			'  (play | [D4 F4 A4]h [G4 B4 D5]h [C4 E4 G4]w |)\n' +
-			'}\n'
-	},
-	{
-		id: 'song-section',
-		label: 'Song from a section',
-		blurb: 'Build a Song from a named section and play it.',
-		source:
-			'use "@std"\nuse "@audio"\nuse "@composition"\n\n' +
-			'tempo 100 {\n' +
-			'  section verse {\n' +
-			'    | E4q E4q F4q G4q G4q F4q E4q D4q C4h |\n' +
-			'  }\n' +
-			'  Song piece = [verse]\n' +
-			'  (writeMidi "verse.mid" piece)\n' +
-			'  (print "rendered verse to MIDI")\n' +
-			'}\n'
-	},
-	{
-		id: 'print-arith',
-		label: 'Print arithmetic',
-		blurb: 'No audio — prefix arithmetic + str, straight to stdout.',
-		source: 'use "@std"\n(print (str (mul 6 7)))\n(print (str (add 1 (mul 2 3))))\n'
-	},
-	{
-		id: 'abide-with-me',
-		label: 'Abide With Me (hymn)',
-		blurb: 'A faithful 5-voice hymn arrangement, converted from MIDI and rendered on a sustaining organ with a gentle reverb tail.',
-		source:
-			'use "@std"\n' +
-			'use "@audio"\n\n' +
-			'tempo 88 {\n' +
-			'    timesig 4/4 {\n' +
-			'        key Ebmajor {\n\n' +
-			'            section roundtrip {\n' +
-			'                Sequence track1_seq = | mf G4h G4q F4q | mf E4-h B4-h | mf C5q B4-q B4-q A4-q |\n' +
-			'                                      mf G4w | mf G4h A4-q B4-q | mf C5h B4-h |\n' +
-			'                                      mf A4-q F4q G4q A4q | mf B4-w | mf G4h G4q F4q |\n' +
-			'                                      mf E4-h B4-h | mf B4-q A4-q A4-q G4q | mf F4w |\n' +
-			'                                      mf F4h G4q A4-q | mf G4q F4q E4-q A4-q | mf G4h F4h |\n' +
-			'                                      mf E4-w |\n' +
-			'                Sequence track2_seq = | mf E4-h D4q D4q | mf E4-h E4-h | mf C4q D4q E4-q F4q |\n' +
-			'                                      mf E4-w | mf E4-h E4-q E4-q | mf E4-h E4-h |\n' +
-			'                                      mf E4-q F4q E4-q E4-q | mf D4w | mf E4-h D4q D4q |\n' +
-			'                                      mf E4-h E4-h | mf E4-q E4-q E4q E4q | mf F4w |\n' +
-			'                                      mf D4h E4-q D4q | mf E4-q D4q E4-q F4q | mf E4-h D4h |\n' +
-			'                                      mf E4-w |\n' +
-			'                Sequence track3_seq = | _ w | _ w | _ w | _ w | _ w | _ w | mf C4q _ h . | _ w |\n' +
-			'                                      _ w | _ h mf E4-q D4q | mf C4q C4q C4q _ q | _ w | _ w |\n' +
-			'                                      _ h . mf C4q | _ w | _ w |\n' +
-			'                Sequence track4_seq = | mf B3-h B3-q A3-q | mf G3h E3-h | mf E3-q B3-q B3-q B3-q |\n' +
-			'                                      mf B3-w | mf B3-h A3-q G3q | mf A3-h G3h |\n' +
-			'                                      _ q mf B3-q B3-q E3-q | mf F3w | mf G3q A3-q B3-q A3-q |\n' +
-			'                                      mf G3h _ h | _ h . mf B3-q | mf A3-w | mf B3-h B3-q B3-q |\n' +
-			'                                      mf B3-q A3-q G3q _ q | mf B3-h. A3-q | mf G3w |\n' +
-			'                Sequence track5_seq = | mf E3-h B2-q B2-q | mf C3h G2h | mf A2-q B2-q C3q D3q |\n' +
-			'                                      mf E3-w | mf E3-q D3q C3q B2-q | mf A2-h E3-h |\n' +
-			'                                      mf F3q D3q E3-q C3q | mf B2-w | mf E3-h B2-q B2-q |\n' +
-			'                                      mf C3h G2h | mf A2-q. B2-e C3q C3q | mf F3w |\n' +
-			'                                      mf A3-h G3q F3q | mf E3-q B2-q C3q A2-q | mf B2-h B2-h |\n' +
-			'                                      mf E3-w |\n' +
-			'            }\n\n' +
-			'            Song s = [roundtrip]\n\n' +
-			'            Buffer mix = (renderSong s "organ")\n' +
-			'            Buffer wet = (reverb mix 1)\n' +
-			'            (play wet)\n\n' +
-			'        }\n' +
-			'    }\n' +
-			'}\n'
-	}
-];
+/** A fetch-shaped function (the global `fetch` by default; injectable so tests can stub it). */
+export type FetchLike = (input: string) => Promise<{ ok: boolean; status: number; json(): Promise<unknown>; text(): Promise<string> }>;
 
-/** Look up a snippet by id (falls back to the default). */
-export function snippetById(id: string): Snippet {
-	return SNIPPETS.find((s) => s.id === id) ?? SNIPPETS[0];
+/**
+ * Load the ordered example manifest from `static/examples/manifest.json`.
+ *
+ * `fetchFn` defaults to the global `fetch` and is injectable so a unit test can pass a stub.
+ * Throws on a non-OK response or malformed JSON — the CALLER (the playground page) is responsible
+ * for catching this and degrading charitably (empty rail + console.warn, never a crashed page).
+ */
+export async function loadManifest(fetchFn: FetchLike = fetch as unknown as FetchLike): Promise<SnippetMeta[]> {
+	const res = await fetchFn('/examples/manifest.json');
+	if (!res.ok) {
+		throw new Error(`manifest fetch failed: ${res.status}`);
+	}
+	const data = (await res.json()) as SnippetMeta[];
+	if (!Array.isArray(data)) {
+		throw new Error('manifest is not an array');
+	}
+	return data;
+}
+
+/**
+ * Load one example's Flow source from `static/examples/<file>`.
+ *
+ * `fetchFn` defaults to the global `fetch` and is injectable for tests. Throws on a non-OK
+ * response so the caller can fall back to `BLANK_SOURCE` (keeping Monaco mountable).
+ */
+export async function loadSnippetSource(
+	file: string,
+	fetchFn: FetchLike = fetch as unknown as FetchLike
+): Promise<string> {
+	const res = await fetchFn(`/examples/${file}`);
+	if (!res.ok) {
+		throw new Error(`snippet fetch failed (${file}): ${res.status}`);
+	}
+	return res.text();
 }

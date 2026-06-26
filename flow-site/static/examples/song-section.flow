@@ -1,0 +1,12 @@
+use "@std"
+use "@audio"
+use "@composition"
+
+tempo 100 {
+  section verse {
+    | E4q E4q F4q G4q G4q F4q E4q D4q C4h |
+  }
+  Song piece = [verse]
+  (writeMidi "verse.mid" piece)
+  (print "rendered verse to MIDI")
+}

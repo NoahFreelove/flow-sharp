@@ -1,0 +1,7 @@
+use "@std"
+use "@audio"
+use "@composition"
+
+key Cmajor {
+  (play | [D4 F4 A4]h [G4 B4 D5]h [C4 E4 G4]w |)
+}

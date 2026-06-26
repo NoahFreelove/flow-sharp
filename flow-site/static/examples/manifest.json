@@ -1,0 +1,50 @@
+[
+	{
+		"id": "sine-440",
+		"label": "Sine tone (440 Hz)",
+		"blurb": "The hello-world — a one-second A4 sine. Press Run to hear it.",
+		"file": "sine-440.flow"
+	},
+	{
+		"id": "print-hello",
+		"label": "Print to console",
+		"blurb": "No audio — just stdout. Shows the console split.",
+		"file": "print-hello.flow"
+	},
+	{
+		"id": "note-stream",
+		"label": "Note stream melody",
+		"blurb": "A C-major run played straight from an inline note stream.",
+		"file": "note-stream.flow"
+	},
+	{
+		"id": "chord-progression",
+		"label": "Chord progression",
+		"blurb": "A ii–V–I in C with chord brackets, played as audio.",
+		"file": "chord-progression.flow"
+	},
+	{
+		"id": "song-section",
+		"label": "Song from a section",
+		"blurb": "Build a Song from a named section and play it.",
+		"file": "song-section.flow"
+	},
+	{
+		"id": "print-arith",
+		"label": "Print arithmetic",
+		"blurb": "No audio — prefix arithmetic + str, straight to stdout.",
+		"file": "print-arith.flow"
+	},
+	{
+		"id": "abide-with-me",
+		"label": "Abide With Me (hymn)",
+		"blurb": "A faithful 5-voice hymn arrangement, converted from MIDI and rendered on a sustaining organ with a gentle reverb tail.",
+		"file": "abide-with-me.flow"
+	},
+	{
+		"id": "ragtime",
+		"label": "Ragtime (24 bars)",
+		"blurb": "A six-voice ragtime excerpt converted from MIDI — stride bass + syncopated melody.",
+		"file": "ragtime.flow"
+	}
+]

@@ -16,7 +16,13 @@
 	import { ShareControls, captureOAuthToken } from '$lib/playground/share-controls.svelte';
 	import { decode, ShareDecodeError } from '$lib/share/encode';
 	import { getGistToken, consumePendingGistSource } from '$lib/share/gist';
-	import { SNIPPETS } from '$lib/playground/snippets';
+	import {
+		BLANK_SOURCE,
+		DEFAULT_SNIPPET_ID,
+		loadManifest,
+		loadSnippetSource,
+		type SnippetMeta
+	} from '$lib/playground/snippets';
 	import type { FlowRuntime, RunError } from '$lib/runtime';
 	// Monaco's editor type is dynamic-imported; keep a loose handle so SSR never sees the module.
 	type Editor = { getValue(): string; setValue(v: string): void; updateOptions(o: { readOnly: boolean }): void; dispose(): void };
@@ -25,6 +31,10 @@
 
 	const pg = new PlaygroundState();
 	const share = new ShareControls();
+
+	// The example list for the left rail, fetched from static/examples/manifest.json in onMount.
+	// Starts empty; a fetch failure leaves it empty (charitable — the page still mounts + runs).
+	let snippets = $state<SnippetMeta[]>([]);
 
 	let runtime: FlowRuntime | null = null;
 	let editor: Editor | null = null;
@@ -103,6 +113,28 @@
 		shareDecodeError = arrival.decodeError;
 
 		(async () => {
+			// 0) Load the example manifest (static/examples/manifest.json) for the left rail and
+			//    resolve the DEFAULT snippet's source so it can seed the editor. Both fetches are
+			//    charitable: a failure leaves the rail empty + the default source blank so Monaco
+			//    still mounts (the page never crashes on a missing/garbled manifest — WR-02 spirit).
+			let defaultSource = BLANK_SOURCE;
+			try {
+				const manifest = await loadManifest();
+				if (disposed) return;
+				snippets = manifest;
+				const defaultEntry = manifest.find((m) => m.id === DEFAULT_SNIPPET_ID);
+				if (defaultEntry) {
+					try {
+						defaultSource = await loadSnippetSource(defaultEntry.file);
+						if (disposed) return;
+					} catch (e) {
+						console.warn('[playground] default snippet fetch failed', e);
+					}
+				}
+			} catch (e) {
+				console.warn('[playground] example manifest fetch failed', e);
+			}
+
 			// 1) Mount Monaco (dynamic import — Pitfall 1).
 			try {
 				const { createFlowEditor } = await import('$lib/monaco');
@@ -110,7 +142,7 @@
 				// §6.1: if we're returning from an OAuth round-trip, prefer the stashed source
 				// over the arrival URL and the default snippet so the composer's code is restored.
 				const initialValue =
-					pendingGistSource ?? arrival.source ?? pg.editorValue;
+					pendingGistSource ?? arrival.source ?? defaultSource;
 				editor = createFlowEditor(editorContainer, {
 					value: initialValue,
 					readOnly: isMobile
@@ -278,8 +310,19 @@
 		pg.stop(runtime);
 	}
 
-	function onLoadSnippet(id: string): void {
-		pg.loadSnippet(id);
+	async function onLoadSnippet(id: string): Promise<void> {
+		const meta = snippets.find((s) => s.id === id);
+		if (!meta) return;
+		let source: string;
+		try {
+			source = await loadSnippetSource(meta.file);
+		} catch (e) {
+			// Charitable: a failed example fetch shouldn't break the editor — keep the current
+			// contents and surface a console warning rather than crashing the load.
+			console.warn('[playground] snippet load failed', e);
+			return;
+		}
+		pg.loadSnippet(id, source);
 		editor?.setValue(pg.editorValue);
 	}
 
@@ -347,7 +390,7 @@
 	<aside class="pg-rail surface-wood" aria-label="Snippets and controls">
 		<h2 class="pg-rail-title">Snippets</h2>
 		<ul class="pg-snippets">
-			{#each SNIPPETS as snip (snip.id)}
+			{#each snippets as snip (snip.id)}
 				<li>
 					<button
 						type="button"

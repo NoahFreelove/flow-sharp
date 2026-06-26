@@ -8,7 +8,7 @@
 
 import type { FlowRuntime, RunError, RunResult } from '../runtime';
 import { offerMidiDownload } from './download';
-import { DEFAULT_SNIPPET_ID, snippetById } from './snippets';
+import { BLANK_SOURCE, DEFAULT_SNIPPET_ID } from './snippets';
 
 export type RunStatus = 'idle' | 'rendering' | 'playing' | 'error';
 
@@ -23,8 +23,10 @@ export type RunStatus = 'idle' | 'rendering' | 'playing' | 'error';
 const PLAYING_SETTLE_MS = 2000;
 
 export class PlaygroundState {
-	/** Current editor contents (mirrored from Monaco on Run). */
-	editorValue = $state(snippetById(DEFAULT_SNIPPET_ID).source);
+	/** Current editor contents (mirrored from Monaco on Run). Starts BLANK — the example sources
+	 *  now ship as `static/examples/*.flow`, so the page fetches the default source in onMount and
+	 *  sets the real initial value once it arrives (it never sync-reads a hardcoded source). */
+	editorValue = $state(BLANK_SOURCE);
 
 	/** Top-level boot-error message (HANDOFF §2.3) — distinct from per-run errors. */
 	bootError = $state<string | null>(null);
@@ -72,15 +74,17 @@ export class PlaygroundState {
 	hasMidi = $derived(this.midi != null);
 
 	/**
-	 * Load a named snippet into the editor. Clears the run outputs (stdout/stderr/errors/midi/status)
-	 * so the right-rail console + MIDI-download button never show STALE results from the previously-run
-	 * snippet (WR-02 — downloading "Download MIDI" after switching would otherwise grab bytes that no
-	 * longer match the loaded source). Mirrors newBlank()'s reset, minus the editor-clear.
+	 * Load a named snippet into the editor. The `source` is fetched by the CALLER (the page, which
+	 * awaits `loadSnippetSource`) and passed in, since the example bodies now live in
+	 * `static/examples/*.flow` rather than being bundled here. Clears the run outputs
+	 * (stdout/stderr/errors/midi/status) so the right-rail console + MIDI-download button never show
+	 * STALE results from the previously-run snippet (WR-02 — downloading "Download MIDI" after
+	 * switching would otherwise grab bytes that no longer match the loaded source). Mirrors
+	 * newBlank()'s reset, minus the editor-clear.
 	 */
-	loadSnippet(id: string): void {
-		const snip = snippetById(id);
+	loadSnippet(id: string, source: string): void {
 		this.clearSettleTimer();
-		this.editorValue = snip.source;
+		this.editorValue = source;
 		this.activeSnippetId = id;
 		this.stdout = '';
 		this.stderr = '';
