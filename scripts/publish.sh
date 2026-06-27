@@ -53,7 +53,13 @@ trap 'if [[ -n "$_CURRENT_ARCHIVE" ]]; then rm -f "$_CURRENT_ARCHIVE"; fi; exit 
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUBLISH_ROOT="$PROJECT_ROOT/publish"
-VERSION="${VERSION:-v1.5.0}"
+# Release version embedded in archive names (flow-<rid>-vX.Y.Z.tar.gz). Read it from
+# FLOW_REL_VERSION, NOT a bare `VERSION` env var: MSBuild imports environment variables
+# as properties, so an exported `VERSION` would override the csproj <Version> and make
+# `dotnet publish` fail with "'vX.Y.Z' is not a valid version string". Keep it a plain
+# (un-exported) shell var so the child `dotnet` processes below never inherit it.
+VERSION="${FLOW_REL_VERSION:-v1.5.0}"
+export -n VERSION 2>/dev/null || true
 SIZE_BUDGET_MB=120
 
 # The 5 supported RIDs. All cross-compile from Linux (managed-only binaries).

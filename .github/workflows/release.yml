@@ -36,7 +36,11 @@ jobs:
 
       - name: Build + package all 5 RIDs
         env:
-          VERSION: ${{ github.ref_name }}
+          # NOT `VERSION`: MSBuild imports env vars as properties, so a `VERSION`
+          # env would override the csproj <Version> with the tag's `v`-prefix and
+          # break `dotnet publish` ("not a valid version string"). publish.sh reads
+          # FLOW_REL_VERSION for archive naming only.
+          FLOW_REL_VERSION: ${{ github.ref_name }}
         run: bash scripts/publish.sh
 
       - name: Publish GitHub Release
