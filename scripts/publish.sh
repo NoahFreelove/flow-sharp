@@ -53,7 +53,7 @@ trap 'if [[ -n "$_CURRENT_ARCHIVE" ]]; then rm -f "$_CURRENT_ARCHIVE"; fi; exit 
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PUBLISH_ROOT="$PROJECT_ROOT/publish"
-VERSION="v1.5.0"
+VERSION="${VERSION:-v1.5.0}"
 SIZE_BUDGET_MB=120
 
 # The 5 supported RIDs. All cross-compile from Linux (managed-only binaries).
