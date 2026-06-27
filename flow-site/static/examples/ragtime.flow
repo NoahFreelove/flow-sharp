@@ -1,6 +1,5 @@
-// "Ragtime" - opening 24 bars, converted from a MIDI file with `flow midi2flow`.
-// Full six-voice arrangement. Rendered with the synthesized "organ" so it plays
-// in the browser playground (the sampled piano isn't bundled on the web target).
+// Converted from midi to flow using the midi2flow cli tool (and then some small tweaks)
+
 use "@std"
 use "@audio"
 
@@ -13,7 +12,6 @@ tempo 175 {
         Sequence v3 = | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w |
         Sequence v4 = | _ w | _ w | _ w | _ w | _ q f [A4 D5 F5+]e _ e [G4+ F5]e. _ q _ s | f [A4 D5 F5+]e. _ s [D5 F5 G4+]e. _ h _ s | _ q f [A4 D5 F5+]e. _ s [G4+ F5]e _ t [A4 F5+]s. [B4 G5]q | f [A4 C5+ F5+]e _ e [G4+ F5]e _ t [G4 C5+ E5]q. _ e . _ t | _ q f [A4 D5 F5+]e _ e [G4+ F5]e _ t [A4 D5 F5+]e. _ e _ t | f [A4 D5 F5+]e. _ s [F5 G4+]e. _ q . _ s . [B4 D5 B5]s.~ | _ e _ t f B4s. D5e _ t E5s. F5e _ t E5s. D5e _ e | f E5e _ t D5+s. D5e _ t C5+e. _ s [A4 C5+ A5]q _ s . | _ q f [A4 D5 F5+]e _ e [G4+ F5]e _ t [A4 D5 F5+]e. _ e _ t | f [A4 D5 F5+]e. _ s [D5 F5 G4+]e. _ h _ s | f [D5 F5+]e _ e [D5 F5+]q. _ t [D5 F5+ B5]e. _ e _ t | f [A4 C5 F5+]e. _ s [A4 F5]e _ t [A4 C5 E5]q. _ e _ x A4t _ y A4+t _ y | f B4e _ e [G4 D5]e _ e [G4+ F5]e _ e [G4+ B4 D5]e _ e | f [A4 D5 F5+]e _ e B5e _ t [A4 D5+ F5+]e. _ s E5s. [A4 D5+]q | _ e _ t f [B4 G5]e _ e [B4 G5]s. [A4 C5+ F5+]e _ e [G4 C5+ E5]e _ e | f [F4+ A4 D5]h _ h | _ q f [A4 D5 F5+]e _ e [G4+ C5+ F5]e. _ q _ s | f [A4 D5 F5+]e. _ s [G4+ C5+ F5]e _ t [A4 D5 F5+]q. _ e . _ t | _ q f [A4 D5 F5+]e _ e [G4+ C5+ F5]e _ t [A4 D5 F5+]s. [B4 G5]e _ e | f [A4 C5+ F5+]e _ e [G4+ F5+]e _ t [G4 C5+ E5]e. _ s _ y A6s. A5s. _ e _ x . |
         Sequence v5 = | _ w | _ w | _ w | _ w | _ h _ e _ t f [A4 D5 F5+]e. _ e _ t | _ q . _ t f [D5 F5+ A4]q. _ e . _ t | _ w | _ w | _ w | _ q . _ t f [D5 F5+ A4]q. _ e . _ t | _ w | _ w | _ w | _ q . _ t f [D5 F5+ A4]q. _ e . _ t | _ q . _ t f G5s. A5e. _ q _ s | _ w | _ w | _ w | _ w | _ w | _ h _ e _ t f [A4 D5 F5+]e. _ e _ t | _ w | _ w | _ w |
-        Sequence v6 = | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w | _ w |
       }
       Song s = [ragtime]
       (play (renderSong s "organ"))

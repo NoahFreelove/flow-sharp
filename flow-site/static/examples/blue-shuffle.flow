@@ -1,0 +1,27 @@
+// "Blue Shuffle" — a 12-bar blues in C with a swing feel.
+
+use "@std"
+use "@audio"
+
+tempo 104 {
+  timesig 4/4 {
+    key Cmajor {
+      swing 0.66 {
+        section blues {
+          // Lead — C blues scale (C Eb F F# G Bb), swung eighth-note licks with a
+          // rest at the end of each bar so the phrases breathe (call-and-response).
+          Sequence lead = | G4e Bb4e G4e Eb4e G4q _ q | F4e Ab4e F4e D4e F4q _ q | G4e Bb4e G4e Eb4e G4q _ q | Eb4e F4e F#4e G4e Bb4q _ q | F4e Ab4e F4e D4e F4q _ q | Ab4e F4e D4e C4e F4q _ q | G4e Bb4e G4e Eb4e G4q _ q | C5e Bb4e G4e Eb4e C4q _ q | D5e B4e G4e D4e G4q _ q | C5e A4e F4e D4e F4q _ q | G4e Bb4e G4e Eb4e C4q _ q | D4e F4e G4e Bb4e D5q _ q |
+          
+          // Walking bass — a quarter-note spine outlining each chord (1-3-5-6 shapes).
+          Sequence bass = | C2q E2q G2q A2q | F2q A2q C3q D3q | C2q E2q G2q A2q | C2q E2q G2q E2q | F2q A2q C3q D3q | F2q A2q C3q Eb3q | C2q E2q G2q A2q | C2q E2q G2q Bb2q | G2q B2q D3q F3q | F2q A2q C3q D3q | C2q E2q G2q A2q | G2q B2q D3q F3q |
+          
+          // Comp — 7th-chord stabs on the backbeat (beats 2 and 4), voiced in the tenor
+          Sequence comp = | _ q [E3 G3 Bb3]q _ q [E3 G3 Bb3]q | _ q [Eb3 A3 C4]q _ q [Eb3 A3 C4]q | _ q [E3 G3 Bb3]q _ q [E3 G3 Bb3]q | _ q [E3 G3 Bb3]q _ q [E3 G3 Bb3]q | _ q [Eb3 A3 C4]q _ q [Eb3 A3 C4]q | _ q [Eb3 A3 C4]q _ q [Eb3 A3 C4]q | _ q [E3 G3 Bb3]q _ q [E3 G3 Bb3]q | _ q [E3 G3 Bb3]q _ q [E3 G3 Bb3]q | _ q [D3 F3 B3]q _ q [D3 F3 B3]q | _ q [Eb3 A3 C4]q _ q [Eb3 A3 C4]q | _ q [E3 G3 Bb3]q _ q [E3 G3 Bb3]q | _ q [D3 F3 B3]q _ q [D3 F3 B3]q |
+        }
+        Song s = [blues]
+        // +8 dB lifts the organ mix to a healthy level (still well under clipping).
+        (play (gain (renderSong s "organ") 8dB))
+      }
+    }
+  }
+}

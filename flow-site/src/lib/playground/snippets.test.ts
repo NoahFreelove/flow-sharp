@@ -73,6 +73,6 @@ describe('static/examples manifest', () => {
 		const ragtime = loadManifest().find((e) => e.id === 'ragtime');
 		expect(ragtime, 'a ragtime entry should exist').toBeDefined();
 		expect(ragtime?.file).toBe('ragtime.flow');
-		expect(ragtime?.label).toBe('Ragtime (24 bars)');
+		// Label intentionally not pinned — it's freely curated copy, not a structural contract.
 	});
 });

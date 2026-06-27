@@ -24,27 +24,27 @@
 		"file": "chord-progression.flow"
 	},
 	{
-		"id": "song-section",
-		"label": "Song from a section",
-		"blurb": "Build a Song from a named section and play it.",
-		"file": "song-section.flow"
-	},
-	{
-		"id": "print-arith",
-		"label": "Print arithmetic",
-		"blurb": "No audio — prefix arithmetic + str, straight to stdout.",
-		"file": "print-arith.flow"
-	},
-	{
 		"id": "abide-with-me",
-		"label": "Abide With Me (hymn)",
-		"blurb": "A faithful 5-voice hymn arrangement, converted from MIDI and rendered on a sustaining organ with a gentle reverb tail.",
+		"label": "Abide With Me",
+		"blurb": "A shortened version of the hymn, by Henry Francis Lyte.",
 		"file": "abide-with-me.flow"
 	},
 	{
 		"id": "ragtime",
-		"label": "Ragtime (24 bars)",
-		"blurb": "A six-voice ragtime excerpt converted from MIDI — stride bass + syncopated melody.",
+		"label": "K.K Ragtime",
+		"blurb": "A version of K.K Ragtime by Tom Brier, transcribed by 'Czarek7711'.",
 		"file": "ragtime.flow"
+	},
+	{
+		"id": "athletic-theme",
+		"label": "Yoshi's Island Athletic Theme",
+		"blurb": "A version of Yoshi's Island Athletic Themeby Tom Brier, transcribed by 'Czarek7711'.",
+		"file": "athletic-theme.flow"
+	},
+	{
+		"id": "blue-shuffle",
+		"label": "Blue Shuffle (12-bar blues)",
+		"blurb": "An original 12-bar blues in C with a swing feel — swung lead licks over a walking bass and backbeat comps.",
+		"file": "blue-shuffle.flow"
 	}
 ]

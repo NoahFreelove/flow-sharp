@@ -8,6 +8,7 @@
 
 import type { FlowRuntime, RunError, RunResult } from '../runtime';
 import { offerMidiDownload } from './download';
+import { filterRuntimeAdvisories, sourcePlaysAudio } from './advisories';
 import { BLANK_SOURCE, DEFAULT_SNIPPET_ID } from './snippets';
 
 export type RunStatus = 'idle' | 'rendering' | 'playing' | 'error';
@@ -125,7 +126,9 @@ export class PlaygroundState {
 		}
 
 		this.stdout = result.stdout ?? '';
-		this.stderr = result.stderr ?? '';
+		// Drop the always-on Web-target stdlib-load advisories (e.g. the stripped `micBuffer`
+		// surface) so the console only shows advisories relevant to THIS script — see advisories.ts.
+		this.stderr = filterRuntimeAdvisories(result.stderr ?? '');
 		// Drop the `cancel` kind defensively — it is defined but never raised in-browser (D-48-10),
 		// and surfacing "cancelled" would confuse composers (UI-SPEC §error box note).
 		this.errors = (result.errors ?? []).filter((err) => err.kind !== 'cancel');
@@ -151,11 +154,15 @@ export class PlaygroundState {
 			// errors, the script likely only called (writeWav ...) — which writes to /tmp (not
 			// audible in the browser). Surface a friendly advisory so the composer knows why they
 			// heard nothing, rather than leaving them staring at a silent playground.
+			//
+			// The frozen runtime always returns result.wav === null and plays (play ...) straight to
+			// the AudioContext (D-48-09), so a real (play ...) script also has no output bytes — we
+			// must check the SOURCE for a playback call, else every (play ...) snippet trips the hint.
 			const hasOutput =
 				result.wav != null ||
 				result.midi != null ||
 				(result.stdout && result.stdout.trim().length > 0);
-			if (!hasOutput) {
+			if (!hasOutput && !sourcePlaysAudio(source)) {
 				const hint =
 					'[playground] This script rendered to a file — add (play mix) (or the name of your final Buffer) to hear it in the browser.';
 				this.stderr = this.stderr ? `${this.stderr}\n${hint}` : hint;
