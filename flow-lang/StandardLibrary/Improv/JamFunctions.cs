@@ -128,10 +128,14 @@ public static class JamFunctions
         //   seed   — Void sentinel → handler routes through PrngRegistry
         //            (unseeded, two-run cmp-clean preserved)
         //   order  — 2 (clamped to [1, 3] in the handler)
+        //   rng    — Void sentinel → no custom RNG; when a (Int => Double) Flow
+        //            function is passed it drives every draw via LambdaRandom
+        //            (a pure index→value fn keeps two-run cmp-clean)
         var sig = new FunctionSignature("jam",
             [SequenceType.Instance, SymbolType.Instance, IntType.Instance,
-             StringType.Instance, IntType.Instance, IntType.Instance],
-            ParameterNames: ["over", "style", "length", "key", "seed", "order"],
+             StringType.Instance, IntType.Instance, IntType.Instance,
+             FunctionType.Instance],
+            ParameterNames: ["over", "style", "length", "key", "seed", "order", "rng"],
             ParameterDefaults:
             [
                 null,                              // over — required
@@ -140,6 +144,7 @@ public static class JamFunctions
                 Value.Void(),                      // key — Void = no override
                 Value.Void(),                      // seed — Void = PrngRegistry
                 Value.Int(2),                      // order
+                Value.Void(),                      // rng — Void = no custom RNG
             ]);
         registry.Register("jam", sig, args => Jam(args, context));
     }
@@ -218,7 +223,14 @@ public static class JamFunctions
             }
         }
 
-        return Value.Sequence(GenerateJam(ctx, over, styleSymbol, length, keyOverride, seed, order));
+        // Optional custom RNG — a Flow (Int => Double) function. Void sentinel
+        // (the registered default) means "no custom RNG; use seed / PrngRegistry".
+        // When supplied it takes precedence over seed in GenerateJam.
+        FunctionOverload? rngFn = null;
+        if (args.Count >= 7 && args[6].Type is not VoidType)
+            rngFn = args[6].As<FunctionOverload>();
+
+        return Value.Sequence(GenerateJam(ctx, over, styleSymbol, length, keyOverride, seed, order, rngFn));
     }
 
     /// <summary>
@@ -234,7 +246,8 @@ public static class JamFunctions
         int length,
         string? keyOverride,
         int? seed,
-        int order)
+        int order,
+        FunctionOverload? rngFn = null)
     {
         var output = new SequenceData();
 
@@ -291,13 +304,18 @@ public static class JamFunctions
         }
 
         // ---- Resolve PRNG ----
-        // Per D-v1.5-06 / D-36-09: explicit seed uses new Random(seed) directly
-        // (PRNG-SANCTIONED — this is the only sanctioned new Random in this
-        // file; MarkovDeterminismTests-style source-grep gates allow at most 1
-        // hit). Unseeded routes through PrngRegistry keyed by (call-site, name).
-        Random rng = seed.HasValue
-            ? new Random(seed.Value) // PRNG-SANCTIONED: explicit-seed path per D-36-10
-            : ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "jam");
+        // Precedence: explicit composer rng= function > explicit seed > unseeded
+        // PrngRegistry. Per D-v1.5-06 / D-36-09 the explicit seed uses
+        // new Random(seed) directly (PRNG-SANCTIONED — the only sanctioned new
+        // Random in this file; JamDeterminismTests caps the hit count at 1).
+        // A custom rng= drives draws through LambdaRandom (no new Random()); a
+        // PURE (Int => Double) keeps two-run cmp-clean. Unseeded routes through
+        // PrngRegistry keyed by (call-site, name).
+        Random rng = rngFn != null
+            ? new LambdaRandom(rngFn, ctx)
+            : seed.HasValue
+                ? new Random(seed.Value) // PRNG-SANCTIONED: explicit-seed path per D-36-10
+                : ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "jam");
 
         // ---- Resolve active key ----
         // keyOverride wins, else GetMusicalContext().Key, else DefaultKey + advisory.

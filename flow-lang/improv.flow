@@ -51,4 +51,9 @@ Note: Unseeded jam routes its PRNG through ExecutionContext.PrngRegistry keyed
 Note: by (CurrentCallSite, "jam") — two consecutive renders of the same source
 Note: at the same git SHA produce byte-identical output (two-run cmp-clean
 Note: determinism preserved).
-internal proc jam (Sequence: over, Symbol: style, Int: length, String: key, Int: seed, Int: order)
+Note:
+Note: rng= takes a composer (Int => Double) function (index -> value in [0,1)).
+Note:   When supplied it drives every random draw, taking precedence over seed.
+Note:   A pure index->value fn keeps two-run cmp-clean; out-of-range returns are
+Note:   charitably folded into [0,1). e.g. (jam over=chords rng=(fn Int i => ...)).
+internal proc jam (Sequence: over, Symbol: style, Int: length, String: key, Int: seed, Int: order, Function: rng)
