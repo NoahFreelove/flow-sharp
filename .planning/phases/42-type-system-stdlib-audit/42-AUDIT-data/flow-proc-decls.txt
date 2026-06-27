@@ -1,7 +1,3 @@
-Nothing
-__enableNotationIoModule
-__enableOscModule
-__enableSfzModule
 abc
 abs
 accelerando
@@ -30,9 +26,10 @@ augment
 bandpass
 barLength
 beat
-beatToSec
 beatsToFrames
+beatToSec
 bpm
+break
 bufferDuration
 bufferHex
 buffersCompatible
@@ -47,9 +44,13 @@ chordNotes
 chordQuality
 chordRoot
 chunk
+clockMaster
+clockSlave
+clockStop
 compress
 concat
 contains
+continue
 copyBuffer
 cos
 createADSR
@@ -94,12 +95,17 @@ diminish
 div
 double
 doubleIt
-doubleToInt
 doubler
+doubleToInt
 down
 drop
 each
 empty
+__enableJackModule
+__enableMidiModule
+__enableNotationIoModule
+__enableOscModule
+__enableSfzModule
 enharmonic
 equals
 euclidean
@@ -131,6 +137,7 @@ getOr
 getRemainingBeats
 getSample
 getSampleRate
+getSection
 getSections
 getTimeSignature
 granular
@@ -146,24 +153,26 @@ hz
 idiv
 if
 init
+inspect
 int
-intToDouble
 internal proc ?()
-internal proc ??()
 internal proc ??reset()
 internal proc ??set(Int: seed)
+intToDouble
 inversion
 invert
 isAudioAvailable
 isMono
 isStereo
 iter
+jackSync
 jam
 jux
 keys
 last
 legato
 len
+length
 life
 list
 listStyles
@@ -191,12 +200,19 @@ markovTrain
 max
 merge
 micBuffer
+midiCC
+midiNoteOff
+midiNoteOn
+midiOut
+midiPorts
+midiSysex
 min
 mix
 mixBuffers
 mml
 ms
 mul
+mulThree
 multipleNonVoidThenReturnNothing
 nanFloat
 neg
@@ -204,14 +220,18 @@ noise
 not
 noteToFrequency
 noteValueToBeats
+Nothing
 onlyVoidAtEnd
+openMidiOutput
 or
 oscBundle
+oscillator
 oscListen
+oscMsg
+oscPump
 oscSend
 oscSendBundle
 oscStop
-oscillator
 palindrome
 pan
 phase
@@ -234,8 +254,8 @@ remove
 render
 renderBarAtBeat
 renderBarAtTime
-renderBarToVoices
 renderBars
+renderBarToVoices
 renderHit
 renderSequenceToVoices
 renderSong
@@ -252,10 +272,11 @@ round
 sampleAt
 scaleBuffer
 scaleNotes
+scan
 sec
-secToBeat
 secondsToFrames
 sectionSequences
+secToBeat
 semitones
 sequals
 set
@@ -293,6 +314,7 @@ stretch
 stringToDouble
 stringToInt
 sub
+sumTwo
 superimpose
 swell
 tail
@@ -326,3 +348,4 @@ writeLilyPond
 writeMidi
 writeMusicXML
 writeWav
+zip
