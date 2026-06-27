@@ -25,7 +25,9 @@ on:
 jobs:
   build-server:
     strategy:
-      fail-fast: true
+      # fail-fast off: a single platform's failure must not cancel the other
+      # legs (and silently skip publish). Each leg builds + uploads its own VSIX.
+      fail-fast: false
       matrix:
         include:
           - rid: linux-x64
@@ -137,6 +139,14 @@ jobs:
       fail-fast: false
       matrix:
         target: [linux-x64, win32-x64, darwin-x64, darwin-arm64]
+    # Map the marketplace tokens to env so the steps below can gate on their
+    # presence: a tag push must stay GREEN whether or not the secrets exist.
+    # Add VSCE_PAT (VS Marketplace) / OVSX_PAT (Open VSX) repo secrets to turn
+    # publishing on — each registry activates independently the moment its token
+    # is set. (You cannot reference `secrets.*` in `if:`; `env.*` is allowed.)
+    env:
+      VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      OVSX_PAT: ${{ secrets.OVSX_PAT }}
     steps:
       - name: Download VSIX artifact (${{ matrix.target }})
         uses: actions/download-artifact@v4
@@ -145,14 +155,24 @@ jobs:
           path: artifacts
 
       - name: Publish to VSCode Marketplace (${{ matrix.target }})
+        if: ${{ env.VSCE_PAT != '' }}
         uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.VSCE_PAT }}
           extensionFile: artifacts/flow-${{ matrix.target }}.vsix
           registryUrl: https://marketplace.visualstudio.com
 
+      - name: Skip VS Marketplace publish (no VSCE_PAT)
+        if: ${{ env.VSCE_PAT == '' }}
+        run: echo "::notice title=VS Marketplace publish skipped::VSCE_PAT secret not set for ${{ matrix.target }}. The VSIX is attached as a build artifact; add the VSCE_PAT repo secret to enable Marketplace publishing."
+
       - name: Publish to OpenVSX (${{ matrix.target }})
+        if: ${{ env.OVSX_PAT != '' }}
         uses: HaaLeo/publish-vscode-extension@v2
         with:
           pat: ${{ secrets.OVSX_PAT }}
           extensionFile: artifacts/flow-${{ matrix.target }}.vsix
+
+      - name: Skip OpenVSX publish (no OVSX_PAT)
+        if: ${{ env.OVSX_PAT == '' }}
+        run: echo "::notice title=OpenVSX publish skipped::OVSX_PAT secret not set for ${{ matrix.target }}. The VSIX is attached as a build artifact; add the OVSX_PAT repo secret to enable Open VSX publishing."
