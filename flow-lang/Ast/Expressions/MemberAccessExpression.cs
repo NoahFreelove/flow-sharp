@@ -8,4 +8,5 @@ namespace FlowLang.Ast.Expressions;
 public record MemberAccessExpression(
     SourceLocation Location,
     Expression Object,
-    string MemberName) : Expression(Location);
+    string MemberName,
+    Span? Span = null) : Expression(Location);

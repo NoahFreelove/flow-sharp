@@ -1,0 +1,73 @@
+Note: =====================================================================
+Note: multi_block.flow — Phase 38 LIVE-01 / LIVE-02 multi-block chapter
+Note: =====================================================================
+Note:
+Note: D-38-02 multi-block independent swap demo. Two `live { ... }` blocks
+Note: live in the same file and swap on their OWN quantize timelines:
+Note:   - The drums block re-evaluates at every 1-bar boundary
+Note:   - The pad block re-evaluates at every 2-bar boundary
+Note:
+Note: Each block is keyed by an FNV-1a stable BlockId computed from its
+Note: SourceLocation, so the LiveBlockRegistry routes saved-file edits to
+Note: the correct block. Editing the drums body and saving does NOT
+Note: re-render the pad block at the next bar — only at the next 2-bar
+Note: boundary if its own body changed.
+Note:
+Note: Run (one-shot smoke):
+Note:   dotnet run --project flow-interpreter examples/live/multi_block.flow
+Note:
+Note: Run (live hot-swap mode):
+Note:   dotnet run --project flow-interpreter -- --watch examples/live/multi_block.flow
+Note:
+Note:   While the watch is running, edit ONLY the drums sequence and
+Note:   save. The 4-row ANSI status panel (UI-SPEC §"ANSI Live Status
+Note:   Panel") shows two `live` rows:
+Note:     Live blocks: live 1bar @ L<N> (last swap bar X, Ys ago)
+Note:                  | live 2bar @ L<M> (last swap bar X, Ys ago)
+Note:   The drums row's "last swap bar" advances; the pad row's does not.
+Note:
+Note: File-scope edit advisory (D-38-04):
+Note:   If you edit OUTSIDE either `live { }` block (e.g. change the
+Note:   `tempo 120` header), Flow emits a one-shot stderr advisory:
+Note:     [live] file-scope edit detected outside live blocks at line N
+Note:     — restart 'flow watch' to apply
+Note:   D-38-03 file-scope-frozen lock: opting into `live { }` opts INTO
+Note:   "performance lock" where setup doesn't change mid-set. Composer
+Note:   restarts `flow watch` to pick up file-scope changes — never
+Note:   auto-restart (Pitfall #12 "live session never dies mid-set").
+Note:
+Note: Voice-pool preservation (LIVE-03):
+Note:   Each block tags its rendered voices with names ("drums:0",
+Note:   "pad:0", etc.) via SongRenderer's "{sequenceName}:{ordinal}"
+Note:   format. On swap, the VoiceAllocator.DiffByVoiceName helper
+Note:   classifies voices as Preserved (name survives → CopyStateFrom
+Note:   transfers OffsetBeats so envelopes don't retrigger), Dropped
+Note:   (name absent in new buffer → ApplyFadeOut), or Added (new
+Note:   voice name → cold start). No click on save.
+
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            live 1bar {
+                section drums {
+                    Sequence kick = | C2q _ C2q _ |
+                }
+                Song song = [drums]
+                Buffer result = (renderSong song "drums")
+                (play result)
+            }
+
+            live 2bar {
+                section pad {
+                    Sequence chord_pad = | C3w | F3w |
+                }
+                Song song = [pad]
+                Buffer result = (renderSong song "strings")
+                (play result)
+            }
+        }
+    }
+}

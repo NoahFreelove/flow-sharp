@@ -1,0 +1,47 @@
+// Converted from midi to flow using the midi2flow cli tool (and then some small tweaks)
+
+use "@std"
+use "@audio"
+
+tempo 88 {
+    timesig 4/4 {
+        key Ebmajor {
+
+            section roundtrip {
+                Sequence track1_seq = | mf G4h G4q F4q | mf E4-h B4-h | mf C5q B4-q B4-q A4-q |
+                                      mf G4w | mf G4h A4-q B4-q | mf C5h B4-h |
+                                      mf A4-q F4q G4q A4q | mf B4-w | mf G4h G4q F4q |
+                                      mf E4-h B4-h | mf B4-q A4-q A4-q G4q | mf F4w |
+                                      mf F4h G4q A4-q | mf G4q F4q E4-q A4-q | mf G4h F4h |
+                                      mf E4-w |
+                Sequence track2_seq = | mf E4-h D4q D4q | mf E4-h E4-h | mf C4q D4q E4-q F4q |
+                                      mf E4-w | mf E4-h E4-q E4-q | mf E4-h E4-h |
+                                      mf E4-q F4q E4-q E4-q | mf D4w | mf E4-h D4q D4q |
+                                      mf E4-h E4-h | mf E4-q E4-q E4q E4q | mf F4w |
+                                      mf D4h E4-q D4q | mf E4-q D4q E4-q F4q | mf E4-h D4h |
+                                      mf E4-w |
+                Sequence track3_seq = | _ w | _ w | _ w | _ w | _ w | _ w | mf C4q _ h . | _ w |
+                                      _ w | _ h mf E4-q D4q | mf C4q C4q C4q _ q | _ w | _ w |
+                                      _ h . mf C4q | _ w | _ w |
+                Sequence track4_seq = | mf B3-h B3-q A3-q | mf G3h E3-h | mf E3-q B3-q B3-q B3-q |
+                                      mf B3-w | mf B3-h A3-q G3q | mf A3-h G3h |
+                                      _ q mf B3-q B3-q E3-q | mf F3w | mf G3q A3-q B3-q A3-q |
+                                      mf G3h _ h | _ h . mf B3-q | mf A3-w | mf B3-h B3-q B3-q |
+                                      mf B3-q A3-q G3q _ q | mf B3-h. A3-q | mf G3w |
+                Sequence track5_seq = | mf E3-h B2-q B2-q | mf C3h G2h | mf A2-q B2-q C3q D3q |
+                                      mf E3-w | mf E3-q D3q C3q B2-q | mf A2-h E3-h |
+                                      mf F3q D3q E3-q C3q | mf B2-w | mf E3-h B2-q B2-q |
+                                      mf C3h G2h | mf A2-q. B2-e C3q C3q | mf F3w |
+                                      mf A3-h G3q F3q | mf E3-q B2-q C3q A2-q | mf B2-h B2-h |
+                                      mf E3-w |
+            }
+
+            Song s = [roundtrip]
+
+            Buffer mix = (renderSong s "organ")
+            Buffer wet = (reverb mix 1)
+            (play wet)
+
+        }
+    }
+}

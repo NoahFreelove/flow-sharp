@@ -1,0 +1,26 @@
+Note: bench_overload.flow
+Note: Hot path measured: OverloadResolver specificity scoring across numeric types.
+Note: Rotates Int / Float / Double via (add) -- each call forces overload re-resolution.
+Note: Long is skipped -- the lexer has no Long literal suffix and conversion builtins
+Note: are not registered in a clearly stable form. Three numeric tiers are enough to
+Note: keep the OverloadResolver scoring tier-shifting on every call.
+Note: Tuned iteration count: N = 200000 (retune if outside 1-5s).
+
+use "@std"
+
+Int i = 7
+Float f = 1.5
+Double d = 2.5
+
+proc touchMixed ()
+    Note: nested (add) calls across Int / Float / Double force OverloadResolver
+    Note: to re-score Int+Float, Float+Double, Int+Double, etc. each time.
+    (add (add i f) (add d (add i (add f d))))
+end proc
+
+Int N = 200000
+
+Double total = (reduce (range 0 N) 0.0 (fn Double acc, Int i2 => (add acc (touchMixed))))
+
+(print (concat "total=" (str total)))
+(print "bench_overload: PASSED")

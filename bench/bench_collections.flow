@@ -1,0 +1,23 @@
+Note: bench_collections.flow
+Note: Hot path measured: range / map / filter / reduce list-wrap allocations.
+Note: Inner pipeline runs over N=10000 elements; outer driver repeats R=20 times.
+Note: Tuned counts: N=10000, R=20 (retune if total is < 0.5s or > 8s).
+
+use "@std"
+
+Int N = 10000
+Int R = 20
+
+proc pipeline (Int: seed)
+    Int[] xs = (range 0 N)
+    Int[] doubled = (map xs (fn Int n => (mul n 2)))
+    Int[] evens = (filter xs (fn Int n => (equals 0 (sub n (mul (div n 2) 2)))))
+    Int sumDoubled = (reduce doubled 0 (fn Int acc, Int n => (add acc n)))
+    Int sumEvens = (reduce evens 0 (fn Int acc, Int n => (add acc n)))
+    (add seed (add sumDoubled sumEvens))
+end proc
+
+Int total = (reduce (range 0 R) 0 (fn Int acc, Int i => (pipeline acc)))
+
+(print (concat "total=" (str total)))
+(print "bench_collections: PASSED")

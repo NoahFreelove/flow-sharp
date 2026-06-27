@@ -1,0 +1,100 @@
+// =====================================================================
+// Markov Jazz — Phase 36 generative showcase
+// =====================================================================
+// Demonstrates the headline Phase 36 generative + improv surface:
+//
+//   - One-shot `(markov corpus order length seed)` for quick exploration
+//   - Train/generate split `(markovTrain corpus order) -> MarkovModel`
+//     + `(markovGenerate model length seed)` for reuse across many bars
+//     (per D-36-06)
+//   - Chord-aware Markov improvisation via `(jam over=chords style=#jazz
+//     length=N seed=N)` over a ii-V-I-VI progression (per D-36-10)
+//   - Phase 35 `as` chain naming threaded through Phase 36 combinators
+//     (`-> (every ...) as varied`)
+//
+// PRNG determinism (D-v1.5-06 / D-36-09): unseeded generative calls route
+// through `ExecutionContext.PrngRegistry` keyed by (SourceLocation, name)
+// and reseed at every `writeWav` boundary. Two consecutive renders of
+// THIS file produce byte-identical WAV output (verified by
+// `scripts/test_two_run_determinism.sh examples/generative/markov_jazz.flow`).
+//
+// Cross-platform note: Lorenz / logistic chaos primitives carry a
+// documented platform-specific FP-divergence caveat (D-36-09). This
+// example uses Markov + jam ONLY — Markov state is integer-pitch-keyed
+// and is byte-portable across Linux / macOS / Windows builds.
+//
+// Render with:
+//   dotnet run --project flow-cli -- run examples/generative/markov_jazz.flow
+//
+// The writeWav target below is `/tmp/markov_jazz.wav` (Phase 36 test
+// convention) so `scripts/test_two_run_determinism.sh` can render the
+// file from any CWD. Copy the output elsewhere if you want to keep it.
+
+use "@std"
+use "@audio"
+use "@patterns"
+use "@generative"
+use "@improv"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+
+            // -------------------------------------------------------------
+            // 1. One-shot Markov — `(markov corpus order length seed)`.
+            //    A short ascending+descending C-major scale teaches the
+            //    chain a step-wise melodic motion; seed=42 makes the
+            //    output identical across consecutive renders.
+            // -------------------------------------------------------------
+            Sequence corpus = | C4q D4q E4q F4q G4q F4q E4q D4q C4q |
+            Sequence oneShot = (markov corpus 2 16 42)
+
+            // -------------------------------------------------------------
+            // 2. Train once, generate many — D-36-06 split shape.
+            //    `MarkovModel` is a reference-identity value type
+            //    (Pitfall 6) — two `(markovTrain corpus order)` calls
+            //    produce DISTINCT models; structural equality via
+            //    `(markovEqual a b)`.
+            // -------------------------------------------------------------
+            MarkovModel m = (markovTrain corpus 2)
+            Sequence riffA = (markovGenerate m 8 100)
+            Sequence riffB = (markovGenerate m 8 200)
+
+            // -------------------------------------------------------------
+            // 3. Chord-aware jam over a ii-V-I-VI in C major (D-36-10).
+            //    `jam` signature (positional form):
+            //      (jam over=chords style=#jazz length=4 key="Cmajor"
+            //           seed=1234 order=2)
+            //    Style packs ship at `flow-lang/improv/styles/*.flow`;
+            //    composer can override at `~/.config/flow/styles/*.flow`.
+            // -------------------------------------------------------------
+            Sequence chords = | Dm7 | G7 | Cmaj7 | Am7 |
+            Sequence solo = (jam chords #jazz 4 "Cmajor" 1234 2)
+
+            // -------------------------------------------------------------
+            // 4. Phase 36 `@patterns` combinators (D-36-03 lambda-required,
+            //    D-36-04 cycle unit = bars). Apply `fast 2.0` to every
+            //    2nd bar of the `riffA` Markov output, then sprinkle a
+            //    stochastic transposition on top via `sometimes` (PRNG
+            //    routed through `PrngRegistry` per D-v1.5-06).
+            // -------------------------------------------------------------
+            Sequence varied = (every 2 (fn Sequence s => (fast s 2.0)) riffA)
+            Sequence variation = (sometimes 0.4 (fn Sequence s => (transpose s +7st)) varied)
+
+            // -------------------------------------------------------------
+            // 5. Stitch all four sequences into a single piano render.
+            //    Each section becomes its own bar group; the Song laid
+            //    out as `[oneShot solo variation riffB]` plays them in
+            //    that order.
+            // -------------------------------------------------------------
+            section A { Sequence v = oneShot }
+            section B { Sequence v = solo }
+            section C { Sequence v = variation }
+            section D { Sequence v = riffB }
+
+            Song song = [A B C D]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "/tmp/markov_jazz.wav" mix)
+        }
+    }
+}

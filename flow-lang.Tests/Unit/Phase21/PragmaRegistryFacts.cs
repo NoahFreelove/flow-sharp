@@ -33,10 +33,13 @@ public class PragmaRegistryFacts
     [Fact]
     public void AlphabetizedKnownNames_ReturnsCsvSorted()
     {
-        // Phase 24 closed-set growth: 5 entries — equalTemperament, hAsB,
-        // justIntonation, pythagorean, scaleLint (ordinal-sorted: e < h < j < p < s).
+        // Phase 45 closed-set growth: 8 entries — beat-true-to-sig,
+        // equalTemperament, hAsB, justIntonation, matchExhaustive, pythagorean,
+        // scaleLint, strict (ordinal-sorted: 'b' < 'e' < 'h' < 'j' < 'm' < 'p'
+        // < 's' < 's'). beat-true-to-sig registered by Plan 45-03 per D-03 —
+        // sorts FIRST under ordinal comparison. (strict added by Plan 44-01.)
         var csv = PragmaRegistry.AlphabetizedKnownNames();
-        Assert.Equal("equalTemperament, hAsB, justIntonation, pythagorean, scaleLint", csv);
+        Assert.Equal("beat-true-to-sig, equalTemperament, hAsB, justIntonation, matchExhaustive, pythagorean, scaleLint, strict", csv);
     }
 
     [Fact]

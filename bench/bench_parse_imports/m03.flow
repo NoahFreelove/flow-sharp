@@ -1,0 +1,31 @@
+Note: m03.flow -- parse-bench import target #3
+Note: Plain Int decls + one proc + one print. Exercises ModuleLoader on relative path.
+
+use "@std"
+
+Int k41 = 41
+Int k42 = 42
+Int k43 = 43
+Int k44 = 44
+Int k45 = 45
+Int k46 = 46
+Int k47 = 47
+Int k48 = 48
+Int k49 = 49
+Int k50 = 50
+Int k51 = 51
+Int k52 = 52
+Int k53 = 53
+Int k54 = 54
+Int k55 = 55
+Int k56 = 56
+Int k57 = 57
+Int k58 = 58
+Int k59 = 59
+Int k60 = 60
+
+proc m03proc (Int: x)
+    (add x k41)
+end proc
+
+(print "m03 loaded")

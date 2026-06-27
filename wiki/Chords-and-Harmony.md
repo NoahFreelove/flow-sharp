@@ -50,7 +50,7 @@ Chord fs = Fsmaj7    Note: F# major 7th
 
 > This is **different** from note literal accidentals, which use `+` and `-` (e.g., `C4+` = C# at octave 4). See [Note Streams](Note-Streams.md).
 
-> `G7` is parsed as the note G at octave 7, not a G dominant 7th chord. Use `Gdom7` (or `G7` in a context where a chord is explicit, like inside a note stream) for the chord.
+> `G7` is parsed as the note G at octave 7 in **all** contexts — including inside note streams. Use `Gdom7` for the dominant 7th chord.
 
 ## Chord Functions
 
@@ -61,8 +61,8 @@ Chord c = Cmaj7
 
 String root = (chordRoot c)                 Note: "C"
 String quality = (chordQuality c)           Note: "maj7"
-String[] notes = (chordNotes c)             Note: ["C", "E", "G", "B"]
-(print $"root: {root}, quality: {quality}, count: {notes -> length}")
+String[] notes = (chordNotes c)             Note: ["C4", "E4", "G4", "B4"]
+(print $"root: {root}, quality: {quality}, count: {notes -> len}")
 ```
 
 ## Chords in Note Streams
@@ -75,6 +75,20 @@ timesig 4/4 {
     (print (str prog))
 }
 ```
+
+Append duration suffixes (and dots) to a named chord element to control its rhythm. A chord with a **letter-bearing quality** (`maj7`, `m7`, `dim7`, `sus4`, `m`, …) fuses directly with the duration letter — `Cmaj7q` — just like a note literal. The space-separated form also works and is required for chords whose quality is a bare digit (`Gdom7`, `C6`):
+
+```flow
+timesig 4/4 {
+    Note: fused — letter-quality chord + duration
+    Sequence fused = | Cmaj7q Am7q Dm7h Fsmaj7h |
+
+    Note: space-separated — works for any chord, required for bare-digit qualities
+    Sequence spaced = | Cmaj7 q Am7 q Gdom7 h Dsus4 h |
+}
+```
+
+> **Bare-digit chords don't fuse.** `G7`, `Bb7`, and `C6` parse as a note + octave (so `Bb7q` is the *note* Bb7 as a quarter, not the Bb dominant 7th — see the warning at the top of this page). When you mean the chord, use a letter-quality spelling (`Gdom7`, `Bfdom7`) so it fuses, or write the dominant explicitly.
 
 ## Roman Numerals
 
@@ -135,7 +149,7 @@ See [Chord Progressions](Chord-Progressions.md) for the full reference, includin
 
 ## Arpeggios
 
-Generate arpeggiated sequences from chords:
+Generate arpeggiated sequences from chords. The 2-arg form takes a direction string and emits eighth notes:
 
 ```flow
 use "@std"
@@ -144,6 +158,47 @@ Sequence up     = (arpeggio Cmaj "up")
 Sequence down   = (arpeggio Cmaj "down")
 Sequence updown = (arpeggio Cmaj "updown")
 ```
+
+The 4-arg form gives full control over rate, direction, and pattern. Rate is a `NoteValue` constant from `@notation` (`QUARTER`, `EIGHTH`, `SIXTEENTH`, etc.) — bare `q`/`e`/`s` are only valid as duration suffixes inside note streams:
+
+```flow
+use "@std"
+use "@notation"
+
+Note: direction is up/down/updown/downup/random; pattern is linear/chord-tone/scale-tone
+Sequence triplets = (arpeggio Cmaj7 QUARTER "updown" "linear")
+Sequence rolling  = (arpeggio Cmaj7 SIXTEENTH "down" "linear")
+```
+
+> `downup` and `random` are accepted today; `chord-tone` and `scale-tone` currently behave the same as `linear` (placeholders for future expansion).
+
+## Chord Inversions and Voicings
+
+Invert a chord by rotating its lowest N notes up an octave each:
+
+```flow
+use "@std"
+
+Chord triad = Cmaj                          Note: C4 E4 G4
+Chord first = (inversion triad 1)           Note: E4 G4 C5
+Chord second = (inversion triad 2)          Note: G4 C5 E5
+```
+
+Apply a named voicing for richer textures (jazz comping, open spacing, etc.):
+
+```flow
+use "@std"
+
+Chord shell = Cmaj7
+
+Chord drop2  = (voicing shell "drop2")      Note: lower the 2nd-from-top note an octave
+Chord drop3  = (voicing shell "drop3")      Note: lower the 3rd-from-top note an octave
+Chord open   = (voicing shell "open")       Note: raise the middle note an octave (wider)
+Chord close  = (voicing shell "close")      Note: collapse to within one octave of root
+Chord spread = (voicing shell "spread")     Note: raise the highest note another octave
+```
+
+> Voicings whose minimum-note requirement isn't met (`drop2`/`drop3` need ≥4 notes; `spread`/`open`/`close` need ≥3) return the input unchanged — no error, no warning. Same for out-of-range inversion indices.
 
 ## Scale Operations
 
@@ -160,6 +215,7 @@ String[] aMinor = (scaleNotes "Aminor")      Note: 7 notes
 Scales are useful for constraining diatonic mutation with `vary`:
 
 ```flow
+Note: snippet - not standalone; mel must be defined first, e.g.: Sequence mel = | C4 D4 E4 F4 G4 |
 Sequence varied = (vary mel 0.3 "pitch" "Cmajor")
 ```
 
@@ -188,8 +244,9 @@ Song mySong = [intro verse]
 String[] sections = (getSections mySong)
 (print (str sections))               Note: ["intro", "verse"]
 
-String[] seqs = (sectionSequences intro)
-(print (str seqs))                   Note: ["mel"]
+Note: sectionSequences(Song, String) returns the sequence names of one named section.
+String[] introSeqs = (sectionSequences mySong "intro")
+(print (str introSeqs))              Note: ["mel"]
 ```
 
 ## See Also

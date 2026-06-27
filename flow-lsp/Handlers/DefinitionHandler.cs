@@ -146,7 +146,7 @@ public sealed class DefinitionHandler : DefinitionHandlerBase
 
     protected override DefinitionRegistrationOptions CreateRegistrationOptions(
         DefinitionCapability capability, ClientCapabilities clientCapabilities)
-        => new() { DocumentSelector = TextDocumentSelector.ForLanguage("flow") };
+        => new() { DocumentSelector = TextDocumentSelector.ForPattern("**/*.flow") };
 
     /// <summary>
     /// Returns true iff <paramref name="prefix"/> contains the keyword

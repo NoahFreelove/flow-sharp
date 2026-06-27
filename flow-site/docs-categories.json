@@ -1,0 +1,32 @@
+{
+	"Getting Started": [
+		"Home",
+		"Quick-Start",
+		"Language-Basics",
+		"Flow-Operator",
+		"Functions",
+		"Loops",
+		"Collections",
+		"String-Interpolation",
+		"Imports-and-Modules"
+	],
+	"Music Concepts": [
+		"Note-Streams",
+		"Chords-and-Harmony",
+		"Chord-Progressions",
+		"Musical-Context",
+		"Song-Structure",
+		"Pattern-Transforms",
+		"Dynamics-and-Expression",
+		"Voices-and-Tracks",
+		"Vocalization",
+		"Generative"
+	],
+	"Audio + Output": [
+		"Audio-and-Synthesis",
+		"Effects",
+		"Playback-and-Export",
+		"Visualization"
+	],
+	"Reference": ["Standard-Library", "Tips-and-Tricks", "Examples"]
+}

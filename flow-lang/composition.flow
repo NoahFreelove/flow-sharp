@@ -1,10 +1,14 @@
 Note: Composition and Timeline Standard Library
-Note: Phase 3b: Timeline Abstractions
 Note:
 Note: For classical music composition with note durations and time signatures,
 Note: see the @notation library which provides structured musical notation.
 Note:
 Note: This library provides DAW-style timeline composition with positioned audio clips.
+Note:
+Note: Legacy fluent Track wrappers (bpm/voiceAt/... below) -- superseded by
+Note: Song/Section as the canonical arrangement primitive; kept as a usable surface.
+
+module composition
 
 Int TIME_SIGNATURE_NOTE = 4
 Int TIME_SIGNATURE_NOTES_PER_BAR = 4
@@ -21,6 +25,8 @@ Note: ===== Time Conversions =====
 
 Note: Converts beats to frames based on current BPM
 internal proc beatsToFrames(Double: beats, Int: sampleRate)
+Note: sweep-260620 — Beat-typed surface; reads the RAW beat double (no timesig multiplier)
+internal proc beatsToFrames(Beat: beats, Int: sampleRate)
 
 Note: Converts frames to beats based on current BPM
 internal proc framesToBeats(Int: frames, Int: sampleRate)
@@ -29,6 +35,8 @@ Note: ===== Voice Management =====
 
 Note: Creates a voice with buffer positioned at beat offset
 internal proc createVoice(Buffer: buffer, Double: offsetBeats)
+Note: sweep-260620 — Beat-typed surface (raw beat double, no timesig multiplier)
+internal proc createVoice(Buffer: buffer, Beat: offsetBeats)
 
 Note: Sets the gain of a voice
 internal proc setVoiceGain(Voice: voice, Double: gain)
@@ -38,6 +46,8 @@ internal proc setVoicePan(Voice: voice, Double: pan)
 
 Note: Sets the offset of a voice in beats
 internal proc setVoiceOffset(Voice: voice, Double: offsetBeats)
+Note: sweep-260620 — Beat-typed surface (raw beat double, no timesig multiplier)
+internal proc setVoiceOffset(Voice: voice, Beat: offsetBeats)
 
 Note: ===== Track Management =====
 
@@ -49,6 +59,8 @@ internal proc addVoice(Track: track, Voice: voice)
 
 Note: Sets the offset of a track in beats
 internal proc setTrackOffset(Track: track, Double: offsetBeats)
+Note: sweep-260620 — Beat-typed surface (raw beat double, no timesig multiplier)
+internal proc setTrackOffset(Track: track, Beat: offsetBeats)
 
 Note: Sets the gain of a track
 internal proc setTrackGain(Track: track, Double: gain)
@@ -58,6 +70,8 @@ internal proc setTrackPan(Track: track, Double: pan)
 
 Note: Renders a track to a buffer with specified duration in beats
 internal proc renderTrack(Track: track, Double: durationBeats)
+Note: sweep-260620 — Beat-typed surface (raw beat double, no timesig multiplier)
+internal proc renderTrack(Track: track, Beat: durationBeats)
 
 Note: ===== Convenience Layer =====
 
@@ -71,6 +85,11 @@ end proc
 
 Note: Create voice positioned at specific beat
 proc voiceAt(Buffer: buffer, Double: beat)
+    (createVoice buffer beat)
+end proc
+
+Note: sweep-260620 — Beat-typed form; forwards the raw value to the Beat createVoice overload (no multiplier math)
+proc voiceAt(Buffer: buffer, Beat: beat)
     (createVoice buffer beat)
 end proc
 
@@ -105,6 +124,12 @@ proc startAt(Track: track, Double: beat)
     track
 end proc
 
+Note: sweep-260620 — Beat-typed form; forwards the raw value to the Beat setTrackOffset overload (no multiplier math)
+proc startAt(Track: track, Beat: beat)
+    track -> setTrackOffset beat
+    track
+end proc
+
 Note: Set track offset to specific bar (assumes 4/4 time)
 proc startAtBar(Track: track, Int: bar)
     Int beatsPerBar = 4
@@ -127,6 +152,11 @@ end proc
 
 Note: Render track with specified duration in beats
 proc render(Track: track, Double: durationBeats)
+    (renderTrack track durationBeats)
+end proc
+
+Note: sweep-260620 — Beat-typed form; forwards the raw value to the Beat renderTrack overload (no multiplier math)
+proc render(Track: track, Beat: durationBeats)
     (renderTrack track durationBeats)
 end proc
 

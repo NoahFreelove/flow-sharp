@@ -25,7 +25,7 @@ public class NoteStreamCompiler
 
     /// <summary>
     /// Maps duration suffix characters to NoteValue enum values.
-    /// w=whole, h=half, q=quarter, e=eighth, s=sixteenth, t=32nd
+    /// w=whole, h=half, q=quarter, e=eighth, s=sixteenth, t=32nd, x=64th, y=128th
     /// </summary>
     private static readonly Dictionary<string, NoteValueType.Value> DurationSuffixMap = new()
     {
@@ -34,7 +34,9 @@ public class NoteStreamCompiler
         { "q", NoteValueType.Value.QUARTER },
         { "e", NoteValueType.Value.EIGHTH },
         { "s", NoteValueType.Value.SIXTEENTH },
-        { "t", NoteValueType.Value.THIRTYSECOND }
+        { "t", NoteValueType.Value.THIRTYSECOND },
+        { "x", NoteValueType.Value.SIXTYFOURTH },
+        { "y", NoteValueType.Value.ONETWENTYEIGHTH }
     };
 
     /// <summary>
@@ -71,14 +73,75 @@ public class NoteStreamCompiler
         var sequence = new SequenceData();
         var timeSig = context.TimeSignature ?? new TimeSignatureData(4, 4);
 
+        // sweep-0614: resolve the active swing once. Context Swing is in [0.0, 1.0]
+        // with 0.5 == straight; the onset-shift math (shared with the `quantize`
+        // builtin) uses [-1.0, 1.0] with 0 == straight, so bridge the convention.
+        // Short-circuit at exactly straight (or absent) so non-swing renders stay
+        // byte-identical / two-run cmp-clean.
+        double transformSwing = context.Swing.HasValue ? (context.Swing.Value - 0.5) * 2.0 : 0.0;
+
         foreach (var bar in noteStream.Bars)
         {
             var barData = CompileBar(bar, timeSig, context, executionContext);
             barData.IsPickup = bar.IsPickup;
+            if (transformSwing != 0.0)
+                ApplyContextSwing(barData, transformSwing);
             sequence.AddBar(barData);
         }
 
         return sequence;
+    }
+
+    /// <summary>
+    /// sweep-0614: applies the active <c>swing N { }</c> context to a compiled bar by
+    /// delaying every offbeat eighth-note onset, mirroring the eighth-note swing grid
+    /// used by the <c>quantize</c> builtin (TransformFunctions.QuantizeBar — CONTEXT
+    /// D-04/D-06). Before this fix <see cref="MusicalContext.Swing"/> was written/cloned
+    /// but never read by any render path, so a <c>swing 0.62 { }</c> block produced
+    /// straight eighths. The shift is ADDED to each note's existing
+    /// <see cref="MusicalNoteData.OnsetOffset"/> (so it composes with tuplets); a later
+    /// explicit <c>quantize</c> transform still overwrites it. Recurses into Phase 28
+    /// parallel voices so voiced bars swing too.
+    /// </summary>
+    private static void ApplyContextSwing(BarData bar, double transformSwing)
+    {
+        var ts = bar.TimeSignature ?? new TimeSignatureData(4, 4);
+        // sweep-0614: currentBeat now accumulates GetBeats in QUARTER-note units,
+        // so the eighth-note subdivision must also be quarter-units (an eighth is
+        // 4/8 = 0.5 quarters in every meter). Previously this was denominator-units
+        // (ts.Denominator / 8.0); in 4/4 both forms equal 0.5, so 4/4 swing stays
+        // byte-identical while non-4/4 swing now snaps to the correct eighth grid.
+        double subdivBeats = 4.0 / 8.0;
+        double swingOffset = transformSwing * (subdivBeats / 2.0);
+
+        var notes = bar.MusicalNotes;
+        double currentBeat = 0.0;
+        // Whether the most recent LEAD note landed on an offbeat eighth — its stacked
+        // chord tones inherit the same shift so the chord stays together.
+        bool leadOffbeat = false;
+        for (int i = 0; i < notes.Count; i++)
+        {
+            var note = notes[i];
+            // Snap the running onset to the nearest eighth-note slot to decide
+            // on/offbeat, then delay the offbeats. Chord tones (isChordTone) ride
+            // the leading note's onset, so only the lead note advances the cursor.
+            if (!note.IsChordTone)
+            {
+                int slot = (int)Math.Round(currentBeat / subdivBeats);
+                leadOffbeat = (slot % 2 == 1);
+                if (leadOffbeat)
+                    notes[i] = note.With(onsetOffset: note.OnsetOffset + swingOffset);
+                currentBeat += note.GetBeats(ts.Denominator);
+            }
+            else if (leadOffbeat)
+            {
+                notes[i] = note.With(onsetOffset: note.OnsetOffset + swingOffset);
+            }
+        }
+
+        if (bar.ParallelVoices != null)
+            foreach (var voice in bar.ParallelVoices)
+                ApplyContextSwing(voice, transformSwing);
     }
 
     /// <summary>
@@ -87,6 +150,10 @@ public class NoteStreamCompiler
     private BarData CompileBar(NoteStreamBar bar, TimeSignatureData timeSig, MusicalContext context, ExecutionContext? executionContext)
     {
         var musicalNotes = new List<MusicalNoteData>();
+        // Phase 28 (SPEC-1): accumulator for `{voice ...}` blocks encountered in this bar.
+        // Local-only — no compiler instance state, so re-entrant calls (nested compiles, tests)
+        // remain isolated.
+        List<BarData>? parallelVoices = null;
 
         if (bar.Elements.Count == 0)
         {
@@ -165,6 +232,18 @@ public class NoteStreamCompiler
                 case TupletElement tuplet:
                     CompileTupletElement(tuplet, context, executionContext, musicalNotes, new Fraction(1, 1));
                     break;
+
+                case VoiceBlockElement voiceBlock:
+                {
+                    // Phase 28 (SPEC-1): each `{voice ...}` block compiles to a separate
+                    // BarData hung off the parent bar's ParallelVoices. The voice's notes
+                    // share the parent bar's onset (0); BarRenderer / SongRenderer mix the
+                    // resulting buffers additively.
+                    var voiceBar = CompileVoiceBlock(voiceBlock, timeSig, context, executionContext);
+                    parallelVoices ??= new List<BarData>();
+                    parallelVoices.Add(voiceBar);
+                    break;
+                }
             }
         }
 
@@ -181,6 +260,99 @@ public class NoteStreamCompiler
         if (musicalNotes.Any(n => n.DurationFraction.HasValue))
         {
             ValidateBarFit(musicalNotes, timeSig, bar.Location);
+        }
+
+        // Phase 28 (SPEC-1): if a bar had no other elements but only voice blocks, its
+        // musicalNotes list is empty. Insert a whole-bar rest so the lead-bar timeline
+        // still spans the bar's full duration; ParallelVoices carry the actual audible
+        // content. This mirrors the empty-bar path above (BarData expects ≥1 note).
+        if (musicalNotes.Count == 0 && parallelVoices != null && parallelVoices.Count > 0)
+        {
+            musicalNotes.Add(new MusicalNoteData(' ', 0, 0, (int)NoteValueType.Value.WHOLE, isRest: true));
+        }
+
+        var result = new BarData(musicalNotes, timeSig);
+        if (parallelVoices != null)
+        {
+            result.ParallelVoices = parallelVoices;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Phase 28 (SPEC-1): compiles a VoiceBlockElement into its own BarData.
+    /// Mirrors the element loop in CompileBar but drives off pre-parsed children
+    /// rather than NoteStreamBar.Elements. Auto-fit duration is calculated from the
+    /// voice block's own children so each voice fills its own time independently.
+    /// Voice blocks may not contain other voice blocks (rejected at parse time).
+    /// </summary>
+    private BarData CompileVoiceBlock(VoiceBlockElement voiceBlock, TimeSignatureData timeSig, MusicalContext context, ExecutionContext? executionContext)
+    {
+        var musicalNotes = new List<MusicalNoteData>();
+
+        if (voiceBlock.Children.Count == 0)
+        {
+            var restNote = new MusicalNoteData(' ', 0, 0, (int)NoteValueType.Value.WHOLE, isRest: true);
+            musicalNotes.Add(restNote);
+            return new BarData(musicalNotes, timeSig);
+        }
+
+        var autoFitDuration = CalculateAutoFitDuration(voiceBlock.Children, timeSig);
+
+        foreach (var element in voiceBlock.Children)
+        {
+            switch (element)
+            {
+                case NoteElement note:
+                    musicalNotes.Add(CompileNoteElement(note, autoFitDuration, context));
+                    break;
+
+                case RestElement rest:
+                    musicalNotes.Add(CompileRestElement(rest, autoFitDuration));
+                    break;
+
+                case ChordElement chord:
+                    foreach (var chordNote in CompileChordElement(chord, autoFitDuration))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case NamedChordElement namedChord:
+                    foreach (var chordNote in CompileNamedChordElement(namedChord, autoFitDuration))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case RomanNumeralElement romanNumeral:
+                    foreach (var chordNote in CompileRomanNumeralElement(romanNumeral, autoFitDuration, context))
+                    {
+                        musicalNotes.Add(chordNote);
+                    }
+                    break;
+
+                case RandomChoiceElement choice:
+                    musicalNotes.Add(CompileRandomChoiceElement(choice, autoFitDuration, executionContext));
+                    break;
+
+                case VariableReferenceElement varRef:
+                    musicalNotes.Add(CompileVariableReferenceElement(varRef, autoFitDuration, executionContext));
+                    break;
+
+                case TupletElement tuplet:
+                    CompileTupletElement(tuplet, context, executionContext, musicalNotes, new Fraction(1, 1));
+                    break;
+
+                // VoiceBlockElement intentionally not handled — ParseVoiceBlockChildren rejects nesting.
+            }
+        }
+
+        InterpolateVelocities(musicalNotes);
+
+        if (musicalNotes.Any(n => n.DurationFraction.HasValue))
+        {
+            ValidateBarFit(musicalNotes, timeSig, voiceBlock.Location);
         }
 
         return new BarData(musicalNotes, timeSig);
@@ -349,9 +521,16 @@ public class NoteStreamCompiler
             {
                 double t = (double)noteIdx / (nonRestCount - 1);
                 double vel = Math.Clamp(startVel + t * (endVel - startVel), 0.0, 1.0);
-                var n = notes[i];
-                notes[i] = new MusicalNoteData(n.NoteName, n.Octave, n.Alteration,
-                    n.DurationValue, n.IsRest, n.CentOffset, n.IsTied, vel, n.Articulation, n.IsDotted, n.SourceLocation, n.SourceLength);
+                // Rebuild via With(...) so the velocity override is the ONLY change.
+                // The 12-arg ctor used to be called here, which silently reset the 5
+                // trailing fields — IsChordTone / DurationFraction / OnsetOffset /
+                // DurationOverlap / PortamentoMs — to their defaults. Dropping
+                // IsChordTone in particular made interpolated chord tones advance the
+                // bar cursor in BarType.ToTimeline, doubling any bar that mixed a
+                // dynamic (→ velocity variation → interpolation runs) with chords.
+                // Same drop-on-reconstruct pattern the 2026-06-09 audit fixed for
+                // transforms (NoteType.cs With(...) docs); this path was missed.
+                notes[i] = notes[i].With(velocity: vel);
             }
             noteIdx++;
         }
@@ -665,14 +844,24 @@ public class NoteStreamCompiler
         // Determine velocity: note-level override > context velocity > default mf
         double velocity = note.Velocity ?? context.Velocity ?? 0.63;
 
-        // Apply accent articulations as velocity boost
+        // Phase 28 locked velocity adjustments (SPEC-4):
+        //   Accent +0.30, Marcato +0.30, Sforzando handled by envelope shaper (Plan 28-03 —
+        //   no scalar boost here), Legato/Tenuto/Staccato/Normal velocity unchanged.
+        // Behavioral change: prior code set `velocity = 0.95` for Sforzando, which clobbered
+        // the composer's intended velocity. SPEC-4 instead routes Sforzando through a
+        // time-varying envelope spike at the synth layer (GenerateArticulationADSR in Plan
+        // 28-03), so the composer's base velocity passes through here unchanged. The Accent
+        // +0.30 also replaces the previous +0.20 to match the locked SPEC-4 constants.
         var articulation = note.ArticulationMark ?? Articulation.Normal;
-        if (articulation == Articulation.Accent)
-            velocity = Math.Min(velocity + 0.2, 1.0);
-        else if (articulation == Articulation.Marcato)
-            velocity = Math.Min(velocity + 0.3, 1.0);
-        else if (articulation == Articulation.Sforzando)
-            velocity = 0.95;
+        switch (articulation)
+        {
+            case Articulation.Accent:
+            case Articulation.Marcato:
+                velocity = Math.Min(velocity + 0.30, 1.0);
+                break;
+            // Sforzando: NO scalar velocity bump — envelope shaper applies time-varying spike at synth layer.
+            // Legato, Tenuto, Staccato, Normal: velocity unchanged.
+        }
 
         return new MusicalNoteData(noteName, octave, alteration, durationValue, isRest: false,
             centOffset: note.CentOffset, isTied: note.IsTied,
@@ -734,7 +923,7 @@ public class NoteStreamCompiler
             // Remaining tones share its onset (IsChordTone=true) so the chord
             // plays as one polyphonic strike, not as an arpeggio across bar
             // beats. See MusicalNoteData.IsChordTone and BarType.ToTimeline.
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen, isChordTone: !first));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isTied: chord.IsTied, isDotted: chord.IsDotted, sourceLocation: chord.Location, sourceLength: chordLen, isChordTone: !first));
             first = false;
         }
 
@@ -762,7 +951,7 @@ public class NoteStreamCompiler
         {
             var (name, octave, alteration) = NoteType.Parse(noteName);
             // See CompileChordElement above: first tone leads, rest stack on its onset.
-            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
+            notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isTied: namedChord.IsTied, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
             firstNamed = false;
         }
 
@@ -789,6 +978,12 @@ public class NoteStreamCompiler
         var chordData = ScaleDatabase.ResolveRomanNumeral(romanNumeral.Numeral, context.Key);
         if (chordData == null)
         {
+            // sweep-0614: surface the silent-rest fallback so a composer whose
+            // numeral fails to resolve in the active key sees WHY notes vanished
+            // instead of getting a mysteriously empty bar. One-shot per (numeral, key).
+            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                $"harmony-rn-unresolved:{romanNumeral.Numeral}:{context.Key}",
+                $"[harmony] roman numeral '{romanNumeral.Numeral}' unresolved in key '{context.Key}' — rendered as rest");
             notes.Add(new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen));
             return notes;
         }
@@ -967,7 +1162,8 @@ public class NoteStreamCompiler
                 + (c.IsDotted ? 1 : 0),
             NamedChordElement nc => nc.ChordSymbol.Length
                 + (nc.DurationSuffix?.Length ?? 0)
-                + (nc.IsDotted ? 1 : 0),
+                + (nc.IsDotted ? 1 : 0)
+                + (nc.IsTied ? 1 : 0),
             RomanNumeralElement rn => rn.Numeral.Length
                 + (rn.DurationSuffix?.Length ?? 0)
                 + (rn.IsDotted ? 1 : 0),

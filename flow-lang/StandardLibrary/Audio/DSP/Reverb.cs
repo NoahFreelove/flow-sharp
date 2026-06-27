@@ -3,6 +3,16 @@ namespace FlowLang.StandardLibrary.Audio.DSP;
 /// <summary>
 /// Schroeder reverb implementation using 4 parallel comb filters and 2 series allpass filters.
 /// All processing returns new buffers — inputs are never modified.
+///
+/// §3.8 tail extension (audit-0609): the output buffer is extended beyond the input
+/// length to carry reverberant decay energy, mirroring Delay.Apply's CalculateTailFrames
+/// approach.  CombFilter and AllpassFilter operate over inputLength + tailFrames, feeding
+/// zeros past the input end.  The tail length is derived from the comb-filter feedback
+/// coefficient: frames until the network decays below -60 dB, capped at 10 s.
+///
+/// §3.6 denormal flush (audit-0609): filterStore and the recirculating buffer entries
+/// are flushed to zero when subnormal, matching the house idiom in Delay.cs:63 and
+/// Filter.ApplyBiquad:168.
 /// </summary>
 public static class Reverb
 {
@@ -22,15 +32,13 @@ public static class Reverb
     /// <param name="roomSize">Room size in range [0, 1]. Controls feedback amount and delay scaling.</param>
     /// <param name="damping">Damping in range [0, 1]. Higher values attenuate high frequencies faster.</param>
     /// <param name="mix">Wet/dry mix in range [0, 1]. 0 = fully dry, 1 = fully wet.</param>
-    /// <returns>A new buffer with reverb applied.</returns>
+    /// <returns>A new buffer with reverb applied; may be longer than input to carry the decay tail.</returns>
     public static AudioBuffer Apply(AudioBuffer input, float roomSize, float damping, float mix)
     {
         // Clamp parameters to valid ranges
         roomSize = Math.Clamp(roomSize, 0f, 1f);
         damping = Math.Clamp(damping, 0f, 1f);
         mix = Math.Clamp(mix, 0f, 1f);
-
-        var result = new AudioBuffer(input.Frames, input.Channels, input.SampleRate);
 
         // Scale delay times for the actual sample rate
         double rateScale = input.SampleRate / 44100.0;
@@ -40,16 +48,21 @@ public static class Reverb
         // ProcessChannel by passing a pre-computed Schroeder feedback coefficient.
         float feedback = 0.7f + roomSize * 0.28f;
 
+        int tailFrames = CalculateTailFrames(feedback, input.SampleRate);
+        int outputFrames = input.Frames + tailFrames;
+        var result = new AudioBuffer(outputFrames, input.Channels, input.SampleRate);
+
         // Process each channel independently
         for (int ch = 0; ch < input.Channels; ch++)
         {
             var dry = ExtractChannel(input, ch);
-            var wet = ProcessChannel(dry, feedback, damping, rateScale);
+            var wet = ProcessChannel(dry, feedback, damping, rateScale, outputFrames);
 
-            // Mix wet/dry into result
-            for (int frame = 0; frame < input.Frames; frame++)
+            // Mix wet/dry into result; past input.Frames dry is silence (tail is wet-only).
+            for (int frame = 0; frame < outputFrames; frame++)
             {
-                float mixed = dry[frame] * (1f - mix) + wet[frame] * mix;
+                float dryVal = frame < input.Frames ? dry[frame] : 0f;
+                float mixed = dryVal * (1f - mix) + wet[frame] * mix;
                 result.SetSample(frame, ch, mixed);
             }
         }
@@ -73,7 +86,7 @@ public static class Reverb
     /// </param>
     /// <param name="damping">Damping in [0, 1]. Higher values attenuate highs faster.</param>
     /// <param name="mix">Wet/dry mix in [0, 1]. 0 = fully dry, 1 = fully wet.</param>
-    /// <returns>A new buffer with reverb applied.</returns>
+    /// <returns>A new buffer with reverb applied; may be longer than input to carry the decay tail.</returns>
     public static AudioBuffer Apply(AudioBuffer input, double rt60Seconds, float damping, float mix)
     {
         // Guard against div-by-zero; dry short-circuit lives in SongRenderer per D-02.
@@ -93,14 +106,18 @@ public static class Reverb
         damping = Math.Clamp(damping, 0f, 1f);
         mix = Math.Clamp(mix, 0f, 1f);
 
-        var result = new AudioBuffer(input.Frames, input.Channels, input.SampleRate);
+        int tailFrames = CalculateTailFrames(feedback, input.SampleRate);
+        int outputFrames = input.Frames + tailFrames;
+        var result = new AudioBuffer(outputFrames, input.Channels, input.SampleRate);
+
         for (int ch = 0; ch < input.Channels; ch++)
         {
             var dry = ExtractChannel(input, ch);
-            var wet = ProcessChannel(dry, feedback, damping, rateScale);
-            for (int frame = 0; frame < input.Frames; frame++)
+            var wet = ProcessChannel(dry, feedback, damping, rateScale, outputFrames);
+            for (int frame = 0; frame < outputFrames; frame++)
             {
-                float mixed = dry[frame] * (1f - mix) + wet[frame] * mix;
+                float dryVal = frame < input.Frames ? dry[frame] : 0f;
+                float mixed = dryVal * (1f - mix) + wet[frame] * mix;
                 result.SetSample(frame, ch, mixed);
             }
         }
@@ -108,25 +125,47 @@ public static class Reverb
     }
 
     /// <summary>
+    /// Calculates how many extra frames of reverb tail to include.
+    /// Uses the longest comb delay as the period and computes frames until
+    /// the network decays below -60 dB, capped at 10 s (mirrors Delay.CalculateTailFrames).
+    /// </summary>
+    internal static int CalculateTailFrames(float feedback, int sampleRate)
+    {
+        if (feedback <= 0f) return 0;
+        if (feedback >= 1f) return sampleRate * 10;
+
+        // Longest comb delay drives the slowest-decaying partial.
+        int longestDelay = CombDelays[^1]; // 1356 samples at 44100 Hz
+
+        // -60 dB = feedback^n  =>  n = -60 / (20 * log10(feedback))
+        double repeats = -60.0 / (20.0 * Math.Log10(feedback));
+        int tailSamples = (int)(repeats * longestDelay);
+
+        // Cap at 10 seconds
+        int maxTail = sampleRate * 10;
+        return Math.Min(tailSamples, maxTail);
+    }
+
+    /// <summary>
     /// Processes a single channel through the Schroeder reverb network. Accepts a
     /// pre-computed feedback coefficient so both Apply overloads (roomSize + rt60)
     /// can share the implementation without duplicating the comb-filter network.
+    /// The output array has length <paramref name="outputLength"/>, which may be
+    /// longer than <paramref name="input"/> to carry the reverb tail.
     /// </summary>
-    private static float[] ProcessChannel(float[] input, float feedback, float damping, double rateScale)
+    private static float[] ProcessChannel(float[] input, float feedback, float damping, double rateScale, int outputLength)
     {
-        int length = input.Length;
-
         // 4 parallel comb filters
         var combOutputs = new float[4][];
         for (int i = 0; i < 4; i++)
         {
             int delay = (int)(CombDelays[i] * rateScale);
-            combOutputs[i] = CombFilter(input, delay, feedback, damping);
+            combOutputs[i] = CombFilter(input, delay, feedback, damping, outputLength);
         }
 
         // Sum comb filter outputs
-        var summed = new float[length];
-        for (int i = 0; i < length; i++)
+        var summed = new float[outputLength];
+        for (int i = 0; i < outputLength; i++)
         {
             summed[i] = (combOutputs[0][i] + combOutputs[1][i] +
                          combOutputs[2][i] + combOutputs[3][i]) * 0.25f;
@@ -146,25 +185,37 @@ public static class Reverb
     /// <summary>
     /// Lowpass feedback comb filter.
     /// output[n] = input[n] + feedback * lpf(output[n - delay])
+    ///
+    /// Operates over <paramref name="outputLength"/> frames, feeding zeros past
+    /// the end of <paramref name="input"/> so the reverb tail decays naturally.
     /// </summary>
-    private static float[] CombFilter(float[] input, int delay, float feedback, float damping)
+    private static float[] CombFilter(float[] input, int delay, float feedback, float damping, int outputLength)
     {
-        int length = input.Length;
         if (delay < 1) delay = 1;
 
-        var output = new float[length];
+        var output = new float[outputLength];
         var buffer = new float[delay];
         int bufferIndex = 0;
         float filterStore = 0f;
 
-        for (int i = 0; i < length; i++)
+        for (int i = 0; i < outputLength; i++)
         {
             float bufOut = buffer[bufferIndex];
 
             // One-pole lowpass in the feedback path (damping)
             filterStore = bufOut * (1f - damping) + filterStore * damping;
 
-            buffer[bufferIndex] = input[i] + filterStore * feedback;
+            // Flush denormals from the feedback state variables so that the
+            // exponentially-decaying tail does not degrade to subnormal-float
+            // arithmetic (10–100× slower on x86/ARM when subnormals remain).
+            // Mirrors the house idiom in Delay.cs:63 and Filter.ApplyBiquad:168.
+            if (float.IsSubnormal(filterStore)) filterStore = 0f;
+
+            // Past the input end feed silence (zero) so the tail decays naturally.
+            float inSample = i < input.Length ? input[i] : 0f;
+            float newBuf = inSample + filterStore * feedback;
+            if (float.IsSubnormal(newBuf)) newBuf = 0f;
+            buffer[bufferIndex] = newBuf;
             output[i] = bufOut;
 
             bufferIndex++;
@@ -191,7 +242,11 @@ public static class Reverb
         {
             float bufOut = buffer[bufferIndex];
             float temp = -gain * input[i] + bufOut;
-            buffer[bufferIndex] = input[i] + gain * temp;
+            float newBuf = input[i] + gain * temp;
+            // Flush denormals from the allpass feedback path.
+            if (float.IsSubnormal(temp)) temp = 0f;
+            if (float.IsSubnormal(newBuf)) newBuf = 0f;
+            buffer[bufferIndex] = newBuf;
             output[i] = temp;
 
             bufferIndex++;

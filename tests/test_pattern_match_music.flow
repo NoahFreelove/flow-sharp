@@ -1,0 +1,55 @@
+// Phase 35 Plan 35-06 — composer-facing acceptance for music-aware pattern
+// extractors (LANG-02).
+//
+// Exercises:
+//   - Chord literal patterns (Cmaj7, Dm7) matching Chord scrutinees by Root + Quality.
+//   - Roman numeral patterns (V) resolved against active key context.
+//   - Pitch-class via guard pattern — uses (gt (noteToFrequency n) 400.0) as
+//     the load-bearing guard composition test (pitchClass/mod/midi builtins
+//     are not in stdlib v1.5).
+//   - Articulation symbol patterns — covered by xUnit because constructing a
+//     Note value with a specific Articulation enum requires direct C# Value
+//     injection (no composer-surface builtin sets Articulation on a bare Note
+//     in v1.5).
+//
+// IDIOM: roman-numeral matching requires the active key MusicalContext, which
+// only lives inside a `key X { ... }` statement-block. Statement blocks are
+// not expressions, so we cannot embed `key X { ... }` directly inside a
+// `lazy(...)` test body. Instead, we resolve the match EAGERLY at top level
+// under the key block, capture the resulting String into a variable, and
+// the (test ...) framework asserts on the captured value later.
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_pattern_match_music.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+// Pre-compute the roman-numeral resolution under each key context. The
+// match expression runs RIGHT HERE during script load — eagerly — so the
+// active musical context is available when MatchRomanNumeral reads it.
+String romanInCmajor = ""
+String romanInGmajor = ""
+key Cmajor { romanInCmajor = (match (chord "G") | V => "dominant" | I => "tonic" | _ => "other") }
+key Gmajor { romanInGmajor = (match (chord "G") | V => "dominant" | I => "tonic" | _ => "other") }
+
+(test "chord literal matches by quality"
+  lazy((assertEq "I" (match Cmaj7 | Cmaj7 => "I" | Dm7 => "ii" | _ => "other"))))
+
+(test "chord literal misses on different root"
+  lazy((assertEq "other" (match Cmaj7 | Dmaj7 => "match" | _ => "other"))))
+
+(test "roman numeral V in Cmajor resolves to G chord (dominant)"
+  lazy((assertEq "dominant" romanInCmajor)))
+
+(test "roman numeral I in Gmajor resolves to G chord (tonic, key-context switch)"
+  lazy((assertEq "tonic" romanInGmajor)))
+
+(test "pitch-class via guard composes with note scrutinee"
+  lazy((assertEq "high"
+                 (match A4
+                   | n when (gt (noteToFrequency n) 400.0) => "high"
+                   | _ => "low"))))
+
+(print "ALL MUSIC-AWARE PATTERN TESTS REGISTERED")

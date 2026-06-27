@@ -1,0 +1,7 @@
+# Native dependency build approval (pnpm 11 security default — explicit allowlist).
+# esbuild (vite), sharp (image optimization, D-49-32), workerd (adapter-cloudflare local dev)
+# all ship native binaries and are first-party, trusted packages — approve their build scripts.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true

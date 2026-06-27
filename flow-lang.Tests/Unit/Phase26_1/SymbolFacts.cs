@@ -48,11 +48,14 @@ public class SymbolFacts
     public void StrictSeparation_SymbolNeqString()
     {
         // Per CONTEXT § Symbol/String charitable equivalence: `(equals #foo "foo")` MUST be false.
-        // The `equals` builtin is registered with [VoidType, VoidType] (Void wildcard) per
-        // BuiltInFunctions.cs:367. The implementation calls Utils.LooseEquals which returns
-        // false for distinct non-numeric types — so Symbol/String are correctly separated.
+        // The `equals` builtin is registered with [VoidType, VoidType] (Void wildcard).
+        // Phase 44 Plan 44-09 Task 2 moved `equals` from RegisterStdLib to
+        // RegisterContextDependentFunctions so the impl can read ctx.CallerStrictMode for
+        // D-11 set-theoretic strict equality — the registration now requires a live
+        // ExecutionContext at registration time.
         var registry = BuildRegistry();
         var ctx = new FlowLang.Runtime.ExecutionContext(new ErrorReporter(), registry);
+        BuiltInFunctions.RegisterContextDependentFunctions(registry, ctx);
         var sym = Value.Symbol("foo", ctx);
         var str = Value.String("foo");
         var result = Call(registry, "equals",
@@ -66,6 +69,7 @@ public class SymbolFacts
     {
         var registry = BuildRegistry();
         var ctx = new FlowLang.Runtime.ExecutionContext(new ErrorReporter(), registry);
+        BuiltInFunctions.RegisterContextDependentFunctions(registry, ctx);
         var a = Value.Symbol("foo", ctx);
         var b = Value.Symbol("foo", ctx);
         var result = Call(registry, "equals",

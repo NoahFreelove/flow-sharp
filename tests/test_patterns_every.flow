@@ -1,0 +1,47 @@
+// Phase 36 Plan 36-05 Task 1 — composer-facing acceptance for the 10
+// deterministic combinators in `@patterns` (every / fast / slow / chunk /
+// phase / rev / iter / palindrome / jux / superimpose).
+//
+// Lambda-required style per D-36-03: every / chunk / jux / superimpose take
+// `(fn Sequence s => ...)` as their transform argument. Cycle unit is BARS
+// per D-36-04.
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_patterns_every.flow
+
+use "@std"
+use "@patterns"
+use "@test"
+
+// Top-level binding — visible inside `lazy(...)` test bodies.
+// Default 4/4 musical context is used (no need for explicit tempo/timesig).
+Sequence src = | C4q D4q | E4q F4q | G4q A4q | B4q C5q |
+
+// every — applies fn to bars where i % n == 0. Calling twice produces
+// structurally identical Sequences (assertNotesMatch checks structural equality).
+(test "every applies fn at cycle boundary deterministically"
+  lazy((assertNotesMatch
+    (every 2 (fn Sequence s => (fast s 2.0)) src)
+    (every 2 (fn Sequence s => (fast s 2.0)) src))))
+
+// fast doubles tempo (halves duration); slow halves (doubles).
+// round-trip via fast→slow recovers the original.
+(test "fast and slow are inverses"
+  lazy((assertNotesMatch src
+    (slow (fast src 2.0) 2.0))))
+
+// rev reverses BAR order. Apply twice → identity.
+(test "rev twice is identity"
+  lazy((assertNotesMatch src (rev (rev src)))))
+
+// palindrome mirrors the sequence — [A B C D] → [A B C D D C B A].
+(test "palindrome is deterministic"
+  lazy((assertNotesMatch (palindrome src) (palindrome src))))
+
+// jux layers original + lambda result via Phase 28 voice blocks.
+(test "jux is deterministic"
+  lazy((assertNotesMatch
+    (jux (fn Sequence s => (transpose s +12st)) src)
+    (jux (fn Sequence s => (transpose s +12st)) src))))
+
+(print "ALL PATTERNS-EVERY TESTS REGISTERED")

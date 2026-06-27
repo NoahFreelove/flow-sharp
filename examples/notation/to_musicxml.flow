@@ -1,0 +1,35 @@
+Note: =====================================================================
+Note: to_musicxml.flow — Phase 39 MusicXML export chapter
+Note: =====================================================================
+Note:
+Note: Composer writes a 4-bar piano piece in C major, exports it as MusicXML
+Note: 3.1 partwise. The output opens directly in MuseScore (D-v1.5-08 reference
+Note: consumer), Sibelius, Dorico, Finale, or LilyPond.
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter examples/notation/to_musicxml.flow
+Note:
+Note: Output:
+Note:   examples/notation/output/to_musicxml.musicxml — well-formed MusicXML 3.1
+Note:
+Note: Verify (optional, requires MuseScore in PATH):
+Note:   mscore examples/notation/output/to_musicxml.musicxml
+Note:
+Note: The MusicXML round-trip CI gate (XML-02) charitable-skips when mscore is
+Note: absent per D-39-08.
+
+use "@notation-io"
+use "@std"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section intro {
+                Sequence piano = | C4q D4q E4q F4q | G4q A4q B4q C5q | C5q B4q A4q G4q | F4q E4q D4q C4w |
+            }
+            Song song = [intro]
+            (writeMusicXML "examples/notation/output/to_musicxml.musicxml" song)
+            (print "MusicXML written to examples/notation/output/to_musicxml.musicxml")
+        }
+    }
+}

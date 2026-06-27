@@ -1,0 +1,84 @@
+enable justIntonation;
+
+use "@std"
+use "@audio"
+use "@composition"
+
+Note: ============================================================
+Note:  Chapter: Scala Microtonal Tunings (Phase 32)
+Note:  Run: dotnet run --project flow-interpreter examples/scala/intro.flow
+Note: ============================================================
+Note:
+Note:  Flow ships three named tunings out of the box: justIntonation,
+Note:  pythagorean, and equalTemperament (the default). Phase 32 extends
+Note:  this to ~5300 community-curated tunings via the Scala (.scl) file
+Note:  format: load any of them with (loadScala "path.scl") and apply via
+Note:  the tuning t { ... } musical-context block.
+
+(print "")
+(print "=== Scala Microtonal Tunings ===")
+(print "Top-of-file pragma `enable justIntonation;` is active (the JI baseline).")
+(print "")
+
+Note: -----------------------------------------------------------
+Note: 1. Load a tuning + describe it
+Note: -----------------------------------------------------------
+Note: (loadScala "path.scl") parses the .scl file at call time and returns
+Note: a first-class Tuning value. (str t) prints the description + step count + period.
+Tuning partch = (loadScala "flow-lang.Tests/fixtures/scala/partch_43.scl")
+(print $"Loaded: {(str partch)}")
+
+Note: -----------------------------------------------------------
+Note: 2. Apply via the tuning { ... } block (identifier form)
+Note: -----------------------------------------------------------
+Note: section a renders under Partch — the Tuning variable is referenced by name.
+tempo 120 {
+    timesig 4/4 {
+        tuning partch {
+            section a {
+                Sequence mel = | C4q D4q E4q F4q |
+            }
+        }
+
+Note: -----------------------------------------------------------
+Note: 3. String-literal sugar (the D-15 ergonomic form)
+Note: -----------------------------------------------------------
+Note: `tuning "x.scl" { ... }` desugars at parse time to `tuning (loadScala "x.scl") { ... }`.
+Note: section b renders under Wendy Carlos' Alpha (a non-octave-repeating scale).
+        tuning "flow-lang.Tests/fixtures/scala/carlos_alpha.scl" {
+            section b {
+                Sequence mel = | C4q E4q G4q B4q |
+            }
+        }
+
+Note: -----------------------------------------------------------
+Note: 4. Last-wins: pragma + block interact (SPEC-6 acceptance)
+Note: -----------------------------------------------------------
+Note: section c is OUTSIDE any tuning block -> renders under the file-scope JI pragma.
+Note: section d is inside `tuning partch { ... }` again -> the inner block wins.
+        section c {
+            Sequence mel = | C4q E4q G4q C5q |
+        }
+        tuning partch {
+            section d {
+                Sequence mel = | C4q E4q G4q C5q |
+            }
+        }
+    }
+}
+
+Note: -----------------------------------------------------------
+Note: 5. Render the four sections to a single WAV
+Note: -----------------------------------------------------------
+Note: Each section uses a distinct active tuning, so the four arpeggios are
+Note: audibly distinct -- a Partch JI fan, a Carlos Alpha non-octave run,
+Note: a 5-limit JI arpeggio, and a return to Partch.
+Song song = [a b c d]
+Buffer audio = (renderSong song "sine")
+(writeWav "/tmp/p32_intro.wav" audio)
+
+(print "")
+(print "Rendered: /tmp/p32_intro.wav")
+(print "Listen for the four distinct timbres -- each section uses a different tuning system.")
+Note: For reference: `(loadScala "path")` builtin + `tuning t { ... }` block
+Note: are documented in CLAUDE.md (Music Types Quick Reference + Music-Specific Language Features).

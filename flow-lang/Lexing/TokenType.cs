@@ -25,12 +25,20 @@ public enum TokenType
     Pan,
     Gain,
     ReverbTime,
+    VoicePool,          // Phase 28 (SPEC-7) — voicePool N { ... } musical-context block
+    SustainPedal,       // sustainPedal { ... } musical-context block — extends note durations
+    Tuning,             // Phase 32 (SPEC-2) — tuning <expr> { ... } musical-context block (D-13)
+    Module,             // Phase 43 (D-03) — module <name> top-of-file declaration
+    Live,               // Phase 38 (LIVE-01) — live <quantize> { ... } block (D-38-02)
+    Match,              // Phase 35 Plan 35-05 (LANG-01) — (match scrutinee | pat => body | ...)
+    When,               // Phase 35 Plan 35-05 (LANG-01) — guard clause: `| n when (...) => ...`
     Pickup,
     For,
     While,
     Break,
     Continue,
     In,
+    As,                 // Phase 35 Plan 35-07 (LANG-03) — `-> CALL as NAME` chain naming
     Progression,
 
     // Type keywords
@@ -57,6 +65,7 @@ public enum TokenType
     HertzLiteral,       // 800Hz, 1.5kHz (Phase 26.2 ERG-04)
     ChordLiteral,       // Cmaj7, Dm, Gsus4
     SymbolLiteral,      // #foo (Phase 26.1 SYM-01) — the leading '#' is a token boundary; lexeme is the body without '#'
+    BeatLiteral,        // 0.5b, 2b, +1b, -2b (Phase 45 D-06/D-07) — eval-time pragma multiplier in ExpressionEvaluator.EvaluateBeatLiteral
     InterpolatedStringStart,   // $"
     InterpolatedStringEnd,     // " (closing an interpolated string)
     InterpolatedStringText,    // Text segments between { } in interpolated strings
@@ -95,5 +104,6 @@ public enum TokenType
     // Other
     Identifier,
     Comment,
+    DocComment,         // Phase 41 (DOC-01) — `/// summary` captured for the following proc (D-07 additive grammar)
     Eof
 }

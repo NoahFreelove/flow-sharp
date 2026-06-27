@@ -1,5 +1,7 @@
 Note: Audio Processing Standard Library
-Note: Phase 1: AudioBuffer Foundation
+Note: AudioBuffer Foundation
+
+module audio
 
 Note: ===== Core Buffer Operations =====
 
@@ -32,26 +34,29 @@ internal proc mix(Buffer: a, Buffer: b)
 
 Note: ===== File I/O Operations =====
 
-Note: Export audio buffer to WAV file with default 16-bit PCM format
-internal proc exportWav(Buffer: buffer, String: filepath)
-
-Note: Export audio buffer to WAV file with specified bit depth (16, 24, or 32)
-internal proc exportWav(Buffer: buffer, String: filepath, Int: bitDepth)
-
 Note: Primary WAV export (path-first, matches writeMidi convention)
 internal proc writeWav(String: filepath, Buffer: buffer)
 
 Note: Primary WAV export with custom bit depth (path-first, matches writeMidi convention)
 internal proc writeWav(String: filepath, Buffer: buffer, Int: bitDepth)
 
+Note: writeWav(String, Song) — render the whole arrangement (per-sequence routing) then export
+internal proc writeWav(String: filepath, Song: song)
+
+Note: writeWav(String, Song, String) — force one synth for every sequence, then export
+internal proc writeWav(String: filepath, Song: song, String: synthType)
+
 Note: Load a WAV file from disk into a Buffer (supports 16/24/32-bit PCM, resamples to 44100 Hz)
 internal proc loadWav(String: filepath)
 
-Note: DX-15 varispeed: load a WAV and pitch-shift by semitones via linear-interpolation resample
+Note: Varispeed: load a WAV and pitch-shift by semitones via linear-interpolation resample.
 Note: 12 semitones = octave up = ratio 2.0 = sample count halved; semitones=0 short-circuits.
 internal proc loadWav(String: filepath, Int: semitones)
 
-Note: DX-15 varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample
+Note: sweep-260620 — Semitone-typed varispeed surface (SemitoneType backing is int)
+internal proc loadWav(String: filepath, Semitone: semitones)
+
+Note: Varispeed: load a WAV and pitch-shift by ratio via linear-interpolation resample.
 Note: ratio > 1.0 raises pitch (fewer frames); ratio == 1.0 short-circuits; ratio <= 0 errors.
 internal proc loadWav(String: filepath, Double: ratio)
 
@@ -109,8 +114,21 @@ proc createBufferStereo(Double: seconds)
     (createBuffer frames DEFAULT_CHANNELS DEFAULT_SAMPLE_RATE)
 end proc
 
+Note: sweep-260620 — Second-duration form (Second auto-coerces to the Double seconds slot)
+proc createBufferStereo(Second: seconds)
+    Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
+    (createBuffer frames DEFAULT_CHANNELS DEFAULT_SAMPLE_RATE)
+end proc
+
 Note: Create mono buffer with default sample rate
 proc createBufferMono(Double: seconds)
+    Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
+    Int mono = 1
+    (createBuffer frames mono DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createBufferMono(Second: seconds)
     Int frames = (secondsToFrames seconds DEFAULT_SAMPLE_RATE)
     Int mono = 1
     (createBuffer frames mono DEFAULT_SAMPLE_RATE)
@@ -123,8 +141,22 @@ proc createBufferStereoCustom(Double: seconds, Int: sampleRate)
     (createBuffer frames stereo sampleRate)
 end proc
 
+Note: sweep-260620 — Second-duration form
+proc createBufferStereoCustom(Second: seconds, Int: sampleRate)
+    Int frames = (secondsToFrames seconds sampleRate)
+    Int stereo = 2
+    (createBuffer frames stereo sampleRate)
+end proc
+
 Note: Create mono buffer with custom sample rate
 proc createBufferMonoCustom(Double: seconds, Int: sampleRate)
+    Int frames = (secondsToFrames seconds sampleRate)
+    Int mono = 1
+    (createBuffer frames mono sampleRate)
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createBufferMonoCustom(Second: seconds, Int: sampleRate)
     Int frames = (secondsToFrames seconds sampleRate)
     Int mono = 1
     (createBuffer frames mono sampleRate)
@@ -140,8 +172,24 @@ proc createSilence(Double: seconds)
     b
 end proc
 
+Note: sweep-260620 — Second-duration form
+proc createSilence(Second: seconds)
+    Buffer b = (createBufferStereo seconds)
+    Double zero = (intToDouble 0)
+    (fillBuffer b zero)
+    b
+end proc
+
 Note: Create silent mono buffer
 proc createSilenceMono(Double: seconds)
+    Buffer b = (createBufferMono seconds)
+    Double zero = (intToDouble 0)
+    (fillBuffer b zero)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration form
+proc createSilenceMono(Second: seconds)
     Buffer b = (createBufferMono seconds)
     Double zero = (intToDouble 0)
     (fillBuffer b zero)
@@ -208,35 +256,95 @@ proc fill(Buffer: b, Double: value)
     (fillBuffer b value)
 end proc
 
-Note: ===== Phase 3a: Signal Generation =====
+Note: ===== Signal Generation =====
 
 Note: ===== Oscillator State Management =====
 
 Note: Creates a new oscillator state with specified frequency and sample rate
 internal proc createOscillatorState(Double: freq, Int: sampleRate)
+Note: sweep-260620 — Hertz-frequency surface (HertzType backing is double)
+internal proc createOscillatorState(Hertz: freq, Int: sampleRate)
 internal proc resetPhase(OscillatorState: state)
 
 Note: ===== Musical Note utilities =====
 internal proc noteToFrequency(Note: n)
 
-internal proc createSineTone(Double: duration, Double: freq, Double: amp)
+Note: Granular synthesis with composable jitter PRNG.
+Note: Composer-facing: (granular buf grain=50ms density=20Hz jitter=0.3 windowing=#hann)
+Note: Returns a Buffer of the SAME length as input (granular is texture, not stretch).
+Note: Jitter PRNG routes through ctx.PrngRegistry — two-run cmp-clean preserved.
+Note: Cost model: CPU cost ~ density * grain * sampleRate * output-duration.
+internal proc granular(Buffer: buffer, Double: grain, Double: density, Double: jitter)
+internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter)
+internal proc granular(Buffer: buffer, Millisecond: grain, Hertz: density, Double: jitter, Symbol: windowing)
 
-Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
-internal proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
+Note: Time-stretch with vocoder/psola/auto mode dispatch.
+Note: Composer-facing: (stretch buf 2.0 mode=#auto frameSize=4096 transientThreshold=0.25)
+Note: factor=1.0 fast-paths to identity (byte-identical to input).
+Note: #auto mode emits a one-shot stderr advisory per call-site summarizing the
+Note: per-frame vocoder vs psola split.
+Note: All knobs (frameSize/hopSize/overlap/transientThreshold/
+Note: pitchPeriod/windowSize) reach the underlying DSP engine end-to-end.
+Note: Universal named-arg surface — composer can pass any subset of knobs
+Note: by name; the resolver picks the overload at the matching arity.
+internal proc stretch(Buffer: buffer, Double: factor)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc stretch(Buffer: buffer, Double: factor, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+
+Note: Pitch-shift via stretch+resample; cents=0 identity fast-path.
+Note: Composer-facing: (pitchShift buf +5st mode=#auto) or (pitchShift buf +50c).
+Note: Accepts Double cents, Cent literal (+50c), or Semitone literal (+2st — auto-scaled).
+Note: Universal named-arg surface — same knob bag as stretch, all 6 knobs honored.
+internal proc pitchShift(Buffer: buffer, Double: cents)
+internal proc pitchShift(Buffer: buffer, Cent: cents)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod)
+internal proc pitchShift(Buffer: buffer, Double: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+internal proc pitchShift(Buffer: buffer, Cent: cents, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
+internal proc pitchShift(Buffer: buffer, Semitone: semitones, Symbol: mode, Int: frameSize, Int: hopSize, Int: overlap, Double: transientThreshold, Int: pitchPeriod, Int: windowSize)
 
 internal proc createClip(Double: duration, Double: amp)
+Note: sweep-260620 — Second-duration surface (SecondType backing is double)
+internal proc createClip(Second: duration, Double: amp)
 
 Note: White noise -- 1s mono buffer at 44100 Hz, amplitude 1.0
 internal proc noise(Double: seconds)
+Note: sweep-260620 — Second-duration surfaces for all 4 noise arities
+internal proc noise(Second: seconds)
 
 Note: White noise -- mono 44100 Hz, custom amplitude
 internal proc noise(Double: seconds, Double: amplitude)
+internal proc noise(Second: seconds, Double: amplitude)
 
 Note: White noise -- 44100 Hz, custom amplitude and channels
 internal proc noise(Double: seconds, Double: amplitude, Int: channels)
+internal proc noise(Second: seconds, Double: amplitude, Int: channels)
 
 Note: White noise -- fully parameterized
 internal proc noise(Double: seconds, Double: amplitude, Int: channels, Int: sampleRate)
+internal proc noise(Second: seconds, Double: amplitude, Int: channels, Int: sampleRate)
 
 Note: ===== Basic Generators =====
 
@@ -268,14 +376,20 @@ internal proc scaleBuffer(Buffer: buffer, Double: gain)
 
 Note: Applies a linear fade-in from silence over the specified duration (seconds)
 internal proc fadeIn(Buffer: buffer, Double: duration)
+Note: sweep-260620 — Second-duration surface
+internal proc fadeIn(Buffer: buffer, Second: duration)
 
 Note: Applies a linear fade-out to silence over the specified duration (seconds) at the end
 internal proc fadeOut(Buffer: buffer, Double: duration)
+Note: sweep-260620 — Second-duration surface
+internal proc fadeOut(Buffer: buffer, Second: duration)
 
 Note: ===== Envelope Creation and Application =====
 
 Note: Creates an AR (Attack-Release) envelope
 internal proc createAR(Double: attackSec, Double: releaseSec, Int: sampleRate)
+Note: sweep-260620 — Second-typed attack/release surface
+internal proc createAR(Second: attackSec, Second: releaseSec, Int: sampleRate)
 
 Note: Creates an ADSR (Attack-Decay-Sustain-Release) envelope
 internal proc createADSR(Double: attack, Double: decay, Double: sustain, Double: release, Int: sr)
@@ -290,6 +404,11 @@ proc createOsc(Double: frequency)
     (createOscillatorState frequency DEFAULT_SAMPLE_RATE)
 end proc
 
+Note: sweep-260620 — Hertz-frequency form (Hertz auto-coerces to the Double freq slot)
+proc createOsc(Hertz: frequency)
+    (createOscillatorState frequency DEFAULT_SAMPLE_RATE)
+end proc
+
 Note: Create sine tone with specified duration, frequency, and amplitude
 proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -297,7 +416,21 @@ proc createSineTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: sweep-260620 — Second-duration form (Second auto-coerces to the duration slot)
+proc createSineTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form ((createSineTone 1.0s 440Hz 0.5))
+proc createSineTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createSineTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 Note: Stereo body matches the bare-Double form above. The C# Hertz overload registered in
 Note: BuiltInFunctions.cs serves as the underlying-primitive surface; this Flow proc shadows
 Note: it for user-facing calls so the resulting buffer matches the bare-Double form's stereo
@@ -310,6 +443,17 @@ proc createSineTone(Double: duration, Hertz: freqHz, Double: amplitude)
     b
 end proc
 
+Note: createSineTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createSineTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createSineTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc freq) amplitude)
+    b
+end proc
+
 Note: Create sawtooth tone
 proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -317,11 +461,36 @@ proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createSawTone(Double, Hertz, Double) — explicit frequency-type ergonomics
-Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompatibleWith(Double) (Wave 1) + Value.ConvertTo Double-arm (Wave 0)
+Note: sweep-260620 — Second-duration form
+proc createSawTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form
+proc createSawTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createSawTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: Hertz auto-coerces to Double on the createOsc call via HertzType.IsCompatibleWith(Double) + Value.ConvertTo Double-arm.
 proc createSawTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSaw b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createSawTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createSawTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createSawTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc freq) amplitude)
     b
 end proc
 
@@ -332,10 +501,35 @@ proc createSquareTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createSquareTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: sweep-260620 — Second-duration form
+proc createSquareTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form
+proc createSquareTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createSquareTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 proc createSquareTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSquare b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createSquareTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createSquareTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createSquareTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc freq) amplitude)
     b
 end proc
 
@@ -346,10 +540,35 @@ proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     b
 end proc
 
-Note: Phase 26.2 ERG-04: createTriangleTone(Double, Hertz, Double) — explicit frequency-type ergonomics
+Note: sweep-260620 — Second-duration form
+proc createTriangleTone(Second: duration, Double: frequency, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc frequency) amplitude)
+    b
+end proc
+
+Note: sweep-260620 — Second-duration + Hertz-frequency form
+proc createTriangleTone(Second: duration, Hertz: freqHz, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createTriangleTone(Double, Hertz, Double) — explicit frequency-type ergonomics
 proc createTriangleTone(Double: duration, Hertz: freqHz, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateTriangle b (createOsc freqHz) amplitude)
+    b
+end proc
+
+Note: createTriangleTone(Hertz, Double, Double) — frequency-FIRST form, the documented canonical
+Note: call shape ((createTriangleTone 440Hz 1.0 0.5)). Before 2026-06-10 only duration-first
+Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
+Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
+Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
+proc createTriangleTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc freq) amplitude)
     b
 end proc
 
@@ -371,12 +590,24 @@ internal proc renderSequenceToVoices(Sequence: seq, String: synthType, Int: samp
 Note: Render an entire Song arrangement to a stereo Buffer
 internal proc renderSong(Song: song, String: synthType)
 internal proc renderSong(Song: song, Function: synth)
+
+Note: Additive Symbol-instrument forms (quick-260621-x21).
+Note: (renderSong song #piano) — unwraps the symbol's interned name to a
+Note: String and delegates to the String path (byte-identical output).
+internal proc renderSong(Song: song, Symbol: synthType)
+
+Note: Piano release-tail knob (Second).
+Note: Composer-facing: (renderSong song "piano" release=2.0s).
+Note: Default 1.5s (Lehtonen 2007 reference);
+Note: clamped to [0.05s, 10.0s] at the renderer (charitable clamp).
+internal proc renderSong(Song: song, String: synthType, Second: release)
+internal proc renderSong(Song: song, Symbol: synthType, Second: release)
 internal proc createSong(String: title)
 internal proc addBarToSong(Song: song, String: sectionName)
 internal proc addBarToSong(Song: song, String: sectionName, Int: count)
 internal proc addBarToSong(Song: song, Sequence: seq)
 
-Note: ===== Phase 5: Audio Effects (DSP) =====
+Note: ===== Audio Effects (DSP) =====
 
 Note: Apply Schroeder reverb with room size (0-1), default damping and mix
 internal proc reverb(Buffer: buffer, Double: roomSize)
@@ -402,18 +633,17 @@ internal proc compress(Buffer: buffer, Double: thresholdDb, Double: ratio, Doubl
 Note: Apply feedback delay with time (ms), feedback (0-1), and wet/dry mix (0-1)
 internal proc delay(Buffer: buffer, Double: delayMs, Double: feedback, Double: mix)
 
-Note: DX-12 -- tempo-synced feedback delay; rate is a NoteValue (EIGHTH, QUARTER, ...) read against the active MusicalContext.Tempo
+Note: Tempo-synced feedback delay; rate is a NoteValue (EIGHTH, QUARTER, ...) read against the active MusicalContext.Tempo
 internal proc delay(Buffer: buffer, NoteValue: rate, Double: feedback, Double: mix)
 
 Note: Apply gain in dB (negative = attenuate, positive = amplify). Returns new buffer.
 internal proc gain(Buffer: buffer, Double: gainDb)
 
-Note: Phase 26.2 ERG-05 — explicit dB ergonomics; same dB semantics as the bare-Double gain overload above.
-Note: Closes RESEARCH Pitfall 2 (dormant gain(Buffer, Decibel) C# registration since QUICK-260504-w24).
+Note: Explicit dB ergonomics; same dB semantics as the bare-Double gain overload above.
 internal proc gain(Buffer: buffer, Decibel: gainDb)
 
-Note: Phase 26.2 ERG-03 — volume(Buffer, Double linear) — linear-multiplier alternative to gain(dB).
-Note: D-04 split: gain treats arg as decibels, volume treats arg as a bare linear multiplier (0.5 = half).
+Note: volume(Buffer, Double linear) — linear-multiplier alternative to gain(dB).
+Note: gain treats arg as decibels, volume treats arg as a bare linear multiplier (0.5 = half).
 internal proc volume(Buffer: buffer, Double: linearMultiplier)
 
 Note: Apply sidechain compression: source ducks under trigger signal
@@ -425,19 +655,28 @@ internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Do
 Note: Apply constant-power stereo panning. Pan: -1.0 = left, 0.0 = center, 1.0 = right. Returns stereo buffer.
 internal proc pan(Buffer: buffer, Double: panValue)
 
-Note: ===== Phase 26.2 ERG-02 + ERG-04: music-type FX overloads =====
+Note: ===== Music-type FX overloads =====
 Note: Each line below surfaces a C# overload registered in EffectsFunctions.cs. Without
 Note: a matching internal proc forward decl the C# registration is invisible to user
-Note: code (RESEARCH Pitfall 2). Same DSP path as the bare-Double overload above each pair.
+Note: code. Same DSP path as the bare-Double overload above each pair.
 
 Note: delay(Buffer, Millisecond, ...) — explicit ms ergonomics
 internal proc delay(Buffer: buffer, Millisecond: delayMs, Double: feedback, Double: mix)
 
+Note: delay(Buffer, Beat, ...) -- tempo-synced rate in beats; reads MusicalContext.Tempo (default 120 BPM + one-shot advisory)
+internal proc delay(Buffer: buffer, Beat: beats, Double: feedback, Double: mix)
+
 Note: compress(Buffer, Decibel threshold, ratio, Millisecond attack, Millisecond release) — full music-typed
 internal proc compress(Buffer: buffer, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
 
+Note: sweep-260620 — simple Decibel compress(Buffer, Decibel, Double)
+internal proc compress(Buffer: buffer, Decibel: thresholdDb, Double: ratio)
+
 Note: sidechain(Buffer source, Buffer trigger, Decibel threshold, ratio, Millisecond attack, Millisecond release)
 internal proc sidechain(Buffer: source, Buffer: trigger, Decibel: thresholdDb, Double: ratio, Millisecond: attackMs, Millisecond: releaseMs)
+
+Note: sweep-260620 — simple Decibel sidechain(Buffer, Buffer, Decibel, Double)
+internal proc sidechain(Buffer: source, Buffer: trigger, Decibel: thresholdDb, Double: ratio)
 
 Note: reverb(Buffer, Double mix, Second decay) — decay time as Second (typical 0.3s-3.0s)
 internal proc reverb(Buffer: buffer, Double: roomSize, Second: decaySec)
@@ -447,13 +686,20 @@ internal proc lowpass(Buffer: buffer, Hertz: cutoffHz)
 internal proc highpass(Buffer: buffer, Hertz: cutoffHz)
 internal proc bandpass(Buffer: buffer, Hertz: lowHz, Hertz: highHz)
 
-Note: ===== Phase 6: Playback =====
+Note: ===== Playback =====
 
 Note: Play an audio buffer through the system audio output
 internal proc play(Buffer: buffer)
 
 Note: Play a sequence (renders to audio then plays)
 internal proc play(Sequence: seq)
+
+Note: Play a whole Song — renders the arrangement with per-sequence instrument routing then plays
+Note: (each named sequence picks its own timbre; unknown names fall back to piano + advisory)
+internal proc play(Song: song)
+
+Note: Play a whole Song forcing one synth for every sequence, e.g. (play song "sine")
+internal proc play(Song: song, String: synthType)
 internal proc stream(Buffer: buffer)
 internal proc stream(Sequence: seq)
 
@@ -482,6 +728,15 @@ Note: ===== Voice Allocation =====
 
 Note: Set the maximum number of simultaneous voices (default 32)
 internal proc setMaxVoices(Int: maxVoices)
+
+Note: ===== Microphone capture =====
+
+Note: Capture audio from the default PulseAudio input device for `duration` seconds.
+Note: Auto-attenuates -20 dB on open (feedback guard).
+Note: Resamples to 44.1 kHz via linear interpolation when device native rate differs.
+Note: Returns a composable Buffer — chains with mix / play / writeWav / granular.
+internal proc micBuffer(Second: duration)
+internal proc micBuffer(Double: duration)
 
 Note: ===== Custom Oscillator Registration =====
 
@@ -517,3 +772,12 @@ internal proc tts(String: text)
 
 Note: Set the external TTS command (default: "espeak-ng --stdout")
 internal proc setTtsCommand(String: command)
+
+Note: ===== Beat <-> Second tempo-aware conversion =====
+Note: Both read the active MusicalContext.Tempo at call time; default 120 BPM + one-shot stderr advisory when no tempo block is active.
+
+Note: beatToSec(Beat) -> Second. 1 beat at 120 BPM = 0.5 seconds.
+internal proc beatToSec(Beat: beats)
+
+Note: secToBeat(Second) -> Beat. 1 second at 120 BPM = 2.0 beats. Symmetric inverse.
+internal proc secToBeat(Second: seconds)

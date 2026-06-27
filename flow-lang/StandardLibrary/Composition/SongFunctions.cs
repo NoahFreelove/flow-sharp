@@ -9,16 +9,20 @@ public static class SongFunctions
 {
     public static void Register(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
     {
-        var createSongSignature = new FunctionSignature("createSong", [StringType.Instance]);
+        var createSongSignature = new FunctionSignature("createSong", [StringType.Instance],
+            ParameterNames: ["title"]);
         registry.Register("createSong", createSongSignature, args => CreateSong(args, context));
 
-        var addBarSignature = new FunctionSignature("addBarToSong", [SongType.Instance, StringType.Instance]);
+        var addBarSignature = new FunctionSignature("addBarToSong", [SongType.Instance, StringType.Instance],
+            ParameterNames: ["song", "name"]);
         registry.Register("addBarToSong", addBarSignature, args => AddBarToSong(args, context));
 
-        var addBarRepeatSignature = new FunctionSignature("addBarToSong", [SongType.Instance, StringType.Instance, IntType.Instance]);
+        var addBarRepeatSignature = new FunctionSignature("addBarToSong", [SongType.Instance, StringType.Instance, IntType.Instance],
+            ParameterNames: ["song", "name", "repeat"]);
         registry.Register("addBarToSong", addBarRepeatSignature, args => AddBarToSong(args, context));
 
-        var addSeqSignature = new FunctionSignature("addBarToSong", [SongType.Instance, SequenceType.Instance]);
+        var addSeqSignature = new FunctionSignature("addBarToSong", [SongType.Instance, SequenceType.Instance],
+            ParameterNames: ["song", "seq"]);
         registry.Register("addBarToSong", addSeqSignature, args => AddSequenceToSong(args, context));
     }
 
@@ -49,8 +53,10 @@ public static class SongFunctions
     {
         // string title = args[0].As<string>(); // Title is currently unused in SongData but good for signature
         var sections = new List<SongSectionRef>();
-        var sectionRegistry = new Dictionary<string, SectionData>(context.SectionRegistry);
-        
+        // Phase 36 Plan 36-10: SectionRegistry is now List-per-name; project to
+        // flat dict via the helper which picks the last-registered overload.
+        var sectionRegistry = context.SectionRegistryFlat();
+
         return Value.Song(new SongData(sections, sectionRegistry));
     }
 }

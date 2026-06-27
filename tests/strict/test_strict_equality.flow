@@ -1,0 +1,52 @@
+enable strict;
+
+use "@std"
+
+Note: Phase 44 Plan 44-11 Task 1 — D-11 + D-12 strict equality surface.
+Note: Verifies the composer-facing rules:
+Note:   - (equals a b) cross-type returns false (set-theoretic, NOT error)
+Note:   - (equals a b) same-type works as expected
+Note:   - (gt|lt|gte|lte a b) cross-type ERRORS in strict — composer must
+Note:     explicitly convert via (double x) / (int x) escape hatches
+Note:   - Same-type comparisons work as expected
+Note: The cross-type comparison call (gt 1 1.0) is INTENTIONALLY OMITTED
+Note: from this fixture — exercising it would abort the script with a
+Note: '[strict] cross-type comparison Int vs Double' error. The strict
+Note: error path is covered verbatim by CrossTypeComparisonStrictTests.cs.
+
+Note: ===== Same-type equality =====
+Bool eqInts = (equals 1 1)
+Bool eqDoubles = (equals 1.0 1.0)
+Bool eqStrings = (equals "abc" "abc")
+(print (concat "(equals 1 1) = " (str eqInts)))
+(print (concat "(equals 1.0 1.0) = " (str eqDoubles)))
+(print (concat "(equals \"abc\" \"abc\") = " (str eqStrings)))
+
+Note: ===== Cross-type equality returns FALSE in strict (D-11 set-theoretic) =====
+Bool eqIntDouble = (equals 1 1.0)
+Bool eqIntString = (equals 1 "1")
+Bool eqSymbolString = (equals #foo "foo")
+(print (concat "(equals 1 1.0) = " (str eqIntDouble)))
+(print (concat "(equals 1 \"1\") = " (str eqIntString)))
+(print (concat "(equals #foo \"foo\") = " (str eqSymbolString)))
+
+Note: ===== Explicit conversion makes both same-typed → true =====
+Bool eqAfterDoubleCast = (equals (double 1) 1.0)
+(print (concat "(equals (double 1) 1.0) = " (str eqAfterDoubleCast)))
+
+Note: ===== Same-type comparisons (gt/lt/gte/lte) =====
+Bool gt2_1 = (gt 2 1)
+Bool lt1_2 = (lt 1 2)
+Bool gtePair = (gte 5 5)
+Bool ltePair = (lte 4 5)
+(print (concat "(gt 2 1) = " (str gt2_1)))
+(print (concat "(lt 1 2) = " (str lt1_2)))
+(print (concat "(gte 5 5) = " (str gtePair)))
+(print (concat "(lte 4 5) = " (str ltePair)))
+
+Note: ===== Escape hatch: cross-type comparison via explicit (double x) =====
+Note: Composer wants to compare Int 2 vs Double 1.5 — convert first, then compare.
+Bool gtViaCast = (gt (double 2) 1.5)
+(print (concat "(gt (double 2) 1.5) = " (str gtViaCast)))
+
+(print "test_strict_equality PASS")

@@ -18,6 +18,18 @@ public sealed class SemitoneType : FlowType
     /// <summary>
     /// Semitone is compatible with Int, allowing transpose(seq, 2) to match
     /// the transpose(Sequence, Semitone) overload without requiring a literal like +2st.
+    /// <para>
+    /// sweep-0614: deliberately NOT widened to Long. A global
+    /// <c>Semitone.IsCompatibleWith(Long)</c> would, via the resolver's
+    /// inverse-direction clause (<c>param.IsCompatibleWith(arg)</c> in
+    /// <see cref="FunctionSignature"/>.SlotMatches), also make the Int-backed
+    /// idempotent <c>semitones(Semitone)</c> overload accept a Long arg and then
+    /// throw on <c>As&lt;int&gt;()</c> — contradicting the documented D-08
+    /// "(semitones x) is Int-ONLY; Long falls through to No matching overload"
+    /// carve-out. The whole-number-Long → transpose ergonomics gap is instead
+    /// closed by an explicit <c>transpose(Sequence, Long)</c> overload in
+    /// TransformFunctions, scoped to transpose only.
+    /// </para>
     /// </summary>
     public override bool IsCompatibleWith(FlowType target)
     {

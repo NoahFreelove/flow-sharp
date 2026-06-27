@@ -31,7 +31,7 @@ public sealed class SemanticTokensHandler : SemanticTokensHandlerBase
     private readonly ParseSession _parser;
 
     private static readonly TextDocumentSelector Selector =
-        TextDocumentSelector.ForLanguage("flow");
+        TextDocumentSelector.ForPattern("**/*.flow");
 
     public SemanticTokensHandler(DocumentManager docs, ParseSession parser)
     {
@@ -58,22 +58,49 @@ public sealed class SemanticTokensHandler : SemanticTokensHandlerBase
         var uri = identifier.TextDocument.Uri;
         var text = _docs.GetText(uri) ?? string.Empty;
         var result = _parser.Parse(text, uri.GetFileSystemPath());
-        foreach (var t in result.Tokens)
+
+        // Two-source semantic-token build:
+        //  - parser tokens (lexer output) → classified via ClassifyTokens
+        //  - synthetic Comment tokens scanned out of the buffer text
+        //    (SimpleLexer consumes comments as whitespace, so they never
+        //    appear in result.Tokens — we side-channel them here)
+        // Merge in source order before pushing to the builder.
+        var classifications = SemanticTokensEncoder.ClassifyTokens(result.Tokens);
+        var commentTokens = SemanticTokensEncoder.ScanCommentTokens(text);
+        var commentLegendIdx = SemanticTokensEncoder.MapTokenType(FlowLang.Lexing.TokenType.Comment) ?? 0;
+
+        var entries = new List<(int Line, int Col, int Length, int LegendIdx)>(
+            result.Tokens.Count + commentTokens.Count);
+        for (int i = 0; i < result.Tokens.Count; i++)
         {
-            if (cancellationToken.IsCancellationRequested) break;
-            var idx = SemanticTokensEncoder.MapTokenType(t.Type);
+            var t = result.Tokens[i];
+            var idx = classifications[i];
             if (idx is null) continue;
             if (t.Text == null || t.Text.Length == 0) continue;
             int line = System.Math.Max(0, t.Location.Line - 1);
             int col = System.Math.Max(0, t.Location.Column - 1);
-            // Cast the mods argument explicitly — without it, `null` is ambiguous
-            // between the (SemanticTokenType?, params SemanticTokenModifier[]) and
-            // (string, params string[]) overloads. Empty modifier array = no modifiers.
+            entries.Add((line, col, t.Text.Length, idx.Value));
+        }
+        foreach (var c in commentTokens)
+        {
+            if (string.IsNullOrEmpty(c.Text)) continue;
+            int line = System.Math.Max(0, c.Location.Line - 1);
+            int col = System.Math.Max(0, c.Location.Column - 1);
+            entries.Add((line, col, c.Text.Length, commentLegendIdx));
+        }
+
+        entries.Sort((a, b) => a.Line != b.Line
+            ? a.Line.CompareTo(b.Line)
+            : a.Col.CompareTo(b.Col));
+
+        foreach (var e in entries)
+        {
+            if (cancellationToken.IsCancellationRequested) break;
             builder.Push(
-                line,
-                col,
-                t.Text.Length,
-                SemanticTokensEncoder.Legend[idx.Value],
+                e.Line,
+                e.Col,
+                e.Length,
+                SemanticTokensEncoder.Legend[e.LegendIdx],
                 System.Array.Empty<SemanticTokenModifier>());
         }
         return Task.CompletedTask;

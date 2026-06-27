@@ -5,4 +5,22 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="flow-midi.Tests" />
+    <!-- Plan 30-09 Task 1: flow-cli/Commands/Midi2FlowCommand.cs calls
+         FlowMidi.Midi.MidiParser.Parse + FlowMidi.Conversion.Quantizer.Quantize
+         + FlowMidi.Conversion.FlowGenerator.Generate. These types are internal
+         to flow-midi (Phase 30-02 + 30-07 + 30-08 all kept them internal). The
+         alternative — flipping them to public — would broaden the API surface
+         beyond what Phase 30 SPEC mandates. InternalsVisibleTo is the minimal
+         deviation (Rule 3: blocking-issue auto-fix). -->
+    <!-- flow-cli's csproj sets <AssemblyName>flow</AssemblyName>, so the
+         InternalsVisibleTo attribute must match the assembly name, not the
+         csproj name (cf. Phase 30-01 task 2 which renamed flow-cli.dll -> flow.dll). -->
+    <InternalsVisibleTo Include="flow" />
+    <!-- Plan 30-09 Task 3: Midi2FlowRoundTripTests calls the same trio from
+         flow-lang.Tests. Same rationale as above. -->
+    <InternalsVisibleTo Include="flow-lang.Tests" />
+  </ItemGroup>
 </Project>

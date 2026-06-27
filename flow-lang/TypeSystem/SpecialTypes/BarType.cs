@@ -66,6 +66,15 @@ public class BarData
     /// </summary>
     public bool IsPickup { get; set; }
 
+    /// <summary>
+    /// Phase 28 (SPEC-1) — single-sequence polyphony. When non-null, each entry is a
+    /// parallel mini-bar (compiled from a `{voice ...}` block) whose onsets share the
+    /// parent bar's offset (0). The renderer (BarRenderer / SongRenderer) mixes these
+    /// additively. Default null preserves backward compatibility for every pre-Phase-28
+    /// bar — only voice-block bars set this field.
+    /// </summary>
+    public List<BarData>? ParallelVoices { get; set; }
+
     public BarData()
     {
         Notes = new List<string>();
@@ -135,8 +144,12 @@ public class BarData
     /// </summary>
     public double GetActualBeats()
     {
+        // sweep-0614: all beat totals are quarter-note units. The bar-capacity
+        // fallback must be quarter-units too (Numerator × 4 / Denominator), not the
+        // bare denominator-unit numerator, otherwise non-4/4 bars advance the
+        // wall-clock / MIDI timeline at the wrong rate.
         if (Mode != BarMode.Musical || TimeSignature == null)
-            return TimeSignature?.Numerator ?? 4;
+            return TimeSignature?.BarCapacityQuarters ?? 4;
 
         // Chord-tones share the leading tone's slot — they must not
         // contribute again to the bar's actual beat count. See
@@ -155,10 +168,11 @@ public class BarData
             return true;
 
         // Chord-tones share the leading tone's slot — see GetActualBeats above.
+        // sweep-0614: GetBeats and capacity are both quarter-units now.
         double totalBeats = MusicalNotes
             .Where(n => !n.IsChordTone)
             .Sum(n => n.GetBeats(TimeSignature.Denominator));
-        return totalBeats <= TimeSignature.Numerator;
+        return totalBeats <= TimeSignature.BarCapacityQuarters;
     }
 
     /// <summary>

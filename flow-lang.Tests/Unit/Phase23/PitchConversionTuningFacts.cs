@@ -68,6 +68,42 @@ public class PitchConversionTuningFacts
     }
 
     [Fact]
+    public void JI_NonCTonic_RendersTonicAtItsOwn12TetReferenceHz()
+    {
+        // Regression (sweep-0614 gap-pitchconversion-ji): the tonic of any key must
+        // render at its 12-TET reference frequency under JI/Pythagorean — NOT
+        // transposed by its C-relative ratio. Before the fix, G4 under JI Gmajor
+        // rendered at 12-TET-G × 3/2 (a D5, ~588 Hz) because the C-relative G ratio
+        // was multiplied into the G tonic anchor without normalizing.
+        var jiGmajor = new RenderTuning(TuningSystem.JustIntonation, Mode.Major, 'G', 0);
+        double gTonic12Tet = PitchConversion.NoteToFrequency('G', 4, 0); // 12-TET G4 ≈ 392 Hz
+        double gTonicJI = PitchConversion.NoteToFrequency(MakeNote('G', 4, 0), jiGmajor);
+        Assert.Equal(gTonic12Tet, gTonicJI, precision: 10);
+    }
+
+    [Fact]
+    public void Pythagorean_NonCTonic_RendersTonicAtItsOwn12TetReferenceHz()
+    {
+        // Same regression for Pythagorean: D tonic under Pyth Dmajor must equal 12-TET D.
+        var pythDmajor = new RenderTuning(TuningSystem.Pythagorean, Mode.Major, 'D', 0);
+        double dTonic12Tet = PitchConversion.NoteToFrequency('D', 4, 0); // 12-TET D4
+        double dTonicPyth = PitchConversion.NoteToFrequency(MakeNote('D', 4, 0), pythDmajor);
+        Assert.Equal(dTonic12Tet, dTonicPyth, precision: 10);
+    }
+
+    [Fact]
+    public void JI_NonCTonic_FifthAboveTonic_Is3to2()
+    {
+        // Intervals are measured FROM THE TONIC: in JI Gmajor, the perfect fifth above
+        // the G tonic is D (the 5th degree), and D/G must be 3/2 — confirming the fix
+        // normalizes correctly, not just for the tonic itself.
+        var jiGmajor = new RenderTuning(TuningSystem.JustIntonation, Mode.Major, 'G', 0);
+        double gFreq = PitchConversion.NoteToFrequency(MakeNote('G', 4, 0), jiGmajor);
+        double dFreq = PitchConversion.NoteToFrequency(MakeNote('D', 5, 0), jiGmajor);
+        Assert.Equal(3.0 / 2.0, dFreq / gFreq, precision: 10);
+    }
+
+    [Fact]
     public void EqualTemperamentShortCircuit_BitIdentical_To1ArgOverload()
     {
         // Pitfall 6 contract pin: when tuning.System == EqualTemperament AND no centOffset,

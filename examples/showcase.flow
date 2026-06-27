@@ -28,6 +28,14 @@ tempo 120 {
             // Ambient pad bed -- long whole notes outline the I / IV / V / I shape
             Sequence pad = | C4w | F4w | G4w | C4w |
 
+            // Progression DSL demo (D-12) -- voice-led I / IV / V / I in the active key.
+            // NON-RENDERED on purpose: progDemo is NOT fed into `section showcase` or the
+            // Song below, so the pinned flow_showcase.wav stays byte-identical. This line
+            // just shows the `progression | ... |` surface alongside the hand-written pad
+            // (voice-led chords differ from the pad's root whole-notes).
+            Sequence progDemo = progression | I IV V I |
+            (print "Progression DSL demo: progression | I IV V I | (voice-led, non-rendered)")
+
             section showcase {
                 Sequence groove = drums
                 Sequence triplets = drumTriplets

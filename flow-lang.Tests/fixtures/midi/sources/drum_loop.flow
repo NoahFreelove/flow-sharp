@@ -1,0 +1,19 @@
+// Phase 30 round-trip fixture — channel 9 GM percussion.
+// CC0 1.0 — see ../LICENSE.txt.
+
+use "@std"
+use "@audio"
+use "@notation"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section main {
+                Sequence beat = | C2q D2q C2q D2q |
+            }
+            Song song = [main]
+            Buffer drumsBuf = (renderSong song "drums")
+            (writeMidi "flow-lang.Tests/fixtures/midi/drum_loop.mid" song)
+        }
+    }
+}

@@ -1,0 +1,36 @@
+Note: Phase 38 Plan 38-07 LIVE-01 smoke — wraps the body of
+Note: examples/live/hello_live.flow in a minimal `live 1bar { ... }`
+Note: smoke that validates parser + interpreter dispatch for the new
+Note: Phase 38 LiveBlockStatement AST + LiveBlockRegistry runtime.
+Note:
+Note: Does NOT exercise the live-reload watch path (that requires a
+Note: real FileSystemWatcher event from a save), just confirms the
+Note: live-block syntax parses + executes once + the D-v1.5-07 stderr
+Note: advisory emits exactly once per (line, process). Mirrors the
+Note: tests/test_live_reload.flow analog (existing 20 LOC pattern)
+Note: with the addition of the live block wrapper.
+Note:
+Note: Run:
+Note:   dotnet run --project flow-interpreter tests/test_live_hello.flow
+Note: Expected: prints PASS sentinel + emits one [live] determinism
+Note: opt-out advisory to stderr.
+
+use "@std"
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            live 1bar {
+                section main {
+                    Sequence melody = | C4q D4q E4q F4q |
+                }
+                Song song = [main]
+                Buffer result = (renderSong song "piano")
+                (print "rendered live block once")
+            }
+        }
+    }
+}
+
+(print "PASS: live hello smoke ran")

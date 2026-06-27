@@ -1,0 +1,55 @@
+Note: =====================================================================
+Note:  Chapter: Granular Synthesis (Phase 37 DSP-01)
+Note:  Run: dotnet run --project flow-cli -- run examples/dsp/granular.flow
+Note: =====================================================================
+Note:
+Note:  Flow's granular builtin pulls grain-sized chunks from an input Buffer
+Note:  at random offsets (within the jitter envelope), applies a window
+Note:  function, and overlap-adds at the requested density rate.
+Note:
+Note:  Composer-facing knobs (Phase 36-02 named-arg surface):
+Note:    grain=50ms       — grain length (Millisecond)
+Note:    density=20Hz     — grains per second (Hertz)
+Note:    jitter=0.3       — random offset within +/-N*grain (Double in [0..1])
+Note:    windowing=#hann  — Hann (default) | #gaussian | #tukey
+Note:
+Note:  Determinism: the jitter PRNG routes through Runtime/PrngRegistry
+Note:  per D-v1.5-06. Two consecutive renders of THIS file at the same
+Note:  git SHA produce byte-identical WAV output (verified by
+Note:  `scripts/test_two_run_determinism.sh examples/dsp/granular.flow`).
+Note:
+Note:  Unknown windowing Symbol falls back to Hann + one-shot stderr
+Note:  advisory (charitable interpretation, Pattern E from 37-RESEARCH).
+
+use "@std"
+use "@audio"
+
+Note: -----------------------------------------------------------
+Note: 1. Build a source Buffer (1-second 440 Hz sine)
+Note: -----------------------------------------------------------
+Buffer tone = (createSineTone 1.0s 440Hz 0.5)
+
+Note: -----------------------------------------------------------
+Note: 2. Default granular call — Hann windowing, modest jitter
+Note: -----------------------------------------------------------
+Buffer g1 = (granular tone 50ms 20Hz 0.3)
+
+Note: -----------------------------------------------------------
+Note: 3. Heavier jitter + Gaussian windowing — cloudier texture
+Note: -----------------------------------------------------------
+Buffer g2 = (granular tone 80ms 15Hz 0.7 #gaussian)
+
+Note: -----------------------------------------------------------
+Note: 4. Compose with reverb + pan (Phase 33 / Phase 37 MIX-01)
+Note: -----------------------------------------------------------
+Buffer g2_wet = (reverb g2 0.5)
+Buffer g2_panned = (pan g2_wet -0.3)
+
+Note: -----------------------------------------------------------
+Note: 5. Mix g1 + g2_panned and write to /tmp.
+Note:    /tmp is used so scripts/test_two_run_determinism.sh can
+Note:    resolve the writeWav target from any CWD (the harness
+Note:    runs the script with CWD = directory of the script).
+Note: -----------------------------------------------------------
+Buffer mix = (mix g1 g2_panned)
+(writeWav "/tmp/granular_demo.wav" mix)

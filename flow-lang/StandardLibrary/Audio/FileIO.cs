@@ -25,35 +25,17 @@ public static class FileIO
     private static Random Random = new Random(DitherSeed);
 
     /// <summary>
-    /// Exports an AudioBuffer to a WAV file with default 16-bit PCM format.
-    /// </summary>
-    public static Value ExportWav(IReadOnlyList<Value> args)
-    {
-        var buffer = args[0].As<AudioBuffer>();
-        string filepath = args[1].As<string>();
-
-        ExportWavInternal(buffer, filepath, 16);
-        return Value.Void();
-    }
-
-    /// <summary>
-    /// Exports an AudioBuffer to a WAV file with specified bit depth.
-    /// </summary>
-    public static Value ExportWavWithBitDepth(IReadOnlyList<Value> args)
-    {
-        var buffer = args[0].As<AudioBuffer>();
-        string filepath = args[1].As<string>();
-        int bitDepth = args[2].As<int>();
-
-        ExportWavInternal(buffer, filepath, bitDepth);
-        return Value.Void();
-    }
-
-    /// <summary>
     /// Core WAV export implementation.
     /// </summary>
-    private static void ExportWavInternal(AudioBuffer buffer, string filepath, int bitDepth)
+    private static void WriteWavInternal(AudioBuffer buffer, string filepath, int bitDepth)
     {
+        // Phase 36 Plan 36-01 (D-v1.5-06 / D-36-09) — reseed PrngRegistry at the
+        // WAV-export boundary so any unseeded Phase 36 stochastic primitives
+        // upstream of this write produce byte-identical bytes on the next
+        // render. Null-safe — direct-API callers that bypass FlowEngine
+        // (rare; legacy unit-test entry) skip the reseed harmlessly.
+        Core.FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
+
         // Validate inputs
         if (buffer == null)
             throw new ArgumentNullException(nameof(buffer));
@@ -62,13 +44,30 @@ public static class FileIO
         if (bitDepth != 16 && bitDepth != 24 && bitDepth != 32)
             throw new ArgumentException($"Bit depth must be 16, 24, or 32 (got {bitDepth})", nameof(bitDepth));
 
-        // Calculate file sizes
+        // Calculate file sizes — must use long to avoid int overflow on long renders.
+        // RIFF format only supports up to 4 GB (uint32 size fields).  Throws a
+        // clear friendly error rather than silently writing corrupt negative fields.
         int bytesPerSample = bitDepth / 8;
-        int dataSize = buffer.Frames * buffer.Channels * bytesPerSample;
-        int fileSize = 36 + dataSize; // 44 bytes header - 8 bytes = 36
+        long dataSizeLong = (long)buffer.Frames * buffer.Channels * bytesPerSample;
+        // RIFF requires every chunk to end on an even byte boundary; an odd
+        // data chunk (only possible at 24-bit / 3-bytes-per-sample with an odd
+        // total sample count) is followed by a single 0x00 pad byte that is
+        // part of the FILE but NOT counted in the data chunk's own size field.
+        // Include that pad byte in the RIFF top-level size so the header stays
+        // consistent with the file on disk (the reader at LoadWavInternal:429-431
+        // already compensates for the pad — this makes the writer symmetric).
+        long padByte = dataSizeLong & 1L;
+        long fileSizeLong = 36L + dataSizeLong + padByte; // 44 bytes header - 8 bytes = 36
+        if (dataSizeLong > 0xFFFFFFFFL || fileSizeLong > 0xFFFFFFFFL)
+            throw new InvalidOperationException(
+                $"WAV output is too large for the RIFF format (4 GB limit). " +
+                $"Render size: {dataSizeLong / (1024.0 * 1024.0 * 1024.0):F2} GB. " +
+                "Use shorter segments or lower bit depth.");
+        int dataSize = (int)dataSizeLong;
+        int fileSize = (int)fileSizeLong;
 
         // Ensure parent directory exists (idempotent — no-op if present).
-        // Benefits both exportWav and writeWav via this shared helper.
+        // Shared by all writeWav overloads via this core helper.
         var dir = Path.GetDirectoryName(filepath);
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
@@ -124,12 +123,23 @@ public static class FileIO
     /// </summary>
     private static void WriteDataChunk(BinaryWriter writer, AudioBuffer buffer, int bitDepth, int bytesPerSample)
     {
-        int dataSize = buffer.Frames * buffer.Channels * bytesPerSample;
+        // Use long arithmetic here too so it is consistent with WriteWavInternal.
+        // The 4 GB guard above already ensures this fits in int, but be explicit.
+        long dataSizeLong = (long)buffer.Frames * buffer.Channels * bytesPerSample;
+        int dataSize = (int)dataSizeLong;
 
         writer.Write(new[] { (byte)'d', (byte)'a', (byte)'t', (byte)'a' });
         writer.Write(dataSize);
 
         WriteSamples(writer, buffer, bitDepth);
+
+        // RIFF spec — pad an odd-size data chunk to an even byte boundary with
+        // a single 0x00 pad byte (not counted in dataSize). Only 24-bit
+        // (3 bytes/sample) with an odd total sample count can be odd; 16/32-bit
+        // totals are always even. The pad is a constant 0x00 so two-run
+        // byte-identical determinism is preserved.
+        if ((dataSizeLong & 1L) == 1L)
+            writer.Write((byte)0);
     }
 
     /// <summary>
@@ -266,7 +276,7 @@ public static class FileIO
     {
         string filepath = args[0].As<string>();
         var buffer = args[1].As<AudioBuffer>();
-        ExportWavInternal(buffer, filepath, 16);
+        WriteWavInternal(buffer, filepath, 16);
         return Value.Void();
     }
 
@@ -278,7 +288,35 @@ public static class FileIO
         string filepath = args[0].As<string>();
         var buffer = args[1].As<AudioBuffer>();
         int bitDepth = args[2].As<int>();
-        ExportWavInternal(buffer, filepath, bitDepth);
+        WriteWavInternal(buffer, filepath, bitDepth);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// play-song (#9): writeWav(String, Song) — convenience export that renders the
+    /// whole arrangement with per-sequence instrument routing (via
+    /// <see cref="SongRenderer.RenderSongAuto"/>) then writes the mix to disk, so a
+    /// composer no longer has to write <c>(writeWav "out.wav" (renderSong song "piano"))</c>.
+    /// </summary>
+    public static Value WriteWavSong(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var song = args[1].As<TypeSystem.SpecialTypes.SongData>();
+        var buffer = SongRenderer.RenderSongAuto(song);
+        WriteWavInternal(buffer, filepath, 16);
+        return Value.Void();
+    }
+
+    /// <summary>
+    /// play-song (#9): writeWav(String, Song, String) — same as
+    /// <see cref="WriteWavSong"/> but forces ONE synth for every sequence.
+    /// </summary>
+    public static Value WriteWavSongWithSynth(IReadOnlyList<Value> args)
+    {
+        string filepath = args[0].As<string>();
+        var renderArgs = new List<Value> { args[1], args[2] };
+        var buffer = SongRenderer.RenderSong(renderArgs).As<AudioBuffer>();
+        WriteWavInternal(buffer, filepath, 16);
         return Value.Void();
     }
 
@@ -409,6 +447,12 @@ public static class FileIO
                     int byteRate = reader.ReadInt32(); // read but unused
                     short blockAlign = reader.ReadInt16(); // read but unused
                     bitsPerSample = reader.ReadInt16();
+                    // Validate bitsPerSample BEFORE any arithmetic that divides by it
+                    // (bitsPerSample/8 in the data branch) to avoid DivideByZeroException
+                    // on malformed files.  Checked here while we have the fmt context.
+                    if (bitsPerSample != 16 && bitsPerSample != 24 && bitsPerSample != 32)
+                        throw new InvalidDataException(
+                            $"Unsupported bit depth: {bitsPerSample}. Only 16, 24, and 32-bit PCM are supported.");
                     // Skip extra format bytes if chunk is larger than 16
                     if (chunkSize > 16)
                         reader.ReadBytes(chunkSize - 16);
@@ -418,8 +462,18 @@ public static class FileIO
                 case "data":
                     if (!fmtFound)
                         throw new InvalidDataException("WAV file has data chunk before fmt chunk");
-                    int totalSamples = chunkSize / (bitsPerSample / 8);
+                    int bytesPerSampleLoad = bitsPerSample / 8;
+                    int totalSamples = chunkSize / bytesPerSampleLoad;
+                    int bytesRead = totalSamples * bytesPerSampleLoad;
                     samples = ReadSamples(reader, totalSamples, bitsPerSample);
+                    // Consume any remainder bytes (e.g. odd-size 24-bit data chunk or
+                    // rounding) plus the mandatory RIFF odd-chunk pad byte so that the
+                    // file position is aligned for any chunk that follows (e.g. LIST/INFO
+                    // appended by editors).  Mirrors the default: branch pad logic.
+                    int remainder = chunkSize - bytesRead;
+                    if (chunkSize % 2 != 0) remainder++; // odd-size pad byte
+                    if (remainder > 0 && fileStream.Position + remainder <= fileStream.Length)
+                        reader.ReadBytes(remainder);
                     break;
 
                 default:

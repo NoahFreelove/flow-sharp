@@ -45,7 +45,18 @@ public sealed class TupleType : FlowType
     public override bool Equals(FlowType? other)
     {
         if (other is not TupleType t) return false;
-        if (IsAnyArity || t.IsAnyArity) return true;
+        // sweep-0614: Equals must be a pure STRUCTURAL-equality relation
+        // consistent with GetHashCode (the AnyArity sentinel hashes
+        // "__AnyArity__"; a concrete tuple hashes its element types). The old
+        // `if (IsAnyArity || t.IsAnyArity) return true;` short-circuit made
+        // AnyArity.Equals(Tuple<<Int>>) == true while their hash codes differ,
+        // violating the .NET invariant "equal objects must hash equally" — a
+        // latent hazard for any future Dictionary<FlowType,_>/HashSet<FlowType>.
+        // AnyArity WILDCARD matching lives in IsCompatibleWith/CanConvertTo,
+        // which is the path dispatch actually uses, so removing it here does
+        // not affect overload resolution. Two AnyArity instances stay equal
+        // (both have empty ElementTypes → fall through the structural loop).
+        if (IsAnyArity != t.IsAnyArity) return false;
         if (ElementTypes.Count != t.ElementTypes.Count) return false;
         for (int i = 0; i < ElementTypes.Count; i++)
             if (!ElementTypes[i].Equals(t.ElementTypes[i])) return false;

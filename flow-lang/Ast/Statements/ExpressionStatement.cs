@@ -8,4 +8,5 @@ namespace FlowLang.Ast.Statements;
 /// </summary>
 public record ExpressionStatement(
     SourceLocation Location,
-    Expression Expression) : Statement(Location);
+    Expression Expression,
+    Span? Span = null) : Statement(Location);

@@ -12,16 +12,19 @@
     { "include": "#keywords" },
     { "include": "#types" },
     { "include": "#booleans" },
+    { "include": "#function-call" },
+    { "include": "#variable-ref" },
     { "include": "#operators" },
     { "include": "#pipes" }
   ],
   "repository": {
     "comments": {
       "patterns": [
-        {
-          "name": "comment.line.double-slash.flow",
-          "match": "//.*$"
-        }
+        { "name": "comment.line.double-slash.flow",  "match": "//.*$" },
+        { "name": "comment.line.semicolon.flow",     "match": "^\\s*;.*$" },
+        { "name": "comment.line.todo.flow",          "match": "^\\s*TODO:.*$" },
+        { "name": "comment.line.fixme.flow",         "match": "^\\s*FIXME:.*$" },
+        { "name": "comment.line.documentation.flow", "match": "^\\s*Note:.*$" }
       ]
     },
     "strings": {
@@ -84,6 +87,23 @@
           "match": "\\b-?[0-9]+(\\.[0-9]+)?(ms|s|db|st|c|hz|khz)?\\b"
         }
       ]
+    },
+    "function-call": {
+      "comment": "Flow's prefix-only S-expression call sites: `(name args...)`. Match an identifier that immediately follows an opening paren (with optional whitespace). Also matches the `name(` C-style form for proc declarations / future affordance.",
+      "patterns": [
+        {
+          "match": "(?<=\\()\\s*([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": { "1": { "name": "entity.name.function.flow" } }
+        },
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+          "captures": { "1": { "name": "entity.name.function.flow" } }
+        }
+      ]
+    },
+    "variable-ref": {
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
+      "name": "variable.other.flow"
     },
     "operators": {
       "patterns": [

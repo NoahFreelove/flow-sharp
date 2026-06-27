@@ -10,16 +10,53 @@ The extension bundles `flow-lsp` and its stdlib and activates on `.flow` files
 automatically; no manual configuration required.
 
 For everyone else, use one of the snippets in this directory and point your
-editor at a `flow-lsp` binary on your `PATH`.
+editor at the LSP server. Two equivalent entry points:
+
+- `flow lsp` — subcommand on the unified `flow` CLI (preferred; shipped by
+  `scripts/install.sh`).
+- `flow-lsp` — standalone binary (built directly from `flow-lsp/`; also bundled
+  per-platform inside the VSCode extension at `server/{platform}-{arch}/`).
+
+Both speak identical LSP 3.17 over stdio — pick whichever your editor's LSP
+client wires up more cleanly.
+
+## What the server provides
+
+See **[FEATURES.md § LSP (`flow-lsp`)](../../FEATURES.md#lsp-flow-lsp)** for the
+authoritative capability table. Short summary:
+
+- **Shipped:** publish diagnostics (6 analyzer sources merged), semantic tokens
+  (full), context-aware completion, hover (markdown), go-to-definition (user
+  symbols + stdlib imports), signature help.
+- **Not yet:** semantic tokens delta, find references, rename, code actions,
+  document/workspace symbols, inlay hints, formatter.
+
+Do not wire keybindings to capabilities in the second list — they will simply
+return null and your editor will show "no references found" / "rename not
+supported".
 
 ## Getting the binary
 
-**Option A — Download a release tarball (recommended once releases are tagged):**
-Pre-built per-platform binaries live at
-https://github.com/noah-freelove/flow-sharp/releases. Extract into a directory
-on your `PATH`, e.g. `~/.local/bin/`.
+**Option A — `flow install` (recommended once a release tag is cut):**
 
-**Option B — Build from source:**
+```bash
+# Per-user install: ~/.local/share/flow/flow-v<VERSION>/ + ~/.local/bin/flow symlink
+curl -fsSL https://raw.githubusercontent.com/NoahFreelove/flow-sharp/main/scripts/install.sh | bash
+
+# Or system-wide (needs sudo): /usr/local/share/flow/... + /usr/local/bin/flow
+curl -fsSL https://raw.githubusercontent.com/NoahFreelove/flow-sharp/main/scripts/install.sh | bash -s -- --system
+```
+
+This drops a `flow` binary on your `PATH` that handles `flow lsp` plus every
+other CLI subcommand. The stdlib `.flow` files ship inside the versioned
+install directory next to the binary — no further setup required.
+
+**Option B — Download a release tarball directly:**
+Pre-built per-platform binaries live at
+https://github.com/NoahFreelove/flow-sharp/releases. Extract the archive and
+either run `bin/flow lsp` directly or symlink `bin/flow` onto your `PATH`.
+
+**Option C — Build from source:**
 Requires the .NET 10 SDK. From the `flow-sharp` repo root:
 
 ```bash
@@ -35,12 +72,13 @@ ln -s ~/.local/bin/flow-lsp-dir/flow-lsp ~/.local/bin/flow-lsp
 
 Replace `linux-x64` with `win-x64`, `osx-x64`, or `osx-arm64` as appropriate.
 
-**Critical:** the binary needs the six shipped stdlib `.flow` files
-(`std.flow`, `audio.flow`, `collections.flow`, `bars.flow`, `notation.flow`,
-`composition.flow`) in the same directory. `dotnet publish` already copies
-them via the csproj's `<CopyToOutputDirectory>` settings — do not move the
-binary away from those stdlib files or `use "@audio"` and friends will fail
-at go-to-definition and import-resolution time.
+**Critical:** the standalone `flow-lsp` binary needs the six shipped stdlib
+`.flow` files (`std.flow`, `audio.flow`, `collections.flow`, `bars.flow`,
+`notation.flow`, `composition.flow`) in the same directory. `dotnet publish`
+already copies them via the csproj's `<CopyToOutputDirectory>` settings — do
+not move the binary away from those stdlib files or `use "@audio"` and friends
+will fail at go-to-definition and import-resolution time. (Option A / Option B
+handle this automatically.)
 
 ## Per-editor configurations
 
@@ -50,8 +88,9 @@ at go-to-definition and import-resolution time.
 | Helix   | [helix.md](./helix.md)            | [helix-languages.toml](./helix-languages.toml)       |
 | Emacs / Zed / Cursor / Windsurf / others | [generic-lsp.md](./generic-lsp.md) | — |
 
-All snippets assume `flow-lsp` is on `PATH`. Open a `.flow` file and the LSP
-attaches automatically.
+All snippets assume either `flow` (via the `flow lsp` subcommand) or
+`flow-lsp` is on `PATH`. Open a `.flow` file and the LSP attaches
+automatically.
 
 ## Not your editor?
 
@@ -68,8 +107,10 @@ all work end-to-end.
 
 ## Troubleshooting
 
-- **"flow-lsp: command not found"** — binary is not on `PATH`. Check with
-  `which flow-lsp` (POSIX) or `where.exe flow-lsp` (Windows).
+- **"flow-lsp: command not found" / "flow: command not found"** — binary is
+  not on `PATH`. Check with `which flow` / `which flow-lsp` (POSIX) or
+  `where.exe flow` (Windows). If you used `scripts/install.sh` in per-user
+  mode, ensure `~/.local/bin` is on `PATH`.
 - **"Flow LSP binary not found at ..."** (VSCode) — the bundled per-platform
   binary is missing. Use the `flow.server.path` setting to point at your own
   build, or reinstall the VSIX for your OS/architecture.

@@ -1,0 +1,32 @@
+Note: Phase 45 REQ-BEAT-TEST-02 — default IDENTITY behavior across timesigs.
+Note: NO `enable beat-true-to-sig;` — pragma OFF means the multiplier is ALWAYS
+Note: 1.0, so `1b` prints "1" in EVERY meter (even 6/8 and 2/2). This is the
+Note: surprise-free default for scripts that never opt in (D-02 / D-10).
+
+use "@std"
+
+Note: 4/4 — denom=4, pragma off → identity
+tempo 120 {
+  timesig 4/4 {
+    Beat a = 1b
+    (print (str a))
+  }
+}
+
+Note: 6/8 — pragma off → STILL identity (no retune to eighth-beat unit)
+tempo 120 {
+  timesig 6/8 {
+    Beat b = 1b
+    (print (str b))
+  }
+}
+
+Note: 2/2 cut time — pragma off → STILL identity (no retune to half-beat unit)
+tempo 120 {
+  timesig 2/2 {
+    Beat c = 1b
+    (print (str c))
+  }
+}
+
+(print "test_beat_pragma_off: PASSED")

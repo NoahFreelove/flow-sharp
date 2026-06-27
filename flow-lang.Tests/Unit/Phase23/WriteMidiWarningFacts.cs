@@ -7,8 +7,8 @@ namespace FlowLang.Tests.Unit.Phase23;
 /// <summary>
 /// Phase 23 Plan 23-03 Task 2 / D-13: <c>writeMidi()</c> emits a one-shot stderr
 /// advisory when called under non-12-TET tuning. MIDI bytes are UNCHANGED — still
-/// 12-TET output (faithful microtonal MIDI deferred to v1.4). The warning is
-/// purely advisory.
+/// 12-TET output (faithful microtonal MIDI is a v1.6+ backlog item). The warning
+/// is purely advisory.
 ///
 /// Per WARNING-4: the <see cref="WriteMidi_BytesUnchanged_UnderJI"/> Fact MUST call
 /// <see cref="RenderingDiagnostics.ResetForTesting"/> between sequential FlowEngineRunner
@@ -41,7 +41,7 @@ tempo 120 {
 ");
         Assert.True(ok, $"expected clean run; stderr: {stderr}");
         Assert.Contains("[midi] tuning != equalTemperament", stderr);
-        Assert.Contains("microtonal MIDI deferred to v1.4", stderr);
+        Assert.Contains("microtonal MIDI is a v1.6+ backlog item", stderr);
     }
 
     [Fact]

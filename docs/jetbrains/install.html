@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install the Flow Language plugin for JetBrains IDEs</title>
+  <style>
+    /* Self-contained — no external CSS/JS/framework (functional reference page). */
+    :root { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 46rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    h1 { font-size: 1.7rem; border-bottom: 2px solid currentColor; padding-bottom: .3rem; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; }
+    code, pre { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    code { padding: .1rem .3rem; background: rgba(127,127,127,.18); border-radius: 4px; }
+    pre {
+      background: rgba(127,127,127,.12);
+      padding: .8rem 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    pre code { background: none; padding: 0; }
+    .download {
+      display: inline-block;
+      margin: .5rem 0;
+      padding: .6rem 1.1rem;
+      border: 2px solid currentColor;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .note {
+      border-left: 4px solid #c8a200;
+      background: rgba(200, 162, 0, .12);
+      padding: .6rem 1rem;
+      margin: 1rem 0;
+      border-radius: 0 6px 6px 0;
+    }
+    ol li, ul li { margin: .35rem 0; }
+    footer { margin-top: 3rem; font-size: .85rem; opacity: .75; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+
+  <h1>Flow Language plugin — direct download &amp; manual install</h1>
+
+  <p>
+    This page is the <strong>direct-download fallback</strong> for installing the
+    <a href="https://github.com/noah-freelove/flow-sharp">Flow Language</a> plugin
+    in JetBrains IDEs (IntelliJ IDEA, PyCharm, WebStorm, GoLand, etc.) while the
+    listing is awaiting JetBrains Marketplace review, or if you prefer to install
+    from a downloaded <code>.zip</code>.
+  </p>
+
+  <div class="note">
+    <strong>Prefer the Marketplace once it is live.</strong> When the plugin is
+    approved, install it the normal way:
+    <em>Settings &rarr; Plugins &rarr; Marketplace</em>, search for
+    <strong>&ldquo;Flow Language&rdquo;</strong>, and click <em>Install</em>.
+    The Marketplace listing will be linked from the project README.
+  </div>
+
+  <h2>1. Download the plugin .zip</h2>
+
+  <p>
+    Download the signed <code>flow-jetbrains-1.5.0.zip</code> from the project's
+    GitHub Releases page (attached to the <code>v1.5.0</code> release):
+  </p>
+
+  <p>
+    <a class="download" href="https://github.com/noah-freelove/flow-sharp/releases/tag/v1.5.0">
+      Download from GitHub Releases (v1.5.0)
+    </a>
+  </p>
+
+  <p>
+    The artifact is <code>flow-jetbrains-1.5.0.zip</code> — the same plugin
+    archive produced by <code>./gradlew buildPlugin</code> under
+    <code>flow-jetbrains/build/distributions/</code>. Do <em>not</em> unzip it;
+    the IDE installs the <code>.zip</code> as-is.
+  </p>
+
+  <h2>2. Install from disk</h2>
+
+  <ol>
+    <li>Open your JetBrains IDE (IntelliJ IDEA Community <strong>2024.2 or later</strong>,
+        i.e. build&nbsp;242+; older builds refuse the plugin).</li>
+    <li>Go to <strong>Settings/Preferences &rarr; Plugins</strong>.</li>
+    <li>Click the <strong>gear icon (&#9881;)</strong> at the top of the Plugins
+        pane &rarr; <strong>Install Plugin from Disk&hellip;</strong></li>
+    <li>Select the downloaded <code>flow-jetbrains-1.5.0.zip</code>.</li>
+    <li><strong>Restart the IDE</strong> when prompted.</li>
+  </ol>
+
+  <h2>3. Prerequisite: the <code>flow</code> binary</h2>
+
+  <p>
+    The plugin is a thin bridge: it starts the Flow language server by running
+    <code>flow lsp</code>. You must have the <code>flow</code> binary available.
+  </p>
+
+  <ul>
+    <li>
+      <strong>On <code>PATH</code> (recommended).</strong> Install the Flow CLI and
+      run <code>flow install</code> (Phase&nbsp;30), which drops <code>flow</code>
+      into <code>~/.local/bin/</code>. Confirm with:
+      <pre><code>flow version</code></pre>
+    </li>
+    <li>
+      <strong>Or via <code>FLOW_LSP_PATH</code> (fallback).</strong> If
+      <code>flow</code> is not on <code>PATH</code>, set the
+      <code>FLOW_LSP_PATH</code> environment variable to the binary's absolute
+      path <em>before launching the IDE</em>:
+      <pre><code>export FLOW_LSP_PATH=/absolute/path/to/flow
+idea .</code></pre>
+      The plugin's <code>FlowLanguageServerFactory</code> reads
+      <code>FLOW_LSP_PATH</code> first and falls back to <code>flow</code> on
+      <code>PATH</code>.
+    </li>
+  </ul>
+
+  <h2>4. Verify it works</h2>
+
+  <p>
+    Open any <code>.flow</code> file. LSP4IJ auto-starts the language server — look
+    for an <strong>&ldquo;LSP&rdquo;</strong> indicator in the status bar, and try
+    typing to see completions, hovers, signature help, and diagnostics (the same
+    features as the VSCode extension).
+  </p>
+
+  <h2>Troubleshooting</h2>
+
+  <ul>
+    <li><strong>&ldquo;Incompatible build&rdquo; on install</strong> &mdash; your IDE
+        is older than build&nbsp;242. Update to 2024.2 or later.</li>
+    <li><strong>No completions / server never starts</strong> &mdash; the
+        <code>flow</code> binary is not discoverable. Confirm
+        <code>flow version</code> works in a terminal, or set
+        <code>FLOW_LSP_PATH</code> as above and restart the IDE.</li>
+    <li><strong>Missing LSP4IJ dependency</strong> &mdash; the plugin depends on
+        <a href="https://plugins.jetbrains.com/plugin/23257-lsp4ij">LSP4IJ</a>;
+        the IDE will offer to install it automatically when you install this plugin.</li>
+  </ul>
+
+  <footer>
+    Flow Language v1.5 &mdash; plugin 1.5.0 &middot;
+    <a href="https://github.com/noah-freelove/flow-sharp">github.com/noah-freelove/flow-sharp</a> &middot;
+    see <code>flow-jetbrains/CHANGELOG.md</code> for release notes.
+  </footer>
+
+</body>
+</html>

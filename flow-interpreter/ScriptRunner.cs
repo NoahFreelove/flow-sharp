@@ -26,7 +26,10 @@ public class ScriptRunner
             if (!success)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                // Phase 35 LANG-04 Wave 2a: picks rich Rust-style format when
+                // the engine has accumulated any FlowDiagnostic, otherwise
+                // falls back to the legacy FormatErrors output.
+                Console.Error.WriteLine(Program.FormatErrorsForEmit(engine));
                 Console.ResetColor();
                 return 1;
             }

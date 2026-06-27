@@ -1,0 +1,73 @@
+Note: =====================================================================
+Note:  Chapter: Stretch + PitchShift (Phase 37 DSP-02 + DSP-03)
+Note:  Run: dotnet run --project flow-cli -- run examples/dsp/stretch_pitchshift.flow
+Note: =====================================================================
+Note:
+Note:  Flow's stretch builtin time-stretches a Buffer without pitch change;
+Note:  pitchShift shifts pitch without time change. Three modes:
+Note:    #vocoder  — Laroche-Dolson 1999 phase-locked vocoder for harmonic
+Note:                material (sine, sustained voices, melody)
+Note:    #psola    — TD-PSOLA + YIN pitch detection for percussive /
+Note:                transient material (kick, snare, plucked strings)
+Note:    #auto     — Fitzgerald 2010 HPS picks per-frame; emits one-shot
+Note:                stderr advisory like:
+Note:                  [stretch] mode=#auto picked: 73% vocoder / 27% psola
+Note:
+Note:  Identity fast-paths (Pitfall 11): factor=1.0 and 0c return the input
+Note:  Buffer byte-identical — preserves two-run cmp-clean determinism.
+Note:
+Note:  Hand-rolled per D-v1.5-03 (RubberBand rejected for GPL hazard).
+Note:
+Note:  Determinism: two consecutive renders of THIS file at the same git
+Note:  SHA produce byte-identical WAV output (verified by
+Note:  `scripts/test_two_run_determinism.sh examples/dsp/stretch_pitchshift.flow`).
+
+use "@std"
+use "@audio"
+
+Note: -----------------------------------------------------------
+Note: 1. Build a harmonic Buffer (2-second 440 Hz sine)
+Note: -----------------------------------------------------------
+Buffer base = (createSineTone 2.0s 440Hz 0.4)
+
+Note: -----------------------------------------------------------
+Note: 2. Stretch 2x in #vocoder mode — phase locking on the sine
+Note: -----------------------------------------------------------
+Buffer s_voc = (stretch base 2.0 #vocoder)
+
+Note: -----------------------------------------------------------
+Note: 3. Stretch 2x in #psola mode — would preserve transients
+Note:    on a percussive source (sine here is sub-optimal — chosen
+Note:    to demonstrate the mode dispatches cleanly).
+Note: -----------------------------------------------------------
+Buffer s_psola = (stretch base 2.0 #psola)
+
+Note: -----------------------------------------------------------
+Note: 4. Stretch 2x in #auto — watch stderr for the picked-ratio
+Note:    advisory. The HPS classifier picks per-frame between
+Note:    vocoder + PSOLA.
+Note: -----------------------------------------------------------
+Buffer s_auto = (stretch base 2.0 #auto)
+
+Note: -----------------------------------------------------------
+Note: 5. Pitch-shift up 5 semitones via #auto — duration preserved
+Note:    (within +/- 1 sample tolerance per Pitfall 11). Semitone
+Note:    overload converts to cents internally (5st = 500c).
+Note: -----------------------------------------------------------
+Buffer p_up = (pitchShift base +5st #auto)
+
+Note: -----------------------------------------------------------
+Note: 6. Identity fast-paths — byte-identical to input
+Note: -----------------------------------------------------------
+Buffer s_identity = (stretch base 1.0)
+Buffer p_identity = (pitchShift base 0c)
+
+Note: -----------------------------------------------------------
+Note: 7. Mix all four outputs for a final stereo render at /tmp.
+Note:    /tmp lets scripts/test_two_run_determinism.sh resolve the
+Note:    writeWav target from any CWD (Pattern 8 / Phase 36 36-12).
+Note: -----------------------------------------------------------
+Buffer mix1 = (mix s_voc s_psola)
+Buffer mix2 = (mix mix1 s_auto)
+Buffer mix3 = (mix mix2 p_up)
+(writeWav "/tmp/stretch_pitchshift_demo.wav" mix3)

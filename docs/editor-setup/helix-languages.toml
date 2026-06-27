@@ -2,21 +2,28 @@
 #
 # Append these blocks to: ~/.config/helix/languages.toml
 #
-# Prerequisite: the `flow-lsp` binary on your PATH.
-#   Option A -- Download a release tarball from:
-#     https://github.com/noah-freelove/flow-sharp/releases
-#   Option B -- Build from source:
+# Prerequisite: `flow` (or `flow-lsp`) on PATH.
+#   Option A -- `flow install`:
+#     curl -fsSL https://raw.githubusercontent.com/NoahFreelove/flow-sharp/main/scripts/install.sh | bash
+#   Option B -- Download a release tarball from:
+#     https://github.com/NoahFreelove/flow-sharp/releases
+#   Option C -- Build from source:
 #     dotnet publish flow-lsp/flow-lsp.csproj \
 #       -c Release -r linux-x64 --self-contained \
 #       -p:PublishSingleFile=true \
 #       -o ~/.local/bin/flow-lsp-dir
 #     (replace linux-x64 with win-x64, osx-x64, or osx-arm64 as needed)
 #
-# IMPORTANT: the binary requires the six shipped stdlib .flow files
-# (std, collections, audio, bars, notation, composition) to sit in the
-# same directory as flow-lsp. dotnet publish handles this via the
-# flow-lsp csproj's <CopyToOutputDirectory> settings -- do not move
-# the binary alone.
+# IMPORTANT (Option C only): the standalone flow-lsp binary requires the
+# six shipped stdlib .flow files (std, collections, audio, bars, notation,
+# composition) to sit in the same directory as flow-lsp. dotnet publish
+# handles this via the flow-lsp csproj's <CopyToOutputDirectory> settings
+# -- do not move the binary alone. (Options A / B handle this automatically.)
+#
+# LSP capabilities shipped: diagnostics, semantic tokens, completion,
+# hover, go-to-definition, signature help. Not yet implemented: rename,
+# find-references, code actions, document/workspace symbols, inlay hints,
+# formatter. See FEATURES.md § LSP for the authoritative table.
 
 [[language]]
 name = "flow"
@@ -28,4 +35,9 @@ indent = { tab-width = 4, unit = "    " }
 language-servers = ["flow-lsp"]
 
 [language-server.flow-lsp]
-command = "flow-lsp"
+# Option A / B: use the `flow lsp` subcommand shipped by `flow install`.
+command = "flow"
+args = ["lsp"]
+# Option C alternative (standalone binary): comment the two lines above and
+# uncomment:
+# command = "flow-lsp"

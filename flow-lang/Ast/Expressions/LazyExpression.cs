@@ -8,4 +8,5 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record LazyExpression(
     SourceLocation Location,
-    Expression InnerExpression) : Expression(Location);
+    Expression InnerExpression,
+    Span? Span = null) : Expression(Location);

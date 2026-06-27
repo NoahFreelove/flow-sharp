@@ -6,17 +6,153 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Phase 47 Plan 47-06 D-47-01/02 — mirror the flow-lang.csproj FlowTarget
+         property in the test project. Default Desktop; explicit Web activates
+         the FLOW_WEB preprocessor symbol so FlowTargetFactAttribute.CurrentTarget
+         resolves to "Web" and the Phase 47 Web-only Facts execute (not skip). -->
+    <FlowTarget Condition="'$(FlowTarget)' == ''">Desktop</FlowTarget>
   </PropertyGroup>
+
+  <!-- Phase 47 Plan 47-06 — Web-target define propagation. ProjectReferences
+       inherit MSBuild properties but NOT DefineConstants, so each project
+       conditioning on FLOW_WEB must add its own conditional define. -->
+  <PropertyGroup Condition="'$(FlowTarget)' == 'Web'">
+    <DefineConstants>$(DefineConstants);FLOW_WEB</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Phase 47 Plan 47-06 — strip 18 test files that reference Sfz / Osc /
+       Rug.Osc types stripped from flow-lang.dll by Plan 47-01's <Compile Remove>
+       list. Identified during Plan 47-04 Task 1 (47-04-SUMMARY.md 18-file
+       deferral table); closed here at the phase closer. Mirrors the Plan 47-01
+       conditional <Compile Remove> pattern verbatim. -->
+  <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+    <Compile Remove="Integration\Phase33\SfzArticulationTests.cs" />
+    <Compile Remove="Integration\Phase37\DrumPitchShiftAutoTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzDrumsLoadTest.cs" />
+    <Compile Remove="Integration\Phase37\SfzHardSwitchRegression.cs" />
+    <Compile Remove="Integration\Phase37\SfzPanCompositionTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzPanRetrofitTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzRoundRobinDeterminismTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzRoundRobinTests.cs" />
+    <Compile Remove="Integration\Phase37\SfzVelocityCrossfadeTests.cs" />
+    <Compile Remove="Integration\Phase38\OscBundleDepthCapTests.cs" />
+    <Compile Remove="Integration\Phase38\OscBundleTests.cs" />
+    <Compile Remove="Integration\Phase38\OscLoopbackTests.cs" />
+    <Compile Remove="Integration\Phase38\OscRateLimitTests.cs" />
+    <Compile Remove="Integration\Phase38\OscTypeTagInferenceTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzLoopCrossfadeTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzParserTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzRegionMatchTests.cs" />
+    <Compile Remove="Unit\Phase33\SfzTypeFacts.cs" />
+    <!-- Phase 47 Plan 47-06 Rule 3 deviation — 3 additional mic-input tests
+         missed by the Plan 47-04 18-file deferral list. Reference PulseAudio*
+         capture types + InputFunctions which are stripped on Web per Plan 47-01. -->
+    <Compile Remove="Integration\Phase38\MicBufferAttenuationTests.cs" />
+    <Compile Remove="Integration\Phase38\MicBufferResampleTests.cs" />
+    <Compile Remove="Integration\Phase38\PulseAudioCaptureBackendTests.cs" />
+    <!-- Phase 40 Plan 40-01 T-40-03 — strip the @midi tests that reference
+         MidiFunctions / the @midi runtime surface (stripped on Web per the
+         flow-lang.csproj Web ItemGroup). MidiBackendTests + CaptureMidiBackend +
+         RtMidiInternalAccessSpikeTests STAY: they only touch IMidiBackend /
+         NullMidiBackend / MidiPlaybackManager / AudioBuffer (all Web-resident)
+         and reflect RtMidi.Core metadata (charitable-skip when absent). -->
+    <Compile Remove="Integration\Phase40\VirtualMidiTests.cs" />
+    <Compile Remove="Integration\Phase40\OfflineRenderDeterminismTests.cs" />
+    <!-- Phase 40 Plan 40-02 T-40-03 — the clock tests reference
+         FlowLang.StandardLibrary.Midi (MidiClockFunctions / ClockHandleData) +
+         FlowLang.Audio.MidiClock, all #if !FLOW_WEB-stripped on Web. Strip them
+         from the Web test build too (they exercise Desktop-only clock surface;
+         the clock never reaches the WASM closure). Added by Plan 40-03 closing a
+         Plan-40-02 Web test-build gap. -->
+    <Compile Remove="Integration\Phase40\ClockMasterTests.cs" />
+    <Compile Remove="Integration\Phase40\ClockSlaveTests.cs" />
+    <!-- Phase 40 Plan 40-03 T-40-03 — JackTransportTests + LinkDeferralTests
+         reference FlowLang.StandardLibrary.Midi (JackFunctions / JackHandleData),
+         #if !FLOW_WEB-stripped on Web. JACK is Linux-only native interop that can
+         never run in a browser. -->
+    <Compile Remove="Integration\Phase40\JackTransportTests.cs" />
+    <Compile Remove="Integration\Phase40\LinkDeferralTests.cs" />
+    <!-- Phase 41 Plan 41-04 WASAPI-01 / COREAUDIO-01 T-41-04-WEBDRIFT — the audio-
+         backend availability tests reference FlowLang.Audio.WasapiBackend /
+         CoreAudioBackend, both <Compile Remove>'d from flow-lang on Web (NAudio.Wasapi
+         + AudioToolbox P/Invoke can never run in a browser). Strip them from the Web
+         test build too — they assert Linux-host probe behavior on the Desktop build.
+         (CoreAudioBackendAvailabilityTests was added in 41-01 without this entry, so
+         `dotnet test -p:FlowTarget=Web` was already failing to compile the test
+         project — Rule 3 blocking-issue fix landed alongside the WASAPI test.) -->
+    <Compile Remove="Integration\Phase41\WasapiBackendAvailabilityTests.cs" />
+    <Compile Remove="Integration\Phase41\CoreAudioBackendAvailabilityTests.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <!-- Phase 47 Plan 47-05 D-47-14: Mono.Cecil 0.11.5 (MIT) for reflective
+         assembly-reference scanning. Used by AssemblyReferenceScanTests to
+         assert the Web-target flow-lang.dll contains zero references to
+         stripped namespaces. Package-legitimacy gate (Task 0) ratified
+         (canonical maintainer jbevain, 1.4B+ downloads, zero transitive deps). -->
+    <PackageReference Include="Mono.Cecil" Version="0.11.5" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
     <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
+    <ProjectReference Include="..\flow-midi\flow-midi.csproj" />
+    <ProjectReference Include="..\flow-interpreter\flow-interpreter.csproj" />
+    <!-- Phase 41 Plan 41-03 DOC-01/02 — the flow doc generator (DocCollector /
+         DocExampleRunner / Html+MarkdownEmitter / ContentHashCache / DocCommand)
+         lives under flow-cli/Doc/. FlowDocGenTests / DocCacheTests /
+         DocExampleExecTests exercise it directly, so the test project references
+         flow-cli (an Exe project — a referencing test project is supported). -->
+    <ProjectReference Include="..\flow-cli\flow-cli.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- sweep-0614 regression-wasm-determinism: WasmEntry.RunFromJs redirects the
+         PROCESS-GLOBAL Console.Out/Error to capture Flow `print` + advisory output
+         (D-48-15). ~60 test files across the suite also swap Console.Out/Error
+         (the shared FlowEngineRunner fixture included). With xUnit's default
+         cross-collection parallelism those swaps interleave with the WASM
+         redirect window, so the captured stdout/stderr — and thus the
+         RunResult JSON — diverges run-to-run (D-48-16 two-run cmp-clean
+         violation). The [Collection] serial-group only serializes the WASM
+         Console tests AMONG THEMSELVES, not against the rest of the suite.
+         Disabling cross-collection parallelism is the only guarantee on a
+         shared-process runner; the browser is single-threaded so this changes
+         nothing about runtime behavior. -->
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="fixtures\midi\ragtime_q_ee.mid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="fixtures\midi\two_voice_counterpoint.mid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="fixtures\midi\drum_loop.mid">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- Phase 38 Plan 38-05 AUDIO-IN-01/02 — mic capture-path fixture
+         (1s sine 440Hz @ 48 kHz mono PCM; synthesized by
+         Tools/Phase38FixtureGenerator). Copied so MicBufferResampleTests
+         can read it from AppContext.BaseDirectory without walking the
+         project tree. -->
+    <None Update="Integration\Phase38\TestFixtures\mic_fixture.wav">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Phase 35 LANG-04 Wave 2a — diagnostic-renderer golden baselines.
+       Copies every .txt under baselines/Phase35/diagnostics/ to the test
+       output directory so DiagnosticRendererGoldenTests can read them
+       from AppContext.BaseDirectory. -->
+  <ItemGroup>
+    <None Include="baselines\Phase35\diagnostics\*.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>baselines\Phase35\diagnostics\%(Filename)%(Extension)</Link>
+    </None>
   </ItemGroup>
 </Project>

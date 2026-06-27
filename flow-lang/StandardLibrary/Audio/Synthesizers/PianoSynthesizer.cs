@@ -1,84 +1,52 @@
-using FlowLang.StandardLibrary.Audio.DSP;
+using System.Threading;
+using FlowLang.Core;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 
 /// <summary>
-/// Grand piano synthesizer with inharmonic partials, hammer strike transient,
-/// string beating, and pitch-dependent filtering for a realistic tone.
+/// Phase 29 REQ-1: piano delegates to <see cref="SampledInstrumentRenderer"/>
+/// with the bundled CC0 piano library. Phase 37 PIANO-01 (Plan 37-04 / D-37-09)
+/// expands the bundled coverage to 4 velocity layers per pitch point — pp + mf + ff
+/// loaded from disk, mp synthesized at eager-load via RmsInterpolate. The Phase 29
+/// velocity-layer crossfade upgrades from 2-way (pp/ff) to 4-way (pp/mp/mf/ff)
+/// inside <see cref="SampledInstrumentRenderer"/> automatically.
+///
+/// Phase 37 PIANO-01 (Plan 37-04 / D-37-11) adds the <c>release=</c> named-arg
+/// knob threaded via <see cref="CurrentReleaseSec"/>. The
+/// <c>renderSong(Song, String, Second)</c> overload in
+/// <see cref="SongRenderer"/> sets this AsyncLocal before dispatching the render
+/// so per-note <see cref="RenderNote"/> calls see the composer's chosen
+/// release-tail length. Test parallelism stays safe (AsyncLocal isolates per
+/// async-flow / per-xUnit-test).
+///
+/// Falls back to silence when <see cref="FlowEngine.CurrentSampleCache"/> is null
+/// or the "piano" manifest entry is unavailable (graceful degradation outside an
+/// engine). Phase 28 articulation envelope applies on top of the sample inside
+/// <c>SampledInstrumentRenderer.Render</c>.
 /// </summary>
 public class PianoSynthesizer : INoteSynthesizer
 {
+    /// <summary>
+    /// Phase 37 PIANO-01 (Plan 37-04) — per-render release-tail override (seconds).
+    /// AsyncLocal so xUnit parallel runs don't bleed knob values across tests
+    /// (same convention as <c>VoiceAllocator._lastPoolSizeUsedForTests</c>).
+    /// When null, <see cref="SampledInstrumentRenderer.DefaultReleaseSec"/> (1.5s,
+    /// D-37-11 lock) applies. Set by <c>SongRenderer.RenderSong</c>'s
+    /// release-aware overload before per-note rendering begins; reset to null in
+    /// the surrounding finally block to keep the AsyncLocal scope clean.
+    /// </summary>
+    public static AsyncLocal<double?> CurrentReleaseSec { get; } = new();
+
     public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
-        if (note.IsRest)
+        var cache = FlowEngine.CurrentSampleCache;
+        if (cache is null || !cache.HasInstrument("piano"))
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
-        double frequency = PitchConversion.NoteToFrequency(note, tuning);
-        double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
-        int numSamples = (int)(durationSeconds * sampleRate);
-        if (numSamples <= 0)
-            return new AudioBuffer(0, 1, sampleRate);
-
-        int midiNote = PitchConversion.GetMidiNote(note.NoteName, note.Octave, note.Alteration);
-
-        // Pitch-dependent inharmonicity: higher for bass strings, lower for treble
-        double inharmonicity = 0.0004 * Math.Exp((60 - midiNote) * 0.02);
-
-        var samples = new float[numSamples];
-        double baseAmp = 0.18 * note.Velocity;
-
-        // --- 1. Inharmonic partials with string beating ---
-        // Render fundamental as a detuned pair (~1.7 cents) for slow amplitude beating
-        double detune = 0.001;
-        SynthUtils.GenerateSine(samples, frequency, baseAmp * 0.5, sampleRate);
-        SynthUtils.GenerateSine(samples, frequency * (1.0 + detune), baseAmp * 0.5, sampleRate);
-
-        // Upper partials (2-8) with inharmonic stretch and 1/n^2 rolloff
-        double nyquistFreq = sampleRate / 2.0;
-        for (int n = 2; n <= 8; n++)
-        {
-            double partialFreq = frequency * n * (1.0 + inharmonicity * n * n);
-            if (partialFreq >= nyquistFreq)
-                break;
-
-            double partialAmp = baseAmp / (n * n);
-            SynthUtils.GenerateSine(samples, partialFreq, partialAmp, sampleRate);
-        }
-
-        // --- 2. Main ADSR envelope ---
-        float[] envelope = SynthUtils.GenerateADSR(
-            attack: 0.003, decay: 0.6, sustain: 0.12, release: 0.3,
-            frames: numSamples, sampleRate: sampleRate);
-        SynthUtils.ApplyEnvelope(samples, envelope);
-
-        // --- 3. Filtering ---
-        // Pitch-dependent biquad lowpass: lower notes darker, higher notes brighter
-        float biquadCutoff = (float)(1500.0 + frequency * 3.0);
-        float nyquistHz = sampleRate / 2.0f;
-        if (biquadCutoff >= nyquistHz - 100f)
-            biquadCutoff = nyquistHz - 100f;
-
-        var tempBuffer = SynthUtils.ToMonoBuffer(samples, sampleRate);
-        tempBuffer = Filter.Lowpass(tempBuffer, biquadCutoff);
-        Array.Copy(tempBuffer.Data, samples, numSamples);
-
-        // Gentle one-pole warmth filter
-        SynthUtils.OnePoleLP(samples, 3000.0 + frequency * 2.0, sampleRate);
-
-        // --- 4. Hammer strike transient (added after filtering to preserve click) ---
-        var transient = new float[numSamples];
-        SynthUtils.GenerateWhiteNoise(transient, 0.025 * note.Velocity);
-
-        float[] transientEnv = SynthUtils.GenerateADSR(
-            attack: 0.0003, decay: 0.002, sustain: 0.0, release: 0.0005,
-            frames: numSamples, sampleRate: sampleRate);
-        SynthUtils.ApplyEnvelope(transient, transientEnv);
-
-        for (int i = 0; i < numSamples; i++)
-            samples[i] += transient[i];
-
-        return SynthUtils.ToMonoBuffer(samples, sampleRate);
+        var renderer = new SampledInstrumentRenderer(cache, "piano", hasVelocityLayers: true);
+        double releaseSec = CurrentReleaseSec.Value ?? SampledInstrumentRenderer.DefaultReleaseSec;
+        return renderer.Render(note, sampleRate, durationBeats, bpm, tuning, releaseSec);
     }
 }

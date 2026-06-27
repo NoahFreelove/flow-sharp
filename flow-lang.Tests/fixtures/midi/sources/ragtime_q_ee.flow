@@ -1,0 +1,18 @@
+// Phase 30 round-trip fixture — Q + E + E rhythm (Bug B Defect 1 regression).
+// CC0 1.0 — see ../LICENSE.txt.
+
+use "@std"
+use "@audio"
+use "@notation"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section main {
+                Sequence melody = | C4q E4e G4e C4q E4e G4e |
+            }
+            Song song = [main]
+            (writeMidi "flow-lang.Tests/fixtures/midi/ragtime_q_ee.mid" song)
+        }
+    }
+}

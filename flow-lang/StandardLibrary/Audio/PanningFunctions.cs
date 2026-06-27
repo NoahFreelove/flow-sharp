@@ -19,7 +19,8 @@ public static class PanningFunctions
     {
         // pan(Buffer, Double) -> Buffer — constant-power stereo panning
         var panSig = new FunctionSignature("pan",
-            [BufferType.Instance, DoubleType.Instance]);
+            [BufferType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "pan"]);
         registry.Register("pan", panSig, PanEffect);
     }
 

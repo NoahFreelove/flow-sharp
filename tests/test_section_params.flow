@@ -1,0 +1,25 @@
+// Phase 36 Plan 36-10 (SECT-01) — composer-facing parameterized section.
+//
+// Demonstrates the basic `section verse(Note root)` form: declare a section
+// with a typed parameter, call it from a Song expression passing positional
+// args. The body's `root` identifier is bound from the call site value via
+// the synthetic frame.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_section_params.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+section verse(Note root) {
+  Sequence melody = | C4q D4q E4q F4q |
+}
+
+Song s = [verse(C4)]
+Int sectionCount = s.SectionCount
+
+(test "parameterized section materializes a sequence"
+  lazy((assertEq sectionCount 1)))
+
+(print "SECTION PARAMS TEST REGISTERED")

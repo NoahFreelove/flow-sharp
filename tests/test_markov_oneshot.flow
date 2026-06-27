@@ -1,0 +1,52 @@
+// Phase 36 Plan 36-06 Task 2 — composer-facing one-shot Markov exercise.
+//
+// This file is the canonical input for `scripts/test_two_run_determinism.sh`:
+// two consecutive runs MUST produce byte-identical WAV output. The
+// unseeded markov call routes through ExecutionContext.PrngRegistry which
+// resets at every writeWav boundary, so the output is reproducible across
+// runs of the same source (D-v1.5-06 / D-36-09).
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_markov_oneshot.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_markov_oneshot.flow
+
+use "@std"
+use "@audio"
+use "@generative"
+use "@test"
+
+// A short, well-structured corpus: an ascending+descending major scale.
+Sequence corpus = | C4q D4q E4q F4q G4q F4q E4q D4q C4q |
+
+// One-shot, explicit seed: same seed -> same sequence on every call.
+Sequence one_shot_a = (markov corpus 2 16 42)
+Sequence one_shot_b = (markov corpus 2 16 42)
+
+(test "markov one-shot is deterministic with explicit seed"
+  lazy((assertNotesMatch one_shot_a one_shot_b)))
+
+// Unseeded one-shot: PrngRegistry-routed; calling twice at the same source
+// position within a single render pass shares the PRNG stream, so reuse the
+// SAME variable in both assertNotesMatch arms.
+Sequence unseeded = (markov corpus 2 16)
+
+(test "markov one-shot unseeded reuses correctly"
+  lazy((assertNotesMatch unseeded unseeded)))
+
+(print "MARKOV ONE-SHOT TESTS REGISTERED")
+
+// ===========================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+// ===========================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence renderable = (markov corpus 2 8)
+        section main { Sequence v = renderable }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/markov_oneshot.wav" mix)
+    }
+}

@@ -1,40 +1,27 @@
+using FlowLang.Core;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 
 /// <summary>
-/// MIDI-style brass / horn synthesizer. Sawtooth fundamental with an octave-up saw
-/// for edge, slow-attack ADSR for the brass swell, and a warm lowpass filter.
+/// Phase 29: brass now delegates to SampledInstrumentRenderer with the bundled
+/// CC0 brass samples (A3, A4, A5 — single mezzo-forte velocity layer). The hand-rolled
+/// sawtooth-plus-octave-up synthesis is replaced by sample-based playback with
+/// linear amplitude scaling by note.Velocity. The Phase 28 articulation envelope
+/// applies on top of the sample.
+///
+/// Fallback: silent if CurrentSampleCache is null (test-isolation path).
 /// </summary>
 public class BrassSynthesizer : INoteSynthesizer
 {
     public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
-        if (note.IsRest)
+        var cache = FlowEngine.CurrentSampleCache;
+        if (cache == null || !cache.HasInstrument("brass"))
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
-        double frequency = PitchConversion.NoteToFrequency(note, tuning);
-        double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
-        int numSamples = (int)(durationSeconds * sampleRate);
-        if (numSamples <= 0)
-            return new AudioBuffer(0, 1, sampleRate);
-
-        var samples = new float[numSamples];
-
-        // Sawtooth fundamental + octave-up saw for brightness
-        SynthUtils.GenerateSaw(samples, frequency, 0.20 * note.Velocity, sampleRate);
-        SynthUtils.GenerateSaw(samples, frequency * 2, 0.05 * note.Velocity, sampleRate);
-
-        // Slow brass swell ADSR
-        float[] envelope = SynthUtils.GenerateADSR(
-            attack: 0.12, decay: 0.1, sustain: 0.7, release: 0.15,
-            frames: numSamples, sampleRate: sampleRate);
-        SynthUtils.ApplyEnvelope(samples, envelope);
-
-        // Warm lowpass filter
-        SynthUtils.OnePoleLP(samples, 1500.0 + frequency * 0.5, sampleRate);
-
-        return SynthUtils.ToMonoBuffer(samples, sampleRate);
+        var renderer = new SampledInstrumentRenderer(cache, "brass", hasVelocityLayers: false);
+        return renderer.Render(note, sampleRate, durationBeats, bpm, tuning);
     }
 }

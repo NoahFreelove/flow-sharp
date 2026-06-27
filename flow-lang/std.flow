@@ -6,9 +6,23 @@ use "@collections"
 use "@bars"
 
 internal proc print (String: s)
+Note: Phase 44 Plan 44-08 — Void-wildcard print overload for the pre-strict
+Note: bug fix per ROADMAP line 404. (print 42) charitably auto-strs in
+Note: non-strict; emits [strict] (print) requires String — got <Type>
+Note: in strict files. The String overload above scores +1000 vs this
+Note: wildcard's +500 so (print "hello") stays byte-identical.
+internal proc print (Void: s)
+
+Note: Nothing() returns Void. Use as `return (Nothing)` to explicitly
+Note: return Void from a proc that would otherwise collect non-void
+Note: expressions before its end. There is no Void literal in source;
+Note: this is the canonical escape hatch.
+internal proc Nothing ()
 
 internal proc len (Voids: arr)
 internal proc len(String: s)
+internal proc length (Voids: arr)
+internal proc length (String: s)
 
 Note: str overloads for all types
 internal proc str (Int: value)
@@ -26,11 +40,17 @@ internal proc str (Cent: value)
 internal proc str (Millisecond: value)
 internal proc str (Second: value)
 internal proc str (Decibel: value)
+Note: sweep-0614 — Hertz prints with "Hz" suffix; dedicated overload disambiguates str(Float)/str(Double) (HertzType.IsCompatibleWith covers both)
+internal proc str (Hertz: value)
+Note: Phase 45 D-14 — Beat prints as a plain double (no "b" suffix); dedicated overload disambiguates str(Float)/str(Double)
+internal proc str (Beat: value)
 internal proc str (Voids: value)
 internal proc str (Sequence: value)
 internal proc str (Chord: value)
 internal proc str (Section: value)
 internal proc str (Song: value)
+Note: Tuning ((loadScala) output) string form
+internal proc str (Tuning: value)
 
 internal proc concat (String: a, String: b)
 
@@ -38,7 +58,110 @@ Note: Type conversions
 internal proc intToDouble (Int: value)
 internal proc doubleToInt (Double: value)
 
-Note: Arithmetic — 5-type same-type fast paths per Phase 26 D-05
+Note: Phase 44 Plan 44-04 (D-08/D-09/D-10) — explicit-conversion builtins.
+Note: 6 forward (db/hz/ms/sec/cents/semitones) + 4 reverse (double/float/int/long
+Note: × 6 music types) = 50 always-available overloads. Mode-independent per D-09
+Note: so composers can test-drive conversions one call at a time when refactoring
+Note: toward `enable strict;`. (semitones x) is Int-ONLY per D-08 (whole-numbers-by-
+Note: design); Float/Double/Long inputs fall through to "No matching overload" in
+Note: BOTH modes. C# implementations: flow-lang/StandardLibrary/ConversionFunctions.cs.
+
+Note: -- Forward direction: raw numeric (+ idempotent target) → tagged music type
+internal proc db (Int: x)
+internal proc db (Long: x)
+internal proc db (Float: x)
+internal proc db (Double: x)
+internal proc db (Decibel: x)
+
+internal proc hz (Int: x)
+internal proc hz (Long: x)
+internal proc hz (Float: x)
+internal proc hz (Double: x)
+internal proc hz (Hertz: x)
+
+internal proc ms (Int: x)
+internal proc ms (Long: x)
+internal proc ms (Float: x)
+internal proc ms (Double: x)
+internal proc ms (Millisecond: x)
+
+internal proc sec (Int: x)
+internal proc sec (Long: x)
+internal proc sec (Float: x)
+internal proc sec (Double: x)
+internal proc sec (Second: x)
+
+internal proc cents (Int: x)
+internal proc cents (Long: x)
+internal proc cents (Float: x)
+internal proc cents (Double: x)
+internal proc cents (Cent: x)
+
+Note: (semitones x) is Int-ONLY per D-08 — Float/Double/Long fall through.
+internal proc semitones (Int: x)
+internal proc semitones (Semitone: x)
+
+Note: -- Reverse direction (D-10): tagged music type → raw numeric
+Note: 4 extractors × 6 music types = 24 overloads. (int <fractional>) floors via
+Note: Math.Floor mirroring the existing doubleToInt convention (T-44-04-01 mitigation).
+internal proc double (Decibel: value)
+internal proc double (Hertz: value)
+internal proc double (Cent: value)
+internal proc double (Millisecond: value)
+internal proc double (Second: value)
+internal proc double (Semitone: value)
+
+internal proc float (Decibel: value)
+internal proc float (Hertz: value)
+internal proc float (Cent: value)
+internal proc float (Millisecond: value)
+internal proc float (Second: value)
+internal proc float (Semitone: value)
+
+internal proc int (Decibel: value)
+internal proc int (Hertz: value)
+internal proc int (Cent: value)
+internal proc int (Millisecond: value)
+internal proc int (Second: value)
+internal proc int (Semitone: value)
+
+internal proc long (Decibel: value)
+internal proc long (Hertz: value)
+internal proc long (Cent: value)
+internal proc long (Millisecond: value)
+internal proc long (Second: value)
+internal proc long (Semitone: value)
+
+Note: Phase 44 Plan 44-09 Task 2 — primitive numeric cross-casts. Without these
+Note: strict-mode composers have no escape hatch for cross-type comparisons:
+Note: `(double 1)` would fail overload resolution because Int → Double widening
+Note: is disabled under strict (Plan 44-03). Each of the 4 extractors accepts
+Note: every primitive numeric source. Narrowing floors per StdLib.DoubleToInt
+Note: convention.
+Note:
+Note: Phase 44 review WR-05: identity casts ((double Double), (float Float),
+Note: (int Int), (long Long)) are intentionally OMITTED. They were no-ops
+Note: with no strict-mode ambiguity to escape, added overload-resolution
+Note: competitors for no benefit, and risked silent shadowing of other Double-
+Note: source overloads under strict. The 12 cross-type rows below cover every
+Note: case where strict mode disables the widening implicit-conversion.
+internal proc double (Int: value)
+internal proc double (Long: value)
+internal proc double (Float: value)
+
+internal proc float (Int: value)
+internal proc float (Long: value)
+internal proc float (Double: value)
+
+internal proc int (Long: value)
+internal proc int (Float: value)
+internal proc int (Double: value)
+
+internal proc long (Int: value)
+internal proc long (Float: value)
+internal proc long (Double: value)
+
+Note: Arithmetic — 5-type same-type fast paths
 internal proc add (Int: a, Int: b)
 internal proc add (Long: a, Long: b)
 internal proc add (Float: a, Float: b)
@@ -57,21 +180,21 @@ internal proc mul (Float: a, Float: b)
 internal proc mul (Double: a, Double: b)
 internal proc mul (Number: a, Number: b)
 
-Note: (div Int Int) auto-promotes to Double per D-08; use (idiv) for Int truncation
+Note: (div Int Int) auto-promotes to Double; use (idiv) for Int truncation
 internal proc div (Int: a, Int: b)
 internal proc div (Long: a, Long: b)
 internal proc div (Float: a, Float: b)
 internal proc div (Double: a, Double: b)
 internal proc div (Number: a, Number: b)
 
-Note: Negation — 5-pack per Phase 26 D-07
+Note: Negation — 5-pack
 internal proc neg (Int: x)
 internal proc neg (Long: x)
 internal proc neg (Float: x)
 internal proc neg (Double: x)
 internal proc neg (Number: x)
 
-Note: Integer division (truncating) per Phase 26 D-08
+Note: Integer division (truncating)
 internal proc idiv (Int: a, Int: b)
 
 Note: String-to-number conversions
@@ -83,11 +206,28 @@ internal proc eval (Lazy<Void>: value)
 
 internal proc if (Bool: cond, Lazy<Void>: if_true, Lazy<Void>: otherwise)
 internal proc if (Bool: cond, Void: if_true, Void: otherwise)
+Note: Phase 44 Plan 44-08 — Void-wildcard if for non-strict truthy-coerce
+Note: (if 5 ...) / (if "" ...). Strict (CallerStrictMode==true) emits
+Note: [strict] (if) requires Bool — got <Type>. Existing Bool-Lazy and
+Note: Bool-Void overloads score +1000 for the Bool case.
+internal proc if (Void: cond, Void: if_true, Void: otherwise)
 internal proc and (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc and (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy and (composer Area 4.2 choice).
+Note: (and 1 "foo") → "foo"; (and false 1) → false. Bool-Bool overload above
+Note: wins +1000 for the Bool case so existing call sites are byte-identical.
+internal proc and (Void: left, Void: right)
 
 internal proc or (Lazy<Bool>: left, Lazy<Bool>: right)
 internal proc or (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy or. (or false 42) → 42;
+Note: (or "" "fallback") → "fallback".
+internal proc or (Void: left, Void: right)
+
+Note: Phase 44 Plan 44-08 — (not) FIRST registration per RESEARCH A6.
+Note: Non-strict charitable truthy: (not 0) → true, (not "x") → false.
+Note: Strict emits [strict] (not) requires Bool — got <Type>.
+internal proc not (Void: x)
 
 Note: Equality and comparison operators
 internal proc equals (Void: a, Void: b)
@@ -97,10 +237,10 @@ internal proc gt (Void: a, Void: b)
 internal proc lte (Void: a, Void: b)
 internal proc gte (Void: a, Void: b)
 
-Note: Tuple unpack runtime apply (Phase 26.1 TUP-11)
+Note: Tuple unpack runtime apply
 internal proc unpack (Void: tup, Function: f)
 
-Note: Dict ops (Phase 26.1 DICT-01/02/03)
+Note: Dict ops
 Note: Use Dict<Void, Void> in proc decls so the parameter type is structurally a DictType
 Note: (matches the runtime impl shape) — distinguishes from the existing Array overloads
 Note: of (each)/(map)/(filter)/(size)/(keys)/(values).
@@ -127,6 +267,7 @@ internal proc ??set(Int: seed)
 Note: Pattern transforms
 internal proc transpose (Sequence: seq, Semitone: interval)
 internal proc transpose (Sequence: seq, Cent: interval)
+internal proc transpose (Sequence: seq, Long: interval)
 internal proc invert (Sequence: seq)
 internal proc retrograde (Sequence: seq)
 internal proc augment (Sequence: seq)
@@ -135,16 +276,18 @@ internal proc up (Sequence: seq, Int: octaves)
 internal proc down (Sequence: seq, Int: octaves)
 internal proc repeat (Sequence: seq, Int: times)
 internal proc repeat (Sequence: seq, Int: times, Semitone: interval)
+Note: sweep-260620 soft-overload — cent-precision repeat transpose (folds remainder into CentOffset)
+internal proc repeat (Sequence: seq, Int: times, Cent: interval)
 internal proc concat (Sequence: a, Sequence: b)
 
-Note: Quantize (Phase 22 DX-13) — snaps note onsets to a grid at the requested resolution.
-Note: strength=0 short-circuits to identity (Pitfall 9); swing -1..1 signed offbeat shift.
+Note: Quantize — snaps note onsets to a grid at the requested resolution.
+Note: strength=0 short-circuits to identity; swing -1..1 signed offbeat shift.
 internal proc quantize (Sequence: seq, NoteValue: resolution, Double: strength, Double: swing)
 
-Note: Articulation transforms (Phase 22 DX-14)
+Note: Articulation transforms
 Note: legato extends each note's rendered duration by overlap factor (1 + overlap), without
-Note: moving onsets — polyphonic mix in the renderer handles the additive overlap (CONTEXT D-01..D-03).
-Note: portamento emits MIDI CC65/CC5 bracket per note (audio renderer ignores; MIDI-only in v1.3).
+Note: moving onsets — polyphonic mix in the renderer handles the additive overlap.
+Note: portamento emits MIDI CC65/CC5 bracket per note (audio renderer ignores; MIDI-only).
 internal proc legato (Sequence: seq, Double: overlap)
 internal proc portamento (Sequence: seq, Millisecond: glideTime)
 
@@ -174,7 +317,9 @@ internal proc voicing (Chord: chord, String: name)
 internal proc scaleNotes (String: keyName)
 internal proc resolveNumeral (String: numeral, String: keyName)
 internal proc getSections (Song: s)
+internal proc getSection (Song: s, String: name)
 internal proc sectionSequences (Section: s)
+internal proc sectionSequences (Song: s, String: name)
 internal proc enharmonic (Note: n)
 
 Note: Tempo expression transforms
@@ -188,11 +333,15 @@ internal proc humanizeGaussian (Sequence: seq, Double: amount, Int: seed)
 
 Note: Ornament transforms
 internal proc trill (Sequence: seq, Semitone: interval)
+Note: sweep-260620 soft-overload — cent-precision trill (folds remainder into CentOffset)
+internal proc trill (Sequence: seq, Cent: interval)
 internal proc tremolo (Sequence: seq, Int: repetitions)
 
 Note: Visualization
 internal proc visualize (Sequence: seq)
 internal proc visualize (Buffer: b)
+internal proc inspect (Sequence: seq)
+internal proc inspect (Buffer: b)
 
 Note: Buffer pretty-printing + hex dump (260502-lum)
 internal proc prettyBuffer (Buffer: b)
@@ -206,6 +355,12 @@ internal proc euclidean (Int: hits, Int: steps, Note: pitch, Double: swing, Doub
 
 Note: Iteration guard
 internal proc setMaxIterations (Int: limit)
+
+Note: break-control (0615) — (break) / (continue) call-position loop control.
+Note: Valid inside while/for bodies including lazy-wrapped positions (if/and/or).
+Note: (break) outside any loop is a charitable no-op + one-shot advisory.
+internal proc break ()
+internal proc continue ()
 
 // Math functions
 internal proc sin (Double: x)
@@ -226,8 +381,25 @@ internal proc log (Double: x)
 internal proc pi ()
 internal proc tau ()
 
-Note: Phase 26.1 Beat constructor (DICT-01 Tuple-of-hashables acceptance)
+Note: Beat constructor
 internal proc beat (Double: fractionalBeats)
 
-Note: Phase 26.1 NaN production primitive (REVISION 2 — DICT-03 acceptance)
+Note: NaN production primitive
 internal proc nanFloat ()
+
+Note: Scala .scl tuning loader
+Note: (loadScala "path.scl") parses the .scl + synthesizes a default linear KBM.
+Note: (loadScala "path.scl" "path.kbm") loads both files together; fires the unmapped-
+Note: key WarnOnce advisory once per Description if any `x` mapping entries are present.
+internal proc loadScala (String: sclPath)
+internal proc loadScala (String: sclPath, String: kbmPath)
+
+Note: SFZ orchestral sampler loader
+Note: Forward-declared in std.flow so the SfzEnabled gate fires at the
+Note: runtime call site, not at parse-resolution. WITHOUT `use "@sfz"`, calling
+Note: (loadSfz #violin) reaches the C# builtin and throws "loadSfz requires `use \"@sfz\"`"
+Note: (the gate's whole point — the composer gets a clear "you forgot the import" message,
+Note: not the generic "Function not found"). WITH `use "@sfz"`, the gate flips true and
+Note: the lookup + parse + return path runs normally.
+internal proc loadSfz (Symbol: name)
+internal proc loadSfz (String: path)

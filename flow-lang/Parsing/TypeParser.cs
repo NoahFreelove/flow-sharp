@@ -201,6 +201,40 @@ public static class TypeParser
             TokenType.Identifier when token.Text == "Symbol" => SymbolType.Instance,
             TokenType.Identifier when token.Text == "Section" => SectionType.Instance,
             TokenType.Identifier when token.Text == "Song" => SongType.Instance,
+            // Phase 32 Plan 32-04: Tuning is the 15th SpecialType. Required so
+            // `Tuning t = (loadScala "...")` declarations parse.
+            TokenType.Identifier when token.Text == "Tuning" => TuningType.Instance,
+            // Phase 33 Plan 33-05: Sfz is the 16th SpecialType. Required so
+            // `Sfz v = (loadSfz #violin)` declarations parse. (Plan 33-02 shipped
+            // the type itself; this entry wires it into the type-name parser.)
+            TokenType.Identifier when token.Text == "Sfz" => SfzType.Instance,
+            // Phase 36 Plan 36-06: MarkovModel is the 17th SpecialType. Required so
+            // `MarkovModel m = (markovTrain corpus 2)` declarations parse.
+            TokenType.Identifier when token.Text == "MarkovModel" => MarkovModelType.Instance,
+            // Phase 36 Plan 36-07: LsystemModel is the 18th SpecialType. Required so
+            // `LsystemModel m = (lsystemModel #A rules)` declarations parse.
+            TokenType.Identifier when token.Text == "LsystemModel" => LsystemModelType.Instance,
+            // Phase 38 Plan 38-06: OscHandle is the 19th SpecialType. Required so
+            // `OscHandle h = (oscListen 7777 "/x" handler)` declarations parse + `use "@osc"` imports.
+            TokenType.Identifier when token.Text == "OscHandle" => OscHandleType.Instance,
+#if !FLOW_WEB
+            // Phase 40 Plan 40-01: MidiDevice is the reference-identity handle for
+            // an opened MIDI output port. Required so `MidiDevice dev =
+            // (openMidiOutput "port")` declarations parse + `use "@midi"` imports.
+            // #if !FLOW_WEB — MidiDeviceType is stripped on Web (T-40-03).
+            TokenType.Identifier when token.Text == "MidiDevice" => MidiDeviceType.Instance,
+            // Phase 40 Plan 40-02: ClockHandle is the reference-identity handle for
+            // a MIDI clock master/slave. Required so `ClockHandle h =
+            // (clockMaster dev)` declarations parse + the `clockStop` decl in
+            // midi.flow type-checks. #if !FLOW_WEB — ClockHandleType is stripped
+            // on Web (T-40-03).
+            TokenType.Identifier when token.Text == "ClockHandle" => ClockHandleType.Instance,
+            // Phase 40 Plan 40-03: JackHandle is the reference-identity handle
+            // returned by (jackSync). Required so `JackHandle h = (jackSync)`
+            // declarations parse + the jackSync decl in jack.flow type-checks.
+            // #if !FLOW_WEB — JackHandleType is stripped on Web (T-40-03).
+            TokenType.Identifier when token.Text == "JackHandle" => JackHandleType.Instance,
+#endif
             TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
@@ -227,6 +261,16 @@ public static class TypeParser
     public static bool LooksLikeFunctionType(List<Token> tokens, int index)
     {
         if (index >= tokens.Count || tokens[index].Type != TokenType.LParen)
+            return false;
+
+        // Phase 35 Plan 35-05 (LANG-01): `(match scrutinee | pat => body | ...)` carries
+        // a `=>` at depth 1 (each arm uses FatArrow) but is NOT a function-type
+        // annotation. Cheap structural disambiguation — when the very next token after
+        // the LParen is the `match` keyword, refuse to claim function-type shape so
+        // ParseStatement falls through to expression-statement parsing where
+        // ParsePrimary's `(match` branch picks it up. Same posture as ParseStatement's
+        // existing keyword sniffs (Pan/Gain/ReverbTime/VoicePool).
+        if (index + 1 < tokens.Count && tokens[index + 1].Type == TokenType.Match)
             return false;
 
         int depth = 1;
@@ -315,6 +359,16 @@ public static class TypeParser
             "Symbol" => SymbolType.Instance,
             "Section" => SectionType.Instance,
             "Song" => SongType.Instance,
+            "Tuning" => TuningType.Instance, // Phase 32 Plan 32-04
+            "Sfz" => SfzType.Instance,       // Phase 33 Plan 33-05
+            "MarkovModel" => MarkovModelType.Instance, // Phase 36 Plan 36-06
+            "LsystemModel" => LsystemModelType.Instance, // Phase 36 Plan 36-07
+            "OscHandle" => OscHandleType.Instance, // Phase 38 Plan 38-06
+#if !FLOW_WEB
+            "MidiDevice" => MidiDeviceType.Instance, // Phase 40 Plan 40-01 (#if !FLOW_WEB)
+            "ClockHandle" => ClockHandleType.Instance, // Phase 40 Plan 40-02 (#if !FLOW_WEB)
+            "JackHandle" => JackHandleType.Instance, // Phase 40 Plan 40-03 (#if !FLOW_WEB)
+#endif
             "Function" => FunctionType.Instance,
             _ => null
         };

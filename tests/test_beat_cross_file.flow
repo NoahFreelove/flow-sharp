@@ -1,0 +1,23 @@
+enable beat-true-to-sig;
+
+use "@std"
+use "./test_beat_cross_file_helper.flow"
+
+Note: Phase 45 REQ-BEAT-TEST-04 — cross-file boundary ENTRY (pragma-ON).
+Note: This file enables beat-true-to-sig. Inside timesig 6/8 { }, a LOCAL 1b
+Note: literal SHOULD multiply to 0.5 (one eighth). But calling bumpBeat —
+Note: declared in the pragma-OFF helper file — MUST return Value.Beat(1.0):
+Note: the helper's declaring file lacks the pragma, so its (beat 1) sees no
+Note: multiplier (D-04 / Pitfall 3 — file-scope pragma, declaring file wins).
+
+tempo 120 {
+    timesig 6/8 {
+        Beat localLit = 1b
+        (print (concat "local 1b in 6/8 pragma-on = " (str localLit)))
+
+        Beat fromHelper = (bumpBeat (beat 0))
+        (print (concat "helper (beat 1) called from 6/8 pragma-on = " (str fromHelper)))
+    }
+}
+
+(print "test_beat_cross_file: PASSED")

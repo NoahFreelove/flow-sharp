@@ -13,6 +13,8 @@ class Program
         string? inputPath = null;
         string? outputPath = null;
         bool dump = false;
+        bool sustainPedal = true;  // default ON for piano-style holds; --no-sustain to disable
+        bool useSfz = false;       // opt-in: emit SFZ-pipeline source (VSCO-CE UprightPiano)
 
         for (int i = 0; i < args.Length; i++)
         {
@@ -23,6 +25,18 @@ class Program
                     return 0;
                 case "--dump":
                     dump = true;
+                    break;
+                case "--no-sustain":
+                    sustainPedal = false;
+                    break;
+                case "--sustain":
+                    sustainPedal = true;
+                    break;
+                case "--sfz":
+                    useSfz = true;
+                    break;
+                case "--no-sfz":
+                    useSfz = false;
                     break;
                 case "-o":
                     if (i + 1 >= args.Length)
@@ -76,16 +90,28 @@ class Program
             }
 
             var quantizeResult = Conversion.Quantizer.Quantize(midiFile);
-            var flowCode = Conversion.FlowGenerator.Generate(midiFile, quantizeResult, Path.GetFileName(inputPath));
+            var result = Conversion.FlowGenerator.GenerateWithStats(midiFile, quantizeResult, Path.GetFileName(inputPath), sustainPedal: sustainPedal, useSfz: useSfz);
 
             if (outputPath != null)
             {
-                File.WriteAllText(outputPath, flowCode);
+                File.WriteAllText(outputPath, result.Source);
                 Console.Error.WriteLine($"Converted {inputPath} -> {outputPath}");
             }
             else
             {
-                Console.Write(flowCode);
+                Console.Write(result.Source);
+            }
+
+            // sweep-0614: honest exit code — a comment-only "no playable tracks"
+            // artifact renders silence; warn + return 2 rather than reporting success.
+            if (result.PlayableTrackCount == 0)
+            {
+                string detail = result.DroppedDrumTrackCount > 0
+                    ? $" ({result.DroppedDrumTrackCount} drum track(s) skipped — Flow uses different drum notation)"
+                    : " (all tracks were drums/empty/rests)";
+                Console.Error.WriteLine(
+                    $"Warning: no playable tracks found in {Path.GetFileName(inputPath)} — output is a comment-only file{detail}");
+                return 2;
             }
 
             return 0;
@@ -107,6 +133,12 @@ class Program
         Console.Error.WriteLine("  flow-midi <input.mid> -o out.flow    Write .flow to file");
         Console.Error.WriteLine();
         Console.Error.WriteLine("Options:");
-        Console.Error.WriteLine("  -h, --help    Show this help message");
+        Console.Error.WriteLine("  -h, --help        Show this help message");
+        Console.Error.WriteLine("  --sustain         Wrap output in sustainPedal { ... } (default ON; matches piano hold)");
+        Console.Error.WriteLine("  --no-sustain      Disable sustainPedal wrapping (use for non-piano / staccato music)");
+        Console.Error.WriteLine("  --sfz             Emit SFZ-pipeline source — renders via VSCO-CE UprightPiano.sfz");
+        Console.Error.WriteLine("                    (requires `sfz_root` in ~/.config/flow/config.toml + VSCO-CE installed;");
+        Console.Error.WriteLine("                     must be rendered with flow-cli, NOT flow-interpreter)");
+        Console.Error.WriteLine("  --no-sfz          (default) Use bundled piano samples via renderSong \"piano\"");
     }
 }

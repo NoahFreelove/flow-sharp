@@ -1,0 +1,34 @@
+// Phase 36 Plan 36-11 Task 2 — composer-facing jam `key=` override exercise.
+//
+// Demonstrates the per-call key= override surface (D-36-10): the composer can
+// improvise outside the active musical-context key for a chromatic pivot bar
+// without restructuring the surrounding key block.
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_jam_key_override.flow
+
+use "@std"
+use "@improv"
+use "@test"
+
+// Cmaj7 chord progression — the chord doesn't change between runs.
+Sequence chords = | Cmaj7 |
+
+// jam with key="Cmajor" vs key="Fsharpmajor" produces DIFFERENT sequences
+// even with the same seed. F#-major's scale (F# G# A# B C# D# E#) shares
+// only one pitch class with C-major's (C D E F G A B), so the scale-tone
+// candidate pool is radically different.
+Sequence inC = (jam chords #jazz 4 "Cmajor" 99 2)
+Sequence inFsharp = (jam chords #jazz 4 "Fsharpmajor" 99 2)
+
+// Each call seeded with the same seed produces identical output across runs.
+Sequence inC_again = (jam chords #jazz 4 "Cmajor" 99 2)
+Sequence inFsharp_again = (jam chords #jazz 4 "Fsharpmajor" 99 2)
+
+(test "key= override is deterministic for Cmajor"
+    lazy((assertNotesMatch inC inC_again)))
+
+(test "key= override is deterministic for Fsharpmajor"
+    lazy((assertNotesMatch inFsharp inFsharp_again)))
+
+(print "JAM KEY OVERRIDE TESTS REGISTERED")

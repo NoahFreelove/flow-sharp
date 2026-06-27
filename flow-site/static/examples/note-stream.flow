@@ -1,0 +1,7 @@
+use "@std"
+use "@audio"
+use "@composition"
+
+tempo 120 {
+  (play | C4q D4q E4q F4q G4q A4q B4q C5h |)
+}

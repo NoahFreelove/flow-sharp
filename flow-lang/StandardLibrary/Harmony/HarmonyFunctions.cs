@@ -22,7 +22,8 @@ public static class HarmonyFunctions
     /// </summary>
     public static void RegisterContextDependent(InternalFunctionRegistry registry, FlowLang.Runtime.ExecutionContext context)
     {
-        var enharmonicSig = new FunctionSignature("enharmonic", [NoteType.Instance]);
+        var enharmonicSig = new FunctionSignature("enharmonic", [NoteType.Instance],
+            ParameterNames: ["note"]);
         registry.Register("enharmonic", enharmonicSig, args => Enharmonic(args, context));
     }
 
@@ -49,15 +50,29 @@ public static class HarmonyFunctions
         var musicalCtx = context.GetMusicalContext();
         string? key = musicalCtx?.Key;
 
-        // Phase 23 Plan 23-03 Task 2 / D-11: under non-12-TET tuning, enharmonic respelling is
-        // destructive (~21 cent shift at enharmonic junctions) — emit a one-shot stderr warning
-        // so composers know the silent regression is happening. Conversion still happens; warning
-        // is purely advisory. Pitfall 5 #3 / AUDIT-VERIFIED. EqualTemperament + no-pragma silent.
-        if (musicalCtx?.Tuning is TuningSystem activeTuning && activeTuning != TuningSystem.EqualTemperament)
+        // Phase 23 Plan 23-03 Task 2 / D-11 + Phase 32 D-12 / Pitfall 6: under non-12-TET
+        // tuning, enharmonic respelling is destructive (~21 cent shift at enharmonic
+        // junctions) — emit a one-shot stderr warning so composers know the silent
+        // regression is happening. Conversion still happens; warning is purely advisory.
+        // Pitfall 5 #3 / AUDIT-VERIFIED. EqualTemperament + no-pragma silent. The predicate
+        // now fires under EITHER a non-EQ Phase 23 system OR a custom Scala tuning
+        // (RenderTuning.Custom != null) — destructive respelling applies in both regimes.
+        var activeTuning = musicalCtx?.ActiveTuning ?? RenderTuning.Default;
+        if (activeTuning.Custom != null || activeTuning.System != TuningSystem.EqualTemperament)
         {
-            RenderingDiagnostics.WarnOnce(
-                "enharmonic-non-equal-temperament",
-                "[enharmonic] called inside tuning != equalTemperament; conversion is destructive (≈ 21 cent shift)");
+            // Phase 44 Plan 44-07 Pattern S3: strict-mode branch.
+            if (context.CallerStrictMode)
+            {
+                context.ErrorReporter.ReportError(
+                    $"[strict] [enharmonic] called inside tuning != equalTemperament — ≈21 cent shift at {context.CurrentCallSite}",
+                    context.CurrentCallSite);
+            }
+            else
+            {
+                RenderingDiagnostics.WarnOnce(
+                    "enharmonic-non-equal-temperament",
+                    "[enharmonic] called inside tuning != equalTemperament; conversion is destructive (≈ 21 cent shift)");
+            }
         }
 
         // D-04 / D-USER-B: in-key branch fires FIRST so diatonic spelling wins for both naturals
@@ -339,7 +354,8 @@ public static class HarmonyFunctions
         // (triads, 6/7/9/11/13 family, sus, add, alterations). Charitable on
         // unparseable input — returns Void instead of throwing, matching
         // resolveNumeral's pattern below.
-        var chordFromStringSignature = new FunctionSignature("chord", [StringType.Instance]);
+        var chordFromStringSignature = new FunctionSignature("chord", [StringType.Instance],
+            ParameterNames: ["symbol"]);
         registry.Register("chord", chordFromStringSignature, args =>
         {
             var symbol = args[0].As<string>();
@@ -357,7 +373,8 @@ public static class HarmonyFunctions
         // overload re-routes the Note's stored text back through `TryParseFlexible` so the
         // string-form vocabulary (power chords, dom7, slash bass embedded in note-shaped
         // tokens) reaches the same parser as the explicit String overload.
-        var chordFromNoteSignature = new FunctionSignature("chord", [NoteType.Instance]);
+        var chordFromNoteSignature = new FunctionSignature("chord", [NoteType.Instance],
+            ParameterNames: ["note"]);
         registry.Register("chord", chordFromNoteSignature, args =>
         {
             var noteText = args[0].As<string>();
@@ -375,7 +392,8 @@ public static class HarmonyFunctions
         });
 
         // str(Chord) -> String
-        var strChordSignature = new FunctionSignature("str", [ChordType.Instance]);
+        var strChordSignature = new FunctionSignature("str", [ChordType.Instance],
+            ParameterNames: ["chord"]);
         registry.Register("str", strChordSignature, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -383,7 +401,8 @@ public static class HarmonyFunctions
         });
 
         // chordNotes(Chord) -> Strings
-        var chordNotesSignature = new FunctionSignature("chordNotes", [ChordType.Instance]);
+        var chordNotesSignature = new FunctionSignature("chordNotes", [ChordType.Instance],
+            ParameterNames: ["chord"]);
         registry.Register("chordNotes", chordNotesSignature, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -392,7 +411,8 @@ public static class HarmonyFunctions
         });
 
         // chordRoot(Chord) -> String
-        var chordRootSignature = new FunctionSignature("chordRoot", [ChordType.Instance]);
+        var chordRootSignature = new FunctionSignature("chordRoot", [ChordType.Instance],
+            ParameterNames: ["chord"]);
         registry.Register("chordRoot", chordRootSignature, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -400,7 +420,8 @@ public static class HarmonyFunctions
         });
 
         // chordQuality(Chord) -> String
-        var chordQualitySignature = new FunctionSignature("chordQuality", [ChordType.Instance]);
+        var chordQualitySignature = new FunctionSignature("chordQuality", [ChordType.Instance],
+            ParameterNames: ["chord"]);
         registry.Register("chordQuality", chordQualitySignature, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -408,7 +429,8 @@ public static class HarmonyFunctions
         });
 
         // arpeggio(Chord, String) -> Sequence (up, down, updown)
-        var arpeggioSignature = new FunctionSignature("arpeggio", [ChordType.Instance, StringType.Instance]);
+        var arpeggioSignature = new FunctionSignature("arpeggio", [ChordType.Instance, StringType.Instance],
+            ParameterNames: ["chord", "direction"]);
         registry.Register("arpeggio", arpeggioSignature, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -416,7 +438,11 @@ public static class HarmonyFunctions
 
             var noteNames = chord.NoteNames.ToList();
 
-            switch (direction.ToLower())
+            // Phase 48 D-48-03 (invariant globalization): ToLowerInvariant matches
+            // the ASCII subset of direction tokens ("up" / "down" / "updown")
+            // regardless of host locale. Without InvariantCulture the Turkish-I
+            // problem surfaces under <InvariantGlobalization>true</InvariantGlobalization>.
+            switch (direction.ToLowerInvariant())
             {
                 case "down":
                     noteNames.Reverse();
@@ -456,7 +482,8 @@ public static class HarmonyFunctions
         // - pattern: "linear" | "chord-tone" | "scale-tone" (chord-tone / scale-tone route to
         //   linear in v1.3 per RESEARCH §Future Requirements / Assumption A8)
         var arpeggioFullSig = new FunctionSignature("arpeggio",
-            [ChordType.Instance, NoteValueType.Instance, StringType.Instance, StringType.Instance]);
+            [ChordType.Instance, NoteValueType.Instance, StringType.Instance, StringType.Instance],
+            ParameterNames: ["chord", "rate", "direction", "pattern"]);
         registry.Register("arpeggio", arpeggioFullSig, args =>
         {
             var chord = args[0].As<ChordData>();
@@ -484,7 +511,8 @@ public static class HarmonyFunctions
         });
 
         // scaleNotes(String) -> Strings
-        var scaleNotesSignature = new FunctionSignature("scaleNotes", [StringType.Instance]);
+        var scaleNotesSignature = new FunctionSignature("scaleNotes", [StringType.Instance],
+            ParameterNames: ["key"]);
         registry.Register("scaleNotes", scaleNotesSignature, args =>
         {
             var keyName = args[0].As<string>();
@@ -496,7 +524,8 @@ public static class HarmonyFunctions
 
         // resolveNumeral(String, String) -> Chord
         var resolveNumeralSignature = new FunctionSignature("resolveNumeral",
-            [StringType.Instance, StringType.Instance]);
+            [StringType.Instance, StringType.Instance],
+            ParameterNames: ["numeral", "key"]);
         registry.Register("resolveNumeral", resolveNumeralSignature, args =>
         {
             var numeral = args[0].As<string>();
@@ -508,7 +537,8 @@ public static class HarmonyFunctions
         });
 
         // str(Section) -> String
-        var strSectionSignature = new FunctionSignature("str", [SectionType.Instance]);
+        var strSectionSignature = new FunctionSignature("str", [SectionType.Instance],
+            ParameterNames: ["section"]);
         registry.Register("str", strSectionSignature, args =>
         {
             var section = args[0].As<SectionData>();
@@ -516,7 +546,8 @@ public static class HarmonyFunctions
         });
 
         // str(Song) -> String
-        var strSongSignature = new FunctionSignature("str", [SongType.Instance]);
+        var strSongSignature = new FunctionSignature("str", [SongType.Instance],
+            ParameterNames: ["song"]);
         registry.Register("str", strSongSignature, args =>
         {
             var song = args[0].As<SongData>();
@@ -524,7 +555,8 @@ public static class HarmonyFunctions
         });
 
         // getSections(Song) -> Strings
-        var getSectionsSignature = new FunctionSignature("getSections", [SongType.Instance]);
+        var getSectionsSignature = new FunctionSignature("getSections", [SongType.Instance],
+            ParameterNames: ["song"]);
         registry.Register("getSections", getSectionsSignature, args =>
         {
             var song = args[0].As<SongData>();
@@ -533,12 +565,50 @@ public static class HarmonyFunctions
         });
 
         // sectionSequences(Section) -> Strings (returns names of sequences in section)
-        var sectionSequencesSignature = new FunctionSignature("sectionSequences", [SectionType.Instance]);
+        var sectionSequencesSignature = new FunctionSignature("sectionSequences", [SectionType.Instance],
+            ParameterNames: ["section"]);
         registry.Register("sectionSequences", sectionSequencesSignature, args =>
         {
             var section = args[0].As<SectionData>();
             var names = section.Sequences.Keys.Select(k => Value.String(k)).ToArray();
             return Value.Array(names, StringType.Instance);
+        });
+
+        // getSection(Song, String) -> Section (the single named section).
+        // Charitable (D-v1.5-05): unknown name -> WarnOnce + empty Section, never throws.
+        var getSectionSignature = new FunctionSignature("getSection", [SongType.Instance, StringType.Instance],
+            ParameterNames: ["song", "name"]);
+        registry.Register("getSection", getSectionSignature, args =>
+        {
+            var song = args[0].As<SongData>();
+            var name = args[1].As<string>();
+            if (song.SectionRegistry.TryGetValue(name, out var section))
+            {
+                return Value.Section(section);
+            }
+            RenderingDiagnostics.WarnOnce(
+                $"getSection-unknown:{name}",
+                $"[getSection] no section named '{name}' in song — returning empty section");
+            return Value.Section(new SectionData(name, new Dictionary<string, SequenceData>(), context: null));
+        });
+
+        // sectionSequences(Song, String) -> Strings (sequence names of ONE named section).
+        // Charitable (D-v1.5-05): unknown name -> WarnOnce + empty array, never throws.
+        var sectionSequencesByNameSignature = new FunctionSignature("sectionSequences", [SongType.Instance, StringType.Instance],
+            ParameterNames: ["song", "name"]);
+        registry.Register("sectionSequences", sectionSequencesByNameSignature, args =>
+        {
+            var song = args[0].As<SongData>();
+            var name = args[1].As<string>();
+            if (song.SectionRegistry.TryGetValue(name, out var section))
+            {
+                var found = section.Sequences.Keys.Select(k => Value.String(k)).ToArray();
+                return Value.Array(found, StringType.Instance);
+            }
+            RenderingDiagnostics.WarnOnce(
+                $"sectionSequences-unknown:{name}",
+                $"[sectionSequences] no section named '{name}' in song — returning empty array");
+            return Value.Array([], StringType.Instance);
         });
     }
 }

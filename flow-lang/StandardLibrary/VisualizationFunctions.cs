@@ -16,14 +16,32 @@ public static class VisualizationFunctions
 {
     /// <summary>
     /// Registers the visualize built-in function.
+    ///
+    /// Phase 38 Plan 38-04 D-38-10: <c>(inspect seq)</c> ships as a builtin-level
+    /// alias backed by the same <see cref="Visualize"/> dispatch (overrides
+    /// REQUIREMENTS.md REPL-04 wording per D-v1.5-01 single-commit migration —
+    /// composer can call either name; identical output).
     /// </summary>
     public static void Register(InternalFunctionRegistry registry)
     {
-        var sig = new FunctionSignature("visualize", [SequenceType.Instance]);
+        var sig = new FunctionSignature("visualize", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
         registry.Register("visualize", sig, Visualize);
 
-        var sig2 = new FunctionSignature("visualize", [BufferType.Instance]);
+        var sig2 = new FunctionSignature("visualize", [BufferType.Instance],
+            ParameterNames: ["buf"]);
         registry.Register("visualize", sig2, VisualizeBuffer);
+
+        // Phase 38 Plan 38-04 D-38-10 — (inspect seq) alias (same dispatch).
+        var sig3 = new FunctionSignature("inspect", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
+        registry.Register("inspect", sig3, Visualize);
+
+        // (inspect buf) alias mirrors (visualize buf) so the documented alias
+        // pair holds for both overloads.
+        var sig4 = new FunctionSignature("inspect", [BufferType.Instance],
+            ParameterNames: ["buf"]);
+        registry.Register("inspect", sig4, VisualizeBuffer);
     }
 
     /// <summary>
@@ -40,8 +58,10 @@ public static class VisualizationFunctions
 
         var timeline = sequence.ToTimeline();
 
-        // Collect all notes with their absolute beat positions and durations
-        var noteEvents = new List<(int midiPitch, string label, double startBeat, double durationBeats)>();
+        // Collect all notes with their absolute beat positions, durations, and
+        // articulation (Phase 38 Plan 38-04 D-38-10 — articulation drives the
+        // onset glyph per UI-SPEC §"Glyph Inventory" lines 187-201).
+        var noteEvents = new List<(int midiPitch, string label, double startBeat, double durationBeats, Articulation articulation)>();
         double totalBeats = 0;
         var barBoundaries = new List<double>();
 
@@ -52,24 +72,31 @@ public static class VisualizationFunctions
             if (bar.Mode != BarMode.Musical || bar.TimeSignature == null)
                 continue;
 
-            int timeSigDenom = bar.TimeSignature.Denominator;
-            double beatCursor = 0;
-
-            foreach (var note in bar.MusicalNotes)
+            // Voice-block bars carry their audible content exclusively in
+            // ParallelVoices; the parent bar's MusicalNotes holds a single
+            // whole-bar rest placeholder (NoteStreamCompiler). Mirror the audio
+            // / MIDI / MusicXML / LilyPond paths (BarRenderer.cs:62) and stack
+            // every voice on the shared bar onset so overlapping voices show on
+            // their own pitch rows. When ParallelVoices is present the parent
+            // MusicalNotes is just the placeholder rest, so the two passes do
+            // not double-count.
+            if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
             {
-                double noteDuration = note.GetBeats(timeSigDenom);
-
-                if (!note.IsRest)
+                foreach (var voiceBar in bar.ParallelVoices)
                 {
-                    int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
-                    string label = FormatNoteLabel(note.NoteName, note.Octave, note.Alteration);
-                    noteEvents.Add((midi, label, offsetBeats + beatCursor, noteDuration));
+                    var voiceSig = voiceBar.TimeSignature ?? bar.TimeSignature;
+                    CollectNoteEvents(voiceBar.MusicalNotes, voiceSig.Denominator, offsetBeats, noteEvents);
                 }
-
-                beatCursor += noteDuration;
+            }
+            else
+            {
+                CollectNoteEvents(bar.MusicalNotes, bar.TimeSignature.Denominator, offsetBeats, noteEvents);
             }
 
-            double barBeats = bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.Numerator;
+            // sweep-0614: note cursors are quarter-units (GetBeats), so the bar span
+            // must be quarter-units too (Numerator × 4 / Denominator) — otherwise the
+            // ASCII piano-roll's bar boundaries drift from the notes in non-4/4 meters.
+            double barBeats = bar.IsPickup ? bar.GetActualBeats() : bar.TimeSignature.BarCapacityQuarters;
             totalBeats = Math.Max(totalBeats, offsetBeats + barBeats);
         }
 
@@ -112,24 +139,78 @@ public static class VisualizationFunctions
                 barLineColumns.Add(col);
         }
 
-        // Fill in notes
-        foreach (var (midi, label, startBeat, duration) in noteEvents)
+        // Fill in notes per Phase 38 Plan 38-04 D-38-10:
+        //   - First cell of a sustained note is the articulation glyph (UI-SPEC line 210):
+        //       Accent → '>', Staccato → '.', Marcato → '^', Tenuto → '_',
+        //       Sforzando → '!', Normal/Legato → '#' (Legato handled by the gap-fill pass
+        //       below per UI-SPEC line 212).
+        //   - Subsequent cells stay '#' (the sustain glyph; pre-Phase-38 behavior).
+        //   - Single-cell notes collapse to the onset glyph alone (UI-SPEC line 211 —
+        //     naturally true because the loop stops when endCol == startCol).
+        foreach (var (midi, label, startBeat, duration, articulation) in noteEvents)
         {
             int row = maxMidi - midi; // top = highest pitch
             int startCol = (int)Math.Round(startBeat * columnsPerBeat);
             int endCol = (int)Math.Round((startBeat + duration) * columnsPerBeat);
             endCol = Math.Min(endCol, gridWidth);
 
+            // Ensure at least one cell renders for very short notes (so the onset glyph is
+            // visible per UI-SPEC line 211 — single-cell collapse).
+            if (endCol <= startCol) endCol = startCol + 1;
+            endCol = Math.Min(endCol, gridWidth);
+
+            char onsetGlyph = articulation switch
+            {
+                Articulation.Accent => '>',
+                Articulation.Staccato => '.',
+                Articulation.Marcato => '^',
+                Articulation.Tenuto => '_',
+                Articulation.Sforzando => '!',
+                _ => '#'  // Normal — pre-Phase-38 baseline. Legato handled separately below.
+            };
+
             for (int c = startCol; c < endCol; c++)
             {
                 if (c >= 0 && c < gridWidth)
-                    grid[row, c] = '#';
+                    grid[row, c] = (c == startCol) ? onsetGlyph : '#';
+            }
+        }
+
+        // Phase 38 Plan 38-04 D-38-10 + UI-SPEC line 212 — Legato gap-fill pass.
+        // For each Legato note, look back to the previous note on the same row that ends
+        // immediately before this note's startCol; fill the gap cell with `~`. Charitable
+        // skip when no adjacent prior-row note exists (D-v1.5-05).
+        var rowNoteEnds = new Dictionary<int, List<(int startCol, int endCol)>>();
+        foreach (var (midi, _, startBeat, duration, _) in noteEvents)
+        {
+            int row = maxMidi - midi;
+            int startCol = (int)Math.Round(startBeat * columnsPerBeat);
+            int endCol = (int)Math.Round((startBeat + duration) * columnsPerBeat);
+            if (!rowNoteEnds.ContainsKey(row)) rowNoteEnds[row] = new List<(int, int)>();
+            rowNoteEnds[row].Add((startCol, endCol));
+        }
+        foreach (var (midi, _, startBeat, _, articulation) in noteEvents)
+        {
+            if (articulation != Articulation.Legato) continue;
+            int row = maxMidi - midi;
+            int startCol = (int)Math.Round(startBeat * columnsPerBeat);
+            // Look for a prior note on the same row ending at startCol or startCol-1.
+            if (!rowNoteEnds.TryGetValue(row, out var spans)) continue;
+            foreach (var (prevStart, prevEnd) in spans)
+            {
+                if (prevEnd >= startCol) continue;
+                int gapCol = prevEnd; // first empty cell after the previous note
+                if (gapCol >= 0 && gapCol < gridWidth && gapCol < startCol && grid[row, gapCol] == ' ')
+                {
+                    grid[row, gapCol] = '~';
+                    break;
+                }
             }
         }
 
         // Build pitch labels (collect unique labels per MIDI pitch)
         var pitchLabels = new Dictionary<int, string>();
-        foreach (var (midi, label, _, _) in noteEvents)
+        foreach (var (midi, label, _, _, _) in noteEvents)
         {
             pitchLabels.TryAdd(midi, label);
         }
@@ -141,6 +222,21 @@ public static class VisualizationFunctions
         // Render output
         var sb = new StringBuilder();
 
+        // Phase 38 Plan 38-04 D-38-10 + UI-SPEC lines 217-228 — tick-mark row
+        // rendered ABOVE the first pitch row. Format mirrors the existing bottom
+        // separator (`+` at bar-line cols, `-` elsewhere) and is followed by
+        // beat-number annotations below the rule.
+        sb.Append(new string(' ', labelWidth));
+        sb.Append(" +");
+        for (int c = 0; c < gridWidth; c++)
+        {
+            if (barLineColumns.Contains(c) && c > 0)
+                sb.Append('+');
+            else
+                sb.Append('-');
+        }
+        sb.AppendLine("+");
+
         for (int r = 0; r < gridHeight; r++)
         {
             int midi = maxMidi - r;
@@ -150,8 +246,23 @@ public static class VisualizationFunctions
 
             for (int c = 0; c < gridWidth; c++)
             {
-                if (grid[r, c] == '#')
-                    sb.Append('#');
+                char cell = grid[r, c];
+                // Articulation glyphs + sustain + legato gap-fill take precedence
+                // over the bar-line stamp at the same cell EXCEPT for `|` itself —
+                // per UI-SPEC line 214, bar line wins over sustain `#`.
+                if (cell != ' ' && cell != '#')
+                {
+                    // Onset glyphs (>./^_!~) win over sustain; per UI-SPEC line 213.
+                    sb.Append(cell);
+                }
+                else if (cell == '#')
+                {
+                    // Sustain — bar line wins per UI-SPEC line 214.
+                    if (barLineColumns.Contains(c) && c > 0)
+                        sb.Append('|');
+                    else
+                        sb.Append('#');
+                }
                 else if (barLineColumns.Contains(c) && c > 0)
                     sb.Append('|');
                 else
@@ -192,6 +303,35 @@ public static class VisualizationFunctions
 
         Console.Write(sb.ToString());
         return Value.Void();
+    }
+
+    /// <summary>
+    /// Collects note events from a flat list of musical notes, advancing a fresh
+    /// per-list beat cursor that starts at <paramref name="offsetBeats"/>. Shared by
+    /// the single-voice and parallel-voice (voice-block) passes — each parallel
+    /// voice starts at the same bar onset so overlapping voices stack correctly.
+    /// Rests advance the cursor but emit no event.
+    /// </summary>
+    private static void CollectNoteEvents(
+        IReadOnlyList<MusicalNoteData> notes,
+        int timeSigDenom,
+        double offsetBeats,
+        List<(int midiPitch, string label, double startBeat, double durationBeats, Articulation articulation)> noteEvents)
+    {
+        double beatCursor = 0;
+        foreach (var note in notes)
+        {
+            double noteDuration = note.GetBeats(timeSigDenom);
+
+            if (!note.IsRest)
+            {
+                int midi = ToMidi(note.NoteName, note.Octave, note.Alteration);
+                string label = FormatNoteLabel(note.NoteName, note.Octave, note.Alteration);
+                noteEvents.Add((midi, label, offsetBeats + beatCursor, noteDuration, note.Articulation));
+            }
+
+            beatCursor += noteDuration;
+        }
     }
 
     /// <summary>

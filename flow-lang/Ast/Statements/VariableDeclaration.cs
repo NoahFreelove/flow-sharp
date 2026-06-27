@@ -11,4 +11,5 @@ public record VariableDeclaration(
     SourceLocation Location,
     FlowType Type,
     string Name,
-    Expression Value) : Statement(Location);
+    Expression Value,
+    Span? Span = null) : Statement(Location);

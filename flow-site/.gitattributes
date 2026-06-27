@@ -1,0 +1,5 @@
+# The committed Phase 48 WASM AppBundle (refreshed via scripts/sync-runtime.sh).
+# Mark the binaries so git never tries to diff/merge them and renormalization
+# can't corrupt them (audit 2026-06-09 §6.3).
+static/wasm/_framework/*.wasm binary -diff
+static/wasm/_framework/*.symbols -diff

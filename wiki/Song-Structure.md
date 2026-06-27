@@ -67,6 +67,56 @@ Song mySong = [intro verse*2 chorus verse chorus*2]
 
 This plays: intro, verse, verse, chorus, verse, chorus, chorus.
 
+## Parameterized Sections
+
+Sections can declare typed parameters with optional default values, so the same musical idea can be reused with different roots, transpositions, or repeat counts. Parameters use the full pattern syntax (typed bindings, tuple destructure, music-aware extractors):
+
+```flow
+section verse(Note root, Int repeats = 2) {
+    Sequence mel = | root D4 E4 F4 |
+}
+
+section chorus(Chord on = Cmaj7) {
+    Sequence bigChord = | on |
+}
+```
+
+Call them from a `Song` expression with either positional or named arguments — defaults are honored for any trailing argument that isn't supplied:
+
+```flow
+Song s = [verse(C4)                Note: uses default repeats=2
+          verse(D4, 4)             Note: positional override
+          verse(root=E4, repeats=1) Note: named-arg form
+          chorus]                  Note: uses default on=Cmaj7
+```
+
+Combine with the `*N` repetition operator — it works on both zero-arg and parameterized calls:
+
+```flow
+Song looped = [verse(C4)*3 chorus*2]
+```
+
+### Section Overloading
+
+Multiple `section verse(...)` declarations with different signatures coexist — the overload resolver picks the highest-specificity match at call time:
+
+```flow
+section verse(Note root) {
+    Sequence mel = | root D4 E4 F4 |
+}
+
+section verse(Note root, Int reps) {
+    Sequence mel = | root D4 E4 F4 |
+    Sequence echo = | root |
+}
+
+Song s = [verse(C4) verse(C4, 3)]      Note: dispatches to each overload
+```
+
+The resolver dispatches by argument count and types at call time, so `verse(C4)` selects the single-`Note` overload and `verse(C4, 3)` selects the two-argument one.
+
+Per-call args bind in a fresh stack frame that **inherits the call-site's musical context**, so a `verse(C4)` call inside a `key Aminor { ... }` block sees Aminor as its active key.
+
 ## Song Functions
 
 ### getSections
@@ -76,13 +126,18 @@ Get the section names from a song:
 ```flow
 use "@std"
 
+section intro { Sequence mel = | C4 E4 G4 C5 | }
+section verse { Sequence mel = | E4 E4 F4 G4 | }
+section chorus { Sequence mel = | G4 A4 G4 E4 | }
+
+Song mySong = [intro verse chorus]
 Strings sections = (getSections mySong)
 (print (str sections))  Note: ["intro", "verse", "chorus"]
 ```
 
-### sectionSequences
+### getSection
 
-Get the sequence names within a section:
+`getSection(Song, String)` pulls one named `Section` back out of a `Song` so you can inspect it:
 
 ```flow
 use "@std"
@@ -92,9 +147,29 @@ section mySection {
     Sequence bass = | C3 G3 C3 G3 |
 }
 
-Strings seqs = (sectionSequences mySection)
-(print (str seqs))
+Song mySong = [mySection]
+Section s = (getSection mySong "mySection")
+(print (str s))         Note: Section[mySection, 2 sequences]
 ```
+
+### sectionSequences
+
+`sectionSequences(Song, String)` returns the **sequence names** within a named section, as a `String[]`. (A `sectionSequences(Section)` overload taking a runtime `Section` value also exists.)
+
+```flow
+use "@std"
+
+section mySection {
+    Sequence lead = | C4 D4 E4 F4 |
+    Sequence bass = | C3 G3 C3 G3 |
+}
+
+Song mySong = [mySection]
+String[] names = (sectionSequences mySong "mySection")
+(print (str names))     Note: ["lead", "bass"]
+```
+
+An unknown section name returns an empty array with a one-shot `[sectionSequences]` advisory rather than erroring.
 
 ### str
 
@@ -103,6 +178,9 @@ Convert a song or section to its string representation:
 ```flow
 use "@std"
 
+section intro { Sequence mel = | C4 E4 G4 C5 | }
+section verse { Sequence mel = | E4 E4 F4 G4 | }
+Song mySong = [intro verse]
 (print (str mySong))
 ```
 
@@ -125,8 +203,8 @@ tempo 120 {
             }
 
             Song song = [intro chorus]
-            Buffer buf = (renderSong song "piano")
-            (exportWav buf "song.wav")
+            Buffer audio = (renderSong song "piano")
+            (writeWav "song.wav" audio)
         }
     }
 }
@@ -182,8 +260,8 @@ tempo 120 {
 
             Song fullSong = [intro verse*2 chorus bridge outro]
             Buffer rendered = (renderSong fullSong "piano")
-            Buffer final = rendered -> fadeIn 0.3 -> fadeOut 0.5
-            (exportWav final "full_song.wav")
+            Buffer final = rendered -> fadeIn 0.3s -> fadeOut 0.5s
+            (writeWav "full_song.wav" final)
             (print "Song exported!")
         }
     }
@@ -201,7 +279,18 @@ tempo 120 {
 A `Song` can also be exported to a Standard MIDI File, preserving tempo, time signature, and key:
 
 ```flow
-(writeMidi "my_song.mid" fullSong)
+use "@audio"
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            section intro { Sequence mel = | C4 E4 G4 C5 | }
+            section verse { Sequence lead = | E4 E4 F4 G4 | }
+            Song fullSong = [intro verse*2]
+            (writeMidi "my_song.mid" fullSong)
+        }
+    }
+}
 ```
 
 See [Playback and Export](Playback-and-Export.md).

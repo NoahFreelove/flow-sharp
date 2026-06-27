@@ -1,0 +1,31 @@
+Note: @patterns stdlib module
+Note: 13 Tidal-style combinators on Sequence.
+Note: All routed through C# PatternFunctions; lambda-required for transform-arg
+Note: combinators; cycle unit is bars for every/chunk/phase;
+Note: stochastic combinators (sometimes/degrade/sparseSeq) flow PRNG through
+Note: ExecutionContext.PrngRegistry.
+
+Note: `fn` is a reserved lambda keyword in Flow — use `cb` (callback) as the
+Note: parameter name for transform-arg combinators, matching the convention in
+Note: the existing `(each Dict Function: cb)` / `(map Dict Function: cb)` /
+Note: `(filter Dict Function: pred)` declarations in std.flow.
+
+module patterns
+
+Note: Deterministic combinators (10)
+internal proc every (Int: n, Function: cb, Sequence: seq)
+internal proc fast (Sequence: seq, Double: factor)
+internal proc slow (Sequence: seq, Double: factor)
+internal proc chunk (Int: n, Function: cb, Sequence: seq)
+internal proc phase (Double: offset, Sequence: seq)
+internal proc rev (Sequence: seq)
+internal proc iter (Int: n, Sequence: seq)
+internal proc palindrome (Sequence: seq)
+internal proc jux (Function: cb, Sequence: seq)
+internal proc superimpose (Function: cb, Sequence: seq)
+
+Note: Stochastic combinators (3 + 1 default-prob overload)
+internal proc sometimes (Double: prob, Function: cb, Sequence: seq)
+internal proc sometimes (Function: cb, Sequence: seq)
+internal proc degrade (Sequence: seq)
+internal proc sparseSeq (Double: prob, Sequence: seq)

@@ -1,42 +1,52 @@
-Note: End-to-end test of the pure-Flow test library.
-Note: Exercises passing AND failing cases for every assertion, then calls summary.
+Note: End-to-end test of the @test framework surface (Phase 35 / TEST-01).
+Note:
+Note: Phase 46 (D-07): ported from the removed pure-Flow legacy assertion library
+Note: (assertTrue/assertEqual/runTest/summary) to the canonical @test module.
+Note: The legacy asserts RETURNED Bool and printed PASS/FAIL — the @test asserts
+Note: THROW AssertionException on failure, so every original FAIL case is ported
+Note: as a POSITIVE assertion of the negation via the registered `not` builtin.
+Note:
+Note: Run via `dotnet run --project flow-cli -- test tests/test_test_library.flow`
+Note: to actually EXECUTE the bodies. The legacy `flow-interpreter` path only
+Note: REGISTERS the tests and emits the "ALL TESTS REGISTERED" sentinel.
 
 use "@std"
-use "@collections"
 use "@test"
 
-(print "=== test_test_library.flow ===")
+Note: ===== assert (Bool) =====
+(test "assert true does not throw" lazy((assert true)))
+(test "assert FAIL case inverted" lazy((assert (not false))))
 
-Note: Collect the Bool result of each assertion into a single array.
-Note: 10 PASS cases + 9 FAIL cases = 19 entries total -> summary reports 10 / 9 / 19.
-Bool[] results = (list
-    (assertTrue  true                "assertTrue PASS case")
-    (assertTrue  false               "assertTrue FAIL case (expected FAIL)")
-    (assertFalse false               "assertFalse PASS case")
-    (assertFalse true                "assertFalse FAIL case (expected FAIL)")
-    (assertEqual 2 2                 "assertEqual Int PASS case")
-    (assertEqual 2 3                 "assertEqual Int FAIL case (expected FAIL)")
-    (assertEqual "hi" "hi"           "assertEqual String PASS case")
-    (assertNotEqual 2 3              "assertNotEqual PASS case")
-    (assertNotEqual 2 2              "assertNotEqual FAIL case (expected FAIL)")
-    (assertLess 1 2                  "assertLess PASS case")
-    (assertLess 2 1                  "assertLess FAIL case (expected FAIL)")
-    (assertGreater 5 3               "assertGreater PASS case")
-    (assertGreater 3 5               "assertGreater FAIL case (expected FAIL)")
-    (assertLessOrEqual 2 2           "assertLessOrEqual PASS equal")
-    (assertLessOrEqual 3 2           "assertLessOrEqual FAIL case (expected FAIL)")
-    (assertGreaterOrEqual 2 2        "assertGreaterOrEqual PASS equal")
-    (assertGreaterOrEqual 1 2        "assertGreaterOrEqual FAIL case (expected FAIL)")
-    (assertApproxEqual 1.0 1.0001 0.001 "assertApproxEqual PASS within epsilon")
-    (assertApproxEqual 1.0 1.5    0.001 "assertApproxEqual FAIL outside epsilon (expected FAIL)")
-)
+Note: assertFalse PASS/FAIL ported to (assert (not ...))
+(test "assertFalse PASS case" lazy((assert (not false))))
+(test "assertFalse FAIL case inverted" lazy((assert (not (not true)))))
 
-Note: Exercise the test runner with a zero-arg Function thunk returning a Bool.
-Bool tResult = (test "inline test: 2 + 2 = 4" (fn => (equals (add 2 2) 4)))
-(print (str tResult))
+Note: ===== assertEq (equality) =====
+(test "assertEq Int PASS case" lazy((assertEq 2 2)))
+(test "assertEq Int FAIL case inverted" lazy((assert (not (equals 2 3)))))
+(test "assertEq String PASS case" lazy((assertEq "hi" "hi")))
 
-Note: Tally the collected Bool[]. summary returns true only if every result is true.
-Bool allGreen = (summary results)
-(print (concat "All green? " (str allGreen)))
+Note: assertNotEqual ported to (assert (not (equals ...)))
+(test "assertNotEqual PASS case" lazy((assert (not (equals 2 3)))))
+(test "assertNotEqual FAIL case inverted" lazy((assert (not (not (equals 2 2))))))
 
-(print "=== test_test_library.flow complete ===")
+Note: ===== ordering comparisons =====
+(test "assertLess PASS case" lazy((assert (lt 1 2))))
+(test "assertLess FAIL case inverted" lazy((assert (not (lt 2 1)))))
+(test "assertGreater PASS case" lazy((assert (gt 5 3))))
+(test "assertGreater FAIL case inverted" lazy((assert (not (gt 3 5)))))
+(test "assertLessOrEqual PASS equal" lazy((assert (lte 2 2))))
+(test "assertLessOrEqual FAIL case inverted" lazy((assert (not (lte 3 2)))))
+(test "assertGreaterOrEqual PASS equal" lazy((assert (gte 2 2))))
+(test "assertGreaterOrEqual FAIL case inverted" lazy((assert (not (gte 1 2)))))
+
+Note: ===== approximate equality =====
+Note: |1.0 - 1.0001| <= 0.001 is true (PASS); |1.0 - 1.5| <= 0.001 is false,
+Note: ported as the positive assertion that the diff is GREATER than epsilon.
+(test "assertApprox PASS within epsilon" lazy((assert (lte (abs (sub 1.0 1.0001)) 0.001))))
+(test "assertApprox FAIL outside epsilon inverted" lazy((assert (gt (abs (sub 1.0 1.5)) 0.001))))
+
+Note: ===== inline test (was runTest) =====
+(test "inline test: 2 + 2 = 4" lazy((assertEq (add 2 2) 4)))
+
+(print "ALL TESTS REGISTERED")

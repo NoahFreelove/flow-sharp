@@ -9,5 +9,6 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record InterpolatedStringExpression(
     SourceLocation Location,
-    IReadOnlyList<Expression> Parts
+    IReadOnlyList<Expression> Parts,
+    Span? Span = null
 ) : Expression(Location);

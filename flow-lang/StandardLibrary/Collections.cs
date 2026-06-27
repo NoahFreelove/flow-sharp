@@ -319,7 +319,7 @@ public static class Collections
 
     // ===== Higher-Order Functions =====
 
-    private static Value InvokeCallback(ExecutionContext context, FunctionOverload callback, List<Value> args)
+    private static Value InvokeCallback(ExecutionContext context, FunctionOverload callback, IReadOnlyList<Value> args)
     {
         if (callback.IsInternal) return callback.Implementation!(args);
         return context.Invoker!.ExecuteUserFunctionWithCaptures(callback.Declaration!, args, callback.CapturedVariables);
@@ -330,9 +330,12 @@ public static class Collections
         var arr = args[0].As<IReadOnlyList<Value>>();
         var callback = args[1].As<FunctionOverload>();
 
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[1];
         foreach (var element in arr)
         {
-            InvokeCallback(context, callback, new List<Value> { element });
+            buffer[0] = element;
+            InvokeCallback(context, callback, buffer);
         }
 
         return Value.Void();
@@ -344,9 +347,12 @@ public static class Collections
         var callback = args[1].As<FunctionOverload>();
 
         var results = new List<Value>();
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[1];
         foreach (var element in arr)
         {
-            results.Add(InvokeCallback(context, callback, new List<Value> { element }));
+            buffer[0] = element;
+            results.Add(InvokeCallback(context, callback, buffer));
         }
 
         if (results.Count == 0)
@@ -365,9 +371,12 @@ public static class Collections
         var callback = args[1].As<FunctionOverload>();
 
         var results = new List<Value>();
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[1];
         foreach (var element in arr)
         {
-            var result = InvokeCallback(context, callback, new List<Value> { element });
+            buffer[0] = element;
+            var result = InvokeCallback(context, callback, buffer);
             if (result.As<bool>())
                 results.Add(element);
         }
@@ -379,6 +388,35 @@ public static class Collections
         return Value.Array(results, elementType);
     }
 
+    /// <summary>
+    /// Combines two arrays into an array of 2-tuples, stopping at the shorter
+    /// length (charitable on mismatched lengths — no error, the extra tail is
+    /// simply dropped). Each element is a <c>&lt;&lt;a@i, b@i&gt;&gt;</c> tuple.
+    /// </summary>
+    public static Value Zip(IReadOnlyList<Value> args)
+    {
+        var a = args[0].As<IReadOnlyList<Value>>();
+        var b = args[1].As<IReadOnlyList<Value>>();
+
+        int n = Math.Min(a.Count, b.Count);
+        var results = new List<Value>(n);
+        for (int i = 0; i < n; i++)
+        {
+            results.Add(Value.Tuple([a[i], b[i]], [a[i].Type, b[i].Type]));
+        }
+
+        // The array element type is the (uniform) tuple type when all pairs share
+        // a shape; otherwise Void[] for the mixed case (mirrors List/Map).
+        if (results.Count == 0)
+            return Value.Array(results, VoidType.Instance);
+
+        var elementType = results[0].Type;
+        if (!results.All(r => r.Type.Equals(elementType)))
+            elementType = VoidType.Instance;
+
+        return Value.Array(results, elementType);
+    }
+
     public static Value Reduce(IReadOnlyList<Value> args, ExecutionContext context)
     {
         var arr = args[0].As<IReadOnlyList<Value>>();
@@ -386,9 +424,13 @@ public static class Collections
         var callback = args[2].As<FunctionOverload>();
 
         var accumulator = initial;
+        // Bundle C: reused per-call buffer (planner-verified safe; args read-only-consumed by InvokeCallback path — see PLAN safety_analysis)
+        var buffer = new Value[2];
         foreach (var element in arr)
         {
-            accumulator = InvokeCallback(context, callback, new List<Value> { accumulator, element });
+            buffer[0] = accumulator;
+            buffer[1] = element;
+            accumulator = InvokeCallback(context, callback, buffer);
         }
 
         return accumulator;

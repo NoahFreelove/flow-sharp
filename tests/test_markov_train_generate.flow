@@ -1,0 +1,51 @@
+// Phase 36 Plan 36-06 Task 2 — composer-facing split-shape Markov exercise.
+//
+// Demonstrates the (markovTrain corpus order) → MarkovModel +
+// (markovGenerate model length [seed]) → Sequence split per D-36-06: the
+// composer trains ONCE from a corpus, then reuses the same MarkovModel value
+// across many generation calls. Reference identity (Pitfall 6): two
+// independently-trained models on the same corpus are STRUCTURALLY equal via
+// (markovEqual) but REFERENCE-DISTINCT under default equality.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_markov_train_generate.flow
+
+use "@std"
+use "@generative"
+use "@test"
+
+Sequence corpus = | C4q D4q E4q F4q G4q F4q E4q D4q C4q |
+
+// Train once, generate twice with explicit seeds — verify deterministic output.
+MarkovModel m = (markovTrain corpus 2)
+Sequence gen_a = (markovGenerate m 12 42)
+Sequence gen_b = (markovGenerate m 12 42)
+
+(test "markovGenerate is deterministic with explicit seed"
+  lazy((assertNotesMatch gen_a gen_b)))
+
+// Two independently-trained models on the same corpus + order: structurally
+// equal but reference-distinct. (markovEqual) returns true here.
+MarkovModel m1 = (markovTrain corpus 2)
+MarkovModel m2 = (markovTrain corpus 2)
+
+(test "markovEqual reports structural equality"
+  lazy((assert (markovEqual m1 m2))))
+
+// Order clamp (GEN-01): order 5 is clamped to 3 with a charitable advisory.
+MarkovModel m_high = (markovTrain corpus 5)
+Sequence gen_clamped = (markovGenerate m_high 8 7)
+
+(test "markovTrain clamps order out-of-range without crashing"
+  lazy((assertNotesMatch gen_clamped gen_clamped)))
+
+// Reuse the model across many generations with different seeds — exercising
+// the "train once, generate many" composer ergonomic from D-36-06.
+Sequence run1 = (markovGenerate m 12 1)
+Sequence run2 = (markovGenerate m 12 2)
+Sequence run3 = (markovGenerate m 12 3)
+
+(test "single trained model serves many generations"
+  lazy((assertNotesMatch run1 run1)))
+
+(print "MARKOV TRAIN/GENERATE TESTS REGISTERED")

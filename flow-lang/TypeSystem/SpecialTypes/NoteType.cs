@@ -196,6 +196,11 @@ public sealed class NoteType : FlowType
 
 /// <summary>
 /// Articulation affects how a note's envelope is shaped.
+/// Phase 28 (SPEC-3): Legato is a first-class articulation value here, separate from the
+/// Phase 22 legato() transform which adjusts DurationOverlap. The Articulation.Legato value
+/// is what `leg` after a note in a `|...|` stream produces; renderers extend its sounding
+/// duration ~110% with a soft crossfade (BarRenderer applies the duration multiplier; per-synth
+/// envelopes apply the soft release).
 /// </summary>
 public enum Articulation
 {
@@ -204,7 +209,8 @@ public enum Articulation
     Tenuto,     // Full sustain, held to full value
     Marcato,    // Accented + slightly shortened
     Accent,     // Velocity bump, normal duration
-    Sforzando   // Sudden loud spike, then return to previous dynamic
+    Sforzando,  // Sudden loud spike, then return to previous dynamic
+    Legato      // Phase 28: extended duration (~110%) with soft crossfade into next note
 }
 
 /// <summary>
@@ -320,45 +326,80 @@ public class MusicalNoteData
         double? onsetOffset = null,
         double? durationOverlap = null,
         double? portamentoMs = null,
-        double? velocity = null)              // PHASE 25 (DEFER-06): velocity slot
+        double? velocity = null,              // PHASE 25 (DEFER-06): velocity slot
+        // Audit 2026-06-09 §4.2 pitch + duration slots: transforms that rebuild
+        // notes (transpose / invert / augment / diminish / trill / tremolo /
+        // fermata / repeat-transpose) used to call the 12-arg ctor and silently
+        // drop the trailing five fields (IsChordTone / DurationFraction /
+        // OnsetOffset / DurationOverlap / PortamentoMs) — re-arpeggiating chord
+        // brackets, flattening tuplets, undoing quantize/legato/portamento.
+        // Routing every rebuild through With(…) preserves untouched fields by
+        // construction. Each slot is null = "keep existing"; pass a value to
+        // override. (CentOffset is itself nullable, so the null-means-keep
+        // convention can't clear it to null — no transform needs that.)
+        char? noteName = null,
+        int? octave = null,
+        int? alteration = null,
+        int? durationValue = null,
+        double? centOffset = null,
+        Articulation? articulation = null,
+        bool? isDotted = null,
+        bool? isTied = null,
+        FlowLang.TypeSystem.Fraction? durationFraction = null,
+        bool? isChordTone = null)
     {
         return new MusicalNoteData(
-            NoteName, Octave, Alteration, DurationValue, IsRest,
-            CentOffset, IsTied,
+            noteName ?? NoteName,
+            octave ?? Octave,
+            alteration ?? Alteration,
+            durationValue ?? DurationValue,
+            IsRest,
+            centOffset ?? CentOffset,
+            isTied ?? IsTied,
             velocity ?? Velocity,             // PHASE 25 (DEFER-06): velocity override
-            Articulation, IsDotted,
-            SourceLocation, SourceLength, DurationFraction,
+            articulation ?? Articulation,
+            isDotted ?? IsDotted,
+            SourceLocation, SourceLength,
+            durationFraction ?? DurationFraction,
             onsetOffset: onsetOffset ?? OnsetOffset,
             durationOverlap: durationOverlap ?? DurationOverlap,
             portamentoMs: portamentoMs ?? PortamentoMs,
-            isChordTone: IsChordTone);
+            isChordTone: isChordTone ?? IsChordTone);
     }
 
     /// <summary>
-    /// Calculates the duration of this note in beats based on the time signature denominator.
+    /// Calculates the duration of this note in QUARTER-NOTE units.
+    ///
+    /// sweep-0614: this returns quarter-note units (1 quarter = 1.0), NOT
+    /// denominator-unit beats. Every wall-clock (SynthUtils.BeatsToSeconds,
+    /// SongRenderer.secondsPerBeat) and tick (MidiExport ticksPerQuarter)
+    /// conversion treats BPM as quarters-per-minute, so GetBeats MUST be
+    /// quarter-relative for non-4/4 meters to render at the correct speed.
+    /// (Prior to this fix the power-of-2 path returned denominator-units, which
+    /// is accidentally correct only for 4/4 — 6/8 rendered 2× too slow, 2/2 2×
+    /// too fast.) The <paramref name="timeSigDenominator"/> parameter is retained
+    /// for signature compatibility but no longer scales the result: a quarter note
+    /// is 1.0 quarters in every meter.
     /// </summary>
     public double GetBeats(int timeSigDenominator)
     {
         if (DurationFraction.HasValue)
         {
-            // FRAC-02 rational override path. DurationFraction is in quarter-note units
-            // (music21 convention). Convert to beats for the active time signature:
-            //   beats = quarterNotes × (timeSigDenominator / 4)
-            // Per D-USER-01: keep existing GetBeats signature (double); sibling
-            // GetBeatsFraction deferred to Phase 19 if needed.
-            // Per D-USER-04: this branch is DORMANT in Phase 18 (no code path sets
-            // DurationFraction yet). Wired-but-unreached.
+            // FRAC-02 rational override path. DurationFraction is already stored in
+            // quarter-note units (music21 convention; e.g. a tuplet leaf of 2/3
+            // quarter). Quarter-units is exactly what every consumer now expects,
+            // so return it verbatim — no per-meter rescale.
             var f = DurationFraction.Value;
-            return (double)f.Num * timeSigDenominator / (f.Denom * 4.0);
+            return (double)f.Num / f.Denom;
         }
 
-        // Existing power-of-2 path — UNCHANGED from pre-Phase-18.
         if (!DurationValue.HasValue)
-            return 1.0; // Default to 1 beat if no duration specified
+            return 1.0; // Default to 1 quarter if no duration specified
 
+        // ToFraction is fraction-of-a-WHOLE-note (quarter=0.25); × 4 → quarter-units.
         double fraction = NoteValueType.ToFraction((NoteValueType.Value)DurationValue.Value);
         if (IsDotted) fraction *= 1.5;
-        return fraction * timeSigDenominator;
+        return fraction * 4.0;
     }
 
     public override string ToString()

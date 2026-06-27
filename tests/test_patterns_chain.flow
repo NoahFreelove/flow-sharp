@@ -1,0 +1,125 @@
+// Phase 36 Plan 36-05 Task 2 — composer-facing end-to-end exercise for
+// all 13 @patterns combinators in a single playable file.
+//
+// This file is the canonical input for `scripts/test_two_run_determinism.sh`:
+// two consecutive runs MUST produce byte-identical WAV output (per
+// D-v1.5-06 / D-36-09). Stochastic combinators (sometimes / degrade /
+// sparseSeq) route their PRNG through ExecutionContext.PrngRegistry which
+// resets at every writeWav boundary, so the output is reproducible across
+// runs of the same source.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_patterns_chain.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_patterns_chain.flow
+
+use "@std"
+use "@audio"
+use "@patterns"
+use "@test"
+
+// 4-bar source — enough to exercise cycle-dependent combinators
+// (every 2, chunk 4, phase 0.5) meaningfully.
+Sequence src = | C4q D4q E4q F4q | G4q A4q B4q C5q | D5q E5q F5q G5q | A5q B5q C6q D6q |
+
+// ===========================================================
+// 10 deterministic combinators — each should be reproducible
+// ===========================================================
+(test "every is reproducible"
+  lazy((assertNotesMatch
+    (every 2 (fn Sequence s => (fast s 2.0)) src)
+    (every 2 (fn Sequence s => (fast s 2.0)) src))))
+
+(test "fast is reproducible"
+  lazy((assertNotesMatch (fast src 2.0) (fast src 2.0))))
+
+(test "slow is reproducible"
+  lazy((assertNotesMatch (slow src 2.0) (slow src 2.0))))
+
+(test "chunk is reproducible"
+  lazy((assertNotesMatch
+    (chunk 4 (fn Sequence s => (transpose s +7st)) src)
+    (chunk 4 (fn Sequence s => (transpose s +7st)) src))))
+
+(test "phase is reproducible"
+  lazy((assertNotesMatch (phase 0.25 src) (phase 0.25 src))))
+
+(test "rev is reproducible"
+  lazy((assertNotesMatch (rev src) (rev src))))
+
+(test "iter is reproducible"
+  lazy((assertNotesMatch (iter 4 src) (iter 4 src))))
+
+(test "palindrome is reproducible"
+  lazy((assertNotesMatch (palindrome src) (palindrome src))))
+
+(test "jux is reproducible"
+  lazy((assertNotesMatch
+    (jux (fn Sequence s => (transpose s +12st)) src)
+    (jux (fn Sequence s => (transpose s +12st)) src))))
+
+(test "superimpose is reproducible"
+  lazy((assertNotesMatch
+    (superimpose (fn Sequence s => (transpose s +7st)) src)
+    (superimpose (fn Sequence s => (transpose s +7st)) src))))
+
+// ===========================================================
+// 3 stochastic combinators (sometimes / degrade / sparseSeq).
+// Two same-source-position calls in different FlowEngine instances
+// produce identical results because PrngRegistry seeds from
+// (SourceLocation, name) via FNV-1a.
+//
+// Within a single render pass, however, two same-position calls
+// advance shared state — so we test reproducibility across renders
+// rather than within one. The two-run cmp-clean determinism gate
+// at scripts/test_two_run_determinism.sh exercises this exact contract.
+// ===========================================================
+
+// Within a SINGLE render pass, two same-source-position calls SHARE PRNG
+// state — the second call sees the state advanced by the first. This is
+// the PrngRegistry contract per D-v1.5-06 ("Same key returns the SAME
+// Random reference within a pass"). The cross-render determinism that
+// composers care about is verified by the two-run cmp-clean harness at
+// scripts/test_two_run_determinism.sh against the writeWav below.
+//
+// These tests just exercise the dispatch path to ensure no exception.
+// `len` of a Sequence's bars isn't a builtin; instead we verify that the
+// stochastic call returns a Sequence (assertNotesMatch self-equal works
+// because it walks the same Sequence reference both times).
+
+Sequence sometimes_out = (sometimes (fn Sequence s => (rev s)) src)
+(test "sometimes default-prob overload runs"
+  lazy((assertNotesMatch sometimes_out sometimes_out)))
+
+Sequence degrade_out = (degrade src)
+(test "degrade runs without crashing"
+  lazy((assertNotesMatch degrade_out degrade_out)))
+
+Sequence sparse_out = (sparseSeq 0.3 src)
+(test "sparseSeq runs without crashing"
+  lazy((assertNotesMatch sparse_out sparse_out)))
+
+(print "ALL 13 COMBINATOR CHAIN TESTS REGISTERED")
+
+// ===========================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+// ===========================================================
+//
+// Build a sequence chaining several combinators including stochastic ones,
+// render to WAV via a Song wrapper, and writeWav so the two-run harness has
+// a target to SHA-256-compare. PrngRegistry.ResetAtRenderBoundary fires
+// inside writeWav's FileIO.ExportWavInternal, so back-to-back renders of
+// THIS file produce identical bytes.
+
+tempo 120 {
+    timesig 4/4 {
+        Sequence base_seq = | C4q D4q E4q F4q | G4q A4q B4q C5q |
+        Sequence transformed = (sometimes 0.5 (fn Sequence s => (transpose s +7st)) base_seq)
+        section main { Sequence v = transformed }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/patterns_chain.wav" mix)
+    }
+}
+

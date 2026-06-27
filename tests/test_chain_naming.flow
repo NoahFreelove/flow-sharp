@@ -1,0 +1,35 @@
+// Phase 35 Plan 35-07 — composer-facing acceptance for `-> CALL as name`
+// chain-naming (LANG-03).
+//
+// Exercises the new `as NAME` annotation on flow-chain steps. Per Pitfall 7
+// the bound name is visible in the CURRENT frame from the point of
+// declaration onward — subsequent `->` steps in the same chain read it,
+// and the next statement in the same block reads it.
+//
+// Per RESEARCH Open Question 5: `as` is right-associative with `->`. The
+// only supported keyword sequence is `EXPR -> CALL as NAME -> ...`;
+// parenthesized form `(EXPR as NAME)` is NOT supported in v1.5.
+//
+// USAGE (Plan 35-04 framework — bodies deferred via lazy):
+//   $ dotnet run --project flow-cli -- test tests/test_chain_naming.flow
+//   PASS  ...::single as-clause binds intermediate value
+//   PASS  ...::multi as-clause chain binds all names
+//   PASS  ...::as-binding visible to next same-block statement
+
+use "@std"
+use "@test"
+
+(test "single as-clause binds intermediate value"
+  lazy((assertEq 20 (5 -> (mul 2) as doubled -> (add doubled)))))
+
+(test "multi as-clause chain binds all names"
+  lazy((assertEq 30
+                 (5 -> (mul 2) as doubled
+                    -> (add doubled) as quadrupled
+                    -> (add 10)))))
+
+(test "as-binding visible to next same-block statement"
+  lazy((assertEq 10
+                 (5 -> (mul 2) as doubled))))
+
+(print "ALL CHAIN-NAMING TESTS REGISTERED")

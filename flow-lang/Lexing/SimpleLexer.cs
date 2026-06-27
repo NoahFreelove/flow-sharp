@@ -21,6 +21,27 @@ public class SimpleLexer
     private readonly Queue<Token> _pendingTokens = new();
     private TokenType? _lastEmittedType = null;   // Phase 26 D-04
 
+    // Phase 41 (DOC-01, D-07): `///` doc-comment capture. Additive to `//` — see
+    // SkipWhitespaceAndComments. The captured text (leading `///` + one optional
+    // space stripped, contiguous `///` lines `\n`-joined) accumulates here; the
+    // Tokenize loop emits a single out-of-band DocComment token per contiguous
+    // block at the block's source location, which the Parser binds to the
+    // following proc. The most-recent captured block is also exposed read-only via
+    // PendingDocComment for the DOC-01 lexer contract test. `//` line comments and
+    // `/* */` (which Flow lexes as Slash/Star tokens) are untouched.
+    private StringBuilder? _docCommentBuilder = null;
+    private SourceLocation _docCommentStart = SourceLocation.Unknown;
+    private bool _docCommentPending = false;
+
+    /// <summary>
+    /// Phase 41 (DOC-01): the text of the most-recently captured <c>///</c>
+    /// doc-comment block (leading <c>///</c> + one optional space stripped,
+    /// contiguous lines newline-joined), or <c>null</c> if no <c>///</c> has been
+    /// lexed. Read-only side-channel for the doc-comment lexer contract; the
+    /// Parser binds via the in-stream <see cref="TokenType.DocComment"/> token.
+    /// </summary>
+    public string? PendingDocComment { get; private set; }
+
     public SimpleLexer(string source, ErrorReporter errorReporter, string? fileName = null,
                        PragmaSet? pragmaSet = null)
     {
@@ -39,6 +60,23 @@ public class SimpleLexer
         while (!IsAtEnd())
         {
             SkipWhitespaceAndComments();
+
+            // Phase 41 (DOC-01): a contiguous `///` block is fully consumed inside
+            // the SkipWhitespaceAndComments call above (its while-loop walks the
+            // newline whitespace between `///` lines). Flush it as ONE out-of-band
+            // DocComment token whose location is the first `///` line, so the Parser
+            // can bind it to the following proc (or charitably drop it).
+            if (_docCommentPending && _docCommentBuilder != null)
+            {
+                string docText = _docCommentBuilder.ToString();
+                PendingDocComment = docText;
+                tokens.Add(new Token(TokenType.DocComment, docText, _docCommentStart,
+                                     Span: Span.At(_docCommentStart)));
+                _lastEmittedType = TokenType.DocComment;
+                _docCommentBuilder = null;
+                _docCommentPending = false;
+            }
+
             if (IsAtEnd()) break;
 
             var token = NextToken();
@@ -49,7 +87,9 @@ public class SimpleLexer
             }
         }
 
-        tokens.Add(new Token(TokenType.Eof, "", new SourceLocation(_line, _column, _fileName)));
+        // Phase 35 LANG-04 Wave 1: EOF is zero-width at the post-source position.
+        var eofLoc = new SourceLocation(_line, _column, _fileName);
+        tokens.Add(new Token(TokenType.Eof, "", eofLoc, Span: Span.At(eofLoc)));
         return tokens;
     }
 
@@ -68,7 +108,7 @@ public class SimpleLexer
             Advance();
             Advance();
             Advance();
-            return new Token(TokenType.Ellipsis, "...", start);
+            return new Token(TokenType.Ellipsis, "...", start, Span: new Span(start, CurrentLocation()));
         }
 
         // Two-character operators
@@ -76,7 +116,7 @@ public class SimpleLexer
         {
             Advance();
             Advance();
-            return new Token(TokenType.Arrow, "->", start);
+            return new Token(TokenType.Arrow, "->", start, Span: new Span(start, CurrentLocation()));
         }
 
         // Phase 26.1 TUP-10: TildeArrow `~>` (tuple-unpack flow operator).
@@ -89,7 +129,7 @@ public class SimpleLexer
         {
             Advance();
             Advance();
-            return new Token(TokenType.TildeArrow, "~>", start);
+            return new Token(TokenType.TildeArrow, "~>", start, Span: new Span(start, CurrentLocation()));
         }
 
         // Check for special literals that start with +/- before treating them as operators
@@ -137,7 +177,7 @@ public class SimpleLexer
                 {
                     Advance();
                     Advance();
-                    return new Token(TokenType.FatArrow, "=>", start);
+                    return new Token(TokenType.FatArrow, "=>", start, Span: new Span(start, CurrentLocation()));
                 }
                 return SingleChar(TokenType.Assign);
             case '.': return SingleChar(TokenType.Dot);
@@ -155,9 +195,27 @@ public class SimpleLexer
             case '|': return SingleChar(TokenType.Pipe);
             case '~': return SingleChar(TokenType.Tilde);
             case '_':
-                // Standalone underscore is a rest token; if followed by word characters it's part of an identifier
-                if (IsAtEnd() || !char.IsLetterOrDigit(PeekNext()))
+                // Standalone underscore is a rest token; if followed by word
+                // characters OR another underscore (e.g. `__enableSfzModule` per
+                // Phase 33 internal-marker naming) it's part of an identifier.
+                if (IsAtEnd() || (!char.IsLetterOrDigit(PeekNext()) && PeekNext() != '_'))
                     return SingleChar(TokenType.Underscore);
+                // sweep-0614: rest-with-duration-suffix `_q`/`_h`/`_e`/`_w`/`_s`/`_t`.
+                // Notes attach their duration directly (`C4q`), so a composer
+                // naturally writes `_q` for a quarter rest. Emit a standalone
+                // Underscore (consuming ONLY the `_`) when it is followed by EXACTLY
+                // one duration-suffix letter that does not begin a longer word — the
+                // suffix re-scans as its own Identifier token so the existing
+                // RestElement path (Parser.NoteStream.cs:90-96 → TryParseDurationSuffix)
+                // picks it up. This mirrors the suffix-split applied to note literals
+                // at ScanNumberOrSpecialLiteral. The `__`-prefixed internal-marker
+                // carve-out above still fires first (PeekNext() == '_').
+                if (IsRestDurationLetter(PeekNext()))
+                {
+                    char afterSuffix = _position + 2 < _source.Length ? _source[_position + 2] : '\0';
+                    if (afterSuffix == '\0' || (!char.IsLetterOrDigit(afterSuffix) && afterSuffix != '_'))
+                        return SingleChar(TokenType.Underscore);
+                }
                 break; // Fall through to identifier scanning
             case ',': return SingleChar(TokenType.Comma);
             case ';': return SingleChar(TokenType.Semicolon);
@@ -177,7 +235,7 @@ public class SimpleLexer
                 }
                 if (sb.Length == 0)
                     throw new Exception($"Expected identifier after '#' at {start}");
-                return new Token(TokenType.SymbolLiteral, sb.ToString(), start);
+                return new Token(TokenType.SymbolLiteral, sb.ToString(), start, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -192,11 +250,20 @@ public class SimpleLexer
         throw new Exception($"Unexpected end of input at {start}");
     }
 
+    // sweep-0614: the note-stream duration-suffix letters (Parser.NoteStream.cs
+    // TryParseDurationSuffix accepts w/h/q/e/s/t/x/y). Used by the `_q`-rest split
+    // in the `_` lexer arm. Restricted to the single-letter forms a composer would
+    // attach to a rest; `x`/`y` are included for parity with TryParseDurationSuffix.
+    private static bool IsRestDurationLetter(char ch) =>
+        ch is 'w' or 'h' or 'q' or 'e' or 's' or 't' or 'x' or 'y';
+
     private Token SingleChar(TokenType type)
     {
         var start = new SourceLocation(_line, _column, _fileName);
         char c = Advance();
-        return new Token(type, c.ToString(), start);
+        // Phase 35 LANG-04 Wave 1: single-char tokens use a zero-width Span.At(start)
+        // per PATTERNS.md Bucket 1 § SimpleLexer.cs note (single-char SingleChar arm).
+        return new Token(type, c.ToString(), start, Span: Span.At(start));
     }
 
     private Token ScanString(SourceLocation start)
@@ -232,13 +299,13 @@ public class SimpleLexer
         {
             _errorReporter.ReportError("Unterminated string literal", start);
             var partialValue = sb.ToString();
-            return new Token(TokenType.StringLiteral, $"\"{partialValue}\"", start, partialValue);
+            return new Token(TokenType.StringLiteral, $"\"{partialValue}\"", start, partialValue, Span: new Span(start, CurrentLocation()));
         }
 
         Advance(); // Skip closing quote
 
         var value = sb.ToString();
-        return new Token(TokenType.StringLiteral, $"\"{value}\"", start, value);
+        return new Token(TokenType.StringLiteral, $"\"{value}\"", start, value, Span: new Span(start, CurrentLocation()));
     }
 
     private Token ScanInterpolatedString(SourceLocation start)
@@ -247,7 +314,8 @@ public class SimpleLexer
         Advance(); // Skip '"'
 
         var tokens = new List<Token>();
-        tokens.Add(new Token(TokenType.InterpolatedStringStart, "$\"", start));
+        // Phase 35 LANG-04: `$"` delimiter is 2 chars; capture end at current pos.
+        tokens.Add(new Token(TokenType.InterpolatedStringStart, "$\"", start, Span: new Span(start, CurrentLocation())));
 
         var textSb = new StringBuilder();
 
@@ -277,8 +345,9 @@ public class SimpleLexer
                 if (textSb.Length > 0)
                 {
                     var textValue = textSb.ToString();
+                    var textTokLoc = new SourceLocation(_line, _column, _fileName);
                     tokens.Add(new Token(TokenType.InterpolatedStringText, textValue,
-                        new SourceLocation(_line, _column, _fileName), textValue));
+                        textTokLoc, textValue, Span: Span.At(textTokLoc)));
                     textSb.Clear();
                 }
 
@@ -324,15 +393,17 @@ public class SimpleLexer
         if (textSb.Length > 0)
         {
             var textValue = textSb.ToString();
+            var textTokLoc = new SourceLocation(_line, _column, _fileName);
             tokens.Add(new Token(TokenType.InterpolatedStringText, textValue,
-                new SourceLocation(_line, _column, _fileName), textValue));
+                textTokLoc, textValue, Span: Span.At(textTokLoc)));
         }
 
         if (!IsAtEnd())
             Advance(); // Skip closing '"'
 
+        var endTokLoc = new SourceLocation(_line, _column, _fileName);
         tokens.Add(new Token(TokenType.InterpolatedStringEnd, "\"",
-            new SourceLocation(_line, _column, _fileName)));
+            endTokLoc, Span: Span.At(endTokLoc)));
 
         // Return the first token, enqueue the rest
         for (int i = 1; i < tokens.Count; i++)
@@ -361,17 +432,18 @@ public class SimpleLexer
             }
 
             var floatValue = double.Parse(sb.ToString(), System.Globalization.CultureInfo.InvariantCulture);
-            return new Token(TokenType.FloatLiteral, sb.ToString(), start, floatValue);
+            return new Token(TokenType.FloatLiteral, sb.ToString(), start, floatValue, Span: new Span(start, CurrentLocation()));
         }
 
         // Phase 26: int-overflow → long-overflow → BigInteger fallthrough.
         string text = sb.ToString();
         if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int intValue))
-            return new Token(TokenType.IntLiteral, text, start, intValue);
+            return new Token(TokenType.IntLiteral, text, start, intValue, Span: new Span(start, CurrentLocation()));
         if (long.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long longValue))
-            return new Token(TokenType.IntLiteral, text, start, longValue);
+            return new Token(TokenType.IntLiteral, text, start, longValue, Span: new Span(start, CurrentLocation()));
         return new Token(TokenType.IntLiteral, text, start,
-            System.Numerics.BigInteger.Parse(text, System.Globalization.CultureInfo.InvariantCulture));
+            System.Numerics.BigInteger.Parse(text, System.Globalization.CultureInfo.InvariantCulture),
+            Span: new Span(start, CurrentLocation()));
     }
 
     /// <summary>
@@ -431,14 +503,19 @@ public class SimpleLexer
             // a tuple literal can legitimately follow any music-typed value-end (e.g. `<<800Hz, 1200Hz>>`).
             or TokenType.HertzLiteral
             or TokenType.TimeLiteral or TokenType.DecibelLiteral
-            or TokenType.CentLiteral or TokenType.SemitoneLiteral;
+            or TokenType.CentLiteral or TokenType.SemitoneLiteral
+            // Phase 45 D-09 — Nb beat literal is a music-literal value-end too; a tuple
+            // literal can close immediately after it (e.g. `<<C4, 0.5b>>`). Without this,
+            // the trailing `>>` falls through to two single `>` tokens and the tuple
+            // never closes. Mirrors the Cent/Time/Decibel/Hertz/Semitone entries above.
+            or TokenType.BeatLiteral;
         if (!isExprStart) return null;
 
         Advance(); // consume first char
         Advance(); // consume second char
         var tt = c == '<' ? TokenType.LessLess : TokenType.GreaterGreater;
         var lex = c == '<' ? "<<" : ">>";
-        return new Token(tt, lex, start);
+        return new Token(tt, lex, start, Span: new Span(start, CurrentLocation()));
     }
 
     private Token? TryLexSignedNumber(SourceLocation start)
@@ -454,6 +531,13 @@ public class SimpleLexer
             or TokenType.Comma
             or TokenType.LBracket
             or TokenType.Arrow
+            // Phase 36 Plan 36-02 (D-36-11) — named-arg negative-literal support.
+            // The named-arg call form `(fn arg=-5)` places `-5` immediately after
+            // the Assign token; TokenType.Assign was already in this set as of
+            // Phase 26 D-04 for variable-declaration initializers (`Int x = -5`),
+            // so named-arg `arg=-5` lexes the negative as a single signed
+            // IntLiteral with no additional change to the lexer — verified by
+            // NamedArgsParserTests.NegativeLiteralAfterAssign.
             or TokenType.Assign
             or TokenType.Pipe
             or TokenType.Semicolon
@@ -461,7 +545,38 @@ public class SimpleLexer
             // (`5 -> add -3`) places `-3` after Identifier(add) — argument-start
             // position. Including Identifier here lets `func -3` lex as a single
             // signed token so it can flow through ParsePrimary's optional-paren-args.
-            or TokenType.Identifier;
+            or TokenType.Identifier
+            // Phase 35 Plan 35-05 (LANG-01): `(match -5 | ... )` places `-5`
+            // right after the `match` keyword (scrutinee position). Similarly,
+            // `n when -5` could surface a signed literal in a guard, though
+            // less common. Both keywords are added to the expression-start
+            // set so the lexer produces a single signed-IntLiteral token.
+            or TokenType.Match
+            or TokenType.When
+            // sweep-0614: value-end tokens. A space-separated arg list places a
+            // negative literal directly after the PREVIOUS argument's value-end
+            // token, e.g. `(add 5 -3)` (after IntLiteral), `(transpose C4 -2)`
+            // (after NoteLiteral), `(transpose (| C4 D4 |) -2)` (after RParen),
+            // and the documented negative index `xs@-1` (after At). Phase 26
+            // removed infix arithmetic — ParseFlowExpression only matches
+            // Arrow/TildeArrow, never Minus — so there is no infix-subtraction
+            // ambiguity to protect against. Music-context sign paths
+            // (tempo/swing/pan/gain/reverbTime) follow their KEYWORD token, not a
+            // value-end token, so their dedicated Match(Minus) parsers are
+            // unaffected. Typed-literal forms (`-3dB`/`+50c`) are already handled
+            // by TryLookAheadSpecialLiteral (Step 1) before this method runs.
+            or TokenType.IntLiteral
+            or TokenType.FloatLiteral
+            or TokenType.NoteLiteral
+            or TokenType.SemitoneLiteral
+            or TokenType.CentLiteral
+            or TokenType.TimeLiteral
+            or TokenType.DecibelLiteral
+            or TokenType.HertzLiteral
+            or TokenType.BeatLiteral
+            or TokenType.ChordLiteral
+            or TokenType.RParen
+            or TokenType.At;
         if (!isExprStart) return null;
 
         int savePos = _position;
@@ -492,15 +607,15 @@ public class SimpleLexer
 
         string text = sb.ToString();
         if (isFloat && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dval))
-            return new Token(TokenType.FloatLiteral, text, start, dval);
+            return new Token(TokenType.FloatLiteral, text, start, dval, Span: new Span(start, CurrentLocation()));
         if (!isFloat)
         {
             if (int.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int ival))
-                return new Token(TokenType.IntLiteral, text, start, ival);
+                return new Token(TokenType.IntLiteral, text, start, ival, Span: new Span(start, CurrentLocation()));
             if (long.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long lval))
-                return new Token(TokenType.IntLiteral, text, start, lval);
+                return new Token(TokenType.IntLiteral, text, start, lval, Span: new Span(start, CurrentLocation()));
             if (System.Numerics.BigInteger.TryParse(text, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var bival))
-                return new Token(TokenType.IntLiteral, text, start, bival);
+                return new Token(TokenType.IntLiteral, text, start, bival, Span: new Span(start, CurrentLocation()));
         }
 
         // Parse failure — rewind so SingleChar(Plus/Minus) gets the chance.
@@ -562,7 +677,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 3);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
             {
-                return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0);  // canonical Hz
+                return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0, Span: new Span(start, CurrentLocation()));  // canonical Hz
             }
         }
 
@@ -576,7 +691,7 @@ public class SimpleLexer
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
             {
-                return new Token(TokenType.HertzLiteral, text, start, hzValue);
+                return new Token(TokenType.HertzLiteral, text, start, hzValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -589,9 +704,27 @@ public class SimpleLexer
 
             // Parse as semitone
             string numberPart = text.Substring(0, text.Length - 2);
-            if (int.TryParse(numberPart, out int semitoneValue))
+            if (int.TryParse(numberPart, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int semitoneValue))
             {
-                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue);
+                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue, Span: new Span(start, CurrentLocation()));
+            }
+        }
+
+        // Try "b" suffix (beat literal — Phase 45 D-06)
+        // Single-char suffix; identifier-guard `!char.IsLetter(PeekNext())`
+        // prevents shadowing of identifiers like `bar` / `beats` / `bpm`
+        // (45-RESEARCH §Pitfall 1).
+        if (!IsAtEnd() && Peek() == 'b' && !char.IsLetter(PeekNext()))
+        {
+            sb.Append(Advance());
+            text = sb.ToString();
+
+            string numberPart = text.Substring(0, text.Length - 1);
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out double beatValue))
+            {
+                return new Token(TokenType.BeatLiteral, text, start, beatValue,
+                                 Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -601,11 +734,12 @@ public class SimpleLexer
             sb.Append(Advance());
             text = sb.ToString();
 
-            // Parse as cent
+            // Parse as cent. InvariantCulture pinned (see ExpressionEvaluator note)
+            // so '.' is the decimal point in every locale, not a thousands group.
             string numberPart = text.Substring(0, text.Length - 1);
-            if (double.TryParse(numberPart, out double centValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
             {
-                return new Token(TokenType.CentLiteral, text, start, centValue);
+                return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -618,9 +752,9 @@ public class SimpleLexer
 
             // Parse as decibel
             string numberPart = text.Substring(0, text.Length - 2);
-            if (double.TryParse(numberPart, out double decibelValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double decibelValue))
             {
-                return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+                return new Token(TokenType.DecibelLiteral, text, start, decibelValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -633,9 +767,9 @@ public class SimpleLexer
 
             // Parse as milliseconds
             string numberPart = text.Substring(0, text.Length - 2);
-            if (double.TryParse(numberPart, out double msValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double msValue))
             {
-                return new Token(TokenType.TimeLiteral, text, start, msValue);
+                return new Token(TokenType.TimeLiteral, text, start, msValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -647,9 +781,9 @@ public class SimpleLexer
 
             // Parse as seconds
             string numberPart = text.Substring(0, text.Length - 1);
-            if (double.TryParse(numberPart, out double sValue))
+            if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double sValue))
             {
-                return new Token(TokenType.TimeLiteral, text, start, sValue);
+                return new Token(TokenType.TimeLiteral, text, start, sValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
@@ -696,7 +830,7 @@ public class SimpleLexer
 
                 if (double.TryParse(numberText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
                 {
-                    return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0);  // canonical Hz
+                    return new Token(TokenType.HertzLiteral, text, start, kHzValue * 1000.0, Span: new Span(start, CurrentLocation()));  // canonical Hz
                 }
             }
             // Phase 26.2 ERG-04: Try "Hz" suffix (2 chars) AFTER kHz
@@ -708,7 +842,7 @@ public class SimpleLexer
 
                 if (double.TryParse(numberText, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
                 {
-                    return new Token(TokenType.HertzLiteral, text, start, hzValue);
+                    return new Token(TokenType.HertzLiteral, text, start, hzValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "ms" suffix (milliseconds)
@@ -719,9 +853,9 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 2);
-                if (double.TryParse(numberPart, out double msValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double msValue))
                 {
-                    return new Token(TokenType.TimeLiteral, text, start, msValue);
+                    return new Token(TokenType.TimeLiteral, text, start, msValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "dB" suffix (decibel) - for unsigned decibels like 0dB
@@ -732,9 +866,9 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 2);
-                if (double.TryParse(numberPart, out double dbValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dbValue))
                 {
-                    return new Token(TokenType.DecibelLiteral, text, start, dbValue);
+                    return new Token(TokenType.DecibelLiteral, text, start, dbValue, Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "c" suffix (cent) - but not if followed by a letter (could be 'c' in a longer identifier)
@@ -744,9 +878,26 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 1);
-                if (double.TryParse(numberPart, out double centValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
                 {
-                    return new Token(TokenType.CentLiteral, text, start, centValue);
+                    return new Token(TokenType.CentLiteral, text, start, centValue, Span: new Span(start, CurrentLocation()));
+                }
+            }
+            // Try "b" suffix (beat literal — Phase 45 D-07)
+            // MUST be `else if` not `if` to preserve order-significant chain.
+            // Identifier-guard `!char.IsLetter(PeekNext())` keeps `1bar` /
+            // `2beats` / `0.5buf` lexing as [digits, identifier].
+            else if (Peek() == 'b' && !char.IsLetter(PeekNext()))
+            {
+                sb.Append(Advance());
+                var text = sb.ToString();
+
+                string numberPart = text.Substring(0, text.Length - 1);
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out double beatValue))
+                {
+                    return new Token(TokenType.BeatLiteral, text, start, beatValue,
+                                     Span: new Span(start, CurrentLocation()));
                 }
             }
             // Try "s" suffix (seconds) - but not if followed by 't'
@@ -756,9 +907,9 @@ public class SimpleLexer
                 var text = sb.ToString();
 
                 string numberPart = text.Substring(0, text.Length - 1);
-                if (double.TryParse(numberPart, out double sValue))
+                if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double sValue))
                 {
-                    return new Token(TokenType.TimeLiteral, text, start, sValue);
+                    return new Token(TokenType.TimeLiteral, text, start, sValue, Span: new Span(start, CurrentLocation()));
                 }
             }
         }
@@ -767,7 +918,7 @@ public class SimpleLexer
         if (numberText.Contains('.'))
         {
             var floatValue = double.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture);
-            return new Token(TokenType.FloatLiteral, numberText, start, floatValue);
+            return new Token(TokenType.FloatLiteral, numberText, start, floatValue, Span: new Span(start, CurrentLocation()));
         }
         else
         {
@@ -777,17 +928,18 @@ public class SimpleLexer
             // throws OverflowException at lex time.
             if (int.TryParse(numberText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int intValue))
             {
-                return new Token(TokenType.IntLiteral, numberText, start, intValue);
+                return new Token(TokenType.IntLiteral, numberText, start, intValue, Span: new Span(start, CurrentLocation()));
             }
             if (long.TryParse(numberText, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out long longValue))
             {
                 // Lex as IntLiteral with a long Value; the parser/evaluator treats
                 // it as a literal whose runtime Value type matches Data's CLR type.
-                return new Token(TokenType.IntLiteral, numberText, start, longValue);
+                return new Token(TokenType.IntLiteral, numberText, start, longValue, Span: new Span(start, CurrentLocation()));
             }
             // Fall back to BigInteger for truly huge literals.
             return new Token(TokenType.IntLiteral, numberText, start,
-                System.Numerics.BigInteger.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture));
+                System.Numerics.BigInteger.Parse(numberText, System.Globalization.CultureInfo.InvariantCulture),
+                Span: new Span(start, CurrentLocation()));
         }
     }
 
@@ -865,12 +1017,20 @@ public class SimpleLexer
             "pan" => TokenType.Pan,
             "gain" => TokenType.Gain,
             "reverbTime" => TokenType.ReverbTime,
+            "voicePool" => TokenType.VoicePool,
+            "sustainPedal" => TokenType.SustainPedal,
+            "tuning" => TokenType.Tuning,
+            "module" => TokenType.Module,         // Phase 43 (D-03) — module <name> top-of-file declaration
+            "live" => TokenType.Live,             // Phase 38 (LIVE-01) — live <quantize> { ... } block (D-38-02)
+            "match" => TokenType.Match,
+            "when" => TokenType.When,
             "pickup" => TokenType.Pickup,
             "for" => TokenType.For,
             "while" => TokenType.While,
             "break" => TokenType.Break,
             "continue" => TokenType.Continue,
             "in" => TokenType.In,
+            "as" => TokenType.As,
             "progression" => TokenType.Progression,
             "Void" => TokenType.Void,
             "Int" => TokenType.Int,
@@ -904,7 +1064,7 @@ public class SimpleLexer
             // fall through the chord check and are picked up by TryParseNote as NoteLiteral(B,7,-1).
             if (ChordParser.IsChordSymbol(text))
             {
-                return new Token(TokenType.ChordLiteral, text, start, text);
+                return new Token(TokenType.ChordLiteral, text, start, text, Span: new Span(start, CurrentLocation()));
             }
 
             // Try to parse as Note (A-G followed by optional octave and alteration)
@@ -916,16 +1076,37 @@ public class SimpleLexer
                 // the authored shape. Token.Text always carries the canonical form
                 // so renderer/MIDI export consume B-rooted notes unchanged.
                 string? originalText = (text != noteValue) ? text : null;
-                return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText);
+                return new Token(TokenType.NoteLiteral, noteValue, start, noteValue, originalText, Span: new Span(start, CurrentLocation()));
             }
 
-            // Check for note + duration suffix (e.g., C4h, D5q, E3w)
-            // The duration suffix (w/h/q/e/s/t) gets consumed as part of the identifier
-            // but should be a separate token for the parser's TryParseDurationSuffix
+            // chord-duration-fusion (feature-addition 0615 #5): a chord name
+            // immediately followed by a single duration letter — Cmaj7q, Dm7e,
+            // F#dim7h, Bb7w — fuses into a ChordLiteral + a separate duration
+            // Identifier, mirroring the note+duration split below (C4q). Greedily
+            // matches the LONGEST valid chord quality, THEN one trailing duration
+            // letter; the optional dot `.` / tie `~` lex as their own tokens, so
+            // the Parser.NoteStream NamedChordElement path (durSuffix → dot → tie)
+            // picks those up unchanged. MUST precede the note+duration split so
+            // the chord reading wins over the exotic "Bb7 = B octave-7 note"
+            // interpretation (CLAUDE.md "Chord literals" lists Bb7 as a chord).
+            // TryMatchChordWithDuration is conservative — empty/bare-digit-without-
+            // accidental qualities (Bbq, G7q, C4q) fall through to the note paths.
+            if (ChordParser.TryMatchChordWithDuration(text, out var chordCore, out _))
+            {
+                // Rewind one char so the trailing duration letter re-scans as its
+                // own Identifier token (same mechanism as the note+duration split).
+                _position--;
+                _column--;
+                return new Token(TokenType.ChordLiteral, chordCore, start, chordCore, Span: new Span(start, CurrentLocation()));
+            }
+
+            // Check for note + duration suffix (e.g., C4h, D5q, E3w, F4x for 64th, G5y for 128th)
+            // The duration suffix gets consumed as part of the identifier but should be a
+            // separate token for the parser's TryParseDurationSuffix.
             if (text.Length >= 3)
             {
                 char lastChar = text[^1];
-                if (lastChar is 'w' or 'h' or 'q' or 'e' or 's' or 't')
+                if (lastChar is 'w' or 'h' or 'q' or 'e' or 's' or 't' or 'x' or 'y')
                 {
                     string notePartText = text[..^1];
                     if (TryParseNote(notePartText, out var notePartValue))
@@ -937,7 +1118,7 @@ public class SimpleLexer
                         // when notePartText ("H4") canonicalizes to notePartValue ("B4"),
                         // preserve the original.
                         string? originalText = (notePartText != notePartValue) ? notePartText : null;
-                        return new Token(TokenType.NoteLiteral, notePartValue, start, notePartValue, originalText);
+                        return new Token(TokenType.NoteLiteral, notePartValue, start, notePartValue, originalText, Span: new Span(start, CurrentLocation()));
                     }
                 }
             }
@@ -945,23 +1126,23 @@ public class SimpleLexer
             // Try to parse as Semitone (+/-Nst)
             if (TryParseSemitone(text, out var semitoneValue))
             {
-                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue);
+                return new Token(TokenType.SemitoneLiteral, text, start, semitoneValue, Span: new Span(start, CurrentLocation()));
             }
 
             // Try to parse as Time (Nms or Ns)
             if (TryParseTime(text, out var timeValue, out var timeUnit))
             {
-                return new Token(TokenType.TimeLiteral, text, start, timeValue);
+                return new Token(TokenType.TimeLiteral, text, start, timeValue, Span: new Span(start, CurrentLocation()));
             }
 
             // Try to parse as Decibel (+/-NdB)
             if (TryParseDecibel(text, out var decibelValue))
             {
-                return new Token(TokenType.DecibelLiteral, text, start, decibelValue);
+                return new Token(TokenType.DecibelLiteral, text, start, decibelValue, Span: new Span(start, CurrentLocation()));
             }
         }
 
-        return new Token(type, text, start, value);
+        return new Token(type, text, start, value, Span: new Span(start, CurrentLocation()));
     }
 
     private bool TryParseNote(string text, out string noteValue)
@@ -1103,6 +1284,23 @@ public class SimpleLexer
             or '<' or '>' or '|' or '~' or '$';
     }
 
+    // Phase 41 (DOC-01, CR-01 fix): drop a pending `///` block that has been
+    // interrupted by a NON-`///` comment line before it could flush as a
+    // DocComment token. A doc-comment only binds to a proc that IMMEDIATELY
+    // follows it; a `///` separated from its proc by any plain comment form
+    // (`//`, `;`, `Note:`, `TODO:`, `FIXME:`) is orphaned and dropped CHARITABLY
+    // (never an error, never mis-bound to a later proc). Contiguous `///` lines
+    // never reach this — the `///` arm in SkipWhitespaceAndComments is checked
+    // first and accumulates them without entering a plain-comment arm.
+    private void DropPendingDocCommentIfInterrupted()
+    {
+        if (_docCommentPending || _docCommentBuilder != null)
+        {
+            _docCommentBuilder = null;
+            _docCommentPending = false;
+        }
+    }
+
     private void SkipWhitespaceAndComments()
     {
         while (!IsAtEnd())
@@ -1132,17 +1330,101 @@ public class SimpleLexer
                 _line--;
                 _column = 1;
             }
+            // Phase 41 (DOC-01, D-07): `///` doc-comment. MUST precede the `//`
+            // arm (Pitfall 1) so `///` is never consumed as a plain line comment.
+            // Mirrors the existing multi-char-before-single-char ordering
+            // (`~>` before `~`, `...` before `..`). Unlike `//`, this CAPTURES the
+            // text (does not merely skip it). Contiguous `///` lines accumulate
+            // newline-joined; the Tokenize loop flushes them as one DocComment token.
+            else if (c == '/' && PeekNext() == '/'
+                     && _position + 2 < _source.Length && _source[_position + 2] == '/')
+            {
+                Advance(); // first  '/'
+                Advance(); // second '/'
+                Advance(); // third  '/'
+
+                // Strip a single leading space if present (the conventional `/// `).
+                if (!IsAtEnd() && Peek() == ' ')
+                    Advance();
+
+                int textStart = _position;
+                while (!IsAtEnd() && Peek() != '\n' && Peek() != '\r')
+                    Advance();
+                // Trim a trailing '\r' region implicitly by stopping at '\r'; the
+                // CRLF newline is consumed on the next loop iteration as whitespace.
+                string line = _source.Substring(textStart, _position - textStart);
+
+                if (_docCommentBuilder == null)
+                {
+                    // Start a fresh contiguous block; remember its source origin so
+                    // the emitted DocComment token points at the first `///` line.
+                    _docCommentBuilder = new StringBuilder();
+                    _docCommentStart = new SourceLocation(_line, _column, _fileName);
+                }
+                else
+                {
+                    _docCommentBuilder.Append('\n');
+                }
+                _docCommentBuilder.Append(line);
+                _docCommentPending = true;
+                // Do NOT clear the buffer here (Pitfall 2): contiguity/binding is
+                // decided by the Tokenize loop + Parser, not by whitespace skipping.
+            }
             else if (c == '/' && PeekNext() == '/')
             {
-                // Line comment: skip to end of line
+                // Line comment: skip to end of line. CR-01: an intervening `//`
+                // orphans any pending `///` block so it cannot bind to a later proc.
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();
                 }
             }
-            else if (c == 'N' && IsStartOfLineContent() && _source.Substring(_position).StartsWith("Note:"))
+            else if (c == 'N' && _source.AsSpan(_position).StartsWith("Note:".AsSpan())
+                     && !IsTypeAnnotationColonPosition())
             {
-                // Skip comment until end of line
+                // `Note:` lead-in line comment — to end of line. It is a comment WHEREVER it
+                // appears as leading trivia: at line start OR trailing a statement
+                // (`(play x)   Note: this plays the tone`). The ONE exception is a proc
+                // parameter TYPE ANNOTATION (`proc f(Note: x)` / `proc f(String s, Note: y)`),
+                // where `Note:` means "param of type Note" — IsTypeAnnotationColonPosition()
+                // excludes that case (it sits right after `(` or `,`). Quoted strings lex via
+                // the `"` path before this check, so `"Note: ..."` stays a String.
+                // (`TODO:`/`FIXME:` below keep their line-start guard — not Flow type names.)
+                DropPendingDocCommentIfInterrupted();
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
+            }
+            // Phase 31 REQ-4 (SPEC-4) D-11 Option A: position-sensitive `;` Lisp-style line comment.
+            // `;` at column-0 (with optional leading whitespace per IsStartOfLineContent()) is a comment
+            // to end-of-line. A `;` mid-line stays a TokenType.Semicolon statement-terminator —
+            // every shipping pragma (`enable hAsB;`) and typed declaration (`Int x = 5;`) keeps its
+            // current lex behavior. Verified zero column-0 `;` exist in any in-repo .flow file
+            // (RESEARCH §Migration Audit), so the Phase 18/25/27/28 byte-identical determinism
+            // contracts are preserved by construction.
+            else if (c == ';' && IsStartOfLineContent())
+            {
+                DropPendingDocCommentIfInterrupted();
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
+            }
+            // Phase 31 REQ-4 (SPEC-4): `TODO:` lead-in line comment (mirrors the `Note:` arm above).
+            else if (c == 'T' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("TODO:".AsSpan()))
+            {
+                DropPendingDocCommentIfInterrupted();
+                while (!IsAtEnd() && Peek() != '\n')
+                {
+                    Advance();
+                }
+            }
+            // Phase 31 REQ-4 (SPEC-4): `FIXME:` lead-in line comment.
+            else if (c == 'F' && IsStartOfLineContent() && _source.AsSpan(_position).StartsWith("FIXME:".AsSpan()))
+            {
+                DropPendingDocCommentIfInterrupted();
                 while (!IsAtEnd() && Peek() != '\n')
                 {
                     Advance();
@@ -1167,8 +1449,37 @@ public class SimpleLexer
         return true; // Reached start of source
     }
 
+    /// <summary>
+    /// True when a <c>Note:</c> at the current position is a proc-parameter TYPE ANNOTATION
+    /// (<c>proc f(Note: x)</c> / <c>proc f(String s, Note: y)</c>) rather than a <c>Note:</c>
+    /// lead-in comment. A <c>Type:</c> annotation is the only place a type name is immediately
+    /// followed by <c>:</c>, and it always sits right after <c>(</c> or <c>,</c> in the
+    /// parameter list. Scanning back over spaces/tabs/<c>\r</c>: the first non-whitespace char
+    /// being <c>(</c> or <c>,</c> marks the annotation position; a newline (line start) or any
+    /// other character means it is a comment (and is treated as such).
+    /// </summary>
+    private bool IsTypeAnnotationColonPosition()
+    {
+        for (int i = _position - 1; i >= 0; i--)
+        {
+            char ch = _source[i];
+            if (ch == '(' || ch == ',') return true;  // proc-parameter type-annotation slot
+            if (ch == '\n') return false;             // reached line start → comment
+            if (!char.IsWhiteSpace(ch)) return false; // trailing content → comment
+        }
+        return false;
+    }
+
     private char Peek() => IsAtEnd() ? '\0' : _source[_position];
     private char PeekNext() => _position + 1 >= _source.Length ? '\0' : _source[_position + 1];
+
+    /// <summary>
+    /// Phase 35 LANG-04 Wave 1: capture the current source position as the
+    /// END of a span being emitted. The lexer's <c>_line</c> / <c>_column</c>
+    /// track the position of the NEXT character to read — which is exactly the
+    /// half-open END position we want (one past the last consumed character).
+    /// </summary>
+    private SourceLocation CurrentLocation() => new SourceLocation(_line, _column, _fileName);
 
     private char Advance()
     {

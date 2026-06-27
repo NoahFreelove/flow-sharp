@@ -1,0 +1,67 @@
+// Phase 36 Plan 36-07 Task 2 — composer-facing one-shot L-system exercise.
+//
+// This file is the canonical input for `scripts/test_two_run_determinism.sh`:
+// two consecutive runs MUST produce byte-identical WAV output. L-system
+// rewriting is purely deterministic (no PRNG), so the only source of run-to-
+// run variability is the audio render path itself — and that's already
+// pinned by Phase 18/25/27/28/29's two-run cmp-clean contract.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_lsystem_oneshot.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_lsystem_oneshot.flow
+
+use "@std"
+use "@audio"
+use "@notation"
+use "@generative"
+use "@test"
+
+// =====================================================================
+// Lindenmayer algae growth — the canonical L-system example.
+//   #A → #A #B
+//   #B → #A
+// Iteration 4 produces the Fibonacci-count-8 sequence
+//   <<#A, #B, #A, #A, #B, #A, #B, #A>>
+// =====================================================================
+
+Dict<Symbol, Symbol[]> algaeRules = (dict #A (list #A #B) #B (list #A))
+
+Symbol[] expanded4 = (lsystem #A algaeRules 4)
+
+(test "lsystem expands the Lindenmayer algae canonical to 8 symbols"
+  lazy((assertEq 8 (len expanded4))))
+
+// One-shot ≡ model+generate equivalence per D-36-06.
+LsystemModel model = (lsystemModel #A algaeRules)
+Symbol[] generated4 = (lsystemGenerate model 4)
+
+(test "lsystem one-shot is equivalent to lsystemModel + lsystemGenerate"
+  lazy((assertEq (len expanded4) (len generated4))))
+
+// Iteration 0 returns the axiom unchanged.
+Symbol[] zeroIter = (lsystem #A algaeRules 0)
+(test "lsystem with iterations=0 returns axiom only"
+  lazy((assertEq 1 (len zeroIter))))
+
+(print "LSYSTEM ONE-SHOT TESTS REGISTERED")
+
+// =====================================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+//
+// Map each Symbol to a quarter-note pitch via a composer-supplied lambda,
+// then render to a small WAV. The same expansion + same render path
+// produces byte-identical WAVs across consecutive runs.
+// =====================================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Symbol[] expanded3 = (lsystem #A algaeRules 3)
+        Sequence music = (lsystemToSequence expanded3 (fn Symbol s => (if (equals s #A) (createMusicalNote C4 4) (createMusicalNote E4 4))))
+        section main { Sequence v = music }
+        Song song = [main]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/lsystem_oneshot.wav" mix)
+    }
+}

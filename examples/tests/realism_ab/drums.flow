@@ -1,0 +1,31 @@
+// Phase 29 A/B fixture: drums
+// Run: dotnet run --project flow-interpreter examples/tests/realism_ab/drums.flow
+// Output: examples/output/realism_ab/drums_rendered.wav
+//
+// MIDI drum mapping (per DrumSynthesizer):
+//   C2  = kick   (MIDI 36)
+//   D2  = snare  (MIDI 38)
+//   F#2 = closed-hh (MIDI 42)
+//   G#2 = open-hh   (MIDI 44)
+// `Fsharp2` / `Gsharp2` (long form) are NOT recognized note literals —
+// use the accidental form `F#2` / `G#2`.
+use "@audio"
+
+tempo 96 {
+    timesig 4/4 {
+        key Cmajor {
+            // 2 bars: rock drum groove
+            //   bar 1: kick + 8th-note hi-hats with snare backbeat on beat 2
+            //   bar 2: short kick/snare fill, an open hi-hat on beat 3, snare backbeat on 4
+            Sequence pattern = | C2q F#2e F#2e D2q F#2e F#2e | C2e D2e D2e G#2q C2q D2q |
+
+            section fill {
+                Sequence v = pattern
+            }
+
+            Song demo = [fill]
+            Buffer rendered = (renderSong demo "drums")
+            (writeWav "examples/output/realism_ab/drums_rendered.wav" rendered)
+        }
+    }
+}

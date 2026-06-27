@@ -1,0 +1,24 @@
+// Phase 29 A/B fixture: brass
+// Run: dotnet run --project flow-interpreter examples/tests/realism_ab/brass.flow
+// Output: examples/output/realism_ab/brass_rendered.wav
+use "@audio"
+
+tempo 96 {
+    timesig 4/4 {
+        key Cmajor {
+            // 2 bars: ascending brass fanfare resolving to a sustained high C
+            //   bar 1: C major arpeggio rising one octave on quarter notes
+            //   bar 2: extension up to E5 / G5 settling on a half-note C5
+            // Tempo 96 keeps the 2-bar piece inside the 5-10s A/B window.
+            Sequence horns = | C4q E4q G4q C5q | E5q G5q C5h |
+
+            section fanfare {
+                Sequence v = horns
+            }
+
+            Song demo = [fanfare]
+            Buffer rendered = (renderSong demo "brass")
+            (writeWav "examples/output/realism_ab/brass_rendered.wav" rendered)
+        }
+    }
+}

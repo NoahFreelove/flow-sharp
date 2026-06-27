@@ -44,7 +44,7 @@ Without `:N`, each numeral gets one bar.
 
 ## Voice Count
 
-By default, progressions use 3 voices (root, third, fifth of the chord). To use a denser voicing, add `voices N`:
+By default, progressions use as many voices as the largest chord in the progression (3 for triads, 4 for 7ths, etc.). To force a denser voicing, add `voices N`:
 
 ```flow
 use "@std"
@@ -54,7 +54,7 @@ key Cmajor {
 }
 ```
 
-Voice counts above the triad add chord tones (7th, 9th) where appropriate.
+Voice counts above the triad add chord tones (7th, 9th) where appropriate. For broader polyphony control across an entire passage (independent of individual chord voicing), see the [`voicePool` context block](Musical-Context.md#voice-pool).
 
 ## Minor Keys
 
@@ -108,8 +108,8 @@ tempo 100 {
 
             Song song = [hook*4]
             Buffer rendered = (renderSong song "piano")
-            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5
-            (exportWav final "ivvi_iv_v.wav")
+            Buffer final = rendered -> reverb 0.3 -> fadeOut 0.5s
+            (writeWav "ivvi_iv_v.wav" final)
         }
     }
 }

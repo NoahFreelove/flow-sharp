@@ -1,0 +1,175 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "flow",
+  "scopeName": "source.flow",
+  "fileTypes": [
+    "flow"
+  ],
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#chords"
+    },
+    {
+      "include": "#notes"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#booleans"
+    },
+    {
+      "include": "#function-call"
+    },
+    {
+      "include": "#variable-ref"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#pipes"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.flow",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.line.semicolon.flow",
+          "match": "^\\s*;.*$"
+        },
+        {
+          "name": "comment.line.todo.flow",
+          "match": "^\\s*TODO:.*$"
+        },
+        {
+          "name": "comment.line.fixme.flow",
+          "match": "^\\s*FIXME:.*$"
+        },
+        {
+          "name": "comment.line.documentation.flow",
+          "match": "^\\s*Note:.*$"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.flow",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.flow",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.flow",
+          "match": "\\b(proc|use|return|internal|lazy|fn|section|for|while|break|continue|in|progression|tempo|timesig|key|swing|dynamics|rit|accel|pickup|pan|gain)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.flow",
+          "match": "\\b(Int|Float|Long|Double|String|Bool|Number|Note|Buf|Void|Buffer|Sequence|Chord|Song|Section|MusicalNote|Beat|Bar|TimeSignature|NoteValue|Semitone|Cent|Millisecond|Second|Decibel|Envelope|OscillatorState|Voice|Track|Lazy|Function)\\b"
+        }
+      ]
+    },
+    "booleans": {
+      "patterns": [
+        {
+          "name": "constant.language.flow",
+          "match": "\\b(true|false)\\b"
+        }
+      ]
+    },
+    "chords": {
+      "patterns": [
+        {
+          "name": "entity.name.function.flow",
+          "comment": "Chord literals: letter [#bsf]? quality (maj7|m7|dim|aug|sus|7|m|maj|...). Placed BEFORE notes so Bb7/Cmaj7 tokenize as chords rather than splitting into note + number.",
+          "match": "\\b[A-G][#bsf]?(maj7|maj|min7|min|m7|m|dim|aug|sus[24]?|7|6|9|11|13)\\b"
+        }
+      ]
+    },
+    "notes": {
+      "patterns": [
+        {
+          "name": "variable.other.note.flow",
+          "comment": "Note literals: letter [#bsf]? octave [duration]? [+Nc]? e.g. C4, Db5, F#3, C4q., Bb6, C4+50c",
+          "match": "\\b[A-G][#bsf]?[+-]*[0-9]+(?:[qhwes]\\.?~?)?(?:\\+[0-9]+c)?\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.flow",
+          "match": "\\b-?[0-9]+(\\.[0-9]+)?(ms|s|db|st|c|hz|khz)?\\b"
+        }
+      ]
+    },
+    "function-call": {
+      "comment": "Flow's prefix-only S-expression call sites: `(name args...)`. Match an identifier that immediately follows an opening paren (with optional whitespace). Also matches the `name(` C-style form for proc declarations / future affordance.",
+      "patterns": [
+        {
+          "match": "(?<=\\()\\s*([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.flow"
+            }
+          }
+        },
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.flow"
+            }
+          }
+        }
+      ]
+    },
+    "variable-ref": {
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
+      "name": "variable.other.flow"
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.flow",
+          "match": "->|=>|\\+|-|\\*|/|<=|>=|<|>|==|="
+        }
+      ]
+    },
+    "pipes": {
+      "patterns": [
+        {
+          "name": "punctuation.section.flow",
+          "match": "\\|"
+        }
+      ]
+    }
+  },
+  "aliases": []
+}

@@ -76,8 +76,11 @@ pixel-diff is fragile across themes.
    the **Extension Development Host** (EDH).
 3. In the EDH window, open `tests/test_chords.flow` (or any other
    Flow file from `tests/` or `examples/`).
-4. Compare colors against `flow-editor/Editor/FlowSyntaxHighlighter.cs`
-   categories. Tick each:
+4. Compare colors against the TextMate grammar at
+   `vscode-extension/syntaxes/flow.tmLanguage.json` (the historical
+   `flow-editor/Editor/FlowSyntaxHighlighter.cs` reference was retired —
+   the TM grammar is the current source of truth for category coverage).
+   Tick each:
    - [ ] Keywords (`proc`, `use`, `section`, `tempo`, `key`, `timesig`,
          `swing`, `dynamics`, `return`) — single consistent "keyword"
          color.

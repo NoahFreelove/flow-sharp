@@ -1,0 +1,58 @@
+enable beat-true-to-sig;
+
+Note: Phase 45 REQ-BEAT-TEST-03 — multiplier matrix with the pragma ON.
+Note: final = raw × (4.0 / denom). `(str Beat)` emits the quarter-relative
+Note: double per D-14, so the printed value IS the post-multiplier result.
+Note: Covers the 5 timesigs from 45-RESEARCH Signal 4 (4/4, 6/8, 2/2, 5/4, 7/8).
+
+use "@std"
+
+Note: 4/4 — denom=4 → multiplier 4/4 = 1.0 (identity, Pitfall-4 default safety)
+timesig 4/4 {
+  Beat a = 1b
+  (print (str a))
+}
+
+Note: 6/8 — denom=8 → multiplier 4/8 = 0.5. 1b = one eighth.
+timesig 6/8 {
+  Beat b = 1b
+  (print (str b))
+}
+
+Note: 6/8 — 2b = two eighths = one quarter
+timesig 6/8 {
+  Beat b2 = 2b
+  (print (str b2))
+}
+
+Note: 6/8 — 0.5b = half an eighth = one sixteenth
+timesig 6/8 {
+  Beat b3 = 0.5b
+  (print (str b3))
+}
+
+Note: 2/2 cut time — denom=2 → multiplier 4/2 = 2.0. 1b = one half.
+timesig 2/2 {
+  Beat c = 1b
+  (print (str c))
+}
+
+Note: 2/2 — 0.5b = half a half = one quarter
+timesig 2/2 {
+  Beat c2 = 0.5b
+  (print (str c2))
+}
+
+Note: 5/4 — denom=4 → multiplier 4/4 = 1.0 (identity, quarter-denominator meter)
+timesig 5/4 {
+  Beat d = 1b
+  (print (str d))
+}
+
+Note: 7/8 irregular — denom=8 → multiplier 4/8 = 0.5. 1b = one eighth.
+timesig 7/8 {
+  Beat e = 1b
+  (print (str e))
+}
+
+(print "test_beat_pragma_on: PASSED")

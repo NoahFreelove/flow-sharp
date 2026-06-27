@@ -2,6 +2,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
+    <!-- Phase 38 Plan 38-04 prep: in-process LSP for REPL tab-completion (D-38-12).
+         Added at Plan 38-01 to avoid a wave-2/3 csproj race when Plan 38-04 lands. -->
+    <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PrettyPrompt" Version="4.1.1" />
   </ItemGroup>
 
 <PropertyGroup>
@@ -10,6 +17,12 @@
     <RootNamespace>flow_interpreter</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- sweep-0614 banner fix: stamp the interpreter version so the interactive
+         REPL banner reads the real version (1.5.x), not the old hardcoded "v0.1".
+         Matches flow-cli.csproj's stamping. Program.ResolveVersion() reads this
+         via AssemblyInformationalVersionAttribute. -->
+    <Version>1.5.0</Version>
+    <InformationalVersion>1.5.0</InformationalVersion>
   </PropertyGroup>
 
 </Project>

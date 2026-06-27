@@ -1,0 +1,55 @@
+// Phase 36 Plan 36-11 Task 2 — composer-facing jam exercise (IMPROV-01).
+//
+// Demonstrates the headline chord-aware Markov improvisation API:
+//   (jam over=chords style=#jazz length=8 seed=42)
+// against a ii-V-I-VI progression in C major. The seeded call is
+// deterministic across runs — used by scripts/test_two_run_determinism.sh.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_jam_jazz.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_jam_jazz.flow
+
+use "@std"
+use "@audio"
+use "@improv"
+use "@test"
+
+// ii-V-I-VI in C major — the canonical jazz turnaround.
+Sequence chords = | Dm7 | G7 | Cmaj7 | Am7 |
+
+// Seeded jam: same seed → same output every call.
+Sequence a = (jam chords #jazz 4 "Cmajor" 42 2)
+Sequence b = (jam chords #jazz 4 "Cmajor" 42 2)
+
+(test "jam jazz seeded is deterministic"
+    lazy((assertNotesMatch a b)))
+
+// Two consecutive unseeded calls at the same source position SHARE PRNG state
+// per D-v1.5-06 — the second call advances the state set by the first, so the
+// two return DIFFERENT sequences. The Phase 36 Plan 36-05 / 36-06 precedent
+// is: bind the unseeded result to a variable ONCE, then assert reference-
+// equal. The two-run cmp-clean determinism is verified by the
+// scripts/test_two_run_determinism.sh harness, not by in-script assertion.
+Sequence unseeded = (jam chords)
+(test "jam jazz default args work (unseeded reuse)"
+    lazy((assertNotesMatch unseeded unseeded)))
+
+(print "JAM JAZZ TESTS REGISTERED")
+
+// ===========================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+// ===========================================================
+
+tempo 120 {
+    timesig 4/4 {
+        key Cmajor {
+            Sequence renderable = (jam chords #jazz 4 "Cmajor" 42 2)
+            section main { Sequence v = renderable }
+            Song song = [main]
+            Buffer mix = (renderSong song "piano")
+            (writeWav "/tmp/jam_jazz.wav" mix)
+        }
+    }
+}

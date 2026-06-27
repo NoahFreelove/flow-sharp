@@ -1,0 +1,75 @@
+Note: @generative stdlib module
+Note: Markov chain primitive in BOTH one-shot AND train+generate-split
+Note: shapes. First-class MarkovModel reference-identity value type —
+Note: see CLAUDE.md Music Types Quick Reference table.
+
+module generative
+
+Note: One-shot — compose train + generate at the call site
+internal proc markov (Sequence: corpus, Int: order, Int: length, Int: seed)
+internal proc markov (Sequence: corpus, Int: order, Int: length)
+Note: Array-corpus forms (0615) — train directly off a Note[] or Int[] of
+Note: pitches without first wrapping them in a Sequence. Int elements are raw
+Note: MIDI pitches; Note elements parse their note string. Same pitch-feature
+Note: Markov path, so determinism + the train/generate split are byte-identical.
+internal proc markov (Note[]: corpus, Int: order, Int: length, Int: seed)
+internal proc markov (Note[]: corpus, Int: order, Int: length)
+internal proc markov (Int[]: corpus, Int: order, Int: length, Int: seed)
+internal proc markov (Int[]: corpus, Int: order, Int: length)
+
+Note: Train once / generate many
+internal proc markovTrain (Sequence: corpus, Int: order)
+Note: features= accepts Symbol (e.g. #pitch) or Tuple<<Symbol, Symbol>>
+Note: (e.g. <<#pitch, #duration>>) — the Void wildcard slot dispatches at runtime.
+internal proc markovTrain (Sequence: corpus, Int: order, Void: features)
+Note: Array-corpus train forms (0615) — mirror the one-shot array surface.
+internal proc markovTrain (Note[]: corpus, Int: order)
+internal proc markovTrain (Int[]: corpus, Int: order)
+
+internal proc markovGenerate (MarkovModel: model, Int: length, Int: seed)
+internal proc markovGenerate (MarkovModel: model, Int: length)
+
+Note: Structural compare — distinct from (eq m1 m2), which is reference identity.
+internal proc markovEqual (MarkovModel: a, MarkovModel: b)
+
+Note: L-system primitive.
+Note: Pure deterministic Symbol rewriting; iteration count clamped to [0, 20]
+Note: as a DoS guard. Rule values accept Tuple<<Symbol, ...>>
+Note: (the canonical composer surface) or Symbol[] — the C# registration uses
+Note: Dict<Void, Void> as a wildcard so EITHER value-shape resolves; the proc
+Note: decl annotates the most-common composer surface (Symbol[]) but the
+Note: wildcard registration in LsystemFunctions.cs:RegisterContextDependent
+Note: accepts tuple-valued dicts equally.
+internal proc lsystem (Symbol: axiom, Dict<Symbol, Symbol[]>: rules, Int: iterations)
+internal proc lsystemModel (Symbol: axiom, Dict<Symbol, Symbol[]>: rules)
+internal proc lsystemGenerate (LsystemModel: model, Int: iterations)
+internal proc lsystemToSequence (Symbol[]: expanded, Function: mapper)
+internal proc lsystemEqual (LsystemModel: a, LsystemModel: b)
+
+Note: Cellular automata primitives.
+Note: 1D `cellular` uses the Wolfram-convention single-1-center default seed
+Note: pattern; the seed arg is accepted for signature uniformity but ignored.
+Note: `cellularSeeded` accepts an explicit Array[Bool] initial pattern.
+Note: 2D `life` uses a composer-supplied seed to seed a Random for 30%-density
+Note: initial fill. Both 1D and 2D primitives clamp width/height/steps to
+Note: <= 1024 (DoS guard) and wrap rule values via & 0xFF.
+internal proc cellular (Int: rule, Int: width, Int: steps, Int: seed)
+internal proc cellularSeeded (Int: rule, Int: width, Int: steps, Int: seed, Bool[]: initialPattern)
+internal proc life (Int: width, Int: height, Int: steps, Int: seed)
+
+Note: Chaos-map primitives.
+Note: Lorenz attractor (forward-Euler with σ=10, ρ=28, β=8/3 canonical
+Note: butterfly) and logistic map (x_{n+1} = r * x_n * (1 - x_n)) both
+Note: return raw Array[Double]; composer quantizes to musical pitch via
+Note: (quantizeToScale series scale). length is clamped to <= 100_000
+Note: (DoS guard). Cross-platform FP divergence is a known limitation —
+Note: same-platform two-run cmp-clean is preserved (single-machine IEEE
+Note: 754 reproducibility); cross-platform reproducibility is NOT
+Note: guaranteed for the chaotic-system outputs of these primitives.
+internal proc lorenz (Double: sigma, Double: rho, Double: beta, Int: length, Int: seed)
+internal proc logistic (Double: r, Int: length, Int: seed)
+Note: quantizeToScale ships in two overloads:
+Note: a String-form that resolves a scale name via ScaleDatabase, and an
+Note: Array[Note] form that lets composers supply the scale directly.
+internal proc quantizeToScale (Double[]: series, String: scaleName)
+internal proc quantizeToScale (Double[]: series, Note[]: scaleNotes)

@@ -1,0 +1,10 @@
+# Phase 29 A/B Answer Key
+# Sealed at 2026-05-12T03:13:19Z
+# Seed: 35780
+
+piano: B
+brass: A
+sax: B
+strings: A
+flute: A
+drums: A

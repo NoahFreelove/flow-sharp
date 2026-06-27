@@ -1,0 +1,19 @@
+// flow-lang.Tests/fixtures/Phase37/round_robin.sfz — Plan 37-03 SAMP-01 fixture
+// Two regions sharing the same key+vel range with seq_position 1 and 2
+// of a seq_length=2 round-robin group. Consumes the Phase 33 smoke-fixture
+// sine sample (referenced via relative path from the .sfz's parent dir;
+// SfzParser resolves sample paths relative to the .sfz file).
+
+<region>
+sample=../sfz-smoke/C4_sine.wav
+pitch_keycenter=60
+lokey=60 hikey=60 lovel=1 hivel=127
+seq_position=1 seq_length=2
+pan=0
+
+<region>
+sample=../sfz-smoke/C4_sine.wav
+pitch_keycenter=60
+lokey=60 hikey=60 lovel=1 hivel=127
+seq_position=2 seq_length=2
+pan=0

@@ -10,4 +10,5 @@ namespace FlowLang.Ast.Expressions;
 /// </summary>
 public record TupleLiteralExpression(
     SourceLocation Location,
-    IReadOnlyList<Expression> Elements) : Expression(Location);
+    IReadOnlyList<Expression> Elements,
+    Span? Span = null) : Expression(Location);

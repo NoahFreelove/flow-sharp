@@ -1,0 +1,16 @@
+# Flow benchmark run — label: baseline — 2026-05-24T19:26:12-04:00
+
+Build: dotnet 10.0.107, git rev fc60720, 5 runs per script.
+
+| Script | Mean (s) | Stddev (s) | Mean RSS (MB) | Stddev RSS (MB) |
+|--------|---------:|-----------:|--------------:|----------------:|
+| bench_collections.flow | 2.692 | 0.069 | 108.7 | 0.4 |
+| bench_function_calls.flow | 1.832 | 0.049 | 109.1 | 0.3 |
+| bench_notestream.flow | 1.350 | 0.007 | 109.0 | 0.1 |
+| bench_overload.flow | 1.988 | 0.008 | 108.7 | 0.4 |
+| bench_parse.flow | 1.620 | 0.007 | 232.9 | 0.3 |
+| bench_var_lookup.flow | 4.680 | 0.032 | 108.9 | 0.1 |
+
+Build: dotnet 10.0.107, git rev fc60720
+Runs:  5 per script
+Host:  Linux 6.17.0-29-generic x86_64

@@ -1,4 +1,6 @@
+using System.Reflection;
 using FlowLang.Core;
+using FlowLang.Runtime;
 
 namespace FlowInterpreter;
 
@@ -6,8 +8,15 @@ class Program
 {
     static int Main(string[] args)
     {
-        Console.WriteLine("Flow Language Interpreter v0.1");
-        Console.WriteLine();
+        // Load ~/.config/flow/config.toml into FlowConfig.Active BEFORE any
+        // FlowEngine is constructed. FlowEngine reads
+        // FlowConfig.ConfiguredStdlibSearchPaths at ModuleLoader-seed time and
+        // loadSfz reads FlowConfig.Active.SfzRoot, so the config must be active
+        // by the time any engine is built (REPL / ScriptRunner / LiveReloadManager).
+        // Missing file: silent fallback. Malformed: charitable warn + continue.
+        // Mirrors flow-cli/Program.cs:16 so `dotnet run --project flow-interpreter`
+        // honors the same config as the `flow` CLI binary.
+        FlowConfigLoader.LoadFromXdg();
 
         // Parse flags from args
         var flags = ParseFlags(args);
@@ -26,7 +35,12 @@ class Program
                 return RunFromStdin(flags.DeviceName, flags.Verbose);
             }
 
-            // No input - start REPL
+            // No input - start REPL. Emit the banner ONLY here (interactive
+            // session) and on STDERR so -e/--eval/--stdin stdout stays clean for
+            // tools capturing program output. The version is read from the real
+            // assembly metadata (no stale hardcoded literal).
+            Console.Error.WriteLine($"Flow Language Interpreter v{ResolveVersion()}");
+            Console.Error.WriteLine();
             var repl = new Repl();
             repl.Run();
             return 0;
@@ -75,7 +89,7 @@ class Program
             if (!success)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                Console.Error.WriteLine(FormatErrorsForEmit(engine));
                 Console.ResetColor();
                 return 1;
             }
@@ -103,7 +117,7 @@ class Program
             if (!success)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                Console.Error.WriteLine(FormatErrorsForEmit(engine));
                 Console.ResetColor();
                 return 1;
             }
@@ -117,6 +131,36 @@ class Program
             Console.ResetColor();
             return 1;
         }
+    }
+
+    /// <summary>
+    /// Phase 35 LANG-04 Wave 2a — picks the rich Rust-style format
+    /// (<see cref="FlowLang.Diagnostics.ErrorReporter.FormatDiagnostics"/>)
+    /// when the engine has accumulated any <see cref="FlowLang.Diagnostics.FlowDiagnostic"/>,
+    /// falling back to the legacy single-line <see cref="FlowLang.Diagnostics.ErrorReporter.FormatErrors"/>
+    /// otherwise. Concatenates both when present so emit sites mid-Span-migration
+    /// don't drop legacy FlowError accumulator output.
+    ///
+    /// <para>
+    /// Color is emitted unconditionally (the wrapping
+    /// <c>Console.ForegroundColor = Red</c> remains the existing precedent);
+    /// .NET auto-suppresses ANSI when stderr is redirected. The
+    /// <c>useColor:false</c> path is reserved for the golden-file tests.
+    /// </para>
+    /// </summary>
+    internal static string FormatErrorsForEmit(FlowEngine engine)
+    {
+        var hasRich = engine.ErrorReporter.HasDiagnostics;
+        var hasLegacy = engine.ErrorReporter.Errors.Count > 0;
+        if (hasRich && hasLegacy)
+        {
+            return engine.ErrorReporter.FormatDiagnostics(engine.SourceMap, useColor: true)
+                + "\n\n"
+                + engine.ErrorReporter.FormatErrors();
+        }
+        if (hasRich)
+            return engine.ErrorReporter.FormatDiagnostics(engine.SourceMap, useColor: true);
+        return engine.ErrorReporter.FormatErrors();
     }
 
     /// <summary>
@@ -225,6 +269,26 @@ class Program
         }
 
         return new CliFlags(scriptPath, evalCode, deviceName, watch, showHelp, readStdin, verbose);
+    }
+
+    /// <summary>
+    /// Resolves the interpreter version for the interactive REPL banner. Reads
+    /// the assembly's <see cref="AssemblyInformationalVersionAttribute"/> (set
+    /// via the build), stripping any SDK-appended <c>+&lt;commit&gt;</c> suffix,
+    /// then falls back to the AssemblyName.Version and finally "unknown".
+    /// Mirrors flow-cli/Commands/VersionCommand.cs so the two binaries report
+    /// the same version surface.
+    /// </summary>
+    static string ResolveVersion()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrEmpty(info))
+        {
+            var plus = info.IndexOf('+');
+            return plus >= 0 ? info[..plus] : info;
+        }
+        return asm.GetName().Version?.ToString() ?? "unknown";
     }
 
     static void PrintUsage()

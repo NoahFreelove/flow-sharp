@@ -1,0 +1,50 @@
+[
+	{
+		"id": "sine-440",
+		"label": "Sine tone (440 Hz)",
+		"blurb": "The hello-world — a one-second A4 sine. Press Run to hear it.",
+		"file": "sine-440.flow"
+	},
+	{
+		"id": "print-hello",
+		"label": "Print to console",
+		"blurb": "No audio — just stdout. Shows the console split.",
+		"file": "print-hello.flow"
+	},
+	{
+		"id": "note-stream",
+		"label": "Note stream melody",
+		"blurb": "A C-major run played straight from an inline note stream.",
+		"file": "note-stream.flow"
+	},
+	{
+		"id": "chord-progression",
+		"label": "Chord progression",
+		"blurb": "A ii–V–I in C with chord brackets, played as audio.",
+		"file": "chord-progression.flow"
+	},
+	{
+		"id": "abide-with-me",
+		"label": "Abide With Me",
+		"blurb": "A shortened version of the hymn, by Henry Francis Lyte.",
+		"file": "abide-with-me.flow"
+	},
+	{
+		"id": "ragtime",
+		"label": "K.K Ragtime",
+		"blurb": "A version of K.K Ragtime by Tom Brier, transcribed by 'Czarek7711'.",
+		"file": "ragtime.flow"
+	},
+	{
+		"id": "athletic-theme",
+		"label": "Yoshi's Island Athletic Theme",
+		"blurb": "A version of Yoshi's Island Athletic Themeby Tom Brier, transcribed by 'Czarek7711'.",
+		"file": "athletic-theme.flow"
+	},
+	{
+		"id": "blue-shuffle",
+		"label": "Blue Shuffle (12-bar blues)",
+		"blurb": "An original 12-bar blues in C with a swing feel — swung lead licks over a walking bass and backbeat comps.",
+		"file": "blue-shuffle.flow"
+	}
+]

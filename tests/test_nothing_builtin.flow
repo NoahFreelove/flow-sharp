@@ -1,0 +1,28 @@
+Note: Test the Nothing() builtin — 0-arg Void-returning escape hatch.
+Note: Verifies (Nothing) is callable, returns Void, and works as a `return` argument.
+
+use "@std"
+
+proc onlyVoidAtEnd ()
+    Int x = 5
+    (print "inside onlyVoidAtEnd")
+end proc
+
+proc explicitReturnNothing ()
+    (print "before explicit return")
+    return (Nothing)
+    (print "after explicit return -- should NOT print")
+end proc
+
+proc multipleNonVoidThenReturnNothing ()
+    Int a = 10
+    (add 1 2)
+    (mul 3 4)
+    return (Nothing)
+end proc
+
+(onlyVoidAtEnd)
+(explicitReturnNothing)
+(multipleNonVoidThenReturnNothing)
+
+(print "all three procs completed without error")

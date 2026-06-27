@@ -25,11 +25,12 @@ public static class PragmaScanner
 {
     /// <summary>
     /// Phase 23 D-14 / MICR-03: single source-of-truth string appended to the unknown-pragma
-    /// error when the typed name resembles a tuning pragma. Pointer documents that the full
-    /// Scala (.scl) loader is deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.
+    /// error when the typed name resembles a tuning pragma. Originally pointed at the
+    /// then-deferred Scala loader; the loader SHIPPED in Phase 32 (v1.4), so the pointer
+    /// now directs composers to the shipped surface (audit 2026-06-09 follow-up to §7.7).
     /// </summary>
     private const string ScalaLoaderDeferralPointer =
-        "Full Scala (.scl) loader is documented as deferred to v1.4 — see ADR/REQUIREMENTS.md D-03.";
+        "For custom tunings use the shipped Scala loader: (loadScala \"x.scl\") applied via a tuning t { ... } block.";
 
     /// <summary>
     /// Phase 23 D-14: returns true if <paramref name="typed"/> looks like a tuning pragma
@@ -233,10 +234,17 @@ public static class PragmaScanner
         // Require at least one whitespace after "enable".
         if (p >= lineText.Length || (lineText[p] != ' ' && lineText[p] != '\t')) return null;
         while (p < lineText.Length && (lineText[p] == ' ' || lineText[p] == '\t')) p++;
-        // Identifier: [A-Za-z_][A-Za-z0-9_]*
+        // Identifier: [A-Za-z_][A-Za-z0-9_-]*
+        // Phase 45 REQ-BEAT-PRAGMA-HYPHEN-01 — accept hyphens in CONTINUATION
+        // position so `enable beat-true-to-sig;` parses cleanly. Leading-char
+        // predicate stays unchanged (still letter/underscore only — hyphen
+        // cannot appear as the first char). PragmaRegistry.KnownPragmas is a
+        // closed-set Ordinal-string dictionary; unknown hyphenated names
+        // (e.g. `foo-bar`) still error via the existing Levenshtein-suggester
+        // path (45-PATTERNS.md §"Threat T-45-01").
         int identStart = p;
         if (p >= lineText.Length || !(char.IsLetter(lineText[p]) || lineText[p] == '_')) return null;
-        while (p < lineText.Length && (char.IsLetterOrDigit(lineText[p]) || lineText[p] == '_')) p++;
+        while (p < lineText.Length && (char.IsLetterOrDigit(lineText[p]) || lineText[p] == '_' || lineText[p] == '-')) p++;
         int identEnd = p;
         string ident = lineText.Substring(identStart, identEnd - identStart);
         // Optional whitespace, then ';'

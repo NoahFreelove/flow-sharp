@@ -1,0 +1,3 @@
+use "@std"
+(print "hello flow")
+(print (str (add 1 2)))

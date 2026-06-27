@@ -8,5 +8,6 @@ namespace FlowLang.Ast.Statements;
 public record WhileStatement(
     SourceLocation Location,
     Expression Condition,
-    IReadOnlyList<Statement> Body
+    IReadOnlyList<Statement> Body,
+    Span? Span = null
 ) : Statement(Location);

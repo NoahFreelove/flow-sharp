@@ -17,11 +17,15 @@
 >
 >proc main () {
 #^^^^ source.flow keyword.control.flow
-#    ^^^^^^^^^^^ source.flow
+#    ^ source.flow
+#     ^^^^ source.flow entity.name.function.flow
+#         ^^^^^^ source.flow
 >    Int x = 42;
 #^^^^ source.flow
 #    ^^^ source.flow storage.type.flow
-#       ^^^ source.flow
+#       ^ source.flow
+#        ^ source.flow variable.other.flow
+#         ^ source.flow
 #          ^ source.flow keyword.operator.flow
 #           ^ source.flow
 #            ^^ source.flow constant.numeric.flow
@@ -29,7 +33,9 @@
 >    Float bpm = 120.0;
 #^^^^ source.flow
 #    ^^^^^ source.flow storage.type.flow
-#         ^^^^^ source.flow
+#         ^ source.flow
+#          ^^^ source.flow variable.other.flow
+#             ^ source.flow
 #              ^ source.flow keyword.operator.flow
 #               ^ source.flow
 #                ^^^^^ source.flow constant.numeric.flow
@@ -37,7 +43,9 @@
 >    String msg = "hello";
 #^^^^ source.flow
 #    ^^^^^^ source.flow storage.type.flow
-#          ^^^^^ source.flow
+#          ^ source.flow
+#           ^^^ source.flow variable.other.flow
+#              ^ source.flow
 #               ^ source.flow keyword.operator.flow
 #                ^ source.flow
 #                 ^ source.flow string.quoted.double.flow
@@ -47,7 +55,9 @@
 >    Bool flag = true;
 #^^^^ source.flow
 #    ^^^^ source.flow storage.type.flow
-#        ^^^^^^ source.flow
+#        ^ source.flow
+#         ^^^^ source.flow variable.other.flow
+#             ^ source.flow
 #              ^ source.flow keyword.operator.flow
 #               ^ source.flow
 #                ^^^^ source.flow constant.language.flow
@@ -62,7 +72,9 @@
 >        key Cmajor {
 #^^^^^^^^ source.flow
 #        ^^^ source.flow keyword.control.flow
-#           ^^^^^^^^^^ source.flow
+#           ^ source.flow
+#            ^^^^^^ source.flow variable.other.flow
+#                  ^^^ source.flow
 >            | C4 Db5q F#3 Bb7 |
 #^^^^^^^^^^^^ source.flow
 #            ^ source.flow punctuation.section.flow
@@ -95,9 +107,13 @@
 #^^^^^^ source.flow
 >
 >    x -> print;
-#^^^^^^ source.flow
+#^^^^ source.flow
+#    ^ source.flow variable.other.flow
+#     ^ source.flow
 #      ^^ source.flow keyword.operator.flow
-#        ^^^^^^^^ source.flow
+#        ^ source.flow
+#         ^^^^^ source.flow variable.other.flow
+#              ^^ source.flow
 >}
 #^^ source.flow
 >

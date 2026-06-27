@@ -16,4 +16,5 @@ namespace FlowLang.Ast.Expressions;
 public record TupleUnpackFlowExpression(
     SourceLocation Location,
     Expression Left,
-    Expression Right) : Expression(Location);
+    Expression Right,
+    Span? Span = null) : Expression(Location);

@@ -1,10 +1,21 @@
+using FlowLang.Diagnostics;
+
 namespace FlowLang.Lexing;
 
 /// <summary>
 /// Closed-set registry of recognized file-scope pragma names. Phase 21 ships
 /// <c>hAsB</c> as the only entry per D-17. Future phases (23 microtonal, 24
-/// scaleLint) add their own entries when they ship — the closed-set design
-/// guarantees unknown names error via D-12 rather than silently passing.
+/// scaleLint, 35 matchExhaustive) add their own entries when they ship — the
+/// closed-set design guarantees unknown names error via D-12 rather than
+/// silently passing.
+///
+/// <para>
+/// Phase 35 LANG-04 Wave 2a: <see cref="SuggestNearest"/> now delegates to
+/// the lifted <see cref="LevenshteinHelper.SuggestNearest"/>. The pragma
+/// registry's did-you-mean path and the diagnostic renderer's did-you-mean
+/// path converge on a single source of truth, matching Pitfall 5's
+/// "show ONE suggestion within max(2, len/3)" recommendation.
+/// </para>
 /// </summary>
 public static class PragmaRegistry
 {
@@ -20,7 +31,10 @@ public static class PragmaRegistry
             ["justIntonation"] = "5-limit just-intonation render-time tuning rooted at active key tonic (default C major).",
             ["pythagorean"] = "3-limit Pythagorean (chain-of-fifths) render-time tuning rooted at active key tonic.",
             ["equalTemperament"] = "12-tone equal temperament (default). Explicit form for tooling-visible intent.",
-            ["scaleLint"] = "Inside `key { ... }` blocks, surface non-diatonic notes as Information-severity LSP diagnostics."
+            ["scaleLint"] = "Phase 31 D-03: scale-lint is now default-on; this pragma is accepted as a no-op for v1.3 backward compat.",
+            ["matchExhaustive"] = "Phase 35 D-v1.5-05: promote non-exhaustive match warnings to errors. File-scope only; does NOT propagate via use imports (Pitfall 4).",
+            ["strict"] = "Opt-in strict mode: no type coercion + input-perimeter clamps become errors + Bool-required for if/and/or/not + same-type required for equals/comparisons. File-scoped, no propagation via use imports.",
+            ["beat-true-to-sig"] = "Opt-in: Nb literals and (beat N) constructor calls multiply by 4/denominator at eval time, reading active timesig. So in 'timesig 6/8 { }' with pragma on, 1b = 1 eighth. File-scoped, no propagation via use imports."
         };
 
     /// <summary>True iff <paramref name="name"/> is a recognized pragma.</summary>
@@ -34,52 +48,18 @@ public static class PragmaRegistry
         string.Join(", ", KnownPragmas.Keys.OrderBy(s => s, StringComparer.Ordinal));
 
     /// <summary>
-    /// Wagner-Fischer Levenshtein. Returns the closest known pragma name within
-    /// distance <c>max(2, typed.Length / 3)</c>, or <c>null</c> if no candidate
-    /// is close enough. Pure-stdlib implementation; correctness over speed since
-    /// this is only invoked on the unknown-pragma error path.
+    /// Returns the closest known pragma name within distance
+    /// <c>max(2, typed.Length / 3)</c>, or <c>null</c> if no candidate is
+    /// close enough.
+    ///
+    /// <para>
+    /// Phase 35 LANG-04 Wave 2a: delegates to
+    /// <see cref="LevenshteinHelper.SuggestNearest"/> — both the pragma
+    /// registry and the diagnostic renderer converge on the lifted helper.
+    /// The threshold remains <c>max(2, typed.Length / 3)</c> per the
+    /// Phase 21 choice (Pitfall 5).
+    /// </para>
     /// </summary>
-    public static string? SuggestNearest(string typed)
-    {
-        if (string.IsNullOrEmpty(typed)) return null;
-        int threshold = Math.Max(2, typed.Length / 3);
-        string? best = null;
-        int bestDist = int.MaxValue;
-        foreach (var name in KnownPragmas.Keys)
-        {
-            int d = LevenshteinDistance(typed, name);
-            if (d <= threshold && d < bestDist)
-            {
-                bestDist = d;
-                best = name;
-            }
-        }
-        return best;
-    }
-
-    private static int LevenshteinDistance(string a, string b)
-    {
-        // Wagner-Fischer DP. Two-row rolling array; O(n*m) time, O(m) space.
-        // The closed-set max name length bounds the inner-loop allocation regardless
-        // of caller-supplied input length (T-21-02 mitigation in the threat register).
-        int n = a.Length, m = b.Length;
-        if (n == 0) return m;
-        if (m == 0) return n;
-        var prev = new int[m + 1];
-        var curr = new int[m + 1];
-        for (int j = 0; j <= m; j++) prev[j] = j;
-        for (int i = 1; i <= n; i++)
-        {
-            curr[0] = i;
-            for (int j = 1; j <= m; j++)
-            {
-                int cost = a[i - 1] == b[j - 1] ? 0 : 1;
-                curr[j] = Math.Min(
-                    Math.Min(curr[j - 1] + 1, prev[j] + 1),
-                    prev[j - 1] + cost);
-            }
-            (prev, curr) = (curr, prev);
-        }
-        return prev[m];
-    }
+    public static string? SuggestNearest(string typed) =>
+        LevenshteinHelper.SuggestNearest(typed, KnownPragmas.Keys);
 }

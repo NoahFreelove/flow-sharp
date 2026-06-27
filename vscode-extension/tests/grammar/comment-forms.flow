@@ -1,0 +1,10 @@
+// Existing double-slash comment.
+; Lisp-style line comment at column 0.
+  ; Indented Lisp-style comment.
+Note: Documentation comment chapter divider.
+TODO: Fix the foo handling.
+FIXME: This is broken.
+proc main () {
+    (print "TODO: this is a string, not a comment");
+    Int x = 5;
+}

@@ -1,0 +1,7 @@
+# Scala archive .scl / .kbm fixtures are byte-verbatim copies of upstream
+# Huygens-Fokker archive content (CRLF line endings) plus 3 hand-authored
+# negative-case fixtures. Preserve line endings on commit so the parser is
+# tested against the EXACT bytes that real-world .scl/.kbm files ship with.
+# See ./LICENSE.md for attribution.
+*.scl -text
+*.kbm -text

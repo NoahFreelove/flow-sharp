@@ -6,6 +6,11 @@ namespace FlowLang.Audio;
 /// Audio backend using PulseAudio Simple API via P/Invoke.
 /// Works with both native PulseAudio and PipeWire's PulseAudio compatibility layer.
 /// </summary>
+/// <remarks>
+/// P/Invoke declarations are in <see cref="LibPulse"/> (audit §8.7 — extracted from
+/// the private copy that previously lived here to share with
+/// <see cref="PulseAudioCaptureBackend"/>).
+/// </remarks>
 public sealed class PulseAudioSimpleBackend : IAudioBackend
 {
     private IntPtr _connection;
@@ -24,7 +29,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
     {
         try
         {
-            pa_strerror(0);
+            LibPulse.GetErrorString(0);
             return true;
         }
         catch (DllNotFoundException)
@@ -47,18 +52,18 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
             _sampleRate = sampleRate;
             _channels = channels;
 
-            var sampleSpec = new pa_sample_spec
+            var sampleSpec = new LibPulse.PaSampleSpec
             {
-                format = PA_SAMPLE_FLOAT32LE,
+                format = LibPulse.PA_SAMPLE_FLOAT32LE,
                 rate = (uint)sampleRate,
                 channels = (byte)channels
             };
 
             int error;
-            _connection = pa_simple_new(
+            _connection = LibPulse.pa_simple_new(
                 IntPtr.Zero,       // Use default server
                 "flow-lang",       // Application name
-                PA_STREAM_PLAYBACK,
+                LibPulse.PA_STREAM_PLAYBACK,
                 IntPtr.Zero,       // Use default device
                 "playback",        // Stream description
                 ref sampleSpec,
@@ -68,7 +73,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
 
             if (_connection == IntPtr.Zero)
             {
-                var errorMsg = Marshal.PtrToStringAnsi(pa_strerror(error));
+                var errorMsg = LibPulse.GetErrorString(error);
                 Console.Error.WriteLine($"PulseAudio: Failed to connect: {errorMsg}");
                 return false;
             }
@@ -94,7 +99,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
         }
 
         // Clamp samples to [-1.0, 1.0] to prevent distortion
-        var clamped = ClampSamples(samples);
+        var clamped = AudioUtils.ClampSamples(samples);
 
         // Pin the float array and write in chunks to support cancellation
         var handle = GCHandle.Alloc(clamped, GCHandleType.Pinned);
@@ -125,12 +130,12 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
                         return;
 
                     var ptr = handle.AddrOfPinnedObject() + byteOffset;
-                    result = pa_simple_write(_connection, ptr, (nuint)writeSize, out error);
+                    result = LibPulse.pa_simple_write(_connection, ptr, (nuint)writeSize, out error);
                 }
 
                 if (result < 0)
                 {
-                    var errorMsg = Marshal.PtrToStringAnsi(pa_strerror(error));
+                    var errorMsg = LibPulse.GetErrorString(error);
                     throw new InvalidOperationException($"PulseAudio write error: {errorMsg}");
                 }
 
@@ -149,7 +154,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
             {
                 if (IsInitialized)
                 {
-                    pa_simple_drain(_connection, out _);
+                    LibPulse.pa_simple_drain(_connection, out _);
                 }
             }
         }
@@ -168,6 +173,11 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
                 "No audio output available. Install PipeWire or PulseAudio.");
     }
 
+    // Reusable scratch for WriteChunk — called continuously from the single
+    // streaming thread during live playback; a per-call allocation is steady-state
+    // Gen0 garbage on the audio-feed path (audit 2026-06-09 §8.6).
+    private float[] _chunkScratch = Array.Empty<float>();
+
     public void WriteChunk(float[] samples, int offset, int count, int sampleRate, int channels)
     {
         if (count <= 0)
@@ -177,12 +187,13 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
 
         // Clamp samples in-place check; write from a clamped sub-buffer
         // to avoid allocating a full copy of the source array.
-        var chunk = new float[count];
+        if (_chunkScratch.Length < count)
+            _chunkScratch = new float[count];
+        var chunk = _chunkScratch;
         for (int i = 0; i < count; i++)
         {
             int srcIdx = offset + i;
-            if (srcIdx >= samples.Length) break;
-            float s = samples[srcIdx];
+            float s = srcIdx < samples.Length ? samples[srcIdx] : 0f;
             if (float.IsNaN(s) || float.IsInfinity(s))
                 chunk[i] = 0f;
             else
@@ -201,11 +212,11 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
 
                 int error;
                 var ptr = handle.AddrOfPinnedObject();
-                int result = pa_simple_write(_connection, ptr, (nuint)writeBytes, out error);
+                int result = LibPulse.pa_simple_write(_connection, ptr, (nuint)writeBytes, out error);
 
                 if (result < 0)
                 {
-                    var errorMsg = Marshal.PtrToStringAnsi(pa_strerror(error));
+                    var errorMsg = LibPulse.GetErrorString(error);
                     throw new InvalidOperationException($"PulseAudio write error: {errorMsg}");
                 }
             }
@@ -223,7 +234,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
         {
             if (IsInitialized)
             {
-                pa_simple_flush(_connection, out _);
+                LibPulse.pa_simple_flush(_connection, out _);
             }
         }
     }
@@ -259,54 +270,8 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
     {
         if (_connection != IntPtr.Zero)
         {
-            pa_simple_free(_connection);
+            LibPulse.pa_simple_free(_connection);
             _connection = IntPtr.Zero;
         }
     }
-
-    /// <summary>
-    /// Clamp all samples to the valid range [-1.0, 1.0] and handle NaN/Infinity.
-    /// Delegates to the shared AudioUtils implementation.
-    /// </summary>
-    private static float[] ClampSamples(float[] samples) => AudioUtils.ClampSamples(samples);
-
-    // --- PulseAudio Simple API P/Invoke bindings ---
-
-    private const int PA_STREAM_PLAYBACK = 1;
-    private const int PA_SAMPLE_FLOAT32LE = 5; // PA_SAMPLE_FLOAT32LE
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct pa_sample_spec
-    {
-        public int format;
-        public uint rate;
-        public byte channels;
-    }
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr pa_simple_new(
-        IntPtr server,
-        [MarshalAs(UnmanagedType.LPStr)] string name,
-        int dir,
-        IntPtr dev,
-        [MarshalAs(UnmanagedType.LPStr)] string streamName,
-        ref pa_sample_spec ss,
-        IntPtr channelMap,
-        IntPtr attr,
-        out int error);
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void pa_simple_free(IntPtr s);
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int pa_simple_write(IntPtr s, IntPtr data, nuint bytes, out int error);
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int pa_simple_drain(IntPtr s, out int error);
-
-    [DllImport("libpulse-simple.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int pa_simple_flush(IntPtr s, out int error);
-
-    [DllImport("libpulse.so.0", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr pa_strerror(int error);
 }

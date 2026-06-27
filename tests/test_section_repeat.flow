@@ -1,0 +1,36 @@
+// Phase 36 Plan 36-10 (SECT-01 / D-36-14) — composer-facing *N repetition
+// operator on parameterized section calls.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_section_repeat.flow
+//
+// USAGE (determinism gate):
+//   $ bash scripts/test_two_run_determinism.sh tests/test_section_repeat.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+section verse(Note root) {
+  Sequence inner = | C4q D4q E4q F4q |
+}
+
+Song s = [verse(C4)*3]
+Int sectionCount = s.SectionCount
+
+(test "*N repeat on parameterized call counts correctly"
+  lazy((assertEq sectionCount 1)))
+
+(print "SECTION REPEAT TEST REGISTERED")
+
+// ===========================================================
+// Renderable artifact for scripts/test_two_run_determinism.sh
+// ===========================================================
+
+tempo 120 {
+    timesig 4/4 {
+        Song song = [verse(C4)*3]
+        Buffer mix = (renderSong song "piano")
+        (writeWav "/tmp/section_repeat.wav" mix)
+    }
+}

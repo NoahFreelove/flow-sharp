@@ -25,11 +25,13 @@ public static class VocalizationFunctions
     public static void Register(InternalFunctionRegistry registry)
     {
         // tts(String) -> Buffer
-        var ttsSignature = new FunctionSignature("tts", [StringType.Instance]);
+        var ttsSignature = new FunctionSignature("tts", [StringType.Instance],
+            ParameterNames: ["text"]);
         registry.Register("tts", ttsSignature, Tts);
 
         // setTtsCommand(String) -> Void
-        var setTtsSig = new FunctionSignature("setTtsCommand", [StringType.Instance]);
+        var setTtsSig = new FunctionSignature("setTtsCommand", [StringType.Instance],
+            ParameterNames: ["command"]);
         registry.Register("setTtsCommand", setTtsSig, SetTtsCommand);
     }
 
@@ -46,7 +48,8 @@ public static class VocalizationFunctions
         FlowLang.Runtime.ExecutionContext context)
     {
         var singSignature = new FunctionSignature("sing",
-            [StringType.Instance, NoteType.Instance, DoubleType.Instance]);
+            [StringType.Instance, NoteType.Instance, DoubleType.Instance],
+            ParameterNames: ["phoneme", "pitch", "duration"]);
         registry.Register("sing", singSignature, args => SingWithContext(args, context));
     }
 

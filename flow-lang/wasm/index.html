@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+  Phase 48 Plan 48-04 — Dev-only smoke harness for the Flow WASM runtime.
+
+  This file is NOT the SvelteKit playground (Phase 49 owns the real UI). It
+  exists so a contributor can sanity-check the runtime end-to-end in any modern
+  browser without setting up the full playground project.
+
+  Usage (serve the GENERATED AppBundle root — verified layout per
+  .planning/debug/wasm-boot-no-app-bundle.md, fix(48-06)):
+    dotnet publish flow-lang/flow-lang.csproj -p:FlowTarget=Web -c Release
+    cd flow-lang/bin/Release/net10.0/browser-wasm/AppBundle/
+    python3 -m http.server 8080
+    # then open: http://localhost:8080/index.html
+    #
+    # AppBundle/ root holds index.html + flow-runtime.js + package.json;
+    # the Mono-WASM runtime (dotnet.js + dotnet.boot.js + dotnet.native.wasm +
+    # Webcil .wasm assemblies) lives under AppBundle/_framework/. index.html
+    # imports ./flow-runtime.js (same dir); flow-runtime.js imports
+    # ./_framework/dotnet.js. Serving the AppBundle root is what makes the
+    # boot manifest fetch resolve.
+
+  D-48-09 user-gesture chain: the Run button's onclick handler calls
+  runtime.resumeAudio() AND runtime.run(source) in the SAME async function so
+  the browser autoplay policy is satisfied in one gesture frame.
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Flow Runtime — Dev Smoke Harness</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+               margin: 1rem; max-width: 960px; }
+        h1 { margin: 0 0 0.25rem; font-size: 1.2rem; }
+        .meta { color: #666; font-size: 0.85rem; margin-bottom: 1rem; }
+        textarea { width: 100%; min-height: 8rem; font-family: ui-monospace, "Menlo", monospace;
+                   font-size: 0.9rem; padding: 0.5rem; box-sizing: border-box; }
+        button { padding: 0.5rem 1rem; font-size: 0.95rem; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: wait; }
+        .status { margin-left: 0.75rem; color: #555; font-size: 0.85rem; }
+        .pane-label { font-weight: 600; font-size: 0.85rem; margin-top: 0.75rem; color: #333; }
+        pre { background: #f4f4f4; padding: 0.5rem; border-radius: 4px; overflow-x: auto;
+              font-size: 0.85rem; min-height: 1.5rem; margin: 0.25rem 0; white-space: pre-wrap; }
+        .err-pane { background: #fff3f3; color: #802020; }
+    </style>
+</head>
+<body>
+    <h1>Flow Runtime — Dev Smoke Harness</h1>
+    <p class="meta">
+        Phase 48 Plan 48-04. Not the SvelteKit playground (Phase 49). Loads
+        <code>flow-runtime.js</code> as an ES module and exercises the round-trip
+        end-to-end. D-48-09 user-gesture chain wired in the Run button.
+    </p>
+
+    <textarea id="src">use "@audio"
+(play (createSineTone 1.0 440Hz 0.5))</textarea>
+    <div style="margin-top: 0.5rem;">
+        <button id="run">Run</button>
+        <span class="status" id="status">idle</span>
+    </div>
+
+    <div class="pane-label">stdout</div>
+    <pre id="stdout"></pre>
+
+    <div class="pane-label">stderr</div>
+    <pre id="stderr"></pre>
+
+    <div class="pane-label">errors</div>
+    <pre id="errors" class="err-pane"></pre>
+
+    <div class="pane-label">duration</div>
+    <pre id="duration"></pre>
+
+    <script type="module">
+        // Import the runtime ES module — flow-runtime.js sits next to this
+        // file at the AppBundle/ root (both copied there by the runtime pack's
+        // _WasmGenerateAppBundle target via WasmMainHTMLPath / WasmMainJSPath),
+        // so the relative path is './flow-runtime.js'.
+        import { loadFlowRuntime } from './flow-runtime.js';
+
+        const srcEl = document.getElementById('src');
+        const runBtn = document.getElementById('run');
+        const statusEl = document.getElementById('status');
+        const stdoutEl = document.getElementById('stdout');
+        const stderrEl = document.getElementById('stderr');
+        const errorsEl = document.getElementById('errors');
+        const durationEl = document.getElementById('duration');
+
+        let runtime = null;
+
+        runBtn.addEventListener('click', async () => {
+            runBtn.disabled = true;
+            statusEl.textContent = 'booting runtime...';
+
+            try {
+                if (!runtime) {
+                    runtime = await loadFlowRuntime();
+                }
+
+                // D-48-09 user-gesture chain: resumeAudio FIRST so the
+                // AudioContext is unsuspended in the same gesture frame as
+                // any subsequent (play ...) call inside runtime.run().
+                statusEl.textContent = 'resuming audio...';
+                await runtime.resumeAudio();
+
+                statusEl.textContent = 'running...';
+                const result = await runtime.run(srcEl.value);
+
+                stdoutEl.textContent = result.stdout || '(empty)';
+                stderrEl.textContent = result.stderr || '(empty)';
+                errorsEl.textContent = result.errors && result.errors.length > 0
+                    ? result.errors.map(e =>
+                        '[' + e.kind + '] ' + e.message +
+                        (e.line ? ' (line ' + e.line + ')' : ''))
+                        .join('\n')
+                    : '(none)';
+                durationEl.textContent = (result.durationMs ?? 0) + ' ms';
+
+                statusEl.textContent = 'done';
+            } catch (err) {
+                errorsEl.textContent = '[harness] ' + (err && err.message ? err.message : String(err));
+                statusEl.textContent = 'failed';
+            } finally {
+                runBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

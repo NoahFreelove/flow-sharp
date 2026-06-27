@@ -42,7 +42,7 @@ public sealed class MillisecondType : FlowType
 
         string valueStr = msStr[..^2]; // Remove "ms"
 
-        if (!double.TryParse(valueStr, out double value))
+        if (!double.TryParse(valueStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value))
             throw new ArgumentException($"Invalid millisecond value: {valueStr}");
 
         return value;

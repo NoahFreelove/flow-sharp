@@ -8,4 +8,5 @@ namespace FlowLang.Ast.Expressions;
 public record ArrayIndexExpression(
     SourceLocation Location,
     Expression Array,
-    Expression Index) : Expression(Location);
+    Expression Index,
+    Span? Span = null) : Expression(Location);

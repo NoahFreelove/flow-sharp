@@ -17,30 +17,42 @@ namespace FlowLsp.Diagnostics;
 /// (returns IReadOnlyList&lt;Diagnostic&gt;). Plan 24-04 wires this into
 /// the DocumentManager onParse callback via CombinedDiagnosticsPublisher.
 ///
-/// D-19 activation gate: short-circuits to Array.Empty when
-/// `Ast.Pragmas.Has("scaleLint")` is false (LINT-02 opt-in invariant).
+/// Phase 31 D-03 SUPERSEDES Phase 24 D-19: the analyzer now runs
+/// unconditionally — there is no opt-in pragma gate. The
+/// <c>enable scaleLint;</c> pragma remains registered in
+/// <see cref="FlowLang.Lexing.PragmaRegistry"/> as a recognized no-op for
+/// v1.3 backward compatibility (Phase 31 D-04 — no language-level opt-out;
+/// editor-side severity-filter is the policy answer).
+///
 /// D-21 innermost-key resolution: reuses NoteStreamContext.FindEnclosingKey
 /// VERBATIM — no parallel resolver lives here.
 /// D-22 silent fail-open: TryParseKeyWithMode false OR DiatonicSpellings null
 /// → analyzer emits zero diagnostics for that block.
-/// D-18 source string: every emitted Diagnostic carries Source="flow.scaleLint"
-/// (NOT just "flow") so editors can filter scale-lint independently of parse errors.
+/// D-18 / Phase 31 D-05 source string: every emitted Diagnostic carries
+/// Source="flow.scaleLint" (NOT just "flow") so editors can filter scale-lint
+/// independently of parse errors. The source string is preserved across the
+/// D-03 default-on flip so existing editor filter rules continue to work.
 /// </summary>
 public static class ScaleLintAnalyzer
 {
     /// <summary>
     /// Walk the AST + tokens and return Information-severity Diagnostic instances
-    /// for non-diatonic notes inside `key { ... }` blocks. Returns an empty list
-    /// when `enable scaleLint;` is not declared (D-19 / LINT-02 short-circuit).
+    /// for non-diatonic notes inside `key { ... }` blocks. Phase 31 D-03 removed
+    /// the pragma-gate short-circuit; the analyzer now always runs. When there is
+    /// no enclosing key block the per-note <see cref="CheckNote"/> path still
+    /// silently returns (Phase 24 D-15 / D-23 invariant), so the overall analyzer
+    /// emits zero diagnostics for sources without any <c>key { ... }</c> context.
     /// </summary>
     public static IReadOnlyList<Diagnostic> Analyze(
         FlowProgram ast,
         IReadOnlyList<Token> tokens,
         string source)
     {
-        // D-19 short-circuit — opt-in only (LINT-02 invariant).
-        if (!ast.Pragmas.Has("scaleLint"))
-            return Array.Empty<Diagnostic>();
+        // Phase 31 D-03: pragma-gate REMOVED. The analyzer runs unconditionally.
+        // The `enable scaleLint;` pragma is still a recognized PragmaRegistry
+        // entry (description updated to "Phase 31 D-03 no-op"); old v1.3 scripts
+        // that declare it continue to parse without surfacing the D-12
+        // unknown-pragma error.
 
         var diagnostics = new List<Diagnostic>();
         WalkStatements(ast.Statements, ast, tokens, source, diagnostics);

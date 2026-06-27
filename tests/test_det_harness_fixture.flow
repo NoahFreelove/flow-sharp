@@ -1,0 +1,5 @@
+// Minimal determinism-harness fixture — used by scripts/test_two_run_determinism.sh
+// regression test only. Produces a tiny 0.1s sine tone at an absolute path.
+use "@audio"
+Buffer tone = (createSineTone 0.1 440.0 0.1)
+(writeWav "/tmp/test_det_harness_fixture_out.wav" tone)

@@ -7,4 +7,5 @@ namespace FlowLang.Ast.Statements;
 /// </summary>
 public record ImportStatement(
     SourceLocation Location,
-    string FilePath) : Statement(Location);
+    string FilePath,
+    Span? Span = null) : Statement(Location);

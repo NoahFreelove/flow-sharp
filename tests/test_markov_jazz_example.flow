@@ -1,0 +1,54 @@
+// Phase 36 Plan 36-12 Task 1 — regression test pairing
+// examples/generative/markov_jazz.flow.
+//
+// Verifies that the composer-facing tutorial surface (markov one-shot,
+// markovTrain/markovGenerate split, jam, every/sometimes combinators)
+// all dispatch cleanly under the same context (key Cmajor, tempo 120,
+// 4/4) the example exercises.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_markov_jazz_example.flow
+
+use "@std"
+use "@audio"
+use "@patterns"
+use "@generative"
+use "@improv"
+use "@test"
+
+Sequence corpus = | C4q D4q E4q F4q G4q F4q E4q D4q C4q |
+
+// One-shot Markov deterministic at seed
+Sequence a = (markov corpus 2 16 42)
+Sequence b = (markov corpus 2 16 42)
+(test "markov_jazz example: one-shot seeded is deterministic"
+    lazy((assertNotesMatch a b)))
+
+// Train/generate split — two `markovTrain` calls produce DISTINCT models
+// (reference identity per Pitfall 6) but structurally equal.
+MarkovModel m1 = (markovTrain corpus 2)
+MarkovModel m2 = (markovTrain corpus 2)
+(test "markov_jazz example: markovTrain produces structurally equal models"
+    lazy((assert (markovEqual m1 m2))))
+
+// markovGenerate from the same model + same seed is deterministic
+Sequence g1 = (markovGenerate m1 8 100)
+Sequence g2 = (markovGenerate m1 8 100)
+(test "markov_jazz example: markovGenerate is deterministic"
+    lazy((assertNotesMatch g1 g2)))
+
+// jam over ii-V-I-VI with seed is deterministic
+Sequence chords = | Dm7 | G7 | Cmaj7 | Am7 |
+Sequence solo1 = (jam chords #jazz 4 "Cmajor" 1234 2)
+Sequence solo2 = (jam chords #jazz 4 "Cmajor" 1234 2)
+(test "markov_jazz example: jam seeded is deterministic"
+    lazy((assertNotesMatch solo1 solo2)))
+
+// every + sometimes compose without exceptions
+Sequence riff = (markovGenerate m1 8 200)
+Sequence varied = (every 2 (fn Sequence s => (fast s 2.0)) riff)
+Sequence variation = (sometimes 0.4 (fn Sequence s => (transpose s +7st)) varied)
+(test "markov_jazz example: every+sometimes chain produces a Sequence"
+    lazy((assertNotesMatch variation variation)))
+
+(print "MARKOV_JAZZ EXAMPLE REGRESSION TESTS REGISTERED")

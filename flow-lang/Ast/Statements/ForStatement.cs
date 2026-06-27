@@ -11,5 +11,6 @@ public record ForStatement(
     FlowType ElementType,
     string VariableName,
     Expression Collection,
-    IReadOnlyList<Statement> Body
+    IReadOnlyList<Statement> Body,
+    Span? Span = null
 ) : Statement(Location);

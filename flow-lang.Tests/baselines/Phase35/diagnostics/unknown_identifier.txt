@@ -1,0 +1,8 @@
+error: unknown identifier 'transpos'
+  --> tests/test_chain.flow:7:9
+   |
+ 7 | seq -> (transpos 2)
+   |         ^^^^^^^^ not found in scope
+   |
+   = note: tried looking in: enclosing function 'main', module 'std', module 'audio'
+   = help: did you mean 'transpose'?

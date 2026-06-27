@@ -55,6 +55,12 @@ public class ThunkTests
             IReadOnlyList<Value> args,
             IReadOnlyDictionary<string, Value>? capturedVariables)
             => throw new NotSupportedException("NoopInvoker: test double");
+
+        // Phase 36 Plan 36-10 — section-call dispatcher contract (unused in Thunk tests)
+        public void ExecuteStatement(FlowLang.Ast.Statement stmt)
+            => throw new NotSupportedException("NoopInvoker: test double");
+
+        public Value? LastExpressionValue => null;
     }
 
     // Placeholder expression — CountingEvaluator.Evaluate ignores its argument,

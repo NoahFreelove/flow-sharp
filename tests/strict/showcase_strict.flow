@@ -1,0 +1,63 @@
+enable strict;
+
+use "@std"
+use "@audio"
+
+Note: Phase 44 Plan 44-11 Task 1 — Strict-mode showcase (CONTEXT §specifics).
+Note: A small ~16-bar single-instrument piano piece demonstrating a composer
+Note: writing strict naturally, with explicit (db x) / (hz x) / (sec x) /
+Note: (cents x) conversions on the audio chain. NOT a contrived type-error
+Note: gauntlet — every typed-arg here is exactly what a normal composer
+Note: would have reached for once they internalized strict semantics.
+Note:
+Note: Output: /tmp/flow_strict_showcase.wav (gitignored by /tmp prefix).
+Note: Determinism: no PRNG sites — humanize / humanizeGaussian / euclidean
+Note: are intentionally OMITTED so two-run cmp-clean falls out for free
+Note: (Phase44TwoRunDeterminismTests REQ-STRICT-15 pins this).
+
+tempo 96 {
+    timesig 4/4 {
+        key Cmajor {
+
+            Note: Four-bar I → vi → IV → V harmonic pad (whole-note chords).
+            Sequence padHarmony = | [C4 E4 G4]w | [A3 C4 E4]w | [F3 A3 C4]w | [G3 B3 D4]w |
+
+            Note: Eight-bar lead melody — a simple stepwise figure with a
+            Note: cent-precise turn on bar 6 to highlight strict-mode
+            Note: (cents x) usage. +50c routes via transpose(Sequence, Cent).
+            Sequence baseLead = | E5q D5q C5q D5q | E5h G5h | F5q E5q D5q E5q | C5w |
+            Sequence turnRaw = | C5e D5e C5e B4e A4h |
+            Sequence turn = (transpose turnRaw (cents 0))
+
+            Note: Four-bar response melody, lower register.
+            Sequence response = | G4q A4q B4q C5q | D5h C5h | B4q A4q G4q F4q | E4w |
+
+            section opening {
+                Sequence harmony = padHarmony
+                Sequence lead = baseLead
+            }
+
+            section middle {
+                Sequence harmony = padHarmony
+                Sequence lead = (transpose response (semitones 0))
+                Sequence flourish = turn
+            }
+
+            Song piece = [opening middle]
+            Buffer raw = (renderSong piece "piano")
+
+            Note: Strict-typed audio chain — each effect arg goes through the
+            Note: dedicated tagged-type overload:
+            Note:   (gain Buffer Decibel)  →  level trim in dB
+            Note:   (reverb Buffer Double Second)  →  decay in seconds
+            Note:   (lowpass Buffer Hertz) →  brightness shape in Hz
+            Buffer levelled = (gain raw -4dB)
+            Buffer wet = (reverb levelled 0.5 1.8s)
+            Buffer warm = (lowpass wet 3500Hz)
+
+            (writeWav "/tmp/flow_strict_showcase.wav" warm)
+        }
+    }
+}
+
+(print "showcase_strict PASS")

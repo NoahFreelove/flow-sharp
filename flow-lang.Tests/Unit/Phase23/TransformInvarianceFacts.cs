@@ -55,6 +55,13 @@ public class TransformInvarianceFacts
     {
         var registry = new InternalFunctionRegistry();
         TransformFunctions.Register(registry);
+        // Phase 44 Plan 44-05: 8 transforms moved to RegisterContextDependent.
+        // None of THIS file's Facts exercise those 8 transforms today, but
+        // wiring the context-dependent path now keeps the test harness
+        // forward-compatible with any future Phase 23 Fact that does.
+        var dummyReporter = new FlowLang.Diagnostics.ErrorReporter();
+        var dummyContext = new FlowLang.Runtime.ExecutionContext(dummyReporter, registry);
+        TransformFunctions.RegisterContextDependent(registry, dummyContext);
         return registry;
     }
 

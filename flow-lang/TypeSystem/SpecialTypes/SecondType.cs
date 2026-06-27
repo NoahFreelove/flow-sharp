@@ -42,7 +42,7 @@ public sealed class SecondType : FlowType
 
         string valueStr = secStr[..^1]; // Remove "s"
 
-        if (!double.TryParse(valueStr, out double value))
+        if (!double.TryParse(valueStr, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double value))
             throw new ArgumentException($"Invalid second value: {valueStr}");
 
         return value;

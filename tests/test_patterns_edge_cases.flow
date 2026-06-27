@@ -1,0 +1,46 @@
+// Phase 36 Plan 36-05 Task 2 — composer-facing edge-case tests for the
+// 13 @patterns combinators. Verifies the charitable-interpretation contract:
+// degenerate input (n<=0, factor=0, NaN offset, prob outside [0,1], empty
+// sequences) returns the input unchanged + emits a one-shot stderr advisory.
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_patterns_edge_cases.flow
+
+use "@std"
+use "@patterns"
+use "@test"
+
+Sequence src = | C4q D4q | E4q F4q |
+
+// every with n=0 returns input unchanged.
+(test "every n=0 is identity"
+  lazy((assertNotesMatch src (every 0 (fn Sequence s => (rev s)) src))))
+
+// chunk with n=0 returns input unchanged.
+(test "chunk n=0 is identity"
+  lazy((assertNotesMatch src (chunk 0 (fn Sequence s => (rev s)) src))))
+
+// fast factor=0 returns input unchanged (would otherwise divide-by-zero).
+(test "fast factor=0 is identity"
+  lazy((assertNotesMatch src (fast src 0.0))))
+
+// slow factor=0 returns input unchanged.
+(test "slow factor=0 is identity"
+  lazy((assertNotesMatch src (slow src 0.0))))
+
+// iter n=-1 returns input unchanged.
+(test "iter n=-1 is identity"
+  lazy((assertNotesMatch src (iter -1 src))))
+
+// sometimes prob>1 clamps to 1 and applies fn to every bar.
+// Verifying behavior is reproducible (deterministic via PrngRegistry).
+(test "sometimes prob>1 is deterministic"
+  lazy((assertNotesMatch
+    (sometimes 1.5 (fn Sequence s => (rev s)) src)
+    (sometimes 1.5 (fn Sequence s => (rev s)) src))))
+
+// sparseSeq prob<0 clamps to 0 → no drops.
+(test "sparseSeq prob<0 keeps everything"
+  lazy((assertNotesMatch src (sparseSeq -0.5 src))))
+
+(print "ALL PATTERNS-EDGE-CASES TESTS REGISTERED")

@@ -77,10 +77,18 @@ public sealed class SignatureHelpHandler : SignatureHelpHandlerBase
         var b = _builtIns.Find(ctx.FunctionName);
         if (b is null) return Task.FromResult<SignatureHelp?>(null);
 
+        // Phase 31 SPEC-3 (D-01/D-02): LSP-side renderer emits U+2026 for varargs.
+        // Parameters populated explicitly per Pitfall 3 — clients hand-resolve from
+        // ParameterInformation labels rather than computing byte offsets in the merged
+        // signature string (UTF-8 width vs UTF-16 code units vs grapheme count).
         var sig = new SignatureInformation
         {
-            Label = b.Signatures.Count > 0 ? b.Signatures[0].ToString() : ctx.FunctionName,
-            Parameters = new Container<ParameterInformation>()
+            Label = b.Signatures.Count > 0
+                ? LspMappings.FormatSignature(b.Signatures[0])
+                : ctx.FunctionName,
+            Parameters = b.Signatures.Count > 0
+                ? LspMappings.BuildParameters(b.Signatures[0])
+                : new Container<ParameterInformation>()
         };
         return Task.FromResult<SignatureHelp?>(new SignatureHelp
         {
@@ -94,7 +102,7 @@ public sealed class SignatureHelpHandler : SignatureHelpHandlerBase
         SignatureHelpCapability capability, ClientCapabilities clientCapabilities)
         => new()
         {
-            DocumentSelector = TextDocumentSelector.ForLanguage("flow"),
+            DocumentSelector = TextDocumentSelector.ForPattern("**/*.flow"),
             TriggerCharacters = new Container<string>("(", ","),
         };
 }

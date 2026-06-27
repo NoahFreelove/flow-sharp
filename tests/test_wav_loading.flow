@@ -3,7 +3,7 @@ use "@audio"
 
 Note: Generate a test buffer (stereo sine tone, 0.1 seconds)
 Buffer original = (createSineTone 0.1 440.0 0.8)
-(exportWav original "tests/test_output_roundtrip.wav")
+(writeWav "tests/test_output_roundtrip.wav" original)
 
 Note: Load it back
 Buffer loaded = (loadWav "tests/test_output_roundtrip.wav")

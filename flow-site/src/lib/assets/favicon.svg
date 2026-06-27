@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+	<title>Flow</title>
+	<defs>
+		<linearGradient id="aqua" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#8fc0f2" />
+			<stop offset="1" stop-color="#2e6cba" />
+		</linearGradient>
+		<linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0" stop-color="#ffffff" stop-opacity="0.6" />
+			<stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+		</linearGradient>
+	</defs>
+	<!-- aqua skeuomorphic rounded-square body (8/34 corner-radius ratio = ~15 at 64) -->
+	<rect x="0" y="0" width="64" height="64" rx="15" fill="url(#aqua)" />
+	<!-- glossy top-half highlight -->
+	<path d="M0 15 A15 15 0 0 1 15 0 L49 0 A15 15 0 0 1 64 15 L64 28 Q32 40 0 28 Z" fill="url(#gloss)" />
+	<!-- centered white musical note (matches the navbar ♪ glyph) -->
+	<text x="32" y="34" text-anchor="middle" dominant-baseline="central"
+		font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="38" fill="#ffffff">♪</text>
+</svg>

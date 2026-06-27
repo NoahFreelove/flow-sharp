@@ -27,7 +27,33 @@ public class InternalFunctionRegistry
         if (!_implementations.TryGetValue(name, out var overloads))
             return false;
 
-        // Find matching overload by signature
+        // Phase 44 Plan 44-08 — TWO-PASS lookup: prefer EXACT signature match
+        // before falling back to wildcard / Void-cross matches. Required when
+        // the same function name has both a typed overload (e.g.
+        // `print(String)`) AND a Void-wildcard overload
+        // (e.g. `print(Void)`) — without the prefer-exact pass, the surface
+        // declaration `internal proc print (Void: s)` would bind to the FIRST
+        // registered impl (`StdLib.Print`) because `Void` matches any
+        // registered type via `TypesEqual` line 95-98. Pass 1 catches the
+        // intended `print(Void) → StdLib.PrintAny` binding before the wildcard
+        // fallback fires. Backwards-compatible: the existing single-impl
+        // (or single-wildcard-impl) cases still resolve identically since
+        // Pass 1 either matches (good) or finds nothing, falling through to
+        // Pass 2.
+        // First pass — exact signature equality on every InputTypes slot
+        // (no Void-wildcard cross-matching).
+        foreach (var (signature, impl) in overloads)
+        {
+            if (SignaturesMatchExactly(signature, requestedSignature))
+            {
+                implementation = impl;
+                registeredSignature = signature;
+                return true;
+            }
+        }
+
+        // Second pass — original compatibility-based match (Void wildcards
+        // honored on either side).
         foreach (var (signature, impl) in overloads)
         {
             if (SignaturesMatch(signature, requestedSignature))
@@ -39,6 +65,43 @@ public class InternalFunctionRegistry
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Phase 44 Plan 44-08 — strict per-slot equality check used by Pass 1
+    /// of <see cref="TryGetImplementation"/>. Does NOT treat <c>Void</c> as a
+    /// wildcard — both the registered and requested signature must match
+    /// type-for-type. Mirrors <see cref="SignaturesMatch"/>'s arity / varargs
+    /// handling so the prefer-exact pass and the wildcard-fallback pass have
+    /// identical structural shape, only the per-slot predicate differs.
+    /// </summary>
+    private bool SignaturesMatchExactly(FunctionSignature registered, FunctionSignature requested)
+    {
+        if (registered.IsVarArgs)
+        {
+            int fixedCount = registered.InputTypes.Count - 1;
+            if (requested.InputTypes.Count < fixedCount) return false;
+            for (int i = 0; i < fixedCount; i++)
+            {
+                if (!registered.InputTypes[i].Equals(requested.InputTypes[i]))
+                    return false;
+            }
+            var varArgType = registered.InputTypes[fixedCount];
+            for (int i = fixedCount; i < requested.InputTypes.Count; i++)
+            {
+                if (!varArgType.Equals(requested.InputTypes[i]))
+                    return false;
+            }
+            return true;
+        }
+        if (registered.InputTypes.Count != requested.InputTypes.Count)
+            return false;
+        for (int i = 0; i < registered.InputTypes.Count; i++)
+        {
+            if (!registered.InputTypes[i].Equals(requested.InputTypes[i]))
+                return false;
+        }
+        return true;
     }
 
     private bool SignaturesMatch(FunctionSignature registered, FunctionSignature requested)
@@ -101,6 +164,23 @@ public class InternalFunctionRegistry
         if (registered is ArrayType rArray && requested is ArrayType reqArray)
         {
             return TypesEqual(rArray.ElementType, reqArray.ElementType);
+        }
+
+        // Phase 33 Plan 33-05 — DictType wildcard symmetric with the ArrayType
+        // case above. The dict ops (`get`/`set`/etc.) registered in
+        // BuiltInFunctions.cs:944-957 use a `DictType(Void, Void)` wildcard, and
+        // Plan 33-05's `__enableSfzModule(Dict<Symbol, String>)` follows the
+        // same convention. Without this recursive wildcard, a concrete-typed
+        // declaration like `internal proc __enableSfzModule (Dict<Symbol, String>: instruments)`
+        // fails to bind even though `DictType(Void, Void).IsCompatibleWith(...)`
+        // returns true at the OverloadResolver layer — the SignaturesMatch /
+        // TypesEqual layer has a stricter equality semantics that needs the
+        // same wildcard handling.
+        if (registered is FlowLang.TypeSystem.SpecialTypes.DictType rDict
+            && requested is FlowLang.TypeSystem.SpecialTypes.DictType reqDict)
+        {
+            return TypesEqual(rDict.KeyType, reqDict.KeyType)
+                && TypesEqual(rDict.ValueType, reqDict.ValueType);
         }
 
         return false;

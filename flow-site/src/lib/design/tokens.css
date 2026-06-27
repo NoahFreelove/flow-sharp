@@ -1,0 +1,170 @@
+/*
+ * Design tokens (D-49-17) — the single source of truth for the skeuomorphic system.
+ *
+ * Light theme is the default under :root (paper + walnut + brass). The dark theme
+ * (D-49-20) re-declares the COLOR custom props under [data-theme="dark"] — a SECOND
+ * skeuo theme (deep walnut + amber-LED accents), NOT an inversion. Spacing / type /
+ * shadow / radius / motion tokens are theme-independent and declared once.
+ *
+ * These raw custom properties are mapped into Tailwind v4's utility layer via the
+ * @theme block in src/app.css (Pitfall 5 — CSS-first, NO tailwind.config.js).
+ *
+ * Self-hosted fonts (UI-SPEC §Font loading): Inter / Fraunces / JetBrains Mono as
+ * woff2 under /fonts, font-display: swap, no Google Fonts CDN (keeps CSP font-src 'self').
+ *
+ * Display-face note (deviation D-49-02-FONT): the UI-SPEC names Recoleta as a DEFAULT
+ * pick from D-49-06's Cooper Black / Recoleta / Krona display set. Recoleta is a
+ * commercial font with no freely-redistributable woff2, so it cannot be self-hosted
+ * without a license. Fraunces (SIL OFL, soft warm optical-display serif) is the closest
+ * freely-licensable match to the "warm hand-set serif" brief and is self-hosted here.
+ */
+
+/* ---- Self-hosted faces (woff2, swap) ---------------------------------- */
+
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/inter-latin-400.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Inter';
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url('/fonts/inter-latin-600.woff2') format('woff2');
+}
+@font-face {
+	/* Display face for the wordmark + hero (Recoleta substitute, see note above). */
+	font-family: 'Fraunces';
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url('/fonts/fraunces-latin-700.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'JetBrains Mono';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url('/fonts/jetbrains-mono-latin-400.woff2') format('woff2');
+}
+
+/* ---- Light theme tokens (default) ------------------------------------- */
+
+:root {
+	/* Color — light (paper + walnut + brass), UI-SPEC §Color */
+	--color-paper: #f5f0e6; /* 60% dominant surface */
+	--color-on-chrome: #f5f0e6; /* light text for ALWAYS-dark metal/wood chrome; theme-stable (no dark override) */
+	--color-walnut: #5c3a21; /* 30% structural secondary */
+	--color-walnut-soft: #7a5235; /* bevel light edge / grain highlight */
+	--color-brass: #c9a567; /* 10% reserved accent */
+	--color-slate: #2c2e33; /* code-surface neutral */
+	--color-ink: #241a12; /* body text on paper (12.8:1 AAA) */
+	--color-ink-muted: #5a4b3c; /* captions (6.1:1 AA) */
+	--color-felt: #6e2b2b; /* grille fabric (decorative) */
+	--color-danger: #a8322b; /* stop / destructive / error rail */
+
+	/* Font families */
+	--font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+	/* Spacing scale (D-49-17 — multiples of 4; 12 is the one allowed mid-step) */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-6: 24px;
+	--space-8: 32px;
+	--space-12: 48px;
+	--space-16: 64px;
+
+	/* Type scale (D-49-17 — size / line-height / tracking pairs) */
+	--text-caption: 12px;
+	--text-caption-lh: 1.4;
+	--text-caption-ls: 0.01em;
+	--text-small: 14px;
+	--text-small-lh: 1.45;
+	--text-small-ls: 0;
+	--text-body: 16px;
+	--text-body-lh: 1.5;
+	--text-body-ls: 0;
+	--text-lead: 18px;
+	--text-lead-lh: 1.55;
+	--text-lead-ls: 0;
+	--text-h3: 24px;
+	--text-h3-lh: 1.3;
+	--text-h3-ls: -0.005em;
+	--text-h2: 32px;
+	--text-h2-lh: 1.2;
+	--text-h2-ls: -0.01em;
+	--text-h1: 48px;
+	--text-h1-lh: 1.1;
+	--text-h1-ls: -0.02em;
+	--text-wordmark: 48px;
+	--text-wordmark-lh: 1;
+	--text-wordmark-ls: -0.03em;
+	--text-code: 14px;
+	--text-code-lh: 1.6;
+	--text-code-ls: 0;
+
+	/* Shadow scale (D-49-17 — 1/3/8/16/32) — light-from-top skeuo elevation */
+	--shadow-1: 0 1px 2px rgba(36, 26, 18, 0.18);
+	--shadow-3: 0 3px 6px rgba(36, 26, 18, 0.22);
+	--shadow-8: 0 8px 16px rgba(36, 26, 18, 0.24);
+	--shadow-16: 0 16px 28px rgba(36, 26, 18, 0.28);
+	--shadow-32: 0 32px 56px rgba(36, 26, 18, 0.32);
+	/* Inset (pressed / recessed wells) — shadow moves to the top inner edge */
+	--shadow-inset: inset 0 2px 4px rgba(36, 26, 18, 0.4);
+	/* Embossed top bevel highlight (light from top) */
+	--bevel-light: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+
+	/* Radius scale (D-49-17 — 2/4/8/12/24) */
+	--radius-1: 2px;
+	--radius-2: 4px;
+	--radius-3: 8px;
+	--radius-4: 12px;
+	--radius-knob: 24px;
+
+	/* Motion (D-49-17 / UI-SPEC §Motion) */
+	--motion-press: 50ms; /* button depress */
+	--motion-slide: 180ms; /* toggle / tab / panel slide */
+	--motion-led: 1200ms; /* LED breathe loop */
+	--motion-hover: 120ms; /* hover bevel brighten */
+	--ease-overshoot: cubic-bezier(0.16, 1, 0.3, 1); /* overshoot-correct */
+	--ease-knob: cubic-bezier(0.34, 1.2, 0.64, 1); /* damped physical knob feel */
+
+	/* Focus ring (brass 2px + 1px offset, D-49-10) */
+	--focus-ring-color: var(--color-brass);
+	--focus-ring-width: 2px;
+	--focus-ring-offset: 1px;
+
+	color-scheme: light;
+}
+
+/* ---- Dark theme tokens (D-49-20 — deep walnut + amber-LED) ------------ */
+
+[data-theme='dark'] {
+	--color-paper: #2a1f18; /* deep walnut page surface */
+	--color-walnut: #1c140e; /* darker structural chrome */
+	--color-walnut-soft: #3a2a1e; /* bevel light edge in dark */
+	--color-brass: #e0b45c; /* amber-LED accent (warmer/brighter) */
+	--color-slate: #15161a; /* code surface */
+	--color-ink: #ede3d3; /* soft cream body text (11.4:1 AAA) */
+	--color-ink-muted: #b8a78f; /* captions (6.3:1 AA) */
+	--color-felt: #4a1e1e; /* grille fabric, darker */
+	--color-danger: #e0635a; /* stop / error rail, brightened */
+
+	/* Shadows read deeper against the dark studio surface */
+	--shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+	--shadow-3: 0 3px 6px rgba(0, 0, 0, 0.55);
+	--shadow-8: 0 8px 16px rgba(0, 0, 0, 0.6);
+	--shadow-16: 0 16px 28px rgba(0, 0, 0, 0.65);
+	--shadow-32: 0 32px 56px rgba(0, 0, 0, 0.7);
+	--shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+	--bevel-light: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+	color-scheme: dark;
+}

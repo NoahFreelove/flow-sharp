@@ -1,0 +1,22 @@
+// Phase 36 Plan 36-10 (SECT-01 / D-36-17) — composer-facing Phase 35 patterns
+// in section signatures: tuple destructure.
+//
+// USAGE (composer):
+//   $ dotnet run --project flow-cli -- test tests/test_section_pattern_destructure.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+// Tuple destructure binds each slot under the BindingPattern's name.
+section transposed(<<Note root, Int reps>>) {
+  Sequence inner = | C4q D4q E4q F4q |
+}
+
+Song s = [transposed(<<D4, 2>>)]
+Int sectionCount = s.SectionCount
+
+(test "tuple destructure in section parameters dispatches"
+  lazy((assertEq sectionCount 1)))
+
+(print "SECTION PATTERN DESTRUCTURE TEST REGISTERED")

@@ -3,6 +3,14 @@ using FlowMidi.Midi;
 
 namespace FlowMidi.Conversion;
 
+// Generate(..., roundTrip: false) — default; preserves existing flow-midi CLI output
+//                                   (with `(play output)` trailer + auto-fit elision +
+//                                   `song_part` section + track.Name-derived sequence names).
+// Generate(..., roundTrip: true)  — Plan 30-08; emits SPEC-5 round-trip-friendly source:
+//                                   no `(play output)`, explicit durations on every note,
+//                                   `trackN_seq` index-derived naming, section `roundtrip`,
+//                                   `Song s = [roundtrip]` marker, no renderSong/play emission.
+
 /// <summary>
 /// Generates idiomatic .flow source code from quantized MIDI data.
 /// </summary>
@@ -30,7 +38,23 @@ static class FlowGenerator
         { (-7, false), "Cbmajor" },   { (-7, true), "Abminor" },
     };
 
-    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName)
+    /// <summary>
+    /// sweep-0614: the conversion result, so callers can tell a genuine success from a
+    /// comment-only "no playable tracks" artifact (which `check`s OK and renders
+    /// silence) — previously folded into the source string and reported as exit 0,
+    /// hiding total content loss.
+    /// </summary>
+    public readonly record struct GenerateResult(string Source, int PlayableTrackCount, int DroppedDrumTrackCount);
+
+    /// <summary>
+    /// Backward-compatible string entry point. Existing callers / tests that only
+    /// need the source keep working; the CLIs use <see cref="GenerateWithStats"/> to
+    /// inspect PlayableTrackCount for an honest exit code (sweep-0614).
+    /// </summary>
+    public static string Generate(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false, bool emitDynamics = true)
+        => GenerateWithStats(midi, quantizeResult, sourceFileName, roundTrip, sustainPedal, useSfz, emitDynamics).Source;
+
+    public static GenerateResult GenerateWithStats(MidiFile midi, QuantizeResult quantizeResult, string sourceFileName, bool roundTrip = false, bool sustainPedal = true, bool useSfz = false, bool emitDynamics = true)
     {
         var sb = new StringBuilder();
         var tracks = quantizeResult.Tracks;
@@ -45,7 +69,7 @@ static class FlowGenerator
         if (playableTracks.Count == 0)
         {
             sb.AppendLine($"Note: Converted from {sourceFileName} — no playable tracks found");
-            return sb.ToString();
+            return new GenerateResult(sb.ToString(), 0, drumTracks.Count);
         }
 
         // Gather metadata from MIDI and quantizer
@@ -67,7 +91,20 @@ static class FlowGenerator
         // Imports
         sb.AppendLine("use \"@std\"");
         sb.AppendLine("use \"@audio\"");
+        if (useSfz && !roundTrip)
+        {
+            sb.AppendLine("use \"@sfz\"");
+        }
         sb.AppendLine();
+
+        // SFZ piano binding — resolves #piano against VSCO-CE's UprightPiano.sfz via
+        // sfz_root in ~/.config/flow/config.toml. Must render with flow-cli (not
+        // flow-interpreter) — only flow-cli loads the XDG config.
+        if (useSfz && !roundTrip)
+        {
+            sb.AppendLine("Sfz piano = (loadSfz #piano)");
+            sb.AppendLine();
+        }
 
         // Open context blocks
         string indent = "";
@@ -87,6 +124,17 @@ static class FlowGenerator
 
         sb.AppendLine();
 
+        // Sustain pedal wrap — when the source is piano-style (default), wrap the
+        // section in `sustainPedal { ... }` so the renderer extends every note's
+        // buffer by ~4 seconds. This emulates a pianist holding the sustain pedal
+        // throughout (typical for Romantic-era piano). Disable with --no-sustain
+        // for staccato or non-piano sources.
+        if (sustainPedal && !roundTrip)
+        {
+            sb.AppendLine($"{indent}sustainPedal {{");
+            indent += "    ";
+        }
+
         if (drumTracks.Count > 0)
         {
             sb.AppendLine($"{indent}Note: Drum track(s) skipped (Flow uses different drum notation)");
@@ -97,34 +145,78 @@ static class FlowGenerator
         // mixes sequences within a section in parallel (additive), but
         // concatenates sections sequentially. To preserve the original
         // multi-track layering, all tracks must live inside a single section.
-        sb.AppendLine($"{indent}section song_part {{");
+        string sectionName;
+        if (roundTrip)
+        {
+            // SPEC-5: round-trip artifact section name (literal "roundtrip").
+            sectionName = "roundtrip";
+        }
+        else
+        {
+            sectionName = "song_part";
+        }
+        sb.AppendLine($"{indent}section {sectionName} {{");
         string sectionIndent = indent + "    ";
 
         var seqNames = new List<string>();
+        int trackIdx = 0;
         foreach (var track in playableTracks)
         {
-            string baseName = SanitizeVarName(track.Name);
-            string uniqueName = baseName;
-            int suffix = 2;
-            while (seqNames.Contains(uniqueName))
-                uniqueName = $"{baseName}_{suffix++}";
-            seqNames.Add(uniqueName);
+            trackIdx++;
+            string seqVar;
+            if (roundTrip)
+            {
+                // SPEC-5: flat track-index naming. Plan 30-09 wires `flow midi2flow`
+                // to this branch — the generated source is a round-trip artifact, so
+                // sequence names must be stable and source-track-order-derived
+                // (not dependent on MIDI track-name strings that may be missing or
+                // sanitize-collide).
+                seqVar = $"track{trackIdx}_seq";
+            }
+            else
+            {
+                // Default path — preserve existing flow-midi CLI behavior:
+                // SanitizeVarName + dedup-via-suffix.
+                string baseName = SanitizeVarName(track.Name);
+                string uniqueName = baseName;
+                int suffix = 2;
+                while (seqNames.Contains(uniqueName))
+                    uniqueName = $"{baseName}_{suffix++}";
+                seqNames.Add(uniqueName);
+                seqVar = uniqueName + "_seq";
+            }
 
-            string seqVar = uniqueName + "_seq";
-            WriteSequence(sb, sectionIndent, seqVar, track);
+            WriteSequence(sb, sectionIndent, seqVar, track, forceExplicitDurations: roundTrip, emitDynamics: emitDynamics);
         }
 
         sb.AppendLine($"{indent}}}");
         sb.AppendLine();
 
-        // Song expression — single section holds all parallel parts.
-        sb.AppendLine($"{indent}Song song = [song_part]");
-        sb.AppendLine($"{indent}Buffer output = (renderSong song \"piano\")");
-        sb.AppendLine($"{indent}(play output)");
+        if (roundTrip)
+        {
+            // SPEC-5: emit the literal `Song s = [roundtrip]` marker only. Plan 30-09's
+            // `flow midi2flow` CLI splices `(writeMidi ...)` after this marker so the
+            // round-trip artifact stays a pure structural translation — no automatic
+            // renderSong / play / writeWav emission here.
+            sb.AppendLine($"{indent}Song s = [{sectionName}]");
+        }
+        else
+        {
+            // Single section holds all parallel parts.
+            sb.AppendLine($"{indent}Song song = [{sectionName}]");
+            string instrumentTag = useSfz ? "sampler:piano" : "piano";
+            sb.AppendLine($"{indent}Buffer output = (renderSong song \"{instrumentTag}\")");
+            sb.AppendLine($"{indent}(play output)");
+        }
 
         sb.AppendLine();
 
         // Close context blocks
+        if (sustainPedal && !roundTrip)
+        {
+            indent = indent.Substring(0, indent.Length - 4);
+            sb.AppendLine($"{indent}}}");
+        }
         if (hasKey)
         {
             indent = "        ";
@@ -134,15 +226,18 @@ static class FlowGenerator
         sb.AppendLine($"{indent}}}");
         sb.AppendLine("}");
 
-        return sb.ToString();
+        return new GenerateResult(sb.ToString(), playableTracks.Count, drumTracks.Count);
     }
 
-    static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track)
+    static void WriteSequence(StringBuilder sb, string indent, string varName, QuantizedTrack track, bool forceExplicitDurations = false, bool emitDynamics = true)
     {
         if (track.Bars.Count == 0) return;
 
-        // Check if all notes in the track share the same duration (enables auto-fit)
-        bool useAutoFit = CanAutoFit(track);
+        // Check if all notes in the track share the same duration (enables auto-fit).
+        // When forceExplicitDurations is true (Plan 30-08 round-trip mode), bypass
+        // auto-fit so every note carries its duration suffix verbatim — auto-fit's
+        // implicit bar-derived duration reconstruction loses round-trip determinism.
+        bool useAutoFit = forceExplicitDurations ? false : CanAutoFit(track);
 
         sb.Append($"{indent}Sequence {varName} = ");
 
@@ -150,7 +245,7 @@ static class FlowGenerator
         var barStrings = new List<string>();
         foreach (var bar in track.Bars)
         {
-            barStrings.Add(FormatBar(bar, useAutoFit));
+            barStrings.Add(FormatBar(bar, useAutoFit, emitDynamics));
         }
 
         // Build the note stream as one continuous expression.
@@ -184,17 +279,66 @@ static class FlowGenerator
         sb.AppendLine(streamBuilder.ToString());
     }
 
-    static string FormatBar(QuantizedBar bar, bool useAutoFit)
+    static string FormatBar(QuantizedBar bar, bool useAutoFit, bool emitDynamics = true)
+    {
+        // Single flat note stream per bar — true polyphony is expressed at the
+        // Sequence level (one Sequence per voice in a section), not at the bar
+        // level via {voice} blocks. The per-bar voice-block path was abandoned
+        // because per-bar voice allocation discarded musical voice identity
+        // across bars (a melody line could end up in voice 1 of bar 1 and voice 2
+        // of bar 2, causing re-attacks at every bar boundary). The track-wide
+        // voice allocator in Quantizer.cs now produces one stable Sequence per
+        // voice and the FlowGenerator emits them as parallel sequences in one
+        // section — Flow's SongRenderer mixes them additively.
+        return FormatElements(bar.Elements, useAutoFit, emitDynamics);
+    }
+
+    /// <summary>
+    /// sweep-0614: bucket a MIDI 0–127 velocity onto the eight-step dynamic ladder the
+    /// Flow note-stream parser recognizes (<c>TryParseDynamicMarking</c>:
+    /// ppp/pp/p/mp/mf/f/ff/fff → 0.125/0.25/0.375/0.5/0.625/0.75/0.875/1.0). Bucket
+    /// edges are chosen so the eight emitted tokens straddle the parser's eight
+    /// velocity values, restoring dynamic fidelity on midi2flow round-trip without any
+    /// new syntax. Pure + integer-thresholded → deterministic (two-run cmp-clean).
+    /// </summary>
+    static string VelocityToDynamic(int velocity) => velocity switch
+    {
+        < 16  => "ppp",
+        < 32  => "pp",
+        < 48  => "p",
+        < 64  => "mp",
+        < 80  => "mf",
+        < 96  => "f",
+        < 112 => "ff",
+        _     => "fff",
+    };
+
+    static string FormatElements(List<IBarElement> elements, bool useAutoFit, bool emitDynamics = true)
     {
         var parts = new List<string>();
-        bool barHasNotes = bar.Elements.Any(e => e is NoteElement or ChordElement);
+        // sweep-0614: per-bar sticky dynamic. Starts null at each bar (FormatElements
+        // is called once per bar) to MATCH the parser's stickyVelocity=null reset at
+        // every pipe (Parser.NoteStream.cs:79), so a re-parse reconstructs the same
+        // per-note velocities. A leading dynamic token is emitted before a note/chord
+        // only when its bucket DIFFERS from the running sticky — so a uniform-velocity
+        // bar carries exactly one token and the rest inherit it.
+        string? stickyDynamic = null;
 
-        foreach (var elem in bar.Elements)
+        foreach (var elem in elements)
         {
             switch (elem)
             {
                 case NoteElement note:
                 {
+                    if (emitDynamics)
+                    {
+                        string dyn = VelocityToDynamic(note.Velocity);
+                        if (dyn != stickyDynamic)
+                        {
+                            parts.Add(dyn);
+                            stickyDynamic = dyn;
+                        }
+                    }
                     string s = note.NoteName;
                     if (!useAutoFit)
                     {
@@ -208,6 +352,15 @@ static class FlowGenerator
 
                 case ChordElement chord:
                 {
+                    if (emitDynamics)
+                    {
+                        string dyn = VelocityToDynamic(chord.Velocity);
+                        if (dyn != stickyDynamic)
+                        {
+                            parts.Add(dyn);
+                            stickyDynamic = dyn;
+                        }
+                    }
                     string notes = string.Join(" ", chord.NoteNames);
                     string s = $"[{notes}]";
                     if (!useAutoFit)
@@ -215,15 +368,27 @@ static class FlowGenerator
                         s += chord.DurationSuffix;
                         if (chord.IsDotted) s += ".";
                     }
+                    if (chord.IsTied) s += "~";
                     parts.Add(s);
                     break;
                 }
 
-                case RestElement:
+                case RestElement rest:
                 {
-                    // Flow rests are just "_" — no duration suffix allowed.
-                    // The rest auto-fits to fill available space in the bar.
-                    parts.Add("_");
+                    // Flow supports both auto-fit rests (`_`) and duration-suffixed
+                    // rests (`_ q`, `_ h`, `_ e .` ...). The space before the suffix
+                    // is required because `_q` lexes as a single underscore-prefixed
+                    // identifier (Flow allows leading underscores in identifiers).
+                    if (!useAutoFit && rest.DurationSuffix != null)
+                    {
+                        string r = "_ " + rest.DurationSuffix;
+                        if (rest.IsDotted) r += " .";
+                        parts.Add(r);
+                    }
+                    else
+                    {
+                        parts.Add("_");
+                    }
                     break;
                 }
             }

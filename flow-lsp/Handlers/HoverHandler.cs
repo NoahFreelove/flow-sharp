@@ -52,7 +52,10 @@ public sealed class HoverHandler : HoverHandlerBase
         if (b is not null)
         {
             var doc = BuiltInDocs.TryGet(identifier);
-            var signature = b.Signatures.Count > 0 ? b.Signatures[0].ToString() : identifier;
+            // Phase 31 SPEC-3 (D-01/D-02): LSP-side renderer emits U+2026 for varargs.
+            // FunctionSignature.ToString() still emits ASCII "..." for runtime use
+            // (Phase 24 D-04 — zero flow-lang touch for LSP-only work).
+            var signature = b.Signatures.Count > 0 ? LspMappings.FormatSignature(b.Signatures[0]) : identifier;
             var summary = doc?.Summary is { Length: > 0 } s ? s : "*(no documentation)*";
             var md = $"```flow\n{signature}\n```\n\n{summary}";
             return new Hover
@@ -119,5 +122,5 @@ public sealed class HoverHandler : HoverHandlerBase
 
     protected override HoverRegistrationOptions CreateRegistrationOptions(
         HoverCapability capability, ClientCapabilities clientCapabilities)
-        => new() { DocumentSelector = TextDocumentSelector.ForLanguage("flow") };
+        => new() { DocumentSelector = TextDocumentSelector.ForPattern("**/*.flow") };
 }

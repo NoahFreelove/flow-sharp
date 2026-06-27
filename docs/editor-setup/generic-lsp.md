@@ -1,15 +1,24 @@
 # Generic LSP setup for Flow (Emacs, Zed, Cursor, Windsurf, and others)
 
-`flow-lsp` is a standard LSP 3.17 server over stdio. Any editor with an LSP
-client can drive it. This page gives generic guidance for editors that do not
-have a dedicated setup page here.
+The Flow language server is a standard LSP 3.17 server over stdio, spawned
+either via `flow lsp` (preferred — shipped by `flow install`) or via the
+standalone `flow-lsp` binary (built directly from `flow-lsp/`). Any editor
+with an LSP client can drive it. This page gives generic guidance for editors
+that do not have a dedicated setup page here.
 
-## Prerequisite: get the `flow-lsp` binary
+For the authoritative list of LSP capabilities (what works today, what does
+not), see **[FEATURES.md § LSP](../../FEATURES.md#lsp-flow-lsp)**. In short:
+diagnostics, semantic tokens, completion, hover, go-to-definition, and
+signature help all work. Rename, find-references, code actions, and document
+symbols are not yet implemented — do not wire keybindings to them.
 
-See the [editor-setup overview](./README.md) for install options (release
-tarball or `dotnet publish` from source). Make sure `flow-lsp` is on `PATH`
-and its six sibling stdlib `.flow` files live in the same directory as the
-binary.
+## Prerequisite: the binary on PATH
+
+See the [editor-setup overview](./README.md) for install options (`flow
+install`, release tarball, or `dotnet publish` from source). If you went the
+Option C `dotnet publish` route, make sure `flow-lsp`'s six sibling stdlib
+`.flow` files live in the same directory as the binary. Option A / B handle
+this automatically.
 
 ## Emacs
 
@@ -24,7 +33,9 @@ Add to your Emacs init:
   (add-to-list 'lsp-language-id-configuration '(flow-mode . "flow"))
   (lsp-register-client
     (make-lsp-client
-      :new-connection (lsp-stdio-connection "flow-lsp")
+      ;; Option A / B (preferred): the `flow lsp` subcommand.
+      ;; For Option C (standalone build), use (lsp-stdio-connection "flow-lsp").
+      :new-connection (lsp-stdio-connection '("flow" "lsp"))
       :major-modes '(flow-mode)
       :server-id 'flow-lsp)))
 
@@ -41,7 +52,9 @@ Add to your Emacs init:
 (add-to-list 'auto-mode-alist '("\\.flow\\'" . flow-mode))
 
 (with-eval-after-load 'eglot
-  (add-to-list 'eglot-server-programs '(flow-mode . ("flow-lsp"))))
+  ;; Option A / B (preferred): the `flow lsp` subcommand.
+  ;; For Option C (standalone build), use ("flow-lsp") instead.
+  (add-to-list 'eglot-server-programs '(flow-mode . ("flow" "lsp"))))
 
 (add-hook 'flow-mode-hook 'eglot-ensure)
 ```
@@ -64,21 +77,30 @@ via the same UI.
 
 If OpenVSX is unreachable, you can also install the `.vsix` file directly:
 download the release asset from
-https://github.com/noah-freelove/flow-sharp/releases and use the editor's
+https://github.com/NoahFreelove/flow-sharp/releases and use the editor's
 "Install from VSIX" command.
+
+## JetBrains IDEs (IntelliJ, PyCharm, Rider, GoLand, etc.)
+
+A stretch-deliverable plugin (`flow-jetbrains`) ships LSP-only support via
+[LSP4IJ](https://github.com/redhat-developer/lsp4ij) on IntelliJ Platform
+2024.2+. Install the `.zip` manually from a release. The plugin spawns
+`flow lsp` via `GeneralCommandLine` and falls back to the `FLOW_LSP_PATH`
+environment variable when `flow` is not on `PATH`. See `flow-jetbrains/README.md`
+in the repo for details.
 
 ## Sublime Text, Kate, Nova, Vim-with-coc.nvim, etc.
 
 Each editor has its own LSP client configuration. The shared contract is:
 
-| Field           | Value                                      |
-|-----------------|--------------------------------------------|
-| Language id     | `flow`                                     |
-| Scope / syntax  | `source.flow`                              |
-| File extensions | `.flow`                                    |
-| Binary          | `flow-lsp` (on `PATH`)                     |
-| Transport       | stdio                                      |
-| Root markers    | `.git`, `.flowproject`                     |
+| Field           | Value                                                              |
+|-----------------|--------------------------------------------------------------------|
+| Language id     | `flow`                                                             |
+| Scope / syntax  | `source.flow`                                                      |
+| File extensions | `.flow`                                                            |
+| Command         | `flow lsp` (preferred) — or standalone `flow-lsp`                  |
+| Transport       | stdio                                                              |
+| Root markers    | `.git`, `.flowproject`                                             |
 
 Plug those values into your editor's LSP client and the server speaks plain
 LSP 3.17 from there.

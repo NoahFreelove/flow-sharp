@@ -40,7 +40,7 @@ public sealed class CentType : FlowType
 
         string numberPart = centStr.Substring(0, centStr.Length - 1);
 
-        if (!double.TryParse(numberPart, out double centValue))
+        if (!double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
             throw new ArgumentException($"Invalid cent value: {numberPart}");
 
         return centValue;

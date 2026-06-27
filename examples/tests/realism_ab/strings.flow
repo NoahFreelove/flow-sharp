@@ -1,0 +1,26 @@
+// Phase 29 A/B fixture: strings
+// Run: dotnet run --project flow-interpreter examples/tests/realism_ab/strings.flow
+// Output: examples/output/realism_ab/strings_rendered.wav
+use "@audio"
+
+tempo 80 {
+    timesig 4/4 {
+        key Dmajor {
+            // 2 bars: lyrical legato strings melody in D major
+            //   bar 1: two half-note arches D4 → F#4 (root → mediant)
+            //   bar 2: rising figure A4 → dotted D5 → eighth F#4 → sustained D4
+            // F#4 uses the `#` accidental — `Fsharp4` is NOT a recognized note literal,
+            // it would tokenize as an identifier (see NoteType.Parse — alteration chars
+            // are b/#/+/- only).
+            Sequence melody = | D4h leg F#4h leg | A4q leg D5q. F#4e leg D4h |
+
+            section chord_with_melody {
+                Sequence v = melody
+            }
+
+            Song demo = [chord_with_melody]
+            Buffer rendered = (renderSong demo "strings")
+            (writeWav "examples/output/realism_ab/strings_rendered.wav" rendered)
+        }
+    }
+}

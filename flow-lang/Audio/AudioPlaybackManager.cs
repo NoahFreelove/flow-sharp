@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using FlowLang.StandardLibrary.Audio;
 
 namespace FlowLang.Audio;
@@ -17,9 +18,12 @@ public sealed class AudioPlaybackManager : IDisposable
 
     /// <summary>
     /// When true, play()/loop() store the buffer instead of playing through PulseAudio.
-    /// Used by background FlowEngine instances during live reload.
+    /// Used by background FlowEngine instances during live reload AND by test runs
+    /// (auto-enabled when FLOW_SUPPRESS_PLAYBACK=1 — set by flow-lang.Tests'
+    /// ModuleInitializer so tests never push audio through PulseAudio).
     /// </summary>
     public bool CaptureMode { get; set; }
+        = Environment.GetEnvironmentVariable("FLOW_SUPPRESS_PLAYBACK") == "1";
 
     /// <summary>
     /// Maximum number of simultaneous voices allowed. Default is 32.
@@ -70,8 +74,28 @@ public sealed class AudioPlaybackManager : IDisposable
     {
         try
         {
-            // Check PulseAudio (covers PipeWire compatibility too)
+#if !FLOW_WEB
+            // On macOS, prefer CoreAudio (AudioToolbox.framework is always present on
+            // a standard install). Fall through to PulseAudio for the rare case where
+            // a composer runs PulseAudio under Homebrew on a Mac.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return CoreAudioBackend.IsAvailable() || PulseAudioSimpleBackend.IsAvailable();
+
+            // Phase 41 Plan 41-04 WASAPI-01 (D-17): on Windows, WASAPI is the path.
+            // Fall through to PulseAudio for the rare WSL/Homebrew-Pulse case.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                return WasapiBackend.IsAvailable() || PulseAudioSimpleBackend.IsAvailable();
+
+            // On Linux (and other non-macOS platforms), PulseAudio Simple covers both
+            // native PulseAudio and PipeWire's compatibility layer.
             return PulseAudioSimpleBackend.IsAvailable();
+#else
+            // Phase 47 D-47-08: PulseAudio + CoreAudio backends stripped from
+            // Web build. The WebAudioBackend stub is unavailable for playback
+            // until Phase 48 — IsAudioAvailable returns false so feature
+            // detection is honest about the gap.
+            return WebAudioBackend.IsAvailable();
+#endif
         }
         catch
         {
@@ -126,13 +150,49 @@ public sealed class AudioPlaybackManager : IDisposable
 
     private static IAudioBackend DetectBackend()
     {
-        // Try PulseAudio Simple API first — this also works on PipeWire systems
-        // since PipeWire provides a PulseAudio compatibility layer.
+        // Phase 47 D-47-06: Web target probe FIRST. OperatingSystem.IsBrowser()
+        // is a JIT intrinsic — constant-false on every Desktop platform, so the
+        // Mono-WASM linker dead-code-eliminates the WebAudioBackend instantiation
+        // on trim-mode Desktop builds (per D-47-07). On Mono-WASM the same
+        // intrinsic returns true and this branch wins before any P/Invoke probe
+        // would have run. Phase 47 ships the stub; Phase 48 fills the [JSImport]
+        // bodies — until then a Web build that calls Play() will throw
+        // PlatformNotSupportedException with a clear stub message.
+        if (WebAudioBackend.IsAvailable())
+            return new WebAudioBackend();
+
+#if !FLOW_WEB
+        // macOS: prefer CoreAudio via AudioToolbox.framework. AudioToolbox is a
+        // system framework so this should always succeed on a standard install.
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            if (CoreAudioBackend.IsAvailable())
+                return new CoreAudioBackend();
+            // Fall through to PulseAudio probe — covers the (rare) macOS user
+            // running PulseAudio under Homebrew.
+        }
+
+        // Phase 41 Plan 41-04 WASAPI-01 (D-17, RESEARCH Pattern 4): Windows uses
+        // WASAPI via NAudio. Probe-gated like CoreAudio — WasapiBackend.IsAvailable()
+        // returns false on non-Windows (and never crashes), so this branch only
+        // wins on real Windows. Ordered before the PulseAudio probe (the rare
+        // Windows-with-WSL-Pulse case still falls through if WASAPI is somehow
+        // unavailable).
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            if (WasapiBackend.IsAvailable())
+                return new WasapiBackend();
+        }
+
+        // Try PulseAudio Simple API — this also works on PipeWire systems since
+        // PipeWire provides a PulseAudio compatibility layer.
         if (PulseAudioSimpleBackend.IsAvailable())
             return new PulseAudioSimpleBackend();
+#endif
 
         throw new PlatformNotSupportedException(
-            "No audio output available. Install PipeWire or PulseAudio.");
+            "No audio output available. On Linux, install PipeWire or PulseAudio. " +
+            "On macOS, CoreAudio (AudioToolbox.framework) should be present by default.");
     }
 
     public override string ToString() =>

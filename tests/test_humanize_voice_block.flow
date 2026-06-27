@@ -1,0 +1,28 @@
+use "@std"
+use "@audio"
+use "@notation"
+
+// Phase 35 HK-01 regression — humanizeGaussian must recurse into voice blocks.
+//
+// Pre-Phase-35 bug: TransformFunctions.HumanizeGaussian iterated only
+// bar.MusicalNotes and dropped bar.ParallelVoices when constructing the new
+// BarData. Result: a 2-voice-block sequence rendered to a 44-byte header-only
+// WAV. The fix mirrors BarRenderer's ParallelVoices recursion, reusing the
+// single seeded Random across all voices (Phase 18/25 byte-identical
+// determinism contract preserved).
+//
+// Pass signal: script exits 0 AND the WAV at examples/output/
+// test_humanize_voice_block.wav is > 44 bytes (size logged below). The
+// authoritative xUnit gate lives at
+// flow-lang.Tests/Phase35/HumanizeGaussianVoiceBlocksTests.cs.
+tempo 120 {
+    timesig 4/4 {
+        Sequence stride = | {voice C4w} {voice C5q D5q E5q F5q} |
+        Sequence humanized = (humanizeGaussian stride 0.03 42)
+        section main { Sequence v = humanized }
+        Song s = [main]
+        Buffer mix = (renderSong s "organ")
+        (writeWav "examples/output/test_humanize_voice_block.wav" mix)
+        (print "humanizeGaussian over voice block: PASSED")
+    }
+}

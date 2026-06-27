@@ -1,0 +1,24 @@
+// Phase 29 A/B fixture: flute
+// Run: dotnet run --project flow-interpreter examples/tests/realism_ab/flute.flow
+// Output: examples/output/realism_ab/flute_rendered.wav
+use "@audio"
+
+tempo 90 {
+    timesig 4/4 {
+        key Gmajor {
+            // 2 bars: lyrical flute line in G major
+            //   bar 1: G arpeggio rising one octave (G4 → B4 → D5 → G5)
+            //   bar 2: descending stepwise E5 → D5 → B4 → G4 settling on a half-note G4
+            // Tempo 90 keeps 2 bars inside the 5-10s window.
+            Sequence line = | G4q B4q D5q G5q | E5q D5q B4q G4h |
+
+            section melody {
+                Sequence v = line
+            }
+
+            Song demo = [melody]
+            Buffer rendered = (renderSong demo "flute")
+            (writeWav "examples/output/realism_ab/flute_rendered.wav" rendered)
+        }
+    }
+}

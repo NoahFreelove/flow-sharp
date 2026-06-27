@@ -1,6 +1,8 @@
 Note: Collections Library for flow-lang
 Note: This library should make it easier to work with arrays
 
+module collections
+
 Note: Varargs function - accepts any number of values (using ... syntax)
 internal proc list (Void...: items)
 
@@ -26,3 +28,4 @@ internal proc each (Voids: arr, Function: callback)
 internal proc map (Voids: arr, Function: callback)
 internal proc filter (Voids: arr, Function: callback)
 internal proc reduce (Voids: arr, Void: initial, Function: callback)
+internal proc zip (Voids: a, Voids: b)

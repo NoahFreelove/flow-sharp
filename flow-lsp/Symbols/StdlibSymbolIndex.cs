@@ -19,12 +19,19 @@ namespace FlowLsp.Symbols;
 public sealed class StdlibSymbolIndex
 {
     /// <summary>
-    /// The 6 stdlib module names per D-07 (matches std.flow's `use "@collections"` +
-    /// `use "@bars"` plus the feature-specific modules loaded by the REPL and by
-    /// convention user scripts).
+    /// Every stdlib module shipped as a flow-lang/*.flow file. Originally the 6
+    /// Phase 17 modules (D-07); extended 2026-06-09 (audit §5.16) with the opt-in
+    /// modules shipped in Phases 33-40 so completion / hover / `use "` path
+    /// suggestions cover the full surface. The constructor charitable-skips any
+    /// module file not shipped beside the binary, so older deployments degrade
+    /// gracefully.
     /// </summary>
     public static readonly string[] ModuleNames = new[]
-        { "std", "audio", "collections", "bars", "notation", "composition" };
+    {
+        "std", "audio", "collections", "bars", "notation", "composition",
+        "sfz", "patterns", "generative", "improv", "osc", "notation-io",
+        "midi", "jack", "test",
+    };
 
     public sealed record StdProc(string Name, string Module, string FilePath);
 
@@ -61,6 +68,24 @@ public sealed class StdlibSymbolIndex
 
     public StdProc? Find(string name) =>
         _byName.TryGetValue(name, out var p) ? p : null;
+
+    /// <summary>
+    /// Returns every stdlib proc declared in <paramref name="moduleName"/>
+    /// (e.g. "harmony", "audio", "std"). Phase 31 reverse-lookup helper consumed
+    /// by <c>UnusedImportAnalyzer</c> (Plan 31-02) to determine whether a
+    /// <c>use "@harmony"</c> actually has any referenced procs, and by
+    /// <c>CompletionHandler.FilterByImports</c> (Plan 31-04) to drop suggestions
+    /// from non-imported modules. Linear walk over the ~100-entry stdlib proc
+    /// table — bounded; no caching needed.
+    /// </summary>
+    public IEnumerable<StdProc> ProcsForModule(string moduleName)
+    {
+        foreach (var p in _byName.Values)
+        {
+            if (p.Module == moduleName)
+                yield return p;
+        }
+    }
 
     /// <summary>
     /// CompletionItems for every discovered stdlib proc. Used in the default

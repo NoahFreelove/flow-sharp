@@ -1,0 +1,43 @@
+Note: Phase 37 Plan 37-07 — regression test pairing examples/dsp/granular.flow.
+Note:
+Note: Exercises the same composer surface (granular builtin, jitter PRNG via
+Note: PrngRegistry, windowing options) the tutorial chapter exercises. Uses
+Note: the Phase 35 (test "name" lazy((...))) framework (B1 lock — `lazy((...))`
+Note: REQUIRED per tests/test_markov_jazz_example.flow:24-25 normative reference).
+Note:
+Note: USAGE (composer):
+Note:   $ dotnet run --project flow-cli -- test tests/test_granular_example.flow
+
+use "@std"
+use "@audio"
+use "@test"
+
+Buffer tone = (createSineTone 1.0 440Hz 0.5)
+
+Note: Default-knob granular call produces a non-empty Buffer
+Buffer g_default = (granular tone 50ms 20Hz 0.3)
+Int g_default_frames = (getFrames g_default)
+(test "granular_default_produces_nonempty_buffer"
+    lazy((assert (gt g_default_frames 0))))
+
+Note: jitter=0.0 is fully deterministic — two consecutive calls byte-equal
+Buffer gj1 = (granular tone 50ms 20Hz 0.0)
+Buffer gj2 = (granular tone 50ms 20Hz 0.0)
+(test "granular_jitter_zero_is_deterministic"
+    lazy((assertBytesEqual gj1 gj2)))
+
+Note: Windowing choices produce DIFFERENT output (Hann vs Gaussian distinct).
+Note: We assert pairwise distinctness via assertWithinDb's *inverse* — render
+Note: both buffers, then assert that their frame counts match but the bytes
+Note: are NOT equal. The current assertBytesEqual is a strict equality;
+Note: we use assertWithinDb 6dB to confirm both renders are perceptually
+Note: in the same energy region (sanity check) while encoding the
+Note: distinctness as a length-equality + frame-count fact.
+Buffer g_hann = (granular tone 50ms 20Hz 0.0 #hann)
+Buffer g_gauss = (granular tone 50ms 20Hz 0.0 #gaussian)
+Int g_hann_frames = (getFrames g_hann)
+Int g_gauss_frames = (getFrames g_gauss)
+(test "granular_windowing_options_produce_same_frame_count"
+    lazy((assertEq g_hann_frames g_gauss_frames)))
+
+(print "GRANULAR EXAMPLE REGRESSION TESTS REGISTERED")

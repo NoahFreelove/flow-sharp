@@ -1,0 +1,6 @@
+! malformed_step_count.scl — hand-authored negative-case fixture for SPEC-7
+!
+Malformed: negative step count
+-5
+!
+ 2/1

@@ -1,4 +1,5 @@
 using System;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 
@@ -133,6 +134,79 @@ public static class SynthUtils
         var parameters = new double[] { attack, decay, sustain, release };
         var envelope = new Envelope(EnvelopeKind.ADSR, parameters, sampleRate);
         return EnvelopeProcessor.GenerateEnvelopeCurve(envelope, frames);
+    }
+
+    /// <summary>
+    /// Phase 28 (SPEC-5): Articulation-aware ADSR. Layers the LOCKED per-articulation
+    /// envelope shaping rules from SPEC-5 on top of the synthesizer's baseline ADSR.
+    ///
+    /// Locked rules:
+    ///   Staccato + Marcato: attack × 0.66 (1.5× faster), sustain = 0, release × 0.5
+    ///   Tenuto:             release × 1.2 (soft release)
+    ///   Legato + Accent + Sforzando + Normal: synth-default ADSR
+    ///   Sforzando ALSO multiplies the curve by 1.5×→1.0× over the first 15% of frames
+    ///
+    /// Composition with Plan 28-02:
+    ///   • <see cref="BarRenderer"/> already shortened the rendered duration via the
+    ///     SPEC-4 multipliers (Staccato/Marcato 0.25, Legato 1.10) BEFORE this curve
+    ///     is generated. The two layers compose: shortened buffer × shaped envelope.
+    ///   • <see cref="NoteStreamCompiler"/> already applied the +0.30 velocity boost
+    ///     for Accent/Marcato. Sforzando velocity passes through here unchanged
+    ///     because the spike is time-varying — the multiplier curve below.
+    ///
+    /// Drum synth passes <paramref name="isPercussion"/> = true to bypass shaping
+    /// (drums are inherently percussive — articulation rules are no-ops per SPEC-5).
+    /// </summary>
+    public static float[] GenerateArticulationADSR(
+        Articulation articulation,
+        double baseAttack, double baseDecay, double baseSustain, double baseRelease,
+        int frames, int sampleRate, bool isPercussion = false)
+    {
+        if (isPercussion)
+            return GenerateADSR(baseAttack, baseDecay, baseSustain, baseRelease, frames, sampleRate);
+
+        double attack = baseAttack;
+        double decay = baseDecay;
+        double sustain = baseSustain;
+        double release = baseRelease;
+
+        switch (articulation)
+        {
+            case Articulation.Staccato:
+            case Articulation.Marcato:
+                attack  = baseAttack  * 0.66; // 1.5× faster — sharper transient
+                sustain = 0.0;                // zero sustain — pure attack-then-decay
+                release = baseRelease * 0.5;  // fast release
+                break;
+            case Articulation.Tenuto:
+                release = baseRelease * 1.2; // soft release — held to full value
+                break;
+            case Articulation.Legato:
+            case Articulation.Accent:
+            case Articulation.Sforzando:
+            case Articulation.Normal:
+            default:
+                // Synth-default ADSR. Sforzando spike applies post-curve below.
+                break;
+        }
+
+        var curve = GenerateADSR(attack, decay, sustain, release, frames, sampleRate);
+
+        if (articulation == Articulation.Sforzando)
+        {
+            // 1.5×→1.0× linear decay over the first 15% of frames. Replaces the prior
+            // static `velocity = 0.95` override removed in Plan 28-02 — composer's base
+            // velocity is preserved and the spike is purely envelope-side.
+            int spikeFrames = Math.Max(1, (int)(frames * 0.15));
+            for (int i = 0; i < spikeFrames; i++)
+            {
+                float t = (float)i / spikeFrames;
+                float multiplier = 1.5f * (1.0f - t) + 1.0f * t;
+                curve[i] *= multiplier;
+            }
+        }
+
+        return curve;
     }
 
     /// <summary>

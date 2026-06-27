@@ -1,0 +1,13 @@
+{
+    "comment": "Phase 28 baseline harmonic-richness ratios. Each value is Σ E(k·f₀ for k in 2..8) / E(f₀) computed via Phase29Fft.HarmonicRichnessRatio over 1.0 sec of rendering at 44.1 kHz, 120 BPM (= 2 beats). Phase 29 Plan 05 must show ≥ 1.20 × these values per instrument (REQ-6 / SPEC D-23).",
+    "drums_kick": 9.553473,
+    "drums_kick_fundamental_hz": 50.00,
+    "organ_c4": 1.378903,
+    "organ_c4_fundamental_hz": 261.63,
+    "wavetable_c4_default": 0.526623,
+    "wavetable_c4_fundamental_hz": 261.63,
+    "baseline_computed_at": "2026-05-11",
+    "baseline_method": "Goertzel @ k·f₀ for k in 1..8, summed energy above ÷ energy at f₀",
+    "baseline_duration_seconds": 1.0,
+    "baseline_sample_rate": 44100
+}

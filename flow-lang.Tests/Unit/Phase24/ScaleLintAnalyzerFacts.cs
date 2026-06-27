@@ -36,15 +36,26 @@ public class ScaleLintAnalyzerFacts
         Assert.Contains("not diatonic in Cmajor", diags[0].Message);
     }
 
-    // ── LINT-02 Acceptance (D-19 short-circuit) ──
+    // ── LINT-02 Acceptance (D-19 short-circuit) — SUPERSEDED by Phase 31 D-03 ──
+    //
+    // Phase 24's "no pragma → zero diagnostics" opt-in semantics is OBSOLETE under
+    // Phase 31 D-03. The analyzer now runs by default; the pragma is a recognized
+    // no-op. The original fact name + scenario are preserved (composer-grep-ability)
+    // but the assertion is inverted to pin the NEW default-on contract.
 
     [Fact]
-    public void PragmaAbsent_NeverFlags_LINT02()
+    public void PragmaAbsent_StillFlags_Phase31_D03_DefaultOn()
     {
+        // Pre-Phase-31 this asserted Empty; post-Phase-31 D-03 the analyzer fires
+        // unconditionally so a non-diatonic note inside a `key Cmajor { ... }`
+        // block produces an Information-severity diagnostic with no pragma needed.
         var src = "key Cmajor { | C4 D4 E4 F#4 G4 | }";  // NO enable scaleLint;
         var result = LspFixtures.Parse(src);
         var diags = ScaleLintAnalyzer.Analyze(result.Ast, result.Tokens, src);
-        Assert.Empty(diags);
+        Assert.Single(diags);
+        Assert.Equal(DiagnosticSeverity.Information, diags[0].Severity);
+        Assert.Equal("flow.scaleLint", diags[0].Source);
+        Assert.Contains("F#4", diags[0].Message);
     }
 
     // ── LINT-03 Acceptance (innermost-key-wins) ──

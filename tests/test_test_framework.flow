@@ -1,0 +1,36 @@
+// Phase 35 Plan 35-04 — composer-facing meta-dogfooding test for the new
+// pure-Flow test framework (TEST-01 + TEST-02).
+//
+// Exercises all 5 assertion primitives + the (test "name" lazy(body))
+// deferral wrap. Run via `dotnet run --project flow-cli -- test
+// tests/test_test_framework.flow` to actually execute the bodies — running
+// this file through `flow-interpreter` (the legacy path) only REGISTERS the
+// tests and never forces the body Thunks, which is why the success-by-
+// console-output convention (CLAUDE.md) is sentinel-based here ("ALL TESTS
+// REGISTERED" — registration succeeded; the bodies are deferred until the
+// TestRunner walks the registry).
+//
+// USAGE:
+//   $ dotnet run --project flow-cli -- test tests/test_test_framework.flow
+//   PASS  tests/test_test_framework.flow::assert with true does not throw
+//   PASS  tests/test_test_framework.flow::assertEq integers
+//   ...
+//   Total: 6; Passed: 6; Failed: 0
+//
+// The legacy `flow run` smoke path still exits 0 — it just emits the
+// "ALL TESTS REGISTERED" sentinel without actually running any test body.
+
+use "@std"
+use "@audio"
+use "@test"
+
+(test "assert with true does not throw" lazy((assert true)))
+(test "assertEq integers" lazy((assertEq 5 (add 2 3))))
+(test "assertEq strings" lazy((assertEq "hello" (concat "hel" "lo"))))
+(test "assertEq booleans" lazy((assertEq true (and true true))))
+(test "assertWithinDb identical sine buffers"
+  lazy((assertWithinDb (createSineTone 0.5 440Hz 0.5) (createSineTone 0.5 440Hz 0.5) 0.5dB)))
+(test "assertNotesMatch identical note streams"
+  lazy((assertNotesMatch | C4q D4q E4q F4q | | C4q D4q E4q F4q |)))
+
+(print "ALL TESTS REGISTERED")
