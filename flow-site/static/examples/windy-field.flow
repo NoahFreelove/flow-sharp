@@ -27,11 +27,18 @@ tempo 90 {
     Buffer gustTail = (createSilence 6.0)
     Buffer gust1    = (appendBuffers leadIn (appendBuffers gustWide gustTail))
 
-    // ---- 3. Rustling grass: high-passed noise, granulated to a shimmer ----
-    Buffer grassRaw = (noise 16.0 0.25 2)
-    Buffer grassHi  = (highpass grassRaw 3500.0)
-    Buffer grass    = (granular grassHi 40ms 18Hz 0.5)
-    Buffer grassMix = (volume grass 0.18)
+    // ---- 3. Rustling grass: two soft bandpass-noise surges that ebb and flow ----
+    // Bright "shhh" noise — continuous, no discrete grains — that swells in and out
+    // and drifts across the field as the wind moves through the blades.
+    Buffer rustleA  = (bandpass (noise 9.0 0.5 2) 1800.0 6500.0)
+    (fadeIn rustleA 2.5)
+    (fadeOut rustleA 3.0)
+    Buffer surgeA   = (appendBuffers (createSilence 1.0) (appendBuffers (pan rustleA 0.3) (createSilence 6.0)))
+    Buffer rustleB  = (bandpass (noise 8.0 0.5 2) 1500.0 5500.0)
+    (fadeIn rustleB 2.5)
+    (fadeOut rustleB 2.5)
+    Buffer surgeB   = (appendBuffers (createSilence 7.0) (pan rustleB -0.3))
+    Buffer grassMix = (volume (mix surgeA surgeB) 0.2)
 
     // ---- 4. A distant bird: a note-stream motif, then pushed far away ----
     section call {
