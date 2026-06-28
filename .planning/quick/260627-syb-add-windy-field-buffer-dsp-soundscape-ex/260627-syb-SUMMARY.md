@@ -24,12 +24,14 @@ Five layers mixed down with a master reverb:
 1. **Wind bed** — `noise` → `lowpass` → `highpass`, long `fadeIn`/`fadeOut`, `gain`.
 2. **Gust** — `noise` → `bandpass`, fades, `pan`, placed mid-scene with `createSilence` +
    `appendBuffers`.
-3. **Rustling grass** — `noise` → `highpass` → `granular` → `volume`.
+3. **Rustling grass** — two `bandpass` `noise` surges, faded + `pan`ned L/R, placed with
+   `createSilence`/`appendBuffers`, `mix`ed and lowered with `volume`. (Originally `granular`,
+   but the grains read as a riffled deck of cards — see Revision below.)
 4. **Distant bird** — a `| ... |` note-stream motif → `renderSong ... "triangle"` (buffer) →
    `lowpass` → `delay` → `reverb` → `pan` → offset via `createSilence`/`appendBuffers`.
 5. **Mixdown** — `mix` ×3 → master `reverb` → `gain`.
 
-Tours ~15 buffer/effect builtins: `noise`, `lowpass`, `highpass`, `bandpass`, `granular`,
+Tours ~14 buffer/effect builtins: `noise`, `lowpass`, `highpass`, `bandpass`,
 `reverb`, `delay`, `gain`, `volume`, `pan`, `fadeIn`, `fadeOut`, `mix`, `appendBuffers`,
 `createSilence` (+ `renderSong` for the note-stream→buffer bridge).
 
@@ -45,6 +47,15 @@ oscillator-based `triangle` synth rather than a sampled instrument.
 - Rendered the committed `.flow` via the interpreter (CI-safe `writeWav`, not `play`):
   exit 0, **no runtime errors or advisories**, output 17.51 s stereo, peak 0.575 FS
   (no clipping), RMS −23.4 dBFS, render wall-time ~1.5 s (well under the 30 s WASM cap).
+
+## Revision (commit 7b7b4ab)
+
+Composer feedback: the granular grass "sounds more like a deck of cards." The granular layer
+(40 ms grains @ 18 Hz) fired discrete, irregularly-spaced transients → a riffle/click texture.
+Replaced it with two soft `bandpass`-`noise` surges (~1.5–6.5 kHz) shaped by fades and panned
+L/R, mixed and offset in time — continuous "shhh" energy that ebbs and flows with no grain
+clicks. Per-second RMS envelope confirms movement (~−28 → −20 → −28 dBFS) rather than flat hiss;
+render stays clean (17.5 s, peak 0.58 FS). `granular` is no longer used by this example.
 
 ## Notes
 
