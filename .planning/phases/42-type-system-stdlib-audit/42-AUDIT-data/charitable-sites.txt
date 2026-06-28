@@ -169,16 +169,17 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/LsystemFunctions.cs:384:        // Cross-context fallback: compare by underlying string body.
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/CellularFunctions.cs:405:            // downstream guard handles the empty-result charitable case;
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:66:/// (empty corpus, length &lt;= 0, order outside [1,3]) return a charitable
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/LambdaRandom.cs:67:            _ => 0.0, // non-numeric return → charitable zero
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:122:        // Default sentinels (D-v1.5-05 charitable):
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:170:        // future caller under-fills (charitable: treat short arg lists as
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:226:    /// a charitable empty <see cref="SequenceData"/> on degenerate input
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:273:        // ---- Style pack lookup with charitable fallback ----
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:288:                $"jam:no-fallback-jazz:{ctx.CurrentCallSite}",
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:340:                    $"[strict] [jam] roulette fallback — unknown key '{activeKey}' at {ctx.CurrentCallSite}",
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:360:        // ---- Read articulation distribution map (charitable defaults) ----
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:365:        // ---- Read beat-weight maps (charitable: missing → uniform 0.33 each) ----
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:454:    // Style pack lookup + charitable fallback
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:527:    // Pack field extraction (charitable — missing fields use defaults)
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:668:            // happen for ChordParser-emitted notes but charitable input is
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:751:            category = Category.ChordTone; // last-resort fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:175:        // future caller under-fills (charitable: treat short arg lists as
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:238:    /// a charitable empty <see cref="SequenceData"/> on degenerate input
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:286:        // ---- Style pack lookup with charitable fallback ----
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:301:                $"jam:no-fallback-jazz:{ctx.CurrentCallSite}",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:358:                    $"[strict] [jam] roulette fallback — unknown key '{activeKey}' at {ctx.CurrentCallSite}",
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:378:        // ---- Read articulation distribution map (charitable defaults) ----
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:383:        // ---- Read beat-weight maps (charitable: missing → uniform 0.33 each) ----
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:472:    // Style pack lookup + charitable fallback
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:545:    // Pack field extraction (charitable — missing fields use defaults)
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:686:            // happen for ChordParser-emitted notes but charitable input is
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:769:            category = Category.ChordTone; // last-resort fallback
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/StyleRegistry.cs:218:    /// charitable about non-<c>(registerStyle ...)</c> top-level statements).

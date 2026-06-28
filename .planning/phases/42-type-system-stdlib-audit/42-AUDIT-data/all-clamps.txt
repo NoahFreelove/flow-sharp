@@ -76,5 +76,5 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:336:        int clamped = Math.Clamp(requestedOrder, 1, 3);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:754:            durationValue = Math.Clamp(durationValue, minDur, maxDur);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Generative/MarkovFunctions.cs:758:            int clampedMidi = Math.Clamp(midi, 12, 127);
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:199:            order = Math.Clamp(requestedOrder, 1, 3);
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:435:                int clampedMidi = Math.Clamp(chosenMidi, 12, 127);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:204:            order = Math.Clamp(requestedOrder, 1, 3);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Improv/JamFunctions.cs:453:                int clampedMidi = Math.Clamp(chosenMidi, 12, 127);

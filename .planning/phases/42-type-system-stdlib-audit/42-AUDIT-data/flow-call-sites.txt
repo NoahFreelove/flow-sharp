@@ -4,9 +4,9 @@
     669 Sequence
     631 proc
     547 internal
-    484 a
+    485 a
     415 use
-    385 Int
+    387 Int
     328 Buffer
     294 is
     278 with
@@ -14,8 +14,8 @@
     259 section
     247 concat
     246 and
+    241 in
     240 test
-    240 in
     217 s
     205 Test
     179 for
@@ -29,16 +29,16 @@
     142 tempo
     137 C4
     136 G4q
+    133 fn
     132 C4q
-    131 fn
     131 chord
     127 E4
     121 of
     119 via
     114 b
     113 renderSong
+    111 run
     110 writeWav
-    110 run
     110 The
     108 on
     104 note
@@ -62,6 +62,7 @@
      71 no
      69 Plan
      69 F4q
+     68 q
      67 D4q
      66 not
      66 B4q
@@ -71,14 +72,13 @@
      61 assertNotesMatch
      60 v
      60 gain
+     60 every
      60 arg
      60 add
      60 String
      59 identical
-     59 every
+     59 A
      58 verse
-     58 A
-     57 q
      57 mul
      57 mix
      57 match
@@ -95,10 +95,10 @@
      50 Note
      50 Hz
      49 live
+     49 jam
      49 C
      49 Beat
      48 that
-     48 jam
      48 each
      47 this
      47 overload
@@ -121,7 +121,6 @@
      42 euclidean
      41 single
      41 kick
-     41 _
      40 notes
      40 ms
      40 equals
@@ -151,6 +150,7 @@
      35 pragma
      35 melody
      35 len
+     35 it
      35 get
      35 audio
      35 USAGE
@@ -159,32 +159,31 @@
      34 voice
      34 under
      34 rendered
+     34 over
      34 map
-     34 it
      34 gt
      34 enharmonic
+     34 chords
      34 TESTS
      34 I
      33 tests
      33 stacc
      33 seed
-     33 over
      33 output
+     33 into
      33 fast
      33 corpus
-     33 chords
+     33 composer
      33 base
+     33 _
      33 This
      32 x
      32 slice
-     32 q
+     32 returns
      32 or
      32 list
-     32 into
      32 granular
-     32 composer
      32 NOT
-     31 returns
      31 path
      31 module
      31 h
@@ -204,6 +203,7 @@
      29 without
      29 volume
      29 then
+     29 range
      29 multiplier
      29 filter
      29 Creates
@@ -212,7 +212,6 @@
      28 true
      28 track
      28 sample
-     28 range
      28 pattern
      28 markov
      28 input
@@ -220,12 +219,14 @@
      27 tone
      27 m
      27 D5q
+     26 value
      26 uses
      26 ten
      26 size
      26 runs
      26 markovGenerate
      26 but
+     26 _
      26 JI
      26 All
      25 velocities
@@ -247,7 +248,6 @@
      25 V
      25 Hertz
      25 D
-     24 value
      24 ratio
      24 octave
      24 noise
@@ -270,7 +270,6 @@
      23 jazz
      23 full
      23 G5q
-     22 w
      22 vary
      22 repeat
      22 regression
@@ -283,6 +282,7 @@
      21 up
      21 stream
      21 return
+     21 q
      21 pan
      21 mono
      21 markovTrain
@@ -294,6 +294,7 @@
      21 PASS
      21 E4h
      21 A4
+     20 w
      20 sometimes
      20 sh
      20 phase
@@ -337,7 +338,6 @@
      18 different
      18 combinators
      18 buf
-     18 _
      18 Markov
      18 G3
      18 C2q
@@ -371,6 +371,7 @@
      16 result
      16 registered
      16 rate
+     16 random
      16 pp
      16 order
      16 nums
@@ -395,7 +396,6 @@
      15 specified
      15 source
      15 shape
-     15 random
      15 parameterized
      15 pair
      15 pad
@@ -407,8 +407,10 @@
      15 load
      15 jux
      15 int
+     15 i
      15 humanizeGaussian
      15 getChannels
+     15 function
      15 frequency
      15 first
      15 dynamics
@@ -436,8 +438,6 @@
      14 legato
      14 keys
      14 jitter
-     14 i
-     14 function
      14 flat
      14 existing
      14 crescendo
@@ -819,6 +819,7 @@
       7 lead
       7 jackSync
       7 j
+      7 index
       7 groove
       7 getSampleRate
       7 getOr
@@ -876,6 +877,7 @@
       7 A1q
       6 wrapped
       6 wavetable
+      6 vi
       6 used
       6 trained
       6 total
@@ -922,7 +924,7 @@
       6 lives
       6 lilypond
       6 lexes
-      6 index
+      6 keeps
       6 idx
       6 humanized
       6 hihat
@@ -1011,6 +1013,7 @@
       5 where
       5 wet
       5 was
+      5 w
       5 voicing
       5 verify
       5 uniform
@@ -1022,9 +1025,11 @@
       5 train
       5 throws
       5 texture
+      5 takes
       5 synthesis
       5 swung
       5 surfaces
+      5 supplied
       5 structurally
       5 stdlib
       5 std
@@ -1076,7 +1081,6 @@
       5 loopback
       5 leading
       5 knobs
-      5 keeps
       5 inversion
       5 imports
       5 import
@@ -1175,7 +1179,6 @@
       4 world
       4 whose
       4 visualize
-      4 vi
       4 val2
       4 usable
       4 upright
@@ -1194,14 +1197,12 @@
       4 ties
       4 th
       4 target
-      4 takes
       4 tag
       4 table
       4 synthetic
       4 synthesizer
       4 sustain
       4 supported
-      4 supplied
       4 sung
       4 sugar
       4 structure
@@ -1244,6 +1245,7 @@
       4 r2
       4 r1
       4 quantized_a
+      4 pure
       4 pumped
       4 program
       4 produced
@@ -1315,6 +1317,7 @@
       4 envelope
       4 emptyArr
       4 drum
+      4 drives
       4 doubles
       4 dogfood
       4 direct
@@ -1449,7 +1452,6 @@
       3 want
       3 walks
       3 walking
-      3 w
       3 vowels
       3 vowel
       3 violin
@@ -1542,7 +1544,6 @@
       3 rather
       3 rampMel
       3 quiet
-      3 pure
       3 pulse
       3 psola
       3 provides
@@ -1668,7 +1669,6 @@
       3 effect
       3 early
       3 dropped
-      3 drives
       3 drive
       3 doubleToInt
       3 do
@@ -1696,6 +1696,7 @@
       3 compression
       3 compile
       3 clear
+      3 charitably
       3 chaotic_b
       3 chaotic_a
       3 chaotic
@@ -1737,6 +1738,7 @@
       3 absolute
       3 about
       3 While
+      3 When
       3 WITHOUT
       3 Variables
       3 UDP
@@ -1871,6 +1873,7 @@
       2 varyTheme
       2 validates
       2 valid
+      2 v_i
       2 v1
       2 user
       2 upper
@@ -2103,6 +2106,7 @@
       2 prefixed
       2 precision
       2 precise
+      2 precedence
       2 pragmas
       2 posOne
       2 pos
@@ -2460,7 +2464,6 @@
       2 choice
       2 chiptune
       2 check
-      2 charitably
       2 chain7
       2 chain6
       2 chain5
@@ -2556,7 +2559,6 @@
       2 Write
       2 Wolfram
       2 Within
-      2 When
       2 We
       2 WarnOnce
       2 WHOLE
@@ -2809,8 +2811,6 @@
       1 violates
       1 viola
       1 viaUnpack
-      1 vi
-      1 vi
       1 very
       1 version
       1 verseBpm
@@ -2826,8 +2826,6 @@
       1 validation
       1 validateBarDuration
       1 val
-      1 v_i
-      1 v_i
       1 v3
       1 utilities
       1 useful
@@ -2934,6 +2932,7 @@
       1 targeting
       1 targetMin
       1 tanZero
+      1 taking
       1 take
       1 tails
       1 tailPart
@@ -3282,7 +3281,6 @@
       1 prevent
       1 prepend
       1 preferred
-      1 precedence
       1 precede
       1 ppp
       1 powResult
@@ -3705,6 +3703,7 @@
       1 follows
       1 followed
       1 follow
+      1 folded
       1 fluent
       1 flows
       1 floorResult
