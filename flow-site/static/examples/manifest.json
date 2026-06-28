@@ -46,5 +46,11 @@
 		"label": "Blue Shuffle (12-bar blues)",
 		"blurb": "An original 12-bar blues in C with a swing feel — swung lead licks over a walking bass and backbeat comps.",
 		"file": "blue-shuffle.flow"
+	},
+	{
+		"id": "windy-field",
+		"label": "Windy field soundscape",
+		"blurb": "Pure buffer DSP — filtered noise, gusts, granular grass, reverb, delay and panning build an ambient field with a distant bird call.",
+		"file": "windy-field.flow"
 	}
 ]

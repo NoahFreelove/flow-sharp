@@ -1,0 +1,58 @@
+// "Windy Field" — an ambient soundscape built entirely from buffer DSP.
+// Nothing here is a sampled instrument: every sound is white noise or an
+// oscillator, shaped by filters, envelopes, reverb, delay and panning.
+// A tour of Flow's buffer toolbox.
+use "@std"
+use "@audio"
+use "@composition"
+
+tempo 90 {
+  key Cmajor {
+
+    // ---- 1. The wind bed: filtered white noise that breathes ----
+    Buffer hiss    = (noise 16.0 0.55 2)
+    Buffer body    = (lowpass hiss 650.0)
+    Buffer bed     = (highpass body 140.0)
+    (fadeIn bed 4.0)
+    (fadeOut bed 4.0)
+    Buffer windBed = (gain bed -6dB)
+
+    // ---- 2. A gust: a brighter band of noise, swelled and panned ----
+    Buffer gustRaw  = (noise 5.0 0.7 2)
+    Buffer gustBand = (bandpass gustRaw 300.0 1800.0)
+    (fadeIn gustBand 2.0)
+    (fadeOut gustBand 2.5)
+    Buffer gustWide = (pan gustBand 0.4)
+    Buffer leadIn   = (createSilence 5.0)
+    Buffer gustTail = (createSilence 6.0)
+    Buffer gust1    = (appendBuffers leadIn (appendBuffers gustWide gustTail))
+
+    // ---- 3. Rustling grass: high-passed noise, granulated to a shimmer ----
+    Buffer grassRaw = (noise 16.0 0.25 2)
+    Buffer grassHi  = (highpass grassRaw 3500.0)
+    Buffer grass    = (granular grassHi 40ms 18Hz 0.5)
+    Buffer grassMix = (volume grass 0.18)
+
+    // ---- 4. A distant bird: a note-stream motif, then pushed far away ----
+    section call {
+      Sequence motif = | _ q G5e B5e G5e _ q E5h |
+    }
+    Song birdSong   = [call]
+    Buffer birdDry  = (renderSong birdSong "triangle")
+    Buffer birdSoft = (lowpass birdDry 2600.0)
+    Buffer birdEcho = (delay birdSoft 380.0 0.45 0.5)
+    Buffer birdFar  = (reverb birdEcho 0.8 0.4 0.6)
+    Buffer birdPan  = (pan birdFar -0.5)
+    Buffer birdLead = (createSilence 7.0)
+    Buffer bird1    = (appendBuffers birdLead birdPan)
+
+    // ---- 5. Mix the layers down and glue with a master reverb ----
+    Buffer scene1 = (mix windBed gust1)
+    Buffer scene2 = (mix scene1 grassMix)
+    Buffer scene  = (mix scene2 bird1)
+    Buffer wet    = (reverb scene 0.3 0.5 0.25)
+    Buffer master = (gain wet 6dB)
+
+    (play master)
+  }
+}
