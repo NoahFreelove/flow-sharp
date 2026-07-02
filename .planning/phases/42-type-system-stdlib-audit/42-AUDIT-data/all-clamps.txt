@@ -39,8 +39,8 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Collections.cs:220:        int e = Math.Clamp(normEnd,   0, count);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Collections.cs:249:        int s = Math.Clamp(normStart, 0, count);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Collections.cs:250:        int e = Math.Clamp(normEnd,   0, count);
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:2060:        double swingClamped = Math.Clamp(swing, -1.0, 1.0);
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:2065:        double humanizeClamped = Math.Clamp(humanize, 0.0, 1.0);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:2082:        double swingClamped = Math.Clamp(swing, -1.0, 1.0);
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:2087:        double humanizeClamped = Math.Clamp(humanize, 0.0, 1.0);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Midi/MidiFunctions.cs:395:                map[name] = Math.Clamp(c, 0, 15);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:384:                int newDur = Math.Clamp(note.DurationValue.Value + shift, minDur, maxDur);
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Patterns/PatternFunctions.cs:946:            double clamped = double.IsFinite(prob) ? Math.Clamp(prob, 0.0, 1.0) : 0.5;

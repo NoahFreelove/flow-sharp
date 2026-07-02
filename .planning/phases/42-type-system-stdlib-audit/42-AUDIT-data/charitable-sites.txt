@@ -61,13 +61,13 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:33:        // Defensive: only A..G accepted (charitable for anything else)
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:43:            _  => string.Empty,  // charitable per D-v1.5-05
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Notation/LilyPondPitch.cs:58:    /// back to "4" (quarter; charitable per D-v1.5-05).
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1311:        // ===== Phase 44 Plan 44-08 — non-strict charitable overloads =====
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1321:        // (print Void) — charitable AutoStr in non-strict; [strict] error
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1337:        // path requires Bool; non-strict charitable truthy.
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1352:        // (or false 42) → 42; (or "" "fallback") → "fallback"
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1842:        // charitable degenerate-input handling (D-v1.5-05) shared with the
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1874:        // the charitable degenerate-input contract).
-/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1962:    /// sweep-0614 — charitable degenerate-input handling for all three
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1333:        // ===== Phase 44 Plan 44-08 — non-strict charitable overloads =====
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1343:        // (print Void) — charitable AutoStr in non-strict; [strict] error
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1359:        // path requires Bool; non-strict charitable truthy.
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1374:        // (or false 42) → 42; (or "" "fallback") → "fallback"
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1864:        // charitable degenerate-input handling (D-v1.5-05) shared with the
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1896:        // the charitable degenerate-input contract).
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/BuiltInFunctions.cs:1984:    /// sweep-0614 — charitable degenerate-input handling for all three
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Midi/ClockHandleData.cs:34:    /// <summary>The live clock service. Never null — even a charitable dead
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Midi/JackHandleData.cs:22:    /// <c>false</c>, <c>(jackSync)</c> was a charitable no-op (WarnOnce advisory)
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Midi/MidiFunctions.cs:30:/// charitable rule: an absent device / dead handle degrades to a quiet no-op.</para>

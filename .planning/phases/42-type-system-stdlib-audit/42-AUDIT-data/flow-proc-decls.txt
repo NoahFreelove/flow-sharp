@@ -39,6 +39,7 @@ ceil
 cellular
 cellularSeeded
 cents
+check
 chord
 chordNotes
 chordQuality
@@ -215,6 +216,7 @@ mul
 mulThree
 multipleNonVoidThenReturnNothing
 nanFloat
+near
 neg
 noise
 not
@@ -295,6 +297,7 @@ setVoiceGain
 setVoiceOffset
 setVoicePan
 sidechain
+silence
 sin
 sing
 size
