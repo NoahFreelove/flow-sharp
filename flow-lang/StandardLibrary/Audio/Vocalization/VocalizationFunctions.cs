@@ -51,6 +51,16 @@ public static class VocalizationFunctions
             [StringType.Instance, NoteType.Instance, DoubleType.Instance],
             ParameterNames: ["phoneme", "pitch", "duration"]);
         registry.Register("sing", singSignature, args => SingWithContext(args, context));
+
+        // Quick 260701-vqz: Second-typed duration surface. (sing "ah" C4 500ms)
+        // previously coerced raw 500.0 into the Double-seconds slot (a 500-second
+        // vowel); Millisecond args now reach this overload via the resolver's
+        // unit-preserving tier and ConvertTo's ms->s scaling. Second's raw backing
+        // IS seconds, so the same handler reads it unchanged.
+        var singSecSignature = new FunctionSignature("sing",
+            [StringType.Instance, NoteType.Instance, SecondType.Instance],
+            ParameterNames: ["phoneme", "pitch", "duration"]);
+        registry.Register("sing", singSecSignature, args => SingWithContext(args, context));
     }
 
     /// <summary>

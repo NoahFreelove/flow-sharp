@@ -574,6 +574,16 @@ public static class EffectsFunctions
             [BufferType.Instance, DoubleType.Instance],
             ParameterNames: ["buf", "factor"]);
         registry.Register("volume", volumeSig, VolumeEffect);
+
+        // Quick 260701-vqz: decibel-typed volume. (volume buf +6dB) previously coerced
+        // the raw 6.0 into the linear slot (~+15.6 dB); (volume buf -6dB) threw the
+        // negative-multiplier error. dB converts to linear (10^(dB/20)) — always
+        // non-negative, so D-06's negative-linear rejection can't fire on this path.
+        var volumeDbSig = new FunctionSignature("volume",
+            [BufferType.Instance, DecibelType.Instance],
+            ParameterNames: ["buf", "factor"]);
+        registry.Register("volume", volumeDbSig, args => VolumeEffect([
+            args[0], Value.Double(Math.Pow(10.0, args[1].As<double>() / 20.0))]));
     }
 
     /// <summary>

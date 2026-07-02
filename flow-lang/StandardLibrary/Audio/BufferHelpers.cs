@@ -92,6 +92,10 @@ public static class BufferHelpers
 
     /// <summary>
     /// Scales all samples in a buffer by a gain factor (in-place).
+    /// Quick 260701-vqz: returns the (mutated) buffer — REPL :help and
+    /// Standard-Library.md always documented a Buffer return, and returning it
+    /// enables `->` chaining; previously returned Void so `Buffer b = (scaleBuffer ...)`
+    /// bound null and crashed downstream.
     /// </summary>
     public static Value ScaleBuffer(IReadOnlyList<Value> args)
     {
@@ -107,7 +111,7 @@ public static class BufferHelpers
             }
         }
 
-        return Value.Void();
+        return args[0];
     }
 
     /// <summary>

@@ -763,6 +763,18 @@ public static class BuiltInFunctions
             ParameterNames: ["a", "b", "gainA", "gainB"]);
         registry.Register("mixBuffers", mixBuffersSignature, Audio.AudioCore.MixBuffers);
 
+        // Quick 260701-vqz: decibel-typed gains. (mixBuffers a b -3dB -3dB) previously
+        // coerced the raw dB numbers into the linear slots (-3.0 linear = 3x AND
+        // phase-inverted). dB converts to a linear multiplier here (10^(dB/20)).
+        var mixBuffersDbSignature = new FunctionSignature(
+            "mixBuffers",
+            [BufferType.Instance, BufferType.Instance, DecibelType.Instance, DecibelType.Instance],
+            ParameterNames: ["a", "b", "gainA", "gainB"]);
+        registry.Register("mixBuffers", mixBuffersDbSignature, args => Audio.AudioCore.MixBuffers([
+            args[0], args[1],
+            Value.Double(Math.Pow(10.0, args[2].As<double>() / 20.0)),
+            Value.Double(Math.Pow(10.0, args[3].As<double>() / 20.0))]));
+
         var mixSignature = new FunctionSignature("mix", [BufferType.Instance, BufferType.Instance],
             ParameterNames: ["a", "b"]);
         registry.Register("mix", mixSignature, Audio.AudioCore.Mix);
@@ -982,6 +994,16 @@ public static class BuiltInFunctions
             [BufferType.Instance, DoubleType.Instance],
             ParameterNames: ["buf", "factor"]);
         registry.Register("scaleBuffer", scaleBufferSignature, Audio.BufferHelpers.ScaleBuffer);
+
+        // Quick 260701-vqz: decibel-typed factor — (scaleBuffer buf -6dB) previously
+        // coerced raw -6.0 into the linear slot (phase-inverted 6x). Same 10^(dB/20)
+        // conversion as the volume/mixBuffers Decibel overloads.
+        var scaleBufferDbSignature = new FunctionSignature(
+            "scaleBuffer",
+            [BufferType.Instance, DecibelType.Instance],
+            ParameterNames: ["buf", "factor"]);
+        registry.Register("scaleBuffer", scaleBufferDbSignature, args => Audio.BufferHelpers.ScaleBuffer([
+            args[0], Value.Double(Math.Pow(10.0, args[1].As<double>() / 20.0))]));
 
         var fadeInSignature = new FunctionSignature(
             "fadeIn",

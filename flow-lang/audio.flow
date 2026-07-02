@@ -28,6 +28,8 @@ internal proc fillBuffer(Buffer: buffer, Double: value)
 
 Note: Mixes two buffers together with individual gain controls
 internal proc mixBuffers(Buffer: a, Buffer: b, Double: gainA, Double: gainB)
+Note: quick-260701-vqz — decibel-typed gains ((mixBuffers a b -3dB -3dB)); dB converts to linear 10^(dB/20)
+internal proc mixBuffers(Buffer: a, Buffer: b, Decibel: gainA, Decibel: gainB)
 
 Note: Mix two buffers by summing samples at unity gain (handles different lengths and mono/stereo promotion)
 internal proc mix(Buffer: a, Buffer: b)
@@ -178,6 +180,16 @@ proc createSilence(Second: seconds)
     Double zero = (intToDouble 0)
     (fillBuffer b zero)
     b
+end proc
+
+Note: quick-260701-vqz — silence(...) alias. :help and CLAUDE.md documented a `silence`
+Note: builtin but only createSilence was ever registered (phantom builtin).
+proc silence(Double: seconds)
+    (createSilence seconds)
+end proc
+
+proc silence(Second: seconds)
+    (createSilence seconds)
 end proc
 
 Note: Create silent mono buffer
@@ -371,8 +383,10 @@ internal proc sliceBuffer(Buffer: source, Int: startFrame, Int: endFrame)
 Note: Appends two buffers together
 internal proc appendBuffers(Buffer: a, Buffer: b)
 
-Note: Scales all samples in buffer by gain factor (in-place)
+Note: Scales all samples in buffer by gain factor (in-place); returns the buffer for chaining
 internal proc scaleBuffer(Buffer: buffer, Double: gain)
+Note: quick-260701-vqz — decibel-typed factor ((scaleBuffer buf -6dB)); dB converts to linear 10^(dB/20)
+internal proc scaleBuffer(Buffer: buffer, Decibel: gain)
 
 Note: Applies a linear fade-in from silence over the specified duration (seconds)
 internal proc fadeIn(Buffer: buffer, Double: duration)
@@ -394,7 +408,7 @@ internal proc createAR(Second: attackSec, Second: releaseSec, Int: sampleRate)
 Note: Creates an ADSR (Attack-Decay-Sustain-Release) envelope
 internal proc createADSR(Double: attack, Double: decay, Double: sustain, Double: release, Int: sr)
 
-Note: Applies envelope curve to buffer (modifies in-place)
+Note: Applies envelope curve to buffer (modifies in-place); returns the buffer for chaining
 internal proc applyEnvelope(Buffer: buffer, Envelope: envelope)
 
 Note: ===== Convenience Layer =====
@@ -454,6 +468,16 @@ proc createSineTone(Hertz: freq, Double: duration, Double: amplitude)
     b
 end proc
 
+Note: quick-260701-vqz — frequency-FIRST + unit-typed duration ((createSineTone 440Hz 500ms 0.5)).
+Note: Millisecond durations reach this Second slot via the resolver's unit-preserving conversion
+Note: tier (ms scales to s in Value.ConvertTo); without this form the ms arg landed RAW in the
+Note: Hz-first Double duration slot — (createSineTone 440Hz 500ms 0.5) rendered 500 SECONDS.
+proc createSineTone(Hertz: freq, Second: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSine b (createOsc freq) amplitude)
+    b
+end proc
+
 Note: Create sawtooth tone
 proc createSawTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -489,6 +513,13 @@ Note: overloads existed, so a leading Hertz arg coerced into the DURATION slot
 Note: (Hertz is Double-compatible) — the hello-world rendered 440 seconds of an
 Note: inaudible 1 Hz wave. The exact Hertz first-slot match outscores that coercion.
 proc createSawTone(Hertz: freq, Double: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSaw b (createOsc freq) amplitude)
+    b
+end proc
+
+Note: quick-260701-vqz — frequency-FIRST + unit-typed duration (see createSineTone note)
+proc createSawTone(Hertz: freq, Second: duration, Double: amplitude)
     Buffer b = (createBufferStereo duration)
     (generateSaw b (createOsc freq) amplitude)
     b
@@ -533,6 +564,13 @@ proc createSquareTone(Hertz: freq, Double: duration, Double: amplitude)
     b
 end proc
 
+Note: quick-260701-vqz — frequency-FIRST + unit-typed duration (see createSineTone note)
+proc createSquareTone(Hertz: freq, Second: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateSquare b (createOsc freq) amplitude)
+    b
+end proc
+
 Note: Create triangle tone
 proc createTriangleTone(Double: duration, Double: frequency, Double: amplitude)
     Buffer b = (createBufferStereo duration)
@@ -572,6 +610,13 @@ proc createTriangleTone(Hertz: freq, Double: duration, Double: amplitude)
     b
 end proc
 
+Note: quick-260701-vqz — frequency-FIRST + unit-typed duration (see createSineTone note)
+proc createTriangleTone(Hertz: freq, Second: duration, Double: amplitude)
+    Buffer b = (createBufferStereo duration)
+    (generateTriangle b (createOsc freq) amplitude)
+    b
+end proc
+
 Note: Create AR envelope with default sample rate
 proc ar(Double: attackSec, Double: releaseSec)
     (createAR attackSec releaseSec DEFAULT_SAMPLE_RATE)
@@ -579,6 +624,14 @@ end proc
 
 Note: Create ADSR envelope with default sample rate
 proc adsr(Double: attack, Double: decay, Double: sustain, Double: release)
+    (createADSR attack decay sustain release DEFAULT_SAMPLE_RATE)
+end proc
+
+Note: quick-260701-vqz — Second-typed time slots ((adsr 10ms 100ms 0.7 200ms)). ADSR times are
+Note: the textbook ms parameters; the ms args reach these Second slots via the resolver's
+Note: unit-preserving tier (previously raw 10.0 landed in the Double-seconds slot = 10-SECOND
+Note: attack). Second's raw backing is seconds, so passing through to createADSR is exact.
+proc adsr(Second: attack, Second: decay, Double: sustain, Second: release)
     (createADSR attack decay sustain release DEFAULT_SAMPLE_RATE)
 end proc
 
@@ -645,6 +698,9 @@ internal proc gain(Buffer: buffer, Decibel: gainDb)
 Note: volume(Buffer, Double linear) — linear-multiplier alternative to gain(dB).
 Note: gain treats arg as decibels, volume treats arg as a bare linear multiplier (0.5 = half).
 internal proc volume(Buffer: buffer, Double: linearMultiplier)
+Note: quick-260701-vqz — decibel-typed volume ((volume buf -6dB)); dB converts to linear 10^(dB/20).
+Note: Previously +6dB coerced raw 6.0 into the linear slot (~+15.6 dB) and -6dB threw.
+internal proc volume(Buffer: buffer, Decibel: gainDb)
 
 Note: Apply sidechain compression: source ducks under trigger signal
 internal proc sidechain(Buffer: source, Buffer: trigger, Double: thresholdDb, Double: ratio)
@@ -766,6 +822,8 @@ Note: ===== Vocalization =====
 
 Note: Synthesize a vowel/syllable at a given pitch and duration (seconds)
 internal proc sing(String: phoneme, Note: pitch, Double: duration)
+Note: quick-260701-vqz — Second-typed duration ((sing "ah" C4 500ms) via ms→s conversion)
+internal proc sing(String: phoneme, Note: pitch, Second: duration)
 
 Note: Run external TTS engine on text, return audio buffer
 internal proc tts(String: text)

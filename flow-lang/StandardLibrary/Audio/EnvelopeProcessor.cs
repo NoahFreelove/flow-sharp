@@ -59,7 +59,10 @@ public static class EnvelopeProcessor
             }
         }
 
-        return Value.Void();
+        // Quick 260701-vqz: return the (mutated) buffer — matches the documented
+        // Buffer return (:help + Standard-Library.md) and enables `->` chaining;
+        // previously returned Void so `Buffer b = (applyEnvelope ...)` bound null.
+        return args[0];
     }
 
     /// <summary>
