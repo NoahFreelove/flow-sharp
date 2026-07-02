@@ -1401,6 +1401,23 @@ public class Interpreter : IFunctionInvoker
                 else
                 {
                     paramValue = args[i];
+
+                    // Quick 260701-vqz: coerce SCALAR args to the declared param type at
+                    // the user-proc boundary, mirroring the internal-builtin boundary in
+                    // ExpressionEvaluator (Phase 26 D-05/D-06). Without this, a pure-Flow
+                    // proc like createSineTone(Hertz, Second, Double) received a
+                    // Millisecond value RAW in its Second slot (500ms bound as 500.0) and
+                    // rendered 500 seconds. Containers/Lazy/Function/Void are excluded:
+                    // their CanConvertTo is element-wise-permissive (e.g. Int[]→Double[])
+                    // but Value.ConvertTo has no typed-container arms and would throw —
+                    // they keep the legacy raw binding.
+                    if (!paramValue.Type.Equals(param.Type)
+                        && paramValue.Type is not (ArrayType or DictType or TupleType or LazyType or FunctionType or VoidType)
+                        && param.Type is not (ArrayType or DictType or TupleType or LazyType or FunctionType or VoidType)
+                        && paramValue.Type.CanConvertTo(param.Type))
+                    {
+                        paramValue = paramValue.ConvertTo(param.Type);
+                    }
                 }
 
                 // Use SetVariable if the name was already declared (from captures), otherwise declare

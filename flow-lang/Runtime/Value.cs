@@ -248,6 +248,11 @@ public class Value
         // Numeric conversions
         if (Data is int intVal)
         {
+            // Quick 260701-vqz: int-backed music types (Semitone, NoteValue) had no
+            // IntType arm, so (up seq +2st) crashed with InvalidCastException when
+            // the resolver routed a Semitone arg into a builtin's Int slot
+            // (Semitone.IsCompatibleWith(Int) accepts it, then ConvertTo fell through).
+            if (targetType is IntType) return Int(intVal);
             if (targetType is LongType) return Long(intVal);
             if (targetType is FloatType) return Float(intVal);
             if (targetType is DoubleType) return Double(intVal);

@@ -274,7 +274,40 @@ public record FunctionSignature(
     }
 
     /// <summary>
+    /// Quick 260701-vqz — unit-quantity music types whose raw double/int backing
+    /// carries a UNIT (dB, ms, s, cents, semitones, Hz, beats). When such an arg
+    /// lands in a bare Double/Float slot the unit is silently dropped (the raw
+    /// number passes through), so that landing must score BELOW a unit-preserving
+    /// conversion to a sibling music type (ms→s scales ×1/1000 in Value.ConvertTo).
+    /// Reference-identity music types (Tuning/Sfz/...) and Note are NOT unit
+    /// quantities — their dispatch is untouched.
+    /// </summary>
+    private static bool IsUnitQuantityType(FlowType type) =>
+        type is SpecialTypes.DecibelType
+            or SpecialTypes.MillisecondType
+            or SpecialTypes.SecondType
+            or SpecialTypes.CentType
+            or SpecialTypes.SemitoneType
+            or SpecialTypes.HertzType
+            or SpecialTypes.BeatType;
+
+    /// <summary>
     /// Calculates a specificity score for overload resolution.
+    ///
+    /// <para>
+    /// Quick 260701-vqz — pre-release type-ergonomics audit. The legacy tiers
+    /// (exact 1000 / compatible 500 / convertible 100) made a raw-Double sibling
+    /// overload ALWAYS beat the unit-converting overload for a music-typed arg:
+    /// <c>(noise 100ms)</c> scored noise(Double)=500 over noise(Second)=100 and
+    /// rendered 100 seconds. Unit-aware tiers fix the family:
+    /// exact 1000 &gt; unit-preserving conversion 700 (ms→s) &gt; non-unit compat
+    /// 500 (unchanged) &gt; unit-dropping raw-numeric landing 300 for Double /
+    /// 290 for Float (the Double/Float split breaks the permanent
+    /// <c>(add 100ms 50ms)</c> ambiguity tie between add(Float,Float) and
+    /// add(Double,Double) — music values are double-backed, Double wins) &gt;
+    /// other conversions 100. Raw-number calls are untouched: a Double arg in a
+    /// Double slot is still exact 1000.
+    /// </para>
     /// </summary>
     public int CalculateSpecificity(IReadOnlyList<FlowType> argTypes)
     {
@@ -296,13 +329,32 @@ public record FunctionSignature(
             }
             else if (argType.IsCompatibleWith(paramType))
             {
-                // Compatible - medium score
-                score += 500;
+                if (IsUnitQuantityType(argType)
+                    && paramType is PrimitiveTypes.DoubleType or PrimitiveTypes.FloatType)
+                {
+                    // Unit-dropping landing: the raw number passes through and the
+                    // unit is discarded. Must lose to a unit-preserving conversion.
+                    score += paramType is PrimitiveTypes.DoubleType ? 300 : 290;
+                }
+                else
+                {
+                    // Compatible - medium score
+                    score += 500;
+                }
             }
             else if (argType.CanConvertTo(paramType))
             {
-                // Convertible - low score
-                score += 100;
+                if (IsUnitQuantityType(argType) && IsUnitQuantityType(paramType))
+                {
+                    // Unit-preserving conversion (ms→s, s→ms): Value.ConvertTo
+                    // scales the backing number, so the composer's unit is honored.
+                    score += 700;
+                }
+                else
+                {
+                    // Convertible - low score
+                    score += 100;
+                }
             }
         }
 
