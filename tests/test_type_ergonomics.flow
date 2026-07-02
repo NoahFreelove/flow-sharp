@@ -1,0 +1,113 @@
+Note: Test Type Ergonomics — quick-260701-vqz overload-resolver unit-drop fix family.
+Note: Music-typed args must pick unit-converting overloads over raw-Double siblings
+Note: (resolver tiers: exact 1000 > unit-preserving 700 > raw-numeric landing 300/290),
+Note: and user-proc param binding must coerce scalar args to declared param types.
+use "@std"
+use "@audio"
+
+proc check(Bool: ok, String: label)
+    (print (if ok (concat "PASS: " label) (concat "FAIL: " label)))
+end proc
+
+proc near(Double: actual, Double: expected, Double: tol)
+    (lt (abs (sub actual expected)) tol)
+end proc
+
+Note: ===== 1. Tone generators: Hz-first + ms duration =====
+Buffer sine = (createSineTone 440Hz 500ms 0.5)
+(check (equals (getFrames sine) 22050) "createSineTone 440Hz 500ms renders 0.5s (was 500s)")
+Buffer saw = (createSawTone 440Hz 250ms 0.4)
+(check (equals (getFrames saw) 11025) "createSawTone 440Hz 250ms renders 0.25s")
+Buffer square = (createSquareTone 220Hz 250ms 0.4)
+(check (equals (getFrames square) 11025) "createSquareTone 220Hz 250ms renders 0.25s")
+Buffer tri = (createTriangleTone 330Hz 250ms 0.4)
+(check (equals (getFrames tri) 11025) "createTriangleTone 330Hz 250ms renders 0.25s")
+
+Note: raw-Double and Hz-first raw-duration forms must be untouched
+Buffer rawSine = (createSineTone 1.0 440.0 0.5)
+(check (equals (getFrames rawSine) 44100) "duration-first raw createSineTone unchanged")
+Buffer hzSine = (createSineTone 440Hz 1.0 0.5)
+(check (equals (getFrames hzSine) 44100) "Hz-first raw-duration createSineTone unchanged")
+
+Note: ===== 2. ms into Second slots via unit-preserving conversion =====
+Buffer noiseMs = (noise 2ms)
+(check (equals (getFrames noiseMs) 88) "noise 2ms renders 2 milliseconds (was 2s)")
+Buffer sil = (createSilence 500ms)
+(check (equals (getFrames sil) 22050) "createSilence 500ms renders 0.5s (was 500s)")
+
+Note: ===== 3. silence alias (was a documented phantom builtin) =====
+Buffer silAlias = (silence 250ms)
+(check (equals (getFrames silAlias) 11025) "silence(ms) alias registered and converts")
+Buffer silRaw = (silence 0.25)
+(check (equals (getFrames silRaw) 11025) "silence(Double seconds) alias works")
+
+Note: ===== 4. fadeIn ms: half-fade point multiplier =====
+Buffer flat = (createBufferStereo 0.5)
+(fillBuffer flat 1.0)
+Buffer faded = (fadeIn flat 100ms)
+(check (near (getSample faded 2205 0) 0.5 0.01) "fadeIn 100ms half-point ~0.5 (fade is 100ms not 100s)")
+
+Note: ===== 5. adsr with ms times matches raw-seconds reference =====
+Buffer c1 = (createBufferStereo 1.0)
+(fillBuffer c1 1.0)
+Envelope msEnv = (adsr 10ms 100ms 0.7 200ms)
+Buffer msShaped = (applyEnvelope c1 msEnv)
+(check (near (getSample msShaped 440 0) 1.0 0.01) "adsr 10ms attack peaks at 10ms (was 10s)")
+(check (near (getSample msShaped 8820 0) 0.7 0.01) "adsr ms decay reaches 0.7 sustain")
+
+Note: ===== 6. applyEnvelope / scaleBuffer return the Buffer (documented contract) =====
+Buffer c2 = (createBufferStereo 0.1)
+(fillBuffer c2 0.5)
+Buffer envBound = (applyEnvelope c2 msEnv)
+(check (equals (getFrames envBound) 4410) "applyEnvelope returns the buffer (bound non-null)")
+Buffer c3 = (createBufferStereo 0.1)
+(fillBuffer c3 0.5)
+Buffer scaled = (scaleBuffer c3 0.5)
+(check (equals (getFrames scaled) 4410) "scaleBuffer returns the buffer (bound non-null)")
+(check (near (getSample scaled 100 0) 0.25 0.001) "scaleBuffer linear factor applied")
+
+Note: ===== 7. Decibel overloads: volume / scaleBuffer / mixBuffers =====
+Buffer v1 = (createBufferStereo 0.1)
+(fillBuffer v1 0.4)
+Buffer vUp = (volume v1 6dB)
+(check (near (getSample vUp 100 0) 0.798 0.005) "volume +6dB ~= 2x linear (was 6x)")
+Buffer v2 = (createBufferStereo 0.1)
+(fillBuffer v2 0.4)
+Buffer vDown = (volume v2 -6dB)
+(check (near (getSample vDown 100 0) 0.2005 0.005) "volume -6dB ~= 0.5x linear (was an error)")
+Buffer v3 = (createBufferStereo 0.1)
+(fillBuffer v3 0.5)
+Buffer v3scaled = (scaleBuffer v3 -6dB)
+(check (near (getSample v3scaled 100 0) 0.2506 0.005) "scaleBuffer -6dB attenuates (was phase-inverted 6x)")
+Buffer m1 = (createBufferStereo 0.1)
+(fillBuffer m1 0.5)
+Buffer m2 = (createBufferStereo 0.1)
+(fillBuffer m2 0.5)
+Buffer mixed = (mixBuffers m1 m2 -6dB -6dB)
+(check (near (getSample mixed 100 0) 0.5012 0.005) "mixBuffers dB gains convert (was phase-inverted)")
+
+Note: ===== 8. Second into Millisecond slots (inverse direction) =====
+Note: delay extends the buffer with an echo tail, so compare 0.25s against the
+Note: exact-ms call — identical frame counts prove the s->ms conversion fired
+Note: (the old raw landing read 0.25 as 0.25 MILLISECONDS).
+Buffer delaySrc = (createSineTone 440Hz 100ms 0.5)
+Buffer delayedSec = (delay delaySrc 0.25s 0.3 0.4)
+Buffer delayedMs = (delay delaySrc 250ms 0.3 0.4)
+(check (equals (getFrames delayedSec) (getFrames delayedMs)) "delay 0.25s == delay 250ms (Millisecond overload resolved)")
+
+Note: ===== 9. unit arithmetic + Semitone->Int conversion =====
+(check (equals (add 100ms 50ms) 150.0) "add ms+ms resolves (was a hard ambiguity error)")
+Sequence melody = | C4q D4q E4q |
+Sequence upTwo = (up melody +2st)
+(print "PASS: up +2st converts Semitone to Int (was InvalidCastException)")
+
+Note: ===== 10. previously-ambiguous mixed compress call =====
+Buffer compTone = (createSineTone 440Hz 200ms 0.8)
+Buffer compressed = (compress compTone -12.0 4.0 5ms 50ms)
+(print "PASS: mixed raw+ms compress call resolves (was ambiguous)")
+
+Note: ===== 11. sing with ms duration =====
+Buffer vowel = (sing "ah" C4 200ms)
+(check (equals (getFrames vowel) 8820) "sing 200ms renders 0.2s (was 200s)")
+
+(print "type-ergonomics regression complete")

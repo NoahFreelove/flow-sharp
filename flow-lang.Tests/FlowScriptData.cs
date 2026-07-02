@@ -211,6 +211,43 @@ public static class FlowScriptData
             "PASS: vocal mixed with instrumental",
         },
 
+        // Quick 260701-vqz: overload-resolver unit-drop fix family. Sentinels pin
+        // the resolver's unit-aware tiers (exact 1000 > unit-preserving 700 >
+        // raw-numeric landing 300/290), the user-proc bind-time scalar coercion,
+        // the Decibel overloads (volume/scaleBuffer/mixBuffers), the silence
+        // alias, the Value.ConvertTo Int arm (Semitone->Int), and the documented
+        // Buffer returns of applyEnvelope/scaleBuffer. One sentinel per fixed
+        // call shape — every "was X" in the label names the pre-fix failure the
+        // 2026-07-01 type-ergonomics audit verified empirically.
+        ["test_type_ergonomics.flow"] = new[]
+        {
+            "PASS: createSineTone 440Hz 500ms renders 0.5s (was 500s)",
+            "PASS: createSawTone 440Hz 250ms renders 0.25s",
+            "PASS: createSquareTone 220Hz 250ms renders 0.25s",
+            "PASS: createTriangleTone 330Hz 250ms renders 0.25s",
+            "PASS: duration-first raw createSineTone unchanged",
+            "PASS: Hz-first raw-duration createSineTone unchanged",
+            "PASS: noise 2ms renders 2 milliseconds (was 2s)",
+            "PASS: createSilence 500ms renders 0.5s (was 500s)",
+            "PASS: silence(ms) alias registered and converts",
+            "PASS: silence(Double seconds) alias works",
+            "PASS: fadeIn 100ms half-point ~0.5 (fade is 100ms not 100s)",
+            "PASS: adsr 10ms attack peaks at 10ms (was 10s)",
+            "PASS: adsr ms decay reaches 0.7 sustain",
+            "PASS: applyEnvelope returns the buffer (bound non-null)",
+            "PASS: scaleBuffer returns the buffer (bound non-null)",
+            "PASS: scaleBuffer linear factor applied",
+            "PASS: volume +6dB ~= 2x linear (was 6x)",
+            "PASS: volume -6dB ~= 0.5x linear (was an error)",
+            "PASS: scaleBuffer -6dB attenuates (was phase-inverted 6x)",
+            "PASS: mixBuffers dB gains convert (was phase-inverted)",
+            "PASS: delay 0.25s == delay 250ms (Millisecond overload resolved)",
+            "PASS: add ms+ms resolves (was a hard ambiguity error)",
+            "PASS: up +2st converts Semitone to Int (was InvalidCastException)",
+            "PASS: mixed raw+ms compress call resolves (was ambiguous)",
+            "PASS: sing 200ms renders 0.2s (was 200s)",
+        },
+
         // Phase 15 DX-07: reverbTime parses, renders, and short-circuits at 0.
         // Wave 0 placeholder — body is a sentinel-only print; Plan 03 replaces the
         // body with a real reverbTime render while preserving these two sentinels.
