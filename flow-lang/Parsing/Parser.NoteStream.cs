@@ -106,11 +106,11 @@ public partial class Parser
                 {
                     var elemLoc = _tokens[savedPos].Location;
                     Advance(); // consume "ghost"
-                    var noteToken = Expect(TokenType.NoteLiteral, "Expected note literal after 'ghost'");
+                    var noteText = ExpectNoteLiteralOrBareLetter("after 'ghost'");
                     string? durSuffix = TryParseDurationSuffix();
                     bool isDotted = durSuffix != null && Match(TokenType.Dot);
                     Expect(TokenType.RParen, "Expected ')' after ghost note");
-                    currentBarElements.Add(new GhostNoteElement(elemLoc, noteToken.Text, durSuffix, isDotted));
+                    currentBarElements.Add(new GhostNoteElement(elemLoc, noteText, durSuffix, isDotted));
                     continue;
                 }
 
@@ -118,9 +118,9 @@ public partial class Parser
                 {
                     var elemLoc = _tokens[savedPos].Location;
                     Advance(); // consume "grace"
-                    var noteToken = Expect(TokenType.NoteLiteral, "Expected note literal after 'grace'");
+                    var noteText = ExpectNoteLiteralOrBareLetter("after 'grace'");
                     Expect(TokenType.RParen, "Expected ')' after grace note");
-                    currentBarElements.Add(new GraceNoteElement(elemLoc, noteToken.Text));
+                    currentBarElements.Add(new GraceNoteElement(elemLoc, noteText));
                     continue;
                 }
 
@@ -250,8 +250,7 @@ public partial class Parser
                 var notes = new List<string>();
                 while (!Check(TokenType.RBracket) && !IsAtEnd())
                 {
-                    var noteToken = Expect(TokenType.NoteLiteral, "Expected note literal in chord bracket");
-                    notes.Add(noteToken.Text);
+                    notes.Add(ExpectNoteLiteralOrBareLetter("in chord bracket"));
                 }
                 Expect(TokenType.RBracket, "Expected ']' after chord bracket");
                 string? durSuffix = TryParseDurationSuffix();
@@ -382,6 +381,29 @@ public partial class Parser
                 }
                 else if (identText is not ("w" or "h" or "q" or "e" or "s" or "t"))
                 {
+                    // quick-260702-gmm: a bare single note letter (A-G, no octave digit /
+                    // accidental) — its octave is supplied later by NoteStreamCompiler via
+                    // MusicalContext.DefaultOctave (default 4, or the active `octave N { }`
+                    // block). MUST precede the uppercase-typo recovery below so `| C D E |`
+                    // renders as notes, not rests. Duration letters (w/h/q/e/s/t) are
+                    // already excluded by the enclosing `is not` guard, so a bare `e`/`s`/`t`
+                    // duration never reaches here; note letters are uppercase A-G.
+                    if (IsBareNoteLetter(identText))
+                    {
+                        var noteTok = Advance();
+                        var elemLoc2 = noteTok.Location;
+                        string? durSuffix = TryParseDurationSuffix();
+                        bool isDotted = durSuffix != null && Match(TokenType.Dot);
+                        bool isTied = Match(TokenType.Tilde);
+                        double? centOffset = null;
+                        if (Check(TokenType.CentLiteral))
+                            centOffset = (double)Advance().Value!;
+                        Articulation? articMark = TryParseArticulation();
+                        currentBarElements.Add(new NoteElement(elemLoc2, identText, durSuffix,
+                            isDotted, isTied, centOffset, stickyVelocity, articMark, null));
+                        continue;
+                    }
+
                     // Lowercase-initial identifiers are variable references
                     if (identText.Length > 0 && char.IsLower(identText[0]))
                     {
@@ -534,6 +556,31 @@ public partial class Parser
     /// OFF; charitably swallowing it would silently accept an H note without
     /// `enable hAsB;`).
     /// </summary>
+    /// <summary>
+    /// quick-260702-gmm: true for a bare single note letter (A-G, no octave digit /
+    /// accidental / duration). SimpleLexer.TryParseNote deliberately excludes single
+    /// letters (they could be variable names like <c>Int C = 5;</c>), so a bare <c>C</c>
+    /// arrives at the note-stream parser as an Identifier. In note-stream context it IS a
+    /// note; its octave is supplied later by NoteStreamCompiler via
+    /// <c>MusicalContext.DefaultOctave</c> (default 4, or the active <c>octave N { }</c> block).
+    /// </summary>
+    private static bool IsBareNoteLetter(string text)
+        => text.Length == 1 && text[0] >= 'A' && text[0] <= 'G';
+
+    /// <summary>
+    /// Consumes one note name in a note-stream context (chord bracket <c>[ ... ]</c>,
+    /// <c>(ghost X)</c>, <c>(grace X)</c>): an explicit NoteLiteral (<c>C4</c>, <c>C#</c>,
+    /// <c>Bb</c>) OR a bare single note letter (A-G) that lexed as an Identifier
+    /// (quick-260702-gmm — octave supplied by DefaultOctave at compile time). Returns the
+    /// note text; <paramref name="context"/> shapes the "expected" diagnostic on failure.
+    /// </summary>
+    private string ExpectNoteLiteralOrBareLetter(string context)
+    {
+        if (Check(TokenType.Identifier) && IsBareNoteLetter(CurrentToken.Text))
+            return Advance().Text;
+        return Expect(TokenType.NoteLiteral, $"Expected note literal {context}").Text;
+    }
+
     private static bool IsNoteLikeTypoShape(string text)
     {
         if (text.Length == 0 || !char.IsUpper(text[0]))
@@ -864,8 +911,7 @@ public partial class Parser
                 var notes = new List<string>();
                 while (!Check(TokenType.RBracket) && !IsAtEnd())
                 {
-                    var nToken = Expect(TokenType.NoteLiteral, "Expected note literal in chord bracket");
-                    notes.Add(nToken.Text);
+                    notes.Add(ExpectNoteLiteralOrBareLetter("in chord bracket"));
                 }
                 Expect(TokenType.RBracket, "Expected ']' after chord bracket");
                 string? durSuffix = TryParseDurationSuffix();

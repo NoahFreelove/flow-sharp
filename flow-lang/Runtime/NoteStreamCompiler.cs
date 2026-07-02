@@ -180,7 +180,7 @@ public class NoteStreamCompiler
 
                 case ChordElement chord:
                     // Expand chord to individual notes (all with same duration, played simultaneously)
-                    foreach (var chordNote in CompileChordElement(chord, autoFitDuration))
+                    foreach (var chordNote in CompileChordElement(chord, autoFitDuration, context))
                     {
                         musicalNotes.Add(chordNote);
                     }
@@ -210,7 +210,7 @@ public class NoteStreamCompiler
 
                 case GhostNoteElement ghost:
                 {
-                    var (name, octave, alteration) = NoteType.Parse(ghost.NoteName);
+                    var (name, octave, alteration) = NoteType.Parse(ghost.NoteName, context.DefaultOctave ?? 4);
                     // Ghost notes default to sixteenth duration (short, ornamental)
                     int? dv = ghost.DurationSuffix != null
                         ? ResolveDuration(ghost.DurationSuffix, autoFitDuration)
@@ -222,7 +222,7 @@ public class NoteStreamCompiler
 
                 case GraceNoteElement grace:
                 {
-                    var (name, octave, alteration) = NoteType.Parse(grace.NoteName);
+                    var (name, octave, alteration) = NoteType.Parse(grace.NoteName, context.DefaultOctave ?? 4);
                     musicalNotes.Add(new MusicalNoteData(name, octave, alteration,
                         (int)NoteValueType.Value.THIRTYSECOND, isRest: false, velocity: 0.5,
                         sourceLocation: grace.Location, sourceLength: CalcSourceLength(grace)));
@@ -312,7 +312,7 @@ public class NoteStreamCompiler
                     break;
 
                 case ChordElement chord:
-                    foreach (var chordNote in CompileChordElement(chord, autoFitDuration))
+                    foreach (var chordNote in CompileChordElement(chord, autoFitDuration, context))
                     {
                         musicalNotes.Add(chordNote);
                     }
@@ -673,7 +673,7 @@ public class NoteStreamCompiler
 
                 case NoteElement note:
                 {
-                    var (name, octave, alteration) = NoteType.Parse(note.NoteName);
+                    var (name, octave, alteration) = NoteType.Parse(note.NoteName, context.DefaultOctave ?? 4);
                     output.Add(new MusicalNoteData(
                         name, octave, alteration,
                         durationValue: (int)NoteValueType.Value.QUARTER,  // best-effort enum mirror; rational override applies
@@ -805,7 +805,7 @@ public class NoteStreamCompiler
     /// </summary>
     private MusicalNoteData CompileNoteElement(NoteElement note, NoteValueType.Value? autoFitDuration, MusicalContext context)
     {
-        var (noteName, octave, alteration) = NoteType.Parse(note.NoteName);
+        var (noteName, octave, alteration) = NoteType.Parse(note.NoteName, context.DefaultOctave ?? 4);
         int? durationValue;
 
         if (note.DurationSuffix != null && DurationSuffixMap.TryGetValue(note.DurationSuffix, out var noteVal))
@@ -896,7 +896,7 @@ public class NoteStreamCompiler
     /// <summary>
     /// Compiles a ChordElement into multiple MusicalNoteData (one per note in the chord).
     /// </summary>
-    private List<MusicalNoteData> CompileChordElement(ChordElement chord, NoteValueType.Value? autoFitDuration)
+    private List<MusicalNoteData> CompileChordElement(ChordElement chord, NoteValueType.Value? autoFitDuration, MusicalContext context)
     {
         var notes = new List<MusicalNoteData>();
         int? durationValue;
@@ -918,7 +918,8 @@ public class NoteStreamCompiler
         bool first = true;
         foreach (var noteName in chord.Notes)
         {
-            var (name, octave, alteration) = NoteType.Parse(noteName);
+            // Bracket chord `[C E G]` bare letters adopt the block default octave.
+            var (name, octave, alteration) = NoteType.Parse(noteName, context.DefaultOctave ?? 4);
             // First chord-tone is the "lead" — it advances the bar's beat cursor.
             // Remaining tones share its onset (IsChordTone=true) so the chord
             // plays as one polyphonic strike, not as an arpeggio across bar
@@ -949,6 +950,10 @@ public class NoteStreamCompiler
         bool firstNamed = true;
         foreach (var noteName in chordData.NoteNames)
         {
+            // Named-chord tones (Cmaj7) come from ChordParser with resolver-assigned
+            // octaves, NOT bare letters the composer typed — intentionally ignore
+            // MusicalContext.DefaultOctave here (locked scope: main notes, brackets,
+            // ghost/grace only).
             var (name, octave, alteration) = NoteType.Parse(noteName);
             // See CompileChordElement above: first tone leads, rest stack on its onset.
             notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isTied: namedChord.IsTied, isDotted: namedChord.IsDotted, sourceLocation: namedChord.Location, sourceLength: ncLen, isChordTone: !firstNamed));
@@ -991,6 +996,9 @@ public class NoteStreamCompiler
         bool firstRoman = true;
         foreach (var noteName in chordData.NoteNames)
         {
+            // Roman-numeral tones (V7 in key context) come from HarmonyFunctions with
+            // resolver-assigned octaves, NOT bare letters — intentionally ignore
+            // MusicalContext.DefaultOctave here (locked scope).
             var (name, octave, alteration) = NoteType.Parse(noteName);
             // See CompileChordElement above: first tone leads, rest stack on its onset.
             notes.Add(new MusicalNoteData(name, octave, alteration, durationValue, isRest: false, isDotted: romanNumeral.IsDotted, sourceLocation: romanNumeral.Location, sourceLength: rnLen, isChordTone: !firstRoman));

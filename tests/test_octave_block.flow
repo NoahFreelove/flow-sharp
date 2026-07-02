@@ -1,0 +1,89 @@
+Note: Test octave N { ... } block — quick-260702-gmm default-octave musical-context block.
+Note:
+Note: Bare note letters inside a | ... | stream adopt the block's octave (C -> C3 inside
+Note: octave 3). Explicit octave digits always win. Nesting is innermost-wins; scope reverts
+Note: to octave 4 after the block; dynamic scope reaches note streams inside called procs.
+Note: Out-of-range octave N clamps charitably to [1, 9] with a one-shot [octave] advisory.
+Note:
+Note: HARNESS: uses the @test framework's `assertNotesMatch`, which compares Sequences
+Note: structurally INCLUDING octave — `str` of a Sequence only shows a bar/beat summary
+Note: (not pitch), so a plain (equals (str a) (str b)) can NOT distinguish octaves. Run with:
+Note:   dotnet run --project flow-cli -- test tests/test_octave_block.flow
+Note: Emits PASS/FAIL lines + a Total/Passed/Failed summary; exits non-zero on any FAIL.
+Note:
+Note: Sequences are built inside helper procs because an `octave N { ... }` block creates its
+Note: own variable scope (locals do not leak out) — a proc `return`s the sequence built under
+Note: the block. Reference sequences use explicit octave digits (which the block never affects).
+Note:
+Note: SCOPE NOTE: a bare `Note n = C;` OUTSIDE a note stream still defaults to octave 4 — the
+Note: lexer has no musical context at that point (locked scope decision). Only note-stream bare
+Note: letters (main notes, bracket chords, ghost/grace, tuplet notes) follow the octave block.
+use "@std"
+use "@test"
+
+Note: ===== Helper procs: build note streams under octave blocks and return them =====
+
+Note: bare letters at octave 3
+proc bare3()
+    octave 3 { return | C D E | }
+end proc
+
+Note: explicit octave digits inside an octave-3 block (should stay 5)
+proc explicitIn3()
+    octave 3 { return | C5 D5 | }
+end proc
+
+Note: bracket chord with bare letters at octave 3
+proc bracket3()
+    octave 3 { return | [C E G]q | }
+end proc
+
+Note: ghost + grace bare notes at octave 3
+proc ghostGrace3()
+    octave 3 { return | (ghost C) (grace D) E | }
+end proc
+
+Note: nested blocks — innermost (2) wins over outer (5)
+proc nested52()
+    octave 5 { octave 2 { return | C | } }
+end proc
+
+Note: code AFTER a block reverts to the default octave 4
+proc afterBlock()
+    octave 2 { Sequence discard = | C | (print) }
+    return | C |
+end proc
+
+Note: a note stream built by a proc with NO octave block of its own —
+Note: it must inherit the CALLER's octave via dynamic scope (like tempo/swing)
+proc makeSeq()
+    return | C D E |
+end proc
+
+proc dynamicScope3()
+    octave 3 { return (makeSeq) }
+end proc
+
+Note: out-of-range octave clamps charitably to 9 (also emits a one-shot [octave] advisory)
+proc clamp12()
+    octave 12 { return | C | }
+end proc
+
+Note: ===== Reference sequences (explicit octaves — the octave block never touches these) =====
+Sequence ref3 = | C3 D3 E3 |
+Sequence ref5 = | C5 D5 |
+Sequence rcChord = | [C3 E3 G3]q |
+Sequence refGhostGrace3 = | (ghost C3) (grace D3) E3 |
+Sequence r2 = | C2 |
+Sequence refC4 = | C4 |
+Sequence ref9 = | C9 |
+
+Note: ===== Assertions =====
+(test "bare letters adopt octave 3" lazy((assertNotesMatch (bare3) ref3)))
+(test "explicit octave digits win over block default" lazy((assertNotesMatch (explicitIn3) ref5)))
+(test "bracket chord bare notes adopt octave 3" lazy((assertNotesMatch (bracket3) rcChord)))
+(test "ghost + grace bare notes adopt octave 3" lazy((assertNotesMatch (ghostGrace3) refGhostGrace3)))
+(test "innermost octave wins in nested blocks" lazy((assertNotesMatch (nested52) r2)))
+(test "bare note reverts to octave 4 after block" lazy((assertNotesMatch (afterBlock) refC4)))
+(test "proc note stream inherits caller octave (dynamic scope)" lazy((assertNotesMatch (dynamicScope3) ref3)))
+(test "octave 12 clamps to 9" lazy((assertNotesMatch (clamp12) ref9)))
