@@ -1,4 +1,4 @@
-# flow-site — the flowlang.dev website
+# flow-site — the website
 
 The marketing + docs + interactive playground site for the [Flow](../) music language.
 Greenfield **SvelteKit 2 / Svelte 5 / TypeScript / Tailwind v4** project, deployed to

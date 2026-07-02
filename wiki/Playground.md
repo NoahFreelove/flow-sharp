@@ -1,6 +1,6 @@
 # Playground
 
-The Flow playground runs the **full interpreter in your browser** — no install, no backend. It lives at **[flow.noahfreelove.com/playground](https://flow.noahfreelove.com/playground)** (the flowlang.dev site).
+The Flow playground runs the **full interpreter in your browser** — no install, no backend. It lives at **[/playground](https://flow.noahfreelove.com/playground)**.
 
 The same C# interpreter that powers the desktop CLI is compiled to WebAssembly (.NET 10 Mono-WASM) and shipped as a static bundle. When you press Run, your code is lexed, parsed, and evaluated entirely client-side, and any audio plays through the browser's Web Audio API.
 
@@ -19,7 +19,7 @@ Two ways to share a sketch:
 - **Share links (zero backend).** The playground compresses your code into a URL fragment (`#code=...`, fflate base64url, guarded against decompression bombs). The link carries the whole program — nothing is stored server-side. This is the default and works with no account.
 - **Save to gist.** An optional GitHub OAuth path (scope `gist`, CSRF-protected, handled by a tiny Cloudflare Worker) saves your sketch as a real gist.
 
-## Honest Caveats
+## Caveats
 
 The browser build is ~85% of the language, but some things cannot run in a browser sandbox. Know these before you reach for them:
 

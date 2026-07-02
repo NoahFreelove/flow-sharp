@@ -389,6 +389,7 @@
 	<!-- LEFT 30% — snippets + controls (UI-SPEC §Playground left rail). -->
 	<aside class="pg-rail surface-wood" aria-label="Snippets and controls">
 		<h2 class="pg-rail-title">Snippets</h2>
+		
 		<ul class="pg-snippets">
 			{#each snippets as snip (snip.id)}
 				<li>
@@ -426,6 +427,11 @@
 				onclick={onSaveToGist}
 			/>
 		</div>
+
+		<h3> Note: Not all instruments are available in the Playground.</h3>
+		
+		<div> This is to keep the JS bundle size relatively low. You can have much higher fidelity 
+		renders running locally with the high fidelity instrument pack downloaded (SFZ).</div>
 
 		{#if share.toast}
 			<!-- Escaped Svelte text (never {@html}) — T-49-XSS-SHARE. -->

@@ -12,7 +12,7 @@ This is why note streams compile against the ambient musical context, why nearly
 
 **Degenerate input gets a reasonable default plus a one-shot advisory — it does not throw.** A wrong note is better than a crash mid-piece. This propagates through the entire stdlib:
 
-- Out-of-range values are clamped (Markov order to `[1, 3]`, L-system iterations to `[0, 20]`, OSC bundle nesting to depth 8, and ~115 other sites).
+- Out-of-range values are clamped
 - Pattern combinators return their input untouched on degenerate arguments (`(every 0 cb seq)` → input + advisory).
 - Notation import (ABC, MML) drops tokens it doesn't understand rather than failing.
 - Config loading, module loading on the wrong target, and unknown windowing symbols all degrade gracefully.
@@ -32,7 +32,7 @@ How it is kept:
 - **Deterministic voice-steal.** Voice-pool overflow steals the oldest voice, with the original input index as a tiebreaker.
 - **Deterministic emitters.** SFZ round-robin counters reset per render; the notation `XmlWriter` pins its newline handling.
 
-### Honest Opt-Outs
+### Opt-Outs
 
 Two places deliberately step outside the contract, and both say so out loud:
 
