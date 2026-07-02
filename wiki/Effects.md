@@ -100,8 +100,9 @@ Feedback delay with three input forms — bare milliseconds, `Millisecond` liter
 ```flow
 use "@notation"   Note: brings EIGHTH/QUARTER/HALF/WHOLE/SIXTEENTH into scope
 
-Buffer delayed   = (delay tone 250.0 0.4 0.5)        Note: 250 ms (Double)
-Buffer delayedMs = (delay tone 250ms 0.4 0.5)        Note: Millisecond literal
+Buffer delayed    = (delay tone 250.0 0.4 0.5)       Note: 250 ms (Double)
+Buffer delayedMs  = (delay tone 250ms 0.4 0.5)       Note: Millisecond literal
+Buffer delayedSec = (delay tone 0.25s 0.4 0.5)       Note: Second literal — converts to 250 ms
 tempo 120 {
     Buffer synced = (delay tone EIGHTH 0.4 0.5)      Note: tempo-synced — reads active BPM
 }
@@ -111,7 +112,7 @@ tempo 120 {
 
 | Parameter | Unit | Description |
 |-----------|------|-------------|
-| `time` | `Double` ms, `Millisecond`, or `NoteValue` | Delay time |
+| `time` | `Double` ms, `Millisecond`, `Second`, or `NoteValue` | Delay time (a `Second` literal converts to ms) |
 | `feedback` | 0.0 - 1.0 | Amount fed back (0 = single echo) |
 | `mix` | 0.0 - 1.0 | Dry/wet mix |
 
@@ -124,9 +125,10 @@ Buffer quieter = (gain tone -6dB)        Note: dB attenuation
 Buffer louder  = (gain tone +6dB)
 Buffer half    = (volume tone 0.5)       Note: linear multiplier — 0.5 = half-amplitude
 Buffer doubled = (volume tone 2.0)       Note: 2.0 = double-amplitude (clipping warning if it crests 1.0)
+Buffer db6     = (volume tone -6dB)      Note: Decibel literal — converted to a linear factor (dB -> linear)
 ```
 
-`volume` rejects negative arguments — use `gain` with a `-dB` value for attenuation. Both emit a one-shot stderr clipping warning when post-multiplication samples exceed 1.0.
+`volume` rejects a negative *linear* multiplier (`(volume tone -0.5)` is an error), but it **does** accept a `Decibel` literal, which it converts to a linear factor — so `(volume tone -6dB)` and `(volume tone +6dB)` both work. Use a bare number when you mean a linear factor and a `-NdB` literal (or `gain`) when you mean decibels. Both `gain` and `volume` emit a one-shot stderr clipping warning when post-multiplication samples exceed 1.0.
 
 ## Panning
 
@@ -295,10 +297,10 @@ Buffer trim      = (compress tone -12dB 4.0)
 | `compress` | `(Buffer, Double\|Decibel, Double) -> Buffer` | Compressor (threshold, ratio) |
 | `compress` | `(Buffer, Double\|Decibel, Double, Double\|Millisecond, Double\|Millisecond) -> Buffer` | Full compressor |
 | `sidechain` | `(Buffer, Buffer, Double\|Decibel, Double[, attack, release]) -> Buffer` | Sidechain compression |
-| `delay` | `(Buffer, Double\|Millisecond, Double, Double) -> Buffer` | Delay (time, feedback, mix) |
+| `delay` | `(Buffer, Double\|Millisecond\|Second, Double, Double) -> Buffer` | Delay (time, feedback, mix) |
 | `delay` | `(Buffer, NoteValue, Double, Double) -> Buffer` | Tempo-synced delay (reads active BPM) |
 | `gain` | `(Buffer, Double\|Decibel) -> Buffer` | Gain in dB |
-| `volume` | `(Buffer, Double) -> Buffer` | Linear-multiplier amplitude (rejects negatives) |
+| `volume` | `(Buffer, Double\|Decibel) -> Buffer` | Linear-multiplier amplitude (rejects negative *linear* values; a `Decibel` literal is converted to linear) |
 | `pan` | `(Buffer, Double) -> Buffer` | Stereo pan (-1 .. +1) — auto-promotes mono to stereo |
 | `fadeIn` | `(Buffer, Double) -> Buffer` | Linear fade-in (seconds) |
 | `fadeOut` | `(Buffer, Double) -> Buffer` | Linear fade-out (seconds) |

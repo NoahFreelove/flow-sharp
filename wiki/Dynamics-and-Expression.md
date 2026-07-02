@@ -278,7 +278,7 @@ Buffer quieter = rendered -> gain -6dB         Note: half loudness (perceptual)
 Buffer doubled = rendered -> volume 2.0        Note: double the sample magnitude
 ```
 
-Both emit clipping warnings to stderr when post-multiplication samples exceed 1.0. `volume` rejects negative values — use `gain` for dB attenuation.
+Both emit clipping warnings to stderr when post-multiplication samples exceed 1.0. `volume` rejects a negative *linear* multiplier, but it accepts a `Decibel` literal (converted to a linear factor), so `(volume rendered -6dB)` works — use `gain` or a `-NdB` literal when you mean decibels.
 
 ## Velocity Preservation
 

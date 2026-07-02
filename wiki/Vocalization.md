@@ -14,9 +14,11 @@ Buffer vowel = (sing "ah" C4 0.5)
 (play vowel)
 ```
 
-**Signature**: `(sing String phoneme, Note pitch, Double duration) -> Buffer`
+**Signature**: `(sing String phoneme, Note pitch, Double duration) -> Buffer`. The duration also accepts a `Second` or `Millisecond` literal, so `(sing "ah" C4 0.5)`, `(sing "ah" C4 0.5s)`, and `(sing "ah" C4 200ms)` all work.
 
 `sing` is tuning-aware — under `enable justIntonation;` + `key Cmajor`, an E4 vocalization renders at the 5/4 ratio rather than 12-TET. Same for `enable pythagorean;`, `enable equalTemperament;`, and `tuning t { }` blocks.
+
+> **Honest scope.** `sing` is a single **Tenor** formant voice with **no vibrato**. It supports the five vowels below plus the three consonant onsets `s` / `t` / `n` — nothing else. It is not a vocaloid-style engine (that is a planned goal, not a shipped feature). For anything richer, layer multiple `sing` buffers or process them with the [effects](Effects.md) chain.
 
 ### Vowels
 
@@ -92,6 +94,8 @@ Very low or very high pitches may become less intelligible, as with real voices.
 
 Flow can delegate a string to an external TTS engine and return the generated audio as a buffer. The default command is `espeak-ng --stdout` — install `espeak-ng` (or any TTS that writes WAV to stdout) and `tts` works without further setup.
 
+> **Desktop-only.** `tts` shells out to an external process, so it requires `espeak-ng` (or your configured engine) to be installed on the machine, and it **does not work in the browser [playground](Playground.md)** — the sandbox has no TTS binary. Formant `sing`, which is pure synthesis, does work in the browser.
+
 ### Setting a Custom TTS Command
 
 ```flow
@@ -146,4 +150,4 @@ Buffer wet   = words -> reverb 0.5 -> fadeOut 0.5s
 - [Audio and Synthesis](Audio-and-Synthesis.md) - Buffers and synthesizers
 - [Effects](Effects.md) - Reverb, filters, compression for vocals
 - [Playback and Export](Playback-and-Export.md) - Saving vocal renders
-- [Tuning](Tuning.md) - How `sing` reads the active tuning context
+- [Musical Context](Musical-Context.md) - How `sing` reads the active tuning context (`tuning { }`, tuning pragmas)

@@ -45,6 +45,8 @@
 - **Export** — WAV (16/24/32-bit), Standard MIDI Files, MusicXML 3.1, LilyPond 2.24+
 - **Import** — WAV, MIDI (via the `flow midi2flow` CLI), ABC 2.1, PC-98 MML
 - **Tooling** — `flow` CLI (`run` / `eval` / `repl` / `watch` / `play` / `render` / `flow2midi` / `midi2flow` / `check` / `new` / `version` / `lsp` / `test` / `doc`), VSCode extension, LSP for Neovim / Helix / Emacs / Zed
+- **Live & realtime** (desktop) — `flow watch` hot-swap with `live { }` blocks; real-time MIDI + clock (`@midi`), OSC (`@osc`), JACK transport (`@jack`) — Linux realtime
+- **Browser** — the full interpreter runs client-side via WebAssembly at the [playground](Playground.md) (synthesis instruments only on web)
 
 ## Wiki Pages
 
@@ -60,6 +62,7 @@
 - [Collections](Collections.md) — Arrays, `Dict<K, V>`, and list operations
 - [Loops](Loops.md) — `for`, `while`, `break`, `continue`
 - [String Interpolation](String-Interpolation.md) — `$"..."` syntax
+- [Strict Mode](Strict-Mode.md) — `enable strict;` opt-in perimeter, explicit conversion builtins, `:strict` toggle
 
 ### Music Features
 
@@ -83,13 +86,19 @@
 - [Vocalization](Vocalization.md) — Formant-synthesized singing and TTS
 - [Visualization](Visualization.md) — ASCII piano-roll and waveform
 - [Playback and Export](Playback-and-Export.md) — `play`, `stream`, WAV / MIDI / MusicXML / LilyPond export, loading WAVs, ABC / MML import
-- Live Coding — `live { }` blocks, `flow watch` status panel, hot-swap, determinism trade-off *(wiki page pending)*
-- OSC and MIDI — `@osc` (send/listen/pump), `@midi` (hardware output, clock), `@jack` (transport sync) *(wiki page pending)*
+- [Live Coding](Live-Coding.md) — `live { }` blocks, `flow watch` status panel, hot-swap, determinism trade-off
+- [OSC and MIDI](OSC-and-MIDI.md) — `@osc` (send/listen/pump), `@midi` (hardware output, clock), `@jack` (transport sync)
+
+### Tooling & Web
+
+- [CLI and Tooling](CLI-and-Tooling.md) — The `flow` CLI verbs, the REPL, the LSP, editor support
+- [Playground](Playground.md) — Run Flow in the browser; share links, gist saves, WAV/MIDI download, honest web caveats
 
 ### Reference
 
 - [Standard Library](Standard-Library.md) — Modules and complete function reference
 - [Imports and Modules](Imports-and-Modules.md) — The `use` statement, the 15 stdlib modules, runtime gates
+- [Design Philosophy](Design-Philosophy.md) — Ergonomics-first, charitable interpretation, the determinism contract, hand-rolled DSP
 - [Tips and Tricks](Tips-and-Tricks.md) — Idioms, shorthands, and common pitfalls
 - [Examples](Examples.md) — Complete working programs
 

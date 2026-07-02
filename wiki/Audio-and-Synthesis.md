@@ -24,7 +24,13 @@ Buffer triangle = (createTriangleTone 0.5s 440Hz 0.5)
 Note: tone generators also accept Hertz-typed frequencies
 Buffer hi = (createSineTone 0.5s 1.5kHz 0.5)
 Buffer lo = (createSineTone 0.5s 220Hz  0.5)
+
+Note: the frequency-first ordering is equally valid, and time units are honored
+Buffer f1 = (createSineTone 440Hz 0.5 0.5)      Note: Hz first, 0.5s duration
+Buffer f2 = (createSineTone 440Hz 500ms 0.5)    Note: 500ms duration = 0.5s
 ```
+
+Music-typed unit arguments are honored across the audio stdlib — a `Second` / `Millisecond` where a duration is expected, a `Hertz` where a frequency is expected, a `Decibel` where a gain is expected. Mix them freely with plain numbers (`(createSilence 500ms)`, `(noise 2ms)`, `(adsr 10ms 100ms 0.7 200ms)`, `(delay tone 0.25s 0.4 0.5)` all Just Work).
 
 > **Note:** `buf` is a reserved lexer token. Use any other name (`mybuf`, `tone`, `sig`, `result`, etc.) for Buffer variables throughout your code.
 
@@ -46,7 +52,7 @@ Float s = (getSample mybuf 0 0)            Note: frame 0, channel 0
 
 ### Buffer Manipulation
 
-`scaleBuffer` modifies a buffer in place and returns `Void` — do not assign its result. Copy first with `(copyBuffer mybuf)` if you need to preserve the original.
+`scaleBuffer` scales a buffer's samples in place **and returns the buffer**, so it chains with `->`. (It still mutates its input — copy first with `(copyBuffer mybuf)` if you need the original.) The factor is a linear multiplier, or a `Decibel` literal that is converted to linear:
 
 ```flow
 Buffer mybuf1  = (createSineTone 440Hz 0.5 0.5)
@@ -54,9 +60,10 @@ Buffer mybuf2  = (createSineTone 880Hz 0.5 0.5)
 Buffer c       = (copyBuffer mybuf1)
 Buffer slice   = (sliceBuffer mybuf1 0 22050)
 Buffer joined  = (appendBuffers mybuf1 mybuf2)
-(scaleBuffer mybuf1 0.5)                   Note: mutates in place, returns Void
+Buffer scaled  = (scaleBuffer c 0.5)        Note: scales `c` in place AND returns it (chainable)
+Buffer scaledDb = (scaleBuffer c -6dB)      Note: Decibel factor — converted to a linear multiplier
 Buffer mixed   = (mix mybuf1 mybuf2)
-Buffer mixed2  = (mixBuffers mybuf1 mybuf2 0.7 0.3)
+Buffer mixed2  = (mixBuffers mybuf1 mybuf2 0.7 0.3)     Note: Decibel gains also work: (mixBuffers a b -3dB -3dB)
 Buffer fadedIn = mybuf1 -> fadeIn 0.5s
 Buffer fadedOt = mybuf1 -> fadeOut 0.5s
 ```
@@ -168,9 +175,9 @@ Envelope adsr = (createADSR 0.01 0.1 0.7 0.3 44100)
 (applyEnvelope mybuf adsr)
 ```
 
-`applyEnvelope` modifies the buffer **in place** and returns `Void`. Use `(copyBuffer mybuf)` first if you need to keep the original unmodified.
+`applyEnvelope` shapes the buffer in place **and returns the buffer**, so it chains with `->` (e.g. `mybuf -> applyEnvelope adsr -> reverb 0.3`). It still mutates its input — use `(copyBuffer mybuf)` first if you need to keep the original unmodified.
 
-When you render through `renderSong`, every note also receives an articulation-aware envelope on top of the synth's natural amplitude curve — see [Articulations](Articulations.md) for the per-articulation shaping table (Staccato shortens + drops sustain, Marcato boosts velocity, Sforzando spikes the attack, etc.).
+When you render through `renderSong`, every note also receives an articulation-aware envelope on top of the synth's natural amplitude curve — see [Dynamics and Expression](Dynamics-and-Expression.md) for the per-articulation shaping table (Staccato shortens + drops sustain, Marcato boosts velocity, Sforzando spikes the attack, etc.).
 
 ## Built-in Synthesizers
 

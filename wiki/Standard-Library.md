@@ -159,12 +159,12 @@ See [Audio and Synthesis](Audio-and-Synthesis.md), [Effects](Effects.md), and [P
 | Function | Signature | Notes |
 |----------|-----------|-------|
 | `createBuffer` | `(Int frames, Int channels, Int sampleRate) -> Buffer` | |
-| `createSilence` | `(Double seconds) -> Buffer` | Zero-filled buffer |
+| `createSilence` / `silence` | `(Double seconds) -> Buffer` / `(Second) -> Buffer` | Zero-filled buffer; `silence` is an alias |
 | `getFrames` / `getChannels` / `getSampleRate` | `(Buffer) -> Int` | |
 | `getSample` / `setSample` | sample I/O | |
 | `fillBuffer` / `copyBuffer` / `sliceBuffer` | buffer mutation / copy | |
-| `appendBuffers` / `mix` / `mixBuffers` | combining | `mix` is unity gain; `mixBuffers` is per-source gain |
-| `scaleBuffer` / `fadeIn` / `fadeOut` | shaping | |
+| `appendBuffers` / `mix` / `mixBuffers` | combining | `mix` is unity gain; `mixBuffers` is per-source gain (`Double` or `Decibel`) |
+| `scaleBuffer` / `fadeIn` / `fadeOut` | shaping | mutate in place **and return the buffer** (chainable); `scaleBuffer` takes `Double` or `Decibel` |
 
 ### Signal generation
 
@@ -183,7 +183,7 @@ See [Audio and Synthesis](Audio-and-Synthesis.md), [Effects](Effects.md), and [P
 |----------|-----------|
 | `createAR` | `(Double attack, Double release, Int sr) -> Envelope` |
 | `createADSR` | `(Double attack, Double decay, Double sustain, Double release, Int sr) -> Envelope` |
-| `applyEnvelope` | `(Buffer, Envelope) -> Buffer` |
+| `applyEnvelope` | `(Buffer, Envelope) -> Buffer` — shapes in place and returns the buffer (chainable with `->`) |
 
 ### Effects
 
