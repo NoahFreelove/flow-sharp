@@ -1115,6 +1115,21 @@ public static class TransformFunctions
             [SequenceType.Instance, IntType.Instance],
             ParameterNames: ["seq", "octaves"]);
         registry.Register("down", downSig, OctaveDown);
+
+        // Quick 260701-vqz follow-up: a Semitone literal into the Int octaves slot
+        // silently converted (+2st meant 2 OCTAVES). The exact-match Semitone
+        // overload honors the unit as written: (up seq +2st) = up 2 semitones.
+        // Int octave forms are unchanged (exact Int match still wins for bare ints).
+        var upStSig = new FunctionSignature("up",
+            [SequenceType.Instance, SemitoneType.Instance],
+            ParameterNames: ["seq", "semitones"]);
+        registry.Register("up", upStSig, args => TransposeSemitone([args[0], args[1]]));
+
+        var downStSig = new FunctionSignature("down",
+            [SequenceType.Instance, SemitoneType.Instance],
+            ParameterNames: ["seq", "semitones"]);
+        registry.Register("down", downStSig, args =>
+            TransposeSemitone([args[0], Value.Semitone(-args[1].As<int>())]));
     }
 
     private static Value OctaveUp(IReadOnlyList<Value> args)

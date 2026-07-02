@@ -1,3 +1,5 @@
+using FlowLang.Diagnostics;
+
 namespace FlowLang.StandardLibrary.Audio.Vocalization;
 
 /// <summary>
@@ -65,14 +67,23 @@ public static class FormantData
     /// </summary>
     /// <param name="vowel">Vowel key: ah, ee, eh, oh, oo</param>
     /// <returns>Array of 5 FormantEntry values (F1-F5).</returns>
-    /// <exception cref="ArgumentException">If vowel is not recognized.</exception>
+    /// <remarks>
+    /// Charitable interpretation (quick-260701-vx4): an unrecognized phoneme no longer
+    /// throws — it degrades to the neutral <c>"ah"</c> vowel with a one-shot stderr
+    /// advisory so a stray token never halts a render. Valid phonemes are byte-identical
+    /// (the found-branch is untouched). Covers every caller — the direct vowel path, the
+    /// consonant-vowel path (unmapped vowel remainder), and the whole-string fallback.
+    /// </remarks>
     public static FormantEntry[] GetFormants(string vowel)
     {
         if (TenorFormants.TryGetValue(vowel, out var formants))
             return formants;
 
-        throw new ArgumentException(
-            $"Unknown vowel phoneme: '{vowel}'. Valid: ah, ee, eh, oh, oo");
+        RenderingDiagnostics.WarnOnce(
+            sentinelKey: $"vocal-unknown-phoneme:{vowel}",
+            message: $"[vocal] unknown phoneme '{vowel}' — using 'ah' " +
+                     "(valid: ah, ee, eh, oh, oo; onsets s/t/n)");
+        return TenorFormants["ah"];
     }
 
     /// <summary>

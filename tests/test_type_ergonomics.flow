@@ -98,8 +98,12 @@ Buffer delayedMs = (delay delaySrc 250ms 0.3 0.4)
 Note: ===== 9. unit arithmetic + Semitone->Int conversion =====
 (check (equals (add 100ms 50ms) 150.0) "add ms+ms resolves (was a hard ambiguity error)")
 Sequence melody = | C4q D4q E4q |
-Sequence upTwo = (up melody +2st)
-(print "PASS: up +2st converts Semitone to Int (was InvalidCastException)")
+Sequence upSt = (up melody +2st)
+(check (equals (str upSt) (str (transpose melody +2st))) "up +2st transposes 2 semitones (was a crash, then 2 octaves)")
+Sequence upOct = (up melody 1)
+(check (equals (str upOct) (str (transpose melody +12st))) "up 1 still transposes one octave (Int form unchanged)")
+Sequence downSt = (down melody +2st)
+(check (equals (str downSt) (str (transpose melody -2st))) "down +2st transposes down 2 semitones")
 
 Note: ===== 10. previously-ambiguous mixed compress call =====
 Buffer compTone = (createSineTone 440Hz 200ms 0.8)

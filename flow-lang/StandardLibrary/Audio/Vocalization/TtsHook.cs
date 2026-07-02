@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using FlowLang.Diagnostics;
 
 namespace FlowLang.StandardLibrary.Audio.Vocalization;
 
@@ -38,6 +39,19 @@ public static class TtsHook
     /// </exception>
     public static AudioBuffer RunTts(string text)
     {
+#if FLOW_WEB
+        // Charitable interpretation (quick-260701-vx4): the browser sandbox has no
+        // subprocess API, so Process.Start hard-crashes with PlatformNotSupportedException.
+        // Degrade to a short silent buffer + a one-shot advisory pointing composers at the
+        // pure-synthesis `sing` path (formant synthesis, fully audible on Web). The `text`
+        // argument is intentionally unused on this target.
+        _ = text;
+        RenderingDiagnostics.WarnOnce(
+            sentinelKey: "tts-web-unavailable",
+            message: "[tts] external TTS unavailable on Web target — returning silence. " +
+                     "Use sing for browser vocals.");
+        return new AudioBuffer((int)(0.5 * 44100), 1, 44100);
+#else
         var parts = _ttsCommand.Split(' ', 2);
         string executable = parts[0];
         string baseArgs = parts.Length > 1 ? parts[1] : "";
@@ -80,6 +94,7 @@ public static class TtsHook
             throw new InvalidOperationException(
                 $"TTS command not found: '{executable}'. Install it or change with setTtsCommand()");
         }
+#endif
     }
 
     /// <summary>
