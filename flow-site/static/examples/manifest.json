@@ -52,5 +52,11 @@
 		"label": "Windy field soundscape",
 		"blurb": "Pure buffer DSP — filtered noise, gusts, granular grass, reverb, delay and panning build an ambient field with a distant bird call.",
 		"file": "windy-field.flow"
+	},
+	{
+		"id": "vocal-choir",
+		"label": "Choir of circuits (vocal synthesis)",
+		"blurb": "The `sing` formant synthesizer builds a vowel choir and a na-na-ta lead over a soft synth pad — no samples, so it plays right in your browser. Expect a charmingly retro, robotic vocoder voice.",
+		"file": "vocal-choir.flow"
 	}
 ]

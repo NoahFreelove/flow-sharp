@@ -1,0 +1,68 @@
+// "Choir of Circuits" — a robotic vocal piece built from `sing`, Flow's formant
+// synthesizer. Every voice here is PURE SYNTHESIS: a sawtooth buzz shaped by
+// vowel-formant bandpass filters (Csound tenor formants). No samples, so it is
+// fully audible in the browser playground. The character is unmistakably
+// retro-robotic — think Kraftwerk vocoder or a 1980s speak-&-spell choir — and
+// that stiff, glassy quality is the charm, not a bug.
+//
+// Web-safe by construction: `sing` + oscillator pad only, raw second durations,
+// `createSilenceMono` for spacing. Nothing sampled, no `tts` (that needs an
+// external engine and stays silent in the browser). Each layer is built in mono,
+// then `pan`ned into the stereo field so the mixes line up.
+use "@std"
+use "@audio"
+
+key Cmajor {
+
+  // ---- 1. Vowel choir: six sustained chords, each three `sing` voices mixed ----
+  // Stacking `sing` buffers with `mix` turns single vowels into full chords.
+  // "oo"/"oh"/"eh"/"ah" give the progression shifting vowel colour.
+  Buffer chord1 = (mix (mix (sing "oo" C4 2.0) (sing "oo" E4 2.0)) (sing "oo" G4 2.0))
+  Buffer chord2 = (mix (mix (sing "oo" A3 2.0) (sing "oo" C4 2.0)) (sing "oo" E4 2.0))
+  Buffer chord3 = (mix (mix (sing "oh" F4 2.0) (sing "oh" A4 2.0)) (sing "oh" C5 2.0))
+  Buffer chord4 = (mix (mix (sing "ah" G3 2.0) (sing "ah" B3 2.0)) (sing "ah" D4 2.0))
+  Buffer chord5 = (mix (mix (sing "eh" A3 2.0) (sing "eh" C4 2.0)) (sing "eh" E4 2.0))
+  Buffer chord6 = (mix (mix (sing "ah" C4 2.0) (sing "ah" E4 2.0)) (sing "ah" G4 2.0))
+
+  Buffer choir12   = (appendBuffers chord1 chord2)
+  Buffer choir34   = (appendBuffers chord3 chord4)
+  Buffer choir56   = (appendBuffers chord5 chord6)
+  Buffer choirLine = (appendBuffers choir12 (appendBuffers choir34 choir56))
+  Buffer choirWet  = (reverb choirLine 0.5 0.4 0.4)
+  Buffer choirMono = (volume choirWet 0.5)
+  Buffer choir     = (pan choirMono -0.1)
+
+  // ---- 2. Lead line: consonant-vowel syllables sung one after another ----
+  // `appendBuffers` lays the syllables end to end. Onsets n/t/s put a soft
+  // attack in front of each vowel so the melody articulates like "na-na-ta".
+  Buffer p1a = (appendBuffers (sing "na" C5 0.4) (sing "na" E5 0.4))
+  Buffer p1b = (appendBuffers (sing "ta" G5 0.5) (sing "na" E5 0.4))
+  Buffer phrase1 = (appendBuffers p1a (appendBuffers p1b (sing "sa" D5 0.5)))
+
+  Buffer p2a = (appendBuffers (sing "ta" E5 0.4) (sing "na" G5 0.4))
+  Buffer p2b = (appendBuffers (sing "ta" A5 0.5) (sing "na" G5 0.5))
+  Buffer phrase2 = (appendBuffers p2a (appendBuffers p2b (sing "sa" E5 0.9)))
+
+  Buffer melodyRaw     = (appendBuffers phrase1 (appendBuffers (createSilenceMono 0.8) phrase2))
+  Buffer melodyDelayed = (appendBuffers (createSilenceMono 2.0) melodyRaw)
+  Buffer melodyWet     = (reverb melodyDelayed 0.4 0.5 0.35)
+  Buffer melody        = (pan melodyWet 0.25)
+
+  // ---- 3. Soft synth pad: a warm triangle drone on the C–G root ----
+  // A pure oscillator (not a sampled instrument) so it sounds on the web.
+  Buffer padC   = (createTriangleTone 131Hz 12.0 0.10)
+  Buffer padG   = (createTriangleTone 196Hz 12.0 0.07)
+  Buffer padRaw = (lowpass (mix padC padG) 700.0)
+  Buffer padVol = (volume padRaw 0.7)
+  (fadeIn padVol 2.0)
+  (fadeOut padVol 2.5)
+  Buffer pad    = (pan padVol 0.05)
+
+  // ---- 4. Mix choir + pad + lead, glue with a master reverb ----
+  Buffer bed    = (mix choir pad)
+  Buffer scene  = (mix bed melody)
+  Buffer wet    = (reverb scene 0.25 0.5 0.2)
+  Buffer master = (gain wet 6dB)
+
+  (play master)
+}
