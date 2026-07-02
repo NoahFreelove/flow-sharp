@@ -104,3 +104,44 @@ test.describe('single-column collapse <768px (D-49-09)', () => {
 		}
 	});
 });
+
+// On a SHORT desktop window (width >=768px but height below the docs nav's intrinsic height) the
+// pinned `position: sticky` `.docs-sidebar` used to have no max-height/overflow, so its lower nav
+// links were permanently unreachable. The fix caps the sidebar to the remaining viewport height
+// and scrolls it internally. This guard fails against the pre-fix CSS (scrollHeight == clientHeight
+// because nothing clips the content) and passes once the sidebar can scroll its own content.
+test.describe('docs sidebar reachability on short desktop viewport (unreachable-nav regression, REQ-SITE-RESPONSIVE-01)', () => {
+	test('short desktop sidebar scrolls internally and its last nav link is reachable', async ({
+		page
+	}, testInfo) => {
+		// Desktop is the only project with the two-column persistent sidebar (docs-render.spec.ts
+		// convention) — skip under the mobile/mobile-narrow projects where the sidebar is static.
+		if (testInfo.project.name !== 'desktop') return;
+
+		await page.setViewportSize({ width: 1280, height: 500 });
+		await page.goto('/docs/flow-operator');
+		await page.locator('main').waitFor();
+
+		const sidebar = page.locator('.docs-sidebar');
+		await expect(sidebar).toBeVisible();
+
+		// The sidebar overflows its own box — proves max-height + overflow-y are in effect (before
+		// the fix these are absent, so scrollHeight === clientHeight and this assertion fails).
+		const { scrollHeight, clientHeight } = await sidebar.evaluate((el) => ({
+			scrollHeight: el.scrollHeight,
+			clientHeight: el.clientHeight
+		}));
+		expect(
+			scrollHeight,
+			`sidebar must scroll internally: scrollHeight ${scrollHeight} should exceed clientHeight ${clientHeight}`
+		).toBeGreaterThan(clientHeight);
+
+		// The LAST nav link must be reachable: Playwright scrolls the nearest overflow-y:auto
+		// ancestor (the sidebar) into view, then the click is the load-bearing reachability proof.
+		const lastLink = page.locator('.docs-cat__list a').last();
+		await lastLink.scrollIntoViewIfNeeded();
+		await expect(lastLink).toBeVisible();
+		await lastLink.click();
+		await expect(page).toHaveURL(/\/docs\//);
+	});
+});

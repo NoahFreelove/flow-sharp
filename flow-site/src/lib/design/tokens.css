@@ -71,6 +71,10 @@
 	--font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
+	/* Layout dimensions (theme-independent) — the sticky toolbar's height, shared so the
+	   docs sidebar's pin/scroll arithmetic can't drift from SiteToolbar's actual height. */
+	--toolbar-height: 58px;
+
 	/* Spacing scale (D-49-17 — multiples of 4; 12 is the one allowed mid-step) */
 	--space-1: 4px;
 	--space-2: 8px;

@@ -63,7 +63,7 @@
 		position: sticky;
 		top: 0;
 		z-index: 50;
-		height: 58px;
+		height: var(--toolbar-height, 58px);
 		display: flex;
 		align-items: center;
 		gap: 18px;

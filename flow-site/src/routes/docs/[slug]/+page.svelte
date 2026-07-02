@@ -69,7 +69,12 @@
 
 	.docs-sidebar {
 		position: sticky;
-		top: var(--space-4);
+		/* Clear the 58px sticky toolbar, then cap height to the remaining viewport and scroll
+		   the nav internally — a pinned sticky element cannot otherwise reach its lower links on
+		   short desktop windows (unreachable-nav regression, REQ-SITE-RESPONSIVE-01). */
+		top: calc(var(--toolbar-height, 58px) + var(--space-4));
+		max-height: calc(100dvh - var(--toolbar-height, 58px) - 2 * var(--space-4));
+		overflow-y: auto;
 		padding: var(--space-4);
 		border-radius: var(--radius-4);
 		/* Grid item must shrink below its content's intrinsic width (otherwise it forces the
