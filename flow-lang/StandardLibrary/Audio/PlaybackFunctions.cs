@@ -24,10 +24,10 @@ public static class PlaybackFunctions
             ParameterNames: ["buf"]);
         registry.Register("play", playBufferSig, args => PlayBuffer(args, manager));
 
-        // play(Sequence) -> Void — renders to buffer then plays
-        var playSeqSig = new FunctionSignature("play", [SequenceType.Instance],
-            ParameterNames: ["seq"]);
-        registry.Register("play", playSeqSig, args => PlaySequence(args, manager));
+        // NOTE: play(Sequence) is registered in RegisterContextDependent (below) so
+        // its lambda can resolve the active tempo { } block's BPM from the
+        // MusicalContext stack. Registered EXACTLY ONCE there — InternalFunctionRegistry
+        // APPENDS per name, so re-registering here would create a duplicate signature.
 
         // play-song (#9): play(Song) -> Void — renders the whole arrangement with
         // per-sequence instrument routing (each named sequence picks its own
@@ -58,10 +58,11 @@ public static class PlaybackFunctions
             ParameterNames: ["buf"]);
         registry.Register("stream", streamBufferSig, args => StreamBuffer(args, manager));
 
-        // stream(Sequence) -> Void — renders and streams
-        var streamSeqSig = new FunctionSignature("stream", [SequenceType.Instance],
-            ParameterNames: ["seq"]);
-        registry.Register("stream", streamSeqSig, args => StreamSequence(args, manager));
+        // NOTE: stream(Sequence) is registered in RegisterContextDependent (below)
+        // for the same tempo-resolution reason as play(Sequence). The resolved BPM is
+        // captured on the calling thread BEFORE the Task.Run dispatch, so the
+        // background render honors the active tempo { } block instead of the wrong
+        // thread's [ThreadStatic] Timeline default.
 
         // preview(Buffer) -> Void — low-quality mono 22050Hz playback
         var previewSig = new FunctionSignature("preview", [BufferType.Instance],
@@ -87,6 +88,47 @@ public static class PlaybackFunctions
     }
 
     /// <summary>
+    /// Registers the two Sequence-consuming playback overloads whose render tempo
+    /// must come from the active <c>tempo { }</c> block. They are registered here
+    /// (NOT in <see cref="Register"/>) so their lambdas can read
+    /// <c>context.GetMusicalContext().Tempo</c> — the exact seam the interpreter +
+    /// SongRenderer already use — with a charitable fallback to
+    /// <see cref="Timeline.GetBPM"/> (which preserves the <c>setBPM</c> escape hatch
+    /// and its 120 BPM default). The BPM is resolved on the CALLING thread and
+    /// captured by value, so <c>stream</c>'s background <c>Task.Run</c> render uses
+    /// the block tempo rather than the wrong thread's <c>[ThreadStatic]</c> default.
+    /// </summary>
+    /// <param name="registry">The function registry to register with.</param>
+    /// <param name="manager">The audio playback manager (owned by FlowEngine).</param>
+    /// <param name="context">The execution context whose MusicalContext stack supplies the active tempo.</param>
+    public static void RegisterContextDependent(
+        InternalFunctionRegistry registry,
+        AudioPlaybackManager manager,
+        FlowLang.Runtime.ExecutionContext context)
+    {
+        // play(Sequence) -> Void — renders to buffer then plays, at the active tempo.
+        var playSeqSig = new FunctionSignature("play", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
+        registry.Register("play", playSeqSig, args =>
+            PlaySequence(args, manager, ResolveBpm(context)));
+
+        // stream(Sequence) -> Void — renders and streams, at the active tempo.
+        var streamSeqSig = new FunctionSignature("stream", [SequenceType.Instance],
+            ParameterNames: ["seq"]);
+        registry.Register("stream", streamSeqSig, args =>
+            StreamSequence(args, manager, ResolveBpm(context)));
+    }
+
+    /// <summary>
+    /// Resolves the render BPM for direct sequence playback: the active
+    /// <c>tempo { }</c> block when present, else the <see cref="Timeline"/> fallback
+    /// (default 120, honoring any <c>setBPM</c>). Never throws — charitable house
+    /// style, no new advisory.
+    /// </summary>
+    private static double ResolveBpm(FlowLang.Runtime.ExecutionContext context)
+        => context.GetMusicalContext().Tempo ?? Timeline.GetBPM([]).As<double>();
+
+    /// <summary>
     /// Plays an AudioBuffer through the audio backend.
     /// Empty buffers are a no-op. Blocks until playback completes.
     /// </summary>
@@ -110,7 +152,7 @@ public static class PlaybackFunctions
     /// <summary>
     /// Renders a Sequence and streams it without blocking.
     /// </summary>
-    private static Value StreamSequence(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    private static Value StreamSequence(IReadOnlyList<Value> args, AudioPlaybackManager manager, double bpm)
     {
         var sequence = args[0].As<SequenceData>();
         if (sequence.Count == 0) return Value.Void();
@@ -121,9 +163,13 @@ public static class PlaybackFunctions
         // play (WebAudio.Play is fire-and-forget — returns immediately) + an
         // advisory, so composers get audio + a diagnostic instead of silence.
         if (WebPlaybackFallbackUsed())
-            return PlaySequence(args, manager);
+            return PlaySequence(args, manager, bpm);
 
-        Task.Run(() => PlaySequence(args, manager));
+        // `bpm` was resolved on the originating thread (where the MusicalContext
+        // stack is live) and is captured by value here — so the background render
+        // honors the active tempo { } block, NOT the render thread's ThreadStatic
+        // Timeline default. This is why Approach B (mirror into Timeline) was rejected.
+        Task.Run(() => PlaySequence(args, manager, bpm));
         return Value.Void();
     }
 
@@ -144,10 +190,11 @@ public static class PlaybackFunctions
     }
 
     /// <summary>
-    /// Renders a Sequence to audio using a sine synthesizer at 120 BPM (or current BPM),
-    /// then plays the result.
+    /// Renders a Sequence to audio using a sine synthesizer at the supplied BPM
+    /// (resolved from the active tempo { } block, else the Timeline fallback), then
+    /// plays the result.
     /// </summary>
-    private static Value PlaySequence(IReadOnlyList<Value> args, AudioPlaybackManager manager)
+    private static Value PlaySequence(IReadOnlyList<Value> args, AudioPlaybackManager manager, double bpm)
     {
         var sequence = args[0].As<SequenceData>();
 
@@ -156,7 +203,6 @@ public static class PlaybackFunctions
 
         const int sampleRate = 44100;
         const string synthType = "sine";
-        double bpm = Timeline.GetBPM([]).As<double>(); // Wait, Timeline.GetBPM needs to work without _manager, it handles current BPM via ThreadStatic
 
         var voices = SequenceRenderer.RenderSequenceToVoices(sequence, synthType, sampleRate, bpm, manager.MaxVoices);
 

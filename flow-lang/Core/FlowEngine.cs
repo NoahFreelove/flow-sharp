@@ -166,6 +166,11 @@ public class FlowEngine : IDisposable
         CurrentExecutionContext = _context;
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
+        // quick-260702-ijs: register play(Sequence)/stream(Sequence) here (post-_context)
+        // so their lambdas resolve the active tempo { } block's BPM from the
+        // MusicalContext stack — mirrors the GranularFunctions.Register direct-call wiring
+        // below. Fixes tempo blocks being silently ignored by direct note-stream playback.
+        PlaybackFunctions.RegisterContextDependent(internalRegistry, _audioManager, _context);
         // Phase 32 Plan 32-04: register (loadScala) overloads + (str Tuning).
         // Phase 44 Plan 44-07: moved post-_context to thread ExecutionContext
         // for strict-mode advisory elevation (unmapped-MIDI-keys).

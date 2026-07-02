@@ -173,6 +173,10 @@ public static class BuiltInFunctions
         var dummyContext = new FlowLang.Runtime.ExecutionContext(dummyReporter, proxy);
         RegisterContextDependentFunctions(proxy, dummyContext);
         RegisterIterationGuard(proxy, dummyContext);
+        // quick-260702-ijs: play(Sequence)/stream(Sequence) moved into
+        // PlaybackFunctions.RegisterContextDependent — enumerate them here too so the
+        // LSP signature surface stays complete (BuiltInFunctionsTests "play"/"stream").
+        Audio.PlaybackFunctions.RegisterContextDependent(proxy, dummyAudio, dummyContext);
     }
 
     /// <summary>
