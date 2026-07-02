@@ -34,6 +34,18 @@ public sealed class NoteType : FlowType
     ///   <c>"Cb0"</c>   → throws ArgumentException (post-alt MIDI 11, below E0=16)
     /// </summary>
     public static (char note, int octave, int alteration) Parse(string noteStr)
+        => Parse(noteStr, 4);
+
+    /// <summary>
+    /// Same as <see cref="Parse(string)"/> but uses <paramref name="defaultOctave"/> for
+    /// bare note letters that omit an explicit octave digit (e.g. <c>"C"</c> → octave
+    /// <paramref name="defaultOctave"/>). An explicit digit in <paramref name="noteStr"/>
+    /// always wins (e.g. <c>"C5"</c> is octave 5 regardless of the default). This is the
+    /// seam through which an <c>octave N { ... }</c> musical-context block reaches bare
+    /// letters in a note stream (NoteStreamCompiler passes the frame-resolved
+    /// <c>MusicalContext.DefaultOctave</c>, coalescing null to 4).
+    /// </summary>
+    public static (char note, int octave, int alteration) Parse(string noteStr, int defaultOctave)
     {
         if (string.IsNullOrEmpty(noteStr))
             throw new ArgumentException("Note string cannot be empty");
@@ -48,7 +60,7 @@ public sealed class NoteType : FlowType
         //   3. Post-octave alteration chars (b/#/+/-)
         int sharpCount = 0;
         int flatCount = 0;
-        int octave = 4; // Default octave (no digits)
+        int octave = defaultOctave; // Default octave when no digits present
         int i = 1;
 
         // Phase 1: pre-octave alterations

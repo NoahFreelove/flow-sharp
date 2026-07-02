@@ -225,6 +225,15 @@ public partial class Parser
                 Advance(); // consume `voicePool`
                 return ParseMusicalContextStatement(MusicalContextType.VoicePool);
             }
+            // octave N { ... } context block. Integer N only (no float/sign), mirroring
+            // voicePool. Range validation ([1, 9] charitable clamp) happens at the
+            // interpreter so the diagnostic points at the value, not at the '{'.
+            if (Check(TokenType.Octave) && _current + 1 < _tokens.Count
+                && _tokens[_current + 1].Type is TokenType.IntLiteral)
+            {
+                Advance(); // consume `octave`
+                return ParseMusicalContextStatement(MusicalContextType.Octave);
+            }
             // sustainPedal { ... } — no value, just the block. Notes inside this block
             // render with extended duration so they ring like a piano with the sustain
             // pedal held down. Nests with other context blocks.
@@ -1036,6 +1045,20 @@ public partial class Parser
                 else
                     throw new ParseException(
                         $"Expected integer voice pool size (1..256), got {CurrentToken.Type} '{CurrentToken.Text}' at {poolLoc}");
+                break;
+            }
+
+            case MusicalContextType.Octave:
+            {
+                // octave N { ... } — integer literal only. Range validation
+                // (charitable clamp to [1, 9]) is done at the interpreter so the
+                // message points at the offending integer, not at the '{'.
+                var octLoc = CurrentToken.Location;
+                if (Check(TokenType.IntLiteral))
+                    value = new LiteralExpression(octLoc, (int)Advance().Value!, Span: Span.At(octLoc));
+                else
+                    throw new ParseException(
+                        $"Expected integer octave (e.g. octave 3 {{ ... }}), got {CurrentToken.Type} '{CurrentToken.Text}' at {octLoc}");
                 break;
             }
 

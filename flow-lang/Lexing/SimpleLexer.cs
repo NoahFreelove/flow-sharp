@@ -1018,6 +1018,7 @@ public class SimpleLexer
             "gain" => TokenType.Gain,
             "reverbTime" => TokenType.ReverbTime,
             "voicePool" => TokenType.VoicePool,
+            "octave" => TokenType.Octave,
             "sustainPedal" => TokenType.SustainPedal,
             "tuning" => TokenType.Tuning,
             "module" => TokenType.Module,         // Phase 43 (D-03) — module <name> top-of-file declaration

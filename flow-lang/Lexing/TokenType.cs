@@ -26,6 +26,7 @@ public enum TokenType
     Gain,
     ReverbTime,
     VoicePool,          // Phase 28 (SPEC-7) — voicePool N { ... } musical-context block
+    Octave,             // octave N { ... } musical-context block — default octave for bare note letters
     SustainPedal,       // sustainPedal { ... } musical-context block — extends note durations
     Tuning,             // Phase 32 (SPEC-2) — tuning <expr> { ... } musical-context block (D-13)
     Module,             // Phase 43 (D-03) — module <name> top-of-file declaration

@@ -951,6 +951,13 @@ public class ExecutionContext
                 // null means "no override" — SequenceRenderer.RenderSequenceToVoicesWithPool
                 // applies the SPEC-7 locked default of 32 at the render call.
                 resolved.VoicePoolSize ??= frame.MusicalContext.VoicePoolSize;
+                // octave N { ... } sets DefaultOctave on its own pushed frame; a note
+                // stream nested inside (directly or via a called proc/section) snapshots
+                // context via GetMusicalContext, so the default octave MUST inherit down
+                // the frame chain like every other context field (dynamic scope). null
+                // means "no override" → NoteStreamCompiler defaults to octave 4 →
+                // byte-identical to a script with no octave block (determinism preserved).
+                resolved.DefaultOctave ??= frame.MusicalContext.DefaultOctave;
                 // sustainPedal { ... } sets SustainPedal=true on its own pushed
                 // frame; a `section` (or note stream) nested inside snapshots
                 // context via GetMusicalContext, so the flag MUST inherit down
@@ -965,7 +972,8 @@ public class ExecutionContext
                 && resolved.Swing != null && resolved.Key != null
                 && resolved.Velocity != null && resolved.Pan != null
                 && resolved.Gain != null && resolved.ReverbTime != null
-                && tuningResolved && resolved.VoicePoolSize != null)
+                && tuningResolved && resolved.VoicePoolSize != null
+                && resolved.DefaultOctave != null)
                 break;
         }
         // REQ-4 (Plan 30-03): three-tier fallback for Tempo + TimeSignature.

@@ -112,6 +112,16 @@ public class MusicalContext
     public int? VoicePoolSize { get; set; }
 
     /// <summary>
+    /// Default octave for bare note letters (letters written without an explicit
+    /// octave digit) inside note streams. null = inherit from parent; when no
+    /// <c>octave N { ... }</c> block is in scope, NoteStreamCompiler falls back to
+    /// octave 4 (the historical default). Set via the <c>octave N { ... }</c>
+    /// musical-context block; the interpreter clamps N charitably to [1, 9].
+    /// Explicit per-note octave digits (e.g. <c>C5</c>) always override this default.
+    /// </summary>
+    public int? DefaultOctave { get; set; }
+
+    /// <summary>
     /// Sustain pedal — when true, notes within this context render with their
     /// audio buffer extended by <see cref="SustainTailSeconds"/> so they ring
     /// through subsequent notes, mimicking a piano's sustain pedal. The flag
@@ -203,7 +213,8 @@ public class MusicalContext
             Gain = Gain,
             ReverbTime = ReverbTime,
             VoicePoolSize = VoicePoolSize,
-            SustainPedal = SustainPedal
+            SustainPedal = SustainPedal,
+            DefaultOctave = DefaultOctave
         };
         // Stack<T> enumeration order is top-to-bottom; the single-arg ctor preserves
         // that order, so naive `new Stack<T>(original)` would REVERSE the stack.
@@ -286,6 +297,7 @@ public class MusicalContext
         if (Pan != null) parts.Add($"pan={Pan}");
         if (Gain != null) parts.Add($"gain={Gain}");
         if (ReverbTime != null) parts.Add($"reverbTime={ReverbTime}");
+        if (DefaultOctave != null) parts.Add($"octave={DefaultOctave}");
         if (TuningStack.Count > 0) parts.Add($"tuning={ActiveTuning} (stack depth {TuningStack.Count})");
         return $"MusicalContext({string.Join(", ", parts)})";
     }

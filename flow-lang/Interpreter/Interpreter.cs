@@ -388,6 +388,30 @@ public class Interpreter : IFunctionInvoker
                     break;
                 }
 
+                case MusicalContextType.Octave:
+                {
+                    // octave N { ... } — sets the default octave for bare note letters
+                    // (letters written without an explicit octave digit) inside note
+                    // streams. CHARITABLE clamp to [1, 9] with a one-shot advisory — never
+                    // a throw. [1, 9] is the widest block-octave range where every bare
+                    // A–G letter (with typical accidentals) stays inside NoteType's
+                    // E0(MIDI 16)–E10(MIDI 136) window (C1=24, B9=131), so the
+                    // default-octave path can NEVER make NoteType.Parse throw. Extreme
+                    // registers remain reachable via explicit per-note octave digits.
+                    var octVal = _evaluator.Evaluate(ctx.Value);
+                    int oct = octVal.As<int>();
+                    if (oct < 1 || oct > 9)
+                    {
+                        int clamped = Math.Clamp(oct, 1, 9);
+                        FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+                            $"octave-clamp:{oct}",
+                            $"[octave] octave {oct} out of range [1, 9] — clamped to {clamped}");
+                        oct = clamped;
+                    }
+                    musicalCtx.DefaultOctave = oct;
+                    break;
+                }
+
                 case MusicalContextType.SustainPedal:
                     // Notes evaluated within this block render with their buffer
                     // extended by MusicalContext.SustainTailSeconds, mimicking a
