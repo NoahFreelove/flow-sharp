@@ -302,7 +302,7 @@ public class SfzRenderer
             {
                 float[]? summed = RenderAndSumXfadeLayers(
                     patch, xfadeLayers, targetMidi, vel, sampleRate,
-                    durationBeats, bpm, totalFrames);
+                    durationBeats, bpm, totalFrames, note.Articulation);
                 if (summed is null)
                     return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
                 return FinishMono(summed, note, region, authoredFrames, totalFrames, sampleRate, voicePan);
@@ -315,7 +315,7 @@ public class SfzRenderer
         }
 
         float[]? single = RenderRegionToMono(
-            patch, region, targetMidi, vel, sampleRate, durationBeats, bpm, totalFrames);
+            patch, region, targetMidi, vel, sampleRate, durationBeats, bpm, totalFrames, note.Articulation);
         if (single is null)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
@@ -335,14 +335,15 @@ public class SfzRenderer
     /// </summary>
     private float[]? RenderAndSumXfadeLayers(
         SfzData patch, List<SfzRegion> layers, int targetMidi, int vel,
-        int sampleRate, double durationBeats, double bpm, int targetFrames)
+        int sampleRate, double durationBeats, double bpm, int targetFrames,
+        Articulation articulation)
     {
         float[]? acc = null;
         foreach (var layer in layers)
         {
             double gain = ComputeXfadeGain(layer, vel);
             float[]? mono = RenderRegionToMono(
-                patch, layer, targetMidi, vel, sampleRate, durationBeats, bpm, targetFrames);
+                patch, layer, targetMidi, vel, sampleRate, durationBeats, bpm, targetFrames, articulation);
             if (mono is null) continue; // missing sample for this layer — already advised inside
 
             float g = (float)gain;
@@ -373,7 +374,8 @@ public class SfzRenderer
     /// </summary>
     private float[]? RenderRegionToMono(
         SfzData patch, SfzRegion region, int targetMidi, int vel,
-        int sampleRate, double durationBeats, double bpm, int targetFrames)
+        int sampleRate, double durationBeats, double bpm, int targetFrames,
+        Articulation articulation)
     {
         int semitonesShift = targetMidi - region.PitchKeycenter;
 
@@ -454,7 +456,20 @@ public class SfzRenderer
             }
         }
 
-        float[] fitted = AssembleBody(source, region, targetFrames);
+        // quick-260702-wz7 — Legato sample-start offset. Real SFZ players emulate
+        // legato without dedicated legato samples by skipping the recorded attack
+        // transient: read the source body starting past the first
+        // min(0.1s, source.Frames/4) frames so each connected note doesn't
+        // retrigger the full bow-start/tongue onset. Gated to Articulation.Legato
+        // ONLY — every other articulation resolves to 0 (AssembleBody stays
+        // byte-identical). Computed HERE, after `source` is resolved through both
+        // the percussion PitchShiftEngine branch and the varispeed branch, so the
+        // offset is measured against the pitch-shift-resolved frame count.
+        int startOffsetFrames = articulation == Articulation.Legato
+            ? Math.Min((int)(0.1 * sampleRate), source.Frames / 4)
+            : 0;
+
+        float[] fitted = AssembleBody(source, region, targetFrames, startOffsetFrames);
 
         // quick-260702-tpn — charitable out-of-[0,100] advisory (keyed per
         // patch so iterative reloads don't flood stderr). The clamp itself
@@ -553,7 +568,13 @@ public class SfzRenderer
 
         float[] envelope = SynthUtils.GenerateArticulationADSR(
             note.Articulation,
-            baseAttack:  region.AmpegAttack  > 0 ? region.AmpegAttack  : 0.005,
+            // quick-260702-wz7 — Legato gets a softened >= 80ms envelope attack so
+            // the skipped-transient seam (the offset applied in RenderRegionToMono)
+            // fades in smoothly instead of retriggering a hard onset. Every other
+            // articulation keeps the Phase 33 baseAttack byte-identical.
+            baseAttack:  note.Articulation == Articulation.Legato
+                             ? Math.Max(region.AmpegAttack, 0.08)
+                             : (region.AmpegAttack > 0 ? region.AmpegAttack : 0.005),
             baseDecay:                                                   0.05,
             baseSustain:                                                 1.0,
             // hasTail → baseRelease 0.0 so the envelope holds the sustain level
@@ -749,10 +770,16 @@ public class SfzRenderer
     /// <c>loop_end</c> past the sample length.
     /// </para>
     /// </summary>
-    private static float[] AssembleBody(AudioBuffer source, SfzRegion region, int targetFrames)
+    private static float[] AssembleBody(AudioBuffer source, SfzRegion region, int targetFrames, int startOffsetFrames = 0)
     {
         var fitted = new float[targetFrames];
         if (source.Frames == 0) return fitted;
+
+        // quick-260702-wz7 — Legato sample-start offset (clamped defensively into
+        // [0, source.Frames-1]). When off == 0 (every non-Legato articulation, and
+        // any Legato patch whose relevant start is 0) every read below is
+        // byte-identical to the pre-change renderer.
+        int off = Math.Clamp(startOffsetFrames, 0, Math.Max(0, source.Frames - 1));
 
         bool isLooped = region.LoopMode == SfzLoopMode.LoopContinuous
                      || region.LoopMode == SfzLoopMode.LoopSustain;
@@ -761,13 +788,18 @@ public class SfzRenderer
         int effectiveLoopEnd = Math.Min(region.LoopEnd, source.Frames - 1);
         int loopLen = effectiveLoopEnd - region.LoopStart;
 
+        // Clamp the offset into the pre-loop region so the loop-body / crossfade
+        // math is left untouched — only the pre-attack head read is advanced.
+        int loopOff = Math.Min(off, region.LoopStart);
+
         if (!isLooped || loopLen <= 0)
         {
-            // NoLoop / OneShot — straight copy and zero-pad. fitted is mono;
-            // source may be stereo (VSCO-CE patches all ship L-R interleaved),
-            // so read each frame via ReadFrameMono to downmix on the fly.
-            int copyLen = Math.Min(source.Frames, targetFrames);
-            for (int i = 0; i < copyLen; i++) fitted[i] = ReadFrameMono(source, i);
+            // NoLoop / OneShot — straight copy from the offset and zero-pad. fitted
+            // is mono; source may be stereo (VSCO-CE patches all ship L-R
+            // interleaved), so read each frame via ReadFrameMono to downmix on the
+            // fly. When off == 0 this equals the pre-change straight copy.
+            int copyLen = Math.Min(source.Frames - off, targetFrames);
+            for (int i = 0; i < copyLen; i++) fitted[i] = ReadFrameMono(source, i + off);
             return fitted;
         }
 
@@ -781,25 +813,37 @@ public class SfzRenderer
             // such a short loop, but tests for the SPEC-5 acceptance gate
             // use loops far longer than 441 frames).
             int dst0 = 0;
-            // Pre-attack head.
-            while (dst0 < region.LoopStart && dst0 < targetFrames)
+            // Pre-attack head — starts at source frame loopOff (quick-260702-wz7
+            // Legato transient-skip). Emits source [loopOff, LoopStart) into
+            // fitted [0, LoopStart-loopOff). loopOff == 0 → byte-identical head.
+            int headSpan0 = region.LoopStart - loopOff;
+            while (dst0 < headSpan0 && dst0 < targetFrames)
             {
-                fitted[dst0] = ReadFrameMono(source, dst0);
+                fitted[dst0] = ReadFrameMono(source, dst0 + loopOff);
                 dst0++;
             }
             while (dst0 < targetFrames)
             {
-                int rel = (dst0 - region.LoopStart) % loopLen;
+                // Anchor the loop body at the (offset-shifted) head end. loopOff == 0
+                // → anchor == region.LoopStart → byte-identical to the pre-change
+                // wrap math.
+                int rel = (dst0 - headSpan0) % loopLen;
                 fitted[dst0] = ReadFrameMono(source, region.LoopStart + rel);
                 dst0++;
             }
             return fitted;
         }
 
-        // Stage 1: pre-attack [0, LoopStart) plays once at the head.
+        // Stage 1: pre-attack head plays once. quick-260702-wz7 — the head read
+        // starts at source frame loopOff (Legato transient-skip), emitting source
+        // [loopOff, LoopStart) into fitted [0, LoopStart-loopOff). The loop-body /
+        // srcReadPos / crossfade math below is left untouched: srcReadPos still
+        // anchors at region.LoopStart, so the loop is seamless and simply plays
+        // loopOff frames earlier. loopOff == 0 → byte-identical (headLen ==
+        // headEnd, source index == dst).
         int dst = 0;
-        int headEnd = Math.Min(region.LoopStart, targetFrames);
-        for (; dst < headEnd; dst++) fitted[dst] = ReadFrameMono(source, dst);
+        int headLen = Math.Min(region.LoopStart - loopOff, targetFrames);
+        for (int h = 0; h < headLen; h++, dst++) fitted[dst] = ReadFrameMono(source, loopOff + h);
 
         // Stage 2: loop body with crossfade. Each iteration emits
         //   - bodyLen samples (loopLen - xfade frames, straight read)
