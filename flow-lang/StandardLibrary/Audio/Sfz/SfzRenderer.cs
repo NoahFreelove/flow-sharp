@@ -94,6 +94,16 @@ public class SfzRenderer
     private const int CrossfadeFrames = 441;
 
     /// <summary>
+    /// quick-260702-vud — SfzParser's default for an ABSENT <c>ampeg_release</c>
+    /// opcode (see <c>SfzParser.ReadDouble(region, "ampeg_release", 0.001, ...)</c>).
+    /// A parsed region that omits ampeg_release lands here, so the tail gate uses
+    /// this as the "no meaningful release declared → no tail" threshold. Keeping
+    /// it in sync with the parser default preserves the must-have byte-identity
+    /// for ampeg_release-absent patches.
+    /// </summary>
+    private const double AbsentAmpegReleaseSentinel = 0.001;
+
+    /// <summary>
     /// Phase 37 SAMP-01 — per-region-group round-robin counter. The key tuple
     /// identifies a round-robin GROUP (regions sharing key+vel range that
     /// declare <c>seq_length &gt; 1</c>). The stored counter is the number of
@@ -249,7 +259,17 @@ public class SfzRenderer
         // CLAUDE.md (mirrors the SampledInstrumentRenderer release band). The
         // picked `region` drives the tail decision; the xfade layers only differ
         // in velocity gain, so the SAME totalFrames threads to every render call.
-        int tailFrames = (IsSustainedArticulation(note.Articulation) && region.AmpegRelease > 0.0)
+        //
+        // Gate threshold note: SfzParser defaults an ABSENT ampeg_release to the
+        // 0.001s sentinel (SfzParser.cs ReadDouble default), NOT 0. A `> 0.0`
+        // gate would therefore hand every ampeg_release-absent patch a ~44-frame
+        // tail, violating the must-have "absent/0 → byte-identical, no tail". So
+        // the gate is `> AbsentAmpegReleaseSentinel` — a patch that meaningfully
+        // declares a release (e.g. VSCO CE ampeg_release=0.7, or the 0.05s smoke
+        // fixture) rings out; an absent one stays byte-identical to pre-change
+        // (its 0.001 sentinel still feeds baseRelease in FinishMono unchanged).
+        int tailFrames = (IsSustainedArticulation(note.Articulation)
+                          && region.AmpegRelease > AbsentAmpegReleaseSentinel)
             ? (int)(Math.Clamp(region.AmpegRelease, 0.0, 10.0) * sampleRate)
             : 0;
         int totalFrames = authoredFrames + tailFrames;
