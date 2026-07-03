@@ -118,24 +118,39 @@ public class SfzVelocityCrossfadeRenderTests : IDisposable
         // intended musical behavior, but the committed test fixture shares one
         // WAV, so we assert the coherent-sum envelope instead.)
         //
-        // The ORIGINAL bug rendered ONE layer with its sin()/cos() gain and an
-        // extra 0.7071: vel=60 → SILENCE, vel 65/70 → 6-11 dB BELOW reference.
-        // The two invariants below reject every one of those:
+        // quick-260702-tpn — the fixture declares no amp_veltrack (→ effective
+        // track 100), so EVERY render now also carries the velocity-squared
+        // amplitude curve (vel/127)^2. The reference is taken at vel=50 while the
+        // swept notes are vel 60..80, so a FIXED refDb+3.5 ceiling no longer
+        // holds — a louder velocity legitimately renders louder. We preserve the
+        // test's INTENT (no dropout; crossfade sum sits at/above the single-layer
+        // level at the SAME velocity) by making the reference PER-VELOCITY:
+        //   expectedSingleDb = refDb + 20*log10( velGain(vel) / velGain(50) )
+        //                    = refDb + 20*log10( (vel/127)^2 / (50/127)^2 )
+        //                    = refDb + 40*log10( vel / 50 )
+        // i.e. the velocity-squared curve cancels the 127 term and reduces to
+        // 40*log10(vel/50). Assertions:
         //   * never silent (no -inf dB)
-        //   * never more than 0.5 dB BELOW the single-layer reference
+        //   * never more than 0.5 dB BELOW the same-velocity single layer
+        //   * never more than 3.5 dB ABOVE it (√2 coherent-sum ceiling)
+        // The ORIGINAL bug rendered ONE layer with its sin()/cos() gain and an
+        // extra 0.7071: vel=60 → SILENCE, vel 65/70 → 6-11 dB below the
+        // same-velocity single layer. Both invariants reject every one of those.
         foreach (int vel in new[] { 60, 65, 70, 75, 80 })
         {
             var buf = RenderAtVelocity(renderer, patch, vel);
             double db = RmsDb(buf);
+            double expectedSingleDb = refDb + 40.0 * Math.Log10(vel / 50.0);
             Assert.False(double.IsNegativeInfinity(db),
                 $"vel={vel} rendered TOTAL SILENCE — velocity crossfade dropout regressed");
-            Assert.True(db >= refDb - 0.5,
-                $"vel={vel}: RMS {db:F2} dB fell BELOW reference {refDb:F2} dB — " +
-                "a velocity-crossfade hole/dropout regressed (layers must sum, not drop).");
+            Assert.True(db >= expectedSingleDb - 0.5,
+                $"vel={vel}: RMS {db:F2} dB fell BELOW the same-velocity single-layer " +
+                $"reference {expectedSingleDb:F2} dB — a velocity-crossfade hole/dropout " +
+                "regressed (layers must sum, not drop).");
             // Coherent ceiling for identical-source layers is √2 (+3.01 dB).
-            Assert.True(db <= refDb + 3.5,
+            Assert.True(db <= expectedSingleDb + 3.5,
                 $"vel={vel}: RMS {db:F2} dB exceeded the coherent-sum ceiling " +
-                $"({refDb:F2}+3.5 dB) — unexpected gain stacking.");
+                $"({expectedSingleDb:F2}+3.5 dB) — unexpected gain stacking.");
         }
     }
 
