@@ -76,12 +76,13 @@ public static class SfzParser
         NumberStyles.Float & ~NumberStyles.AllowExponent & ~NumberStyles.AllowThousands;
 
     /// <summary>
-    /// 22-opcode whitelist — Phase 33's 14 plus the Phase 37 SAMP-01/02 six
+    /// 23-opcode whitelist — Phase 33's 14 plus the Phase 37 SAMP-01/02 six
     /// (round-robin pair + velocity-crossfade quad) plus the sweep-0614
-    /// charitable-ignore pair (<c>ampeg_dynamic</c>, <c>tune</c>). Case-sensitive
-    /// Ordinal compare per T-33-OPCODE-01 — rejects unicode tricks and case-fold
-    /// variants. Whitelisted-but-unread opcodes are accepted silently (no
-    /// WarnOnce) but have no rendering effect.
+    /// charitable-ignore pair (<c>ampeg_dynamic</c>, <c>tune</c>) plus the
+    /// quick-260702-tpn velocity-amplitude opcode (<c>amp_veltrack</c>).
+    /// Case-sensitive Ordinal compare per T-33-OPCODE-01 — rejects unicode
+    /// tricks and case-fold variants. Whitelisted-but-unread opcodes are
+    /// accepted silently (no WarnOnce) but have no rendering effect.
     /// </summary>
     private static readonly HashSet<string> KnownOpcodes = new(StringComparer.Ordinal)
     {
@@ -117,6 +118,10 @@ public static class SfzParser
         //   tune          — fine pitch tune in cents (pitch nuance, not modeled)
         "ampeg_dynamic",
         "tune",
+        // quick-260702-tpn — velocity-amplitude tracking (Sforzando/ARIA
+        // default 100 → gain = (vel/127)^2). Read in BuildRegion; the renderer
+        // owns the charitable clamp of the effective track fraction to [0,1].
+        "amp_veltrack",
     };
 
     /// <summary>
@@ -538,6 +543,12 @@ public static class SfzParser
         double ampegRelease = ReadDouble(region, "ampeg_release", 0.001, patchDescription);
         double volumeDb = ReadDouble(region, "volume", 0.0, patchDescription);
         double panSfz = ReadDouble(region, "pan", 0.0, patchDescription);
+        // quick-260702-tpn — velocity-amplitude tracking. Store the RAW declared
+        // value (default 100 = Sforzando/ARIA default); the renderer owns the
+        // charitable clamp of the effective track fraction to [0,1] + advisory.
+        // Inherits the global/group/region cascade automatically because the
+        // `region` dict already has global+group copied in at <region> open.
+        double ampVeltrack = ReadDouble(region, "amp_veltrack", 100.0, patchDescription);
 
         // Pitfall 8: dB → linear amplitude.
         double volumeLinear = Math.Pow(10.0, volumeDb / 20.0);
@@ -615,7 +626,8 @@ public static class SfzParser
             volumeLinear, panFlow,
             seqPosition, seqLength,
             xfinLoVel, xfinHiVel,
-            xfoutLoVel, xfoutHiVel);
+            xfoutLoVel, xfoutHiVel,
+            ampVeltrack);
     }
 
     private static int ReadInt(

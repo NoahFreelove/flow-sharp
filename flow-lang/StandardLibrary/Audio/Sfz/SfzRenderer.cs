@@ -277,7 +277,7 @@ public class SfzRenderer
         }
 
         float[]? single = RenderRegionToMono(
-            patch, region, targetMidi, sampleRate, durationBeats, bpm, targetFrames);
+            patch, region, targetMidi, vel, sampleRate, durationBeats, bpm, targetFrames);
         if (single is null)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
@@ -304,7 +304,7 @@ public class SfzRenderer
         {
             double gain = ComputeXfadeGain(layer, vel);
             float[]? mono = RenderRegionToMono(
-                patch, layer, targetMidi, sampleRate, durationBeats, bpm, targetFrames);
+                patch, layer, targetMidi, vel, sampleRate, durationBeats, bpm, targetFrames);
             if (mono is null) continue; // missing sample for this layer — already advised inside
 
             float g = (float)gain;
@@ -317,16 +317,24 @@ public class SfzRenderer
 
     /// <summary>
     /// Render a single region's mono body (source load → varispeed/pitch-shift
-    /// → AssembleBody → region.Volume) for <paramref name="targetMidi"/>/
-    /// <paramref name="vel"/>. The equal-power xfade gain is NOT applied here —
-    /// the caller scales each layer in <see cref="RenderAndSumXfadeLayers"/>, or
-    /// (single-region hard-switch path) intentionally renders at full level.
+    /// → AssembleBody → region.Volume × velocity gain) for
+    /// <paramref name="targetMidi"/>/<paramref name="vel"/>. The equal-power
+    /// xfade gain is NOT applied here — the caller scales each layer in
+    /// <see cref="RenderAndSumXfadeLayers"/>, or (single-region hard-switch
+    /// path) intentionally renders at full level.
+    ///
+    /// <para>quick-260702-tpn — the SFZ <c>amp_veltrack</c> velocity-amplitude
+    /// gain <c>(1-t)+t·(vel/127)²</c> is folded into the same single-pass
+    /// scale as <c>region.Volume</c> so it is applied EXACTLY ONCE per rendered
+    /// body. Because this method runs per-layer in the xfade summing path,
+    /// per-layer <c>amp_veltrack</c> differences are honored.</para>
+    ///
     /// Returns null when the region's sample isn't loaded (emits the charitable
     /// WarnOnce / strict-mode advisory, mirroring the Phase 33 missing-sample
     /// contract).
     /// </summary>
     private float[]? RenderRegionToMono(
-        SfzData patch, SfzRegion region, int targetMidi,
+        SfzData patch, SfzRegion region, int targetMidi, int vel,
         int sampleRate, double durationBeats, double bpm, int targetFrames)
     {
         int semitonesShift = targetMidi - region.PitchKeycenter;
@@ -410,14 +418,57 @@ public class SfzRenderer
 
         float[] fitted = AssembleBody(source, region, targetFrames);
 
-        if (region.Volume != 1.0)
+        // quick-260702-tpn — charitable out-of-[0,100] advisory (keyed per
+        // patch so iterative reloads don't flood stderr). The clamp itself
+        // lives inside ComputeVelocityGain; this only surfaces the warning.
+        if (region.AmpVeltrack < 0.0 || region.AmpVeltrack > 100.0)
         {
-            float volScale = (float)region.Volume;
-            for (int i = 0; i < fitted.Length; i++) fitted[i] *= volScale;
+            RenderingDiagnostics.WarnOnce(
+                $"sfz:ampveltrack:{patch.Description}",
+                $"[sfz] amp_veltrack={region.AmpVeltrack} out of [0,100] in '{patch.Description}' — clamping");
+        }
+
+        // Fold region.Volume (parser-converted dB→linear) and the amp_veltrack
+        // velocity gain into a single combined scale, applied exactly once per
+        // rendered body. The != 1.0 short-circuit stays correct against the
+        // COMBINED scale (skips the pass only when both are unity).
+        double velGain = ComputeVelocityGain(region.AmpVeltrack, vel);
+        double combinedScale = region.Volume * velGain;
+        if (combinedScale != 1.0)
+        {
+            float scale = (float)combinedScale;
+            for (int i = 0; i < fitted.Length; i++) fitted[i] *= scale;
         }
 
         return fitted;
     }
+
+    /// <summary>
+    /// quick-260702-tpn — SFZ <c>amp_veltrack</c> velocity-amplitude curve.
+    /// <c>t = clamp(ampVeltrack/100, 0, 1)</c> is the fraction of amplitude the
+    /// note velocity controls; the returned gain is
+    /// <c>(1-t) + t·(vel/127)²</c>. At the Sforzando/ARIA default
+    /// <c>ampVeltrack=100</c> (t=1) this is the pure velocity-squared curve
+    /// <c>(vel/127)²</c>; at <c>ampVeltrack=0</c> (t=0) it is a constant
+    /// <c>1.0</c> — velocity does not affect amplitude. Pure function of its
+    /// inputs (no RNG) — two-run determinism preserved. Mirrors the
+    /// <see cref="ComputeXfadeGain"/> / <see cref="ComputeXfadeGain_TestOnly"/>
+    /// pattern.
+    /// </summary>
+    private static double ComputeVelocityGain(double ampVeltrack, int midiVelocity)
+    {
+        double t = Math.Clamp(ampVeltrack / 100.0, 0.0, 1.0);
+        double normVel = midiVelocity / 127.0;
+        return (1.0 - t) + t * normVel * normVel;
+    }
+
+    /// <summary>
+    /// Test-only entry point exposing <see cref="ComputeVelocityGain"/> for
+    /// SfzAmpVeltrackTests. Production callers reach the helper indirectly via
+    /// <see cref="Render"/>.
+    /// </summary>
+    public static double ComputeVelocityGain_TestOnly(double ampVeltrack, int midiVelocity)
+        => ComputeVelocityGain(ampVeltrack, midiVelocity);
 
     /// <summary>
     /// Emit the charitable missing-sample advisory (or strict-mode error) for

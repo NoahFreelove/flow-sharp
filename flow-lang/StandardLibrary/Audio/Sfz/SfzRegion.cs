@@ -73,6 +73,17 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 ///   region gain is <c>cos(normVel · π/2)</c> per equal-power curve. Sentinel
 ///   default <c>(-1, -1)</c> means "no xfout band declared" — Phase 33
 ///   hard-switch fallback applies.</description></item>
+///
+///   <item><description><see cref="AmpVeltrack"/> — quick-260702-tpn SFZ
+///   velocity-amplitude tracking. The spec range is <c>[-100..100]</c>, but this
+///   common-subset renderer clamps the effective track fraction
+///   <c>t = ampVeltrack/100</c> to <c>[0, 1]</c> charitably (renderer-side, so a
+///   malformed value never throws / never produces NaN gain). Default
+///   <c>100</c> (the Sforzando/ARIA default that VSCO Community Edition is
+///   authored for) means gain <c>= (vel/127)^2</c>; <c>0</c> means velocity does
+///   NOT affect amplitude (gain <c>= 1.0</c> at every velocity). The raw declared
+///   value is stored here; <c>SfzRenderer</c> owns the charitable clamp + a
+///   one-shot out-of-range advisory.</description></item>
 /// </list>
 ///
 /// Sealed record: immutable + structural equality + the region grid stores
@@ -97,4 +108,5 @@ public sealed record SfzRegion(
     int XfinLoVel = -1,
     int XfinHiVel = -1,
     int XfoutLoVel = -1,
-    int XfoutHiVel = -1);
+    int XfoutHiVel = -1,
+    double AmpVeltrack = 100.0);
