@@ -183,8 +183,8 @@ public class SfzRenderer
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
         double durationSeconds = SynthUtils.BeatsToSeconds(durationBeats, bpm);
-        int targetFrames = (int)(durationSeconds * sampleRate);
-        if (targetFrames <= 0)
+        int authoredFrames = (int)(durationSeconds * sampleRate);
+        if (authoredFrames <= 0)
             return new AudioBuffer(0, 1, sampleRate);
 
         int targetMidi = PitchConversion.GetMidiNote(note.NoteName, note.Octave, note.Alteration);
@@ -236,6 +236,24 @@ public class SfzRenderer
             }
         }
 
+        // quick-260702-vud — ampeg_release tail past the authored note end.
+        // Real SFZ semantics: ampeg_release is what happens AFTER note-off, so
+        // the tail RINGS PAST the note boundary rather than being squeezed
+        // inside the note window (the 93%-fade cutoff bug). Mirror Phase 29's
+        // SampledInstrumentRenderer: hold the sustain level to the authored end,
+        // then append a separate exponential tail. Only SUSTAINED articulations
+        // get the tail — Staccato/Marcato force sustain=0 in
+        // SynthUtils.GenerateArticulationADSR and stay short/detached with no
+        // tail. ampeg_release absent (<=0) → tailFrames 0 → byte-identical to
+        // the pre-change renderer. The clamp to [0, 10]s is charitable per
+        // CLAUDE.md (mirrors the SampledInstrumentRenderer release band). The
+        // picked `region` drives the tail decision; the xfade layers only differ
+        // in velocity gain, so the SAME totalFrames threads to every render call.
+        int tailFrames = (IsSustainedArticulation(note.Articulation) && region.AmpegRelease > 0.0)
+            ? (int)(Math.Clamp(region.AmpegRelease, 0.0, 10.0) * sampleRate)
+            : 0;
+        int totalFrames = authoredFrames + tailFrames;
+
         // Phase 37 SAMP-02 (sweep-0614 fix) — equal-power velocity crossfade.
         // The Phase 33 design rendered exactly ONE region per (pitch, vel)
         // cell and applied its xfin/xfout gain, which produces a guaranteed
@@ -264,10 +282,10 @@ public class SfzRenderer
             {
                 float[]? summed = RenderAndSumXfadeLayers(
                     patch, xfadeLayers, targetMidi, vel, sampleRate,
-                    durationBeats, bpm, targetFrames);
+                    durationBeats, bpm, totalFrames);
                 if (summed is null)
                     return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
-                return FinishMono(summed, note, region, targetFrames, sampleRate, voicePan);
+                return FinishMono(summed, note, region, authoredFrames, totalFrames, sampleRate, voicePan);
             }
             // Only one xfade layer covers this cell — there is no complementary
             // layer to sum, so applying sin()/cos() would create a dropout at
@@ -277,11 +295,11 @@ public class SfzRenderer
         }
 
         float[]? single = RenderRegionToMono(
-            patch, region, targetMidi, vel, sampleRate, durationBeats, bpm, targetFrames);
+            patch, region, targetMidi, vel, sampleRate, durationBeats, bpm, totalFrames);
         if (single is null)
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
-        return FinishMono(single, note, region, targetFrames, sampleRate, voicePan);
+        return FinishMono(single, note, region, authoredFrames, totalFrames, sampleRate, voicePan);
     }
 
     /// <summary>
@@ -503,32 +521,82 @@ public class SfzRenderer
     /// </summary>
     private AudioBuffer FinishMono(
         float[] fitted, MusicalNoteData note, SfzRegion region,
-        int targetFrames, int sampleRate, double voicePan)
+        int authoredFrames, int totalFrames, int sampleRate, double voicePan)
     {
+        // quick-260702-vud — hasTail is true only for sustained articulations
+        // on an ampeg_release>0 patch (RenderInternal computed totalFrames >
+        // authoredFrames). When false the whole block below is byte-identical to
+        // the pre-change renderer: frames == authoredFrames == fitted.Length,
+        // baseRelease unchanged, SAMP-03 window == fitted.Length, no tail.
+        bool hasTail = totalFrames > authoredFrames;
+        int tailFrames = totalFrames - authoredFrames;
+
         float[] envelope = SynthUtils.GenerateArticulationADSR(
             note.Articulation,
             baseAttack:  region.AmpegAttack  > 0 ? region.AmpegAttack  : 0.005,
             baseDecay:                                                   0.05,
             baseSustain:                                                 1.0,
-            baseRelease: region.AmpegRelease > 0 ? region.AmpegRelease : 0.05,
-            frames: targetFrames,
+            // hasTail → baseRelease 0.0 so the envelope holds the sustain level
+            // (1.0 for sustained articulations) through the authored end, meeting
+            // the exponential tail continuously (Phase 29 precedent). No-tail path
+            // keeps the Phase 33 baseRelease so it stays byte-identical.
+            baseRelease: hasTail ? 0.0 : (region.AmpegRelease > 0 ? region.AmpegRelease : 0.05),
+            frames: authoredFrames,
             sampleRate: sampleRate,
             isPercussion: false);
-        SynthUtils.ApplyEnvelope(fitted, envelope);
+        // Apply the envelope over the AUTHORED window only — the tail region past
+        // authoredFrames is shaped by the exponential ring-out below. In the
+        // no-tail path authoredFrames == fitted.Length == envelope.Length, so this
+        // loop equals the pre-change SynthUtils.ApplyEnvelope(fitted, envelope).
+        for (int i = 0; i < authoredFrames && i < fitted.Length; i++)
+            fitted[i] *= envelope[i];
 
-        // Phase 37 SAMP-03 (Pitfall 10 — Phase 28 helper unchanged).
+        // Phase 37 SAMP-03 (Pitfall 10 — Phase 28 helper unchanged). quick-260702-vud:
+        // bound the multiplier to the AUTHORED window and sample its A/D/S/R
+        // quartiles against authoredFrames (mirrors the sweep-0614 fix in
+        // SampledInstrumentRenderer) so the tail is not reshaped by the
+        // articulation quartiles. Byte-identical for the no-tail path where
+        // authoredFrames == fitted.Length.
         var sampleMult = SamplePathArticulationMultipliers.For(note.Articulation);
         if (sampleMult.IsNontrivial)
         {
-            for (int i = 0; i < fitted.Length; i++)
-                fitted[i] *= sampleMult.Sample(i, fitted.Length);
+            int multFrames = Math.Min(authoredFrames, fitted.Length);
+            for (int i = 0; i < multFrames; i++)
+                fitted[i] *= sampleMult.Sample(i, authoredFrames);
+        }
+
+        // quick-260702-vud — exponential ampeg_release tail over [authoredFrames,
+        // fitted.Length). level starts at 1.0 (continuity with the held sustain=1.0
+        // envelope — no step at the seam) and reaches x0.001 (~-60 dB) at the final
+        // tail frame. No RNG — deterministic. Skipped entirely in the no-tail path.
+        if (hasTail && tailFrames > 0)
+        {
+            double level = 1.0;
+            double decayPerFrame = Math.Pow(0.001, 1.0 / tailFrames);
+            for (int i = authoredFrames; i < fitted.Length; i++)
+            {
+                fitted[i] = (float)(fitted[i] * level);
+                level *= decayPerFrame;
+            }
         }
 
         // Phase 37 MIX-02 + B2 lock — unconditional stereo + OQ4
-        // additive-with-clamp pan composition.
+        // additive-with-clamp pan composition. Operates over the full (possibly
+        // tail-extended) fitted buffer.
         double effectivePan = Math.Clamp(region.Pan + voicePan, -1.0, 1.0);
         return ToStereoBufferWithPan(fitted, sampleRate, effectivePan);
     }
+
+    /// <summary>
+    /// quick-260702-vud — an articulation is "sustained" (and therefore earns an
+    /// ampeg_release tail past the authored note end) when it is NOT Staccato or
+    /// Marcato. Those two are the only articulations that
+    /// <see cref="SynthUtils.GenerateArticulationADSR"/> forces to sustain=0;
+    /// every other articulation (Normal/Legato/Tenuto/Accent/Sforzando) holds a
+    /// non-zero sustain and rings out via the tail.
+    /// </summary>
+    private static bool IsSustainedArticulation(Articulation a)
+        => a != Articulation.Staccato && a != Articulation.Marcato;
 
     /// <summary>
     /// Phase 37 SAMP-01 round-robin region picker (RESEARCH §Pattern 5).
