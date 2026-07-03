@@ -445,9 +445,16 @@ Buffer mix = (renderSong s ""sampler:smoke"")
         Assert.True(tenutoAudible >= (int)(authoredFrames * 0.95),
             $"Tenuto baseline {tenutoAudible} frames is below 95% of authored " +
             $"({authoredFrames}); envelope hook may be regressed");
-        Assert.True(tenutoAudible <= (int)(authoredFrames * 1.05),
-            $"Tenuto baseline {tenutoAudible} frames exceeds 105% of authored " +
-            $"({authoredFrames})");
+        // quick-260702-vud — the smoke fixture (C4Region) declares
+        // ampeg_release=0.05, so sustained articulations (incl. Tenuto) now ring
+        // ~0.05s PAST the authored end via the exponential release tail instead of
+        // being squeezed inside the note window. Raise the ceiling by the smoke
+        // fixture's release tail so the audible-frame count that legitimately
+        // extends into the tail still passes.
+        int smokeReleaseFrames = (int)(0.05 * SampleRate);
+        Assert.True(tenutoAudible <= (int)((authoredFrames + smokeReleaseFrames) * 1.05),
+            $"Tenuto baseline {tenutoAudible} frames exceeds 105% of authored+release " +
+            $"({authoredFrames} + {smokeReleaseFrames} ampeg_release tail)");
 
         // Staccato + Marcato share the same envelope shape (sustain=0,
         // release × 0.5). The audible duration is dominated by the
