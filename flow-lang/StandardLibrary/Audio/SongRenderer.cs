@@ -545,8 +545,25 @@ public static class SongRenderer
             }
         }
 
-        if (allVoices.Count == 0 || maxBeats <= 0)
+        // Genuinely-empty section (no sequences, or only zero-length sequences):
+        // maxBeats <= 0 → keep the historical zero-length return. Nothing was
+        // notated, so nothing is rendered.
+        if (maxBeats <= 0)
             return new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+
+        // All-rest section: real notated length (maxBeats > 0) but no voices —
+        // rests produce no Voice objects. Silence is the only musically-correct
+        // reading (charitable interpretation): render a zero-filled stereo buffer
+        // of the notated length so later Song sections start at the correct frame
+        // offset instead of collapsing early. Frame count uses the SAME formula
+        // MixVoicesToStereoBuffer relies on, with the already-resolved section bpm
+        // so tempo context is honored. A freshly-constructed AudioBuffer is
+        // zero-filled — identical to what a zero-voice additive mix would produce.
+        if (allVoices.Count == 0)
+        {
+            int totalFrames = (int)(maxBeats * (60.0 / bpm) * DefaultSampleRate);
+            return new AudioBuffer(totalFrames, StereoChannels, DefaultSampleRate);
+        }
 
         return MixVoicesToStereoBuffer(allVoices, bpm, DefaultSampleRate, maxBeats);
     }
