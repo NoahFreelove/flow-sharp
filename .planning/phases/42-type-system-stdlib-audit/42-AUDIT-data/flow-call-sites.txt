@@ -1,110 +1,111 @@
-   1320 print
-    821 the
-    715 str
-    671 Sequence
-    645 proc
-    551 internal
-    489 a
-    417 use
+   1319 print
+    832 the
+    723 str
+    682 Sequence
+    659 proc
+    553 internal
+    503 a
+    420 use
     389 Int
     366 Buffer
-    297 is
-    284 to
-    281 with
+    298 is
+    290 to
+    284 with
     259 section
-    251 and
+    252 and
+    250 test
     249 concat
-    244 in
-    240 test
-    227 s
-    206 Test
+    245 in
+    231 s
+    207 Test
     181 for
+    172 lazy
     171 Phase
     165 Song
-    164 lazy
+    156 at
     152 timesig
-    152 at
     148 E4q
     143 key
     142 tempo
-    139 C4
+    140 C4
     136 G4q
     133 fn
+    133 chord
     133 C4q
-    131 chord
     127 E4
-    123 via
+    124 via
+    123 of
     123 b
-    121 of
+    115 end
     113 renderSong
-    111 run
+    112 run
+    111 note
     110 writeWav
     110 getFrames
     110 The
-    108 on
-    106 end
-    104 note
+    109 on
     101 same
      99 bar
      98 song
+     98 so
      98 Double
-     97 so
      96 as
      94 per
      94 from
      94 C5q
-     83 n
+     84 n
+     81 q
      80 ms
-     78 project
-     78 dotnet
+     79 project
+     79 dotnet
      76 F4
      76 D4
      75 Cmajor
-     71 no
+     72 no
+     70 not
+     69 assertNotesMatch
      69 Plan
      69 F4q
      68 D4q
-     67 not
      66 B4q
      65 MIDI
+     64 octave
+     64 block
+     63 by
+     63 are
      63 Hz
-     62 by
-     62 are
      62 add
-     61 assertNotesMatch
      61 arg
      60 v
      60 identical
      60 gain
      60 every
      60 String
+     59 equals
+     59 an
      59 A
      58 verse
      58 call
-     57 q
      57 mul
      57 mix
      57 match
      57 assertEq
-     57 an
-     56 block
-     56 _
-     55 equals
+     57 C
+     55 transpose
      54 flow
      52 two
-     52 transpose
      52 createSineTone
      52 Bool
+     51 one
      51 enable
-     50 one
+     51 Note
      50 buffer
-     50 Note
+     50 _
      49 this
+     49 that
      49 live
      49 jam
-     49 C
      49 Beat
-     48 that
      48 overload
      48 each
      47 sub
@@ -113,24 +114,28 @@
      47 duration
      47 G4
      47 A4q
+     46 sequence
      45 time
-     45 sequence
      44 file
      44 assert
      44 across
      43 when
+     43 notes
      43 mel
      43 interpreter
      43 B
      42 render
+     42 melody
      42 euclidean
+     42 context
      41 single
      41 kick
-     40 notes
-     40 context
-     40 cli
+     41 explicit
+     41 cli
+     40 inside
      39 reverb
      39 deterministic
+     39 default
      39 all
      38 typed
      38 through
@@ -138,28 +143,25 @@
      38 line
      38 facing
      38 e
-     38 default
      38 createBufferStereo
      37 volume
      37 surface
-     37 melody
+     37 over
      37 frames
-     37 explicit
      37 WAV
      37 Chord
      36 writeMidi
      36 returns
      36 pitchShift
+     36 it
      36 into
-     36 inside
      36 delay
      36 Symbol
      36 Flow
+     35 under
      35 rendered
      35 pragma
-     35 over
      35 len
-     35 it
      35 get
      35 audio
      35 USAGE
@@ -167,7 +169,6 @@
      35 Bar
      34 x
      34 voice
-     34 under
      34 map
      34 gt
      34 enharmonic
@@ -183,34 +184,36 @@
      33 composer
      33 base
      33 This
+     33 NOT
      32 slice
+     32 return
      32 renders
-     32 q
      32 or
+     32 only
      32 list
      32 granular
-     32 NOT
+     32 form
+     31 range
      31 path
-     31 only
      31 module
      31 h
-     31 form
      31 dict
+     31 beat
      31 Section
      30 without
      30 tuple
+     30 then
      30 produces
      30 multiplier
      30 mf
      30 marc
      30 major
-     30 beat
      30 Render
      30 Pitfall
-     29 then
-     29 range
+     29 has
      29 filter
      29 createOsc
+     29 check
      29 Creates
      28 type
      28 true
@@ -219,28 +222,32 @@
      28 pattern
      28 markov
      28 input
-     28 has
+     27 uses
+     27 up
      27 tone
      27 m
      27 dB
      27 but
+     27 bare
      27 D5q
+     27 D
      26 value
-     26 uses
      26 ten
+     26 stream
      26 size
+     26 should
      26 runs
      26 noise
      26 markovGenerate
-     26 check
      26 JI
      26 All
+     25 w
      25 velocities
      25 tuning
      25 swing
      25 stretch
      25 src
-     25 should
+     25 shot
      25 produce
      25 play
      25 oscillator
@@ -250,10 +257,8 @@
      25 empty
      25 V
      25 Hertz
-     25 D
      24 sing
      24 ratio
-     24 octave
      24 neg
      24 leg
      24 f
@@ -265,9 +270,7 @@
      24 Create
      24 Cmaj7
      24 C4h
-     23 up
      23 unpack
-     23 shot
      23 sections
      23 rev
      23 regression
@@ -275,9 +278,9 @@
      23 jazz
      23 full
      23 builtin
+     23 N
      23 G5q
      22 vary
-     22 return
      22 repeat
      22 raw
      22 mp
@@ -286,58 +289,59 @@
      22 D2q
      21 while
      21 vs
-     21 stream
      21 pan
+     21 never
      21 mono
      21 markovTrain
+     21 its
+     21 ghost
      21 ff
+     21 emits
      21 double
+     21 can
      21 active
      21 Task
      21 PASS
      21 E4h
+     21 E
      21 A4
      20 sometimes
      20 sh
+     20 seq
      20 phase
      20 negative
+     20 musical
      20 linear
      20 length
      20 lambda
-     20 its
      20 intToDouble
      20 humanize
      20 first
-     20 emits
      20 count
      20 consecutive
      20 chain
-     20 can
      20 buf
-     20 N
      19 was
      19 voices
      19 tempoRamp
      19 slow
-     19 seq
      19 seconds
      19 second
      19 reverbTime
      19 prints
-     19 never
-     19 musical
+     19 must
      19 matching
      19 lt
      19 inner
      19 canonical
-     19 bare
+     19 C3
      19 BPM
      19 ALL
      18 smoke
      18 seeded
+     18 scope
      18 requires
      18 registered
-     18 must
      18 lowpass
      18 loadSfz
      18 limit
@@ -346,6 +350,8 @@
      18 frame
      18 different
      18 combinators
+     18 any
+     18 Run
      18 Markov
      18 G3
      18 C2q
@@ -353,9 +359,10 @@
      17 velocity
      17 set
      17 quarter
+     17 main
      17 long
      17 half
-     17 ghost
+     17 grace
      17 flat
      17 fillBuffer
      17 does
@@ -364,12 +371,9 @@
      17 chunk
      17 case
      17 body
-     17 any
      17 Two
-     17 Run
      17 G4e
      17 G
-     17 E
      16 we
      16 wav
      16 stereo
@@ -385,7 +389,6 @@
      16 music
      16 mixed
      16 mic
-     16 main
      16 loadWav
      16 demo
      16 bars
@@ -396,8 +399,9 @@
      16 Each
      16 Dict
      16 C5h
-     16 C3
      15 within
+     15 which
+     15 variable
      15 style
      15 square
      15 specified
@@ -423,13 +427,13 @@
      15 compress
      15 charitable
      15 calls
+     15 after
      15 Tempo
      15 MusicalNote
      15 D4e
-     14 w
-     14 variable
      14 values
      14 than
+     14 still
      14 snare
      14 short
      14 retrograde
@@ -456,15 +460,17 @@
      14 between
      14 beats
      14 arpeggio
+     14 FAIL
+     14 C5
      14 A4e
      13 whole
-     13 which
      13 trip
      13 transposed
+     13 streams
      13 slot
      13 silent
      13 sidechain
-     13 scope
+     13 sequences
      13 routes
      13 piece
      13 piano
@@ -476,40 +482,42 @@
      13 iter
      13 here
      13 guard
-     13 grace
      13 expression
      13 eighth
      13 drums
+     13 down
      13 documented
      13 createSquareTone
      13 c
      13 builtins
+     13 blocks
      13 binding
      13 aware
      13 arr
-     13 after
      13 TET
      13 SECTION
      13 Lambda
-     13 FAIL
      13 C4e
      12 would
      12 wildcard
+     12 vqz
      12 unseeded
+     12 them
      12 their
      12 t
      12 string
-     12 still
      12 silence
      12 scale
      12 reduce
      12 override
      12 overloads
+     12 nested
      12 model
      12 literals
      12 iteration
      12 false
      12 expected
+     12 dynamic
      12 drop
      12 directly
      12 createTriangleTone
@@ -527,26 +535,21 @@
      12 MarkovModel
      12 GM
      12 EIGHTH
-     12 C5
      11 writes
-     11 w
-     11 vqz
      11 verified
      11 transform
      11 tidal
      11 third
-     11 them
      11 tail
      11 symbol
      11 swap
      11 structural
-     11 streams
      11 specificity
      11 sparseSeq
-     11 sequences
      11 scl
      11 ritardando
      11 position
+     11 own
      11 near
      11 names
      11 loud
@@ -555,47 +558,54 @@
      11 generate
      11 gate
      11 four
+     11 forms
      11 fadeIn
      11 export
      11 expect
      11 exercise
      11 createBuffer
      11 chorus
-     11 blocks
+     11 build
      11 acceptance
      11 With
      11 Void
      11 Set
      11 Renderable
+     11 NO
      11 H
      11 Functions
      11 FIRST
      11 F
      11 Exercises
      11 C5e
+     11 C2
      11 Basic
      11 B3
+     10 zero
      10 y
      10 xUnit
      10 works
      10 using
+     10 tuplet
      10 system
      10 sustained
      10 superimpose
+     10 st
      10 specific
      10 sine
      10 shift
+     10 semitones
      10 scaleBuffer
      10 roman
      10 renderSequenceToVoices
      10 quarters
+     10 q
      10 progression
      10 port
      10 patterns
      10 parser
      10 offset
      10 number
-     10 nested
      10 midiOut
      10 many
      10 interpolation
@@ -603,7 +613,6 @@
      10 idiv
      10 hits
      10 getSample
-     10 forms
      10 float
      10 final
      10 doubled
@@ -612,9 +621,9 @@
      10 constructor
      10 clamped
      10 capture
-     10 build
      10 bodies
      10 binds
+     10 because
      10 back
      10 articulation
      10 arm
@@ -626,7 +635,6 @@
      10 Rule
      10 Returns
      10 NoteValue
-     10 NO
      10 Musical
      10 Mix
      10 G4s
@@ -637,13 +645,12 @@
      10 Demonstrates
      10 DSP
      10 C6q
-     10 C2
      10 Both
      10 Aminor
-      9 zero
+      9 wins
       9 watch
       9 waltz
-      9 tuplet
+      9 unit
       9 triad
       9 transforms
       9 three
@@ -655,20 +662,18 @@
       9 stays
       9 state
       9 start
-      9 st
       9 split
       9 small
       9 simple
       9 ships
-      9 semitones
       9 secondsToFrames
       9 root
       9 r
       9 prettyBuffer
       9 plan
+      9 plain
       9 picks
       9 pass
-      9 own
       9 overlap
       9 notation
       9 lsystemModel
@@ -687,15 +692,15 @@
       9 equality
       9 entry
       9 engine
-      9 dynamic
-      9 down
       9 constant
+      9 clamps
+      9 called
       9 bytes
-      9 because
       9 apply
       9 applies
       9 accepts
       9 abs
+      9 _
       9 Wave
       9 Use
       9 Sets
@@ -715,7 +720,6 @@
       8 work
       8 vocoder
       8 vocal
-      8 unit
       8 twice
       8 swell
       8 song1
@@ -731,7 +735,7 @@
       8 relative
       8 preset
       8 positioned
-      8 plain
+      8 point
       8 phrase
       8 parses
       8 param
@@ -745,6 +749,7 @@
       8 mml
       8 max
       8 lorenz
+      8 like
       8 life
       8 letter
       8 instrument
@@ -768,7 +773,7 @@
       8 class
       8 clamp
       8 ci
-      8 called
+      8 bracket
       8 blues
       8 based
       8 base_seq
@@ -802,7 +807,6 @@
       8 C2w
       7 written
       7 writeLilyPond
-      7 wins
       7 visible
       7 variation
       7 trill
@@ -822,7 +826,6 @@
       7 reads
       7 raises
       7 portamento
-      7 point
       7 platform
       7 pack
       7 outro
@@ -834,7 +837,6 @@
       7 message
       7 merge
       7 lsystem
-      7 like
       7 lead
       7 jackSync
       7 j
@@ -864,6 +866,7 @@
       7 chained
       7 center
       7 captures
+      7 built
       7 buffers
       7 bed
       7 audible
@@ -901,12 +904,14 @@
       6 trained
       6 total
       6 textured
+      6 structurally
       6 strings
       6 slots
       6 sixteenth
       6 signature
       6 sig
       6 side
+      6 shows
       6 setTrackOffset
       6 setMaxVoices
       6 sectionCount
@@ -946,6 +951,7 @@
       6 lives
       6 lilypond
       6 lexes
+      6 letters
       6 keeps
       6 idx
       6 humanized
@@ -975,7 +981,6 @@
       6 compose
       6 coerced
       6 cleanly
-      6 clamps
       6 ch
       6 cents
       6 c2
@@ -990,6 +995,8 @@
       6 assertion
       6 arrangement
       6 arity
+      6 always
+      6 also
       6 adds
       6 accelerando
       6 acc
@@ -1003,6 +1010,7 @@
       6 Stochastic
       6 Scala
       6 SFZ
+      6 Reference
       6 QUARTER
       6 PulseAudio
       6 Pragma
@@ -1021,8 +1029,10 @@
       6 Granular
       6 Gaussian
       6 Eb4e
+      6 E3
       6 Declarations
       6 Db4
+      6 D5
       6 Composers
       6 Chapter
       6 Carlos
@@ -1056,7 +1066,6 @@
       5 sustain
       5 surfaces
       5 supplied
-      5 structurally
       5 stdlib
       5 std
       5 speeding
@@ -1066,7 +1075,6 @@
       5 smooth
       5 sliceDemo
       5 signatures
-      5 shows
       5 ship
       5 share
       5 session
@@ -1080,6 +1088,7 @@
       5 returned
       5 real
       5 rampFrames
+      5 r2
       5 processed
       5 primitives
       5 presetSong
@@ -1087,6 +1096,7 @@
       5 partch
       5 parameter
       5 owned
+      5 outer
       5 oscBundle
       5 opt
       5 note_corpus
@@ -1101,6 +1111,7 @@
       5 makes
       5 make
       5 loopback
+      5 locked
       5 leading
       5 knobs
       5 inverted
@@ -1125,37 +1136,38 @@
       5 files
       5 fall
       5 extractors
+      5 exits
       5 evaluates
       5 escape
       5 equivalent
       5 element
       5 effecting
       5 edge
+      5 digits
       5 diff
+      5 defaults
       5 db
       5 cresc
       5 createBufferMono
       5 counts
-      5 converts
       5 convention
       5 contains
       5 comment
       5 combined
+      5 code
       5 clause
       5 clap
+      5 charitably
       5 channels
       5 cellularSeeded
       5 c3
       5 c1
-      5 bracket
       5 beta
       5 b2
       5 axiom
       5 assertWithinDb
       5 assertBytesEqual
       5 applyEnvelope
-      5 always
-      5 also
       5 actually
       5 accented
       5 accelFrames
@@ -1168,6 +1180,7 @@
       5 Register
       5 Random
       5 REGRESSION
+      5 OUTSIDE
       5 OUT
       5 ONLY
       5 MusicXML
@@ -1205,6 +1218,7 @@
       4 whose
       4 vowel
       4 visualize
+      4 vi
       4 val2
       4 v3
       4 usable
@@ -1234,6 +1248,7 @@
       4 structure
       4 stringBass
       4 stop
+      4 stay
       4 staccato
       4 sparse_out
       4 sp
@@ -1266,9 +1281,9 @@
       4 renderBarAtBeat
       4 regime
       4 read
+      4 reaches
       4 r4
       4 r3
-      4 r2
       4 r1
       4 quantized_a
       4 pure
@@ -1283,7 +1298,6 @@
       4 paths
       4 outscores
       4 outputs
-      4 outer
       4 other
       4 organ
       4 opts
@@ -1305,13 +1319,13 @@
       4 lte
       4 lsystemToSequence
       4 lp
-      4 locked
       4 librtmidi
       4 keyed
       4 keep
       4 kHz
       4 jig
       4 integration
+      4 innermost
       4 infers
       4 inaudible
       4 improvisation
@@ -1333,7 +1347,6 @@
       4 fifth
       4 feel
       4 features
-      4 exits
       4 exhaustive
       4 exercised
       4 executed
@@ -1344,12 +1357,12 @@
       4 drives
       4 doubles
       4 dogfood
+      4 do
       4 direct
       4 destructure
       4 descending
       4 depth
       4 degrade_out
-      4 defaults
       4 declaration
       4 decl
       4 dMain
@@ -1360,19 +1373,18 @@
       4 current
       4 createOscillatorState
       4 createADSR
+      4 converts
       4 continue
       4 confirm
       4 composability
       4 complete
       4 comp
       4 coerces
-      4 code
       4 closure
       4 chromatic
       4 chains
       4 calling
       4 bundle
-      4 built
       4 bug
       4 bassVerse
       4 bassBuild
@@ -1390,6 +1402,7 @@
       4 amplitude
       4 already
       4 algaeRules
+      4 adopt
       4 addVoice
       4 addNoteToBar
       4 accepted
@@ -1409,11 +1422,9 @@
       4 Signal
       4 Roman
       4 Ritardando
-      4 Reference
       4 RENDER
       4 Positive
       4 Pinned
-      4 OUTSIDE
       4 Nb
       4 NEVER
       4 MARKOV
@@ -1445,7 +1456,6 @@
       4 DISTINCT
       4 DAW
       4 D5e
-      4 D5
       4 D4s
       4 Chords
       4 Check
@@ -1477,7 +1487,6 @@
       3 walking
       3 vowels
       3 violin
-      3 vi
       3 varispeed
       3 varied
       3 unmapped
@@ -1489,6 +1498,7 @@
       3 trigger
       3 triad_ji_pragma
       3 triad_ji5_scl
+      3 transposes
       3 transFwd
       3 trailing
       3 totalSec
@@ -1518,7 +1528,6 @@
       3 stretched
       3 stray
       3 straight
-      3 stay
       3 stable
       3 sqTable
       3 songs
@@ -1568,7 +1577,6 @@
       3 rejection
       3 rejected
       3 registry
-      3 reaches
       3 reach
       3 rather
       3 rampMel
@@ -1631,7 +1639,9 @@
       3 loops
       3 loads
       3 lint
+      3 lines
       3 library
+      3 lexer
       3 legSeq
       3 led
       3 known
@@ -1660,6 +1670,7 @@
       3 host
       3 holds
       3 hmel
+      3 helper
       3 hear
       3 headroom
       3 hatch
@@ -1701,7 +1712,6 @@
       3 dropped
       3 drive
       3 doubleToInt
-      3 do
       3 dispatches
       3 dictDoubled
       3 diagnostics
@@ -1727,7 +1737,6 @@
       3 compile
       3 compare
       3 clear
-      3 charitably
       3 chaotic_b
       3 chaotic_a
       3 chaotic
@@ -1769,7 +1778,6 @@
       3 accept
       3 absolute
       3 about
-      3 _
       3 While
       3 When
       3 WITHOUT
@@ -1808,6 +1816,7 @@
       3 Osc
       3 Operations
       3 Open
+      3 Only
       3 On
       3 Nothing
       3 Nested
@@ -1840,14 +1849,15 @@
       3 F3h
       3 F3
       3 Expression
+      3 Explicit
       3 Expected
+      3 Emits
       3 Eb5e
       3 Eb4
       3 E6q
       3 E5
       3 E3q
       3 E3h
-      3 E3
       3 Dynamics
       3 Dm
       3 Dense
@@ -1871,6 +1881,7 @@
       3 CI
       3 CELLULAR
       3 Bbmajor
+      3 Bare
       3 Array
       3 Arithmetic
       3 Applies
@@ -1910,6 +1921,7 @@
       2 varyTheme
       2 validates
       2 valid
+      2 v_i
       2 vUp
       2 vDown
       2 v3scaled
@@ -2085,6 +2097,7 @@
       2 riff
       2 rhythmSection
       2 review
+      2 reverts
       2 reversed
       2 retunes
       2 retune
@@ -2134,6 +2147,7 @@
       2 purely
       2 pulls
       2 progDemo
+      2 procs
       2 printing
       2 previously
       2 preview
@@ -2257,10 +2271,8 @@
       2 listening
       2 listener
       2 lint_canary
-      2 lines
       2 linearly
       2 limited
-      2 lexer
       2 lets
       2 leftCh
       2 left
@@ -2291,8 +2303,9 @@
       2 instrFrames
       2 installed
       2 inspect
-      2 innermost
       2 injection
+      2 inherits
+      2 inherit
       2 individual
       2 indexing
       2 independently
@@ -2312,7 +2325,6 @@
       2 hit
       2 hh
       2 hex
-      2 helper
       2 height
       2 headless
       2 hat
@@ -2358,6 +2370,7 @@
       2 format
       2 forcing
       2 forces
+      2 follow
       2 folds
       2 flute
       2 floors
@@ -2514,6 +2527,7 @@
       2 cast
       2 cap
       2 cannot
+      2 caller
       2 calculateOverflow
       2 cSong
       2 cBuf
@@ -2624,6 +2638,7 @@
       2 Sidechain
       2 Short
       2 Sharp
+      2 Sequences
       2 Seeded
       2 Seed
       2 Schroeder
@@ -2664,7 +2679,6 @@
       2 OscEnabled
       2 OscBundle
       2 Orchestral
-      2 Only
       2 One
       2 OWN
       2 ORDER
@@ -2678,6 +2692,7 @@
       2 NotationIoEnabled
       2 Notation
       2 Next
+      2 Nesting
       2 NEW
       2 MusicalContext
       2 MuseScore
@@ -2715,6 +2730,7 @@
       2 IO
       2 INSIDE
       2 IEEE
+      2 Helper
       2 Harry
       2 HPS
       2 H4
@@ -2731,9 +2747,7 @@
       2 Fill
       2 FX
       2 F4h
-      2 Explicit
       2 Envelope
-      2 Emits
       2 Edition
       2 Edit
       2 EXPR
@@ -2751,6 +2765,7 @@
       2 Db5q
       2 DROP
       2 DOES
+      2 D3
       2 D2h
       2 Cycle
       2 Copy
@@ -2775,7 +2790,6 @@
       2 Bjorklund
       2 Bind
       2 Beats
-      2 Bare
       2 BLOCK
       2 B5e
       2 B3q
@@ -2789,6 +2803,7 @@
       2 AR
       2 ANSI
       2 AND
+      2 AFTER
       2 A5h
       2 A4w
       2 A3h
@@ -2809,6 +2824,7 @@
       1 withBridge
       1 wise
       1 windowed
+      1 win
       1 why
       1 wholeRest
       1 whether
@@ -2842,7 +2858,6 @@
       1 violates
       1 viola
       1 viaUnpack
-      1 vi
       1 very
       1 version
       1 verseBpm
@@ -2858,12 +2873,11 @@
       1 validation
       1 validateBarDuration
       1 val
-      1 v_i
-      1 v_i
       1 utilities
       1 useful
       1 upper_bound
-      1 upTwo
+      1 upSt
+      1 upOct
       1 unwraps
       1 untouched
       1 unpacks
@@ -2923,6 +2937,7 @@
       1 transUp
       1 transBlock
       1 toward
+      1 touches
       1 too
       1 toml
       1 tokenize
@@ -3247,6 +3262,11 @@
       1 register
       1 regardless
       1 references
+      1 refGhostGrace3
+      1 refC4
+      1 ref9
+      1 ref5
+      1 ref3
       1 recurse
       1 recurs
       1 recovers
@@ -3256,6 +3276,7 @@
       1 received
       1 reachable
       1 rd
+      1 rcChord
       1 rawSine
       1 ratios
       1 rates
@@ -3306,7 +3327,6 @@
       1 progBlock
       1 prog
       1 production
-      1 procs
       1 processing
       1 procFrames
       1 probability
@@ -3406,6 +3426,7 @@
       1 old
       1 oh
       1 offsets
+      1 octaves
       1 octaveUp
       1 octaveBlock
       1 octHigh
@@ -3422,6 +3443,7 @@
       1 newBest
       1 net
       1 nested_inner_wins
+      1 nested52
       1 neighborhood
       1 negation
       1 negated
@@ -3502,6 +3524,7 @@
       1 mappedValue
       1 manipulating
       1 managed
+      1 makeSeq
       1 maj7
       1 mainSec
       1 made
@@ -3519,6 +3542,7 @@
       1 logged
       1 logResult
       1 locking
+      1 locals
       1 localLit
       1 loading
       1 loadedFrames
@@ -3533,7 +3557,6 @@
       1 libjack
       1 lh
       1 lexing
-      1 letters
       1 less
       1 lengths
       1 legatoPhrase
@@ -3541,6 +3564,7 @@
       1 leftBuf
       1 leaves
       1 leave
+      1 leak
       1 layout
       1 layered
       1 later
@@ -3602,9 +3626,7 @@
       1 inlineCresc
       1 inlineCr
       1 initPattern
-      1 inherits
       1 inheriting
-      1 inherit
       1 informational
       1 info
       1 infix
@@ -3635,6 +3657,7 @@
       1 horns
       1 horn
       1 honored
+      1 honor
       1 hitsSize
       1 historically
       1 hihatLoud
@@ -3685,11 +3708,13 @@
       1 graceSeq
       1 graceBlock
       1 good
+      1 gmm
       1 gj2
       1 giving
       1 ghosty
       1 ghostVel
       1 ghostSeq
+      1 ghostGrace3
       1 ghostBlock
       1 getTimeSignature
       1 getSection
@@ -3741,7 +3766,6 @@
       1 forgot
       1 follows
       1 followed
-      1 follow
       1 folded
       1 fluent
       1 flows
@@ -3779,6 +3803,7 @@
       1 exposes
       1 exportVocal
       1 explicitReturnNothing
+      1 explicitIn3
       1 experience
       1 expects
       1 expecting
@@ -3850,6 +3875,7 @@
       1 earlier
       1 eagerly
       1 dynamicsRamp
+      1 dynamicScope3
       1 dynSeq
       1 dying
       1 dxMel
@@ -3871,6 +3897,7 @@
       1 drags
       1 downstream
       1 downloads
+      1 downSt
       1 doubledOnce
       1 doubledKick
       1 doubled5
@@ -3881,14 +3908,15 @@
       1 divider
       1 distributes
       1 distinguishes
+      1 distinguish
       1 dispose
       1 discriminator
       1 discrimination
       1 discovered
+      1 discard
       1 disables
       1 disabled
       1 dim
-      1 digits
       1 diff_len
       1 diffSymbols
       1 diffSym
@@ -3958,6 +3986,7 @@
       1 crescBlock
       1 creation
       1 creating
+      1 creates
       1 createStereoTrack
       1 createSong
       1 createSequence
@@ -4018,6 +4047,7 @@
       1 compat
       1 comparisons
       1 comparison
+      1 compares
       1 commit
       1 comments
       1 command
@@ -4047,6 +4077,7 @@
       1 classes
       1 clarinet
       1 clapGone
+      1 clamp12
       1 cks
       1 circuits
       1 circuit
@@ -4080,7 +4111,6 @@
       1 care
       1 candidate
       1 canary
-      1 caller
       1 callback
       1 calculated
       1 c9
@@ -4107,6 +4137,7 @@
       1 branches
       1 branch
       1 bracketed
+      1 bracket3
       1 braces
       1 boundaries
       1 boost
@@ -4132,6 +4163,7 @@
       1 bassGain
       1 bassFrames
       1 bassDrop
+      1 bare3
       1 barLength
       1 bar6_8
       1 bar5_4
@@ -4209,6 +4241,7 @@
       1 ah
       1 agnostic
       1 again
+      1 afterBlock
       1 affects
       1 advances
       1 advanced
@@ -4349,7 +4382,6 @@
       1 Sevenths
       1 Settles
       1 Server
-      1 Sequences
       1 Send
       1 SemitoneType
       1 SecondType
@@ -4385,6 +4417,7 @@
       1 SECOND
       1 SCORE
       1 SCOPED
+      1 SCOPE
       1 SAX
       1 SAVE
       1 RunSource
@@ -4506,7 +4539,6 @@
       1 Normal
       1 NonDiatonic_FsharpInCmajor_FlagsOneDiagnostic
       1 Ninths
-      1 Nesting
       1 NestedKeys_InnermostWins_NoFlag
       1 Negation
       1 Naturals
@@ -4591,12 +4623,12 @@
       1 INTENTIONALLY
       1 INSERTION
       1 INNERMOST
+      1 INCLUDING
       1 IDENTITY
       1 HumanizeGaussian
       1 Humanization
       1 Heterogeneous
       1 HertzType
-      1 Helper
       1 Heavier
       1 Headline
       1 Hb4q
@@ -4641,6 +4673,7 @@
       1 FileSystemWatcher
       1 File
       1 Feature
+      1 Failed
       1 Fade
       1 FULL
       1 FP
@@ -4711,7 +4744,6 @@
       1 D5w
       1 D5s
       1 D3q
-      1 D3
       1 Curve
       1 CreateSineTone
       1 Covers
@@ -4763,6 +4795,7 @@
       1 CASES
       1 CASE
       1 CAPTURE
+      1 C9
       1 By
       1 But
       1 Bundles
@@ -4794,6 +4827,7 @@
       1 BAR
       1 Authoritative
       1 AudioBuffer
+      1 Assertions
       1 AssertionException
       1 Articulations
       1 Arrays
@@ -4825,7 +4859,6 @@
       1 ARG
       1 ARE
       1 API
-      1 AFTER
       1 ABI
       1 A7
       1 A5w

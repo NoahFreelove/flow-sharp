@@ -1,8 +1,8 @@
 Phase 42 Plan 02 — clamp/advisory inventory summary
-Generated: 2026-07-02T03:13:23Z
+Generated: 2026-07-02T16:29:49Z
 Source scope: /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/ (clamps + charitable), /home/noah/Desktop/projects/flow-sharp/flow-lang/ (advisories)
 
 input-clamps.txt:    0 lines
 all-clamps.txt:      80 lines
-advisory-sites.txt:  167 lines
-charitable-sites.txt: 185 lines
+advisory-sites.txt:  170 lines
+charitable-sites.txt: 186 lines

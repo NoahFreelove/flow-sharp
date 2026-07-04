@@ -1,6 +1,6 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Ast/Expressions/MatchExpression.cs:33:///       RenderingDiagnostics.WarnOnce, then fall through to
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Ast/Statements/LiveBlockStatement.cs:35:/// (line, process) via <see cref="FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce"/>
-/home/noah/Desktop/projects/flow-sharp/flow-lang/Parsing/Parser.NoteStream.cs:434:                        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Parsing/Parser.NoteStream.cs:456:                        RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ModuleLoader.cs:98:            Diagnostics.RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ModuleLoader.cs:254:                        RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ModuleLoader.cs:268:                            RenderingDiagnostics.WarnOnce(
@@ -8,12 +8,13 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:552:    /// site that historically emitted <c>RenderingDiagnostics.WarnOnce(key, body)</c>
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:566:    /// <c>RenderingDiagnostics.WarnOnce(_emitted)</c> set: same sentinel key
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/ExecutionContext.cs:638:    /// <c>RenderingDiagnostics.WarnOnce(key, message)</c> pattern (Plans 33-04 /
-/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/NoteStreamCompiler.cs:984:            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Runtime/NoteStreamCompiler.cs:989:            FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/ExpressionEvaluator.cs:780:        //   RenderingDiagnostics.WarnOnce keyed on the match Span, then
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/ExpressionEvaluator.cs:807:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:550:    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
-/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:575:        RenderingDiagnostics.WarnOnce(
-/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:1022:                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:406:                        FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:574:    ///   <see cref="RenderingDiagnostics.WarnOnce"/> with sentinel
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:599:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/Interpreter/Interpreter.cs:1046:                FlowLang.Diagnostics.RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Audio/MidiClock.cs:201:            RenderingDiagnostics.WarnOnce("clock-master-loop", $"[clock] master loop error: {ex.Message}");
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Audio/MidiClock.cs:275:            RenderingDiagnostics.WarnOnce("clock-send-raw", $"[clock] raw send failed: {ex.Message}");
 /home/noah/Desktop/projects/flow-sharp/flow-lang/Audio/MidiClock.cs:318:                    RenderingDiagnostics.WarnOnce(
@@ -101,6 +102,8 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:139:            RenderingDiagnostics.WarnOnce("piano:release:clamp-high",
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:184:                RenderingDiagnostics.WarnOnce("piano:mp_mf:missing",
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:369:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Vocalization/FormantData.cs:82:        RenderingDiagnostics.WarnOnce(
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Vocalization/TtsHook.cs:49:        RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/EffectsFunctions.cs:399:                Diagnostics.RenderingDiagnostics.WarnOnce(
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:35:///   emit a charitable <see cref="RenderingDiagnostics.WarnOnce"/> advisory
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:202:                RenderingDiagnostics.WarnOnce(

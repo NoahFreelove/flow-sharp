@@ -2,13 +2,13 @@
 	{
 		"id": "sine-440",
 		"label": "Sine tone (440 Hz)",
-		"blurb": "The hello-world — a one-second A4 sine. Press Run to hear it.",
+		"blurb": "The audio equivalent of hello world: a one-second A4 sine.",
 		"file": "sine-440.flow"
 	},
 	{
 		"id": "print-hello",
 		"label": "Print to console",
-		"blurb": "No audio — just stdout. Shows the console split.",
+		"blurb": "Just stdout. A real Hello World.",
 		"file": "print-hello.flow"
 	},
 	{

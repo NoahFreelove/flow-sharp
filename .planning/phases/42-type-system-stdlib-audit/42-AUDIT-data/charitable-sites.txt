@@ -123,6 +123,7 @@
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/InputFunctions.cs:181:        // (3) Charitable fallback: capture failure → silent buffer + advisory.
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Synthesizers/DrumSynthesizer.cs:295:        // is a fallback for MIDI numbers outside the standard kit map.
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/SampledInstrumentRenderer.cs:164:            // U-Iowa MIS recording. Charitable fallback (T-37-04-02): if mp OR mf is
+/home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Vocalization/FormantData.cs:75:    /// consonant-vowel path (unmapped vowel remainder), and the whole-string fallback.
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/EffectsFunctions.cs:312:    /// Out-of-range enum values fall through to the quarter fallback (charitable D-07,
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzData.cs:40:///   fallback per CONTEXT D-03: when <c>Grid[pitch, vel]</c> is null, find the
 /home/noah/Desktop/projects/flow-sharp/flow-lang/StandardLibrary/Audio/Sfz/SfzRenderer.cs:30:///   <item><description>Nearest-pitch fallback (SPEC-4) when the grid cell is

@@ -10,6 +10,7 @@ addOne
 addPair
 addVoice
 adsr
+afterBlock
 and
 append
 appendBuffers
@@ -24,11 +25,13 @@ assertWithinDb
 audioDevices
 augment
 bandpass
+bare3
 barLength
 beat
 beatsToFrames
 beatToSec
 bpm
+bracket3
 break
 bufferDuration
 bufferHex
@@ -45,6 +48,7 @@ chordNotes
 chordQuality
 chordRoot
 chunk
+clamp12
 clockMaster
 clockSlave
 clockStop
@@ -100,6 +104,7 @@ doubler
 doubleToInt
 down
 drop
+dynamicScope3
 each
 empty
 __enableJackModule
@@ -112,6 +117,7 @@ equals
 euclidean
 eval
 every
+explicitIn3
 explicitReturnNothing
 fadeIn
 fadeOut
@@ -141,6 +147,7 @@ getSampleRate
 getSection
 getSections
 getTimeSignature
+ghostGrace3
 granular
 gt
 gte
@@ -193,6 +200,7 @@ lsystemModel
 lsystemToSequence
 lt
 lte
+makeSeq
 map
 markov
 markovEqual
@@ -218,6 +226,7 @@ multipleNonVoidThenReturnNothing
 nanFloat
 near
 neg
+nested52
 noise
 not
 noteToFrequency
