@@ -12,23 +12,25 @@
 #   GITHUB_CLIENT_ID      — GitHub → Settings → Developer settings → OAuth Apps → New OAuth App
 #   GITHUB_CLIENT_SECRET  — same OAuth App page; store ENCRYPTED in CF Pages env (secret)
 #
-# OAuth App "Authorization callback URL" MUST be:  https://<project>.pages.dev/api/auth/github
-# (the <project>.pages.dev host comes from Plan 49-01's CF Pages deploy.)
+# OAuth App "Authorization callback URL" MUST be:  https://flow.noahfreelove.com/api/auth/github
+# (must EXACTLY match SITE_ORIGIN below — the site is served on the custom domain, and the whole
+#  OAuth round-trip must stay on ONE origin so the __Host- CSRF cookie survives the GitHub redirect.)
 
 name = "flow-music"
 compatibility_date = "2026-06-05"
 pages_build_output_dir = ".svelte-kit/cloudflare"
 
 # Non-secret, build-visible vars. GITHUB_CLIENT_ID is intentionally PUBLIC (it is bundled into the
-# authorize URL anyway). Set the real id in the dashboard; this placeholder keeps local builds happy.
+# authorize URL anyway) so we commit the real value here — otherwise every `wrangler pages deploy`
+# re-applies a placeholder and clobbers any dashboard-set value, which is what broke gist sign-in.
 [vars]
-GITHUB_CLIENT_ID = "set-in-cloudflare-dashboard"
+GITHUB_CLIENT_ID = "Ov23liFOoNCopywTMufO"
 
 # SITE_ORIGIN pins the OAuth redirect origin to a SERVER-KNOWN constant instead of the request Host
 # (CR-02 — closes the token-theft / open-redirect vector). MUST be the deployed canonical origin and
 # MUST match the OAuth App's "Authorization callback URL" host above. Set the real value in the
 # Cloudflare dashboard per environment (e.g. preview vs production). The worker rejects any callback
 # whose origin does not equal this. Local dev (vite, unset) falls back to http://localhost:5173.
-SITE_ORIGIN = "https://flow-music.pages.dev"
+SITE_ORIGIN = "https://flow.noahfreelove.com"
 
 # GITHUB_CLIENT_SECRET is deliberately ABSENT here — it is an encrypted dashboard secret only.
