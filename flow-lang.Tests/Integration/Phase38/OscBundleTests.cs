@@ -162,9 +162,12 @@ public class OscBundleTests : IDisposable
         cts.Token.Register(() => { try { receiver.Dispose(); } catch { } });
         var done = new ManualResetEventSlim(false);
 
+        // Bind before sending: a datagram sent before the socket exists is lost,
+        // which made this test fail intermittently under full-suite load.
+        receiver.Connect();
+
         var listenerTask = Task.Run(() =>
         {
-            try { receiver.Connect(); } catch { return; }
             while (!cts.IsCancellationRequested)
             {
                 try

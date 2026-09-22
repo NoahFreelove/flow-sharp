@@ -346,5 +346,10 @@ could not run the contract tests. `.gitignore` now allow-lists `contracts/` and
 `examples/language/`, the programs are committed, and the contract tests were run
 from a fresh `git clone` of the result.
 
+The fresh-clone core run exposed an intermittent OSC loopback failure: three
+tests bound their UDP receiver inside `Task.Run` while the sender fired at once,
+so a datagram could arrive before the socket existed. The receivers now bind
+before sending. This was a test race, unrelated to the interpreter changes.
+
 Next ready slice: Phase 2 session ownership against the session-lifetime
 decision's gate.

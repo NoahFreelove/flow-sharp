@@ -91,9 +91,11 @@ public class OscLoopbackTests : IDisposable
         var cts = new CancellationTokenSource();
         cts.Token.Register(() => { try { receiver.Dispose(); } catch { } });
 
+        // Bind before sending: a datagram sent before the socket exists is lost.
+        receiver.Connect();
+
         var listenerTask = Task.Run(() =>
         {
-            try { receiver.Connect(); } catch { return; }
             while (!cts.IsCancellationRequested)
             {
                 try
@@ -170,9 +172,11 @@ public class OscLoopbackTests : IDisposable
         var cts = new CancellationTokenSource();
         cts.Token.Register(() => { try { receiver.Dispose(); } catch { } });
 
+        // Bind before sending: a datagram sent before the socket exists is lost.
+        receiver.Connect();
+
         var listenerTask = Task.Run(() =>
         {
-            try { receiver.Connect(); } catch { return; }
             while (!cts.IsCancellationRequested)
             {
                 try
