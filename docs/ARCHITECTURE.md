@@ -2,6 +2,10 @@
 
 # Flow Language Architecture
 
+For the proposed language/music separation and Linux DAW work, see the
+[2026-09-20 restructuring roadmap](plans/2026-09-20-flow-restructuring-roadmap.md).
+That plan describes a target architecture; the tour below describes the existing implementation.
+
 This document is a developer's tour of how Flow is structured. It's aimed at
 someone who wants to understand the codebase before adding a feature, fixing a
 bug, or porting Flow to a new platform. For composer-facing language reference,
