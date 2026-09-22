@@ -1,0 +1,7 @@
+tea: 3
+coffee: 2
+cocoa: 1
+revenue items: ["tea", "coffee", "cocoa"]
+revenue values: [9, 8, 5]
+popular: ["tea", "coffee"]
+distinct items: 3

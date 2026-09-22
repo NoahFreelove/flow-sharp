@@ -1,0 +1,7 @@
+company (10)
+  research (5)
+    lab (7)
+    library (2)
+  sales (4)
+total: 28
+depth: 3

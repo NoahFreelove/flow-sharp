@@ -1,0 +1,7 @@
+#add 5 -> 5 (small)
+#mul 30 -> 150 (large)
+#sub 200 -> -50 (negative)
+#noop 1 -> -50 (negative)
+#reset 0 -> 0 (zero)
+#add 7 -> 7 (small)
+final: 7

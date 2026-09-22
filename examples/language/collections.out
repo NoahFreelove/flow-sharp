@@ -1,0 +1,11 @@
+students: 5
+passing scores: [91, 85, 97]
+curved: [96, 83, 90, 67, 100]
+average: 82.6
+best: 97
+  Ada: 91
+  Grace: 78
+  Alan: 85
+  Edsger: 62
+  Barbara: 97
+["Ada", "Alan", "Barbara"]
