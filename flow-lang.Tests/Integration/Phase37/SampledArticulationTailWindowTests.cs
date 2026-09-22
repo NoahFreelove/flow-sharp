@@ -72,7 +72,7 @@ public class SampledArticulationTailWindowTests : IDisposable
             var setup = runner.RunSource(setupScript, "<tail-window-setup>");
             Assert.True(setup.Success, $"Setup render failed: {setup.Stderr}");
 
-            var cache = FlowEngine.CurrentSampleCache;
+            var cache = runner.GetEngine().SampleCache;
             Assert.NotNull(cache);
             var renderer = new SampledInstrumentRenderer(cache!, "piano", hasVelocityLayers: true);
 

@@ -741,6 +741,7 @@ public class Interpreter : IFunctionInvoker
         {
             foreach (var item in items)
             {
+                _context.Session.ThrowIfCancelled();
                 if (++iterations > _context.MaxIterations)
                 {
                     _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in for loop", stmt.Location);
@@ -773,6 +774,7 @@ public class Interpreter : IFunctionInvoker
         {
             while (true)
             {
+                _context.Session.ThrowIfCancelled();
                 if (++iterations > _context.MaxIterations)
                 {
                     _errorReporter.ReportError($"Iteration limit of {_context.MaxIterations} exceeded in while loop", stmt.Location);
@@ -1364,6 +1366,7 @@ public class Interpreter : IFunctionInvoker
         IReadOnlyList<Value> args,
         IReadOnlyDictionary<string, Value>? capturedVariables)
     {
+        _context.Session.ThrowIfCancelled();
         if (++_recursionDepth > MaxRecursionDepth)
         {
             _recursionDepth--;

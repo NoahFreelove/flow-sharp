@@ -915,7 +915,7 @@ public static class TransformFunctions
             if (midi < MIDI_MIN || midi > MIDI_MAX)
             {
                 int clamped = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
-                Console.Error.WriteLine(
+                FlowConsole.Error.WriteLine(
                     $"Warning: transpose would put {NoteType.Format(note.NoteName, note.Octave, note.Alteration)} " +
                     $"out of range (MIDI {midi}), clamping to MIDI {clamped}");
                 midi = clamped;
@@ -1044,7 +1044,7 @@ public static class TransformFunctions
             int newDur = note.DurationValue.Value - 1; // toward WHOLE=0
             if (newDur < (int)NoteValueType.Value.WHOLE)
             {
-                Console.Error.WriteLine("Warning: augment clamped duration at whole note");
+                FlowConsole.Error.WriteLine("Warning: augment clamped duration at whole note");
                 newDur = (int)NoteValueType.Value.WHOLE;
             }
 
@@ -1078,7 +1078,7 @@ public static class TransformFunctions
             int newDur = note.DurationValue.Value + 1; // toward THIRTYSECOND=5
             if (newDur > (int)NoteValueType.Value.THIRTYSECOND)
             {
-                Console.Error.WriteLine("Warning: diminish clamped duration at thirty-second note");
+                FlowConsole.Error.WriteLine("Warning: diminish clamped duration at thirty-second note");
                 newDur = (int)NoteValueType.Value.THIRTYSECOND;
             }
 

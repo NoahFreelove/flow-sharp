@@ -69,7 +69,7 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 /// <see cref="Render"/> directly with a pre-populated
 /// <see cref="SfzSampleCache"/> + a programmatic <see cref="SfzData"/>.
 /// Plan 33-07 wires it into <c>SongRenderer</c>'s <c>sampler:NAME</c>
-/// dispatch branch alongside Phase 29's <c>FlowEngine.CurrentSampleCache</c>
+/// dispatch branch alongside Phase 29's <c>RenderServices.SampleCache</c>
 /// surface.
 /// </summary>
 public class SfzRenderer

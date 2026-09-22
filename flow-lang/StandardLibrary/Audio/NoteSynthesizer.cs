@@ -252,7 +252,16 @@ public class FlowFunctionSynthesizer : INoteSynthesizer
 /// </summary>
 public static class SynthesizerFactory
 {
-    private static readonly Dictionary<string, float[]> _customWavetables = new(StringComparer.OrdinalIgnoreCase);
+    // User wavetables live in the session's RenderServices; the static table is only
+    // used outside a session (direct renderer calls). Built-in variants are
+    // process-wide and immutable once registered; a user wavetable of the same name wins.
+    private static readonly Dictionary<string, float[]> _fallbackWavetables = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, float[]> _builtinWavetables = new(StringComparer.OrdinalIgnoreCase);
+    private static Dictionary<string, float[]> Wavetables => RenderServices.Current?.CustomWavetables ?? _fallbackWavetables;
+
+    /// <summary>Registers one of the built-in wavetable variants (process-wide, immutable).</summary>
+    internal static void RegisterBuiltinWavetable(string name, float[] wavetable)
+        => _builtinWavetables[name.ToLowerInvariant()] = wavetable;
 
     /// <summary>
     /// Phase 29 SPEC D-22 — guards <c>WavetableVariants.RegisterBuiltinVariants()</c>
@@ -276,12 +285,12 @@ public static class SynthesizerFactory
     /// </summary>
     public static void RegisterWavetable(string name, float[] wavetable)
     {
-        _customWavetables[name.ToLowerInvariant()] = wavetable;
+        Wavetables[name.ToLowerInvariant()] = wavetable;
     }
 
     /// <summary>
     /// Backward-compatible factory entry. Delegates to the cache-aware overload
-    /// using <see cref="FlowLang.Core.FlowEngine.CurrentSampleCache"/> so existing
+    /// using the current session's <see cref="RenderServices.SampleCache"/> so existing
     /// callers (every pre-Phase-29 site) keep working unchanged. Phase 29 Plan 03
     /// rewires the tonal synth classes to delegate to <c>SampledInstrumentRenderer</c>
     /// using the injected cache; the cache argument is accepted now so Plan 03 / 04
@@ -289,7 +298,7 @@ public static class SynthesizerFactory
     /// </summary>
     public static INoteSynthesizer Create(string synthType)
     {
-        return Create(synthType, FlowLang.Core.FlowEngine.CurrentSampleCache);
+        return Create(synthType, RenderServices.Current?.SampleCache);
     }
 
     /// <summary>
@@ -304,7 +313,8 @@ public static class SynthesizerFactory
         EnsureBuiltinVariantsRegistered();
         string key = synthType.ToLowerInvariant();
 
-        if (_customWavetables.TryGetValue(key, out var wavetable))
+        if (Wavetables.TryGetValue(key, out var wavetable)
+            || _builtinWavetables.TryGetValue(key, out wavetable))
             return new WavetableSynthesizer(wavetable);
 
         return key switch

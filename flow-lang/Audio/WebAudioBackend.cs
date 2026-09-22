@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.JavaScript;
+using FlowLang.Runtime;
 
 namespace FlowLang.Audio;
 
@@ -114,7 +115,7 @@ public sealed class WebAudioBackend : IAudioBackend
             {
                 // T-48-11 mitigation: log to stderr only — never bubble JS internals
                 // into composer-visible output.
-                Console.Error.WriteLine($"WebAudio: Failed to create AudioContext: {ex.Message}");
+                FlowConsole.Error.WriteLine($"WebAudio: Failed to create AudioContext: {ex.Message}");
                 _audioContext = null;
                 return false;
             }

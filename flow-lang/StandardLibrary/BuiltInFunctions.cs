@@ -24,7 +24,18 @@ public static class BuiltInFunctions
             ParameterNames: ["max"]);
         registry.Register("setMaxIterations", setMaxIterSignature, args =>
         {
-            context.MaxIterations = args[0].As<int>();
+            // Scripts may lower their loop limit freely but cannot raise it above the
+            // host's ceiling (EngineOptions.MaxIterationsCeiling).
+            int requested = args[0].As<int>();
+            int ceiling = context.Session.MaxIterationsCeiling;
+            if (requested > ceiling)
+            {
+                Diagnostics.RenderingDiagnostics.WarnOnce(
+                    $"budget-max-iterations:{requested}",
+                    $"[budget] setMaxIterations {requested} exceeds the host limit of {ceiling}; using {ceiling}");
+                requested = ceiling;
+            }
+            context.MaxIterations = requested;
             return Value.Void();
         });
 

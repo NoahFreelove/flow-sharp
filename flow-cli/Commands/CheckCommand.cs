@@ -41,13 +41,12 @@ internal static class CheckCommand
                 return 1;
             }
 
-            var originalOut = Console.Out;
             bool success;
             string? errorText = null;
             try
             {
-                Console.SetOut(TextWriter.Null);
-                using var engine = new FlowEngine(verbose: false);
+                // The script's own output is discarded through the engine's sink.
+                using var engine = new FlowEngine(new EngineOptions { Output = TextWriter.Null });
                 success = engine.Execute(source, script.FullName);
                 if (!success || engine.ErrorReporter.HasErrors)
                 {
@@ -59,10 +58,6 @@ internal static class CheckCommand
             {
                 errorText = $"Error executing script: {ex.Message}";
                 success = false;
-            }
-            finally
-            {
-                Console.SetOut(originalOut);
             }
 
             if (!success)

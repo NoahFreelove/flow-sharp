@@ -188,6 +188,7 @@ public static class PhaseVocoder
         // Walk analysis frames at hopSize stride across the input.
         for (int t = 0; t < input.Length; t += hopSize)
         {
+            RenderServices.Checkpoint();
             // Build analysis frame; zero-pad past end-of-input.
             for (int k = 0; k < frameSize; k++)
             {

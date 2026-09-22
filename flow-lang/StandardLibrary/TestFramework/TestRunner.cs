@@ -1,5 +1,6 @@
 using System;
 using FlowLang.Core;
+using FlowLang.Runtime;
 
 namespace FlowLang.StandardLibrary.TestFramework;
 
@@ -39,6 +40,8 @@ public class TestRunner
         if (filePath is null) throw new ArgumentNullException(nameof(filePath));
 
         int passed = 0, failed = 0;
+        // Test bodies evaluate in the engine's session (output, advisories, cancellation).
+        using var scope = engine.EnterScope();
         foreach (var test in engine.Context.TestRegistry)
         {
             var snapshot = engine.Context.SnapshotState();
@@ -56,7 +59,7 @@ public class TestRunner
                 }
                 else
                 {
-                    Console.WriteLine($"  PASS  {filePath}::{test.Name}");
+                    FlowConsole.Out.WriteLine($"  PASS  {filePath}::{test.Name}");
                     passed++;
                 }
             }
@@ -65,7 +68,7 @@ public class TestRunner
                 EmitFailLine(filePath, test.Name, ex.Message);
                 failed++;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 // Non-assertion exception bubbling out of the body is a FAIL
                 // with the exception type included for diagnosability —
@@ -92,7 +95,7 @@ public class TestRunner
         // codes are swallowed when stdout is not a terminal.
         bool useColor = !Console.IsOutputRedirected;
         if (useColor) Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine($"  FAIL  {filePath}::{testName}: {message}");
+        FlowConsole.Out.WriteLine($"  FAIL  {filePath}::{testName}: {message}");
         if (useColor) Console.ResetColor();
     }
 }

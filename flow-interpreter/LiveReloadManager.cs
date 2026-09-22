@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FlowLang.Audio;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
+using FlowLang.Hosting;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio;
 
@@ -53,9 +54,10 @@ public sealed record LiveBlockBuffer(int BlockId, float[] Bytes, int Length, int
 /// Phase 38 Plan 38-01 modernization (per CONTEXT D-38-05 / D-38-07 / D-38-08):
 /// <list type="bullet">
 /// <item><description>200ms debounce (down from 500ms — Pitfall #21).</description></item>
-/// <item><description>30s CancellationToken-equivalent wall-clock cap on each
-/// render via <c>Task.Run + Wait(TimeSpan)</c> (RESEARCH §E Option A; orphan
-/// workers past 30s leak — accepted per D-38-07, T-38-22).</description></item>
+/// <item><description>30s budget on each render, enforced by cooperative
+/// cancellation (<see cref="FlowEngine.Evaluate"/>); renders run as
+/// latest-request-wins jobs (<see cref="LatestRequestCoordinator{T}"/>), so a newer
+/// save cancels an older render and a timed-out render stops instead of leaking.</description></item>
 /// <item><description>Per-block pending-buffer dict
 /// (<see cref="LiveBlockBuffer"/>) replacing the prior single-field
 /// <c>_pendingBuffer</c> — Plan 38-02 fills this with real
@@ -67,9 +69,7 @@ public sealed record LiveBlockBuffer(int BlockId, float[] Bytes, int Length, int
 ///
 /// Phase 28/29/33 byte-identical determinism contract preserved for the
 /// whole-script swap path: <see cref="CheckBarBoundary"/> + <see cref="ApplyCrossfade"/> +
-/// <see cref="RenderScript"/> body are unchanged from the Phase 28 baseline
-/// (the <see cref="RenderScript"/> signature gains a new <c>out</c> param
-/// stubbed to <c>null</c> in Plan 38-01; Plan 38-02 will fill it).
+/// <see cref="RenderScript"/> evaluation are unchanged from the Phase 28 baseline.
 ///
 /// Class is no longer <c>sealed</c> so Phase 38 Wave 0 xUnit tests can subclass
 /// via the <see cref="OnRenderTriggered"/> testable seam to count debounce
@@ -84,12 +84,30 @@ public class LiveReloadManager : IDisposable
     public const int DebounceMs = 200;
 
     /// <summary>
-    /// Wall-clock cap on a single live re-render (D-38-07). Workers that
-    /// exceed this leak as orphans per RESEARCH §E Option A — accepted as a
-    /// tractable v1.5 tradeoff against the cost of a true cooperative
-    /// CancellationToken plumbing through <see cref="FlowEngine"/>.
+    /// Wall-clock budget for one live re-render (D-38-07). Enforced cooperatively by
+    /// <see cref="FlowEngine.Evaluate"/>: a render that exceeds it stops at its next
+    /// checkpoint and its engine is disposed; the previous version keeps playing.
     /// </summary>
     private static readonly TimeSpan RenderTimeout = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Latest-request-wins render jobs: a new save cancels the render in progress,
+    /// and only the newest render may replace the playing version.
+    /// </summary>
+    private readonly LatestRequestCoordinator<LiveRender> _renders = new();
+
+    /// <summary>
+    /// One advisory log for the whole watch session, shared by the engine each reload
+    /// creates, so one-shot advisories stay once per session rather than once per save.
+    /// </summary>
+    private readonly AdvisoryLog _advisories = new();
+
+    /// <summary>One render's output; owns the engine until the buffers are staged.</summary>
+    private sealed record LiveRender(
+        AudioBuffer? Buffer, MusicalContext? MusicalContext, string? Errors, FlowEngine? Engine) : IDisposable
+    {
+        public void Dispose() => Engine?.Dispose();
+    }
 
     private readonly string _filePath;
     private readonly string? _deviceName;
@@ -221,8 +239,11 @@ public class LiveReloadManager : IDisposable
         // call StagePendingBuffers (PRNG reset + stale-closure gate) before
         // disposing it. The initial render does not stage to _pendingPerBlock
         // (it sets _currentBuffer directly), so we just dispose the engine here.
-        var initialBuffer = RenderScript(_filePath, out var musicalContext, out var errors, out _, out var initialEngine);
-        initialEngine?.Dispose();
+        var initial = RenderScript(_filePath, _advisories, CancellationToken.None, out _);
+        initial.Dispose();
+        var initialBuffer = initial.Buffer;
+        var musicalContext = initial.MusicalContext;
+        var errors = initial.Errors;
 
         if (initialBuffer == null)
         {
@@ -539,147 +560,123 @@ public class LiveReloadManager : IDisposable
     }
 
     /// <summary>
-    /// Dispatches the actual render work on a background task, wrapped in the
-    /// 30s wall-clock cap per D-38-07 / RESEARCH §E Option A.
+    /// Submits a re-render as the newest job. Rendering runs on a background task
+    /// under the <see cref="RenderTimeout"/> budget; a newer save cancels it.
     /// </summary>
-    private void StartRenderTask()
+    private Task StartRenderTask()
     {
         // Allow file write to complete
         Thread.Sleep(100);
 
-        Task.Run(() =>
+        // sweep-0614: salt per-render dedup keys with a per-save sequence so
+        // later saves are not swallowed by dedup in plain-line mode.
+        long renderSeq = Interlocked.Increment(ref _renderSeq);
+        _panel?.PublishAdvisory(
+            "[watch] change detected, re-rendering...",
+            AdvisoryLevel.Info,
+            dedupKey: $"watch-rerender:{renderSeq}");
+
+        return _renders.Submit(token =>
         {
-            // Audit-0609 D2-minimal: declare renderEngine outside the try block
-            // so the catch block can dispose it on unexpected exceptions.
-            FlowEngine? renderEngine = null;
-
-            // sweep-0614: salt per-render dedup keys with a per-save sequence so
-            // the process-lifetime WarnOnce dedup doesn't swallow later saves in
-            // plain-line mode. Captured once per render task so the re-render
-            // notice and the parse-failure advisory below share the same save id.
-            long renderSeq = Interlocked.Increment(ref _renderSeq);
-
-            try
+            var render = RenderScript(_filePath, _advisories, token, out var outcome);
+            var status = outcome switch
             {
-                _panel?.PublishAdvisory(
-                    "[watch] change detected, re-rendering...",
-                    AdvisoryLevel.Info,
-                    dedupKey: $"watch-rerender:{renderSeq}");
+                EvaluationOutcome.TimedOut => JobStatus.TimedOut,
+                EvaluationOutcome.Cancelled => JobStatus.Cancelled,
+                _ when render.Buffer is null => JobStatus.Failed,
+                _ => JobStatus.Succeeded,
+            };
+            if (status is JobStatus.TimedOut or JobStatus.Cancelled)
+            {
+                render.Dispose();
+                return new JobResult<LiveRender>(status, null);
+            }
+            return new JobResult<LiveRender>(status, render, render.Errors);
+        }).ContinueWith(t => OnRenderCompleted(t.Result, renderSeq), TaskScheduler.Default);
+    }
 
-                AudioBuffer? capturedBuffer = null;
-                MusicalContext? musicalContext = null;
-                string? errors = null;
-                Dictionary<int, LiveBlockBuffer>? perBlockBuffers = null;
+    /// <summary>
+    /// Test seam: renders the current file exactly as a detected edit does and
+    /// completes once the outcome has been applied.
+    /// </summary>
+    protected internal Task RenderEditForTesting() => StartRenderTask();
 
-                // RESEARCH §E Option A: 30s wall-clock cap via Task.Run + Wait.
-                // Workers that exceed 30s leak as orphans — acceptable for v1.5
-                // per D-38-07; Plan 38-XX may revisit if HUMAN-UAT reports
-                // worker accumulation (T-38-22 documented).
-                //
-                // Audit-0609 D2-minimal: RenderScript now returns the live engine
-                // (ownership transferred to caller). The engine is disposed after
-                // StagePendingBuffers is called below.
-                var workerTask = Task.Run(() =>
-                {
-                    capturedBuffer = RenderScript(_filePath, out musicalContext, out errors, out perBlockBuffers, out renderEngine);
-                });
+    /// <summary>
+    /// Applies one render's outcome. Only the latest successful render is staged for
+    /// the bar-boundary swap; any failure keeps the previous version playing
+    /// (Pitfall #12 "live session never dies mid-set").
+    /// </summary>
+    private void OnRenderCompleted(JobCompletion<LiveRender> completion, long renderSeq)
+    {
+        var render = completion.Value;
+        try
+        {
+            switch (completion.Status)
+            {
+                case JobStatus.Succeeded:
+                    StageRender(render!);
+                    break;
 
-                if (!workerTask.Wait(RenderTimeout))
-                {
-                    // Phase 38 Plan 38-03 LIVE-02 — Timeout-revert path.
-                    // Aligns wording / level / dedup key with UI-SPEC line 330:
-                    //   body: "[live] evaluation timed out at 30s at line N — keeping previous version"
-                    //   level: Error (red, UI-SPEC line 99 destructive)
-                    //   dedup: "live-timeout:<line>"
-                    // The worker continues running in the background as an
-                    // orphan per RESEARCH §E Option A. KEEP previous buffer
-                    // (no swap) — Pitfall #12 "live session never dies
-                    // mid-set" lock.
-                    //
-                    // Line-N for the timed-out render — we don't know which
-                    // specific live { } block hung (the worker's already
-                    // detached), so we report line 1 as the file-scope
-                    // anchor. Future plans can thread per-block timeout
-                    // tracking; this v1.5 cut emits the locked wording at
-                    // the documented dedup format.
-                    // Audit-0609 D2-minimal: engine leaked as orphan on timeout
-                    // (same as the orphan worker — accepted per D-38-07).
-                    PublishTimeoutAdvisory(line: 1);
-                    return;
-                }
-
-                if (capturedBuffer == null)
-                {
-                    // Audit-0609 D2-minimal: dispose engine on non-null render
-                    // failure (parse error / no audio output).
-                    renderEngine?.Dispose();
-                    renderEngine = null;
-
-                    var msg = !string.IsNullOrEmpty(errors)
-                        ? $"[live] {errors} — keeping previous version"
+                case JobStatus.Failed:
+                    var msg = !string.IsNullOrEmpty(completion.Error)
+                        ? $"[live] {completion.Error} — keeping previous version"
                         : "[live] no audio output detected — keeping previous version";
                     PublishParseFailureAdvisory(msg, renderSeq);
-                    return;
-                }
+                    break;
 
-                // Store the pending musical context
-                Interlocked.Exchange(ref _pendingMusicalContext, musicalContext);
+                case JobStatus.TimedOut:
+                    // UI-SPEC line 330 wording and dedup key; the render has stopped.
+                    PublishTimeoutAdvisory(line: 1);
+                    break;
 
-                // Plan 38-01: wrap the single captured buffer in a dict with
-                // sentinel BlockId=0 (whole-script swap mode per D-38-01).
-                // Plan 38-02 will pass perBlockBuffers through unchanged when
-                // the AST visitor produces a non-null dict.
-                //
-                // Audit-0609 §5.7: SampleRate + Channels are carried INSIDE the
-                // LiveBlockBuffer so they are applied atomically in the streaming
-                // loop at the bar-boundary swap — NOT here on the render thread.
-                // Applying them here (as the original code did) caused the old
-                // buffer to stream at the wrong format until the swap fired.
-                var swap = new Dictionary<int, LiveBlockBuffer>
-                {
-                    [0] = new LiveBlockBuffer(
-                        BlockId: 0,
-                        Bytes: capturedBuffer.Data,
-                        Length: capturedBuffer.Data.Length,
-                        SampleRate: capturedBuffer.SampleRate,
-                        Channels: capturedBuffer.Channels),
-                };
-                // NOTE: _currentSampleRate / _currentChannels intentionally NOT
-                // updated here — they are updated at the bar-boundary swap below
-                // (Audit-0609 §5.7 fix).
-
-                // Audit-0609 D2-minimal: route through StagePendingBuffers so
-                // the whole-script swap path fires PrngRegistry.ResetAtRenderBoundary
-                // exactly once per swap and runs the stale-closure gate (a no-op
-                // for sentinel BlockId=0 since it has no LiveBlockRegistration).
-                // StagePendingBuffers owns the _pendingPerBlock write; we no
-                // longer set it directly.
-                if (renderEngine != null)
-                {
-                    var emptyBlocks = renderEngine.Context.LiveBlockRegistry.Snapshot();
-                    StagePendingBuffers(swap, renderEngine, emptyBlocks);
-                    renderEngine.Dispose();
-                    renderEngine = null;
-                }
-                else
-                {
-                    // Fallback: engine was null (shouldn't happen; defensive path).
-                    lock (_pendingLock)
-                    {
-                        _pendingPerBlock = swap;
-                    }
-                }
+                // Superseded / Cancelled: a newer render (or shutdown) replaced it.
             }
-            catch (Exception ex)
+        }
+        catch (Exception ex)
+        {
+            _panel?.PublishAdvisory(
+                $"[live] {ex.Message} — keeping previous version",
+                AdvisoryLevel.Error,
+                dedupKey: $"live-exception:{ex.GetType().Name}");
+        }
+        finally
+        {
+            render?.Dispose();
+        }
+    }
+
+    private void StageRender(LiveRender render)
+    {
+        var capturedBuffer = render.Buffer!;
+        Interlocked.Exchange(ref _pendingMusicalContext, render.MusicalContext);
+
+        // Whole-script swap mode (D-38-01): one buffer under sentinel BlockId=0.
+        // SampleRate + Channels travel inside LiveBlockBuffer and are applied at the
+        // bar-boundary swap in the streaming loop (Audit-0609 §5.7).
+        var swap = new Dictionary<int, LiveBlockBuffer>
+        {
+            [0] = new LiveBlockBuffer(
+                BlockId: 0,
+                Bytes: capturedBuffer.Data,
+                Length: capturedBuffer.Data.Length,
+                SampleRate: capturedBuffer.SampleRate,
+                Channels: capturedBuffer.Channels),
+        };
+
+        // StagePendingBuffers fires PrngRegistry.ResetAtRenderBoundary once per swap
+        // and runs the stale-closure gate before the engine is disposed.
+        if (render.Engine != null)
+        {
+            var blocks = render.Engine.Context.LiveBlockRegistry.Snapshot();
+            StagePendingBuffers(swap, render.Engine, blocks);
+        }
+        else
+        {
+            lock (_pendingLock)
             {
-                // Audit-0609 D2-minimal: dispose engine on unexpected exception.
-                renderEngine?.Dispose();
-                _panel?.PublishAdvisory(
-                    $"[live] {ex.Message} — keeping previous version",
-                    AdvisoryLevel.Error,
-                    dedupKey: $"live-exception:{ex.GetType().Name}");
+                _pendingPerBlock = swap;
             }
-        });
+        }
     }
 
     /// <summary>
@@ -990,33 +987,21 @@ public class LiveReloadManager : IDisposable
     /// Renders a script using a fresh FlowEngine in capture mode.
     /// Returns the captured AudioBuffer and extracted MusicalContext.
     ///
-    /// Plan 38-01: signature grew by a new <paramref name="perBlockBuffers"/>
-    /// <c>out</c> parameter (RESEARCH §F line 500) — Plan 38-02 fills it from
-    /// the <c>live { }</c> AST visitor; Plan 38-01 always emits <c>null</c>
-    /// (the orchestration wraps the captured buffer in a sentinel BlockId=0
-    /// dict on its own per D-38-01 whole-script swap).
-    ///
-    /// Audit-0609 D2-minimal: the <paramref name="engineOut"/> <c>out</c>
-    /// parameter returns the live (not-yet-disposed) FlowEngine so the caller
-    /// can pass it to <see cref="StagePendingBuffers"/> — which fires
-    /// <see cref="PrngRegistry.ResetAtRenderBoundary"/> + the stale-closure gate —
-    /// before disposing it. The caller MUST dispose <paramref name="engineOut"/>
-    /// after staging; this method no longer disposes it internally.
-    ///
-    /// BODY PRESERVED BYTE-IDENTICAL from the Phase 28 baseline (D-38-06) —
-    /// only the signature and disposal responsibility change.
+    /// Evaluates the script in a fresh capture-mode engine under the watch session's
+    /// advisory log, the job's cancellation token and the <see cref="RenderTimeout"/>
+    /// budget. The returned <see cref="LiveRender"/> owns the engine so the caller can
+    /// pass it to <see cref="StagePendingBuffers"/> (PRNG reset + stale-closure gate)
+    /// before disposing it.
     /// </summary>
-    private static AudioBuffer? RenderScript(
+    private static LiveRender RenderScript(
         string filePath,
-        out MusicalContext? musicalContext,
-        out string? errors,
-        out Dictionary<int, LiveBlockBuffer>? perBlockBuffers,
-        out FlowEngine? engineOut)
+        AdvisoryLog advisories,
+        CancellationToken cancellation,
+        out EvaluationOutcome outcome)
     {
-        musicalContext = null;
-        errors = null;
-        perBlockBuffers = null; // Plan 38-02 will fill from live{} AST visitor.
-        engineOut = null;
+        MusicalContext? musicalContext;
+        string? errors = null;
+        outcome = EvaluationOutcome.Failed;
 
         string source;
         try
@@ -1025,17 +1010,19 @@ public class LiveReloadManager : IDisposable
         }
         catch (IOException ex)
         {
-            errors = $"Could not read file: {ex.Message}";
-            return null;
+            return new LiveRender(null, null, $"Could not read file: {ex.Message}", null);
         }
 
-        // Audit-0609 D2-minimal: engine is NOT wrapped in a using block here;
-        // ownership is transferred to the caller (StartRenderTask or the initial
-        // Run() path) which disposes it after calling StagePendingBuffers.
-        var engine = new FlowEngine();
+        // The engine is owned by the returned LiveRender until the caller has staged
+        // its buffers; disposing the render disposes the engine.
+        var engine = new FlowEngine(new EngineOptions { Advisories = advisories });
         engine.AudioManager.CaptureMode = true;
 
-        engine.Execute(source, filePath);
+        outcome = engine.Evaluate(source, filePath, new EvaluationOptions
+        {
+            Cancellation = cancellation,
+            TimeLimit = RenderTimeout,
+        }).Outcome;
 
         // Audit-0609 §5.8: populate errors from the reporter when execute fails.
         // Before this fix, parse/eval failures left errors == null and the caller
@@ -1067,13 +1054,12 @@ public class LiveReloadManager : IDisposable
             }
         }
 
-        // Transfer ownership to caller — they call StagePendingBuffers then Dispose.
-        engineOut = engine;
-        return buffer;
+        return new LiveRender(buffer, musicalContext, errors, engine);
     }
 
     public void Dispose()
     {
+        _renders.Dispose();
         _cts?.Cancel();
 
         try

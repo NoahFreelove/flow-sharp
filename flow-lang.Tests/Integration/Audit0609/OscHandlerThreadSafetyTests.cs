@@ -83,7 +83,7 @@ end proc
         Assert.Equal(0, engine.Context.GlobalFrame.GetVariable("hits").As<int>());
 
         // Drain on the foreground (test) thread — NOW it runs.
-        int drained = OscFunctions.DrainPendingHandlers();
+        int drained = OscFunctions.DrainPendingHandlers(ctx);
         Assert.Equal(1, drained);
         Assert.Equal(1, engine.Context.GlobalFrame.GetVariable("hits").As<int>());
     }
@@ -152,11 +152,11 @@ end proc
         int totalDrained = 0;
         while (!all.IsCompleted || OscFunctions.PendingHandlerCountForTesting > 0)
         {
-            totalDrained += OscFunctions.DrainPendingHandlers();
+            totalDrained += OscFunctions.DrainPendingHandlers(ctx);
             Thread.Yield();
         }
         all.Wait(TimeSpan.FromSeconds(15));
-        totalDrained += OscFunctions.DrainPendingHandlers(); // final sweep
+        totalDrained += OscFunctions.DrainPendingHandlers(ctx); // final sweep
 
         Assert.Equal(total, enqueued);
         Assert.Equal(total, totalDrained);

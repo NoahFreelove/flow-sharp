@@ -272,7 +272,7 @@ public static class SfzBuiltins
     {
         if (ctx.ResolvedSfzRoot is not null) return ctx.ResolvedSfzRoot;
 
-        string? fromConfig = FlowConfig.Active?.SfzRoot;
+        string? fromConfig = (FlowLang.Runtime.SessionServices.Current?.Config ?? FlowConfig.Active)?.SfzRoot;
         if (string.IsNullOrEmpty(fromConfig))
         {
             // One-shot composer-facing advisory + throw. The advisory is

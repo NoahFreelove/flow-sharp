@@ -52,7 +52,7 @@ public static class VisualizationFunctions
         var sequence = args[0].Data as SequenceData;
         if (sequence == null || sequence.Bars.Count == 0)
         {
-            Console.WriteLine("(empty sequence)");
+            FlowConsole.Out.WriteLine("(empty sequence)");
             return Value.Void();
         }
 
@@ -105,7 +105,7 @@ public static class VisualizationFunctions
 
         if (noteEvents.Count == 0)
         {
-            Console.WriteLine("(no notes in sequence)");
+            FlowConsole.Out.WriteLine("(no notes in sequence)");
             return Value.Void();
         }
 
@@ -120,7 +120,7 @@ public static class VisualizationFunctions
 
         if (gridWidth <= 0 || gridHeight <= 0)
         {
-            Console.WriteLine("(sequence too short to visualize)");
+            FlowConsole.Out.WriteLine("(sequence too short to visualize)");
             return Value.Void();
         }
 
@@ -301,7 +301,7 @@ public static class VisualizationFunctions
         }
         sb.AppendLine();
 
-        Console.Write(sb.ToString());
+        FlowConsole.Out.Write(sb.ToString());
         return Value.Void();
     }
 
@@ -342,7 +342,7 @@ public static class VisualizationFunctions
         var buffer = args[0].As<AudioBuffer>();
         if (buffer.Frames == 0)
         {
-            Console.WriteLine("(empty buffer)");
+            FlowConsole.Out.WriteLine("(empty buffer)");
             return Value.Void();
         }
 
@@ -417,7 +417,7 @@ public static class VisualizationFunctions
         sb.Append(new string('-', width));
         sb.AppendLine("+");
         
-        Console.Write(sb.ToString());
+        FlowConsole.Out.Write(sb.ToString());
         return Value.Void();
     }
 

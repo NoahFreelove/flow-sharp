@@ -9,7 +9,19 @@ namespace FlowLang.StandardLibrary.Audio.Vocalization;
 /// </summary>
 public static class TtsHook
 {
-    private static string _ttsCommand = "espeak-ng --stdout";
+    private const string DefaultCommand = "espeak-ng --stdout";
+
+    // The command is session state (set by a script); outside a session it is
+    // process-wide as before.
+    private sealed class TtsSettings { public string Command = DefaultCommand; }
+    private static readonly TtsSettings _fallback = new();
+    private static TtsSettings Settings =>
+        FlowLang.Runtime.SessionServices.Current?.GetOrAdd(() => new TtsSettings()) ?? _fallback;
+    private static string _ttsCommand
+    {
+        get => Settings.Command;
+        set => Settings.Command = value;
+    }
 
     /// <summary>
     /// Sets the external TTS command. The first token is the executable,

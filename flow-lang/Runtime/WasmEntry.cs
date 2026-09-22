@@ -58,12 +58,8 @@ public sealed class RunResult
 /// <c>"parse" | "eval" | "runtime" | "cancel" | "platform-not-supported"</c>.
 /// </summary>
 /// <remarks>
-/// The <c>"cancel"</c> kind remains DEFINED in the D-48-14 contract (field
-/// names + kinds are PINNED — JS and tests parse them directly), but it is
-/// NOT raised by <see cref="WasmEntry.RunFromJs"/> in single-threaded WASM:
-/// the D-48-10 hard 30s wall-clock cap is unenforceable by blocking on a
-/// single-threaded runtime (see <see cref="WasmEntry"/> remarks for the
-/// debug-session amendment).
+/// <c>"cancel"</c> is raised when a run exceeds the D-48-10 30s budget, which
+/// is enforced cooperatively (see <see cref="WasmEntry"/> remarks).
 /// </remarks>
 /// <param name="Kind">Error category (see remarks above).</param>
 /// <param name="Message">Human-readable message; no .NET stack traces leak
@@ -138,31 +134,19 @@ internal partial class FlowWasmJsonContext : JsonSerializerContext
 /// boundary — the JS side sees structured errors in <see cref="RunResult.Errors"/>,
 /// never raw .NET internals.</para>
 ///
-/// <para>D-48-15 stdout/stderr split: <see cref="RunFromJs"/> redirects
-/// both streams to per-call <see cref="StringWriter"/> sinks via
-/// <see cref="Console.SetOut"/> / <see cref="Console.SetError"/>, then restores
-/// the prior streams in a <c>finally</c> block (T-48-14 mitigation —
-/// restoration guaranteed even on exception path).</para>
+/// <para>D-48-15 stdout/stderr split: <see cref="RunFromJs"/> gives each run's
+/// engine per-call <see cref="StringWriter"/> sinks (<see cref="EngineOptions.Output"/>
+/// and <see cref="EngineOptions.Diagnostics"/>); the process console is never
+/// redirected.</para>
 ///
-/// <para><b>D-48-10 30-second wall-clock cap — AMENDED (debug session
-/// wasm-boot-no-app-bundle, cycle 3, 2026-05-30):</b> the cap is a HARD wall
-/// on Desktop only and is <b>best-effort (non-preemptive) in single-threaded
-/// WASM</b>. <see cref="RunFromJs"/> calls <see cref="FlowEngine.Execute"/>
-/// <b>synchronously on the calling (main) thread</b>. The previous
-/// <c>Task.Run + Wait(TimeSpan.FromSeconds(30))</c> shape (Pattern C, carried
-/// over from Phase 38 LIVE-02 where a real Desktop thread pool exists)
-/// DEADLOCKS under Mono-WASM, which is single-threaded by default
-/// (dotnet/runtime#85592): <c>Task.Run</c> queues the work to the one main
-/// thread and <c>Wait</c> then blocks that same thread, so <c>Execute</c> never
-/// runs and every call timed out at exactly 30s. A hard cap is fundamentally
-/// unenforceable by blocking in a single-threaded runtime (no preemption). The
-/// accepted tradeoff: a runaway Flow script hangs its own browser tab exactly
-/// like any synchronous single-threaded JS — the composer controls their own
-/// script, this matches the browser execution model, and ergonomics-first wins.
-/// The <c>"cancel"</c> RunError kind stays DEFINED in the D-48-14 contract
-/// (field names + kinds are PINNED) but is no longer raised here. The Plan
-/// 48-07 closer / 48-VERIFICATION.md should record D-48-10 as "hard cap on
-/// Desktop, best-effort (synchronous, non-preemptive) in single-threaded WASM".</para>
+/// <para><b>D-48-10 30-second cap:</b> <see cref="RunFromJs"/> evaluates
+/// <b>synchronously on the calling (main) thread</b>; Mono-WASM is single-threaded,
+/// and blocking on a worker task deadlocks it (dotnet/runtime#85592). The cap is
+/// enforced cooperatively instead: <see cref="FlowEngine.Evaluate"/> checks a
+/// deadline at every loop iteration, call and render chunk, which needs neither
+/// preemption nor a timer callback. A run past <see cref="RunTimeLimit"/> stops and
+/// reports a <c>"cancel"</c> RunError. (Native code that never reaches a checkpoint
+/// can still hang the tab; no current builtin does.)</para>
 ///
 /// <para>D-48-09 contract: <see cref="RunFromJs"/> does NOT call
 /// <c>resumeContext</c> on the AudioContext. The autoplay-policy
@@ -174,6 +158,9 @@ internal partial class FlowWasmJsonContext : JsonSerializerContext
 public static partial class WasmEntry
 {
     private static readonly object _lock = new();
+
+    /// <summary>D-48-10 per-run budget. Tests shorten it; the browser uses 30s.</summary>
+    internal static TimeSpan RunTimeLimit { get; set; } = TimeSpan.FromSeconds(30);
     private static WebAudioBackend? _sharedBackend;
     private static FlowEngine? _sharedEngine;
 
@@ -202,7 +189,7 @@ public static partial class WasmEntry
     /// stdlib bindings the constructor loads, so fresh-engine-per-run is the
     /// correct (and cheapest-to-reason-about) reset path.
     /// </summary>
-    private static FlowEngine NewEngineForRun()
+    private static FlowEngine NewEngineForRun(TextWriter output, TextWriter diagnostics)
     {
         lock (_lock)
         {
@@ -212,7 +199,7 @@ public static partial class WasmEntry
                 catch (Exception ex) { Console.Error.WriteLine($"[runtime] engine recycle: {ex.Message}"); }
                 _sharedEngine = null;
             }
-            _sharedEngine = new FlowEngine(verbose: false);
+            _sharedEngine = new FlowEngine(new EngineOptions { Output = output, Diagnostics = diagnostics });
             return _sharedEngine;
         }
     }
@@ -264,9 +251,8 @@ public static partial class WasmEntry
     /// in <see cref="RunFromJs"/> emits kind=<c>"runtime"</c> for uncaught
     /// host-side exceptions; kind=<c>"parse"</c> is reserved for future
     /// per-stage tagging when the ErrorReporter grows a category field (v1.6
-    /// backlog). kind=<c>"cancel"</c> stays DEFINED in the D-48-14 contract but
-    /// is no longer raised — the 30s cap is non-preemptive in single-threaded
-    /// WASM (see <see cref="WasmEntry"/> remarks, debug-session amendment).
+    /// backlog). kind=<c>"cancel"</c> reports a run stopped by the D-48-10 budget
+    /// (added by <see cref="RunFromJs"/>, not by this mapping).
     /// </remarks>
     private static RunError[] MapFlowErrors(IEnumerable<FlowError> errors, SourceMap? sourceMap = null)
     {
@@ -335,12 +321,9 @@ public static partial class WasmEntry
     /// the JS caller ALWAYS receives a valid JSON string.
     /// </summary>
     /// <remarks>
-    /// Runs <see cref="FlowEngine.Execute"/> SYNCHRONOUSLY on the calling
-    /// thread. Mono-WASM is single-threaded by default, so offloading to a
-    /// worker task and blocking on it (the prior Pattern C shape) deadlocks —
-    /// see the <see cref="WasmEntry"/> D-48-10 amendment. The 30s wall-clock cap
-    /// is therefore best-effort / non-preemptive in-browser (a runaway script
-    /// hangs its own tab, exactly like synchronous single-threaded JS).
+    /// Runs <see cref="FlowEngine.Evaluate"/> SYNCHRONOUSLY on the calling
+    /// thread (Mono-WASM is single-threaded). The D-48-10 30s cap is enforced by
+    /// cooperative deadline checks; a run that exceeds it reports kind <c>"cancel"</c>.
     /// </remarks>
     /// <param name="source">Flow source code (composer-authored).</param>
     /// <returns>JSON-serialized <see cref="RunResult"/> with camelCase property
@@ -352,102 +335,73 @@ public static partial class WasmEntry
         var stdoutCapture = new StringWriter();
         var stderrCapture = new StringWriter();
 
-        // sweep-0614 regression-wasm-determinism: build the FRESH per-run engine
-        // BEFORE redirecting Console. NewEngineForRun re-runs the full @std +
-        // style-pack bootstrap (a non-trivial amount of work); the constructor
-        // emits ZERO Console.Out/Error output the run needs to capture (verified —
-        // ctor stdout/stderr length is 0). Keeping that bootstrap OUTSIDE the
-        // Console-redirect window shrinks the window to just engine.Execute, so
-        // the process-global Console.SetOut/SetError redirect is held for the
-        // minimum time — narrowing the cross-test race that an in-window bootstrap
-        // (the 1f31a5e shape) widened enough to flip RunResult stdout/stderr to
-        // empty under a parallel runner (D-48-16 two-run cmp-clean). The
-        // assembly-level parallelizeTestCollections=false in the test project is
-        // the hard guarantee; this is the defense-in-depth narrowing.
+        // Each run gets a fresh engine whose session sinks capture print output and
+        // advisories directly: no process-global Console redirection, and advisory
+        // deduplication is per engine, so two runs of the same source produce the
+        // same stderr (D-48-16).
         FlowEngine engine;
         Exception? engineBuildError = null;
-        try { engine = NewEngineForRun(); }
+        try { engine = NewEngineForRun(stdoutCapture, stderrCapture); }
         catch (Exception ex)
         {
-            // Engine construction failed before any redirect — surface as a
-            // structured runtime error without ever having touched Console.
             engine = null!;
             engineBuildError = ex;
         }
-
-        var prevOut = Console.Out;
-        var prevErr = Console.Error;
-
-        Console.SetOut(stdoutCapture);
-        Console.SetError(stderrCapture);
-
-        // §5.4 two-run cmp-clean: clear any MIDI bytes from a previous run
-        // BEFORE execution so the sink always reflects THIS run only.
-        FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink();
-
-        // sweep-0614 wasm-web (D-48-16): WarnOnce dedups on a process-static set.
-        // The long-lived WASM runtime would suppress an advisory on the SECOND
-        // run of identical source — so RunResult.stderr would DIFFER across two
-        // runs, breaking the "same source → byte-identical RunResult" contract.
-        // Reset per-run (mirrors the per-run MIDI-sink drain above) so the
-        // advisory channel is run-scoped, not process-scoped.
-        FlowLang.Diagnostics.RenderingDiagnostics.ResetForTesting();
 
         RunError[] errors;
         byte[]? midiBytes;
         try
         {
-            try
+            if (engineBuildError != null)
+                throw engineBuildError;
+            // sweep-0614 wasm-web: a FRESH engine per run gives a clean
+            // GlobalFrame + empty SectionRegistry for this run's top-level
+            // declarations (built above). A reused
+            // engine threw "already declared" on the second run of any
+            // declaring script (the common edit→Run loop).
+            // D-48-10: run SYNCHRONOUSLY on the calling thread (Mono-WASM is
+            // single-threaded; blocking on a worker deadlocks). The budget is a
+            // deadline checked at evaluation checkpoints, so it holds without
+            // preemption or timers.
+            var evaluation = engine.Evaluate(source ?? string.Empty, WasmSourceKey,
+                new EvaluationOptions { TimeLimit = RunTimeLimit });
+            // sweep-0614 wasm-web: thread the engine SourceMap so parse /
+            // runtime errors carry the quoted source line for the
+            // playground's Rust-style diagnostic box (D-48-14).
+            errors = MapFlowErrors(engine.ErrorReporter.Errors, engine.SourceMap)
+                .Concat(MapDiagnostics(engine.ErrorReporter.Diagnostics, engine.SourceMap))
+                .ToArray();
+            if (evaluation.Outcome == EvaluationOutcome.TimedOut)
             {
-                if (engineBuildError != null)
-                    throw engineBuildError;
-                // sweep-0614 wasm-web: a FRESH engine per run gives a clean
-                // GlobalFrame + empty SectionRegistry for this run's top-level
-                // declarations (built above, outside the Console window). A reused
-                // engine threw "already declared" on the second run of any
-                // declaring script (the common edit→Run loop).
-                // D-48-10 (AMENDED, debug session wasm-boot-no-app-bundle cycle 3):
-                // run SYNCHRONOUSLY on the calling thread. Mono-WASM is single-
-                // threaded by default — the prior Task.Run + Wait(30s) shape
-                // deadlocked (Task.Run queues to the one main thread, Wait then
-                // blocks it, so Execute never ran → every call timed out at 30s).
-                // The hard 30s cap is unenforceable without preemption; in-browser
-                // it is best-effort (a runaway script hangs its own tab, like any
-                // synchronous single-threaded JS). The "cancel" RunError kind stays
-                // DEFINED (D-48-14 contract) but is no longer raised here.
-                engine.Execute(source ?? string.Empty, WasmSourceKey);
-                // sweep-0614 wasm-web: thread the engine SourceMap so parse /
-                // runtime errors carry the quoted source line for the
-                // playground's Rust-style diagnostic box (D-48-14).
-                errors = MapFlowErrors(engine.ErrorReporter.Errors, engine.SourceMap)
-                    .Concat(MapDiagnostics(engine.ErrorReporter.Diagnostics, engine.SourceMap))
-                    .ToArray();
-            }
-            catch (Exception ex)
-            {
-                // T-48-15 mitigation: only ex.Message — no stack traces leak.
-                errors = new[]
-                {
-                    new RunError(
-                        Kind: "runtime",
-                        Message: ex.Message ?? ex.GetType().Name,
+                // The engine's location-less budget error becomes the D-48-14 "cancel" kind.
+                errors = errors
+                    .Where(e => !(e.Line is null && e.Message.StartsWith("evaluation exceeded", StringComparison.Ordinal)))
+                    .Append(new RunError(
+                        Kind: "cancel",
+                        Message: $"evaluation stopped after its {RunTimeLimit.TotalSeconds:0.###}s time limit",
                         Line: null,
                         Column: null,
-                        SourceSnippet: null),
-                };
+                        SourceSnippet: null))
+                    .ToArray();
             }
         }
-        finally
+        catch (Exception ex)
         {
-            // T-48-14 mitigation: stream restoration ALWAYS runs, even on
-            // exception path. Without this an internal throw would leave the
-            // process-wide Console.Out pointed at our StringWriter forever.
-            Console.SetOut(prevOut);
-            Console.SetError(prevErr);
+            // T-48-15 mitigation: only ex.Message — no stack traces leak.
+            errors = new[]
+            {
+                new RunError(
+                    Kind: "runtime",
+                    Message: ex.Message ?? ex.GetType().Name,
+                    Line: null,
+                    Column: null,
+                    SourceSnippet: null),
+            };
         }
 
-        // §5.4 — drain after Execute so midi is set for THIS run.
-        midiBytes = FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink();
+        // §5.4 — MIDI written by THIS run's engine (its RenderServices sink).
+        midiBytes = engine is null ? null
+            : FlowLang.StandardLibrary.Audio.MidiExport.DrainInMemorySink(engine.RenderServices);
 
         // sweep-0614 wasm-web: cache for GetLastMidiBytes() so the JS consumer
         // can pull a REAL Uint8Array. System.Text.Json serializes the Midi byte[]

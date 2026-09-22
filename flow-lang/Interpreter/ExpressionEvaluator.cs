@@ -587,6 +587,8 @@ public class ExpressionEvaluator
             _context.CallerStrictMode = _context.StrictMode;
             try
             {
+                // Cancellation checkpoint: every builtin call.
+                _context.Session.ThrowIfCancelled();
                 // Call internal implementation
                 return overload.Implementation!(argValues);
             }

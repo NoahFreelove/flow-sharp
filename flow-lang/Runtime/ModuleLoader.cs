@@ -305,7 +305,7 @@ public class ModuleLoader
             _diagnosticOutput?.WriteLine($"[verbose] Loaded module: {resolvedPath}");
             return ModuleLoadResult.Loaded;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _diagnosticOutput?.WriteLine($"[verbose] Failed to load module: {resolvedPath} - {ex.Message}");
             _errorReporter.ReportError($"Error loading module {resolvedPath}: {ex.Message}", errorLocation);

@@ -182,7 +182,7 @@ public static class InputFunctions
         //     Composer's `live` session continues to play (Pitfall #12).
         if (rawSamples is null)
         {
-            Console.Error.WriteLine($"[audio-in] capture failed at duration {durationSeconds}s — returning silent buffer");
+            FlowConsole.Error.WriteLine($"[audio-in] capture failed at duration {durationSeconds}s — returning silent buffer");
             int silentFrames = (int)(durationSeconds * TargetSampleRate);
             return new AudioBuffer(silentFrames, channels, TargetSampleRate);
         }
@@ -243,14 +243,14 @@ public static class InputFunctions
             if (!backend.Initialize(out var initError))
             {
                 if (initError is not null)
-                    Console.Error.WriteLine($"[audio-in] {initError}");
+                    FlowConsole.Error.WriteLine($"[audio-in] {initError}");
                 return null;
             }
             nativeRate = backend.SampleRate;
             int totalFrames = (int)(durationSeconds * nativeRate);
             var samples = backend.CaptureSamples(totalFrames, out var captureError);
             if (samples is null && captureError is not null)
-                Console.Error.WriteLine($"[audio-in] {captureError}");
+                FlowConsole.Error.WriteLine($"[audio-in] {captureError}");
             return samples;
         }
         finally

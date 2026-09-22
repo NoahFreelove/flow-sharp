@@ -1,6 +1,6 @@
+using System.Runtime.ExceptionServices;
 using FlowLang.Ast;
 using FlowLang.Interpreter;
-using System.Threading;
 
 namespace FlowLang.Runtime;
 
@@ -8,37 +8,59 @@ namespace FlowLang.Runtime;
 /// Represents a deferred computation that can be forced to produce a value.
 /// Caches both successful values and exceptions; re-throws cached exceptions
 /// with the original stack trace preserved (ExceptionDispatchInfo semantics).
+/// Cancellation is never cached: a thunk interrupted by a cancelled or timed-out
+/// evaluation is evaluated afresh the next time it is forced.
 /// </summary>
 public class Thunk
 {
-    private readonly Lazy<Value> _lazy;
+    private readonly Expression _expression;
+    private readonly ExpressionEvaluator _evaluator;
+    private readonly object _gate = new();
+    private Value? _value;
+    private ExceptionDispatchInfo? _error;
+    private bool _evaluating;
 
     public Thunk(Expression expression, ExpressionEvaluator evaluator)
     {
-        if (expression == null) throw new ArgumentNullException(nameof(expression));
-        if (evaluator == null) throw new ArgumentNullException(nameof(evaluator));
-
-        // ExecutionAndPublication is the default for Lazy<T>(Func<T>).
-        // Specifying it explicitly documents intent and guards against a
-        // future .NET runtime changing the default mode.
-        //
-        // Lazy<T> internally uses ExceptionDispatchInfo.Capture + .Throw()
-        // to cache and rethrow exceptions thrown by the factory, preserving
-        // the original stack trace on every subsequent .Value access.
-        // This satisfies both:
-        //   - D-05 (ExceptionDispatchInfo stack preservation)
-        //   - D-06 (thread-safe memoization)
-        _lazy = new Lazy<Value>(
-            () => evaluator.Evaluate(expression),
-            LazyThreadSafetyMode.ExecutionAndPublication);
+        _expression = expression ?? throw new ArgumentNullException(nameof(expression));
+        _evaluator = evaluator ?? throw new ArgumentNullException(nameof(evaluator));
     }
 
     /// <summary>
     /// Forces evaluation. Returns the cached value if already evaluated.
     /// If the evaluator threw on first access, re-throws the same exception
-    /// with the original stack trace preserved.
+    /// with the original stack trace preserved. Thread-safe: concurrent callers
+    /// wait for one evaluation.
     /// </summary>
-    public Value Force() => _lazy.Value;
+    public Value Force()
+    {
+        lock (_gate)
+        {
+            if (_value is not null) return _value;
+            _error?.Throw();
+            if (_evaluating)
+                throw new InvalidOperationException("A lazy value depends on itself.");
+            _evaluating = true;
+            try
+            {
+                _value = _evaluator.Evaluate(_expression);
+                return _value;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _error = ExceptionDispatchInfo.Capture(ex);
+                throw;
+            }
+            finally
+            {
+                _evaluating = false;
+            }
+        }
+    }
 
-    public bool IsEvaluated => _lazy.IsValueCreated;
+    public bool IsEvaluated => _value is not null;
 }

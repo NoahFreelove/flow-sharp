@@ -60,7 +60,7 @@ public static class BufferPrinter
         var buf = args[0].As<AudioBuffer>();
         if (buf.Frames == 0)
         {
-            Console.WriteLine("(empty buffer)");
+            FlowConsole.Out.WriteLine("(empty buffer)");
             return Value.Void();
         }
 
@@ -96,7 +96,7 @@ public static class BufferPrinter
         header.AppendLine($"  duration    : {durationSeconds:F3} s");
         header.AppendLine($"  peak        : {peak:F4} ({peakDb} dBFS)");
         header.AppendLine($"  rms         : {rms:F4}  ({rmsDb} dBFS)");
-        Console.Write(header.ToString());
+        FlowConsole.Out.Write(header.ToString());
 
         // ----- 60-column ASCII waveform ---------------------------------------
         // Mirrors the shape of VisualizationFunctions.VisualizeBuffer but smaller
@@ -172,7 +172,7 @@ public static class BufferPrinter
                 wf.Append(grid[r, c]);
             wf.AppendLine("|");
         }
-        Console.Write(wf.ToString());
+        FlowConsole.Out.Write(wf.ToString());
 
         return Value.Void();
     }
@@ -187,7 +187,7 @@ public static class BufferPrinter
         var buf = args[0].As<AudioBuffer>();
         if (buf.Frames == 0)
         {
-            Console.WriteLine("(empty buffer)");
+            FlowConsole.Out.WriteLine("(empty buffer)");
             return Value.Void();
         }
 
@@ -215,7 +215,7 @@ public static class BufferPrinter
 
         if (buf.Frames == 0)
         {
-            Console.WriteLine("(empty buffer)");
+            FlowConsole.Out.WriteLine("(empty buffer)");
             return Value.Void();
         }
 
@@ -232,7 +232,7 @@ public static class BufferPrinter
         if (offset < 0) offset = 0;
         if (offset >= bytes.Length)
         {
-            Console.WriteLine("(empty slice)");
+            FlowConsole.Out.WriteLine("(empty slice)");
             return Value.Void();
         }
         if (length < 0) length = 0;
@@ -254,7 +254,7 @@ public static class BufferPrinter
         {
             // Even an empty slice prints the trailing offset line so callers
             // can always count rows.
-            Console.WriteLine($"{absoluteOffset:x8}");
+            FlowConsole.Out.WriteLine($"{absoluteOffset:x8}");
             return;
         }
 
@@ -305,7 +305,7 @@ public static class BufferPrinter
         sb.Append(endOffset.ToString("x8"));
         sb.AppendLine();
 
-        Console.Write(sb.ToString());
+        FlowConsole.Out.Write(sb.ToString());
     }
 
     /// <summary>

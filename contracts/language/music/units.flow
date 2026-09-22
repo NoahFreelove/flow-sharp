@@ -1,6 +1,7 @@
 // contract: music.units
 // status: preserve
 // rationale: Unit literals are typed values; kHz canonicalizes to Hz at lex time.
+//    Unit values format their number like plain doubles (10 significant digits).
 use "@std"
 (print (str 100ms))
 (print (str 2.5s))
@@ -9,3 +10,6 @@ use "@std"
 (print (str -6dB))
 (print (str +2st))
 (print (str +50c))
+(print (str (div 2s 3)))
+(print (str (div 1000Hz 3)))
+(print (str (div 100.0 3)))

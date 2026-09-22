@@ -116,6 +116,7 @@ public static class GranularEngine
         // Both draws span [-1, +1] (rescaled from PrngRegistry's [0, 1) draw).
         for (int t = 0; t < frames; t += grainPeriodSamples)
         {
+            RenderServices.Checkpoint();
             double offsetDraw = prng.NextDouble(site, "granular_offset") * 2.0 - 1.0;
             double timeDraw = prng.NextDouble(site, "granular_timing") * 2.0 - 1.0;
 

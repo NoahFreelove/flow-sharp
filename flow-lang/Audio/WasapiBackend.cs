@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using NAudio.CoreAudioApi;
 using NAudio.Wave;
+using FlowLang.Runtime;
 
 namespace FlowLang.Audio;
 
@@ -111,7 +112,7 @@ internal sealed class WasapiBackend : IAudioBackend
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"WASAPI: initialization failed: {ex.Message}");
+                FlowConsole.Error.WriteLine($"WASAPI: initialization failed: {ex.Message}");
                 CloseOutput();
                 return false;
             }
@@ -298,7 +299,7 @@ internal sealed class WasapiBackend : IAudioBackend
         // Runtime device switching would require reconstructing WasapiOut bound to a
         // specific MMDevice. Not supported for v1.5 — match Pulse/CoreAudio: composer
         // uses Windows Sound settings to change the default output device.
-        Console.Error.WriteLine(
+        FlowConsole.Error.WriteLine(
             "WASAPI backend does not support runtime device switching. " +
             "Use Windows Sound settings to change the default output device.");
         return false;

@@ -14,12 +14,16 @@ namespace FlowLang.StandardLibrary.Audio;
 /// </summary>
 public static class Timeline
 {
-    // ===== BPM Context (thread-local state) =====
-    [ThreadStatic] private static double? _currentBPM;
+    // ===== BPM Context (session state; per thread outside a session) =====
+    [ThreadStatic] private static double? _fallbackBPM;
     private static double CurrentBPM
     {
-        get => _currentBPM ?? 120.0;
-        set => _currentBPM = value;
+        get => (RenderServices.Current is { } render ? render.TimelineBpm : _fallbackBPM) ?? 120.0;
+        set
+        {
+            if (RenderServices.Current is { } render) render.TimelineBpm = value;
+            else _fallbackBPM = value;
+        }
     }
 
     /// <summary>

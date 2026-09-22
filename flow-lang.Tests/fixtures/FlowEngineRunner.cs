@@ -7,17 +7,15 @@ public sealed class FlowEngineRunner : IDisposable
 {
     private readonly StringWriter _stdout = new();
     private readonly StringWriter _stderr = new();
-    private readonly TextWriter _origOut;
-    private readonly TextWriter _origErr;
     private readonly FlowEngine _engine;
 
+    /// <summary>
+    /// Captures the engine's print output and advisories through its session sinks
+    /// (no process-console redirection).
+    /// </summary>
     public FlowEngineRunner(bool verbose = false)
     {
-        _origOut = Console.Out;
-        _origErr = Console.Error;
-        Console.SetOut(_stdout);
-        Console.SetError(_stderr);
-        _engine = new FlowEngine(verbose);
+        _engine = new FlowEngine(new EngineOptions { Output = _stdout, Diagnostics = _stderr, Verbose = verbose });
     }
 
     public (bool Success, string Stdout, string Stderr, int ErrorCount) RunFile(string path)
@@ -72,7 +70,5 @@ public sealed class FlowEngineRunner : IDisposable
     public void Dispose()
     {
         _engine.Dispose();
-        Console.SetOut(_origOut);
-        Console.SetError(_origErr);
     }
 }

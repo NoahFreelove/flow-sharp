@@ -9,13 +9,13 @@ namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 /// CC0 bell sample (C5 only — single mf velocity layer). Varispeed reach for
 /// bell notes ranges up to ±12 semitones in worst case (see RESEARCH Pitfall 3 +
 /// Open Question #2). Bell's inharmonic timbre is forgiving of varispeed shift.
-/// Fallback: silent if CurrentSampleCache is null.
+/// Fallback: silent if the session has no sample cache (RenderServices.Current is null).
 /// </summary>
 public class BellSynthesizer : INoteSynthesizer
 {
     public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
-        var cache = FlowEngine.CurrentSampleCache;
+        var cache = RenderServices.Current?.SampleCache;
         if (cache == null || !cache.HasInstrument("bell"))
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 

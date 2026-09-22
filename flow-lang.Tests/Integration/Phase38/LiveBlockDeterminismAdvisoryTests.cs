@@ -43,9 +43,12 @@ public class LiveBlockDeterminismAdvisoryTests : IDisposable
     [Fact]
     public void EnterLiveBlock_EmitsDV15_07AdvisoryOncePerLine()
     {
+        // Engines of one logical session share an advisory log (as watch-mode
+        // reloads do); unshared engines each show the advisory once.
+        var sharedAdvisories = new FlowLang.Runtime.AdvisoryLog();
         var source = "live 1bar { (print \"hi\") }";
 
-        using var engine = new FlowLang.Core.FlowEngine();
+        using var engine = new FlowLang.Core.FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
         var ok = engine.Execute(source, "<test>");
         Assert.True(ok, "FlowEngine.Execute should succeed");
 
@@ -66,7 +69,7 @@ public class LiveBlockDeterminismAdvisoryTests : IDisposable
         // Re-execute the SAME source in the SAME process. The WarnOnce sentinel
         // `live-determinism-optout:<line>` must dedup the advisory — the captured
         // stderr should STILL contain exactly one such advisory line.
-        using var engine2 = new FlowLang.Core.FlowEngine();
+        using var engine2 = new FlowLang.Core.FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
         var ok2 = engine2.Execute(source, "<test>");
         Assert.True(ok2);
 

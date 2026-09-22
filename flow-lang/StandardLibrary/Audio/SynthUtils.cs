@@ -16,15 +16,22 @@ public static class SynthUtils
     // sample bytes never matched between renders. Decorrelation across
     // samples within one render still holds; the seed simply pins the
     // sequence so two renderSong calls produce byte-identical buffers.
-    private const int SynthNoiseSeed = 0x55EED;
-    private static Random Rng = new Random(SynthNoiseSeed);
+    // The RNG belongs to the session's RenderServices so concurrent engines do not
+    // share (or corrupt) one Random; outside a session each thread has its own.
+    [ThreadStatic] private static Random? _fallbackRng;
+    private static Random Rng => RenderServices.Current?.NoiseRng
+        ?? (_fallbackRng ??= new Random(RenderServices.SynthNoiseSeed));
 
     /// <summary>
     /// Resets the white-noise RNG to its fixed seed. Called by SongRenderer at
     /// the start of every <c>renderSong</c> so that consecutive renders of the
     /// same Song produce byte-identical buffers (Plan 15-05 ROADMAP #2).
     /// </summary>
-    public static void ResetNoiseRng() => Rng = new Random(SynthNoiseSeed);
+    public static void ResetNoiseRng()
+    {
+        if (RenderServices.Current is { } render) render.ResetNoiseRng();
+        else _fallbackRng = new Random(RenderServices.SynthNoiseSeed);
+    }
 
     /// <summary>
     /// Converts a beat duration to seconds given a BPM.

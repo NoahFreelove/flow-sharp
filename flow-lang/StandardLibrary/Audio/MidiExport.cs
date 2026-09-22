@@ -36,8 +36,19 @@ public static class MidiExport
     // cmp-clean contract is preserved because the slot is drained by
     // DrainInMemorySink() at the start of every RunFromJs call.
     // -----------------------------------------------------------------------
+    // Session-owned (RenderServices.LastMidiBytes); per thread outside a session.
     [ThreadStatic]
-    private static byte[]? _inMemorySink;
+    private static byte[]? _fallbackSink;
+
+    private static byte[]? InMemorySink
+    {
+        get => RenderServices.Current is { } render ? render.LastMidiBytes : _fallbackSink;
+        set
+        {
+            if (RenderServices.Current is { } render) render.LastMidiBytes = value;
+            else _fallbackSink = value;
+        }
+    }
 
     /// <summary>
     /// Returns the SMF bytes captured by the most recent <c>writeMidi</c>
@@ -52,10 +63,16 @@ public static class MidiExport
     /// from a previous run — two-run cmp-clean: same source with
     /// <c>writeMidi</c> → byte-identical <c>RunResult.Midi</c>.
     /// </remarks>
-    public static byte[]? DrainInMemorySink()
+    public static byte[]? DrainInMemorySink(RenderServices? render = null)
     {
-        var bytes = _inMemorySink;
-        _inMemorySink = null;
+        if (render is not null)
+        {
+            var own = render.LastMidiBytes;
+            render.LastMidiBytes = null;
+            return own;
+        }
+        var bytes = InMemorySink;
+        InMemorySink = null;
         return bytes;
     }
 
@@ -690,12 +707,12 @@ public static class MidiExport
         {
             using var ms = new System.IO.MemoryStream();
             midiFile.Write(ms);
-            _inMemorySink = ms.ToArray();
+            InMemorySink = ms.ToArray();
         }
         catch
         {
             // Charitable: capture failure must not break the normal file write.
-            _inMemorySink = null;
+            InMemorySink = null;
         }
 
         // Write the MIDI file to disk

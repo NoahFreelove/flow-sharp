@@ -156,7 +156,7 @@ public static class SongRenderer
         // harmless: SampleCache.EagerLoad no-ops for unknown instrument names
         // (lambda has no name → empty string → InstrumentManifest miss → return).
         // We keep the call for code-path uniformity across the three RenderSong* entries.
-        FlowEngine.CurrentSampleCache?.EagerLoad(song, string.Empty);
+        RenderServices.Current?.SampleCache?.EagerLoad(song, string.Empty);
 
         // Create a wrapper for the lambda that matches the INoteSynthesizer requirement
         var synth = new FlowFunctionSynthesizer((note, duration, bpm) =>
@@ -181,6 +181,7 @@ public static class SongRenderer
 
             for (int r = 0; r < sectionRef.RepeatCount; r++)
             {
+                RenderServices.Checkpoint();
                 result = AppendBuffers(result, sectionBuffer);
             }
         }
@@ -202,7 +203,7 @@ public static class SongRenderer
         // renderSong boundary so any unseeded Phase 36 stochastic primitives
         // (markov / lsystem / cellular / lorenz / degrade / sparseSeq / sometimes /
         // jam) produce byte-identical buffers across renders.
-        FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
+        RenderServices.Current?.Context?.PrngRegistry.ResetAtRenderBoundary();
 
         // Reset the synth white-noise RNG to its fixed seed so that two
         // renderSong calls on the same SongData produce byte-identical
@@ -211,7 +212,7 @@ public static class SongRenderer
         SynthUtils.ResetNoiseRng();
 
         // Phase 33 D-13: sampler:NAME dispatch — reads ExecutionContext.SfzPatchRegistry;
-        // eager-loads via FlowEngine.CurrentSfzSampleCache; per-note render via
+        // eager-loads via RenderServices.Current?.SfzSampleCache; per-note render via
         // SfzRenderer wrapped in an INoteSynthesizer adapter so the existing
         // RenderSection / SequenceRenderer / BarRenderer / VoiceAllocator pipeline
         // is reused unchanged. Phase 29 bundled-sample path below stays untouched
@@ -236,7 +237,7 @@ public static class SongRenderer
         // non-sampled instruments (drums/organ/wavetable) and when no FlowEngine
         // owns the active cache (e.g. direct-API SongRenderer calls bypassing
         // FlowEngine — preserves pre-Phase-29 backward compatibility).
-        FlowEngine.CurrentSampleCache?.EagerLoad(song, synthType);
+        RenderServices.Current?.SampleCache?.EagerLoad(song, synthType);
 
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
 
@@ -250,6 +251,7 @@ public static class SongRenderer
             // Apply repeat count
             for (int r = 0; r < sectionRef.RepeatCount; r++)
             {
+                RenderServices.Checkpoint();
                 result = AppendBuffers(result, sectionBuffer);
             }
         }
@@ -273,13 +275,13 @@ public static class SongRenderer
     {
         // Same render-boundary reseed as RenderSong so unseeded stochastic
         // primitives stay byte-identical across renders (two-run cmp-clean).
-        FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
+        RenderServices.Current?.Context?.PrngRegistry.ResetAtRenderBoundary();
         SynthUtils.ResetNoiseRng();
 
         // Eager-load samples for every distinct sequence-name-derived instrument
         // so the sampled-tonal path (piano/brass/sax/strings/flute/bell) has its
         // WAVs ready. EagerLoad no-ops for unknown / synthesis-only instruments.
-        var sampleCache = FlowEngine.CurrentSampleCache;
+        var sampleCache = RenderServices.Current?.SampleCache;
         if (sampleCache is not null)
         {
             foreach (var distinctSynth in DistinctResolvedSynths(song))
@@ -309,7 +311,10 @@ public static class SongRenderer
 
             var sectionBuffer = RenderSection(sectionData, (Func<string, INoteSynthesizer>)Resolve);
             for (int r = 0; r < sectionRef.RepeatCount; r++)
+            {
+                RenderServices.Checkpoint();
                 result = AppendBuffers(result, sectionBuffer);
+            }
         }
         return result;
     }
@@ -580,6 +585,7 @@ public static class SongRenderer
 
         foreach (var voice in voices)
         {
+            RenderServices.Checkpoint();
             int voiceStartFrame = (int)(voice.OffsetBeats * secondsPerBeat * sampleRate);
 
             // Mono voices: legacy synth path — apply constant-power pan from
@@ -667,7 +673,7 @@ public static class SongRenderer
     ///   composer-facing message listing known patch names and the
     ///   <c>Sfz {name} = (loadSfz #...)</c> hint (D-13).</description></item>
     ///   <item><description>Otherwise eager-loads the patch's WAVs via
-    ///   <see cref="FlowEngine.CurrentSfzSampleCache"/> and wraps a
+    ///   <see cref="RenderServices.SfzSampleCache"/> and wraps a
     ///   <see cref="SfzRenderer"/> in <see cref="SfzNoteSynthesizer"/> so the
     ///   existing <see cref="RenderSection(SectionData, INoteSynthesizer)"/>
     ///   pipeline (voice pool, per-section reverb, pan / gain context, voice
@@ -682,7 +688,7 @@ public static class SongRenderer
     private static Value RenderSongWithSfz(SongData song, string synthType)
     {
         string patchName = synthType.Substring("sampler:".Length);
-        var ctx = FlowEngine.CurrentExecutionContext;
+        var ctx = RenderServices.Current?.Context;
 
         // Advisory #2 — sampler:NAME voice routes through SongRenderer when
         // SfzEnabled=false OR the patch isn't loaded. Emitted BEFORE the
@@ -749,7 +755,7 @@ public static class SongRenderer
                 $"Did you forget `Sfz {patchName} = (loadSfz #...)`?");
         }
 
-        var cache = FlowEngine.CurrentSfzSampleCache
+        var cache = RenderServices.Current?.SfzSampleCache
             ?? throw new InvalidOperationException(
                 "sampler:NAME dispatch requires an active FlowEngine — no SfzSampleCache published. " +
                 "Direct SongRenderer.RenderSong calls bypassing FlowEngine are unsupported for SFZ patches.");
@@ -781,6 +787,7 @@ public static class SongRenderer
             var sectionBuffer = RenderSection(sectionData, adapter);
             for (int r = 0; r < sectionRef.RepeatCount; r++)
             {
+                RenderServices.Checkpoint();
                 result = AppendBuffers(result, sectionBuffer);
             }
         }

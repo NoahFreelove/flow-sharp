@@ -248,12 +248,15 @@ public class BeatConversionTests : IDisposable
     [Fact]
     public void BeatToSec_AdvisoryDedupsAcrossTwoExecuteCalls()
     {
+        // Engines of one logical session share an advisory log (as watch-mode
+        // reloads do); unshared engines each show the advisory once.
+        var sharedAdvisories = new FlowLang.Runtime.AdvisoryLog();
         string source = "use \"@audio\"; Second s = (beatToSec 1.0)";
         string stderr = CaptureStderr(() =>
         {
-            using var e1 = new FlowEngine();
+            using var e1 = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
             e1.Execute(source, "<run1>");
-            using var e2 = new FlowEngine();
+            using var e2 = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
             e2.Execute(source, "<run2>");
         });
 

@@ -83,7 +83,7 @@ public static class MidiFunctions
         {
             RequireModuleActivated(context, "midiPorts");
             var ports = GetBackend().ListPorts();
-            foreach (var p in ports) Console.WriteLine(p);
+            foreach (var p in ports) FlowConsole.Out.WriteLine(p);
             return Value.Void();
         });
 
@@ -102,6 +102,9 @@ public static class MidiFunctions
                     $"midi-open-dead:{port}",
                     $"[midi] openMidiOutput('{port}') — no such port (or librtmidi.so absent); returning a dead handle");
             }
+            // The native output port closes with its engine.
+            if (handle is not null)
+                context.Session.Track(() => { try { handle.Dispose(); } catch { } });
             return Value.MidiDevice(new MidiDeviceData { PortName = port, Handle = handle });
         });
 

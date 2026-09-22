@@ -1044,14 +1044,14 @@ public class NoteStreamCompiler
             int totalWeight = choice.Choices.Sum(c => c.Weight ?? 0);
             if (totalWeight <= 0)
             {
-                Console.Error.WriteLine("Warning: random choice weights sum to 0, using uniform selection");
+                FlowConsole.Error.WriteLine("Warning: random choice weights sum to 0, using uniform selection");
                 hasWeights = false;
             }
             else
             {
                 if (totalWeight != 100)
                 {
-                    Console.Error.WriteLine($"Warning: random choice weights sum to {totalWeight}, not 100. Normalizing.");
+                    FlowConsole.Error.WriteLine($"Warning: random choice weights sum to {totalWeight}, not 100. Normalizing.");
                 }
                 float rand = GetRandomFloat(choice.IsSeeded, executionContext) * totalWeight;
                 float cumulative = 0;
@@ -1089,7 +1089,7 @@ public class NoteStreamCompiler
         int vrLen = CalcSourceLength(varRef);
         if (executionContext == null)
         {
-            Console.Error.WriteLine($"Warning: cannot resolve variable '{varRef.VariableName}' in note stream (no execution context)");
+            FlowConsole.Error.WriteLine($"Warning: cannot resolve variable '{varRef.VariableName}' in note stream (no execution context)");
             return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
         }
 
@@ -1100,7 +1100,7 @@ public class NoteStreamCompiler
         }
         catch (InvalidOperationException)
         {
-            Console.Error.WriteLine($"Warning: undefined variable '{varRef.VariableName}' in note stream, inserting rest");
+            FlowConsole.Error.WriteLine($"Warning: undefined variable '{varRef.VariableName}' in note stream, inserting rest");
             return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
         }
 
@@ -1115,7 +1115,7 @@ public class NoteStreamCompiler
             }
             catch
             {
-                Console.Error.WriteLine($"Warning: variable '{varRef.VariableName}' has invalid note value '{noteStr}', inserting rest");
+                FlowConsole.Error.WriteLine($"Warning: variable '{varRef.VariableName}' has invalid note value '{noteStr}', inserting rest");
                 return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
             }
         }
@@ -1138,7 +1138,7 @@ public class NoteStreamCompiler
                 sourceLocation: varRef.Location, sourceLength: vrLen);
         }
 
-        Console.Error.WriteLine($"Warning: variable '{varRef.VariableName}' is type {value.Type.Name}, expected Note or MusicalNote, inserting rest");
+        FlowConsole.Error.WriteLine($"Warning: variable '{varRef.VariableName}' is type {value.Type.Name}, expected Note or MusicalNote, inserting rest");
         return new MusicalNoteData(' ', 0, 0, durationValue, isRest: true, sourceLocation: varRef.Location, sourceLength: vrLen);
     }
 

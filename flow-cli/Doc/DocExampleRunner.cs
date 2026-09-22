@@ -101,69 +101,35 @@ public sealed class DocExampleRunner
     /// </summary>
     public string? RunOne(string exampleSource)
     {
-        string? failure = null;
-        Exception? thrown = null;
-
-        var worker = new Thread(() =>
-        {
-            // The worker ONLY runs the engine. The Console redirect/restore is owned
-            // by the CALLING thread below (CR-03 fix) so it is always
-            // restored, including on the timeout path where this worker keeps running
-            // in the background. Doing the redirect here risked leaving the host
-            // process's Console.Out pointed at TextWriter.Null whenever a worker timed
-            // out before its finally ran (silently swallowing all later flow-doc
-            // output), plus a restore race between concurrent RunOne workers.
-            try
-            {
-                using var engine = new FlowEngine(verbose: false);
-                bool ok = engine.Execute(exampleSource, "<doc-example>");
-                if (!ok || engine.ErrorReporter.HasErrors)
-                {
-                    var formatted = engine.ErrorReporter.FormatAll(engine.SourceMap, useColor: false);
-                    failure = string.IsNullOrWhiteSpace(formatted)
-                        ? "[example failed]"
-                        : "[example failed] " + Flatten(formatted);
-                }
-            }
-            catch (Exception ex)
-            {
-                thrown = ex;
-            }
-        })
-        {
-            IsBackground = true,
-        };
-
-        // CR-03: redirect + restore on the CALLING thread so the host process's
-        // Console.Out/Error is ALWAYS restored — including the timeout path, where the
-        // worker is abandoned to the background and its own finally would never run on
-        // this thread. The example's own print/advisory output during the join window
-        // is suppressed; a timed-out worker that prints afterward writes to the
-        // already-restored host stream, which is harmless (flow doc output is clean).
-        var savedOut = Console.Out;
-        var savedErr = Console.Error;
-        Console.SetOut(TextWriter.Null);
-        Console.SetError(TextWriter.Null);
+        // The example's print/advisory output goes to discarded engine sinks, and the
+        // time limit is enforced cooperatively, so a slow example stops rather than
+        // being abandoned on a background thread.
         try
         {
-            worker.Start();
-            if (!worker.Join(_timeoutMs))
+            using var engine = new FlowEngine(new EngineOptions
             {
-                // Best-effort: we cannot preempt the worker (Thread.Abort is gone in
-                // modern .NET), but it is a background thread so it dies with the
-                // process. Annotate and move on.
+                Output = TextWriter.Null,
+                Diagnostics = TextWriter.Null,
+            });
+            var result = engine.Evaluate(exampleSource, "<doc-example>", new EvaluationOptions
+            {
+                TimeLimit = TimeSpan.FromMilliseconds(_timeoutMs),
+            });
+            if (result.Outcome == EvaluationOutcome.TimedOut)
                 return $"[example failed] timed out after {_timeoutMs} ms";
+            if (!result.Succeeded)
+            {
+                var formatted = engine.ErrorReporter.FormatAll(engine.SourceMap, useColor: false);
+                return string.IsNullOrWhiteSpace(formatted)
+                    ? "[example failed]"
+                    : "[example failed] " + Flatten(formatted);
             }
+            return null;
         }
-        finally
+        catch (Exception ex)
         {
-            Console.SetOut(savedOut);
-            Console.SetError(savedErr);
+            return "[example failed] " + Flatten(ex.Message);
         }
-
-        if (thrown is not null)
-            return "[example failed] " + Flatten(thrown.Message);
-        return failure;
     }
 
     private static string Flatten(string s) =>

@@ -82,7 +82,7 @@ public class VelocityLayerTests
             var setup = runner.RunSource(setupScript, "<velocity-piano-setup>");
             Assert.True(setup.Success, $"Setup render for piano velocity test failed: {setup.Stderr}");
 
-            var cache = FlowEngine.CurrentSampleCache;
+            var cache = runner.GetEngine().SampleCache;
             Assert.NotNull(cache);
             var renderer = new SampledInstrumentRenderer(cache!, "piano", hasVelocityLayers: true);
 
@@ -175,7 +175,7 @@ public class VelocityLayerTests
         Assert.True(setup.Success,
             $"Setup render for {instrument} velocity test failed: {setup.Stderr}");
 
-        var cache = FlowEngine.CurrentSampleCache;
+        var cache = runner.GetEngine().SampleCache;
         Assert.NotNull(cache);
 
         var renderer = new SampledInstrumentRenderer(cache!, instrument, hasVelocityLayers);

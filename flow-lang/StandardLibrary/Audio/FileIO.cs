@@ -21,8 +21,10 @@ public static class FileIO
     // CountDivergentPcmSamples observables instead of raw byte comparison;
     // those observables remain valid but Plan 15-05's byte-identical WAV
     // Fact requires this fix.
-    private const int DitherSeed = 0xD17E2;
-    private static Random Random = new Random(DitherSeed);
+    // Session-owned (RenderServices.DitherRng); per-thread outside a session.
+    [ThreadStatic] private static Random? _fallbackDither;
+    private static Random Random => RenderServices.Current?.DitherRng
+        ?? (_fallbackDither ??= new Random(RenderServices.DitherSeed));
 
     /// <summary>
     /// Core WAV export implementation.
@@ -34,7 +36,7 @@ public static class FileIO
         // upstream of this write produce byte-identical bytes on the next
         // render. Null-safe — direct-API callers that bypass FlowEngine
         // (rare; legacy unit-test entry) skip the reseed harmlessly.
-        Core.FlowEngine.CurrentExecutionContext?.PrngRegistry.ResetAtRenderBoundary();
+        RenderServices.Current?.Context.PrngRegistry.ResetAtRenderBoundary();
 
         // Validate inputs
         if (buffer == null)
@@ -75,7 +77,8 @@ public static class FileIO
         // Reset the TPDF dither RNG to its fixed seed at the start of every
         // export so that two consecutive writes of the same buffer produce
         // byte-identical files (Plan 05 ROADMAP criterion #2 / D-18).
-        Random = new Random(DitherSeed);
+        if (RenderServices.Current is { } render) render.ResetDitherRng();
+        else _fallbackDither = new Random(RenderServices.DitherSeed);
 
         // Write WAV file
         using var fileStream = new FileStream(filepath, FileMode.Create, FileAccess.Write);

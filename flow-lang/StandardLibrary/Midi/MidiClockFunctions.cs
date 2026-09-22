@@ -69,6 +69,8 @@ public static class MidiClockFunctions
                     "clock-master-dead",
                     "[clock] clockMaster — device handle is dead (absent port / librtmidi.so absent); clock runs but bytes go nowhere");
             }
+            // The clock thread stops with its engine even without (clockStop).
+            context.Session.Track(() => { try { clock.Stop(); } catch { } });
             return Value.ClockHandle(new ClockHandleData
             {
                 Mode = ClockMode.Master,
@@ -92,6 +94,7 @@ public static class MidiClockFunctions
             // can never perturb the deterministic offline render.
             var mctx = context.GetMusicalContext();
             var clock = MidiClock.StartSlave(mctx, port);
+            context.Session.Track(() => { try { clock.Stop(); } catch { } });
             return Value.ClockHandle(new ClockHandleData
             {
                 Mode = ClockMode.Slave,

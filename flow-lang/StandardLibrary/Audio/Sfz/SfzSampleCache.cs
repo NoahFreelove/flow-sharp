@@ -15,8 +15,8 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 /// (Pitfall 5).
 ///
 /// Lifetime: same as the owning <c>FlowEngine</c>. Plan 33-07 wires
-/// <c>FlowEngine.CurrentSfzSampleCache</c> and registers the eager-load
-/// callback alongside the existing <c>FlowEngine.CurrentSampleCache</c>
+/// <c>RenderServices.SfzSampleCache</c> and registers the eager-load
+/// callback alongside the existing <c>RenderServices.SampleCache</c>
 /// surface; this plan ships the cache in isolation.
 ///
 /// Storage model:

@@ -72,7 +72,19 @@ public static class OscFunctions
 
     private const int RateLimitWindowMs = 5;   // 1 / 200 Hz
 
-    private static readonly ConcurrentDictionary<string, long> _lastFireTimeMs = new();
+    // Per-session OSC state (rate-limit timestamps and the pending-handler queue).
+    // Keyed by the owning session so concurrent engines never drain or rate-limit
+    // each other's listeners; the weak table lets sessions be collected.
+    private sealed class OscSessionState
+    {
+        public readonly ConcurrentDictionary<string, long> LastFireTimeMs = new();
+        public readonly ConcurrentQueue<PendingHandlerInvocation> PendingHandlers = new();
+    }
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FlowLang.Runtime.SessionServices, OscSessionState> _states = new();
+
+    private static OscSessionState StateFor(FlowLang.Runtime.ExecutionContext context)
+        => _states.GetValue(context.Session, _ => new OscSessionState());
 
     // ===== Bundle nesting depth cap (D-38-15 / mirrors T-36-17 / D-39-19) =====
     private const int BundleDepthCap = 8;
@@ -108,7 +120,6 @@ public static class OscFunctions
         IReadOnlyList<Value> Args,
         FlowLang.Runtime.ExecutionContext Context);
 
-    private static readonly ConcurrentQueue<PendingHandlerInvocation> _pendingHandlers = new();
 
     /// <summary>
     /// Test-only: clear the rate-limit gate state. Required so per-test
@@ -118,13 +129,16 @@ public static class OscFunctions
     /// </summary>
     public static void ResetForTesting()
     {
-        _lastFireTimeMs.Clear();
-        while (_pendingHandlers.TryDequeue(out _)) { }
+        foreach (var (_, state) in _states)
+        {
+            state.LastFireTimeMs.Clear();
+            while (state.PendingHandlers.TryDequeue(out _)) { }
+        }
     }
 
     /// <summary>Test-only: number of user-proc handler invocations currently
     /// queued for the foreground drain (audit §5.3 pinning test seam).</summary>
-    public static int PendingHandlerCountForTesting => _pendingHandlers.Count;
+    public static int PendingHandlerCountForTesting => _states.Sum(kv => kv.Value.PendingHandlers.Count);
 
     /// <summary>
     /// Test-only (audit §5.3): enqueue a user-proc handler invocation exactly as
@@ -137,7 +151,7 @@ public static class OscFunctions
     /// </summary>
     public static void EnqueueHandlerForTesting(
         FunctionOverload handler, IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext context)
-        => _pendingHandlers.Enqueue(new PendingHandlerInvocation(handler, args, context));
+        => StateFor(context).PendingHandlers.Enqueue(new PendingHandlerInvocation(handler, args, context));
 
     /// <summary>
     /// Audit §5.3 — drain every queued user-proc handler invocation on the
@@ -149,14 +163,15 @@ public static class OscFunctions
     /// queue is a no-op. Returns the number of handlers drained (composer-
     /// visible count for <c>(oscPump)</c>).
     /// </summary>
-    public static int DrainPendingHandlers()
+    public static int DrainPendingHandlers(FlowLang.Runtime.ExecutionContext context)
     {
+        var queue = StateFor(context).PendingHandlers;
         int drained = 0;
         // Snapshot the count BEFORE the loop so a handler that enqueues another
         // packet (rare, but possible via a nested osc call) cannot livelock the
         // drain — anything enqueued during this pass waits for the next.
-        int budget = _pendingHandlers.Count;
-        while (budget-- > 0 && _pendingHandlers.TryDequeue(out var pending))
+        int budget = queue.Count;
+        while (budget-- > 0 && queue.TryDequeue(out var pending))
         {
             try
             {
@@ -167,7 +182,7 @@ public static class OscFunctions
             {
                 // Charitable per Pitfall #12 — a handler exception never kills
                 // the drain; surface to stderr and continue.
-                Console.Error.WriteLine($"[osc] handler error: {ex.Message}");
+                FlowConsole.Error.WriteLine($"[osc] handler error: {ex.Message}");
             }
             drained++;
         }
@@ -213,7 +228,7 @@ public static class OscFunctions
         registry.Register("oscSend", sigSend, args =>
         {
             RequireModuleActivated(context, "oscSend");
-            DrainPendingHandlers();   // audit §5.3 — flush queued handlers on the foreground thread
+            DrainPendingHandlers(context);   // audit §5.3 — flush queued handlers on the foreground thread
             string host = args[0].As<string>();
             int port = args[1].As<int>();
             string path = args[2].As<string>();
@@ -237,7 +252,7 @@ public static class OscFunctions
         registry.Register("oscListen", sigListen, args =>
         {
             RequireModuleActivated(context, "oscListen");
-            DrainPendingHandlers();   // audit §5.3
+            DrainPendingHandlers(context);   // audit §5.3
             int port = args[0].As<int>();
             string path = args[1].As<string>();
             var handler = args[2].As<FunctionOverload>();
@@ -256,7 +271,7 @@ public static class OscFunctions
             // audit §5.3 — drain AFTER stop so any handler that was already
             // queued before the stop still runs; the future-timetag fix (§5.10)
             // guarantees nothing NEW is enqueued for a stopped handle.
-            DrainPendingHandlers();
+            DrainPendingHandlers(context);
             return Value.Void();
         });
 
@@ -271,7 +286,7 @@ public static class OscFunctions
         registry.Register("oscPump", sigPump, _ =>
         {
             RequireModuleActivated(context, "oscPump");
-            return Value.Int(DrainPendingHandlers());
+            return Value.Int(DrainPendingHandlers(context));
         });
 
         // ----- oscMsg(String path, ...args) -> OscHandle wrapping OscMessage -----
@@ -319,7 +334,7 @@ public static class OscFunctions
         registry.Register("oscBundle", sigBundle, args =>
         {
             RequireModuleActivated(context, "oscBundle");
-            DrainPendingHandlers();   // audit §5.3
+            DrainPendingHandlers(context);   // audit §5.3
             var packets = new List<Rug.Osc.OscPacket>(args.Count);
             for (int i = 0; i < args.Count; i++)
             {
@@ -356,7 +371,7 @@ public static class OscFunctions
         registry.Register("oscSendBundle", sigSendBundle, args =>
         {
             RequireModuleActivated(context, "oscSendBundle");
-            DrainPendingHandlers();   // audit §5.3
+            DrainPendingHandlers(context);   // audit §5.3
             string host = args[0].As<string>();
             int port = args[1].As<int>();
             var hd = args[2].As<OscHandleData>();
@@ -634,21 +649,24 @@ public static class OscFunctions
                     // visible (this is the catastrophic path, not the normal
                     // sample-and-hold drop). Only genuine mid-session receive
                     // errors reach here (cancellation NOT requested).
-                    Console.Error.WriteLine($"[osc] receive error on port {port}: {ex.Message}");
+                    FlowConsole.Error.WriteLine($"[osc] receive error on port {port}: {ex.Message}");
                     continue;
                 }
                 DispatchPacket(packet, path, handler, context, 0, listenerStrict, listenerSite, cts.Token);
             }
         }, cts.Token);
 
-        return Value.OscHandle(new OscHandleData
+        var handle = new OscHandleData
         {
             Port = port,
             Path = path,
             Receiver = receiver,
             Cts = cts,
             ListenerTask = task,
-        });
+        };
+        // The listener stops with its engine even if the script never calls (oscStop).
+        context.Session.Track(() => StopListener(handle));
+        return Value.OscHandle(handle);
     }
 
     private static void StopListener(OscHandleData handle)
@@ -779,10 +797,11 @@ public static class OscFunctions
         SourceLocation listenerSite)
     {
         var nowMs = Environment.TickCount64;
-        var lastMs = _lastFireTimeMs.GetOrAdd(path, 0L);
+        var rates = StateFor(context).LastFireTimeMs;
+        var lastMs = rates.GetOrAdd(path, 0L);
         if (lastMs > 0 && nowMs - lastMs < RateLimitWindowMs)
             return;  // Drop-newest, sample-and-hold per D-38-14
-        _lastFireTimeMs[path] = nowMs;
+        rates[path] = nowMs;
 
         // Translate the OscMessage's args back to Flow Values (inverse of
         // InferOscArgs). Rug.Osc enumerates via IEnumerable<object>.
@@ -800,7 +819,7 @@ public static class OscFunctions
         {
             // Charitable per Pitfall #12 — handler exceptions never kill
             // the listener loop; surface to stderr and continue.
-            Console.Error.WriteLine($"[osc] handler error at {path}: {ex.Message}");
+            FlowConsole.Error.WriteLine($"[osc] handler error at {path}: {ex.Message}");
         }
     }
 
@@ -832,7 +851,7 @@ public static class OscFunctions
             // evaluator thread to drain via DrainPendingHandlers (osc* call
             // sites + (oscPump)). Serialized-not-parallel with the rest of the
             // script; see the _pendingHandlers field doc for the tradeoff.
-            _pendingHandlers.Enqueue(new PendingHandlerInvocation(handler, args, context));
+            StateFor(context).PendingHandlers.Enqueue(new PendingHandlerInvocation(handler, args, context));
         }
     }
 

@@ -151,7 +151,7 @@ restructuring. Keep semantic changes out of extraction commits.
 | --- | --- | --- |
 | `music.note-stream` | preserve | Streams compile to Sequences; transforms chain; `inspect` output. |
 | `music.octave-context` | preserve | `octave N { }` default octave; explicit octave wins. |
-| `music.units` | preserve | Unit literal formatting; kHz canonicalizes to Hz. |
+| `music.units` | preserve | Unit literal formatting (10 significant digits, like doubles); kHz canonicalizes to Hz. |
 | `music.unit-arithmetic` | preserve | Unit-preserving arithmetic; durations compare across ms and s. |
 | `music.harmony` | preserve | Chord literals and roman-numeral resolution. |
 | `music.note-transpose` | preserve | `transpose` moves a single Note. |

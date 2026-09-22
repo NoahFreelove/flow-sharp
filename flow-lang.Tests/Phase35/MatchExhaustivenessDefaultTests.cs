@@ -68,6 +68,9 @@ public class MatchExhaustivenessDefaultTests
     [Fact]
     public void WarnDedupedPerMatchSpan()
     {
+        // Engines of one logical session share an advisory log (as watch-mode
+        // reloads do); unshared engines each show the advisory once.
+        var sharedAdvisories = new FlowLang.Runtime.AdvisoryLog();
         // Three evaluations of the SAME match expression in the same process.
         // Per Pitfall 5 / RenderingDiagnostics.WarnOnce, the warning emits ONCE
         // per (sentinel-key = match Span) per process. The dedup state must be
@@ -84,7 +87,7 @@ public class MatchExhaustivenessDefaultTests
             // RenderingDiagnostics, which is process-global and key-deduped.
             for (int i = 0; i < 3; i++)
             {
-                using var engine = new FlowEngine(verbose: false);
+                using var engine = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
                 engine.ExecuteScriptAndGetResult("(match 5 | 1 => \"one\" | 2 => \"two\")");
             }
         }

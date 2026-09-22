@@ -11,13 +11,13 @@ namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 /// linear amplitude scaling by note.Velocity. The Phase 28 articulation envelope
 /// applies on top of the sample.
 ///
-/// Fallback: silent if CurrentSampleCache is null (test-isolation path).
+/// Fallback: silent if the session has no sample cache (RenderServices.Current is null) (test-isolation path).
 /// </summary>
 public class BrassSynthesizer : INoteSynthesizer
 {
     public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
-        var cache = FlowEngine.CurrentSampleCache;
+        var cache = RenderServices.Current?.SampleCache;
         if (cache == null || !cache.HasInstrument("brass"))
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 

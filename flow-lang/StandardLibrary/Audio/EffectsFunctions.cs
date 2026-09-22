@@ -475,7 +475,7 @@ public static class EffectsFunctions
 
         if (wouldClip && gainDb > 0)
         {
-            Console.Error.WriteLine(
+            FlowConsole.Error.WriteLine(
                 $"Warning: gain({gainDb:F1} dB) causes clipping. Consider reducing gain or applying compression first.");
         }
 
@@ -624,7 +624,7 @@ public static class EffectsFunctions
         // since attenuation never causes clipping).
         if (wouldClip && linearMultiplier > 1.0)
         {
-            Console.Error.WriteLine(
+            FlowConsole.Error.WriteLine(
                 $"Warning: volume({linearMultiplier:F2}×) causes clipping. Consider reducing volume or applying compression first.");
         }
 

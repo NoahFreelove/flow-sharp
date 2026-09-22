@@ -222,6 +222,13 @@ public class ExecutionContext
     public InternalFunctionRegistry InternalRegistry { get; }
 
     /// <summary>
+    /// The session this context evaluates in: output and diagnostic sinks,
+    /// cancellation, budgets and domain services. Engines assign their own session;
+    /// a context constructed on its own gets a private default session.
+    /// </summary>
+    public SessionServices Session { get; set; } = new();
+
+    /// <summary>
     /// Phase 44 Plans 44-05 + 44-08 — public accessor for the engine-level
     /// <see cref="Diagnostics.ErrorReporter"/> so context-dependent builtin
     /// registrations can route strict-mode errors through the same
@@ -982,10 +989,10 @@ public class ExecutionContext
         //   2. FlowConfig.Active (~/.config/flow/config.toml override) — this layer.
         //   3. Hard-coded baked default (120 BPM / 4/4) — final fallback.
         // Swing has no config knob in SPEC-4 so it skips tier 2.
-        resolved.Tempo ??= FlowConfig.Active.DefaultTempo.HasValue
-            ? (double)FlowConfig.Active.DefaultTempo.Value
+        resolved.Tempo ??= Session.Config.DefaultTempo.HasValue
+            ? (double)Session.Config.DefaultTempo.Value
             : 120.0;
-        resolved.TimeSignature ??= ParseTimesigOrDefault(FlowConfig.Active.DefaultTimesig);
+        resolved.TimeSignature ??= ParseTimesigOrDefault(Session.Config.DefaultTimesig);
         resolved.Swing ??= 0.5;
         _cachedMusicalContext = resolved;
         return resolved;
@@ -1017,7 +1024,7 @@ public class ExecutionContext
     ///   - null / whitespace -> 4/4 silently
     ///   - malformed (not "N/M" with positive integers AND power-of-2 denominator)
     ///     -> 4/4 + single stderr Warning at first encounter. The static guard
-    ///     <see cref="_timesigWarningEmitted"/> avoids spamming the warning on every
+    ///     a per-session one-shot advisory avoids spamming the warning on every
     ///     <see cref="GetMusicalContext"/> call (note streams + bars + songs all hit
     ///     this code path).
     /// </summary>
@@ -1035,20 +1042,17 @@ public class ExecutionContext
         {
             return new TypeSystem.SpecialTypes.TimeSignatureData(num, den);
         }
-        if (!_timesigWarningEmitted)
-        {
-            Console.Error.WriteLine(
-                $"Warning: malformed default_timesig in config.toml: \"{config}\" — falling back to 4/4.");
-            _timesigWarningEmitted = true;
-        }
+        // Once per session (and per process outside a session).
+        Diagnostics.RenderingDiagnostics.WarnOnce(
+            $"config-default-timesig:{config}",
+            $"Warning: malformed default_timesig in config.toml: \"{config}\" — falling back to 4/4.");
         return new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
     }
 
     // Test-only access: reset the one-shot warning latch so successive tests can
     // each independently assert the malformed-timesig path. Intentionally internal-
     // scoped through reflection-free static reset — production code never touches it.
-    private static bool _timesigWarningEmitted = false;
-    internal static void ResetTimesigWarningLatchForTests() => _timesigWarningEmitted = false;
+    internal static void ResetTimesigWarningLatchForTests() => Diagnostics.RenderingDiagnostics.ResetForTesting();
 
     /// <summary>
     /// Phase 32 D-12 transitional shim: bridges Phase 23's
@@ -1273,7 +1277,7 @@ public class ExecutionContext
             JackEnabled = JackEnabled,
 
             // 11. FlowConfig.Active singleton.
-            FlowConfigActive = FlowConfig.Active,
+            FlowConfigActive = Session.Config,
 
             // 12. Phase 36 Plan 36-01 — PrngRegistry cache snapshot.
             //     Captures the (SourceLocation, name) → Random map by reference;
@@ -1374,7 +1378,7 @@ public class ExecutionContext
         JackEnabled = snap.JackEnabled;
 
         // 11. FlowConfig.Active singleton.
-        FlowConfig.Active = snap.FlowConfigActive;
+        Session.Config = snap.FlowConfigActive;
 
         // 12. Phase 36 Plan 36-01 — PrngRegistry restore. Null-guard preserves
         //     backward compatibility with pre-Phase-36 TestSnapshots that don't

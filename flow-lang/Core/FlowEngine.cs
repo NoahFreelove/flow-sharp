@@ -37,6 +37,8 @@ public class FlowEngine : IDisposable
 #endif
     private readonly ModuleLoader _moduleLoader;
     private readonly TextWriter? _diagnosticOutput;
+    private readonly SessionServices _session;
+    private readonly RenderServices _render;
     private bool _disposed;
 
     public ErrorReporter ErrorReporter => _errorReporter;
@@ -75,38 +77,21 @@ public class FlowEngine : IDisposable
     public SampleCache SampleCache => _sampleCache;
 
     /// <summary>
-    /// Phase 29 — exposes the active engine's SampleCache to static renderer code
-    /// (<c>SongRenderer.RenderSong</c> is a static method). Set by the FlowEngine
-    /// constructor; read by <c>SongRenderer.RenderSong</c> on entry to trigger
-    /// eager-load. Single-engine-per-process is a project convention (per
-    /// <c>SynthUtils.ResetNoiseRng</c>'s identical static-mutable-state precedent);
-    /// if concurrent-engine support is required in v1.5, refactor to thread the
-    /// cache through ExecutionContext.
+    /// Services this engine's session owns (output, diagnostics, advisory dedup,
+    /// configuration snapshot, cancellation, render state). Created with the engine
+    /// and disposed with it.
     /// </summary>
-    public static SampleCache? CurrentSampleCache { get; private set; }
+    public SessionServices Session => _session;
 
-#if !FLOW_WEB
-    /// <summary>
-    /// Phase 33 Plan 33-07 — exposes the active engine's SfzSampleCache to static
-    /// renderer code. Mirrors <see cref="CurrentSampleCache"/>'s shape exactly:
-    /// set by the FlowEngine constructor, read by <c>SongRenderer.RenderSong</c>'s
-    /// new <c>sampler:NAME</c> dispatch branch on entry, cleared in Dispose only
-    /// if it still points at this engine's cache instance (back-to-back test
-    /// engines guard).
-    ///
-    /// Phase 47 D-47-08: SFZ subsystem stripped on Web target.
-    /// </summary>
-    public static SfzSampleCache? CurrentSfzSampleCache { get; private set; }
-#endif
+    /// <summary>Render state (sample caches, random sources) owned by this engine.</summary>
+    public RenderServices RenderServices => _render;
 
     /// <summary>
-    /// Phase 33 Plan 33-07 — exposes the active engine's ExecutionContext to
-    /// static renderer code so the <c>sampler:NAME</c> dispatch in
-    /// <c>SongRenderer.RenderSong</c> can read
-    /// <see cref="RuntimeContext.SfzPatchRegistry"/> at render time. Same
-    /// single-engine-per-process project convention as <see cref="CurrentSampleCache"/>.
+    /// Makes this engine's session current for the calling code until disposed.
+    /// Engine entry points do this themselves; hosts and tests need it only when they
+    /// call renderer or builtin code directly.
     /// </summary>
-    public static RuntimeContext? CurrentExecutionContext { get; private set; }
+    public SessionServices.Scope EnterScope() => _session.Enter();
 
     /// <summary>
     /// Phase 47 D-47-10: true when this assembly was compiled with
@@ -138,8 +123,24 @@ public class FlowEngine : IDisposable
     }
 
     public FlowEngine(ErrorReporter errorReporter, bool verbose = false)
+        : this(new EngineOptions { Verbose = verbose }, errorReporter)
     {
-        _errorReporter = errorReporter;
+    }
+
+    /// <summary>
+    /// Creates an engine whose output, diagnostics, configuration and budgets come
+    /// from <paramref name="options"/>. Engines share no mutable state, so several
+    /// can run concurrently on different threads.
+    /// </summary>
+    public FlowEngine(EngineOptions options, ErrorReporter? errorReporter = null)
+    {
+        _errorReporter = errorReporter ?? new ErrorReporter();
+        _session = new SessionServices(options.Output, options.Diagnostics, options.Config, options.Advisories)
+        {
+            MaxIterationsCeiling = options.MaxIterationsCeiling,
+        };
+        using var scope = _session.Enter();
+        bool verbose = options.Verbose;
         _audioManager = new AudioPlaybackManager();
         _sampleCache = new SampleCache();
 #if !FLOW_WEB
@@ -147,23 +148,22 @@ public class FlowEngine : IDisposable
         // Phase 47 D-47-08: SFZ subsystem stripped on Web target.
         _sfzSampleCache = new SfzSampleCache();
 #endif
-        // Publish to the static accessor so SongRenderer (a static class) can find
-        // this engine's cache on renderSong entry. Cleared in Dispose.
-        CurrentSampleCache = _sampleCache;
-#if !FLOW_WEB
-        CurrentSfzSampleCache = _sfzSampleCache;
-#endif
-        _diagnosticOutput = verbose ? Console.Error : null;
+        _diagnosticOutput = verbose ? _session.Diagnostics : null;
 
         // Create internal function registry and register C# implementations
         var internalRegistry = new InternalFunctionRegistry();
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
-        // Phase 33 Plan 33-07 — publish the ExecutionContext to the static
-        // accessor so SongRenderer's sampler: dispatch branch can read
-        // SfzPatchRegistry at render time. Cleared in Dispose.
-        CurrentExecutionContext = _context;
+        _context.Session = _session;
+        // The renderer reads caches, SFZ patches and the PRNG registry from the
+        // session's RenderServices (no process-static engine accessors).
+        _render = new RenderServices(_sampleCache, _context
+#if !FLOW_WEB
+            , _sfzSampleCache
+#endif
+            );
+        _session.Set(_render);
         BuiltInFunctions.RegisterIterationGuard(internalRegistry, _context);
         BuiltInFunctions.RegisterContextDependentFunctions(internalRegistry, _context);
         // quick-260702-ijs: register play(Sequence)/stream(Sequence) here (post-_context)
@@ -338,9 +338,75 @@ public class FlowEngine : IDisposable
     }
 
     /// <summary>
-    /// Execute Flow source code.
+    /// Execute Flow source code. Returns true when the program reported no errors.
     /// </summary>
     public bool Execute(string source, string? fileName = null)
+        => Evaluate(source, fileName).Succeeded;
+
+    /// <summary>
+    /// Evaluates Flow source under the host's cancellation and time budget. Output and
+    /// advisories go to this engine's session sinks. A cancelled or timed-out
+    /// evaluation stops at its next checkpoint (loop iteration, call, render chunk),
+    /// stops playback it started, and reports an error.
+    /// </summary>
+    public EvaluationResult Evaluate(string source, string? fileName = null, EvaluationOptions? options = null)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        options ??= new EvaluationOptions();
+        // The time budget is enforced twice: the deadline is checked at every
+        // checkpoint (works without timers, e.g. single-threaded WASM), and the
+        // token is cancelled on a timer so blocking waits observe it too.
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(options.Cancellation);
+        if (options.TimeLimit is { } limit)
+            budget.CancelAfter(limit);
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        using var scope = _session.Enter();
+        var previousToken = _session.Cancellation;
+        var previousDeadline = _session.Deadline;
+        _session.Cancellation = budget.Token;
+        _session.Deadline = options.TimeLimit is { } l
+            ? System.Diagnostics.Stopwatch.GetTimestamp() + (long)(l.TotalSeconds * System.Diagnostics.Stopwatch.Frequency)
+            : 0;
+        _cancelledDuringCore = false;
+        try
+        {
+            ExecuteCore(source, fileName);
+        }
+        finally
+        {
+            _session.Cancellation = previousToken;
+            _session.Deadline = previousDeadline;
+        }
+
+        EvaluationOutcome outcome;
+        if (_cancelledDuringCore)
+        {
+            outcome = options.Cancellation.IsCancellationRequested ? EvaluationOutcome.Cancelled : EvaluationOutcome.TimedOut;
+            // Resources started by the abandoned evaluation stop with it.
+            _audioManager.StopPlayback();
+            _errorReporter.ReportError(outcome == EvaluationOutcome.Cancelled
+                ? "evaluation cancelled"
+                : $"evaluation exceeded its time limit of {options.TimeLimit!.Value.TotalSeconds:0.###}s",
+                SourceLocation.Unknown);
+        }
+        else
+        {
+            outcome = _errorReporter.HasErrors ? EvaluationOutcome.Failed : EvaluationOutcome.Succeeded;
+        }
+        _cancelledDuringCore = false;
+
+        return new EvaluationResult(
+            outcome,
+            _errorReporter.Errors.ToList(),
+            _errorReporter.Diagnostics.ToList(),
+            outcome == EvaluationOutcome.Succeeded ? _interpreter.GetLastExpressionValue() : null,
+            stopwatch.Elapsed);
+    }
+
+    private bool _cancelledDuringCore;
+
+    private bool ExecuteCore(string source, string? fileName)
     {
         _errorReporter.Clear();
 
@@ -401,6 +467,11 @@ public class FlowEngine : IDisposable
             _interpreter.Execute(program);
 
             return !_errorReporter.HasErrors;
+        }
+        catch (OperationCanceledException) when (_session.Cancellation.IsCancellationRequested || _session.Deadline != 0)
+        {
+            _cancelledDuringCore = true;
+            return false;
         }
         catch (Exception ex)
         {
@@ -540,20 +611,7 @@ public class FlowEngine : IDisposable
         {
             _disposed = true;
             _audioManager.Dispose();
-            // Clear the static accessor only if it still points to this engine —
-            // guards against test code that constructs engines back-to-back where
-            // the next engine may already have overwritten CurrentSampleCache.
-            if (ReferenceEquals(CurrentSampleCache, _sampleCache))
-                CurrentSampleCache = null;
-#if !FLOW_WEB
-            // Phase 33 Plan 33-07 — same back-to-back-engines guard for the
-            // SFZ static accessors.
-            // Phase 47 D-47-08: SFZ subsystem stripped on Web target.
-            if (ReferenceEquals(CurrentSfzSampleCache, _sfzSampleCache))
-                CurrentSfzSampleCache = null;
-#endif
-            if (ReferenceEquals(CurrentExecutionContext, _context))
-                CurrentExecutionContext = null;
+            _session.Dispose();
         }
     }
 }

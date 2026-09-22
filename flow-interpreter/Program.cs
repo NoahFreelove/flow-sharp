@@ -18,6 +18,12 @@ class Program
         // honors the same config as the `flow` CLI binary.
         FlowConfigLoader.LoadFromXdg();
 
+        // Worker mode: evaluate requests from a host over a JSON-lines protocol on
+        // stdin/stdout (FlowLang.Hosting.ProcessEvaluationWorker). The host may kill
+        // this process to stop a runaway evaluation.
+        if (args.Length == 1 && args[0] == "--worker")
+            return FlowLang.Hosting.EvaluationWorkerServer.Run(Console.In, Console.Out);
+
         // Parse flags from args
         var flags = ParseFlags(args);
 

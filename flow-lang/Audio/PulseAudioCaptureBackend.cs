@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using FlowLang.Runtime;
 
 namespace FlowLang.Audio;
 
@@ -130,7 +131,7 @@ public sealed class PulseAudioCaptureBackend : IDisposable
             {
                 var errMsg = LibPulse.GetErrorString(errorCode);
                 error = $"PulseAudio capture failed to connect: {errMsg}";
-                Console.Error.WriteLine(error);
+                FlowConsole.Error.WriteLine(error);
                 return false;
             }
 

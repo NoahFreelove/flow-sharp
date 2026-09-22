@@ -29,7 +29,7 @@ public static class StdLib
     /// </summary>
     public static Value Print(IReadOnlyList<Value> args)
     {
-        Console.WriteLine(args[0].As<string>());
+        FlowConsole.Out.WriteLine(args[0].As<string>());
         return Value.Void();
     }
 
@@ -134,7 +134,7 @@ public static class StdLib
     public static Value StrCent(IReadOnlyList<Value> args)
     {
         var value = args[0].As<double>();
-        return Value.String($"{(value >= 0 ? "+" : "")}{value}c");
+        return Value.String($"{(value >= 0 ? "+" : "")}{Num(value)}c");
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public static class StdLib
     /// </summary>
     public static Value StrMillisecond(IReadOnlyList<Value> args)
     {
-        return Value.String($"{args[0].As<double>()}ms");
+        return Value.String($"{Num(args[0].As<double>())}ms");
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ public static class StdLib
     /// </summary>
     public static Value StrSecond(IReadOnlyList<Value> args)
     {
-        return Value.String($"{args[0].As<double>()}s");
+        return Value.String($"{Num(args[0].As<double>())}s");
     }
 
     /// <summary>
@@ -159,7 +159,7 @@ public static class StdLib
     public static Value StrDecibel(IReadOnlyList<Value> args)
     {
         var value = args[0].As<double>();
-        return Value.String($"{(value >= 0 ? "+" : "")}{value}dB");
+        return Value.String($"{(value >= 0 ? "+" : "")}{Num(value)}dB");
     }
 
     /// <summary>
@@ -172,7 +172,7 @@ public static class StdLib
     /// </summary>
     public static Value StrHertz(IReadOnlyList<Value> args)
     {
-        return Value.String($"{args[0].As<double>()}Hz");
+        return Value.String($"{Num(args[0].As<double>())}Hz");
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public static class StdLib
     /// </summary>
     public static Value StrBeat(IReadOnlyList<Value> args)
     {
-        return Value.String($"{args[0].As<double>()}");
+        return Value.String(Num(args[0].As<double>()));
     }
 
     /// <summary>
@@ -225,6 +225,12 @@ public static class StdLib
             : text.Split(separator);
         return Value.Array(parts.Select(Value.String).ToArray(), StringType.Instance);
     }
+
+    /// <summary>
+    /// Number formatting shared by every value formatter (str, print, interpolation):
+    /// up to 10 significant digits, as for plain doubles.
+    /// </summary>
+    internal static string Num(double value) => value.ToString("G10");
 
     public static Value Concat(IReadOnlyList<Value> args)
     {
@@ -700,16 +706,16 @@ public static class StdLib
         if (v.Type is CentType)
         {
             var c = v.As<double>();
-            return $"{(c >= 0 ? "+" : "")}{c}c";
+            return $"{(c >= 0 ? "+" : "")}{Num(c)}c";
         }
-        if (v.Type is MillisecondType) return $"{v.As<double>()}ms";
-        if (v.Type is SecondType) return $"{v.As<double>()}s";
+        if (v.Type is MillisecondType) return $"{Num(v.As<double>())}ms";
+        if (v.Type is SecondType) return $"{Num(v.As<double>())}s";
         if (v.Type is DecibelType)
         {
             var dB = v.As<double>();
-            return $"{(dB >= 0 ? "+" : "")}{dB}dB";
+            return $"{(dB >= 0 ? "+" : "")}{Num(dB)}dB";
         }
-        if (v.Type is HertzType) return $"{v.As<double>()}Hz";
+        if (v.Type is HertzType) return $"{Num(v.As<double>())}Hz";
         if (v.Type is VoidType) return "()";
         // Sequence / Bar / Chord / Song / Section / Tuple / Dict / Array / Tuning /
         // Sfz / MarkovModel / LsystemModel / OscHandle etc. — fall through to
@@ -738,7 +744,7 @@ public static class StdLib
                 ctx.CurrentCallSite);
             return Value.Void();
         }
-        Console.WriteLine(AutoStr(args[0]));
+        FlowConsole.Out.WriteLine(AutoStr(args[0]));
         return Value.Void();
     }
 

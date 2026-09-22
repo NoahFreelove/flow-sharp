@@ -45,9 +45,9 @@ public static class WavetableVariants
         lock (_registerLock)
         {
             if (_registered) return;
-            SynthesizerFactory.RegisterWavetable("warm",   GenerateWarmTable(TableSize));
-            SynthesizerFactory.RegisterWavetable("bright", GenerateBrightTable(TableSize));
-            SynthesizerFactory.RegisterWavetable("buzz",   GenerateBuzzTable(TableSize));
+            SynthesizerFactory.RegisterBuiltinWavetable("warm",   GenerateWarmTable(TableSize));
+            SynthesizerFactory.RegisterBuiltinWavetable("bright", GenerateBrightTable(TableSize));
+            SynthesizerFactory.RegisterBuiltinWavetable("buzz",   GenerateBuzzTable(TableSize));
             _registered = true;
         }
     }

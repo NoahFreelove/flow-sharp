@@ -137,6 +137,9 @@ public class ModuleCollisionAdvisoryTests : IDisposable
     [Fact]
     public void DuplicateModuleName_EmitsOneShotAdvisory_AndDedupsAcrossRuns()
     {
+        // Engines of one logical session share an advisory log (as watch-mode
+        // reloads do); unshared engines each show the advisory once.
+        var sharedAdvisories = new FlowLang.Runtime.AdvisoryLog();
         WriteModuleFile("dupa",
             "module dupmod\nproc fa (Int: n) (mul n 2) end\n");
         WriteModuleFile("dupb",
@@ -144,7 +147,7 @@ public class ModuleCollisionAdvisoryTests : IDisposable
 
         var stderr1 = CaptureStderr(() =>
         {
-            using var engine = new FlowEngine();
+            using var engine = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
             engine.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
             var ok = engine.Execute("use \"dupa\"\nuse \"dupb\"\n", "<test>");
             Assert.True(ok);
@@ -160,7 +163,7 @@ public class ModuleCollisionAdvisoryTests : IDisposable
         // is per-process — the second run must NOT emit a fresh advisory.
         var stderr2 = CaptureStderr(() =>
         {
-            using var engine2 = new FlowEngine();
+            using var engine2 = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
             engine2.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
             var ok2 = engine2.Execute("use \"dupa\"\nuse \"dupb\"\n", "<test>");
             Assert.True(ok2);
@@ -256,6 +259,9 @@ public class ModuleCollisionAdvisoryTests : IDisposable
     [Fact]
     public void ShadowAdvisory_DedupsAcrossRuns()
     {
+        // Engines of one logical session share an advisory log (as watch-mode
+        // reloads do); unshared engines each show the advisory once.
+        var sharedAdvisories = new FlowLang.Runtime.AdvisoryLog();
         WriteModuleFile("dedupA",
             "module dedupA\nproc shfn (Int: n) (mul n 2) end\n");
         WriteModuleFile("dedupB",
@@ -264,7 +270,7 @@ public class ModuleCollisionAdvisoryTests : IDisposable
         // First run — advisory fires once.
         var stderr1 = CaptureStderr(() =>
         {
-            using var engine = new FlowEngine();
+            using var engine = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
             engine.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
             var ok = engine.Execute("use \"dedupA\"\nuse \"dedupB\"\n", "<test>");
             Assert.True(ok);
@@ -276,7 +282,7 @@ public class ModuleCollisionAdvisoryTests : IDisposable
         // Second run — dedup keyed by module-shadow:dedupA:dedupB:shfn.
         var stderr2 = CaptureStderr(() =>
         {
-            using var engine2 = new FlowEngine();
+            using var engine2 = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
             engine2.ModuleLoader.AdditionalSearchPaths.Add(_tempDir);
             var ok2 = engine2.Execute("use \"dedupA\"\nuse \"dedupB\"\n", "<test>");
             Assert.True(ok2);

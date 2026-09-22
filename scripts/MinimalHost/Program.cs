@@ -36,21 +36,16 @@ var assembliesBefore = LoadedAssemblies();
 var nativeBefore = NativeLibraries();
 var statics = new Dictionary<string, object?>();
 
-// There is no output-sink API: printing goes to Console.Out, so the host must
-// redirect process-global console streams (not safe with concurrent sessions).
+// Output and advisories go to the engine's own sinks (no console redirection).
 var stdout = new StringWriter();
 var stderr = new StringWriter();
-var origOut = Console.Out;
-var origErr = Console.Error;
-Console.SetOut(stdout);
-Console.SetError(stderr);
 
 long allocBefore = GC.GetAllocatedBytesForCurrentThread();
 var construct = Stopwatch.StartNew();
 FlowEngine engine;
 try
 {
-    engine = new FlowEngine();
+    engine = new FlowEngine(new EngineOptions { Output = stdout, Diagnostics = stderr });
 }
 finally
 {
@@ -60,9 +55,9 @@ long allocConstruct = GC.GetAllocatedBytesForCurrentThread() - allocBefore;
 
 var assembliesAfterConstruct = LoadedAssemblies();
 var nativeAfterConstruct = NativeLibraries();
-statics["FlowEngine.CurrentSampleCache"] = FlowEngine.CurrentSampleCache is not null;
-statics["FlowEngine.CurrentSfzSampleCache"] = FlowEngine.CurrentSfzSampleCache is not null;
-statics["FlowEngine.CurrentExecutionContext"] = FlowEngine.CurrentExecutionContext is not null;
+// Engine state reachable from outside the engine's entry points (all should be false).
+statics["SessionServices.Current after construction"] = SessionServices.Current is not null;
+statics["RenderServices.Current after construction"] = FlowLang.StandardLibrary.Audio.RenderServices.Current is not null;
 statics["FlowConfig.Active is defaults"] = ReferenceEquals(FlowConfig.Active, FlowConfigPoco.Defaults);
 var modulesAfterConstruct = LoadedModules(engine.ModuleLoader);
 var styleCount = engine.Context.StyleRegistry.Count;
@@ -76,9 +71,8 @@ try
 finally
 {
     run.Stop();
-    Console.SetOut(origOut);
-    Console.SetError(origErr);
 }
+statics["SessionServices.Current after execution"] = SessionServices.Current is not null;
 
 var reporter = engine.ErrorReporter;
 var diagnostics = reporter.Errors.Select(e => $"{e.Level}: {e.Message}")

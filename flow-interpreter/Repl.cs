@@ -20,6 +20,9 @@ namespace FlowInterpreter;
 public class Repl
 {
     private readonly FlowEngine _engine;
+
+    // The evaluation currently running, so Ctrl+C can cancel it.
+    private CancellationTokenSource? _running;
     private ReplLineEditor? _lineEditor;
 
     /// <summary>
@@ -51,10 +54,12 @@ public class Repl
         // Script mode requires explicit imports for reproducibility
         AutoImportStandardModules();
 
-        // Handle Ctrl+C: stop audio playback, don't exit REPL
+        // Handle Ctrl+C: cancel the evaluation in progress (if any) and stop audio
+        // playback; never exit the REPL.
         Console.CancelKeyPress += (_, e) =>
         {
             e.Cancel = true; // Prevent process exit
+            Volatile.Read(ref _running)?.Cancel();
             _engine.StopAudio();
             Console.WriteLine();
             Console.Write("> ");
@@ -124,7 +129,18 @@ public class Repl
                 // _sessionStrict so the next line inherits it. This is the
                 // RESEARCH §Pattern 8 sticky-from-pragma sync requirement.
                 var lineToExecute = _sessionStrict ? "enable strict;\n" + input : input;
-                var result = _engine.ExecuteScriptAndGetResult(lineToExecute, "<repl>");
+                using var running = new CancellationTokenSource();
+                Volatile.Write(ref _running, running);
+                FlowLang.Runtime.Value? result;
+                try
+                {
+                    result = _engine.Evaluate(lineToExecute, "<repl>",
+                        new EvaluationOptions { Cancellation = running.Token }).LastValue;
+                }
+                finally
+                {
+                    Volatile.Write(ref _running, null);
+                }
                 if (_engine.Context.StrictMode != _sessionStrict)
                     _sessionStrict = _engine.Context.StrictMode;
 

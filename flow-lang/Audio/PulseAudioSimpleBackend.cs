@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using FlowLang.Runtime;
 
 namespace FlowLang.Audio;
 
@@ -74,7 +75,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
             if (_connection == IntPtr.Zero)
             {
                 var errorMsg = LibPulse.GetErrorString(error);
-                Console.Error.WriteLine($"PulseAudio: Failed to connect: {errorMsg}");
+                FlowConsole.Error.WriteLine($"PulseAudio: Failed to connect: {errorMsg}");
                 return false;
             }
 
@@ -251,7 +252,7 @@ public sealed class PulseAudioSimpleBackend : IAudioBackend
         // PulseAudio Simple API doesn't support runtime device switching.
         // Would need to reconnect with the device name passed to pa_simple_new.
         // For now, report that this is not supported.
-        Console.Error.WriteLine(
+        FlowConsole.Error.WriteLine(
             "PulseAudio Simple API does not support runtime device switching. " +
             "Use system audio settings to change the output device.");
         return false;

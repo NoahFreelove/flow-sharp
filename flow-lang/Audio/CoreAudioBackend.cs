@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using FlowLang.Runtime;
 
 namespace FlowLang.Audio;
 
@@ -112,7 +113,7 @@ public sealed class CoreAudioBackend : IAudioBackend
 
             if (status != 0 || _audioQueue == IntPtr.Zero)
             {
-                Console.Error.WriteLine($"CoreAudio: AudioQueueNewOutput failed (OSStatus={status})");
+                FlowConsole.Error.WriteLine($"CoreAudio: AudioQueueNewOutput failed (OSStatus={status})");
                 _audioQueue = IntPtr.Zero;
                 return false;
             }
@@ -126,7 +127,7 @@ public sealed class CoreAudioBackend : IAudioBackend
                 int allocStatus = AudioQueueAllocateBuffer(_audioQueue, bufferByteSize, out IntPtr buf);
                 if (allocStatus != 0 || buf == IntPtr.Zero)
                 {
-                    Console.Error.WriteLine($"CoreAudio: AudioQueueAllocateBuffer failed (OSStatus={allocStatus})");
+                    FlowConsole.Error.WriteLine($"CoreAudio: AudioQueueAllocateBuffer failed (OSStatus={allocStatus})");
                     CloseQueue();
                     return false;
                 }
@@ -187,7 +188,7 @@ public sealed class CoreAudioBackend : IAudioBackend
             }
             if (enqStatus != 0)
             {
-                Console.Error.WriteLine($"CoreAudio: AudioQueueEnqueueBuffer failed (OSStatus={enqStatus})");
+                FlowConsole.Error.WriteLine($"CoreAudio: AudioQueueEnqueueBuffer failed (OSStatus={enqStatus})");
                 Stop();
                 return;
             }
@@ -282,7 +283,7 @@ public sealed class CoreAudioBackend : IAudioBackend
         }
         if (enqStatus != 0)
         {
-            Console.Error.WriteLine($"CoreAudio: AudioQueueEnqueueBuffer failed (OSStatus={enqStatus})");
+            FlowConsole.Error.WriteLine($"CoreAudio: AudioQueueEnqueueBuffer failed (OSStatus={enqStatus})");
             return;
         }
 
@@ -314,7 +315,7 @@ public sealed class CoreAudioBackend : IAudioBackend
     {
         // Same rationale as GetDevices. Composer uses macOS System Settings → Sound
         // to change the default output device.
-        Console.Error.WriteLine(
+        FlowConsole.Error.WriteLine(
             "CoreAudio backend does not support runtime device switching. " +
             "Use System Settings → Sound to change the output device.");
         return false;
@@ -344,7 +345,7 @@ public sealed class CoreAudioBackend : IAudioBackend
             int startStatus = AudioQueueStart(_audioQueue, IntPtr.Zero);
             if (startStatus != 0)
             {
-                Console.Error.WriteLine($"CoreAudio: AudioQueueStart failed (OSStatus={startStatus})");
+                FlowConsole.Error.WriteLine($"CoreAudio: AudioQueueStart failed (OSStatus={startStatus})");
                 return;
             }
             _started = true;
@@ -459,13 +460,13 @@ public sealed class CoreAudioBackend : IAudioBackend
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"CoreAudio: failed to read AudioQueueBuffer header: {ex.Message}");
+            FlowConsole.Error.WriteLine($"CoreAudio: failed to read AudioQueueBuffer header: {ex.Message}");
             return false;
         }
 
         if (header.mAudioData == IntPtr.Zero || byteSize > header.mAudioDataBytesCapacity)
         {
-            Console.Error.WriteLine($"CoreAudio: AudioQueueBuffer too small ({header.mAudioDataBytesCapacity} bytes) for {byteSize}-byte chunk.");
+            FlowConsole.Error.WriteLine($"CoreAudio: AudioQueueBuffer too small ({header.mAudioDataBytesCapacity} bytes) for {byteSize}-byte chunk.");
             return false;
         }
 

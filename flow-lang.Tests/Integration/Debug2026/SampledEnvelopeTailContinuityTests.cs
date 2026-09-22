@@ -85,7 +85,7 @@ public class SampledEnvelopeTailContinuityTests : IDisposable
             var setup = runner.RunSource(setupScript, "<tail-continuity-setup>");
             Assert.True(setup.Success, $"Setup render failed: {setup.Stderr}");
 
-            var cache = FlowEngine.CurrentSampleCache;
+            var cache = runner.GetEngine().SampleCache;
             Assert.NotNull(cache);
             var renderer = new SampledInstrumentRenderer(cache!, "piano", hasVelocityLayers: true);
 

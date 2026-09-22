@@ -138,7 +138,7 @@ public class SampleCacheTests
             Assert.True(success, $"setup render failed: {stderr}");
 
             // The engine's cache should have loaded the piano manifest (10 entries).
-            var cache = FlowEngine.CurrentSampleCache;
+            var cache = runner.GetEngine().SampleCache;
             Assert.NotNull(cache);
             int loadedAfterFirstRender = cache!.RawSampleCount;
             Assert.True(loadedAfterFirstRender > 0,
@@ -202,7 +202,7 @@ public class SampleCacheTests
             ", "<nearest-probe>");
             Assert.True(success, $"render failed: {stderr}");
 
-            var cache = FlowEngine.CurrentSampleCache;
+            var cache = runner.GetEngine().SampleCache;
             Assert.NotNull(cache);
 
             // MIDI 62 (D4) → nearest piano sample is C4 (60), 2 semitones up

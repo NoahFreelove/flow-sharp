@@ -210,6 +210,7 @@ public static class Psola
         int outPos = 0;
         while (outPos < outFrames)
         {
+            RenderServices.Checkpoint();
             // Map this output position back to input time, then snap to the
             // nearest input epoch to source the grain.
             double inPos = outPos / factor;
@@ -298,6 +299,7 @@ public static class Psola
 
         while (pos < frames)
         {
+            RenderServices.Checkpoint();
             int windowLen = Math.Min(AnalysisWindow, frames - pos);
             if (windowLen < 32) break;
 

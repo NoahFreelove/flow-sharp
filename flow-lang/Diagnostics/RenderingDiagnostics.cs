@@ -1,7 +1,10 @@
 namespace FlowLang.Diagnostics;
 
 /// <summary>
-/// One-shot stderr warning channel with per-process per-sentinel-key deduplication.
+/// One-shot warning channel with per-session per-sentinel-key deduplication.
+/// Inside an engine session (<see cref="Runtime.SessionServices.Current"/>) the
+/// advisory goes to that session's diagnostic sink and is deduplicated per session;
+/// outside any session it goes to stderr with process-wide deduplication.
 /// Phase 23 Plan 23-03 Task 1 (CONTEXT D-11 / D-13 / Pitfall 5).
 ///
 /// Public surface:
@@ -19,15 +22,24 @@ namespace FlowLang.Diagnostics;
 public static class RenderingDiagnostics
 {
     private static readonly HashSet<string> _emitted = new(StringComparer.Ordinal);
+    // Keys emitted by any session or the process since the last reset; test support only.
+    private static readonly HashSet<string> _seen = new(StringComparer.Ordinal);
     private static readonly object _lock = new();
 
     /// <summary>
-    /// Writes <paramref name="message"/> to <see cref="Console.Error"/> the FIRST time
-    /// <paramref name="sentinelKey"/> is seen in this process. Subsequent calls
-    /// with the same key are no-ops. Thread-safe.
+    /// Writes <paramref name="message"/> the FIRST time <paramref name="sentinelKey"/>
+    /// is seen in the current session (or, outside a session, in this process).
+    /// Thread-safe.
     /// </summary>
     public static void WarnOnce(string sentinelKey, string message)
     {
+        lock (_lock) { _seen.Add(sentinelKey); }
+        var session = Runtime.SessionServices.Current;
+        if (session is not null)
+        {
+            session.WarnOnce(sentinelKey, message);
+            return;
+        }
         lock (_lock)
         {
             if (!_emitted.Add(sentinelKey)) return;
@@ -36,29 +48,21 @@ public static class RenderingDiagnostics
     }
 
     /// <summary>
-    /// Test-only: clears the dedup set so [Collection]-serialized Facts can isolate
-    /// without a process restart. Also used between sequential FlowEngineRunner runs
-    /// in <c>WriteMidi_BytesUnchanged_UnderJI</c> per WARNING-4.
-    ///
-    /// Public visibility required for cross-assembly Facts (no InternalsVisibleTo
-    /// configured — same convention as <see cref="StandardLibrary.Audio.EffectsFunctions"/>
-    /// helpers exposed for testing).
+    /// Test-only: clears process-wide dedup state, and the current session's when
+    /// called inside one.
     /// </summary>
     public static void ResetForTesting()
     {
-        lock (_lock) { _emitted.Clear(); }
+        lock (_lock) { _emitted.Clear(); _seen.Clear(); }
+        Runtime.SessionServices.Current?.ResetAdvisories();
     }
 
     /// <summary>
-    /// Test-only: returns <c>true</c> if <paramref name="sentinelKey"/> was
-    /// recorded by <see cref="WarnOnce"/> at least once since the last
-    /// <see cref="ResetForTesting"/> call. Consumed by Phase 38 Plan 38-03
-    /// TimeoutRevertTests to verify the live-block timeout advisory's dedup
-    /// sentinel landed at the locked <c>live-timeout:&lt;line&gt;</c> format
-    /// per UI-SPEC line 330.
+    /// Test-only: true if <paramref name="sentinelKey"/> was emitted by any session or
+    /// the process since the last <see cref="ResetForTesting"/>.
     /// </summary>
     public static bool WasWarnedForTesting(string sentinelKey)
     {
-        lock (_lock) { return _emitted.Contains(sentinelKey); }
+        lock (_lock) { return _seen.Contains(sentinelKey); }
     }
 }

@@ -87,4 +87,26 @@ public class WasmDiagnosticsTests
         Assert.Equal("unknown identifier 'lenght' (did you mean 'length'?)", error.GetProperty("message").GetString());
         Assert.Equal(3, error.GetProperty("line").GetInt32());
     }
+
+    [Fact]
+    public void RunFromJsStopsARunawayScriptWithACancelError()
+    {
+        var previous = WasmEntry.RunTimeLimit;
+        WasmEntry.RunTimeLimit = TimeSpan.FromMilliseconds(200);
+        try
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+#pragma warning disable CA1416 // browser-only marshalling boundary; Execute path is platform-agnostic
+            var json = WasmEntry.RunFromJs("use \"@std\"\n(setMaxIterations 1000000)\nwhile true {\n  for Int i in (range 0 1000) { (Nothing) }\n}");
+#pragma warning restore CA1416
+            watch.Stop();
+            var error = Assert.Single(JsonDocument.Parse(json).RootElement.GetProperty("errors").EnumerateArray());
+            Assert.Equal("cancel", error.GetProperty("kind").GetString());
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"took {watch.Elapsed}");
+        }
+        finally
+        {
+            WasmEntry.RunTimeLimit = previous;
+        }
+    }
 }

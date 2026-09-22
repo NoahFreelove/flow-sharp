@@ -70,7 +70,7 @@ public class SampledInstrumentSmokeTests
                 Assert.True(setup.Success,
                     $"Setup render for {instrument} failed before direct-API smoke probe: {setup.Stderr}");
 
-                var cache = FlowEngine.CurrentSampleCache;
+                var cache = runner.GetEngine().SampleCache;
                 Assert.NotNull(cache);
                 Assert.True(cache!.HasInstrument(instrument),
                     $"SampleCache.HasInstrument(\"{instrument}\") must be true after eager-load.");

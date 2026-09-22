@@ -21,7 +21,7 @@ namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 /// release-tail length. Test parallelism stays safe (AsyncLocal isolates per
 /// async-flow / per-xUnit-test).
 ///
-/// Falls back to silence when <see cref="FlowEngine.CurrentSampleCache"/> is null
+/// Falls back to silence when the session has no sample cache (<see cref="RenderServices.Current"/> is null)
 /// or the "piano" manifest entry is unavailable (graceful degradation outside an
 /// engine). Phase 28 articulation envelope applies on top of the sample inside
 /// <c>SampledInstrumentRenderer.Render</c>.
@@ -41,7 +41,7 @@ public class PianoSynthesizer : INoteSynthesizer
 
     public AudioBuffer RenderNote(MusicalNoteData note, int sampleRate, double durationBeats, double bpm, RenderTuning tuning)
     {
-        var cache = FlowEngine.CurrentSampleCache;
+        var cache = RenderServices.Current?.SampleCache;
         if (cache is null || !cache.HasInstrument("piano"))
             return SynthUtils.CreateSilence(sampleRate, durationBeats, bpm);
 
