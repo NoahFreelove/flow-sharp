@@ -8,6 +8,11 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 baseline gate passed on 2026-09-20. Phase 1 is ready; it has not started.
 See the [acceptance record](../../baselines/phase0/verification.md).
 
+Handoff prepared on 2026-09-22: [Phase 0 to Phase 1](../handoffs/2026-09-22-phase0-to-phase1.md).
+It records the pending implementation, verification evidence and next steps.
+This documentation update did not rerun the suites; implementation remains
+uncommitted, and Phase 1 has not started.
+
 Starting revision: `1e85f6710b6a39c293b0e4361ca57364489c824d`.
 Pre-existing changes: `docs/ARCHITECTURE.md` and the untracked roadmap; preserved.
 Owner: primary implementation agent. No delegated file ownership.
