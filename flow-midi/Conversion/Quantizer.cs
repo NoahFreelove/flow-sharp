@@ -270,14 +270,8 @@ static class Quantizer
         }
     }
 
-    // The pitch-range hand-split heuristic was deleted in Plan 30-07 per
-    // SPEC-5 ("one Sequence per MIDI track"). Bug B Defect 3 was that any
-    // track whose pitch range exceeded 24 semitones got bisected at the
-    // median pitch (clamped near middle C) and emitted as two sub-tracks
-    // with right-hand / left-hand suffixes, double-splitting a 2-channel
-    // piano MIDI into 4 sequences. The composer-authored channel/track
-    // assignment is the source of truth for hand/voice separation; flow-midi
-    // now respects that without heuristic re-derivation.
+    // Current compatibility contract retains hand/voice splitting; see
+    // docs/decisions/2026-09-20-baseline-compatibility.md.
 
     /// <summary>
     /// Picks the time signature that spans the most ticks in the file.

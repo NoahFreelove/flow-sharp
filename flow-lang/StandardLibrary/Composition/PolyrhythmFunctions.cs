@@ -111,8 +111,8 @@ public static class PolyrhythmFunctions
 
     private static int GetTimeSignatureNumerator(SequenceData seq)
     {
-        if (seq.Bars.Count > 0 && seq.Bars[0].TimeSignature != null)
-            return seq.Bars[0].TimeSignature.Numerator;
+        if (seq.Bars.Count > 0 && seq.Bars[0].TimeSignature is { } timeSignature)
+            return timeSignature.Numerator;
         return 4; // Default 4/4
     }
 

@@ -11,7 +11,6 @@ using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using System.Numerics;
-using FlowLang.Diagnostics;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
 
 namespace FlowLang.Interpreter;

@@ -267,7 +267,6 @@ public static class AbcImport
         var ts = new TimeSignatureData(meterNum, meterDenom);
         var sequence = new SequenceData();
         var currentBarNotes = new List<MusicalNoteData>();
-        int currentAccidental = 0;  // resets each bar
         int accidentalForNext = 0;  // accumulated by ^, _, =, _.. ^^.. tokens
         bool nextAccidentalIsExplicit = false;
 
