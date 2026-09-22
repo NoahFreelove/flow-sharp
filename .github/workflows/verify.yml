@@ -1,0 +1,55 @@
+name: Verify Flow
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Linux / ${{ matrix.tier }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        tier: [core, platform, long]
+    env:
+      NO_COLOR: '1'
+      TERM: dumb
+      FLOW_TEST_ARTIFACTS_DIR: ${{ runner.temp }}/flow-reports
+      FLOW_UPDATE_REPORTS: '0'
+      FLOW_UPDATE_AUDIO_BASELINES: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Web build tools
+        if: matrix.tier == 'platform'
+        run: dotnet workload install wasm-tools
+      - name: Test verification failure handling
+        if: matrix.tier == 'core'
+        run: python3 -m unittest discover -s scripts/ci -p 'test_*.py'
+      - name: Build, test, and check tracked content
+        run: python3 scripts/ci/verify.py --tier '${{ matrix.tier }}' --artifacts '${{ runner.temp }}/flow-verification'
+      - name: Upload logs, TRX, and generated reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flow-${{ matrix.tier }}
+          path: |
+            ${{ runner.temp }}/flow-verification
+            ${{ runner.temp }}/flow-reports
+          if-no-files-found: error

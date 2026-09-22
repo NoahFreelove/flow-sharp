@@ -1,0 +1,11 @@
+{
+  "oldSha256": "01312cd5c12b324ba52935bf81e4150bad6c009a5f30b4de55cdf79541e43e77",
+  "newSha256": "f19e650bb359b245dbc954c36ad45d9481b8ddbeda9c552970e9289dcef4a079",
+  "frames": 2763521,
+  "channels": 2,
+  "sampleRate": 44100,
+  "sampleWidthBytes": 2,
+  "firstDifferentFrame": 2,
+  "lastDifferentFrame": 154366,
+  "lastDifferenceSeconds": 3.5003628117913834
+}

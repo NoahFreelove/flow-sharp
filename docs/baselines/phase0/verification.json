@@ -1,0 +1,269 @@
+{
+  "date": "2026-09-20",
+  "environment": "Ubuntu 26.04 x64; SDK 10.0.112; Linux Desktop host with wasm-tools",
+  "runs": {
+    "core": {
+      "tier": "core",
+      "steps": [
+        {
+          "step": "build",
+          "exit_code": 0
+        },
+        {
+          "step": "flow-lang.Tests",
+          "exit_code": 0,
+          "tests": {
+            "total": "2729",
+            "executed": "2715",
+            "passed": "2715",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          }
+        },
+        {
+          "step": "flow-midi.Tests",
+          "exit_code": 0,
+          "tests": {
+            "total": "21",
+            "executed": "21",
+            "passed": "21",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          }
+        }
+      ],
+      "changed_tracked_files": []
+    },
+    "platform": {
+      "tier": "platform",
+      "steps": [
+        {
+          "step": "build",
+          "exit_code": 0
+        },
+        {
+          "step": "flow-lang.Tests",
+          "exit_code": 0,
+          "tests": {
+            "total": "18",
+            "executed": "13",
+            "passed": "13",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          }
+        }
+      ],
+      "changed_tracked_files": []
+    },
+    "long": {
+      "tier": "long",
+      "steps": [
+        {
+          "step": "build",
+          "exit_code": 0
+        },
+        {
+          "step": "flow-lang.Tests",
+          "exit_code": 0,
+          "tests": {
+            "total": "33",
+            "executed": "33",
+            "passed": "33",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          }
+        }
+      ],
+      "changed_tracked_files": []
+    },
+    "all": {
+      "tier": "all",
+      "steps": [
+        {
+          "step": "build",
+          "exit_code": 0
+        },
+        {
+          "step": "flow-lang.Tests",
+          "exit_code": 0,
+          "tests": {
+            "total": "2782",
+            "executed": "2763",
+            "passed": "2763",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          }
+        },
+        {
+          "step": "flow-midi.Tests",
+          "exit_code": 0,
+          "tests": {
+            "total": "21",
+            "executed": "21",
+            "passed": "21",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          }
+        }
+      ],
+      "changed_tracked_files": []
+    }
+  },
+  "skip_reasons": [
+    {
+      "test": "FlowLang.Tests.Integration.Phase48.WasmStrippedBuiltinSurfaceTests.CreateSineTone_Resolves_AfterAudioImport_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.WebTargetModuleLoaderTests.UseOscImport_EmitsCharitableAdvisory_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.WebTargetModuleLoaderTests.UseNotationIoImport_Succeeds_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.WebTargetParserTests.LiveBlock_FailsToParse_OnWeb_WithCharitableDiagnostic",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase48.WasmStrippedBuiltinSurfaceTests.StdBootstrap_IsClean_WhenLoadSfzImplStripped_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.WebTargetParserTests.SupportsLiveBlocks_IsFalse_OnWebBuild",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase40.RealMidiLoopbackTests.RealClockSlave_LocksTempoFromInjected24Ppqn",
+      "reason": "librtmidi or snd-virmidi VirMIDI loopback port absent \u2014 load snd-virmidi + install librtmidi-dev"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.AssemblyReferenceScanTests.WebBuild_HasNoRefsToStrippedNamespaces",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase48.WasmStrippedBuiltinSurfaceTests.MicBuffer_Call_DegradesTo_FunctionNotFound_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase40.RealMidiLoopbackTests.RealClockMaster_EmitsTransportStartStopOverWire",
+      "reason": "librtmidi or snd-virmidi VirMIDI loopback port absent \u2014 load snd-virmidi + install librtmidi-dev"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Audit0609.CoreAudioDrainTests.Play_BlocksUntilAudioFinishes",
+      "reason": "Prerequisite 'macos' not satisfied on Ubuntu 26.04 LTS \u2014 skipping."
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Audit0609.CoreAudioDrainTests.BackToBackPlays_BothCompleteFully",
+      "reason": "Prerequisite 'macos' not satisfied on Ubuntu 26.04 LTS \u2014 skipping."
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.WebTargetModuleLoaderTests.UseSfzImport_EmitsCharitableAdvisory_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase40.RealMidiLoopbackTests.RealOutput_NoteCcSysex_CapturedByteForByte",
+      "reason": "librtmidi or snd-virmidi VirMIDI loopback port absent \u2014 load snd-virmidi + install librtmidi-dev"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase48.WasmStrippedBuiltinSurfaceTests.UseAudioImport_Succeeds_WhenMicBufferImplStripped_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.AssemblyReferenceScanTests.WebBuild_RetainsLegitimateRefs",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase48.WasmStrippedBuiltinSurfaceTests.StrippedBuiltinAdvisory_FiresAtMostOncePerName_OnWeb",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase39.MusicXmlRoundTripTests.StructuralPreservation_NoteCountMatches",
+      "reason": "requires mscore in PATH \u2014 XML-02 gate lights up automatically when CI provisions one"
+    },
+    {
+      "test": "FlowLang.Tests.Integration.Phase47.WebTargetParserTests.IsWebTarget_IsTrue_OnWebBuild",
+      "reason": "Skipped on Desktop \u2014 test runs under: Web"
+    }
+  ],
+  "tier_coverage": {
+    "counts": {
+      "core": 2729,
+      "platform": 18,
+      "long": 33
+    },
+    "overlaps": {},
+    "local_only": {
+      "FlowLang.Tests.FlowScriptTests.RunsToCompletion(relativePath: \"test_break_builtin.flow\")": 1,
+      "FlowLang.Tests.FlowScriptTests.RunsToCompletion(relativePath: \"test_markov_corpus_array.flow\")": 1
+    }
+  },
+  "limits": "CI commands validated locally, including an isolated fresh checkout. Remote GitHub Actions execution and audible/device validation not performed."
+}

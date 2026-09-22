@@ -35,6 +35,37 @@ scripts/test_two_run_determinism.sh path/to/script.flow
 scripts/lsp-smoke.sh path/to/flow-lsp
 ```
 
+## Generated audit and bundle reports
+
+Normal `ClampGrepConsistencyTests` and `BundleSizeBudgetTests` runs write
+reports under the system temporary directory, in `flow-test-reports/<unique-id>/`.
+Each report directory is printed in test output and retained for inspection.
+Set `FLOW_TEST_ARTIFACTS_DIR` to collect these reports elsewhere; relative paths
+are resolved from the test process working directory. TRX output is controlled
+separately by `--results-directory`.
+
+```bash
+FLOW_TEST_ARTIFACTS_DIR=/tmp/flow-reports dotnet test flow-lang.Tests/flow-lang.Tests.csproj \
+  --filter 'FullyQualifiedName~ClampGrepConsistencyTests|FullyQualifiedName~BundleSizeBudgetTests' \
+  --logger trx --results-directory /tmp/flow-test-results
+```
+
+Updating the historical reports under `.planning/phases/42-type-system-stdlib-audit/`
+and `.planning/phases/48-wasm-runtime-webaudio-backend/` requires an explicit command:
+
+```bash
+FLOW_UPDATE_REPORTS=1 dotnet test flow-lang.Tests/flow-lang.Tests.csproj \
+  --filter 'FullyQualifiedName~ClampGrepConsistencyTests|FullyQualifiedName~BundleSizeBudgetTests'
+```
+
+Only the exact value `1` enables updates, and it takes precedence over the
+artifact-directory setting. Review the generated diff before committing it.
+This option controls these reports only, not audio or diagnostic golden baselines.
+Bundle tests require the `wasm-tools` workload and publish the Web target;
+do not run another build/publish against the same checkout simultaneously.
+The standalone audit scripts retain their existing defaults; pass `--out-dir`
+when invoking them directly to write outside the historical report directory.
+
 ## The Five Test Layers
 
 | Layer | Where | What it covers |
@@ -356,3 +387,58 @@ The bundled sample directory currently sits at ~3.8 MB (21 WAVs at 44.1 kHz
 16-bit mono from the CC-BY 4.0 University of Iowa MIS dataset, plus VSCO-CE
 drum kit additions). Adding samples without trimming existing ones risks
 the 5 MB cap — `RepoSizeTests` will fail loudly if you do.
+
+## Phase 0 CI tiers and reproducible baseline
+
+`.github/workflows/verify.yml` runs three required-to-pass jobs on each PR
+and pushes to `dev`/`main`, with separate checkouts/build outputs:
+
+| Tier | Selection | Coverage |
+| --- | --- | --- |
+| `core` | `Category!=Platform&Category!=LongRunning`, plus all MIDI tests | Language, music, host, and ordinary integration tests |
+| `platform` | `Category=Platform` | Desktop/Web build and publish checks; prerequisite-gated MIDI/macOS device tests |
+| `long` | `Category=LongRunning` | Longer DSP/stretch, audio regression, and repeated-render determinism tests |
+
+Every test belongs to the core selection unless explicitly assigned one of the
+other categories. None are excluded from the combined jobs. Hardware and
+Web-target-only tests retain explicit prerequisite skip reasons. The platform
+job installs `wasm-tools`; ordinary native-device availability is not assumed.
+These jobs establish Linux compatibility-host coverage; they do not claim a
+language-only build, hardware listening, or Windows/macOS release certification.
+Branch protection must be configured separately to make GitHub checks mandatory.
+
+Run the identical verification locally (Python 3 and .NET 10 required):
+
+```bash
+python3 scripts/ci/verify.py --tier core --artifacts /tmp/flow-ci-core
+python3 scripts/ci/verify.py --tier platform --artifacts /tmp/flow-ci-platform
+python3 scripts/ci/verify.py --tier long --artifacts /tmp/flow-ci-long
+# Unfiltered baseline, including both C# test projects:
+python3 scripts/ci/verify.py --tier all --artifacts /tmp/flow-ci-all
+```
+
+The verifier builds first, fails on missing/empty TRX evidence or nonzero exit
+codes, and checks tracked-file content hashes even after failures. It supports
+a pre-existing dirty working tree by comparing against entry contents. It does
+not discard or restore changes. Do not edit tracked files during verification.
+Keep artifact paths outside tracked source directories. CI uploads logs, TRX,
+verification summaries, and generated report artifacts even when tests fail.
+
+The [Phase 0 baseline](baselines/phase0/README.md) records parse/evaluation/render
+measurements, dependencies, public APIs, global-state candidates, and warning
+triage. Its probe writes outside the repository and measures offline behavior;
+no real-time performance promise is inferred from its results.
+
+The Phase 41 showcase audio fixture uses the logical source name
+`examples/edm/pulse.flow` because granular randomness includes source location.
+It compares RMS and requires two renders to be byte-identical. To deliberately
+refresh this specific audio baseline (separate from report updates):
+
+```bash
+FLOW_UPDATE_AUDIO_BASELINES=1 dotnet test flow-lang.Tests/flow-lang.Tests.csproj \
+  --filter FullyQualifiedName~Phase41ShowcaseRmsTests
+```
+
+Do not enable either update mode in CI. See the [baseline compatibility
+decision](decisions/2026-09-20-baseline-compatibility.md) for the initial portable
+fixture refresh and PCM comparison evidence.

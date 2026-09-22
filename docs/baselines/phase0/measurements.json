@@ -1,0 +1,355 @@
+{
+  "runtime": ".NET 10.0.12",
+  "os": "Ubuntu 26.04 LTS",
+  "architecture": "X64",
+  "processors": 16,
+  "stopwatchFrequency": 1000000000,
+  "parseSource": "Int item0 = (add 0 1)\nInt item1 = (add 1 1)\nInt item2 = (add 2 1)\nInt item3 = (add 3 1)\nInt item4 = (add 4 1)\nInt item5 = (add 5 1)\nInt item6 = (add 6 1)\nInt item7 = (add 7 1)\nInt item8 = (add 8 1)\nInt item9 = (add 9 1)\nInt item10 = (add 10 1)\nInt item11 = (add 11 1)\nInt item12 = (add 12 1)\nInt item13 = (add 13 1)\nInt item14 = (add 14 1)\nInt item15 = (add 15 1)\nInt item16 = (add 16 1)\nInt item17 = (add 17 1)\nInt item18 = (add 18 1)\nInt item19 = (add 19 1)\nInt item20 = (add 20 1)\nInt item21 = (add 21 1)\nInt item22 = (add 22 1)\nInt item23 = (add 23 1)\nInt item24 = (add 24 1)\nInt item25 = (add 25 1)\nInt item26 = (add 26 1)\nInt item27 = (add 27 1)\nInt item28 = (add 28 1)\nInt item29 = (add 29 1)\nInt item30 = (add 30 1)\nInt item31 = (add 31 1)\nInt item32 = (add 32 1)\nInt item33 = (add 33 1)\nInt item34 = (add 34 1)\nInt item35 = (add 35 1)\nInt item36 = (add 36 1)\nInt item37 = (add 37 1)\nInt item38 = (add 38 1)\nInt item39 = (add 39 1)\nInt item40 = (add 40 1)\nInt item41 = (add 41 1)\nInt item42 = (add 42 1)\nInt item43 = (add 43 1)\nInt item44 = (add 44 1)\nInt item45 = (add 45 1)\nInt item46 = (add 46 1)\nInt item47 = (add 47 1)\nInt item48 = (add 48 1)\nInt item49 = (add 49 1)\nInt item50 = (add 50 1)\nInt item51 = (add 51 1)\nInt item52 = (add 52 1)\nInt item53 = (add 53 1)\nInt item54 = (add 54 1)\nInt item55 = (add 55 1)\nInt item56 = (add 56 1)\nInt item57 = (add 57 1)\nInt item58 = (add 58 1)\nInt item59 = (add 59 1)\nInt item60 = (add 60 1)\nInt item61 = (add 61 1)\nInt item62 = (add 62 1)\nInt item63 = (add 63 1)\nInt item64 = (add 64 1)\nInt item65 = (add 65 1)\nInt item66 = (add 66 1)\nInt item67 = (add 67 1)\nInt item68 = (add 68 1)\nInt item69 = (add 69 1)\nInt item70 = (add 70 1)\nInt item71 = (add 71 1)\nInt item72 = (add 72 1)\nInt item73 = (add 73 1)\nInt item74 = (add 74 1)\nInt item75 = (add 75 1)\nInt item76 = (add 76 1)\nInt item77 = (add 77 1)\nInt item78 = (add 78 1)\nInt item79 = (add 79 1)\nInt item80 = (add 80 1)\nInt item81 = (add 81 1)\nInt item82 = (add 82 1)\nInt item83 = (add 83 1)\nInt item84 = (add 84 1)\nInt item85 = (add 85 1)\nInt item86 = (add 86 1)\nInt item87 = (add 87 1)\nInt item88 = (add 88 1)\nInt item89 = (add 89 1)\nInt item90 = (add 90 1)\nInt item91 = (add 91 1)\nInt item92 = (add 92 1)\nInt item93 = (add 93 1)\nInt item94 = (add 94 1)\nInt item95 = (add 95 1)\nInt item96 = (add 96 1)\nInt item97 = (add 97 1)\nInt item98 = (add 98 1)\nInt item99 = (add 99 1)\nInt item100 = (add 100 1)\nInt item101 = (add 101 1)\nInt item102 = (add 102 1)\nInt item103 = (add 103 1)\nInt item104 = (add 104 1)\nInt item105 = (add 105 1)\nInt item106 = (add 106 1)\nInt item107 = (add 107 1)\nInt item108 = (add 108 1)\nInt item109 = (add 109 1)\nInt item110 = (add 110 1)\nInt item111 = (add 111 1)\nInt item112 = (add 112 1)\nInt item113 = (add 113 1)\nInt item114 = (add 114 1)\nInt item115 = (add 115 1)\nInt item116 = (add 116 1)\nInt item117 = (add 117 1)\nInt item118 = (add 118 1)\nInt item119 = (add 119 1)\nInt item120 = (add 120 1)\nInt item121 = (add 121 1)\nInt item122 = (add 122 1)\nInt item123 = (add 123 1)\nInt item124 = (add 124 1)\nInt item125 = (add 125 1)\nInt item126 = (add 126 1)\nInt item127 = (add 127 1)\nInt item128 = (add 128 1)\nInt item129 = (add 129 1)\nInt item130 = (add 130 1)\nInt item131 = (add 131 1)\nInt item132 = (add 132 1)\nInt item133 = (add 133 1)\nInt item134 = (add 134 1)\nInt item135 = (add 135 1)\nInt item136 = (add 136 1)\nInt item137 = (add 137 1)\nInt item138 = (add 138 1)\nInt item139 = (add 139 1)\nInt item140 = (add 140 1)\nInt item141 = (add 141 1)\nInt item142 = (add 142 1)\nInt item143 = (add 143 1)\nInt item144 = (add 144 1)\nInt item145 = (add 145 1)\nInt item146 = (add 146 1)\nInt item147 = (add 147 1)\nInt item148 = (add 148 1)\nInt item149 = (add 149 1)\nInt item150 = (add 150 1)\nInt item151 = (add 151 1)\nInt item152 = (add 152 1)\nInt item153 = (add 153 1)\nInt item154 = (add 154 1)\nInt item155 = (add 155 1)\nInt item156 = (add 156 1)\nInt item157 = (add 157 1)\nInt item158 = (add 158 1)\nInt item159 = (add 159 1)\nInt item160 = (add 160 1)\nInt item161 = (add 161 1)\nInt item162 = (add 162 1)\nInt item163 = (add 163 1)\nInt item164 = (add 164 1)\nInt item165 = (add 165 1)\nInt item166 = (add 166 1)\nInt item167 = (add 167 1)\nInt item168 = (add 168 1)\nInt item169 = (add 169 1)\nInt item170 = (add 170 1)\nInt item171 = (add 171 1)\nInt item172 = (add 172 1)\nInt item173 = (add 173 1)\nInt item174 = (add 174 1)\nInt item175 = (add 175 1)\nInt item176 = (add 176 1)\nInt item177 = (add 177 1)\nInt item178 = (add 178 1)\nInt item179 = (add 179 1)\nInt item180 = (add 180 1)\nInt item181 = (add 181 1)\nInt item182 = (add 182 1)\nInt item183 = (add 183 1)\nInt item184 = (add 184 1)\nInt item185 = (add 185 1)\nInt item186 = (add 186 1)\nInt item187 = (add 187 1)\nInt item188 = (add 188 1)\nInt item189 = (add 189 1)\nInt item190 = (add 190 1)\nInt item191 = (add 191 1)\nInt item192 = (add 192 1)\nInt item193 = (add 193 1)\nInt item194 = (add 194 1)\nInt item195 = (add 195 1)\nInt item196 = (add 196 1)\nInt item197 = (add 197 1)\nInt item198 = (add 198 1)\nInt item199 = (add 199 1)\nInt item200 = (add 200 1)\nInt item201 = (add 201 1)\nInt item202 = (add 202 1)\nInt item203 = (add 203 1)\nInt item204 = (add 204 1)\nInt item205 = (add 205 1)\nInt item206 = (add 206 1)\nInt item207 = (add 207 1)\nInt item208 = (add 208 1)\nInt item209 = (add 209 1)\nInt item210 = (add 210 1)\nInt item211 = (add 211 1)\nInt item212 = (add 212 1)\nInt item213 = (add 213 1)\nInt item214 = (add 214 1)\nInt item215 = (add 215 1)\nInt item216 = (add 216 1)\nInt item217 = (add 217 1)\nInt item218 = (add 218 1)\nInt item219 = (add 219 1)\nInt item220 = (add 220 1)\nInt item221 = (add 221 1)\nInt item222 = (add 222 1)\nInt item223 = (add 223 1)\nInt item224 = (add 224 1)\nInt item225 = (add 225 1)\nInt item226 = (add 226 1)\nInt item227 = (add 227 1)\nInt item228 = (add 228 1)\nInt item229 = (add 229 1)\nInt item230 = (add 230 1)\nInt item231 = (add 231 1)\nInt item232 = (add 232 1)\nInt item233 = (add 233 1)\nInt item234 = (add 234 1)\nInt item235 = (add 235 1)\nInt item236 = (add 236 1)\nInt item237 = (add 237 1)\nInt item238 = (add 238 1)\nInt item239 = (add 239 1)\nInt item240 = (add 240 1)\nInt item241 = (add 241 1)\nInt item242 = (add 242 1)\nInt item243 = (add 243 1)\nInt item244 = (add 244 1)\nInt item245 = (add 245 1)\nInt item246 = (add 246 1)\nInt item247 = (add 247 1)\nInt item248 = (add 248 1)\nInt item249 = (add 249 1)\nInt item250 = (add 250 1)\nInt item251 = (add 251 1)\nInt item252 = (add 252 1)\nInt item253 = (add 253 1)\nInt item254 = (add 254 1)\nInt item255 = (add 255 1)\nInt item256 = (add 256 1)\nInt item257 = (add 257 1)\nInt item258 = (add 258 1)\nInt item259 = (add 259 1)\nInt item260 = (add 260 1)\nInt item261 = (add 261 1)\nInt item262 = (add 262 1)\nInt item263 = (add 263 1)\nInt item264 = (add 264 1)\nInt item265 = (add 265 1)\nInt item266 = (add 266 1)\nInt item267 = (add 267 1)\nInt item268 = (add 268 1)\nInt item269 = (add 269 1)\nInt item270 = (add 270 1)\nInt item271 = (add 271 1)\nInt item272 = (add 272 1)\nInt item273 = (add 273 1)\nInt item274 = (add 274 1)\nInt item275 = (add 275 1)\nInt item276 = (add 276 1)\nInt item277 = (add 277 1)\nInt item278 = (add 278 1)\nInt item279 = (add 279 1)\nInt item280 = (add 280 1)\nInt item281 = (add 281 1)\nInt item282 = (add 282 1)\nInt item283 = (add 283 1)\nInt item284 = (add 284 1)\nInt item285 = (add 285 1)\nInt item286 = (add 286 1)\nInt item287 = (add 287 1)\nInt item288 = (add 288 1)\nInt item289 = (add 289 1)\nInt item290 = (add 290 1)\nInt item291 = (add 291 1)\nInt item292 = (add 292 1)\nInt item293 = (add 293 1)\nInt item294 = (add 294 1)\nInt item295 = (add 295 1)\nInt item296 = (add 296 1)\nInt item297 = (add 297 1)\nInt item298 = (add 298 1)\nInt item299 = (add 299 1)\nInt item300 = (add 300 1)\nInt item301 = (add 301 1)\nInt item302 = (add 302 1)\nInt item303 = (add 303 1)\nInt item304 = (add 304 1)\nInt item305 = (add 305 1)\nInt item306 = (add 306 1)\nInt item307 = (add 307 1)\nInt item308 = (add 308 1)\nInt item309 = (add 309 1)\nInt item310 = (add 310 1)\nInt item311 = (add 311 1)\nInt item312 = (add 312 1)\nInt item313 = (add 313 1)\nInt item314 = (add 314 1)\nInt item315 = (add 315 1)\nInt item316 = (add 316 1)\nInt item317 = (add 317 1)\nInt item318 = (add 318 1)\nInt item319 = (add 319 1)\nInt item320 = (add 320 1)\nInt item321 = (add 321 1)\nInt item322 = (add 322 1)\nInt item323 = (add 323 1)\nInt item324 = (add 324 1)\nInt item325 = (add 325 1)\nInt item326 = (add 326 1)\nInt item327 = (add 327 1)\nInt item328 = (add 328 1)\nInt item329 = (add 329 1)\nInt item330 = (add 330 1)\nInt item331 = (add 331 1)\nInt item332 = (add 332 1)\nInt item333 = (add 333 1)\nInt item334 = (add 334 1)\nInt item335 = (add 335 1)\nInt item336 = (add 336 1)\nInt item337 = (add 337 1)\nInt item338 = (add 338 1)\nInt item339 = (add 339 1)\nInt item340 = (add 340 1)\nInt item341 = (add 341 1)\nInt item342 = (add 342 1)\nInt item343 = (add 343 1)\nInt item344 = (add 344 1)\nInt item345 = (add 345 1)\nInt item346 = (add 346 1)\nInt item347 = (add 347 1)\nInt item348 = (add 348 1)\nInt item349 = (add 349 1)\nInt item350 = (add 350 1)\nInt item351 = (add 351 1)\nInt item352 = (add 352 1)\nInt item353 = (add 353 1)\nInt item354 = (add 354 1)\nInt item355 = (add 355 1)\nInt item356 = (add 356 1)\nInt item357 = (add 357 1)\nInt item358 = (add 358 1)\nInt item359 = (add 359 1)\nInt item360 = (add 360 1)\nInt item361 = (add 361 1)\nInt item362 = (add 362 1)\nInt item363 = (add 363 1)\nInt item364 = (add 364 1)\nInt item365 = (add 365 1)\nInt item366 = (add 366 1)\nInt item367 = (add 367 1)\nInt item368 = (add 368 1)\nInt item369 = (add 369 1)\nInt item370 = (add 370 1)\nInt item371 = (add 371 1)\nInt item372 = (add 372 1)\nInt item373 = (add 373 1)\nInt item374 = (add 374 1)\nInt item375 = (add 375 1)\nInt item376 = (add 376 1)\nInt item377 = (add 377 1)\nInt item378 = (add 378 1)\nInt item379 = (add 379 1)\nInt item380 = (add 380 1)\nInt item381 = (add 381 1)\nInt item382 = (add 382 1)\nInt item383 = (add 383 1)\nInt item384 = (add 384 1)\nInt item385 = (add 385 1)\nInt item386 = (add 386 1)\nInt item387 = (add 387 1)\nInt item388 = (add 388 1)\nInt item389 = (add 389 1)\nInt item390 = (add 390 1)\nInt item391 = (add 391 1)\nInt item392 = (add 392 1)\nInt item393 = (add 393 1)\nInt item394 = (add 394 1)\nInt item395 = (add 395 1)\nInt item396 = (add 396 1)\nInt item397 = (add 397 1)\nInt item398 = (add 398 1)\nInt item399 = (add 399 1)\nInt item400 = (add 400 1)\nInt item401 = (add 401 1)\nInt item402 = (add 402 1)\nInt item403 = (add 403 1)\nInt item404 = (add 404 1)\nInt item405 = (add 405 1)\nInt item406 = (add 406 1)\nInt item407 = (add 407 1)\nInt item408 = (add 408 1)\nInt item409 = (add 409 1)\nInt item410 = (add 410 1)\nInt item411 = (add 411 1)\nInt item412 = (add 412 1)\nInt item413 = (add 413 1)\nInt item414 = (add 414 1)\nInt item415 = (add 415 1)\nInt item416 = (add 416 1)\nInt item417 = (add 417 1)\nInt item418 = (add 418 1)\nInt item419 = (add 419 1)\nInt item420 = (add 420 1)\nInt item421 = (add 421 1)\nInt item422 = (add 422 1)\nInt item423 = (add 423 1)\nInt item424 = (add 424 1)\nInt item425 = (add 425 1)\nInt item426 = (add 426 1)\nInt item427 = (add 427 1)\nInt item428 = (add 428 1)\nInt item429 = (add 429 1)\nInt item430 = (add 430 1)\nInt item431 = (add 431 1)\nInt item432 = (add 432 1)\nInt item433 = (add 433 1)\nInt item434 = (add 434 1)\nInt item435 = (add 435 1)\nInt item436 = (add 436 1)\nInt item437 = (add 437 1)\nInt item438 = (add 438 1)\nInt item439 = (add 439 1)\nInt item440 = (add 440 1)\nInt item441 = (add 441 1)\nInt item442 = (add 442 1)\nInt item443 = (add 443 1)\nInt item444 = (add 444 1)\nInt item445 = (add 445 1)\nInt item446 = (add 446 1)\nInt item447 = (add 447 1)\nInt item448 = (add 448 1)\nInt item449 = (add 449 1)\nInt item450 = (add 450 1)\nInt item451 = (add 451 1)\nInt item452 = (add 452 1)\nInt item453 = (add 453 1)\nInt item454 = (add 454 1)\nInt item455 = (add 455 1)\nInt item456 = (add 456 1)\nInt item457 = (add 457 1)\nInt item458 = (add 458 1)\nInt item459 = (add 459 1)\nInt item460 = (add 460 1)\nInt item461 = (add 461 1)\nInt item462 = (add 462 1)\nInt item463 = (add 463 1)\nInt item464 = (add 464 1)\nInt item465 = (add 465 1)\nInt item466 = (add 466 1)\nInt item467 = (add 467 1)\nInt item468 = (add 468 1)\nInt item469 = (add 469 1)\nInt item470 = (add 470 1)\nInt item471 = (add 471 1)\nInt item472 = (add 472 1)\nInt item473 = (add 473 1)\nInt item474 = (add 474 1)\nInt item475 = (add 475 1)\nInt item476 = (add 476 1)\nInt item477 = (add 477 1)\nInt item478 = (add 478 1)\nInt item479 = (add 479 1)\nInt item480 = (add 480 1)\nInt item481 = (add 481 1)\nInt item482 = (add 482 1)\nInt item483 = (add 483 1)\nInt item484 = (add 484 1)\nInt item485 = (add 485 1)\nInt item486 = (add 486 1)\nInt item487 = (add 487 1)\nInt item488 = (add 488 1)\nInt item489 = (add 489 1)\nInt item490 = (add 490 1)\nInt item491 = (add 491 1)\nInt item492 = (add 492 1)\nInt item493 = (add 493 1)\nInt item494 = (add 494 1)\nInt item495 = (add 495 1)\nInt item496 = (add 496 1)\nInt item497 = (add 497 1)\nInt item498 = (add 498 1)\nInt item499 = (add 499 1)\nInt item500 = (add 500 1)\nInt item501 = (add 501 1)\nInt item502 = (add 502 1)\nInt item503 = (add 503 1)\nInt item504 = (add 504 1)\nInt item505 = (add 505 1)\nInt item506 = (add 506 1)\nInt item507 = (add 507 1)\nInt item508 = (add 508 1)\nInt item509 = (add 509 1)\nInt item510 = (add 510 1)\nInt item511 = (add 511 1)\nInt item512 = (add 512 1)\nInt item513 = (add 513 1)\nInt item514 = (add 514 1)\nInt item515 = (add 515 1)\nInt item516 = (add 516 1)\nInt item517 = (add 517 1)\nInt item518 = (add 518 1)\nInt item519 = (add 519 1)\nInt item520 = (add 520 1)\nInt item521 = (add 521 1)\nInt item522 = (add 522 1)\nInt item523 = (add 523 1)\nInt item524 = (add 524 1)\nInt item525 = (add 525 1)\nInt item526 = (add 526 1)\nInt item527 = (add 527 1)\nInt item528 = (add 528 1)\nInt item529 = (add 529 1)\nInt item530 = (add 530 1)\nInt item531 = (add 531 1)\nInt item532 = (add 532 1)\nInt item533 = (add 533 1)\nInt item534 = (add 534 1)\nInt item535 = (add 535 1)\nInt item536 = (add 536 1)\nInt item537 = (add 537 1)\nInt item538 = (add 538 1)\nInt item539 = (add 539 1)\nInt item540 = (add 540 1)\nInt item541 = (add 541 1)\nInt item542 = (add 542 1)\nInt item543 = (add 543 1)\nInt item544 = (add 544 1)\nInt item545 = (add 545 1)\nInt item546 = (add 546 1)\nInt item547 = (add 547 1)\nInt item548 = (add 548 1)\nInt item549 = (add 549 1)\nInt item550 = (add 550 1)\nInt item551 = (add 551 1)\nInt item552 = (add 552 1)\nInt item553 = (add 553 1)\nInt item554 = (add 554 1)\nInt item555 = (add 555 1)\nInt item556 = (add 556 1)\nInt item557 = (add 557 1)\nInt item558 = (add 558 1)\nInt item559 = (add 559 1)\nInt item560 = (add 560 1)\nInt item561 = (add 561 1)\nInt item562 = (add 562 1)\nInt item563 = (add 563 1)\nInt item564 = (add 564 1)\nInt item565 = (add 565 1)\nInt item566 = (add 566 1)\nInt item567 = (add 567 1)\nInt item568 = (add 568 1)\nInt item569 = (add 569 1)\nInt item570 = (add 570 1)\nInt item571 = (add 571 1)\nInt item572 = (add 572 1)\nInt item573 = (add 573 1)\nInt item574 = (add 574 1)\nInt item575 = (add 575 1)\nInt item576 = (add 576 1)\nInt item577 = (add 577 1)\nInt item578 = (add 578 1)\nInt item579 = (add 579 1)\nInt item580 = (add 580 1)\nInt item581 = (add 581 1)\nInt item582 = (add 582 1)\nInt item583 = (add 583 1)\nInt item584 = (add 584 1)\nInt item585 = (add 585 1)\nInt item586 = (add 586 1)\nInt item587 = (add 587 1)\nInt item588 = (add 588 1)\nInt item589 = (add 589 1)\nInt item590 = (add 590 1)\nInt item591 = (add 591 1)\nInt item592 = (add 592 1)\nInt item593 = (add 593 1)\nInt item594 = (add 594 1)\nInt item595 = (add 595 1)\nInt item596 = (add 596 1)\nInt item597 = (add 597 1)\nInt item598 = (add 598 1)\nInt item599 = (add 599 1)\nInt item600 = (add 600 1)\nInt item601 = (add 601 1)\nInt item602 = (add 602 1)\nInt item603 = (add 603 1)\nInt item604 = (add 604 1)\nInt item605 = (add 605 1)\nInt item606 = (add 606 1)\nInt item607 = (add 607 1)\nInt item608 = (add 608 1)\nInt item609 = (add 609 1)\nInt item610 = (add 610 1)\nInt item611 = (add 611 1)\nInt item612 = (add 612 1)\nInt item613 = (add 613 1)\nInt item614 = (add 614 1)\nInt item615 = (add 615 1)\nInt item616 = (add 616 1)\nInt item617 = (add 617 1)\nInt item618 = (add 618 1)\nInt item619 = (add 619 1)\nInt item620 = (add 620 1)\nInt item621 = (add 621 1)\nInt item622 = (add 622 1)\nInt item623 = (add 623 1)\nInt item624 = (add 624 1)\nInt item625 = (add 625 1)\nInt item626 = (add 626 1)\nInt item627 = (add 627 1)\nInt item628 = (add 628 1)\nInt item629 = (add 629 1)\nInt item630 = (add 630 1)\nInt item631 = (add 631 1)\nInt item632 = (add 632 1)\nInt item633 = (add 633 1)\nInt item634 = (add 634 1)\nInt item635 = (add 635 1)\nInt item636 = (add 636 1)\nInt item637 = (add 637 1)\nInt item638 = (add 638 1)\nInt item639 = (add 639 1)\nInt item640 = (add 640 1)\nInt item641 = (add 641 1)\nInt item642 = (add 642 1)\nInt item643 = (add 643 1)\nInt item644 = (add 644 1)\nInt item645 = (add 645 1)\nInt item646 = (add 646 1)\nInt item647 = (add 647 1)\nInt item648 = (add 648 1)\nInt item649 = (add 649 1)\nInt item650 = (add 650 1)\nInt item651 = (add 651 1)\nInt item652 = (add 652 1)\nInt item653 = (add 653 1)\nInt item654 = (add 654 1)\nInt item655 = (add 655 1)\nInt item656 = (add 656 1)\nInt item657 = (add 657 1)\nInt item658 = (add 658 1)\nInt item659 = (add 659 1)\nInt item660 = (add 660 1)\nInt item661 = (add 661 1)\nInt item662 = (add 662 1)\nInt item663 = (add 663 1)\nInt item664 = (add 664 1)\nInt item665 = (add 665 1)\nInt item666 = (add 666 1)\nInt item667 = (add 667 1)\nInt item668 = (add 668 1)\nInt item669 = (add 669 1)\nInt item670 = (add 670 1)\nInt item671 = (add 671 1)\nInt item672 = (add 672 1)\nInt item673 = (add 673 1)\nInt item674 = (add 674 1)\nInt item675 = (add 675 1)\nInt item676 = (add 676 1)\nInt item677 = (add 677 1)\nInt item678 = (add 678 1)\nInt item679 = (add 679 1)\nInt item680 = (add 680 1)\nInt item681 = (add 681 1)\nInt item682 = (add 682 1)\nInt item683 = (add 683 1)\nInt item684 = (add 684 1)\nInt item685 = (add 685 1)\nInt item686 = (add 686 1)\nInt item687 = (add 687 1)\nInt item688 = (add 688 1)\nInt item689 = (add 689 1)\nInt item690 = (add 690 1)\nInt item691 = (add 691 1)\nInt item692 = (add 692 1)\nInt item693 = (add 693 1)\nInt item694 = (add 694 1)\nInt item695 = (add 695 1)\nInt item696 = (add 696 1)\nInt item697 = (add 697 1)\nInt item698 = (add 698 1)\nInt item699 = (add 699 1)\nInt item700 = (add 700 1)\nInt item701 = (add 701 1)\nInt item702 = (add 702 1)\nInt item703 = (add 703 1)\nInt item704 = (add 704 1)\nInt item705 = (add 705 1)\nInt item706 = (add 706 1)\nInt item707 = (add 707 1)\nInt item708 = (add 708 1)\nInt item709 = (add 709 1)\nInt item710 = (add 710 1)\nInt item711 = (add 711 1)\nInt item712 = (add 712 1)\nInt item713 = (add 713 1)\nInt item714 = (add 714 1)\nInt item715 = (add 715 1)\nInt item716 = (add 716 1)\nInt item717 = (add 717 1)\nInt item718 = (add 718 1)\nInt item719 = (add 719 1)\nInt item720 = (add 720 1)\nInt item721 = (add 721 1)\nInt item722 = (add 722 1)\nInt item723 = (add 723 1)\nInt item724 = (add 724 1)\nInt item725 = (add 725 1)\nInt item726 = (add 726 1)\nInt item727 = (add 727 1)\nInt item728 = (add 728 1)\nInt item729 = (add 729 1)\nInt item730 = (add 730 1)\nInt item731 = (add 731 1)\nInt item732 = (add 732 1)\nInt item733 = (add 733 1)\nInt item734 = (add 734 1)\nInt item735 = (add 735 1)\nInt item736 = (add 736 1)\nInt item737 = (add 737 1)\nInt item738 = (add 738 1)\nInt item739 = (add 739 1)\nInt item740 = (add 740 1)\nInt item741 = (add 741 1)\nInt item742 = (add 742 1)\nInt item743 = (add 743 1)\nInt item744 = (add 744 1)\nInt item745 = (add 745 1)\nInt item746 = (add 746 1)\nInt item747 = (add 747 1)\nInt item748 = (add 748 1)\nInt item749 = (add 749 1)\nInt item750 = (add 750 1)\nInt item751 = (add 751 1)\nInt item752 = (add 752 1)\nInt item753 = (add 753 1)\nInt item754 = (add 754 1)\nInt item755 = (add 755 1)\nInt item756 = (add 756 1)\nInt item757 = (add 757 1)\nInt item758 = (add 758 1)\nInt item759 = (add 759 1)\nInt item760 = (add 760 1)\nInt item761 = (add 761 1)\nInt item762 = (add 762 1)\nInt item763 = (add 763 1)\nInt item764 = (add 764 1)\nInt item765 = (add 765 1)\nInt item766 = (add 766 1)\nInt item767 = (add 767 1)\nInt item768 = (add 768 1)\nInt item769 = (add 769 1)\nInt item770 = (add 770 1)\nInt item771 = (add 771 1)\nInt item772 = (add 772 1)\nInt item773 = (add 773 1)\nInt item774 = (add 774 1)\nInt item775 = (add 775 1)\nInt item776 = (add 776 1)\nInt item777 = (add 777 1)\nInt item778 = (add 778 1)\nInt item779 = (add 779 1)\nInt item780 = (add 780 1)\nInt item781 = (add 781 1)\nInt item782 = (add 782 1)\nInt item783 = (add 783 1)\nInt item784 = (add 784 1)\nInt item785 = (add 785 1)\nInt item786 = (add 786 1)\nInt item787 = (add 787 1)\nInt item788 = (add 788 1)\nInt item789 = (add 789 1)\nInt item790 = (add 790 1)\nInt item791 = (add 791 1)\nInt item792 = (add 792 1)\nInt item793 = (add 793 1)\nInt item794 = (add 794 1)\nInt item795 = (add 795 1)\nInt item796 = (add 796 1)\nInt item797 = (add 797 1)\nInt item798 = (add 798 1)\nInt item799 = (add 799 1)\nInt item800 = (add 800 1)\nInt item801 = (add 801 1)\nInt item802 = (add 802 1)\nInt item803 = (add 803 1)\nInt item804 = (add 804 1)\nInt item805 = (add 805 1)\nInt item806 = (add 806 1)\nInt item807 = (add 807 1)\nInt item808 = (add 808 1)\nInt item809 = (add 809 1)\nInt item810 = (add 810 1)\nInt item811 = (add 811 1)\nInt item812 = (add 812 1)\nInt item813 = (add 813 1)\nInt item814 = (add 814 1)\nInt item815 = (add 815 1)\nInt item816 = (add 816 1)\nInt item817 = (add 817 1)\nInt item818 = (add 818 1)\nInt item819 = (add 819 1)\nInt item820 = (add 820 1)\nInt item821 = (add 821 1)\nInt item822 = (add 822 1)\nInt item823 = (add 823 1)\nInt item824 = (add 824 1)\nInt item825 = (add 825 1)\nInt item826 = (add 826 1)\nInt item827 = (add 827 1)\nInt item828 = (add 828 1)\nInt item829 = (add 829 1)\nInt item830 = (add 830 1)\nInt item831 = (add 831 1)\nInt item832 = (add 832 1)\nInt item833 = (add 833 1)\nInt item834 = (add 834 1)\nInt item835 = (add 835 1)\nInt item836 = (add 836 1)\nInt item837 = (add 837 1)\nInt item838 = (add 838 1)\nInt item839 = (add 839 1)\nInt item840 = (add 840 1)\nInt item841 = (add 841 1)\nInt item842 = (add 842 1)\nInt item843 = (add 843 1)\nInt item844 = (add 844 1)\nInt item845 = (add 845 1)\nInt item846 = (add 846 1)\nInt item847 = (add 847 1)\nInt item848 = (add 848 1)\nInt item849 = (add 849 1)\nInt item850 = (add 850 1)\nInt item851 = (add 851 1)\nInt item852 = (add 852 1)\nInt item853 = (add 853 1)\nInt item854 = (add 854 1)\nInt item855 = (add 855 1)\nInt item856 = (add 856 1)\nInt item857 = (add 857 1)\nInt item858 = (add 858 1)\nInt item859 = (add 859 1)\nInt item860 = (add 860 1)\nInt item861 = (add 861 1)\nInt item862 = (add 862 1)\nInt item863 = (add 863 1)\nInt item864 = (add 864 1)\nInt item865 = (add 865 1)\nInt item866 = (add 866 1)\nInt item867 = (add 867 1)\nInt item868 = (add 868 1)\nInt item869 = (add 869 1)\nInt item870 = (add 870 1)\nInt item871 = (add 871 1)\nInt item872 = (add 872 1)\nInt item873 = (add 873 1)\nInt item874 = (add 874 1)\nInt item875 = (add 875 1)\nInt item876 = (add 876 1)\nInt item877 = (add 877 1)\nInt item878 = (add 878 1)\nInt item879 = (add 879 1)\nInt item880 = (add 880 1)\nInt item881 = (add 881 1)\nInt item882 = (add 882 1)\nInt item883 = (add 883 1)\nInt item884 = (add 884 1)\nInt item885 = (add 885 1)\nInt item886 = (add 886 1)\nInt item887 = (add 887 1)\nInt item888 = (add 888 1)\nInt item889 = (add 889 1)\nInt item890 = (add 890 1)\nInt item891 = (add 891 1)\nInt item892 = (add 892 1)\nInt item893 = (add 893 1)\nInt item894 = (add 894 1)\nInt item895 = (add 895 1)\nInt item896 = (add 896 1)\nInt item897 = (add 897 1)\nInt item898 = (add 898 1)\nInt item899 = (add 899 1)\nInt item900 = (add 900 1)\nInt item901 = (add 901 1)\nInt item902 = (add 902 1)\nInt item903 = (add 903 1)\nInt item904 = (add 904 1)\nInt item905 = (add 905 1)\nInt item906 = (add 906 1)\nInt item907 = (add 907 1)\nInt item908 = (add 908 1)\nInt item909 = (add 909 1)\nInt item910 = (add 910 1)\nInt item911 = (add 911 1)\nInt item912 = (add 912 1)\nInt item913 = (add 913 1)\nInt item914 = (add 914 1)\nInt item915 = (add 915 1)\nInt item916 = (add 916 1)\nInt item917 = (add 917 1)\nInt item918 = (add 918 1)\nInt item919 = (add 919 1)\nInt item920 = (add 920 1)\nInt item921 = (add 921 1)\nInt item922 = (add 922 1)\nInt item923 = (add 923 1)\nInt item924 = (add 924 1)\nInt item925 = (add 925 1)\nInt item926 = (add 926 1)\nInt item927 = (add 927 1)\nInt item928 = (add 928 1)\nInt item929 = (add 929 1)\nInt item930 = (add 930 1)\nInt item931 = (add 931 1)\nInt item932 = (add 932 1)\nInt item933 = (add 933 1)\nInt item934 = (add 934 1)\nInt item935 = (add 935 1)\nInt item936 = (add 936 1)\nInt item937 = (add 937 1)\nInt item938 = (add 938 1)\nInt item939 = (add 939 1)\nInt item940 = (add 940 1)\nInt item941 = (add 941 1)\nInt item942 = (add 942 1)\nInt item943 = (add 943 1)\nInt item944 = (add 944 1)\nInt item945 = (add 945 1)\nInt item946 = (add 946 1)\nInt item947 = (add 947 1)\nInt item948 = (add 948 1)\nInt item949 = (add 949 1)\nInt item950 = (add 950 1)\nInt item951 = (add 951 1)\nInt item952 = (add 952 1)\nInt item953 = (add 953 1)\nInt item954 = (add 954 1)\nInt item955 = (add 955 1)\nInt item956 = (add 956 1)\nInt item957 = (add 957 1)\nInt item958 = (add 958 1)\nInt item959 = (add 959 1)\nInt item960 = (add 960 1)\nInt item961 = (add 961 1)\nInt item962 = (add 962 1)\nInt item963 = (add 963 1)\nInt item964 = (add 964 1)\nInt item965 = (add 965 1)\nInt item966 = (add 966 1)\nInt item967 = (add 967 1)\nInt item968 = (add 968 1)\nInt item969 = (add 969 1)\nInt item970 = (add 970 1)\nInt item971 = (add 971 1)\nInt item972 = (add 972 1)\nInt item973 = (add 973 1)\nInt item974 = (add 974 1)\nInt item975 = (add 975 1)\nInt item976 = (add 976 1)\nInt item977 = (add 977 1)\nInt item978 = (add 978 1)\nInt item979 = (add 979 1)\nInt item980 = (add 980 1)\nInt item981 = (add 981 1)\nInt item982 = (add 982 1)\nInt item983 = (add 983 1)\nInt item984 = (add 984 1)\nInt item985 = (add 985 1)\nInt item986 = (add 986 1)\nInt item987 = (add 987 1)\nInt item988 = (add 988 1)\nInt item989 = (add 989 1)\nInt item990 = (add 990 1)\nInt item991 = (add 991 1)\nInt item992 = (add 992 1)\nInt item993 = (add 993 1)\nInt item994 = (add 994 1)\nInt item995 = (add 995 1)\nInt item996 = (add 996 1)\nInt item997 = (add 997 1)\nInt item998 = (add 998 1)\nInt item999 = (add 999 1)",
+  "evalSource": "(reduce (map (range 0 10000) (fn Int n =\u003E (mul n 2))) 0 (fn Int acc, Int n =\u003E (add acc n)))",
+  "measurements": [
+    {
+      "name": "first-engine-create-dispose",
+      "samples": [
+        {
+          "milliseconds": 100.9588,
+          "allocatedBytes": 1994904,
+          "managedHeapBeforeBytes": 2120312,
+          "managedHeapAfterBytes": 4131416,
+          "workingSetBytes": 71892992,
+          "processPeakWorkingSetBytes": 71892992,
+          "result": 1
+        }
+      ]
+    },
+    {
+      "name": "warm-engine-create-dispose",
+      "samples": [
+        {
+          "milliseconds": 2.881,
+          "allocatedBytes": 1904696,
+          "managedHeapBeforeBytes": 2190592,
+          "managedHeapAfterBytes": 4113536,
+          "workingSetBytes": 73850880,
+          "processPeakWorkingSetBytes": 73850880,
+          "result": 1
+        },
+        {
+          "milliseconds": 2.8975,
+          "allocatedBytes": 1904696,
+          "managedHeapBeforeBytes": 2191024,
+          "managedHeapAfterBytes": 4113968,
+          "workingSetBytes": 69820416,
+          "processPeakWorkingSetBytes": 73351168,
+          "result": 1
+        },
+        {
+          "milliseconds": 3.5089,
+          "allocatedBytes": 1904696,
+          "managedHeapBeforeBytes": 2191096,
+          "managedHeapAfterBytes": 4114040,
+          "workingSetBytes": 69820416,
+          "processPeakWorkingSetBytes": 73351168,
+          "result": 1
+        },
+        {
+          "milliseconds": 2.7832,
+          "allocatedBytes": 1904696,
+          "managedHeapBeforeBytes": 2191168,
+          "managedHeapAfterBytes": 4114112,
+          "workingSetBytes": 69820416,
+          "processPeakWorkingSetBytes": 73351168,
+          "result": 1
+        },
+        {
+          "milliseconds": 2.8172,
+          "allocatedBytes": 1904696,
+          "managedHeapBeforeBytes": 2191240,
+          "managedHeapAfterBytes": 4114184,
+          "workingSetBytes": 69820416,
+          "processPeakWorkingSetBytes": 73351168,
+          "result": 1
+        }
+      ]
+    },
+    {
+      "name": "lex-parse-1000-declarations",
+      "samples": [
+        {
+          "milliseconds": 7.2666,
+          "allocatedBytes": 4701336,
+          "managedHeapBeforeBytes": 2357664,
+          "managedHeapAfterBytes": 7080144,
+          "workingSetBytes": 73494528,
+          "processPeakWorkingSetBytes": 73494528,
+          "result": 1000
+        },
+        {
+          "milliseconds": 5.4033,
+          "allocatedBytes": 4701336,
+          "managedHeapBeforeBytes": 2358096,
+          "managedHeapAfterBytes": 7086816,
+          "workingSetBytes": 73674752,
+          "processPeakWorkingSetBytes": 73674752,
+          "result": 1000
+        },
+        {
+          "milliseconds": 4.6848,
+          "allocatedBytes": 4701336,
+          "managedHeapBeforeBytes": 2358168,
+          "managedHeapAfterBytes": 7086888,
+          "workingSetBytes": 73678848,
+          "processPeakWorkingSetBytes": 73678848,
+          "result": 1000
+        },
+        {
+          "milliseconds": 6.6107,
+          "allocatedBytes": 4701336,
+          "managedHeapBeforeBytes": 2358240,
+          "managedHeapAfterBytes": 7086992,
+          "workingSetBytes": 73678848,
+          "processPeakWorkingSetBytes": 73678848,
+          "result": 1000
+        },
+        {
+          "milliseconds": 4.6828,
+          "allocatedBytes": 4701336,
+          "managedHeapBeforeBytes": 2358312,
+          "managedHeapAfterBytes": 7087032,
+          "workingSetBytes": 73678848,
+          "processPeakWorkingSetBytes": 73678848,
+          "result": 1000
+        }
+      ]
+    },
+    {
+      "name": "evaluate-preparsed-map-reduce-10000",
+      "samples": [
+        {
+          "milliseconds": 60.7758,
+          "allocatedBytes": 17328832,
+          "managedHeapBeforeBytes": 2598008,
+          "managedHeapAfterBytes": 4336928,
+          "workingSetBytes": 79876096,
+          "processPeakWorkingSetBytes": 79876096,
+          "result": 99990000
+        },
+        {
+          "milliseconds": 68.9433,
+          "allocatedBytes": 17328832,
+          "managedHeapBeforeBytes": 2598440,
+          "managedHeapAfterBytes": 4337360,
+          "workingSetBytes": 79876096,
+          "processPeakWorkingSetBytes": 79876096,
+          "result": 99990000
+        },
+        {
+          "milliseconds": 80.7331,
+          "allocatedBytes": 17266952,
+          "managedHeapBeforeBytes": 2598512,
+          "managedHeapAfterBytes": 4271288,
+          "workingSetBytes": 80887808,
+          "processPeakWorkingSetBytes": 80887808,
+          "result": 99990000
+        },
+        {
+          "milliseconds": 36.9804,
+          "allocatedBytes": 16528832,
+          "managedHeapBeforeBytes": 2598584,
+          "managedHeapAfterBytes": 11885784,
+          "workingSetBytes": 80928768,
+          "processPeakWorkingSetBytes": 80928768,
+          "result": 99990000
+        },
+        {
+          "milliseconds": 13.3772,
+          "allocatedBytes": 16528832,
+          "managedHeapBeforeBytes": 2598656,
+          "managedHeapAfterBytes": 11885816,
+          "workingSetBytes": 80928768,
+          "processPeakWorkingSetBytes": 80928768,
+          "result": 99990000
+        }
+      ]
+    },
+    {
+      "name": "render-sine-1-sections",
+      "samples": [
+        {
+          "milliseconds": 1.5965,
+          "allocatedBytes": 1061864,
+          "managedHeapBeforeBytes": 3756072,
+          "managedHeapAfterBytes": 4831040,
+          "workingSetBytes": 83468288,
+          "processPeakWorkingSetBytes": 83468288,
+          "result": 88200
+        },
+        {
+          "milliseconds": 1.3005,
+          "allocatedBytes": 1061864,
+          "managedHeapBeforeBytes": 3756504,
+          "managedHeapAfterBytes": 4831472,
+          "workingSetBytes": 83464192,
+          "processPeakWorkingSetBytes": 83464192,
+          "result": 88200
+        },
+        {
+          "milliseconds": 1.5201,
+          "allocatedBytes": 1061864,
+          "managedHeapBeforeBytes": 3756576,
+          "managedHeapAfterBytes": 4831544,
+          "workingSetBytes": 79167488,
+          "processPeakWorkingSetBytes": 82497536,
+          "result": 88200
+        },
+        {
+          "milliseconds": 1.3678,
+          "allocatedBytes": 1061864,
+          "managedHeapBeforeBytes": 3756648,
+          "managedHeapAfterBytes": 4827424,
+          "workingSetBytes": 75149312,
+          "processPeakWorkingSetBytes": 82497536,
+          "result": 88200
+        },
+        {
+          "milliseconds": 1.5702,
+          "allocatedBytes": 1061864,
+          "managedHeapBeforeBytes": 3756720,
+          "managedHeapAfterBytes": 4827496,
+          "workingSetBytes": 71155712,
+          "processPeakWorkingSetBytes": 82497536,
+          "result": 88200
+        }
+      ]
+    },
+    {
+      "name": "render-sine-8-sections",
+      "samples": [
+        {
+          "milliseconds": 16.5602,
+          "allocatedBytes": 33180384,
+          "managedHeapBeforeBytes": 10533480,
+          "managedHeapAfterBytes": 43722440,
+          "workingSetBytes": 122658816,
+          "processPeakWorkingSetBytes": 122658816,
+          "result": 705600
+        },
+        {
+          "milliseconds": 20.5319,
+          "allocatedBytes": 33180384,
+          "managedHeapBeforeBytes": 10533912,
+          "managedHeapAfterBytes": 43722872,
+          "workingSetBytes": 120279040,
+          "processPeakWorkingSetBytes": 121700352,
+          "result": 705600
+        },
+        {
+          "milliseconds": 16.2972,
+          "allocatedBytes": 33180384,
+          "managedHeapBeforeBytes": 10533984,
+          "managedHeapAfterBytes": 43722944,
+          "workingSetBytes": 116236288,
+          "processPeakWorkingSetBytes": 121700352,
+          "result": 705600
+        },
+        {
+          "milliseconds": 18.2654,
+          "allocatedBytes": 33180384,
+          "managedHeapBeforeBytes": 10534056,
+          "managedHeapAfterBytes": 43723016,
+          "workingSetBytes": 116236288,
+          "processPeakWorkingSetBytes": 121700352,
+          "result": 705600
+        },
+        {
+          "milliseconds": 15.6637,
+          "allocatedBytes": 33180384,
+          "managedHeapBeforeBytes": 10534128,
+          "managedHeapAfterBytes": 43723088,
+          "workingSetBytes": 116510720,
+          "processPeakWorkingSetBytes": 121700352,
+          "result": 705600
+        }
+      ]
+    },
+    {
+      "name": "render-sine-32-sections",
+      "samples": [
+        {
+          "milliseconds": 187.9242,
+          "allocatedBytes": 405830496,
+          "managedHeapBeforeBytes": 37350536,
+          "managedHeapAfterBytes": 83631872,
+          "workingSetBytes": 271495168,
+          "processPeakWorkingSetBytes": 304717824,
+          "result": 2822400
+        },
+        {
+          "milliseconds": 147.9831,
+          "allocatedBytes": 405801800,
+          "managedHeapBeforeBytes": 37350968,
+          "managedHeapAfterBytes": 303781248,
+          "workingSetBytes": 396685312,
+          "processPeakWorkingSetBytes": 396685312,
+          "result": 2822400
+        },
+        {
+          "milliseconds": 133.0681,
+          "allocatedBytes": 405828232,
+          "managedHeapBeforeBytes": 37351040,
+          "managedHeapAfterBytes": 83631736,
+          "workingSetBytes": 342204416,
+          "processPeakWorkingSetBytes": 418021376,
+          "result": 2822400
+        },
+        {
+          "milliseconds": 89.0825,
+          "allocatedBytes": 405827240,
+          "managedHeapBeforeBytes": 37351112,
+          "managedHeapAfterBytes": 83626184,
+          "workingSetBytes": 338186240,
+          "processPeakWorkingSetBytes": 418021376,
+          "result": 2822400
+        },
+        {
+          "milliseconds": 115.4752,
+          "allocatedBytes": 405826968,
+          "managedHeapBeforeBytes": 37351184,
+          "managedHeapAfterBytes": 107270352,
+          "workingSetBytes": 285745152,
+          "processPeakWorkingSetBytes": 418021376,
+          "result": 2822400
+        }
+      ]
+    }
+  ],
+  "renderEvidence": [
+    {
+      "sections": 1,
+      "Frames": 88200,
+      "SampleRate": 44100,
+      "Channels": 2,
+      "pcmBytes": 705600,
+      "sha256": "1FEB0D426CD4144CA52CCCAB97E9B8FE3FC64AD8F53028C67A6B5E706D6EB8B4",
+      "source": "use \u0022@audio\u0022\nsection phrase { Sequence lead = | C4q E4q G4q C5q | }\nSong piece = [phrase]\n"
+    },
+    {
+      "sections": 8,
+      "Frames": 705600,
+      "SampleRate": 44100,
+      "Channels": 2,
+      "pcmBytes": 5644800,
+      "sha256": "62B44F7B7E553C8A936A2F9535257307671E497BCFFDD9A982CE8131FBC51F64",
+      "source": "use \u0022@audio\u0022\nsection phrase { Sequence lead = | C4q E4q G4q C5q | }\nSong piece = [phrase phrase phrase phrase phrase phrase phrase phrase]\n"
+    },
+    {
+      "sections": 32,
+      "Frames": 2822400,
+      "SampleRate": 44100,
+      "Channels": 2,
+      "pcmBytes": 22579200,
+      "sha256": "9562C1E8081AD485369070079E64AB81E6FF5E4F63C4EC6E07888EE20534A455",
+      "source": "use \u0022@audio\u0022\nsection phrase { Sequence lead = | C4q E4q G4q C5q | }\nSong piece = [phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase phrase]\n"
+    }
+  ],
+  "notes": "Release, one warmup then five samples except first engine. GC forced before each sample; process-wide allocation delta. Evaluation excludes parsing/engine setup. Rendering excludes composition setup; no playback or device opening requested. Peak RSS is cumulative across the process, not per workload. First engine includes initialization, not process launch. Current full compatibility host may load user style packs. No real-time guarantees."
+}
