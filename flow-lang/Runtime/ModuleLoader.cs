@@ -102,10 +102,15 @@ public class ModuleLoader
             return ModuleLoadResult.Error;
         }
 
+        // A cycle is not an error: the module is already being loaded in this
+        // session, so this import is skipped (imports are idempotent). The rest of
+        // the cycling module's body still runs once, from its first import.
         if (_currentlyLoading.Contains(resolvedPath))
         {
-            _errorReporter.ReportError($"Circular import detected: {resolvedPath}", errorLocation);
-            return ModuleLoadResult.Error;
+            Diagnostics.RenderingDiagnostics.WarnOnce(
+                $"module-cycle:{resolvedPath}",
+                $"[module] circular import of '{Path.GetFileName(resolvedPath)}' in {Path.GetFileName(errorLocation.FileName ?? currentFile)} skipped — it is already loading");
+            return ModuleLoadResult.AlreadyLoaded;
         }
 
         _currentlyLoading.Add(resolvedPath);

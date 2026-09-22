@@ -1,0 +1,8 @@
+// contract: functional.lazy-inline
+// status: preserve
+// rationale: (eval lazy (...)) forces an inline thunk; creating a thunk does not
+//    evaluate it.
+use "@std"
+Lazy pending = lazy ((print "not forced"))
+(print (str (eval lazy ((add 1 1)))))
+(eval lazy ((print "forced inline")))

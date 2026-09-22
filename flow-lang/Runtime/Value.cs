@@ -264,7 +264,7 @@ public class Value
 
         if (Data is long longVal)
         {
-            if (targetType is IntType) return Int((int)longVal); // Lossy
+            if (targetType is IntType) return Int(FitInt(longVal));
             if (targetType is FloatType) return Float(longVal);
             if (targetType is DoubleType) return Double(longVal);
             if (targetType is NumberType) return Number(new BigInteger(longVal));
@@ -306,8 +306,11 @@ public class Value
         // Boxed BigInteger
         if (Data is BigInteger bigVal)
         {
-            if (targetType is IntType) return Int((int)bigVal); // Lossy
-            if (targetType is LongType) return Long((long)bigVal); // Lossy
+            if (targetType is IntType) return Int(FitInt(bigVal));
+            if (targetType is LongType)
+                return bigVal >= long.MinValue && bigVal <= long.MaxValue
+                    ? Long((long)bigVal)
+                    : throw new InvalidCastException($"value {bigVal} does not fit in Long");
             if (targetType is FloatType) return Float((float)bigVal); // Lossy
             if (targetType is DoubleType) return Double((double)bigVal); // Lossy
         }
@@ -383,9 +386,50 @@ public class Value
             return Dict(DictData.Empty(targetDict));
         }
 
+        // A Dict<Void, Void> built up from an untyped (dict) seed (for example a
+        // reduce accumulator) converts to a typed Dict<K, V> when every entry fits.
+        if (Type is DictType { KeyType: TypeSystem.PrimitiveTypes.VoidType, ValueType: TypeSystem.PrimitiveTypes.VoidType }
+            && targetType is DictType typedDict
+            && Data is DictData untypedData
+            && untypedData.Entries.All(kv =>
+                (kv.Key.Type.Equals(typedDict.KeyType) || kv.Key.Type.CanConvertTo(typedDict.KeyType))
+                && (kv.Value.Type.Equals(typedDict.ValueType) || kv.Value.Type.CanConvertTo(typedDict.ValueType))))
+        {
+            var converted = DictData.Empty(typedDict);
+            foreach (var (k, v) in untypedData.Entries)
+                converted = converted.WithSet(k.ConvertTo(typedDict.KeyType), v.ConvertTo(typedDict.ValueType));
+            return Dict(converted);
+        }
+
+        // Any tuple fits the any-arity `Tuple` type unchanged.
+        if (Type is TupleType && targetType is TupleType { IsAnyArity: true })
+        {
+            return this;
+        }
+
+        // Any array fits a Void[] (Voids) slot unchanged; the elements keep their types.
+        if (Type is ArrayType && targetType is ArrayType { ElementType: TypeSystem.PrimitiveTypes.VoidType })
+        {
+            return this;
+        }
+
+        // A lazy value keeps its thunk under a more specific annotation (Lazy<Int>);
+        // the forced value is checked where it is used.
+        if (Type is LazyType && targetType is LazyType targetLazy && Data is Thunk thunkData)
+        {
+            return Lazy(thunkData, targetLazy.InnerType);
+        }
+
         // Explicit Type Name error
         throw new InvalidCastException($"Cannot convert Flow type '{Type.Name}' with underlying CLR type '{(Data != null ? Data.GetType().Name : "null")}' to Flow target type '{targetType.Name}'");
     }
+
+    // Whole numbers narrow to Int only when they fit; wrapping would silently change
+    // the value (integer arithmetic promotes past Int instead).
+    private static int FitInt(BigInteger value) =>
+        value >= int.MinValue && value <= int.MaxValue
+            ? (int)value
+            : throw new InvalidCastException($"value {value} does not fit in Int");
 
     /// <summary>
     /// Gets the CLR value as a specific type safely.

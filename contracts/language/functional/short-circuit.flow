@@ -1,0 +1,10 @@
+// contract: functional.short-circuit
+// status: preserve
+// rationale: if evaluates only the taken branch, whether or not the branches are
+//    wrapped in lazy; and/or skip lazy operands they do not need.
+use "@std"
+(print (if true lazy ("yes") lazy ((print "untaken lazy"))))
+(print (if false "no" "fallback"))
+(print (if true "yes" (print "untaken bare")))
+(print (str (and false lazy ((print "never")))))
+(print (str (or true lazy ((print "never")))))

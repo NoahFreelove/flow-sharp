@@ -1,0 +1,16 @@
+// contract: calls.optional-parens-nested-arg
+// status: preserve
+// rationale: At the head of a statement a paren-less call also accepts
+//    parenthesized arguments on the same line, so print (str x) prints. Elsewhere
+//    (array literals, nested arguments) a parenthesized value after a name stays
+//    a separate value. Decision: docs/decisions/2026-09-22-phase1-semantic-fixes.md.
+use "@std"
+proc square (Int: n)
+    (mul n n)
+end proc
+print "before"
+print (str (square 5))
+print (concat "total: " (str (add 1 2)))
+Int[] pair = [5 (neg 1)]
+(print (str (len pair)))
+print "after"

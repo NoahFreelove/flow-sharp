@@ -1,0 +1,8 @@
+// contract: modules.relative-import
+// status: preserve
+// rationale: Relative imports resolve from the importing file and execute in the
+//    caller's scope, so procs and top-level variables become visible unqualified.
+use "@std"
+use "lib/plain.flow"
+(print (str (helper 5)))
+(print (str sharedConstant))

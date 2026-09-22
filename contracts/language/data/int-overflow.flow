@@ -1,0 +1,14 @@
+// contract: data.int-overflow
+// status: preserve
+// rationale: Integer arithmetic promotes on overflow (Int -> Long -> Number) as
+//    oversized literals do. Binding a value that does not fit an Int variable is
+//    an error naming the value (never a silent wrap); the name keeps its default.
+// errors: 1
+// stderr: Cannot assign to n: value 2147483648 does not fit in Int
+use "@std"
+Int big = 2147483647
+(print (str (add big 1)))
+(print (str (mul 3000000000 4000000000)))
+(print (str (neg (neg 2147483648))))
+Int n = (add big 1)
+(print (str n))

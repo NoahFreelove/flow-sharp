@@ -7,7 +7,9 @@ rationale and a compatibility status. `LanguageContractTests` runs every one
 new behavior as a deliberate decision and update the contract with it.
 
 Written for restructuring roadmap Phase 1 (section 2). The contract describes
-semantics, not implementation history. Recorded on 2026-09-22 against `dev`.
+semantics, not implementation history. Recorded on 2026-09-22 against `dev`;
+the defects, disputed behaviors and gaps found then were resolved the same day
+(`docs/decisions/2026-09-22-phase1-semantic-fixes.md`).
 
 ## Format
 
@@ -52,11 +54,11 @@ restructuring. Keep semantic changes out of extraction commits.
 | `calls.prefix-arithmetic` | preserve | Prefix arithmetic, `div` promotion, negative literal arguments. |
 | `calls.infix-rejected` | preserve | Infix `+` is a parse error that suggests the prefix builtin. |
 | `calls.optional-parens` | preserve | Statement-position calls with simple arguments omit parentheses. |
-| `calls.optional-parens-nested-arg` | disputed | `print (str x)` without outer parentheses silently does nothing. |
+| `calls.optional-parens-nested-arg` | preserve | At statement head, `print (str x)` calls with a parenthesized argument. |
 | `calls.flow-operator` | preserve | `->` chains builtins, procs and lambdas; equals nested calls. |
 | `calls.flow-as-binding` | preserve | `-> f as NAME` binds an intermediate result. |
 | `calls.tuple-unpack-flow` | preserve | `~>` spreads tuples, falls through to `->`; `unpack` call form. |
-| `calls.tuple-unpack-parenthesized` | gap | `(t ~> f)` is a parse error. |
+| `calls.tuple-unpack-parenthesized` | preserve | `(t ~> f)` works inside parentheses. |
 
 ### Procedures
 
@@ -65,7 +67,7 @@ restructuring. Keep semantic changes out of extraction commits.
 | `procedures.implicit-return` | preserve | Zero, one or several collected values give Void, the value, or an array. |
 | `procedures.explicit-return` | preserve | `return X` discards collected values and short-circuits. |
 | `procedures.trailing-void` | preserve | A trailing void call keeps an earlier collected value. |
-| `procedures.nothing-builtin` | disputed | `(Nothing)` does not force Void as documented. |
+| `procedures.nothing-builtin` | preserve | A final `(Nothing)` discards collected values and returns Void. |
 | `procedures.bare-return` | preserve | Bare `return` is a parse error. |
 | `procedures.recursion` | preserve | Recursive procs with lazily deferred base cases. |
 | `procedures.overloads` | preserve | User overloads by type; Int widens to a Double parameter. |
@@ -83,13 +85,13 @@ restructuring. Keep semantic changes out of extraction commits.
 | `functional.higher-order` | preserve | Functions as arguments to builtins and procs. |
 | `functional.short-circuit` | preserve | `if` evaluates only the taken branch; first-operand `and`/`or` short-circuit. |
 | `functional.lazy-inline` | preserve | `(eval lazy (...))` forces an inline thunk. |
-| `functional.lazy-variable` | defect | A thunk held in a variable is never forced; cached failures are unobservable. |
-| `functional.lazy-typed-declaration` | defect | `Lazy<Int>` declarations abort the program. |
-| `functional.lazy-operand` | defect | `(and true lazy (false))` returns a truthy thunk; `if` takes the wrong branch. |
+| `functional.lazy-variable` | preserve | Stored thunks are forced by `eval`/`if`/`and`/`or`, memoized; failures reported once. |
+| `functional.lazy-typed-declaration` | preserve | `Lazy<Int>` annotations accept lazy values. |
+| `functional.lazy-operand` | preserve | `and`/`or` force lazy operands when reached and return their values. |
 | `functional.match-basics` | preserve | Literal, symbol, guard and wildcard arms. |
 | `functional.match-non-exhaustive` | generous | Fall-through warns and yields Void. |
 | `functional.match-exhaustive-pragma` | preserve | `enable matchExhaustive;` makes fall-through an error. |
-| `functional.match-tuple-pattern` | gap | Tuple patterns are rejected in `match`. |
+| `functional.match-tuple-pattern` | preserve | Tuple patterns `<<p1, p2>>` with typed slots and guards. |
 | `functional.loops` | preserve | `for`/`while` with gated `(break)`/`(continue)`. |
 
 ### Data
@@ -97,14 +99,15 @@ restructuring. Keep semantic changes out of extraction commits.
 | Contract | Status | Behavior |
 | --- | --- | --- |
 | `data.numeric-widening` | preserve | Widening chain; large literals become Long/BigInteger. |
-| `data.int-overflow` | disputed | Int arithmetic wraps although literals promote. |
+| `data.int-overflow` | preserve | Integer arithmetic promotes on overflow; out-of-range Int binding is an error. |
 | `data.equality` | preserve | `equals`/`sequals`, structural arrays and tuples, symbols are not strings. |
 | `data.arrays` | preserve | `@` indexing, negative indices via expressions, literal separators. |
 | `data.tuples` | preserve | Indexing, destructuring, empty and singleton tuples. |
 | `data.dicts` | preserve | Insertion order, persistent updates, right-biased merge. |
-| `data.str-collections` | gap | `str` has no Tuple or Dict overload. |
-| `data.tuple-array-variable` | defect | Arrays of tuples cannot be stored in a variable. |
-| `data.empty-dict-argument` | defect | A bare `(dict)` reduce seed aborts with a typed reducer. |
+| `data.sort-mod-split` | preserve | Floor `mod`, stable `sort`, `split`; located errors on misuse. |
+| `data.str-collections` | preserve | `str` formats arrays, tuples and dicts like literals. |
+| `data.tuple-array-variable` | preserve | `Tuple<<...>>[]`, `Voids` and bare `Tuple` hold tuple values. |
+| `data.empty-dict-argument` | preserve | A bare `(dict)` works as a typed reduce seed. |
 | `data.defaults` | preserve | Uninitialized declarations take type defaults. |
 
 ### Ergonomics
@@ -114,7 +117,7 @@ restructuring. Keep semantic changes out of extraction commits.
 | `ergonomics.comments` | preserve | Five comment forms and their positions. |
 | `ergonomics.separators` | preserve | Semicolons and backslash line continuation. |
 | `ergonomics.interpolation` | preserve | `$"..."` expressions, pipes and brace escapes. |
-| `ergonomics.interpolation-formatting` | disputed | Interpolation quotes Notes and prints Void as `void`, unlike `str`. |
+| `ergonomics.interpolation-formatting` | preserve | Interpolation, `str` and `print` share one formatting rule. |
 | `ergonomics.plural-types` | preserve | `Ints` means `Int[]`. |
 | `ergonomics.diagnostic-span` | preserve | Location, excerpt and did-you-mean for unknown identifiers. |
 
@@ -123,10 +126,10 @@ restructuring. Keep semantic changes out of extraction commits.
 | Contract | Status | Behavior |
 | --- | --- | --- |
 | `generous.error-accumulation` | preserve | Errors are collected; later statements still run. |
-| `generous.void-argument` | defect | An unknown identifier passed to arithmetic aborts the program. |
+| `generous.void-argument` | preserve | A failed argument is reported once; enclosing calls are skipped, no cascade. |
 | `generous.clamp-advisory` | generous | Out-of-range input clamps with a one-shot advisory. |
 | `generous.truthy-if` | generous | Non-Bool conditions use truthiness outside strict mode. |
-| `generous.mixed-comparison` | defect | `(lt 1 "2")` aborts with an internal error. |
+| `generous.mixed-comparison` | preserve | Builtin failures such as `(lt 1 "2")` are located errors; execution continues. |
 | `generous.strict-file` | preserve | `enable strict;` removes widening and truthiness in its file. |
 | `generous.unknown-pragma` | preserve | Unknown pragma is an error with a suggestion. |
 | `generous.quoted-strings` | preserve | Quoted text is never a music literal. |
@@ -139,8 +142,8 @@ restructuring. Keep semantic changes out of extraction commits.
 | `modules.import-idempotent` | preserve | A module body runs once per engine. |
 | `modules.qualified-access` | preserve | `module NAME` enables `NAME.fn`; last-import-wins with shadow advisory. |
 | `modules.qualified-errors` | preserve | Distinct diagnostics for unknown modules and missing procs. |
-| `modules.circular-import` | disputed | Cycles report errors but still run bodies; docs say silent no-op. |
-| `modules.pragma-isolation` | disputed | Pragmas stay per file, but a strict proc widens when called from charitable code. |
+| `modules.circular-import` | preserve | Cycles are skipped with a one-shot advisory; each body runs once. |
+| `modules.pragma-isolation` | preserve | Strict governs code in the strict file: its proc bodies stay strict, callers' arguments follow the caller. |
 
 ### Music
 
@@ -149,9 +152,9 @@ restructuring. Keep semantic changes out of extraction commits.
 | `music.note-stream` | preserve | Streams compile to Sequences; transforms chain; `inspect` output. |
 | `music.octave-context` | preserve | `octave N { }` default octave; explicit octave wins. |
 | `music.units` | preserve | Unit literal formatting; kHz canonicalizes to Hz. |
-| `music.unit-arithmetic` | disputed | Unit arithmetic drops units; equality does not convert units. |
+| `music.unit-arithmetic` | preserve | Unit-preserving arithmetic; durations compare across ms and s. |
 | `music.harmony` | preserve | Chord literals and roman-numeral resolution. |
-| `music.note-transpose` | gap | `transpose` has no single-Note overload. |
+| `music.note-transpose` | preserve | `transpose` moves a single Note. |
 | `music.sections` | preserve | Parameterized section calls in song literals. |
 
 ## Covered elsewhere
@@ -172,9 +175,10 @@ The contract does not duplicate deep suites that already pin these behaviors:
 
 Most checking happens during evaluation. Type annotations are enforced when a
 value is bound, overloads are resolved from runtime argument types, and many
-failures are only discovered on the executed path (for example
-`functional.lazy-variable` and `data.tuple-array-variable`). Parse errors
+failures are only discovered on the executed path (for example a missing
+function or an out-of-range Int binding). Parse errors
 (`calls.infix-rejected`, `procedures.named-args-order`, `generous.unknown-pragma`)
-are the only failures reported before execution. A future analyzer must not claim
-more than this contract demonstrates; see
+are the only failures reported before execution. Failures during evaluation are
+always reported at a source location and never end the program early. A future
+analyzer must not claim more than this contract demonstrates; see
 `docs/decisions/2026-09-22-analysis-and-evaluation-api.md`.

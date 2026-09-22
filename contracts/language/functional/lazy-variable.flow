@@ -1,0 +1,20 @@
+// contract: functional.lazy-variable
+// status: preserve
+// rationale: A thunk stored in a variable is forced by eval, if, and, or. It is
+//    memoized: its side effect runs once, and a failure is reported once and
+//    cached, however often the thunk is forced afterwards.
+// errors: 1
+// stderr: Array index 5 out of bounds (0-0)
+use "@std"
+Lazy greeting = lazy ((print "forced"))
+(eval greeting)
+(if true greeting lazy (0))
+Int[] xs = [1]
+Lazy failing = lazy (xs@5)
+(eval failing)
+(eval failing)
+Lazy two = lazy ((add 1 1))
+(print (str (eval two)))
+Lazy yes = lazy (true)
+(print (str (and true yes)))
+print "end"

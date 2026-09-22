@@ -1,0 +1,9 @@
+// contract: functional.lazy-typed-declaration
+// status: preserve
+// rationale: Lazy<T> annotations accept a lazy value; the thunk keeps its
+//    deferred expression and is checked where it is forced.
+use "@std"
+print "before"
+Lazy<Int> two = lazy ((add 1 1))
+(print (str (eval two)))
+print "after"

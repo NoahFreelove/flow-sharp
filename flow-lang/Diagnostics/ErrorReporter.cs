@@ -48,11 +48,20 @@ public class ErrorReporter
     /// </summary>
     public bool HasDiagnostics => _diagnostics.Count > 0;
 
+    /// <summary>
+    /// Number of error-level reports across both the legacy <see cref="Errors"/> list
+    /// and the rich <see cref="Diagnostics"/> list, including reports past the
+    /// storage cap. Hosts should use this rather than counting either list.
+    /// </summary>
+    public int ErrorCount => _errorCount;
+    private int _errorCount;
+
     public void Report(FlowError error)
     {
         if (error.Level == DiagnosticLevel.Error)
         {
             _hasErrors = true;
+            _errorCount++;
         }
 
         if (_errors.Count < MaxErrorCount)
@@ -79,6 +88,7 @@ public class ErrorReporter
         if (diagnostic.Level == DiagnosticLevel.Error)
         {
             _hasErrors = true;
+            _errorCount++;
         }
 
         if (_diagnostics.Count < MaxErrorCount)
@@ -139,5 +149,30 @@ public class ErrorReporter
         if (_diagnostics.Count == 0) return string.Empty;
         return string.Join("\n\n",
             _diagnostics.Select(d => DiagnosticRenderer.Render(d, sources, useColor)));
+    }
+
+    /// <summary>
+    /// Everything accumulated: rich diagnostics (Rust-style) followed by legacy
+    /// single-line errors. Hosts print this instead of either list alone, which
+    /// would drop the other kind.
+    /// </summary>
+    public string FormatAll(SourceMap sources, bool useColor)
+    {
+        var rich = FormatDiagnostics(sources, useColor);
+        var legacy = FormatErrors();
+        if (rich.Length == 0) return legacy;
+        if (legacy.Length == 0) return rich;
+        return rich + "\n\n" + legacy;
+    }
+
+    /// <summary>
+    /// Terminal styling policy for rendered diagnostics: only for an interactive
+    /// destination, and never when <c>NO_COLOR</c> is set or <c>TERM=dumb</c>.
+    /// </summary>
+    public static bool ShouldUseColor(bool toStdout = false)
+    {
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NO_COLOR"))) return false;
+        if (Environment.GetEnvironmentVariable("TERM") == "dumb") return false;
+        return toStdout ? !Console.IsOutputRedirected : !Console.IsErrorRedirected;
     }
 }

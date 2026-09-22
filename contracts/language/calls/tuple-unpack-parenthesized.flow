@@ -1,0 +1,10 @@
+// contract: calls.tuple-unpack-parenthesized
+// status: preserve
+// rationale: (t ~> f) works inside parentheses exactly like (x -> f).
+use "@std"
+proc area (Int: w, Int: h)
+    (mul w h)
+end proc
+Tuple<<Int, Int>> room = <<3, 4>>
+(print (str (room ~> area)))
+(print (str (<<5, 6>> ~> area)))

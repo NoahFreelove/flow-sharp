@@ -1,0 +1,10 @@
+// contract: generous.mixed-comparison
+// status: preserve
+// rationale: Comparing values with no common ordering is a located error and
+//    the program continues. Any failure inside a builtin is reported at its call.
+// errors: 1
+// stderr: generous/mixed-comparison.flow:9:13: error: lt: Cannot compare non-numeric type: String
+use "@std"
+print "before"
+(print (str (lt 1 "2")))
+print "continues"

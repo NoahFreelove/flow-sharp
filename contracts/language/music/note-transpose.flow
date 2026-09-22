@@ -1,0 +1,7 @@
+// contract: music.note-transpose
+// status: preserve
+// rationale: transpose moves a single Note by semitones (Semitone or Int).
+use "@std"
+(print (str (transpose C4 +2st)))
+(print (str (transpose B4 1)))
+(print (str (transpose C4 -13)))

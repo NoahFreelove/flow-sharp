@@ -1,0 +1,9 @@
+// contract: functional.match-non-exhaustive
+// status: generous
+// rationale: Without the matchExhaustive pragma a match with no matching arm
+//    warns and yields Void; execution continues.
+// stderr: non-exhaustive — fell through to Void
+use "@std"
+String s = (match 5 | 1 => "one")
+(print $"result=[{s}]")
+print "continues"

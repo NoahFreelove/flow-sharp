@@ -1,0 +1,31 @@
+Note: Tuples as lightweight records, threaded through -> and ~> pipelines.
+use "@std"
+
+proc area (Int: w, Int: h)
+    (mul w h)
+end proc
+
+proc describe (String: name, Int: w, Int: h)
+    $"{name} is {w}x{h} ({(area w h)} square units)"
+end proc
+
+proc scale (Tuple<<Int, Int>>: size, Int: factor)
+    <<(mul size@0 factor), (mul size@1 factor)>>
+end proc
+
+Tuple<<Int, Int>> room = <<3, 4>>
+
+Note: ~> spreads a tuple into positional arguments.
+(print (str (room ~> area)))
+
+Note: -> passes the whole tuple as the first argument.
+Tuple<<Int, Int>> bigger = room -> scale 3
+(print (str (bigger ~> area)))
+
+Note: Destructure a result into named bindings.
+<<Int w, Int h>> = bigger
+(print (describe "hall" w h))
+
+Note: unpack is the call form of ~>.
+Tuple<<String, Int, Int>> garden = <<"garden", 10, 2>>
+(print (unpack garden describe))

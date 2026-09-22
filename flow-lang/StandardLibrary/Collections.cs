@@ -105,6 +105,46 @@ public static class Collections
         return Value.Bool(elements.Count == 0);
     }
 
+    /// <summary>
+    /// Stable ascending sort. Numbers compare by value (Int/Long/Float/Double may
+    /// mix), strings ordinally, notes by pitch; other element types are an error.
+    /// </summary>
+    public static Value Sort(IReadOnlyList<Value> args)
+    {
+        var arr = args[0];
+        if (arr.Type is not ArrayType arrayType)
+            throw new InvalidOperationException($"Expected Array, got {arr.Type}");
+        var elements = arr.As<IReadOnlyList<Value>>();
+        try
+        {
+            var sorted = elements.Order(Comparer<Value>.Create(CompareForSort)).ToArray();
+            return Value.Array(sorted, arrayType.ElementType);
+        }
+        catch (InvalidOperationException ex) when (ex.InnerException is InvalidOperationException inner)
+        {
+            // The sort wraps comparer failures; surface the comparer's message.
+            throw inner;
+        }
+    }
+
+    private static int CompareForSort(Value a, Value b)
+    {
+        static double? Number(Value v) => v.Data switch
+        {
+            int i => i, long l => l, float f => f, double d => d, _ => null,
+        };
+        if (Number(a) is double x && Number(b) is double y) return x.CompareTo(y);
+        if (a.Type is NoteType && b.Type is NoteType)
+        {
+            var (na, oa, aa) = NoteType.Parse(a.As<string>());
+            var (nb, ob, ab) = NoteType.Parse(b.As<string>());
+            return NoteType.ToMidiNote(na, oa, aa).CompareTo(NoteType.ToMidiNote(nb, ob, ab));
+        }
+        if (a.Data is string sa && b.Data is string sb && a.Type.Equals(b.Type))
+            return string.CompareOrdinal(sa, sb);
+        throw new InvalidOperationException($"cannot order {a.Type} and {b.Type}");
+    }
+
     public static Value Reverse(IReadOnlyList<Value> args)
     {
         var arr = args[0];

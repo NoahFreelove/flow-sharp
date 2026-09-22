@@ -1,0 +1,32 @@
+Note: Recursive processing of a tree built from tuples and arrays.
+Note: A node is <<label, value, children>>; leaves have an empty child array.
+use "@std"
+
+proc leaf (String: label, Int: value)
+    <<label, value, (list)>>
+end proc
+
+proc node (String: label, Int: value, Voids: children)
+    <<label, value, children>>
+end proc
+
+proc total (Void: tree)
+    (add tree@1 (reduce tree@2 0 (fn Int acc, Void child => (add acc (total child)))))
+end proc
+
+proc depth (Void: tree)
+    (add 1 (reduce tree@2 0 (fn Int deepest, Void child => (max deepest (depth child)))))
+end proc
+
+proc show (Void: tree, String: indent)
+    (print $"{indent}{tree@0} ({tree@1})")
+    (each tree@2 (fn Void child => (show child (concat indent "  "))))
+end proc
+
+Tuple<<String, Int, Voids>> budget = (node "company" 10 (list
+    (node "research" 5 (list (leaf "lab" 7) (leaf "library" 2)))
+    (leaf "sales" 4)))
+
+(show budget "")
+(print $"total: {(total budget)}")
+(print $"depth: {(depth budget)}")

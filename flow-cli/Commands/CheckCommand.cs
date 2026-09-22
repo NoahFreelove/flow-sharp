@@ -1,3 +1,4 @@
+using FlowLang.Diagnostics;
 using System.CommandLine;
 using FlowLang.Core;
 
@@ -50,7 +51,7 @@ internal static class CheckCommand
                 success = engine.Execute(source, script.FullName);
                 if (!success || engine.ErrorReporter.HasErrors)
                 {
-                    errorText = engine.ErrorReporter.FormatErrors();
+                    errorText = engine.ErrorReporter.FormatAll(engine.SourceMap, ErrorReporter.ShouldUseColor());
                     success = false;
                 }
             }

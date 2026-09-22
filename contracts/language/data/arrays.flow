@@ -1,0 +1,14 @@
+// contract: data.arrays
+// status: preserve
+// rationale: Arrays index with @; negative indices count from the end but need a
+//    (neg N) expression or a variable. Literals accept commas or spaces.
+use "@std"
+Int[] xs = [10, 20, 30]
+Int[] ys = [1 2 3]
+Int back = (neg 1)
+(print (str xs@0))
+(print (str xs@(neg 1)))
+(print (str xs@back))
+(print (str ys))
+(print (str (slice xs 1 3)))
+(print (str (append (tail xs) 40)))

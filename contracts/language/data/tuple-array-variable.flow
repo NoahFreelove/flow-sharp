@@ -1,0 +1,11 @@
+// contract: data.tuple-array-variable
+// status: preserve
+// rationale: Arrays of tuples can be stored in variables, either as
+//    Tuple<<...>>[] or as Voids (any array); bare Tuple is the any-arity type.
+use "@std"
+Tuple<<String, Int>>[] pairs = (list <<"a", 1>> <<"b", 2>>)
+Voids anything = (list <<1, 2>> <<3, 4>>)
+Tuple triple = <<1, 2, 3>>
+(print (str pairs))
+(print (str (len anything)))
+(print (str triple))

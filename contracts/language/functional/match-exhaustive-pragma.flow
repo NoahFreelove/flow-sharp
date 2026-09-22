@@ -1,0 +1,10 @@
+// contract: functional.match-exhaustive-pragma
+// status: preserve
+// rationale: enable matchExhaustive; turns the fall-through into an error for
+//    this file only.
+// errors: 1
+// stderr: match expression non-exhaustive — no arm matched scrutinee of type Int
+enable matchExhaustive;
+use "@std"
+String s = (match 5 | 1 => "one")
+print "continues"

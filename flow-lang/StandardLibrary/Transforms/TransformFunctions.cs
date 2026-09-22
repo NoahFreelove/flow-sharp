@@ -818,6 +818,20 @@ public static class TransformFunctions
             [SequenceType.Instance, LongType.Instance],
             ParameterNames: ["seq", "amount"]);
         registry.Register("transpose", transposeLongSig, TransposeLong);
+
+        // transpose(Note, Semitone|Int) — a single pitch moves like a one-note sequence.
+        registry.Register("transpose", new FunctionSignature("transpose",
+            [NoteType.Instance, SemitoneType.Instance], ParameterNames: ["note", "amount"]), TransposeNote);
+        registry.Register("transpose", new FunctionSignature("transpose",
+            [NoteType.Instance, IntType.Instance], ParameterNames: ["note", "amount"]), TransposeNote);
+    }
+
+    private static Value TransposeNote(IReadOnlyList<Value> args)
+    {
+        var (letter, octave, alteration) = NoteType.Parse(args[0].As<string>());
+        int midi = NoteType.ToMidiNote(letter, octave, alteration) + args[1].As<int>();
+        var (l, o, a) = NoteType.FromMidiNote(midi);
+        return Value.Note(NoteType.Format(l, o, a));
     }
 
     /// <remarks>

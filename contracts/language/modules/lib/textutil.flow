@@ -1,0 +1,7 @@
+module textutil
+use "@std"
+print "textutil body runs"
+Int textutilVersion = 2
+proc shout (String: s)
+    (concat s "!")
+end proc

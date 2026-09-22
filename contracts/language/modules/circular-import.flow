@@ -1,0 +1,8 @@
+// contract: modules.circular-import
+// status: preserve
+// rationale: An import of a module that is still loading is skipped with a
+//    one-shot advisory (imports are idempotent); each body runs once.
+// stderr: [module] circular import of 'cycle_a.flow' in cycle_b.flow skipped
+use "@std"
+use "lib/cycle_a.flow"
+print "importer continues"

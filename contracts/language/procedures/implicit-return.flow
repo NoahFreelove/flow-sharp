@@ -1,0 +1,19 @@
+// contract: procedures.implicit-return
+// status: preserve
+// rationale: A proc returns what its body collects: no non-void expression gives
+//    Void, one gives that value, several give an array of all of them.
+use "@std"
+proc none (Int: x)
+    Int y = x
+end proc
+proc one (Int: x)
+    (add x 1)
+end proc
+proc many (Int: x)
+    (add x 1)
+    (add x 2)
+    (add x 3)
+end proc
+(print $"none=[{(none 1)}]")
+(print (str (one 1)))
+(print (str (many 1)))

@@ -1,0 +1,14 @@
+module stats
+use "@std"
+
+proc sum (Ints: xs)
+    (reduce xs 0 (fn Int acc, Int x => (add acc x)))
+end proc
+
+proc mean (Ints: xs)
+    (div (sum xs) (len xs))
+end proc
+
+proc spread (Ints: xs)
+    (sub (reduce xs (head xs) (fn Int m, Int x => (max m x))) (reduce xs (head xs) (fn Int m, Int x => (min m x))))
+end proc

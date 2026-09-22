@@ -26,6 +26,7 @@ public partial class Parser
     // When true, disables the "identifier followed by literal = function call"
     // heuristic in ParsePrimary. Set while parsing arguments inside (func arg1 arg2).
     private bool _inFuncCallArgs = false;
+    private bool _statementHead;
     private bool _inLoop = false;
     // Phase 43 D-01 — set true after the first non-module non-comment statement
     // is appended to the Program's Statements list inside Parse(). A subsequent
@@ -369,7 +370,10 @@ public partial class Parser
             }
 
             // Expression statement
-            var expr = ParseExpression();
+            _statementHead = true;
+            Expression expr;
+            try { expr = ParseExpression(); }
+            finally { _statementHead = false; }
             return new ExpressionStatement(expr.Location, expr, Span: new Span(expr.Location, PreviousToken.Location));
         }
         finally
@@ -1475,6 +1479,10 @@ public partial class Parser
 
     private Expression ParsePrimary()
     {
+        // True only for the first primary of an expression statement (its head).
+        bool isStatementHead = _statementHead;
+        _statementHead = false;
+
         // Lazy expression
         if (Match(TokenType.Lazy))
         {
@@ -1673,7 +1681,7 @@ public partial class Parser
             }
 
             // Check if this is a function call like (func arg1 arg2)
-            // But NOT if the identifier is followed by -> (that's a parenthesized flow expression)
+            // But NOT if the identifier is followed by -> or ~> (that's a parenthesized flow expression)
             //
             // break-control (0615): TokenType.Break / TokenType.Continue are recognized
             // as call names here so the prefix-only `(break)` / `(continue)` builtins
@@ -1685,6 +1693,7 @@ public partial class Parser
             if ((Check(TokenType.Identifier) || Check(TokenType.Pan) || Check(TokenType.Gain)
                  || Check(TokenType.Break) || Check(TokenType.Continue)) && _current + 1 < _tokens.Count
                 && _tokens[_current + 1].Type != TokenType.Arrow
+                && _tokens[_current + 1].Type != TokenType.TildeArrow
                 && _tokens[_current + 1].Type != TokenType.Dot
                 && _tokens[_current + 1].Type != TokenType.At)
             {
@@ -1776,13 +1785,19 @@ public partial class Parser
             // Note: We only support simple arguments (literals, identifiers) for optional parens
             // For complex arguments (parenthesized expressions), use explicit syntax: (func (expr))
             // Disabled inside (func ...) args to prevent (add n 1) from becoming add(n(1))
-            if (!_inFuncCallArgs && IsArgumentStart(CurrentToken.Type)
+            //
+            // At the head of a statement a parenthesized argument is also accepted
+            // (`print (str x)`): there it can only mean a call, whereas elsewhere
+            // `xs (fn ...)` may be two neighbouring values.
+            bool ArgStart() => IsArgumentStart(CurrentToken.Type)
+                || (isStatementHead && CurrentToken.Type == TokenType.LParen);
+            if (!_inFuncCallArgs && ArgStart()
                 && CurrentToken.Location.Line == location.Line)
             {
                 var args = new List<Expression>();
 
                 // Parse simple arguments until we hit a terminator or non-argument token
-                while (!IsAtEnd() && IsArgumentStart(CurrentToken.Type)
+                while (!IsAtEnd() && ArgStart()
                        && CurrentToken.Location.Line == location.Line)
                 {
                     args.Add(ParseUnaryShorthand()); // Parse argument expression
@@ -2226,6 +2241,29 @@ public partial class Parser
         {
             inner = new WildcardPattern(location, Span: PreviousToken.EffectiveSpan);
         }
+        else if (Match(TokenType.LessLess))
+        {
+            // Tuple pattern `<<p1, p2, ...>>`; slots are full patterns and may be
+            // typed bindings (`<<String op, Int n>>`), as in section signatures.
+            // `>>` may lex as one token or, after some tokens (`_>>`), as two `>`.
+            bool AtClose() => Check(TokenType.GreaterGreater)
+                || (Check(TokenType.GreaterThan) && _current + 1 < _tokens.Count
+                    && _tokens[_current + 1].Type == TokenType.GreaterThan);
+            var slots = new List<Pattern>();
+            while (!AtClose() && !IsAtEnd())
+            {
+                slots.Add(ParseSectionParameterPattern());
+                if (!AtClose())
+                    Expect(TokenType.Comma, "Expected ',' between tuple pattern slots");
+            }
+            if (!Match(TokenType.GreaterGreater))
+            {
+                Expect(TokenType.GreaterThan, "Expected '>>' after tuple pattern");
+                Expect(TokenType.GreaterThan, "Expected '>>' after tuple pattern");
+            }
+            inner = new ConstructorPattern(location, "Tuple", slots,
+                Span: new Span(location, PreviousToken.Location));
+        }
         else if (Match(TokenType.IntLiteral))
         {
             inner = new LiteralPattern(location, PreviousToken.Value!, Span: PreviousToken.EffectiveSpan);
@@ -2325,7 +2363,7 @@ public partial class Parser
         else
         {
             _errorReporter.ReportError(
-                $"Unexpected token '{CurrentToken.Text}' in match pattern; expected literal, identifier, '_', chord, or #symbol",
+                $"Unexpected token '{CurrentToken.Text}' in match pattern; expected literal, identifier, '_', chord, #symbol or <<tuple>>",
                 CurrentToken.Location);
             // Consume the offending token to avoid an infinite loop in the arm.
             if (!IsAtEnd()) Advance();

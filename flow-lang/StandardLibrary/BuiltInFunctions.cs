@@ -79,6 +79,7 @@ public static class BuiltInFunctions
     {
         RegisterStdLib(registry);
         RegisterMath(registry);
+        UnitArithmetic.Register(registry);
         // Phase 44 Plan 44-04 (D-08/D-09/D-10) — explicit-conversion builtins:
         // 6 forward (db/hz/ms/sec/cents/semitones) + 4 reverse (double/float/int/long
         // × 6 music types) = 50 always-available registrations. Mode-independent
@@ -309,6 +310,14 @@ public static class BuiltInFunctions
             ParameterNames: ["value"]);
         registry.Register("str", strArraySignature, StdLib.StrArray);
 
+        // Tuples and dicts format like their literal forms: <<1, "a">> and {"a": 1}.
+        var strTupleSignature = new FunctionSignature("str", [TupleType.AnyArity],
+            ParameterNames: ["value"]);
+        registry.Register("str", strTupleSignature, StdLib.StrArray);
+        var strDictSignature = new FunctionSignature("str", [new DictType(VoidType.Instance, VoidType.Instance)],
+            ParameterNames: ["value"]);
+        registry.Register("str", strDictSignature, StdLib.StrArray);
+
         var strSequenceSignature = new FunctionSignature("str", [SequenceType.Instance],
             ParameterNames: ["value"]);
         registry.Register("str", strSequenceSignature, args =>
@@ -455,6 +464,16 @@ public static class BuiltInFunctions
         var idivIntSignature = new FunctionSignature("idiv", [IntType.Instance, IntType.Instance],
             ParameterNames: ["a", "b"]);
         registry.Register("idiv", idivIntSignature, StdLib.IDivInt);
+
+        // Floor modulo: the result takes the divisor's sign, so pitch-class math
+        // such as (mod -1 12) gives 11.
+        registry.Register("mod", new FunctionSignature("mod", [IntType.Instance, IntType.Instance],
+            ParameterNames: ["a", "b"]), StdLib.ModInt);
+        registry.Register("mod", new FunctionSignature("mod", [DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["a", "b"]), StdLib.ModDouble);
+
+        registry.Register("split", new FunctionSignature("split", [StringType.Instance, StringType.Instance],
+            ParameterNames: ["s", "separator"]), StdLib.Split);
 
         // String-to-number conversions
         var stringToIntSignature = new FunctionSignature("stringToInt", [StringType.Instance],
@@ -670,6 +689,10 @@ public static class BuiltInFunctions
         var reverseSignature = new FunctionSignature("reverse", [new ArrayType(VoidType.Instance)],
             ParameterNames: ["arr"]);
         registry.Register("reverse", reverseSignature, Collections.Reverse);
+
+        var sortSignature = new FunctionSignature("sort", [new ArrayType(VoidType.Instance)],
+            ParameterNames: ["arr"]);
+        registry.Register("sort", sortSignature, Collections.Sort);
 
         var takeSignature = new FunctionSignature("take", [new ArrayType(VoidType.Instance), IntType.Instance],
             ParameterNames: ["arr", "n"]);

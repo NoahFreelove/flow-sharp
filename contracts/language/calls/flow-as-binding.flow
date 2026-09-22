@@ -1,0 +1,9 @@
+// contract: calls.flow-as-binding
+// status: preserve
+// rationale: EXPR -> CALL as NAME binds an intermediate chain result in the
+//    current scope without breaking the pipeline.
+use "@std"
+Function dbl = fn Int n => (mul n 2)
+String text = 3 -> dbl as doubled -> str
+(print text)
+(print (str (add doubled 1)))

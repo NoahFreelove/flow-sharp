@@ -1,0 +1,21 @@
+// contract: procedures.overloads
+// status: preserve
+// rationale: User procs overload by parameter type; exact matches win and an Int
+//    argument widens to a Double-only proc.
+use "@std"
+proc describe (Int: x)
+    "int"
+end proc
+proc describe (String: x)
+    "string"
+end proc
+proc describe (Double: x)
+    "double"
+end proc
+proc half (Double: x)
+    (div x 2.0)
+end proc
+(print (describe 1))
+(print (describe "s"))
+(print (describe 1.5))
+(print (str (half 3)))

@@ -1,0 +1,12 @@
+// contract: generous.error-accumulation
+// status: preserve
+// rationale: Evaluation errors are collected rather than thrown: later
+//    statements still run and a failed call evaluates to Void.
+// errors: 2
+// stderr: Array index 5 out of bounds (0-2)
+// stderr: Function 'nonExistent' not found
+use "@std"
+Int[] xs = [1, 2, 3]
+Int bad = xs@5
+(nonExistent 1)
+print "still running"

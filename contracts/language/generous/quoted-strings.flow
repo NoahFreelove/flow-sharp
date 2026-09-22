@@ -1,0 +1,9 @@
+// contract: generous.quoted-strings
+// status: preserve
+// rationale: Quoted strings are never re-typed as music literals; only bare
+//    tokens produce unit values.
+use "@std"
+String s = "10s"
+(print s)
+(print (str (len s)))
+(print (str 10s))

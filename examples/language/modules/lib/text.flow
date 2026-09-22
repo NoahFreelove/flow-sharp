@@ -1,0 +1,10 @@
+module text
+use "@std"
+
+proc pad (String: s, Int: width)
+    (if (gte (len s) width) lazy (s) lazy ((pad (concat s " ") width)))
+end proc
+
+proc row (String: label, String: value)
+    (concat (pad label 8) value)
+end proc

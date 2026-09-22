@@ -1,0 +1,8 @@
+// contract: music.octave-context
+// status: preserve
+// rationale: octave N { } sets the default octave for bare note letters inside
+//    streams; explicit octaves win.
+use "@std"
+octave 3 {
+    (inspect | C D E4 |)
+}

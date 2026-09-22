@@ -1,0 +1,13 @@
+// contract: procedures.named-args-order
+// status: preserve
+// rationale: A positional argument after a named one, or a repeated name, is a
+//    parse error; neither is silently reordered.
+// errors: 2
+// stderr: positional argument after named argument is not allowed (in call to 'greet')
+// stderr: duplicate named argument 'name' in call to 'greet'
+use "@std"
+proc greet (String: name, String: greeting)
+    (concat greeting (concat ", " name))
+end proc
+(print (greet name="Ada" "Hi"))
+(print (greet name="Ada" name="Bob"))

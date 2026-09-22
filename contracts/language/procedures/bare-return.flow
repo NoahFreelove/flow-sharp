@@ -1,0 +1,11 @@
+// contract: procedures.bare-return
+// status: preserve
+// rationale: There is no Void literal; a bare return without a value is a parse
+//    error, so the file does not run.
+// errors: 2
+// stderr: Unexpected token EndProc 'end'
+use "@std"
+print "not reached"
+proc f (Int: x)
+    return
+end proc

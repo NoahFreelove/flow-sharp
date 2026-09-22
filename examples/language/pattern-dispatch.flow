@@ -1,0 +1,35 @@
+Note: A tiny command interpreter using match on symbols, literals and guards.
+use "@std"
+
+proc apply (Symbol: op, Int: acc, Int: arg)
+    (match op
+     | #add => (add acc arg)
+     | #sub => (sub acc arg)
+     | #mul => (mul acc arg)
+     | #reset => 0
+     | _ => acc)
+end proc
+
+proc classify (Int: n)
+    (match n
+     | 0 => "zero"
+     | x when (lt x 0) => "negative"
+     | x when (gt x 100) => "large"
+     | _ => "small")
+end proc
+
+Note: Each command is a tuple; a tuple pattern takes it apart.
+Tuple<<Symbol, Int>>[] program = (list <<#add, 5>> <<#mul, 30>> <<#sub, 200>> <<#noop, 1>> <<#reset, 0>> <<#add, 7>>)
+
+proc step (Int: acc, Tuple: cmd)
+    (match cmd
+     | <<op, Int arg>> => (apply op acc arg)
+     | _ => acc)
+end proc
+
+Int result = (reduce program 0 (fn Int acc, Void cmd => (
+    Int next = (step acc cmd)
+    (print $"{cmd@0} {cmd@1} -> {next} ({(classify next)})")
+    next
+)))
+(print $"final: {result}")

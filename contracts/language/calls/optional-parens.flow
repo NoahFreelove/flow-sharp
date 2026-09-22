@@ -1,0 +1,12 @@
+// contract: calls.optional-parens
+// status: preserve
+// rationale: At statement position a call whose arguments are literals or
+//    identifiers may omit its outer parentheses, for builtins and user procs alike.
+use "@std"
+proc shout (String: s)
+    (print (concat s "!"))
+end proc
+print "hello"
+String name = "flow"
+shout name
+shout "again"

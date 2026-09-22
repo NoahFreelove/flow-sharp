@@ -1,0 +1,13 @@
+// contract: data.tuples
+// status: preserve
+// rationale: Tuples are fixed-arity and heterogeneous, indexed with @N, and
+//    destructured with <<a, b>> = expr.
+use "@std"
+Tuple<<Int, String>> t = <<7, "seven">>
+(print (str t@0))
+(print t@1)
+<<Int n, String word>> = t
+(print $"{n} is {word}")
+Tuple<<>> empty = <<>>
+Tuple<<Int>> solo = <<42>>
+(print (str solo@0))

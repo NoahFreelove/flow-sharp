@@ -1,0 +1,9 @@
+// contract: music.sections
+// status: preserve
+// rationale: Parameterized sections are called inside song literals.
+use "@std"
+section verse(Note root) {
+    Sequence s = | C4 |
+}
+Song song = [verse(C4) verse(D4) verse(E4)]
+(print (str (len (getSections song))))

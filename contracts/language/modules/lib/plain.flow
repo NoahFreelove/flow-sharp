@@ -1,0 +1,5 @@
+use "@std"
+proc helper (Int: x)
+    (add (mul x 2) 1)
+end proc
+Int sharedConstant = 42

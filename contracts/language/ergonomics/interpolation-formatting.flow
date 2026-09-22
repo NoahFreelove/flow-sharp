@@ -1,0 +1,14 @@
+// contract: ergonomics.interpolation-formatting
+// status: preserve
+// rationale: Interpolation, str and print share one formatting rule: notes and
+//    strings bare, doubles to 10 significant digits, Void as "()".
+use "@std"
+Note n = C4
+Double third = (div 1.0 3.0)
+proc none (Int: x)
+    Int y = x
+end proc
+(print $"{n} {(str n)}")
+(print $"{third} {(str third)}")
+(print third)
+(print $"{(none 1)}")

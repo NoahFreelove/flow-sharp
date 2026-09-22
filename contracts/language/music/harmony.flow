@@ -1,0 +1,7 @@
+// contract: music.harmony
+// status: preserve
+// rationale: Chord literals parse at compile time; roman numerals resolve against
+//    a key.
+use "@std"
+(print (str (chordNotes Cmaj7)))
+(print (str (resolveNumeral "V7" "Cmajor")))

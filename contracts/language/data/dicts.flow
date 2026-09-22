@@ -1,0 +1,17 @@
+// contract: data.dicts
+// status: preserve
+// rationale: Dict preserves insertion order; set, remove and merge return new
+//    dicts and leave the original unchanged; merge is right-biased.
+use "@std"
+Dict<String, Int> d = (dict "b" 2 "a" 1 "c" 3)
+Dict<String, Int> d2 = (set d "a" 9)
+(print (str (keys d)))
+(print (str (values d)))
+(print (str (get d2 "a")))
+(print (str (get d "a")))
+(print (str (getOr d "zz" 0)))
+Dict<String, Int> m = (merge d (dict "z" 0 "b" 20))
+(print (str (keys m)))
+(print (str (get m "b")))
+(print (str (size (remove d "b"))))
+(print (str (size d)))

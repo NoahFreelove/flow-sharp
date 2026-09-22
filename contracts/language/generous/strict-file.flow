@@ -1,0 +1,16 @@
+// contract: generous.strict-file
+// status: preserve
+// rationale: enable strict; removes widening and requires Bool conditions in the
+//    declaring file; each violation is reported and execution continues.
+// errors: 2
+// stderr: No matching overload for function 'half' with argument types (Int)
+// stderr: [strict] (if) requires Bool — got Int
+enable strict;
+use "@std"
+proc half (Double: x)
+    (div x 2.0)
+end proc
+(print (str (half 3.0)))
+(print (str (half 3)))
+(print (str (if 1 lazy ("truthy") lazy ("falsy"))))
+print "end"

@@ -94,6 +94,17 @@ examples/dsp/*.wav
 examples/dsp/*.mp3
 examples/dsp/*.mid
 
+# Restructuring Phase 1 — executable language contract programs (plus their
+# helper modules) and the non-musical tutorial examples. LanguageContractTests
+# reads them from the checkout, so they must be tracked despite the global
+# *.flow ignore. Their expected-output .out files are already tracked.
+!contracts/
+!contracts/**
+!contracts/**/*.flow
+!examples/language/
+!examples/language/**
+!examples/language/**/*.flow
+
 # Phase 28 polyphony / articulation acceptance fixtures — must be tracked
 # despite the global *.flow ignore.
 !examples/tests/

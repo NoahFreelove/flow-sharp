@@ -1,0 +1,7 @@
+// contract: modules.import-idempotent
+// status: preserve
+// rationale: A module body runs once per engine however often it is imported.
+use "@std"
+use "lib/textutil.flow"
+use "lib/textutil.flow"
+(print (str textutilVersion))

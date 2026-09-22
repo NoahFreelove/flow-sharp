@@ -1,0 +1,9 @@
+// contract: data.defaults
+// status: preserve
+// rationale: A declaration without an initializer takes the type's default.
+use "@std"
+Int c
+String e
+Bool f
+Int[] xs
+(print $"[{c}] [{e}] [{f}] [{(len xs)}]")

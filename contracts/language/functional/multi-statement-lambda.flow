@@ -1,0 +1,12 @@
+// contract: functional.multi-statement-lambda
+// status: preserve
+// rationale: A lambda body in parentheses that starts with a typed declaration is
+//    a statement block; its implicit return is the collected value.
+use "@std"
+Function classify = fn Int n => (
+    Int doubled = (mul n 2)
+    String label = (if (gt doubled 10) lazy ("big") lazy ("small"))
+    label
+)
+(print (classify 7))
+(print (classify 2))

@@ -1,0 +1,12 @@
+// contract: generous.void-argument
+// status: preserve
+// rationale: A failed argument is reported once; the enclosing calls are skipped
+//    instead of cascading (no ambiguous-overload or conversion errors on the
+//    resulting Void) and the program continues.
+// errors: 1
+// stderr: unknown identifier 'lenght'
+use "@std"
+Int length = 3
+print "before"
+(print (str (add lenght 1)))
+print "continues"

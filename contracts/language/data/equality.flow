@@ -1,0 +1,12 @@
+// contract: data.equality
+// status: preserve
+// rationale: equals compares compatible types, sequals also requires the same
+//    type; arrays and tuples compare structurally; symbols are never strings.
+use "@std"
+(print (str (equals 5 5.0)))
+(print (str (sequals 5 5.0)))
+(print (str (equals [1, 2] [1, 2])))
+(print (str (equals <<1, "a">> <<1, "a">>)))
+(print (str (equals #foo #foo)))
+(print (str (equals #foo "foo")))
+(print (str #foo))

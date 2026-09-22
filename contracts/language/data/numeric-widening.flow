@@ -1,0 +1,11 @@
+// contract: data.numeric-widening
+// status: preserve
+// rationale: Int widens to Long, Float, Double and Number. Integer literals too
+//    large for Int become Long or BigInteger without error.
+use "@std"
+Double d = 5
+(print (str d))
+(print (str (add 1 2.5)))
+Long l = 3000000000
+(print (str l))
+(print (str 99999999999999999999))

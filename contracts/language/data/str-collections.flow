@@ -1,0 +1,8 @@
+// contract: data.str-collections
+// status: preserve
+// rationale: str formats arrays, tuples and dicts like their literal forms.
+use "@std"
+(print (str (zip [1, 2] ["a", "b"])))
+(print (str <<1, "a">>))
+(print (str (dict "a" 1 "b" 2)))
+(print $"{<<#x, 2.5>>}")

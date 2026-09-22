@@ -1,0 +1,21 @@
+// contract: functional.proc-lexical-scope
+// status: preserve
+// rationale: A proc body sees its parameters, its locals and globals, never the
+//    caller's locals. Globals remain readable and writable from procs.
+// errors: 1
+// stderr: unknown identifier 'local'
+use "@std"
+Int counter = 1
+proc bump ()
+    counter = (add counter 10)
+end proc
+proc peek ()
+    local
+end proc
+proc caller ()
+    Int local = 5
+    (peek)
+end proc
+(bump)
+(print (str counter))
+(caller)

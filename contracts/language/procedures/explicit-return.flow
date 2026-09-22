@@ -1,0 +1,10 @@
+// contract: procedures.explicit-return
+// status: preserve
+// rationale: return X discards previously collected values and short-circuits.
+use "@std"
+proc early (Int: x)
+    (add x 100)
+    return (mul x 2)
+    (add x 1000)
+end proc
+(print (str (early 5)))

@@ -197,6 +197,35 @@ public static class StdLib
         return Value.String(args[0].ToString());
     }
     
+    public static Value ModInt(IReadOnlyList<Value> args)
+    {
+        int a = args[0].As<int>(), b = args[1].As<int>();
+        if (b == 0) throw new InvalidOperationException("Division by zero");
+        int r = a % b;
+        return Value.Int(r != 0 && (r < 0) != (b < 0) ? r + b : r);
+    }
+
+    public static Value ModDouble(IReadOnlyList<Value> args)
+    {
+        double a = Convert.ToDouble(args[0].Data), b = Convert.ToDouble(args[1].Data);
+        if (b == 0) throw new InvalidOperationException("Division by zero");
+        return Value.Double(a - b * Math.Floor(a / b));
+    }
+
+    /// <summary>
+    /// Splits on every occurrence of the separator; an empty separator splits
+    /// into single characters.
+    /// </summary>
+    public static Value Split(IReadOnlyList<Value> args)
+    {
+        var text = args[0].As<string>();
+        var separator = args[1].As<string>();
+        var parts = separator.Length == 0
+            ? text.Select(c => c.ToString())
+            : text.Split(separator);
+        return Value.Array(parts.Select(Value.String).ToArray(), StringType.Instance);
+    }
+
     public static Value Concat(IReadOnlyList<Value> args)
     {
         var arg1 = args[0].As<string>();
@@ -234,7 +263,7 @@ public static class StdLib
     {
         var a = args[0].As<int>();
         var b = args[1].As<int>();
-        return Value.Int(a + b);
+        return IntOrWider((long)a + b);
     }
 
     /// <summary>
@@ -295,7 +324,7 @@ public static class StdLib
     {
         var a = args[0].As<int>();
         var b = args[1].As<int>();
-        return Value.Int(a - b);
+        return IntOrWider((long)a - b);
     }
 
     /// <summary>
@@ -305,7 +334,7 @@ public static class StdLib
     {
         var a = args[0].As<int>();
         var b = args[1].As<int>();
-        return Value.Int(a * b);
+        return IntOrWider((long)a * b);
     }
 
     /// <summary>
@@ -352,11 +381,19 @@ public static class StdLib
 
     // ===== Phase 26 Long arithmetic (D-05 fast path) =====
     public static Value AddLong(IReadOnlyList<Value> args)
-        => Value.Long(args[0].As<long>() + args[1].As<long>());
+        => LongOrWider((BigInteger)args[0].As<long>() + args[1].As<long>());
     public static Value SubLong(IReadOnlyList<Value> args)
-        => Value.Long(args[0].As<long>() - args[1].As<long>());
+        => LongOrWider((BigInteger)args[0].As<long>() - args[1].As<long>());
     public static Value MulLong(IReadOnlyList<Value> args)
-        => Value.Long(args[0].As<long>() * args[1].As<long>());
+        => LongOrWider((BigInteger)args[0].As<long>() * args[1].As<long>());
+
+    // Integer arithmetic promotes on overflow (Int -> Long -> Number), the same way
+    // an oversized integer literal does, instead of wrapping silently.
+    private static Value IntOrWider(long result)
+        => result is >= int.MinValue and <= int.MaxValue ? Value.Int((int)result) : Value.Long(result);
+
+    private static Value LongOrWider(BigInteger result)
+        => result >= long.MinValue && result <= long.MaxValue ? Value.Long((long)result) : Value.Number(result);
     public static Value DivLong(IReadOnlyList<Value> args)
     {
         var a = args[0].As<long>();
@@ -382,9 +419,9 @@ public static class StdLib
 
     // ===== Phase 26 (neg) 5-pack (D-07) =====
     public static Value NegInt(IReadOnlyList<Value> args)
-        => Value.Int(-args[0].As<int>());
+        => IntOrWider(-(long)args[0].As<int>());
     public static Value NegLong(IReadOnlyList<Value> args)
-        => Value.Long(-args[0].As<long>());
+        => LongOrWider(-(BigInteger)args[0].As<long>());
     public static Value NegFloat(IReadOnlyList<Value> args)
         => Value.Float(-args[0].As<double>());   // FloatType is double-backed in Value.Float
     public static Value NegDouble(IReadOnlyList<Value> args)
@@ -441,28 +478,13 @@ public static class StdLib
     /// <summary>
     /// Evaluates a lazy value.
     /// </summary>
-    public static Value Eval(IReadOnlyList<Value> args)
-    {
-        var lazyValue = args[0];
-        var thunk = lazyValue.As<Thunk>();
-        return thunk.Force();
-    }
+    public static Value Eval(IReadOnlyList<Value> args) => ForceIfLazy(args[0]);
 
 
     public static Value If(IReadOnlyList<Value> args)
     {
         var cond = args[0].As<bool>();
-        var if_true = args[1].As<Thunk>();
-        var otherwise = args[2].As<Thunk>();
-
-        if (cond)
-        {
-            return if_true.Force();
-        }
-        else
-        {
-            return otherwise.Force();
-        }
+        return ForceIfLazy(cond ? args[1] : args[2]);
     }
 
     /// <summary>
@@ -473,8 +495,16 @@ public static class StdLib
     /// return the FORCED branch value rather than a raw Thunk. Only the SELECTED
     /// branch is forced — the untaken branch is never evaluated.
     /// </summary>
-    private static Value ForceIfLazy(Value v)
-        => v.Type is LazyType && v.Data is Thunk t ? t.Force() : v;
+    /// A lazy variable passed to a lazy parameter arrives wrapped in a second
+    /// deferral thunk (the slot defers the variable reference itself), so forcing
+    /// continues until a non-lazy value appears. Thunks memoize, so a stored lazy
+    /// value (and a failure it reported) is evaluated once however often it is forced.
+    internal static Value ForceIfLazy(Value v)
+    {
+        while (v.Type is LazyType && v.Data is Thunk t)
+            v = t.Force();
+        return v;
+    }
 
     /// <summary>
     /// Strict (non-Lazy) if overload. Both branches are eagerly evaluated
@@ -505,15 +535,12 @@ public static class StdLib
         if (rightLazy.Type is not LazyType { InnerType: BoolType or VoidType })
             throw new InvalidOperationException($"Expected Lazy<Bool>, got {rightLazy.Type}");
 
-        var left = args[0].As<Thunk>();
-        var right = args[1].As<Thunk>();
-
-        bool lres = left.Force().As<bool>();
+        bool lres = ForceIfLazy(args[0]).As<bool>();
         if (!lres)
         {
             return Value.Bool(false);
         }
-        bool rres = right.Force().As<bool>();
+        bool rres = ForceIfLazy(args[1]).As<bool>();
 
         return Value.Bool(rres);
     }
@@ -536,15 +563,12 @@ public static class StdLib
         if (rightLazy.Type is not LazyType { InnerType: BoolType or VoidType })
             throw new InvalidOperationException($"Expected Lazy<Bool>, got {rightLazy.Type}");
 
-        var left = args[0].As<Thunk>();
-        var right = args[1].As<Thunk>();
-
-        bool lres = left.Force().As<bool>();
+        bool lres = ForceIfLazy(args[0]).As<bool>();
         if (lres)
         {
             return Value.Bool(true);
         }
-        bool rres = right.Force().As<bool>();
+        bool rres = ForceIfLazy(args[1]).As<bool>();
 
         return Value.Bool(rres);
     }
@@ -662,8 +686,8 @@ public static class StdLib
         if (v.Type is StringType) return v.As<string>();
         if (v.Type is IntType) return v.As<int>().ToString();
         if (v.Type is LongType) return v.As<long>().ToString();
-        if (v.Type is FloatType) return v.As<double>().ToString();
-        if (v.Type is DoubleType) return v.As<double>().ToString();
+        // Same 10-significant-digit form as (str x) and interpolation.
+        if (v.Type is FloatType or DoubleType) return v.ToString();
         if (v.Type is NumberType) return v.As<BigInteger>().ToString();
         if (v.Type is BoolType) return v.As<bool>() ? "true" : "false";
         if (v.Type is NoteType) return v.As<string>();
@@ -825,6 +849,9 @@ public static class StdLib
     public static Value AndLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
     {
         if (args.Count == 0) return Value.Bool(true);
+        // Lazy operands are forced in order, only when reached, so the untaken
+        // operands stay unevaluated and the result is a value, never a thunk.
+        args = new ForcedArgs(args);
         if (ctx.CallerStrictMode)
         {
             // D-12 strict: Bool-required across every operand. Emit error on
@@ -878,6 +905,7 @@ public static class StdLib
     public static Value OrLastTruthy(IReadOnlyList<Value> args, ExecutionContext ctx)
     {
         if (args.Count == 0) return Value.Bool(false);
+        args = new ForcedArgs(args);
         if (ctx.CallerStrictMode)
         {
             // D-12 strict: Bool-required across every operand.
@@ -997,5 +1025,21 @@ public static class StdLib
             return Value.Bool(false);
         }
         return Value.Bool(Utils.CompareNumeric(args[0], args[1]) <= 0);
+    }
+
+    /// <summary>
+    /// Read-only view that forces each lazy operand the first time it is read.
+    /// Keeps and/or short-circuiting: operands after the deciding one are never read.
+    /// </summary>
+    private sealed class ForcedArgs(IReadOnlyList<Value> inner) : IReadOnlyList<Value>
+    {
+        private readonly Value?[] _forced = new Value?[inner.Count];
+        public Value this[int index] => _forced[index] ??= ForceIfLazy(inner[index]);
+        public int Count => inner.Count;
+        public IEnumerator<Value> GetEnumerator()
+        {
+            for (int i = 0; i < Count; i++) yield return this[i];
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }

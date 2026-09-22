@@ -1,0 +1,15 @@
+// contract: calls.prefix-arithmetic
+// status: preserve
+// rationale: Arithmetic is ordinary prefix calls. (div Int Int) promotes to Double
+//    only when the quotient is fractional; idiv truncates; negative literals lex
+//    as single tokens in argument position.
+use "@std"
+(print (str (add 3 4)))
+(print (str (sub 10 3)))
+(print (str (mul 5 6)))
+(print (str (div 15 4)))
+(print (str (div 8 2)))
+(print (str (idiv 15 4)))
+(print (str (neg 5)))
+(print (str (add 10 -3)))
+(print (concat "Hello, " "World!"))

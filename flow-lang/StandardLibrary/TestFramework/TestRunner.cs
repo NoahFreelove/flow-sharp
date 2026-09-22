@@ -42,11 +42,23 @@ public class TestRunner
         foreach (var test in engine.Context.TestRegistry)
         {
             var snapshot = engine.Context.SnapshotState();
+            int errorsBefore = engine.ErrorReporter.ErrorCount;
             try
             {
                 test.BodyThunk.Force();
-                Console.WriteLine($"  PASS  {filePath}::{test.Name}");
-                passed++;
+                // Errors accumulate instead of throwing, so a body that reported an
+                // error (unknown function, failed builtin) must not count as a pass.
+                int reported = engine.ErrorReporter.ErrorCount - errorsBefore;
+                if (reported > 0)
+                {
+                    EmitFailLine(filePath, test.Name, $"body reported {reported} error(s)");
+                    failed++;
+                }
+                else
+                {
+                    Console.WriteLine($"  PASS  {filePath}::{test.Name}");
+                    passed++;
+                }
             }
             catch (AssertionException ex)
             {

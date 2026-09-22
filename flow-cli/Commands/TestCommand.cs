@@ -1,3 +1,4 @@
+using FlowLang.Diagnostics;
 using System.CommandLine;
 using FlowLang.Core;
 using FlowLang.StandardLibrary.TestFramework;
@@ -97,7 +98,7 @@ internal static class TestCommand
                 {
                     Console.Error.WriteLine(
                         $"  ERROR  {file}: source did not execute cleanly — registration aborted");
-                    Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                    Console.Error.WriteLine(engine.ErrorReporter.FormatAll(engine.SourceMap, ErrorReporter.ShouldUseColor()));
                     filesWithExecuteErrors++;
                     continue;
                 }

@@ -1,0 +1,12 @@
+// contract: ergonomics.interpolation
+// status: preserve
+// rationale: $"..." evaluates full expressions in braces, including pipes;
+//    \{ and \} are literal braces.
+use "@std"
+Int a = 3
+Int b = 4
+Double d = 2.5
+(print $"sum {(add a b)} of {a} and {b}")
+(print $"double {d} bool {true} symbol {#tag}")
+(print $"count {[1, 2, 3] -> len}")
+(print $"literal \{braces\}")

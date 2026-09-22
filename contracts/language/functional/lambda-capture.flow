@@ -1,0 +1,14 @@
+// contract: functional.lambda-capture
+// status: preserve
+// rationale: Lambdas capture their defining scope by snapshot: later assignment
+//    to a captured variable does not change the lambda. Lambdas can return lambdas.
+use "@std"
+Int x = 10
+Function addX = fn Int n => (add n x)
+x = 999
+(print (str (addX 5)))
+Function adder = fn Int k => fn Int n => (add n k)
+Function add5 = (adder 5)
+(print (str (add5 1)))
+(Int => Int) typed = fn Int n => (mul n 3)
+(print (str (typed 4)))

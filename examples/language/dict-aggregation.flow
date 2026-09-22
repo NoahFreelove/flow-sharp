@@ -1,0 +1,22 @@
+Note: Aggregating records into a Dict: counts and totals per key.
+Note: Dicts are persistent: set returns a new dict, so we fold with reduce.
+use "@std"
+
+Note: The raw log is one comma-separated string.
+Strings orders = (split "tea,coffee,tea,cocoa,coffee,tea" ",")
+Ints prices = (list 3 4 3 5 4 3)
+
+Note: Count occurrences; insertion order is first-seen order.
+Dict<String, Int> counts = (reduce orders (dict) (fn Dict<String, Int> acc, String item => (set acc item (add (getOr acc item 0) 1))))
+
+(each counts (fn String item, Int n => (print $"{item}: {n}")))
+
+Note: Revenue per item from parallel arrays.
+Dict<String, Int> revenue = (reduce (zip orders prices) (dict) (fn Dict<String, Int> acc, Void pair => (set acc pair@0 (add (getOr acc pair@0 0) pair@1))))
+(print $"revenue items: {(str (keys revenue))}")
+(print $"revenue values: {(str (values revenue))}")
+
+Note: Keep only items ordered more than once.
+Dict<String, Int> popular = (filter counts (fn String item, Int n => (gt n 1)))
+(print $"popular: {(str (keys popular))}")
+(print $"distinct items: {(size counts)}")

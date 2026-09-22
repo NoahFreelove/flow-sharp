@@ -39,6 +39,10 @@ public static class Utils
     /// </summary>
     public static int CompareNumeric(Value a, Value b)
     {
+        // Durations compare as the same quantity: (lt 500ms 1s) is true.
+        if (UnitArithmetic.TryAsSeconds(a, b, out var aSec, out var bSec))
+            return aSec.CompareTo(bSec);
+
         var (aIsNumeric, aDouble, aBigInt) = ToComparableNumber(a);
         var (bIsNumeric, bDouble, bBigInt) = ToComparableNumber(b);
 
@@ -65,6 +69,10 @@ public static class Utils
         // If same type, delegate to strict equals
         if (a.Type.Equals(b.Type))
             return StrictEquals(a, b);
+
+        // Durations in different units: (equals 1000ms 1s) is true.
+        if (UnitArithmetic.TryAsSeconds(a, b, out var aSec, out var bSec))
+            return aSec == bSec;
 
         // Try numeric comparison
         var (aIsNumeric, _, _) = ToComparableNumber(a);

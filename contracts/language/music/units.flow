@@ -1,0 +1,11 @@
+// contract: music.units
+// status: preserve
+// rationale: Unit literals are typed values; kHz canonicalizes to Hz at lex time.
+use "@std"
+(print (str 100ms))
+(print (str 2.5s))
+(print (str 440Hz))
+(print (str 1.5kHz))
+(print (str -6dB))
+(print (str +2st))
+(print (str +50c))

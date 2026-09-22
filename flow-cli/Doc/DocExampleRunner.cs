@@ -1,3 +1,4 @@
+using FlowLang.Diagnostics;
 using FlowLang.Core;
 
 namespace FlowCli.Doc;
@@ -118,7 +119,7 @@ public sealed class DocExampleRunner
                 bool ok = engine.Execute(exampleSource, "<doc-example>");
                 if (!ok || engine.ErrorReporter.HasErrors)
                 {
-                    var formatted = engine.ErrorReporter.FormatErrors();
+                    var formatted = engine.ErrorReporter.FormatAll(engine.SourceMap, useColor: false);
                     failure = string.IsNullOrWhiteSpace(formatted)
                         ? "[example failed]"
                         : "[example failed] " + Flatten(formatted);

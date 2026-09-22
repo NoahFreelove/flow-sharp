@@ -1,0 +1,27 @@
+Note: Collection processing without any music.
+Note: A small gradebook: filter, map, reduce, zip and ranges over plain arrays.
+use "@std"
+
+Strings students = (list "Ada" "Grace" "Alan" "Edsger" "Barbara")
+Ints scores = (list 91 78 85 62 97)
+
+proc average (Ints: xs)
+    (div (reduce xs 0 (fn Int acc, Int x => (add acc x))) (len xs))
+end proc
+
+Ints passing = (filter scores (fn Int s => (gte s 80)))
+Ints curved = (map scores (fn Int s => (min 100 (add s 5))))
+
+(print $"students: {(len students)}")
+(print $"passing scores: {(str passing)}")
+(print $"curved: {(str curved)}")
+(print $"average: {(average scores)}")
+(print $"best: {(reduce scores 0 (fn Int best, Int s => (max best s)))}")
+(print $"ranked: {(str (reverse (sort scores)))}")
+
+Note: zip pairs names with scores; each pair is a tuple.
+(each (zip students scores) (fn Void pair => (print $"  {pair@0}: {pair@1}")))
+
+Note: Every other student, using a range of indices.
+Ints evenIdx = (filter (range 0 (len students)) (fn Int i => (equals (mod i 2) 0)))
+(print (str (map evenIdx (fn Int i => students@i))))

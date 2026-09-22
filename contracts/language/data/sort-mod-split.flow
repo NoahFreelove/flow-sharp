@@ -1,0 +1,21 @@
+// contract: data.sort-mod-split
+// status: preserve
+// rationale: mod is floor modulo (result takes the divisor's sign, so pitch-class
+//    math wraps); sort is a stable ascending sort of numbers, strings or notes;
+//    split breaks a string on a separator (empty separator: characters).
+//    Unorderable mixes and a zero divisor are located errors.
+// errors: 2
+// stderr: error: Division by zero
+// stderr: sort: cannot order Int and String
+use "@std"
+(print (str (mod 7 3)))
+(print (str (mod -1 12)))
+(print (str (mod 7.5 2.0)))
+(print (str (sort [3, 1, 2, 1.5])))
+(print (str (sort ["pear", "apple"])))
+(print (str (sort (list G4 C4 E4))))
+(print (str (split "a,b,,c" ",")))
+(print (str (split "abc" "")))
+(print (str (mod 1 0)))
+(print (str (sort (list 1 "a"))))
+print "continues"

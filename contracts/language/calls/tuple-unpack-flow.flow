@@ -1,0 +1,17 @@
+// contract: calls.tuple-unpack-flow
+// status: preserve
+// rationale: t ~> f spreads a tuple into positional arguments at evaluation time;
+//    a non-tuple left side falls through to ->. (unpack t f) is the call form.
+use "@std"
+proc area (Int: w, Int: h)
+    (mul w h)
+end proc
+proc twice (Int: n)
+    (mul n 2)
+end proc
+Tuple<<Int, Int>> size = <<3, 4>>
+Int a = size ~> area
+(print (str a))
+Int b = 5 ~> twice
+(print (str b))
+(print (str (unpack <<6, 7>> area)))

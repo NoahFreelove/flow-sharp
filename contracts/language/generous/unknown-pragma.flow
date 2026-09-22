@@ -1,0 +1,8 @@
+// contract: generous.unknown-pragma
+// status: preserve
+// rationale: Unknown pragmas are errors with a suggestion; nothing runs.
+// errors: 1
+// stderr: unknown pragma 'strcit' at line 6. Did you mean 'strict'?
+enable strcit;
+use "@std"
+print "not reached"

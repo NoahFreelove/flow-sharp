@@ -1,0 +1,11 @@
+// contract: functional.lazy-operand
+// status: preserve
+// rationale: and/or force a lazy operand when they reach it and return its
+//    value, so a lazy guard decides if correctly. Operands after the deciding
+//    one are never evaluated.
+use "@std"
+(print (if (and true lazy (false)) lazy ("then (wrong)") lazy ("else")))
+(print (if (or false lazy (false)) lazy ("then (wrong)") lazy ("else")))
+(print (str (and true lazy (false))))
+(print (str (or false lazy (true))))
+(print (str (and false lazy ((print "never")))))

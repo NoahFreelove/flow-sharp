@@ -1,0 +1,6 @@
+// contract: generous.truthy-if
+// status: generous
+// rationale: Outside strict mode, if accepts a non-Bool condition by truthiness.
+use "@std"
+(print (if 1 lazy ("truthy") lazy ("falsy")))
+(print (if 0 lazy ("truthy") lazy ("falsy")))

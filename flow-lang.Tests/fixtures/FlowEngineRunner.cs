@@ -25,14 +25,14 @@ public sealed class FlowEngineRunner : IDisposable
         var source = File.ReadAllText(path);
         var success = _engine.Execute(source, path);
         FlushErrorsToStderr();
-        return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.Errors.Count);
+        return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.ErrorCount);
     }
 
     public (bool Success, string Stdout, string Stderr, int ErrorCount) RunSource(string source, string fileName = "<test>")
     {
         var success = _engine.Execute(source, fileName);
         FlushErrorsToStderr();
-        return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.Errors.Count);
+        return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.ErrorCount);
     }
 
     /// <summary>
@@ -55,16 +55,17 @@ public sealed class FlowEngineRunner : IDisposable
     public FlowEngine GetEngine() => _engine;
 
     /// <summary>
-    /// Mirrors flow-interpreter/Program.cs:78 behavior: after Execute, format the
-    /// ErrorReporter contents to stderr. The interpreter entry-point does this
+    /// Mirrors the CLI: after Execute, format the ErrorReporter contents to stderr. The interpreter entry-point does this
     /// for user feedback; our fixture does it so that Theory rows asserting
     /// stderr substrings (ExpectedErrorScripts) see the same messages.
     /// </summary>
     private void FlushErrorsToStderr()
     {
-        if (_engine.ErrorReporter.Errors.Count > 0)
+        // Both accumulators: legacy FlowErrors and rich FlowDiagnostics (unknown
+        // identifiers, match exhaustiveness), exactly as the CLI prints them.
+        if (_engine.ErrorReporter.Errors.Count > 0 || _engine.ErrorReporter.HasDiagnostics)
         {
-            _stderr.WriteLine(_engine.ErrorReporter.FormatErrors());
+            _stderr.WriteLine(_engine.ErrorReporter.FormatAll(_engine.SourceMap, useColor: false));
         }
     }
 

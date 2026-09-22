@@ -122,7 +122,28 @@ public static class PatternMatcher
         // Non-music ConstructorPatterns (none in v1.5 surface) fall through
         // to false — the silent-Void behavior from Plan 35-05 stays in place
         // until v1.6 introduces nested constructor patterns.
-        _ = bindings; _ = evaluator;
+        // Tuple pattern `<<p1, p2, ...>>`: same arity, every slot matches. Slot
+        // bindings are committed only when the whole tuple matches.
+        if (ctor.Name == "Tuple" && !ctor.IsChordLiteral && !ctor.IsRomanNumeral
+            && !ctor.IsArticulationSymbol && !ctor.IsSymbolLiteral)
+        {
+            if (scrutinee.Type is not TypeSystem.SpecialTypes.TupleType
+                || scrutinee.Data is not IReadOnlyList<Value> elements
+                || elements.Count != ctor.SubPatterns.Count)
+                return false;
+            var slotBindings = new Dictionary<string, Value>(bindings);
+            for (int i = 0; i < elements.Count; i++)
+            {
+                if (ctor.SubPatterns[i] is BindingPattern { TypeAnnotation: { } slotType }
+                    && !IsTypeCompatible(elements[i], slotType))
+                    return false;
+                if (!PatternMatches(ctor.SubPatterns[i], elements[i], slotBindings, evaluator, context))
+                    return false;
+            }
+            foreach (var (name, value) in slotBindings)
+                bindings[name] = value;
+            return true;
+        }
 
         if (ctor.IsChordLiteral)
             return MatchChordQuality(ctor.Name, scrutinee);

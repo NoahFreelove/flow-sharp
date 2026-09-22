@@ -1,0 +1,12 @@
+// contract: modules.qualified-access
+// status: preserve
+// rationale: A file starting with module NAME can be called as (NAME.fn ...).
+//    Unqualified names are last-import-wins with a one-shot shadow advisory.
+// stderr: [module] 'shout' from 'other' shadows 'shout' from 'textutil'
+use "@std"
+use "lib/textutil.flow"
+(print (shout "hey"))
+use "lib/other.flow"
+(print (shout "hey"))
+(print (textutil.shout "hey"))
+(print (other.shout "hey"))

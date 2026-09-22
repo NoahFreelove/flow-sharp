@@ -341,6 +341,13 @@ public class ExpressionEvaluator
         // `(eval lazy(...))`).
         bool[]? lazySlots = ComputeLazyDeferralSlots(call);
 
+        // Errors reported while evaluating the arguments. A Void argument that came
+        // with a fresh error is the report-and-continue sentinel of a failure that has
+        // already been diagnosed; calling on with it only produces cascading
+        // diagnostics (ambiguous overloads on Void, strict "got Void") or internal
+        // conversion failures, so the call is skipped.
+        int errorsBeforeArgs = _errorReporter.ErrorCount;
+
         var argValues = new List<Value>(call.Arguments.Count);
         var argTypes = new FlowType[call.Arguments.Count];
         for (int i = 0; i < call.Arguments.Count; i++)
@@ -377,6 +384,13 @@ public class ExpressionEvaluator
                 namedArgValues[name] = val;
                 namedArgTypes[name] = val.Type;
             }
+        }
+
+        if (_errorReporter.ErrorCount > errorsBeforeArgs
+            && (argValues.Any(v => v.Type is VoidType)
+                || (namedArgValues?.Values.Any(v => v.Type is VoidType) ?? false)))
+        {
+            return Value.Void();
         }
 
         // Try to resolve function overload
@@ -590,6 +604,14 @@ public class ExpressionEvaluator
                 // mirroring ReportUnknownMember's charitable contract. Covers all
                 // six div builtins at one site.
                 return ReportDivisionByZero(call.Location);
+            }
+            catch (Exception ex) when (!ControlFlow.IsSignal(ex))
+            {
+                // Any other failure inside a builtin is reported at the call and the
+                // program continues with Void (error accumulation), rather than
+                // escaping as a location-less "Unexpected error" that ends the run.
+                _errorReporter.ReportError($"{call.Name}: {ex.Message}", call.Location);
+                return Value.Void();
             }
             finally
             {
@@ -1361,14 +1383,9 @@ public class ExpressionEvaluator
         var sb = new System.Text.StringBuilder();
         foreach (var part in expr.Parts)
         {
-            var val = Evaluate(part);
-            // Raw String values append verbatim (no added quotes). Everything else —
-            // including Symbol, whose underlying CLR Data is also a string — renders
-            // via Value.ToString so interpolation matches (str x) output.
-            if (val.Type is StringType && val.Data is string s)
-                sb.Append(s);
-            else
-                sb.Append(val.ToString());
+            // One formatting rule for interpolation, (str x) and (print x): strings
+            // and notes appear bare, Void as "()".
+            sb.Append(StandardLibrary.StdLib.AutoStr(Evaluate(part)));
         }
         return Value.String(sb.ToString());
     }

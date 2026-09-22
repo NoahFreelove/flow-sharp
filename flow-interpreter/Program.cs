@@ -142,26 +142,14 @@ class Program
     /// don't drop legacy FlowError accumulator output.
     ///
     /// <para>
-    /// Color is emitted unconditionally (the wrapping
-    /// <c>Console.ForegroundColor = Red</c> remains the existing precedent);
-    /// .NET auto-suppresses ANSI when stderr is redirected. The
-    /// <c>useColor:false</c> path is reserved for the golden-file tests.
+    /// Rich diagnostics are styled only when the destination is an interactive
+    /// terminal and neither <c>NO_COLOR</c> nor <c>TERM=dumb</c> is set (the embedded
+    /// ANSI codes are not suppressed by .NET for redirected streams). The REPL passes
+    /// <paramref name="toStdout"/> because it prints diagnostics to stdout.
     /// </para>
     /// </summary>
-    internal static string FormatErrorsForEmit(FlowEngine engine)
-    {
-        var hasRich = engine.ErrorReporter.HasDiagnostics;
-        var hasLegacy = engine.ErrorReporter.Errors.Count > 0;
-        if (hasRich && hasLegacy)
-        {
-            return engine.ErrorReporter.FormatDiagnostics(engine.SourceMap, useColor: true)
-                + "\n\n"
-                + engine.ErrorReporter.FormatErrors();
-        }
-        if (hasRich)
-            return engine.ErrorReporter.FormatDiagnostics(engine.SourceMap, useColor: true);
-        return engine.ErrorReporter.FormatErrors();
-    }
+    internal static string FormatErrorsForEmit(FlowEngine engine, bool toStdout = false)
+        => engine.ErrorReporter.FormatAll(engine.SourceMap, FlowLang.Diagnostics.ErrorReporter.ShouldUseColor(toStdout));
 
     /// <summary>
     /// Runs a script with file watching and live-coding support.

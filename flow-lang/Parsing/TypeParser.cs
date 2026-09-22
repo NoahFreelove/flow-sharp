@@ -42,6 +42,13 @@ public static class TypeParser
         {
             index++; // past "Tuple"
 
+            // Bare `Tuple` (no element list) is the any-arity tuple type.
+            if (index >= tokens.Count
+                || (tokens[index].Type != TokenType.LessLess && tokens[index].Type != TokenType.LessThan))
+            {
+                return WithArraySuffix(TupleType.AnyArity, tokens, index);
+            }
+
             if (index < tokens.Count && tokens[index].Type == TokenType.LessLess)
             {
                 index++; // consumed single `<<` token
@@ -88,7 +95,7 @@ public static class TypeParser
                 index++;
             }
 
-            return (new TupleType(elementTypes), index, isVarArgs: false);
+            return WithArraySuffix(new TupleType(elementTypes), tokens, index);
         }
 
         // Phase 26.1 DICT-01: Dict<K, V> generic type. Place BEFORE the plural-form check
@@ -252,6 +259,18 @@ public static class TypeParser
         }
 
         return (parsedType, index, isVarArgs);
+    }
+
+    // `T[]` after a generic type such as Tuple<<Int, String>>[].
+    private static (FlowType type, int nextIndex, bool isVarArgs) WithArraySuffix(FlowType type, List<Token> tokens, int index)
+    {
+        if (index + 1 < tokens.Count
+            && tokens[index].Type == TokenType.LBracket
+            && tokens[index + 1].Type == TokenType.RBracket)
+        {
+            return (new ArrayType(type), index + 2, isVarArgs: false);
+        }
+        return (type, index, isVarArgs: false);
     }
 
     /// <summary>

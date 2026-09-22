@@ -1,0 +1,15 @@
+// contract: functional.loops
+// status: preserve
+// rationale: for/while are statements; the (break)/(continue) call forms can be
+//    gated by if.
+use "@std"
+for Int i in (range 0 10) {
+    (if (equals i 2) lazy ((continue)) lazy ((Nothing)))
+    (if (equals i 5) lazy ((break)) lazy ((Nothing)))
+    (print (str i))
+}
+Int k = 0
+while (lt k 3) {
+    k = (add k 1)
+}
+(print (str k))

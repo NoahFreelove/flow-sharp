@@ -22,6 +22,17 @@ public class BreakSignal : Exception { }
 public class ContinueSignal : Exception { }
 
 /// <summary>
+/// Exceptions that carry control flow or a deliberate abort through the interpreter
+/// and must not be converted into accumulated diagnostics.
+/// </summary>
+internal static class ControlFlow
+{
+    public static bool IsSignal(Exception ex) =>
+        ex is BreakSignal or ContinueSignal or OperationCanceledException
+            or StandardLibrary.TestFramework.AssertionException;
+}
+
+/// <summary>
 /// Main interpreter for executing Flow AST.
 /// </summary>
 public class Interpreter : IFunctionInvoker
@@ -168,6 +179,21 @@ public class Interpreter : IFunctionInvoker
             return; // Already returned
         // AUDIT-VERIFIED 2026-04-18: C2 — Dismissed: _returnValue only set by ReturnStatement; guard is correct (tests/spike/c2-return-value-short-circuit.flow)
 
+        // Error accumulation: an internal exception inside one statement is reported
+        // at that statement and the program continues, instead of escaping to
+        // FlowEngine's catch-all as a location-less "Unexpected error" that ends the run.
+        try
+        {
+            ExecuteStatementCore(stmt);
+        }
+        catch (Exception ex) when (!ControlFlow.IsSignal(ex))
+        {
+            _errorReporter.ReportError(ex.Message, stmt.Location);
+        }
+    }
+
+    private void ExecuteStatementCore(Statement stmt)
+    {
         switch (stmt)
         {
             case ProcDeclaration proc:
@@ -1089,6 +1115,7 @@ public class Interpreter : IFunctionInvoker
                 || value.Type.CanConvertTo(varDecl.Type);
 
             // Try direct Value-level coercion for numeric narrowing (Double→Float, etc.)
+            string? narrowingFailure = null;
             if (!typeCompatible && IsNumericNarrowing(value.Type, varDecl.Type))
             {
                 try
@@ -1100,6 +1127,10 @@ public class Interpreter : IFunctionInvoker
                         typeCompatible = true;
                     }
                 }
+                catch (InvalidCastException ex) when (ex.Message.Contains("does not fit", StringComparison.Ordinal))
+                {
+                    narrowingFailure = ex.Message; // e.g. "value 2147483648 does not fit in Int"
+                }
                 catch { /* fall through to error */ }
             }
 
@@ -1108,8 +1139,13 @@ public class Interpreter : IFunctionInvoker
             if (value.Type is not TypeSystem.PrimitiveTypes.FunctionType && !typeCompatible)
             {
                 _errorReporter.ReportError(
-                    $"Cannot assign {value.Type} to variable of type {varDecl.Type}",
+                    narrowingFailure is null
+                        ? $"Cannot assign {value.Type} to variable of type {varDecl.Type}"
+                        : $"Cannot assign to {varDecl.Name}: {narrowingFailure}",
                     varDecl.Location);
+                // Declare the name with its type default so later uses do not cascade
+                // into "unknown identifier" errors.
+                _context.DeclareVariable(varDecl.Name, CreateDefaultValue(varDecl.Type));
                 return;
             }
 
@@ -1463,9 +1499,14 @@ public class Interpreter : IFunctionInvoker
                 ExecuteStatement(statement);
 
                 // If statement was an expression, collect its value (already evaluated in ExecuteStatement)
-                if (statement is ExpressionStatement)
+                if (statement is ExpressionStatement exprStatement)
                 {
-                    collector.Collect(_lastExpressionValue ?? Value.Void());
+                    // `(Nothing)` discards everything collected so far, so as the final
+                    // statement it makes the proc return Void.
+                    if (exprStatement.Expression is FunctionCallExpression { Name: "Nothing", Arguments.Count: 0 })
+                        collector.Clear();
+                    else
+                        collector.Collect(_lastExpressionValue ?? Value.Void());
                 }
             }
 

@@ -1,0 +1,8 @@
+// contract: music.note-stream
+// status: preserve
+// rationale: Note streams compile to Sequences using the active context;
+//    transforms chain with -> and inspect renders a deterministic piano roll.
+use "@std"
+Sequence mel = | C4 D4 E4 F4 |
+(print (str mel))
+(inspect (mel -> retrograde))

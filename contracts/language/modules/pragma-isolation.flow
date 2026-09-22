@@ -1,0 +1,13 @@
+// contract: modules.pragma-isolation
+// status: preserve
+// rationale: Pragmas are per file. Strict mode governs code written in the strict
+//    file: a strict proc's body stays strict when called from charitable code,
+//    while the caller's arguments are coerced by the caller's (charitable) rules.
+//    Importing a strict module does not make the importer strict.
+// errors: 1
+// stderr: [strict] (if) requires Bool — got Int
+use "@std"
+use "lib/strict_half.flow"
+(print (str (strictHalf 3)))
+(print (if 1 lazy ("importer stays charitable") lazy ("?")))
+(print (str (strictTruth 1)))

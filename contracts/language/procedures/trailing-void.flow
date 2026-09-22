@@ -1,0 +1,10 @@
+// contract: procedures.trailing-void
+// status: preserve
+// rationale: A trailing void call does not erase a value that was already
+//    collected; the side effect happens and the collected value is returned.
+use "@std"
+proc logged (Int: x)
+    (add x 1)
+    (print "side effect")
+end proc
+(print (str (logged 1)))

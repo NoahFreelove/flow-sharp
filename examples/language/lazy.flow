@@ -1,0 +1,27 @@
+Note: Deferred work. if, and and or evaluate only what they need, so an
+Note: expensive or failing branch is never touched when it is not taken.
+use "@std"
+
+Ints data = (list 4 8 15 16 23 42)
+
+Note: and only evaluates its lazy second operand when the first is true.
+proc safeAt (Ints: xs, Int: i)
+    (if (and (gte i 0) lazy ((lt i (len xs)))) lazy (xs@i) lazy ((neg 1)))
+end proc
+
+(print (str (safeAt data 2)))
+(print (str (safeAt data 99)))
+
+Note: The untaken branch would fail, but it is never evaluated.
+(print (if (empty data) lazy ((head (list))) lazy ("data present")))
+
+Note: or stops at the first true operand.
+(print (str (or (contains data 15) lazy ((print "not evaluated")))))
+
+Note: An inline thunk runs only when forced.
+(print (str (eval lazy ((reduce data 0 (fn Int a, Int x => (add a x)))))))
+
+Note: A stored thunk runs once, however often it is forced.
+Lazy total = lazy ((print "computing total..."))
+(eval total)
+(eval total)

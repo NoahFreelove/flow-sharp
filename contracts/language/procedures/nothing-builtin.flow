@@ -1,0 +1,19 @@
+// contract: procedures.nothing-builtin
+// status: preserve
+// rationale: (Nothing) discards the values collected so far, so as the last
+//    statement it makes a proc return Void even after earlier expressions.
+//    Values collected after it are returned as usual.
+use "@std"
+proc silent (Int: x)
+    (add x 1)
+    (Nothing)
+end proc
+proc empty (Int: x)
+    (Nothing)
+end proc
+proc later (Int: x)
+    (add x 1)
+    (Nothing)
+    (add x 2)
+end proc
+(print $"silent=[{(silent 1)}] empty=[{(empty 1)}] later=[{(later 1)}]")

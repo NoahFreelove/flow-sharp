@@ -1,0 +1,9 @@
+// contract: ergonomics.plural-types
+// status: preserve
+// rationale: A type name ending in s is its array type (Ints = Int[]).
+use "@std"
+Ints nums = (list 1 2 3)
+Strings names = (list "a" "b")
+Int[] same = nums
+(print (str (equals nums same)))
+(print (str names))

@@ -1,3 +1,4 @@
+using FlowLang.Diagnostics;
 using System.CommandLine;
 using FlowLang.Core;
 
@@ -46,7 +47,7 @@ internal static class EvalCommand
                 if (!success)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine(engine.ErrorReporter.FormatErrors());
+                    Console.Error.WriteLine(engine.ErrorReporter.FormatAll(engine.SourceMap, ErrorReporter.ShouldUseColor()));
                     Console.ResetColor();
                     return 1;
                 }

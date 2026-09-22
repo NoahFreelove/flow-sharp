@@ -1,0 +1,9 @@
+// contract: calls.infix-rejected
+// status: preserve
+// rationale: Flow is deliberately prefix-only. Infix arithmetic is a parse error
+//    that suggests the prefix builtin, so no statement in the file runs.
+// errors: 1
+// stderr: removed infix arithmetic; use prefix builtins (add)/(sub)/(mul)/(div).
+use "@std"
+print "not reached"
+Int x = 1 + 2

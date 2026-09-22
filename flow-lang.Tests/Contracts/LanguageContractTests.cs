@@ -80,16 +80,7 @@ public class LanguageContractTests
         RenderingDiagnostics.ResetForTesting();
         var absolute = Path.Combine(RepoRoot, relativePath);
         using var runner = new FlowEngineRunner();
-        var (_, stdout, stderr, _) = runner.RunFile(absolute);
-
-        // Legacy FlowErrors and rich FlowDiagnostics (unknown identifiers, match
-        // exhaustiveness) accumulate separately; the CLI prints both, so count both.
-        var engine = runner.GetEngine();
-        var reporter = engine.ErrorReporter;
-        var errors = reporter.Errors.Count(e => e.Level == DiagnosticLevel.Error)
-            + reporter.Diagnostics.Count(d => d.Level == DiagnosticLevel.Error);
-        if (reporter.HasDiagnostics)
-            stderr += reporter.FormatDiagnostics(engine.SourceMap, useColor: false);
+        var (_, stdout, stderr, errors) = runner.RunFile(absolute);
         return (stdout, NormalizeStderr(stderr), errors);
     }
 

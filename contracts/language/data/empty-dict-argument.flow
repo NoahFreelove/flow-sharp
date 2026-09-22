@@ -1,0 +1,10 @@
+// contract: data.empty-dict-argument
+// status: preserve
+// rationale: A bare (dict) works wherever a typed Dict is expected, including as
+//    a reduce seed with a typed reducer; entries added to it convert to the
+//    declared key and value types.
+use "@std"
+Dict<String, Int> counts = (reduce ["a", "b", "a"] (dict) (fn Dict<String, Int> acc, String k => (set acc k (add (getOr acc k 0) 1))))
+(print (str counts))
+Function size = fn Dict<String, Int> d => (size d)
+(print (str (size (dict))))

@@ -1,0 +1,13 @@
+// contract: ergonomics.diagnostic-span
+// status: preserve
+// rationale: Unknown identifiers report file:line:column, a source excerpt and a
+//    did-you-mean suggestion; execution continues after the error.
+// errors: 1
+// stderr: unknown identifier 'lenght'
+// stderr: --> contracts/language/ergonomics/diagnostic-span.flow:12:9
+// stderr: help: did you mean 'length'?
+use "@std"
+print "before"
+Int length = 3
+Int n = lenght
+print "after"

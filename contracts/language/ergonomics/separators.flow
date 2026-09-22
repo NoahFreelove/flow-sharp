@@ -1,0 +1,10 @@
+// contract: ergonomics.separators
+// status: preserve
+// rationale: Newlines or semicolons separate statements; a trailing backslash
+//    continues a logical line.
+use "@std"
+Int a = 1; Int b = 2; (print (str (add a b)))
+Int total = (add 1 \
+             (add 2 \
+              3))
+(print (str total))

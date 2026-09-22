@@ -1,0 +1,13 @@
+// contract: ergonomics.comments
+// status: preserve
+// rationale: Five comment forms: Note: and // anywhere; TODO: and FIXME: at line
+//    start; ; only at column 0 (elsewhere ; separates statements).
+use "@std"
+Note: a Note: comment
+// a slash comment
+; a column-0 semicolon comment
+TODO: a todo comment
+FIXME: a fixme comment
+Int x = 5  Note: trailing Note: comment
+Int y = 7  // trailing slash comment
+(print (str (add x y)))

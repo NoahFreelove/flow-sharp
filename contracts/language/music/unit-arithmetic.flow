@@ -1,0 +1,14 @@
+// contract: music.unit-arithmetic
+// status: preserve
+// rationale: Arithmetic keeps units: same-unit add/sub, scaling by a number, and
+//    ms/s mixing (first operand's unit). Dividing like units gives a plain
+//    ratio. Durations compare and equal across ms and s.
+use "@std"
+(print (str (add 100ms 50ms)))
+(print (str (add 1s 250ms)))
+(print (str (mul 2.5s 2)))
+(print (str (div 1s 250ms)))
+(print (str (add +2st +3st)))
+(print (str (add -6dB -3dB)))
+(print (str (equals 1000ms 1s)))
+(print (str (lt 500ms 1s)))

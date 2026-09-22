@@ -136,7 +136,7 @@ public class Repl
                     // FlowEngine.Execute lets the renderer quote the offending
                     // line back to the composer.
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(Program.FormatErrorsForEmit(_engine));
+                    Console.WriteLine(Program.FormatErrorsForEmit(_engine, toStdout: true));
                     Console.ResetColor();
                 }
                 else if (result != null && result.Type is not VoidType)

@@ -1,0 +1,15 @@
+// contract: functional.match-basics
+// status: preserve
+// rationale: match tries arms in order: literals (Int, String, Symbol), binding
+//    patterns with when guards, and the _ wildcard.
+use "@std"
+proc label (Int: n)
+    (match n
+     | 0 => "zero"
+     | x when (lt x 0) => "negative"
+     | 1 => "one"
+     | _ => "many")
+end proc
+(each [(neg 3), 0, 1, 7] (fn Int n => (print (label n))))
+(print (match "b" | "a" => "A" | "b" => "B" | _ => "?"))
+(print (match #stop | #go => "go" | #stop => "stop" | _ => "?"))

@@ -1,0 +1,13 @@
+// contract: procedures.varargs
+// status: preserve
+// rationale: Type... collects individual arguments into an array; the plural
+//    type Ints is an array parameter that takes one array argument.
+use "@std"
+proc showAll (Void...: items)
+    (each items (fn Void item => (print (str item))))
+end proc
+proc sumAll (Ints: numbers)
+    (reduce numbers 0 (fn Int acc, Int n => (add acc n)))
+end proc
+(showAll 1 "two" true)
+(print (str (sumAll [1, 2, 3])))

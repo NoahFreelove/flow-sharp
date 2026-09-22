@@ -1,0 +1,12 @@
+// contract: functional.higher-order
+// status: preserve
+// rationale: Functions are values accepted by builtins and user procs.
+use "@std"
+proc applyTwice (Function: f, Int: x)
+    (f (f x))
+end proc
+Int[] nums = [1, 2, 3, 4, 5]
+(print (str (map nums (fn Int n => (mul n 2)))))
+(print (str (filter nums (fn Int n => (gt n 3)))))
+(print (str (reduce nums 0 (fn Int acc, Int n => (add acc n)))))
+(print (str (applyTwice (fn Int n => (add n 10)) 1)))

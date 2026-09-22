@@ -1,0 +1,13 @@
+Note: A two-module utility: statistics and text formatting live in lib/.
+Note: Unqualified calls work; qualified module.proc calls disambiguate.
+use "@std"
+use "lib/stats.flow"
+use "lib/text.flow"
+
+Ints latencies = (list 120 95 143 88 101)
+
+(print (row "count" (str (len latencies))))
+(print (row "sum" (str (sum latencies))))
+(print (row "mean" (str (stats.mean latencies))))
+(print (row "spread" (str (stats.spread latencies))))
+(print (text.row "done" "yes"))

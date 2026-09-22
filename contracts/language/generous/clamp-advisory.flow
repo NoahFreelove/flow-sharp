@@ -1,0 +1,9 @@
+// contract: generous.clamp-advisory
+// status: generous
+// rationale: Out-of-range stdlib inputs clamp to a safe value with a one-shot
+//    [prefix] advisory on stderr instead of failing.
+// stderr: [cellular] width 5000 > 1024
+use "@std"
+use "@generative"
+Sequence cells = (cellular 30 5000 2 1)
+print "rendered"

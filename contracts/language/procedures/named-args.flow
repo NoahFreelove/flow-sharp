@@ -1,0 +1,14 @@
+// contract: procedures.named-args
+// status: preserve
+// rationale: Any parameter name can be used at the call site, in any order,
+//    after all positional arguments. An unknown name is an evaluation error.
+// errors: 1
+// stderr: unknown parameter 'nope' for function 'greet' (expected: name, greeting)
+use "@std"
+proc greet (String: name, String: greeting)
+    (concat greeting (concat ", " name))
+end proc
+(print (greet greeting="Hi" name="Ada"))
+(print (greet "Ada" greeting="Yo"))
+(print (greet "Ada" nope="x"))
+print "continues"

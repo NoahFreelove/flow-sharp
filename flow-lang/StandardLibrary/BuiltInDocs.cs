@@ -63,14 +63,16 @@ public static class BuiltInDocs
         ["slice"] = new("Returns a sub-array/sub-sequence bounded by start/end (silently clamped).", Array.Empty<ParamDoc>()),
         ["empty"] = new("Returns true iff the array has zero elements.", Array.Empty<ParamDoc>()),
         ["zip"] = new("Combines two arrays into an array of pairs, stopping at the shorter length.", Array.Empty<ParamDoc>()),
+        ["sort"] = new("Stable ascending sort of numbers, strings or notes.", Array.Empty<ParamDoc>()),
+        ["split"] = new("Splits a string on a separator; an empty separator splits into characters.", Array.Empty<ParamDoc>()),
         ["contains"] = new("Returns true if the array contains the given element.", Array.Empty<ParamDoc>()),
 
         // ===== Arithmetic =====
-        ["add"] = new("Returns a + b. Overloads for Int, Float, Double.", Array.Empty<ParamDoc>()),
+        ["add"] = new("Returns a + b. Integers promote on overflow; unit values keep their unit (150ms).", Array.Empty<ParamDoc>()),
         ["sub"] = new("Returns a - b. Overloads for Int, Float, Double.", Array.Empty<ParamDoc>()),
         ["mul"] = new("Returns a * b. Overloads for Int, Float, Double.", Array.Empty<ParamDoc>()),
         ["div"] = new("Returns a / b. Overloads for Int, Float, Double.", Array.Empty<ParamDoc>()),
-        ["mod"] = new("Returns a modulo b.", Array.Empty<ParamDoc>()),
+        ["mod"] = new("Floor modulo: the result takes the divisor's sign, so (mod -1 12) is 11.", Array.Empty<ParamDoc>()),
         ["pow"] = new("Returns base raised to the exponent.", Array.Empty<ParamDoc>()),
         ["abs"] = new("Absolute value (Int or Double overloads).", Array.Empty<ParamDoc>()),
         ["min"] = new("Smaller of two values.", Array.Empty<ParamDoc>()),

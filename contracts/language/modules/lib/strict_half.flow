@@ -1,0 +1,8 @@
+enable strict;
+use "@std"
+proc strictHalf (Double: x)
+    (div x 2.0)
+end proc
+proc strictTruth (Int: x)
+    (if x lazy ("truthy") lazy ("falsy"))
+end proc

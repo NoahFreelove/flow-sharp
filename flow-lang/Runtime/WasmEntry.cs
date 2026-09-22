@@ -287,6 +287,26 @@ public static partial class WasmEntry
     }
 
     /// <summary>
+    /// Maps rich <see cref="FlowDiagnostic"/> entries (unknown identifiers, match
+    /// exhaustiveness) to the same <see cref="RunError"/> shape; they accumulate
+    /// separately from <see cref="ErrorReporter.Errors"/>.
+    /// </summary>
+    private static IEnumerable<RunError> MapDiagnostics(IEnumerable<FlowDiagnostic> diagnostics, SourceMap? sourceMap)
+    {
+        foreach (var d in diagnostics)
+        {
+            if (d.Level != DiagnosticLevel.Error) continue;
+            int? line = d.Primary.Start.Line > 0 ? d.Primary.Start.Line : null;
+            yield return new RunError(
+                Kind: "eval",
+                Message: d.Suggestion is { } hint ? $"{d.Message} (did you mean '{hint}'?)" : d.Message,
+                Line: line,
+                Column: d.Primary.Start.Column > 0 ? d.Primary.Start.Column : null,
+                SourceSnippet: SnippetFor(sourceMap, line));
+        }
+    }
+
+    /// <summary>
     /// sweep-0614 wasm-web: quote the offending source line for the playground's
     /// Rust-style diagnostic box. <see cref="FlowEngine.Execute"/> registers the
     /// full source under the <c>"&lt;wasm&gt;"</c> key (the <c>fileName</c> passed
@@ -399,7 +419,9 @@ public static partial class WasmEntry
                 // sweep-0614 wasm-web: thread the engine SourceMap so parse /
                 // runtime errors carry the quoted source line for the
                 // playground's Rust-style diagnostic box (D-48-14).
-                errors = MapFlowErrors(engine.ErrorReporter.Errors, engine.SourceMap);
+                errors = MapFlowErrors(engine.ErrorReporter.Errors, engine.SourceMap)
+                    .Concat(MapDiagnostics(engine.ErrorReporter.Diagnostics, engine.SourceMap))
+                    .ToArray();
             }
             catch (Exception ex)
             {

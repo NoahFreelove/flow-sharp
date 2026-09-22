@@ -1,0 +1,16 @@
+// contract: functional.match-tuple-pattern
+// status: preserve
+// rationale: match accepts tuple patterns <<p1, p2>>: same arity, every slot
+//    matches (literals, symbols, bindings, typed bindings, _), optional guard.
+use "@std"
+proc run (Tuple: cmd)
+    (match cmd
+     | <<"add", n>> => $"adding {n}"
+     | <<#mul, Int n>> when (gt n 10) => $"big multiply {n}"
+     | <<op, _>> => $"unknown {op}"
+     | _ => "not a pair")
+end proc
+(print (run <<"add", 3>>))
+(print (run <<#mul, 30>>))
+(print (run <<#mul, 3>>))
+(print (run <<1, 2, 3>>))

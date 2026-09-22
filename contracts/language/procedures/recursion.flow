@@ -1,0 +1,12 @@
+// contract: procedures.recursion
+// status: preserve
+// rationale: Procs can recurse; the lazily deferred if branch stops the recursion.
+use "@std"
+proc fact (Int: n)
+    (if (lte n 1) lazy (1) lazy ((mul n (fact (sub n 1)))))
+end proc
+proc fib (Int: n)
+    (if (lt n 2) lazy (n) lazy ((add (fib (sub n 1)) (fib (sub n 2)))))
+end proc
+(print (str (fact 10)))
+(print (str (map (range 0 10) (fn Int n => (fib n)))))

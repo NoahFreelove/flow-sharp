@@ -1,0 +1,5 @@
+module other
+use "@std"
+proc shout (String: s)
+    (concat s "?!")
+end proc

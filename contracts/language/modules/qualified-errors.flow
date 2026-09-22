@@ -1,0 +1,11 @@
+// contract: modules.qualified-errors
+// status: preserve
+// rationale: Unknown modules and missing procs in a known module have distinct
+//    diagnostics.
+// errors: 2
+// stderr: Function 'nomodule.shout' not found
+// stderr: [module] module 'textutil' has no proc 'whisper'
+use "@std"
+use "lib/textutil.flow"
+(print (nomodule.shout "x"))
+(print (textutil.whisper "x"))

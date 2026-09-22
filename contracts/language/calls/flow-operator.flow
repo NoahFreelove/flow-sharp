@@ -1,0 +1,15 @@
+// contract: calls.flow-operator
+// status: preserve
+// rationale: x -> f a is rewritten at parse time to (f x a); chains read left to
+//    right and accept builtins, procs and lambda values.
+use "@std"
+proc square (Int: n)
+    (mul n n)
+end proc
+Function inc = fn Int n => (add n 1)
+"pipe" -> print
+5 -> square -> inc -> str -> print
+"a" -> concat "b" -> concat "c" -> print
+Int nested = (inc (square 3))
+Int piped = 3 -> square -> inc
+(print (str (equals nested piped)))
