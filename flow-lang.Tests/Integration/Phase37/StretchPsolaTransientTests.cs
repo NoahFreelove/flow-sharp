@@ -14,6 +14,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// by Plan 37-02 Task 1 (PSOLA core + YIN pitch detector + W4 LOCK override).
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class StretchPsolaTransientTests : IDisposable
 {
     public StretchPsolaTransientTests()

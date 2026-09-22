@@ -24,6 +24,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// baseline after a deliberate change, delete the .wav and re-run.</para>
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class Phase37MixSynthPathRegression : IDisposable
 {
     public Phase37MixSynthPathRegression()

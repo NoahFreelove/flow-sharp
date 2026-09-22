@@ -14,6 +14,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// Plan 37-02 Task 3.
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class PitchShiftTests : IDisposable
 {
     public PitchShiftTests()

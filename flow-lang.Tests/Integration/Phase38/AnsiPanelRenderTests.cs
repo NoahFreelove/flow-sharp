@@ -29,6 +29,8 @@ namespace FlowLang.Tests.Integration.Phase38;
 [Collection("FlowScripts")]
 public class AnsiPanelRenderTests : IDisposable
 {
+    private readonly Helpers.TerminalEnvironmentScope _terminalEnvironment = new();
+
     private static readonly Regex AnsiEscapeRegex =
         new Regex("\\u001b\\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
 
@@ -45,6 +47,7 @@ public class AnsiPanelRenderTests : IDisposable
     {
         RenderingDiagnostics.ResetForTesting();
         FlowConfig.Reset();
+        _terminalEnvironment.Dispose();
     }
 
     [Fact]

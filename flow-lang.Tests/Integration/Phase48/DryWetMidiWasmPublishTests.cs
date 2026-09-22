@@ -26,6 +26,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 /// FLOW_WEB.
 /// </summary>
 [Collection(WasmWebPublishCollection.Name)]
+[Trait("Category", "Platform")]
 public class DryWetMidiWasmPublishTests
 {
     private static string FindRepoRoot()

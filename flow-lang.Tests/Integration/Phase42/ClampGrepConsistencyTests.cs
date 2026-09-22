@@ -28,6 +28,9 @@ namespace FlowLang.Tests.Integration.Phase42;
 /// </summary>
 public class ClampGrepConsistencyTests
 {
+    private readonly string _outputDirectory = Helpers.TestReportDirectory.Create(
+        FindRepoRoot(), Path.Combine(".planning", "phases", "42-type-system-stdlib-audit", "42-AUDIT-data"));
+
     // RESEARCH.md baselines: ~72 Math.Clamp + ~117 WarnOnce. Tolerance windows
     // are generous to allow forward drift across Plans 03+ / Phases 43+ without
     // requiring a fixture update for every minor stdlib addition.
@@ -44,8 +47,7 @@ public class ClampGrepConsistencyTests
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
 
-        string outDir = Path.Combine(
-            repoRoot, ".planning", "phases", "42-type-system-stdlib-audit", "42-AUDIT-data");
+        string outDir = _outputDirectory;
 
         string[] expected =
         {
@@ -81,9 +83,7 @@ public class ClampGrepConsistencyTests
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
 
-        string path = Path.Combine(
-            repoRoot, ".planning", "phases", "42-type-system-stdlib-audit",
-            "42-AUDIT-data", "all-clamps.txt");
+        string path = Path.Combine(_outputDirectory, "all-clamps.txt");
 
         int lineCount = File.ReadAllLines(path).Length;
 
@@ -103,9 +103,7 @@ public class ClampGrepConsistencyTests
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
 
-        string path = Path.Combine(
-            repoRoot, ".planning", "phases", "42-type-system-stdlib-audit",
-            "42-AUDIT-data", "advisory-sites.txt");
+        string path = Path.Combine(_outputDirectory, "advisory-sites.txt");
 
         int lineCount = File.ReadAllLines(path).Length;
 
@@ -125,9 +123,7 @@ public class ClampGrepConsistencyTests
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
 
-        string path = Path.Combine(
-            repoRoot, ".planning", "phases", "42-type-system-stdlib-audit",
-            "42-AUDIT-data", "advisory-sites.txt");
+        string path = Path.Combine(_outputDirectory, "advisory-sites.txt");
 
         string[] lines = File.ReadAllLines(path);
 
@@ -161,9 +157,7 @@ public class ClampGrepConsistencyTests
         string repoRoot = FindRepoRoot();
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "flow-callers.sh"));
 
-        string path = Path.Combine(
-            repoRoot, ".planning", "phases", "42-type-system-stdlib-audit",
-            "42-AUDIT-data", "flow-proc-decls.txt");
+        string path = Path.Combine(_outputDirectory, "flow-proc-decls.txt");
 
         Assert.True(File.Exists(path),
             $"flow-proc-decls.txt missing at {path} — flow-callers.sh did not run");
@@ -198,7 +192,7 @@ public class ClampGrepConsistencyTests
     }
 
     [Fact]
-    public void InventoryFiles_LandInPhase42DataDir()
+    public void InventoryFiles_LandInSelectedDirectory_WithoutChangingHistoricalReports()
     {
         if (!IsBashAvailable()) Assert.Skip("bash not available on this OS — audit scripts require bash");
         // flow-callers.sh (run inside this test) uses `shopt -s globstar` (bash 4+).
@@ -207,18 +201,15 @@ public class ClampGrepConsistencyTests
             Assert.Skip("bash < 4 (no globstar) — flow-callers.sh requires bash 4+; macOS ships bash 3.2");
 
         string repoRoot = FindRepoRoot();
-        string expectedDir = Path.Combine(
-            repoRoot, ".planning", "phases", "42-type-system-stdlib-audit",
-            "42-AUDIT-data");
+        string expectedDir = _outputDirectory;
 
-        // Capture a sentinel timestamp BEFORE running the scripts so we can
-        // assert that the extractors only wrote inside the expected dir.
+        // Capture historical reports as well as plans before running the scripts.
         string sentinelDir = Path.Combine(
             repoRoot, ".planning", "phases", "42-type-system-stdlib-audit");
 
         var beforeFiles = Directory
-            .EnumerateFiles(sentinelDir, "*", SearchOption.TopDirectoryOnly)
-            .Select(f => (f, ts: File.GetLastWriteTimeUtc(f)))
+            .EnumerateFiles(sentinelDir, "*", SearchOption.AllDirectories)
+            .Select(f => (f, bytes: File.ReadAllBytes(f)))
             .ToList();
 
         RunBashScript(repoRoot, Path.Combine("scripts", "audit", "clamp-grep.sh"));
@@ -228,12 +219,12 @@ public class ClampGrepConsistencyTests
         Assert.True(Directory.Exists(expectedDir),
             $"expected output dir missing: {expectedDir}");
 
-        // None of the top-level phase-dir files (the *.md plans/research/etc.)
-        // should have been touched by the scripts.
-        foreach (var (f, ts) in beforeFiles)
+        if (!Helpers.TestReportDirectory.UpdateHistoricalReports)
         {
-            var newTs = File.GetLastWriteTimeUtc(f);
-            Assert.Equal(ts, newTs);
+            Assert.Equal(beforeFiles.Select(entry => entry.f).OrderBy(path => path),
+                Directory.EnumerateFiles(sentinelDir, "*", SearchOption.AllDirectories).OrderBy(path => path));
+            foreach (var (file, bytes) in beforeFiles)
+                Assert.Equal(bytes, File.ReadAllBytes(file));
         }
 
         // Inventory files all land under expectedDir; we don't enumerate a
@@ -325,7 +316,7 @@ public class ClampGrepConsistencyTests
     /// via /usr/bin/env bash. Asserts ExitCode == 0. Returns stdout for
     /// optional diagnostic use.
     /// </summary>
-    private static string RunBashScript(string repoRoot, string scriptRelPath)
+    private string RunBashScript(string repoRoot, string scriptRelPath)
     {
         string scriptAbsPath = Path.Combine(repoRoot, scriptRelPath);
         Assert.True(File.Exists(scriptAbsPath),
@@ -334,13 +325,16 @@ public class ClampGrepConsistencyTests
         var psi = new ProcessStartInfo
         {
             FileName = "bash",
-            Arguments = scriptAbsPath,
             WorkingDirectory = repoRoot,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+
+        psi.ArgumentList.Add(scriptAbsPath);
+        psi.ArgumentList.Add("--out-dir");
+        psi.ArgumentList.Add(_outputDirectory);
 
         using var proc = Process.Start(psi);
         Assert.NotNull(proc);

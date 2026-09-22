@@ -1,5 +1,6 @@
 using System;
 using FlowLang.Runtime;
+using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary.Midi;
 using FlowLang.Tests.Fixtures;
 using FlowLang.Tests.Integration.Phase48;
@@ -30,8 +31,16 @@ namespace FlowLang.Tests.Integration.Phase40;
 // prevents the cross-class Console-redirection race (same fix Plan 40-01 applied
 // to VirtualMidiTests + OfflineRenderDeterminismTests).
 [Collection(WasmEntryConsoleCollection.Name)]
-public class JackTransportTests
+public class JackTransportTests : IDisposable
 {
+    public JackTransportTests() => RenderingDiagnostics.ResetForTesting();
+
+    public void Dispose()
+    {
+        RenderingDiagnostics.ResetForTesting();
+        JackFunctions.TransportQueryOverride = null;
+    }
+
     /// <summary>
     /// JACK-01 headline acceptance (T-40-04): with NO JACK server present,
     /// <c>(jackSync)</c> is a charitable no-op — it emits a one-shot advisory,

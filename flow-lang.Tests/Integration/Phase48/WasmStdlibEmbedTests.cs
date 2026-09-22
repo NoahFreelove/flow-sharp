@@ -47,6 +47,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 /// browser-only gaps remain until the full surface is exercised once.</para>
 /// </summary>
 [Collection(WasmWebPublishCollection.Name)]
+[Trait("Category", "Platform")]
 public class WasmStdlibEmbedTests
 {
     /// <summary>

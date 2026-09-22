@@ -1,26 +1,7 @@
-// Plan 30-06 Task 3 — RED-on-HEAD facts pinning Bug B emit-structure defects
-// in FlowGenerator.cs.
-//
-// References:
-// - .planning/debug/midi-import-quarter-quantize.md (composer had to sed
-//   `(play output)` away to make the imported .flow output useful)
-// - .planning/phases/30-flow-cli-formal-install/30-RESEARCH.md Bug B Scope
-//   Assessment Layer 3 — FlowGenerator emit adjustments.
-// - SPEC-5: "one `Sequence trackN = | ... |` per MIDI track inside a single
-//   `section roundtrip { ... }`"
-//
-// Three pins:
-//   1. `(play output)` trailer must NOT appear in midi2flow output.
-//      FlowGenerator.cs:123 currently emits it unconditionally.
-//   2. One Sequence per source track / channel — no _rh / _lh suffixes
-//      (caused by the AddSplitTracks heuristic in Quantizer; Plan 30-08
-//      removes it).
-//   3. Auto-fit duration suffix-elision (CanAutoFit at FlowGenerator.cs:239)
-//      must NOT trigger when round-trip fidelity is requested — every note
-//      token must carry an explicit duration suffix. Plan 30-08 adds an
-//      --explicit-durations flag, default ON for midi2flow.
-//
-// Do NOT [Skip] any fact.
+// MIDI-to-Flow output contract: optional playback trailer, explicit round-trip
+// durations, and one sequence per allocated voice with preserved channels.
+// Hand/voice splitting supersedes the original Phase 30 one-track assertion;
+// see docs/decisions/2026-09-20-baseline-compatibility.md.
 
 using FlowMidi.Conversion;
 using FlowMidi.Tests.Fixtures;
@@ -61,14 +42,10 @@ public class FlowGeneratorStructureTests
         Assert.DoesNotContain("(play output)", source);
     }
 
-    // Pins SPEC-5 emit shape: one Sequence per source track / channel,
-    // no _rh / _lh sub-track suffixes.
-    //
-    // Fixture: Format-0 single track with two channels, each channel >2 octaves
-    // wide. On HEAD: AddSplitTracks splits each channel into _rh + _lh →
-    // 4 sequences. Target: 2 sequences (one per channel).
+    // Current converter contract emits one sequence per allocated melodic voice.
+    // Source channels remain distinct; middle C belongs to the right hand.
     [Fact]
-    public void One_Sequence_Per_Track_Channel_No_RH_LH_Suffix()
+    public void One_Sequence_Per_Allocated_Voice_Preserves_Source_Channels()
     {
         var midi = new MidiFixtureBuilder()
             .WithTpqn(Tpqn)
@@ -92,11 +69,16 @@ public class FlowGeneratorStructureTests
 
         // Count "Sequence " declarations.
         int sequenceCount = System.Text.RegularExpressions.Regex.Matches(source, @"\bSequence\s+\w+\s*=").Count;
-        Assert.Equal(2, sequenceCount);
+        Assert.Equal(4, sequenceCount);
 
-        // No _rh or _lh in the generated source.
-        Assert.DoesNotContain("_rh", source);
-        Assert.DoesNotContain("_lh", source);
+        Assert.Equal(new[] { 0, 0, 1, 1 }, qr.Tracks.Select(t => t.Channel));
+        Assert.Equal(new[] { "track_ch1_rh", "track_ch1_lh", "track_ch2_rh", "track_ch2_lh" },
+            qr.Tracks.Select(t => t.Name));
+        Assert.Equal(new[] { "C2", "C3", "C3", "C4", "C4", "C5", "C5", "C6" },
+            qr.Tracks.SelectMany(t => t.Bars).SelectMany(b => b.Elements)
+                .OfType<NoteElement>().Select(n => n.NoteName).OrderBy(n => n));
+        foreach (var pitch in new[] { "C2", "C3", "C4", "C5", "C6" })
+            Assert.Contains(pitch, source);
     }
 
     // Pins SPEC-5 explicit-durations contract for midi2flow round-trip.

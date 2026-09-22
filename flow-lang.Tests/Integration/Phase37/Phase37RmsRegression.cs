@@ -29,6 +29,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// ±0.5 dB / 100 ms anywhere in the buffer is caught here.
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class Phase37RmsRegression : IDisposable
 {
     public Phase37RmsRegression()

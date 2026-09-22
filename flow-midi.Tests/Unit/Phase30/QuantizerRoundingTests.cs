@@ -1,20 +1,6 @@
-// Plan 30-06 Task 3 — RED-on-HEAD facts pinning Bug B Defect 2 + Defect 3.
-//
-// References:
-// - .planning/debug/midi-import-quarter-quantize.md
-// - .planning/phases/30-flow-cli-formal-install/30-RESEARCH.md Bug B Scope Assessment
-//   Defect 2: leading-empty-bar emission (Quantizer.cs:355-359 emits bars from
-//     idx 0 regardless of first-note onset); AddRests (Quantizer.cs:604-637)
-//     over-emits "_" rest tokens because the "evenly divides gap" tolerance
-//     accepts large counts.
-//   Defect 3: AddSplitTracks (Quantizer.cs:201-247) splits any track whose pitch
-//     range exceeds 24 semitones into _rh / _lh sub-tracks; this violates the
-//     SPEC-5 "one Sequence per source track" contract.
-//
-// Plan 30-07 turns these GREEN by adding a leading-empty-bar trim, fixing
-// AddRests over-emission, and removing the AddSplitTracks heuristic.
-//
-// Do NOT [Skip] any fact.
+// MIDI quantization contract: trim globally empty leading bars, represent rests,
+// and preserve note timing when melodic channels are divided into hand/voice tracks.
+// See docs/decisions/2026-09-20-baseline-compatibility.md.
 
 using FlowMidi.Conversion;
 using FlowMidi.Tests.Fixtures;
@@ -111,18 +97,10 @@ public class QuantizerRoundingTests
             $"Bug B Defect 2 (AddRests over-emission): a 3-quarter-rest gap after a quarter note must compress to a single auto-fit '_' rest (Plan 30-07 target). On HEAD the AddRests inner-loop emits {restCount} RestElement entries because the 'evenly divides gap' tolerance accepts the largest count that fits.");
     }
 
-    // Pins Bug B Defect 3 — RH/LH pitch-split heuristic (AddSplitTracks,
-    // Quantizer.cs:201-247). SPEC-5 contract: "one Sequence per source track".
-    //
-    // RED-on-HEAD: a track whose pitch range exceeds 24 semitones (here C2..C5,
-    // 36 semitones) is split into baseName + "_rh" and baseName + "_lh"
-    // sub-tracks. Result: 2 tracks for 1 input channel.
-    //
-    // Plan 30-08 (or 30-07 — both depend on the AddSplitTracks removal) deletes
-    // this heuristic. Composer-authored channel assignment is the source of
-    // truth for RH/LH split, not heuristic pitch-range inference.
+    // Current contract: preserve hand separation and note timing across voices.
+    // See docs/decisions/2026-09-20-baseline-compatibility.md.
     [Fact]
-    public void Two_Octave_Range_Does_Not_Split_RH_LH()
+    public void Melodic_Hands_Preserve_Note_Onsets_And_Durations()
     {
         // Bass C2 (MIDI 36) to treble C5 (MIDI 72) — 36 semitones, all channel 0.
         var midi = new MidiFixtureBuilder()
@@ -138,10 +116,25 @@ public class QuantizerRoundingTests
 
         var result = Quantizer.Quantize(midi);
 
-        // On HEAD: result.Tracks.Count == 2 (track_ch1_rh + track_ch1_lh).
-        // Target (after Plan 30-08 removes AddSplitTracks): exactly 1 track.
-        Assert.Single(result.Tracks);
-        Assert.DoesNotContain("_rh", result.Tracks[0].Name);
-        Assert.DoesNotContain("_lh", result.Tracks[0].Name);
+        Assert.Equal(new[] { "track_ch1_rh", "track_ch1_lh" }, result.Tracks.Select(t => t.Name));
+        var notes = new List<(string Name, long Start, long Duration)>();
+        foreach (var track in result.Tracks)
+        {
+            Assert.Equal(0, track.Channel);
+            Assert.False(track.IsDrumTrack);
+            foreach (var bar in track.Bars)
+            {
+                long cursor = bar.BarNumber * 4L * Tpqn;
+                foreach (var element in bar.Elements)
+                {
+                    long duration = element.DurationTicks(Tpqn);
+                    if (element is NoteElement note)
+                        notes.Add((note.NoteName, cursor, duration));
+                    cursor += duration;
+                }
+            }
+        }
+        Assert.Equal(new[] { ("C2", 0L, 480L), ("C3", 480L, 480L),
+            ("C4", 960L, 480L), ("C5", 1440L, 480L) }, notes.OrderBy(n => n.Start));
     }
 }

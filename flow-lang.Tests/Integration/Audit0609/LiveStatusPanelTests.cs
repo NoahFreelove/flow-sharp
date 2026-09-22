@@ -37,6 +37,8 @@ namespace FlowLang.Tests.Integration.Audit0609;
 [Collection("FlowScripts")]
 public class LiveStatusPanelTests : IDisposable
 {
+    private readonly Helpers.TerminalEnvironmentScope _terminalEnvironment = new();
+
     public LiveStatusPanelTests()
     {
         RenderingDiagnostics.ResetForTesting();
@@ -47,6 +49,7 @@ public class LiveStatusPanelTests : IDisposable
     {
         RenderingDiagnostics.ResetForTesting();
         FlowConfig.Reset();
+        _terminalEnvironment.Dispose();
     }
 
     // Shared empty collections used across tests.

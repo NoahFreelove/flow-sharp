@@ -22,21 +22,19 @@ namespace FlowLang.Tests.Integration.Phase41;
 /// render buffer is scoped inside its <c>tempo/timesig/key</c> context blocks, so
 /// the written file — not a global binding — is the comparison surface; mirrors
 /// the Phase 28 <c>HeldNoteRmsTests</c> read-back pattern). The pinned render path
-/// is the SEEDED, deterministic section of the showcase (every stochastic call
-/// carries an explicit seed → PrngRegistry reseeds at the writeWav boundary); the
+/// is the deterministic section of the showcase (explicit generative seeds and
+/// source-location-derived granular randomness); the
 /// file's <c>live</c> block + real-time <c>midiOut</c> demo lives in a commented
 /// section that never executes during this headless render (Pitfall 5,
 /// D-v1.5-07).</para>
 ///
-/// <para><b>Baseline regeneration</b>: on first run with no baseline file, the
-/// rendered WAV is written to the baseline path and the test passes (so the
-/// committer sees a clean run); the committed baseline is asserted against on
-/// every subsequent run. To regenerate after a deliberate change, delete the
-/// .wav and re-run — the showcase render is two-run cmp-clean so the regenerated
-/// baseline is byte-stable.</para>
+/// <para>The granular texture derives its seed from source location. Use a fixed
+/// logical file name so checkout paths cannot change the expected audio.
+/// Baseline updates require FLOW_UPDATE_AUDIO_BASELINES=1; missing files fail.</para>
 /// </summary>
 [Trait("Category", "Phase41")]
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class Phase41ShowcaseRmsTests : IDisposable
 {
     public Phase41ShowcaseRmsTests()
@@ -82,8 +80,10 @@ public class Phase41ShowcaseRmsTests : IDisposable
         // WAV — not a global binding — is the comparison surface.
         string renderedWav = Path.Combine(Path.GetTempPath(),
             $"flow_phase41_showcase_{Guid.NewGuid():N}.wav");
+        string renderedMidi = Path.ChangeExtension(renderedWav, ".mid");
         string source = File.ReadAllText(showcasePath)
-            .Replace("\"/tmp/pulse.wav\"", "\"" + renderedWav.Replace("\\", "/") + "\"");
+            .Replace("\"/tmp/pulse.wav\"", "\"" + renderedWav.Replace("\\", "/") + "\"")
+            .Replace("\"/tmp/pulse.mid\"", "\"" + renderedMidi.Replace("\\", "/") + "\"");
 
         // Run the showcase from repo root so its `use "@..."` stdlib imports
         // resolve identically to a CLI `flow run`.
@@ -92,7 +92,7 @@ public class Phase41ShowcaseRmsTests : IDisposable
         {
             Environment.CurrentDirectory = repoRoot;
             using var runner = new FlowEngineRunner();
-            var (ok, _, stderr, errorCount) = runner.RunSource(source, showcasePath);
+            var (ok, _, stderr, errorCount) = runner.RunSource(source, "examples/edm/pulse.flow");
             Assert.True(ok && errorCount == 0,
                 $"Showcase render failed (errorCount={errorCount}):\n{stderr}");
             Assert.True(File.Exists(renderedWav),
@@ -102,28 +102,30 @@ public class Phase41ShowcaseRmsTests : IDisposable
             Assert.True(rendered.Frames > 0, "SHOWCASE-01 render produced zero frames");
             Assert.Equal(2, rendered.Channels);
 
-            if (!File.Exists(baselinePath))
+            if (Environment.GetEnvironmentVariable("FLOW_UPDATE_AUDIO_BASELINES") == "1")
             {
-                // First-run: seed the baseline from the rendered WAV and pass.
-                // The committer then commits baselines/Phase41/showcase.wav;
-                // subsequent runs pin to it. The showcase render is two-run
-                // cmp-clean so the baseline is byte-stable.
                 Directory.CreateDirectory(Path.GetDirectoryName(baselinePath)!);
                 File.Copy(renderedWav, baselinePath, overwrite: true);
-                Assert.True(File.Exists(baselinePath),
-                    $"Baseline write failed at {baselinePath}");
-                return;
             }
+            Assert.True(File.Exists(baselinePath),
+                "Missing showcase baseline. Explicitly regenerate with FLOW_UPDATE_AUDIO_BASELINES=1.");
 
             // SPEC-8 locked ±0.5 dB / 100 ms window. Both the rendered WAV and
             // the baseline are already-dithered files on disk → single-read
             // compare (no double-dither), so use the file-path overload.
             RmsRegressionTests.AssertWavMatchesBaseline(renderedWav, baselinePath);
+
+            var firstBytes = File.ReadAllBytes(renderedWav);
+            using var secondRunner = new FlowEngineRunner();
+            var second = secondRunner.RunSource(source, "examples/edm/pulse.flow");
+            Assert.True(second.Success, second.Stderr);
+            Assert.Equal(firstBytes, File.ReadAllBytes(renderedWav));
         }
         finally
         {
             Environment.CurrentDirectory = originalCwd;
             if (File.Exists(renderedWav)) File.Delete(renderedWav);
+            if (File.Exists(renderedMidi)) File.Delete(renderedMidi);
         }
     }
 }

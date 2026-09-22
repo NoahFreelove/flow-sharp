@@ -39,6 +39,7 @@ namespace FlowLang.Tests.Integration.Phase48;
 ///   resilience.
 /// </summary>
 [Collection(WasmWebPublishCollection.Name)]
+[Trait("Category", "Platform")]
 public class WasmBuildPipelineTests
 {
     private static string FindRepoRoot()

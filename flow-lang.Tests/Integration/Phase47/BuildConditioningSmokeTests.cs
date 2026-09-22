@@ -18,6 +18,7 @@ namespace FlowLang.Tests.Integration.Phase47;
 /// walking up from AppContext.BaseDirectory until flow-lang/flow-lang.csproj
 /// is found.
 /// </summary>
+[Trait("Category", "Platform")]
 public class BuildConditioningSmokeTests
 {
     private static string FindRepoRoot()

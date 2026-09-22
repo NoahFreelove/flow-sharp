@@ -16,6 +16,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// Task 3 (peak-to-sideband ratio).
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class StretchVocoderTests : IDisposable
 {
     public StretchVocoderTests()

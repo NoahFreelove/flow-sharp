@@ -22,6 +22,7 @@ namespace FlowLang.Tests.Integration.Audit0609;
 /// silence so test runs make no sound.
 /// </summary>
 [Trait("Category", "Audit0609")]
+[Trait("Category", "Platform")]
 public class CoreAudioDrainTests
 {
     private const int SampleRate = 44100;

@@ -1,26 +1,35 @@
+using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary.Audio.Vocalization;
 using Xunit;
 
 namespace FlowLang.Tests.Unit.Phase10;
 
-/// <summary>
-/// VOC-01 unknown-vowel regression test: GetFormants rejects non-canonical
-/// vowel phonemes with a helpful ArgumentException. The message lists the
-/// valid 5-vowel set so users get actionable feedback.
-///
-/// API shape (per flow-lang/StandardLibrary/Audio/Vocalization/FormantData.cs:69-76):
-///   public static FormantEntry[] GetFormants(string vowel)
-///     — throws ArgumentException at :74-75 with message
-///       "Unknown vowel phoneme: '{vowel}'. Valid: ah, ee, eh, oh, oo"
-///     — single-argument ArgumentException ctor (no paramName suffix), so
-///       Message equality holds without "(Parameter 'vowel')" appended.
-/// </summary>
-public class FormantDataTests
+// Contract: docs/decisions/2026-09-20-baseline-compatibility.md.
+[Collection("FlowScripts")]
+public class FormantDataTests : IDisposable
 {
+    public FormantDataTests() => RenderingDiagnostics.ResetForTesting();
+    public void Dispose() => RenderingDiagnostics.ResetForTesting();
+
     [Fact]
-    public void GetFormants_UnknownVowel_ThrowsArgumentException()
+    public void UnknownVowels_ReturnAh_AndWarnOncePerPhoneme()
     {
-        var ex = Assert.Throws<ArgumentException>(() => FormantData.GetFormants("xyz"));
-        Assert.Equal("Unknown vowel phoneme: 'xyz'. Valid: ah, ee, eh, oh, oo", ex.Message);
+        using var stderr = new StringWriter();
+        var previous = Console.Error;
+        Console.SetError(stderr);
+        try
+        {
+            var neutral = FormantData.GetFormants("ah");
+            Assert.Same(neutral, FormantData.GetFormants("xyz"));
+            Assert.Same(neutral, FormantData.GetFormants("xyz"));
+            Assert.Same(neutral, FormantData.GetFormants("abc"));
+        }
+        finally { Console.SetError(previous); }
+
+        var lines = stderr.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(2, lines.Length);
+        Assert.Contains("unknown phoneme 'xyz' — using 'ah'", lines[0]);
+        Assert.Contains("unknown phoneme 'abc' — using 'ah'", lines[1]);
+        Assert.All(lines, line => Assert.Contains("valid: ah, ee, eh, oh, oo", line));
     }
 }

@@ -23,6 +23,7 @@ namespace FlowLang.Tests.Integration.Phase18;
 /// double values for the existing enum path. Bisect the NoteType.cs edit.
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class ByteIdenticalTutorialTests
 {
     [Fact]

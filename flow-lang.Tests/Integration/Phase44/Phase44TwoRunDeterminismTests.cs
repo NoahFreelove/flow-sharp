@@ -45,6 +45,7 @@ namespace FlowLang.Tests.Integration.Phase44;
 /// </summary>
 [Trait("Category", Phase44TestCategory.Phase44)]
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class Phase44TwoRunDeterminismTests
 {
     /// <summary>

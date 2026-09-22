@@ -23,6 +23,8 @@ namespace FlowLang.Tests.Integration.Phase38;
 [Collection("FlowScripts")]
 public class PanelTtyFallbackTests : IDisposable
 {
+    private readonly Helpers.TerminalEnvironmentScope _terminalEnvironment = new();
+
     /// <summary>
     /// ANSI ESC character (U+001B). Built at runtime from <c>(char)0x1B</c>
     /// so the source file stays pure ASCII and we sidestep the C# <c>\x</c>
@@ -40,6 +42,7 @@ public class PanelTtyFallbackTests : IDisposable
     {
         RenderingDiagnostics.ResetForTesting();
         FlowConfig.Reset();
+        _terminalEnvironment.Dispose();
     }
 
     [Fact]
@@ -88,6 +91,20 @@ public class PanelTtyFallbackTests : IDisposable
 
         var output = sw.ToString();
         Assert.False(output.Contains(Esc), $"NO_COLOR=1 output unexpectedly contains ESC byte: {output}");
+    }
+
+    [Fact]
+    public void WhenTermDumb_DisablesAnsiEscapes()
+    {
+        using var scope = new EnvScope("TERM", "dumb");
+        using var output = new StringWriter();
+        using var panel = new LiveStatusPanel(@out: output, forceTtyMode: true);
+
+        panel.PublishState(90, (3, 4), 1, Array.Empty<LiveBlockDisplay>(),
+            0, 32, new Dictionary<string, int>());
+
+        Assert.DoesNotContain(Esc, output.ToString(), StringComparison.Ordinal);
+        Assert.Contains("[watch] tempo=90 timesig=3/4 bar=1 voices=0/32", output.ToString());
     }
 
     [Fact]

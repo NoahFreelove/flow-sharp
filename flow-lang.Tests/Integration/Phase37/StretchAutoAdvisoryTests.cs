@@ -19,6 +19,7 @@ namespace FlowLang.Tests.Integration.Phase37;
 /// 37-02 Task 2.
 /// </summary>
 [Collection("FlowScripts")]
+[Trait("Category", "LongRunning")]
 public class StretchAutoAdvisoryTests : IDisposable
 {
     public StretchAutoAdvisoryTests()

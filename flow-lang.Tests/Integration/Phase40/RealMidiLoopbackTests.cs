@@ -50,6 +50,7 @@ namespace FlowLang.Tests.Integration.Phase40;
 /// applied to VirtualMidiTests / OfflineRenderDeterminismTests / JackTransportTests).</para>
 /// </summary>
 [Collection(WasmEntryConsoleCollection.Name)]
+[Trait("Category", "Platform")]
 public class RealMidiLoopbackTests
 {
     private readonly ITestOutputHelper _out;
