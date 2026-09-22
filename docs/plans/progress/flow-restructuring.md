@@ -406,6 +406,8 @@ dotnet run --project scripts/MinimalHost -c Release -- --json docs/baselines/pha
   tracked-content changes in every tier.
 - CLI smoke: `flow run`, `flow check` (including a rich diagnostic), `flow eval`,
   and a `--worker` round trip.
+- Fresh `git clone` of `6745994`: core **2,819 passed / 0 failed** (the workspace's
+  two extra are the ignored local Flow tests), MIDI **21 passed**, zero tracked changes.
 - Five tests that asserted advisory dedup across separate engines now pin the
   shared-`AdvisoryLog` contract (advisories are once per engine by default).
 
