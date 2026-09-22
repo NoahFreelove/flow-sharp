@@ -95,7 +95,7 @@ Flow supports implicit numeric widening:
 Int -> Long -> Float -> Double -> Number
 ```
 
-An `Int` can be used wherever a `Double` is expected. Integer literals that exceed `Int` range automatically fall through to `Long`, then `BigInteger` (`Number`) — no overflow error.
+An `Int` can be used wherever a `Double` is expected. Integer literals that exceed `Int` range automatically fall through to `Long`, then `BigInteger` (`Number`) — no overflow error. Integer arithmetic promotes the same way: `(add 2147483647 1)` is the Long `2147483648`, never a wrapped negative number. Binding such a value to an `Int` variable is an error that names the value.
 
 ## Special (Music) Types
 
@@ -123,6 +123,20 @@ An `Int` can be used wherever a `Double` is expected. Integer literals that exce
 | `Tuning` | Scala tuning (reference identity) | `(loadScala "x.scl")` |
 | `Sfz` | SFZ sampler patch (reference identity) | `(loadSfz #violin)` |
 | `MarkovModel` / `LsystemModel` | Generative models (reference identity) | `(markovTrain ...)` |
+
+### Unit Arithmetic
+
+Arithmetic keeps units. Same-unit `add`/`sub` stay in that unit, scaling by a number keeps the unit, and milliseconds and seconds mix, taking the first operand's unit. Dividing like units gives a plain ratio, and durations compare across units:
+
+```flow
+use "@std"
+
+(print (str (add 100ms 50ms)))   Note: 150ms
+(print (str (add 1s 250ms)))     Note: 1.25s
+(print (str (mul 2.5s 2)))       Note: 5s
+(print (str (div 1s 250ms)))     Note: 4
+(print (str (equals 1000ms 1s))) Note: true
+```
 
 ### Note Literals
 
@@ -202,6 +216,13 @@ Int y = point@1
 > **Typed tuple declarations require the `Tuple<<...>>` prefix.** Bare `<<Type, Type>> name = ...` is parsed as a destructure assignment — the `Tuple<<...>>` prefix is required when you want a typed variable binding.
 
 Tuples compare by **structural equality** (`(equals <<1, 2>> <<1, 2>>)` is true).
+
+An array of tuples is written `Tuple<<String, Int>>[]`, and bare `Tuple` accepts a tuple of any arity:
+
+```flow
+Tuple<<String, Int>>[] scores = (list <<"Ada", 91>> <<"Alan", 85>>)
+Tuple anything = <<1, "two", #three>>
+```
 
 ### Destructuring Assignment
 
@@ -298,7 +319,7 @@ Bool b = (or true false)     Note: true
 Bool c = (not true)          Note: false
 ```
 
-`and` and `or` accept `Lazy` arguments for short-circuit evaluation.
+`and` and `or` accept `Lazy` arguments for short-circuit evaluation: a lazy operand is forced only when it is reached, and its value (not the thunk) decides the result.
 
 ## Control Flow
 
@@ -348,7 +369,21 @@ String sign = (match n
                | x               => "positive")
 ```
 
-Patterns supported: `_` wildcard, literal patterns (Int / Float / String / Bool / Note), binding patterns (bare identifier), constructor patterns (chord literals, roman numerals, articulation symbols), and `when (...)` guards.
+Patterns supported: `_` wildcard, literal patterns (Int / Float / String / Bool / Note), binding patterns (bare identifier), constructor patterns (chord literals, roman numerals, articulation symbols), tuple patterns, and `when (...)` guards.
+
+Tuple patterns take a tuple apart; slots can be literals, symbols, bindings, typed bindings or `_`:
+
+```flow
+use "@std"
+
+proc run (Tuple: cmd)
+    (match cmd
+     | <<"add", n>> => $"adding {n}"
+     | <<#mul, Int n>> when (gt n 10) => $"big multiply {n}"
+     | <<op, _>> => $"unknown {op}"
+     | _ => "not a pair")
+end proc
+```
 
 To make non-exhaustive matches a hard error instead of a warning, add this pragma at the top of the file:
 

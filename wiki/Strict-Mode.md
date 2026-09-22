@@ -29,7 +29,7 @@ Charitable stdlib functions clamp out-of-range inputs (Markov order to `[1, 3]`,
 
 `if`, `and`, and `or` require actual `Bool` values (no truthy coercion), and comparisons require both sides to be the same type. This catches the classic "compared a String to an Int and got a surprising answer" bug.
 
-Strict mode is captured **per proc at its declaring file**. A proc defined in a strict file stays strict even when called from a charitable file, and vice versa — strictness does not propagate across `use` boundaries.
+Strict mode governs **the code written in the strict file**, captured per proc at its declaring file. A proc defined in a strict file runs its body strictly even when called from a charitable file, and vice versa. The arguments of a call belong to the caller's code, so a charitable caller may still pass `3` to a strict proc's `Double` parameter and have it widened. Strictness does not propagate across `use` boundaries.
 
 ## Explicit Conversion Builtins
 

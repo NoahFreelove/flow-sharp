@@ -306,6 +306,7 @@ The standard library uses both. For example:
 | `init` | `(T[]) -> T[]` | All except last |
 | `empty` | `(T[]) -> Bool` | Is array empty? |
 | `reverse` | `(T[]) -> T[]` | Reverse order |
+| `sort` | `(T[]) -> T[]` | Stable ascending sort of numbers, strings or notes |
 | `take` | `(T[], Int) -> T[]` | First N elements |
 | `drop` | `(T[], Int) -> T[]` | Drop first N |
 | `slice` | `(T[], Int, Int) -> T[]` | Half-open slice |
@@ -319,6 +320,7 @@ The standard library uses both. For example:
 | `each` | `(T[], T => Void) -> Void` | Apply for side effects |
 | `range` | `(Int, Int[, Int]) -> Int[]` | Half-open integer range with optional step |
 | `zip` | `(A[], B[]) -> Tuple<<A, B>>[]` | Pair two arrays element-wise (stops at shorter) |
+| `split` | `(String, String) -> String[]` | Split on a separator; `""` splits into characters |
 
 ## See Also
 

@@ -92,7 +92,7 @@ Int s1 = (square 4)
 print "hello"            Note: same as (print "hello") at statement position
 ```
 
-Complex parenthesized expressions as arguments still require explicit call syntax. A bare identifier with a zero-arg overload also auto-calls — `print` works as both a value reference and a call.
+At the start of a statement, parenthesized arguments work too: `print (str (square 5))` prints `25`. Elsewhere (inside other calls or array literals) a name followed by a parenthesized value stays two separate values, so use explicit call syntax there: `(f (expr))`. A bare identifier with a zero-arg overload also auto-calls — `print` works as both a value reference and a call.
 
 ## Named Arguments
 

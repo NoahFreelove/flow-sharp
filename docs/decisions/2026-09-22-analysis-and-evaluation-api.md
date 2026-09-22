@@ -9,10 +9,10 @@ Today's embedding surface is `FlowEngine.Execute(source, fileName) -> bool` plus
 `ExecuteScriptAndGetResult`. `flow check` executes the program with console
 suppression; it does not analyze. Most checking happens at evaluation time. The
 [language contract](../../contracts/language/README.md#what-analysis-can-prove)
-shows that only parse errors are reported before execution. Several failures
-surface only on the executed path, and some abort evaluation with a location-less
-`Unexpected error` (`functional.lazy-typed-declaration`, `generous.void-argument`,
-`generous.mixed-comparison`, `data.tuple-array-variable`).
+shows that only parse errors are reported before execution; other failures
+surface only on the executed path. Since the Phase 1 semantic fixes, internal
+failures during evaluation are reported at a source location and never end the
+program; `FlowEngine`'s location-less catch-all remains only as a last resort.
 
 ## Decision
 
@@ -30,8 +30,9 @@ PrepareRender / RenderOffline(...)              -> RenderResult             (mus
 1. **One diagnostic model.** Every diagnostic has a stable code, severity, message,
    primary span (source id, line, column, length) and optional notes or
    suggestions. The legacy `FlowError` list and the rich `FlowDiagnostic` list merge
-   into it. Formatting (color, Rust-style boxes) is a host concern driven by the
-   host's terminal policy, including `NO_COLOR`.
+   into it (`ErrorReporter.ErrorCount`/`FormatAll` already present them together).
+   Formatting (color, Rust-style boxes) is a host concern driven by the host's
+   terminal policy, including `NO_COLOR` (`ErrorReporter.ShouldUseColor`).
 2. **`EvaluationResult` distinguishes outcomes:** success (with the last value and
    exports), invalid program (diagnostics), cancelled, budget exhausted, missing
    capability or module, and host failure. Internal exceptions become host
@@ -59,9 +60,8 @@ CLI keeps its current text output until diagnostic codes exist. The frozen WASM
 ## Verification to add
 
 - Every contract with `errors:` produces the same count and messages through
-  `Evaluate` as through `FlowEngine.Execute`. The four location-less aborts either
-  keep their pinned behavior or are fixed with contract updates in a deliberate
-  change.
+  `Evaluate` as through `FlowEngine.Execute`. No contract reports a location-less
+  (`0:0`) diagnostic.
 - `Analyze` on `contracts/language/**` reports the parse-time failures and executes
   nothing: no stdout, no module side effects such as the `textutil body runs`
   print.

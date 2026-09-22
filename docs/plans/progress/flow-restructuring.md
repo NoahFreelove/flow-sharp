@@ -11,8 +11,9 @@ not started. See the [Phase 1 record](../../baselines/phase1/README.md).
 Phase 0 was committed on 2026-09-22 (`1988d86`, `a20289d`, `daff044`, `fac475d`)
 after a fresh core-tier rerun.
 
-Phase 1 findings need owner decisions before any semantic fix: 7 defects and 7
-disputed behaviors, listed in the Phase 1 record. None were fixed in Phase 1.
+All Phase 1 findings (7 defects, 7 disputed behaviors, 4 gaps, plus tooling
+issues) were fixed on 2026-09-22 at the owner's request, before Phase 2; see
+[the semantic-fixes decision](../../decisions/2026-09-22-phase1-semantic-fixes.md).
 
 Starting revision: `1e85f6710b6a39c293b0e4361ca57364489c824d`.
 Owner: primary implementation agent. No delegated file ownership.
@@ -31,6 +32,7 @@ Owner: primary implementation agent. No delegated file ownership.
 | P1-03 Seam decisions | recorded | Six `docs/decisions/2026-09-22-*` files: profiles, grammar, signature ownership, dependency direction, session lifetime, analysis/evaluation API. |
 | P1-04 Dependency ratchet | verified | `DependencyDirectionTests` + `docs/baselines/phase1/language-dependency-edges.json` (38 edges). |
 | P1-05 Minimal host prototype | verified | `scripts/MinimalHost` + `docs/baselines/phase1/minimal-host.json`. |
+| P1-06 Fix Phase 1 findings | verified | Runtime, stdlib, parser, host diagnostics; 70 contracts all preserve/generous. |
 
 ## Decisions
 
@@ -302,6 +304,47 @@ dotnet flow-cli/bin/Debug/net10.0/flow.dll run examples/language/modules/report.
   no runtime, build-flavor or long-test changes. `scripts/MinimalHost` is not in
   the solution (like `BaselineProbe`) and is built only when run.
 
-Next ready slice: owner review of the Phase 1 findings, then Phase 2 session
-ownership (output/diagnostic sinks, removal of `FlowEngine.Current*` statics,
-per-session advisory dedup) against the session-lifetime decision's gate.
+Next ready slice (superseded below): owner review of the Phase 1 findings, then
+Phase 2 session ownership.
+
+
+## Phase 1 findings fixed — 2026-09-22
+
+The owner asked to fix the issues before Phase 2. Each contract's expectation was
+changed first (it failed), then the runtime was fixed and the contract re-pinned.
+
+- Evaluation never ends early: builtin and statement exceptions become located
+  errors; a failed argument skips its call instead of cascading; failed
+  declarations bind a default. `TestRunner` fails bodies that report errors.
+- Lazy values force deeply (stored thunks work, memoized, failures once); `and`/`or`
+  force lazy operands; `Lazy<T>` declarations work.
+- Integer arithmetic promotes on overflow; out-of-range Int binding is a named
+  error. `Voids` takes any array, `Tuple<<...>>[]` and bare `Tuple` types exist,
+  untyped dicts convert to typed ones.
+- Statement-head paren-less calls accept parenthesized arguments; `(t ~> f)` in
+  parentheses; tuple patterns in `match`; one formatter for interpolation/`str`/
+  `print`; `(Nothing)` returns Void; circular imports skipped with an advisory;
+  strict-proc docs corrected (behavior kept).
+- Unit-preserving arithmetic and cross-unit duration comparison; `transpose` on a
+  Note; `str` on tuples/dicts; new `mod`, `sort`, `split`.
+- Hosts: `ErrorReporter.ErrorCount`/`FormatAll`/`ShouldUseColor`; interpreter CLI,
+  REPL, `flow eval/check/test/doc`, `FlowEngineRunner` and WASM `errors[]` include
+  rich diagnostics; `NO_COLOR`/`TERM=dumb`/redirection disable styling.
+- Examples no longer need workarounds; wiki pages updated (functions, strict mode,
+  imports, interpolation, language basics, collections, standard library).
+
+Verification (2026-09-22): core **2,800 passed / 0 failed / 14 skipped**, MIDI
+**21 passed**; platform **13 passed / 5 skipped**; long **33 passed**; zero
+tracked-content changes in every tier. No existing test expectation changed.
+The committed flow-site playground AppBundle still carries the old runtime until
+`flow-site/scripts/sync-runtime.sh` is rerun (not done here).
+
+**Commit gap found and fixed.** The global `*.flow` rule in `.gitignore`
+kept every contract and example `.flow` program out of the Phase 1 commits
+(`ad45aaf` etc.); only their `.out` files were committed, so a fresh checkout
+could not run the contract tests. `.gitignore` now allow-lists `contracts/` and
+`examples/language/`, the programs are committed, and the contract tests were run
+from a fresh `git clone` of the result.
+
+Next ready slice: Phase 2 session ownership against the session-lifetime
+decision's gate.

@@ -36,7 +36,7 @@ Int[] items = (list 1 2 3)
 
 ## Supported Value Types
 
-Any value that can be converted to a string works inside an interpolation. The expression is converted to its string representation automatically. Note that for `Note` values, direct interpolation (`{pitch}`) includes surrounding quotes (e.g. `"C4"`); use `(str pitch)` inside the braces to get the bare name (`C4`) instead:
+Any value that can be converted to a string works inside an interpolation. Interpolation uses exactly the same formatting as `(str x)` and `(print x)`: strings and notes appear bare (`C4`), doubles show up to 10 significant digits, tuples and dicts print like their literals, and a Void value prints as `()`:
 
 ```flow
 use "@std"

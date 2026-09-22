@@ -1,5 +1,5 @@
 {
-  "recordedUtc": "2026-09-22 17:15:07Z",
+  "recordedUtc": "2026-09-22 18:05:50Z",
   "runtime": "10.0.12",
   "os": "Ubuntu 26.04 LTS",
   "program": {
@@ -10,11 +10,11 @@
     "diagnostics": []
   },
   "construction": {
-    "milliseconds": 93.6,
-    "allocatedBytesThisThread": 1971096,
+    "milliseconds": 99.8,
+    "allocatedBytesThisThread": 2264160,
     "note": "Single cold process measurement; indicative only."
   },
-  "executionMilliseconds": 11.5,
+  "executionMilliseconds": 13.1,
   "assemblies": {
     "flowLangReferences": [
       "Melanchall.DryWetMidi",
@@ -58,7 +58,7 @@
   ],
   "improvStylesLoaded": 3,
   "builtinSignaturesByImplementationNamespace": {
-    "FlowLang.StandardLibrary": 244,
+    "FlowLang.StandardLibrary": 296,
     "FlowLang.StandardLibrary.Audio": 121,
     "FlowLang.StandardLibrary.Audio.DSP": 35,
     "FlowLang.StandardLibrary.Audio.Sfz": 3,
@@ -73,6 +73,6 @@
     "FlowLang.StandardLibrary.Notation": 5,
     "FlowLang.StandardLibrary.Patterns": 14,
     "FlowLang.StandardLibrary.TestFramework": 6,
-    "FlowLang.StandardLibrary.Transforms": 29
+    "FlowLang.StandardLibrary.Transforms": 31
   }
 }

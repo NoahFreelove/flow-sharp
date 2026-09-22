@@ -14,8 +14,9 @@ Status: accepted for restructuring Phase 1 (2026-09-22). Implemented in Phase 2.
   `SynthUtils.Rng` and `PianoSynthesizer.CurrentReleaseSec` are process-wide.
 - `WasmEntry` keeps a shared engine whose lifetime is implicit.
 - Diagnostics accumulate in two lists (`ErrorReporter.Errors` and
-  `ErrorReporter.Diagnostics`). Hosts must remember to read both; `FlowEngineRunner`
-  does not, which leaves a latent blind spot in `FlowScriptTests`.
+  `ErrorReporter.Diagnostics`). Hosts now read them through
+  `ErrorReporter.ErrorCount`/`FormatAll`; the session diagnostic sink should
+  replace both lists with one.
 
 The full static-field inventory is in `docs/baselines/phase0/static-fields.json`.
 

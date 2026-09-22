@@ -131,7 +131,7 @@ This means:
 
 ## Circular Import Detection
 
-Flow detects and prevents circular imports. If `a.flow` imports `b.flow` and `b.flow` imports `a.flow`, the import is short-circuited (idempotent) — re-importing an already-loaded module is a silent no-op, not an error.
+Flow detects circular imports and skips them. If `a.flow` imports `b.flow` and `b.flow` imports `a.flow`, the inner `use "a.flow"` is skipped because `a.flow` is already loading, with a one-shot `[module] circular import ... skipped` advisory on stderr. It is not an error, and each module body runs once. Re-importing an already-loaded module is a silent no-op.
 
 ## Module Resolution
 

@@ -74,6 +74,7 @@ Flow has no infix `+ - * /`. Use the prefix builtins:
 | `add` / `sub` / `mul` / `div` | `(Int, Int)` plus Float / Double / Long / Number overloads | Same-type fast paths |
 | `neg` | `(Int) -> Int` / `(Double) -> Double` | Unary negation |
 | `idiv` | `(Int, Int) -> Int` | Integer (floor) division |
+| `mod` | `(Int, Int) -> Int`, `(Double, Double) -> Double` | Floor modulo: `(mod -1 12)` is `11` |
 | `abs` / `min` / `max` | `(Int, Int)` / `(Double, Double)` | Standard ops |
 
 ### Math
@@ -124,6 +125,8 @@ See [Collections](Collections.md) for the deep-dive.
 | `head` / `tail` / `last` / `init` | array operations | Common destructuring |
 | `empty` / `len` | predicates / size | |
 | `reverse` / `take` / `drop` | array ops | |
+| `sort` | `(T[]) -> T[]` | stable ascending sort (numbers, strings, notes) |
+| `split` | `(String, String) -> String[]` | split text on a separator |
 | `append` / `prepend` / `concat` | array building | |
 | `contains` | `(T[], T) -> Bool` | Membership |
 | `map` / `filter` / `reduce` / `each` | `(T[], …) -> …` | Higher-order ops |
