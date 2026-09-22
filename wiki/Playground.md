@@ -36,7 +36,7 @@ Everything else — the whole core language, pattern matching, all music types, 
 
 - Flow `print` output goes to the console pane; engine advisories (`[tuning]`, `[stretch]`, …) are shown separately.
 - The same source produces byte-identical WAV/MIDI on repeated runs (the determinism contract holds in the browser too).
-- There is no wall-clock cancel in the single-threaded WASM build — a runaway script hangs its own tab. Keep loops bounded.
+- Each run has a 30-second budget. A runaway script stops at its next loop iteration or call and reports a `cancel` error instead of hanging the tab.
 
 ## Running Flow Fully
 

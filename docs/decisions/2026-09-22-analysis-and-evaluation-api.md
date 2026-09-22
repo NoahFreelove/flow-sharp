@@ -1,6 +1,7 @@
 # Public analysis and evaluation APIs
 
-Status: proposed shape accepted for restructuring Phase 1 (2026-09-22). Names settle in Phases 2 and 4.
+Status: proposed shape accepted for restructuring Phase 1 (2026-09-22). `Evaluate` and
+cancellation implemented in Phase 2; `Parse`/`Analyze` remain Phase 4.
 
 ## Context
 
@@ -49,6 +50,18 @@ PrepareRender / RenderOffline(...)              -> RenderResult             (mus
 6. **Cancellation reaches evaluation.** It is checked at loop back-edges, calls,
    long builtins, module loads and render chunks. Charitable fallbacks never swallow
    cancellation or budget errors.
+
+## Implemented in Phase 2
+
+`FlowEngine.Evaluate(source, fileName, EvaluationOptions)` returns an
+`EvaluationResult` with outcome `Succeeded`, `Failed`, `Cancelled` or `TimedOut`, the
+errors and rich diagnostics, the last value, and the elapsed time.
+`EvaluationOptions` carries the host's `CancellationToken` and a wall-clock
+`TimeLimit`. Output goes to the engine's `EngineOptions.Output`/`Diagnostics` sinks.
+Internal failures during evaluation are located diagnostics (Phase 1 semantic
+fixes). A separate `HostFailure` outcome and stable diagnostic codes are still open;
+they belong with the unified diagnostic model in Phase 4. `Parse` and `Analyze` do
+not exist yet.
 
 ## Compatibility
 

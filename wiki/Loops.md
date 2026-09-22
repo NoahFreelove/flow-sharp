@@ -176,7 +176,7 @@ use "@std"
 (setMaxIterations 1000000)
 ```
 
-When the limit is exceeded, the interpreter reports `Iteration limit of N exceeded in for loop` (or `while loop`) and halts that loop. Long-running batch loops may need to raise the cap.
+When the limit is exceeded, the interpreter reports `Iteration limit of N exceeded in for loop` (or `while loop`) and halts that loop. Long-running batch loops may need to raise the cap. The host sets a ceiling (1,000,000 by default): asking for more is capped with a `[budget]` advisory. Hosts can also stop an evaluation that runs too long, such as watch mode's 30-second render budget or Ctrl+C in the REPL.
 
 ## Loops and Music
 

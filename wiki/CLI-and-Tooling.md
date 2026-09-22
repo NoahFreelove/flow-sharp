@@ -39,6 +39,7 @@ The legacy `flow-interpreter` binary is still maintained for back-compat (`--wat
 - **Tab completion**, backed by the same completion engine as the LSP.
 - **Ctrl+R** reverse history search. History persists to `~/.config/flow/history` (10k-entry cap, `0600` mode).
 - **Multi-line continuation** via paren / bracket nesting depth.
+- **Ctrl+C** stops a runaway evaluation (and any playback) without leaving the REPL.
 
 When stdin is piped or redirected (CI, scripts), it falls back to a plain line reader — no TTY required.
 

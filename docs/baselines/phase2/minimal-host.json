@@ -1,0 +1,78 @@
+{
+  "recordedUtc": "2026-09-22 19:21:38Z",
+  "runtime": "10.0.12",
+  "os": "Ubuntu 26.04 LTS",
+  "program": {
+    "source": "\u003Cminimal-host\u003E",
+    "success": true,
+    "stdout": "alpha=1\nbeta=2\ngamma=1\n[1, 4, 9, 16, 25]\n",
+    "stderr": "",
+    "diagnostics": []
+  },
+  "construction": {
+    "milliseconds": 105.8,
+    "allocatedBytesThisThread": 2266872,
+    "note": "Single cold process measurement; indicative only."
+  },
+  "executionMilliseconds": 12.7,
+  "assemblies": {
+    "flowLangReferences": [
+      "Melanchall.DryWetMidi",
+      "Microsoft.Win32.Primitives",
+      "NAudio.Core",
+      "NAudio.Wasapi",
+      "Rug.Osc",
+      "Tomlyn"
+    ],
+    "loadedByConstruction": [
+      "System.Collections.Concurrent",
+      "System.Memory",
+      "System.Numerics.Vectors",
+      "System.Runtime.InteropServices",
+      "System.Runtime.Numerics",
+      "System.Threading"
+    ],
+    "loadedByExecution": []
+  },
+  "nativeLibraries": {
+    "loadedByConstruction": [],
+    "loadedByExecution": []
+  },
+  "processStatics": {
+    "SessionServices.Current after construction": false,
+    "RenderServices.Current after construction": false,
+    "FlowConfig.Active is defaults": true,
+    "SessionServices.Current after execution": false
+  },
+  "modulesLoadedAtConstruction": [
+    "bars.flow",
+    "collections.flow",
+    "improv.flow",
+    "std.flow"
+  ],
+  "modulesLoadedAfterExecution": [
+    "bars.flow",
+    "collections.flow",
+    "improv.flow",
+    "std.flow"
+  ],
+  "improvStylesLoaded": 3,
+  "builtinSignaturesByImplementationNamespace": {
+    "FlowLang.StandardLibrary": 296,
+    "FlowLang.StandardLibrary.Audio": 121,
+    "FlowLang.StandardLibrary.Audio.DSP": 35,
+    "FlowLang.StandardLibrary.Audio.Sfz": 3,
+    "FlowLang.StandardLibrary.Audio.Tuning": 3,
+    "FlowLang.StandardLibrary.Audio.Vocalization": 4,
+    "FlowLang.StandardLibrary.Composition": 12,
+    "FlowLang.StandardLibrary.Generative": 25,
+    "FlowLang.StandardLibrary.Harmony": 19,
+    "FlowLang.StandardLibrary.Improv": 3,
+    "FlowLang.StandardLibrary.Midi": 16,
+    "FlowLang.StandardLibrary.Network": 8,
+    "FlowLang.StandardLibrary.Notation": 5,
+    "FlowLang.StandardLibrary.Patterns": 14,
+    "FlowLang.StandardLibrary.TestFramework": 6,
+    "FlowLang.StandardLibrary.Transforms": 31
+  }
+}

@@ -4,16 +4,16 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 
 ## Current milestone
 
-**Phase 1 is complete (2026-09-22).** The language contract, non-musical examples,
-six seam decisions, dependency ratchet and minimal-host prototype are committed;
-the core tier passes. Phase 2 (session state and evaluation jobs) is next and has
-not started. See the [Phase 1 record](../../baselines/phase1/README.md).
-Phase 0 was committed on 2026-09-22 (`1988d86`, `a20289d`, `daff044`, `fac475d`)
-after a fresh core-tier rerun.
+**Phase 2 is complete (2026-09-22).** Engines own their state (sinks, advisory
+log, config snapshot, render services, tracked resources), evaluations support
+cooperative cancellation and budgets, watch mode renders through a
+latest-request-wins coordinator, and a process worker provides hard termination.
+All four gate items have tests; core, platform and long tiers pass. See the
+[Phase 2 record](../../baselines/phase2/README.md). Phase 3 (language-only runtime
+and pure standard library) is next and has not started.
 
-All Phase 1 findings (7 defects, 7 disputed behaviors, 4 gaps, plus tooling
-issues) were fixed on 2026-09-22 at the owner's request, before Phase 2; see
-[the semantic-fixes decision](../../decisions/2026-09-22-phase1-semantic-fixes.md).
+Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
+see the [Phase 1 record](../../baselines/phase1/README.md).
 
 Starting revision: `1e85f6710b6a39c293b0e4361ca57364489c824d`.
 Owner: primary implementation agent. No delegated file ownership.
@@ -33,6 +33,11 @@ Owner: primary implementation agent. No delegated file ownership.
 | P1-04 Dependency ratchet | verified | `DependencyDirectionTests` + `docs/baselines/phase1/language-dependency-edges.json` (38 edges). |
 | P1-05 Minimal host prototype | verified | `scripts/MinimalHost` + `docs/baselines/phase1/minimal-host.json`. |
 | P1-06 Fix Phase 1 findings | verified | Runtime, stdlib, parser, host diagnostics; 70 contracts all preserve/generous. |
+| P2-01 Session-owned state | verified | `SessionServices`/`EngineOptions`/`RenderServices`; `FlowEngine.Current*` statics removed; per-session output, advisories, config, RNGs, OSC state. |
+| P2-02 Cancellation and budgets | verified | `FlowEngine.Evaluate`, deadline checkpoints, iteration ceiling, cancellation-safe thunks; WASM 30 s cap enforced. |
+| P2-03 Job coordination | verified | `LatestRequestCoordinator<T>`; watch mode migrated; REPL Ctrl+C cancels. |
+| P2-04 Process worker | verified | `ProcessEvaluationWorker` + `flow-interpreter --worker`; kill-and-replace tested. |
+| P2-05 Hosts without console redirection | verified | WASM, `flow check`, `flow doc`, test fixture, minimal host use engine sinks. |
 
 ## Decisions
 
@@ -57,10 +62,10 @@ Result: **2,753 passed, 9 failed, 19 skipped**, 2,781 total. Local `/tmp` artifa
 
 ## Current gate status
 
-Phase 0 and Phase 1 gates are met for the documented Linux baseline (details in
-the completion sections below). Environmental skips and remaining warnings are
-explicit. Hardware/audio listening validation and remote GitHub Actions execution
-are not claimed. No runtime extraction has begun; Phase 2 is the next milestone.
+Phase 0, Phase 1 and Phase 2 gates are met for the documented Linux baseline
+(details in the completion sections below). Environmental skips and remaining
+warnings are explicit. Hardware/audio listening validation and remote GitHub
+Actions execution are not claimed. Phase 3 is the next milestone.
 
 ## Completed slice — 2026-09-20
 
@@ -353,3 +358,56 @@ before sending. This was a test race, unrelated to the interpreter changes.
 
 Next ready slice: Phase 2 session ownership against the session-lifetime
 decision's gate.
+
+
+## Phase 2 completion — 2026-09-22
+
+### Delivered
+
+- `SessionServices` (language layer) and `RenderServices` (music layer) own what was
+  process-global: output and diagnostic sinks, `AdvisoryLog` dedup, config
+  snapshot, cancellation/deadline, iteration ceiling, tracked resources, sample
+  caches, noise and dither RNGs (original seeds), custom wavetables, `setBPM`
+  tempo, MIDI sink, OSC queues and rate limits, TTS command. `EngineOptions`
+  configures them. `FlowEngine.Current*` statics are removed. Legacy static code
+  reaches the session through a scoped transitional lookup set only inside engine
+  entry points.
+- `FlowEngine.Evaluate` + `EvaluationOptions` → `EvaluationResult`
+  (Succeeded/Failed/Cancelled/TimedOut). Checkpoints in loops, calls, builtins,
+  section rendering, voice mixing and DSP loops. Deadline-based budgets work in
+  single-threaded WASM. Cancellation is not cached by thunks or swallowed by
+  module/test catches. Cancelled evaluations stop their playback. Script-opened
+  OSC listeners, MIDI clocks and ports are released on engine disposal.
+- `FlowLang.Hosting.LatestRequestCoordinator<T>` (latest-request-wins, generation
+  IDs, stale-result rejection, last-good retention). Watch mode uses it and a
+  per-watch-session advisory log; its orphaning `Task.Run` + `Wait` is gone. REPL
+  Ctrl+C cancels the running evaluation.
+- `FlowLang.Hosting.ProcessEvaluationWorker` + `flow-interpreter --worker`: kill the
+  worker process tree on timeout/cancel, start a fresh one next time.
+- WASM, `flow check`, `flow doc`, the `FlowEngineRunner` fixture and the minimal
+  host use engine sinks; `flow doc` examples stop cooperatively.
+- Language fix: unit values format numbers like plain doubles (10 significant
+  digits). Browser fix: the D-48-10 30 s cap is enforced and reports `cancel`.
+- Decision record updated with implementation notes and the process-wide state that
+  remains by design. CLAUDE.md and wiki pages (loops, live coding, playground,
+  CLI) updated.
+
+### Verification (2026-09-22)
+
+```sh
+NO_COLOR=1 TERM=dumb python3 scripts/ci/verify.py --tier core --artifacts <dir>
+NO_COLOR=1 TERM=dumb python3 scripts/ci/verify.py --tier platform --artifacts <dir>
+NO_COLOR=1 TERM=dumb python3 scripts/ci/verify.py --tier long --artifacts <dir>
+dotnet run --project scripts/MinimalHost -c Release -- --json docs/baselines/phase2/minimal-host.json
+```
+
+- Core **2,821 passed / 0 failed / 14 skipped** (21 new hosting tests), MIDI
+  **21 passed**; platform **13 passed / 5 skipped**; long **33 passed**; zero
+  tracked-content changes in every tier.
+- CLI smoke: `flow run`, `flow check` (including a rich diagnostic), `flow eval`,
+  and a `--worker` round trip.
+- Five tests that asserted advisory dedup across separate engines now pin the
+  shared-`AdvisoryLog` contract (advisories are once per engine by default).
+
+Next ready slice: Phase 3 (syntax-level type names, music bindings behind an
+interface, stdlib split with compatibility aggregates, language-only build).

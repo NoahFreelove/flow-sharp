@@ -18,7 +18,7 @@ flow watch path/to/script.flow
 - **64-sample equal-power crossfade.** The old and new buffers are blended over 64 samples at the swap point — no click.
 - **Failed renders keep the previous version.** If your edit has a parse or eval error, the last good version keeps playing and the error is surfaced in the `[live]` advisory row. You never get a silence-on-error gap.
 - **200 ms trailing-edge debounce.** Editors often fire several save events in a burst; Flow waits 200 ms of quiet before rendering, so only the final save of a burst triggers a re-render.
-- **30 s evaluation cap.** A single render is capped at 30 seconds of wall-clock time so a runaway script can't wedge the session.
+- **30 s evaluation cap.** A single render is capped at 30 seconds of wall-clock time; a render that runs longer is stopped and the previous version keeps playing. Saving again while a render is still running cancels the older render, so only your newest edit is ever swapped in.
 
 ## The `live { }` Block
 
