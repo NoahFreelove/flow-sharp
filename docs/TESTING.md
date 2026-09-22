@@ -66,6 +66,30 @@ do not run another build/publish against the same checkout simultaneously.
 The standalone audit scripts retain their existing defaults; pass `--out-dir`
 when invoking them directly to write outside the historical report directory.
 
+## Language contract and dependency ratchet
+
+`contracts/language/` holds the executable language contract: short programs
+with expected stdout (`.out`), error counts, stderr fragments, a rationale and a
+compatibility status (`preserve`, `generous`, `disputed`, `defect`, `gap`).
+`examples/language/` holds non-musical tutorial programs with expected output.
+`LanguageContractTests` runs both in the core tier; see
+[the contract README](../contracts/language/README.md) for the format.
+
+```bash
+dotnet test flow-lang.Tests --filter "FullyQualifiedName~FlowLang.Tests.Contracts"
+```
+
+A failing contract means observable behavior changed. Either revert the change
+or record the new semantics deliberately: update the `.out`/header, and for
+`preserve` entries add a decision under `docs/decisions/`. Never regenerate
+`.out` files wholesale.
+
+`DependencyDirectionTests` pins every language-core → music/audio/platform
+namespace edge in `flow-lang.dll`
+(`docs/baselines/phase1/language-dependency-edges.json`). New edges fail. When an
+extraction removes edges, regenerate with
+`FLOW_UPDATE_DEPENDENCY_BASELINE=1` and review the shrinking diff.
+
 ## The Five Test Layers
 
 | Layer | Where | What it covers |

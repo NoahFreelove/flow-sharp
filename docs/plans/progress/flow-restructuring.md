@@ -4,17 +4,17 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 
 ## Current milestone
 
-**Phase 0 is complete in the verified working tree.** Its Linux Desktop/Web
-baseline gate passed on 2026-09-20. Phase 1 is ready; it has not started.
-See the [acceptance record](../../baselines/phase0/verification.md).
+**Phase 1 is complete (2026-09-22).** The language contract, non-musical examples,
+six seam decisions, dependency ratchet and minimal-host prototype are committed;
+the core tier passes. Phase 2 (session state and evaluation jobs) is next and has
+not started. See the [Phase 1 record](../../baselines/phase1/README.md).
+Phase 0 was committed on 2026-09-22 (`1988d86`, `a20289d`, `daff044`, `fac475d`)
+after a fresh core-tier rerun.
 
-Handoff prepared on 2026-09-22: [Phase 0 to Phase 1](../handoffs/2026-09-22-phase0-to-phase1.md).
-It records the pending implementation, verification evidence and next steps.
-This documentation update did not rerun the suites; implementation remains
-uncommitted, and Phase 1 has not started.
+Phase 1 findings need owner decisions before any semantic fix: 7 defects and 7
+disputed behaviors, listed in the Phase 1 record. None were fixed in Phase 1.
 
 Starting revision: `1e85f6710b6a39c293b0e4361ca57364489c824d`.
-Pre-existing changes: `docs/ARCHITECTURE.md` and the untracked roadmap; preserved.
 Owner: primary implementation agent. No delegated file ownership.
 
 | Task | Status | Scope / dependencies |
@@ -26,6 +26,11 @@ Owner: primary implementation agent. No delegated file ownership.
 | P0-04 Warning triage | verified | Targeted warning fixes; remaining diagnostics classified without suppression. |
 | P0-05 Performance baseline | verified | Reproducible Release parse, pre-parsed evaluation, engine and offline render measurements. |
 | P0-02 Non-mutating test outputs | verified | Audit and bundle reports use isolated artifacts; explicit update mode verified; full solution run preserved tracked contents. |
+| P1-01 Executable language contract | verified | `contracts/language/` (69 contracts), `LanguageContractTests`. Pins current behavior only. |
+| P1-02 Non-musical examples | verified | `examples/language/` (7 programs with expected output, incl. two-module utility). |
+| P1-03 Seam decisions | recorded | Six `docs/decisions/2026-09-22-*` files: profiles, grammar, signature ownership, dependency direction, session lifetime, analysis/evaluation API. |
+| P1-04 Dependency ratchet | verified | `DependencyDirectionTests` + `docs/baselines/phase1/language-dependency-edges.json` (38 edges). |
+| P1-05 Minimal host prototype | verified | `scripts/MinimalHost` + `docs/baselines/phase1/minimal-host.json`. |
 
 ## Decisions
 
@@ -50,12 +55,10 @@ Result: **2,753 passed, 9 failed, 19 skipped**, 2,781 total. Local `/tmp` artifa
 
 ## Current gate status
 
-All Phase 0 work items are verified for the documented Linux baseline.
-Environmental skips and remaining warnings are explicit. Hardware/audio listening
-validation and actual remote GitHub Actions execution are not claimed.
-Phase 1 language contracts and seam decisions are the next authorized milestone
-to select; no runtime extraction has begun.
-
+Phase 0 and Phase 1 gates are met for the documented Linux baseline (details in
+the completion sections below). Environmental skips and remaining warnings are
+explicit. Hardware/audio listening validation and remote GitHub Actions execution
+are not claimed. No runtime extraction has begun; Phase 2 is the next milestone.
 
 ## Completed slice — 2026-09-20
 
@@ -243,3 +246,62 @@ Exact commands, skip reasons, checked-in summaries, and artifact paths are in th
 Next ready slice: Phase 1's executable language-personality corpus and first
 non-musical examples, followed by module/profile, grammar, signature ownership,
 and session/API decisions. Phase 0 has no unresolved completion gate.
+
+
+## Phase 1 completion — 2026-09-22
+
+### Delivered
+
+- Committed Phase 0 first in four path-scoped commits after rerunning the core
+  tier on the uncommitted tree: main 2,717 passed / 0 failed (the two extra over
+  2,715 are the ignored local Flow tests), MIDI 21 passed, zero tracked changes.
+- Language contract: 69 programs across calls, procedures, functional behavior,
+  data, ergonomics, forgiving/strict semantics, modules and music. 48 preserve,
+  3 generous, 7 disputed, 7 defect, 4 gap. Each has expected stdout, error count,
+  stderr fragments, rationale and status; an index test enforces documentation.
+- Seven non-musical examples with expected output, exercising collections,
+  dictionary aggregation, tuple pipelines, recursive trees, deferred evaluation,
+  pattern dispatch and a two-module utility. Gaps they work around are listed in
+  `examples/language/README.md`, not fixed.
+- Decisions: legacy profile default with a host-selected `language` profile; one
+  grammar with optional music semantics; C# registration authoritative for native
+  signatures with `.flow` exports derived/validated; namespace-level dependency
+  rules enforced by a shrink-only ratchet; session-owned state and sinks; separate
+  Parse/Analyze/Evaluate APIs with one diagnostic model.
+- Minimal host (library-only reference) runs a non-musical program and records
+  remaining dependencies: static references to DryWetMidi/NAudio/Rug.Osc/Tomlyn,
+  three process statics, eager `@bars`/`@improv` loading and style packs, ~600
+  mostly musical builtins, console redirection, private-only module/impl lists.
+
+### Findings (not fixed; owner decisions needed)
+
+Defects: lazy `and`/`or` operands return a truthy thunk (wrong branch taken);
+thunks held in variables are never forced; `Lazy<T>` declarations, arithmetic on
+an unknown identifier, Int/String comparison, arrays of tuples in variables and a
+bare `(dict)` reduce seed abort evaluation with `0:0` internal errors. Disputed:
+optional-paren calls with nested arguments are silently dropped, `(Nothing)` vs
+docs, Int overflow wraps, interpolation formatting, circular imports, strict-proc
+widening, unit arithmetic dropping units. Also: the CLI forces ANSI color on rich
+diagnostics despite `NO_COLOR`, and `FlowEngineRunner`/`FlowScriptTests` ignore
+rich diagnostics (a scan of all 152 tracked `tests/*.flow` found none masked).
+
+### Verification (2026-09-22)
+
+```sh
+NO_COLOR=1 TERM=dumb python3 scripts/ci/verify.py --tier core --artifacts <dir>
+dotnet run --project scripts/MinimalHost -c Release -- --json docs/baselines/phase1/minimal-host.json
+dotnet flow-cli/bin/Debug/net10.0/flow.dll run examples/language/modules/report.flow
+```
+
+- Core tier: main **2,795 passed / 0 failed / 14 skipped** (2,717 + 78 new:
+  69 contracts, 7 examples, index check, dependency ratchet), MIDI **21 passed**,
+  zero tracked-content changes.
+- Harness self-check: a changed `.out` and an invalid status both fail.
+- CLI runs the examples; `recursion-trees.flow` output matches its `.out`.
+- `git diff --check` passes. Platform and long tiers were not rerun: Phase 1 made
+  no runtime, build-flavor or long-test changes. `scripts/MinimalHost` is not in
+  the solution (like `BaselineProbe`) and is built only when run.
+
+Next ready slice: owner review of the Phase 1 findings, then Phase 2 session
+ownership (output/diagnostic sinks, removal of `FlowEngine.Current*` statics,
+per-session advisory dedup) against the session-lifetime decision's gate.
