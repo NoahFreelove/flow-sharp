@@ -37,7 +37,7 @@ public sealed class NoteValueType : FlowType
     /// <summary>
     /// 0615 bare-notevalues — predefined GLOBAL NoteValue constant names. Maps the
     /// canonical single-letter duration short-forms (the SAME table
-    /// <see cref="FlowLang.Runtime.NoteStreamCompiler"/> uses for note-stream
+    /// <see cref="FlowLang.Music.NoteStreamCompiler"/> uses for note-stream
     /// duration suffixes) to their <see cref="Value"/> enum. Resolved by
     /// <c>ExpressionEvaluator.EvaluateVariable</c> ONLY when no variable or
     /// function with that name is in scope, so a composer's <c>Int e = 5</c>

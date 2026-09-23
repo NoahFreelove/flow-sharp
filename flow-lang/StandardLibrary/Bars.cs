@@ -7,7 +7,7 @@ namespace FlowLang.StandardLibrary;
 /// Bar (musical measure) operations.
 ///
 /// Legacy bar/measure-construction API. Superseded by the <c>| C4 D4 E4 |</c>
-/// note-stream literal syntax (<see cref="FlowLang.Runtime.NoteStreamCompiler"/>)
+/// note-stream literal syntax (<see cref="FlowLang.Music.NoteStreamCompiler"/>)
 /// — kept as a usable measure-construction surface. Orthogonal to Phase 45 Beats
 /// (measure axis, not duration). Imported by std.flow:6.
 /// </summary>

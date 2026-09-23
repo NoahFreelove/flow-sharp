@@ -2019,6 +2019,11 @@ FlowLang.Music.MusicalContext :: static Boolean IsValidTransportTempo(Double)
 FlowLang.Music.MusicalContext :: static field Double MaxTransportTempo
 FlowLang.Music.MusicalContext :: static field Double SustainTailSeconds
 FlowLang.Music.MusicalContext :: static field HashSet<String> ValidKeys
+FlowLang.Music.NoteStreamCompiler :: SequenceData Compile(NoteStreamExpression, MusicalContext, ExecutionContext)
+FlowLang.Music.NoteStreamCompiler :: ctor()
+FlowLang.Music.NoteStreamCompiler :: ctor(ErrorReporter)
+FlowLang.Music.ProgressionCompiler :: SequenceData Compile(ProgressionExpression, MusicalContext)
+FlowLang.Music.ProgressionCompiler :: ctor()
 FlowLang.Parsing.BufType :: Int32 GetSpecificity()
 FlowLang.Parsing.BufType :: String get_Name()
 FlowLang.Parsing.BufType :: property String Name
@@ -2262,9 +2267,6 @@ FlowLang.Runtime.ModuleRegistry :: Void Clear()
 FlowLang.Runtime.ModuleRegistry :: Void Register(String, IReadOnlyDictionary<String,Value>)
 FlowLang.Runtime.ModuleRegistry :: ctor()
 FlowLang.Runtime.ModuleRegistry :: property IReadOnlyDictionary<String,IReadOnlyCollection<String>> Exports
-FlowLang.Runtime.NoteStreamCompiler :: SequenceData Compile(NoteStreamExpression, MusicalContext, ExecutionContext)
-FlowLang.Runtime.NoteStreamCompiler :: ctor()
-FlowLang.Runtime.NoteStreamCompiler :: ctor(ErrorReporter)
 FlowLang.Runtime.PrngRegistry :: Double NextDouble(SourceLocation, String)
 FlowLang.Runtime.PrngRegistry :: IReadOnlyDictionary<ValueTuple<SourceLocation,String>,Int64> SnapshotForTesting()
 FlowLang.Runtime.PrngRegistry :: Int32 NextChunkRotation(SourceLocation)
@@ -2275,8 +2277,6 @@ FlowLang.Runtime.PrngRegistry :: Void ResetAtRenderBoundary()
 FlowLang.Runtime.PrngRegistry :: Void RestoreFromSnapshot(IReadOnlyDictionary<ValueTuple<SourceLocation,String>,Int64>)
 FlowLang.Runtime.PrngRegistry :: ctor()
 FlowLang.Runtime.PrngRegistry :: property Int32 ResetCallCount
-FlowLang.Runtime.ProgressionCompiler :: SequenceData Compile(ProgressionExpression, MusicalContext)
-FlowLang.Runtime.ProgressionCompiler :: ctor()
 FlowLang.Runtime.RunError :: Boolean Equals(Object)
 FlowLang.Runtime.RunError :: Boolean Equals(RunError)
 FlowLang.Runtime.RunError :: Int32 GetHashCode()
@@ -4177,6 +4177,8 @@ type FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE
 type FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE+<M>$11034BF75A2B45F4D0E32CCE8568B599
 type FlowLang.Music.MusicSession
 type FlowLang.Music.MusicalContext
+type FlowLang.Music.NoteStreamCompiler
+type FlowLang.Music.ProgressionCompiler
 type FlowLang.Parsing.BufType
 type FlowLang.Parsing.ParseException
 type FlowLang.Parsing.Parser
@@ -4200,9 +4202,7 @@ type FlowLang.Runtime.MarkovModelData+PrefixComparer
 type FlowLang.Runtime.ModuleLoadResult
 type FlowLang.Runtime.ModuleLoader
 type FlowLang.Runtime.ModuleRegistry
-type FlowLang.Runtime.NoteStreamCompiler
 type FlowLang.Runtime.PrngRegistry
-type FlowLang.Runtime.ProgressionCompiler
 type FlowLang.Runtime.RunError
 type FlowLang.Runtime.RunResult
 type FlowLang.Runtime.SessionServices

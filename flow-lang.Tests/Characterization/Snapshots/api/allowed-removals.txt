@@ -181,3 +181,10 @@ FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlySet<Str
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property MusicalContext GlobalFrameMusicalContext  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property String ResolvedSfzRoot  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
 type FlowLang.Runtime.MusicalContext  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.NoteStreamCompiler :: SequenceData Compile(NoteStreamExpression, MusicalContext, ExecutionContext)  # Phase 3: moved to FlowLang.Music
+FlowLang.Runtime.NoteStreamCompiler :: ctor()  # Phase 3: moved to FlowLang.Music
+FlowLang.Runtime.NoteStreamCompiler :: ctor(ErrorReporter)  # Phase 3: moved to FlowLang.Music
+FlowLang.Runtime.ProgressionCompiler :: SequenceData Compile(ProgressionExpression, MusicalContext)  # Phase 3: moved to FlowLang.Music
+FlowLang.Runtime.ProgressionCompiler :: ctor()  # Phase 3: moved to FlowLang.Music
+type FlowLang.Runtime.NoteStreamCompiler  # Phase 3: moved to FlowLang.Music
+type FlowLang.Runtime.ProgressionCompiler  # Phase 3: moved to FlowLang.Music

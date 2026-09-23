@@ -1,3 +1,4 @@
+using FlowLang.Runtime;
 using FlowLang.Ast.Expressions;
 using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Harmony;
@@ -5,9 +6,8 @@ using FlowLang.TypeSystem;  // for Fraction (Phase 18)
 using FlowLang.TypeSystem.SpecialTypes;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 using FlowLang.Syntax;
-using FlowLang.Music;
 
-namespace FlowLang.Runtime;
+namespace FlowLang.Music;
 
 /// <summary>
 /// Compiles a NoteStreamExpression into a SequenceData using the active MusicalContext.

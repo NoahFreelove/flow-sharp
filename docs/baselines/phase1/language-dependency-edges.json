@@ -41,12 +41,6 @@
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.Music",
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.StandardLibrary.Harmony",
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Interpreter.SectionOverloadDispatch -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Runtime.NoteStreamCompiler -\u003E FlowLang.Music",
-    "FlowLang.Runtime.NoteStreamCompiler -\u003E FlowLang.StandardLibrary.Harmony",
-    "FlowLang.Runtime.NoteStreamCompiler -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Runtime.ProgressionCompiler -\u003E FlowLang.Music",
-    "FlowLang.Runtime.ProgressionCompiler -\u003E FlowLang.StandardLibrary.Harmony",
-    "FlowLang.Runtime.ProgressionCompiler -\u003E FlowLang.TypeSystem.SpecialTypes"
+    "FlowLang.Interpreter.SectionOverloadDispatch -\u003E FlowLang.TypeSystem.SpecialTypes"
   ]
 }
