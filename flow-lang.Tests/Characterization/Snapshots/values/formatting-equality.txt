@@ -1,0 +1,174 @@
+3 : Int
+  autostr: 3
+  tostring: 3
+  loose-equals: 3
+  strict-equals: 3
+  value-equals: 3
+3000000000 : Long
+  autostr: 3000000000
+  tostring: 3000000000
+  loose-equals: 3000000000
+  strict-equals: 3000000000
+  value-equals: 3000000000
+99999999999999999999 : Number
+  autostr: 99999999999999999999
+  tostring: 99999999999999999999
+  loose-equals: 99999999999999999999
+  strict-equals: 99999999999999999999
+  value-equals: 99999999999999999999
+1.5 : Double
+  autostr: 1.5
+  tostring: 1.5
+  loose-equals: 1.5 | (float 1.5)
+  strict-equals: 1.5
+  value-equals: 1.5
+(float 1.5) : Float
+  autostr: 1.5
+  tostring: 1.5
+  loose-equals: 1.5 | (float 1.5)
+  strict-equals: (float 1.5)
+  value-equals: (float 1.5)
+"text" : String
+  autostr: text
+  tostring: "text"
+  loose-equals: "text"
+  strict-equals: "text"
+  value-equals: "text"
+true : Bool
+  autostr: true
+  tostring: true
+  loose-equals: true
+  strict-equals: true
+  value-equals: true
+#tag : Symbol
+  autostr: #tag
+  tostring: #tag
+  loose-equals: #tag
+  strict-equals: #tag
+  value-equals: #tag
+C4 : Note
+  autostr: C4
+  tostring: "C4"
+  loose-equals: C4
+  strict-equals: C4
+  value-equals: C4
+F4+50c : Cent
+  autostr: +50c
+  tostring: 50
+  loose-equals: F4+50c | +50c
+  strict-equals: F4+50c | +50c
+  value-equals: F4+50c
+Cmaj7 : Chord
+  autostr: Cmaj7 [C4 E4 G4 B4]
+  tostring: Cmaj7 [C4 E4 G4 B4]
+  loose-equals: Cmaj7
+  strict-equals: Cmaj7
+  value-equals: Cmaj7
+| C4 D4 E4 F4 | : Sequence
+  autostr: Sequence[1 bars, 4 beats total]
+  tostring: Sequence[1 bars, 4 beats total]
+  loose-equals: | C4 D4 E4 F4 |
+  strict-equals: | C4 D4 E4 F4 |
+  value-equals: | C4 D4 E4 F4 |
++2st : Semitone
+  autostr: +2st
+  tostring: 2
+  loose-equals: +2st
+  strict-equals: +2st
+  value-equals: +2st
++50c : Cent
+  autostr: +50c
+  tostring: 50
+  loose-equals: F4+50c | +50c
+  strict-equals: F4+50c | +50c
+  value-equals: +50c
+100ms : Millisecond
+  autostr: 100ms
+  tostring: 100
+  loose-equals: 100ms
+  strict-equals: 100ms
+  value-equals: 100ms
+2.5s : Second
+  autostr: 2.5s
+  tostring: 2.5
+  loose-equals: 2.5s
+  strict-equals: 2.5s
+  value-equals: 2.5s
+-6dB : Decibel
+  autostr: -6dB
+  tostring: -6
+  loose-equals: -6dB
+  strict-equals: -6dB
+  value-equals: -6dB
+440Hz : Hertz
+  autostr: 440Hz
+  tostring: 440
+  loose-equals: 440Hz
+  strict-equals: 440Hz
+  value-equals: 440Hz
+1b : Beat
+  autostr: 1
+  tostring: 1
+  loose-equals: 1b
+  strict-equals: 1b
+  value-equals: 1b
+q : NoteValue
+  autostr: 2
+  tostring: 2
+  loose-equals: q
+  strict-equals: q
+  value-equals: q
+[1, 2, 3] : Int[]
+  autostr: [1, 2, 3]
+  tostring: [1, 2, 3]
+  loose-equals: [1, 2, 3]
+  strict-equals: [1, 2, 3]
+  value-equals: [1, 2, 3]
+(list "a" "b") : String[]
+  autostr: ["a", "b"]
+  tostring: ["a", "b"]
+  loose-equals: (list "a" "b")
+  strict-equals: (list "a" "b")
+  value-equals: (list "a" "b")
+(list) : Void[]
+  autostr: []
+  tostring: []
+  loose-equals: (list)
+  strict-equals: (list)
+  value-equals: (list)
+<<1, "a">> : Tuple<<Int, String>>
+  autostr: <<1, "a">>
+  tostring: <<1, "a">>
+  loose-equals: <<1, "a">>
+  strict-equals: <<1, "a">>
+  value-equals: <<1, "a">>
+(dict "a" 1) : Dict<String, Int>
+  autostr: {"a": 1}
+  tostring: {"a": 1}
+  loose-equals: (dict "a" 1)
+  strict-equals: (dict "a" 1)
+  value-equals: (dict "a" 1)
+(createSineTone 440Hz 0.01 0.5) : Buffer
+  autostr: FlowLang.StandardLibrary.Audio.AudioBuffer
+  tostring: FlowLang.StandardLibrary.Audio.AudioBuffer
+  loose-equals: (createSineTone 440Hz 0.01 0.5)
+  strict-equals: (createSineTone 440Hz 0.01 0.5)
+  value-equals: (createSineTone 440Hz 0.01 0.5)
+(Nothing) : Void
+  autostr: ()
+  tostring: void
+  loose-equals: (Nothing)
+  strict-equals: (Nothing)
+  value-equals: (Nothing)
+fn Int n => (mul n 2) : Function
+  autostr: FlowLang.Runtime.FunctionOverload
+  tostring: FlowLang.Runtime.FunctionOverload
+  loose-equals: fn Int n => (mul n 2)
+  strict-equals: fn Int n => (mul n 2)
+  value-equals: fn Int n => (mul n 2)
+lazy ((add 1 1)) : Lazy<Void>
+  autostr: <lazy: unevaluated>
+  tostring: <lazy: unevaluated>
+  loose-equals: lazy ((add 1 1))
+  strict-equals: lazy ((add 1 1))
+  value-equals: lazy ((add 1 1))

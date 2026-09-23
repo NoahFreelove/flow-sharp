@@ -1,0 +1,281 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ImportStatement {
+      FilePath: "@audio" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              BeatLiteralExpression {
+                RawValue: 1 }]
+            Name: "beatToSec"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "beatLength"
+      Parameters: [] },
+    VariableDeclaration {
+      Name: "lambdaBeat"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: FunctionCallExpression {
+              Arguments: [
+                BeatLiteralExpression {
+                  RawValue: 1 }]
+              Name: "beatToSec"
+              NamedArgs: null } }]
+        Parameters: [] } },
+    VariableDeclaration {
+      Name: "madeInside"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: FunctionCallExpression {
+              Arguments: [
+                BeatLiteralExpression {
+                  RawValue: 1 }]
+              Name: "beatToSec"
+              NamedArgs: null } }]
+        Parameters: [] } },
+    MusicalContextStatement {
+      Body: [
+        AssignmentStatement {
+          Name: "madeInside"
+          Value: LambdaExpression {
+            Body: [
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    BeatLiteralExpression {
+                      RawValue: 1 }]
+                  Name: "beatToSec"
+                  NamedArgs: null } }]
+            Parameters: [] } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              InterpolatedStringExpression {
+                Parts: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "proc in 90: " },
+                  FunctionCallExpression {
+                    Arguments: []
+                    Name: "beatLength"
+                    NamedArgs: null }] }]
+            Name: "print"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              InterpolatedStringExpression {
+                Parts: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "lambda in 90: " },
+                  FunctionCallExpression {
+                    Arguments: []
+                    Name: "lambdaBeat"
+                    NamedArgs: null }] }]
+            Name: "print"
+            NamedArgs: null } },
+        MusicalContextStatement {
+          Body: [
+            ExpressionStatement {
+              Expression: FunctionCallExpression {
+                Arguments: [
+                  InterpolatedStringExpression {
+                    Parts: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "nested 150: " },
+                      FunctionCallExpression {
+                        Arguments: []
+                        Name: "beatLength"
+                        NamedArgs: null }] }]
+                Name: "print"
+                NamedArgs: null } }]
+          ContextType: MusicalContextType.Tempo
+          Value: LiteralExpression {
+            IsMusicLiteral: false
+            Value: 150 }
+          Value2: null },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              InterpolatedStringExpression {
+                Parts: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "back in 90: " },
+                  FunctionCallExpression {
+                    Arguments: []
+                    Name: "beatLength"
+                    NamedArgs: null }] }]
+            Name: "print"
+            NamedArgs: null } },
+        VariableDeclaration {
+          Name: "inside"
+          Type: type Int
+          Value: LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 } }]
+      ContextType: MusicalContextType.Tempo
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 90 }
+      Value2: null },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "lambda made in 90, called outside: " },
+              FunctionCallExpression {
+                Arguments: []
+                Name: "madeInside"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "after block: " },
+              FunctionCallExpression {
+                Arguments: [
+                  BeatLiteralExpression {
+                    RawValue: 1 }]
+                Name: "beatToSec"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "inside visible: " },
+              VariableExpression {
+                Name: "inside" }] }]
+        Name: "print"
+        NamedArgs: null } },
+    MusicalContextStatement {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "V" },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "Dmajor" }]
+                    Name: "resolveNumeral"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }]
+            Name: "print"
+            NamedArgs: null } }]
+      ContextType: MusicalContextType.Key
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: "Dmajor" }
+      Value2: null },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: NoteStreamExpression {
+            Bars: [
+              NoteStreamBar {
+                Elements: [
+                  NoteElement {
+                    ArticulationMark: null
+                    CentOffset: null
+                    DurationSuffix: null
+                    IsDotted: false
+                    IsTied: false
+                    NoteName: "C"
+                    TupletRatio: null
+                    Velocity: null },
+                  NoteElement {
+                    ArticulationMark: null
+                    CentOffset: null
+                    DurationSuffix: null
+                    IsDotted: false
+                    IsTied: false
+                    NoteName: "D"
+                    TupletRatio: null
+                    Velocity: null }]
+                IsPickup: false }] } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "lowNotes"
+      Parameters: [] },
+    MusicalContextStatement {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: []
+                Name: "lowNotes"
+                NamedArgs: null }]
+            Name: "inspect"
+            NamedArgs: null } }]
+      ContextType: MusicalContextType.Octave
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 2 }
+      Value2: null },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: VariableExpression {
+            Name: "callerLocal" } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "peek"
+      Parameters: [] },
+    MusicalContextStatement {
+      Body: [
+        VariableDeclaration {
+          Name: "callerLocal"
+          Type: type Int
+          Value: LiteralExpression {
+            IsMusicLiteral: false
+            Value: 5 } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: []
+            Name: "peek"
+            NamedArgs: null } }]
+      ContextType: MusicalContextType.Tempo
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 100 }
+      Value2: null }] }

@@ -263,6 +263,14 @@ public class StackFrame
         return Parent.GetFunctionOverloads(name);
     }
 
+    /// <summary>Names of every function visible from this frame (own and inherited).</summary>
+    public IEnumerable<string> GetFunctionNames()
+    {
+        var names = new HashSet<string>(_functions.Keys, StringComparer.Ordinal);
+        if (Parent is not null) names.UnionWith(Parent.GetFunctionNames());
+        return names;
+    }
+
     public bool HasFunction(string name)
     {
         return _functions.ContainsKey(name) || (Parent?.HasFunction(name) ?? false);

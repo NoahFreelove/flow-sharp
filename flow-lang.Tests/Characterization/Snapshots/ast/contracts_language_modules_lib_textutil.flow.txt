@@ -1,0 +1,43 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ModuleDeclarationStatement {
+      Name: "textutil" },
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "textutil body runs" }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "textutilVersion"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 2 } },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "s" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "!" }]
+            Name: "concat"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "shout"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "s"
+          Type: type String }] }] }

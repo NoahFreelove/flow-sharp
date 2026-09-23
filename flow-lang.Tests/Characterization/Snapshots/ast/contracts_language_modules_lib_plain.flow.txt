@@ -1,0 +1,40 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "x" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 }]
+                Name: "mul"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }]
+            Name: "add"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "helper"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Int }] },
+    VariableDeclaration {
+      Name: "sharedConstant"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 42 } }] }

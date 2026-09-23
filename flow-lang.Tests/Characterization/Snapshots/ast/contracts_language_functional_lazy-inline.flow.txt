@@ -1,0 +1,53 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "pending"
+      Type: type Lazy<Void>
+      Value: LazyExpression {
+        InnerExpression: FunctionCallExpression {
+          Arguments: [
+            LiteralExpression {
+              IsMusicLiteral: false
+              Value: "not forced" }]
+          Name: "print"
+          NamedArgs: null } } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LazyExpression {
+                    InnerExpression: FunctionCallExpression {
+                      Arguments: [
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: 1 },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: 1 }]
+                      Name: "add"
+                      NamedArgs: null } }]
+                Name: "eval"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LazyExpression {
+            InnerExpression: FunctionCallExpression {
+              Arguments: [
+                LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "forced inline" }]
+              Name: "print"
+              NamedArgs: null } }]
+        Name: "eval"
+        NamedArgs: null } }] }

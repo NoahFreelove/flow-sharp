@@ -1,0 +1,117 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: true },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "yes" } },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: [
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: "untaken lazy" }]
+                  Name: "print"
+                  NamedArgs: null } }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: false },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "no" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "fallback" }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: true },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "yes" },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "untaken bare" }]
+                Name: "print"
+                NamedArgs: null }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: false },
+                  LazyExpression {
+                    InnerExpression: FunctionCallExpression {
+                      Arguments: [
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: "never" }]
+                      Name: "print"
+                      NamedArgs: null } }]
+                Name: "and"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: true },
+                  LazyExpression {
+                    InnerExpression: FunctionCallExpression {
+                      Arguments: [
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: "never" }]
+                      Name: "print"
+                      NamedArgs: null } }]
+                Name: "or"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

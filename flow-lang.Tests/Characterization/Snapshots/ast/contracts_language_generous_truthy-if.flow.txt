@@ -1,0 +1,45 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "truthy" } },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "falsy" } }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 0 },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "truthy" } },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "falsy" } }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

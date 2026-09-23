@@ -1,0 +1,64 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "c"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 0 } },
+    VariableDeclaration {
+      Name: "e"
+      Type: type String
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: "" } },
+    VariableDeclaration {
+      Name: "f"
+      Type: type Bool
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: false } },
+    VariableDeclaration {
+      Name: "xs"
+      Type: type Int[]
+      Value: FunctionCallExpression {
+        Arguments: []
+        Name: "list"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "[" },
+              VariableExpression {
+                Name: "c" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "] [" },
+              VariableExpression {
+                Name: "e" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "] [" },
+              VariableExpression {
+                Name: "f" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "] [" },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "xs" }]
+                Name: "len"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "]" }] }]
+        Name: "print"
+        NamedArgs: null } }] }

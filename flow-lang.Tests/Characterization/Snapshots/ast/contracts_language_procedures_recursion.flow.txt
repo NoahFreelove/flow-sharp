@@ -1,0 +1,167 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "n" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "lte"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 1 } },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "n" },
+                    FunctionCallExpression {
+                      Arguments: [
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "n" },
+                            LiteralExpression {
+                              IsMusicLiteral: false
+                              Value: 1 }]
+                          Name: "sub"
+                          NamedArgs: null }]
+                      Name: "fact"
+                      NamedArgs: null }]
+                  Name: "mul"
+                  NamedArgs: null } }]
+            Name: "if"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "fact"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "n"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "n" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 }]
+                Name: "lt"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: VariableExpression {
+                  Name: "n" } },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: [
+                    FunctionCallExpression {
+                      Arguments: [
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "n" },
+                            LiteralExpression {
+                              IsMusicLiteral: false
+                              Value: 1 }]
+                          Name: "sub"
+                          NamedArgs: null }]
+                      Name: "fib"
+                      NamedArgs: null },
+                    FunctionCallExpression {
+                      Arguments: [
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "n" },
+                            LiteralExpression {
+                              IsMusicLiteral: false
+                              Value: 2 }]
+                          Name: "sub"
+                          NamedArgs: null }]
+                      Name: "fib"
+                      NamedArgs: null }]
+                  Name: "add"
+                  NamedArgs: null } }]
+            Name: "if"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "fib"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "n"
+          Type: type Int }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 10 }]
+                Name: "fact"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 0 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 10 }]
+                    Name: "range"
+                    NamedArgs: null },
+                  LambdaExpression {
+                    Body: [
+                      ExpressionStatement {
+                        Expression: FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "n" }]
+                          Name: "fib"
+                          NamedArgs: null } }]
+                    Parameters: [
+                      LambdaParameter {
+                        Name: "n"
+                        Type: type Int }] }]
+                Name: "map"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

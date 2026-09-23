@@ -1,0 +1,91 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ModuleDeclarationStatement {
+      Name: "text" },
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "s" }]
+                    Name: "len"
+                    NamedArgs: null },
+                  VariableExpression {
+                    Name: "width" }]
+                Name: "gte"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: VariableExpression {
+                  Name: "s" } },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: [
+                    FunctionCallExpression {
+                      Arguments: [
+                        VariableExpression {
+                          Name: "s" },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: " " }]
+                      Name: "concat"
+                      NamedArgs: null },
+                    VariableExpression {
+                      Name: "width" }]
+                  Name: "pad"
+                  NamedArgs: null } }]
+            Name: "if"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "pad"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "s"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "width"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "label" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 8 }]
+                Name: "pad"
+                NamedArgs: null },
+              VariableExpression {
+                Name: "value" }]
+            Name: "concat"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "row"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "label"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "value"
+          Type: type String }] }] }

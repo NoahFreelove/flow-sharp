@@ -1,0 +1,62 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: true
+                    Value: "C4" },
+                  LiteralExpression {
+                    IsMusicLiteral: true
+                    Value: "+2st" }]
+                Name: "transpose"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: true
+                    Value: "B4" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "transpose"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: true
+                    Value: "C4" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: -13 }]
+                Name: "transpose"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

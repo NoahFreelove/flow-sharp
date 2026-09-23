@@ -1,0 +1,34 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ImportStatement {
+      FilePath: "@generative" },
+    VariableDeclaration {
+      Name: "cells"
+      Type: type Sequence
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 30 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 5000 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 }]
+        Name: "cellular"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "rendered" }]
+        Name: "print"
+        NamedArgs: null } }] }

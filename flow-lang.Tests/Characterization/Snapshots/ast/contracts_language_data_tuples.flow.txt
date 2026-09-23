@@ -1,0 +1,94 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "t"
+      Type: type Tuple<<Int, String>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 7 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "seven" }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "t" }
+                Index: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 0 } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          ArrayIndexExpression {
+            Array: VariableExpression {
+              Name: "t" }
+            Index: LiteralExpression {
+              IsMusicLiteral: false
+              Value: 1 } }]
+        Name: "print"
+        NamedArgs: null } },
+    TupleDestructureStatement {
+      Patterns: [
+        TupleDestructurePattern {
+          Name: "n"
+          Type: type Int },
+        TupleDestructurePattern {
+          Name: "word"
+          Type: type String }]
+      Value: VariableExpression {
+        Name: "t" } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              VariableExpression {
+                Name: "n" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " is " },
+              VariableExpression {
+                Name: "word" }] }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "empty"
+      Type: type Tuple<<>>
+      Value: TupleLiteralExpression {
+        Elements: [] } },
+    VariableDeclaration {
+      Name: "solo"
+      Type: type Tuple<<Int>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 42 }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "solo" }
+                Index: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 0 } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

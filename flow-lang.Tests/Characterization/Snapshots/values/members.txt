@@ -1,0 +1,76 @@
+3 : Int
+3000000000 : Long
+99999999999999999999 : Number
+  .IsEven = false
+  .IsOne = false
+  .IsPowerOfTwo = false
+  .IsZero = false
+  .Sign = 1
+1.5 : Double
+(float 1.5) : Float
+"text" : String
+  .Length = 4
+true : Bool
+#tag : Symbol
+  .Length = 3
+C4 : Note
+  .Length = 2
+F4+50c : Note
+  .Length = 3
+Cmaj7 : Chord
+  .NoteNames = ["C4", "E4", "G4", "B4"]
+  .Octave = 4
+  .Quality = maj7
+  .Root = C
+| C4 D4 E4 F4 | : Sequence
+  .Bars = error: Cannot infer Flow type from CLR type System.Collections.Generic.List`1[FlowLang.TypeSystem.SpecialTypes.BarData]
+  .Count = 1
+  .TotalBeats = 4
++2st : Semitone
++50c : Cent
+100ms : Millisecond
+2.5s : Second
+-6dB : Decibel
+440Hz : Hertz
+1b : Beat
+q : NoteValue
+[1, 2, 3] : Int[]
+  .Capacity = 3
+  .Count = 3
+(list "a" "b") : String[]
+  .Capacity = 2
+  .Count = 2
+(list) : Void[]
+  .IsFixedSize = true
+  .IsReadOnly = false
+  .IsSynchronized = false
+  .Length = 0
+  .LongLength = 0
+  .Rank = 1
+  .SyncRoot = error: Use Value.Array() to create array values
+<<1, "a">> : Tuple<<Int, String>>
+  .Capacity = 2
+  .Count = 2
+(dict "a" 1) : Dict<String, Int>
+  .Entries = error: Cannot infer Flow type from CLR type System.Collections.Generic.OrderedDictionary`2[FlowLang.Runtime.Value,FlowLa…
+  .Type = error: Cannot infer Flow type from CLR type FlowLang.TypeSystem.SpecialTypes.DictType
+(createSineTone 440Hz 0.01 0.5) : Buffer
+  .Channels = 2
+  .Data = error: Cannot infer Flow type from CLR type System.Single[]
+  .Frames = 441
+  .PlaybackStartTime = ()
+  .SampleRate = 44100
+(Nothing) : Void
+fn Int n => (mul n 2) : Function
+  .CapturedVariables = error: Cannot infer Flow type from CLR type System.Collections.Generic.Dictionary`2[System.String,FlowLang.Runtime.Value…
+  .Declaration = error: Cannot infer Flow type from CLR type FlowLang.Ast.Statements.ProcDeclaration
+  .Implementation = ()
+  .IsInternal = false
+  .Name = __lambda_<id>
+  .Signature = error: Cannot infer Flow type from CLR type FlowLang.TypeSystem.FunctionSignature
+lazy ((add 1 1)) : Lazy<Void>
+  .IsEvaluated = false
+(getSections song)@0 : String
+  .Length = 5
+song : Song
+  .SectionCount = 2

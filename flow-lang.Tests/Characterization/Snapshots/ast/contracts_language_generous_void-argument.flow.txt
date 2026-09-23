@@ -1,0 +1,45 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "length"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 3 } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "before" }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "lenght" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "add"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "continues" }]
+        Name: "print"
+        NamedArgs: null } }] }

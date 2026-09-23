@@ -1,0 +1,2 @@
+
+! unknown pragma 'strcit' at line 6. Did you mean 'strict'? Known pragmas: beat-true-to-sig, equalTemperament, hAsB, justIntonation, matchExhaustive, pythagorean, scaleLint, strict.

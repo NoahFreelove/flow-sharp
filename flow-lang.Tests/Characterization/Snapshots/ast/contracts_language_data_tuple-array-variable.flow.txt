@@ -1,0 +1,102 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "pairs"
+      Type: type Tuple<<String, Int>>[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          TupleLiteralExpression {
+            Elements: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "a" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }] },
+          TupleLiteralExpression {
+            Elements: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "b" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 2 }] }]
+        Name: "list"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "anything"
+      Type: type Void[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          TupleLiteralExpression {
+            Elements: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 2 }] },
+          TupleLiteralExpression {
+            Elements: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 3 },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 4 }] }]
+        Name: "list"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "triple"
+      Type: type Tuple<<*>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "pairs" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "anything" }]
+                Name: "len"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "triple" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

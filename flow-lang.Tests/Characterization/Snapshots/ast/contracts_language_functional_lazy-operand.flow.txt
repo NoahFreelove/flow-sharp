@@ -1,0 +1,125 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: true },
+                  LazyExpression {
+                    InnerExpression: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: false } }]
+                Name: "and"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "then (wrong)" } },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "else" } }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: false },
+                  LazyExpression {
+                    InnerExpression: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: false } }]
+                Name: "or"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "then (wrong)" } },
+              LazyExpression {
+                InnerExpression: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "else" } }]
+            Name: "if"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: true },
+                  LazyExpression {
+                    InnerExpression: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: false } }]
+                Name: "and"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: false },
+                  LazyExpression {
+                    InnerExpression: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: true } }]
+                Name: "or"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: false },
+                  LazyExpression {
+                    InnerExpression: FunctionCallExpression {
+                      Arguments: [
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: "never" }]
+                      Name: "print"
+                      NamedArgs: null } }]
+                Name: "and"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

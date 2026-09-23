@@ -1,0 +1,75 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "w" },
+              VariableExpression {
+                Name: "h" }]
+            Name: "mul"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "area"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "w"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "h"
+          Type: type Int }] },
+    VariableDeclaration {
+      Name: "room"
+      Type: type Tuple<<Int, Int>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 4 }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleUnpackFlowExpression {
+                Left: VariableExpression {
+                  Name: "room" }
+                Right: VariableExpression {
+                  Name: "area" } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleUnpackFlowExpression {
+                Left: TupleLiteralExpression {
+                  Elements: [
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 5 },
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 6 }] }
+                Right: VariableExpression {
+                  Name: "area" } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

@@ -1,0 +1,226 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "w" },
+              VariableExpression {
+                Name: "h" }]
+            Name: "mul"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "area"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "w"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "h"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: InterpolatedStringExpression {
+            Parts: [
+              VariableExpression {
+                Name: "name" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " is " },
+              VariableExpression {
+                Name: "w" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "x" },
+              VariableExpression {
+                Name: "h" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " (" },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "w" },
+                  VariableExpression {
+                    Name: "h" }]
+                Name: "area"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " square units)" }] } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "describe"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "name"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "w"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "h"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: TupleLiteralExpression {
+            Elements: [
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayIndexExpression {
+                    Array: VariableExpression {
+                      Name: "size" }
+                    Index: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 0 } },
+                  VariableExpression {
+                    Name: "factor" }]
+                Name: "mul"
+                NamedArgs: null },
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayIndexExpression {
+                    Array: VariableExpression {
+                      Name: "size" }
+                    Index: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 1 } },
+                  VariableExpression {
+                    Name: "factor" }]
+                Name: "mul"
+                NamedArgs: null }] } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "scale"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "size"
+          Type: type Tuple<<Int, Int>> },
+        Parameter {
+          IsVarArgs: false
+          Name: "factor"
+          Type: type Int }] },
+    VariableDeclaration {
+      Name: "room"
+      Type: type Tuple<<Int, Int>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 4 }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleUnpackFlowExpression {
+                Left: VariableExpression {
+                  Name: "room" }
+                Right: VariableExpression {
+                  Name: "area" } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "bigger"
+      Type: type Tuple<<Int, Int>>
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "room" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }]
+        Name: "scale"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleUnpackFlowExpression {
+                Left: VariableExpression {
+                  Name: "bigger" }
+                Right: VariableExpression {
+                  Name: "area" } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    TupleDestructureStatement {
+      Patterns: [
+        TupleDestructurePattern {
+          Name: "w"
+          Type: type Int },
+        TupleDestructurePattern {
+          Name: "h"
+          Type: type Int }]
+      Value: VariableExpression {
+        Name: "bigger" } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "hall" },
+              VariableExpression {
+                Name: "w" },
+              VariableExpression {
+                Name: "h" }]
+            Name: "describe"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "garden"
+      Type: type Tuple<<String, Int, Int>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "garden" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 10 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "garden" },
+              VariableExpression {
+                Name: "describe" }]
+            Name: "unpack"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

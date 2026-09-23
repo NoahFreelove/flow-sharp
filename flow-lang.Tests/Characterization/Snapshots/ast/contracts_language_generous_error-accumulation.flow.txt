@@ -1,0 +1,44 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "xs"
+      Type: type Int[]
+      Value: ArrayLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }] } },
+    VariableDeclaration {
+      Name: "bad"
+      Type: type Int
+      Value: ArrayIndexExpression {
+        Array: VariableExpression {
+          Name: "xs" }
+        Index: LiteralExpression {
+          IsMusicLiteral: false
+          Value: 5 } } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 }]
+        Name: "nonExistent"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "still running" }]
+        Name: "print"
+        NamedArgs: null } }] }

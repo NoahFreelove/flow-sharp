@@ -1,0 +1,123 @@
+3 : Int
+  -> Int: Int 3
+  -> Long: Long 3
+  -> Float: Float 3
+  -> Double: Double 3
+  -> Number: Number 3
+  -> NoteValue: NoteValue 3
+3000000000 : Long
+  -> Long: Long 3000000000
+  -> Float: Float 3000000000
+  -> Double: Double 3000000000
+  -> Number: Number 3000000000
+99999999999999999999 : Number
+  -> Number: Number 99999999999999999999
+1.5 : Double
+  -> Double: Double 1.5
+  -> Number: Number 1
+(float 1.5) : Float
+  -> Float: Float 1.5
+  -> Double: Double 1.5
+  -> Number: Number 1
+"text" : String
+  -> String: String text
+true : Bool
+  -> Bool: Bool true
+#tag : Symbol
+  -> Symbol: Symbol #tag
+C4 : Note
+  -> Note: Note C4
+F4+50c : Cent
+  -> Float: Float 50
+  -> Double: Double 50
+  -> Cent: Cent +50c
+Cmaj7 : Chord
+  -> Chord: Chord Cmaj7 [C4 E4 G4 B4]
+| C4 D4 E4 F4 | : Sequence
+  -> Sequence: Sequence Sequence[1 bars, 4 beats total]
++2st : Semitone
+  -> Int: Int 2
+  -> Semitone: Semitone +2st
++50c : Cent
+  -> Float: Float 50
+  -> Double: Double 50
+  -> Cent: Cent +50c
+100ms : Millisecond
+  -> Float: Float 100
+  -> Double: Double 100
+  -> Millisecond: Millisecond 100ms
+  -> Second: Second 0.1s
+2.5s : Second
+  -> Float: Float 2.5
+  -> Double: Double 2.5
+  -> Millisecond: Millisecond 2500ms
+  -> Second: Second 2.5s
+-6dB : Decibel
+  -> Float: Float -6
+  -> Double: Double -6
+  -> Decibel: Decibel -6dB
+440Hz : Hertz
+  -> Float: Float 440
+  -> Double: Double 440
+  -> Hertz: Hertz 440Hz
+1b : Beat
+  -> Float: Float 1
+  -> Double: Double 1
+  -> Beat: Beat 1
+q : NoteValue
+  -> Int: Int 2
+  -> NoteValue: NoteValue 2
+[1, 2, 3] : Int[]
+  -> Int[]: Int[] [1, 2, 3]
+  -> Void[]: Int[] [1, 2, 3]
+(list "a" "b") : String[]
+  -> String[]: String[] ["a", "b"]
+  -> Void[]: String[] ["a", "b"]
+(list) : Void[]
+  -> Int[]: Int[] []
+  -> String[]: String[] []
+  -> Void[]: Void[] []
+  -> Note[]: Note[] []
+<<1, "a">> : Tuple<<Int, String>>
+(dict "a" 1) : Dict<String, Int>
+  -> Dict<String,Int>: Dict<String, Int> {"a": 1}
+(createSineTone 440Hz 0.01 0.5) : Buffer
+  -> Buffer: Buffer FlowLang.StandardLibrary.Audio.AudioBuffer
+(Nothing) : Void
+  -> Int: throws InvalidCastException
+  -> Long: throws InvalidCastException
+  -> Float: throws InvalidCastException
+  -> Double: throws InvalidCastException
+  -> Number: throws InvalidCastException
+  -> String: throws InvalidCastException
+  -> Bool: throws InvalidCastException
+  -> Symbol: throws InvalidCastException
+  -> Void: Void ()
+  -> Function: throws InvalidCastException
+  -> Lazy<Void>: throws InvalidCastException
+  -> Int[]: throws InvalidCastException
+  -> String[]: throws InvalidCastException
+  -> Void[]: throws InvalidCastException
+  -> Note[]: throws InvalidCastException
+  -> Tuple<<Int,Int>>: throws InvalidCastException
+  -> Dict<String,Int>: throws InvalidCastException
+  -> Buffer: throws InvalidCastException
+  -> Note: throws InvalidCastException
+  -> Chord: throws InvalidCastException
+  -> Sequence: throws InvalidCastException
+  -> Bar: throws InvalidCastException
+  -> Section: throws InvalidCastException
+  -> Song: throws InvalidCastException
+  -> Semitone: throws InvalidCastException
+  -> Cent: throws InvalidCastException
+  -> Millisecond: throws InvalidCastException
+  -> Second: throws InvalidCastException
+  -> Decibel: throws InvalidCastException
+  -> Hertz: throws InvalidCastException
+  -> Beat: throws InvalidCastException
+  -> NoteValue: throws InvalidCastException
+  -> TimeSignature: throws InvalidCastException
+fn Int n => (mul n 2) : Function
+  -> Function: Function FlowLang.Runtime.FunctionOverload
+lazy ((add 1 1)) : Lazy<Void>
+  -> Lazy<Void>: Lazy<Void> <lazy: unevaluated>

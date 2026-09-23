@@ -1,0 +1,86 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "greeting" },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: ", " },
+                  VariableExpression {
+                    Name: "name" }]
+                Name: "concat"
+                NamedArgs: null }]
+            Name: "concat"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "greet"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "name"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "greeting"
+          Type: type String }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: []
+            Name: "greet"
+            NamedArgs: { "greeting": LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Hi" } "name": LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Ada" } } }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Ada" }]
+            Name: "greet"
+            NamedArgs: { "greeting": LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Yo" } } }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Ada" }]
+            Name: "greet"
+            NamedArgs: { "nope": LiteralExpression {
+                IsMusicLiteral: false
+                Value: "x" } } }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "continues" }]
+        Name: "print"
+        NamedArgs: null } }] }

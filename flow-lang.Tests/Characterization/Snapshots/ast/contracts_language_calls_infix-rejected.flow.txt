@@ -1,0 +1,20 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "not reached" }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "x"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 1 } }] }
+! Unexpected token '+' at contracts/language/calls/infix-rejected.flow:9:11 — Phase 26 removed infix arithmetic; use prefix builtins (add)/(sub)/(mul)/(div).

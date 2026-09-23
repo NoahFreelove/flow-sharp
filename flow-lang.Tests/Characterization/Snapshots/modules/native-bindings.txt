@@ -1,0 +1,10 @@
+# registered native signatures: 643
+# reachable through an `internal proc` surface: 637
+# registered without a surface (unreachable from Flow):
+  addNoteToBar(Bar, MusicalNote)
+  createSineTone(Double, Double, Double)
+  createSineTone(Double, Hertz, Double)
+  createSineTone(Hertz, Double, Double)
+  createSineTone(Second, Double, Double)
+  createSineTone(Second, Hertz, Double)
+# surfaces bound to a signature not registered verbatim (wildcard binding):

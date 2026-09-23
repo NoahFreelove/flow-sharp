@@ -1,0 +1,109 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "a"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 3 } },
+    VariableDeclaration {
+      Name: "b"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 4 } },
+    VariableDeclaration {
+      Name: "d"
+      Type: type Double
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 2.5 } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "sum " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "a" },
+                  VariableExpression {
+                    Name: "b" }]
+                Name: "add"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " of " },
+              VariableExpression {
+                Name: "a" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " and " },
+              VariableExpression {
+                Name: "b" }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "double " },
+              VariableExpression {
+                Name: "d" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " bool " },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: true },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " symbol " },
+              SymbolLiteralExpression {
+                Name: "tag" }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "count " },
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 2 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 3 }] }]
+                Name: "len"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "literal {braces}" }] }]
+        Name: "print"
+        NamedArgs: null } }] }

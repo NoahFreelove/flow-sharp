@@ -1,0 +1,64 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "greeting" },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: ", " },
+                  VariableExpression {
+                    Name: "name" }]
+                Name: "concat"
+                NamedArgs: null }]
+            Name: "concat"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "greet"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "name"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "greeting"
+          Type: type String }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Hi" }]
+            Name: "greet"
+            NamedArgs: { "name": LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Ada" } } }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: []
+            Name: "greet"
+            NamedArgs: { "name": LiteralExpression {
+                IsMusicLiteral: false
+                Value: "Ada" } } }]
+        Name: "print"
+        NamedArgs: null } }] }
+! positional argument after named argument is not allowed (in call to 'greet')
+! duplicate named argument 'name' in call to 'greet'

@@ -1,0 +1,67 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "nums"
+      Type: type Int[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }]
+        Name: "list"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "names"
+      Type: type String[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "a" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "b" }]
+        Name: "list"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "same"
+      Type: type Int[]
+      Value: VariableExpression {
+        Name: "nums" } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "nums" },
+                  VariableExpression {
+                    Name: "same" }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "names" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

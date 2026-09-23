@@ -1,0 +1,98 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "n"
+      Type: type Note
+      Value: LiteralExpression {
+        IsMusicLiteral: true
+        Value: "C4" } },
+    VariableDeclaration {
+      Name: "third"
+      Type: type Double
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }]
+        Name: "div"
+        NamedArgs: null } },
+    ProcDeclaration {
+      Body: [
+        VariableDeclaration {
+          Name: "y"
+          Type: type Int
+          Value: VariableExpression {
+            Name: "x" } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "none"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Int }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              VariableExpression {
+                Name: "n" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "n" }]
+                Name: "str"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              VariableExpression {
+                Name: "third" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "third" }]
+                Name: "str"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "third" }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "none"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } }] }

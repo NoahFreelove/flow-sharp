@@ -1,0 +1,147 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 }]
+                Name: "sequals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 2 }] },
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 2 }] }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  TupleLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "a" }] },
+                  TupleLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "a" }] }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  SymbolLiteralExpression {
+                    Name: "foo" },
+                  SymbolLiteralExpression {
+                    Name: "foo" }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  SymbolLiteralExpression {
+                    Name: "foo" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "foo" }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              SymbolLiteralExpression {
+                Name: "foo" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

@@ -1,0 +1,134 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ImportStatement {
+      FilePath: "lib/stats.flow" },
+    ImportStatement {
+      FilePath: "lib/text.flow" },
+    VariableDeclaration {
+      Name: "latencies"
+      Type: type Int[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 120 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 95 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 143 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 88 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 101 }]
+        Name: "list"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "count" },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "latencies" }]
+                    Name: "len"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }]
+            Name: "row"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "sum" },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "latencies" }]
+                    Name: "sum"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }]
+            Name: "row"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "mean" },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "latencies" }]
+                    Name: "stats.mean"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }]
+            Name: "row"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "spread" },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "latencies" }]
+                    Name: "stats.spread"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }]
+            Name: "row"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "done" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "yes" }]
+            Name: "text.row"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

@@ -1,0 +1,126 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "x" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }]
+            Name: "add"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: []
+            Name: "Nothing"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "silent"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: []
+            Name: "Nothing"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "empty"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "x" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }]
+            Name: "add"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: []
+            Name: "Nothing"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "x" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 2 }]
+            Name: "add"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "later"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Int }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "silent=[" },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "silent"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "] empty=[" },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "empty"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "] later=[" },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "later"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "]" }] }]
+        Name: "print"
+        NamedArgs: null } }] }

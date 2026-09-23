@@ -1,0 +1,43 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "s"
+      Type: type String
+      Value: MatchExpression {
+        Arms: [
+          MatchArm {
+            Body: LiteralExpression {
+              IsMusicLiteral: false
+              Value: "one" }
+            Pattern: LiteralPattern {
+              Value: 1 } }]
+        CapturedPragmas: pragmas[]
+        Scrutinee: LiteralExpression {
+          IsMusicLiteral: false
+          Value: 5 } } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "result=[" },
+              VariableExpression {
+                Name: "s" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "]" }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "continues" }]
+        Name: "print"
+        NamedArgs: null } }] }

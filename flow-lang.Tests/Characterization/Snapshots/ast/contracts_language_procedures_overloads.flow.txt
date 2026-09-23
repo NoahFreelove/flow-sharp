@@ -1,0 +1,127 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: LiteralExpression {
+            IsMusicLiteral: false
+            Value: "int" } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "describe"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: LiteralExpression {
+            IsMusicLiteral: false
+            Value: "string" } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "describe"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type String }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: LiteralExpression {
+            IsMusicLiteral: false
+            Value: "double" } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "describe"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Double }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "x" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 2 }]
+            Name: "div"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "half"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "x"
+          Type: type Double }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }]
+            Name: "describe"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "s" }]
+            Name: "describe"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1.5 }]
+            Name: "describe"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 3 }]
+                Name: "half"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

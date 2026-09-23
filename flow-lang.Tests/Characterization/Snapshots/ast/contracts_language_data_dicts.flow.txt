@@ -1,0 +1,227 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "d"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "b" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "a" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "c" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }]
+        Name: "dict"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "d2"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "d" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "a" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 9 }]
+        Name: "set"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "d" }]
+                Name: "keys"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "d" }]
+                Name: "values"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "d2" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "a" }]
+                Name: "get"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "d" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "a" }]
+                Name: "get"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "d" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "zz" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 0 }]
+                Name: "getOr"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "m"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "d" },
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "z" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 0 },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "b" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 20 }]
+            Name: "dict"
+            NamedArgs: null }]
+        Name: "merge"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "m" }]
+                Name: "keys"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "m" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "b" }]
+                Name: "get"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "d" },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "b" }]
+                    Name: "remove"
+                    NamedArgs: null }]
+                Name: "size"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "d" }]
+                Name: "size"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

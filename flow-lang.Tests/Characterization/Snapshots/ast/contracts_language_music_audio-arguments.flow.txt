@@ -1,0 +1,120 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ImportStatement {
+      FilePath: "@audio" },
+    VariableDeclaration {
+      Name: "src"
+      Type: type Buffer
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: true
+            Value: "440Hz" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 0.1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 0.5 }]
+        Name: "createSineTone"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      FunctionCallExpression {
+                        Arguments: [
+                          VariableExpression {
+                            Name: "src" },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 250 },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 0.5 },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 0.4 }]
+                        Name: "delay"
+                        NamedArgs: null }]
+                    Name: "getFrames"
+                    NamedArgs: null },
+                  FunctionCallExpression {
+                    Arguments: [
+                      FunctionCallExpression {
+                        Arguments: [
+                          VariableExpression {
+                            Name: "src" },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 250 },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 0.5 },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 0.4 }]
+                        Name: "delay"
+                        NamedArgs: null }]
+                    Name: "getFrames"
+                    NamedArgs: null }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "empty"
+      Type: type Buffer
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 0 } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "empty" }]
+                Name: "getFrames"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "failed"
+      Type: type Buffer
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 }]
+        Name: "nope"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "failed" }]
+                Name: "getFrames"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

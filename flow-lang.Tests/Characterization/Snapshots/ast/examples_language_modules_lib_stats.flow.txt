@@ -1,0 +1,153 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ModuleDeclarationStatement {
+      Name: "stats" },
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "xs" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 0 },
+              LambdaExpression {
+                Body: [
+                  ExpressionStatement {
+                    Expression: FunctionCallExpression {
+                      Arguments: [
+                        VariableExpression {
+                          Name: "acc" },
+                        VariableExpression {
+                          Name: "x" }]
+                      Name: "add"
+                      NamedArgs: null } }]
+                Parameters: [
+                  LambdaParameter {
+                    Name: "acc"
+                    Type: type Int },
+                  LambdaParameter {
+                    Name: "x"
+                    Type: type Int }] }]
+            Name: "reduce"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "sum"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "xs"
+          Type: type Int[] }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "xs" }]
+                Name: "sum"
+                NamedArgs: null },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "xs" }]
+                Name: "len"
+                NamedArgs: null }]
+            Name: "div"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "mean"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "xs"
+          Type: type Int[] }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "xs" },
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "xs" }]
+                    Name: "head"
+                    NamedArgs: null },
+                  LambdaExpression {
+                    Body: [
+                      ExpressionStatement {
+                        Expression: FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "m" },
+                            VariableExpression {
+                              Name: "x" }]
+                          Name: "max"
+                          NamedArgs: null } }]
+                    Parameters: [
+                      LambdaParameter {
+                        Name: "m"
+                        Type: type Int },
+                      LambdaParameter {
+                        Name: "x"
+                        Type: type Int }] }]
+                Name: "reduce"
+                NamedArgs: null },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "xs" },
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "xs" }]
+                    Name: "head"
+                    NamedArgs: null },
+                  LambdaExpression {
+                    Body: [
+                      ExpressionStatement {
+                        Expression: FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "m" },
+                            VariableExpression {
+                              Name: "x" }]
+                          Name: "min"
+                          NamedArgs: null } }]
+                    Parameters: [
+                      LambdaParameter {
+                        Name: "m"
+                        Type: type Int },
+                      LambdaParameter {
+                        Name: "x"
+                        Type: type Int }] }]
+                Name: "reduce"
+                NamedArgs: null }]
+            Name: "sub"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "spread"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "xs"
+          Type: type Int[] }] }] }

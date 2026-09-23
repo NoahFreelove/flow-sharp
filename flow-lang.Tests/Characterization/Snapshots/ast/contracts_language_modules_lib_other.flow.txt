@@ -1,0 +1,29 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ModuleDeclarationStatement {
+      Name: "other" },
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "s" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "?!" }]
+            Name: "concat"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "shout"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "s"
+          Type: type String }] }] }

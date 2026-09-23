@@ -1,0 +1,90 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 2 }] },
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "a" },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: "b" }] }]
+                Name: "zip"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleLiteralExpression {
+                Elements: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "a" }] }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "a" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "b" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 }]
+                Name: "dict"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              TupleLiteralExpression {
+                Elements: [
+                  SymbolLiteralExpression {
+                    Name: "x" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2.5 }] }] }]
+        Name: "print"
+        NamedArgs: null } }] }

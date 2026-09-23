@@ -1,0 +1,49 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    MusicalContextStatement {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              NoteStreamExpression {
+                Bars: [
+                  NoteStreamBar {
+                    Elements: [
+                      NoteElement {
+                        ArticulationMark: null
+                        CentOffset: null
+                        DurationSuffix: null
+                        IsDotted: false
+                        IsTied: false
+                        NoteName: "C"
+                        TupletRatio: null
+                        Velocity: null },
+                      NoteElement {
+                        ArticulationMark: null
+                        CentOffset: null
+                        DurationSuffix: null
+                        IsDotted: false
+                        IsTied: false
+                        NoteName: "D"
+                        TupletRatio: null
+                        Velocity: null },
+                      NoteElement {
+                        ArticulationMark: null
+                        CentOffset: null
+                        DurationSuffix: null
+                        IsDotted: false
+                        IsTied: false
+                        NoteName: "E4"
+                        TupletRatio: null
+                        Velocity: null }]
+                    IsPickup: false }] }]
+            Name: "inspect"
+            NamedArgs: null } }]
+      ContextType: MusicalContextType.Octave
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 3 }
+      Value2: null }] }

@@ -1,0 +1,15 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "not reached" }]
+        Name: "print"
+        NamedArgs: null } }] }
+! Unexpected token EndProc 'end' at contracts/language/procedures/bare-return.flow:11:1
+! Expected procedure name. Got Eof '' at contracts/language/procedures/bare-return.flow:12:1

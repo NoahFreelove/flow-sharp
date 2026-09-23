@@ -1,0 +1,145 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "xs"
+      Type: type Int[]
+      Value: ArrayLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 10 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 20 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 30 }] } },
+    VariableDeclaration {
+      Name: "ys"
+      Type: type Int[]
+      Value: ArrayLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 2 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }] } },
+    VariableDeclaration {
+      Name: "back"
+      Type: type Int
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 }]
+        Name: "neg"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "xs" }
+                Index: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 0 } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "xs" }
+                Index: FunctionCallExpression {
+                  Arguments: [
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 1 }]
+                  Name: "neg"
+                  NamedArgs: null } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "xs" }
+                Index: VariableExpression {
+                  Name: "back" } }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "ys" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "xs" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 3 }]
+                Name: "slice"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "xs" }]
+                    Name: "tail"
+                    NamedArgs: null },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 40 }]
+                Name: "append"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

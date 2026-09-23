@@ -1,0 +1,117 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ForStatement {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "i" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 }]
+                Name: "equals"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: []
+                  Name: "continue"
+                  NamedArgs: null } },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: []
+                  Name: "Nothing"
+                  NamedArgs: null } }]
+            Name: "if"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "i" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 }]
+                Name: "equals"
+                NamedArgs: null },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: []
+                  Name: "break"
+                  NamedArgs: null } },
+              LazyExpression {
+                InnerExpression: FunctionCallExpression {
+                  Arguments: []
+                  Name: "Nothing"
+                  NamedArgs: null } }]
+            Name: "if"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "i" }]
+                Name: "str"
+                NamedArgs: null }]
+            Name: "print"
+            NamedArgs: null } }]
+      Collection: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 0 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 10 }]
+        Name: "range"
+        NamedArgs: null }
+      ElementType: type Int
+      VariableName: "i" },
+    VariableDeclaration {
+      Name: "k"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 0 } },
+    WhileStatement {
+      Body: [
+        AssignmentStatement {
+          Name: "k"
+          Value: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "k" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }]
+            Name: "add"
+            NamedArgs: null } }]
+      Condition: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "k" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }]
+        Name: "lt"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "k" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

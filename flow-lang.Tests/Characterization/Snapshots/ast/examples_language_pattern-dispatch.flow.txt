@@ -1,0 +1,342 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: MatchExpression {
+            Arms: [
+              MatchArm {
+                Body: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "arg" }]
+                  Name: "add"
+                  NamedArgs: null }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: true
+                  Name: "add"
+                  SubPatterns: [] } },
+              MatchArm {
+                Body: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "arg" }]
+                  Name: "sub"
+                  NamedArgs: null }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: true
+                  Name: "sub"
+                  SubPatterns: [] } },
+              MatchArm {
+                Body: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "arg" }]
+                  Name: "mul"
+                  NamedArgs: null }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: true
+                  Name: "mul"
+                  SubPatterns: [] } },
+              MatchArm {
+                Body: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 0 }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: true
+                  Name: "reset"
+                  SubPatterns: [] } },
+              MatchArm {
+                Body: VariableExpression {
+                  Name: "acc" }
+                Pattern: WildcardPattern { } }]
+            CapturedPragmas: pragmas[]
+            Scrutinee: VariableExpression {
+              Name: "op" } } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "apply"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "op"
+          Type: type Symbol },
+        Parameter {
+          IsVarArgs: false
+          Name: "acc"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "arg"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: MatchExpression {
+            Arms: [
+              MatchArm {
+                Body: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "zero" }
+                Pattern: LiteralPattern {
+                  Value: 0 } },
+              MatchArm {
+                Body: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "negative" }
+                Pattern: GuardPattern {
+                  GuardExpression: FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "x" },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 0 }]
+                    Name: "lt"
+                    NamedArgs: null }
+                  Inner: BindingPattern {
+                    Name: "x"
+                    TypeAnnotation: null } } },
+              MatchArm {
+                Body: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "large" }
+                Pattern: GuardPattern {
+                  GuardExpression: FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "x" },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 100 }]
+                    Name: "gt"
+                    NamedArgs: null }
+                  Inner: BindingPattern {
+                    Name: "x"
+                    TypeAnnotation: null } } },
+              MatchArm {
+                Body: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "small" }
+                Pattern: WildcardPattern { } }]
+            CapturedPragmas: pragmas[]
+            Scrutinee: VariableExpression {
+              Name: "n" } } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "classify"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "n"
+          Type: type Int }] },
+    VariableDeclaration {
+      Name: "program"
+      Type: type Tuple<<Symbol, Int>>[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          TupleLiteralExpression {
+            Elements: [
+              SymbolLiteralExpression {
+                Name: "add" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 5 }] },
+          TupleLiteralExpression {
+            Elements: [
+              SymbolLiteralExpression {
+                Name: "mul" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 30 }] },
+          TupleLiteralExpression {
+            Elements: [
+              SymbolLiteralExpression {
+                Name: "sub" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 200 }] },
+          TupleLiteralExpression {
+            Elements: [
+              SymbolLiteralExpression {
+                Name: "noop" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 }] },
+          TupleLiteralExpression {
+            Elements: [
+              SymbolLiteralExpression {
+                Name: "reset" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 0 }] },
+          TupleLiteralExpression {
+            Elements: [
+              SymbolLiteralExpression {
+                Name: "add" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 7 }] }]
+        Name: "list"
+        NamedArgs: null } },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: MatchExpression {
+            Arms: [
+              MatchArm {
+                Body: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "op" },
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "arg" }]
+                  Name: "apply"
+                  NamedArgs: null }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: false
+                  Name: "Tuple"
+                  SubPatterns: [
+                    BindingPattern {
+                      Name: "op"
+                      TypeAnnotation: null },
+                    BindingPattern {
+                      Name: "arg"
+                      TypeAnnotation: type Int }] } },
+              MatchArm {
+                Body: VariableExpression {
+                  Name: "acc" }
+                Pattern: WildcardPattern { } }]
+            CapturedPragmas: pragmas[]
+            Scrutinee: VariableExpression {
+              Name: "cmd" } } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "step"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "acc"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "cmd"
+          Type: type Tuple<<*>> }] },
+    VariableDeclaration {
+      Name: "result"
+      Type: type Int
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "program" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 0 },
+          LambdaExpression {
+            Body: [
+              VariableDeclaration {
+                Name: "next"
+                Type: type Int
+                Value: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "cmd" }]
+                  Name: "step"
+                  NamedArgs: null } },
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    InterpolatedStringExpression {
+                      Parts: [
+                        ArrayIndexExpression {
+                          Array: VariableExpression {
+                            Name: "cmd" }
+                          Index: LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 0 } },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: " " },
+                        ArrayIndexExpression {
+                          Array: VariableExpression {
+                            Name: "cmd" }
+                          Index: LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 1 } },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: " -> " },
+                        VariableExpression {
+                          Name: "next" },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: " (" },
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "next" }]
+                          Name: "classify"
+                          NamedArgs: null },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: ")" }] }]
+                  Name: "print"
+                  NamedArgs: null } },
+              ExpressionStatement {
+                Expression: VariableExpression {
+                  Name: "next" } }]
+            Parameters: [
+              LambdaParameter {
+                Name: "acc"
+                Type: type Int },
+              LambdaParameter {
+                Name: "cmd"
+                Type: type Void }] }]
+        Name: "reduce"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "final: " },
+              VariableExpression {
+                Name: "result" }] }]
+        Name: "print"
+        NamedArgs: null } }] }

@@ -1,0 +1,125 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "w" },
+              VariableExpression {
+                Name: "h" }]
+            Name: "mul"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "area"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "w"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "h"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "n" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 2 }]
+            Name: "mul"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "twice"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "n"
+          Type: type Int }] },
+    VariableDeclaration {
+      Name: "size"
+      Type: type Tuple<<Int, Int>>
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 4 }] } },
+    VariableDeclaration {
+      Name: "a"
+      Type: type Int
+      Value: TupleUnpackFlowExpression {
+        Left: VariableExpression {
+          Name: "size" }
+        Right: VariableExpression {
+          Name: "area" } } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "a" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "b"
+      Type: type Int
+      Value: TupleUnpackFlowExpression {
+        Left: LiteralExpression {
+          IsMusicLiteral: false
+          Value: 5 }
+        Right: VariableExpression {
+          Name: "twice" } } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "b" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  TupleLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 6 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 7 }] },
+                  VariableExpression {
+                    Name: "area" }]
+                Name: "unpack"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

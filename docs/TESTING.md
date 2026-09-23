@@ -90,6 +90,26 @@ namespace edge in `flow-lang.dll`
 extraction removes edges, regenerate with
 `FLOW_UPDATE_DEPENDENCY_BASELINE=1` and review the shrinking diff.
 
+## Characterization snapshots
+
+`flow-lang.Tests/Characterization/` pins current behavior in the areas the
+language/music extraction touches. Each test compares generated text with a file
+under `Characterization/Snapshots/`:
+
+| Test | Snapshot | Pins |
+| --- | --- | --- |
+| `ParserCharacterizationTests` | `ast/` | Canonical, location-free AST of every tracked `.flow` file (hash manifest, plus full dumps for contracts and examples). Types print by name. |
+| `TypeSystemCharacterizationTests` | `types/` | Type relations (compatible/convertible/equal, specificity) and the overload each builtin call resolves to when each argument varies over 33 representative types, charitable and strict. |
+| `ValueCharacterizationTests` | `values/` | Formatting, equality and hashing, `Value.ConvertTo`, and member access, including the reflection fallback that exposes CLR properties. |
+| `ModuleSurfaceCharacterizationTests` | `modules/` | What a fresh engine and each `use "@x"` make visible, and which native registrations lack a `.flow` surface. |
+| `PublicApiCharacterizationTests` | `api/` | Public C# API of `flow-lang`. Removals fail unless listed in `api/allowed-removals.txt`; additions are free. |
+| `CorpusCharacterizationTests` (long tier) | `corpus/` | For every tracked script under `tests/` and `examples/`: stdout, diagnostics, error count and rendered-buffer hashes. Fields that differed between two recording runs are marked unstable. |
+
+A failure writes the actual text to the test-report directory and shows the first
+differing lines. A changed snapshot is a behavior change: fix the regression, or,
+for a deliberate change, regenerate with `FLOW_UPDATE_SNAPSHOTS=1` and review the diff.
+The AST and corpus snapshots take their file lists from `git ls-files` when regenerated.
+
 ## The Five Test Layers
 
 | Layer | Where | What it covers |

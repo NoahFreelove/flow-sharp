@@ -1,0 +1,77 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "n"
+      Type: type Void
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 3 } },
+    VariableDeclaration {
+      Name: "pair"
+      Type: type Void
+      Value: TupleLiteralExpression {
+        Elements: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "a" }] } },
+    VariableDeclaration {
+      Name: "nothing"
+      Type: type Void
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 0 } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              VariableExpression {
+                Name: "n" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " " },
+              VariableExpression {
+                Name: "pair" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " [" },
+              VariableExpression {
+                Name: "nothing" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "]" }] }]
+        Name: "print"
+        NamedArgs: null } },
+    AssignmentStatement {
+      Name: "n"
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "n" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 }]
+        Name: "add"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "n" }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    AssignmentStatement {
+      Name: "n"
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: "text" } }] }

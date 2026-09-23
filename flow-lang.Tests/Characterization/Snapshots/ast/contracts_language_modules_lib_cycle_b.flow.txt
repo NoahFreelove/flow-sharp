@@ -1,0 +1,13 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "cycle_a.flow" },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "cycle_b body" }]
+        Name: "print"
+        NamedArgs: null } }] }

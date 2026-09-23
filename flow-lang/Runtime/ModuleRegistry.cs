@@ -48,6 +48,10 @@ public sealed class ModuleRegistry
     /// </summary>
     public bool Contains(string moduleName) => _modules.ContainsKey(moduleName);
 
+    /// <summary>Registered module names with the procs each exports (read-only view).</summary>
+    public IReadOnlyDictionary<string, IReadOnlyCollection<string>> Exports =>
+        _modules.ToDictionary(kv => kv.Key, kv => (IReadOnlyCollection<string>)kv.Value.Keys.ToList(), StringComparer.Ordinal);
+
     /// <summary>
     /// Registers (or replaces) the exported procs for <paramref name="moduleName"/>.
     /// Last-write-wins per D-06 — the caller is responsible for the advisory

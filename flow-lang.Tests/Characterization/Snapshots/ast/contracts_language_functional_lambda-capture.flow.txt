@@ -1,0 +1,136 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "x"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 10 } },
+    VariableDeclaration {
+      Name: "addX"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: FunctionCallExpression {
+              Arguments: [
+                VariableExpression {
+                  Name: "n" },
+                VariableExpression {
+                  Name: "x" }]
+              Name: "add"
+              NamedArgs: null } }]
+        Parameters: [
+          LambdaParameter {
+            Name: "n"
+            Type: type Int }] } },
+    AssignmentStatement {
+      Name: "x"
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 999 } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 }]
+                Name: "addX"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "adder"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: LambdaExpression {
+              Body: [
+                ExpressionStatement {
+                  Expression: FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "n" },
+                      VariableExpression {
+                        Name: "k" }]
+                    Name: "add"
+                    NamedArgs: null } }]
+              Parameters: [
+                LambdaParameter {
+                  Name: "n"
+                  Type: type Int }] } }]
+        Parameters: [
+          LambdaParameter {
+            Name: "k"
+            Type: type Int }] } },
+    VariableDeclaration {
+      Name: "add5"
+      Type: type Function
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 5 }]
+        Name: "adder"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "add5"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "typed"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: FunctionCallExpression {
+              Arguments: [
+                VariableExpression {
+                  Name: "n" },
+                LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 3 }]
+              Name: "mul"
+              NamedArgs: null } }]
+        Parameters: [
+          LambdaParameter {
+            Name: "n"
+            Type: type Int }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 4 }]
+                Name: "typed"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

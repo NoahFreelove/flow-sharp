@@ -1,0 +1,292 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "orders"
+      Type: type String[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "tea,coffee,tea,cocoa,coffee,tea" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "," }]
+        Name: "split"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "prices"
+      Type: type Int[]
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 4 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 5 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 4 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 3 }]
+        Name: "list"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "counts"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "orders" },
+          FunctionCallExpression {
+            Arguments: []
+            Name: "dict"
+            NamedArgs: null },
+          LambdaExpression {
+            Body: [
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "item" },
+                    FunctionCallExpression {
+                      Arguments: [
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "acc" },
+                            VariableExpression {
+                              Name: "item" },
+                            LiteralExpression {
+                              IsMusicLiteral: false
+                              Value: 0 }]
+                          Name: "getOr"
+                          NamedArgs: null },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: 1 }]
+                      Name: "add"
+                      NamedArgs: null }]
+                  Name: "set"
+                  NamedArgs: null } }]
+            Parameters: [
+              LambdaParameter {
+                Name: "acc"
+                Type: type Dict<String, Int> },
+              LambdaParameter {
+                Name: "item"
+                Type: type String }] }]
+        Name: "reduce"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "counts" },
+          LambdaExpression {
+            Body: [
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    InterpolatedStringExpression {
+                      Parts: [
+                        VariableExpression {
+                          Name: "item" },
+                        LiteralExpression {
+                          IsMusicLiteral: false
+                          Value: ": " },
+                        VariableExpression {
+                          Name: "n" }] }]
+                  Name: "print"
+                  NamedArgs: null } }]
+            Parameters: [
+              LambdaParameter {
+                Name: "item"
+                Type: type String },
+              LambdaParameter {
+                Name: "n"
+                Type: type Int }] }]
+        Name: "each"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "revenue"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "orders" },
+              VariableExpression {
+                Name: "prices" }]
+            Name: "zip"
+            NamedArgs: null },
+          FunctionCallExpression {
+            Arguments: []
+            Name: "dict"
+            NamedArgs: null },
+          LambdaExpression {
+            Body: [
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    ArrayIndexExpression {
+                      Array: VariableExpression {
+                        Name: "pair" }
+                      Index: LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 0 } },
+                    FunctionCallExpression {
+                      Arguments: [
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "acc" },
+                            ArrayIndexExpression {
+                              Array: VariableExpression {
+                                Name: "pair" }
+                              Index: LiteralExpression {
+                                IsMusicLiteral: false
+                                Value: 0 } },
+                            LiteralExpression {
+                              IsMusicLiteral: false
+                              Value: 0 }]
+                          Name: "getOr"
+                          NamedArgs: null },
+                        ArrayIndexExpression {
+                          Array: VariableExpression {
+                            Name: "pair" }
+                          Index: LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 1 } }]
+                      Name: "add"
+                      NamedArgs: null }]
+                  Name: "set"
+                  NamedArgs: null } }]
+            Parameters: [
+              LambdaParameter {
+                Name: "acc"
+                Type: type Dict<String, Int> },
+              LambdaParameter {
+                Name: "pair"
+                Type: type Void }] }]
+        Name: "reduce"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "revenue items: " },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "revenue" }]
+                    Name: "keys"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "revenue values: " },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "revenue" }]
+                    Name: "values"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "popular"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "counts" },
+          LambdaExpression {
+            Body: [
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "n" },
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 1 }]
+                  Name: "gt"
+                  NamedArgs: null } }]
+            Parameters: [
+              LambdaParameter {
+                Name: "item"
+                Type: type String },
+              LambdaParameter {
+                Name: "n"
+                Type: type Int }] }]
+        Name: "filter"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "popular: " },
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "popular" }]
+                    Name: "keys"
+                    NamedArgs: null }]
+                Name: "str"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "distinct items: " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "counts" }]
+                Name: "size"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } }] }

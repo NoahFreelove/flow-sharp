@@ -1,0 +1,140 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "n" },
+              VariableExpression {
+                Name: "n" }]
+            Name: "mul"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "square"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "n"
+          Type: type Int }] },
+    VariableDeclaration {
+      Name: "inc"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: FunctionCallExpression {
+              Arguments: [
+                VariableExpression {
+                  Name: "n" },
+                LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 1 }]
+              Name: "add"
+              NamedArgs: null } }]
+        Parameters: [
+          LambdaParameter {
+            Name: "n"
+            Type: type Int }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "pipe" }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 5 }]
+                    Name: "square"
+                    NamedArgs: null }]
+                Name: "inc"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "a" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "b" }]
+                Name: "concat"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "c" }]
+            Name: "concat"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "nested"
+      Type: type Int
+      Value: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 3 }]
+            Name: "square"
+            NamedArgs: null }]
+        Name: "inc"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "piped"
+      Type: type Int
+      Value: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 3 }]
+            Name: "square"
+            NamedArgs: null }]
+        Name: "inc"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "nested" },
+                  VariableExpression {
+                    Name: "piped" }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

@@ -1,0 +1,68 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    VariableDeclaration {
+      Name: "dbl"
+      Type: type Function
+      Value: LambdaExpression {
+        Body: [
+          ExpressionStatement {
+            Expression: FunctionCallExpression {
+              Arguments: [
+                VariableExpression {
+                  Name: "n" },
+                LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 2 }]
+              Name: "mul"
+              NamedArgs: null } }]
+        Parameters: [
+          LambdaParameter {
+            Name: "n"
+            Type: type Int }] } },
+    VariableDeclaration {
+      Name: "text"
+      Type: type String
+      Value: FunctionCallExpression {
+        Arguments: [
+          FlowExpression {
+            IntermediateName: "doubled"
+            Left: LiteralExpression {
+              IsMusicLiteral: false
+              Value: 3 }
+            Right: FunctionCallExpression {
+              Arguments: [
+                LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 3 }]
+              Name: "dbl"
+              NamedArgs: null } }]
+        Name: "str"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "text" }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "doubled" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 }]
+                Name: "add"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

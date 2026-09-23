@@ -1,0 +1,171 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: MatchExpression {
+            Arms: [
+              MatchArm {
+                Body: InterpolatedStringExpression {
+                  Parts: [
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: "adding " },
+                    VariableExpression {
+                      Name: "n" }] }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: false
+                  Name: "Tuple"
+                  SubPatterns: [
+                    LiteralPattern {
+                      Value: "add" },
+                    BindingPattern {
+                      Name: "n"
+                      TypeAnnotation: null }] } },
+              MatchArm {
+                Body: InterpolatedStringExpression {
+                  Parts: [
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: "big multiply " },
+                    VariableExpression {
+                      Name: "n" }] }
+                Pattern: GuardPattern {
+                  GuardExpression: FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "n" },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 10 }]
+                    Name: "gt"
+                    NamedArgs: null }
+                  Inner: ConstructorPattern {
+                    IsArticulationSymbol: false
+                    IsChordLiteral: false
+                    IsRomanNumeral: false
+                    IsSymbolLiteral: false
+                    Name: "Tuple"
+                    SubPatterns: [
+                      ConstructorPattern {
+                        IsArticulationSymbol: false
+                        IsChordLiteral: false
+                        IsRomanNumeral: false
+                        IsSymbolLiteral: true
+                        Name: "mul"
+                        SubPatterns: [] },
+                      BindingPattern {
+                        Name: "n"
+                        TypeAnnotation: type Int }] } } },
+              MatchArm {
+                Body: InterpolatedStringExpression {
+                  Parts: [
+                    LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: "unknown " },
+                    VariableExpression {
+                      Name: "op" }] }
+                Pattern: ConstructorPattern {
+                  IsArticulationSymbol: false
+                  IsChordLiteral: false
+                  IsRomanNumeral: false
+                  IsSymbolLiteral: false
+                  Name: "Tuple"
+                  SubPatterns: [
+                    BindingPattern {
+                      Name: "op"
+                      TypeAnnotation: null },
+                    WildcardPattern { }] } },
+              MatchArm {
+                Body: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: "not a pair" }
+                Pattern: WildcardPattern { } }]
+            CapturedPragmas: pragmas[]
+            Scrutinee: VariableExpression {
+              Name: "cmd" } } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "run"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "cmd"
+          Type: type Tuple<<*>> }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleLiteralExpression {
+                Elements: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "add" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 3 }] }]
+            Name: "run"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleLiteralExpression {
+                Elements: [
+                  SymbolLiteralExpression {
+                    Name: "mul" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 30 }] }]
+            Name: "run"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleLiteralExpression {
+                Elements: [
+                  SymbolLiteralExpression {
+                    Name: "mul" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 3 }] }]
+            Name: "run"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              TupleLiteralExpression {
+                Elements: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 1 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 3 }] }]
+            Name: "run"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

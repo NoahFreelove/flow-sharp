@@ -1,0 +1,89 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    SectionDeclaration {
+      Body: [
+        VariableDeclaration {
+          Name: "s"
+          Type: type Sequence
+          Value: NoteStreamExpression {
+            Bars: [
+              NoteStreamBar {
+                Elements: [
+                  NoteElement {
+                    ArticulationMark: null
+                    CentOffset: null
+                    DurationSuffix: null
+                    IsDotted: false
+                    IsTied: false
+                    NoteName: "C4"
+                    TupletRatio: null
+                    Velocity: null }]
+                IsPickup: false }] } }]
+      DefaultValues: [
+        null]
+      Name: "verse"
+      Parameters: [
+        BindingPattern {
+          Name: "root"
+          TypeAnnotation: type Note }] },
+    VariableDeclaration {
+      Name: "song"
+      Type: type Song
+      Value: SongExpression {
+        Elements: [
+          SectionCallElement {
+            Name: "verse"
+            NamedArgs: null
+            PositionalArgs: [
+              LiteralExpression {
+                IsMusicLiteral: true
+                Value: "C4" }]
+            RepeatCount: 1 },
+          SectionCallElement {
+            Name: "verse"
+            NamedArgs: null
+            PositionalArgs: [
+              LiteralExpression {
+                IsMusicLiteral: true
+                Value: "D4" }]
+            RepeatCount: 1 },
+          SectionCallElement {
+            Name: "verse"
+            NamedArgs: null
+            PositionalArgs: [
+              LiteralExpression {
+                IsMusicLiteral: true
+                Value: "E4" }]
+            RepeatCount: 1 }]
+        Sections: [
+          SongSectionReference {
+            Name: "verse"
+            RepeatCount: 1 },
+          SongSectionReference {
+            Name: "verse"
+            RepeatCount: 1 },
+          SongSectionReference {
+            Name: "verse"
+            RepeatCount: 1 }] } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  FunctionCallExpression {
+                    Arguments: [
+                      VariableExpression {
+                        Name: "song" }]
+                    Name: "getSections"
+                    NamedArgs: null }]
+                Name: "len"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

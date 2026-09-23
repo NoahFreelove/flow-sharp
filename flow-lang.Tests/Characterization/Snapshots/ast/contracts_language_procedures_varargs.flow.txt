@@ -1,0 +1,119 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "items" },
+              LambdaExpression {
+                Body: [
+                  ExpressionStatement {
+                    Expression: FunctionCallExpression {
+                      Arguments: [
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "item" }]
+                          Name: "str"
+                          NamedArgs: null }]
+                      Name: "print"
+                      NamedArgs: null } }]
+                Parameters: [
+                  LambdaParameter {
+                    Name: "item"
+                    Type: type Void }] }]
+            Name: "each"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "showAll"
+      Parameters: [
+        Parameter {
+          IsVarArgs: true
+          Name: "items"
+          Type: type Void }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              VariableExpression {
+                Name: "numbers" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 0 },
+              LambdaExpression {
+                Body: [
+                  ExpressionStatement {
+                    Expression: FunctionCallExpression {
+                      Arguments: [
+                        VariableExpression {
+                          Name: "acc" },
+                        VariableExpression {
+                          Name: "n" }]
+                      Name: "add"
+                      NamedArgs: null } }]
+                Parameters: [
+                  LambdaParameter {
+                    Name: "acc"
+                    Type: type Int },
+                  LambdaParameter {
+                    Name: "n"
+                    Type: type Int }] }]
+            Name: "reduce"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "sumAll"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "numbers"
+          Type: type Int[] }] },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 1 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "two" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: true }]
+        Name: "showAll"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 2 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 3 }] }]
+                Name: "sumAll"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

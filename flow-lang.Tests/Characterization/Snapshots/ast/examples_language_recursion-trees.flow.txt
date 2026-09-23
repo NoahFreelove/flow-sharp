@@ -1,0 +1,353 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@std" },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: TupleLiteralExpression {
+            Elements: [
+              VariableExpression {
+                Name: "label" },
+              VariableExpression {
+                Name: "value" },
+              FunctionCallExpression {
+                Arguments: []
+                Name: "list"
+                NamedArgs: null }] } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "leaf"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "label"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "value"
+          Type: type Int }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: TupleLiteralExpression {
+            Elements: [
+              VariableExpression {
+                Name: "label" },
+              VariableExpression {
+                Name: "value" },
+              VariableExpression {
+                Name: "children" }] } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "node"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "label"
+          Type: type String },
+        Parameter {
+          IsVarArgs: false
+          Name: "value"
+          Type: type Int },
+        Parameter {
+          IsVarArgs: false
+          Name: "children"
+          Type: type Void[] }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "tree" }
+                Index: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 1 } },
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayIndexExpression {
+                    Array: VariableExpression {
+                      Name: "tree" }
+                    Index: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 2 } },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 0 },
+                  LambdaExpression {
+                    Body: [
+                      ExpressionStatement {
+                        Expression: FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "acc" },
+                            FunctionCallExpression {
+                              Arguments: [
+                                VariableExpression {
+                                  Name: "child" }]
+                              Name: "total"
+                              NamedArgs: null }]
+                          Name: "add"
+                          NamedArgs: null } }]
+                    Parameters: [
+                      LambdaParameter {
+                        Name: "acc"
+                        Type: type Int },
+                      LambdaParameter {
+                        Name: "child"
+                        Type: type Void }] }]
+                Name: "reduce"
+                NamedArgs: null }]
+            Name: "add"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "total"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "tree"
+          Type: type Void }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 },
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayIndexExpression {
+                    Array: VariableExpression {
+                      Name: "tree" }
+                    Index: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 2 } },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 0 },
+                  LambdaExpression {
+                    Body: [
+                      ExpressionStatement {
+                        Expression: FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "deepest" },
+                            FunctionCallExpression {
+                              Arguments: [
+                                VariableExpression {
+                                  Name: "child" }]
+                              Name: "depth"
+                              NamedArgs: null }]
+                          Name: "max"
+                          NamedArgs: null } }]
+                    Parameters: [
+                      LambdaParameter {
+                        Name: "deepest"
+                        Type: type Int },
+                      LambdaParameter {
+                        Name: "child"
+                        Type: type Void }] }]
+                Name: "reduce"
+                NamedArgs: null }]
+            Name: "add"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "depth"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "tree"
+          Type: type Void }] },
+    ProcDeclaration {
+      Body: [
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              InterpolatedStringExpression {
+                Parts: [
+                  VariableExpression {
+                    Name: "indent" },
+                  ArrayIndexExpression {
+                    Array: VariableExpression {
+                      Name: "tree" }
+                    Index: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 0 } },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: " (" },
+                  ArrayIndexExpression {
+                    Array: VariableExpression {
+                      Name: "tree" }
+                    Index: LiteralExpression {
+                      IsMusicLiteral: false
+                      Value: 1 } },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: ")" }] }]
+            Name: "print"
+            NamedArgs: null } },
+        ExpressionStatement {
+          Expression: FunctionCallExpression {
+            Arguments: [
+              ArrayIndexExpression {
+                Array: VariableExpression {
+                  Name: "tree" }
+                Index: LiteralExpression {
+                  IsMusicLiteral: false
+                  Value: 2 } },
+              LambdaExpression {
+                Body: [
+                  ExpressionStatement {
+                    Expression: FunctionCallExpression {
+                      Arguments: [
+                        VariableExpression {
+                          Name: "child" },
+                        FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "indent" },
+                            LiteralExpression {
+                              IsMusicLiteral: false
+                              Value: "  " }]
+                          Name: "concat"
+                          NamedArgs: null }]
+                      Name: "show"
+                      NamedArgs: null } }]
+                Parameters: [
+                  LambdaParameter {
+                    Name: "child"
+                    Type: type Void }] }]
+            Name: "each"
+            NamedArgs: null } }]
+      DocComment: null
+      IsBeatTrueToSig: false
+      IsInternal: false
+      IsStrict: false
+      Name: "show"
+      Parameters: [
+        Parameter {
+          IsVarArgs: false
+          Name: "tree"
+          Type: type Void },
+        Parameter {
+          IsVarArgs: false
+          Name: "indent"
+          Type: type String }] },
+    VariableDeclaration {
+      Name: "budget"
+      Type: type Tuple<<String, Int, Void[]>>
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "company" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 10 },
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "research" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 5 },
+                  FunctionCallExpression {
+                    Arguments: [
+                      FunctionCallExpression {
+                        Arguments: [
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: "lab" },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 7 }]
+                        Name: "leaf"
+                        NamedArgs: null },
+                      FunctionCallExpression {
+                        Arguments: [
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: "library" },
+                          LiteralExpression {
+                            IsMusicLiteral: false
+                            Value: 2 }]
+                        Name: "leaf"
+                        NamedArgs: null }]
+                    Name: "list"
+                    NamedArgs: null }]
+                Name: "node"
+                NamedArgs: null },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "sales" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 4 }]
+                Name: "leaf"
+                NamedArgs: null }]
+            Name: "list"
+            NamedArgs: null }]
+        Name: "node"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          VariableExpression {
+            Name: "budget" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "" }]
+        Name: "show"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "total: " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "budget" }]
+                Name: "total"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "depth: " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "budget" }]
+                Name: "depth"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } }] }
