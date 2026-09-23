@@ -5,6 +5,7 @@ using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Music;
 
 namespace FlowLang.StandardLibrary.Midi;
 

@@ -1,7 +1,7 @@
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
 
-namespace FlowLang.Runtime;
+namespace FlowLang.Music;
 
 /// <summary>
 /// Holds the current musical context state for a scope.

@@ -8,6 +8,7 @@ using FlowLang.Runtime;
 using FlowLang.Tests.Fixtures;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Unit.Sweep0614;
 

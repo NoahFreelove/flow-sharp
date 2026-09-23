@@ -5,6 +5,7 @@ using FlowLang.TypeSystem;  // for Fraction (Phase 18)
 using FlowLang.TypeSystem.SpecialTypes;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
 using FlowLang.Syntax;
+using FlowLang.Music;
 
 namespace FlowLang.Runtime;
 

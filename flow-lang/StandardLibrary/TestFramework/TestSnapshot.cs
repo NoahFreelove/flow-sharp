@@ -1,10 +1,6 @@
 using System.Collections.Generic;
 using FlowLang.Core;
 using FlowLang.Runtime;
-#if !FLOW_WEB
-// Phase 47 D-47-08: SFZ namespace stripped from Web build (Plan 47-01 strip-list).
-using FlowLang.StandardLibrary.Audio.Sfz;
-#endif
 
 namespace FlowLang.StandardLibrary.TestFramework;
 
@@ -32,17 +28,10 @@ namespace FlowLang.StandardLibrary.TestFramework;
 /// </summary>
 public sealed record TestSnapshot
 {
-    // 1-3. Global frame variables, registered TestRegistry size (not state —
-    //      a marker so we can confirm we restore to the same registry
-    //      cardinality), and SectionRegistry contents.
+    // 1-2. Global frame variables, and the registered TestRegistry size (not state —
+    //      a marker so we can confirm we restore to the same registry cardinality).
     public required IReadOnlyDictionary<string, Value> GlobalVariables { get; init; }
     public required int TestRegistryCount { get; init; }
-    // Phase 36 Plan 36-10 (D-36-18) — value type is now List<SectionData> so
-    // overload-bearing same-name registrations are captured + restored
-    // verbatim. Pre-Phase-36 snapshot consumers only need the single
-    // last-registered entry per name (see ExecutionContext.SectionRegistryFlat)
-    // but the snapshot preserves the full overload list for fidelity.
-    public required IReadOnlyDictionary<string, List<FlowLang.TypeSystem.SpecialTypes.SectionData>> SectionRegistry { get; init; }
 
     // 4. Phase 26.1 — Symbol intern table (per-context).
     public required IReadOnlyDictionary<string, Value> SymbolInternTable { get; init; }
@@ -52,23 +41,9 @@ public sealed record TestSnapshot
     public required System.Random? FixedGen { get; init; }
     public required System.Random? Gen { get; init; }
 
-    // 6. Musical-context stack — snapshot the global frame's MusicalContext
-    //    instance (cloned via MusicalContext.Clone if non-null).
-    public required MusicalContext? GlobalFrameMusicalContext { get; init; }
-
-    // 7-10. Phase 33 SFZ statics — SfzEnabled + SfzInstruments +
-    //       SfzPatchRegistry + SfzDiagnostics + ResolvedSfzRoot.
-    // Phase 47 D-47-08: SfzData type is stripped from Web build, so the
-    //   SfzPatchRegistry shape uses #if to avoid type-resolution errors.
-    //   The other SFZ-state fields use builtin types (bool / Value / string)
-    //   and survive across both targets.
-    public required bool SfzEnabled { get; init; }
-    public required IReadOnlyDictionary<Value, string> SfzInstruments { get; init; }
-#if !FLOW_WEB
-    public required IReadOnlyDictionary<string, SfzData> SfzPatchRegistry { get; init; }
-#endif
-    public required IReadOnlySet<string> SfzDiagnostics { get; init; }
-    public required string? ResolvedSfzRoot { get; init; }
+    // 6. Domain session extensions (ExecutionContext.GetExtension), keyed by
+    //    extension type, each holding the state its Snapshot returned.
+    public required IReadOnlyDictionary<System.Type, object?> ExtensionStates { get; init; }
 
     // 10b. Phase 39 — notation-io module activation gate. Defaulted-false so
     //      pre-Phase-39 TestSnapshot constructions remain backward-compatible
@@ -107,12 +82,4 @@ public sealed record TestSnapshot
     {
         get; init;
     }
-
-    // 13. Phase 36 Plan 36-11 — StyleRegistry snapshot. Defaulted-null so
-    //     pre-Plan-36-11 TestSnapshot constructions stay backward-compatible.
-    //     The dict is shallow-copied (Value keys are interned, DictData values
-    //     are immutable per Phase 26.1 DICT-02). The override-advisory dedup
-    //     set is captured alongside so the WarnOnce sentinels reset cleanly.
-    public IReadOnlyDictionary<Value, DictData>? StyleRegistryState { get; init; }
-    public IReadOnlySet<string>? StyleOverrideAdvisoriesEmitted { get; init; }
 }

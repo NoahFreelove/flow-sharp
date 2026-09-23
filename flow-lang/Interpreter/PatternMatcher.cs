@@ -6,6 +6,7 @@ using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using FlowLang.Syntax;
+using FlowLang.Music;
 
 namespace FlowLang.Interpreter;
 

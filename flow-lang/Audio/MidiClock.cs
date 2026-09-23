@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Midi;
+using FlowLang.Music;
 
 namespace FlowLang.Audio;
 

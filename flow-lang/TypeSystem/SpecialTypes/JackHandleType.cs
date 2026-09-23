@@ -5,7 +5,7 @@ namespace FlowLang.TypeSystem.SpecialTypes;
 /// Phase 40 JACK-01 (D-40-03 / D-40-05 best-effort) — first-class value type for a
 /// JACK transport-sync handle. Returned by <c>(jackSync)</c> (opt-in
 /// <c>use "@jack"</c>); the handle records whether a JACK server was reachable and
-/// the transport snapshot that drove <see cref="FlowLang.Runtime.MusicalContext.Tempo"/>
+/// the transport snapshot that drove <see cref="FlowLang.Music.MusicalContext.Tempo"/>
 /// at sync time. Wraps a <see cref="StandardLibrary.Midi.JackHandleData"/> record.
 ///
 /// <para>Specificity 154 — slotted above <see cref="ClockHandleType"/> (153),

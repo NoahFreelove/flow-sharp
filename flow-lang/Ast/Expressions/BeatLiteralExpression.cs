@@ -8,7 +8,7 @@ namespace FlowLang.Ast.Expressions;
 /// <c>final = pragma_on ? raw × (4.0 / denom) : raw</c> applies at eval time
 /// in <see cref="FlowLang.Interpreter.ExpressionEvaluator.EvaluateBeatLiteral"/>,
 /// reading <see cref="FlowLang.Runtime.ExecutionContext.BeatTrueToSig"/> +
-/// <see cref="FlowLang.Runtime.MusicalContext.TimeSignature"/>.
+/// <see cref="FlowLang.Music.MusicalContext.TimeSignature"/>.
 /// </summary>
 public record BeatLiteralExpression(
     SourceLocation Location,

@@ -184,7 +184,8 @@ flow-lang/
   Ast/{Expressions,Statements}/   # immutable record nodes
   Interpreter/          # ExpressionEvaluator, Interpreter
   Runtime/              # ExecutionContext, StackFrame, Value, ModuleLoader,
-                        #   MusicalContext, NoteStreamCompiler, Thunk, PrngRegistry
+                        #   NoteStreamCompiler, Thunk, PrngRegistry
+  Music/                # MusicalContext, MusicSession (music state on ExecutionContext)
   TypeSystem/{PrimitiveTypes,SpecialTypes}/ + OverloadResolver.cs + ArrayType.cs
   StandardLibrary/
     BuiltInFunctions.cs           # main registration site
@@ -220,7 +221,7 @@ flow-lang/
 | Runtime | `Runtime/ExecutionContext.cs` | Call stack, scoping, musical context stack |
 | Scope | `Runtime/StackFrame.cs` | Variables/functions with parent chain |
 | Values | `Runtime/Value.cs` | CLR wrapper + Flow type info |
-| Musical ctx | `Runtime/MusicalContext.cs` | Tempo / timesig / key / swing (push/pop) |
+| Musical ctx | `Music/MusicalContext.cs` + `Music/MusicSession.cs` | Tempo / timesig / key / swing (per-frame scope state); per-context music state (sections, styles, SFZ) as an `ExecutionContext` extension |
 | Note streams | `Runtime/NoteStreamCompiler.cs` | `\| ... \|` → Sequence using active context |
 | Overloads | `TypeSystem/OverloadResolver.cs` | Specificity-scored dispatch |
 | Built-ins | `StandardLibrary/InternalFunctionRegistry.cs` + `BuiltInFunctions.cs` | Registration |

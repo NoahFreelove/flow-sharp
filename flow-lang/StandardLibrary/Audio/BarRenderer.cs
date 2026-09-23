@@ -157,7 +157,7 @@ public static class BarRenderer
             // so positions remain correct.
             if (sustainPedalActive)
             {
-                double sustainTailBeats = (FlowLang.Runtime.MusicalContext.SustainTailSeconds * bpm) / 60.0;
+                double sustainTailBeats = (FlowLang.Music.MusicalContext.SustainTailSeconds * bpm) / 60.0;
                 durationBeats += sustainTailBeats;
             }
 

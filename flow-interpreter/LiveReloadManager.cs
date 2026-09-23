@@ -11,6 +11,7 @@ using FlowLang.Diagnostics;
 using FlowLang.Hosting;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio;
+using FlowLang.Music;
 
 namespace FlowInterpreter;
 

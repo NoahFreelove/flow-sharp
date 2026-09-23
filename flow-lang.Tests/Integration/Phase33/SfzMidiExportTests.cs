@@ -8,6 +8,7 @@ using FlowLang.Tests.Fixtures;
 using FlowLang.TypeSystem.SpecialTypes;
 using Melanchall.DryWetMidi.Core;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase33;
 

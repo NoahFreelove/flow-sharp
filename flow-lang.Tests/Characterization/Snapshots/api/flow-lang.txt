@@ -1885,6 +1885,140 @@ FlowLang.Lexing.TokenType :: static field TokenType VoicePool
 FlowLang.Lexing.TokenType :: static field TokenType Void
 FlowLang.Lexing.TokenType :: static field TokenType When
 FlowLang.Lexing.TokenType :: static field TokenType While
+FlowLang.Music.MusicContextExtensions :: static Boolean get_SfzEnabled(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Boolean get_SuppressStyleOverrideAdvisory(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Dictionary<String,List<SectionData>> get_SectionRegistry(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Dictionary<String,SectionData> SectionRegistryFlat(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Dictionary<String,SfzData> get_SfzPatchRegistry(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Dictionary<Value,DictData> get_StyleRegistry(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Dictionary<Value,String> get_SfzInstruments(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static HashSet<String> get_SfzDiagnostics(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static HashSet<String> get_StyleOverrideAdvisoriesEmitted(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static MusicSession get_Music(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static MusicalContext GetMusicalContext(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static MusicalContext get_MusicalContext(StackFrame)
+FlowLang.Music.MusicContextExtensions :: static String get_ResolvedSfzRoot(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Void PopTuning(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Void PushTuning(ExecutionContext, RenderTuning)
+FlowLang.Music.MusicContextExtensions :: static Void ResetBlockTuningStack(ExecutionContext)
+FlowLang.Music.MusicContextExtensions :: static Void SetCurrentFrameMusicalContext(ExecutionContext, MusicalContext)
+FlowLang.Music.MusicContextExtensions :: static Void SetFileScopeTuning(ExecutionContext, RenderTuning)
+FlowLang.Music.MusicContextExtensions :: static Void set_MusicalContext(StackFrame, MusicalContext)
+FlowLang.Music.MusicContextExtensions :: static Void set_ResolvedSfzRoot(ExecutionContext, String)
+FlowLang.Music.MusicContextExtensions :: static Void set_SfzEnabled(ExecutionContext, Boolean)
+FlowLang.Music.MusicContextExtensions :: static Void set_SuppressStyleOverrideAdvisory(ExecutionContext, Boolean)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Boolean get_SfzEnabled()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Boolean get_SuppressStyleOverrideAdvisory()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Dictionary<String,List<SectionData>> get_SectionRegistry()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Dictionary<String,SectionData> SectionRegistryFlat()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Dictionary<String,SfzData> get_SfzPatchRegistry()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Dictionary<Value,DictData> get_StyleRegistry()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Dictionary<Value,String> get_SfzInstruments()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: HashSet<String> get_SfzDiagnostics()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: HashSet<String> get_StyleOverrideAdvisoriesEmitted()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: MusicSession get_Music()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: MusicalContext GetMusicalContext()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: String get_ResolvedSfzRoot()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void PopTuning()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void PushTuning(RenderTuning)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void ResetBlockTuningStack()
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void SetCurrentFrameMusicalContext(MusicalContext)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void SetFileScopeTuning(RenderTuning)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void set_ResolvedSfzRoot(String)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void set_SfzEnabled(Boolean)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: Void set_SuppressStyleOverrideAdvisory(Boolean)
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property Boolean SfzEnabled
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property Boolean SuppressStyleOverrideAdvisory
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property Dictionary<String,List<SectionData>> SectionRegistry
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property Dictionary<String,SfzData> SfzPatchRegistry
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property Dictionary<Value,DictData> StyleRegistry
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property Dictionary<Value,String> SfzInstruments
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property HashSet<String> SfzDiagnostics
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property HashSet<String> StyleOverrideAdvisoriesEmitted
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property MusicSession Music
+FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4 :: property String ResolvedSfzRoot
+FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE :: MusicalContext get_MusicalContext()
+FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE :: Void set_MusicalContext(MusicalContext)
+FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE :: property MusicalContext MusicalContext
+FlowLang.Music.MusicSession :: Boolean get_SfzEnabled()
+FlowLang.Music.MusicSession :: Boolean get_SuppressStyleOverrideAdvisory()
+FlowLang.Music.MusicSession :: Dictionary<String,List<SectionData>> get_SectionRegistry()
+FlowLang.Music.MusicSession :: Dictionary<String,SectionData> SectionRegistryFlat()
+FlowLang.Music.MusicSession :: Dictionary<String,SfzData> get_SfzPatchRegistry()
+FlowLang.Music.MusicSession :: Dictionary<Value,DictData> get_StyleRegistry()
+FlowLang.Music.MusicSession :: Dictionary<Value,String> get_SfzInstruments()
+FlowLang.Music.MusicSession :: HashSet<String> get_SfzDiagnostics()
+FlowLang.Music.MusicSession :: HashSet<String> get_StyleOverrideAdvisoriesEmitted()
+FlowLang.Music.MusicSession :: MusicalContext Resolve(ExecutionContext)
+FlowLang.Music.MusicSession :: Object Snapshot(ExecutionContext)
+FlowLang.Music.MusicSession :: String get_ResolvedSfzRoot()
+FlowLang.Music.MusicSession :: Void Restore(ExecutionContext, Object)
+FlowLang.Music.MusicSession :: Void set_ResolvedSfzRoot(String)
+FlowLang.Music.MusicSession :: Void set_SfzEnabled(Boolean)
+FlowLang.Music.MusicSession :: Void set_SuppressStyleOverrideAdvisory(Boolean)
+FlowLang.Music.MusicSession :: ctor()
+FlowLang.Music.MusicSession :: property Boolean SfzEnabled
+FlowLang.Music.MusicSession :: property Boolean SuppressStyleOverrideAdvisory
+FlowLang.Music.MusicSession :: property Dictionary<String,List<SectionData>> SectionRegistry
+FlowLang.Music.MusicSession :: property Dictionary<String,SfzData> SfzPatchRegistry
+FlowLang.Music.MusicSession :: property Dictionary<Value,DictData> StyleRegistry
+FlowLang.Music.MusicSession :: property Dictionary<Value,String> SfzInstruments
+FlowLang.Music.MusicSession :: property HashSet<String> SfzDiagnostics
+FlowLang.Music.MusicSession :: property HashSet<String> StyleOverrideAdvisoriesEmitted
+FlowLang.Music.MusicSession :: property String ResolvedSfzRoot
+FlowLang.Music.MusicalContext :: Boolean TryGetLiveTempo(Double&)
+FlowLang.Music.MusicalContext :: MusicalContext Clone()
+FlowLang.Music.MusicalContext :: Nullable<Boolean> get_SustainPedal()
+FlowLang.Music.MusicalContext :: Nullable<Double> get_Gain()
+FlowLang.Music.MusicalContext :: Nullable<Double> get_Pan()
+FlowLang.Music.MusicalContext :: Nullable<Double> get_ReverbTime()
+FlowLang.Music.MusicalContext :: Nullable<Double> get_Swing()
+FlowLang.Music.MusicalContext :: Nullable<Double> get_Tempo()
+FlowLang.Music.MusicalContext :: Nullable<Double> get_Velocity()
+FlowLang.Music.MusicalContext :: Nullable<Int32> get_DefaultOctave()
+FlowLang.Music.MusicalContext :: Nullable<Int32> get_VoicePoolSize()
+FlowLang.Music.MusicalContext :: Nullable<TuningSystem> get_Tuning()
+FlowLang.Music.MusicalContext :: RenderTuning get_ActiveTuning()
+FlowLang.Music.MusicalContext :: Stack<RenderTuning> get_TuningStack()
+FlowLang.Music.MusicalContext :: String ToString()
+FlowLang.Music.MusicalContext :: String get_Key()
+FlowLang.Music.MusicalContext :: TimeSignatureData get_TimeSignature()
+FlowLang.Music.MusicalContext :: Void SetLiveTempo(Double)
+FlowLang.Music.MusicalContext :: Void set_DefaultOctave(Nullable<Int32>)
+FlowLang.Music.MusicalContext :: Void set_Gain(Nullable<Double>)
+FlowLang.Music.MusicalContext :: Void set_Key(String)
+FlowLang.Music.MusicalContext :: Void set_Pan(Nullable<Double>)
+FlowLang.Music.MusicalContext :: Void set_ReverbTime(Nullable<Double>)
+FlowLang.Music.MusicalContext :: Void set_SustainPedal(Nullable<Boolean>)
+FlowLang.Music.MusicalContext :: Void set_Swing(Nullable<Double>)
+FlowLang.Music.MusicalContext :: Void set_Tempo(Nullable<Double>)
+FlowLang.Music.MusicalContext :: Void set_TimeSignature(TimeSignatureData)
+FlowLang.Music.MusicalContext :: Void set_Tuning(Nullable<TuningSystem>)
+FlowLang.Music.MusicalContext :: Void set_Velocity(Nullable<Double>)
+FlowLang.Music.MusicalContext :: Void set_VoicePoolSize(Nullable<Int32>)
+FlowLang.Music.MusicalContext :: ctor()
+FlowLang.Music.MusicalContext :: property Nullable<Boolean> SustainPedal
+FlowLang.Music.MusicalContext :: property Nullable<Double> Gain
+FlowLang.Music.MusicalContext :: property Nullable<Double> Pan
+FlowLang.Music.MusicalContext :: property Nullable<Double> ReverbTime
+FlowLang.Music.MusicalContext :: property Nullable<Double> Swing
+FlowLang.Music.MusicalContext :: property Nullable<Double> Tempo
+FlowLang.Music.MusicalContext :: property Nullable<Double> Velocity
+FlowLang.Music.MusicalContext :: property Nullable<Int32> DefaultOctave
+FlowLang.Music.MusicalContext :: property Nullable<Int32> VoicePoolSize
+FlowLang.Music.MusicalContext :: property Nullable<TuningSystem> Tuning
+FlowLang.Music.MusicalContext :: property RenderTuning ActiveTuning
+FlowLang.Music.MusicalContext :: property Stack<RenderTuning> TuningStack
+FlowLang.Music.MusicalContext :: property String Key
+FlowLang.Music.MusicalContext :: property TimeSignatureData TimeSignature
+FlowLang.Music.MusicalContext :: static Boolean IsValidGain(Double)
+FlowLang.Music.MusicalContext :: static Boolean IsValidKey(String)
+FlowLang.Music.MusicalContext :: static Boolean IsValidSwing(Double)
+FlowLang.Music.MusicalContext :: static Boolean IsValidTempo(Double)
+FlowLang.Music.MusicalContext :: static Boolean IsValidTransportTempo(Double)
+FlowLang.Music.MusicalContext :: static field Double MaxTransportTempo
+FlowLang.Music.MusicalContext :: static field Double SustainTailSeconds
+FlowLang.Music.MusicalContext :: static field HashSet<String> ValidKeys
 FlowLang.Parsing.BufType :: Int32 GetSpecificity()
 FlowLang.Parsing.BufType :: String get_Name()
 FlowLang.Parsing.BufType :: property String Name
@@ -1918,31 +2052,23 @@ FlowLang.Runtime.ExecutionContext :: Boolean get_JackEnabled()
 FlowLang.Runtime.ExecutionContext :: Boolean get_MidiEnabled()
 FlowLang.Runtime.ExecutionContext :: Boolean get_NotationIoEnabled()
 FlowLang.Runtime.ExecutionContext :: Boolean get_OscEnabled()
-FlowLang.Runtime.ExecutionContext :: Boolean get_SfzEnabled()
 FlowLang.Runtime.ExecutionContext :: Boolean get_StrictMode()
-FlowLang.Runtime.ExecutionContext :: Boolean get_SuppressStyleOverrideAdvisory()
-FlowLang.Runtime.ExecutionContext :: Dictionary<String,List<SectionData>> get_SectionRegistry()
-FlowLang.Runtime.ExecutionContext :: Dictionary<String,SectionData> SectionRegistryFlat()
-FlowLang.Runtime.ExecutionContext :: Dictionary<String,SfzData> get_SfzPatchRegistry()
 FlowLang.Runtime.ExecutionContext :: Dictionary<String,String> get_ProcOwnership()
 FlowLang.Runtime.ExecutionContext :: Dictionary<String,Value> get_SymbolInternTable()
-FlowLang.Runtime.ExecutionContext :: Dictionary<Value,DictData> get_StyleRegistry()
-FlowLang.Runtime.ExecutionContext :: Dictionary<Value,String> get_SfzInstruments()
 FlowLang.Runtime.ExecutionContext :: ErrorReporter get_ErrorReporter()
 FlowLang.Runtime.ExecutionContext :: FunctionOverload ResolveFunction(String, IReadOnlyList<FlowType>, SourceLocation, IReadOnlyDictionary<String,FlowType>)
 FlowLang.Runtime.ExecutionContext :: FunctionOverload TryResolveFunction(String, IReadOnlyList<FlowType>, IReadOnlyDictionary<String,FlowType>)
-FlowLang.Runtime.ExecutionContext :: HashSet<String> get_SfzDiagnostics()
 FlowLang.Runtime.ExecutionContext :: HashSet<String> get_StrictAdvisoryDedup()
-FlowLang.Runtime.ExecutionContext :: HashSet<String> get_StyleOverrideAdvisoriesEmitted()
+FlowLang.Runtime.ExecutionContext :: IEnumerable<StackFrame> get_ActiveFrames()
 FlowLang.Runtime.ExecutionContext :: IFunctionInvoker get_Invoker()
 FlowLang.Runtime.ExecutionContext :: Int32 get_FixedRandSeed()
 FlowLang.Runtime.ExecutionContext :: Int32 get_LoopDepth()
 FlowLang.Runtime.ExecutionContext :: Int32 get_MaxIterations()
+FlowLang.Runtime.ExecutionContext :: Int64 get_ScopeVersion()
 FlowLang.Runtime.ExecutionContext :: InternalFunctionRegistry get_InternalRegistry()
 FlowLang.Runtime.ExecutionContext :: List<TestRecord> get_TestRegistry()
 FlowLang.Runtime.ExecutionContext :: LiveBlockRegistry get_LiveBlockRegistry()
 FlowLang.Runtime.ExecutionContext :: ModuleRegistry get_ModuleRegistry()
-FlowLang.Runtime.ExecutionContext :: MusicalContext GetMusicalContext()
 FlowLang.Runtime.ExecutionContext :: PragmaSet get_ProgramPragmaSet()
 FlowLang.Runtime.ExecutionContext :: PrngRegistry get_PrngRegistry()
 FlowLang.Runtime.ExecutionContext :: Random GetRand(Boolean)
@@ -1952,23 +2078,18 @@ FlowLang.Runtime.ExecutionContext :: SessionServices get_Session()
 FlowLang.Runtime.ExecutionContext :: SourceLocation get_CurrentCallSite()
 FlowLang.Runtime.ExecutionContext :: StackFrame get_CurrentFrame()
 FlowLang.Runtime.ExecutionContext :: StackFrame get_GlobalFrame()
-FlowLang.Runtime.ExecutionContext :: String get_ResolvedSfzRoot()
+FlowLang.Runtime.ExecutionContext :: T GetExtension()
 FlowLang.Runtime.ExecutionContext :: TestSnapshot SnapshotState()
 FlowLang.Runtime.ExecutionContext :: TextWriter get_DiagnosticOutput()
 FlowLang.Runtime.ExecutionContext :: Value GetVariable(String)
 FlowLang.Runtime.ExecutionContext :: Void DeclareFunction(FunctionOverload)
 FlowLang.Runtime.ExecutionContext :: Void DeclareVariable(String, Value)
+FlowLang.Runtime.ExecutionContext :: Void NotifyScopeChanged()
 FlowLang.Runtime.ExecutionContext :: Void PopFrame()
-FlowLang.Runtime.ExecutionContext :: Void PopTuning()
 FlowLang.Runtime.ExecutionContext :: Void PushFrame(Boolean)
-FlowLang.Runtime.ExecutionContext :: Void PushTuning(RenderTuning)
-FlowLang.Runtime.ExecutionContext :: Void ResetBlockTuningStack()
 FlowLang.Runtime.ExecutionContext :: Void ResetGen()
 FlowLang.Runtime.ExecutionContext :: Void RestoreState(TestSnapshot)
-FlowLang.Runtime.ExecutionContext :: Void SetCurrentFrameMusicalContext(MusicalContext)
-FlowLang.Runtime.ExecutionContext :: Void SetFileScopeTuning(RenderTuning)
 FlowLang.Runtime.ExecutionContext :: Void SetSeed(Int32)
-FlowLang.Runtime.ExecutionContext :: Void SetTuning(Nullable<TuningSystem>)
 FlowLang.Runtime.ExecutionContext :: Void SetVariable(String, Value)
 FlowLang.Runtime.ExecutionContext :: Void set_BeatTrueToSig(Boolean)
 FlowLang.Runtime.ExecutionContext :: Void set_CallerStrictMode(Boolean)
@@ -1984,11 +2105,8 @@ FlowLang.Runtime.ExecutionContext :: Void set_MidiEnabled(Boolean)
 FlowLang.Runtime.ExecutionContext :: Void set_NotationIoEnabled(Boolean)
 FlowLang.Runtime.ExecutionContext :: Void set_OscEnabled(Boolean)
 FlowLang.Runtime.ExecutionContext :: Void set_ProgramPragmaSet(PragmaSet)
-FlowLang.Runtime.ExecutionContext :: Void set_ResolvedSfzRoot(String)
 FlowLang.Runtime.ExecutionContext :: Void set_Session(SessionServices)
-FlowLang.Runtime.ExecutionContext :: Void set_SfzEnabled(Boolean)
 FlowLang.Runtime.ExecutionContext :: Void set_StrictMode(Boolean)
-FlowLang.Runtime.ExecutionContext :: Void set_SuppressStyleOverrideAdvisory(Boolean)
 FlowLang.Runtime.ExecutionContext :: ctor(ErrorReporter, InternalFunctionRegistry, TextWriter)
 FlowLang.Runtime.ExecutionContext :: field Object RandLock
 FlowLang.Runtime.ExecutionContext :: property Boolean BeatTrueToSig
@@ -1997,23 +2115,17 @@ FlowLang.Runtime.ExecutionContext :: property Boolean JackEnabled
 FlowLang.Runtime.ExecutionContext :: property Boolean MidiEnabled
 FlowLang.Runtime.ExecutionContext :: property Boolean NotationIoEnabled
 FlowLang.Runtime.ExecutionContext :: property Boolean OscEnabled
-FlowLang.Runtime.ExecutionContext :: property Boolean SfzEnabled
 FlowLang.Runtime.ExecutionContext :: property Boolean StrictMode
-FlowLang.Runtime.ExecutionContext :: property Boolean SuppressStyleOverrideAdvisory
-FlowLang.Runtime.ExecutionContext :: property Dictionary<String,List<SectionData>> SectionRegistry
-FlowLang.Runtime.ExecutionContext :: property Dictionary<String,SfzData> SfzPatchRegistry
 FlowLang.Runtime.ExecutionContext :: property Dictionary<String,String> ProcOwnership
 FlowLang.Runtime.ExecutionContext :: property Dictionary<String,Value> SymbolInternTable
-FlowLang.Runtime.ExecutionContext :: property Dictionary<Value,DictData> StyleRegistry
-FlowLang.Runtime.ExecutionContext :: property Dictionary<Value,String> SfzInstruments
 FlowLang.Runtime.ExecutionContext :: property ErrorReporter ErrorReporter
-FlowLang.Runtime.ExecutionContext :: property HashSet<String> SfzDiagnostics
 FlowLang.Runtime.ExecutionContext :: property HashSet<String> StrictAdvisoryDedup
-FlowLang.Runtime.ExecutionContext :: property HashSet<String> StyleOverrideAdvisoriesEmitted
+FlowLang.Runtime.ExecutionContext :: property IEnumerable<StackFrame> ActiveFrames
 FlowLang.Runtime.ExecutionContext :: property IFunctionInvoker Invoker
 FlowLang.Runtime.ExecutionContext :: property Int32 FixedRandSeed
 FlowLang.Runtime.ExecutionContext :: property Int32 LoopDepth
 FlowLang.Runtime.ExecutionContext :: property Int32 MaxIterations
+FlowLang.Runtime.ExecutionContext :: property Int64 ScopeVersion
 FlowLang.Runtime.ExecutionContext :: property InternalFunctionRegistry InternalRegistry
 FlowLang.Runtime.ExecutionContext :: property List<TestRecord> TestRegistry
 FlowLang.Runtime.ExecutionContext :: property LiveBlockRegistry LiveBlockRegistry
@@ -2026,7 +2138,6 @@ FlowLang.Runtime.ExecutionContext :: property SessionServices Session
 FlowLang.Runtime.ExecutionContext :: property SourceLocation CurrentCallSite
 FlowLang.Runtime.ExecutionContext :: property StackFrame CurrentFrame
 FlowLang.Runtime.ExecutionContext :: property StackFrame GlobalFrame
-FlowLang.Runtime.ExecutionContext :: property String ResolvedSfzRoot
 FlowLang.Runtime.ExecutionContext :: property TextWriter DiagnosticOutput
 FlowLang.Runtime.FlowConfig :: static FlowConfigPoco get_Active()
 FlowLang.Runtime.FlowConfig :: static IReadOnlyList<String> get_ConfiguredStdlibSearchPaths()
@@ -2082,6 +2193,8 @@ FlowLang.Runtime.FunctionOverload :: property ProcDeclaration Declaration
 FlowLang.Runtime.FunctionOverload :: property String Name
 FlowLang.Runtime.FunctionOverload :: static FunctionOverload Internal(String, FunctionSignature, Func<IReadOnlyList<Value>,Value>)
 FlowLang.Runtime.FunctionOverload :: static FunctionOverload UserDefined(String, FunctionSignature, ProcDeclaration, IReadOnlyDictionary<String,Value>)
+FlowLang.Runtime.ISessionExtension :: Object Snapshot(ExecutionContext)
+FlowLang.Runtime.ISessionExtension :: Void Restore(ExecutionContext, Object)
 FlowLang.Runtime.LiveBlockRegistration :: Boolean Equals(LiveBlockRegistration)
 FlowLang.Runtime.LiveBlockRegistration :: Boolean Equals(Object)
 FlowLang.Runtime.LiveBlockRegistration :: Double get_QuantizeBeats()
@@ -2149,59 +2262,6 @@ FlowLang.Runtime.ModuleRegistry :: Void Clear()
 FlowLang.Runtime.ModuleRegistry :: Void Register(String, IReadOnlyDictionary<String,Value>)
 FlowLang.Runtime.ModuleRegistry :: ctor()
 FlowLang.Runtime.ModuleRegistry :: property IReadOnlyDictionary<String,IReadOnlyCollection<String>> Exports
-FlowLang.Runtime.MusicalContext :: Boolean TryGetLiveTempo(Double&)
-FlowLang.Runtime.MusicalContext :: MusicalContext Clone()
-FlowLang.Runtime.MusicalContext :: Nullable<Boolean> get_SustainPedal()
-FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Gain()
-FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Pan()
-FlowLang.Runtime.MusicalContext :: Nullable<Double> get_ReverbTime()
-FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Swing()
-FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Tempo()
-FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Velocity()
-FlowLang.Runtime.MusicalContext :: Nullable<Int32> get_DefaultOctave()
-FlowLang.Runtime.MusicalContext :: Nullable<Int32> get_VoicePoolSize()
-FlowLang.Runtime.MusicalContext :: Nullable<TuningSystem> get_Tuning()
-FlowLang.Runtime.MusicalContext :: RenderTuning get_ActiveTuning()
-FlowLang.Runtime.MusicalContext :: Stack<RenderTuning> get_TuningStack()
-FlowLang.Runtime.MusicalContext :: String ToString()
-FlowLang.Runtime.MusicalContext :: String get_Key()
-FlowLang.Runtime.MusicalContext :: TimeSignatureData get_TimeSignature()
-FlowLang.Runtime.MusicalContext :: Void SetLiveTempo(Double)
-FlowLang.Runtime.MusicalContext :: Void set_DefaultOctave(Nullable<Int32>)
-FlowLang.Runtime.MusicalContext :: Void set_Gain(Nullable<Double>)
-FlowLang.Runtime.MusicalContext :: Void set_Key(String)
-FlowLang.Runtime.MusicalContext :: Void set_Pan(Nullable<Double>)
-FlowLang.Runtime.MusicalContext :: Void set_ReverbTime(Nullable<Double>)
-FlowLang.Runtime.MusicalContext :: Void set_SustainPedal(Nullable<Boolean>)
-FlowLang.Runtime.MusicalContext :: Void set_Swing(Nullable<Double>)
-FlowLang.Runtime.MusicalContext :: Void set_Tempo(Nullable<Double>)
-FlowLang.Runtime.MusicalContext :: Void set_TimeSignature(TimeSignatureData)
-FlowLang.Runtime.MusicalContext :: Void set_Tuning(Nullable<TuningSystem>)
-FlowLang.Runtime.MusicalContext :: Void set_Velocity(Nullable<Double>)
-FlowLang.Runtime.MusicalContext :: Void set_VoicePoolSize(Nullable<Int32>)
-FlowLang.Runtime.MusicalContext :: ctor()
-FlowLang.Runtime.MusicalContext :: property Nullable<Boolean> SustainPedal
-FlowLang.Runtime.MusicalContext :: property Nullable<Double> Gain
-FlowLang.Runtime.MusicalContext :: property Nullable<Double> Pan
-FlowLang.Runtime.MusicalContext :: property Nullable<Double> ReverbTime
-FlowLang.Runtime.MusicalContext :: property Nullable<Double> Swing
-FlowLang.Runtime.MusicalContext :: property Nullable<Double> Tempo
-FlowLang.Runtime.MusicalContext :: property Nullable<Double> Velocity
-FlowLang.Runtime.MusicalContext :: property Nullable<Int32> DefaultOctave
-FlowLang.Runtime.MusicalContext :: property Nullable<Int32> VoicePoolSize
-FlowLang.Runtime.MusicalContext :: property Nullable<TuningSystem> Tuning
-FlowLang.Runtime.MusicalContext :: property RenderTuning ActiveTuning
-FlowLang.Runtime.MusicalContext :: property Stack<RenderTuning> TuningStack
-FlowLang.Runtime.MusicalContext :: property String Key
-FlowLang.Runtime.MusicalContext :: property TimeSignatureData TimeSignature
-FlowLang.Runtime.MusicalContext :: static Boolean IsValidGain(Double)
-FlowLang.Runtime.MusicalContext :: static Boolean IsValidKey(String)
-FlowLang.Runtime.MusicalContext :: static Boolean IsValidSwing(Double)
-FlowLang.Runtime.MusicalContext :: static Boolean IsValidTempo(Double)
-FlowLang.Runtime.MusicalContext :: static Boolean IsValidTransportTempo(Double)
-FlowLang.Runtime.MusicalContext :: static field Double MaxTransportTempo
-FlowLang.Runtime.MusicalContext :: static field Double SustainTailSeconds
-FlowLang.Runtime.MusicalContext :: static field HashSet<String> ValidKeys
 FlowLang.Runtime.NoteStreamCompiler :: SequenceData Compile(NoteStreamExpression, MusicalContext, ExecutionContext)
 FlowLang.Runtime.NoteStreamCompiler :: ctor()
 FlowLang.Runtime.NoteStreamCompiler :: ctor(ErrorReporter)
@@ -2304,20 +2364,19 @@ FlowLang.Runtime.StackFrame :: IEnumerable<String> GetFunctionNames()
 FlowLang.Runtime.StackFrame :: IReadOnlyDictionary<String,Value> GetAllAccessibleVariables()
 FlowLang.Runtime.StackFrame :: IReadOnlyDictionary<String,Value> GetLocalVariables()
 FlowLang.Runtime.StackFrame :: List<FunctionOverload> GetFunctionOverloads(String)
-FlowLang.Runtime.StackFrame :: MusicalContext get_MusicalContext()
 FlowLang.Runtime.StackFrame :: StackFrame get_GlobalScope()
 FlowLang.Runtime.StackFrame :: StackFrame get_Parent()
+FlowLang.Runtime.StackFrame :: T GetScope()
 FlowLang.Runtime.StackFrame :: Value GetVariable(String)
 FlowLang.Runtime.StackFrame :: Void DeclareFunction(FunctionOverload)
 FlowLang.Runtime.StackFrame :: Void DeclareVariable(String, Value)
 FlowLang.Runtime.StackFrame :: Void RestoreLocalVariables(IReadOnlyDictionary<String,Value>)
+FlowLang.Runtime.StackFrame :: Void SetScope(T)
 FlowLang.Runtime.StackFrame :: Void SetVariable(String, Value)
 FlowLang.Runtime.StackFrame :: Void set_GlobalScope(StackFrame)
 FlowLang.Runtime.StackFrame :: Void set_IsCallBoundary(Boolean)
-FlowLang.Runtime.StackFrame :: Void set_MusicalContext(MusicalContext)
 FlowLang.Runtime.StackFrame :: ctor(StackFrame)
 FlowLang.Runtime.StackFrame :: property Boolean IsCallBoundary
-FlowLang.Runtime.StackFrame :: property MusicalContext MusicalContext
 FlowLang.Runtime.StackFrame :: property StackFrame GlobalScope
 FlowLang.Runtime.StackFrame :: property StackFrame Parent
 FlowLang.Runtime.Thunk :: Boolean get_IsEvaluated()
@@ -3339,44 +3398,28 @@ FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Boolean get_JackEnabled()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Boolean get_MidiEnabled()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Boolean get_NotationIoEnabled()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Boolean get_OscEnabled()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Boolean get_SfzEnabled()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: FlowConfigPoco get_FlowConfigActive()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<String,List<SectionData>> get_SectionRegistry()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<String,SfzData> get_SfzPatchRegistry()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<String,Value> get_GlobalVariables()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<String,Value> get_SymbolInternTable()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<Value,DictData> get_StyleRegistryState()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<Value,String> get_SfzInstruments()
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<Type,Object> get_ExtensionStates()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<ValueTuple<SourceLocation,String>,Int64> get_PrngRegistryState()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlySet<String> get_SfzDiagnostics()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlySet<String> get_StyleOverrideAdvisoriesEmitted()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Int32 GetHashCode()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Int32 get_FixedRandSeed()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Int32 get_TestRegistryCount()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: MusicalContext get_GlobalFrameMusicalContext()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Random get_FixedGen()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Random get_Gen()
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: String ToString()
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: String get_ResolvedSfzRoot()
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_ExtensionStates(IReadOnlyDictionary<Type,Object>)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_FixedGen(Random)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_FixedRandSeed(Int32)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_FlowConfigActive(FlowConfigPoco)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_Gen(Random)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_GlobalFrameMusicalContext(MusicalContext)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_GlobalVariables(IReadOnlyDictionary<String,Value>)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_JackEnabled(Boolean)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_MidiEnabled(Boolean)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_NotationIoEnabled(Boolean)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_OscEnabled(Boolean)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_PrngRegistryState(IReadOnlyDictionary<ValueTuple<SourceLocation,String>,Int64>)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_ResolvedSfzRoot(String)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SectionRegistry(IReadOnlyDictionary<String,List<SectionData>>)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzDiagnostics(IReadOnlySet<String>)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzEnabled(Boolean)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzInstruments(IReadOnlyDictionary<Value,String>)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzPatchRegistry(IReadOnlyDictionary<String,SfzData>)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_StyleOverrideAdvisoriesEmitted(IReadOnlySet<String>)
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_StyleRegistryState(IReadOnlyDictionary<Value,DictData>)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SymbolInternTable(IReadOnlyDictionary<String,Value>)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_TestRegistryCount(Int32)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: ctor()
@@ -3384,23 +3427,15 @@ FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Boolean JackEnab
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Boolean MidiEnabled
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Boolean NotationIoEnabled
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Boolean OscEnabled
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Boolean SfzEnabled
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property FlowConfigPoco FlowConfigActive
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<String,List<SectionData>> SectionRegistry
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<String,SfzData> SfzPatchRegistry
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<String,Value> GlobalVariables
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<String,Value> SymbolInternTable
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<Value,DictData> StyleRegistryState
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<Value,String> SfzInstruments
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<Type,Object> ExtensionStates
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<ValueTuple<SourceLocation,String>,Int64> PrngRegistryState
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlySet<String> SfzDiagnostics
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlySet<String> StyleOverrideAdvisoriesEmitted
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Int32 FixedRandSeed
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Int32 TestRegistryCount
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property MusicalContext GlobalFrameMusicalContext
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Random FixedGen
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Random Gen
-FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property String ResolvedSfzRoot
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: static Boolean op_Equality(TestSnapshot, TestSnapshot)
 FlowLang.StandardLibrary.TestFramework.TestSnapshot :: static Boolean op_Inequality(TestSnapshot, TestSnapshot)
 FlowLang.StandardLibrary.Transforms.TransformFunctions :: static SequenceData ApplyTransposeCentForTesting(SequenceData, Double)
@@ -4135,6 +4170,13 @@ type FlowLang.Lexing.PragmaSet
 type FlowLang.Lexing.SimpleLexer
 type FlowLang.Lexing.Token
 type FlowLang.Lexing.TokenType
+type FlowLang.Music.MusicContextExtensions
+type FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4
+type FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4+<M>$9B4102559475182BCA9103E3CDB5EF0F
+type FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE
+type FlowLang.Music.MusicContextExtensions+<G>$B844642787A80500E4F15B8AA644E3DE+<M>$11034BF75A2B45F4D0E32CCE8568B599
+type FlowLang.Music.MusicSession
+type FlowLang.Music.MusicalContext
 type FlowLang.Parsing.BufType
 type FlowLang.Parsing.ParseException
 type FlowLang.Parsing.Parser
@@ -4149,6 +4191,7 @@ type FlowLang.Runtime.FlowConfigLoader
 type FlowLang.Runtime.FlowConfigPoco
 type FlowLang.Runtime.FlowConsole
 type FlowLang.Runtime.FunctionOverload
+type FlowLang.Runtime.ISessionExtension
 type FlowLang.Runtime.LiveBlockRegistration
 type FlowLang.Runtime.LiveBlockRegistry
 type FlowLang.Runtime.LsystemModelData
@@ -4157,7 +4200,6 @@ type FlowLang.Runtime.MarkovModelData+PrefixComparer
 type FlowLang.Runtime.ModuleLoadResult
 type FlowLang.Runtime.ModuleLoader
 type FlowLang.Runtime.ModuleRegistry
-type FlowLang.Runtime.MusicalContext
 type FlowLang.Runtime.NoteStreamCompiler
 type FlowLang.Runtime.PrngRegistry
 type FlowLang.Runtime.ProgressionCompiler

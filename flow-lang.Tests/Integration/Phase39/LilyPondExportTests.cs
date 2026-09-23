@@ -7,6 +7,7 @@ using FlowLang.StandardLibrary.Notation;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
 using FlowLang.Syntax;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase39;
 

@@ -4,6 +4,7 @@ using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
 using Xunit;
 using ExecCtx = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase30;
 

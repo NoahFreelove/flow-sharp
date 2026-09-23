@@ -33,7 +33,7 @@ public class PublicApiCharacterizationTests
         var missing = recorded.Where(r => !current.Contains(r) && !allowed.Contains(r)).ToList();
         Assert.True(missing.Count == 0,
             $"{missing.Count} public API entries were removed. Restore them (a delegating facade), or list each in api/allowed-removals.txt with a reason:\n  "
-            + string.Join("\n  ", missing.Take(40)));
+            + string.Join("\n  ", missing));
     }
 
     internal static SortedSet<string> PublicSurface(Assembly assembly)

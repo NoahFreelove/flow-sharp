@@ -1,6 +1,7 @@
 using FlowLang.Ast.Expressions;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Music;
 
 namespace FlowLang.Runtime;
 

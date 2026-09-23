@@ -33,7 +33,7 @@ public class DependencyDirectionTests
         "FlowLang.StandardLibrary.Harmony", "FlowLang.StandardLibrary.Improv", "FlowLang.StandardLibrary.Midi",
         "FlowLang.StandardLibrary.Network", "FlowLang.StandardLibrary.Notation", "FlowLang.StandardLibrary.Patterns",
         "FlowLang.StandardLibrary.Transforms", "FlowLang.StandardLibrary.Generative",
-        "FlowLang.TypeSystem.SpecialTypes", "Melanchall", "NAudio", "Rug.Osc",
+        "FlowLang.TypeSystem.SpecialTypes", "FlowLang.Music", "Melanchall", "NAudio", "Rug.Osc",
     ];
 
     // Special (music) types live under TypeSystem today; they are targets, not sources.

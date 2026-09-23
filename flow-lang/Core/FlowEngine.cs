@@ -15,6 +15,7 @@ using FlowLang.StandardLibrary.Generative;
 using FlowLang.StandardLibrary.Improv;
 using FlowLang.StandardLibrary.Patterns;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Music;
 
 namespace FlowLang.Core;
 

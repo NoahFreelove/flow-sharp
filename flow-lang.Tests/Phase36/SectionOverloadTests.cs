@@ -4,6 +4,7 @@ using FlowLang.Core;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Phase36;
 

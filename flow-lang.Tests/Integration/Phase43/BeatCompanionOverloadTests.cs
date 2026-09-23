@@ -11,6 +11,7 @@ using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase43;
 

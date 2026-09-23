@@ -30,7 +30,7 @@ public class SectionData
 {
     public string Name { get; }
     public Dictionary<string, SequenceData> Sequences { get; }
-    public Runtime.MusicalContext? Context { get; }
+    public Music.MusicalContext? Context { get; }
     public Core.SourceLocation? SourceLocation { get; }
 
     /// <summary>
@@ -55,7 +55,7 @@ public class SectionData
     /// </summary>
     public IReadOnlyList<Statement>? Body { get; }
 
-    public SectionData(string name, Dictionary<string, SequenceData> sequences, Runtime.MusicalContext? context, Core.SourceLocation? sourceLocation = null,
+    public SectionData(string name, Dictionary<string, SequenceData> sequences, Music.MusicalContext? context, Core.SourceLocation? sourceLocation = null,
         IReadOnlyList<Pattern>? parameters = null,
         IReadOnlyList<Expression?>? defaultValues = null,
         IReadOnlyList<Statement>? body = null)

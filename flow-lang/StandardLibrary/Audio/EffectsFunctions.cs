@@ -3,6 +3,7 @@ using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using FlowLang.StandardLibrary.Audio.DSP;
+using FlowLang.Music;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -422,7 +423,7 @@ public static class EffectsFunctions
 
     /// <summary>
     /// Walks the <see cref="FlowLang.Runtime.StackFrame"/> parent chain looking
-    /// for an explicit <see cref="FlowLang.Runtime.MusicalContext.Tempo"/>
+    /// for an explicit <see cref="FlowLang.Music.MusicalContext.Tempo"/>
     /// assignment. Per Phase 30 REQ-4, <see cref="FlowLang.Runtime.ExecutionContext.GetMusicalContext"/>
     /// always reports a non-null Tempo (defaulting to 120 BPM at tier 3) so
     /// callers needing to detect "tempo block in scope" must walk frames

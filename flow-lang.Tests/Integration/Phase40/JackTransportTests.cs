@@ -5,6 +5,7 @@ using FlowLang.StandardLibrary.Midi;
 using FlowLang.Tests.Fixtures;
 using FlowLang.Tests.Integration.Phase48;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase40;
 

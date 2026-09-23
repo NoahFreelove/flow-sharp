@@ -10,6 +10,7 @@ using Xunit;
 // Disambiguate FlowLang.Runtime.ExecutionContext from System.Threading.ExecutionContext —
 // the bare name is ambiguous under net10.0's implicit usings.
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Phase36;
 

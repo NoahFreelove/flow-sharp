@@ -12,6 +12,7 @@ using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using System.Numerics;
 using RuntimeContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Music;
 
 namespace FlowLang.Interpreter;
 

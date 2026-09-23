@@ -41,13 +41,24 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
 - Phase 3: `FlowLang.Runtime.WasmEntry` is host glue and is excluded by name. It
   cannot move out of `FlowLang.Runtime` because the frozen `flow-runtime.js` binds
   `exports.FlowLang.Runtime.WasmEntry.*` by full name.
+- Phase 3: `FlowLang.Music` is a music namespace (forbidden to the language). It
+  holds `MusicalContext` and `MusicSession`, the music state that used to live on
+  `ExecutionContext` (sections, style packs, SFZ registries, tuning stack
+  operations, the memoized context resolution). The language offers two
+  domain-neutral seams for it: typed per-frame scope state
+  (`StackFrame.GetScope<T>`/`SetScope<T>`, with `ExecutionContext.ScopeVersion`
+  for memoization) and per-context extensions (`ExecutionContext.GetExtension<T>`,
+  snapshotted for test isolation through `ISessionExtension`). C# 14 extension
+  members in `MusicContextExtensions` keep the old call shapes
+  (`ctx.GetMusicalContext()`, `frame.MusicalContext`), so an edge to
+  `FlowLang.Music` now marks exactly the code that still uses them.
 
 ## Known limits
 
 - Music-shaped types that already live in language namespaces are not edges:
   `TypeSystem.PrimitiveTypes` Buffer/Envelope/OscillatorState/Voice/Track types,
-  `Runtime.MusicalContext`, `NoteStreamCompiler`, `ProgressionCompiler`,
-  and `WasmEntry`. Phase 3 moves them. The ratchet
+  `NoteStreamCompiler`, `ProgressionCompiler`, and the Markov/L-system model
+  data. Phase 3 moves them (`MusicalContext` has moved). The ratchet
   then catches references back to them.
 - The check is namespace-based within one assembly. After extraction, assembly
   references enforce the same rule, and the Web-target `AssemblyReferenceScanTests`

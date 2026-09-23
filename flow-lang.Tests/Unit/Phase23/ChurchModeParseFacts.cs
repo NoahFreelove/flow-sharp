@@ -138,20 +138,20 @@ public class ChurchModeParseFacts
         // D-04: ValidKeys extended from 34 (17 × 2) to 119 (17 × 7) entries.
         // Without this extension, `key Cdorian { ... }` fails IsValidKey before
         // tuning math sees it.
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Cdorian"));
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Aphrygian"));
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Glydian"));
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Bmixolydian"));
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Dlocrian"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Cdorian"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Aphrygian"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Glydian"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Bmixolydian"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Dlocrian"));
         // Old keys still valid:
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Cmajor"));
-        Assert.True(FlowLang.Runtime.MusicalContext.IsValidKey("Aminor"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Cmajor"));
+        Assert.True(FlowLang.Music.MusicalContext.IsValidKey("Aminor"));
     }
 
     [Fact]
     public void MusicalContext_ValidKeys_HasExpectedCount()
     {
         // 17 roots × 7 modes = 119 entries.
-        Assert.Equal(119, FlowLang.Runtime.MusicalContext.ValidKeys.Count);
+        Assert.Equal(119, FlowLang.Music.MusicalContext.ValidKeys.Count);
     }
 }

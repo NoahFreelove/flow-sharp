@@ -2,6 +2,7 @@ using FlowLang.Core;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Unit.Phase15;
 

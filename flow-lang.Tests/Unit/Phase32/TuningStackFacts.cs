@@ -7,6 +7,7 @@ using FlowLang.StandardLibrary.Audio.Tuning;
 using Xunit;
 
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Music;
 
 namespace FlowLangTests.Unit.Phase32;
 

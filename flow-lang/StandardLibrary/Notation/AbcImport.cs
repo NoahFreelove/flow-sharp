@@ -4,6 +4,7 @@ using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.SpecialTypes;
 using FlowLang.Syntax;
+using FlowLang.Music;
 
 namespace FlowLang.StandardLibrary.Notation;
 

@@ -13,7 +13,7 @@ namespace FlowLang.Ast.Statements;
 /// variants all carry SCALAR primitive values (Int / Double / String key name);
 /// the tuning block carries a <c>Tuning</c>-typed <see cref="Expression"/> which
 /// the interpreter evaluates and pushes onto
-/// <see cref="FlowLang.Runtime.MusicalContext.TuningStack"/> via
+/// <see cref="FlowLang.Music.MusicalContext.TuningStack"/> via
 /// <see cref="FlowLang.Runtime.ExecutionContext.PushTuning"/>. Keeping value-shape
 /// and dispatch clean — narrow blast radius, <see cref="MusicalContextStatement"/>
 /// and its parser stay untouched.

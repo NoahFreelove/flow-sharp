@@ -8,6 +8,7 @@ using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Music;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -251,7 +252,7 @@ public static class MidiExport
     /// for <c>writeMidi</c>. Mirrors <see cref="Harmony.HarmonyFunctions.RegisterContextDependent"/>
     /// shape — closure over <see cref="FlowLang.Runtime.ExecutionContext"/> so
     /// <see cref="WriteMidi(IReadOnlyList{Value}, FlowLang.Runtime.ExecutionContext)"/>
-    /// can read <see cref="Runtime.MusicalContext.ActiveTuning"/> at call time and emit the
+    /// can read <see cref="Music.MusicalContext.ActiveTuning"/> at call time and emit the
     /// D-13 one-shot warning when EITHER the resolved <see cref="RenderTuning.System"/> is
     /// non-EQ OR a custom Scala tuning is active (<c>Custom != null</c>). MIDI bytes
     /// themselves are UNCHANGED — still 12-TET.

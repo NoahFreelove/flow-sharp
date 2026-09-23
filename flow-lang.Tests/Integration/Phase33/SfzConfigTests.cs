@@ -4,6 +4,7 @@ using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.Tests.Fixtures;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase33;
 

@@ -13,6 +13,7 @@ using FlowLang.Runtime;
 using FlowLang.TypeSystem.SpecialTypes;
 using FlowLang.Tests.Integration.Phase48;
 using Xunit;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Integration.Phase40;
 

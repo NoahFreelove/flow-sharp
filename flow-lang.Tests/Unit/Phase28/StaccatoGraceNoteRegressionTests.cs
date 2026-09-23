@@ -11,6 +11,7 @@ using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
 using FlowLang.Syntax;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Unit.Phase28;
 

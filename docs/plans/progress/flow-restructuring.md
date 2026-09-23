@@ -444,11 +444,24 @@ microphone capture to silence at 44.1 kHz so the host input device cannot change
   `Value.ConvertTo` for a `ValueConversions` registry the music layer fills.
   `Value` has no music dependencies. Edges 25 → 19.
 
+- **D2** — `MusicalContext` moves to the new `FlowLang.Music` namespace (forbidden
+  to the language), with `MusicSession`: the sections, style packs, SFZ registries,
+  tuning-stack operations and memoized context resolution that lived on
+  `ExecutionContext`. The language gains two neutral seams: typed per-frame scope
+  state (`StackFrame.GetScope/SetScope`, `ScopeVersion`) and per-context extensions
+  (`GetExtension<T>`, snapshotted for tests via `ISessionExtension`). C# 14
+  extension members keep the old call shapes. `ExecutionContext` and
+  `MusicalContext` have no music edges; the remaining edges into `FlowLang.Music`
+  are the D3/D4 targets. Edges 19 → 18 (with `FlowLang.Music` newly forbidden). The
+  public-API test no longer truncates its removal list (it had hidden 72 entries,
+  now allow-listed).
+
 Verification after D1: `verify.py --tier all` core 2,882 passed (the one failure
 was the host-dependent mic advisory, now pinned), MIDI 21 passed, Web build OK,
-zero tracked-content changes.
+zero tracked-content changes. After D2: `--tier all` core 2,883 passed / 0 failed,
+MIDI 21 passed, Web build OK, zero tracked-content changes.
 
-Remaining slices: D2 (music session state out of `ExecutionContext`), D3 (interpreter
+Remaining slices: D3 (interpreter
 music constructs behind a hook; `MusicalContext`/`NoteStreamCompiler`/
 `ProgressionCompiler` move to the music layer), D4 (pattern-matcher music patterns,
 member access, section dispatch), then the stdlib split, the language-only

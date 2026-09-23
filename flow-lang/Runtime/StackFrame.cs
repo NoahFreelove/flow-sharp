@@ -12,10 +12,16 @@ public class StackFrame
 
     public StackFrame? Parent { get; }
 
+    // Scope-local state owned by domain layers (for example the music layer's
+    // tempo/key context), keyed by type. Null or absent means "inherit".
+    private Dictionary<Type, object>? _scopes;
+
     /// <summary>
-    /// Optional musical context for this scope. Null means "inherit from parent".
+    /// Change counter shared by every frame of one execution context. Setting scope
+    /// state on any frame, and pushing or popping frames, ticks it, so resolvers
+    /// that merge scope state across the stack can memoize their result.
     /// </summary>
-    public MusicalContext? MusicalContext { get; set; }
+    internal ScopeClock Clock { get; }
 
     /// <summary>
     /// Audit §2.5 (D5) — marks a frame as a USER-PROC / lambda CALL BOUNDARY.
@@ -64,6 +70,19 @@ public class StackFrame
     public StackFrame(StackFrame? parent = null)
     {
         Parent = parent;
+        Clock = parent?.Clock ?? new ScopeClock();
+    }
+
+    /// <summary>Scope state of type <typeparamref name="T"/> set on this frame, or null.</summary>
+    public T? GetScope<T>() where T : class =>
+        _scopes is not null && _scopes.TryGetValue(typeof(T), out var value) ? (T)value : null;
+
+    /// <summary>Sets (or with null, clears) this frame's scope state of type <typeparamref name="T"/>.</summary>
+    public void SetScope<T>(T? value) where T : class
+    {
+        if (value is null) _scopes?.Remove(typeof(T));
+        else (_scopes ??= new())[typeof(T)] = value;
+        Clock.Tick();
     }
 
     // Variable management
@@ -357,4 +376,11 @@ public class FunctionOverload
     {
         return new FunctionOverload(name, signature, null, declaration, capturedVariables);
     }
+}
+
+/// <summary>Monotonic change counter for scope state; see <see cref="StackFrame.Clock"/>.</summary>
+internal sealed class ScopeClock
+{
+    public long Version { get; private set; }
+    public void Tick() => Version++;
 }

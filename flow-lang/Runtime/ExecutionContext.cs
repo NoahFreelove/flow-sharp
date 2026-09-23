@@ -1,6 +1,5 @@
 using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary;
-using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
@@ -40,18 +39,6 @@ public class ExecutionContext
     /// lazy-wrapped positions (if/and/or branches) because it is resolved at eval time.
     /// </summary>
     public int LoopDepth { get; set; } = 0;
-
-    /// <summary>
-    /// Bundle E (quick task 260524-sa3) — memoizes the result of <see cref="GetMusicalContext"/>
-    /// between mutation events. Invalidated by any call to <see cref="PushFrame"/> /
-    /// <see cref="PopFrame"/> / <see cref="PushTuning"/> / <see cref="PopTuning"/> /
-    /// <see cref="SetFileScopeTuning"/> / <see cref="ResetBlockTuningStack"/> /
-    /// <see cref="SetCurrentFrameMusicalContext"/>, and by <see cref="RestoreState"/>
-    /// during hermetic-test boundaries. SAFE because the read-only-return contract holds
-    /// (audit recorded in 260524-sa3-PLAN.md &lt;invalidation_surface_audit&gt;) — no caller
-    /// of <see cref="GetMusicalContext"/> mutates the returned <see cref="MusicalContext"/>.
-    /// </summary>
-    private MusicalContext? _cachedMusicalContext;
 
     /// <summary>
     /// Bundle F (quick task 260524-srj) — per-context overload-resolution memoization
@@ -218,6 +205,35 @@ public class ExecutionContext
     }
 
     public StackFrame CurrentFrame => _callStack.Peek();
+
+    /// <summary>Active frames, innermost (current) first, ending with the global frame.</summary>
+    public IEnumerable<StackFrame> ActiveFrames => _callStack;
+
+    /// <summary>
+    /// Changes whenever any frame's scope state is set or frames are pushed or popped.
+    /// Resolvers that merge scope state across <see cref="ActiveFrames"/> memoize on it.
+    /// </summary>
+    public long ScopeVersion => GlobalFrame.Clock.Version;
+
+    /// <summary>
+    /// Call after mutating scope state in place (rather than through
+    /// <see cref="StackFrame.SetScope{T}"/>) so memoized resolutions are dropped.
+    /// </summary>
+    public void NotifyScopeChanged() => GlobalFrame.Clock.Tick();
+
+    private readonly Dictionary<Type, ISessionExtension> _extensions = new();
+
+    /// <summary>
+    /// Per-context state owned by a domain layer (for example the music layer's
+    /// sections, style packs and SFZ registry). Created on first use; participates
+    /// in test snapshot/restore through <see cref="ISessionExtension"/>.
+    /// </summary>
+    public T GetExtension<T>() where T : class, ISessionExtension, new()
+    {
+        if (!_extensions.TryGetValue(typeof(T), out var extension))
+            _extensions[typeof(T)] = extension = new T();
+        return (T)extension;
+    }
     public StackFrame GlobalFrame { get; }
     public InternalFunctionRegistry InternalRegistry { get; }
 
@@ -244,42 +260,6 @@ public class ExecutionContext
     /// mid-execution.
     /// </summary>
     public ErrorReporter ErrorReporter => _errorReporter;
-    /// <summary>
-    /// Section registry — keyed by section name.
-    ///
-    /// <para>
-    /// Phase 36 Plan 36-10 (D-36-18 SECT-01) — value type is
-    /// <c>List&lt;SectionData&gt;</c> so multiple overloads with the same
-    /// name (but different pattern signatures) can coexist. The list
-    /// preserves DECLARATION ORDER which the OverloadResolver uses for
-    /// tiebreaker stability and the legacy "single-entry per name" path
-    /// is preserved as the trivial case (list of one). Zero-arg bare-name
-    /// references in song expressions still resolve correctly through the
-    /// <see cref="SectionRegistryFlat"/> helper.
-    /// </para>
-    /// </summary>
-    public Dictionary<string, List<SectionData>> SectionRegistry { get; } = new();
-
-    /// <summary>
-    /// Phase 36 Plan 36-10 — flat <c>Dictionary&lt;string, SectionData&gt;</c>
-    /// view of <see cref="SectionRegistry"/> for downstream consumers
-    /// (SongRenderer / MidiExport / SfzSampleCache) that don't yet know
-    /// about overloads. Returns the FIRST entry per name — sufficient for
-    /// bare-identifier dispatch on zero-arg sections. Parameterized
-    /// sections produce materialized SectionData entries under synthetic
-    /// keys (<c>name#callsite</c>) at song-evaluation time so the flat
-    /// view captures them too.
-    /// </summary>
-    public Dictionary<string, SectionData> SectionRegistryFlat()
-    {
-        var flat = new Dictionary<string, SectionData>();
-        foreach (var (key, list) in SectionRegistry)
-        {
-            if (list.Count > 0)
-                flat[key] = list[list.Count - 1];  // last-registered wins for legacy bare-name lookup
-        }
-        return flat;
-    }
 
     /// <summary>
     /// Phase 35 Plan 35-04 TEST-01 — registry of <c>(test "name" body)</c>
@@ -372,49 +352,6 @@ public class ExecutionContext
     public Dictionary<string, string> ProcOwnership { get; } = new();
 
     /// <summary>
-    /// Phase 36 Plan 36-11 (D-36-12, IMPROV-01) — style-pack registry keyed by
-    /// Symbol-typed <see cref="Value"/>. Populated at FlowEngine init by
-    /// <c>StyleRegistry.LoadAtEngineInit</c> (shipped packs at
-    /// <c>flow-lang/improv/styles/*.flow</c> first, then user packs at
-    /// <c>~/.config/flow/styles/*.flow</c>; last-write-wins per Pitfall 8). The
-    /// <c>(registerStyle #name pack)</c> builtin mutates this dict at runtime.
-    /// Each value is a <see cref="DictData"/> holding the composer's rule-pack
-    /// content (beat_weights / interval_transitions / rhythmic_template /
-    /// articulation_distribution per the contract in
-    /// <c>flow-lang/improv/styles/README.md</c>).
-    ///
-    /// <para>
-    /// Keys use the same equality semantics as <see cref="SymbolInternTable"/>
-    /// (interned Symbol values → pointer equality), so the standard
-    /// <see cref="Value"/>-keyed Dictionary lookup works directly without a
-    /// custom comparer.
-    /// </para>
-    /// </summary>
-    public Dictionary<Value, DictData> StyleRegistry { get; } = new();
-
-    /// <summary>
-    /// Phase 36 Plan 36-11 — dedup set for the per-style override advisory
-    /// emitted by the user-pack load path (Pitfall 8). Tracks Symbol name
-    /// strings (not Values) because the user-pack file is loaded into the SAME
-    /// <see cref="ExecutionContext"/> as the shipped packs — the override
-    /// detection sees the EXISTING entry already in <see cref="StyleRegistry"/>
-    /// and fires the advisory keyed by the symbol name string.
-    /// </summary>
-    public HashSet<string> StyleOverrideAdvisoriesEmitted { get; } = new();
-
-    /// <summary>
-    /// Phase 36 Plan 36-11 — when <c>true</c>, the <c>registerStyle</c> builtin
-    /// suppresses its "user overrides shipped" advisory for the duration of the
-    /// flag. Set by <c>StyleRegistry.LoadShippedAndUserPacks</c> during the
-    /// shipped-pack phase only — re-registering the same shipped pack between
-    /// processes (e.g., back-to-back FlowEngine instances) is NOT an override
-    /// from the composer's perspective. The user-pack phase un-sets the flag
-    /// so a user pack with the same Symbol as a shipped pack DOES fire the
-    /// override advisory once.
-    /// </summary>
-    public bool SuppressStyleOverrideAdvisory { get; set; } = false;
-
-    /// <summary>
     /// Phase 36 Plan 36-05 — the currently-evaluating builtin call site, set by
     /// <c>ExpressionEvaluator.EvaluateFunctionCall</c> immediately before invoking
     /// the registered C# lambda and cleared (reset to <see cref="SourceLocation.Unknown"/>)
@@ -438,17 +375,6 @@ public class ExecutionContext
     /// </summary>
     public Core.SourceLocation CurrentCallSite { get; set; } = Core.SourceLocation.Unknown;
 
-    // ===== Phase 33 — SFZ surface =====
-
-    /// <summary>
-    /// Phase 33 — flips <c>true</c> when the <c>__enableSfzModule</c> marker
-    /// builtin runs (triggered by <c>use "@sfz"</c> in a script). Until then,
-    /// <c>loadSfz</c> and the <c>sampler:NAME</c> instrument-string dispatcher
-    /// are gated off and raise <c>UndefinedFunctionError</c> /
-    /// <c>UnknownInstrumentError</c> respectively. Default <c>false</c>.
-    /// </summary>
-    public bool SfzEnabled { get; set; } = false;
-
     /// <summary>
     /// Phase 39 D-39-01 — flips <c>true</c> when the <c>__enableNotationIoModule</c>
     /// marker builtin runs (triggered by <c>use "@notation-io"</c> in a script).
@@ -465,7 +391,7 @@ public class ExecutionContext
     /// <c>oscListen</c> / <c>oscStop</c> / <c>oscBundle</c> /
     /// <c>oscSendBundle</c> are gated off and raise a clear
     /// "requires <c>use \"@osc\"</c>" error. Mirrors the Phase 33
-    /// <see cref="SfzEnabled"/> / Phase 39 <see cref="NotationIoEnabled"/>
+    /// <c>SfzEnabled</c> / Phase 39 <see cref="NotationIoEnabled"/>
     /// posture. Default <c>false</c>.
     /// </summary>
     public bool OscEnabled { get; set; } = false;
@@ -593,7 +519,7 @@ public class ExecutionContext
     /// Read site: <see cref="FlowLang.Interpreter.ExpressionEvaluator.EvaluateBeatLiteral"/>
     /// and <c>BeatConstructorFunctions.RegisterContextDependent</c>. Computes the
     /// multiplier formula <c>final = pragma_on ? raw × (4.0 / denom) : raw</c>
-    /// against the active <see cref="MusicalContext.TimeSignature"/> at literal /
+    /// against the active musical context time signature at literal /
     /// constructor invocation time.
     /// </para>
     ///
@@ -607,57 +533,6 @@ public class ExecutionContext
     /// </summary>
     public bool BeatTrueToSig { get; set; } = false;
 
-    /// <summary>
-    /// Phase 33 — 19-entry GM-orchestral Symbol → relative-path map populated
-    /// from <c>flow-lang/sfz.flow</c> via <c>__enableSfzModule</c> per CONTEXT
-    /// D-09 / D-11 (the dict lives in Flow source, not C#, so composers can
-    /// inspect / extend it without a C# rebuild). Read by <c>loadSfz(Symbol)</c>
-    /// to look up the relative path before joining with <see cref="ResolvedSfzRoot"/>.
-    /// Empty until the module imports.
-    /// </summary>
-    public Dictionary<Value, string> SfzInstruments { get; } = new();
-
-    /// <summary>
-    /// Phase 33 — variable-name → patch registry per CONTEXT D-12. Populated by
-    /// <c>Interpreter.ExecuteVariableDeclaration</c> (Plan 33-07) when the
-    /// declared type is <c>SfzType</c>; the assignment handler writes
-    /// <c>(name, sfzValue.As&lt;SfzData&gt;())</c> into this dict alongside the
-    /// normal <c>CurrentFrame.SetVariable</c> call. Read by
-    /// <c>SongRenderer</c>'s <c>sampler:NAME</c> branch (Plan 33-07) to resolve
-    /// the bound patch.
-    ///
-    /// Per Pitfall 10: last-bound-wins per variable name within an
-    /// ExecutionContext — reassigning a same-name variable overwrites the
-    /// prior registry entry, matching Flow's variable-shadowing semantics.
-    /// </summary>
-#if !FLOW_WEB
-    // Phase 47 D-47-08: SfzData type stripped from Web build. Consumers
-    // (SongRenderer sampler:NAME dispatch, TestSnapshot, Value.Sfz factory)
-    // are all #if-guarded too so the absent registry is unreachable on Web.
-    public Dictionary<string, FlowLang.StandardLibrary.Audio.Sfz.SfzData> SfzPatchRegistry { get; } = new();
-#endif
-
-    /// <summary>
-    /// Phase 33 — one-shot stderr advisory dedup set, keyed by sentinel strings
-    /// of the form <c>sfz:opcode:{patch}:{name}</c>,
-    /// <c>sfz:missing:{patch}:{midi}:{vel}</c>, or
-    /// <c>sfz:config:sfz_root_missing</c>. Used via the Phase 23/32
-    /// <c>RenderingDiagnostics.WarnOnce(key, message)</c> pattern (Plans 33-04 /
-    /// 33-05 / 33-06 add the SFZ-specific overload). The dedup is per-context
-    /// rather than per-process so each FlowEngine instance gets a fresh slate.
-    /// </summary>
-    public HashSet<string> SfzDiagnostics { get; } = new();
-
-    /// <summary>
-    /// Phase 33 — first-read cache for <c>FlowConfig.Active.SfzRoot</c> per
-    /// 33-RESEARCH § Pitfall 2. <see cref="FlowConfig.Active"/> is mutable
-    /// (test isolation pollutes the singleton); reading the value once at the
-    /// first <c>loadSfz</c> call within a given <see cref="ExecutionContext"/>
-    /// and caching here prevents (a) test-order-dependent failures and
-    /// (b) script-time config edits from affecting an in-flight render.
-    /// <c>null</c> until first read (or until first read returns null).
-    /// </summary>
-    public string? ResolvedSfzRoot { get; set; } = null;
 
     /// <summary>
     /// Invoker used to execute userspace functions/lambdas from standard library or engine.
@@ -728,7 +603,7 @@ public class ExecutionContext
             ? new StackFrame(CurrentFrame) { IsCallBoundary = true, GlobalScope = GlobalFrame }
             : new StackFrame(CurrentFrame);
         _callStack.Push(newFrame);
-        InvalidateMusicalContextCache();
+        GlobalFrame.Clock.Tick();
     }
 
     /// <summary>
@@ -750,7 +625,7 @@ public class ExecutionContext
         if (_framesThatDeclaredFunctions.Remove(popped))
             InvalidateOverloadCache();
 
-        InvalidateMusicalContextCache();
+        GlobalFrame.Clock.Tick();
     }
 
     /// <summary>
@@ -906,252 +781,6 @@ public class ExecutionContext
         return arr;
     }
 
-    /// <summary>
-    /// Resolves the current musical context by walking the stack from top to bottom.
-    /// First non-null value for each property wins. Uses defaults for any unresolved properties.
-    /// Defaults: 4/4 time signature, 120 BPM, 0.5 swing (straight), no key.
-    ///
-    /// Phase 32 D-12: <see cref="MusicalContext.TuningStack"/> resolution walks frames
-    /// top-to-bottom and copies the FIRST non-empty stack onto the resolved context.
-    /// This preserves the existing innermost-wins semantic of the other ??= fields:
-    /// readers consume <see cref="MusicalContext.ActiveTuning"/> on the returned
-    /// context, which peeks the resolved stack's top frame.
-    /// </summary>
-    public MusicalContext GetMusicalContext()
-    {
-        // Bundle E (260524-sa3) — cached fast-return. Invalidation is wired at every
-        // mutation entry point (PushFrame / PopFrame / PushTuning / PopTuning /
-        // SetFileScopeTuning / ResetBlockTuningStack / SetCurrentFrameMusicalContext /
-        // RestoreState) so a non-null cache is guaranteed to equal a fresh resolution.
-        if (_cachedMusicalContext != null)
-            return _cachedMusicalContext;
-
-        var resolved = new MusicalContext();
-        bool tuningResolved = false;
-        foreach (var frame in _callStack)
-        {
-            if (frame.MusicalContext != null)
-            {
-                resolved.TimeSignature ??= frame.MusicalContext.TimeSignature;
-                resolved.Tempo ??= frame.MusicalContext.Tempo;
-                resolved.Swing ??= frame.MusicalContext.Swing;
-                resolved.Key ??= frame.MusicalContext.Key;
-                resolved.Velocity ??= frame.MusicalContext.Velocity;
-                resolved.Pan ??= frame.MusicalContext.Pan;
-                resolved.Gain ??= frame.MusicalContext.Gain;
-                resolved.ReverbTime ??= frame.MusicalContext.ReverbTime;
-                // Phase 32 D-12 (supersedes Phase 23 D-05): Tuning is a push/pop stack.
-                // Resolution walks frames top-to-bottom and adopts the first non-empty
-                // stack encountered. Innermost-frame-wins matches the existing ??= shape
-                // of the other fields. File-scope pragmas live on GlobalFrame.MusicalContext;
-                // block forms (Plan 32-06) push above on the innermost frame, so a hit
-                // higher in the call stack naturally wins.
-                if (!tuningResolved && frame.MusicalContext.TuningStack.Count > 0)
-                {
-                    // Reference-share the stack — readers consume ActiveTuning (peek),
-                    // not the stack instance, so aliasing is safe + cheaper than cloning.
-                    foreach (var rt in new Stack<StandardLibrary.Audio.Tuning.RenderTuning>(frame.MusicalContext.TuningStack))
-                        resolved.TuningStack.Push(rt);
-                    tuningResolved = true;
-                }
-                // Phase 28 SPEC-7: voice pool size inherits via the same ??= chain.
-                // null means "no override" — SequenceRenderer.RenderSequenceToVoicesWithPool
-                // applies the SPEC-7 locked default of 32 at the render call.
-                resolved.VoicePoolSize ??= frame.MusicalContext.VoicePoolSize;
-                // octave N { ... } sets DefaultOctave on its own pushed frame; a note
-                // stream nested inside (directly or via a called proc/section) snapshots
-                // context via GetMusicalContext, so the default octave MUST inherit down
-                // the frame chain like every other context field (dynamic scope). null
-                // means "no override" → NoteStreamCompiler defaults to octave 4 →
-                // byte-identical to a script with no octave block (determinism preserved).
-                resolved.DefaultOctave ??= frame.MusicalContext.DefaultOctave;
-                // sustainPedal { ... } sets SustainPedal=true on its own pushed
-                // frame; a `section` (or note stream) nested inside snapshots
-                // context via GetMusicalContext, so the flag MUST inherit down
-                // the frame chain like every other context field — otherwise
-                // SongRenderer's `section.Context?.SustainPedal == true` reads
-                // null and the BarRenderer tail-extension never fires. null means
-                // "no pedal" → render-side default-false → byte-identical to a
-                // script with no sustainPedal block (determinism preserved).
-                resolved.SustainPedal ??= frame.MusicalContext.SustainPedal;
-            }
-            if (resolved.TimeSignature != null && resolved.Tempo != null
-                && resolved.Swing != null && resolved.Key != null
-                && resolved.Velocity != null && resolved.Pan != null
-                && resolved.Gain != null && resolved.ReverbTime != null
-                && tuningResolved && resolved.VoicePoolSize != null
-                && resolved.DefaultOctave != null)
-                break;
-        }
-        // REQ-4 (Plan 30-03): three-tier fallback for Tempo + TimeSignature.
-        //   1. Call-stack-resolved value (active tempo/timesig block) — already
-        //      consumed in the ??= chain above.
-        //   2. FlowConfig.Active (~/.config/flow/config.toml override) — this layer.
-        //   3. Hard-coded baked default (120 BPM / 4/4) — final fallback.
-        // Swing has no config knob in SPEC-4 so it skips tier 2.
-        resolved.Tempo ??= Session.Config.DefaultTempo.HasValue
-            ? (double)Session.Config.DefaultTempo.Value
-            : 120.0;
-        resolved.TimeSignature ??= ParseTimesigOrDefault(Session.Config.DefaultTimesig);
-        resolved.Swing ??= 0.5;
-        _cachedMusicalContext = resolved;
-        return resolved;
-    }
-
-    /// <summary>
-    /// Bundle E (260524-sa3) — drops the memoized <see cref="GetMusicalContext"/> result.
-    /// See <see cref="_cachedMusicalContext"/> for the invalidation contract.
-    /// </summary>
-    private void InvalidateMusicalContextCache() => _cachedMusicalContext = null;
-
-    /// <summary>
-    /// Bundle E (260524-sa3) — the single chokepoint used by
-    /// <see cref="FlowLang.Interpreter.Interpreter"/>'s <c>ExecuteMusicalContext</c>
-    /// branch (Interpreter.cs:335) to write the just-pushed frame's
-    /// <see cref="StackFrame.MusicalContext"/>. The wrapper keeps the cache-invalidation
-    /// discipline LOCAL to <see cref="ExecutionContext"/> so callers cannot forget it.
-    /// </summary>
-    public void SetCurrentFrameMusicalContext(MusicalContext? musicalContext)
-    {
-        CurrentFrame.MusicalContext = musicalContext;
-        InvalidateMusicalContextCache();
-    }
-
-    /// <summary>
-    /// REQ-4 (Plan 30-03): parse the <c>default_timesig</c> config string ("N/M") into
-    /// a <see cref="TypeSystem.SpecialTypes.TimeSignatureData"/>. Charitable per
-    /// CLAUDE.md feedback_charitable_interpretation memory:
-    ///   - null / whitespace -> 4/4 silently
-    ///   - malformed (not "N/M" with positive integers AND power-of-2 denominator)
-    ///     -> 4/4 + single stderr Warning at first encounter. The static guard
-    ///     a per-session one-shot advisory avoids spamming the warning on every
-    ///     <see cref="GetMusicalContext"/> call (note streams + bars + songs all hit
-    ///     this code path).
-    /// </summary>
-    private static TypeSystem.SpecialTypes.TimeSignatureData ParseTimesigOrDefault(string? config)
-    {
-        if (string.IsNullOrWhiteSpace(config))
-            return new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
-        var parts = config.Split('/');
-        if (parts.Length == 2
-            && int.TryParse(parts[0], out var num) && num > 0
-            && int.TryParse(parts[1], out var den) && den > 0
-            // TimeSignatureData constructor validates denominator-is-power-of-2;
-            // pre-check here so the throw becomes a charitable fallback instead.
-            && (den & (den - 1)) == 0)
-        {
-            return new TypeSystem.SpecialTypes.TimeSignatureData(num, den);
-        }
-        // Once per session (and per process outside a session).
-        Diagnostics.RenderingDiagnostics.WarnOnce(
-            $"config-default-timesig:{config}",
-            $"Warning: malformed default_timesig in config.toml: \"{config}\" — falling back to 4/4.");
-        return new TypeSystem.SpecialTypes.TimeSignatureData(4, 4);
-    }
-
-    // Test-only access: reset the one-shot warning latch so successive tests can
-    // each independently assert the malformed-timesig path. Intentionally internal-
-    // scoped through reflection-free static reset — production code never touches it.
-    internal static void ResetTimesigWarningLatchForTests() => Diagnostics.RenderingDiagnostics.ResetForTesting();
-
-    /// <summary>
-    /// Phase 32 D-12 transitional shim: bridges Phase 23's
-    /// <c>SetTuning(TuningSystem?)</c> callers through to <see cref="SetFileScopeTuning"/>.
-    /// Marked <see cref="ObsoleteAttribute"/> so any unmigrated FlowEngine pragma bridge
-    /// surfaces as a compile warning; replaced by <see cref="SetFileScopeTuning"/> in
-    /// Plan 32-05 Task 2 (FlowEngine.ApplyTuningPragma builds a <see cref="RenderTuning"/>
-    /// from the pragma name). Will be removed after Plan 32-06 lands.
-    /// </summary>
-    [Obsolete("Phase 32 D-12: use SetFileScopeTuning(RenderTuning). Scheduled for removal after Plan 32-06 lands.")]
-    public void SetTuning(TuningSystem? tuning)
-    {
-        if (tuning is null) return; // D-07: no-op on null — preserve previous REPL state.
-        // Use the same defaults SongRenderer.ResolveRenderTuning would fall back to when
-        // no key context exists (D-02 silent C-major default): tonic = ('C', 0),
-        // mode = Major. The full key-aware resolution happens at section render time.
-        SetFileScopeTuning(new RenderTuning(tuning.Value, Mode.Major, 'C', 0));
-    }
-
-    /// <summary>
-    /// Phase 32 D-12 (supersedes Phase 23 D-06/D-07 <c>SetTuning(TuningSystem?)</c>):
-    /// REPLACES the bottom-of-stack file-scope pragma frame on
-    /// <see cref="StackFrame.MusicalContext"/>.<see cref="MusicalContext.TuningStack"/>
-    /// of the global frame. Called by <see cref="FlowLang.Core.FlowEngine"/>'s pragma
-    /// bridge once between parse and interpret.
-    ///
-    /// Algorithm (Pitfall 2 — bottom frame is sticky across REPL evals):
-    /// <list type="number">
-    ///   <item>Pop any block frames above the file-scope frame (defensive — if
-    ///   <c>ResetBlockTuningStack</c> wasn't called at the prior REPL boundary,
-    ///   the global frame's stack should still only carry the bottom pragma frame).</item>
-    ///   <item>Pop the existing file-scope frame (if any).</item>
-    ///   <item>Push the new <paramref name="renderTuning"/> as the new bottom frame.</item>
-    /// </list>
-    /// Net result: <c>GlobalFrame.MusicalContext.TuningStack.Count == 1</c>, containing
-    /// the new file-scope tuning. D-08 REPL stickiness (carried over from Phase 23):
-    /// FlowEngine's <c>ApplyTuningPragma</c> only calls this when a tuning pragma is
-    /// actually present in the parsed program; absent-pragma case leaves the previous
-    /// frame untouched.
-    /// </summary>
-    public void SetFileScopeTuning(RenderTuning renderTuning)
-    {
-        if (GlobalFrame.MusicalContext == null)
-            GlobalFrame.MusicalContext = new MusicalContext();
-        var stack = GlobalFrame.MusicalContext.TuningStack;
-        while (stack.Count > 0)
-            stack.Pop();
-        stack.Push(renderTuning);
-        InvalidateMusicalContextCache();
-    }
-
-    /// <summary>
-    /// Phase 32 D-12 + Plan 32-06 entry: pushes a <see cref="RenderTuning"/> onto the
-    /// topmost (current-frame) <see cref="MusicalContext.TuningStack"/>. Used by the
-    /// <c>tuning t { ... }</c> block interpreter case to layer a block tuning above
-    /// the file-scope pragma frame. The paired <see cref="PopTuning"/> is invoked in
-    /// the block's exit (try/finally per Plan 32-06).
-    /// </summary>
-    public void PushTuning(RenderTuning renderTuning)
-    {
-        if (CurrentFrame.MusicalContext == null)
-            CurrentFrame.MusicalContext = new MusicalContext();
-        CurrentFrame.MusicalContext.TuningStack.Push(renderTuning);
-        InvalidateMusicalContextCache();
-    }
-
-    /// <summary>
-    /// Phase 32 D-12 + Plan 32-06 exit: pops the topmost frame's
-    /// <see cref="MusicalContext.TuningStack"/>. Throws <see cref="InvalidOperationException"/>
-    /// when the stack is empty — defensive guard that should never fire if push/pop pairs
-    /// are balanced via try/finally per Plan 32-06.
-    /// </summary>
-    public void PopTuning()
-    {
-        if (CurrentFrame.MusicalContext == null || CurrentFrame.MusicalContext.TuningStack.Count == 0)
-            throw new InvalidOperationException(
-                "PopTuning called with an empty TuningStack — push/pop must be balanced (Phase 32 D-12).");
-        CurrentFrame.MusicalContext.TuningStack.Pop();
-        InvalidateMusicalContextCache();
-    }
-
-    /// <summary>
-    /// Phase 32 D-14 + Pitfall 2 — REPL eval boundary hook: pops the global frame's
-    /// <see cref="MusicalContext.TuningStack"/> down to at most ONE entry (the file-scope
-    /// pragma frame). Block-form pushes above the pragma frame are ephemeral per D-14;
-    /// the pragma frame stays sticky across REPL evals per Phase 23 D-08 carried forward.
-    /// Called by the REPL eval boundary in <see cref="FlowLang.Core.FlowEngine"/>.
-    ///
-    /// Cardinality contract: after this call, <c>GlobalFrame.MusicalContext.TuningStack.Count</c>
-    /// is <c>≤ 1</c> — exactly the file-scope pragma frame if one was pushed; empty otherwise.
-    /// </summary>
-    public void ResetBlockTuningStack()
-    {
-        if (GlobalFrame.MusicalContext == null) return;
-        var stack = GlobalFrame.MusicalContext.TuningStack;
-        while (stack.Count > 1)
-            stack.Pop();
-        InvalidateMusicalContextCache();
-    }
 
     /// <summary>
     /// Tries to resolve a function without reporting errors (for probing).
@@ -1227,14 +856,9 @@ public class ExecutionContext
     {
         return new FlowLang.StandardLibrary.TestFramework.TestSnapshot
         {
-            // 1-3. Global frame variables, test registry size, section registry.
+            // 1-2. Global frame variables and test registry size.
             GlobalVariables = GlobalFrame.SnapshotLocalVariables(),
             TestRegistryCount = TestRegistry.Count,
-            // Phase 36 Plan 36-10 — deep-copy each per-name list so post-snapshot
-            // mutations on the live registry don't leak into the snapshot.
-            SectionRegistry = SectionRegistry.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new List<SectionData>(kvp.Value)),
 
             // 4. Phase 26.1 — Symbol intern table.
             SymbolInternTable = new Dictionary<string, Value>(SymbolInternTable),
@@ -1247,22 +871,9 @@ public class ExecutionContext
             FixedGen = FixedGen,
             Gen = Gen,
 
-            // 6. Musical-context stack — clone the global frame's
-            //    MusicalContext (carries tuning stack + tempo + key + ...).
-            GlobalFrameMusicalContext = GlobalFrame.MusicalContext?.Clone(),
-
-            // 7-10. Phase 33 SFZ statics.
-            // Phase 47 D-47-08: SfzPatchRegistry is stripped from Web build
-            //   along with the SfzData type — Snapshot/Restore use #if guard
-            //   to mirror TestSnapshot.cs's conditional shape.
-            SfzEnabled = SfzEnabled,
-            SfzInstruments = new Dictionary<Value, string>(SfzInstruments),
-#if !FLOW_WEB
-            SfzPatchRegistry =
-                new Dictionary<string, FlowLang.StandardLibrary.Audio.Sfz.SfzData>(SfzPatchRegistry),
-#endif
-            SfzDiagnostics = new HashSet<string>(SfzDiagnostics),
-            ResolvedSfzRoot = ResolvedSfzRoot,
+            // 6. Domain session extensions (the music layer's context, sections,
+            //    style packs and SFZ state) snapshot themselves.
+            ExtensionStates = _extensions.ToDictionary(kv => kv.Key, kv => kv.Value.Snapshot(this)),
 
             // 10b. Phase 39 — notation-io module gate.
             NotationIoEnabled = NotationIoEnabled,
@@ -1285,15 +896,6 @@ public class ExecutionContext
             //     this dict so post-snapshot draws on the same Random instances
             //     replay the SAME values they would have drawn before mutation.
             PrngRegistryState = PrngRegistry.SnapshotForTesting(),
-
-            // 13. Phase 36 Plan 36-11 — StyleRegistry snapshot. Value keys are
-            //     interned Symbol values (pointer-equality), DictData values
-            //     are immutable copies, so a shallow copy is faithful. The
-            //     override-advisory dedup set is also captured so post-test
-            //     reload (a test that resets and re-loads packs) sees a clean
-            //     advisory slate.
-            StyleRegistryState = new Dictionary<Value, DictData>(StyleRegistry),
-            StyleOverrideAdvisoriesEmitted = new HashSet<string>(StyleOverrideAdvisoriesEmitted),
         };
     }
 
@@ -1315,11 +917,6 @@ public class ExecutionContext
         while (TestRegistry.Count > snap.TestRegistryCount)
             TestRegistry.RemoveAt(TestRegistry.Count - 1);
 
-        // 3. SectionRegistry — Phase 36 Plan 36-10 list-of-overloads shape.
-        SectionRegistry.Clear();
-        foreach (var (k, v) in snap.SectionRegistry)
-            SectionRegistry[k] = new List<SectionData>(v);
-
         // 4. SymbolInternTable.
         SymbolInternTable.Clear();
         foreach (var (k, v) in snap.SymbolInternTable)
@@ -1339,31 +936,22 @@ public class ExecutionContext
             Gen = snap.Gen;
         }
 
-        // 6. Musical-context stack on the global frame.
-        GlobalFrame.MusicalContext = snap.GlobalFrameMusicalContext;
-        InvalidateMusicalContextCache();
+        // 6. Domain session extensions. One created after the snapshot is dropped,
+        //    so the next use starts fresh.
+        foreach (var type in _extensions.Keys.ToList())
+        {
+            if (snap.ExtensionStates.TryGetValue(type, out var state))
+                _extensions[type].Restore(this, state);
+            else
+                _extensions.Remove(type);
+        }
+        GlobalFrame.Clock.Tick();
 
         // Bundle F (260524-srj) — defensive invalidation. The chokepoint at
         // DeclareFunction already covered any in-test (re)declarations, but
         // pin this in case SnapshotState/RestoreState ever gain a
         // _functions-restoring field. Costs one Dictionary.Clear() per test.
         InvalidateOverloadCache();
-
-        // 7-10. Phase 33 SFZ statics.
-        // Phase 47 D-47-08: SfzPatchRegistry stripped on Web build (see Snapshot).
-        SfzEnabled = snap.SfzEnabled;
-        SfzInstruments.Clear();
-        foreach (var (k, v) in snap.SfzInstruments)
-            SfzInstruments[k] = v;
-#if !FLOW_WEB
-        SfzPatchRegistry.Clear();
-        foreach (var (k, v) in snap.SfzPatchRegistry)
-            SfzPatchRegistry[k] = v;
-#endif
-        SfzDiagnostics.Clear();
-        foreach (var k in snap.SfzDiagnostics)
-            SfzDiagnostics.Add(k);
-        ResolvedSfzRoot = snap.ResolvedSfzRoot;
 
         // 10b. Phase 39 — notation-io module gate restore.
         NotationIoEnabled = snap.NotationIoEnabled;
@@ -1386,28 +974,10 @@ public class ExecutionContext
         if (snap.PrngRegistryState != null)
             PrngRegistry.RestoreFromSnapshot(snap.PrngRegistryState);
 
-        // 13. Phase 36 Plan 36-11 — StyleRegistry restore. Same null-guard
-        //     posture as #12. Clear + repopulate so the registry exactly
-        //     matches the snapshot (in-test (registerStyle ...) calls do not
-        //     leak across tests).
-        if (snap.StyleRegistryState != null)
-        {
-            StyleRegistry.Clear();
-            foreach (var kv in snap.StyleRegistryState)
-                StyleRegistry[kv.Key] = kv.Value;
-        }
-        if (snap.StyleOverrideAdvisoriesEmitted != null)
-        {
-            StyleOverrideAdvisoriesEmitted.Clear();
-            foreach (var key in snap.StyleOverrideAdvisoriesEmitted)
-                StyleOverrideAdvisoriesEmitted.Add(key);
-        }
-
         // Static reset hooks for mutable singletons without snapshot fields.
         // Per RESEARCH §Pitfall 3 — these existing hooks were added by prior
         // phases (Phase 23 / Phase 32 / Phase 33) for the same hermetic-test
         // purpose. We piggyback on them rather than maintaining duplicates.
-        FlowLang.StandardLibrary.Audio.Synthesizers.SynthUtils.ResetNoiseRng();
         FlowLang.Diagnostics.RenderingDiagnostics.ResetForTesting();
 
         // Phase 44 review CR-03 — per-test reset of the strict-advisory dedup

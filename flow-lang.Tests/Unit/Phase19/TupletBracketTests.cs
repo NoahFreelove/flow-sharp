@@ -9,6 +9,7 @@ using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Music;
 
 namespace FlowLang.Tests.Unit.Phase19;
 

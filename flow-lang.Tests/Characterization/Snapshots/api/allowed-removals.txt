@@ -68,3 +68,116 @@ FlowLang.Runtime.Value :: static Value TimeSignature(TimeSignatureData)  # Phase
 FlowLang.Runtime.Value :: static Value Track(Track)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
 FlowLang.Runtime.Value :: static Value Tuning(ResolvedTuning)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
 FlowLang.Runtime.Value :: static Value Voice(Voice)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.ExecutionContext :: Boolean get_SfzEnabled()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Boolean get_SuppressStyleOverrideAdvisory()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Dictionary<String,List<SectionData>> get_SectionRegistry()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Dictionary<String,SectionData> SectionRegistryFlat()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Dictionary<String,SfzData> get_SfzPatchRegistry()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Dictionary<Value,DictData> get_StyleRegistry()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Dictionary<Value,String> get_SfzInstruments()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: HashSet<String> get_SfzDiagnostics()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: HashSet<String> get_StyleOverrideAdvisoriesEmitted()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: MusicalContext GetMusicalContext()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: String get_ResolvedSfzRoot()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void PopTuning()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void PushTuning(RenderTuning)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void ResetBlockTuningStack()  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void SetCurrentFrameMusicalContext(MusicalContext)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void SetFileScopeTuning(RenderTuning)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void SetTuning(Nullable<TuningSystem>)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void set_ResolvedSfzRoot(String)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void set_SfzEnabled(Boolean)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: Void set_SuppressStyleOverrideAdvisory(Boolean)  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property Boolean SfzEnabled  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property Boolean SuppressStyleOverrideAdvisory  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property Dictionary<String,List<SectionData>> SectionRegistry  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property Dictionary<String,SfzData> SfzPatchRegistry  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property Dictionary<Value,DictData> StyleRegistry  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property Dictionary<Value,String> SfzInstruments  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property HashSet<String> SfzDiagnostics  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property HashSet<String> StyleOverrideAdvisoriesEmitted  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.ExecutionContext :: property String ResolvedSfzRoot  # Phase 3: music session state moved to FlowLang.Music (MusicSession + extension members)
+FlowLang.Runtime.MusicalContext :: Boolean TryGetLiveTempo(Double&)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: MusicalContext Clone()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Boolean> get_SustainPedal()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Gain()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Pan()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Double> get_ReverbTime()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Swing()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Tempo()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Double> get_Velocity()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Int32> get_DefaultOctave()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<Int32> get_VoicePoolSize()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Nullable<TuningSystem> get_Tuning()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: RenderTuning get_ActiveTuning()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Stack<RenderTuning> get_TuningStack()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: String ToString()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: String get_Key()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: TimeSignatureData get_TimeSignature()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void SetLiveTempo(Double)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_DefaultOctave(Nullable<Int32>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Gain(Nullable<Double>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Key(String)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Pan(Nullable<Double>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_ReverbTime(Nullable<Double>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_SustainPedal(Nullable<Boolean>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Swing(Nullable<Double>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Tempo(Nullable<Double>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_TimeSignature(TimeSignatureData)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Tuning(Nullable<TuningSystem>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_Velocity(Nullable<Double>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: Void set_VoicePoolSize(Nullable<Int32>)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: ctor()  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Boolean> SustainPedal  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Double> Gain  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Double> Pan  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Double> ReverbTime  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Double> Swing  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Double> Tempo  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Double> Velocity  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Int32> DefaultOctave  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<Int32> VoicePoolSize  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Nullable<TuningSystem> Tuning  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property RenderTuning ActiveTuning  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property Stack<RenderTuning> TuningStack  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property String Key  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: property TimeSignatureData TimeSignature  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static Boolean IsValidGain(Double)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static Boolean IsValidKey(String)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static Boolean IsValidSwing(Double)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static Boolean IsValidTempo(Double)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static Boolean IsValidTransportTempo(Double)  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static field Double MaxTransportTempo  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static field Double SustainTailSeconds  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.MusicalContext :: static field HashSet<String> ValidKeys  # Phase 3: MusicalContext moved to FlowLang.Music
+FlowLang.Runtime.StackFrame :: MusicalContext get_MusicalContext()  # Phase 3: now the FlowLang.Music extension property over StackFrame.GetScope/SetScope
+FlowLang.Runtime.StackFrame :: Void set_MusicalContext(MusicalContext)  # Phase 3: now the FlowLang.Music extension property over StackFrame.GetScope/SetScope
+FlowLang.Runtime.StackFrame :: property MusicalContext MusicalContext  # Phase 3: now the FlowLang.Music extension property over StackFrame.GetScope/SetScope
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Boolean get_SfzEnabled()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<String,List<SectionData>> get_SectionRegistry()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<String,SfzData> get_SfzPatchRegistry()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<Value,DictData> get_StyleRegistryState()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlyDictionary<Value,String> get_SfzInstruments()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlySet<String> get_SfzDiagnostics()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: IReadOnlySet<String> get_StyleOverrideAdvisoriesEmitted()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: MusicalContext get_GlobalFrameMusicalContext()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: String get_ResolvedSfzRoot()  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_GlobalFrameMusicalContext(MusicalContext)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_ResolvedSfzRoot(String)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SectionRegistry(IReadOnlyDictionary<String,List<SectionData>>)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzDiagnostics(IReadOnlySet<String>)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzEnabled(Boolean)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzInstruments(IReadOnlyDictionary<Value,String>)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_SfzPatchRegistry(IReadOnlyDictionary<String,SfzData>)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_StyleOverrideAdvisoriesEmitted(IReadOnlySet<String>)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: Void set_StyleRegistryState(IReadOnlyDictionary<Value,DictData>)  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property Boolean SfzEnabled  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<String,List<SectionData>> SectionRegistry  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<String,SfzData> SfzPatchRegistry  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<Value,DictData> StyleRegistryState  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlyDictionary<Value,String> SfzInstruments  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlySet<String> SfzDiagnostics  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property IReadOnlySet<String> StyleOverrideAdvisoriesEmitted  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property MusicalContext GlobalFrameMusicalContext  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+FlowLang.StandardLibrary.TestFramework.TestSnapshot :: property String ResolvedSfzRoot  # Phase 3: music state is captured by MusicSession through TestSnapshot.ExtensionStates
+type FlowLang.Runtime.MusicalContext  # Phase 3: MusicalContext moved to FlowLang.Music
