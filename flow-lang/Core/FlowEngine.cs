@@ -155,7 +155,11 @@ public class FlowEngine : IDisposable
         var internalRegistry = new InternalFunctionRegistry();
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
 
-        _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput);
+        _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput)
+        {
+            // The engine is the music host: Flow's music grammar means what the music library says.
+            Bindings = Music.MusicBindings.Create(),
+        };
         _context.Session = _session;
         // The renderer reads caches, SFZ patches and the PRNG registry from the
         // session's RenderServices (no process-static engine accessors).

@@ -456,13 +456,24 @@ microphone capture to silence at 44.1 kHz so the host input device cannot change
   public-API test no longer truncates its removal list (it had hidden 72 entries,
   now allow-listed).
 
+- **D3** (`3d64844` + this slice) — the note-stream and progression compilers move to
+  `FlowLang.Music`. The interpreter now evaluates every music construct through
+  per-context `DomainBindings` (expression/statement evaluators by node type, literal
+  parsers, constants, members, defaults, declaration observers, patterns);
+  `MusicBindings` supplies them and `FlowEngine` installs them. Section declarations,
+  section calls/overload dispatch, context/tuning/live blocks, songs, chords, beats,
+  note streams and progressions moved out of `Interpreter`/`ExpressionEvaluator`/
+  `PatternMatcher` verbatim. A context without bindings runs plain code and reports
+  music constructs (`DomainBindings` tests). **Edges 18 → 12 → 0**: the language
+  namespaces have no music or platform dependencies.
+
 Verification after D1: `verify.py --tier all` core 2,882 passed (the one failure
 was the host-dependent mic advisory, now pinned), MIDI 21 passed, Web build OK,
 zero tracked-content changes. After D2: `--tier all` core 2,883 passed / 0 failed,
-MIDI 21 passed, Web build OK, zero tracked-content changes.
+MIDI 21 passed, Web build OK, zero tracked-content changes. After D3: core 2,890
+passed / 0 failed, MIDI 21, Web build OK, zero tracked-content changes; CLI smoke OK.
 
-Remaining slices: D3 (interpreter
-music constructs behind a hook; `MusicalContext`/`NoteStreamCompiler`/
-`ProgressionCompiler` move to the music layer), D4 (pattern-matcher music patterns,
-member access, section dispatch), then the stdlib split, the language-only
-assembly and the Phase 3 gate.
+D4 (pattern matcher, member access, section dispatch) landed inside D3. Remaining:
+the stdlib split with compatibility aggregates (language vs legacy profile), moving
+the remaining music-shaped primitive types, the language-only assembly, and the
+Phase 3 gate.

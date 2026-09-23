@@ -100,11 +100,11 @@ public class CarveOutsPreservedTests : IDisposable
     [Fact]
     public void Fact_LiveAdvisoryAtInterpreter_StillCharitable()
     {
-        // Carve-out: flow-lang/Interpreter/Interpreter.cs around line 476 — the
+        // Carve-out: flow-lang/Music/MusicStatements.cs (the live-block executor) — the
         // [live] entering live block advisory MUST stay charitable in BOTH modes
         // (D-v1.5-07 + Pitfall 2). Strict mode does NOT escalate this advisory.
         AssertCarveOutPreserved(
-            relativePath: "flow-lang/Interpreter/Interpreter.cs",
+            relativePath: "flow-lang/Music/MusicStatements.cs",
             hint: "[live] entering live block");
     }
 

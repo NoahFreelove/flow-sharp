@@ -2,7 +2,6 @@ using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Runtime;
 
@@ -222,6 +221,13 @@ public class ExecutionContext
     public void NotifyScopeChanged() => GlobalFrame.Clock.Tick();
 
     private readonly Dictionary<Type, ISessionExtension> _extensions = new();
+
+    /// <summary>
+    /// What domain constructs (note streams, sections, unit literals, ...) mean in this
+    /// context. Empty for a language-only host; the music host installs the music
+    /// bindings.
+    /// </summary>
+    public Interpreter.DomainBindings Bindings { get; init; } = new();
 
     /// <summary>
     /// Per-context state owned by a domain layer (for example the music layer's

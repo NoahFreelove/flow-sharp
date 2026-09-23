@@ -52,13 +52,22 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
   members in `MusicContextExtensions` keep the old call shapes
   (`ctx.GetMusicalContext()`, `frame.MusicalContext`), so an edge to
   `FlowLang.Music` now marks exactly the code that still uses them.
+- Phase 3: the interpreter evaluates domain constructs only through
+  `FlowLang.Interpreter.DomainBindings` (per context, `ExecutionContext.Bindings`):
+  evaluators keyed by expression and statement node type, plus unit/pitch literal
+  parsers, identifier constants, member resolvers, declared-type defaults,
+  declaration observers and pattern matchers. `MusicBindings` (in `FlowLang.Music`)
+  installs the music meaning of the grammar; `FlowEngine`, the music host, installs
+  it on every engine. A context without bindings reports each music construct at its
+  location (`note stream is not available: ...`) and runs everything else. With this,
+  the language namespaces have **no** music or platform edges (baseline empty).
 
 ## Known limits
 
-- Music-shaped types that already live in language namespaces are not edges:
-  `TypeSystem.PrimitiveTypes` Buffer/Envelope/OscillatorState/Voice/Track types,
-  `NoteStreamCompiler`, `ProgressionCompiler`, and the Markov/L-system model
-  data. Phase 3 moves them (`MusicalContext` has moved). The ratchet
+- Music-shaped types that still live in language namespaces are not edges:
+  `TypeSystem.PrimitiveTypes` Buffer/Envelope/OscillatorState/Voice/Track types and
+  the Markov/L-system model data in `Runtime`. Phase 3 moves them with the assembly
+  split (`MusicalContext` and the note-stream/progression compilers have moved). The ratchet
   then catches references back to them.
 - The check is namespace-based within one assembly. After extraction, assembly
   references enforce the same rule, and the Web-target `AssemblyReferenceScanTests`

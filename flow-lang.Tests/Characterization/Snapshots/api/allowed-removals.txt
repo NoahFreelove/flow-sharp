@@ -188,3 +188,5 @@ FlowLang.Runtime.ProgressionCompiler :: SequenceData Compile(ProgressionExpressi
 FlowLang.Runtime.ProgressionCompiler :: ctor()  # Phase 3: moved to FlowLang.Music
 type FlowLang.Runtime.NoteStreamCompiler  # Phase 3: moved to FlowLang.Music
 type FlowLang.Runtime.ProgressionCompiler  # Phase 3: moved to FlowLang.Music
+FlowLang.Interpreter.SectionOverloadDispatch :: static Nullable<ValueTuple<SectionData,IReadOnlyList<Value>,Dictionary<String,Value>>> Resolve(String, IReadOnlyList<SectionData>, IReadOnlyList<Value>, IReadOnlyDictionary<String,Value>, ExecutionContext, ErrorReporter, ExpressionEvaluator, SourceLocation)  # Phase 3: moved to FlowLang.Music
+type FlowLang.Interpreter.SectionOverloadDispatch  # Phase 3: moved to FlowLang.Music

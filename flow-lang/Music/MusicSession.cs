@@ -61,6 +61,13 @@ public sealed class MusicSession : ISessionExtension
     /// </summary>
     public string? ResolvedSfzRoot { get; set; }
 
+    /// <summary>
+    /// Bare-expression sequences of the section body being declared, so nested context,
+    /// tuning and live blocks still produce audible output. Transient interpreter state;
+    /// not part of snapshots.
+    /// </summary>
+    public List<SequenceData>? ActiveSectionCapture { get; set; }
+
     private MusicalContext? _resolved;
     private long _resolvedVersion = -1;
 

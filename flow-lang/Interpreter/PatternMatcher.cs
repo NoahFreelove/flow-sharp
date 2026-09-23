@@ -2,11 +2,8 @@ using FlowLang.Ast;
 using FlowLang.Ast.Patterns;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary;
-using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
 using FlowLang.Syntax;
-using FlowLang.Music;
 
 namespace FlowLang.Interpreter;
 
@@ -68,7 +65,7 @@ public static class PatternMatcher
         {
             WildcardPattern => true,
             BindingPattern b => Bind(b.Name, scrutinee, bindings),
-            LiteralPattern lit => MatchLiteral(lit, scrutinee),
+            LiteralPattern lit => MatchLiteral(lit, scrutinee, context),
             ConstructorPattern ctor => MatchConstructor(ctor, scrutinee, bindings, evaluator, context),
             GuardPattern guard => MatchGuard(guard, scrutinee, bindings, evaluator, context),
             _ => throw new NotSupportedException($"Unknown pattern: {pattern.GetType().Name}"),
@@ -85,21 +82,11 @@ public static class PatternMatcher
         return true;
     }
 
-    private static bool MatchLiteral(LiteralPattern lit, Value scrutinee)
+    private static bool MatchLiteral(LiteralPattern lit, Value scrutinee, Runtime.ExecutionContext context)
     {
-        // sweep-0614: a Note-literal pattern (`| C4 => ...`) carries the raw
-        // note text "C4" as a string payload. Value.From would wrap it as a
-        // String-typed Value, so LooseEquals(Note, String) takes its cross-type
-        // fallthrough and returns false unconditionally — a note pattern could
-        // never match a Note scrutinee. Build a Note-typed comparison value
-        // when the scrutinee is a Note so both sides hit the same-type
-        // StrictEquals branch (verbatim note-text compare). Both the scrutinee
-        // (MusicValue.Note(text)) and the pattern payload store the raw note text,
-        // so a direct text compare fires for the common case.
-        if (scrutinee.Type is NoteType && lit.Value is string noteText)
-        {
-            return Utils.LooseEquals(scrutinee, MusicValue.Note(noteText));
-        }
+        // Domain literals first (a note pattern compares as a Note, not as its text).
+        if (context.Bindings.MatchLiteralPattern(lit.Value, scrutinee) is { } domainMatch)
+            return domainMatch;
 
         // Wrap the embedded literal payload (int / double / bool / string)
         // in a Value so it routes through Utils.LooseEquals — which already
@@ -147,10 +134,8 @@ public static class PatternMatcher
             return true;
         }
 
-        if (ctor.IsChordLiteral)
-            return MatchChordQuality(ctor.Name, scrutinee);
-        if (ctor.IsRomanNumeral)
-            return MatchRomanNumeral(ctor.Name, scrutinee, context);
+        if (ctor.IsChordLiteral || ctor.IsRomanNumeral)
+            return context.Bindings.MatchConstructorPattern(ctor, scrutinee, context) ?? false;
 
         // sweep-0614: a `#symbol` pattern may carry BOTH flags (an articulation
         // keyword like `#staccato`). Dispatch on the scrutinee's runtime type:
@@ -161,7 +146,7 @@ public static class PatternMatcher
         if (ctor.IsSymbolLiteral && scrutinee.Type is SymbolType)
             return MatchSymbol(ctor.Name, scrutinee);
         if (ctor.IsArticulationSymbol)
-            return MatchArticulation(ctor.Name, scrutinee);
+            return context.Bindings.MatchConstructorPattern(ctor, scrutinee, context) ?? false;
         if (ctor.IsSymbolLiteral)
             return MatchSymbol(ctor.Name, scrutinee);
 
@@ -183,78 +168,6 @@ public static class PatternMatcher
         return scrutinee.Type is SymbolType
             && scrutinee.Data is string scrutineeName
             && string.Equals(scrutineeName, symbolName, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// Phase 35 Plan 35-06 (LANG-02) — matches a chord-literal pattern (e.g.,
-    /// <c>Cmaj7</c>, <c>Dm7</c>) against a Chord scrutinee. The canonical
-    /// equality per RESEARCH §Example 2 is Root + Quality match — different
-    /// roots miss, different qualities miss, only structural equality on
-    /// both fields produces a hit. Octave is intentionally ignored so a
-    /// composer matching <c>Cmaj7</c> hits any Cmaj7 chord value regardless
-    /// of the octave the scrutinee was rendered at.
-    /// </summary>
-    private static bool MatchChordQuality(string chordText, Value scrutinee)
-    {
-        if (scrutinee.Data is not ChordData scrutineeChord)
-            return false;
-
-        if (!ChordParser.TryParse(chordText, out var expected) || expected == null)
-            return false;
-
-        return string.Equals(scrutineeChord.Root, expected.Root, StringComparison.Ordinal)
-            && string.Equals(scrutineeChord.Quality, expected.Quality, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// Phase 35 Plan 35-06 (LANG-02) — matches a roman-numeral pattern (e.g.,
-    /// <c>V7</c>, <c>I</c>, <c>vi</c>) against a Chord scrutinee. The numeral
-    /// is resolved against the active key context (read from
-    /// <see cref="MusicalContext.Key"/>) via
-    /// <see cref="ScaleDatabase.ResolveRomanNumeral"/>, then compared to the
-    /// scrutinee by Root + Quality (mirroring MatchChordQuality). When no
-    /// key is active or the resolution fails, the match misses charitably
-    /// rather than throwing — the composer is expected to scope the match
-    /// inside a <c>key X { ... }</c> block, but a missing key is a
-    /// composer-error condition, not a runtime crash.
-    /// </summary>
-    private static bool MatchRomanNumeral(
-        string numeral,
-        Value scrutinee,
-        Runtime.ExecutionContext context)
-    {
-        if (scrutinee.Data is not ChordData scrutineeChord)
-            return false;
-
-        var musical = context.GetMusicalContext();
-        if (musical.Key is null)
-            return false;
-
-        var resolved = ScaleDatabase.ResolveRomanNumeral(numeral, musical.Key);
-        if (resolved is null)
-            return false;
-
-        return string.Equals(scrutineeChord.Root, resolved.Root, StringComparison.Ordinal)
-            && string.Equals(scrutineeChord.Quality, resolved.Quality, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// Phase 35 Plan 35-06 (LANG-02) — matches an articulation-symbol pattern
-    /// (e.g., <c>#staccato</c>, <c>#legato</c>, <c>#accent</c>) against a
-    /// MusicalNote scrutinee by comparing the symbol body (case-insensitive
-    /// per Phase 28's lex-time normalization) to the note's
-    /// <see cref="Articulation"/> enum value. Unknown symbol names produce
-    /// a charitable miss rather than throwing.
-    /// </summary>
-    private static bool MatchArticulation(string symbolName, Value scrutinee)
-    {
-        if (scrutinee.Data is not MusicalNoteData musicalNote)
-            return false;
-
-        if (!Enum.TryParse<Articulation>(symbolName, ignoreCase: true, out var expected))
-            return false;
-
-        return musicalNote.Articulation == expected;
     }
 
     /// <summary>

@@ -118,8 +118,8 @@ public class Phase44ClampGrepConsistencyTests : IDisposable
     public void Fact_CarveOutLiveAdvisoryStillCharitable()
     {
         // Pitfall 2 anti-regression pin: the [live] block-entry advisory must
-        // STAY charitable (WarnOnce, not ErrorReporter). The Interpreter.cs
-        // file is owned by Plan 38 LIVE-01; Plan 44-05 must NOT touch it.
+        // STAY charitable (WarnOnce, not ErrorReporter). Live blocks execute in
+        // Music/MusicStatements.cs since the Phase 3 extraction (was Interpreter.cs).
         //
         // NOTE: Interpreter.cs DOES legitimately contain `CallerStrictMode`
         // references from Plan 44-02's call-boundary save/restore — those are
@@ -129,8 +129,8 @@ public class Phase44ClampGrepConsistencyTests : IDisposable
         // window, NOR is the WarnOnce-style emission removed.
         string repoRoot = FindRepoRoot();
         string path = Path.Combine(
-            repoRoot, "flow-lang", "Interpreter", "Interpreter.cs");
-        Assert.True(File.Exists(path), $"Interpreter.cs missing at {path}");
+            repoRoot, "flow-lang", "Music", "MusicStatements.cs");
+        Assert.True(File.Exists(path), $"MusicStatements.cs missing at {path}");
 
         var lines = File.ReadAllLines(path);
 

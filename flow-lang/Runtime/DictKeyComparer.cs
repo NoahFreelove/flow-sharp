@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using FlowLang.StandardLibrary;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Runtime;
 

@@ -1700,8 +1700,24 @@ FlowLang.Hosting.WorkerResponse :: static Boolean op_Equality(WorkerResponse, Wo
 FlowLang.Hosting.WorkerResponse :: static Boolean op_Inequality(WorkerResponse, WorkerResponse)
 FlowLang.Interpreter.BreakSignal :: ctor()
 FlowLang.Interpreter.ContinueSignal :: ctor()
+FlowLang.Interpreter.DomainBindings :: DomainBindings Constant(Func<String,Value>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings ConstructorPattern(Func<ConstructorPattern,Value,ExecutionContext,Nullable<Boolean>>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings DeclarationObserver(Action<ExecutionContext,String,Value,FlowType>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings DefaultValue(Func<FlowType,Value>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings Expression(Func<T,ExpressionEvaluator,Value>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings LiteralParser(Func<String,Value>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings LiteralPattern(Func<Object,Value,Nullable<Boolean>>)
+FlowLang.Interpreter.DomainBindings :: DomainBindings Members(MemberResolver)
+FlowLang.Interpreter.DomainBindings :: DomainBindings Statement(Action<T,Interpreter>)
+FlowLang.Interpreter.DomainBindings :: ctor()
+FlowLang.Interpreter.ExpressionEvaluator :: ErrorReporter get_Errors()
+FlowLang.Interpreter.ExpressionEvaluator :: ExecutionContext get_Context()
+FlowLang.Interpreter.ExpressionEvaluator :: IFunctionInvoker get_Invoker()
 FlowLang.Interpreter.ExpressionEvaluator :: Value Evaluate(Expression)
 FlowLang.Interpreter.ExpressionEvaluator :: ctor(ExecutionContext, ErrorReporter, IFunctionInvoker)
+FlowLang.Interpreter.ExpressionEvaluator :: property ErrorReporter Errors
+FlowLang.Interpreter.ExpressionEvaluator :: property ExecutionContext Context
+FlowLang.Interpreter.ExpressionEvaluator :: property IFunctionInvoker Invoker
 FlowLang.Interpreter.IFunctionInvoker :: Value ExecuteUserFunction(ProcDeclaration, IReadOnlyList<Value>)
 FlowLang.Interpreter.IFunctionInvoker :: Value ExecuteUserFunctionWithCaptures(ProcDeclaration, IReadOnlyList<Value>, IReadOnlyDictionary<String,Value>)
 FlowLang.Interpreter.IFunctionInvoker :: Value get_LastExpressionValue()
@@ -1712,18 +1728,35 @@ FlowLang.Interpreter.ImplicitReturnCollector :: Void Clear()
 FlowLang.Interpreter.ImplicitReturnCollector :: Void Collect(Value)
 FlowLang.Interpreter.ImplicitReturnCollector :: Void MarkExplicitReturn()
 FlowLang.Interpreter.ImplicitReturnCollector :: ctor()
+FlowLang.Interpreter.Interpreter :: Boolean get_HasPendingReturn()
+FlowLang.Interpreter.Interpreter :: Boolean get_InsideProcCall()
+FlowLang.Interpreter.Interpreter :: ErrorReporter get_Errors()
+FlowLang.Interpreter.Interpreter :: ExecutionContext get_Context()
+FlowLang.Interpreter.Interpreter :: ExpressionEvaluator get_Evaluator()
 FlowLang.Interpreter.Interpreter :: Value ExecuteUserFunction(ProcDeclaration, IReadOnlyList<Value>)
 FlowLang.Interpreter.Interpreter :: Value ExecuteUserFunctionWithCaptures(ProcDeclaration, IReadOnlyList<Value>, IReadOnlyDictionary<String,Value>)
 FlowLang.Interpreter.Interpreter :: Value GetLastExpressionValue()
+FlowLang.Interpreter.Interpreter :: Value SaveAndClearReturnValue()
 FlowLang.Interpreter.Interpreter :: Value get_LastExpressionValue()
+FlowLang.Interpreter.Interpreter :: Void ClearLeakedReturn(String, SourceLocation)
+FlowLang.Interpreter.Interpreter :: Void DiscardPendingReturn(String, SourceLocation)
 FlowLang.Interpreter.Interpreter :: Void Execute(Program)
 FlowLang.Interpreter.Interpreter :: Void ExecuteStatement(Statement)
+FlowLang.Interpreter.Interpreter :: Void RestoreReturnValueAfterSection(Value, SourceLocation)
 FlowLang.Interpreter.Interpreter :: ctor(ExecutionContext, ErrorReporter, ModuleLoader)
+FlowLang.Interpreter.Interpreter :: property Boolean HasPendingReturn
+FlowLang.Interpreter.Interpreter :: property Boolean InsideProcCall
+FlowLang.Interpreter.Interpreter :: property ErrorReporter Errors
+FlowLang.Interpreter.Interpreter :: property ExecutionContext Context
+FlowLang.Interpreter.Interpreter :: property ExpressionEvaluator Evaluator
 FlowLang.Interpreter.Interpreter :: property Value LastExpressionValue
 FlowLang.Interpreter.LambdaCaptureAuditor :: static HashSet<String> CollectFileScopeReferences(IReadOnlyList<Statement>)
+FlowLang.Interpreter.MemberResolver :: Boolean EndInvoke(Value&, IAsyncResult)
+FlowLang.Interpreter.MemberResolver :: Boolean Invoke(Value, String, Value&)
+FlowLang.Interpreter.MemberResolver :: IAsyncResult BeginInvoke(Value, String, Value&, AsyncCallback, Object)
+FlowLang.Interpreter.MemberResolver :: ctor(Object, IntPtr)
 FlowLang.Interpreter.PatternMatcher :: static Boolean PatternMatches(Pattern, Value, Dictionary<String,Value>, ExpressionEvaluator, ExecutionContext)
 FlowLang.Interpreter.PatternMatcher :: static ValueTuple<Boolean,Dictionary<String,Value>,Int32> TryMatchAll(IReadOnlyList<Pattern>, IReadOnlyList<Value>, ExpressionEvaluator, ExecutionContext)
-FlowLang.Interpreter.SectionOverloadDispatch :: static Nullable<ValueTuple<SectionData,IReadOnlyList<Value>,Dictionary<String,Value>>> Resolve(String, IReadOnlyList<SectionData>, IReadOnlyList<Value>, IReadOnlyDictionary<String,Value>, ExecutionContext, ErrorReporter, ExpressionEvaluator, SourceLocation)
 FlowLang.Lexing.PragmaDeclarationSite :: Boolean Equals(Object)
 FlowLang.Lexing.PragmaDeclarationSite :: Boolean Equals(PragmaDeclarationSite)
 FlowLang.Lexing.PragmaDeclarationSite :: Int32 GetHashCode()
@@ -1885,6 +1918,8 @@ FlowLang.Lexing.TokenType :: static field TokenType VoicePool
 FlowLang.Lexing.TokenType :: static field TokenType Void
 FlowLang.Lexing.TokenType :: static field TokenType When
 FlowLang.Lexing.TokenType :: static field TokenType While
+FlowLang.Music.MusicBindings :: static DomainBindings Create()
+FlowLang.Music.MusicBindings :: static DomainBindings Install(DomainBindings)
 FlowLang.Music.MusicContextExtensions :: static Boolean get_SfzEnabled(ExecutionContext)
 FlowLang.Music.MusicContextExtensions :: static Boolean get_SuppressStyleOverrideAdvisory(ExecutionContext)
 FlowLang.Music.MusicContextExtensions :: static Dictionary<String,List<SectionData>> get_SectionRegistry(ExecutionContext)
@@ -1949,10 +1984,12 @@ FlowLang.Music.MusicSession :: Dictionary<Value,DictData> get_StyleRegistry()
 FlowLang.Music.MusicSession :: Dictionary<Value,String> get_SfzInstruments()
 FlowLang.Music.MusicSession :: HashSet<String> get_SfzDiagnostics()
 FlowLang.Music.MusicSession :: HashSet<String> get_StyleOverrideAdvisoriesEmitted()
+FlowLang.Music.MusicSession :: List<SequenceData> get_ActiveSectionCapture()
 FlowLang.Music.MusicSession :: MusicalContext Resolve(ExecutionContext)
 FlowLang.Music.MusicSession :: Object Snapshot(ExecutionContext)
 FlowLang.Music.MusicSession :: String get_ResolvedSfzRoot()
 FlowLang.Music.MusicSession :: Void Restore(ExecutionContext, Object)
+FlowLang.Music.MusicSession :: Void set_ActiveSectionCapture(List<SequenceData>)
 FlowLang.Music.MusicSession :: Void set_ResolvedSfzRoot(String)
 FlowLang.Music.MusicSession :: Void set_SfzEnabled(Boolean)
 FlowLang.Music.MusicSession :: Void set_SuppressStyleOverrideAdvisory(Boolean)
@@ -1965,6 +2002,7 @@ FlowLang.Music.MusicSession :: property Dictionary<Value,DictData> StyleRegistry
 FlowLang.Music.MusicSession :: property Dictionary<Value,String> SfzInstruments
 FlowLang.Music.MusicSession :: property HashSet<String> SfzDiagnostics
 FlowLang.Music.MusicSession :: property HashSet<String> StyleOverrideAdvisoriesEmitted
+FlowLang.Music.MusicSession :: property List<SequenceData> ActiveSectionCapture
 FlowLang.Music.MusicSession :: property String ResolvedSfzRoot
 FlowLang.Music.MusicalContext :: Boolean TryGetLiveTempo(Double&)
 FlowLang.Music.MusicalContext :: MusicalContext Clone()
@@ -2024,6 +2062,7 @@ FlowLang.Music.NoteStreamCompiler :: ctor()
 FlowLang.Music.NoteStreamCompiler :: ctor(ErrorReporter)
 FlowLang.Music.ProgressionCompiler :: SequenceData Compile(ProgressionExpression, MusicalContext)
 FlowLang.Music.ProgressionCompiler :: ctor()
+FlowLang.Music.SectionOverloadDispatch :: static Nullable<ValueTuple<SectionData,IReadOnlyList<Value>,Dictionary<String,Value>>> Resolve(String, IReadOnlyList<SectionData>, IReadOnlyList<Value>, IReadOnlyDictionary<String,Value>, ExecutionContext, ErrorReporter, ExpressionEvaluator, SourceLocation)
 FlowLang.Parsing.BufType :: Int32 GetSpecificity()
 FlowLang.Parsing.BufType :: String get_Name()
 FlowLang.Parsing.BufType :: property String Name
@@ -2060,6 +2099,7 @@ FlowLang.Runtime.ExecutionContext :: Boolean get_OscEnabled()
 FlowLang.Runtime.ExecutionContext :: Boolean get_StrictMode()
 FlowLang.Runtime.ExecutionContext :: Dictionary<String,String> get_ProcOwnership()
 FlowLang.Runtime.ExecutionContext :: Dictionary<String,Value> get_SymbolInternTable()
+FlowLang.Runtime.ExecutionContext :: DomainBindings get_Bindings()
 FlowLang.Runtime.ExecutionContext :: ErrorReporter get_ErrorReporter()
 FlowLang.Runtime.ExecutionContext :: FunctionOverload ResolveFunction(String, IReadOnlyList<FlowType>, SourceLocation, IReadOnlyDictionary<String,FlowType>)
 FlowLang.Runtime.ExecutionContext :: FunctionOverload TryResolveFunction(String, IReadOnlyList<FlowType>, IReadOnlyDictionary<String,FlowType>)
@@ -2097,6 +2137,7 @@ FlowLang.Runtime.ExecutionContext :: Void RestoreState(TestSnapshot)
 FlowLang.Runtime.ExecutionContext :: Void SetSeed(Int32)
 FlowLang.Runtime.ExecutionContext :: Void SetVariable(String, Value)
 FlowLang.Runtime.ExecutionContext :: Void set_BeatTrueToSig(Boolean)
+FlowLang.Runtime.ExecutionContext :: Void set_Bindings(DomainBindings)
 FlowLang.Runtime.ExecutionContext :: Void set_CallerStrictMode(Boolean)
 FlowLang.Runtime.ExecutionContext :: Void set_CurrentCallSite(SourceLocation)
 FlowLang.Runtime.ExecutionContext :: Void set_FixedGen(Random)
@@ -2123,6 +2164,7 @@ FlowLang.Runtime.ExecutionContext :: property Boolean OscEnabled
 FlowLang.Runtime.ExecutionContext :: property Boolean StrictMode
 FlowLang.Runtime.ExecutionContext :: property Dictionary<String,String> ProcOwnership
 FlowLang.Runtime.ExecutionContext :: property Dictionary<String,Value> SymbolInternTable
+FlowLang.Runtime.ExecutionContext :: property DomainBindings Bindings
 FlowLang.Runtime.ExecutionContext :: property ErrorReporter ErrorReporter
 FlowLang.Runtime.ExecutionContext :: property HashSet<String> StrictAdvisoryDedup
 FlowLang.Runtime.ExecutionContext :: property IEnumerable<StackFrame> ActiveFrames
@@ -4156,13 +4198,14 @@ type FlowLang.Hosting.WorkerRequest
 type FlowLang.Hosting.WorkerResponse
 type FlowLang.Interpreter.BreakSignal
 type FlowLang.Interpreter.ContinueSignal
+type FlowLang.Interpreter.DomainBindings
 type FlowLang.Interpreter.ExpressionEvaluator
 type FlowLang.Interpreter.IFunctionInvoker
 type FlowLang.Interpreter.ImplicitReturnCollector
 type FlowLang.Interpreter.Interpreter
 type FlowLang.Interpreter.LambdaCaptureAuditor
+type FlowLang.Interpreter.MemberResolver
 type FlowLang.Interpreter.PatternMatcher
-type FlowLang.Interpreter.SectionOverloadDispatch
 type FlowLang.Lexing.PragmaDeclarationSite
 type FlowLang.Lexing.PragmaRegistry
 type FlowLang.Lexing.PragmaScanner
@@ -4170,6 +4213,7 @@ type FlowLang.Lexing.PragmaSet
 type FlowLang.Lexing.SimpleLexer
 type FlowLang.Lexing.Token
 type FlowLang.Lexing.TokenType
+type FlowLang.Music.MusicBindings
 type FlowLang.Music.MusicContextExtensions
 type FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4
 type FlowLang.Music.MusicContextExtensions+<G>$2D52CB9564E847E733B63CFB339CC9A4+<M>$9B4102559475182BCA9103E3CDB5EF0F
@@ -4179,6 +4223,7 @@ type FlowLang.Music.MusicSession
 type FlowLang.Music.MusicalContext
 type FlowLang.Music.NoteStreamCompiler
 type FlowLang.Music.ProgressionCompiler
+type FlowLang.Music.SectionOverloadDispatch
 type FlowLang.Parsing.BufType
 type FlowLang.Parsing.ParseException
 type FlowLang.Parsing.Parser

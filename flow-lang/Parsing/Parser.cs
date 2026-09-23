@@ -10,7 +10,6 @@ using FlowLang.StandardLibrary;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.Syntax;
-using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Parsing;
 

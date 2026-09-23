@@ -184,8 +184,9 @@ flow-lang/
   Ast/{Expressions,Statements}/   # immutable record nodes
   Interpreter/          # ExpressionEvaluator, Interpreter
   Runtime/              # ExecutionContext, StackFrame, Value, ModuleLoader,
-                        #   NoteStreamCompiler, Thunk, PrngRegistry
-  Music/                # MusicalContext, MusicSession (music state on ExecutionContext)
+                        #   Thunk, PrngRegistry
+  Music/                # MusicBindings (music meaning of the grammar), MusicalContext,
+                        #   MusicSession, NoteStreamCompiler, ProgressionCompiler, sections
   TypeSystem/{PrimitiveTypes,SpecialTypes}/ + OverloadResolver.cs + ArrayType.cs
   StandardLibrary/
     BuiltInFunctions.cs           # main registration site
@@ -222,7 +223,7 @@ flow-lang/
 | Scope | `Runtime/StackFrame.cs` | Variables/functions with parent chain |
 | Values | `Runtime/Value.cs` | CLR wrapper + Flow type info |
 | Musical ctx | `Music/MusicalContext.cs` + `Music/MusicSession.cs` | Tempo / timesig / key / swing (per-frame scope state); per-context music state (sections, styles, SFZ) as an `ExecutionContext` extension |
-| Note streams | `Runtime/NoteStreamCompiler.cs` | `\| ... \|` → Sequence using active context |
+| Note streams | `Music/NoteStreamCompiler.cs` | `\| ... \|` → Sequence using active context |
 | Overloads | `TypeSystem/OverloadResolver.cs` | Specificity-scored dispatch |
 | Built-ins | `StandardLibrary/InternalFunctionRegistry.cs` + `BuiltInFunctions.cs` | Registration |
 | Imports | `Runtime/ModuleLoader.cs` | `use "@x"` = stdlib, else relative |
@@ -234,6 +235,7 @@ flow-lang/
 
 ## Key Design Decisions
 
+- **Music grammar is bound, not built in** (Phase 3). The interpreter evaluates note streams, chords, songs, sections, context/tuning/live blocks, unit literals, music members and music patterns through `Interpreter/DomainBindings.cs` (`ExecutionContext.Bindings`); `Music/MusicBindings.cs` supplies them and `FlowEngine` installs them. New music syntax: add the AST node + parser rule, then bind its evaluation in `MusicBindings` — never add music types to `Interpreter/` or `Runtime/` (the `DependencyDirectionTests` ratchet now has an empty baseline).
 - **`->` is a parse-time transform.** `x -> f(arg)` → `f(x, arg)` as `FunctionCallExpression`. No runtime flow concept.
 - **Overload resolution.** `OverloadResolver` scores: exact +1000, compatible +500, convertible +100. `Void` params act as wildcards.
 - **Implicit returns.** `ImplicitReturnCollector` collects every non-void expression. 0 → `Void`; 1 → that value; 2+ → array. Explicit `return X` clears and short-circuits. No `Void`/`null`/`()` literal; bare `return` is a parse error. To return `Void` implicitly end with a void expression (e.g. `(print)` or a declaration).

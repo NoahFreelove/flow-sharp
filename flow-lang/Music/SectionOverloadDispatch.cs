@@ -2,10 +2,11 @@ using FlowLang.Ast;
 using FlowLang.Ast.Patterns;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
+using FlowLang.Interpreter;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.SpecialTypes;
 
-namespace FlowLang.Interpreter;
+namespace FlowLang.Music;
 
 /// <summary>
 /// Phase 36 Plan 36-10 (D-36-18 SECT-01) — runtime dispatcher that picks
