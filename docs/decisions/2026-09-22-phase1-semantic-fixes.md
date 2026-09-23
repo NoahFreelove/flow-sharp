@@ -139,3 +139,8 @@ surfaced more inconsistencies. They were fixed before the snapshots were recorde
 - **`Void` variables.** `Void x = 3` was rejected, although `Void` parameters and
   `Voids` accept anything. A `Void` annotation now accepts any value, and the
   variable takes that value's type.
+- **Nested blocks in parameterized sections.** `section v(Note r) { gain 0.5 { | r | } }`
+  produced no sequences and rendered silent, because the section-call path did not
+  collect note streams from nested context, tuning or live blocks the way a declared
+  section does. Both paths now collect them (`music.sections`). Found while moving
+  section evaluation into the music bindings.

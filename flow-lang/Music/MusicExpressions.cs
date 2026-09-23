@@ -333,11 +333,12 @@ internal sealed class MusicExpressions
             // Re-run the body. Same shape as Interpreter.ExecuteSectionDeclaration's
             // body-execution block — we mirror it here because the section is
             // re-evaluated per call site with different bindings.
+            // Bare-expression sequences of the body. Installed as the section capture
+            // so nested context/tuning/live blocks (`section v(Note r) { gain 0.5
+            // { | r | } }`) surface their sequences, exactly as a declared section's do.
             var bareExprSeqs = new List<SequenceData>();
-            // Note: we don't have access to _activeSectionBareExpressions from
-            // the ExpressionEvaluator. The section body's bare-expression
-            // sequences are captured via the local-variable scan + a manual
-            // post-pass.
+            var previousCapture = _context.Music.ActiveSectionCapture;
+            _context.Music.ActiveSectionCapture = bareExprSeqs;
 
             // Audit §2.3 — fence the body re-execution against return-flag leakage.
             // This re-execution happens during SONG evaluation, which may itself be
@@ -371,6 +372,7 @@ internal sealed class MusicExpressions
             }
             finally
             {
+                _context.Music.ActiveSectionCapture = previousCapture;
                 interp?.RestoreReturnValueAfterSection(savedReturn, call.Location);
             }
 

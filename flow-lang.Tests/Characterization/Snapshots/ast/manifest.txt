@@ -77,7 +77,7 @@ be0502306f56148e  contracts/language/music/audio-arguments.flow
 5147176698a76c52  contracts/language/music/note-stream.flow
 91057819abc97e9f  contracts/language/music/note-transpose.flow
 a676eded631bc1f0  contracts/language/music/octave-context.flow
-a82d238c66c50a61  contracts/language/music/sections.flow
+248e24c001718d8f  contracts/language/music/sections.flow
 f9a03d7fa7af4956  contracts/language/music/unit-arithmetic.flow
 306a50f4051f0c17  contracts/language/music/units.flow
 983df400f6806b87  contracts/language/procedures/bare-return.flow

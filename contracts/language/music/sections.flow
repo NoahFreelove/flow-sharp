@@ -1,9 +1,21 @@
 // contract: music.sections
 // status: preserve
-// rationale: Parameterized sections are called inside song literals.
+// rationale: Parameterized sections are called inside song literals. A section's
+//    bare note streams become its sequences, including those inside nested context
+//    blocks, whether the section is declared plain or called with arguments.
 use "@std"
 section verse(Note root) {
     Sequence s = | C4 |
 }
 Song song = [verse(C4) verse(D4) verse(E4)]
 (print (str (len (getSections song))))
+section plain {
+    gain 0.5 { | C4 D4 | }
+}
+section chorus(Note root) {
+    | E4 |
+    gain 0.5 { | C4 D4 | }
+}
+Song nested = [plain chorus(C4)]
+(print (sectionSequences nested "plain"))
+(print (sectionSequences nested "chorus#0"))
