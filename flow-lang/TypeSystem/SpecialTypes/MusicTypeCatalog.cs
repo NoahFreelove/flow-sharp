@@ -14,6 +14,8 @@ internal static class MusicTypeCatalog
     internal static void Register()
     {
         Runtime.ValueConversions.Register(MusicValueConversions.Convert);
+        Runtime.ValueComparisons.RegisterNumericView(MusicValueConversions.NumericView);
+        Runtime.ValueComparisons.RegisterCommonScale(MusicValueConversions.CommonScale);
 
         var catalog = TypeCatalog.Default;
         catalog.Register("Buffer", BufferType.Instance);

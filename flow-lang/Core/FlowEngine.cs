@@ -102,12 +102,7 @@ public class FlowEngine : IDisposable
     /// (stripped-stdlib advisory) to surface Web-target-aware diagnostics
     /// at parse / load time rather than as silent runtime failures.
     /// </summary>
-    public static bool IsWebTarget { get; } =
-#if FLOW_WEB
-        true;
-#else
-        false;
-#endif
+    public static bool IsWebTarget => Runtime.BuildTarget.IsWeb;
 
     /// <summary>
     /// Phase 47 D-47-10: false on Web target. `live { ... }` blocks require
@@ -117,7 +112,7 @@ public class FlowEngine : IDisposable
     /// a parse-time ParseException with Rust-style diagnostic pointing at
     /// the offending source line fires when this property is false.
     /// </summary>
-    public static bool SupportsLiveBlocks { get; } = !IsWebTarget;
+    public static bool SupportsLiveBlocks => Runtime.BuildTarget.SupportsLiveBlocks;
 
     public FlowEngine(bool verbose = false) : this(new ErrorReporter(), verbose)
     {

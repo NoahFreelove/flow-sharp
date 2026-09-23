@@ -57,4 +57,6 @@ public sealed class SecondType : FlowType
     {
         return $"{seconds}s";
     }
+
+    public override string? Format(Runtime.Value value) => $"{Runtime.ValueFormatter.Number(value.As<double>())}s";
 }

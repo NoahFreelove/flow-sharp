@@ -57,6 +57,13 @@ public abstract class FlowType : IEquatable<FlowType>
     /// </summary>
     public virtual bool AcceptsConversionFrom(FlowType source) => false;
 
+    /// <summary>
+    /// How <c>(str x)</c>, <c>print</c> and string interpolation show a value of this
+    /// type, when the type has its own literal form (for example <c>+2st</c>). Null
+    /// uses the value's general formatting. Domain types override it.
+    /// </summary>
+    public virtual string? Format(Runtime.Value value) => null;
+
     public virtual bool Equals(FlowType? other)
     {
         if (other is null) return false;

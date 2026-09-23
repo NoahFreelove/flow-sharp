@@ -1176,7 +1176,7 @@ public class ExpressionEvaluator
         {
             // One formatting rule for interpolation, (str x) and (print x): strings
             // and notes appear bare, Void as "()".
-            sb.Append(StandardLibrary.StdLib.AutoStr(Evaluate(part)));
+            sb.Append(ValueFormatter.AutoStr(Evaluate(part)));
         }
         return Value.String(sb.ToString());
     }

@@ -62,4 +62,6 @@ public sealed class SemitoneType : FlowType
         string sign = semitones >= 0 ? "+" : "";
         return $"{sign}{semitones}st";
     }
+
+    public override string? Format(Runtime.Value value) => $"{(value.As<int>() >= 0 ? "+" : "")}{value.As<int>()}st";
 }

@@ -47,4 +47,6 @@ public sealed class CentType : FlowType
 
         return centValue;
     }
+
+    public override string? Format(Runtime.Value value) => $"{(value.As<double>() >= 0 ? "+" : "")}{Runtime.ValueFormatter.Number(value.As<double>())}c";
 }

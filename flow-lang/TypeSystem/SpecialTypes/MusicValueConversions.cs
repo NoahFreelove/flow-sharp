@@ -42,4 +42,20 @@ internal static class MusicValueConversions
                 return null;
         }
     }
+
+    /// <summary>Semitones, cents, durations and decibels compare as plain numbers.</summary>
+    public static (double Double, System.Numerics.BigInteger? Whole)? NumericView(Value value) => value.Type switch
+    {
+        SemitoneType => (value.As<int>(), new System.Numerics.BigInteger(value.As<int>())),
+        CentType or MillisecondType or SecondType or DecibelType => (value.As<double>(), null),
+        _ => null,
+    };
+
+    /// <summary>Durations compare in seconds across ms and s: (equals 1000ms 1s).</summary>
+    public static (double A, double B)? CommonScale(Value a, Value b)
+    {
+        static bool IsTime(Value v) => v.Type is MillisecondType or SecondType;
+        static double Seconds(Value v) => v.Type is MillisecondType ? System.Convert.ToDouble(v.Data) / 1000.0 : System.Convert.ToDouble(v.Data);
+        return IsTime(a) && IsTime(b) ? (Seconds(a), Seconds(b)) : null;
+    }
 }

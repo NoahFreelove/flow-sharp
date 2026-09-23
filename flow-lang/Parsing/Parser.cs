@@ -272,7 +272,7 @@ public partial class Parser
                 // (Interpreter.cs:133 case-dispatch + ExecutionContext.cs:292 property)
                 // but the parse-time throw prevents instances from ever being
                 // constructed under Web target.
-                if (!Core.FlowEngine.SupportsLiveBlocks)
+                if (!Runtime.BuildTarget.SupportsLiveBlocks)
                 {
                     var liveTok = PreviousToken;
                     throw new ParseException(

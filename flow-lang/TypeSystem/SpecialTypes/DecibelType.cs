@@ -51,4 +51,6 @@ public sealed class DecibelType : FlowType
         string sign = decibels > 0 ? "+" : "";
         return $"{sign}{decibels}dB";
     }
+
+    public override string? Format(Runtime.Value value) => $"{(value.As<double>() >= 0 ? "+" : "")}{Runtime.ValueFormatter.Number(value.As<double>())}dB";
 }

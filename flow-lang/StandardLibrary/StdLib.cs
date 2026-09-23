@@ -230,7 +230,7 @@ public static class StdLib
     /// Number formatting shared by every value formatter (str, print, interpolation):
     /// up to 10 significant digits, as for plain doubles.
     /// </summary>
-    internal static string Num(double value) => value.ToString("G10");
+    internal static string Num(double value) => ValueFormatter.Number(value);
 
     public static Value Concat(IReadOnlyList<Value> args)
     {
@@ -687,43 +687,7 @@ public static class StdLib
     /// reference-identity types fall back to <see cref="Value.ToString"/>.
     /// </para>
     /// </summary>
-    public static string AutoStr(Value v)
-    {
-        if (v.Type is StringType) return v.As<string>();
-        if (v.Type is IntType) return v.As<int>().ToString();
-        if (v.Type is LongType) return v.As<long>().ToString();
-        // Same 10-significant-digit form as (str x) and interpolation.
-        if (v.Type is FloatType or DoubleType) return v.ToString();
-        if (v.Type is NumberType) return v.As<BigInteger>().ToString();
-        if (v.Type is BoolType) return v.As<bool>() ? "true" : "false";
-        if (v.Type is NoteType) return v.As<string>();
-        if (v.Type is SymbolType) return "#" + v.As<string>();
-        if (v.Type is SemitoneType)
-        {
-            var st = v.As<int>();
-            return $"{(st >= 0 ? "+" : "")}{st}st";
-        }
-        if (v.Type is CentType)
-        {
-            var c = v.As<double>();
-            return $"{(c >= 0 ? "+" : "")}{Num(c)}c";
-        }
-        if (v.Type is MillisecondType) return $"{Num(v.As<double>())}ms";
-        if (v.Type is SecondType) return $"{Num(v.As<double>())}s";
-        if (v.Type is DecibelType)
-        {
-            var dB = v.As<double>();
-            return $"{(dB >= 0 ? "+" : "")}{Num(dB)}dB";
-        }
-        if (v.Type is HertzType) return $"{Num(v.As<double>())}Hz";
-        if (v.Type is VoidType) return "()";
-        // Sequence / Bar / Chord / Song / Section / Tuple / Dict / Array / Tuning /
-        // Sfz / MarkovModel / LsystemModel / OscHandle etc. — fall through to
-        // Value.ToString which already handles each (and reference-identity types
-        // print their canonical description). Pitfall 6 (NewLineChars) does not
-        // apply here — we are NOT writing structured docs.
-        return v.ToString();
-    }
+    public static string AutoStr(Value v) => ValueFormatter.AutoStr(v);
 
     /// <summary>
     /// Non-strict charitable <c>(print)</c> impl backing the Void-wildcard

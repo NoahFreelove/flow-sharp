@@ -93,7 +93,7 @@ public class ModuleLoader
         //
         // FlowEngine.IsWebTarget is a compile-time constant — the entire
         // if-body is dead code on Desktop builds (Roslyn constant-fold).
-        if (Core.FlowEngine.IsWebTarget && IsStrippedOnWeb(path))
+        if (BuildTarget.IsWeb && IsStrippedOnWeb(path))
         {
             Diagnostics.RenderingDiagnostics.WarnOnce(
                 $"target:stripped-module:{path}",

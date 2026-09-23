@@ -68,4 +68,6 @@ public sealed class HertzType : FlowType
 
         throw new ArgumentException($"Invalid hertz format: {hzStr}. Must end with 'Hz' or 'kHz'.");
     }
+
+    public override string? Format(Runtime.Value value) => $"{Runtime.ValueFormatter.Number(value.As<double>())}Hz";
 }

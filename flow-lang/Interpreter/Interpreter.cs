@@ -387,7 +387,7 @@ public class Interpreter : IFunctionInvoker
                 var overload = FunctionOverload.Internal(proc.Name, registeredSignature!, impl!);
                 _context.DeclareFunction(overload);
             }
-            else if (FlowLang.Core.FlowEngine.IsWebTarget)
+            else if (BuildTarget.IsWeb)
             {
                 // Phase 48 (debug wasm-boot-no-app-bundle, cycle 6): on the Web
                 // target some builtin C# implementations are STRIPPED at compile

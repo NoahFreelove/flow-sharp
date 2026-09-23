@@ -110,6 +110,8 @@ public sealed class NoteType : FlowType
 
         return $"{note}{octave}{altStr}";
     }
+
+    public override string? Format(Runtime.Value value) => value.As<string>();
 }
 
 /// <summary>

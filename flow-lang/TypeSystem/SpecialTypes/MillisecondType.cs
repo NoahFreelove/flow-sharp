@@ -57,4 +57,6 @@ public sealed class MillisecondType : FlowType
     {
         return $"{milliseconds}ms";
     }
+
+    public override string? Format(Runtime.Value value) => $"{Runtime.ValueFormatter.Number(value.As<double>())}ms";
 }

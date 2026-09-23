@@ -1,7 +1,6 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
 using System.Numerics;
 
 namespace FlowLang.StandardLibrary;
@@ -23,12 +22,10 @@ public static class Utils
             FloatType => (true, value.As<double>(), null),
             DoubleType => (true, value.As<double>(), null),
             NumberType => (true, (double)value.As<BigInteger>(), value.As<BigInteger>()),
-            SemitoneType => (true, value.As<int>(), new BigInteger(value.As<int>())),
-            CentType => (true, value.As<double>(), null),
-            MillisecondType => (true, value.As<double>(), null),
-            SecondType => (true, value.As<double>(), null),
-            DecibelType => (true, value.As<double>(), null),
-            _ => (false, 0, null)
+            // Domain quantities that compare as numbers (e.g. semitones, decibels).
+            _ => ValueComparisons.NumericView(value) is { } domain
+                ? (true, domain.Double, domain.Whole)
+                : (false, 0, null)
         };
     }
 
@@ -39,9 +36,9 @@ public static class Utils
     /// </summary>
     public static int CompareNumeric(Value a, Value b)
     {
-        // Durations compare as the same quantity: (lt 500ms 1s) is true.
-        if (UnitArithmetic.TryAsSeconds(a, b, out var aSec, out var bSec))
-            return aSec.CompareTo(bSec);
+        // Values measuring one quantity compare on a common scale: (lt 500ms 1s) is true.
+        if (ValueComparisons.CommonScale(a, b) is var (aScaled, bScaled))
+            return aScaled.CompareTo(bScaled);
 
         var (aIsNumeric, aDouble, aBigInt) = ToComparableNumber(a);
         var (bIsNumeric, bDouble, bBigInt) = ToComparableNumber(b);
@@ -70,9 +67,9 @@ public static class Utils
         if (a.Type.Equals(b.Type))
             return StrictEquals(a, b);
 
-        // Durations in different units: (equals 1000ms 1s) is true.
-        if (UnitArithmetic.TryAsSeconds(a, b, out var aSec, out var bSec))
-            return aSec == bSec;
+        // One quantity in different units: (equals 1000ms 1s) is true.
+        if (ValueComparisons.CommonScale(a, b) is var (aScaled, bScaled))
+            return aScaled == bScaled;
 
         // Try numeric comparison
         var (aIsNumeric, _, _) = ToComparableNumber(a);
