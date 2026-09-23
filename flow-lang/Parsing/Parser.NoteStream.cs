@@ -8,6 +8,7 @@ using FlowLang.Lexing;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.SpecialTypes;
 using System.Collections.Generic;
+using FlowLang.Syntax;
 
 public partial class Parser
 {

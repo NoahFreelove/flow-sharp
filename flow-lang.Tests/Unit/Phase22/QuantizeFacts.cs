@@ -4,6 +4,7 @@ using FlowLang.StandardLibrary.Transforms;
 using FlowLang.Tests.Fixtures;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Unit.Phase22;
 

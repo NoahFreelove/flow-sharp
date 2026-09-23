@@ -3,6 +3,7 @@ using System.Linq;
 using FlowLang.Tests.Fixtures;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Unit.Phase28;
 

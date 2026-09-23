@@ -90,7 +90,7 @@ public class MusicAwarePatternsTests
         using var engine = new FlowEngine(verbose: false);
         var staccato = new TypeSystem.SpecialTypes.MusicalNoteData(
             'C', 4, 0, 4, isRest: false,
-            articulation: TypeSystem.SpecialTypes.Articulation.Staccato);
+            articulation: Syntax.Articulation.Staccato);
         engine.Context.DeclareVariable("n", Value.MusicalNote(staccato));
 
         var src = "(match n | #staccato => \"short\" | #legato => \"smooth\" | _ => \"normal\")";
@@ -105,7 +105,7 @@ public class MusicAwarePatternsTests
         using var engine = new FlowEngine(verbose: false);
         var normal = new TypeSystem.SpecialTypes.MusicalNoteData(
             'C', 4, 0, 4, isRest: false,
-            articulation: TypeSystem.SpecialTypes.Articulation.Normal);
+            articulation: Syntax.Articulation.Normal);
         engine.Context.DeclareVariable("n", Value.MusicalNote(normal));
 
         var src = "(match n | #staccato => \"short\" | #legato => \"smooth\" | _ => \"normal\")";

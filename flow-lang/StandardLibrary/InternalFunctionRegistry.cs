@@ -176,8 +176,8 @@ public class InternalFunctionRegistry
         // returns true at the OverloadResolver layer — the SignaturesMatch /
         // TypesEqual layer has a stricter equality semantics that needs the
         // same wildcard handling.
-        if (registered is FlowLang.TypeSystem.SpecialTypes.DictType rDict
-            && requested is FlowLang.TypeSystem.SpecialTypes.DictType reqDict)
+        if (registered is FlowLang.TypeSystem.DictType rDict
+            && requested is FlowLang.TypeSystem.DictType reqDict)
         {
             return TypesEqual(rDict.KeyType, reqDict.KeyType)
                 && TypesEqual(rDict.ValueType, reqDict.ValueType);

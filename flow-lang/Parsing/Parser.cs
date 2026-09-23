@@ -7,10 +7,9 @@ using FlowLang.Core;
 using FlowLang.Diagnostics;
 using FlowLang.Lexing;
 using FlowLang.StandardLibrary;
-using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.Parsing;
 
@@ -507,7 +506,7 @@ public partial class Parser
         if (Match(TokenType.Assign))
         {
             // Special case: Song type with [section1 section2*N ...] arrangement syntax
-            if (varType is SongType && Check(TokenType.LBracket))
+            if (varType.Name == "Song" && Check(TokenType.LBracket))
             {
                 value = ParseSongExpression();
             }
@@ -2031,7 +2030,7 @@ public partial class Parser
             string numeral = numeralToken.Text;
 
             // Validate it looks like a roman numeral
-            if (!ScaleDatabase.IsRomanNumeral(numeral))
+            if (!NumeralSyntax.IsRomanNumeral(numeral))
             {
                 _errorReporter.ReportError(
                     $"'{numeral}' is not a valid roman numeral chord symbol",
@@ -2343,7 +2342,7 @@ public partial class Parser
             // the key musical-context is not known until evaluation. When
             // the identifier is NOT a roman numeral, fall back to the
             // BindingPattern semantics from Plan 35-05.
-            if (ScaleDatabase.IsRomanNumeral(PreviousToken.Text))
+            if (NumeralSyntax.IsRomanNumeral(PreviousToken.Text))
             {
                 inner = new ConstructorPattern(
                     location,
@@ -2418,38 +2417,14 @@ public partial class Parser
         {
             var text = CurrentToken.Text;
 
-            // Special types
-            if (text is "Buffer" or "Note" or "Bar" or "Semitone" or "Cent"
-                or "Millisecond" or "Second" or "Decibel" or "Hertz" or "Lazy"
-                or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
-                or "OscillatorState" or "Envelope" or "Beat" or "Voice"
-                or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
-                or "Symbol" or "Tuple"  // Phase 26.1 TUP-09 — `Tuple<<T1, T2>>` annotation gate
-                or "Dict"  // Phase 26.1 DICT-01 — `Dict<K, V>` annotation gate
-                or "Tuning"  // Phase 32 Plan 32-04 — `Tuning t = (loadScala ...)` annotation gate
-                or "Sfz"  // Phase 33 Plan 33-05 — `Sfz v = (loadSfz #...)` annotation gate
-                or "MarkovModel"  // Phase 36 Plan 36-06 — `MarkovModel m = (markovTrain ...)` annotation gate
-                or "LsystemModel"  // Phase 36 Plan 36-07 — `LsystemModel m = (lsystemModel ...)` annotation gate
-                or "OscHandle"  // Phase 38 Plan 38-06 — `OscHandle h = (oscListen ...)` annotation gate
-                or "MidiDevice"  // Phase 40 Plan 40-01 — `MidiDevice dev = (openMidiOutput ...)` annotation gate (string-only check; safe on Web — @midi import rejected before any decl parses)
-                or "ClockHandle"  // Phase 40 Plan 40-02 — `ClockHandle h = (clockMaster ...)` annotation gate + the `clockStop` midi.flow decl (string-only check; safe on Web)
-                or "JackHandle")  // Phase 40 Plan 40-03 — `JackHandle h = (jackSync)` annotation gate + the jackSync jack.flow decl (string-only check; safe on Web)
+            // Named types and constructors (Tuple<<...>>, Dict<K, V>, Lazy<T>) from the
+            // grammar's fixed list; whether a layer defines them does not matter here.
+            if (TypeNames.Named.Contains(text) || TypeNames.Constructors.Contains(text))
                 return true;
 
-            // Plural forms (array types like Ints, Strings, etc.)
-            if (text.EndsWith("s"))
-            {
-                var singular = text.Substring(0, text.Length - 1);
-                if (singular is "Void" or "Int" or "Float" or "Long" or "Double"
-                    or "String" or "Bool" or "Number" or "Buf" or "Buffer"
-                    or "Note" or "Bar" or "Semitone" or "Cent" or "Millisecond" or "Second" or "Decibel"
-                    or "Hertz"
-                    or "MusicalNote" or "Function" or "Chord" or "Section" or "Song"
-                    or "OscillatorState" or "Envelope" or "Beat" or "Voice"
-                    or "Track" or "NoteValue" or "TimeSignature" or "Sequence"
-                    or "Symbol")
-                    return true;
-            }
+            // Plural forms (array types like Ints, Notes)
+            if (text.EndsWith("s") && TypeNames.PluralDeclarationStarters.Contains(text[..^1]))
+                return true;
         }
 
         return false;

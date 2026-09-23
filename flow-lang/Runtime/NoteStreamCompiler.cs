@@ -4,6 +4,7 @@ using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem;  // for Fraction (Phase 18)
 using FlowLang.TypeSystem.SpecialTypes;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Syntax;
 
 namespace FlowLang.Runtime;
 

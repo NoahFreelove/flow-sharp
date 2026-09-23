@@ -3,6 +3,7 @@ using System.Text;
 using System.Xml;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.StandardLibrary.Notation;
 

@@ -7,6 +7,7 @@ using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.Tests.Helpers;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Unit.Phase28;
 

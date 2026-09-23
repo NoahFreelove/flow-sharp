@@ -3449,6 +3449,26 @@ FlowLang.StandardLibrary.Utils :: static ValueTuple<Boolean,Double,Nullable<BigI
 FlowLang.StandardLibrary.VisualizationFunctions :: static Value Visualize(IReadOnlyList<Value>)
 FlowLang.StandardLibrary.VisualizationFunctions :: static Value VisualizeBuffer(IReadOnlyList<Value>)
 FlowLang.StandardLibrary.VisualizationFunctions :: static Void Register(InternalFunctionRegistry)
+FlowLang.Syntax.Articulation :: field Int32 value__
+FlowLang.Syntax.Articulation :: static field Articulation Accent
+FlowLang.Syntax.Articulation :: static field Articulation Legato
+FlowLang.Syntax.Articulation :: static field Articulation Marcato
+FlowLang.Syntax.Articulation :: static field Articulation Normal
+FlowLang.Syntax.Articulation :: static field Articulation Sforzando
+FlowLang.Syntax.Articulation :: static field Articulation Staccato
+FlowLang.Syntax.Articulation :: static field Articulation Tenuto
+FlowLang.Syntax.ChordSyntax :: static Boolean IsChordSymbol(String)
+FlowLang.Syntax.ChordSyntax :: static Boolean TryMatchChordWithDuration(String, String&, Char&)
+FlowLang.Syntax.ChordSyntax :: static field IReadOnlySet<String> Qualities
+FlowLang.Syntax.NoteSyntax :: static Int32 GetNoteValue(Char, Int32)
+FlowLang.Syntax.NoteSyntax :: static ValueTuple<Char,Int32,Int32> Parse(String)
+FlowLang.Syntax.NoteSyntax :: static ValueTuple<Char,Int32,Int32> Parse(String, Int32)
+FlowLang.Syntax.NumeralSyntax :: static Boolean IsRomanNumeral(String)
+FlowLang.Syntax.NumeralSyntax :: static ValueTuple<String,String> SplitRomanNumeral(String)
+FlowLang.Syntax.TypeNames :: static field IReadOnlySet<String> Constructors
+FlowLang.Syntax.TypeNames :: static field IReadOnlySet<String> Named
+FlowLang.Syntax.TypeNames :: static field IReadOnlySet<String> PluralDeclarationStarters
+FlowLang.Syntax.TypeNames :: static field IReadOnlySet<String> Pluralizable
 FlowLang.TypeSystem.ArrayType :: Boolean CanConvertTo(FlowType)
 FlowLang.TypeSystem.ArrayType :: Boolean Equals(FlowType)
 FlowLang.TypeSystem.ArrayType :: Boolean IsCompatibleWith(FlowType)
@@ -3459,6 +3479,19 @@ FlowLang.TypeSystem.ArrayType :: String get_Name()
 FlowLang.TypeSystem.ArrayType :: ctor(FlowType)
 FlowLang.TypeSystem.ArrayType :: property FlowType ElementType
 FlowLang.TypeSystem.ArrayType :: property String Name
+FlowLang.TypeSystem.DictType :: Boolean CanConvertTo(FlowType)
+FlowLang.TypeSystem.DictType :: Boolean Equals(FlowType)
+FlowLang.TypeSystem.DictType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.DictType :: Boolean IsHashable()
+FlowLang.TypeSystem.DictType :: FlowType get_KeyType()
+FlowLang.TypeSystem.DictType :: FlowType get_ValueType()
+FlowLang.TypeSystem.DictType :: Int32 GetHashCode()
+FlowLang.TypeSystem.DictType :: Int32 GetSpecificity()
+FlowLang.TypeSystem.DictType :: String get_Name()
+FlowLang.TypeSystem.DictType :: ctor(FlowType, FlowType)
+FlowLang.TypeSystem.DictType :: property FlowType KeyType
+FlowLang.TypeSystem.DictType :: property FlowType ValueType
+FlowLang.TypeSystem.DictType :: property String Name
 FlowLang.TypeSystem.FlowType :: Boolean CanConvertTo(FlowType)
 FlowLang.TypeSystem.FlowType :: Boolean Equals(FlowType)
 FlowLang.TypeSystem.FlowType :: Boolean Equals(Object)
@@ -3612,14 +3645,6 @@ FlowLang.TypeSystem.PrimitiveTypes.VoidType :: String get_Name()
 FlowLang.TypeSystem.PrimitiveTypes.VoidType :: property String Name
 FlowLang.TypeSystem.PrimitiveTypes.VoidType :: static VoidType get_Instance()
 FlowLang.TypeSystem.PrimitiveTypes.VoidType :: static property VoidType Instance
-FlowLang.TypeSystem.SpecialTypes.Articulation :: field Int32 value__
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Accent
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Legato
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Marcato
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Normal
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Sforzando
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Staccato
-FlowLang.TypeSystem.SpecialTypes.Articulation :: static field Articulation Tenuto
 FlowLang.TypeSystem.SpecialTypes.BarData :: BarMode get_Mode()
 FlowLang.TypeSystem.SpecialTypes.BarData :: Boolean ValidateDuration()
 FlowLang.TypeSystem.SpecialTypes.BarData :: Boolean get_IsPickup()
@@ -3707,19 +3732,6 @@ FlowLang.TypeSystem.SpecialTypes.DecibelType :: static DecibelType get_Instance(
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static Double Parse(String)
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static String Format(Double)
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static property DecibelType Instance
-FlowLang.TypeSystem.SpecialTypes.DictType :: Boolean CanConvertTo(FlowType)
-FlowLang.TypeSystem.SpecialTypes.DictType :: Boolean Equals(FlowType)
-FlowLang.TypeSystem.SpecialTypes.DictType :: Boolean IsCompatibleWith(FlowType)
-FlowLang.TypeSystem.SpecialTypes.DictType :: Boolean IsHashable()
-FlowLang.TypeSystem.SpecialTypes.DictType :: FlowType get_KeyType()
-FlowLang.TypeSystem.SpecialTypes.DictType :: FlowType get_ValueType()
-FlowLang.TypeSystem.SpecialTypes.DictType :: Int32 GetHashCode()
-FlowLang.TypeSystem.SpecialTypes.DictType :: Int32 GetSpecificity()
-FlowLang.TypeSystem.SpecialTypes.DictType :: String get_Name()
-FlowLang.TypeSystem.SpecialTypes.DictType :: ctor(FlowType, FlowType)
-FlowLang.TypeSystem.SpecialTypes.DictType :: property FlowType KeyType
-FlowLang.TypeSystem.SpecialTypes.DictType :: property FlowType ValueType
-FlowLang.TypeSystem.SpecialTypes.DictType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.HertzType :: Boolean IsCompatibleWith(FlowType)
 FlowLang.TypeSystem.SpecialTypes.HertzType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.HertzType :: String get_Name()
@@ -3950,25 +3962,36 @@ FlowLang.TypeSystem.SpecialTypes.TuningType :: String get_Name()
 FlowLang.TypeSystem.SpecialTypes.TuningType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.TuningType :: static TuningType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.TuningType :: static property TuningType Instance
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Boolean CanConvertTo(FlowType)
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Boolean Equals(FlowType)
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Boolean IsCompatibleWith(FlowType)
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Boolean IsHashable()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Boolean get_IsAnyArity()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: IReadOnlyList<FlowType> get_ElementTypes()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Int32 GetHashCode()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: Int32 GetSpecificity()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: String get_Name()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: ctor(IReadOnlyList<FlowType>)
-FlowLang.TypeSystem.SpecialTypes.TupleType :: property Boolean IsAnyArity
-FlowLang.TypeSystem.SpecialTypes.TupleType :: property IReadOnlyList<FlowType> ElementTypes
-FlowLang.TypeSystem.SpecialTypes.TupleType :: property String Name
-FlowLang.TypeSystem.SpecialTypes.TupleType :: static TupleType get_AnyArity()
-FlowLang.TypeSystem.SpecialTypes.TupleType :: static property TupleType AnyArity
+FlowLang.TypeSystem.TupleType :: Boolean CanConvertTo(FlowType)
+FlowLang.TypeSystem.TupleType :: Boolean Equals(FlowType)
+FlowLang.TypeSystem.TupleType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.TupleType :: Boolean IsHashable()
+FlowLang.TypeSystem.TupleType :: Boolean get_IsAnyArity()
+FlowLang.TypeSystem.TupleType :: IReadOnlyList<FlowType> get_ElementTypes()
+FlowLang.TypeSystem.TupleType :: Int32 GetHashCode()
+FlowLang.TypeSystem.TupleType :: Int32 GetSpecificity()
+FlowLang.TypeSystem.TupleType :: String get_Name()
+FlowLang.TypeSystem.TupleType :: ctor(IReadOnlyList<FlowType>)
+FlowLang.TypeSystem.TupleType :: property Boolean IsAnyArity
+FlowLang.TypeSystem.TupleType :: property IReadOnlyList<FlowType> ElementTypes
+FlowLang.TypeSystem.TupleType :: property String Name
+FlowLang.TypeSystem.TupleType :: static TupleType get_AnyArity()
+FlowLang.TypeSystem.TupleType :: static property TupleType AnyArity
+FlowLang.TypeSystem.TypeCatalog :: FlowType Resolve(String)
+FlowLang.TypeSystem.TypeCatalog :: FlowType TryResolve(String)
+FlowLang.TypeSystem.TypeCatalog :: Void Register(String, FlowType)
+FlowLang.TypeSystem.TypeCatalog :: ctor()
+FlowLang.TypeSystem.TypeCatalog :: static TypeCatalog get_Default()
+FlowLang.TypeSystem.TypeCatalog :: static property TypeCatalog Default
 FlowLang.TypeSystem.TypeChecker :: Boolean CheckAssignment(FlowType, FlowType, SourceLocation)
 FlowLang.TypeSystem.TypeChecker :: Boolean CheckTypes(IReadOnlyList<FlowType>, IReadOnlyList<FlowType>, SourceLocation)
 FlowLang.TypeSystem.TypeChecker :: Boolean ValidateType(FlowType, SourceLocation)
 FlowLang.TypeSystem.TypeChecker :: ctor(ErrorReporter)
+FlowLang.TypeSystem.UnresolvedType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.UnresolvedType :: Int32 GetSpecificity()
+FlowLang.TypeSystem.UnresolvedType :: String get_Name()
+FlowLang.TypeSystem.UnresolvedType :: ctor(String)
+FlowLang.TypeSystem.UnresolvedType :: property String Name
 type FlowLang.Ast.AstNode
 type FlowLang.Ast.Elements.BareSectionElement
 type FlowLang.Ast.Elements.SectionCallElement
@@ -4276,7 +4299,13 @@ type FlowLang.StandardLibrary.Transforms.TransformFunctions
 type FlowLang.StandardLibrary.UnitArithmetic
 type FlowLang.StandardLibrary.Utils
 type FlowLang.StandardLibrary.VisualizationFunctions
+type FlowLang.Syntax.Articulation
+type FlowLang.Syntax.ChordSyntax
+type FlowLang.Syntax.NoteSyntax
+type FlowLang.Syntax.NumeralSyntax
+type FlowLang.Syntax.TypeNames
 type FlowLang.TypeSystem.ArrayType
+type FlowLang.TypeSystem.DictType
 type FlowLang.TypeSystem.FlowType
 type FlowLang.TypeSystem.Fraction
 type FlowLang.TypeSystem.FunctionSignature
@@ -4297,7 +4326,6 @@ type FlowLang.TypeSystem.PrimitiveTypes.SymbolType
 type FlowLang.TypeSystem.PrimitiveTypes.TrackType
 type FlowLang.TypeSystem.PrimitiveTypes.VoiceType
 type FlowLang.TypeSystem.PrimitiveTypes.VoidType
-type FlowLang.TypeSystem.SpecialTypes.Articulation
 type FlowLang.TypeSystem.SpecialTypes.BarData
 type FlowLang.TypeSystem.SpecialTypes.BarMode
 type FlowLang.TypeSystem.SpecialTypes.BarType
@@ -4307,7 +4335,6 @@ type FlowLang.TypeSystem.SpecialTypes.ChordData
 type FlowLang.TypeSystem.SpecialTypes.ChordType
 type FlowLang.TypeSystem.SpecialTypes.ClockHandleType
 type FlowLang.TypeSystem.SpecialTypes.DecibelType
-type FlowLang.TypeSystem.SpecialTypes.DictType
 type FlowLang.TypeSystem.SpecialTypes.HertzType
 type FlowLang.TypeSystem.SpecialTypes.JackHandleType
 type FlowLang.TypeSystem.SpecialTypes.LsystemModelType
@@ -4333,5 +4360,7 @@ type FlowLang.TypeSystem.SpecialTypes.SongType
 type FlowLang.TypeSystem.SpecialTypes.TimeSignatureData
 type FlowLang.TypeSystem.SpecialTypes.TimeSignatureType
 type FlowLang.TypeSystem.SpecialTypes.TuningType
-type FlowLang.TypeSystem.SpecialTypes.TupleType
+type FlowLang.TypeSystem.TupleType
+type FlowLang.TypeSystem.TypeCatalog
 type FlowLang.TypeSystem.TypeChecker
+type FlowLang.TypeSystem.UnresolvedType

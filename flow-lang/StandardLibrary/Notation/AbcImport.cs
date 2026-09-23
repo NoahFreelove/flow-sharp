@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.StandardLibrary.Notation;
 

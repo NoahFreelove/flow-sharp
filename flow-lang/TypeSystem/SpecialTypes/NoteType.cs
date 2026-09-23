@@ -1,3 +1,4 @@
+using FlowLang.Syntax;
 namespace FlowLang.TypeSystem.SpecialTypes;
 
 /// <summary>
@@ -46,108 +47,13 @@ public sealed class NoteType : FlowType
     /// <c>MusicalContext.DefaultOctave</c>, coalescing null to 4).
     /// </summary>
     public static (char note, int octave, int alteration) Parse(string noteStr, int defaultOctave)
-    {
-        if (string.IsNullOrEmpty(noteStr))
-            throw new ArgumentException("Note string cannot be empty");
-
-        char note = char.ToUpper(noteStr[0]);
-        if (note < 'A' || note > 'G')
-            throw new ArgumentException($"Invalid note: {note}. Must be A-G.");
-
-        // Sum-based scan across the remaining chars (D-07). Three phases:
-        //   1. Pre-octave alteration chars (b/#/+/-)
-        //   2. Octave digits (contiguous)
-        //   3. Post-octave alteration chars (b/#/+/-)
-        int sharpCount = 0;
-        int flatCount = 0;
-        int octave = defaultOctave; // Default octave when no digits present
-        int i = 1;
-
-        // Phase 1: pre-octave alterations
-        while (i < noteStr.Length && !char.IsDigit(noteStr[i]))
-        {
-            switch (noteStr[i])
-            {
-                case '+':
-                case '#':
-                    sharpCount++;
-                    break;
-                case '-':
-                case 'b':
-                    flatCount++;
-                    break;
-                default:
-                    throw new ArgumentException($"Invalid note character '{noteStr[i]}' in {noteStr}");
-            }
-            i++;
-        }
-
-        // Phase 2: octave digits
-        int octStart = i;
-        while (i < noteStr.Length && char.IsDigit(noteStr[i]))
-        {
-            i++;
-        }
-        if (i > octStart)
-        {
-            octave = int.Parse(noteStr[octStart..i]);
-        }
-
-        // Phase 3: post-octave alterations
-        while (i < noteStr.Length)
-        {
-            switch (noteStr[i])
-            {
-                case '+':
-                case '#':
-                    sharpCount++;
-                    break;
-                case '-':
-                case 'b':
-                    flatCount++;
-                    break;
-                default:
-                    throw new ArgumentException($"Invalid note character '{noteStr[i]}' in {noteStr}");
-            }
-            i++;
-        }
-
-        int alteration = sharpCount - flatCount;
-
-        // Post-alteration MIDI range check (D-09): replaces letter+octave-only IsValidNoteRange.
-        // Cb4 (MIDI 59 = B3) is in range; Cb0 (MIDI 11) is below E0 (MIDI 16) and throws.
-        int midi = GetNoteValue(note, octave) + alteration;
-        int minMidi = GetNoteValue('E', 0);
-        int maxMidi = GetNoteValue('E', 10);
-        if (midi < minMidi || midi > maxMidi)
-        {
-            throw new ArgumentException($"Note {noteStr} is out of valid range (E0 to E10)");
-        }
-
-        return (note, octave, alteration);
-    }
+        => FlowLang.Syntax.NoteSyntax.Parse(noteStr, defaultOctave);
 
     /// <summary>
-    /// Converts a note and octave to a MIDI-like note number for range validation.
-    /// Public so tests and helpers outside NoteType can compute ranges without duplicating
-    /// the chromatic mapping.
+    /// Converts a note and octave to a MIDI-like note number (C0 = 12). Delegates to
+    /// <see cref="FlowLang.Syntax.NoteSyntax.GetNoteValue"/>.
     /// </summary>
-    public static int GetNoteValue(char note, int octave)
-    {
-        int noteOffset = note switch
-        {
-            'C' => 0,
-            'D' => 2,
-            'E' => 4,
-            'F' => 5,
-            'G' => 7,
-            'A' => 9,
-            'B' => 11,
-            _ => throw new ArgumentException($"Invalid note: {note}")
-        };
-
-        return (octave + 1) * 12 + noteOffset; // C0 = 12
-    }
+    public static int GetNoteValue(char note, int octave) => FlowLang.Syntax.NoteSyntax.GetNoteValue(note, octave);
 
     public static int ToMidiNote(char note, int octave, int alteration)
     {
@@ -204,25 +110,6 @@ public sealed class NoteType : FlowType
 
         return $"{note}{octave}{altStr}";
     }
-}
-
-/// <summary>
-/// Articulation affects how a note's envelope is shaped.
-/// Phase 28 (SPEC-3): Legato is a first-class articulation value here, separate from the
-/// Phase 22 legato() transform which adjusts DurationOverlap. The Articulation.Legato value
-/// is what `leg` after a note in a `|...|` stream produces; renderers extend its sounding
-/// duration ~110% with a soft crossfade (BarRenderer applies the duration multiplier; per-synth
-/// envelopes apply the soft release).
-/// </summary>
-public enum Articulation
-{
-    Normal,     // Default envelope
-    Staccato,   // Short, detached (~50% duration)
-    Tenuto,     // Full sustain, held to full value
-    Marcato,    // Accented + slightly shortened
-    Accent,     // Velocity bump, normal duration
-    Sforzando,  // Sudden loud spike, then return to previous dynamic
-    Legato      // Phase 28: extended duration (~110%) with soft crossfade into next note
 }
 
 /// <summary>

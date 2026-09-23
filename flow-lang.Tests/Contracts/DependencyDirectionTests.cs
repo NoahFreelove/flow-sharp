@@ -22,7 +22,7 @@ public class DependencyDirectionTests
     [
         "FlowLang.Lexing", "FlowLang.Parsing", "FlowLang.Ast", "FlowLang.Interpreter",
         "FlowLang.Diagnostics", "FlowLang.Runtime", "FlowLang.TypeSystem",
-        "FlowLang.StandardLibrary.Dict",
+        "FlowLang.StandardLibrary.Dict", "FlowLang.Syntax",
     ];
 
     // Namespaces a language-core type may not reference (music model/language,

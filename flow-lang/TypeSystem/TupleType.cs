@@ -1,6 +1,6 @@
 using System.Linq;
 
-namespace FlowLang.TypeSystem.SpecialTypes;
+namespace FlowLang.TypeSystem;
 
 /// <summary>
 /// Tuple type with per-position element types and arity (Phase 26.1 TUP-09).

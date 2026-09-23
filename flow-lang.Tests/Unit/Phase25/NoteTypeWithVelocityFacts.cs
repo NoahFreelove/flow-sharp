@@ -2,6 +2,7 @@ using FlowLang.Core;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Unit.Phase25;
 

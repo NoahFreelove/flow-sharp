@@ -11,6 +11,7 @@ using FlowLang.StandardLibrary.Audio;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Unit.Phase28;
 

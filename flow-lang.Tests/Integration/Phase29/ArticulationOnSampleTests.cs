@@ -8,6 +8,7 @@ using FlowLang.Tests.Fixtures;
 using FlowLang.Tests.Helpers;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Integration.Phase29;
 

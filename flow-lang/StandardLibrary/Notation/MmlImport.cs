@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using FlowLang.Diagnostics;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.StandardLibrary.Notation;
 

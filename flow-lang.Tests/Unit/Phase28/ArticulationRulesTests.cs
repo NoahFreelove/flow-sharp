@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Unit.Phase28;
 

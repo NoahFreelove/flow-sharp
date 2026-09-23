@@ -1,7 +1,6 @@
 using FlowLang.Lexing;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Parsing;
 
@@ -186,63 +185,9 @@ public static class TypeParser
             TokenType.Bool => BoolType.Instance,
             TokenType.Number => NumberType.Instance,
             TokenType.Buf => BufType.Instance,
-            TokenType.Identifier when token.Text == "Buffer" => BufferType.Instance,
-            TokenType.Identifier when token.Text == "Note" => NoteType.Instance,
-            TokenType.Identifier when token.Text == "Bar" => BarType.Instance,
-            TokenType.Identifier when token.Text == "Semitone" => SemitoneType.Instance,
-            TokenType.Identifier when token.Text == "Cent" => CentType.Instance,
-            TokenType.Identifier when token.Text == "Millisecond" => MillisecondType.Instance,
-            TokenType.Identifier when token.Text == "Second" => SecondType.Instance,
-            TokenType.Identifier when token.Text == "Decibel" => DecibelType.Instance,
-            TokenType.Identifier when token.Text == "Hertz" => HertzType.Instance,
-            TokenType.Identifier when token.Text == "OscillatorState" => OscillatorStateType.Instance,
-            TokenType.Identifier when token.Text == "Envelope" => EnvelopeType.Instance,
-            TokenType.Identifier when token.Text == "Beat" => BeatType.Instance,
-            TokenType.Identifier when token.Text == "Voice" => VoiceType.Instance,
-            TokenType.Identifier when token.Text == "Track" => TrackType.Instance,
-            TokenType.Identifier when token.Text == "NoteValue" => NoteValueType.Instance,
-            TokenType.Identifier when token.Text == "TimeSignature" => TimeSignatureType.Instance,
-            TokenType.Identifier when token.Text == "Sequence" => SequenceType.Instance,
-            TokenType.Identifier when token.Text == "MusicalNote" => MusicalNoteType.Instance,
-            TokenType.Identifier when token.Text == "Chord" => ChordType.Instance,
-            TokenType.Identifier when token.Text == "Symbol" => SymbolType.Instance,
-            TokenType.Identifier when token.Text == "Section" => SectionType.Instance,
-            TokenType.Identifier when token.Text == "Song" => SongType.Instance,
-            // Phase 32 Plan 32-04: Tuning is the 15th SpecialType. Required so
-            // `Tuning t = (loadScala "...")` declarations parse.
-            TokenType.Identifier when token.Text == "Tuning" => TuningType.Instance,
-            // Phase 33 Plan 33-05: Sfz is the 16th SpecialType. Required so
-            // `Sfz v = (loadSfz #violin)` declarations parse. (Plan 33-02 shipped
-            // the type itself; this entry wires it into the type-name parser.)
-            TokenType.Identifier when token.Text == "Sfz" => SfzType.Instance,
-            // Phase 36 Plan 36-06: MarkovModel is the 17th SpecialType. Required so
-            // `MarkovModel m = (markovTrain corpus 2)` declarations parse.
-            TokenType.Identifier when token.Text == "MarkovModel" => MarkovModelType.Instance,
-            // Phase 36 Plan 36-07: LsystemModel is the 18th SpecialType. Required so
-            // `LsystemModel m = (lsystemModel #A rules)` declarations parse.
-            TokenType.Identifier when token.Text == "LsystemModel" => LsystemModelType.Instance,
-            // Phase 38 Plan 38-06: OscHandle is the 19th SpecialType. Required so
-            // `OscHandle h = (oscListen 7777 "/x" handler)` declarations parse + `use "@osc"` imports.
-            TokenType.Identifier when token.Text == "OscHandle" => OscHandleType.Instance,
-#if !FLOW_WEB
-            // Phase 40 Plan 40-01: MidiDevice is the reference-identity handle for
-            // an opened MIDI output port. Required so `MidiDevice dev =
-            // (openMidiOutput "port")` declarations parse + `use "@midi"` imports.
-            // #if !FLOW_WEB — MidiDeviceType is stripped on Web (T-40-03).
-            TokenType.Identifier when token.Text == "MidiDevice" => MidiDeviceType.Instance,
-            // Phase 40 Plan 40-02: ClockHandle is the reference-identity handle for
-            // a MIDI clock master/slave. Required so `ClockHandle h =
-            // (clockMaster dev)` declarations parse + the `clockStop` decl in
-            // midi.flow type-checks. #if !FLOW_WEB — ClockHandleType is stripped
-            // on Web (T-40-03).
-            TokenType.Identifier when token.Text == "ClockHandle" => ClockHandleType.Instance,
-            // Phase 40 Plan 40-03: JackHandle is the reference-identity handle
-            // returned by (jackSync). Required so `JackHandle h = (jackSync)`
-            // declarations parse + the jackSync decl in jack.flow type-checks.
-            // #if !FLOW_WEB — JackHandleType is stripped on Web (T-40-03).
-            TokenType.Identifier when token.Text == "JackHandle" => JackHandleType.Instance,
-#endif
-            TokenType.Identifier when token.Text == "Function" => FunctionType.Instance,
+            // Named types bind through the catalog; a grammar name with no installed
+            // binding becomes an UnresolvedType placeholder (grammar never varies).
+            TokenType.Identifier when Syntax.TypeNames.Named.Contains(token.Text) => TypeCatalog.Default.Resolve(token.Text),
             _ => throw new ParseException($"Expected type name but got {token.Type} '{token.Text}' at {token.Location}")
         };
 
@@ -344,54 +289,7 @@ public static class TypeParser
     /// Returns null if the name doesn't match a known type.
     /// </summary>
     private static FlowType? TryParseSingularType(string name)
-    {
-        return name switch
-        {
-            "Void" => VoidType.Instance,
-            "Int" => IntType.Instance,
-            "Float" => FloatType.Instance,
-            "Long" => LongType.Instance,
-            "Double" => DoubleType.Instance,
-            "String" => StringType.Instance,
-            "Bool" => BoolType.Instance,
-            "Number" => NumberType.Instance,
-            "Buf" => BufType.Instance,
-            "Buffer" => BufferType.Instance,
-            "Note" => NoteType.Instance,
-            "Bar" => BarType.Instance,
-            "Semitone" => SemitoneType.Instance,
-            "Cent" => CentType.Instance,
-            "Millisecond" => MillisecondType.Instance,
-            "Second" => SecondType.Instance,
-            "Decibel" => DecibelType.Instance,
-            "Hertz" => HertzType.Instance,
-            "OscillatorState" => OscillatorStateType.Instance,
-            "Envelope" => EnvelopeType.Instance,
-            "Beat" => BeatType.Instance,
-            "Voice" => VoiceType.Instance,
-            "Track" => TrackType.Instance,
-            "NoteValue" => NoteValueType.Instance,
-            "TimeSignature" => TimeSignatureType.Instance,
-            "Sequence" => SequenceType.Instance,
-            "MusicalNote" => MusicalNoteType.Instance,
-            "Chord" => ChordType.Instance,
-            "Symbol" => SymbolType.Instance,
-            "Section" => SectionType.Instance,
-            "Song" => SongType.Instance,
-            "Tuning" => TuningType.Instance, // Phase 32 Plan 32-04
-            "Sfz" => SfzType.Instance,       // Phase 33 Plan 33-05
-            "MarkovModel" => MarkovModelType.Instance, // Phase 36 Plan 36-06
-            "LsystemModel" => LsystemModelType.Instance, // Phase 36 Plan 36-07
-            "OscHandle" => OscHandleType.Instance, // Phase 38 Plan 38-06
-#if !FLOW_WEB
-            "MidiDevice" => MidiDeviceType.Instance, // Phase 40 Plan 40-01 (#if !FLOW_WEB)
-            "ClockHandle" => ClockHandleType.Instance, // Phase 40 Plan 40-02 (#if !FLOW_WEB)
-            "JackHandle" => JackHandleType.Instance, // Phase 40 Plan 40-03 (#if !FLOW_WEB)
-#endif
-            "Function" => FunctionType.Instance,
-            _ => null
-        };
-    }
+        => Syntax.TypeNames.Pluralizable.Contains(name) ? TypeCatalog.Default.Resolve(name) : null;
 }
 
 /// <summary>

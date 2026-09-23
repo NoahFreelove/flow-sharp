@@ -5,6 +5,7 @@ using FlowLang.StandardLibrary;
 using FlowLang.StandardLibrary.Harmony;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.Interpreter;
 
@@ -127,7 +128,7 @@ public static class PatternMatcher
         if (ctor.Name == "Tuple" && !ctor.IsChordLiteral && !ctor.IsRomanNumeral
             && !ctor.IsArticulationSymbol && !ctor.IsSymbolLiteral)
         {
-            if (scrutinee.Type is not TypeSystem.SpecialTypes.TupleType
+            if (scrutinee.Type is not TypeSystem.TupleType
                 || scrutinee.Data is not IReadOnlyList<Value> elements
                 || elements.Count != ctor.SubPatterns.Count)
                 return false;
@@ -311,7 +312,7 @@ public static class PatternMatcher
                 && !cp.IsChordLiteral && !cp.IsRomanNumeral && !cp.IsArticulationSymbol
                 && !cp.IsSymbolLiteral)
             {
-                if (arg.Type is not TypeSystem.SpecialTypes.TupleType
+                if (arg.Type is not TypeSystem.TupleType
                     || arg.Data is not IReadOnlyList<Value> tupleElements)
                     return (false, bindings, 0);
                 if (tupleElements.Count != cp.SubPatterns.Count)

@@ -1,5 +1,6 @@
 using System;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.StandardLibrary.Audio.Synthesizers;
 

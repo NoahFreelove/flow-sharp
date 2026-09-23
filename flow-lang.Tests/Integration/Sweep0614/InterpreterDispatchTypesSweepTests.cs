@@ -2,6 +2,7 @@ using FlowLang.Tests.Fixtures;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.TypeSystem;
 
 namespace FlowLang.Tests.Integration.Sweep0614;
 

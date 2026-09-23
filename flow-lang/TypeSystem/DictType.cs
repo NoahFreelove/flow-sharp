@@ -1,6 +1,6 @@
 using FlowLang.TypeSystem.PrimitiveTypes;
 
-namespace FlowLang.TypeSystem.SpecialTypes;
+namespace FlowLang.TypeSystem;
 
 /// <summary>
 /// Generic Dict&lt;K, V&gt; with insertion-order preservation (Phase 26.1 DICT-01).

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.StandardLibrary.Audio;
 

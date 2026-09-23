@@ -8,6 +8,7 @@ using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.Tests.Helpers;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Tools;
 

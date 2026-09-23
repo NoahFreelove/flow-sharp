@@ -9,6 +9,7 @@ using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Notation;
 using FlowLang.TypeSystem.SpecialTypes;
 using Xunit;
+using FlowLang.Syntax;
 
 namespace FlowLang.Tests.Integration.Phase39;
 

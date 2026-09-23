@@ -53,7 +53,7 @@ q : NoteValue
   .Count = 2
 (dict "a" 1) : Dict<String, Int>
   .Entries = error: Cannot infer Flow type from CLR type System.Collections.Generic.OrderedDictionary`2[FlowLang.Runtime.Value,FlowLa…
-  .Type = error: Cannot infer Flow type from CLR type FlowLang.TypeSystem.SpecialTypes.DictType
+  .Type = error: Cannot infer Flow type from CLR type FlowLang.TypeSystem.DictType
 (createSineTone 440Hz 0.01 0.5) : Buffer
   .Channels = 2
   .Data = error: Cannot infer Flow type from CLR type System.Single[]

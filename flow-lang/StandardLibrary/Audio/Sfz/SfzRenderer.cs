@@ -5,6 +5,7 @@ using FlowLang.Diagnostics;
 using FlowLang.StandardLibrary.Audio.DSP;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.SpecialTypes;
+using FlowLang.Syntax;
 
 namespace FlowLang.StandardLibrary.Audio.Sfz;
 

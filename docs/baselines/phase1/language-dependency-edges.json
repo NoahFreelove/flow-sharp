@@ -8,7 +8,8 @@
     "FlowLang.Diagnostics",
     "FlowLang.Runtime",
     "FlowLang.TypeSystem",
-    "FlowLang.StandardLibrary.Dict"
+    "FlowLang.StandardLibrary.Dict",
+    "FlowLang.Syntax"
   ],
   "forbiddenNamespaces": [
     "FlowLang.Audio",
@@ -28,7 +29,6 @@
     "Rug.Osc"
   ],
   "edges": [
-    "FlowLang.Ast.Expressions.NoteElement -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Interpreter.ExpressionEvaluator -\u003E FlowLang.StandardLibrary.Audio",
     "FlowLang.Interpreter.ExpressionEvaluator -\u003E FlowLang.StandardLibrary.Harmony",
     "FlowLang.Interpreter.ExpressionEvaluator -\u003E FlowLang.TypeSystem.SpecialTypes",
@@ -38,13 +38,7 @@
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.StandardLibrary.Harmony",
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Interpreter.SectionOverloadDispatch -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Lexing.SimpleLexer -\u003E FlowLang.StandardLibrary.Harmony",
-    "FlowLang.Lexing.SimpleLexer -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Parsing.Parser -\u003E FlowLang.StandardLibrary.Harmony",
-    "FlowLang.Parsing.Parser -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Parsing.TypeParser -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Runtime.DictData -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Runtime.DictKeyComparer -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Runtime.ExecutionContext -\u003E FlowLang.StandardLibrary.Audio.Sfz",
     "FlowLang.Runtime.ExecutionContext -\u003E FlowLang.StandardLibrary.Audio.Synthesizers",
     "FlowLang.Runtime.ExecutionContext -\u003E FlowLang.StandardLibrary.Audio.Tuning",
@@ -63,7 +57,6 @@
     "FlowLang.Runtime.Value -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Runtime.WasmEntry -\u003E FlowLang.Audio",
     "FlowLang.Runtime.WasmEntry -\u003E FlowLang.StandardLibrary.Audio",
-    "FlowLang.StandardLibrary.Dict.DictFunctions -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.TypeSystem.FunctionSignature -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.TypeSystem.PrimitiveTypes.IntType -\u003E FlowLang.TypeSystem.SpecialTypes"
   ]

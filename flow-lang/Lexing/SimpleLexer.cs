@@ -1,8 +1,7 @@
 using FlowLang.Core;
 using FlowLang.Diagnostics;
-using FlowLang.StandardLibrary.Harmony;
-using FlowLang.TypeSystem.SpecialTypes;
 using System.Text;
+using FlowLang.Syntax;
 
 namespace FlowLang.Lexing;
 
@@ -1063,7 +1062,7 @@ public class SimpleLexer
             // fall through to TryParseNote below.
             // Identifiers like "Bb7" (b-accidental-style, which ChordParser doesn't accept)
             // fall through the chord check and are picked up by TryParseNote as NoteLiteral(B,7,-1).
-            if (ChordParser.IsChordSymbol(text))
+            if (ChordSyntax.IsChordSymbol(text))
             {
                 return new Token(TokenType.ChordLiteral, text, start, text, Span: new Span(start, CurrentLocation()));
             }
@@ -1092,7 +1091,7 @@ public class SimpleLexer
             // interpretation (CLAUDE.md "Chord literals" lists Bb7 as a chord).
             // TryMatchChordWithDuration is conservative — empty/bare-digit-without-
             // accidental qualities (Bbq, G7q, C4q) fall through to the note paths.
-            if (ChordParser.TryMatchChordWithDuration(text, out var chordCore, out _))
+            if (ChordSyntax.TryMatchChordWithDuration(text, out var chordCore, out _))
             {
                 // Rewind one char so the trailing duration letter re-scans as its
                 // own Identifier token (same mechanism as the note+duration split).
@@ -1165,7 +1164,7 @@ public class SimpleLexer
             var probe = "B" + text[1..];   // canonical
             try
             {
-                var (note, octave, alteration) = NoteType.Parse(probe);
+                var (note, octave, alteration) = NoteSyntax.Parse(probe);
                 noteValue = probe;          // canonical text returned (B4q etc.)
                 return true;
             }
@@ -1193,7 +1192,7 @@ public class SimpleLexer
         try
         {
             // Use the NoteType.Parse method to validate
-            var (note, octave, alteration) = NoteType.Parse(text);
+            var (note, octave, alteration) = NoteSyntax.Parse(text);
             // Store the original text as the value
             noteValue = text;
             return true;
