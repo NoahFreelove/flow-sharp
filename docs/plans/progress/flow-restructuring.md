@@ -9,8 +9,8 @@ log, config snapshot, render services, tracked resources), evaluations support
 cooperative cancellation and budgets, watch mode renders through a
 latest-request-wins coordinator, and a process worker provides hard termination.
 All four gate items have tests; core, platform and long tiers pass. See the
-[Phase 2 record](../../baselines/phase2/README.md). Phase 3 (language-only runtime
-and pure standard library) is next and has not started.
+[Phase 2 record](../../baselines/phase2/README.md). **Phase 3 (language-only runtime
+and pure standard library) is in progress**; see the Phase 3 section below.
 
 Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
 see the [Phase 1 record](../../baselines/phase1/README.md).
@@ -413,3 +413,43 @@ dotnet run --project scripts/MinimalHost -c Release -- --json docs/baselines/pha
 
 Next ready slice: Phase 3 (syntax-level type names, music bindings behind an
 interface, stdlib split with compatibility aggregates, language-only build).
+
+## Phase 3 in progress — 2026-09-22
+
+### Characterization suite (`933f2d4`, fixes `94792af`)
+
+Snapshot tests under `flow-lang.Tests/Characterization/` pin what the extraction
+must not change: parser ASTs for every contract and example, overload resolution
+and conversions for 33 representative types, value formatting/equality/members,
+module export surfaces, the public API (removals need an allow-list entry), and the
+whole music corpus (stdout, diagnostics, error count, buffer hashes; `LongRunning`).
+Writing them surfaced five language inconsistencies, fixed first (integer `delay`
+time, identity casts, unit × unit `mul`, empty-buffer default, `Void` variables);
+see `docs/decisions/2026-09-22-phase1-semantic-fixes.md`. The corpus test pins
+microphone capture to silence at 44.1 kHz so the host input device cannot change it.
+
+### Extraction slices
+
+- **A (`ecd9db4`)** — lexical rules move to `FlowLang.Syntax` (notes, chords,
+  numerals, articulations, the fixed type-name grammar). `TypeCatalog` binds names
+  to types; music types register from `MusicTypeCatalog`; unbound names parse as
+  `UnresolvedType`. Tuple/Dict types move to `FlowLang.TypeSystem`. The parser and
+  lexer no longer reference music runtime types. Edges 38 → 30.
+- **B** — `FlowType.IsUnitQuantity` / `AcceptsConversionFrom` traits replace
+  music-type checks in `IntType` and `FunctionSignature`; the note-stream parser
+  uses `NumeralSyntax`. `WasmEntry` is classified as host glue (the frozen
+  `flow-runtime.js` binds it by full name). Edges 30 → 25.
+- **D1** — the 30 music `Value` factories move to `MusicValue`
+  (`FlowLang.TypeSystem.SpecialTypes`), and music conversions leave
+  `Value.ConvertTo` for a `ValueConversions` registry the music layer fills.
+  `Value` has no music dependencies. Edges 25 → 19.
+
+Verification after D1: `verify.py --tier all` core 2,882 passed (the one failure
+was the host-dependent mic advisory, now pinned), MIDI 21 passed, Web build OK,
+zero tracked-content changes.
+
+Remaining slices: D2 (music session state out of `ExecutionContext`), D3 (interpreter
+music constructs behind a hook; `MusicalContext`/`NoteStreamCompiler`/
+`ProgressionCompiler` move to the music layer), D4 (pattern-matcher music patterns,
+member access, section dispatch), then the stdlib split, the language-only
+assembly and the Phase 3 gate.

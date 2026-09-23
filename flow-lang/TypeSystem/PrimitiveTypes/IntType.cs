@@ -13,9 +13,10 @@ public sealed class IntType : FlowType
 
     public override bool CanConvertTo(FlowType target)
     {
-        // Int can convert to Long, Float, Double, Number, NoteValue (int-backed enum)
+        // Int can convert to Long, Float, Double, Number, and to any type that accepts
+        // Int (the music layer's int-backed NoteValue).
         return target is LongType or FloatType or DoubleType or NumberType
-            or SpecialTypes.NoteValueType
+            || target.AcceptsConversionFrom(this)
             || base.CanConvertTo(target);
     }
 

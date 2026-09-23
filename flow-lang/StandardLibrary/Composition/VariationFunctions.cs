@@ -63,7 +63,7 @@ public static class VariationFunctions
     {
         var seq = args[0].As<SequenceData>();
         double probability = args[1].As<double>();
-        return Value.Sequence(ApplyVariation(seq, probability, null, new Random(), null));
+        return MusicValue.Sequence(ApplyVariation(seq, probability, null, new Random(), null));
     }
 
     private static Value VaryTyped(IReadOnlyList<Value> args)
@@ -71,7 +71,7 @@ public static class VariationFunctions
         var seq = args[0].As<SequenceData>();
         double probability = args[1].As<double>();
         string mutationType = (string)args[2].Data!;
-        return Value.Sequence(ApplyVariation(seq, probability, mutationType, new Random(), null));
+        return MusicValue.Sequence(ApplyVariation(seq, probability, mutationType, new Random(), null));
     }
 
     private static Value VarySeeded(IReadOnlyList<Value> args)
@@ -79,7 +79,7 @@ public static class VariationFunctions
         var seq = args[0].As<SequenceData>();
         double probability = args[1].As<double>();
         int seed = args[2].As<int>();
-        return Value.Sequence(ApplyVariation(seq, probability, null, new Random(seed), null));
+        return MusicValue.Sequence(ApplyVariation(seq, probability, null, new Random(seed), null));
     }
 
     private static Value VaryTypedSeeded(IReadOnlyList<Value> args)
@@ -88,7 +88,7 @@ public static class VariationFunctions
         double probability = args[1].As<double>();
         string mutationType = (string)args[2].Data!;
         int seed = args[3].As<int>();
-        return Value.Sequence(ApplyVariation(seq, probability, mutationType, new Random(seed), null));
+        return MusicValue.Sequence(ApplyVariation(seq, probability, mutationType, new Random(seed), null));
     }
 
     private static Value VaryTypedWithKey(IReadOnlyList<Value> args)
@@ -97,7 +97,7 @@ public static class VariationFunctions
         double probability = args[1].As<double>();
         string mutationType = (string)args[2].Data!;
         string keyContext = (string)args[3].Data!;
-        return Value.Sequence(ApplyVariation(seq, probability, mutationType, new Random(), keyContext));
+        return MusicValue.Sequence(ApplyVariation(seq, probability, mutationType, new Random(), keyContext));
     }
 
     private static Value VaryTypedWithKeySeed(IReadOnlyList<Value> args)
@@ -107,7 +107,7 @@ public static class VariationFunctions
         string mutationType = (string)args[2].Data!;
         string keyContext = (string)args[3].Data!;
         int seed = args[4].As<int>();
-        return Value.Sequence(ApplyVariation(seq, probability, mutationType, new Random(seed), keyContext));
+        return MusicValue.Sequence(ApplyVariation(seq, probability, mutationType, new Random(seed), keyContext));
     }
 
     // ===== Core Variation Logic =====

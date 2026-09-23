@@ -1,5 +1,6 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -332,7 +333,7 @@ public static class FileIO
     {
         string filepath = args[0].As<string>();
         var buffer = LoadWavInternal(filepath);
-        return Value.Buffer(buffer);
+        return MusicValue.Buffer(buffer);
     }
 
     /// <summary>
@@ -346,9 +347,9 @@ public static class FileIO
         string filepath = args[0].As<string>();
         int semitones = args[1].As<int>();
         var buffer = LoadWavInternal(filepath);
-        if (semitones == 0) return Value.Buffer(buffer);   // identity short-circuit
+        if (semitones == 0) return MusicValue.Buffer(buffer);   // identity short-circuit
         double ratio = Math.Pow(2.0, semitones / 12.0);
-        return Value.Buffer(VarispeedResample(buffer, ratio));
+        return MusicValue.Buffer(VarispeedResample(buffer, ratio));
     }
 
     /// <summary>
@@ -362,11 +363,11 @@ public static class FileIO
         string filepath = args[0].As<string>();
         double ratio = args[1].As<double>();
         var buffer = LoadWavInternal(filepath);
-        if (ratio == 1.0) return Value.Buffer(buffer);     // identity short-circuit
+        if (ratio == 1.0) return MusicValue.Buffer(buffer);     // identity short-circuit
         if (ratio <= 0.0 || double.IsNaN(ratio))
             throw new ArgumentException(
                 $"loadWav ratio must be positive and finite (got {ratio})");
-        return Value.Buffer(VarispeedResample(buffer, ratio));
+        return MusicValue.Buffer(VarispeedResample(buffer, ratio));
     }
 
     /// <summary>

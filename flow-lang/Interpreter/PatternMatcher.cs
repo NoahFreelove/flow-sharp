@@ -93,11 +93,11 @@ public static class PatternMatcher
         // never match a Note scrutinee. Build a Note-typed comparison value
         // when the scrutinee is a Note so both sides hit the same-type
         // StrictEquals branch (verbatim note-text compare). Both the scrutinee
-        // (Value.Note(text)) and the pattern payload store the raw note text,
+        // (MusicValue.Note(text)) and the pattern payload store the raw note text,
         // so a direct text compare fires for the common case.
         if (scrutinee.Type is NoteType && lit.Value is string noteText)
         {
-            return Utils.LooseEquals(scrutinee, Value.Note(noteText));
+            return Utils.LooseEquals(scrutinee, MusicValue.Note(noteText));
         }
 
         // Wrap the embedded literal payload (int / double / bool / string)

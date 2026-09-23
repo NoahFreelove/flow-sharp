@@ -2,6 +2,7 @@ using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.StandardLibrary.Audio.DSP;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -35,9 +36,9 @@ public static class PanningFunctions
         var panValue = (float)args[1].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, 2, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, 2, buffer.SampleRate));
 
         var result = Panner.Apply(buffer, panValue);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 }

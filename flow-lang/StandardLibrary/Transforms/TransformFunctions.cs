@@ -67,7 +67,7 @@ public static class TransformFunctions
         {
             var seq = args[0].As<SequenceData>();
             double overlap = args[1].As<double>();
-            return Value.Sequence(TransformNotes(seq, note =>
+            return MusicValue.Sequence(TransformNotes(seq, note =>
                 note.With(durationOverlap: overlap)));
         });
 
@@ -79,7 +79,7 @@ public static class TransformFunctions
         {
             var seq = args[0].As<SequenceData>();
             double ms = args[1].As<double>();   // Millisecond is backed by double
-            return Value.Sequence(TransformNotes(seq, note =>
+            return MusicValue.Sequence(TransformNotes(seq, note =>
                 note.With(portamentoMs: ms)));
         });
     }
@@ -147,11 +147,11 @@ public static class TransformFunctions
 
             // Pitfall 9 — byte-identical regression gate. strength=0 + swing=0 MUST return the
             // input sequence object reference unchanged, or the ByteIdentical gate breaks.
-            if (strength == 0.0 && swing == 0.0) return Value.Sequence(seq);
+            if (strength == 0.0 && swing == 0.0) return MusicValue.Sequence(seq);
 
             var timesig = context.GetMusicalContext().TimeSignature
                 ?? new TimeSignatureData(4, 4);
-            return Value.Sequence(QuantizeSequence(seq, (NoteValueType.Value)resEnum,
+            return MusicValue.Sequence(QuantizeSequence(seq, (NoteValueType.Value)resEnum,
                 strength, swing, timesig));
         });
 
@@ -281,11 +281,11 @@ public static class TransformFunctions
                     ctx.CurrentCallSite);
                 return Value.Void();
             }
-            return Value.Sequence(ApplyVelocityGradient(seq, startRaw, endRaw));
+            return MusicValue.Sequence(ApplyVelocityGradient(seq, startRaw, endRaw));
         }
         double startVel = Math.Clamp(startRaw, 0.0, 1.0);
         double endVel = Math.Clamp(endRaw, 0.0, 1.0);
-        return Value.Sequence(ApplyVelocityGradient(seq, startVel, endVel));
+        return MusicValue.Sequence(ApplyVelocityGradient(seq, startVel, endVel));
     }
 
     private static Value DecrescendoStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
@@ -310,11 +310,11 @@ public static class TransformFunctions
                 return Value.Void();
             }
             // Reverse the velocity gradient: decrescendo goes from endVel down to startVel
-            return Value.Sequence(ApplyVelocityGradient(seq, endRaw, startRaw));
+            return MusicValue.Sequence(ApplyVelocityGradient(seq, endRaw, startRaw));
         }
         double startVel = Math.Clamp(startRaw, 0.0, 1.0);
         double endVel = Math.Clamp(endRaw, 0.0, 1.0);
-        return Value.Sequence(ApplyVelocityGradient(seq, endVel, startVel));
+        return MusicValue.Sequence(ApplyVelocityGradient(seq, endVel, startVel));
     }
 
     private static Value SwellStrict(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext ctx)
@@ -831,7 +831,7 @@ public static class TransformFunctions
         var (letter, octave, alteration) = NoteType.Parse(args[0].As<string>());
         int midi = NoteType.ToMidiNote(letter, octave, alteration) + args[1].As<int>();
         var (l, o, a) = NoteType.FromMidiNote(midi);
-        return Value.Note(NoteType.Format(l, o, a));
+        return MusicValue.Note(NoteType.Format(l, o, a));
     }
 
     /// <remarks>
@@ -848,7 +848,7 @@ public static class TransformFunctions
     {
         var seq = args[0].As<SequenceData>();
         int semitones = args[1].As<int>();
-        return Value.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
+        return MusicValue.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
     }
 
     /// <summary>
@@ -868,7 +868,7 @@ public static class TransformFunctions
         int semitones = raw > int.MaxValue ? int.MaxValue
                       : raw < int.MinValue ? int.MinValue
                       : (int)raw;
-        return Value.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
+        return MusicValue.Sequence(TransposeBy(seq, semitones, centsRemainder: 0.0));
     }
 
     /// <summary>
@@ -893,7 +893,7 @@ public static class TransformFunctions
         int semitones = (int)Math.Truncate(cents / 100.0);
         double centsRemainder = cents - semitones * 100.0;
 
-        return Value.Sequence(TransposeBy(seq, semitones, centsRemainder));
+        return MusicValue.Sequence(TransposeBy(seq, semitones, centsRemainder));
     }
 
     /// <summary>
@@ -957,7 +957,7 @@ public static class TransformFunctions
 
         // If no notes found (all rests), return a clone
         if (!axisMidi.HasValue)
-            return Value.Sequence(TransformNotes(seq, n => n));
+            return MusicValue.Sequence(TransformNotes(seq, n => n));
 
         int axis = axisMidi.Value;
         var result = TransformNotes(seq, note =>
@@ -974,7 +974,7 @@ public static class TransformFunctions
             return note.With(noteName: name, octave: oct, alteration: alt);
         });
 
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ===== Retrograde =====
@@ -1002,7 +1002,7 @@ public static class TransformFunctions
         var result = new SequenceData();
         foreach (var bar in reversedBars)
             result.AddBar(bar);
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ===== Augment / Diminish =====
@@ -1051,7 +1051,7 @@ public static class TransformFunctions
             return note.With(durationValue: newDur);
         });
 
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // AUDIT-VERIFIED 2026-04-18: C5 — diminish correct (shortens); observed D=# vs Q=## columns in visualize (tests/spike/c5-augment-diminish.flow)
@@ -1085,7 +1085,7 @@ public static class TransformFunctions
             return note.With(durationValue: newDur);
         });
 
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ===== Test wrappers =====
@@ -1093,28 +1093,28 @@ public static class TransformFunctions
     // (per Phase 19 Plan 19-05 TUP-07 — flow-lang.Tests/Unit/Phase19/TupletAugmentDiminishTests.cs).
     // Production callers continue routing through the registry's `augment` / `diminish` signatures.
     public static SequenceData AugmentForTesting(SequenceData seq) =>
-        Augment(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
+        Augment(new List<Value> { MusicValue.Sequence(seq) }).As<SequenceData>();
 
     public static SequenceData DiminishForTesting(SequenceData seq) =>
-        Diminish(new List<Value> { Value.Sequence(seq) }).As<SequenceData>();
+        Diminish(new List<Value> { MusicValue.Sequence(seq) }).As<SequenceData>();
 
     // Audit 2026-06-09 §4.2 — direct transpose wrapper so C#-built tuplet sequences
     // (DurationFraction set) can be transposed without routing through the note-stream
     // lexer (which has no quarter-triplet literal). Production callers use the registry's
     // `transpose` signatures.
     public static SequenceData ApplyTransposeForTesting(SequenceData seq, int semitones) =>
-        TransposeSemitone(new List<Value> { Value.Sequence(seq), Value.Semitone(semitones) }).As<SequenceData>();
+        TransposeSemitone(new List<Value> { MusicValue.Sequence(seq), MusicValue.Semitone(semitones) }).As<SequenceData>();
 
     // Audit 2026-06-09 §4.5 — direct trill wrapper so a C#-built source note carrying a
     // specific CentOffset + Articulation can be trilled and the upper-neighbour propagation
     // asserted without depending on combined cent+articulation note-stream literals.
     public static SequenceData TrillForTesting(SequenceData seq, int semitones) =>
-        Trill(new List<Value> { Value.Sequence(seq), Value.Semitone(semitones) }).As<SequenceData>();
+        Trill(new List<Value> { MusicValue.Sequence(seq), MusicValue.Semitone(semitones) }).As<SequenceData>();
 
     // Audit 2026-06-09 §10-gap-3 — direct cent-transpose wrapper so a C#-built note carrying
     // a known CentOffset can be cent-transposed and the fold-into-CentOffset behaviour asserted.
     public static SequenceData ApplyTransposeCentForTesting(SequenceData seq, double cents) =>
-        TransposeCent(new List<Value> { Value.Sequence(seq), Value.Cent(cents) }).As<SequenceData>();
+        TransposeCent(new List<Value> { MusicValue.Sequence(seq), MusicValue.Cent(cents) }).As<SequenceData>();
 
     // ===== Octave Shift =====
 
@@ -1143,19 +1143,19 @@ public static class TransformFunctions
             [SequenceType.Instance, SemitoneType.Instance],
             ParameterNames: ["seq", "semitones"]);
         registry.Register("down", downStSig, args =>
-            TransposeSemitone([args[0], Value.Semitone(-args[1].As<int>())]));
+            TransposeSemitone([args[0], MusicValue.Semitone(-args[1].As<int>())]));
     }
 
     private static Value OctaveUp(IReadOnlyList<Value> args)
     {
         int octaves = args[1].As<int>();
-        return TransposeSemitone([args[0], Value.Semitone(octaves * 12)]);
+        return TransposeSemitone([args[0], MusicValue.Semitone(octaves * 12)]);
     }
 
     private static Value OctaveDown(IReadOnlyList<Value> args)
     {
         int octaves = args[1].As<int>();
-        return TransposeSemitone([args[0], Value.Semitone(-octaves * 12)]);
+        return TransposeSemitone([args[0], MusicValue.Semitone(-octaves * 12)]);
     }
 
     // ===== Repeat =====
@@ -1196,7 +1196,7 @@ public static class TransformFunctions
                 result.AddBar(CloneBarWithVoices(bar));
             }
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     private static Value RepeatTranspose(IReadOnlyList<Value> args)
@@ -1224,7 +1224,7 @@ public static class TransformFunctions
                 result.AddBar(TransformBar(bar, shift));
             }
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1261,7 +1261,7 @@ public static class TransformFunctions
                 result.AddBar(TransformBar(bar, shift));
             }
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ===== Concat =====
@@ -1285,7 +1285,7 @@ public static class TransformFunctions
             result.AddBar(CloneBarWithVoices(bar));
         foreach (var bar in seqB.Bars)
             result.AddBar(CloneBarWithVoices(bar));
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ===== Dynamic Transforms (Phase 44 Plan 44-05: strict-aware registration
@@ -1306,7 +1306,7 @@ public static class TransformFunctions
         int totalNotes = CountAudibleNotes(seq);
 
         if (totalNotes <= 1)
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
 
         int midpoint = totalNotes / 2;
         int descendLength = totalNotes - 1 - midpoint;
@@ -1325,7 +1325,7 @@ public static class TransformFunctions
             // Audit §4.2: With(velocity:) preserves the trailing five fields.
             return note.With(velocity: velocity);
         });
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     private static SequenceData ApplyVelocityGradient(SequenceData seq, double startVel, double endVel)
@@ -1374,7 +1374,7 @@ public static class TransformFunctions
     {
         // Audit §4.1: count + index include Phase 28 voice-block notes.
         int totalNotes = CountAudibleNotes(seq);
-        if (totalNotes <= 1) return Value.Sequence(seq);
+        if (totalNotes <= 1) return MusicValue.Sequence(seq);
 
         var result = MapNotesIndexed(seq, (note, noteIndex) =>
         {
@@ -1384,7 +1384,7 @@ public static class TransformFunctions
             double newVel = Math.Clamp(note.Velocity - velReduction, 0.05, 1.0);
             return note.With(velocity: newVel);   // Audit §4.2: preserves trailing five fields
         });
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1396,7 +1396,7 @@ public static class TransformFunctions
     {
         // Audit §4.1: count + index include Phase 28 voice-block notes.
         int totalNotes = CountAudibleNotes(seq);
-        if (totalNotes <= 1) return Value.Sequence(seq);
+        if (totalNotes <= 1) return MusicValue.Sequence(seq);
 
         var result = MapNotesIndexed(seq, (note, noteIndex) =>
         {
@@ -1406,7 +1406,7 @@ public static class TransformFunctions
             double newVel = Math.Clamp(note.Velocity + velBoost, 0.05, 1.0);
             return note.With(velocity: newVel);   // Audit §4.2: preserves trailing five fields
         });
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1431,7 +1431,7 @@ public static class TransformFunctions
             }
             return note;
         });
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ===== Humanize (Phase 44 Plan 44-05: registration owned by
@@ -1453,7 +1453,7 @@ public static class TransformFunctions
         {
             result.AddBar(HumanizeUniformBar(bar, amount, rng));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1517,7 +1517,7 @@ public static class TransformFunctions
     /// </summary>
     private static Value HumanizeGaussianCore(SequenceData seq, double amount, int seed)
     {
-        if (amount == 0.0) return Value.Sequence(seq);               // D-10 short-circuit
+        if (amount == 0.0) return MusicValue.Sequence(seq);               // D-10 short-circuit
 
         // D-03: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
         // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
@@ -1528,7 +1528,7 @@ public static class TransformFunctions
         {
             result.AddBar(HumanizeBar(bar, amount, rng));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1635,7 +1635,7 @@ public static class TransformFunctions
         {
             result.AddBar(TrillBar(bar, semitones));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1658,7 +1658,7 @@ public static class TransformFunctions
         {
             result.AddBar(TrillBar(bar, semitones, centsRemainder));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>
@@ -1828,7 +1828,7 @@ public static class TransformFunctions
         {
             result.AddBar(TremoloBar(bar, reps));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     /// <summary>

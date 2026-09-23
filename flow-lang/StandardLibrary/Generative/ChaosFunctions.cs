@@ -339,7 +339,7 @@ public static class ChaosFunctions
         string scaleName = args[1].As<string>();
 
         var scaleNotes = ResolveScaleByName(scaleName, ctx);
-        return Value.Sequence(Quantize(series, scaleNotes, ctx));
+        return MusicValue.Sequence(Quantize(series, scaleNotes, ctx));
     }
 
     /// <summary>
@@ -471,7 +471,7 @@ public static class ChaosFunctions
             }
         }
 
-        return Value.Sequence(Quantize(series, scaleNotes, ctx));
+        return MusicValue.Sequence(Quantize(series, scaleNotes, ctx));
     }
 
     // ====================================================================

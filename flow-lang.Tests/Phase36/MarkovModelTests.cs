@@ -47,7 +47,7 @@ public class MarkovModelTests
     public void ValueMarkovModelFactoryWraps()
     {
         var model = BuildSampleModel();
-        var value = Value.MarkovModel(model);
+        var value = MusicValue.MarkovModel(model);
 
         Assert.Same(MarkovModelType.Instance, value.Type);
         Assert.Same(model, value.Data);

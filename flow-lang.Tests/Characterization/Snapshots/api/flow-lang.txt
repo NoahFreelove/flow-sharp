@@ -2334,50 +2334,22 @@ FlowLang.Runtime.Value :: ctor(Object, FlowType)
 FlowLang.Runtime.Value :: property FlowType Type
 FlowLang.Runtime.Value :: property Object Data
 FlowLang.Runtime.Value :: static Value Array(IReadOnlyList<Value>, FlowType)
-FlowLang.Runtime.Value :: static Value Bar(BarData)
-FlowLang.Runtime.Value :: static Value Beat(Double)
 FlowLang.Runtime.Value :: static Value Bool(Boolean)
-FlowLang.Runtime.Value :: static Value Buffer(Object)
-FlowLang.Runtime.Value :: static Value Cent(Double)
-FlowLang.Runtime.Value :: static Value Chord(ChordData)
-FlowLang.Runtime.Value :: static Value ClockHandle(ClockHandleData)
-FlowLang.Runtime.Value :: static Value Decibel(Double)
 FlowLang.Runtime.Value :: static Value Dict(DictData)
 FlowLang.Runtime.Value :: static Value Double(Double)
-FlowLang.Runtime.Value :: static Value EmptyBuffer()
-FlowLang.Runtime.Value :: static Value Envelope(Envelope)
 FlowLang.Runtime.Value :: static Value Float(Double)
 FlowLang.Runtime.Value :: static Value From(Object)
 FlowLang.Runtime.Value :: static Value Function(FunctionOverload)
-FlowLang.Runtime.Value :: static Value Hertz(Double)
 FlowLang.Runtime.Value :: static Value Int(Int32)
-FlowLang.Runtime.Value :: static Value JackHandle(JackHandleData)
 FlowLang.Runtime.Value :: static Value Lazy(Thunk, FlowType)
 FlowLang.Runtime.Value :: static Value Long(Int64)
-FlowLang.Runtime.Value :: static Value LsystemModel(LsystemModelData)
-FlowLang.Runtime.Value :: static Value MarkovModel(MarkovModelData)
-FlowLang.Runtime.Value :: static Value MidiDevice(MidiDeviceData)
-FlowLang.Runtime.Value :: static Value Millisecond(Double)
-FlowLang.Runtime.Value :: static Value MusicalNote(MusicalNoteData)
-FlowLang.Runtime.Value :: static Value Note(String)
-FlowLang.Runtime.Value :: static Value NoteValue(Int32)
 FlowLang.Runtime.Value :: static Value Number(BigInteger)
-FlowLang.Runtime.Value :: static Value OscHandle(OscHandleData)
-FlowLang.Runtime.Value :: static Value OscillatorState(OscillatorState)
-FlowLang.Runtime.Value :: static Value Second(Double)
-FlowLang.Runtime.Value :: static Value Section(SectionData)
-FlowLang.Runtime.Value :: static Value Semitone(Int32)
-FlowLang.Runtime.Value :: static Value Sequence(SequenceData)
-FlowLang.Runtime.Value :: static Value Sfz(SfzData)
-FlowLang.Runtime.Value :: static Value Song(SongData)
 FlowLang.Runtime.Value :: static Value String(String)
 FlowLang.Runtime.Value :: static Value Symbol(String, ExecutionContext)
-FlowLang.Runtime.Value :: static Value TimeSignature(TimeSignatureData)
-FlowLang.Runtime.Value :: static Value Track(Track)
-FlowLang.Runtime.Value :: static Value Tuning(ResolvedTuning)
 FlowLang.Runtime.Value :: static Value Tuple(IReadOnlyList<Value>, IReadOnlyList<FlowType>)
-FlowLang.Runtime.Value :: static Value Voice(Voice)
 FlowLang.Runtime.Value :: static Value Void()
+FlowLang.Runtime.ValueConversions :: static Value TryConvert(Value, FlowType)
+FlowLang.Runtime.ValueConversions :: static Void Register(Func<Value,FlowType,Value>)
 FlowLang.Runtime.WasmEntry :: static Byte[] GetLastMidiBytes()
 FlowLang.Runtime.WasmEntry :: static String RunFromJs(String)
 FlowLang.Runtime.WasmEntry :: static Void DisposeFromJs()
@@ -3492,15 +3464,18 @@ FlowLang.TypeSystem.DictType :: ctor(FlowType, FlowType)
 FlowLang.TypeSystem.DictType :: property FlowType KeyType
 FlowLang.TypeSystem.DictType :: property FlowType ValueType
 FlowLang.TypeSystem.DictType :: property String Name
+FlowLang.TypeSystem.FlowType :: Boolean AcceptsConversionFrom(FlowType)
 FlowLang.TypeSystem.FlowType :: Boolean CanConvertTo(FlowType)
 FlowLang.TypeSystem.FlowType :: Boolean Equals(FlowType)
 FlowLang.TypeSystem.FlowType :: Boolean Equals(Object)
 FlowLang.TypeSystem.FlowType :: Boolean IsCompatibleWith(FlowType)
 FlowLang.TypeSystem.FlowType :: Boolean IsHashable()
+FlowLang.TypeSystem.FlowType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.FlowType :: Int32 GetHashCode()
 FlowLang.TypeSystem.FlowType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.FlowType :: String ToString()
 FlowLang.TypeSystem.FlowType :: String get_Name()
+FlowLang.TypeSystem.FlowType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.FlowType :: property String Name
 FlowLang.TypeSystem.FlowType :: static Boolean op_Equality(FlowType, FlowType)
 FlowLang.TypeSystem.FlowType :: static Boolean op_Inequality(FlowType, FlowType)
@@ -3689,14 +3664,18 @@ FlowLang.TypeSystem.SpecialTypes.BarType :: static BarType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.BarType :: static property BarType Instance
 FlowLang.TypeSystem.SpecialTypes.BeatType :: Boolean IsCompatibleWith(FlowType)
 FlowLang.TypeSystem.SpecialTypes.BeatType :: Boolean IsHashable()
+FlowLang.TypeSystem.SpecialTypes.BeatType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.BeatType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.BeatType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.BeatType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.BeatType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.BeatType :: static BeatType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.BeatType :: static property BeatType Instance
 FlowLang.TypeSystem.SpecialTypes.CentType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.SpecialTypes.CentType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.CentType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.CentType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.CentType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.CentType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.CentType :: static CentType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.CentType :: static Double Parse(String)
@@ -3725,16 +3704,20 @@ FlowLang.TypeSystem.SpecialTypes.ClockHandleType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.ClockHandleType :: static ClockHandleType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.ClockHandleType :: static property ClockHandleType Instance
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.SpecialTypes.DecibelType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.DecibelType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static DecibelType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static Double Parse(String)
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static String Format(Double)
 FlowLang.TypeSystem.SpecialTypes.DecibelType :: static property DecibelType Instance
 FlowLang.TypeSystem.SpecialTypes.HertzType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.SpecialTypes.HertzType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.HertzType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.HertzType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.HertzType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.HertzType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.HertzType :: static Double Parse(String)
 FlowLang.TypeSystem.SpecialTypes.HertzType :: static HertzType get_Instance()
@@ -3769,13 +3752,45 @@ FlowLang.TypeSystem.SpecialTypes.MidiDeviceType :: static MidiDeviceType get_Ins
 FlowLang.TypeSystem.SpecialTypes.MidiDeviceType :: static property MidiDeviceType Instance
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: Boolean CanConvertTo(FlowType)
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.SpecialTypes.MillisecondType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.MillisecondType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: static Double Parse(String)
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: static MillisecondType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: static String Format(Double)
 FlowLang.TypeSystem.SpecialTypes.MillisecondType :: static property MillisecondType Instance
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Bar(BarData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Beat(Double)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Buffer(Object)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Cent(Double)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Chord(ChordData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value ClockHandle(ClockHandleData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Decibel(Double)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value EmptyBuffer()
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Envelope(Envelope)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Hertz(Double)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value JackHandle(JackHandleData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value LsystemModel(LsystemModelData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value MarkovModel(MarkovModelData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value MidiDevice(MidiDeviceData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Millisecond(Double)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value MusicalNote(MusicalNoteData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Note(String)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value NoteValue(Int32)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value OscHandle(OscHandleData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value OscillatorState(OscillatorState)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Second(Double)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Section(SectionData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Semitone(Int32)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Sequence(SequenceData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Sfz(SfzData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Song(SongData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value TimeSignature(TimeSignatureData)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Track(Track)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Tuning(ResolvedTuning)
+FlowLang.TypeSystem.SpecialTypes.MusicValue :: static Value Voice(Voice)
 FlowLang.TypeSystem.SpecialTypes.MusicalNoteData :: Articulation get_Articulation()
 FlowLang.TypeSystem.SpecialTypes.MusicalNoteData :: Boolean get_IsChordTone()
 FlowLang.TypeSystem.SpecialTypes.MusicalNoteData :: Boolean get_IsDotted()
@@ -3833,6 +3848,7 @@ FlowLang.TypeSystem.SpecialTypes.NoteType :: static ValueTuple<Char,Int32,Int32>
 FlowLang.TypeSystem.SpecialTypes.NoteType :: static ValueTuple<Char,Int32,Int32> Parse(String)
 FlowLang.TypeSystem.SpecialTypes.NoteType :: static ValueTuple<Char,Int32,Int32> Parse(String, Int32)
 FlowLang.TypeSystem.SpecialTypes.NoteType :: static property NoteType Instance
+FlowLang.TypeSystem.SpecialTypes.NoteValueType :: Boolean AcceptsConversionFrom(FlowType)
 FlowLang.TypeSystem.SpecialTypes.NoteValueType :: Boolean IsCompatibleWith(FlowType)
 FlowLang.TypeSystem.SpecialTypes.NoteValueType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.NoteValueType :: String ToString()
@@ -3863,8 +3879,10 @@ FlowLang.TypeSystem.SpecialTypes.OscHandleType :: static OscHandleType get_Insta
 FlowLang.TypeSystem.SpecialTypes.OscHandleType :: static property OscHandleType Instance
 FlowLang.TypeSystem.SpecialTypes.SecondType :: Boolean CanConvertTo(FlowType)
 FlowLang.TypeSystem.SpecialTypes.SecondType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.SpecialTypes.SecondType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.SecondType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.SecondType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.SecondType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.SecondType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.SecondType :: static Double Parse(String)
 FlowLang.TypeSystem.SpecialTypes.SecondType :: static SecondType get_Instance()
@@ -3892,8 +3910,10 @@ FlowLang.TypeSystem.SpecialTypes.SectionType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.SectionType :: static SectionType get_Instance()
 FlowLang.TypeSystem.SpecialTypes.SectionType :: static property SectionType Instance
 FlowLang.TypeSystem.SpecialTypes.SemitoneType :: Boolean IsCompatibleWith(FlowType)
+FlowLang.TypeSystem.SpecialTypes.SemitoneType :: Boolean get_IsUnitQuantity()
 FlowLang.TypeSystem.SpecialTypes.SemitoneType :: Int32 GetSpecificity()
 FlowLang.TypeSystem.SpecialTypes.SemitoneType :: String get_Name()
+FlowLang.TypeSystem.SpecialTypes.SemitoneType :: property Boolean IsUnitQuantity
 FlowLang.TypeSystem.SpecialTypes.SemitoneType :: property String Name
 FlowLang.TypeSystem.SpecialTypes.SemitoneType :: static Int32 Parse(String)
 FlowLang.TypeSystem.SpecialTypes.SemitoneType :: static SemitoneType get_Instance()
@@ -4148,6 +4168,7 @@ type FlowLang.Runtime.SessionServices+Scope
 type FlowLang.Runtime.StackFrame
 type FlowLang.Runtime.Thunk
 type FlowLang.Runtime.Value
+type FlowLang.Runtime.ValueConversions
 type FlowLang.Runtime.WasmEntry
 type FlowLang.StandardLibrary.Audio.AudioBuffer
 type FlowLang.StandardLibrary.Audio.AudioCore
@@ -4341,6 +4362,7 @@ type FlowLang.TypeSystem.SpecialTypes.LsystemModelType
 type FlowLang.TypeSystem.SpecialTypes.MarkovModelType
 type FlowLang.TypeSystem.SpecialTypes.MidiDeviceType
 type FlowLang.TypeSystem.SpecialTypes.MillisecondType
+type FlowLang.TypeSystem.SpecialTypes.MusicValue
 type FlowLang.TypeSystem.SpecialTypes.MusicalNoteData
 type FlowLang.TypeSystem.SpecialTypes.MusicalNoteType
 type FlowLang.TypeSystem.SpecialTypes.NoteType

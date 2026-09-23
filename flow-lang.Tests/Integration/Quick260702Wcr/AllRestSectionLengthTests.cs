@@ -146,7 +146,7 @@ Buffer rendered = (renderSong s ""organ"")
         var song = new SongData(new List<SongSectionRef> { new("empty") }, registry);
 
         var buf = SongRenderer
-            .RenderSong(new List<Value> { Value.Song(song), Value.String("organ") })
+            .RenderSong(new List<Value> { MusicValue.Song(song), Value.String("organ") })
             .As<AudioBuffer>();
 
         Assert.Equal(0, buf.Frames);

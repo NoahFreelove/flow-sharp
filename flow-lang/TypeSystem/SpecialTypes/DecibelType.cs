@@ -13,6 +13,8 @@ public sealed class DecibelType : FlowType
 
     public override string Name => "Decibel";
 
+    public override bool IsUnitQuantity => true;
+
     public override int GetSpecificity() => 128;
 
     /// <summary>

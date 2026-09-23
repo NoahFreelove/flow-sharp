@@ -4,6 +4,7 @@ using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.Tests.Fixtures;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Unit.Phase22;
 
@@ -85,7 +86,7 @@ public class LoadWavVarispeedFacts
         {
             var src = SynthSine(4410, 44100, 1);
             // Use existing WAV writer (private path: reuse ExportWavInternal via WriteWav).
-            FileIO.WriteWav(new[] { Value.String(tmp), Value.Buffer(src) });
+            FileIO.WriteWav(new[] { Value.String(tmp), MusicValue.Buffer(src) });
 
             var loaded = FileIO.LoadWavSemitones(new[] { Value.String(tmp), Value.Int(0) }).As<AudioBuffer>();
             Assert.Equal(src.Frames, loaded.Frames);
@@ -104,7 +105,7 @@ public class LoadWavVarispeedFacts
         try
         {
             var src = SynthSine(4410, 44100, 1);
-            FileIO.WriteWav(new[] { Value.String(tmp), Value.Buffer(src) });
+            FileIO.WriteWav(new[] { Value.String(tmp), MusicValue.Buffer(src) });
 
             var loaded = FileIO.LoadWavRatio(new[] { Value.String(tmp), Value.Double(1.0) }).As<AudioBuffer>();
             Assert.Equal(src.Frames, loaded.Frames);
@@ -123,7 +124,7 @@ public class LoadWavVarispeedFacts
         try
         {
             var src = SynthSine(4410, 44100, 1);
-            FileIO.WriteWav(new[] { Value.String(tmp), Value.Buffer(src) });
+            FileIO.WriteWav(new[] { Value.String(tmp), MusicValue.Buffer(src) });
 
             Assert.Throws<ArgumentException>(() =>
                 FileIO.LoadWavRatio(new[] { Value.String(tmp), Value.Double(-1.0) }));
@@ -142,7 +143,7 @@ public class LoadWavVarispeedFacts
         try
         {
             var src = SynthSine(4410, 44100, 1);
-            FileIO.WriteWav(new[] { Value.String(tmp), Value.Buffer(src) });
+            FileIO.WriteWav(new[] { Value.String(tmp), MusicValue.Buffer(src) });
 
             Assert.Throws<ArgumentException>(() =>
                 FileIO.LoadWavRatio(new[] { Value.String(tmp), Value.Double(0.0) }));
@@ -172,7 +173,7 @@ public class LoadWavVarispeedFacts
         try
         {
             var src = SynthSine(4410, 44100, 1);
-            FileIO.WriteWav(new[] { Value.String(tmp), Value.Buffer(src) });
+            FileIO.WriteWav(new[] { Value.String(tmp), MusicValue.Buffer(src) });
 
             var a = FileIO.LoadWav(new[] { Value.String(tmp) }).As<AudioBuffer>();
             var b = FileIO.LoadWav(new[] { Value.String(tmp) }).As<AudioBuffer>();

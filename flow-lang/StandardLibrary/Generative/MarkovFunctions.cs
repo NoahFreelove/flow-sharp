@@ -226,7 +226,7 @@ public static class MarkovFunctions
     {
         var corpus = args[0].As<SequenceData>();
         int order = ClampOrderWithAdvisory(args[1].As<int>(), ctx);
-        return Value.MarkovModel(TrainMarkov(corpus, order, FeatureModePitch));
+        return MusicValue.MarkovModel(TrainMarkov(corpus, order, FeatureModePitch));
     }
 
     /// <summary>
@@ -309,7 +309,7 @@ public static class MarkovFunctions
                 + $"got {featuresVal.Type.Name}; falling back to features=#pitch");
             mode = FeatureModePitch;
         }
-        return Value.MarkovModel(TrainMarkov(corpus, order, mode));
+        return MusicValue.MarkovModel(TrainMarkov(corpus, order, mode));
     }
 
     private static string UnknownFeatureFallback(string sym, ExecutionContext ctx)
@@ -365,7 +365,7 @@ public static class MarkovFunctions
         int length = args[1].As<int>();
         int seed = args[2].As<int>();
         var rng = new Random(seed); // PRNG-SANCTIONED: explicit-seed overload per D-36-06
-        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+        return MusicValue.Sequence(GenerateMarkov(model, length, rng, ctx));
     }
 
     private static Value MarkovGenerateUnseeded(IReadOnlyList<Value> args, ExecutionContext ctx)
@@ -373,7 +373,7 @@ public static class MarkovFunctions
         var model = args[0].As<MarkovModelData>();
         int length = args[1].As<int>();
         var rng = ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "markovGenerate");
-        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+        return MusicValue.Sequence(GenerateMarkov(model, length, rng, ctx));
     }
 
     // ====================================================================
@@ -388,7 +388,7 @@ public static class MarkovFunctions
         int seed = args[3].As<int>();
         var model = TrainMarkov(corpus, order, FeatureModePitch);
         var rng = new Random(seed); // PRNG-SANCTIONED: explicit-seed overload per D-36-06
-        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+        return MusicValue.Sequence(GenerateMarkov(model, length, rng, ctx));
     }
 
     private static Value MarkovOneShotUnseeded(IReadOnlyList<Value> args, ExecutionContext ctx)
@@ -398,7 +398,7 @@ public static class MarkovFunctions
         int length = args[2].As<int>();
         var model = TrainMarkov(corpus, order, FeatureModePitch);
         var rng = ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "markov");
-        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+        return MusicValue.Sequence(GenerateMarkov(model, length, rng, ctx));
     }
 
     // ====================================================================
@@ -419,7 +419,7 @@ public static class MarkovFunctions
         var states = ExtractStatesFromArray(args[0], kind, ctx);
         var model = TrainMarkovFromStates(states, order, FeatureModePitch);
         var rng = new Random(seed); // PRNG-SANCTIONED: explicit-seed overload per D-36-06
-        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+        return MusicValue.Sequence(GenerateMarkov(model, length, rng, ctx));
     }
 
     private static Value MarkovOneShotFromArrayUnseeded(
@@ -430,7 +430,7 @@ public static class MarkovFunctions
         var states = ExtractStatesFromArray(args[0], kind, ctx);
         var model = TrainMarkovFromStates(states, order, FeatureModePitch);
         var rng = ctx.PrngRegistry.GetRandom(ctx.CurrentCallSite, "markov");
-        return Value.Sequence(GenerateMarkov(model, length, rng, ctx));
+        return MusicValue.Sequence(GenerateMarkov(model, length, rng, ctx));
     }
 
     private static Value MarkovTrainFromArray(
@@ -438,7 +438,7 @@ public static class MarkovFunctions
     {
         int order = ClampOrderWithAdvisory(args[1].As<int>(), ctx);
         var states = ExtractStatesFromArray(args[0], kind, ctx);
-        return Value.MarkovModel(TrainMarkovFromStates(states, order, FeatureModePitch));
+        return MusicValue.MarkovModel(TrainMarkovFromStates(states, order, FeatureModePitch));
     }
 
     /// <summary>

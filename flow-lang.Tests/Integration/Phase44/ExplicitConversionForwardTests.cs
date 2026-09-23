@@ -86,7 +86,7 @@ public class ExplicitConversionForwardTests
 
     /// <summary>
     /// D-08 carve-out — <c>(semitones Int)</c> is the SOLE source-type overload.
-    /// Semitone is Int-backed (per <c>Value.Semitone(int)</c> factory) so the
+    /// Semitone is Int-backed (per <c>MusicValue.Semitone(int)</c> factory) so the
     /// probe uses <c>As&lt;int&gt;()</c> not <c>As&lt;double&gt;()</c>.
     /// </summary>
     [Theory]

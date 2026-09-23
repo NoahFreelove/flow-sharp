@@ -13,6 +13,8 @@ internal static class MusicTypeCatalog
     [ModuleInitializer]
     internal static void Register()
     {
+        Runtime.ValueConversions.Register(MusicValueConversions.Convert);
+
         var catalog = TypeCatalog.Default;
         catalog.Register("Buffer", BufferType.Instance);
         catalog.Register("Note", NoteType.Instance);

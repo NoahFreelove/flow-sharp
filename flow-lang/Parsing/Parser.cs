@@ -10,6 +10,7 @@ using FlowLang.StandardLibrary;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.Syntax;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Parsing;
 
@@ -1534,7 +1535,7 @@ public partial class Parser
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 
         // Phase 26.2 ERG-04 — HertzLiteral routes to LiteralExpression with raw text;
-        // ExpressionEvaluator.TryParseSpecialLiteral resolves "800Hz" / "1.5kHz" to Value.Hertz(canonical-Hz double).
+        // ExpressionEvaluator.TryParseSpecialLiteral resolves "800Hz" / "1.5kHz" to MusicValue.Hertz(canonical-Hz double).
         if (Match(TokenType.HertzLiteral))
             return new LiteralExpression(PreviousToken.Location, PreviousToken.Text, Span: PreviousToken.EffectiveSpan, IsMusicLiteral: true);
 

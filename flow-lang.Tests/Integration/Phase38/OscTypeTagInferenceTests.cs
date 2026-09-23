@@ -80,7 +80,7 @@ public class OscTypeTagInferenceTests : IDisposable
     {
         var buf = new AudioBuffer(8, 1, 44100);
         for (int i = 0; i < buf.Frames; i++) buf.Data[i] = 0.25f * i;
-        var flowArgs = new Value[] { Value.Buffer(buf) };
+        var flowArgs = new Value[] { MusicValue.Buffer(buf) };
 
         var oscArgs = OscFunctions.InferOscArgs(flowArgs);
 
@@ -150,7 +150,7 @@ public class OscTypeTagInferenceTests : IDisposable
         // Construct a minimal SequenceData to wrap; the exact shape doesn't
         // matter since InferOscArgs rejects on FlowType match.
         var emptySeq = new SequenceData();
-        var flowArgs = new Value[] { Value.Sequence(emptySeq) };
+        var flowArgs = new Value[] { MusicValue.Sequence(emptySeq) };
 
         var ex = Assert.Throws<ArgumentException>(() => OscFunctions.InferOscArgs(flowArgs));
         Assert.Contains("[osc] unsupported arg type at index 0", ex.Message);

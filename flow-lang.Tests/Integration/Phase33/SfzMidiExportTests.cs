@@ -255,7 +255,7 @@ public class SfzMidiExportTests : IDisposable
         MidiExport.WriteMidi(new System.Collections.Generic.List<Value>
         {
             Value.String(outPath),
-            Value.Song(song),
+            MusicValue.Song(song),
         });
     }
 
@@ -328,7 +328,7 @@ public class SfzMidiExportTests : IDisposable
         MidiExport.WriteMidi(new System.Collections.Generic.List<Value>
         {
             Value.String(outPath),
-            Value.Song(song),
+            MusicValue.Song(song),
         });
     }
 }

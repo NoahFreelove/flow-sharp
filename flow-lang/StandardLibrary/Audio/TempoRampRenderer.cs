@@ -45,7 +45,7 @@ public static class TempoRampRenderer
         var timeline = sequence.ToTimeline();
 
         if (timeline.Count == 0 || sequence.TotalBeats <= 0)
-            return Value.Buffer(new AudioBuffer(0, StereoChannels, DefaultSampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, StereoChannels, DefaultSampleRate));
 
         AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
 
@@ -83,7 +83,7 @@ public static class TempoRampRenderer
             result = AppendBuffers(result, barBuffer);
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

@@ -57,6 +57,6 @@ public static class SongFunctions
         // flat dict via the helper which picks the last-registered overload.
         var sectionRegistry = context.SectionRegistryFlat();
 
-        return Value.Song(new SongData(sections, sectionRegistry));
+        return MusicValue.Song(new SongData(sections, sectionRegistry));
     }
 }

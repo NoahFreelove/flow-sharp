@@ -81,7 +81,7 @@ public class TransformInvarianceFacts
         var triad = CMajorTriadSequence();
         var sig = new FunctionSignature("transpose", [SequenceType.Instance, SemitoneType.Instance]);
         var transposed = Invoke(registry, "transpose", sig,
-            Value.Sequence(triad), Value.Semitone(5));
+            MusicValue.Sequence(triad), MusicValue.Semitone(5));
         Assert.Equal(new[] { 65, 69, 72 }, MidiNumbersOf(transposed));
     }
 
@@ -93,7 +93,7 @@ public class TransformInvarianceFacts
         var registry = RegistryWithTransforms();
         var triad = CMajorTriadSequence();
         var sig = new FunctionSignature("invert", [SequenceType.Instance]);
-        var inverted = Invoke(registry, "invert", sig, Value.Sequence(triad));
+        var inverted = Invoke(registry, "invert", sig, MusicValue.Sequence(triad));
         Assert.Equal(new[] { 60, 56, 53 }, MidiNumbersOf(inverted));
     }
 
@@ -104,7 +104,7 @@ public class TransformInvarianceFacts
         var registry = RegistryWithTransforms();
         var triad = CMajorTriadSequence();
         var sig = new FunctionSignature("retrograde", [SequenceType.Instance]);
-        var reversed = Invoke(registry, "retrograde", sig, Value.Sequence(triad));
+        var reversed = Invoke(registry, "retrograde", sig, MusicValue.Sequence(triad));
         Assert.Equal(new[] { 67, 64, 60 }, MidiNumbersOf(reversed));
     }
 

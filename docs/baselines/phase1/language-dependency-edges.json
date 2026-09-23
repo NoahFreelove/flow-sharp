@@ -38,7 +38,6 @@
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.StandardLibrary.Harmony",
     "FlowLang.Interpreter.PatternMatcher -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Interpreter.SectionOverloadDispatch -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Parsing.Parser -\u003E FlowLang.StandardLibrary.Harmony",
     "FlowLang.Runtime.ExecutionContext -\u003E FlowLang.StandardLibrary.Audio.Sfz",
     "FlowLang.Runtime.ExecutionContext -\u003E FlowLang.StandardLibrary.Audio.Synthesizers",
     "FlowLang.Runtime.ExecutionContext -\u003E FlowLang.StandardLibrary.Audio.Tuning",
@@ -48,16 +47,6 @@
     "FlowLang.Runtime.NoteStreamCompiler -\u003E FlowLang.StandardLibrary.Harmony",
     "FlowLang.Runtime.NoteStreamCompiler -\u003E FlowLang.TypeSystem.SpecialTypes",
     "FlowLang.Runtime.ProgressionCompiler -\u003E FlowLang.StandardLibrary.Harmony",
-    "FlowLang.Runtime.ProgressionCompiler -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Runtime.Value -\u003E FlowLang.StandardLibrary.Audio",
-    "FlowLang.Runtime.Value -\u003E FlowLang.StandardLibrary.Audio.Sfz",
-    "FlowLang.Runtime.Value -\u003E FlowLang.StandardLibrary.Audio.Tuning",
-    "FlowLang.Runtime.Value -\u003E FlowLang.StandardLibrary.Midi",
-    "FlowLang.Runtime.Value -\u003E FlowLang.StandardLibrary.Network",
-    "FlowLang.Runtime.Value -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.Runtime.WasmEntry -\u003E FlowLang.Audio",
-    "FlowLang.Runtime.WasmEntry -\u003E FlowLang.StandardLibrary.Audio",
-    "FlowLang.TypeSystem.FunctionSignature -\u003E FlowLang.TypeSystem.SpecialTypes",
-    "FlowLang.TypeSystem.PrimitiveTypes.IntType -\u003E FlowLang.TypeSystem.SpecialTypes"
+    "FlowLang.Runtime.ProgressionCompiler -\u003E FlowLang.TypeSystem.SpecialTypes"
   ]
 }

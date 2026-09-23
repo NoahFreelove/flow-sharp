@@ -161,7 +161,7 @@ public static class SongRenderer
         // Create a wrapper for the lambda that matches the INoteSynthesizer requirement
         var synth = new FlowFunctionSynthesizer((note, duration, bpm) =>
         {
-            var noteValue = Value.MusicalNote(note);
+            var noteValue = MusicValue.MusicalNote(note);
             var durValue = Value.Double(duration);
             var bpmValue = Value.Double(bpm);
 
@@ -186,7 +186,7 @@ public static class SongRenderer
             }
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -256,7 +256,7 @@ public static class SongRenderer
             }
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -791,7 +791,7 @@ public static class SongRenderer
                 result = AppendBuffers(result, sectionBuffer);
             }
         }
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

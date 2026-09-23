@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio.Sfz;
 
@@ -6,7 +7,7 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 /// Phase 33 — top-level immutable model produced by the <c>SfzParser</c>
 /// (Plan 33-04) and consumed by every other Phase 33 surface (renderer,
 /// sample cache, sampler:NAME dispatch). Wrapped by
-/// <c>FlowLang.Runtime.Value.Sfz(SfzData)</c> for first-class language access.
+/// <c>FlowLang.TypeSystem.SpecialTypes.MusicValue.Sfz(SfzData)</c> for first-class language access.
 ///
 /// Field semantics:
 ///

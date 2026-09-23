@@ -19,7 +19,7 @@ public static class Bars
     public static Value CreateBar(IReadOnlyList<Value> args)
     {
         var bar = new BarData();
-        return Value.Bar(bar);
+        return MusicValue.Bar(bar);
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public static class Bars
     {
         var note = args[0].As<string>();
         var bar = new BarData(new[] { note });
-        return Value.Bar(bar);
+        return MusicValue.Bar(bar);
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public static class Bars
         var notesArray = args[0].As<IReadOnlyList<Value>>();
         var notes = notesArray.Select(v => v.As<string>()).ToList();
         var bar = new BarData(notes);
-        return Value.Bar(bar);
+        return MusicValue.Bar(bar);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public static class Bars
         var bar = args[0].As<BarData>();
         int index = args[1].As<int>();
         string note = bar.GetNote(index);
-        return Value.Note(note);
+        return MusicValue.Note(note);
     }
 
     /// <summary>

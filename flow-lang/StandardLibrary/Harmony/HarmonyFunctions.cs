@@ -98,18 +98,18 @@ public static class HarmonyFunctions
         {
             return letter switch
             {
-                'E' => Value.Note(NoteType.Format('F', octave,     -1)),
-                'F' => Value.Note(NoteType.Format('E', octave,     +1)),
-                'B' => Value.Note(NoteType.Format('C', octave + 1, -1)),
-                'C' => Value.Note(NoteType.Format('B', octave - 1, +1)),
-                _   => Value.Note(NoteType.Format(letter, octave, 0)),  // D/G/A unchanged
+                'E' => MusicValue.Note(NoteType.Format('F', octave,     -1)),
+                'F' => MusicValue.Note(NoteType.Format('E', octave,     +1)),
+                'B' => MusicValue.Note(NoteType.Format('C', octave + 1, -1)),
+                'C' => MusicValue.Note(NoteType.Format('B', octave - 1, +1)),
+                _   => MusicValue.Note(NoteType.Format(letter, octave, 0)),  // D/G/A unchanged
             };
         }
 
         // D-05: no-key flip. Sharp → letter up (alt = inputMidi - naturalMidi(up)).
         //                   Flat  → letter down (alt = inputMidi - naturalMidi(down)).
         var (flippedLetter, flippedOct, flippedAlt) = ComputeFlippedSpelling(letter, octave, alteration, inputMidi);
-        return Value.Note(NoteType.Format(flippedLetter, flippedOct, flippedAlt));
+        return MusicValue.Note(NoteType.Format(flippedLetter, flippedOct, flippedAlt));
     }
 
     /// <summary>
@@ -145,7 +145,7 @@ public static class HarmonyFunctions
             if (NoteType.ToMidiNote(spLetter, oct, spAlt) != inputMidi)
                 continue;  // spelling doesn't hit the target — skip and keep searching
 
-            result = Value.Note(NoteType.Format(spLetter, oct, spAlt));
+            result = MusicValue.Note(NoteType.Format(spLetter, oct, spAlt));
             return true;
         }
 
@@ -360,7 +360,7 @@ public static class HarmonyFunctions
         {
             var symbol = args[0].As<string>();
             if (ChordParser.TryParseFlexible(symbol, out var chordData) && chordData != null)
-                return Value.Chord(chordData);
+                return MusicValue.Chord(chordData);
             return Value.Void();
         });
 
@@ -379,14 +379,14 @@ public static class HarmonyFunctions
         {
             var noteText = args[0].As<string>();
             if (ChordParser.TryParseFlexible(noteText, out var chordData) && chordData != null)
-                return Value.Chord(chordData);
+                return MusicValue.Chord(chordData);
             // Fallback: bare root letter (e.g. Note "C4" → C major triad on the root letter).
             // This keeps `(chord <Note variable>)` charitable when the note text isn't itself
             // a recognized chord symbol — pull the leading A-G as the root and build a major.
             if (!string.IsNullOrEmpty(noteText) && noteText[0] >= 'A' && noteText[0] <= 'G')
             {
                 if (ChordParser.TryParseFlexible(noteText[0] + "maj", out var fallback) && fallback != null)
-                    return Value.Chord(fallback);
+                    return MusicValue.Chord(fallback);
             }
             return Value.Void();
         });
@@ -470,7 +470,7 @@ public static class HarmonyFunctions
             var sequence = new SequenceData();
             sequence.AddBar(bar);
 
-            return Value.Sequence(sequence);
+            return MusicValue.Sequence(sequence);
         });
 
         // DX-10: 4-arg arpeggio(Chord, NoteValue, direction, pattern) -> Sequence
@@ -507,7 +507,7 @@ public static class HarmonyFunctions
             var sequenceFull = new SequenceData();
             sequenceFull.AddBar(barFull);
 
-            return Value.Sequence(sequenceFull);
+            return MusicValue.Sequence(sequenceFull);
         });
 
         // scaleNotes(String) -> Strings
@@ -533,7 +533,7 @@ public static class HarmonyFunctions
             var chordData = ScaleDatabase.ResolveRomanNumeral(numeral, keyName);
             if (chordData == null)
                 return Value.Void();
-            return Value.Chord(chordData);
+            return MusicValue.Chord(chordData);
         });
 
         // str(Section) -> String
@@ -584,12 +584,12 @@ public static class HarmonyFunctions
             var name = args[1].As<string>();
             if (song.SectionRegistry.TryGetValue(name, out var section))
             {
-                return Value.Section(section);
+                return MusicValue.Section(section);
             }
             RenderingDiagnostics.WarnOnce(
                 $"getSection-unknown:{name}",
                 $"[getSection] no section named '{name}' in song — returning empty section");
-            return Value.Section(new SectionData(name, new Dictionary<string, SequenceData>(), context: null));
+            return MusicValue.Section(new SectionData(name, new Dictionary<string, SequenceData>(), context: null));
         });
 
         // sectionSequences(Song, String) -> Strings (sequence names of ONE named section).

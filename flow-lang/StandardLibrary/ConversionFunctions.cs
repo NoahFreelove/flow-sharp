@@ -82,11 +82,11 @@ public static class ConversionFunctions
         foreach (var (sourceType, materializer) in NumericFiveSourceTypes())
         {
             var sig = new FunctionSignature("db", [sourceType], ParameterNames: ["x"]);
-            registry.Register("db", sig, args => Value.Decibel(materializer(args[0])));
+            registry.Register("db", sig, args => MusicValue.Decibel(materializer(args[0])));
         }
         // Idempotent target overload (D-08 "idempotent on target tagged type").
         var idemSig = new FunctionSignature("db", [DecibelType.Instance], ParameterNames: ["x"]);
-        registry.Register("db", idemSig, args => Value.Decibel(args[0].As<double>()));
+        registry.Register("db", idemSig, args => MusicValue.Decibel(args[0].As<double>()));
     }
 
     /// <summary>
@@ -100,10 +100,10 @@ public static class ConversionFunctions
         foreach (var (sourceType, materializer) in NumericFiveSourceTypes())
         {
             var sig = new FunctionSignature("hz", [sourceType], ParameterNames: ["x"]);
-            registry.Register("hz", sig, args => Value.Hertz(materializer(args[0])));
+            registry.Register("hz", sig, args => MusicValue.Hertz(materializer(args[0])));
         }
         var idemSig = new FunctionSignature("hz", [HertzType.Instance], ParameterNames: ["x"]);
-        registry.Register("hz", idemSig, args => Value.Hertz(args[0].As<double>()));
+        registry.Register("hz", idemSig, args => MusicValue.Hertz(args[0].As<double>()));
     }
 
     /// <summary>
@@ -115,10 +115,10 @@ public static class ConversionFunctions
         foreach (var (sourceType, materializer) in NumericFiveSourceTypes())
         {
             var sig = new FunctionSignature("ms", [sourceType], ParameterNames: ["x"]);
-            registry.Register("ms", sig, args => Value.Millisecond(materializer(args[0])));
+            registry.Register("ms", sig, args => MusicValue.Millisecond(materializer(args[0])));
         }
         var idemSig = new FunctionSignature("ms", [MillisecondType.Instance], ParameterNames: ["x"]);
-        registry.Register("ms", idemSig, args => Value.Millisecond(args[0].As<double>()));
+        registry.Register("ms", idemSig, args => MusicValue.Millisecond(args[0].As<double>()));
     }
 
     /// <summary>
@@ -130,10 +130,10 @@ public static class ConversionFunctions
         foreach (var (sourceType, materializer) in NumericFiveSourceTypes())
         {
             var sig = new FunctionSignature("sec", [sourceType], ParameterNames: ["x"]);
-            registry.Register("sec", sig, args => Value.Second(materializer(args[0])));
+            registry.Register("sec", sig, args => MusicValue.Second(materializer(args[0])));
         }
         var idemSig = new FunctionSignature("sec", [SecondType.Instance], ParameterNames: ["x"]);
-        registry.Register("sec", idemSig, args => Value.Second(args[0].As<double>()));
+        registry.Register("sec", idemSig, args => MusicValue.Second(args[0].As<double>()));
     }
 
     /// <summary>
@@ -145,10 +145,10 @@ public static class ConversionFunctions
         foreach (var (sourceType, materializer) in NumericFiveSourceTypes())
         {
             var sig = new FunctionSignature("cents", [sourceType], ParameterNames: ["x"]);
-            registry.Register("cents", sig, args => Value.Cent(materializer(args[0])));
+            registry.Register("cents", sig, args => MusicValue.Cent(materializer(args[0])));
         }
         var idemSig = new FunctionSignature("cents", [CentType.Instance], ParameterNames: ["x"]);
-        registry.Register("cents", idemSig, args => Value.Cent(args[0].As<double>()));
+        registry.Register("cents", idemSig, args => MusicValue.Cent(args[0].As<double>()));
     }
 
     /// <summary>
@@ -157,17 +157,17 @@ public static class ConversionFunctions
     /// through OverloadResolver to "No matching overload for 'semitones'" in
     /// BOTH modes. Semitone-input idempotent overload also ships so
     /// <c>(semitones +2st)</c> works. Semitone is the only tagged music type
-    /// whose CLR backing is <c>int</c> (per <c>Value.Semitone(int)</c>
+    /// whose CLR backing is <c>int</c> (per <c>MusicValue.Semitone(int)</c>
     /// factory at <c>Value.cs:34</c>) so the idempotent path reads
     /// <c>args[0].As&lt;int&gt;()</c>, NOT <c>As&lt;double&gt;()</c>.
     /// </summary>
     private static void RegisterSemitone(InternalFunctionRegistry registry)
     {
         var intSig = new FunctionSignature("semitones", [IntType.Instance], ParameterNames: ["x"]);
-        registry.Register("semitones", intSig, args => Value.Semitone(args[0].As<int>()));
+        registry.Register("semitones", intSig, args => MusicValue.Semitone(args[0].As<int>()));
 
         var idemSig = new FunctionSignature("semitones", [SemitoneType.Instance], ParameterNames: ["x"]);
-        registry.Register("semitones", idemSig, args => Value.Semitone(args[0].As<int>()));
+        registry.Register("semitones", idemSig, args => MusicValue.Semitone(args[0].As<int>()));
     }
 
     /// <summary>

@@ -26,7 +26,7 @@ namespace FlowLang.StandardLibrary.Audio.Sfz;
 ///   <see cref="ExecutionContext.SfzInstruments"/>, joins the relative path with
 ///   <see cref="ExecutionContext.ResolvedSfzRoot"/> (cached from
 ///   <c>FlowConfig.Active.SfzRoot</c> per Pitfall 2), parses via
-///   <see cref="SfzParser.Parse"/>, returns <see cref="Value.Sfz"/>.</description></item>
+///   <see cref="SfzParser.Parse"/>, returns <see cref="MusicValue.Sfz"/>.</description></item>
 ///
 ///   <item><description><c>loadSfz(String)</c> — bypasses the dict; parses the literal
 ///   path directly (composer-side absolute or relative path).</description></item>
@@ -142,7 +142,7 @@ public static class SfzBuiltins
     /// Symbol overload — looks up <c>args[0]</c> (a Symbol Value) in
     /// <see cref="ExecutionContext.SfzInstruments"/>, resolves
     /// <c>sfz_root</c> via the Pitfall-2 cache, joins, parses, and wraps the
-    /// result with <see cref="Value.Sfz"/>.
+    /// result with <see cref="MusicValue.Sfz"/>.
     ///
     /// Error paths (each is composer-facing and points at the fix):
     /// <list type="bullet">
@@ -235,7 +235,7 @@ public static class SfzBuiltins
             sfzData = sfzData with { IsPercussion = true };
         }
 
-        return Value.Sfz(sfzData);
+        return MusicValue.Sfz(sfzData);
     }
 
     /// <summary>
@@ -256,7 +256,7 @@ public static class SfzBuiltins
         var sfzData = SfzParser.Parse(content, path,
             patchDescription: Path.GetFileNameWithoutExtension(path),
             strictCtx: ctx);
-        return Value.Sfz(sfzData);
+        return MusicValue.Sfz(sfzData);
     }
 
     /// <summary>

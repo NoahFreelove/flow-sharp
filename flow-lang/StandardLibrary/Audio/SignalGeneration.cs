@@ -1,6 +1,7 @@
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.Synthesizers;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -18,7 +19,7 @@ public static class SignalGeneration
         int sampleRate = args[1].As<int>();
 
         var state = new OscillatorState(frequency, sampleRate);
-        return Value.OscillatorState(state);
+        return MusicValue.OscillatorState(state);
     }
 
     /// <summary>
@@ -160,7 +161,7 @@ public static class SignalGeneration
             buffer.SetSample(frame, 0, sample);
             state.AdvancePhase();
         }
-        return Value.Buffer(buffer);
+        return MusicValue.Buffer(buffer);
     }
 
     /// <summary>
@@ -180,7 +181,7 @@ public static class SignalGeneration
             float sample = frame < (frames / 10) ? (float)((Random.Shared.NextDouble() * 2 - 1) * amplitude) : 0f;
             buffer.SetSample(frame, 0, sample);
         }
-        return Value.Buffer(buffer);
+        return MusicValue.Buffer(buffer);
     }
 
     /// <summary>
@@ -206,7 +207,7 @@ public static class SignalGeneration
         // GenerateWhiteNoise is additive (+=) but a fresh AudioBuffer's .Data is
         // zero-initialized, so this acts as a write.
         SynthUtils.GenerateWhiteNoise(buffer.Data, amplitude);
-        return Value.Buffer(buffer);
+        return MusicValue.Buffer(buffer);
     }
 
     /// <summary>1-arity noise: 1s mono 44100Hz amplitude=1.0.</summary>

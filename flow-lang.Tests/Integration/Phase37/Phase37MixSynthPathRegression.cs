@@ -7,6 +7,7 @@ using FlowLang.StandardLibrary.Audio;
 using FlowLang.Tests.Helpers;
 using FlowLang.Tests.Fixtures;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Integration.Phase37;
 
@@ -108,7 +109,7 @@ Buffer mix = (renderSong s ""piano"")
             var args = new System.Collections.Generic.List<Value>
             {
                 Value.String(baselinePath),
-                Value.Buffer(buf),
+                MusicValue.Buffer(buf),
             };
             FileIO.WriteWav(args);
             // Defensive: re-read the baseline to verify the round-trip wrote

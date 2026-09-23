@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using FlowLang.StandardLibrary.Audio;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Helpers;
 
@@ -185,7 +186,7 @@ public static class Phase37Fixtures
         var args = new[]
         {
             FlowLang.Runtime.Value.String(path),
-            FlowLang.Runtime.Value.Buffer(buf),
+            FlowLang.TypeSystem.SpecialTypes.MusicValue.Buffer(buf),
         };
         FileIO.WriteWav(args);
     }

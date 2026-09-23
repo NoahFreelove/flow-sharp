@@ -105,7 +105,7 @@ public static class MidiFunctions
             // The native output port closes with its engine.
             if (handle is not null)
                 context.Session.Track(() => { try { handle.Dispose(); } catch { } });
-            return Value.MidiDevice(new MidiDeviceData { PortName = port, Handle = handle });
+            return MusicValue.MidiDevice(new MidiDeviceData { PortName = port, Handle = handle });
         });
 
         // ----- midiNoteOn(MidiDevice dev, Int ch, Int pitch, Int vel) -> Void -----

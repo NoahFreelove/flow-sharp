@@ -102,7 +102,7 @@ public static class VocalizationFunctions
         double duration = args[2].As<double>();
 
         var result = FormantSynthesizer.SynthesizeSyllable(phoneme, frequencyHz, duration);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public static class VocalizationFunctions
     {
         string text = args[0].As<string>();
         var result = TtsHook.RunTts(text);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

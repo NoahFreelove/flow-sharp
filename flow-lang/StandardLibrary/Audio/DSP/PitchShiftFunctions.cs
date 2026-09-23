@@ -155,7 +155,7 @@ public static class PitchShiftFunctions
         }
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         StretchMode mode = StretchMode.Auto;
         if (arity >= 3)
@@ -177,7 +177,7 @@ public static class PitchShiftFunctions
             transientThreshold: transientThreshold,
             pitchPeriod: pitchPeriod, windowSize: windowSize,
             site: ctx.CurrentCallSite);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     private static StretchMode ResolveStretchMode(string sym, ExecutionContext ctx)

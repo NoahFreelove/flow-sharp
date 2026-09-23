@@ -137,14 +137,14 @@ public static class CellularFunctions
         steps = ClampDimensionWithAdvisory(steps, ctx, "cellular", "steps");
 
         if (width <= 0 || steps <= 0)
-            return Value.Sequence(new SequenceData());
+            return MusicValue.Sequence(new SequenceData());
 
         // Default initial row: single 1 at center.
         var initial = new bool[width];
         initial[width / 2] = true;
 
         var grid = RunElementaryCa(rule, initial, steps);
-        return Value.Sequence(Ca1dGridToSequence(grid, width));
+        return MusicValue.Sequence(Ca1dGridToSequence(grid, width));
     }
 
     private static Value CellularSeeded(IReadOnlyList<Value> args, ExecutionContext ctx)
@@ -160,7 +160,7 @@ public static class CellularFunctions
         steps = ClampDimensionWithAdvisory(steps, ctx, "cellularSeeded", "steps");
 
         if (width <= 0 || steps <= 0)
-            return Value.Sequence(new SequenceData());
+            return MusicValue.Sequence(new SequenceData());
 
         // Build the initial row from the composer-supplied pattern. If the
         // pattern is shorter than width, pad with false; if longer, truncate.
@@ -173,7 +173,7 @@ public static class CellularFunctions
         }
 
         var grid = RunElementaryCa(rule, initial, steps);
-        return Value.Sequence(Ca1dGridToSequence(grid, width));
+        return MusicValue.Sequence(Ca1dGridToSequence(grid, width));
     }
 
     /// <summary>
@@ -347,7 +347,7 @@ public static class CellularFunctions
                 }
                 seq.AddBar(new BarData(notes, timeSig));
             }
-            result.Add(Value.Sequence(seq));
+            result.Add(MusicValue.Sequence(seq));
         }
         return result;
     }

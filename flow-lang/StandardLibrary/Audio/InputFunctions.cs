@@ -104,14 +104,14 @@ public static class InputFunctions
     {
         double seconds = args[0].As<double>();
         var buf = MicBuffer(seconds, ctx);
-        return Value.Buffer(buf);
+        return MusicValue.Buffer(buf);
     }
 
     private static Value MicBufferFromDouble(IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
     {
         double seconds = args[0].As<double>();
         var buf = MicBuffer(seconds, ctx);
-        return Value.Buffer(buf);
+        return MusicValue.Buffer(buf);
     }
 
     /// <summary>

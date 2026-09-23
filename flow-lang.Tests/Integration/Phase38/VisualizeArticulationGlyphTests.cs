@@ -52,7 +52,7 @@ public class VisualizeArticulationGlyphTests : IDisposable
         Console.SetOut(sw);
         try
         {
-            VisualizationFunctions.Visualize(new List<Value> { Value.Sequence(seq) });
+            VisualizationFunctions.Visualize(new List<Value> { MusicValue.Sequence(seq) });
         }
         finally
         {

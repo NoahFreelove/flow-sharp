@@ -124,12 +124,12 @@ public static class GranularFunctions
 
         // Empty-buffer short-circuit (matches EffectsFunctions.cs:96, 112-113, etc.).
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = GranularEngine.Apply(
             buffer, grainSec, densityHz, jitter, kind,
             ctx.PrngRegistry, ctx.CurrentCallSite);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

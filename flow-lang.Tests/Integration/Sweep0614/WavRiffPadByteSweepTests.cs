@@ -3,6 +3,7 @@ using System.IO;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Integration.Sweep0614;
 
@@ -49,7 +50,7 @@ public class WavRiffPadByteSweepTests
             FileIO.WriteWavWithBitDepth(new[]
             {
                 Value.String(path),
-                Value.Buffer(buffer),
+                MusicValue.Buffer(buffer),
                 Value.Int(24),
             });
 
@@ -102,7 +103,7 @@ public class WavRiffPadByteSweepTests
             FileIO.WriteWavWithBitDepth(new[]
             {
                 Value.String(path),
-                Value.Buffer(buffer),
+                MusicValue.Buffer(buffer),
                 Value.Int(24),
             });
 
@@ -137,8 +138,8 @@ public class WavRiffPadByteSweepTests
         string b = Path.Combine(Path.GetTempPath(), $"flow_riffpad_b_{Guid.NewGuid():N}.wav");
         try
         {
-            FileIO.WriteWavWithBitDepth(new[] { Value.String(a), Value.Buffer(buffer), Value.Int(24) });
-            FileIO.WriteWavWithBitDepth(new[] { Value.String(b), Value.Buffer(buffer), Value.Int(24) });
+            FileIO.WriteWavWithBitDepth(new[] { Value.String(a), MusicValue.Buffer(buffer), Value.Int(24) });
+            FileIO.WriteWavWithBitDepth(new[] { Value.String(b), MusicValue.Buffer(buffer), Value.Int(24) });
             Assert.Equal(File.ReadAllBytes(a), File.ReadAllBytes(b));
         }
         finally
@@ -167,8 +168,8 @@ public class WavRiffPadByteSweepTests
         string p24 = Path.Combine(Path.GetTempPath(), $"flow_even24_{Guid.NewGuid():N}.wav");
         try
         {
-            FileIO.WriteWavWithBitDepth(new[] { Value.String(p16), Value.Buffer(buf16), Value.Int(16) });
-            FileIO.WriteWavWithBitDepth(new[] { Value.String(p24), Value.Buffer(buf24), Value.Int(24) });
+            FileIO.WriteWavWithBitDepth(new[] { Value.String(p16), MusicValue.Buffer(buf16), Value.Int(16) });
+            FileIO.WriteWavWithBitDepth(new[] { Value.String(p24), MusicValue.Buffer(buf24), Value.Int(24) });
 
             // 44 header + 6 data = 50 (even, no pad).
             Assert.Equal(50, new FileInfo(p16).Length);

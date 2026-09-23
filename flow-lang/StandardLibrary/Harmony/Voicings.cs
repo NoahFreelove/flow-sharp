@@ -40,7 +40,7 @@ public static class Voicings
         {
             var chord = args[0].As<ChordData>();
             int n = args[1].As<int>();
-            return Value.Chord(Inversion(chord, n));
+            return MusicValue.Chord(Inversion(chord, n));
         });
 
         // voicing(Chord, String) -> Chord
@@ -51,7 +51,7 @@ public static class Voicings
         {
             var chord = args[0].As<ChordData>();
             string name = args[1].As<string>();
-            return Value.Chord(Voicing(chord, name));
+            return MusicValue.Chord(Voicing(chord, name));
         });
     }
 

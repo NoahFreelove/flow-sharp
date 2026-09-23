@@ -13,6 +13,8 @@ public sealed class SemitoneType : FlowType
 
     public override string Name => "Semitone";
 
+    public override bool IsUnitQuantity => true;
+
     public override int GetSpecificity() => 125;
 
     /// <summary>

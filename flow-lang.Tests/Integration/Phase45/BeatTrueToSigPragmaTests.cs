@@ -6,6 +6,7 @@ using FlowLang.Lexing;
 using FlowLang.StandardLibrary;
 using Xunit;
 using ExecutionContext = FlowLang.Runtime.ExecutionContext;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Integration.Phase45;
 
@@ -363,7 +364,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     public void StrEmitsQuarterValuePragmaOn6Over8()
     {
         // Pragma on, 6/8 → multiplier 4/8 = 0.5 → (beat 1.0) constructs
-        // Value.Beat(0.5); str shows the QUARTER value "0.5", never "1b".
+        // MusicValue.Beat(0.5); str shows the QUARTER value "0.5", never "1b".
         var src = "enable beat-true-to-sig;\ntimesig 6/8 { (print (str (beat 1.0))) }";
         Assert.Equal("0.5", RunCapture(src));
     }
@@ -372,7 +373,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     public void StrEmitsQuarterValuePragmaOn2Over2()
     {
         // Pragma on, 2/2 → multiplier 4/2 = 2.0 → (beat 0.5) constructs
-        // Value.Beat(1.0); str shows the QUARTER value "1".
+        // MusicValue.Beat(1.0); str shows the QUARTER value "1".
         var src = "enable beat-true-to-sig;\ntimesig 2/2 { (print (str (beat 0.5))) }";
         Assert.Equal("1", RunCapture(src));
     }
@@ -382,7 +383,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     // Pitfall 3 / D-04 verification at the composer-source level: a pragma-ON
     // entry file `use`-s a pragma-OFF helper declaring `proc bumpBeat ... (beat 1)`.
     // Inside the entry's `timesig 6/8 { }`, a LOCAL 1b literal multiplies to 0.5,
-    // but `(bumpBeat (beat 0))` returns Value.Beat(1.0) — the helper proc's
+    // but `(bumpBeat (beat 0))` returns MusicValue.Beat(1.0) — the helper proc's
     // (beat 1) reads its DECLARING file's pragma bit (off), not the caller's.
     // Mechanism: ProcDeclaration.IsBeatTrueToSig captured at parse time from the
     // declaring file + per-proc push/pop in Interpreter.ExecuteUserFunctionWithCaptures.

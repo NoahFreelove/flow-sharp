@@ -3,6 +3,7 @@ using System.IO;
 using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.TestFramework;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Helpers;
 
@@ -51,7 +52,7 @@ public static class RmsRegressionTests
             var args = new System.Collections.Generic.List<FlowLang.Runtime.Value>
             {
                 FlowLang.Runtime.Value.String(tempPath),
-                FlowLang.Runtime.Value.Buffer(rendered),
+                FlowLang.TypeSystem.SpecialTypes.MusicValue.Buffer(rendered),
             };
             FileIO.WriteWav(args);
             AssertWavMatchesBaseline(tempPath, baselineWavPath, windowMs, toleranceDb, overrideReason);

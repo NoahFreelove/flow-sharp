@@ -13,6 +13,8 @@ public sealed class SecondType : FlowType
 
     public override string Name => "Second";
 
+    public override bool IsUnitQuantity => true;
+
     public override bool CanConvertTo(FlowType target)
     {
         // Seconds can convert to Milliseconds (CONTEXT D-02 — STAYS)

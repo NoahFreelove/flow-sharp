@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Midi;
 
@@ -187,7 +188,7 @@ public static class JackFunctions
                 RenderingDiagnostics.WarnOnce(
                     "jack-absent",
                     "[jack] no JACK server — (jackSync) is a no-op (transport tempo unchanged)");
-                return Value.JackHandle(new JackHandleData
+                return MusicValue.JackHandle(new JackHandleData
                 {
                     ServerPresent = false,
                     Tempo = null,
@@ -223,7 +224,7 @@ public static class JackFunctions
                     $"[jack] transport BPM {bpm.Value:0.##} is out of range — not applied to Tempo");
             }
 
-            return Value.JackHandle(new JackHandleData
+            return MusicValue.JackHandle(new JackHandleData
             {
                 ServerPresent = true,
                 Tempo = appliedTempo,

@@ -90,13 +90,13 @@ public static class NotationIoBuiltins
                 // composer-visible [strict] errors when context.CallerStrictMode.
                 var sections = AbcImport.ParseMultiTune(src, context);
                 var values = new List<Value>(sections.Count);
-                foreach (var s in sections) values.Add(Value.Section(s));
+                foreach (var s in sections) values.Add(MusicValue.Section(s));
                 return Value.Array(values, SectionType.Instance);
             }
             else
             {
                 var section = AbcImport.ParseSingleTune(src, context);
-                return Value.Section(section);
+                return MusicValue.Section(section);
             }
         });
 
@@ -111,7 +111,7 @@ public static class NotationIoBuiltins
             // Phase 44 Plan 44-07: thread the calling ExecutionContext so deep
             // parser helpers can elevate WarnOnce advisories to [strict] errors.
             var seq = MmlImport.ParseMml(src, context);
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         });
     }
 

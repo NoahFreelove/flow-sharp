@@ -282,14 +282,7 @@ public record FunctionSignature(
     /// Reference-identity music types (Tuning/Sfz/...) and Note are NOT unit
     /// quantities — their dispatch is untouched.
     /// </summary>
-    private static bool IsUnitQuantityType(FlowType type) =>
-        type is SpecialTypes.DecibelType
-            or SpecialTypes.MillisecondType
-            or SpecialTypes.SecondType
-            or SpecialTypes.CentType
-            or SpecialTypes.SemitoneType
-            or SpecialTypes.HertzType
-            or SpecialTypes.BeatType;
+    private static bool IsUnitQuantityType(FlowType type) => type.IsUnitQuantity;
 
     /// <summary>
     /// Calculates a specificity score for overload resolution.

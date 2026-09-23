@@ -72,11 +72,11 @@ public static class PolyrhythmFunctions
             LoopVoices(allVoices, voices2, seq2Beats, totalBeats, bpm, sampleRate);
 
         if (allVoices.Count == 0)
-            return Value.Buffer(new AudioBuffer(0, 2, sampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, 2, sampleRate));
 
         // Mix all voices into stereo buffer using SongRenderer's mixer
         var result = SongRenderer.MixVoicesToStereoBuffer(allVoices, bpm, sampleRate, totalBeats);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -20,7 +21,7 @@ public static class EnvelopeProcessor
         var parameters = new double[] { attackSec, releaseSec };
         var envelope = new Envelope(EnvelopeKind.AR, parameters, sampleRate);
 
-        return Value.Envelope(envelope);
+        return MusicValue.Envelope(envelope);
     }
 
     /// <summary>
@@ -37,7 +38,7 @@ public static class EnvelopeProcessor
         var parameters = new double[] { attack, decay, sustain, release };
         var envelope = new Envelope(EnvelopeKind.ADSR, parameters, sampleRate);
 
-        return Value.Envelope(envelope);
+        return MusicValue.Envelope(envelope);
     }
 
     /// <summary>

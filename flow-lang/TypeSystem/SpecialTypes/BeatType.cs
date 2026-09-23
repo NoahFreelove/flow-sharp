@@ -15,6 +15,8 @@ public sealed class BeatType : FlowType
 
     public override string Name => "Beat";
 
+    public override bool IsUnitQuantity => true;
+
     public override int GetSpecificity() => 139;
 
     /// <summary>

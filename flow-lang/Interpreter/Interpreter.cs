@@ -541,7 +541,7 @@ public class Interpreter : IFunctionInvoker
             return;
         }
 
-        // Step 3: extract the ResolvedTuning. Value.Tuning(ResolvedTuning) is the
+        // Step 3: extract the ResolvedTuning. MusicValue.Tuning(ResolvedTuning) is the
         // Plan 32-04 factory; the unwrap reads the Data slot directly.
         var resolved = (StandardLibrary.Audio.Tuning.ResolvedTuning)tuningValue.Data!;
 
@@ -1287,18 +1287,18 @@ public class Interpreter : IFunctionInvoker
             BoolType => Value.Bool(false),
             NumberType => Value.Number(System.Numerics.BigInteger.Zero),
             ArrayType arr => Value.Array(new List<Value>(), arr.ElementType),
-            BufferType => Value.EmptyBuffer(),
-            NoteType => Value.Note("C4"),
-            SemitoneType => Value.Semitone(0),
-            CentType => Value.Cent(0.0),
-            MillisecondType => Value.Millisecond(0.0),
-            SecondType => Value.Second(0.0),
-            DecibelType => Value.Decibel(0.0),
-            BeatType => Value.Beat(0.0),
-            NoteValueType => Value.NoteValue(0),
-            TimeSignatureType => Value.TimeSignature(new TimeSignatureData(4, 4)),
-            SequenceType => Value.Sequence(new SequenceData()),
-            BarType => Value.Bar(new BarData(new List<MusicalNoteData>(), new TimeSignatureData(4, 4))),
+            BufferType => MusicValue.EmptyBuffer(),
+            NoteType => MusicValue.Note("C4"),
+            SemitoneType => MusicValue.Semitone(0),
+            CentType => MusicValue.Cent(0.0),
+            MillisecondType => MusicValue.Millisecond(0.0),
+            SecondType => MusicValue.Second(0.0),
+            DecibelType => MusicValue.Decibel(0.0),
+            BeatType => MusicValue.Beat(0.0),
+            NoteValueType => MusicValue.NoteValue(0),
+            TimeSignatureType => MusicValue.TimeSignature(new TimeSignatureData(4, 4)),
+            SequenceType => MusicValue.Sequence(new SequenceData()),
+            BarType => MusicValue.Bar(new BarData(new List<MusicalNoteData>(), new TimeSignatureData(4, 4))),
             _ => Value.Void()
         };
     }

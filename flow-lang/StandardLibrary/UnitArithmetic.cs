@@ -15,12 +15,12 @@ public static class UnitArithmetic
     // Double-backed unit types and their factories.
     private static readonly (FlowType Type, Func<double, Value> Make)[] DoubleUnits =
     [
-        (MillisecondType.Instance, Value.Millisecond),
-        (SecondType.Instance, Value.Second),
-        (DecibelType.Instance, Value.Decibel),
-        (HertzType.Instance, Value.Hertz),
-        (CentType.Instance, Value.Cent),
-        (BeatType.Instance, Value.Beat),
+        (MillisecondType.Instance, MusicValue.Millisecond),
+        (SecondType.Instance, MusicValue.Second),
+        (DecibelType.Instance, MusicValue.Decibel),
+        (HertzType.Instance, MusicValue.Hertz),
+        (CentType.Instance, MusicValue.Cent),
+        (BeatType.Instance, MusicValue.Beat),
     ];
 
     public static void Register(InternalFunctionRegistry registry)
@@ -44,13 +44,13 @@ public static class UnitArithmetic
 
         // Milliseconds and seconds combine; the result uses the first operand's unit.
         Reg(registry, "add", MillisecondType.Instance, SecondType.Instance,
-            args => Value.Millisecond(D(args[0]) + D(args[1]) * 1000.0));
+            args => MusicValue.Millisecond(D(args[0]) + D(args[1]) * 1000.0));
         Reg(registry, "sub", MillisecondType.Instance, SecondType.Instance,
-            args => Value.Millisecond(D(args[0]) - D(args[1]) * 1000.0));
+            args => MusicValue.Millisecond(D(args[0]) - D(args[1]) * 1000.0));
         Reg(registry, "add", SecondType.Instance, MillisecondType.Instance,
-            args => Value.Second(D(args[0]) + D(args[1]) / 1000.0));
+            args => MusicValue.Second(D(args[0]) + D(args[1]) / 1000.0));
         Reg(registry, "sub", SecondType.Instance, MillisecondType.Instance,
-            args => Value.Second(D(args[0]) - D(args[1]) / 1000.0));
+            args => MusicValue.Second(D(args[0]) - D(args[1]) / 1000.0));
         Reg(registry, "div", MillisecondType.Instance, SecondType.Instance,
             args => Value.Double(D(args[0]) / NonZero(D(args[1]) * 1000.0)));
         Reg(registry, "div", SecondType.Instance, MillisecondType.Instance,
@@ -58,10 +58,10 @@ public static class UnitArithmetic
 
         // Semitones are whole numbers.
         var st = SemitoneType.Instance;
-        Reg(registry, "add", st, st, args => Value.Semitone(I(args[0]) + I(args[1])));
-        Reg(registry, "sub", st, st, args => Value.Semitone(I(args[0]) - I(args[1])));
-        Reg(registry, "mul", st, IntType.Instance, args => Value.Semitone(I(args[0]) * I(args[1])));
-        Reg(registry, "mul", IntType.Instance, st, args => Value.Semitone(I(args[0]) * I(args[1])));
+        Reg(registry, "add", st, st, args => MusicValue.Semitone(I(args[0]) + I(args[1])));
+        Reg(registry, "sub", st, st, args => MusicValue.Semitone(I(args[0]) - I(args[1])));
+        Reg(registry, "mul", st, IntType.Instance, args => MusicValue.Semitone(I(args[0]) * I(args[1])));
+        Reg(registry, "mul", IntType.Instance, st, args => MusicValue.Semitone(I(args[0]) * I(args[1])));
         Reg(registry, "mul", st, st, args => Value.Int(I(args[0]) * I(args[1])));
     }
 

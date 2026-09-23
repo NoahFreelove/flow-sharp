@@ -11,6 +11,9 @@ public sealed class NoteValueType : FlowType
 
     public override string Name => "NoteValue";
 
+    /// <summary>Int converts to NoteValue implicitly (NoteValue is an int-backed enum).</summary>
+    public override bool AcceptsConversionFrom(FlowType source) => source is PrimitiveTypes.IntType;
+
     public override int GetSpecificity() => 132;
 
     public override bool IsCompatibleWith(FlowType other)

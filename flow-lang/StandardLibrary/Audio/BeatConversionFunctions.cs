@@ -71,7 +71,7 @@ public static class BeatConversionFunctions
             }
 
             double seconds = beats * (60.0 / bpm);
-            return Value.Second(seconds);
+            return MusicValue.Second(seconds);
         });
 
         // secToBeat(Second) → Beat (symmetric inverse)
@@ -92,7 +92,7 @@ public static class BeatConversionFunctions
             }
 
             double beats = seconds * (bpm / 60.0);
-            return Value.Beat(beats);
+            return MusicValue.Beat(beats);
         });
     }
 

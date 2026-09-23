@@ -83,7 +83,7 @@ public class ExpressionEvaluator
         try
         {
             var (note, octave, alteration) = NoteType.Parse(text);
-            return Value.Note(text); // Store original text
+            return MusicValue.Note(text); // Store original text
         }
         catch
         {
@@ -96,7 +96,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 2);
             if (int.TryParse(numberPart, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int semitoneValue))
             {
-                return Value.Semitone(semitoneValue);
+                return MusicValue.Semitone(semitoneValue);
             }
         }
 
@@ -109,7 +109,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 1);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double centValue))
             {
-                return Value.Cent(centValue);
+                return MusicValue.Cent(centValue);
             }
         }
 
@@ -119,7 +119,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double msValue))
             {
-                return Value.Millisecond(msValue);
+                return MusicValue.Millisecond(msValue);
             }
         }
         else if (text.EndsWith("s") && !text.EndsWith("ms"))
@@ -127,7 +127,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 1);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double sValue))
             {
-                return Value.Second(sValue);
+                return MusicValue.Second(sValue);
             }
         }
 
@@ -137,7 +137,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double dbValue))
             {
-                return Value.Decibel(dbValue);
+                return MusicValue.Decibel(dbValue);
             }
         }
 
@@ -148,7 +148,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 3);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double kHzValue))
             {
-                return Value.Hertz(kHzValue * 1000.0);  // canonical Hz
+                return MusicValue.Hertz(kHzValue * 1000.0);  // canonical Hz
             }
         }
         else if (text.EndsWith("Hz"))
@@ -156,7 +156,7 @@ public class ExpressionEvaluator
             string numberPart = text.Substring(0, text.Length - 2);
             if (double.TryParse(numberPart, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double hzValue))
             {
-                return Value.Hertz(hzValue);
+                return MusicValue.Hertz(hzValue);
             }
         }
 
@@ -208,7 +208,7 @@ public class ExpressionEvaluator
         // NoteValueType.TryGetPredefinedConstant (mirrors NoteStreamCompiler's
         // duration-suffix table so `e` and a note-stream `C4e` agree).
         if (NoteValueType.TryGetPredefinedConstant(var.Name, out var nvEnum))
-            return Value.NoteValue((int)nvEnum);
+            return MusicValue.NoteValue((int)nvEnum);
 
         // Not a variable or function — Phase 35 LANG-04 Wave 2a: emit rich
         // FlowDiagnostic with Levenshtein-derived did-you-mean suggestion
@@ -1156,7 +1156,7 @@ public class ExpressionEvaluator
         {
             return member.MemberName switch
             {
-                "TimeSignature" => Value.TimeSignature(barData.TimeSignature),
+                "TimeSignature" => MusicValue.TimeSignature(barData.TimeSignature),
                 "Count" => Value.Int(barData.Notes.Count),
                 _ => ReportUnknownMember(obj.Type, member.MemberName, member.Location)
             };
@@ -1311,7 +1311,7 @@ public class ExpressionEvaluator
     {
         if (ChordParser.TryParse(chordLit.ChordText, out var chordData))
         {
-            return Value.Chord(chordData!);
+            return MusicValue.Chord(chordData!);
         }
 
         _errorReporter.ReportError($"Invalid chord symbol: '{chordLit.ChordText}'", chordLit.Location);
@@ -1340,7 +1340,7 @@ public class ExpressionEvaluator
     /// With pragma OFF the multiplier is always 1.0 (raw passes through); with
     /// pragma ON in 4/4 (or no timesig) the multiplier is 4/4 = 1.0 (identity) —
     /// activation never corrupts scripts that never set a non-quarter meter.
-    /// Internal storage stays quarter-relative (<see cref="Value.Beat(double)"/>),
+    /// Internal storage stays quarter-relative (<see cref="MusicValue.Beat(double)"/>),
     /// so every downstream Beat consumer is unaffected (construction-only desugar).
     /// </summary>
     private Value EvaluateBeatLiteral(BeatLiteralExpression beatLit)
@@ -1350,7 +1350,7 @@ public class ExpressionEvaluator
         // divide-by-zero-proof identity default (T-45-09 mitigation).
         int denom = _context.GetMusicalContext().TimeSignature?.Denominator ?? 4;
         double multiplier = _context.BeatTrueToSig ? (4.0 / denom) : 1.0;
-        return Value.Beat(beatLit.RawValue * multiplier);
+        return MusicValue.Beat(beatLit.RawValue * multiplier);
     }
 
     private Value EvaluateNoteStream(NoteStreamExpression noteStream)
@@ -1361,7 +1361,7 @@ public class ExpressionEvaluator
         // pattern — Plan 19-01/19-02 unit Facts continue using the parameterless ctor.
         var compiler = new NoteStreamCompiler(_errorReporter);
         var sequence = compiler.Compile(noteStream, context, _context);
-        return Value.Sequence(sequence);
+        return MusicValue.Sequence(sequence);
     }
 
     private Value EvaluateProgression(ProgressionExpression progression)
@@ -1377,7 +1377,7 @@ public class ExpressionEvaluator
 
         var compiler = new ProgressionCompiler();
         var sequence = compiler.Compile(progression, context);
-        return Value.Sequence(sequence);
+        return MusicValue.Sequence(sequence);
     }
 
     private Value EvaluateInterpolatedString(InterpolatedStringExpression expr)
@@ -1475,7 +1475,7 @@ public class ExpressionEvaluator
         }
 
         var songData = new SongData(sectionRefs, flatRegistry);
-        return Value.Song(songData);
+        return MusicValue.Song(songData);
     }
 
     /// <summary>

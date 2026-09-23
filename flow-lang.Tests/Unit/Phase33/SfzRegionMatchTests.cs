@@ -394,7 +394,7 @@ public class SfzRegionMatchTests : IDisposable
         FileIO.WriteWav(new List<FlowLang.Runtime.Value>
         {
             FlowLang.Runtime.Value.String(path),
-            FlowLang.Runtime.Value.Buffer(buf)
+            FlowLang.TypeSystem.SpecialTypes.MusicValue.Buffer(buf)
         });
     }
 

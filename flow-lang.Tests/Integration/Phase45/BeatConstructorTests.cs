@@ -3,6 +3,7 @@ using System.IO;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Integration.Phase45;
 
@@ -115,7 +116,7 @@ public class BeatConstructorTests : IDisposable
     {
         // Phase 26.1 DICT-01: <<C4, (beat 0.25)>> is a valid Tuple<<Note, Beat>>
         // Dict key. Pragma OFF in 4/4 → multiplier 1.0 → key value 0.25; INSERT and
-        // LOOKUP construct the identical internal Value.Beat(0.25), so (get) hits.
+        // LOOKUP construct the identical internal MusicValue.Beat(0.25), so (get) hits.
         var src =
             "timesig 4/4 {\n" +
             "  Dict<Tuple<<Note, Beat>>, Int> d = (dict <<C4, (beat 0.25)>> 100)\n" +
@@ -142,7 +143,7 @@ public class BeatConstructorTests : IDisposable
     public void Dict01Regression_PragmaOn_6Over8()
     {
         // Pragma ON in 6/8 → multiplier 0.5. BOTH the INSERT key and the LOOKUP key
-        // construct <<C4, Value.Beat(0.125)>> (0.25 × 0.5) — identical internal value,
+        // construct <<C4, MusicValue.Beat(0.125)>> (0.25 × 0.5) — identical internal value,
         // so the round-trip still hits (§Signal 5 RESEARCH.md row 3). Proves the
         // migrated context-dependent constructor preserves Tuple-of-hashables key
         // dispatch consistently under the pragma multiplier.

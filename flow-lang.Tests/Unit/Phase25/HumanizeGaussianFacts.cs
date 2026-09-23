@@ -98,7 +98,7 @@ public class HumanizeGaussianFacts
             throw new InvalidOperationException("humanizeGaussian not registered");
         var args = new List<Value>
         {
-            Value.Sequence(seq),
+            MusicValue.Sequence(seq),
             Value.Double(amount),
             Value.Int(seed),
         };

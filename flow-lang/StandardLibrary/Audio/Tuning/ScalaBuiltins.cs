@@ -79,7 +79,7 @@ public static class ScalaBuiltins
         var kbm = ScalaKbmParser.Default(parsedScl);
         var resolved = new ResolvedTuning(parsedScl, kbm);
         FireUnmappedAdvisoryIfNeeded(resolved, kbm, ctx);
-        return Value.Tuning(resolved);
+        return MusicValue.Tuning(resolved);
     }
 
     private static Value LoadScalaTwoArg(System.Collections.Generic.IReadOnlyList<Value> args, FlowLang.Runtime.ExecutionContext? ctx)
@@ -105,7 +105,7 @@ public static class ScalaBuiltins
             period: parsedScl.PeriodCents);
         var resolved = new ResolvedTuning(parsedScl, kbm);
         FireUnmappedAdvisoryIfNeeded(resolved, kbm, ctx);
-        return Value.Tuning(resolved);
+        return MusicValue.Tuning(resolved);
     }
 
     private static Value StrTuning(System.Collections.Generic.IReadOnlyList<Value> args)

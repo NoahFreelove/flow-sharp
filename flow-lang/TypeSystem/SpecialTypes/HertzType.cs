@@ -17,6 +17,8 @@ public sealed class HertzType : FlowType
 
     public override string Name => "Hertz";
 
+    public override bool IsUnitQuantity => true;
+
     /// <summary>
     /// 144 — one above Cent (143). Unique among existing music types
     /// (Cent=143, Beat=139, Decibel=128, Semitone=125, Millisecond=122, Second=123).

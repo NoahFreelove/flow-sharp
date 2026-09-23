@@ -154,7 +154,7 @@ public class SliceNegativeTests
         // 3-bar seq; -2 + 3 = 1; slice seq 1 3 = bars[1], bars[2] -> 2 bars.
         var seq = MakeThreeBarSequence();
         var result = Collections.SliceSequence(
-            new[] { Value.Sequence(seq), Value.Int(-2), Value.Int(3) });
+            new[] { MusicValue.Sequence(seq), Value.Int(-2), Value.Int(3) });
         Assert.Equal(2, result.As<SequenceData>().Bars.Count);
     }
 
@@ -164,7 +164,7 @@ public class SliceNegativeTests
         // 3-bar seq; -1 + 3 = 2; slice seq 0 2 = bars[0], bars[1] -> 2 bars.
         var seq = MakeThreeBarSequence();
         var result = Collections.SliceSequence(
-            new[] { Value.Sequence(seq), Value.Int(0), Value.Int(-1) });
+            new[] { MusicValue.Sequence(seq), Value.Int(0), Value.Int(-1) });
         Assert.Equal(2, result.As<SequenceData>().Bars.Count);
     }
 }

@@ -240,14 +240,14 @@ public static class PatternFunctions
                         $"[strict] [every] n must be > 0 (got {n}) at {ctx.CurrentCallSite}",
                         ctx.CurrentCallSite);
                 }
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 sentinel,
                 $"[every] n must be > 0 (got {n}) at {ctx.CurrentCallSite}; sequence unchanged");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
-        if (IsEmptySeqAdvisory(seq, "every", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "every", ctx)) return MusicValue.Sequence(seq);
 
         var output = new List<BarData>(seq.Bars.Count);
         for (int i = 0; i < seq.Bars.Count; i++)
@@ -259,7 +259,7 @@ public static class PatternFunctions
                 var single = SingleBarSeq(seq.Bars[i]);
                 var lambdaResult = InvokeCallback(
                     ctx, fn,
-                    new List<Value> { Value.Sequence(single) });
+                    new List<Value> { MusicValue.Sequence(single) });
 
                 if (lambdaResult.Data is SequenceData transformed)
                 {
@@ -274,7 +274,7 @@ public static class PatternFunctions
                         ctx.ErrorReporter.ReportError(
                             $"[strict] [every] lambda at {ctx.CurrentCallSite} did not return Sequence",
                             ctx.CurrentCallSite);
-                        return Value.Sequence(seq);
+                        return MusicValue.Sequence(seq);
                     }
                     RenderingDiagnostics.WarnOnce(
                         $"every:non-sequence-fn:{ctx.CurrentCallSite}",
@@ -287,7 +287,7 @@ public static class PatternFunctions
                 output.Add(seq.Bars[i]);
             }
         }
-        return Value.Sequence(FromBars(output));
+        return MusicValue.Sequence(FromBars(output));
     }
 
     // ====================================================================
@@ -352,16 +352,16 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [{name}] factor must be > 0 and finite (got {factor})",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             // (Use a no-CurrentCallSite key so the advisory dedups by name —
             //  Fast/Slow have no context.PrngRegistry threading.)
             RenderingDiagnostics.WarnOnce(
                 $"{name}:invalid-factor",
                 $"[{name}] factor must be > 0 and finite (got {factor}); sequence unchanged");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
-        if (factor == 1.0) return Value.Sequence(seq);
+        if (factor == 1.0) return MusicValue.Sequence(seq);
 
         // log2-shift the duration enum. NoteValueType.Value is power-of-2-tiered:
         // WHOLE=0, HALF=1, QUARTER=2, EIGHTH=3, SIXTEENTH=4, THIRTYSECOND=5,
@@ -394,7 +394,7 @@ public static class PatternFunctions
             }
             result.AddBar(new BarData(newNotes, bar.TimeSignature!));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ====================================================================
@@ -438,14 +438,14 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [chunk] n must be > 0 (got {n}) at {ctx.CurrentCallSite}",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"chunk:invalid-n:{ctx.CurrentCallSite}",
                 $"[chunk] n must be > 0 (got {n}) at {ctx.CurrentCallSite}; sequence unchanged");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
-        if (IsEmptySeqAdvisory(seq, "chunk", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "chunk", ctx)) return MusicValue.Sequence(seq);
 
         // Per-call-site rotation counter — advances on each invocation. Lives
         // on the per-context PrngRegistry so it is reset at every render
@@ -469,12 +469,12 @@ public static class PatternFunctions
         // Only reachable when barCount < n (some trailing chunks legitimately
         // have zero bars); charitable passthrough applies the transform to
         // nothing for those genuinely-empty rotation indices.
-        if (chunkStart >= barCount) return Value.Sequence(seq);
+        if (chunkStart >= barCount) return MusicValue.Sequence(seq);
 
         // Build a sub-Sequence of the active chunk, invoke fn, splice result back.
         var chunkSeq = new SequenceData();
         for (int i = chunkStart; i < chunkEnd; i++) chunkSeq.AddBar(seq.Bars[i]);
-        var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { Value.Sequence(chunkSeq) });
+        var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { MusicValue.Sequence(chunkSeq) });
 
         var output = new List<BarData>(seq.Bars.Count);
         for (int i = 0; i < chunkStart; i++) output.Add(seq.Bars[i]);
@@ -490,7 +490,7 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [chunk] lambda at {ctx.CurrentCallSite} did not return Sequence",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"chunk:non-sequence-fn:{ctx.CurrentCallSite}",
@@ -498,7 +498,7 @@ public static class PatternFunctions
             for (int i = chunkStart; i < chunkEnd; i++) output.Add(seq.Bars[i]);
         }
         for (int i = chunkEnd; i < barCount; i++) output.Add(seq.Bars[i]);
-        return Value.Sequence(FromBars(output));
+        return MusicValue.Sequence(FromBars(output));
     }
 
     /// <summary>
@@ -547,12 +547,12 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [phase] offset must be finite (got {offset})",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 "phase:non-finite",
                 $"[phase] offset must be finite (got {offset}); sequence unchanged");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
         if (seq.Bars.Count == 0)
         {
@@ -561,22 +561,22 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     "[strict] [phase] empty sequence",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 "phase:empty",
                 "[phase] empty sequence; returned unchanged");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
 
         int barCount = seq.Bars.Count;
         int shift = ((int)Math.Round(offset * barCount) % barCount + barCount) % barCount;
-        if (shift == 0) return Value.Sequence(seq);
+        if (shift == 0) return MusicValue.Sequence(seq);
 
         var output = new List<BarData>(barCount);
         for (int i = 0; i < barCount; i++)
             output.Add(seq.Bars[(i + shift) % barCount]);
-        return Value.Sequence(FromBars(output));
+        return MusicValue.Sequence(FromBars(output));
     }
 
     // ====================================================================
@@ -610,12 +610,12 @@ public static class PatternFunctions
                     "[strict] [rev] empty sequence",
                     ctx.CurrentCallSite);
             }
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
 
         var reversed = new List<BarData>(seq.Bars);
         reversed.Reverse();
-        return Value.Sequence(FromBars(reversed));
+        return MusicValue.Sequence(FromBars(reversed));
     }
 
     // ====================================================================
@@ -653,12 +653,12 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [iter] n must be > 0 (got {n})",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 "iter:invalid-n",
                 $"[iter] n must be > 0 (got {n}); sequence unchanged");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
         if (seq.Bars.Count == 0)
         {
@@ -669,7 +669,7 @@ public static class PatternFunctions
                     "[strict] [iter] empty sequence",
                     ctx.CurrentCallSite);
             }
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
 
         // Flatten notes, rotate, re-distribute keeping bar.Count counts identical.
@@ -681,9 +681,9 @@ public static class PatternFunctions
             flat.AddRange(bar.MusicalNotes);
         }
 
-        if (flat.Count == 0) return Value.Sequence(seq);
+        if (flat.Count == 0) return MusicValue.Sequence(seq);
         int shift = (flat.Count / n) % flat.Count;
-        if (shift == 0) return Value.Sequence(seq);
+        if (shift == 0) return MusicValue.Sequence(seq);
 
         // Rotate left by `shift`: rotated[i] = flat[(i+shift) % count]
         var rotated = new List<MusicalNoteData>(flat.Count);
@@ -700,7 +700,7 @@ public static class PatternFunctions
             for (int j = 0; j < size; j++) newNotes.Add(rotated[idx++]);
             result.AddBar(new BarData(newNotes, seq.Bars[b].TimeSignature!));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ====================================================================
@@ -733,13 +733,13 @@ public static class PatternFunctions
                     "[strict] [palindrome] empty sequence",
                     ctx.CurrentCallSite);
             }
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
 
         var result = new SequenceData();
         foreach (var b in seq.Bars) result.AddBar(b);
         for (int i = seq.Bars.Count - 1; i >= 0; i--) result.AddBar(seq.Bars[i]);
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ====================================================================
@@ -767,9 +767,9 @@ public static class PatternFunctions
         var fn = args[0].As<FunctionOverload>();
         var seq = args[1].As<SequenceData>();
 
-        if (IsEmptySeqAdvisory(seq, "jux", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "jux", ctx)) return MusicValue.Sequence(seq);
 
-        var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { Value.Sequence(seq) });
+        var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { MusicValue.Sequence(seq) });
         if (lambdaResult.Data is not SequenceData other)
         {
             // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
@@ -778,12 +778,12 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [jux] lambda at {ctx.CurrentCallSite} did not return Sequence",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"jux:non-sequence-fn:{ctx.CurrentCallSite}",
                 $"[jux] lambda at {ctx.CurrentCallSite} did not return Sequence; original passed through");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
         if (other.Bars.Count != seq.Bars.Count)
         {
@@ -793,12 +793,12 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [jux] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"jux:bar-mismatch:{ctx.CurrentCallSite}",
                 $"[jux] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}; original passed through");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
 
         var result = new SequenceData();
@@ -813,7 +813,7 @@ public static class PatternFunctions
             };
             result.AddBar(parent);
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ====================================================================
@@ -842,9 +842,9 @@ public static class PatternFunctions
         var fn = args[0].As<FunctionOverload>();
         var seq = args[1].As<SequenceData>();
 
-        if (IsEmptySeqAdvisory(seq, "superimpose", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "superimpose", ctx)) return MusicValue.Sequence(seq);
 
-        var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { Value.Sequence(seq) });
+        var lambdaResult = InvokeCallback(ctx, fn, new List<Value> { MusicValue.Sequence(seq) });
         if (lambdaResult.Data is not SequenceData other)
         {
             // Phase 44 Plan 44-06: strict-mode elevation per D-06/D-07.
@@ -853,12 +853,12 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [superimpose] lambda at {ctx.CurrentCallSite} did not return Sequence",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"superimpose:non-sequence-fn:{ctx.CurrentCallSite}",
                 $"[superimpose] lambda at {ctx.CurrentCallSite} did not return Sequence; original passed through");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
         if (other.Bars.Count != seq.Bars.Count)
         {
@@ -868,12 +868,12 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [superimpose] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"superimpose:bar-mismatch:{ctx.CurrentCallSite}",
                 $"[superimpose] lambda result has {other.Bars.Count} bars vs source {seq.Bars.Count}; original passed through");
-            return Value.Sequence(seq);
+            return MusicValue.Sequence(seq);
         }
 
         var result = new SequenceData();
@@ -887,7 +887,7 @@ public static class PatternFunctions
             };
             result.AddBar(parent);
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ====================================================================
@@ -950,14 +950,14 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [sometimes] probability {prob} outside [0.0, 1.0]",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"sometimes:clamp:{ctx.CurrentCallSite}",
                 $"[sometimes] prob {prob} clamped to {clamped} at {ctx.CurrentCallSite}");
             prob = clamped;
         }
-        if (IsEmptySeqAdvisory(seq, "sometimes", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "sometimes", ctx)) return MusicValue.Sequence(seq);
 
         // PRNG via the per-context registry — keyed by (CurrentCallSite, "sometimes").
         // Source-grep gate (PatternDeterminismTests.NoNewRandomInPatternFunctions)
@@ -971,7 +971,7 @@ public static class PatternFunctions
                 // Apply fn to this bar.
                 var single = SingleBarSeq(seq.Bars[i]);
                 var lambdaResult = InvokeCallback(ctx, fn,
-                    new List<Value> { Value.Sequence(single) });
+                    new List<Value> { MusicValue.Sequence(single) });
                 if (lambdaResult.Data is SequenceData transformed)
                     foreach (var b in transformed.Bars) output.Add(b);
                 else
@@ -982,7 +982,7 @@ public static class PatternFunctions
                         ctx.ErrorReporter.ReportError(
                             $"[strict] [sometimes] lambda at {ctx.CurrentCallSite} did not return Sequence",
                             ctx.CurrentCallSite);
-                        return Value.Sequence(FromBars(output));
+                        return MusicValue.Sequence(FromBars(output));
                     }
                     RenderingDiagnostics.WarnOnce(
                         $"sometimes:non-sequence-fn:{ctx.CurrentCallSite}",
@@ -995,7 +995,7 @@ public static class PatternFunctions
                 output.Add(seq.Bars[i]);
             }
         }
-        return Value.Sequence(FromBars(output));
+        return MusicValue.Sequence(FromBars(output));
     }
 
     // ====================================================================
@@ -1019,7 +1019,7 @@ public static class PatternFunctions
     private static Value Degrade(IReadOnlyList<Value> args, ExecutionContext ctx)
     {
         var seq = args[0].As<SequenceData>();
-        if (IsEmptySeqAdvisory(seq, "degrade", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "degrade", ctx)) return MusicValue.Sequence(seq);
         return DropBars(seq, prob: 0.5, name: "degrade", ctx: ctx);
     }
 
@@ -1055,14 +1055,14 @@ public static class PatternFunctions
                 ctx.ErrorReporter.ReportError(
                     $"[strict] [sparseSeq] probability {prob} outside [0.0, 1.0]",
                     ctx.CurrentCallSite);
-                return Value.Sequence(seq);
+                return MusicValue.Sequence(seq);
             }
             RenderingDiagnostics.WarnOnce(
                 $"sparseSeq:clamp:{ctx.CurrentCallSite}",
                 $"[sparseSeq] prob {prob} clamped to {clamped} at {ctx.CurrentCallSite}");
             prob = clamped;
         }
-        if (IsEmptySeqAdvisory(seq, "sparseSeq", ctx)) return Value.Sequence(seq);
+        if (IsEmptySeqAdvisory(seq, "sparseSeq", ctx)) return MusicValue.Sequence(seq);
         return DropBars(seq, prob, name: "sparseSeq", ctx: ctx);
     }
 
@@ -1091,6 +1091,6 @@ public static class PatternFunctions
         // least the structure intact — return the empty SequenceData (composer
         // can hear silence and adjust). No advisory because this is the
         // expected behavior for high prob values.
-        return Value.Sequence(FromBars(output));
+        return MusicValue.Sequence(FromBars(output));
     }
 }

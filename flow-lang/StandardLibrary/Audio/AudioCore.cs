@@ -1,5 +1,6 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -116,7 +117,7 @@ public static class AudioCore
         int sampleRate = args[2].As<int>();
 
         var buffer = new AudioBuffer(frames, channels, sampleRate);
-        return Value.Buffer(buffer);
+        return MusicValue.Buffer(buffer);
     }
 
     /// <summary>
@@ -223,7 +224,7 @@ public static class AudioCore
             result.Data[i] = sampleA + sampleB;
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -270,6 +271,6 @@ public static class AudioCore
             result.Data[i] = sampleA * gainA + sampleB * gainB;
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 }

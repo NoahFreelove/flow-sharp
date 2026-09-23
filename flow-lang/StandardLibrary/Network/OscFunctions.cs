@@ -309,7 +309,7 @@ public static class OscFunctions
             for (int i = 1; i < args.Count; i++) payload.Add(args[i]);
             var oscArgs = InferOscArgs(payload);
             var msg = new Rug.Osc.OscMessage(path, oscArgs);
-            return Value.OscHandle(new OscHandleData
+            return MusicValue.OscHandle(new OscHandleData
             {
                 Port = 0,
                 Path = path,
@@ -353,7 +353,7 @@ public static class OscFunctions
             // re-wrap as nested params.
             var packetsArr = packets.ToArray();
             var bundle = new Rug.Osc.OscBundle(immediate, packetsArr);
-            return Value.OscHandle(new OscHandleData
+            return MusicValue.OscHandle(new OscHandleData
             {
                 Port = 0,
                 Path = string.Empty,
@@ -580,7 +580,7 @@ public static class OscFunctions
             }
             // Return a sentinel "dead" handle — composer can still pass to
             // (oscStop) without crashing.
-            return Value.OscHandle(new OscHandleData
+            return MusicValue.OscHandle(new OscHandleData
             {
                 Port = port,
                 Path = path,
@@ -666,7 +666,7 @@ public static class OscFunctions
         };
         // The listener stops with its engine even if the script never calls (oscStop).
         context.Session.Track(() => StopListener(handle));
-        return Value.OscHandle(handle);
+        return MusicValue.OscHandle(handle);
     }
 
     private static void StopListener(OscHandleData handle)
@@ -926,7 +926,7 @@ public static class OscFunctions
             int frames = sampleCount / channels;
             var buf = new AudioBuffer(frames, channels, sampleRate);
             System.Buffer.BlockCopy(bytes, BlobHeaderBytes, buf.Data, 0, sampleCount * 4);
-            return Value.Buffer(buf);
+            return MusicValue.Buffer(buf);
         }
 
         // Headerless (foreign) blob — charitable mono/44100 fallback + advisory.
@@ -936,7 +936,7 @@ public static class OscFunctions
         int monoFrames = bytes.Length / 4;
         var monoBuf = new AudioBuffer(monoFrames, 1, 44100);
         System.Buffer.BlockCopy(bytes, 0, monoBuf.Data, 0, monoFrames * 4);
-        return Value.Buffer(monoBuf);
+        return MusicValue.Buffer(monoBuf);
     }
 
     /// <summary>

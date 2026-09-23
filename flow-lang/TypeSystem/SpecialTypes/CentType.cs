@@ -15,6 +15,8 @@ public sealed class CentType : FlowType
 
     public override string Name => "Cent";
 
+    public override bool IsUnitQuantity => true;
+
     public override int GetSpecificity() => 143;
 
     /// <summary>

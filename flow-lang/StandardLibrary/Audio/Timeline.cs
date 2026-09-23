@@ -88,7 +88,7 @@ public static class Timeline
         double offsetBeats = args[1].As<double>();
 
         var voice = new Voice(buffer, offsetBeats);
-        return Value.Voice(voice);
+        return MusicValue.Voice(voice);
     }
 
     /// <summary>
@@ -137,7 +137,7 @@ public static class Timeline
         int channels = args[1].As<int>();
 
         var track = new Track(sampleRate, channels);
-        return Value.Track(track);
+        return MusicValue.Track(track);
     }
 
     /// <summary>
@@ -248,7 +248,7 @@ public static class Timeline
             }
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

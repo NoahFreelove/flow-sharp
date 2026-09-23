@@ -38,3 +38,33 @@ FlowLang.TypeSystem.SpecialTypes.TupleType :: String get_Name()  # Phase 3: move
 type FlowLang.TypeSystem.SpecialTypes.Articulation  # Phase 3: moved to FlowLang.Syntax / FlowLang.TypeSystem (language layer)
 type FlowLang.TypeSystem.SpecialTypes.DictType  # Phase 3: moved to FlowLang.Syntax / FlowLang.TypeSystem (language layer)
 type FlowLang.TypeSystem.SpecialTypes.TupleType  # Phase 3: moved to FlowLang.Syntax / FlowLang.TypeSystem (language layer)
+FlowLang.Runtime.Value :: static Value Bar(BarData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Beat(Double)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Buffer(Object)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Cent(Double)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Chord(ChordData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value ClockHandle(ClockHandleData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Decibel(Double)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value EmptyBuffer()  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Envelope(Envelope)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Hertz(Double)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value JackHandle(JackHandleData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value LsystemModel(LsystemModelData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value MarkovModel(MarkovModelData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value MidiDevice(MidiDeviceData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Millisecond(Double)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value MusicalNote(MusicalNoteData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Note(String)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value NoteValue(Int32)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value OscHandle(OscHandleData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value OscillatorState(OscillatorState)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Second(Double)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Section(SectionData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Semitone(Int32)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Sequence(SequenceData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Sfz(SfzData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Song(SongData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value TimeSignature(TimeSignatureData)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Track(Track)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Tuning(ResolvedTuning)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue
+FlowLang.Runtime.Value :: static Value Voice(Voice)  # Phase 3: music factories moved to FlowLang.TypeSystem.SpecialTypes.MusicValue

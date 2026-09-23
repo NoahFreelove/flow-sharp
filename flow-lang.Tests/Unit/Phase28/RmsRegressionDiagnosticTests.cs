@@ -122,7 +122,7 @@ public class RmsRegressionDiagnosticTests
             var args = new List<Value>
             {
                 Value.String(BaselinePath),
-                Value.Buffer(rendered),
+                MusicValue.Buffer(rendered),
             };
             FileIO.WriteWav(args);
             // First-run bootstrap: not a failure, but make the situation visible.
@@ -151,7 +151,7 @@ public class RmsRegressionDiagnosticTests
             var args = new List<Value>
             {
                 Value.String(tempPath),
-                Value.Buffer(src),
+                MusicValue.Buffer(src),
             };
             FileIO.WriteWav(args);
 

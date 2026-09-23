@@ -1,6 +1,7 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -27,7 +28,7 @@ public static class BeatConstructorFunctions
             double raw = args[0].As<double>();
             int denom = context.GetMusicalContext().TimeSignature?.Denominator ?? 4;
             double multiplier = context.BeatTrueToSig ? (4.0 / denom) : 1.0;
-            return Value.Beat(raw * multiplier);
+            return MusicValue.Beat(raw * multiplier);
         });
     }
 }

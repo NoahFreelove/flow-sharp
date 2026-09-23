@@ -1,6 +1,7 @@
 using FlowLang.Core;
 using FlowLang.Runtime;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Phase35;
 
@@ -91,7 +92,7 @@ public class MusicAwarePatternsTests
         var staccato = new TypeSystem.SpecialTypes.MusicalNoteData(
             'C', 4, 0, 4, isRest: false,
             articulation: Syntax.Articulation.Staccato);
-        engine.Context.DeclareVariable("n", Value.MusicalNote(staccato));
+        engine.Context.DeclareVariable("n", MusicValue.MusicalNote(staccato));
 
         var src = "(match n | #staccato => \"short\" | #legato => \"smooth\" | _ => \"normal\")";
         var v = engine.ExecuteScriptAndGetResult(src);
@@ -106,7 +107,7 @@ public class MusicAwarePatternsTests
         var normal = new TypeSystem.SpecialTypes.MusicalNoteData(
             'C', 4, 0, 4, isRest: false,
             articulation: Syntax.Articulation.Normal);
-        engine.Context.DeclareVariable("n", Value.MusicalNote(normal));
+        engine.Context.DeclareVariable("n", MusicValue.MusicalNote(normal));
 
         var src = "(match n | #staccato => \"short\" | #legato => \"smooth\" | _ => \"normal\")";
         var v = engine.ExecuteScriptAndGetResult(src);

@@ -34,6 +34,14 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
 - Changing the namespace classification is a decision update to this file, not a
   baseline refresh.
 
+## Classification updates
+
+- Phase 3: `FlowLang.Syntax` (grammar tables: note, chord, numeral and type-name
+  rules, `Articulation`) is part of the language.
+- Phase 3: `FlowLang.Runtime.WasmEntry` is host glue and is excluded by name. It
+  cannot move out of `FlowLang.Runtime` because the frozen `flow-runtime.js` binds
+  `exports.FlowLang.Runtime.WasmEntry.*` by full name.
+
 ## Known limits
 
 - Music-shaped types that already live in language namespaces are not edges:

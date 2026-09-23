@@ -1,5 +1,6 @@
 using FlowLang.Runtime;
 using FlowLang.TypeSystem.PrimitiveTypes;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.StandardLibrary.Audio;
 
@@ -18,7 +19,7 @@ public static class BufferHelpers
         var copy = new AudioBuffer(source.Frames, source.Channels, source.SampleRate);
         Array.Copy(source.Data, copy.Data, source.Data.Length);
 
-        return Value.Buffer(copy);
+        return MusicValue.Buffer(copy);
     }
 
     /// <summary>
@@ -47,7 +48,7 @@ public static class BufferHelpers
             }
         }
 
-        return Value.Buffer(slice);
+        return MusicValue.Buffer(slice);
     }
 
     /// <summary>
@@ -87,7 +88,7 @@ public static class BufferHelpers
             }
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -140,7 +141,7 @@ public static class BufferHelpers
             }
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -169,6 +170,6 @@ public static class BufferHelpers
             }
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 }

@@ -67,10 +67,10 @@ public static class EffectsFunctions
             const float mix = 0.3f;  // matches ReverbSimple default
 
             if (buffer.Frames == 0)
-                return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+                return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
             var result = Reverb.Apply(buffer, roomSize, damping, mix);
-            return Value.Buffer(result);
+            return MusicValue.Buffer(result);
         });
     }
 
@@ -83,10 +83,10 @@ public static class EffectsFunctions
         float roomSize = (float)args[1].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Reverb.Apply(buffer, roomSize, damping: 0.5f, mix: 0.3f);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -100,10 +100,10 @@ public static class EffectsFunctions
         float mix = (float)args[3].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Reverb.Apply(buffer, roomSize, damping, mix);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     // ===== Filters =====
@@ -158,10 +158,10 @@ public static class EffectsFunctions
         float cutoff = (float)args[1].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Filter.Lowpass(buffer, cutoff);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -173,10 +173,10 @@ public static class EffectsFunctions
         float cutoff = (float)args[1].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Filter.Highpass(buffer, cutoff);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -189,10 +189,10 @@ public static class EffectsFunctions
         float highHz = (float)args[2].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Filter.Bandpass(buffer, lowHz, highHz);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     // ===== Compressor =====
@@ -244,10 +244,10 @@ public static class EffectsFunctions
         float ratio = (float)args[2].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Compressor.Apply(buffer, threshold, ratio);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -262,10 +262,10 @@ public static class EffectsFunctions
         float releaseMs = (float)args[4].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Compressor.Apply(buffer, threshold, ratio, attackMs, releaseMs);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     // ===== Delay =====
@@ -308,10 +308,10 @@ public static class EffectsFunctions
         float mix = (float)args[3].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = Delay.Apply(buffer, delayMs, feedback, mix);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -370,12 +370,12 @@ public static class EffectsFunctions
             double delayMs = NoteValueToMs((NoteValueType.Value)noteValueEnum, bpm);
 
             if (buffer.Frames == 0)
-                return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+                return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
             // Delegate to the same DSP routine as the ms-rate path — both overloads converge
             // at Delay.Apply, which is the regression-stable boundary.
             var result = Delay.Apply(buffer, (float)delayMs, feedback, mix);
-            return Value.Buffer(result);
+            return MusicValue.Buffer(result);
         });
 
         // Phase 43 D-09 — delay(Buffer, Beat, Double, Double) -> Buffer.
@@ -413,10 +413,10 @@ public static class EffectsFunctions
             double delayMs = beats * (60_000.0 / bpm);
 
             if (buffer.Frames == 0)
-                return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+                return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
             var result = Delay.Apply(buffer, (float)delayMs, feedback, mix);
-            return Value.Buffer(result);
+            return MusicValue.Buffer(result);
         });
     }
 
@@ -468,7 +468,7 @@ public static class EffectsFunctions
         double gainDb = args[1].As<double>();
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         float gainLinear = (float)Math.Pow(10.0, gainDb / 20.0);
 
@@ -488,7 +488,7 @@ public static class EffectsFunctions
                 $"Warning: gain({gainDb:F1} dB) causes clipping. Consider reducing gain or applying compression first.");
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     // ===== Sidechain Compression =====
@@ -540,10 +540,10 @@ public static class EffectsFunctions
         float ratio = (float)args[3].As<double>();
 
         if (source.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
 
         var result = SidechainCompressor.Apply(source, trigger, threshold, ratio);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>
@@ -560,10 +560,10 @@ public static class EffectsFunctions
         float releaseMs = (float)args[5].As<double>();
 
         if (source.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, source.Channels, source.SampleRate));
 
         var result = SidechainCompressor.Apply(source, trigger, threshold, ratio, attackMs, releaseMs);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     // ===== Volume (Phase 26.2 ERG-03) =====
@@ -616,7 +616,7 @@ public static class EffectsFunctions
         }
 
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         var result = new AudioBuffer(buffer.Frames, buffer.Channels, buffer.SampleRate);
 
@@ -637,6 +637,6 @@ public static class EffectsFunctions
                 $"Warning: volume({linearMultiplier:F2}×) causes clipping. Consider reducing volume or applying compression first.");
         }
 
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 }

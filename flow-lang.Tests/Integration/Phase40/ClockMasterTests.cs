@@ -273,8 +273,8 @@ public class ClockMasterTests
             Clock = MidiClock.StartMaster(new MusicalContext { Tempo = 120 }, new TimestampingHandle()),
         };
 
-        var v1 = Value.ClockHandle(h1);
-        var v2 = Value.ClockHandle(h2);
+        var v1 = MusicValue.ClockHandle(h1);
+        var v2 = MusicValue.ClockHandle(h2);
 
         // Reference identity: distinct handles → distinct underlying data.
         Assert.Same(ClockHandleType.Instance, v1.Type);

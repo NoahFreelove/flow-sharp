@@ -5,6 +5,7 @@ using FlowLang.StandardLibrary.Audio;
 using FlowLang.StandardLibrary.Audio.DSP;
 using FlowLang.Tests.Fixtures;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Integration.Audit0609;
 
@@ -99,7 +100,7 @@ public class DspHygieneTests
         {
             FileIO.WriteWav(new FlowLang.Runtime.Value[] {
                 FlowLang.Runtime.Value.String(tmpWav),
-                FlowLang.Runtime.Value.Buffer(smallBuf)
+                FlowLang.TypeSystem.SpecialTypes.MusicValue.Buffer(smallBuf)
             });
             Assert.True(File.Exists(tmpWav), "small WAV should be written");
 

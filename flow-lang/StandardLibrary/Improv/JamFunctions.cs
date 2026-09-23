@@ -231,7 +231,7 @@ public static class JamFunctions
         if (args.Count >= 7 && args[6].Type is not VoidType)
             rngFn = args[6].As<FunctionOverload>();
 
-        return Value.Sequence(GenerateJam(ctx, over, styleSymbol, length, keyOverride, seed, order, rngFn));
+        return MusicValue.Sequence(GenerateJam(ctx, over, styleSymbol, length, keyOverride, seed, order, rngFn));
     }
 
     /// <summary>

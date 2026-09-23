@@ -1612,7 +1612,7 @@ public static class BuiltInFunctions
             string pitchStr = (string)args[0].Data!;
             int durationValue = (int)args[1].Data!;
             var note = Audio.ClassicalComposition.CreateMusicalNote(pitchStr, durationValue);
-            return Value.MusicalNote(note);
+            return MusicValue.MusicalNote(note);
         });
 
         var createRestSignature = new FunctionSignature(
@@ -1623,7 +1623,7 @@ public static class BuiltInFunctions
         {
             int durationValue = (int)args[0].Data!;
             var rest = Audio.ClassicalComposition.CreateRest(durationValue);
-            return Value.MusicalNote(rest);
+            return MusicValue.MusicalNote(rest);
         });
 
         // ===== Time Signature =====
@@ -1637,7 +1637,7 @@ public static class BuiltInFunctions
             int numerator = (int)args[0].Data!;
             int denominator = (int)args[1].Data!;
             var timeSig = Audio.ClassicalComposition.CreateTimeSignature(numerator, denominator);
-            return Value.TimeSignature(timeSig);
+            return MusicValue.TimeSignature(timeSig);
         });
 
         // ===== Musical Bar Creation =====
@@ -1657,7 +1657,7 @@ public static class BuiltInFunctions
 
             var timeSig = (TimeSignatureData)args[1].Data!;
             var bar = Audio.ClassicalComposition.CreateMusicalBar(notes, timeSig);
-            return Value.Bar(bar);
+            return MusicValue.Bar(bar);
         });
 
         // ===== Incremental Bar Building =====
@@ -1670,7 +1670,7 @@ public static class BuiltInFunctions
         {
             var timeSig = (TimeSignatureData)args[0].Data!;
             var bar = Audio.ClassicalComposition.CreateEmptyMusicalBar(timeSig);
-            return Value.Bar(bar);
+            return MusicValue.Bar(bar);
         });
 
         var tryAddNoteToBarSignature = new FunctionSignature(
@@ -1773,7 +1773,7 @@ public static class BuiltInFunctions
             double bpm = (double)args[3].Data!;
 
             var voices = Audio.BarRenderer.RenderBarToVoices(bar, synthType, sampleRate, bpm);
-            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            var voiceValues = voices.Select(v => MusicValue.Voice(v)).ToArray();
             return Value.Array(voiceValues, VoiceType.Instance);
         });
 
@@ -1784,7 +1784,7 @@ public static class BuiltInFunctions
         registry.Register("createSequence", createSequenceSignature, args =>
         {
             var sequence = Audio.SequenceRenderer.CreateSequence();
-            return Value.Sequence(sequence);
+            return MusicValue.Sequence(sequence);
         });
 
         var addBarToSequenceSignature = new FunctionSignature(
@@ -1796,7 +1796,7 @@ public static class BuiltInFunctions
             var sequence = (SequenceData)args[0].Data!;
             var bar = (BarData)args[1].Data!;
             Audio.SequenceRenderer.AddBarToSequence(sequence, bar);
-            return Value.Sequence(sequence);
+            return MusicValue.Sequence(sequence);
         });
 
         var renderSequenceToVoicesSignature = new FunctionSignature(
@@ -1811,7 +1811,7 @@ public static class BuiltInFunctions
             double bpm = (double)args[3].Data!;
 
             var voices = Audio.SequenceRenderer.RenderSequenceToVoices(sequence, synthType, sampleRate, bpm);
-            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            var voiceValues = voices.Select(v => MusicValue.Voice(v)).ToArray();
             return Value.Array(voiceValues, VoiceType.Instance);
         });
 
@@ -1830,7 +1830,7 @@ public static class BuiltInFunctions
             double bpm = (double)args[4].Data!;
 
             var voices = Audio.BarRenderer.RenderBarAtBeat(bar, beatOffset, synthType, sampleRate, bpm);
-            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            var voiceValues = voices.Select(v => MusicValue.Voice(v)).ToArray();
             return Value.Array(voiceValues, VoiceType.Instance);
         });
 
@@ -1855,7 +1855,7 @@ public static class BuiltInFunctions
             double bpm = (double)args[4].Data!;
 
             var voices = Audio.BarRenderer.RenderBarAtBeat(bar, beatOffset, synthType, sampleRate, bpm);
-            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            var voiceValues = voices.Select(v => MusicValue.Voice(v)).ToArray();
             return Value.Array(voiceValues, VoiceType.Instance);
         });
 
@@ -1872,7 +1872,7 @@ public static class BuiltInFunctions
             double bpm = (double)args[4].Data!;
 
             var voices = Audio.BarRenderer.RenderBarAtTime(bar, timeSeconds, synthType, sampleRate, bpm);
-            var voiceValues = voices.Select(v => Value.Voice(v)).ToArray();
+            var voiceValues = voices.Select(v => MusicValue.Voice(v)).ToArray();
             return Value.Array(voiceValues, VoiceType.Instance);
         });
 
@@ -1943,7 +1943,7 @@ public static class BuiltInFunctions
             string noteStr = (string)args[2].Data!;
 
             if (!TryValidateEuclideanInputs(ref hits, ref steps, context))
-                return Value.Sequence(new SequenceData());
+                return MusicValue.Sequence(new SequenceData());
 
             var (noteName, octave, alteration) = NoteType.Parse(noteStr);
 
@@ -1972,7 +1972,7 @@ public static class BuiltInFunctions
             var bar = new BarData(notes, timeSig);
             var sequence = new SequenceData();
             sequence.AddBar(bar);
-            return Value.Sequence(sequence);
+            return MusicValue.Sequence(sequence);
         });
 
         // euclidean(Int, Int, Note, Double) -> Sequence
@@ -1988,7 +1988,7 @@ public static class BuiltInFunctions
             double swing = (double)args[3].Data!;
 
             if (!TryValidateEuclideanInputs(ref hits, ref steps, context))
-                return Value.Sequence(new SequenceData());
+                return MusicValue.Sequence(new SequenceData());
 
             return BuildEuclideanSequence(hits, steps, noteStr, swing, humanize: 0.0, rng: null, context);
         });
@@ -2009,7 +2009,7 @@ public static class BuiltInFunctions
             int seed = (int)args[5].Data!;
 
             if (!TryValidateEuclideanInputs(ref hits, ref steps, context))
-                return Value.Sequence(new SequenceData());
+                return MusicValue.Sequence(new SequenceData());
 
             // D-17: LOCAL new Random(seed) scoped to THIS call; does NOT read or mutate
             // ExecutionContext.GetRand. Mirrors VariationFunctions.VarySeeded at :71-77.
@@ -2156,7 +2156,7 @@ public static class BuiltInFunctions
         var bar = new BarData(notes, timeSig);
         var sequence = new SequenceData();
         sequence.AddBar(bar);
-        return Value.Sequence(sequence);
+        return MusicValue.Sequence(sequence);
     }
 
     /// <summary>

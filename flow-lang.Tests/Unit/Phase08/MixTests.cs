@@ -1,6 +1,7 @@
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio;
 using Xunit;
+using FlowLang.TypeSystem.SpecialTypes;
 
 namespace FlowLang.Tests.Unit.Phase08;
 
@@ -12,7 +13,7 @@ namespace FlowLang.Tests.Unit.Phase08;
 ///
 /// API shape (per flow-lang/StandardLibrary/Audio/AudioCore.cs:170):
 ///   public static Value Mix(IReadOnlyList&lt;Value&gt; args)
-///     — args[0] and args[1] are Value.Buffer(AudioBuffer).
+///     — args[0] and args[1] are MusicValue.Buffer(AudioBuffer).
 ///     — returns Value wrapping the mixed AudioBuffer.
 ///     — sums sample-by-sample at unity gain (AudioCore.cs:200:
 ///       result.Data[i] = sampleA + sampleB).
@@ -31,7 +32,7 @@ public class MixTests
 
         // Call AudioCore.Mix with the boxed-Value arg shape used by the
         // built-in dispatcher.
-        var args = new[] { Value.Buffer(bufA), Value.Buffer(bufB) };
+        var args = new[] { MusicValue.Buffer(bufA), MusicValue.Buffer(bufB) };
         var result = AudioCore.Mix(args);
 
         // Unwrap the result and assert the first sample is the additive sum.

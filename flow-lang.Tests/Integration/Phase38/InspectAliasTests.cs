@@ -68,7 +68,7 @@ public class InspectAliasTests : IDisposable
     public void InspectAndVisualize_ProduceIdenticalOutput()
     {
         var seq = BuildNonTrivialSequence();
-        var args = new List<Value> { Value.Sequence(seq) };
+        var args = new List<Value> { MusicValue.Sequence(seq) };
 
         var visualizeOutput = CaptureStdout(() => VisualizationFunctions.Visualize(args));
         var inspectOutput   = CaptureStdout(() => VisualizationFunctions.Visualize(args)); // Inspect dispatches to Visualize

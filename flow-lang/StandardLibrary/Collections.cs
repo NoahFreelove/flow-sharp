@@ -289,12 +289,12 @@ public static class Collections
         int s = Math.Clamp(normStart, 0, count);
         int e = Math.Clamp(normEnd,   0, count);
         if (s >= e)
-            return Value.Sequence(new SequenceData());
+            return MusicValue.Sequence(new SequenceData());
 
         var result = new SequenceData();
         for (int i = s; i < e; i++)
             result.AddBar(seq.Bars[i]);
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     public static Value Append(IReadOnlyList<Value> args)

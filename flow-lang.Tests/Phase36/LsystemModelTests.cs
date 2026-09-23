@@ -56,7 +56,7 @@ public class LsystemModelTests
     public void ValueLsystemModelFactoryWraps()
     {
         var model = BuildSampleModel();
-        var value = Value.LsystemModel(model);
+        var value = MusicValue.LsystemModel(model);
 
         Assert.Same(LsystemModelType.Instance, value.Type);
         Assert.Same(model, value.Data);

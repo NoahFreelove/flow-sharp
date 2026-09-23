@@ -39,6 +39,10 @@ public class DependencyDirectionTests
     // Special (music) types live under TypeSystem today; they are targets, not sources.
     private static readonly string[] SourceExclusions = ["FlowLang.TypeSystem.SpecialTypes"];
 
+    // Host glue that must keep a language namespace: the frozen browser runtime
+    // (flow-runtime.js) binds exports.FlowLang.Runtime.WasmEntry.* by full name.
+    private static readonly string[] HostTypes = ["FlowLang.Runtime.WasmEntry"];
+
     private static readonly string BaselinePath = Path.Combine(
         Path.GetDirectoryName(FlowScriptData.FindTestsRoot())!,
         "docs", "baselines", "phase1", "language-dependency-edges.json");
@@ -79,6 +83,7 @@ public class DependencyDirectionTests
         foreach (var type in module.Types)
         {
             if (!IsIn(type.Namespace, LanguageNamespaces) || IsIn(type.Namespace, SourceExclusions)) continue;
+            if (HostTypes.Contains(type.FullName)) continue;
             foreach (var ns in ReferencedNamespaces(type))
             {
                 var target = ForbiddenNamespaces.FirstOrDefault(f => IsIn(ns, [f]));

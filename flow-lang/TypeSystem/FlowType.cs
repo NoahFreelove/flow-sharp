@@ -43,6 +43,20 @@ public abstract class FlowType : IEquatable<FlowType>
     /// </summary>
     public virtual bool IsHashable() => false;
 
+    /// <summary>
+    /// True for unit-carrying quantities (dB, ms, s, cents, semitones, Hz, beats). The
+    /// overload resolver scores a unit value landing in a bare numeric slot below a
+    /// unit-preserving conversion. Domain types opt in; the language defines none.
+    /// </summary>
+    public virtual bool IsUnitQuantity => false;
+
+    /// <summary>
+    /// Lets a target type accept an implicit conversion from <paramref name="source"/>
+    /// that the source type does not know about (for example a music enum backed by
+    /// Int accepting Int). Consulted by <see cref="IntType"/>-style primitives.
+    /// </summary>
+    public virtual bool AcceptsConversionFrom(FlowType source) => false;
+
     public virtual bool Equals(FlowType? other)
     {
         if (other is null) return false;

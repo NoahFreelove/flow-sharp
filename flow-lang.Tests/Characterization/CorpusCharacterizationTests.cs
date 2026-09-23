@@ -14,7 +14,8 @@ namespace FlowLang.Tests.Characterization;
 /// and a hash of every audio buffer the script leaves in a global variable. Playback
 /// is captured, never sent to a device. When the snapshot is recorded each script
 /// runs twice; any field that differs between the runs (timings, wall-clock output)
-/// is recorded as unstable and not compared.
+/// is recorded as unstable and not compared. Microphone capture is pinned to silence
+/// at 44.1 kHz so the host's input device never changes the observation.
 /// </summary>
 [Collection("FlowScripts")]
 [Trait("Category", "LongRunning")]
@@ -71,6 +72,10 @@ public class CorpusCharacterizationTests
         var origCwd = Environment.CurrentDirectory;
         // Scripts use repository-relative paths, as when run with `flow run` from the root.
         Environment.CurrentDirectory = Snapshot.RepoRoot;
+        var origCapture = InputFunctions.CaptureOverride;
+        var origRate = InputFunctions.NativeRateForTesting;
+        InputFunctions.CaptureOverride = (rate, channels, seconds) => new float[(int)(rate * seconds) * channels];
+        InputFunctions.NativeRateForTesting = 44_100;
         try
         {
             using var engine = new FlowEngine(new EngineOptions { Output = stdout, Diagnostics = diagnostics });
@@ -93,6 +98,8 @@ public class CorpusCharacterizationTests
         finally
         {
             Environment.CurrentDirectory = origCwd;
+            InputFunctions.CaptureOverride = origCapture;
+            InputFunctions.NativeRateForTesting = origRate;
         }
     }
 

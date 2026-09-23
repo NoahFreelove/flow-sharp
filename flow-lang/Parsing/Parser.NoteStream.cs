@@ -5,8 +5,6 @@ using FlowLang.Ast.Expressions;
 using FlowLang.Core;
 using FlowLang.Diagnostics;
 using FlowLang.Lexing;
-using FlowLang.StandardLibrary.Harmony;
-using FlowLang.TypeSystem.SpecialTypes;
 using System.Collections.Generic;
 using FlowLang.Syntax;
 
@@ -371,7 +369,7 @@ public partial class Parser
             if (Check(TokenType.Identifier))
             {
                 var identText = CurrentToken.Text;
-                if (ScaleDatabase.IsRomanNumeral(identText))
+                if (NumeralSyntax.IsRomanNumeral(identText))
                 {
                     var rnToken = Advance();
                     var elemLoc = rnToken.Location;
@@ -613,7 +611,7 @@ public partial class Parser
             or TokenType.LBrace)
             return false;
         // Check if identifier is a roman numeral, dynamic marking, articulation mark, or cresc/decresc
-        if (type == TokenType.Identifier && (ScaleDatabase.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc" or "leg" or "cresc" or "decresc"))
+        if (type == TokenType.Identifier && (NumeralSyntax.IsRomanNumeral(CurrentToken.Text) || TryParseDynamicMarking(CurrentToken.Text).HasValue || CurrentToken.Text is "stacc" or "ten" or "marc" or "leg" or "cresc" or "decresc"))
             return false;
         // Lowercase identifiers are variable references — continue the stream
         if (type == TokenType.Identifier)

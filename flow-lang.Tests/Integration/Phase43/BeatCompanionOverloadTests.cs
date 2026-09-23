@@ -94,7 +94,7 @@ public class BeatCompanionOverloadTests : IDisposable
     /// with sentinel <c>delay-beat-no-tempo</c>; we exercise it through the
     /// public registry surface rather than parsing Beat-typed source so we
     /// don't depend on a Beat literal lexer change. The lambda accepts a
-    /// Value carrying a Beat-typed FlowType — that's what `Value.Beat(...)`
+    /// Value carrying a Beat-typed FlowType — that's what `MusicValue.Beat(...)`
     /// constructs.
     /// </summary>
     [Fact]
@@ -119,8 +119,8 @@ public class BeatCompanionOverloadTests : IDisposable
         {
             var args = new[]
             {
-                Value.Buffer(buf),
-                Value.Beat(0.5),
+                MusicValue.Buffer(buf),
+                MusicValue.Beat(0.5),
                 Value.Double(0.3),
                 Value.Double(0.5),
             };
@@ -160,7 +160,7 @@ public class BeatCompanionOverloadTests : IDisposable
         {
             var args = new[]
             {
-                Value.Buffer(buf),
+                MusicValue.Buffer(buf),
                 Value.Double(250.0),
                 Value.Double(0.3),
                 Value.Double(0.5),
@@ -204,11 +204,11 @@ public class BeatCompanionOverloadTests : IDisposable
 
         var beatArgs = new[]
         {
-            Value.Buffer(buf), Value.Beat(0.5), Value.Double(0.3), Value.Double(0.5),
+            MusicValue.Buffer(buf), MusicValue.Beat(0.5), Value.Double(0.3), Value.Double(0.5),
         };
         var msArgs = new[]
         {
-            Value.Buffer(buf), Value.Millisecond(250.0), Value.Double(0.3), Value.Double(0.5),
+            MusicValue.Buffer(buf), MusicValue.Millisecond(250.0), Value.Double(0.3), Value.Double(0.5),
         };
 
         string stderr = CaptureStderr(() =>
@@ -275,12 +275,12 @@ public class BeatCompanionOverloadTests : IDisposable
 
         var doubleArgs = new[]
         {
-            Value.Bar(bar), Value.Double(1.0), Value.String("piano"),
+            MusicValue.Bar(bar), Value.Double(1.0), Value.String("piano"),
             Value.Int(44100), Value.Double(120.0),
         };
         var beatArgs = new[]
         {
-            Value.Bar(bar), Value.Beat(1.0), Value.String("piano"),
+            MusicValue.Bar(bar), MusicValue.Beat(1.0), Value.String("piano"),
             Value.Int(44100), Value.Double(120.0),
         };
 

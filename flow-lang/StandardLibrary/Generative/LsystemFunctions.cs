@@ -156,7 +156,7 @@ public static class LsystemFunctions
         // exists so two-model structural compare can include iteration intent.
         var rules = NormalizeRules(rulesDict, ctx);
         var model = new LsystemModelData(axiom, rules, iterations: 0);
-        return Value.LsystemModel(model);
+        return MusicValue.LsystemModel(model);
     }
 
     // ====================================================================
@@ -237,7 +237,7 @@ public static class LsystemFunctions
             var timeSig = new TimeSignatureData(4, 4);
             result.AddBar(new BarData(notes, timeSig));
         }
-        return Value.Sequence(result);
+        return MusicValue.Sequence(result);
     }
 
     // ====================================================================

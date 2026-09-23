@@ -121,7 +121,7 @@ public static class StretchFunctions
 
         // Empty-buffer short-circuit (matches EffectsFunctions:96, 112-113, etc.).
         if (buffer.Frames == 0)
-            return Value.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
+            return MusicValue.Buffer(new AudioBuffer(0, buffer.Channels, buffer.SampleRate));
 
         // Prefix ladder: args[i] holds the value for PrefixParamNames[i].
         // Slot map (W4 LOCK): 2="mode", 3="frameSize", 4="hopSize",
@@ -140,7 +140,7 @@ public static class StretchFunctions
             transientThreshold: transientThreshold,
             pitchPeriod: pitchPeriod, windowSize: windowSize,
             site: ctx.CurrentCallSite);
-        return Value.Buffer(result);
+        return MusicValue.Buffer(result);
     }
 
     /// <summary>

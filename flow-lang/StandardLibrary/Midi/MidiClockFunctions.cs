@@ -71,7 +71,7 @@ public static class MidiClockFunctions
             }
             // The clock thread stops with its engine even without (clockStop).
             context.Session.Track(() => { try { clock.Stop(); } catch { } });
-            return Value.ClockHandle(new ClockHandleData
+            return MusicValue.ClockHandle(new ClockHandleData
             {
                 Mode = ClockMode.Master,
                 Clock = clock,
@@ -95,7 +95,7 @@ public static class MidiClockFunctions
             var mctx = context.GetMusicalContext();
             var clock = MidiClock.StartSlave(mctx, port);
             context.Session.Track(() => { try { clock.Stop(); } catch { } });
-            return Value.ClockHandle(new ClockHandleData
+            return MusicValue.ClockHandle(new ClockHandleData
             {
                 Mode = ClockMode.Slave,
                 Clock = clock,

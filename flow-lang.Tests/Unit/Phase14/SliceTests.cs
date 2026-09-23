@@ -106,7 +106,7 @@ public class SliceTests
     {
         var seq = MakeThreeBarSequence();
         var result = Collections.SliceSequence(
-            new[] { Value.Sequence(seq), Value.Int(1), Value.Int(3) });
+            new[] { MusicValue.Sequence(seq), Value.Int(1), Value.Int(3) });
         Assert.Equal(2, result.As<SequenceData>().Bars.Count);
     }
 
@@ -115,7 +115,7 @@ public class SliceTests
     {
         var seq = MakeThreeBarSequence();
         var result = Collections.SliceSequence(
-            new[] { Value.Sequence(seq), Value.Int(-5), Value.Int(2) });
+            new[] { MusicValue.Sequence(seq), Value.Int(-5), Value.Int(2) });
         Assert.Equal(2, result.As<SequenceData>().Bars.Count);
     }
 
@@ -124,7 +124,7 @@ public class SliceTests
     {
         var seq = MakeThreeBarSequence();
         var result = Collections.SliceSequence(
-            new[] { Value.Sequence(seq), Value.Int(2), Value.Int(1) });
+            new[] { MusicValue.Sequence(seq), Value.Int(2), Value.Int(1) });
         Assert.Empty(result.As<SequenceData>().Bars);
     }
 }
