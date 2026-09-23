@@ -1,0 +1,14 @@
+// contract: data.conversions
+// status: preserve
+// rationale: The explicit conversion builtins accept every numeric type, including
+//    their own (identity), so (double 2.5) and (int 5) are never ambiguous with the
+//    unit-typed overloads; unit values extract their number.
+use "@std"
+(print (str (double 2.5)))
+(print (str (double 3)))
+(print (str (int 5)))
+(print (str (int 2.9)))
+(print (str (long 7)))
+(print (str (float 1.5)))
+(print (str (double 440Hz)))
+(print (str (int +3st)))

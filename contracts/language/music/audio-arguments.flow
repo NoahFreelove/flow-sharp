@@ -1,0 +1,15 @@
+// contract: music.audio-arguments
+// status: preserve
+// rationale: A whole-number delay time is milliseconds, like the Double form (it
+//    was ambiguous with the NoteValue overload). An uninitialized or failed Buffer
+//    declaration holds an empty buffer, so later uses do not cascade.
+// errors: 1
+// stderr: Function 'nope' not found
+use "@std"
+use "@audio"
+Buffer src = (createSineTone 440Hz 0.1 0.5)
+(print (str (equals (getFrames (delay src 250 0.5 0.4)) (getFrames (delay src 250.0 0.5 0.4)))))
+Buffer empty
+(print (str (getFrames empty)))
+Buffer failed = (nope 1)
+(print (str (getFrames failed)))

@@ -29,6 +29,8 @@ public class Value
     public static Value Bool(bool value) => new(value, BoolType.Instance);
     public static Value Number(BigInteger value) => new(value, NumberType.Instance);
     public static Value Buffer(object? value = null) => new(value, BufferType.Instance);
+    /// <summary>An empty stereo 44.1 kHz buffer: the default value of the Buffer type.</summary>
+    public static Value EmptyBuffer() => new(new StandardLibrary.Audio.AudioBuffer(0, 2, 44100), BufferType.Instance);
     public static Value Note(string value) => new(value, NoteType.Instance);
     public static Value Bar(BarData value) => new(value, BarType.Instance);
     public static Value Semitone(int value) => new(value, SemitoneType.Instance);

@@ -286,6 +286,15 @@ public static class EffectsFunctions
             [BufferType.Instance, MillisecondType.Instance, DoubleType.Instance, DoubleType.Instance],
             ParameterNames: ["buf", "timeMs", "feedback", "mix"]);
         registry.Register("delay", delayMsSig, DelayEffect);
+
+        // delay(Buffer, Int, Double, Double) — a whole-number time is milliseconds, as
+        // with the Double form. Without it `(delay src 250 0.5 0.4)` was ambiguous
+        // between the Double (ms) and NoteValue (int-backed) overloads.
+        var delayIntSig = new FunctionSignature("delay",
+            [BufferType.Instance, IntType.Instance, DoubleType.Instance, DoubleType.Instance],
+            ParameterNames: ["buf", "timeMs", "feedback", "mix"]);
+        registry.Register("delay", delayIntSig, args =>
+            DelayEffect([args[0], Value.Double(args[1].As<int>()), args[2], args[3]]));
     }
 
     /// <summary>

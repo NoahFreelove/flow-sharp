@@ -116,3 +116,26 @@ full-precision `print` of Doubles, the quoted Note in interpolation, errors from
 circular imports, and passing pure-Flow tests whose body reported errors. Flow is
 pre-traction (D-v1.5-01), so these ship without a migration path. The existing
 suites (`tests/*.flow`, xUnit) needed no expectation changes.
+
+## Follow-up: fixes found by the Phase 3 characterization suite
+
+Writing the overload-resolution and value snapshots before the Phase 3 refactor
+surfaced more inconsistencies. They were fixed before the snapshots were recorded:
+
+- **Integer delay time.** `(delay src 250 0.5 0.4)` was ambiguous between the
+  Double (milliseconds) and NoteValue overloads, because NoteValue accepts Int. A
+  `delay(Buffer, Int, Double, Double)` overload now treats a whole number as
+  milliseconds (`music.audio-arguments`). The Phase 22 test that pinned the
+  ambiguity as a "documented pitfall" now pins the resolution.
+- **Identity conversions.** `(double 2.5)`, `(int 5)`, `(long 7)` and `(float 1.5)`
+  were ambiguous between the unit-typed overloads. The identity overloads the
+  Phase 44 review had removed are restored (`data.conversions`).
+- **Unit × unit.** Unit-preserving arithmetic made `(mul 2s 3s)` and `(mul 2s 3Hz)`
+  ambiguous. Explicit unit-pair overloads return a plain number, as before
+  (`music.unit-arithmetic`).
+- **Empty-buffer default.** An uninitialized or failed `Buffer` declaration held a
+  null buffer, so the next use failed again. The default is now an empty buffer
+  (`music.audio-arguments`).
+- **`Void` variables.** `Void x = 3` was rejected, although `Void` parameters and
+  `Voids` accept anything. A `Void` annotation now accepts any value, and the
+  variable takes that value's type.

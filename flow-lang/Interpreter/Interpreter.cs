@@ -1094,6 +1094,18 @@ public class Interpreter : IFunctionInvoker
     {
         var value = _evaluator.Evaluate(varDecl.Value);
 
+        // `Void` is the wildcard type: as a variable annotation it accepts any value
+        // and the variable takes that value's type (like a Void parameter or Voids).
+        // A declaration without an initializer carries a synthetic literal placed at the
+        // variable name (an explicit initializer follows the `=`); it keeps the Void default.
+        bool synthesizedDefault = varDecl.Value is LiteralExpression
+            && varDecl.Span is { } declSpan && varDecl.Value.Location == declSpan.Start;
+        if (varDecl.Type is VoidType && value.Type is not VoidType && !synthesizedDefault)
+        {
+            _context.DeclareVariable(varDecl.Name, value);
+            return;
+        }
+
         // Check if this is a default value initialization (when expression evaluates to Int 0 for non-Int types)
         // Exclude NoteValue since it's int-backed and 0 is a valid enum value (WHOLE)
         bool isDefaultInit = value.Type is IntType && value.As<int>() == 0 && varDecl.Type is not IntType
@@ -1275,7 +1287,7 @@ public class Interpreter : IFunctionInvoker
             BoolType => Value.Bool(false),
             NumberType => Value.Number(System.Numerics.BigInteger.Zero),
             ArrayType arr => Value.Array(new List<Value>(), arr.ElementType),
-            BufferType => Value.Buffer(null),
+            BufferType => Value.EmptyBuffer(),
             NoteType => Value.Note("C4"),
             SemitoneType => Value.Semitone(0),
             CentType => Value.Cent(0.0),

@@ -104,10 +104,12 @@ restructuring. Keep semantic changes out of extraction commits.
 | `data.arrays` | preserve | `@` indexing, negative indices via expressions, literal separators. |
 | `data.tuples` | preserve | Indexing, destructuring, empty and singleton tuples. |
 | `data.dicts` | preserve | Insertion order, persistent updates, right-biased merge. |
+| `data.conversions` | preserve | `double`/`int`/`long`/`float` accept every numeric type, including their own. |
 | `data.sort-mod-split` | preserve | Floor `mod`, stable `sort`, `split`; located errors on misuse. |
 | `data.str-collections` | preserve | `str` formats arrays, tuples and dicts like literals. |
 | `data.tuple-array-variable` | preserve | `Tuple<<...>>[]`, `Voids` and bare `Tuple` hold tuple values. |
 | `data.empty-dict-argument` | preserve | A bare `(dict)` works as a typed reduce seed. |
+| `data.void-variable` | preserve | A `Void` variable takes the type of its initial value. |
 | `data.defaults` | preserve | Uninitialized declarations take type defaults. |
 
 ### Ergonomics
@@ -152,9 +154,11 @@ restructuring. Keep semantic changes out of extraction commits.
 | `music.note-stream` | preserve | Streams compile to Sequences; transforms chain; `inspect` output. |
 | `music.octave-context` | preserve | `octave N { }` default octave; explicit octave wins. |
 | `music.units` | preserve | Unit literal formatting (10 significant digits, like doubles); kHz canonicalizes to Hz. |
-| `music.unit-arithmetic` | preserve | Unit-preserving arithmetic; durations compare across ms and s. |
+| `music.unit-arithmetic` | preserve | Unit-preserving arithmetic; unit × unit is a plain number; durations compare across ms and s. |
+| `music.audio-arguments` | preserve | Whole-number delay times are ms; empty-buffer default prevents cascades. |
 | `music.harmony` | preserve | Chord literals and roman-numeral resolution. |
 | `music.note-transpose` | preserve | `transpose` moves a single Note. |
+| `music.context-scope` | preserve | Musical context is dynamic (seen where called, innermost wins, restored on exit); variables stay lexical. |
 | `music.sections` | preserve | Parameterized section calls in song literals. |
 
 ## Covered elsewhere

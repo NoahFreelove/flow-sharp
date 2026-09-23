@@ -222,15 +222,12 @@ public static class ConversionFunctions
         // comparisons / arithmetic: `(double 1)` would fail overload resolution
         // because Int → Double widening is disabled under strict (Plan 44-03).
         // Each of the 4 extractors (double/float/int/long) accepts every
-        // CROSS-TYPE primitive numeric source (the identity case is omitted —
-        // see WR-05 comment below).
+        // primitive numeric source, including its own type (see below).
         //
-        // Phase 44 review WR-05: identity casts (e.g. `(double 1.0)` where
-        // arg is already Double) are no-ops AND have no strict-mode
-        // ambiguity, so they're not part of the escape-hatch contract. The
-        // previous loop registered all 4x4=16 overloads — 4 identity rows
-        // were redundant and added competitors to overload resolution. Drop
-        // the identity rows; only cross-type rows register.
+        // Identity casts ((double Double), (int Int), ...) ARE registered. Without
+        // them `(double 2.5)` was ambiguous: a Double argument matches the unit-typed
+        // overloads (double Decibel), (double Hertz), ... equally well, because those
+        // unit types accept Double. The exact identity overload always wins.
         //
         // Phase 44 review WR-05: `(int Long)` previously silently truncated
         // via `(int)(long)` cast — e.g. `(int 5_000_000_000L)` produced
@@ -248,28 +245,25 @@ public static class ConversionFunctions
 
         foreach (var (src, toDbl, toLng) in numericPrims)
         {
-            // (double Int|Long|Float) — skip identity (Double → Double).
-            if (src != DoubleType.Instance)
+            // (double Int|Long|Float|Double)
             {
                 var dblSig = new FunctionSignature("double", [src], ParameterNames: ["value"]);
                 registry.Register("double", dblSig, args => Value.Double(toDbl(args[0])));
             }
 
-            // (float Int|Long|Double) — skip identity (Float → Float).
+            // (float Int|Long|Float|Double)
             // Flow Float is CLR double, so the body is the same toDbl materializer.
-            if (src != FloatType.Instance)
             {
                 var fltSig = new FunctionSignature("float", [src], ParameterNames: ["value"]);
                 registry.Register("float", fltSig, args => Value.Float(toDbl(args[0])));
             }
 
-            // (int Long|Float|Double) — skip identity (Int → Int).
+            // (int Int|Long|Float|Double)
             // WR-05: Long source clamps to [int.MinValue, int.MaxValue] rather
             // than silently truncating. Float/Double sources go through toLng
             // (which floor-rounds) then clamp via the same path — Math.Floor
             // of a large Double still overflows long, so the materializer
             // result is clamped before cast.
-            if (src != IntType.Instance)
             {
                 var intSig = new FunctionSignature("int", [src], ParameterNames: ["value"]);
                 registry.Register("int", intSig, args =>
@@ -280,8 +274,7 @@ public static class ConversionFunctions
                 });
             }
 
-            // (long Int|Float|Double) — skip identity (Long → Long).
-            if (src != LongType.Instance)
+            // (long Int|Long|Float|Double)
             {
                 var lngSig = new FunctionSignature("long", [src], ParameterNames: ["value"]);
                 registry.Register("long", lngSig, args => Value.Long(toLng(args[0])));

@@ -167,35 +167,24 @@ tempo 120 {
         Assert.True(outside > 0);
     }
 
-    // ===== Test 9: bare-integer dispatch documented (Pitfall 1) =====
+    // ===== Test 9: bare-integer delay time is milliseconds (formerly Pitfall 1) =====
 
     [Fact]
-    public void BareIntegerArg_DispatchesAmbiguous_DocumentedPitfall1()
+    public void BareIntegerArg_IsMilliseconds()
     {
-        // Pitfall 1: (delay buf 250 0.5 0.4) with a bare Int arg is AMBIGUOUS between the
-        // Double-rate and NoteValue-rate overloads:
-        //   - NoteValueType.IsCompatibleWith treats IntType as compatible (NoteValueType.cs:19)
-        //   - IntType is convertible to DoubleType via the numeric ladder
-        // Both candidates score equally at the OverloadResolver, so the resolver reports an
-        // ambiguous-overload error. The fix per RESEARCH Pitfall 10 is for users to write
-        // either `250.0` (forces Double) or use the `EIGHTH`/`QUARTER` named NoteValue
-        // constants from @notation.
-        //
-        // This Fact PINS the ambiguity so that any future change to the score table —
-        // intentional disambiguation OR accidental tie-break — surfaces in CI as a behavior
-        // change requiring an explicit decision.
+        // Formerly Pitfall 1: (delay buf 250 0.5 0.4) was ambiguous between the Double-ms
+        // and NoteValue overloads (NoteValue accepts Int). A dedicated delay(Buffer, Int,
+        // Double, Double) overload now treats a whole number as milliseconds, exactly like
+        // 250.0 (docs/decisions/2026-09-22-phase1-semantic-fixes.md, "Follow-up").
         using var runner = new FlowEngineRunner();
         var (_, _, stderr, errorCount) = runner.RunSource(@"
 use ""@std""
 use ""@audio""
 Buffer src = (createSineTone 0.1 440.0 0.5)
-Buffer wet = (delay src 250 0.5 0.4)
+Int intFrames = (getFrames (delay src 250 0.5 0.4))
+Int doubleFrames = (getFrames (delay src 250.0 0.5 0.4))
 ");
-        // Observed behavior in v1.3: errorCount > 0 with "Ambiguous overload" stderr.
-        // If a future plan disambiguates the dispatch, this assertion will go RED and the
-        // change should be reviewed (likely flipping the assertion to `errorCount == 0`).
-        Assert.True(errorCount > 0,
-            $"bare-Int dispatch unexpectedly resolved (errorCount={errorCount}); Pitfall 1 ambiguity may have been silently fixed — review and update this Fact.");
-        Assert.Contains("Ambiguous overload", stderr);
+        Assert.True(errorCount == 0, stderr);
+        Assert.Equal(runner.GetVariable("doubleFrames").As<int>(), runner.GetVariable("intFrames").As<int>());
     }
 }

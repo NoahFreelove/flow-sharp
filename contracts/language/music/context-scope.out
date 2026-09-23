@@ -1,0 +1,14 @@
+proc in 90: 0.6666666667s
+lambda in 90: 0.6666666667s
+nested 150: 0.4s
+back in 90: 0.6666666667s
+lambda made in 90, called outside: 0.5s
+after block: 0.5s
+inside visible: ()
+Amaj [A4 C5+ E5]
+    +--------+
+ D2 |    ####|
+C#2 |        |
+ C2 |####    |
+    +--------+
+     1 2 3 4 

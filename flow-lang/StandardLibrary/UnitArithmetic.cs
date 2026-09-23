@@ -35,6 +35,13 @@ public static class UnitArithmetic
             Reg(registry, "div", type, type, args => Value.Double(D(args[0]) / NonZero(D(args[1]))));
         }
 
+        // Multiplying two unit values (2s × 3s, 2s × 3Hz) gives a plain number, as it
+        // did before unit-preserving arithmetic; explicit overloads keep the call from
+        // tying between mul(Unit, Double) and mul(Double, Unit).
+        foreach (var (a, _) in DoubleUnits)
+            foreach (var (b, _) in DoubleUnits)
+                Reg(registry, "mul", a, b, args => Value.Double(D(args[0]) * D(args[1])));
+
         // Milliseconds and seconds combine; the result uses the first operand's unit.
         Reg(registry, "add", MillisecondType.Instance, SecondType.Instance,
             args => Value.Millisecond(D(args[0]) + D(args[1]) * 1000.0));
@@ -55,6 +62,7 @@ public static class UnitArithmetic
         Reg(registry, "sub", st, st, args => Value.Semitone(I(args[0]) - I(args[1])));
         Reg(registry, "mul", st, IntType.Instance, args => Value.Semitone(I(args[0]) * I(args[1])));
         Reg(registry, "mul", IntType.Instance, st, args => Value.Semitone(I(args[0]) * I(args[1])));
+        Reg(registry, "mul", st, st, args => Value.Int(I(args[0]) * I(args[1])));
     }
 
     /// <summary>

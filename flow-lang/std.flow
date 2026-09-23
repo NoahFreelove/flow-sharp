@@ -141,27 +141,27 @@ Note: is disabled under strict (Plan 44-03). Each of the 4 extractors accepts
 Note: every primitive numeric source. Narrowing floors per StdLib.DoubleToInt
 Note: convention.
 Note:
-Note: Phase 44 review WR-05: identity casts ((double Double), (float Float),
-Note: (int Int), (long Long)) are intentionally OMITTED. They were no-ops
-Note: with no strict-mode ambiguity to escape, added overload-resolution
-Note: competitors for no benefit, and risked silent shadowing of other Double-
-Note: source overloads under strict. The 12 cross-type rows below cover every
-Note: case where strict mode disables the widening implicit-conversion.
+Note: Identity casts ((double Double), (int Int), ...) are included: without them
+Note: (double 2.5) was ambiguous between the unit-typed overloads.
 internal proc double (Int: value)
 internal proc double (Long: value)
 internal proc double (Float: value)
+internal proc double (Double: value)
 
 internal proc float (Int: value)
 internal proc float (Long: value)
 internal proc float (Double: value)
+internal proc float (Float: value)
 
 internal proc int (Long: value)
 internal proc int (Float: value)
 internal proc int (Double: value)
+internal proc int (Int: value)
 
 internal proc long (Int: value)
 internal proc long (Float: value)
 internal proc long (Double: value)
+internal proc long (Long: value)
 
 Note: Arithmetic — 5-type same-type fast paths
 internal proc add (Int: a, Int: b)
@@ -249,6 +249,43 @@ internal proc add (Semitone: a, Semitone: b)
 internal proc sub (Semitone: a, Semitone: b)
 internal proc mul (Semitone: a, Int: b)
 internal proc mul (Int: a, Semitone: b)
+internal proc mul (Millisecond: a, Millisecond: b)
+internal proc mul (Millisecond: a, Second: b)
+internal proc mul (Millisecond: a, Decibel: b)
+internal proc mul (Millisecond: a, Hertz: b)
+internal proc mul (Millisecond: a, Cent: b)
+internal proc mul (Millisecond: a, Beat: b)
+internal proc mul (Second: a, Millisecond: b)
+internal proc mul (Second: a, Second: b)
+internal proc mul (Second: a, Decibel: b)
+internal proc mul (Second: a, Hertz: b)
+internal proc mul (Second: a, Cent: b)
+internal proc mul (Second: a, Beat: b)
+internal proc mul (Decibel: a, Millisecond: b)
+internal proc mul (Decibel: a, Second: b)
+internal proc mul (Decibel: a, Decibel: b)
+internal proc mul (Decibel: a, Hertz: b)
+internal proc mul (Decibel: a, Cent: b)
+internal proc mul (Decibel: a, Beat: b)
+internal proc mul (Hertz: a, Millisecond: b)
+internal proc mul (Hertz: a, Second: b)
+internal proc mul (Hertz: a, Decibel: b)
+internal proc mul (Hertz: a, Hertz: b)
+internal proc mul (Hertz: a, Cent: b)
+internal proc mul (Hertz: a, Beat: b)
+internal proc mul (Cent: a, Millisecond: b)
+internal proc mul (Cent: a, Second: b)
+internal proc mul (Cent: a, Decibel: b)
+internal proc mul (Cent: a, Hertz: b)
+internal proc mul (Cent: a, Cent: b)
+internal proc mul (Cent: a, Beat: b)
+internal proc mul (Beat: a, Millisecond: b)
+internal proc mul (Beat: a, Second: b)
+internal proc mul (Beat: a, Decibel: b)
+internal proc mul (Beat: a, Hertz: b)
+internal proc mul (Beat: a, Cent: b)
+internal proc mul (Beat: a, Beat: b)
+internal proc mul (Semitone: a, Semitone: b)
 
 Note: String-to-number conversions
 internal proc stringToInt (String: s)

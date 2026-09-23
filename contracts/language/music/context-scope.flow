@@ -1,0 +1,46 @@
+// contract: music.context-scope
+// status: preserve
+// rationale: Musical context (tempo, key, octave) is dynamically scoped: a proc or
+//    lambda sees the context active where it is CALLED, innermost block wins, and
+//    blocks restore the outer context on exit. Variables stay lexical: a variable
+//    declared inside a context block is not visible after it, and a proc still
+//    cannot read its caller's locals inside a block.
+// errors: 2
+// stderr: unknown identifier 'inside'
+// stderr: unknown identifier 'callerLocal'
+use "@std"
+use "@audio"
+proc beatLength ()
+    (beatToSec 1b)
+end proc
+Function lambdaBeat = fn => (beatToSec 1b)
+Function madeInside = fn => (beatToSec 1b)
+tempo 90 {
+    madeInside = fn => (beatToSec 1b)
+    (print $"proc in 90: {(beatLength)}")
+    (print $"lambda in 90: {(lambdaBeat)}")
+    tempo 150 {
+        (print $"nested 150: {(beatLength)}")
+    }
+    (print $"back in 90: {(beatLength)}")
+    Int inside = 1
+}
+(print $"lambda made in 90, called outside: {(madeInside)}")
+(print $"after block: {(beatToSec 1b)}")
+(print $"inside visible: {inside}")
+key Dmajor {
+    (print (str (resolveNumeral "V" "Dmajor")))
+}
+proc lowNotes ()
+    | C D |
+end proc
+octave 2 {
+    (inspect (lowNotes))
+}
+proc peek ()
+    callerLocal
+end proc
+tempo 100 {
+    Int callerLocal = 5
+    (peek)
+}

@@ -1,0 +1,15 @@
+// contract: data.void-variable
+// status: preserve
+// rationale: Void is the wildcard type. As a variable annotation it accepts any
+//    value and the variable takes that value's type (reassignment then follows that
+//    type); with no initializer the variable is Void.
+// errors: 1
+// stderr: Cannot assign String to variable of type Int
+use "@std"
+Void n = 3
+Void pair = <<1, "a">>
+Void nothing
+(print $"{n} {pair} [{nothing}]")
+n = (add n 1)
+(print (str n))
+n = "text"
