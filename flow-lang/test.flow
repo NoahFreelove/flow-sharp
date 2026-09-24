@@ -17,6 +17,8 @@ Note:   (test "audio identity"        lazy((assertWithinDb buf buf 0.5dB)))
 
 module test
 
+use "@std"
+
 internal proc test (String: name, Lazy<Void>: body)
 internal proc assert (Bool: condition)
 internal proc assertEq (Void: a, Void: b)

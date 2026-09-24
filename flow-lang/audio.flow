@@ -6,6 +6,8 @@ module audio
 Note: ===== Core Buffer Operations =====
 
 Note: Creates a new audio buffer with the specified parameters
+use "@std"
+
 internal proc createBuffer(Int: frames, Int: channels, Int: sampleRate)
 
 Note: Gets the number of frames in a buffer

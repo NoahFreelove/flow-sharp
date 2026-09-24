@@ -60,6 +60,7 @@ public class BeatConstructorTests : IDisposable
         {
             Console.SetOut(sw);
             using var engine = new FlowEngine();
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             var ok = engine.Execute(source, "<test>");
             Assert.True(ok, $"execute failed: {engine.ErrorReporter.FormatErrors()}");
         }

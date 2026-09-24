@@ -45,6 +45,7 @@ public class WebTargetGuardTests
         // via FlowTargetFact("Web") in Plan 47-04).
         var src = "live 1bar { Int x = 1; (print x); }";
         var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(src, "<test>");
         Assert.True(ok,
             "Desktop execution of a minimal live block must succeed (no parse error).");
@@ -63,6 +64,7 @@ public class WebTargetGuardTests
         {
             var src = "use \"@sfz\";";
             var engine = new FlowEngine();
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             engine.Execute(src, "<test>");
         }
         finally

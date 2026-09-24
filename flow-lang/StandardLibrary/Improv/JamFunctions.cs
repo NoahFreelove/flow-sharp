@@ -483,6 +483,7 @@ public static class JamFunctions
     /// </summary>
     private static DictData? LookupStylePack(ExecutionContext ctx, Value styleSymbol)
     {
+        StyleRegistry.EnsureLoaded(ctx);
         if (ctx.StyleRegistry.TryGetValue(styleSymbol, out var pack))
             return pack;
 

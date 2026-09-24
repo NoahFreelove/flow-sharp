@@ -33,6 +33,7 @@ public class TestBodyDeferralTests
     public void TestBodyNotEvaluatedAtRegistration()
     {
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var originalOut = Console.Out;
         using var captured = new StringWriter();
         try

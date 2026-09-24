@@ -37,6 +37,12 @@ public sealed class MusicSession : ISessionExtension
     /// </summary>
     public bool SuppressStyleOverrideAdvisory { get; set; }
 
+    /// <summary>
+    /// True once the shipped and user style packs are in <see cref="StyleRegistry"/>.
+    /// They load on first use of the style surface (see <c>StyleRegistry.EnsureLoaded</c>).
+    /// </summary>
+    public bool StylePacksLoaded { get; set; }
+
     /// <summary>Set by <c>use "@sfz"</c>; gates <c>loadSfz</c> and <c>sampler:NAME</c>.</summary>
     public bool SfzEnabled { get; set; }
 
@@ -180,7 +186,8 @@ public sealed class MusicSession : ISessionExtension
         HashSet<string> SfzDiagnostics,
         string? SfzRoot,
         Dictionary<Value, DictData> Styles,
-        HashSet<string> StyleAdvisories);
+        HashSet<string> StyleAdvisories,
+        bool StylePacksLoaded);
 
     public object? Snapshot(ExecutionContext context) => new State(
         SectionRegistry.ToDictionary(kv => kv.Key, kv => new List<SectionData>(kv.Value)),
@@ -193,7 +200,8 @@ public sealed class MusicSession : ISessionExtension
         new HashSet<string>(SfzDiagnostics),
         ResolvedSfzRoot,
         new Dictionary<Value, DictData>(StyleRegistry),
-        new HashSet<string>(StyleOverrideAdvisoriesEmitted));
+        new HashSet<string>(StyleOverrideAdvisoriesEmitted),
+        StylePacksLoaded);
 
     public void Restore(ExecutionContext context, object? snapshot)
     {
@@ -211,6 +219,7 @@ public sealed class MusicSession : ISessionExtension
         Refill(StyleRegistry, state.Styles);
         StyleOverrideAdvisoriesEmitted.Clear();
         StyleOverrideAdvisoriesEmitted.UnionWith(state.StyleAdvisories);
+        StylePacksLoaded = state.StylePacksLoaded;
         _resolved = null;
 
         // Hermetic tests: the synthesizers' noise generator restarts too.

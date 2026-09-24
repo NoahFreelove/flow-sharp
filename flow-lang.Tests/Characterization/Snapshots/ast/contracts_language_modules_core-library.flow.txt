@@ -215,4 +215,11 @@ Program {
             Name: "str"
             NamedArgs: null }]
         Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          ChordLiteralExpression {
+            ChordText: "Cmaj7" }]
+        Name: "chordRoot"
         NamedArgs: null } }] }

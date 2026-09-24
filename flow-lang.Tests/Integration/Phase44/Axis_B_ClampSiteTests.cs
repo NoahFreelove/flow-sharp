@@ -74,6 +74,7 @@ public class Axis_B_ClampSiteTests : IDisposable
         string flowSrc = BuildOutOfRangeStrictProgram(builtin, row.Param, row.Range);
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(flowSrc, "<top>");
 
         // Strict-mode error reported via ErrorReporter (NOT thrown).
@@ -108,6 +109,7 @@ public class Axis_B_ClampSiteTests : IDisposable
         string flowSrc = BuildOutOfRangeNonStrictProgram(builtin, row.Param, row.Range);
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(flowSrc, "<top>");
 
         Assert.True(ok,
@@ -129,11 +131,13 @@ public class Axis_B_ClampSiteTests : IDisposable
 
         using (var engine = new FlowEngine())
         {
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             var ok = engine.Execute(strictSrc, "<top>");
             Assert.True(ok, $"strict in-range crescendo must succeed: {engine.ErrorReporter.FormatErrors()}");
         }
         using (var engine = new FlowEngine())
         {
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             var ok = engine.Execute(nonStrictSrc, "<top>");
             Assert.True(ok, $"non-strict in-range crescendo must succeed: {engine.ErrorReporter.FormatErrors()}");
         }
@@ -153,6 +157,7 @@ public class Axis_B_ClampSiteTests : IDisposable
             + "(quantize s QUARTER 1.5 1.5)\n";
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(src, "<top>");
         Assert.False(ok, "strict-mode quantize with out-of-range args expected to fail");
 
@@ -172,6 +177,7 @@ public class Axis_B_ClampSiteTests : IDisposable
             + "(swell s 0.3 0.9)\n";
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(src, "<top>");
         Assert.True(ok,
             $"existing transform-using script must still execute: {engine.ErrorReporter.FormatErrors()}");

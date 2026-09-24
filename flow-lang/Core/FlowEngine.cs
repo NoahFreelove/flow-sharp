@@ -95,6 +95,17 @@ public class FlowEngine : IDisposable
     public SessionServices.Scope EnterScope() => _session.Enter();
 
     /// <summary>
+    /// Imports <c>@std</c> for interactive use (the REPL, <c>-e</c>, <c>flow eval</c>):
+    /// a convenience of those hosts, since scripts import what they use and the
+    /// engine itself has no prelude.
+    /// </summary>
+    public void ImportInteractiveDefaults()
+    {
+        using var scope = _session.Enter();
+        _moduleLoader.LoadModule("@std", "<interactive>", _context);
+    }
+
+    /// <summary>
     /// Phase 47 D-47-10: true when this assembly was compiled with
     /// FlowTarget=Web (FLOW_WEB preprocessor symbol active). Compile-time
     /// constant — no runtime mutation. Read by <see cref="Parsing.Parser"/>
@@ -309,32 +320,12 @@ public class FlowEngine : IDisposable
         _interpreter = new Interpreter.Interpreter(_context, _errorReporter, _moduleLoader);
         _moduleLoader.ParentInterpreter = _interpreter;
 
-        // Phase 48 fix(48-06) — EXPLICITLY bootstrap the @std builtin SURFACE at
-        // engine init. The Flow builtin call surface (print/add/str/createSineTone/
-        // play/... — declared as `internal proc` in std.flow, which in turn pulls
-        // @collections + @bars) is NOT registered by the C# Register* calls above:
-        // those register only IMPLEMENTATIONS keyed by name; the interpreter binds
-        // an impl ONLY when a matching `internal proc` surface overload exists
-        // (Interpreter.cs:845-848). On Desktop the surface happened to load as a
-        // SIDE EFFECT of StyleRegistry.LoadShippedAndUserPacks below (the improv
-        // packs `use "@improv"` -> `use "@std"`). That chain is FRAGILE and, on the
-        // Web/WASM target, does not fire at all (the style-pack directory does not
-        // exist in the Emscripten VFS), so the entire builtin surface was missing
-        // in-browser -> `[eval] Function '<name>' not found` for EVERY builtin.
-        // See debug session wasm-boot-no-app-bundle (cycle 4). Loading @std here is
-        // idempotent (ModuleLoader dedups via _loadedModules), so the later
-        // improv-pack `use "@std"` hits AlreadyLoaded and Desktop behavior is
-        // unchanged. On Web the embedded-resource fallback in ModuleLoader.LoadModule
-        // supplies the .flow source (no host filesystem in the browser).
-        _moduleLoader.LoadModule("@std", "<engine-init>", _context);
-
-        // Phase 36 Plan 36-11 — load shipped + user style packs AFTER the
-        // interpreter is fully wired. Each pack `use "@improv"` + declares a
-        // Dict<Symbol, Value> + calls (registerStyle #name pack), so we need
-        // the moduleLoader + parsing/interpretation surface to be ready. Pack
-        // loading is charitable — a malformed pack fires a one-shot stderr
-        // advisory and CONTINUES; FlowEngine init MUST NOT abort on a bad pack.
-        StyleRegistry.LoadShippedAndUserPacks(this, _context);
+        // No implicit prelude (owner decision 2026-09-23): scripts import what they
+        // use — `use "@core"` for the essentials, `use "@std"` for the broad library.
+        // The builtin implementations are registered above, but a builtin becomes
+        // callable only once an imported module declares its `internal proc`
+        // surface. Interactive hosts (REPL, -e) import @std themselves; style packs
+        // load on first use (StyleRegistry.EnsureLoaded).
     }
 
     /// <summary>

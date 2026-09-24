@@ -111,6 +111,8 @@ public sealed class DocExampleRunner
                 Output = TextWriter.Null,
                 Diagnostics = TextWriter.Null,
             });
+            // Doc examples are snippets: like `flow -e`, they run with @std imported.
+            engine.ImportInteractiveDefaults();
             var result = engine.Evaluate(exampleSource, "<doc-example>", new EvaluationOptions
             {
                 TimeLimit = TimeSpan.FromMilliseconds(_timeoutMs),

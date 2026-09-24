@@ -102,7 +102,7 @@ public class WasmJsonSerializationTests
     public void RunFromJs_Produces_CamelCase_RunResult_Shape()
     {
 #pragma warning disable CA1416 // browser-only export; the Execute path is platform-agnostic on Desktop
-        var json = WasmEntry.RunFromJs("(print \"hi\")");
+        var json = WasmEntry.RunFromJs("use \"@core\"\n(print \"hi\")");
 #pragma warning restore CA1416
 
         var node = JsonNode.Parse(json)!.AsObject();

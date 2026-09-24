@@ -43,7 +43,7 @@ public class WasmSynchronousExecutionTests
     public void RunFromJs_SimpleScript_RunsToCompletion_PopulatedStdout_NoErrors()
     {
 #pragma warning disable CA1416 // browser-only export; the Execute path is platform-agnostic on Desktop
-        var json = WasmEntry.RunFromJs("(print \"hi\")");
+        var json = WasmEntry.RunFromJs("use \"@core\"\n(print \"hi\")");
 #pragma warning restore CA1416
 
         var node = JsonNode.Parse(json)!.AsObject();

@@ -42,6 +42,8 @@ public class Repl
     public Repl()
     {
         _engine = new FlowEngine();
+        // Interactive convenience: the REPL starts with @std imported.
+        _engine.ImportInteractiveDefaults();
     }
 
     public void Run()

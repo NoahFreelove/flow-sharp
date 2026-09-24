@@ -3,7 +3,10 @@
 // rationale: @core is the essential general-purpose library: printing, formatting,
 //    arithmetic, comparison, logic, conversions, strings, dictionaries and (through
 //    @collections) lists. It declares no music builtins; @std imports @core and adds
-//    the music-typed and non-essential surface, so `use "@std"` is unchanged.
+//    the music-typed and non-essential surface, so `use "@std"` is unchanged. Music
+//    builtins such as chordRoot are not declared by @core alone.
+// errors: 1
+// stderr: chordRoot
 use "@core"
 Int total = (reduce [1, 2, 3, 4] 0 fn Int acc, Int x => (add acc x))
 (print $"total {total}, max {(max 3 9)}, mod {(mod -1 12)}")
@@ -12,3 +15,4 @@ Dict<String, Int> ages = (dict "ada" 36 "alan" 41)
 (print $"{(get ages "alan")} {(size ages)} {(has ages "grace")}")
 (print (str (split "a,b,c" ",")))
 (print (str (equals 2 2.0)))
+(chordRoot Cmaj7)

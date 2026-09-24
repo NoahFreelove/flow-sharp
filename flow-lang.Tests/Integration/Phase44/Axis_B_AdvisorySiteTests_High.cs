@@ -120,6 +120,7 @@ public class Axis_B_AdvisorySiteTests_High : IDisposable
         string sentinelPrefix, string strictSrc, string nonStrictSrc)
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(strictSrc, "<top>");
 
         var errors = engine.ErrorReporter.FormatErrors();
@@ -132,6 +133,7 @@ public class Axis_B_AdvisorySiteTests_High : IDisposable
         string sentinelPrefix, string strictSrc, string nonStrictSrc)
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(nonStrictSrc, "<top>");
 
         Assert.True(ok,
@@ -171,6 +173,7 @@ public class Axis_B_AdvisorySiteTests_High : IDisposable
         string src = "enable strict;\nInt x = 42;\n(match x | 1 => 1 | 2 => 2)\n";
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(src, "<top>");
 
         var errors = engine.ErrorReporter.FormatErrors();
@@ -184,6 +187,7 @@ public class Axis_B_AdvisorySiteTests_High : IDisposable
         string src = "Int x = 42;\n(match x | 1 => 1 | 2 => 2)\n";
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(src, "<top>");
 
         Assert.True(ok,

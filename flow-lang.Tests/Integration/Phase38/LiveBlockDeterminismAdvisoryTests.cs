@@ -49,6 +49,8 @@ public class LiveBlockDeterminismAdvisoryTests : IDisposable
         var source = "live 1bar { (print \"hi\") }";
 
         using var engine = new FlowLang.Core.FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
+
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(source, "<test>");
         Assert.True(ok, "FlowEngine.Execute should succeed");
 
@@ -70,6 +72,7 @@ public class LiveBlockDeterminismAdvisoryTests : IDisposable
         // `live-determinism-optout:<line>` must dedup the advisory — the captured
         // stderr should STILL contain exactly one such advisory line.
         using var engine2 = new FlowLang.Core.FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
+        engine2.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok2 = engine2.Execute(source, "<test>");
         Assert.True(ok2);
 

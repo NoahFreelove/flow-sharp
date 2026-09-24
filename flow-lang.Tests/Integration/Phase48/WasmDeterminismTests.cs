@@ -55,7 +55,7 @@ public class WasmDeterminismTests
     /// byte-identical (D-36-09 chaos-caveat does NOT apply).
     /// </summary>
     private const string DeterministicSource =
-        "(print \"hello flow\")\n(print 42)\n(print (add 1 2))";
+        "use \"@core\"\n(print \"hello flow\")\n(print 42)\n(print (add 1 2))";
 
     /// <summary>
     /// Strips the <c>durationMs</c> field from a RunResult JSON string.

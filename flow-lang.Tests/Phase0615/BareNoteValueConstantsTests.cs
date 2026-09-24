@@ -28,6 +28,7 @@ public class BareNoteValueConstantsTests
     private static FlowEngine Run(string source, out bool ok)
     {
         var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         ok = engine.Execute(source + "\n");
         return engine;
     }

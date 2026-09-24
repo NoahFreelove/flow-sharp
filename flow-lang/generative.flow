@@ -6,6 +6,8 @@ Note: see CLAUDE.md Music Types Quick Reference table.
 module generative
 
 Note: One-shot — compose train + generate at the call site
+use "@std"
+
 internal proc markov (Sequence: corpus, Int: order, Int: length, Int: seed)
 internal proc markov (Sequence: corpus, Int: order, Int: length)
 Note: Array-corpus forms (0615) — train directly off a Note[] or Int[] of

@@ -26,8 +26,19 @@ public sealed class FlowEngineRunner : IDisposable
         return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.ErrorCount);
     }
 
+    private bool _interactiveImported;
+
+    /// <summary>
+    /// Runs a source snippet the way <c>flow -e</c> does: <c>@std</c> is imported first
+    /// (once). Scripts run through <see cref="RunFile"/> import what they use.
+    /// </summary>
     public (bool Success, string Stdout, string Stderr, int ErrorCount) RunSource(string source, string fileName = "<test>")
     {
+        if (!_interactiveImported)
+        {
+            _engine.ImportInteractiveDefaults();
+            _interactiveImported = true;
+        }
         var success = _engine.Execute(source, fileName);
         FlushErrorsToStderr();
         return (success, _stdout.ToString(), _stderr.ToString(), _engine.ErrorReporter.ErrorCount);

@@ -53,6 +53,10 @@ public class StyleRegistryTests
         using var runner = new FlowEngineRunner();
         var ctx = runner.GetEngine().Context;
 
+        // Style packs load on first use of the style surface (no eager init load).
+
+        FlowLang.StandardLibrary.Improv.StyleRegistry.EnsureLoaded(ctx);
+
         // Direct probe of ExecutionContext.StyleRegistry.
         Assert.True(ctx.StyleRegistry.ContainsKey(SymbolFor(ctx, "jazz")),
             "shipped #jazz pack should be loaded at engine init");
@@ -137,6 +141,12 @@ public class StyleRegistryTests
         Assert.True(success, $"Script failed; stderr:\n{stderr}");
 
         var ctx = runner.GetEngine().Context;
+
+
+        // Style packs load on first use of the style surface (no eager init load).
+
+
+        FlowLang.StandardLibrary.Improv.StyleRegistry.EnsureLoaded(ctx);
         var unknown = SymbolFor(ctx, "nonexistent_style");
         Assert.False(ctx.StyleRegistry.ContainsKey(unknown));
         // #jazz IS present (shipped pack).
@@ -187,6 +197,10 @@ public class StyleRegistryTests
 
                 using var runner = new FlowEngineRunner();
                 var ctx = runner.GetEngine().Context;
+
+                // Style packs load on first use of the style surface (no eager init load).
+
+                FlowLang.StandardLibrary.Improv.StyleRegistry.EnsureLoaded(ctx);
 
                 // Loaded packs include jazz from the user dir, which overrides
                 // the shipped jazz pack. Verify the marker is present in the
@@ -256,6 +270,10 @@ public class StyleRegistryTests
                 // Engine construction must NOT throw despite the busted pack.
                 using var runner = new FlowEngineRunner();
                 var ctx = runner.GetEngine().Context;
+
+                // Style packs load on first use of the style surface (no eager init load).
+
+                FlowLang.StandardLibrary.Improv.StyleRegistry.EnsureLoaded(ctx);
 
                 // Shipped packs still loaded.
                 Assert.True(ctx.StyleRegistry.ContainsKey(SymbolFor(ctx, "jazz")));

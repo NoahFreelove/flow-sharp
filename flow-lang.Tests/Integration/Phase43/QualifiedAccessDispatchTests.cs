@@ -70,6 +70,7 @@ public class QualifiedAccessDispatchTests : IDisposable
         try
         {
             using var engine = new FlowEngine();
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             if (extraSearchPath != null)
                 engine.ModuleLoader.AdditionalSearchPaths.Add(extraSearchPath);
             ok = engine.Execute(source, "<test>");

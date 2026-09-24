@@ -10,6 +10,8 @@ Note: Song/Section as the canonical arrangement primitive; kept as a usable surf
 
 module composition
 
+use "@std"
+
 Int TIME_SIGNATURE_NOTE = 4
 Int TIME_SIGNATURE_NOTES_PER_BAR = 4
 

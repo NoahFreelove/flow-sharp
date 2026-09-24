@@ -56,6 +56,7 @@ public class LexerLiteralsSweepTests
             CultureInfo.DefaultThreadCurrentCulture = de;
 
             using var engine = new FlowEngine(verbose: false);
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             // Evaluate the bare literal so the Value's underlying double is
             // exactly what the literal-parse path produced (display formatting is
             // a separate, culture-dependent concern).
@@ -108,6 +109,7 @@ public class LexerLiteralsSweepTests
         // The documented `xs@-1` surface syntax must reach the negative-index
         // handling (ExpressionEvaluator: arr.Count + index).
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var result = engine.ExecuteScriptAndGetResult("Ints xs = [1, 2, 3]\nxs@-1");
         Assert.NotNull(result);
         Assert.False(engine.ErrorReporter.HasErrors,
@@ -152,6 +154,7 @@ public class LexerLiteralsSweepTests
     public void RestWithDurationSuffix_ParsesToBarNotEmptyStreamError()
     {
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute("use \"@std\"\ntimesig 4/4 { Sequence s = | C4q _q _ _ |\n(print (str s)) }");
         Assert.False(engine.ErrorReporter.HasErrors,
             $"`| C4q _q _ _ |` must parse, got: {engine.ErrorReporter.FormatErrors()}");
@@ -161,6 +164,7 @@ public class LexerLiteralsSweepTests
     public void WholeRestBar_Parses()
     {
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute("tempo 120 { timesig 4/4 { Sequence s = | _w | C4w |\n(print (str s)) } }");
         Assert.False(engine.ErrorReporter.HasErrors,
             $"`| _w | C4w |` must parse, got: {engine.ErrorReporter.FormatErrors()}");
@@ -183,6 +187,7 @@ public class LexerLiteralsSweepTests
     {
         RenderingDiagnostics.ResetForTesting();
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         // `Z9` is the shape of a mistyped note name (first char outside A-G).
         // It must NOT abort the stream nor produce "Empty note stream".
         engine.Execute("timesig 4/4 { Sequence s = | C4 D4 Z9 E4 |\n(print (str s)) }");
@@ -210,6 +215,7 @@ public class LexerLiteralsSweepTests
         // instead terminate the stream (IsEndOfNoteStream / break).
         RenderingDiagnostics.ResetForTesting();
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(
             "use \"@std\"\n" +
             "Sequence a = |\n" +
@@ -235,6 +241,7 @@ public class LexerLiteralsSweepTests
         // pragma is set). The charitable typo recovery must NOT swallow it as a rest
         // — an H note without the pragma must STILL be rejected (parse error).
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(
             "use \"@std\"\n" +
             "Sequence seq = | H4q B4q |\n" +
@@ -250,6 +257,7 @@ public class LexerLiteralsSweepTests
         // lex time and parses clean — the regression fix must not break the pragma's
         // accept path.
         using var engine = new FlowEngine(verbose: false);
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(
             "enable hAsB;\n" +
             "use \"@std\"\n" +

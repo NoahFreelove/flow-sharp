@@ -84,6 +84,7 @@ public class BeatConversionTests : IDisposable
             try
             {
                 using var engine = new FlowEngine();
+                engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
                 engine.Execute(source, "<beatToSec_default_tempo>");
                 stdout = outSb.ToString();
             }
@@ -117,6 +118,7 @@ public class BeatConversionTests : IDisposable
             try
             {
                 using var engine = new FlowEngine();
+                engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
                 engine.Execute(source, "<beatToSec_tempo60>");
                 stdout = outSb.ToString();
             }
@@ -148,6 +150,7 @@ public class BeatConversionTests : IDisposable
             try
             {
                 using var engine = new FlowEngine();
+                engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
                 engine.Execute(source, "<beatToSec_tempo120>");
                 stdout = outSb.ToString();
             }
@@ -181,6 +184,7 @@ public class BeatConversionTests : IDisposable
         string stderr = CaptureStderr(() =>
         {
             using var engine = new FlowEngine();
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             engine.Execute(source, "<secToBeat_default_tempo>");
             var v = engine.Context.GetVariable("b");
             beatsValue = (double)v.Data!;
@@ -208,6 +212,7 @@ public class BeatConversionTests : IDisposable
         string stderr = CaptureStderr(() =>
         {
             using var engine = new FlowEngine();
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             engine.Execute(source, "<secToBeat_tempo120>");
             // Don't read the variable — it lived inside the tempo block scope.
             // The point of this fact is the advisory suppression behavior.
@@ -227,6 +232,7 @@ public class BeatConversionTests : IDisposable
     {
         string source = "use \"@audio\"; tempo 120 { (secToBeat 0.5) }";
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var result = engine.ExecuteScriptAndGetResult(source, "<secToBeat_numeric>");
         Assert.NotNull(result);
         Assert.IsType<BeatType>(result!.Type);
@@ -255,8 +261,10 @@ public class BeatConversionTests : IDisposable
         string stderr = CaptureStderr(() =>
         {
             using var e1 = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
+            e1.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             e1.Execute(source, "<run1>");
             using var e2 = new FlowEngine(new FlowLang.Core.EngineOptions { Advisories = sharedAdvisories });
+            e2.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             e2.Execute(source, "<run2>");
         });
 

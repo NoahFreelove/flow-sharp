@@ -23,6 +23,7 @@ public class HostDiagnosticsTests
     public void ErrorCountAndFormatAllCoverBothDiagnosticLists()
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(UnknownIdentifier, "<host>");
 
         var reporter = engine.ErrorReporter;
@@ -53,6 +54,7 @@ public class HostDiagnosticsTests
     public void TestBodyThatReportsAnErrorFails()
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var originalOut = Console.Out;
         using var captured = new StringWriter();
         try

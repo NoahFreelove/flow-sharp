@@ -39,7 +39,7 @@ public class ModuleSurfaceCharacterizationTests
         var sb = new StringBuilder();
         using var bare = Quiet();
         var baseline = Visible(bare);
-        sb.Append("# engine start (implicit @std + improv packs): ").Append(baseline.Count).Append(" overloads\n");
+        sb.Append("# engine start (no prelude): ").Append(baseline.Count).Append(" overloads\n");
         foreach (var entry in baseline) sb.Append("  ").Append(entry).Append('\n');
 
         foreach (var module in Modules)

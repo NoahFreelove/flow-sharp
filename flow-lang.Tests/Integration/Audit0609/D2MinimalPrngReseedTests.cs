@@ -62,6 +62,7 @@ public class D2MinimalPrngReseedTests : IDisposable
     public void StagePendingBuffers_WholeScriptSentinel_FiresResetExactlyOnce()
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         int before = engine.Context.PrngRegistry.ResetCallCount;
 
         using var harness = new D2MinimalHarness();

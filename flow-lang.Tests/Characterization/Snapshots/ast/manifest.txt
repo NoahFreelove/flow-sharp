@@ -60,7 +60,7 @@ bdd93249525d49e9  contracts/language/generous/quoted-strings.flow
 23978e169e2a5f07  contracts/language/generous/unknown-pragma.flow
 a3d785cd2d68f430  contracts/language/generous/void-argument.flow
 c83ee73507a9011b  contracts/language/modules/circular-import.flow
-9c002dd522a3aa32  contracts/language/modules/core-library.flow
+4b3972d121dbac37  contracts/language/modules/core-library.flow
 2d0948b2d0c6444a  contracts/language/modules/import-idempotent.flow
 f319abefe6939e85  contracts/language/modules/lib/cycle_a.flow
 fd2cf34663ebdc78  contracts/language/modules/lib/cycle_b.flow
@@ -68,6 +68,7 @@ fd2cf34663ebdc78  contracts/language/modules/lib/cycle_b.flow
 fa7a5085bcf742f1  contracts/language/modules/lib/plain.flow
 fd79f1cd7485d8b0  contracts/language/modules/lib/strict_half.flow
 ac105d3e8acaccc5  contracts/language/modules/lib/textutil.flow
+ef24c39d0c7a3671  contracts/language/modules/no-prelude.flow
 ca58988fdcb90b0a  contracts/language/modules/pragma-isolation.flow
 e95fe59e96f7b380  contracts/language/modules/qualified-access.flow
 8a280b5706071618  contracts/language/modules/qualified-errors.flow
@@ -133,12 +134,12 @@ a845e025939b02c4  flow-lang.Tests/fixtures/Phase37/piano_warmth_smoke.flow
 9b820ffcad2e6fa2  flow-lang.Tests/fixtures/midi/sources/drum_loop.flow
 e4e6f9f6bdc06f76  flow-lang.Tests/fixtures/midi/sources/ragtime_q_ee.flow
 b1725f4114620a26  flow-lang.Tests/fixtures/midi/sources/two_voice_counterpoint.flow
-50b604b8ee53bc42  flow-lang/audio.flow
+e39ea82c15608195  flow-lang/audio.flow
 2815446e62897dbb  flow-lang/bars.flow
 bcc1fb04aba23c7a  flow-lang/collections.flow
-1f85017ca3f6bfce  flow-lang/composition.flow
+facea1f53d9b6e0c  flow-lang/composition.flow
 40baf2946f33bf50  flow-lang/core.flow
-1a79a24a17b7b581  flow-lang/generative.flow
+00fc18397c23f2c0  flow-lang/generative.flow
 5490f4f55469e4ff  flow-lang/improv.flow
 c81cd0981c0987ea  flow-lang/improv/styles/blues.flow
 ec99c3ca1e59992c  flow-lang/improv/styles/classical.flow
@@ -146,12 +147,12 @@ eedd3a897932d267  flow-lang/improv/styles/jazz.flow
 94d41a5f5cc9455d  flow-lang/jack.flow
 15c48b152e4dc49e  flow-lang/midi.flow
 3812d6a7effa4bae  flow-lang/notation-io.flow
-890170d3caae0d58  flow-lang/notation.flow
+a1eede70de937657  flow-lang/notation.flow
 2a045dd7978856cf  flow-lang/osc.flow
-098e26ec5d798417  flow-lang/patterns.flow
+eeda29d7fe251771  flow-lang/patterns.flow
 0b1c7647383281ce  flow-lang/sfz.flow
 5239300835a88f7e  flow-lang/std.flow
-b6712e5648025e0a  flow-lang/test.flow
+b9b7bc9512bc4dae  flow-lang/test.flow
 dac5ce2730f70a55  tests/demo_expressive_piano.flow
 b1405b95682fae1d  tests/demo_feature_showcase.flow
 97a7d11b5a8cda79  tests/mary-had-a-little-lamb.flow
@@ -199,7 +200,7 @@ cb8773a47bc146de  tests/test_dynamics.flow
 5f1bd69ffaa0ae39  tests/test_dynamics_midi_velocity.flow
 718e028bd62d11e0  tests/test_enharmonic.flow
 ea15baa6190497cc  tests/test_enharmonic_edges.flow
-dd92e43bc9895688  tests/test_error_masking.flow
+17fe28e5aab09143  tests/test_error_masking.flow
 f9bca1359a291d5b  tests/test_euclidean_humanize.flow
 daa28cc5686a3979  tests/test_euclidean_swing.flow
 bdc3d288b46791fb  tests/test_expression_integration.flow

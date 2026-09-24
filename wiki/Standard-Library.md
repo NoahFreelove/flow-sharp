@@ -17,8 +17,8 @@ use "@std"
 
 | Module | Import | Provides | Wiki Page |
 |--------|--------|----------|-----------|
-| core (auto) | none | Arithmetic, comparisons, logic, math, random, `if`, `eval`, lambdas | [Language Basics](Language-Basics.md) |
-| `@std` | `use "@std"` | I/O, `str`, `concat`, type conversion, transitively re-exports `@collections` and `@bars` | this page |
+| `@core` | `use "@core"` | The essentials: `print`, `str`, arithmetic, comparisons, logic, math, conversions, strings, dicts, `if`, `eval`; re-exports `@collections` | this page |
+| `@std` | `use "@std"` | `@core` plus the broad library: music-typed overloads, unit conversions, notation helpers; re-exports `@core` and `@bars` | this page |
 | `@collections` | `use "@collections"` | List operations (`head`, `tail`, `map`, `filter`, `reduce`, …) | [Collections](Collections.md) |
 | `@bars` | `use "@bars"` | Bar/note primitives | [Note Streams](Note-Streams.md) |
 | `@audio` | `use "@audio"` | Buffers, signal generation, envelopes, effects, playback, WAV/MIDI I/O, granular / stretch / pitchShift, vocalization | [Audio and Synthesis](Audio-and-Synthesis.md), [Effects](Effects.md), [Playback and Export](Playback-and-Export.md), [Vocalization](Vocalization.md) |
@@ -31,7 +31,7 @@ use "@std"
 | `@notation-io` | `use "@notation-io"` | `writeMusicXML`, `writeLilyPond` export; `abc`, `mml` import | [Playback and Export](Playback-and-Export.md) |
 | `@test` | `use "@test"` | Test framework + assertion procs | [Tips and Tricks](Tips-and-Tricks.md) |
 
-`@std` automatically imports `@collections` and `@bars`, so you rarely need to import them separately.
+There is no implicit prelude: a script imports what it uses, and without an import even `print` is undeclared. Start a script with `use "@std"` (music) or `use "@core"` (general-purpose code). `@std` imports `@core`, `@collections` and `@bars`, and every music module (`@audio`, `@notation`, `@improv`, …) imports `@std`, so one `use` line is usually enough. The REPL, `flow -e` and `flow eval` import `@std` for you.
 
 ### Runtime Gates
 

@@ -90,6 +90,7 @@ class Program
         {
             using var engine = new FlowEngine(verbose: verbose);
             ConfigureDevice(engine, deviceName);
+            engine.ImportInteractiveDefaults();   // -e is interactive: @std is imported
             var success = engine.Execute(code, "<eval>");
 
             if (!success)

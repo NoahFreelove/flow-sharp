@@ -128,6 +128,7 @@ public class Axis_B_AdvisorySiteTests_MedLow : IDisposable
         string sentinelSubstring, string strictSrc, string nonStrictSrc)
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         engine.Execute(strictSrc, "<top>");
 
         var errors = engine.ErrorReporter.FormatErrors();
@@ -140,6 +141,7 @@ public class Axis_B_AdvisorySiteTests_MedLow : IDisposable
         string sentinelSubstring, string strictSrc, string nonStrictSrc)
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(nonStrictSrc, "<top>");
 
         Assert.True(ok,

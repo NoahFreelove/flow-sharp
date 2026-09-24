@@ -92,6 +92,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     public void PragmaSetsContextBit()
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute("enable beat-true-to-sig;\n(print \"ok\")", "<test>");
         Assert.True(ok, $"execute failed: {engine.ErrorReporter.FormatErrors()}");
         Assert.True(engine.Context.BeatTrueToSig,
@@ -102,6 +103,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
     public void AbsenceLeavesBitFalse()
     {
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute("(print \"ok\")", "<test>");
         Assert.True(ok, $"execute failed: {engine.ErrorReporter.FormatErrors()}");
         Assert.False(engine.Context.BeatTrueToSig,
@@ -156,6 +158,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
             "Int innerX = 10;\n");
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var innerPosix = innerPath.Replace('\\', '/');
         var outerSrc =
             "use \"" + innerPosix + "\"\n" +
@@ -177,6 +180,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
         File.WriteAllText(innerPath, "Int innerX = 10;\n");
 
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var innerPosix = innerPath.Replace('\\', '/');
         var outerSrc =
             "enable beat-true-to-sig;\n" +
@@ -198,6 +202,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
         // the outer's bit MUST still be restored to true via the try/finally
         // save-restore (Anti-Pattern 1: never mutate without a paired restore).
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var missingPath = Path.Combine(_tempDir, "definitely_missing.flow").Replace('\\', '/');
         var outerSrc =
             "enable beat-true-to-sig;\n" +
@@ -218,6 +223,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
         // no pragma. After the import returns, the importer's bit must still be
         // true — the import's set-to-false is overridden by the finally restore.
         using var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var outerSrc =
             "enable beat-true-to-sig;\n" +
             "use \"@audio\"\n" +
@@ -248,6 +254,7 @@ public class BeatTrueToSigPragmaTests : IDisposable
         {
             Console.SetOut(sw);
             using var engine = new FlowEngine();
+            engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
             var ok = engine.Execute(source, "<test>");
             Assert.True(ok, $"execute failed: {engine.ErrorReporter.FormatErrors()}");
         }

@@ -1,0 +1,9 @@
+// contract: modules.no-prelude
+// status: preserve
+// rationale: The language has no implicit prelude: without an import even `print`
+//    is undeclared. Scripts start with `use "@core"` (or `@std`, which imports it).
+//    Interactive hosts (the REPL, `flow -e`, `flow eval`) import @std themselves.
+// errors: 1
+// stderr: print
+Int x = 5
+(print "hi")

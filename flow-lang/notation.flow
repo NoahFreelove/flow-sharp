@@ -5,6 +5,8 @@ module notes
 
 Note: ===== Internal C# Function Declarations =====
 
+use "@std"
+
 internal proc createMusicalNote (Note: pitch, NoteValue: duration)
 internal proc createRest (NoteValue: duration)
 internal proc createTimeSignature (Int: numerator, Int: denominator)

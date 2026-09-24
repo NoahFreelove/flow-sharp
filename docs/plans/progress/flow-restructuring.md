@@ -499,6 +499,16 @@ passed / 0 failed, MIDI 21, Web build OK, zero tracked-content changes; CLI smok
   examples import `@core`; contract `modules.core-library`. Found: `FlowEngine`
   loads `@std` (and the improv packs) at init as an implicit prelude, so imports are
   currently optional in the music host — owner decision pending on removing it.
+- **F2 (this slice)** — owner decision 2026-09-23: **no implicit prelude.**
+  `FlowEngine` no longer loads `@std` at init; scripts import what they use. The REPL,
+  `-e`, `flow eval`, `flow doc` examples and the `RunSource` test fixture import `@std`
+  (`FlowEngine.ImportInteractiveDefaults`). Every music module imports `@std`, so any
+  script with one music import is unchanged; only `tests/test_error_masking.flow` (no
+  imports) needed `use "@std"`, and the corpus is identical. Style packs load lazily in
+  a private engine on first `registerStyle`/`listStyles`/`jam`, so `@improv`/`@std` no
+  longer leak into every script. Contracts `modules.no-prelude`, `modules.core-library`
+  (music builtins absent under `@core` alone). ~265 test snippets moved to the
+  interactive path (they are `-e`-style snippets).
 
 D4 (pattern matcher, member access, section dispatch) landed inside D3. Remaining:
 the stdlib split with compatibility aggregates (language vs legacy profile), moving

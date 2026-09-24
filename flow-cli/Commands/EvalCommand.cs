@@ -42,6 +42,7 @@ internal static class EvalCommand
                     }
                 }
 
+                engine.ImportInteractiveDefaults();   // eval is interactive: @std is imported
                 var success = engine.Execute(code, "<eval>");
 
                 if (!success)

@@ -1,0 +1,17 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    VariableDeclaration {
+      Name: "x"
+      Type: type Int
+      Value: LiteralExpression {
+        IsMusicLiteral: false
+        Value: 5 } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "hi" }]
+        Name: "print"
+        NamedArgs: null } }] }

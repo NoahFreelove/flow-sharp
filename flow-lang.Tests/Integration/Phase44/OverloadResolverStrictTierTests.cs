@@ -64,6 +64,7 @@ public class OverloadResolverStrictTierTests
     private static (FlowEngine engine, bool ok) RunSource(string source)
     {
         var engine = new FlowEngine();
+        engine.ImportInteractiveDefaults();   // snippet runs like `flow -e`
         var ok = engine.Execute(source, "<test>");
         return (engine, ok);
     }

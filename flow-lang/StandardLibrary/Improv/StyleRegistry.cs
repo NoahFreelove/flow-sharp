@@ -83,6 +83,41 @@ public static class StyleRegistry
     /// stderr advisory. Called from <c>FlowEngine</c> engine init AFTER the
     /// interpreter + module loader are fully constructed.
     /// </summary>
+    /// <summary>
+    /// Loads the shipped and user style packs into <paramref name="context"/>'s registry
+    /// the first time the style surface is used (<c>registerStyle</c>, <c>listStyles</c>,
+    /// <c>jam</c>). The packs run in a private engine and only their registered styles
+    /// are copied over, so a pack's own imports (<c>use "@improv"</c>, which brings
+    /// <c>@std</c>) never leak into the composer's scope. Loading before the first
+    /// <c>registerStyle</c> keeps the old order: packs first, script registrations
+    /// override them (with the usual advisory).
+    /// </summary>
+    public static void EnsureLoaded(ExecutionContext context)
+    {
+        if (context.Music.StylePacksLoaded)
+            return;
+        context.Music.StylePacksLoaded = true;
+
+        using var packEngine = new FlowLang.Core.FlowEngine(new FlowLang.Core.EngineOptions
+        {
+            Output = TextWriter.Null,
+            Diagnostics = context.Session.Diagnostics,
+            Advisories = context.Session.Advisories,
+            Config = context.Session.Config,
+        });
+        // The private engine's own style surface must not recurse into another load.
+        packEngine.Context.Music.StylePacksLoaded = true;
+        using (packEngine.EnterScope())
+            LoadShippedAndUserPacks(packEngine, packEngine.Context);
+
+        foreach (var (name, pack) in packEngine.Context.StyleRegistry)
+        {
+            // Symbols are interned per context: re-intern the name in the caller's.
+            var symbol = Value.Symbol(name.As<string>(), context);
+            context.StyleRegistry[symbol] = pack;
+        }
+    }
+
     public static void LoadShippedAndUserPacks(
         FlowLang.Core.FlowEngine engine,
         ExecutionContext context)
@@ -138,6 +173,7 @@ public static class StyleRegistry
     /// </summary>
     private static Value RegisterStyle(IReadOnlyList<Value> args, ExecutionContext ctx)
     {
+        EnsureLoaded(ctx);
         var symbolValue = args[0];
         var pack = args[1].As<DictData>();
 
@@ -172,6 +208,7 @@ public static class StyleRegistry
     /// </summary>
     private static Value ListStyles(ExecutionContext ctx)
     {
+        EnsureLoaded(ctx);
         var symbols = new List<Value>(ctx.StyleRegistry.Count);
         foreach (var key in ctx.StyleRegistry.Keys)
             symbols.Add(key);
