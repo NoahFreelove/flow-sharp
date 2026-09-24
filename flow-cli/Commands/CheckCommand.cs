@@ -1,24 +1,17 @@
 using FlowLang.Diagnostics;
 using System.CommandLine;
-using FlowLang.Core;
+using FlowLang.Analysis;
 
 namespace FlowCli.Commands;
 
-// `flow check <script.flow>` — verifies a script lexes/parses/runs without
-// errors. NOTE: parse-AND-execute (RESEARCH Open Question 2 deferred a true
-// parse-only mode). FlowEngine has no public Parse() entrypoint as of Phase 30,
-// so we redirect Console.Out to TextWriter.Null and run the full pipeline; any
-// (print …) side-effects are silenced, but errors and exit code still reflect
-// the engine's success/failure verdict. Audio playback calls inside the script
-// remain side-effectful — for Phase 30 this is acceptable since `check` is
-// not advertised as a sandbox.
+// Static frontend only: checking must never execute a script or its module bodies.
 internal static class CheckCommand
 {
     public static Command Build()
     {
         var scriptArg = new Argument<FileInfo>("script") { Description = "Path to .flow script" };
 
-        var cmd = new Command("check", "Parse a Flow script without executing it");
+        var cmd = new Command("check", "Check syntax and top-level imports without executing code");
         cmd.Add(scriptArg);
         cmd.SetAction(parseResult =>
         {
@@ -45,18 +38,19 @@ internal static class CheckCommand
             string? errorText = null;
             try
             {
-                // The script's own output is discarded through the engine's sink.
-                using var engine = new FlowEngine(new EngineOptions { Output = TextWriter.Null });
-                success = engine.Execute(source, script.FullName);
-                if (!success || engine.ErrorReporter.HasErrors)
+                var syntax = LanguageAnalysis.Parse(source, script.FullName);
+                var result = LanguageAnalysis.Analyze(syntax,
+                    new FileModuleSourceProvider(script.DirectoryName!));
+                success = result.Success;
+                if (result.Diagnostics.Count > 0)
                 {
-                    errorText = engine.ErrorReporter.FormatAll(engine.SourceMap, ErrorReporter.ShouldUseColor());
-                    success = false;
+                    errorText = string.Join(Environment.NewLine, result.Diagnostics.Select(d =>
+                        $"{d.Span.Start}: {d.Level.ToString().ToLowerInvariant()} [{d.Code}]: {d.Message}"));
                 }
             }
             catch (Exception ex)
             {
-                errorText = $"Error executing script: {ex.Message}";
+                errorText = $"Error analyzing script: {ex.Message}";
                 success = false;
             }
 
@@ -68,7 +62,8 @@ internal static class CheckCommand
                 return 1;
             }
 
-            Console.WriteLine($"OK: {script.FullName}");
+            if (!string.IsNullOrEmpty(errorText)) Console.Error.WriteLine(errorText);
+            Console.WriteLine($"OK: {script.FullName} (syntax and imports; runtime behavior not checked)");
             return 0;
         });
         return cmd;

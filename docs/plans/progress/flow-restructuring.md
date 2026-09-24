@@ -12,7 +12,9 @@ verification passes in a fresh clone; see the [Phase 3 record](../../baselines/p
 
 Phase 2 (session ownership, cancellation/budgets, evaluation coordination and
 process isolation) remains complete; see the [Phase 2 record](../../baselines/phase2/README.md).
-**Next milestone: Phase 4 — honest analysis and shared tooling.**
+**Phase 4 is in progress — honest analysis and shared tooling.** The shared
+non-executing frontend and `flow check` replacement have landed; see the Phase 4
+section below for scope and outstanding work.
 
 Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
 see the [Phase 1 record](../../baselines/phase1/README.md).
@@ -573,3 +575,18 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   AppBundle boots under Node through the frozen runtime and prints `10` / `150ms`
   with no errors. The refreshed compatibility MinimalHost records zero startup
   modules/styles. Gate evidence and limitations: `docs/baselines/phase3/`.
+
+## Phase 4 in progress — 2026-09-24
+
+- **A — non-executing frontend and check**: `FlowLang.Analysis` exposes `Parse`,
+  declaration descriptors and bounded, cancellable discovery of top-level imports
+  through a host-supplied source provider. Sources retain their identities; no
+  interpreter, module body or builtin implementation is invoked. Syntax diagnostics
+  have stable stage codes and spans; rich diagnostic details survive unchanged.
+  `flow check` now uses this frontend and explicitly reports its current scope
+  (syntax/imports; runtime behavior unchecked). The LSP parse adapter shares the
+  same parser and publishes its coded spans while preserving its legacy parse API.
+  Name/type/overload binding and nested/conditional import analysis are explicitly
+  listed as unchecked, not treated as proven valid. Verification: 137 frontend and
+  existing Phase 17/pragma tests pass, including a CLI script with writes, playback,
+  infinite looping and imported initializer effects, none of which execute.

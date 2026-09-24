@@ -68,7 +68,9 @@ public sealed class CombinedDiagnosticsPublisher
     public static IReadOnlyList<Diagnostic> BuildAll(
         ParseResult result, string source, StdlibSymbolIndex stdlib)
     {
-        var parseDiags     = DiagnosticsPublisher.BuildDiagnostics(result.Errors);
+        var parseDiags = result.Syntax is { } syntax
+            ? DiagnosticsPublisher.BuildAnalysisDiagnostics(syntax.Diagnostics)
+            : DiagnosticsPublisher.BuildDiagnostics(result.Errors);
         var lintDiags      = ScaleLintAnalyzer.Analyze(result.Ast, result.Tokens, source);
         var unusedDiags    = UnusedImportAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib);
         var unreachDiags   = UnreachableSectionAnalyzer.Analyze(result.Ast, result.Tokens, source);

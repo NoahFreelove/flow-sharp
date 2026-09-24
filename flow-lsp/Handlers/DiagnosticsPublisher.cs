@@ -47,6 +47,18 @@ public sealed class DiagnosticsPublisher : IDiagnosticsPublisher
         return list;
     }
 
+    public static IReadOnlyList<Diagnostic> BuildAnalysisDiagnostics(
+        IReadOnlyList<FlowLang.Analysis.AnalysisDiagnostic> diagnostics) => diagnostics.Select(d => new Diagnostic
+        {
+            Code = d.Code,
+            Source = "flow",
+            Severity = LspMappings.ToSeverity(d.Level),
+            Message = d.Message,
+            Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                new Position(Math.Max(0, d.Span.Start.Line - 1), Math.Max(0, d.Span.Start.Column - 1)),
+                new Position(Math.Max(0, d.Span.End.Line - 1), Math.Max(0, d.Span.End.Column - 1))),
+        }).ToArray();
+
     public void Publish(DocumentUri uri, IReadOnlyList<FlowError> errors)
     {
         // MUST publish even when empty — that is how LSP clears prior markers.
