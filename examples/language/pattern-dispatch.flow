@@ -1,5 +1,5 @@
 Note: A tiny command interpreter using match on symbols, literals and guards.
-use "@std"
+use "@core"
 
 proc apply (Symbol: op, Int: acc, Int: arg)
     (match op

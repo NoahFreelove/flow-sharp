@@ -1,6 +1,6 @@
 Note: A two-module utility: statistics and text formatting live in lib/.
 Note: Unqualified calls work; qualified module.proc calls disambiguate.
-use "@std"
+use "@core"
 use "lib/stats.flow"
 use "lib/text.flow"
 

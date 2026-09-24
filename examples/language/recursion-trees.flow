@@ -1,6 +1,6 @@
 Note: Recursive processing of a tree built from tuples and arrays.
 Note: A node is <<label, value, children>>; leaves have an empty child array.
-use "@std"
+use "@core"
 
 proc leaf (String: label, Int: value)
     <<label, value, (list)>>

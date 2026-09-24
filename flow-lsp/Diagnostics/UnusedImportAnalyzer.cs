@@ -122,17 +122,13 @@ public static class UnusedImportAnalyzer
         HashSet<string> referenced,
         StdlibSymbolIndex stdlib)
     {
-        // Special case: @std transitively imports the other stdlib modules.
-        if (moduleName == "std")
+        // @std and @core transitively import other stdlib modules.
+        foreach (var mod in StdlibSymbolIndex.ModulesVisibleThrough(moduleName))
         {
-            foreach (var mod in StdlibSymbolIndex.ModuleNames)
-            {
-                if (HasAnyReferencedProcInModule(mod, referenced, stdlib))
-                    return true;
-            }
-            return false;
+            if (HasAnyReferencedProcInModule(mod, referenced, stdlib))
+                return true;
         }
-        return HasAnyReferencedProcInModule(moduleName, referenced, stdlib);
+        return false;
     }
 
     private static bool HasAnyReferencedProcInModule(

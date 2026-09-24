@@ -490,6 +490,16 @@ passed / 0 failed, MIDI 21, Web build OK, zero tracked-content changes; CLI smok
   (`5 C 6s`, no errors). The committed `flow-site/static/wasm` bundle is untouched
   (refresh with `sync-runtime.sh` when the site should pick this up).
 
+- **F1 (this slice)** — stdlib split, owner decision 2026-09-23: `@core` is the
+  essential general-purpose library (121 declarations moved out of `std.flow`, plus
+  `@collections`); `@std` imports `@core` + `@bars` and keeps the 221 music-typed and
+  non-essential declarations (`slice(Sequence)` moved there from `@collections`). The
+  recorded `@std` export surface, the corpus and all overload snapshots are
+  unchanged. The LSP index knows `@core` (`ModulesVisibleThrough`); the non-musical
+  examples import `@core`; contract `modules.core-library`. Found: `FlowEngine`
+  loads `@std` (and the improv packs) at init as an implicit prelude, so imports are
+  currently optional in the music host — owner decision pending on removing it.
+
 D4 (pattern matcher, member access, section dispatch) landed inside D3. Remaining:
 the stdlib split with compatibility aggregates (language vs legacy profile), moving
 the remaining music-shaped primitive types (Buffer/Envelope/OscillatorState/Voice/

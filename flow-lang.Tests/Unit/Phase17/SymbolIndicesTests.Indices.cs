@@ -71,7 +71,7 @@ public partial class SymbolIndicesTests
         // In the test bin dir they resolve; if an environment-specific issue leaves
         // the index empty, the Fact downgrades to a warning rather than failing.
         var si = new StdlibSymbolIndex(new ParseSession());
-        // std.flow contains 'print', 'str', 'concat', etc. as internal procs.
+        // core.flow (imported by std.flow) declares 'print', 'str', 'concat', etc.
         var found = si.Find("print");
         Assert.NotNull(found);
     }
@@ -86,8 +86,9 @@ public partial class SymbolIndicesTests
         var si = new StdlibSymbolIndex(new ParseSession());
         var items = si.UseStringPathItems().ToList();
         Assert.Equal(StdlibSymbolIndex.ModuleNames.Length, items.Count);
-        Assert.Equal(15, items.Count);
+        Assert.Equal(16, items.Count);   // + @core (Phase 3 stdlib split)
         Assert.All(items, i => Assert.StartsWith("@", i.Label));
+        Assert.Contains(items, i => i.Label == "@core");
         Assert.Contains(items, i => i.Label == "@patterns");
         Assert.Contains(items, i => i.Label == "@midi");
     }

@@ -1,5 +1,5 @@
 Note: Tuples as lightweight records, threaded through -> and ~> pipelines.
-use "@std"
+use "@core"
 
 proc area (Int: w, Int: h)
     (mul w h)

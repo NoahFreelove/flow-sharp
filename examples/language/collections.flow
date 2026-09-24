@@ -1,6 +1,6 @@
 Note: Collection processing without any music.
 Note: A small gradebook: filter, map, reduce, zip and ranges over plain arrays.
-use "@std"
+use "@core"
 
 Strings students = (list "Ada" "Grace" "Alan" "Edsger" "Barbara")
 Ints scores = (list 91 78 85 62 97)

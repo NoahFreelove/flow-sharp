@@ -2,7 +2,7 @@ Program {
   Pragmas: pragmas[]
   Statements: [
     ImportStatement {
-      FilePath: "@std" },
+      FilePath: "@core" },
     VariableDeclaration {
       Name: "data"
       Type: type Int[]

@@ -125,15 +125,23 @@ Function callTwice = fn Function f, Int x => (f (f x))
     [Fact]
     public void Print_WithoutStdImport_Flagged()
     {
-        // `print` is declared in std.flow as `internal proc print (String: s)`
-        // — Flow requires `use "@std"` to make it visible. The analyzer flags
-        // it (mirroring the runtime "Function 'print' not found" error).
+        // `print` is declared in core.flow as `internal proc print (String: s)`
+        // — Flow requires `use "@core"` (or `@std`, which imports it) to make it
+        // visible. The analyzer flags it and names the declaring module
+        // (mirroring the runtime "Function 'print' not found" error).
         var src = "(print \"hi\")\n";
         var diags = Analyze(src);
         var printDiag = diags.FirstOrDefault(d =>
             d.Source == "flow.undefinedSymbol" && d.Message.Contains("'print'"));
         Assert.NotNull(printDiag);
-        Assert.Contains("@std", printDiag.Message);
+        Assert.Contains("@core", printDiag.Message);
+    }
+
+    [Fact]
+    public void Print_WithCoreImport_NotFlagged()
+    {
+        var diags = Analyze("use \"@core\"\n(print \"hi\")\n");
+        Assert.DoesNotContain(diags, d => d.Source == "flow.undefinedSymbol");
     }
 
     [Fact]

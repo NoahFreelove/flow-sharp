@@ -323,3 +323,8 @@ docs/reference/
 # Phase 37 test fixtures — regenerated idempotently + byte-deterministically by
 # Phase37Fixtures.EnsureFixturesExist() on every test run (audit 2026-06-09 note)
 flow-lang.Tests/Fixtures/Phase37/*.wav
+
+# Stdlib modules shipped by the libraries (use "@core", "@std", ...) — must be
+# tracked despite the global *.flow ignore (older ones were force-added).
+!flow-lang/*.flow
+!flow-language/*.flow

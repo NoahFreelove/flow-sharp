@@ -1,0 +1,218 @@
+Program {
+  Pragmas: pragmas[]
+  Statements: [
+    ImportStatement {
+      FilePath: "@core" },
+    VariableDeclaration {
+      Name: "total"
+      Type: type Int
+      Value: FunctionCallExpression {
+        Arguments: [
+          ArrayLiteralExpression {
+            Elements: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 1 },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 2 },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 3 },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: 4 }] },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 0 },
+          LambdaExpression {
+            Body: [
+              ExpressionStatement {
+                Expression: FunctionCallExpression {
+                  Arguments: [
+                    VariableExpression {
+                      Name: "acc" },
+                    VariableExpression {
+                      Name: "x" }]
+                  Name: "add"
+                  NamedArgs: null } }]
+            Parameters: [
+              LambdaParameter {
+                Name: "acc"
+                Type: type Int },
+              LambdaParameter {
+                Name: "x"
+                Type: type Int }] }]
+        Name: "reduce"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: "total " },
+              VariableExpression {
+                Name: "total" },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: ", max " },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 3 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 9 }]
+                Name: "max"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: ", mod " },
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: -1 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 12 }]
+                Name: "mod"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  ArrayLiteralExpression {
+                    Elements: [
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 1 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 2 },
+                      LiteralExpression {
+                        IsMusicLiteral: false
+                        Value: 3 }] },
+                  LambdaExpression {
+                    Body: [
+                      ExpressionStatement {
+                        Expression: FunctionCallExpression {
+                          Arguments: [
+                            VariableExpression {
+                              Name: "n" },
+                            VariableExpression {
+                              Name: "n" }]
+                          Name: "mul"
+                          NamedArgs: null } }]
+                    Parameters: [
+                      LambdaParameter {
+                        Name: "n"
+                        Type: type Int }] }]
+                Name: "map"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    VariableDeclaration {
+      Name: "ages"
+      Type: type Dict<String, Int>
+      Value: FunctionCallExpression {
+        Arguments: [
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "ada" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 36 },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: "alan" },
+          LiteralExpression {
+            IsMusicLiteral: false
+            Value: 41 }]
+        Name: "dict"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          InterpolatedStringExpression {
+            Parts: [
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "ages" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "alan" }]
+                Name: "get"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "ages" }]
+                Name: "size"
+                NamedArgs: null },
+              LiteralExpression {
+                IsMusicLiteral: false
+                Value: " " },
+              FunctionCallExpression {
+                Arguments: [
+                  VariableExpression {
+                    Name: "ages" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "grace" }]
+                Name: "has"
+                NamedArgs: null }] }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "a,b,c" },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: "," }]
+                Name: "split"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } },
+    ExpressionStatement {
+      Expression: FunctionCallExpression {
+        Arguments: [
+          FunctionCallExpression {
+            Arguments: [
+              FunctionCallExpression {
+                Arguments: [
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 },
+                  LiteralExpression {
+                    IsMusicLiteral: false
+                    Value: 2 }]
+                Name: "equals"
+                NamedArgs: null }]
+            Name: "str"
+            NamedArgs: null }]
+        Name: "print"
+        NamedArgs: null } }] }

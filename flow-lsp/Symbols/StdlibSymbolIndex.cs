@@ -28,9 +28,21 @@ public sealed class StdlibSymbolIndex
     /// </summary>
     public static readonly string[] ModuleNames = new[]
     {
-        "std", "audio", "collections", "bars", "notation", "composition",
+        "std", "core", "audio", "collections", "bars", "notation", "composition",
         "sfz", "patterns", "generative", "improv", "osc", "notation-io",
         "midi", "jack", "test",
+    };
+
+    /// <summary>
+    /// The modules whose procs a <c>use "@module"</c> makes visible: <c>@std</c> is the
+    /// broad aggregate (treated as every stdlib module), <c>@core</c> brings
+    /// <c>@collections</c>, and any other module brings itself.
+    /// </summary>
+    public static IEnumerable<string> ModulesVisibleThrough(string module) => module switch
+    {
+        "std" => ModuleNames,
+        "core" => new[] { "core", "collections" },
+        _ => new[] { module },
     };
 
     public sealed record StdProc(string Name, string Module, string FilePath);

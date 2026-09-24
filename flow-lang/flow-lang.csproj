@@ -263,7 +263,7 @@
       </None>
 
       <!-- Phase 48 fix(48-06): embed the surviving stdlib .flow modules into
-           flow-lang.wasm so `use "@std"` (and the transitive @collections/@bars,
+           flow-lang.wasm so `use "@std"` (and the transitive @core/@collections/@bars,
            plus the opt-in @audio/@patterns/@generative/@improv/@notation/@notation-io)
            resolve in the BROWSER. The Emscripten VFS has no host filesystem, so
            the CopyToPublishDirectory copies that Desktop relies on are absent in
@@ -275,6 +275,9 @@
            session wasm-boot-no-app-bundle (cycle 4). -->
       <EmbeddedResource Include="std.flow">
         <LogicalName>FlowLang.Stdlib.std.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="core.flow">
+        <LogicalName>FlowLang.Stdlib.core.flow</LogicalName>
       </EmbeddedResource>
       <EmbeddedResource Include="collections.flow">
         <LogicalName>FlowLang.Stdlib.collections.flow</LogicalName>
@@ -323,6 +326,10 @@
 
     <ItemGroup>
       <None Update="std.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
+      <None Update="core.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>

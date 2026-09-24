@@ -1,6 +1,6 @@
 Note: Aggregating records into a Dict: counts and totals per key.
 Note: Dicts are persistent: set returns a new dict, so we fold with reduce.
-use "@std"
+use "@core"
 
 Note: The raw log is one comma-separated string.
 Strings orders = (split "tea,coffee,tea,cocoa,coffee,tea" ",")

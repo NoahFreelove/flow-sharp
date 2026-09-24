@@ -116,15 +116,8 @@ public static class UndefinedSymbolAnalyzer
                 {
                     var mod = ExtractModuleName(imp.FilePath);
                     if (mod is null) continue;
-                    if (mod == "std")
-                    {
-                        foreach (var subMod in StdlibSymbolIndex.ModuleNames)
-                            AddModuleProcs(stdlib, subMod, universe);
-                    }
-                    else
-                    {
-                        AddModuleProcs(stdlib, mod, universe);
-                    }
+                    foreach (var subMod in StdlibSymbolIndex.ModulesVisibleThrough(mod))
+                        AddModuleProcs(stdlib, subMod, universe);
                 }
             }
 

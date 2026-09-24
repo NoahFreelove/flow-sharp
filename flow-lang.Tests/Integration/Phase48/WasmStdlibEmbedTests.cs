@@ -59,6 +59,7 @@ public class WasmStdlibEmbedTests
     private static readonly string[] RequiredEmbeddedModules =
     {
         "FlowLang.Stdlib.std.flow",
+        "FlowLang.Stdlib.core.flow",
         "FlowLang.Stdlib.collections.flow",
         "FlowLang.Stdlib.bars.flow",
         "FlowLang.Stdlib.audio.flow",
@@ -167,19 +168,23 @@ public class WasmStdlibEmbedTests
         var dll = LocateTrimmedFlowLangDll(repoRoot);
         using var asm = AssemblyDefinition.ReadAssembly(dll);
 
-        var std = asm.MainModule.Resources
-            .OfType<EmbeddedResource>()
-            .FirstOrDefault(r => r.Name == "FlowLang.Stdlib.std.flow");
-        Assert.NotNull(std);
+        string Embedded(string name)
+        {
+            var resource = asm.MainModule.Resources.OfType<EmbeddedResource>().FirstOrDefault(r => r.Name == name);
+            Assert.NotNull(resource);
+            return System.Text.Encoding.UTF8.GetString(resource!.GetResourceData());
+        }
 
-        var text = System.Text.Encoding.UTF8.GetString(std!.GetResourceData());
-
-        // The actual builtin surface lines the browser needs. If these are
-        // present in the embedded resource, ModuleLoader.TryReadEmbeddedModule
-        // can declare them in-browser and the registry impls become reachable.
-        Assert.Contains("internal proc print", text);
-        Assert.Contains("use \"@collections\"", text);
-        Assert.Contains("use \"@bars\"", text);
+        // The actual builtin surface lines the browser needs: @std pulls @core (the
+        // essential builtins, e.g. print) and @bars; @core pulls @collections. If these
+        // are present in the embedded resources, ModuleLoader.TryReadEmbeddedModule can
+        // declare them in-browser and the registry impls become reachable.
+        var std = Embedded("FlowLang.Stdlib.std.flow");
+        Assert.Contains("use \"@core\"", std);
+        Assert.Contains("use \"@bars\"", std);
+        var core = Embedded("FlowLang.Stdlib.core.flow");
+        Assert.Contains("internal proc print", core);
+        Assert.Contains("use \"@collections\"", core);
     }
 
     /// <summary>

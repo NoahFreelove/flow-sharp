@@ -393,7 +393,8 @@ In `TypeSystem/`. Each type extends `FlowType` and implements `IsCompatibleWith(
 ## Standard Library Modules (`flow-lang/*.flow`)
 
 Loaded via `use "@name"`:
-- `std.flow` — imports `@collections` + `@bars`
+- `core.flow` (`@core`) — the essential general-purpose builtins (print/str, arithmetic, comparison, logic, conversions, strings, dicts) + `@collections`. New general-purpose builtins go here.
+- `std.flow` (`@std`) — imports `@core` + `@bars` and declares the music-typed / non-essential surface (unit overloads, notation helpers, `?`/`??`). Existing `use "@std"` scripts are unchanged.
 - `collections.flow`, `bars.flow`, `notation.flow`, `composition.flow`
 - `audio.flow` — buffer/signal/effects/playback convenience; Phase 37 adds `granular` (3 overloads) + `stretch` (8-arity prefix-ladder) + `pitchShift` (24 overloads) + `renderSong(Song, String, Second)` for PIANO-01 `release=`
 - `sfz.flow` — SFZ surface (Phase 33; opt-in `@sfz`); Phase 37 DRUM-01 grew GM dict 19 → 20 with `#drums "GM-StylePerc.sfz"` (W7 LOCK)

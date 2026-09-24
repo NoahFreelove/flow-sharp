@@ -245,10 +245,8 @@ public sealed class CompletionHandler : CompletionHandlerBase
         foreach (var stmt in ast.Statements.OfType<ImportStatement>())
         {
             var mod = ExtractModuleName(stmt.FilePath);
-            if (mod is not null) importedModules.Add(mod);
+            if (mod is not null) importedModules.UnionWith(StdlibSymbolIndex.ModulesVisibleThrough(mod));
         }
-        if (importedModules.Contains("std"))
-            importedModules.UnionWith(StdlibSymbolIndex.ModuleNames);
 
         return items.Where(item =>
         {

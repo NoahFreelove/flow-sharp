@@ -2,7 +2,7 @@ Program {
   Pragmas: pragmas[]
   Statements: [
     ImportStatement {
-      FilePath: "@std" },
+      FilePath: "@core" },
     ProcDeclaration {
       Body: [
         ExpressionStatement {

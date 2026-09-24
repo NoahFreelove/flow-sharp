@@ -1,0 +1,206 @@
+Note: Flow core library — the essential, general-purpose builtins: printing,
+Note: formatting, arithmetic, comparison, logic, conversions, strings, dictionaries
+Note: and (via @collections) lists. Import it with `use "@core"`; the language has
+Note: almost nothing without it. @std imports it and adds the rest.
+Note: The C# implementations are linked at runtime.
+
+use "@collections"
+
+internal proc print (String: s)
+Note: Phase 44 Plan 44-08 — Void-wildcard print overload for the pre-strict
+Note: bug fix per ROADMAP line 404. (print 42) charitably auto-strs in
+Note: non-strict; emits [strict] (print) requires String — got <Type>
+Note: in strict files. The String overload above scores +1000 vs this
+Note: wildcard's +500 so (print "hello") stays byte-identical.
+internal proc print (Void: s)
+
+Note: Nothing() returns Void. Use as `return (Nothing)` to explicitly
+Note: return Void from a proc that would otherwise collect non-void
+Note: expressions before its end. There is no Void literal in source;
+Note: this is the canonical escape hatch.
+internal proc Nothing ()
+
+internal proc len (Voids: arr)
+internal proc len(String: s)
+internal proc length (Voids: arr)
+internal proc length (String: s)
+
+Note: str overloads for all types
+internal proc str (Int: value)
+internal proc str (Long: value)
+internal proc str (Float: value)
+internal proc str (Double: value)
+internal proc str (Number: value)
+internal proc str (String: value)
+internal proc str (Bool: value)
+internal proc str (Symbol: value)
+internal proc str (Voids: value)
+internal proc str (Tuple: value)
+internal proc str (Dict<Void, Void>: value)
+
+internal proc concat (String: a, String: b)
+
+Note: Type conversions
+internal proc intToDouble (Int: value)
+internal proc doubleToInt (Double: value)
+
+Note: Phase 44 Plan 44-09 Task 2 — primitive numeric cross-casts. Without these
+Note: strict-mode composers have no escape hatch for cross-type comparisons:
+Note: `(double 1)` would fail overload resolution because Int → Double widening
+Note: is disabled under strict (Plan 44-03). Each of the 4 extractors accepts
+Note: every primitive numeric source. Narrowing floors per StdLib.DoubleToInt
+Note: convention.
+Note:
+Note: Identity casts ((double Double), (int Int), ...) are included: without them
+Note: (double 2.5) was ambiguous between the unit-typed overloads.
+internal proc double (Int: value)
+internal proc double (Long: value)
+internal proc double (Float: value)
+internal proc double (Double: value)
+
+internal proc float (Int: value)
+internal proc float (Long: value)
+internal proc float (Double: value)
+internal proc float (Float: value)
+
+internal proc int (Long: value)
+internal proc int (Float: value)
+internal proc int (Double: value)
+internal proc int (Int: value)
+
+internal proc long (Int: value)
+internal proc long (Float: value)
+internal proc long (Double: value)
+internal proc long (Long: value)
+
+Note: Arithmetic — 5-type same-type fast paths
+internal proc add (Int: a, Int: b)
+internal proc add (Long: a, Long: b)
+internal proc add (Float: a, Float: b)
+internal proc add (Double: a, Double: b)
+internal proc add (Number: a, Number: b)
+
+internal proc sub (Int: a, Int: b)
+internal proc sub (Long: a, Long: b)
+internal proc sub (Float: a, Float: b)
+internal proc sub (Double: a, Double: b)
+internal proc sub (Number: a, Number: b)
+
+internal proc mul (Int: a, Int: b)
+internal proc mul (Long: a, Long: b)
+internal proc mul (Float: a, Float: b)
+internal proc mul (Double: a, Double: b)
+internal proc mul (Number: a, Number: b)
+
+Note: (div Int Int) auto-promotes to Double; use (idiv) for Int truncation
+internal proc div (Int: a, Int: b)
+internal proc div (Long: a, Long: b)
+internal proc div (Float: a, Float: b)
+internal proc div (Double: a, Double: b)
+internal proc div (Number: a, Number: b)
+
+Note: Negation — 5-pack
+internal proc neg (Int: x)
+internal proc neg (Long: x)
+internal proc neg (Float: x)
+internal proc neg (Double: x)
+internal proc neg (Number: x)
+
+Note: Integer division (truncating)
+internal proc idiv (Int: a, Int: b)
+internal proc mod (Int: a, Int: b)
+internal proc mod (Double: a, Double: b)
+internal proc split (String: s, String: separator)
+
+Note: String-to-number conversions
+internal proc stringToInt (String: s)
+internal proc stringToDouble (String: s)
+
+Note: Lazy evaluation
+internal proc eval (Lazy<Void>: value)
+
+internal proc if (Bool: cond, Lazy<Void>: if_true, Lazy<Void>: otherwise)
+internal proc if (Bool: cond, Void: if_true, Void: otherwise)
+Note: Phase 44 Plan 44-08 — Void-wildcard if for non-strict truthy-coerce
+Note: (if 5 ...) / (if "" ...). Strict (CallerStrictMode==true) emits
+Note: [strict] (if) requires Bool — got <Type>. Existing Bool-Lazy and
+Note: Bool-Void overloads score +1000 for the Bool case.
+internal proc if (Void: cond, Void: if_true, Void: otherwise)
+internal proc and (Lazy<Bool>: left, Lazy<Bool>: right)
+internal proc and (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy and (composer Area 4.2 choice).
+Note: (and 1 "foo") → "foo"; (and false 1) → false. Bool-Bool overload above
+Note: wins +1000 for the Bool case so existing call sites are byte-identical.
+internal proc and (Void: left, Void: right)
+
+internal proc or (Lazy<Bool>: left, Lazy<Bool>: right)
+internal proc or (Bool: left, Bool: right)
+Note: Phase 44 Plan 44-08 — D-12 last-truthy or. (or false 42) → 42;
+Note: (or "" "fallback") → "fallback".
+internal proc or (Void: left, Void: right)
+
+Note: Phase 44 Plan 44-08 — (not) FIRST registration per RESEARCH A6.
+Note: Non-strict charitable truthy: (not 0) → true, (not "x") → false.
+Note: Strict emits [strict] (not) requires Bool — got <Type>.
+internal proc not (Void: x)
+
+Note: Equality and comparison operators
+internal proc equals (Void: a, Void: b)
+internal proc sequals (Void: a, Void: b)
+internal proc lt (Void: a, Void: b)
+internal proc gt (Void: a, Void: b)
+internal proc lte (Void: a, Void: b)
+internal proc gte (Void: a, Void: b)
+
+Note: Tuple unpack runtime apply
+internal proc unpack (Void: tup, Function: f)
+
+Note: Dict ops
+Note: Use Dict<Void, Void> in proc decls so the parameter type is structurally a DictType
+Note: (matches the runtime impl shape) — distinguishes from the existing Array overloads
+Note: of (each)/(map)/(filter)/(size)/(keys)/(values).
+internal proc dict (Void...: pairs)
+internal proc dictTuple (Void...: tuplePairs)
+internal proc get (Dict<Void, Void>: d, Void: k)
+internal proc getOr (Dict<Void, Void>: d, Void: k, Void: defaultValue)
+internal proc set (Dict<Void, Void>: d, Void: k, Void: v)
+internal proc remove (Dict<Void, Void>: d, Void: k)
+internal proc has (Dict<Void, Void>: d, Void: k)
+internal proc keys (Dict<Void, Void>: d)
+internal proc values (Dict<Void, Void>: d)
+internal proc size (Dict<Void, Void>: d)
+internal proc merge (Dict<Void, Void>: d1, Dict<Void, Void>: d2)
+internal proc each (Dict<Void, Void>: d, Function: cb)
+internal proc map (Dict<Void, Void>: d, Function: cb)
+internal proc filter (Dict<Void, Void>: d, Function: pred)
+
+Note: Iteration guard
+internal proc setMaxIterations (Int: limit)
+
+Note: break-control (0615) — (break) / (continue) call-position loop control.
+Note: Valid inside while/for bodies including lazy-wrapped positions (if/and/or).
+Note: (break) outside any loop is a charitable no-op + one-shot advisory.
+internal proc break ()
+internal proc continue ()
+
+// Math functions
+internal proc sin (Double: x)
+internal proc cos (Double: x)
+internal proc tan (Double: x)
+internal proc abs (Double: x)
+internal proc abs (Int: x)
+internal proc sqrt (Double: x)
+internal proc min (Double: a, Double: b)
+internal proc min (Int: a, Int: b)
+internal proc max (Double: a, Double: b)
+internal proc max (Int: a, Int: b)
+internal proc floor (Double: x)
+internal proc ceil (Double: x)
+internal proc round (Double: x)
+internal proc pow (Double: base, Double: exponent)
+internal proc log (Double: x)
+internal proc pi ()
+internal proc tau ()
+
+Note: NaN production primitive
+internal proc nanFloat ()

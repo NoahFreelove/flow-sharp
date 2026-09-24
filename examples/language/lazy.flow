@@ -1,6 +1,6 @@
 Note: Deferred work. if, and and or evaluate only what they need, so an
 Note: expensive or failing branch is never touched when it is not taken.
-use "@std"
+use "@core"
 
 Ints data = (list 4 8 15 16 23 42)
 

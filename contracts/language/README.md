@@ -146,6 +146,7 @@ restructuring. Keep semantic changes out of extraction commits.
 | `modules.qualified-errors` | preserve | Distinct diagnostics for unknown modules and missing procs. |
 | `modules.circular-import` | preserve | Cycles are skipped with a one-shot advisory; each body runs once. |
 | `modules.pragma-isolation` | preserve | Strict governs code in the strict file: its proc bodies stay strict, callers' arguments follow the caller. |
+| `modules.core-library` | preserve | `@core` holds the essential general-purpose builtins (lists via `@collections`); `@std` imports it and adds the music-typed surface. |
 
 ### Music
 

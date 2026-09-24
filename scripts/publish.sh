@@ -67,7 +67,7 @@ RIDS=(linux-x64 linux-arm64 osx-x64 osx-arm64 win-x64)
 
 # stdlib .flow files that MUST land in every output dir (engine ships them via
 # CopyToPublishDirectory=PreserveNewest on flow-lang.csproj).
-STDLIB_FILES=(std.flow collections.flow audio.flow bars.flow notation.flow composition.flow \
+STDLIB_FILES=(std.flow core.flow collections.flow audio.flow bars.flow notation.flow composition.flow \
               patterns.flow generative.flow improv.flow)
 
 cd "$PROJECT_ROOT"
