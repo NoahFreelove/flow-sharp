@@ -82,3 +82,10 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
   then catches references back to them.
 - The ratchet itself is namespace-based; the assembly split now backs it with the
   compiler. The Web-target `AssemblyReferenceScanTests` scan both assemblies.
+
+- Phase 3 F3: `CoreLibrary`, `CoreStdLib` and `CoreCollections` live in the
+  language assembly. The root `StandardLibrary` namespace remains shared with the
+  music compatibility registration facade; assembly references enforce the boundary.
+  Collection sort delegates domain ordering to `ValueComparisons.RegisterOrdering`;
+  this is separate from numeric equality/common-scale conversion to preserve note
+  equality and comparison semantics. The music initializer installs note ordering.

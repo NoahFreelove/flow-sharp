@@ -17,6 +17,7 @@ public static class ValueComparisons
 {
     private static readonly List<Func<Value, (double Double, BigInteger? Whole)?>> _numericViews = new();
     private static readonly List<Func<Value, Value, (double A, double B)?>> _commonScales = new();
+    private static readonly List<Func<Value, Value, int?>> _orderings = new();
     private static readonly object _lock = new();
 
     public static void RegisterNumericView(Func<Value, (double Double, BigInteger? Whole)?> view)
@@ -44,6 +45,20 @@ public static class ValueComparisons
         foreach (var scale in Snapshot(_commonScales))
             if (scale(a, b) is { } pair)
                 return pair;
+        return null;
+    }
+
+    /// <summary>Register domain ordering used by collection sort; null means not handled.</summary>
+    public static void RegisterOrdering(Func<Value, Value, int?> ordering)
+    {
+        lock (_lock) _orderings.Add(ordering);
+    }
+
+    public static int? Order(Value a, Value b)
+    {
+        foreach (var ordering in Snapshot(_orderings))
+            if (ordering(a, b) is { } result)
+                return result;
         return null;
     }
 

@@ -516,3 +516,14 @@ the stdlib split with compatibility aggregates (language vs legacy profile), mov
 the remaining music-shaped primitive types (Buffer/Envelope/OscillatorState/Voice/
 Track type descriptors still live in `flow-language`), a language-only host, and the
 Phase 3 gate.
+
+- **F3 — core implementations** (2026-09-24): `CoreLibrary.Register(registry[, context])`
+  now supplies the general-purpose builtins entirely from `flow-language`:
+  arithmetic/conversions, strings, collections/callbacks, dictionaries, control flow,
+  random state, comparisons and output. The music host interleaves internal core
+  registration slices at their original positions, preserving overload order;
+  `RegisterSignaturesOnly` still follows that same path. `StdLib`/`Collections`
+  retain forwarding C# APIs plus their music-specific implementations. Note sorting
+  uses a domain ordering hook in `ValueComparisons`, installed by the music layer.
+  Verification: all 112 contract/characterization tests pass, including the music
+  corpus, overload/value/module snapshots, public API and BCL-only closure checks.

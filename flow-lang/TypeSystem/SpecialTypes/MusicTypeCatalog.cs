@@ -17,6 +17,13 @@ internal static class MusicTypeCatalog
         Runtime.ValueComparisons.RegisterNumericView(MusicValueConversions.NumericView);
         Runtime.ValueComparisons.RegisterCommonScale(MusicValueConversions.CommonScale);
 
+        Runtime.ValueComparisons.RegisterOrdering((a, b) =>
+        {
+            if (a.Type is not NoteType || b.Type is not NoteType) return null;
+            var (na, oa, aa) = NoteType.Parse(a.As<string>());
+            var (nb, ob, ab) = NoteType.Parse(b.As<string>());
+            return NoteType.ToMidiNote(na, oa, aa).CompareTo(NoteType.ToMidiNote(nb, ob, ab));
+        });
         var catalog = TypeCatalog.Default;
         catalog.Register("Buffer", BufferType.Instance);
         catalog.Register("Note", NoteType.Instance);
