@@ -555,3 +555,11 @@ Phase 3 gate.
   `FlowLang.Music` import after the scope-state move; construction now records zero
   modules/styles. Also removed the new host-test helper's async naming warning.
   Verification: corpus two-pass regeneration succeeds; final fresh-clone gate follows.
+
+- **OSC disposal-test readiness** (2026-09-24): the serial fresh-clone gate
+  exposed a pre-existing scheduling race in the Phase 2 resource-lifetime test:
+  `oscListen` connects on its worker task, but the test immediately asserted the
+  UDP port was occupied. It now waits up to five seconds for the receiver's
+  connected state, then performs the same occupied-before/free-after checks.
+  A `using` also guarantees engine cleanup on assertion failure. The test is
+  explicitly Desktop-only. All seven cancellation tests pass; no runtime changes.

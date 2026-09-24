@@ -145,14 +145,14 @@ public class CancellationTests
         Assert.Throws<ObjectDisposedException>(() => engine.Evaluate("1"));
     }
 
-    [Fact]
+    [FlowLang.Tests.Helpers.FlowTargetFact("Desktop")]
     public void DisposingTheEngineStopsScriptOpenedOscListeners()
     {
         int port;
         using (var probe = new System.Net.Sockets.UdpClient(0, System.Net.Sockets.AddressFamily.InterNetwork))
             port = ((System.Net.IPEndPoint)probe.Client.LocalEndPoint!).Port;
 
-        var engine = Quiet();
+        using var engine = Quiet();
         var ok = engine.Execute($"""
             use "@std"
             use "@osc"
@@ -160,6 +160,17 @@ public class CancellationTests
             """);
         Assert.True(ok, engine.ErrorReporter.FormatAll(engine.SourceMap, useColor: false));
         Assert.Equal(1, engine.Session.TrackedResourceCount);
+#if !FLOW_WEB
+        // oscListen connects on its background task. Observe readiness before
+        // asserting that disposal releases a bound port; otherwise scheduling
+        // can make the pre-disposal assertion run before the socket binds.
+        var handle = engine.Context.GlobalFrame.GetVariable("h")
+            .As<FlowLang.StandardLibrary.Network.OscHandleData>();
+        Assert.NotNull(handle.Receiver);
+        Assert.True(SpinWait.SpinUntil(
+            () => handle.Receiver.State == Rug.Osc.OscSocketState.Connected,
+            TimeSpan.FromSeconds(5)), "OSC listener did not connect");
+#endif
         // The script never calls (oscStop); the port stays bound until the engine goes.
         Assert.ThrowsAny<System.Net.Sockets.SocketException>(() => new System.Net.Sockets.UdpClient(port).Dispose());
 
