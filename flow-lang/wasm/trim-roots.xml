@@ -15,36 +15,11 @@
      Source: https://learn.microsoft.com/en-us/dotnet/core/deploying/trimming/trimming-options#root-descriptors
 -->
 <linker>
-  <assembly fullname="flow-lang">
-    <!-- Base class for all Flow types -->
+  <!-- Phase 3: the language runtime is its own assembly. Its FlowType subclasses,
+       ArrayType, Tuple/Dict types and Value are pinned here with the same rationale as
+       the music types below (Instance accessors, Value interop boundary). -->
+  <assembly fullname="flow-language">
     <type fullname="FlowLang.TypeSystem.FlowType" preserve="all" />
-
-    <!-- SpecialTypes — music-type singletons accessed via static Instance getters.
-         Trim-mode reachability sometimes elides static .cctor initializers; this
-         descriptor pins the Instance accessors so type lookups keep working. -->
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.BarType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.BeatType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.CentType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.ChordType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.DecibelType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.DictType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.HertzType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.LsystemModelType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.MarkovModelType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.MillisecondType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.MusicalNoteType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.NoteType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.NoteValueType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.SecondType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.SectionType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.SemitoneType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.SequenceType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.SongType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.TimeSignatureType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.TuningType" preserve="all" />
-    <type fullname="FlowLang.TypeSystem.SpecialTypes.TupleType" preserve="all" />
-
-    <!-- PrimitiveTypes — core scalar/value type singletons. -->
     <type fullname="FlowLang.TypeSystem.PrimitiveTypes.BoolType" preserve="all" />
     <type fullname="FlowLang.TypeSystem.PrimitiveTypes.BufferType" preserve="all" />
     <type fullname="FlowLang.TypeSystem.PrimitiveTypes.DoubleType" preserve="all" />
@@ -61,14 +36,44 @@
     <type fullname="FlowLang.TypeSystem.PrimitiveTypes.TrackType" preserve="all" />
     <type fullname="FlowLang.TypeSystem.PrimitiveTypes.VoiceType" preserve="all" />
     <type fullname="FlowLang.TypeSystem.PrimitiveTypes.VoidType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.ArrayType" preserve="all" />
+    <type fullname="FlowLang.Runtime.Value" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.DictType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.TupleType" preserve="all" />
+  </assembly>
+  <assembly fullname="flow-lang">
+    <!-- Base class for all Flow types -->
+
+    <!-- SpecialTypes — music-type singletons accessed via static Instance getters.
+         Trim-mode reachability sometimes elides static .cctor initializers; this
+         descriptor pins the Instance accessors so type lookups keep working. -->
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.BarType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.BeatType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.CentType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.ChordType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.DecibelType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.HertzType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.LsystemModelType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.MarkovModelType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.MillisecondType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.MusicalNoteType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.NoteType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.NoteValueType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SecondType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SectionType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SemitoneType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SequenceType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.SongType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.TimeSignatureType" preserve="all" />
+    <type fullname="FlowLang.TypeSystem.SpecialTypes.TuningType" preserve="all" />
+
+    <!-- PrimitiveTypes — core scalar/value type singletons. -->
 
     <!-- Array type (top-level, parameterized by element type). -->
-    <type fullname="FlowLang.TypeSystem.ArrayType" preserve="all" />
 
     <!-- Interop boundary types — Phase 48 Plan 48-03 marshals these across [JSImport]/[JSExport].
          48-PATTERNS.md §Discrepancy 1: AudioBuffer field is named `Data`, not `Samples`. -->
     <type fullname="FlowLang.StandardLibrary.Audio.AudioBuffer" preserve="all" />
-    <type fullname="FlowLang.Runtime.Value" preserve="all" />
     <type fullname="FlowLang.Audio.WebAudioBackend" preserve="all" />
 
     <!-- Phase 48 Plan 48-04: [JSExport] surface + JSON-serialized RunResult shape.

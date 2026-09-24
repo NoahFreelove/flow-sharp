@@ -100,6 +100,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <!-- Phase 3: the language runtime lives in its own assembly; this project is
+           the music library and music host built on it. -->
+      <ProjectReference Include="..\flow-language\flow-language.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
       <!-- Pidgin 3.5.1 removed 2026-06-09 (audit §8.4): zero `using Pidgin` in the
            repo — SimpleLexer/Parser are manual. AssemblyReferenceScanTests now

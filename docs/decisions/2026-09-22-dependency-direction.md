@@ -61,6 +61,17 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
   it on every engine. A context without bindings reports each music construct at its
   location (`note stream is not available: ...`) and runs everything else. With this,
   the language namespaces have **no** music or platform edges (baseline empty).
+- Phase 3: the language is a separate assembly, `flow-language.dll`
+  (`flow-language/`), referenced by `flow-lang` (the music library and host). It
+  references only the BCL, so the compiler now enforces the direction.
+  `LanguageClosureTests` pin three facts: the assembly's references are BCL-only, it
+  contains no music or platform namespaces, and `flow-lang` declares
+  language-namespace types only for the host glue in `DependencyDirectionTests.HostTypes`
+  (`WasmEntry` and its result types, `FlowConfigLoader`). The public API is
+  unchanged: types kept their namespaces, and the API snapshot spans both assemblies.
+  Before the split, domain comparisons (`ValueComparisons`), formatting
+  (`FlowType.Format`, `ValueFormatter`) and build-target facts (`BuildTarget`) moved
+  behind language seams so the language's transitive closure did not reach music.
 
 ## Known limits
 
@@ -69,6 +80,5 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
   the Markov/L-system model data in `Runtime`. Phase 3 moves them with the assembly
   split (`MusicalContext` and the note-stream/progression compilers have moved). The ratchet
   then catches references back to them.
-- The check is namespace-based within one assembly. After extraction, assembly
-  references enforce the same rule, and the Web-target `AssemblyReferenceScanTests`
-  remain in force.
+- The ratchet itself is namespace-based; the assembly split now backs it with the
+  compiler. The Web-target `AssemblyReferenceScanTests` scan both assemblies.

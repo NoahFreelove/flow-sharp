@@ -67,13 +67,22 @@ public class AssemblyReferenceScanTests
     [FlowTargetFact("Web")]
     public void WebBuild_HasNoRefsToStrippedNamespaces()
     {
-        // Anchor: locate flow-lang.dll via a public type FlowLang.Core.FlowEngine.
-        // typeof(FlowEngine).Assembly.Location returns the loaded assembly's
-        // file path — same .dll the test runner just loaded.
-        var asmPath = typeof(FlowLang.Core.FlowEngine).Assembly.Location;
-        Assert.True(File.Exists(asmPath),
-            $"Anchor assembly not found at expected path: {asmPath}");
+        // Scan both shipped assemblies: the music library (flow-lang.dll, anchored
+        // via FlowEngine) and the language runtime it references (flow-language.dll,
+        // anchored via Value). Either leaking a stripped reference breaks the Web build.
+        foreach (var asmPath in new[]
+                 {
+                     typeof(FlowLang.Core.FlowEngine).Assembly.Location,
+                     typeof(FlowLang.Runtime.Value).Assembly.Location,
+                 }.Distinct())
+        {
+            Assert.True(File.Exists(asmPath), $"Anchor assembly not found at expected path: {asmPath}");
+            ScanForStrippedReferences(asmPath);
+        }
+    }
 
+    private static void ScanForStrippedReferences(string asmPath)
+    {
         using var asm = AssemblyDefinition.ReadAssembly(asmPath);
         var module = asm.MainModule;
 
@@ -93,7 +102,7 @@ public class AssemblyReferenceScanTests
             }
         }
         Assert.True(leakedTypeRefs.Count == 0,
-            "Web build leaked stripped type references:\n  " +
+            $"Web build leaked stripped type references in {Path.GetFileName(asmPath)}:\n  " +
             string.Join("\n  ", leakedTypeRefs));
 
         // ----- Pass 2: P/Invoke string scan -----
@@ -114,7 +123,7 @@ public class AssemblyReferenceScanTests
             }
         }
         Assert.True(leakedPInvokes.Count == 0,
-            "Web build leaked stripped P/Invoke targets:\n  " +
+            $"Web build leaked stripped P/Invoke targets in {Path.GetFileName(asmPath)}:\n  " +
             string.Join("\n  ", leakedPInvokes));
     }
 

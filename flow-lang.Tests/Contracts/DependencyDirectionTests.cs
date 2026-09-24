@@ -39,9 +39,16 @@ public class DependencyDirectionTests
     // Special (music) types live under TypeSystem today; they are targets, not sources.
     private static readonly string[] SourceExclusions = ["FlowLang.TypeSystem.SpecialTypes"];
 
-    // Host glue that must keep a language namespace: the frozen browser runtime
-    // (flow-runtime.js) binds exports.FlowLang.Runtime.WasmEntry.* by full name.
-    private static readonly string[] HostTypes = ["FlowLang.Runtime.WasmEntry"];
+    // Host glue that keeps a language namespace but lives in flow-lang.dll: the frozen
+    // browser runtime (flow-runtime.js) binds exports.FlowLang.Runtime.WasmEntry.* by
+    // full name, and
+    // FlowConfigLoader reads ~/.config/flow/config.toml for hosts (Tomlyn).
+    // RunResult/RunError/FlowWasmJsonContext are WasmEntry's result shapes.
+    public static readonly string[] HostTypes =
+    [
+        "FlowLang.Runtime.WasmEntry", "FlowLang.Runtime.RunResult", "FlowLang.Runtime.RunError",
+        "FlowLang.Runtime.FlowWasmJsonContext", "FlowLang.Runtime.FlowConfigLoader",
+    ];
 
     private static readonly string BaselinePath = Path.Combine(
         Path.GetDirectoryName(FlowScriptData.FindTestsRoot())!,
@@ -76,10 +83,27 @@ public class DependencyDirectionTests
             + string.Join("\n  ", removed));
     }
 
+    // Language code lives in flow-language.dll; flow-lang.dll still holds host glue
+    // in language namespaces (see HostTypes) and the music types. Scan both.
+    public static readonly string[] Assemblies =
+    [
+        typeof(FlowLang.Runtime.Value).Assembly.Location,
+        typeof(FlowEngine).Assembly.Location,
+    ];
+
     public static List<string> ComputeEdges()
     {
-        using var module = ModuleDefinition.ReadModule(typeof(FlowEngine).Assembly.Location);
         var edges = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var path in Assemblies.Distinct())
+        {
+            using var module = ModuleDefinition.ReadModule(path);
+            AddEdges(module, edges);
+        }
+        return edges.ToList();
+    }
+
+    private static void AddEdges(ModuleDefinition module, SortedSet<string> edges)
+    {
         foreach (var type in module.Types)
         {
             if (!IsIn(type.Namespace, LanguageNamespaces) || IsIn(type.Namespace, SourceExclusions)) continue;
@@ -90,7 +114,6 @@ public class DependencyDirectionTests
                 if (target is not null) edges.Add($"{type.FullName} -> {ns}");
             }
         }
-        return edges.ToList();
     }
 
     private static bool IsIn(string ns, string[] roots) =>

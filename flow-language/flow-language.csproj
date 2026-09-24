@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Flow.Language (roadmap 4.1): lexer, parser, AST, type system, values,
+         interpreter, diagnostics and the extension contracts domain libraries bind
+         to (DomainBindings, TypeCatalog, ValueConversions, ISessionExtension).
+         No music model, audio, IO, device or package dependencies — the compiler
+         enforces it, since this project references nothing but the BCL. -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>FlowLang</RootNamespace>
+        <AssemblyName>flow-language</AssemblyName>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <!-- Same compile-target flavor flag as flow-lang (Phase 47 D-47-01). -->
+        <FlowTarget>Desktop</FlowTarget>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(FlowTarget)' == 'Web'">
+        <DefineConstants>$(DefineConstants);FLOW_WEB</DefineConstants>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="flow-lang" />
+        <InternalsVisibleTo Include="flow-lang.Tests" />
+    </ItemGroup>
+
+</Project>

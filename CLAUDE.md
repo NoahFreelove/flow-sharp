@@ -79,9 +79,9 @@ dotnet build flow-lang/flow-lang.csproj -p:FlowTarget=Web
 - `flow-lang/Core/FlowEngine.cs:225,251` — `#if !FLOW_WEB` wraps SfzBuiltins.Register (line 233) + OscFunctions.Register (line 254)
 - `flow-lang/StandardLibrary/BuiltInFunctions.cs:1048` — `#if !FLOW_WEB` wraps InputFunctions.RegisterContextDependent (line 1055)
 - `flow-lang/Audio/AudioPlaybackManager.cs` — `WebAudioBackend.IsAvailable()` probe FIRST in `DetectBackend`, existing branches wrapped in `#if !FLOW_WEB`
-- `flow-lang/Runtime/ModuleLoader.cs` — `IsStrippedOnWeb` gate at top of `LoadModule`
-- `flow-lang/Parsing/Parser.cs:251` — `TokenType.Live` gate inside the dispatch branch
-- `flow-lang/Core/FlowEngine.cs` — `FlowEngine.IsWebTarget` + `FlowEngine.SupportsLiveBlocks` static properties (compile-time constants via `#if FLOW_WEB` initializer)
+- `flow-language/Runtime/ModuleLoader.cs` — `IsStrippedOnWeb` gate at top of `LoadModule`
+- `flow-language/Parsing/Parser.cs` — `TokenType.Live` gate inside the dispatch branch (reads `BuildTarget.SupportsLiveBlocks`)
+- `flow-language/Runtime/BuildTarget.cs` — `BuildTarget.IsWeb` + `SupportsLiveBlocks` (compile-time constants via `#if FLOW_WEB`); `FlowEngine.IsWebTarget`/`SupportsLiveBlocks` delegate to them
 - `flow-lang.Tests/Integration/Phase47/AssemblyReferenceScanTests.cs` — Mono.Cecil reflective invariant gate
 
 When adding new audio/network/IO features that may not work in the browser: (1) add a `#if !FLOW_WEB` guard at the actual call site (NOT a wrapper method); (2) if composer-invoked at parse-time or import-time, add a charitable advisory at Parser or ModuleLoader; (3) tag exercising tests with `[FlowTargetFact("Desktop")]`; (4) if a new package is pulled, add it to `AssemblyReferenceScanTests.ForbiddenTypeRefPrefixes` so Web build drift is caught.
@@ -174,20 +174,24 @@ Docs are synced at build time from the 26-page `wiki/` via `scripts/sync-wiki.sh
 
 ## Project Structure
 
-The solution (`flow-sharp.sln`) contains seven primary C# projects: **flow-lang** (library, namespace `FlowLang`), **flow-interpreter** (REPL + `flow run`/`flow watch`, namespace `FlowInterpreter`), **flow-cli** (14-verb CLI binary `flow`, namespace `FlowCli`), **flow-lsp** (LSP 3.17 server, namespace `FlowLsp`), **flow-midi** (standalone MIDI→Flow converter backing `flow midi2flow`, Quantizer pipeline), **flow-midi.Tests** and **flow-lang.Tests** (xUnit test suites). Two script-tool projects live under `scripts/` (`Migrate26`, `StdlibAuditor`). Sibling dirs: **flow-site/** (flowlang.dev SvelteKit site), **vscode-extension/** and **flow-jetbrains/** (editor plugins).
+The solution (`flow-sharp.sln`) contains eight primary C# projects: **flow-language** (the language runtime — lexer, parser, AST, types, values, interpreter, extension contracts; references only the BCL), **flow-lang** (the music library and music host built on it, namespace `FlowLang`), **flow-interpreter** (REPL + `flow run`/`flow watch`, namespace `FlowInterpreter`), **flow-cli** (14-verb CLI binary `flow`, namespace `FlowCli`), **flow-lsp** (LSP 3.17 server, namespace `FlowLsp`), **flow-midi** (standalone MIDI→Flow converter backing `flow midi2flow`, Quantizer pipeline), **flow-midi.Tests** and **flow-lang.Tests** (xUnit test suites). Two script-tool projects live under `scripts/` (`Migrate26`, `StdlibAuditor`). Sibling dirs: **flow-site/** (flowlang.dev SvelteKit site), **vscode-extension/** and **flow-jetbrains/** (editor plugins).
 
 ```
-flow-lang/
-  Core/                 # FlowEngine orchestrator
+flow-language/          # Flow.Language — BCL only; LanguageClosureTests enforce it
+  Core/                 # SourceLocation, Span, SourceMap
   Lexing/               # SimpleLexer (manual, music-literal aware)
   Parsing/              # Parser, TypeParser (recursive descent)
-  Ast/{Expressions,Statements}/   # immutable record nodes
-  Interpreter/          # ExpressionEvaluator, Interpreter
-  Runtime/              # ExecutionContext, StackFrame, Value, ModuleLoader,
-                        #   Thunk, PrngRegistry
+  Ast/{Expressions,Statements}/   # immutable record nodes (music syntax included — one grammar)
+  Interpreter/          # ExpressionEvaluator, Interpreter, DomainBindings
+  Runtime/              # ExecutionContext, StackFrame, Value, ModuleLoader, Thunk,
+                        #   PrngRegistry, ValueConversions/Comparisons/Formatter
+  Syntax/ TypeSystem/{PrimitiveTypes} + OverloadResolver.cs + TypeCatalog.cs
+flow-lang/              # music library + music host (references flow-language)
+  Core/                 # FlowEngine orchestrator, EngineOptions
+  Runtime/              # WasmEntry, FlowConfigLoader (host glue)
   Music/                # MusicBindings (music meaning of the grammar), MusicalContext,
                         #   MusicSession, NoteStreamCompiler, ProgressionCompiler, sections
-  TypeSystem/{PrimitiveTypes,SpecialTypes}/ + OverloadResolver.cs + ArrayType.cs
+  TypeSystem/SpecialTypes/ # music types (MusicValue factories, MusicTypeCatalog)
   StandardLibrary/
     BuiltInFunctions.cs           # main registration site
     InternalFunctionRegistry.cs   # signature → lambda

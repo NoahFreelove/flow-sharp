@@ -3,7 +3,6 @@ using System.Linq;
 using FlowLang.Runtime;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
-using FlowLang.TypeSystem.SpecialTypes;
 
 // NOTE: The namespace ends in `.Dict` (not `.Collections`) to avoid colliding
 // with the existing static class `FlowLang.StandardLibrary.Collections`

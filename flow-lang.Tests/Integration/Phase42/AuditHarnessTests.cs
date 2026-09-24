@@ -92,9 +92,11 @@ public class AuditHarnessTests
         using var engine = new FlowEngine();
         var registry = engine.Context.InternalRegistry;
 
-        // Reflect over the FlowType subclass set.
-        var typeAsm = typeof(FlowType).Assembly;
-        var discovered = typeAsm.GetTypes()
+        // Reflect over the FlowType subclass set: language types (flow-language)
+        // plus music types (flow-lang).
+        var discovered = new[] { typeof(FlowType).Assembly, typeof(FlowEngine).Assembly }
+            .Distinct()
+            .SelectMany(a => a.GetTypes())
             .Where(t => typeof(FlowType).IsAssignableFrom(t)
                         && !t.IsAbstract
                         && !t.IsGenericType)

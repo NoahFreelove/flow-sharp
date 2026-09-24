@@ -473,7 +473,25 @@ zero tracked-content changes. After D2: `--tier all` core 2,883 passed / 0 faile
 MIDI 21 passed, Web build OK, zero tracked-content changes. After D3: core 2,890
 passed / 0 failed, MIDI 21, Web build OK, zero tracked-content changes; CLI smoke OK.
 
+- **E1 (`304f9d8`)** — the language's transitive closure stops reaching music:
+  build-target constants (`BuildTarget`), domain comparisons (`ValueComparisons`),
+  and formatting (`ValueFormatter`, `FlowType.Format`) move behind language seams.
+- **E2 (this slice)** — **the language is its own assembly.** `flow-language/`
+  (`flow-language.dll`, 127 files moved with history) holds lexer, parser, AST,
+  types, values, interpreter and the extension contracts, and references only the
+  BCL; `flow-lang` references it. No public API change (types kept namespaces).
+  `ModuleLoader` finds embedded stdlib modules in any loaded assembly; WASM trim roots
+  gain a `flow-language` block (and drop stale `SpecialTypes.Tuple/DictType` names left
+  from slice A); the Web reference scan, API snapshot and audit harness cover both
+  assemblies; the test assembly runs the music library's initializer up front.
+  Verified: `--tier all` 2,893 passed / 0 failed, MIDI 21; Web build OK;
+  `dotnet publish -p:FlowTarget=Web` bundles `flow-language.wasm` and the AppBundle
+  boots under Node and runs a music script through `flow-runtime.js`
+  (`5 C 6s`, no errors). The committed `flow-site/static/wasm` bundle is untouched
+  (refresh with `sync-runtime.sh` when the site should pick this up).
+
 D4 (pattern matcher, member access, section dispatch) landed inside D3. Remaining:
 the stdlib split with compatibility aggregates (language vs legacy profile), moving
-the remaining music-shaped primitive types, the language-only assembly, and the
+the remaining music-shaped primitive types (Buffer/Envelope/OscillatorState/Voice/
+Track type descriptors still live in `flow-language`), a language-only host, and the
 Phase 3 gate.

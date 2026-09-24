@@ -16,7 +16,10 @@ public class PublicApiCharacterizationTests
     [Fact]
     public void NoPublicApiIsRemovedWithoutAnAllowance()
     {
-        var current = PublicSurface(typeof(FlowEngine).Assembly);
+        // The public surface spans the language runtime (flow-language) and the music
+        // library (flow-lang); entries carry no assembly name, so moving a type between
+        // the two is not a change.
+        var current = PublicSurface(typeof(FlowLang.Runtime.Value).Assembly, typeof(FlowEngine).Assembly);
         var snapshotPath = Path.Combine(Snapshot.RepoRoot, "flow-lang.Tests", "Characterization", "Snapshots", "api", "flow-lang.txt");
         if (Environment.GetEnvironmentVariable("FLOW_UPDATE_SNAPSHOTS") == "1")
         {
@@ -36,10 +39,10 @@ public class PublicApiCharacterizationTests
             + string.Join("\n  ", missing));
     }
 
-    internal static SortedSet<string> PublicSurface(Assembly assembly)
+    internal static SortedSet<string> PublicSurface(params Assembly[] assemblies)
     {
         var set = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (var type in assembly.GetExportedTypes())
+        foreach (var type in assemblies.Distinct().SelectMany(a => a.GetExportedTypes()))
         {
             var name = type.FullName ?? type.Name;
             set.Add("type " + name);

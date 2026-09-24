@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StdlibAuditor", "scripts\St
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-midi.Tests", "flow-midi.Tests\flow-midi.Tests.csproj", "{3E810968-859B-4880-8C4F-A3E01CF9476D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-language", "flow-language\flow-language.csproj", "{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,6 +140,18 @@ Global
 		{3E810968-859B-4880-8C4F-A3E01CF9476D}.Release|x64.Build.0 = Release|Any CPU
 		{3E810968-859B-4880-8C4F-A3E01CF9476D}.Release|x86.ActiveCfg = Release|Any CPU
 		{3E810968-859B-4880-8C4F-A3E01CF9476D}.Release|x86.Build.0 = Release|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Debug|x64.Build.0 = Debug|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Debug|x86.Build.0 = Debug|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x64.ActiveCfg = Release|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x64.Build.0 = Release|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x86.ActiveCfg = Release|Any CPU
+		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

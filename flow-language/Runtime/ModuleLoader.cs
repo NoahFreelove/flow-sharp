@@ -389,25 +389,24 @@ public class ModuleLoader
         if (relative.Length == 0)
             relative = Path.GetFileName(resolvedPath);
 
-        var asm = typeof(ModuleLoader).Assembly;
         // Embedded resources are named "FlowLang.Stdlib.<relative>" via the
-        // csproj LogicalName.
+        // csproj LogicalName. The stdlib modules are embedded by the library that
+        // ships them (the music library today), so every loaded assembly is searched,
+        // this one first.
         var wanted = "FlowLang.Stdlib." + relative;
-        string? match = null;
-        foreach (var name in asm.GetManifestResourceNames())
+        Stream? stream = null;
+        foreach (var asm in EmbeddedStdlibAssemblies())
         {
-            if (name == wanted)
-            {
-                match = name;
+            if (Array.IndexOf(asm.GetManifestResourceNames(), wanted) < 0)
+                continue;
+            stream = asm.GetManifestResourceStream(wanted);
+            if (stream is not null)
                 break;
-            }
         }
-        if (match is null)
-            return false;
-
-        using var stream = asm.GetManifestResourceStream(match);
         if (stream is null)
             return false;
+
+        using var _ = stream;
         using var reader = new StreamReader(stream);
         source = reader.ReadToEnd();
         return true;
@@ -446,5 +445,14 @@ public class ModuleLoader
 
         // Otherwise resolve relative to current directory
         return Path.GetFullPath(path);
+    }
+
+    private static IEnumerable<System.Reflection.Assembly> EmbeddedStdlibAssemblies()
+    {
+        var own = typeof(ModuleLoader).Assembly;
+        yield return own;
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+            if (asm != own && !asm.IsDynamic)
+                yield return asm;
     }
 }
