@@ -99,6 +99,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
+    <ProjectReference Include="..\scripts\LanguageHost\LanguageHost.csproj" />
     <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
     <ProjectReference Include="..\flow-midi\flow-midi.csproj" />
     <ProjectReference Include="..\flow-interpreter\flow-interpreter.csproj" />

@@ -1,5 +1,5 @@
 module text
-use "@std"
+use "@core"
 
 proc pad (String: s, Int: width)
     (if (gte (len s) width) lazy (s) lazy ((pad (concat s " ") width)))

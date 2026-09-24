@@ -534,3 +534,13 @@ Phase 3 gate.
   the language module list; Phase 48 checks scan both trimmed assemblies. The AST
   manifest changes only the two paths (hashes unchanged). Verification: 106
   contracts/module/parser/Web-embedding tests pass, including a trimmed Web publish.
+
+- **G — language-only host** (2026-09-24): `scripts/LanguageHost` references
+  only `flow-language` and composes `CoreLibrary`, session sinks and the interpreter
+  with no domain bindings. It supports scripts/stdin (explicit imports), `-e` and a
+  line REPL (`@core` interactive default), plus a JSON assembly/native-library
+  report. Twelve tests cover all seven examples in separate processes, exact output,
+  artifact/loaded/native closure, embedded use, REPL state, and unavailable prelude/
+  music. The two nested tutorial helper modules still imported `@std`; corrected
+  both to `@core` without changing their expected output. Parser snapshots record
+  only those import changes. Verification: all 12 host tests and parser gate pass.

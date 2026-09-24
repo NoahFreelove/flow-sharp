@@ -4,7 +4,7 @@ Program {
     ModuleDeclarationStatement {
       Name: "stats" },
     ImportStatement {
-      FilePath: "@std" },
+      FilePath: "@core" },
     ProcDeclaration {
       Body: [
         ExpressionStatement {

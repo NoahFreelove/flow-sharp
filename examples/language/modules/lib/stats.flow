@@ -1,5 +1,5 @@
 module stats
-use "@std"
+use "@core"
 
 proc sum (Ints: xs)
     (reduce xs 0 (fn Int acc, Int x => (add acc x)))

@@ -102,8 +102,8 @@ cbd8affca6622a28  examples/dsp/granular.flow
 94a9149f7638b7a6  examples/language/collections.flow
 0f9d1f33e20ed398  examples/language/dict-aggregation.flow
 434cf44f0c44b89e  examples/language/lazy.flow
-e42369ef1e44ae26  examples/language/modules/lib/stats.flow
-cbe91e6b019b0f97  examples/language/modules/lib/text.flow
+6d7f3a7ff6e6dbb5  examples/language/modules/lib/stats.flow
+d3b27805c9f88782  examples/language/modules/lib/text.flow
 c3a90af5650d452a  examples/language/modules/report.flow
 2bceef50e6ac6d40  examples/language/pattern-dispatch.flow
 1d988a3a60050836  examples/language/recursion-trees.flow
