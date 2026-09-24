@@ -33,8 +33,7 @@ public static class LspFixtures
     /// </summary>
     public static BuiltInIndex BuiltInIndex()
     {
-        var registry = new InternalFunctionRegistry();
-        BuiltInFunctions.RegisterSignaturesOnly(registry);
-        return new BuiltInIndex(registry);
+        var stdlib = StdlibIndex();
+        return new BuiltInIndex(stdlib.Descriptors);
     }
 }

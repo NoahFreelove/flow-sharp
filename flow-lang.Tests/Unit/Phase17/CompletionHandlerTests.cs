@@ -18,10 +18,8 @@ public class CompletionHandlerTests
 {
     private static (BuiltInIndex bi, UserSymbolIndex ui, StdlibSymbolIndex si, KeywordIndex ki) MakeIndices()
     {
-        var reg = new InternalFunctionRegistry();
-        BuiltInFunctions.RegisterSignaturesOnly(reg); // D-07 full coverage, audio-free
-        var parser = new ParseSession();
-        return (new BuiltInIndex(reg), new UserSymbolIndex(), new StdlibSymbolIndex(parser), new KeywordIndex());
+        var stdlib = new StdlibSymbolIndex(new ParseSession());
+        return (new BuiltInIndex(stdlib.Descriptors), new UserSymbolIndex(), stdlib, new KeywordIndex());
     }
 
     [Fact]

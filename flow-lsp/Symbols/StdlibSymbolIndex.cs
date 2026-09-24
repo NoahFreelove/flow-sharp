@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using FlowLang.Ast.Statements;
+using FlowLang.Analysis;
 using FlowLang.Runtime;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
@@ -49,8 +50,11 @@ public sealed class StdlibSymbolIndex
 
     private readonly Dictionary<string, StdProc> _byName = new();
 
+    public IReadOnlyList<ModuleDescriptor> Descriptors { get; }
+
     public StdlibSymbolIndex(ParseSession parser)
     {
+        var descriptors = new List<ModuleDescriptor>();
         foreach (var mod in ModuleNames)
         {
             var path = ModuleLoader.ResolveStdlibPath(mod);
@@ -68,6 +72,7 @@ public sealed class StdlibSymbolIndex
             }
 
             var result = parser.Parse(source, path);
+            descriptors.Add(LanguageAnalysis.Describe(result.Syntax!));
             foreach (var stmt in result.Ast.Statements)
             {
                 if (stmt is ProcDeclaration pd && !_byName.ContainsKey(pd.Name))
@@ -76,6 +81,7 @@ public sealed class StdlibSymbolIndex
                 }
             }
         }
+        Descriptors = descriptors.ToArray();
     }
 
     public StdProc? Find(string name) =>

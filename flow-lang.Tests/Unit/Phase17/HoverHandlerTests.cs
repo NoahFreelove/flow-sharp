@@ -17,9 +17,8 @@ public class HoverHandlerTests
 {
     private static (BuiltInIndex bi, UserSymbolIndex ui, StdlibSymbolIndex si) Indices()
     {
-        var reg = new InternalFunctionRegistry();
-        BuiltInFunctions.RegisterSignaturesOnly(reg); // D-07 full coverage, audio-free
-        return (new BuiltInIndex(reg), new UserSymbolIndex(), new StdlibSymbolIndex(new ParseSession()));
+        var stdlib = new StdlibSymbolIndex(new ParseSession());
+        return (new BuiltInIndex(stdlib.Descriptors), new UserSymbolIndex(), stdlib);
     }
 
     [Fact]

@@ -6,15 +6,9 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 namespace FlowLsp.Symbols;
 
 /// <summary>
-/// Snapshot of every built-in function registered in an
-/// <see cref="InternalFunctionRegistry"/>, indexed by name. Built ONCE at
-/// server startup from a registry populated via
-/// <see cref="BuiltInFunctions.RegisterSignaturesOnly"/> — this gives D-07
-/// "every built-in" coverage (core + audio + transforms + harmony) without
-/// constructing or invoking any audio backend.
-///
-/// Phase 17 (17-05). Consumed by CompletionHandler (17-05), HoverHandler
-/// and SignatureHelpHandler (17-06).
+/// Editor signatures discovered from module declarations, without registering
+/// implementations or constructing audio/session objects. The registry constructor
+/// remains a compatibility adapter for existing callers.
 /// </summary>
 public sealed class BuiltInIndex
 {
@@ -30,6 +24,15 @@ public sealed class BuiltInIndex
             dict[kvp.Key] = new Entry(kvp.Key, kvp.Value);
         }
         _byName = dict;
+    }
+
+    public BuiltInIndex(IEnumerable<FlowLang.Analysis.ModuleDescriptor> modules)
+    {
+        _byName = modules.SelectMany(m => m.Procedures)
+            .GroupBy(p => p.Name, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key,
+                group => new Entry(group.Key, group.Select(p => p.Signature).ToArray()),
+                StringComparer.Ordinal);
     }
 
     /// <summary>Returns the index entry for <paramref name="name"/>, or null if unknown.</summary>

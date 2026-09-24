@@ -69,6 +69,24 @@ public class LanguageAnalysisTests
     }
 
     [Fact]
+    public void FileSourcesUseExplicitRootsAndConfiguredSearchPaths()
+    {
+        var temp = Path.Combine(Path.GetTempPath(), "flow-module-sources-" + Guid.NewGuid().ToString("N"));
+        var cwd = Environment.CurrentDirectory;
+        Directory.CreateDirectory(Path.Combine(temp, "library"));
+        try
+        {
+            File.WriteAllText(Path.Combine(temp, "library", "helper.flow"), "proc identity(Int: x) x end proc");
+            var provider = new FileModuleSourceProvider(temp, searchPaths: new[] { "library" });
+            var source = provider.Resolve("helper", Path.Combine(temp, "main.flow"));
+            Assert.NotNull(source);
+            Assert.Equal(Path.Combine(temp, "library", "helper.flow"), source.Id);
+            Assert.Equal(cwd, Environment.CurrentDirectory);
+        }
+        finally { Directory.Delete(temp, recursive: true); }
+    }
+
+    [Fact]
     public void ModuleBudgetAndCancellationBoundDiscovery()
     {
         var root = LanguageAnalysis.Parse("use \"one\"", "root");
@@ -80,7 +98,7 @@ public class LanguageAnalysisTests
             new AnalysisOptions(Cancellation: new CancellationToken(canceled: true))));
     }
 
-    [Fact]
+    [FlowLang.Tests.Helpers.FlowTargetFact("Desktop")]
     public async Task CheckDoesNotRunWritesPlaybackLoopsOrImportedBodies()
     {
         var temp = Path.Combine(Path.GetTempPath(), "flow-static-check-" + Guid.NewGuid().ToString("N"));

@@ -18,7 +18,7 @@ namespace FlowLsp.Handlers;
 /// <summary>
 /// Completion handler. Merges 5 sources:
 ///   1. BuiltInIndex — every built-in function (core + audio + transforms + harmony)
-///      registered via <see cref="FlowLang.StandardLibrary.BuiltInFunctions.RegisterSignaturesOnly"/>
+///      discovered from parsed standard-library module declarations
 ///      (D-07).
 ///   2. StdlibSymbolIndex — top-level procs in the 6 stdlib .flow modules.
 ///   3. UserSymbolIndex — procs/variables/sections in the current buffer.

@@ -590,3 +590,14 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   listed as unchecked, not treated as proven valid. Verification: 137 frontend and
   existing Phase 17/pragma tests pass, including a CLI script with writes, playback,
   infinite looping and imported initializer effects, none of which execute.
+
+- **B — declaration-driven editor metadata**: LSP startup now builds builtin
+  signatures from the shared parsed module descriptors, rather than invoking
+  `RegisterSignaturesOnly` and constructing dummy runtime/audio registrations.
+  The public registry-based index constructor remains an adapter for callers.
+  Completion/hover/varargs test fixtures use the production descriptor path;
+  tests validate every shipped internal declaration against its runtime binding
+  and inspect LSP IL to reject calls to runtime registration/engine/audio-manager
+  construction. The doc collector also shares `Parse`. `flow check` honors the
+  host's configured module search paths through the explicit source provider.
+  Verification before the final core gate: 195 frontend/editor tests pass.

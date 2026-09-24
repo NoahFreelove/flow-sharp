@@ -40,7 +40,8 @@ internal static class CheckCommand
             {
                 var syntax = LanguageAnalysis.Parse(source, script.FullName);
                 var result = LanguageAnalysis.Analyze(syntax,
-                    new FileModuleSourceProvider(script.DirectoryName!));
+                    new FileModuleSourceProvider(script.DirectoryName!,
+                        searchPaths: FlowLang.Runtime.FlowConfig.ConfiguredStdlibSearchPaths.Select(Path.GetFullPath)));
                 success = result.Success;
                 if (result.Diagnostics.Count > 0)
                 {

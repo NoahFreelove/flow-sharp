@@ -9,9 +9,8 @@ namespace FlowLsp;
 
 // Wave 4 bootstrap (plan 17-05). Extends the plan 17-03 wiring with the 4
 // symbol indices (BuiltInIndex / StdlibSymbolIndex / KeywordIndex / UserSymbolIndex)
-// and the CompletionHandler. The registry is populated via
-// BuiltInFunctions.RegisterSignaturesOnly — D-07 "every built-in" completeness
-// without constructing or invoking any audio output backend.
+// and the CompletionHandler. Signatures come from parsed module descriptors;
+// startup does not register implementations or construct runtime/audio objects.
 //
 // DocumentManager's onParse callback also pushes the fresh AST into the
 // UserSymbolIndex so per-keystroke completion reflects newly-declared procs,
@@ -40,15 +39,9 @@ public static class Program
                 // DiagnosticsPublisher.BuildDiagnostics for parse-error → Diagnostic mapping.
                 .AddSingleton<IScaleLintPublisher, ScaleLintPublisher>()
                 .AddSingleton<CombinedDiagnosticsPublisher>()
-                .AddSingleton<FlowLang.StandardLibrary.InternalFunctionRegistry>(_ =>
-                {
-                    var r = new FlowLang.StandardLibrary.InternalFunctionRegistry();
-                    // Option C — D-07 full coverage, audio-free (stubs throw NotSupportedException).
-                    FlowLang.StandardLibrary.BuiltInFunctions.RegisterSignaturesOnly(r);
-                    return r;
-                })
-                .AddSingleton<BuiltInIndex>()
                 .AddSingleton<StdlibSymbolIndex>()
+                .AddSingleton<BuiltInIndex>(sp =>
+                    new BuiltInIndex(sp.GetRequiredService<StdlibSymbolIndex>().Descriptors))
                 .AddSingleton<KeywordIndex>()
                 .AddSingleton<UserSymbolIndex>()
                 .AddSingleton<DocumentManager>(sp =>

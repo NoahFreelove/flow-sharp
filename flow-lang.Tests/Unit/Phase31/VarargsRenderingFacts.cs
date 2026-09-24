@@ -37,9 +37,8 @@ public class VarargsRenderingFacts
 {
     private static (BuiltInIndex bi, UserSymbolIndex ui, StdlibSymbolIndex si) Indices()
     {
-        var reg = new InternalFunctionRegistry();
-        BuiltInFunctions.RegisterSignaturesOnly(reg);
-        return (new BuiltInIndex(reg), new UserSymbolIndex(), new StdlibSymbolIndex(new ParseSession()));
+        var stdlib = new StdlibSymbolIndex(new ParseSession());
+        return (new BuiltInIndex(stdlib.Descriptors), new UserSymbolIndex(), stdlib);
     }
 
     // ===== Unit-level (FormatSignature / BuildParameters) =====

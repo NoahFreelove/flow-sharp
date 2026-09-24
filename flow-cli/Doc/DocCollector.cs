@@ -138,23 +138,12 @@ public sealed class DocCollector
             return Array.Empty<ProcDeclaration>();
         }
 
-        var errors = new ErrorReporter();
         try
         {
-            var (pragmaSet, transformed) = PragmaScanner.Scan(source, file, errors);
-            if (errors.HasErrors) return Array.Empty<ProcDeclaration>();
-
-            var lexer = new SimpleLexer(transformed, errors, file, pragmaSet);
-            var tokens = lexer.Tokenize();
-            if (errors.HasErrors) return Array.Empty<ProcDeclaration>();
-
-            var parser = new Parser(tokens, errors, pragmaSet);
-            var program = parser.Parse();
-            if (errors.HasErrors) return Array.Empty<ProcDeclaration>();
-
-            return program.Statements
-                .OfType<ProcDeclaration>()
-                .ToList();
+            var syntax = FlowLang.Analysis.LanguageAnalysis.Parse(source, file);
+            if (syntax.Diagnostics.Any(d => d.Level == DiagnosticLevel.Error))
+                return Array.Empty<ProcDeclaration>();
+            return syntax.Program.Statements.OfType<ProcDeclaration>().ToArray();
         }
         catch
         {
