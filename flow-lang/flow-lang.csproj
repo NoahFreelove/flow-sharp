@@ -276,12 +276,6 @@
       <EmbeddedResource Include="std.flow">
         <LogicalName>FlowLang.Stdlib.std.flow</LogicalName>
       </EmbeddedResource>
-      <EmbeddedResource Include="core.flow">
-        <LogicalName>FlowLang.Stdlib.core.flow</LogicalName>
-      </EmbeddedResource>
-      <EmbeddedResource Include="collections.flow">
-        <LogicalName>FlowLang.Stdlib.collections.flow</LogicalName>
-      </EmbeddedResource>
       <EmbeddedResource Include="bars.flow">
         <LogicalName>FlowLang.Stdlib.bars.flow</LogicalName>
       </EmbeddedResource>
@@ -326,14 +320,6 @@
 
     <ItemGroup>
       <None Update="std.flow">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </None>
-      <None Update="core.flow">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </None>
-      <None Update="collections.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </None>

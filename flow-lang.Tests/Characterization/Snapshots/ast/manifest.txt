@@ -136,9 +136,7 @@ e4e6f9f6bdc06f76  flow-lang.Tests/fixtures/midi/sources/ragtime_q_ee.flow
 b1725f4114620a26  flow-lang.Tests/fixtures/midi/sources/two_voice_counterpoint.flow
 e39ea82c15608195  flow-lang/audio.flow
 2815446e62897dbb  flow-lang/bars.flow
-bcc1fb04aba23c7a  flow-lang/collections.flow
 facea1f53d9b6e0c  flow-lang/composition.flow
-40baf2946f33bf50  flow-lang/core.flow
 00fc18397c23f2c0  flow-lang/generative.flow
 5490f4f55469e4ff  flow-lang/improv.flow
 c81cd0981c0987ea  flow-lang/improv/styles/blues.flow
@@ -153,6 +151,8 @@ eeda29d7fe251771  flow-lang/patterns.flow
 0b1c7647383281ce  flow-lang/sfz.flow
 5239300835a88f7e  flow-lang/std.flow
 b9b7bc9512bc4dae  flow-lang/test.flow
+bcc1fb04aba23c7a  flow-language/collections.flow
+40baf2946f33bf50  flow-language/core.flow
 dac5ce2730f70a55  tests/demo_expressive_piano.flow
 b1405b95682fae1d  tests/demo_feature_showcase.flow
 97a7d11b5a8cda79  tests/mary-had-a-little-lamb.flow

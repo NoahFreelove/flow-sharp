@@ -24,4 +24,14 @@
         <InternalsVisibleTo Include="flow-lang.Tests" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="core.flow;collections.flow" CopyToOutputDirectory="PreserveNewest"
+              CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+        <EmbeddedResource Include="core.flow;collections.flow">
+            <LogicalName>FlowLang.Stdlib.%(Filename)%(Extension)</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
 </Project>

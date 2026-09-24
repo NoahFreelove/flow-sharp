@@ -67,7 +67,8 @@ RIDS=(linux-x64 linux-arm64 osx-x64 osx-arm64 win-x64)
 
 # stdlib .flow files that MUST land in every output dir (engine ships them via
 # CopyToPublishDirectory=PreserveNewest on flow-lang.csproj).
-STDLIB_FILES=(std.flow core.flow collections.flow audio.flow bars.flow notation.flow composition.flow \
+LANGUAGE_STDLIB_FILES=(core.flow collections.flow)
+STDLIB_FILES=("${LANGUAGE_STDLIB_FILES[@]}" std.flow audio.flow bars.flow notation.flow composition.flow \
               patterns.flow generative.flow improv.flow)
 
 cd "$PROJECT_ROOT"
@@ -124,7 +125,7 @@ for RID in "${RIDS[@]}"; do
   for f in "${STDLIB_FILES[@]}"; do
     if [[ ! -f "$OUT/$f" ]]; then
       echo "ERROR: [$RID] stdlib file $OUT/$f missing from publish output." >&2
-      echo "  Hint: confirm CopyToPublishDirectory=PreserveNewest on flow-lang.csproj for $f." >&2
+      echo "  Hint: confirm CopyToPublishDirectory=PreserveNewest on the owning flow-language/flow-lang project for $f." >&2
       exit 1
     fi
   done

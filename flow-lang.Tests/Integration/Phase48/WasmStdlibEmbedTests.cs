@@ -141,7 +141,8 @@ public class WasmStdlibEmbedTests
             $"Trimmed flow-lang.dll missing — expected at {dll}");
 
         using var asm = AssemblyDefinition.ReadAssembly(dll);
-        var resourceNames = asm.MainModule.Resources
+        using var language = AssemblyDefinition.ReadAssembly(Path.Combine(Path.GetDirectoryName(dll)!, "flow-language.dll"));
+        var resourceNames = asm.MainModule.Resources.Concat(language.MainModule.Resources)
             .OfType<EmbeddedResource>()
             .Select(r => r.Name)
             .ToHashSet(StringComparer.Ordinal);
@@ -167,10 +168,11 @@ public class WasmStdlibEmbedTests
         var repoRoot = FindRepoRoot();
         var dll = LocateTrimmedFlowLangDll(repoRoot);
         using var asm = AssemblyDefinition.ReadAssembly(dll);
+        using var language = AssemblyDefinition.ReadAssembly(Path.Combine(Path.GetDirectoryName(dll)!, "flow-language.dll"));
 
         string Embedded(string name)
         {
-            var resource = asm.MainModule.Resources.OfType<EmbeddedResource>().FirstOrDefault(r => r.Name == name);
+            var resource = asm.MainModule.Resources.Concat(language.MainModule.Resources).OfType<EmbeddedResource>().FirstOrDefault(r => r.Name == name);
             Assert.NotNull(resource);
             return System.Text.Encoding.UTF8.GetString(resource!.GetResourceData());
         }

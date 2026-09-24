@@ -527,3 +527,10 @@ Phase 3 gate.
   uses a domain ordering hook in `ValueComparisons`, installed by the music layer.
   Verification: all 112 contract/characterization tests pass, including the music
   corpus, overload/value/module snapshots, public API and BCL-only closure checks.
+
+- **F4 — core module assets** (2026-09-24): `core.flow` and `collections.flow`
+  move to `flow-language`, with transitive output/publish copying and Web embedded
+  resources under their existing logical names. Publish verification distinguishes
+  the language module list; Phase 48 checks scan both trimmed assemblies. The AST
+  manifest changes only the two paths (hashes unchanged). Verification: 106
+  contracts/module/parser/Web-embedding tests pass, including a trimmed Web publish.
