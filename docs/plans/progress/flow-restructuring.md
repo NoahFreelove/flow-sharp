@@ -10,7 +10,8 @@ cooperative cancellation and budgets, watch mode renders through a
 latest-request-wins coordinator, and a process worker provides hard termination.
 All four gate items have tests; core, platform and long tiers pass. See the
 [Phase 2 record](../../baselines/phase2/README.md). **Phase 3 (language-only runtime
-and pure standard library) is in progress**; see the Phase 3 section below.
+and pure standard library) is in progress**; see the Phase 3 section below and the
+[2026-09-24 handoff](../handoffs/2026-09-24-phase3-in-progress.md).
 
 Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
 see the [Phase 1 record](../../baselines/phase1/README.md).
