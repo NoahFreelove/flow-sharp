@@ -1,6 +1,6 @@
 examples/beat/cut-time.flow out=234575b6bb48 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 examples/beat/intro.flow out=2c5489c3236e diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
-examples/dsp/granular.flow out=e3b0c44298fc diag=e3b0c44298fc errors=5feceb66ffc8 buffers=c663ec99ac20
+examples/dsp/granular.flow out=e3b0c44298fc diag=e3b0c44298fc errors=5feceb66ffc8 buffers=cd9b80f4b255
 examples/dsp/stretch_pitchshift.flow out=e3b0c44298fc diag=73369a962165 errors=5feceb66ffc8 buffers=774cf0090093
 examples/edm/pulse.flow out=e3b0c44298fc diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 examples/generative/markov_jazz.flow out=e3b0c44298fc diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
@@ -18,7 +18,7 @@ examples/live/hello_live.flow out=e3b0c44298fc diag=9ce41ccb82af errors=5feceb66
 examples/live/mic_granular.flow out=e3b0c44298fc diag=c7858d31fce3 errors=5feceb66ffc8 buffers=0401707c5c6d
 examples/live/multi_block.flow out=e3b0c44298fc diag=2ad6e055dd50 errors=5feceb66ffc8 buffers=e3b0c44298fc
 examples/live/osc_controller.flow out=e3b0c44298fc diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
-examples/long_demo.flow out=bd3f060098b7 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=b79a5db5ae88
+examples/long_demo.flow out=bd3f060098b7 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=14857fc8dd05
 examples/notation/from_abc.flow out=e9a8a80ab7eb diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 examples/notation/from_mml.flow out=9480d415656a diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 examples/notation/to_lilypond.flow out=0354555f7c20 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
@@ -92,7 +92,7 @@ tests/test_for_loop.flow out=5209f15a1bc4 diag=e3b0c44298fc errors=5feceb66ffc8 
 tests/test_full_song.flow out=5a7917c7bd9e diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 tests/test_gain_context.flow out=ba1e9deb6286 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e555a03c1473
 tests/test_generative.flow out=6eb9a3a85588 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
-tests/test_granular_example.flow out=c7abfd8cae31 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=c1d8b1d5a69d
+tests/test_granular_example.flow out=c7abfd8cae31 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=ce6678d66a80
 tests/test_h_alias.flow out=448e93ff6df6 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 tests/test_h_identifier.flow out=5fa958fe3cc8 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc
 tests/test_humanize.flow out=76b01c0f2aa2 diag=e3b0c44298fc errors=5feceb66ffc8 buffers=e3b0c44298fc

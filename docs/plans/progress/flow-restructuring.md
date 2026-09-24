@@ -544,3 +544,14 @@ Phase 3 gate.
   music. The two nested tutorial helper modules still imported `@std`; corrected
   both to `@core` without changing their expected output. Parser snapshots record
   only those import changes. Verification: all 12 host tests and parser gate pass.
+
+- **Gate portability fixes** (2026-09-24): the first fresh-clone run exposed
+  corpus snapshots whose unseeded granular buffers depended on the checkout's
+  absolute source path. The harness now evaluates with repository-relative source
+  names (runtime seeding semantics unchanged); a two-pass regeneration changes only
+  the three affected buffer hashes. Full suites in overlapping checkouts also share
+  the strict-showcase `/tmp` WAV, so final verification runs serially. Documented
+  this constraint in `docs/TESTING.md`. Restored the MinimalHost probe's missing
+  `FlowLang.Music` import after the scope-state move; construction now records zero
+  modules/styles. Also removed the new host-test helper's async naming warning.
+  Verification: corpus two-pass regeneration succeeds; final fresh-clone gate follows.

@@ -14,7 +14,7 @@ public class LanguageHostTests
     public async Task ExampleRunsInLanguageOnlyProcess(string relativePath)
     {
         var source = Path.Combine(Snapshot.RepoRoot, relativePath);
-        var (code, stdout, stderr, report) = await RunHost([source]);
+        var (code, stdout, stderr, report) = await RunHostAsync([source]);
         Assert.True(code == 0, stderr);
         Assert.Empty(stderr);
         Assert.Equal(File.ReadAllText(Path.ChangeExtension(source, ".out")).Replace("\r\n", "\n"), stdout);
@@ -38,7 +38,7 @@ public class LanguageHostTests
     [Fact]
     public async Task InteractiveCoreImportAndStatePersistAcrossLines()
     {
-        var (code, stdout, stderr, report) = await RunHost(["--repl"], "Int total = 7\n(print (add total 5))\n:quit\n");
+        var (code, stdout, stderr, report) = await RunHostAsync(["--repl"], "Int total = 7\n(print (add total 5))\n:quit\n");
         Assert.True(code == 0, stderr);
         Assert.Equal("12\n", stdout);
         Assert.Empty(stderr);
@@ -51,7 +51,7 @@ public class LanguageHostTests
     [InlineData("use \"@std\"", "not found")]
     public async Task ScriptsDoNotAcquirePreludeOrMusic(string source, string diagnostic)
     {
-        var (code, _, stderr, report) = await RunHost([], source);
+        var (code, _, stderr, report) = await RunHostAsync([], source);
         Assert.Equal(1, code);
         Assert.Contains(diagnostic, stderr, StringComparison.OrdinalIgnoreCase);
         AssertLanguageClosure(report);
@@ -69,7 +69,7 @@ public class LanguageHostTests
             Assert.DoesNotContain(forbidden, native, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static async Task<(int Code, string Stdout, string Stderr, JsonElement Report)> RunHost(string[] args, string? stdin = null)
+    private static async Task<(int Code, string Stdout, string Stderr, JsonElement Report)> RunHostAsync(string[] args, string? stdin = null)
     {
         var configuration = typeof(LanguageHostTests).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()!.Configuration;
         var hostDir = Path.Combine(Snapshot.RepoRoot, "scripts", "LanguageHost", "bin", configuration, "net10.0");

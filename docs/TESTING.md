@@ -72,7 +72,9 @@ when invoking them directly to write outside the historical report directory.
 with expected stdout (`.out`), error counts, stderr fragments, a rationale and a
 compatibility status (`preserve`, `generous`, `disputed`, `defect`, `gap`).
 `examples/language/` holds non-musical tutorial programs with expected output.
-`LanguageContractTests` runs both in the core tier; see
+`LanguageContractTests` runs both in the core tier; `LanguageHostTests` also runs
+all seven examples in fresh language-only processes and checks output, artifact and
+loaded/native dependency closure, embedding and line-REPL behavior; see
 [the contract README](../contracts/language/README.md) for the format.
 
 ```bash
@@ -465,8 +467,9 @@ The verifier builds first, fails on missing/empty TRX evidence or nonzero exit
 codes, and checks tracked-file content hashes even after failures. It supports
 a pre-existing dirty working tree by comparing against entry contents. It does
 not discard or restore changes. Do not edit tracked files during verification.
-Keep artifact paths outside tracked source directories. CI uploads logs, TRX,
-verification summaries, and generated report artifacts even when tests fail.
+Keep artifact paths outside tracked source directories. Run full suites serially,
+even across checkouts: legacy audio fixtures still share fixed `/tmp` WAV paths.
+CI uploads logs, TRX, verification summaries, and generated report artifacts even when tests fail.
 
 The [Phase 0 baseline](baselines/phase0/README.md) records parse/evaluation/render
 measurements, dependencies, public APIs, global-state candidates, and warning

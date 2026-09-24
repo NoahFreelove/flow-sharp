@@ -81,7 +81,10 @@ public class CorpusCharacterizationTests
             using var engine = new FlowEngine(new EngineOptions { Output = stdout, Diagnostics = diagnostics });
             engine.AudioManager.CaptureMode = true;
             var path = Path.Combine(Snapshot.RepoRoot, file);
-            engine.Evaluate(File.ReadAllText(path), path, new EvaluationOptions { TimeLimit = TimeSpan.FromMinutes(2) });
+            // Seeded generators include the source name in their call-site key.
+            // A repository-relative identity keeps snapshots independent of the
+            // checkout directory; cwd above still resolves script-relative imports.
+            engine.Evaluate(File.ReadAllText(path), file, new EvaluationOptions { TimeLimit = TimeSpan.FromMinutes(2) });
 
             var buffers = new StringBuilder();
             foreach (var (name, value) in engine.Context.GlobalFrame.GetLocalVariables().OrderBy(kv => kv.Key, StringComparer.Ordinal))

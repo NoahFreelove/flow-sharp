@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using FlowLang.Core;
+using FlowLang.Music;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 
