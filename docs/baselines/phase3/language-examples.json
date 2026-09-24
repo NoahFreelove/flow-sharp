@@ -1,0 +1,37 @@
+[
+  {
+    "example": "examples/language/collections.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  },
+  {
+    "example": "examples/language/dict-aggregation.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  },
+  {
+    "example": "examples/language/lazy.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  },
+  {
+    "example": "examples/language/modules/report.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  },
+  {
+    "example": "examples/language/pattern-dispatch.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  },
+  {
+    "example": "examples/language/recursion-trees.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  },
+  {
+    "example": "examples/language/tuple-pipelines.flow",
+    "exitCode": 0,
+    "stdoutMatches": true
+  }
+]

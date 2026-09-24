@@ -1,0 +1,71 @@
+{
+  "recordedUtc": "2026-09-24 22:32:16Z",
+  "runtime": "10.0.12",
+  "os": "Ubuntu 26.04 LTS",
+  "program": {
+    "source": "\u003Cminimal-host\u003E",
+    "success": true,
+    "stdout": "alpha=1\nbeta=2\ngamma=1\n[1, 4, 9, 16, 25]\n",
+    "stderr": "",
+    "diagnostics": []
+  },
+  "construction": {
+    "milliseconds": 44,
+    "allocatedBytesThisThread": 224688,
+    "note": "Single cold process measurement; indicative only."
+  },
+  "executionMilliseconds": 72.4,
+  "assemblies": {
+    "flowLangReferences": [
+      "flow-language",
+      "Melanchall.DryWetMidi",
+      "Microsoft.Win32.Primitives",
+      "NAudio.Core",
+      "NAudio.Wasapi",
+      "Rug.Osc",
+      "Tomlyn"
+    ],
+    "loadedByConstruction": [],
+    "loadedByExecution": [
+      "System.Memory",
+      "System.Numerics.Vectors",
+      "System.Runtime.InteropServices"
+    ]
+  },
+  "nativeLibraries": {
+    "loadedByConstruction": [],
+    "loadedByExecution": []
+  },
+  "processStatics": {
+    "SessionServices.Current after construction": false,
+    "RenderServices.Current after construction": false,
+    "FlowConfig.Active is defaults": true,
+    "SessionServices.Current after execution": false
+  },
+  "modulesLoadedAtConstruction": [],
+  "modulesLoadedAfterExecution": [
+    "bars.flow",
+    "collections.flow",
+    "core.flow",
+    "std.flow"
+  ],
+  "improvStylesLoaded": 0,
+  "builtinSignaturesByImplementationNamespace": {
+    "FlowLang.StandardLibrary": 337,
+    "FlowLang.StandardLibrary.Audio": 122,
+    "FlowLang.StandardLibrary.Audio.DSP": 35,
+    "FlowLang.StandardLibrary.Audio.Sfz": 3,
+    "FlowLang.StandardLibrary.Audio.Tuning": 3,
+    "FlowLang.StandardLibrary.Audio.Vocalization": 4,
+    "FlowLang.StandardLibrary.Composition": 12,
+    "FlowLang.StandardLibrary.Generative": 25,
+    "FlowLang.StandardLibrary.Harmony": 19,
+    "FlowLang.StandardLibrary.Improv": 3,
+    "FlowLang.StandardLibrary.Midi": 16,
+    "FlowLang.StandardLibrary.Network": 8,
+    "FlowLang.StandardLibrary.Notation": 5,
+    "FlowLang.StandardLibrary.Patterns": 14,
+    "FlowLang.StandardLibrary.TestFramework": 6,
+    "FlowLang.StandardLibrary.Transforms": 31
+  }
+}

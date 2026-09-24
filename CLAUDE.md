@@ -46,7 +46,7 @@ dotnet run --project flow-interpreter tests/test_comprehensive.flow
 for test in tests/test_*.flow; do dotnet run --project flow-interpreter "$test"; done
 ```
 
-No unit-test framework — tests are `.flow` scripts in `tests/` verified by console output (70+ files: features, pipes, audio, musical context, note streams, chords, song structure, instruments, effects, transforms, generative, lambdas, imports).
+xUnit suites live in `flow-lang.Tests/` and `flow-midi.Tests/`; pure-Flow tests live in `tests/`. Use `python3 scripts/ci/verify.py --tier all` for the full gate; see `docs/TESTING.md`.
 
 ## Compile-Target Flavors
 
@@ -174,7 +174,7 @@ Docs are synced at build time from the 26-page `wiki/` via `scripts/sync-wiki.sh
 
 ## Project Structure
 
-The solution (`flow-sharp.sln`) contains eight primary C# projects: **flow-language** (the language runtime — lexer, parser, AST, types, values, interpreter, extension contracts; references only the BCL), **flow-lang** (the music library and music host built on it, namespace `FlowLang`), **flow-interpreter** (REPL + `flow run`/`flow watch`, namespace `FlowInterpreter`), **flow-cli** (14-verb CLI binary `flow`, namespace `FlowCli`), **flow-lsp** (LSP 3.17 server, namespace `FlowLsp`), **flow-midi** (standalone MIDI→Flow converter backing `flow midi2flow`, Quantizer pipeline), **flow-midi.Tests** and **flow-lang.Tests** (xUnit test suites). Two script-tool projects live under `scripts/` (`Migrate26`, `StdlibAuditor`). Sibling dirs: **flow-site/** (flowlang.dev SvelteKit site), **vscode-extension/** and **flow-jetbrains/** (editor plugins).
+The solution (`flow-sharp.sln`) contains eight primary C# projects: **flow-language** (the language runtime — lexer, parser, AST, types, values, interpreter, extension contracts; references only the BCL), **flow-lang** (the music library and music host built on it, namespace `FlowLang`), **flow-interpreter** (REPL + `flow run`/`flow watch`, namespace `FlowInterpreter`), **flow-cli** (14-verb CLI binary `flow`, namespace `FlowCli`), **flow-lsp** (LSP 3.17 server, namespace `FlowLsp`), **flow-midi** (standalone MIDI→Flow converter backing `flow midi2flow`, Quantizer pipeline), **flow-midi.Tests** and **flow-lang.Tests** (xUnit test suites). Script tools and probes under `scripts/` include `Migrate26`, `StdlibAuditor`, `MinimalHost` and `LanguageHost`. Sibling dirs: **flow-site/** (flowlang.dev SvelteKit site), **vscode-extension/** and **flow-jetbrains/** (editor plugins).
 
 ```
 flow-language/          # Flow.Language — BCL only; LanguageClosureTests enforce it
@@ -186,6 +186,8 @@ flow-language/          # Flow.Language — BCL only; LanguageClosureTests enfor
   Runtime/              # ExecutionContext, StackFrame, Value, ModuleLoader, Thunk,
                         #   PrngRegistry, ValueConversions/Comparisons/Formatter
   Syntax/ TypeSystem/{PrimitiveTypes} + OverloadResolver.cs + TypeCatalog.cs
+  StandardLibrary/      # CoreLibrary registration, core implementations, registry, Dict
+  core.flow collections.flow # essential modules; copied and Web-embedded
 flow-lang/              # music library + music host (references flow-language)
   Core/                 # FlowEngine orchestrator, EngineOptions
   Runtime/              # WasmEntry, FlowConfigLoader (host glue)
@@ -194,7 +196,7 @@ flow-lang/              # music library + music host (references flow-language)
   TypeSystem/SpecialTypes/ # music types (MusicValue factories, MusicTypeCatalog)
   StandardLibrary/
     BuiltInFunctions.cs           # main registration site
-    InternalFunctionRegistry.cs   # signature → lambda
+    StdLib.cs Collections.cs      # compatibility wrappers + music overloads
     Audio/{DSP,Synthesizers,Sfz}/ # effects + instruments + SFZ surface
     Harmony/                      # ChordParser, scales, roman numerals
     Transforms/                   # transpose/invert/retrograde/etc.
@@ -214,6 +216,11 @@ flow-lang/              # music library + music host (references flow-language)
 
 `Source → SimpleLexer → Token[] → Parser → AST (records) → Interpreter → Value`
 
+**Language-only host:** `scripts/LanguageHost` references only `flow-language`, registers
+`CoreLibrary`, and supports scripts/stdin, `-e` and a line REPL. Scripts explicitly
+import `@core`; interactive modes import it for the user. `LanguageHostTests` checks
+all seven language examples and process closure. See `docs/baselines/phase3/README.md`.
+
 **FlowEngine** (`Core/FlowEngine.cs`) wires `InternalFunctionRegistry` + `ExecutionContext` + `Interpreter` and owns `AudioPlaybackManager`.
 
 | Stage | File | Role |
@@ -223,13 +230,13 @@ flow-lang/              # music library + music host (references flow-language)
 | Type parsing | `Parsing/TypeParser.cs` | Annotations: arrays, music types, function types |
 | Evaluation | `Interpreter/ExpressionEvaluator.cs` | Switch dispatch over AST → `Value` |
 | Execution | `Interpreter/Interpreter.cs` | Statements, function calls, implicit returns, musical context, sections |
-| Runtime | `Runtime/ExecutionContext.cs` | Call stack, scoping, musical context stack |
+| Runtime | `Runtime/ExecutionContext.cs` | Call stack, lexical scopes, session and extension state |
 | Scope | `Runtime/StackFrame.cs` | Variables/functions with parent chain |
 | Values | `Runtime/Value.cs` | CLR wrapper + Flow type info |
 | Musical ctx | `Music/MusicalContext.cs` + `Music/MusicSession.cs` | Tempo / timesig / key / swing (per-frame scope state); per-context music state (sections, styles, SFZ) as an `ExecutionContext` extension |
 | Note streams | `Music/NoteStreamCompiler.cs` | `\| ... \|` → Sequence using active context |
 | Overloads | `TypeSystem/OverloadResolver.cs` | Specificity-scored dispatch |
-| Built-ins | `StandardLibrary/InternalFunctionRegistry.cs` + `BuiltInFunctions.cs` | Registration |
+| Built-ins | `StandardLibrary/InternalFunctionRegistry.cs` + `CoreLibrary.cs` / `BuiltInFunctions.cs` | Core / music compatibility registration |
 | Imports | `Runtime/ModuleLoader.cs` | `use "@x"` = stdlib, else relative |
 | Lazy | `Runtime/Thunk.cs` | Memoizing thunk for `if`/`and`/`or` |
 | Audio | `Audio/AudioPlaybackManager.cs` | Real-time playback via `IAudioBackend` |
@@ -405,10 +412,10 @@ Loaded via `use "@name"`:
 
 ## Adding Built-ins
 
-1. Define in `StandardLibrary/BuiltInFunctions.cs` (or relevant subdir: `Audio/`, `Harmony/`, `Transforms/`)
-2. Create a `FunctionSignature` (name, param types, varargs flag, parameter names per Phase 36 D-36-11)
-3. `registry.Register(signature, args => { ... })` in the appropriate `Register*` method
-4. For a new module, call its registration from `FlowEngine.cs`
+1. Put general-purpose implementations in `flow-language/StandardLibrary/` and register them through `CoreLibrary`. Put music implementations in `flow-lang/StandardLibrary/` and its relevant subdirectory.
+2. Create a `FunctionSignature` with parameter names and register the implementation in the appropriate `Register*` method. Preserve relative overload order in the compatibility host.
+3. Declare essential general-purpose builtins in `flow-language/core.flow` (or `collections.flow`); declare music/non-essential builtins in `flow-lang/std.flow` or the appropriate music module.
+4. For a new music module, wire registration through `FlowEngine`. Keep the language assembly BCL-only. Ensure `RegisterSignaturesOnly` includes the new surface and run the relevant contract/characterization tests.
 
 ## Adding Synthesizers
 
@@ -417,7 +424,7 @@ Loaded via `use "@name"`:
 
 ## C# Conventions
 
-- .NET 10, C# 13, nullable on, implicit usings, file-scoped namespaces
+- .NET 10, C# 14, nullable on, implicit usings, file-scoped namespaces
 - All namespaces under `FlowLang.*` (library) or `FlowInterpreter` (CLI)
 - AST nodes are `record` types
 - Switch expressions for node dispatch (not visitor pattern)
@@ -436,7 +443,7 @@ Loaded via `use "@name"`:
 <!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
-**Runtime:** .NET 10 / C# 13 (record types, pattern matching, file-scoped namespaces).
+**Runtime:** .NET 10 / C# 14 (record types, pattern matching, file-scoped namespaces).
 
 **Audio backends (P/Invoke):** PulseAudio (`libpulse-simple.so.0` on Linux, also covers PipeWire); CoreAudio AudioQueue (`AudioToolbox.framework` on macOS). Both expose stereo. `IAudioBackend.IsAvailable()` probe gates per-platform selection.
 

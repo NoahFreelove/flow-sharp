@@ -4,14 +4,15 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 
 ## Current milestone
 
-**Phase 2 is complete (2026-09-22).** Engines own their state (sinks, advisory
-log, config snapshot, render services, tracked resources), evaluations support
-cooperative cancellation and budgets, watch mode renders through a
-latest-request-wins coordinator, and a process worker provides hard termination.
-All four gate items have tests; core, platform and long tiers pass. See the
-[Phase 2 record](../../baselines/phase2/README.md). **Phase 3 (language-only runtime
-and pure standard library) is in progress**; see the Phase 3 section below and the
-[2026-09-24 handoff](../handoffs/2026-09-24-phase3-in-progress.md).
+**Phase 3 is complete (2026-09-24).** The BCL-only `flow-language` artifact now
+includes the core library and module assets. `scripts/LanguageHost` runs all seven
+non-musical examples, embedded sessions and a line REPL without the music assembly
+or audio packages. The compatibility host still passes the music corpus. Full
+verification passes in a fresh clone; see the [Phase 3 record](../../baselines/phase3/README.md).
+
+Phase 2 (session ownership, cancellation/budgets, evaluation coordination and
+process isolation) remains complete; see the [Phase 2 record](../../baselines/phase2/README.md).
+**Next milestone: Phase 4 — honest analysis and shared tooling.**
 
 Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
 see the [Phase 1 record](../../baselines/phase1/README.md).
@@ -415,7 +416,7 @@ dotnet run --project scripts/MinimalHost -c Release -- --json docs/baselines/pha
 Next ready slice: Phase 3 (syntax-level type names, music bindings behind an
 interface, stdlib split with compatibility aggregates, language-only build).
 
-## Phase 3 in progress — 2026-09-22
+## Phase 3 complete — 2026-09-24
 
 ### Characterization suite (`933f2d4`, fixes `94792af`)
 
@@ -511,11 +512,9 @@ passed / 0 failed, MIDI 21, Web build OK, zero tracked-content changes; CLI smok
   (music builtins absent under `@core` alone). ~265 test snippets moved to the
   interactive path (they are `-e`-style snippets).
 
-D4 (pattern matcher, member access, section dispatch) landed inside D3. Remaining:
-the stdlib split with compatibility aggregates (language vs legacy profile), moving
-the remaining music-shaped primitive types (Buffer/Envelope/OscillatorState/Voice/
-Track type descriptors still live in `flow-language`), a language-only host, and the
-Phase 3 gate.
+D4 (pattern matcher, member access, section dispatch) landed inside D3. The
+remaining core implementation/assets and language-only host work landed in F3/F4/G
+below. The BCL-only music-shaped descriptors remain optional later cleanup.
 
 - **F3 — core implementations** (2026-09-24): `CoreLibrary.Register(registry[, context])`
   now supplies the general-purpose builtins entirely from `flow-language`:
@@ -563,3 +562,14 @@ Phase 3 gate.
   connected state, then performs the same occupied-before/free-after checks.
   A `using` also guarantees engine cleanup on assertion failure. The test is
   explicitly Desktop-only. All seven cancellation tests pass; no runtime changes.
+
+- **Phase 3 gate closed** (2026-09-24): implementation through `e2bd5f8`; the
+  fresh clone at `/tmp/flow-phase3-verified` publishes LanguageHost before building any
+  music project, then `verify.py --tier all` passes **2,906** main tests + **21** MIDI
+  tests, **19** prerequisite/Web-only skips, **0** failures and **0** tracked-content
+  changes. The original checkout run passed 2,908 + 21 (it discovers two additional
+  ignored local Flow scripts). Twelve new host tests cover the language-only gate.
+  The published host also matches all seven `.out` files from `/tmp`. The Web
+  AppBundle boots under Node through the frozen runtime and prints `10` / `150ms`
+  with no errors. The refreshed compatibility MinimalHost records zero startup
+  modules/styles. Gate evidence and limitations: `docs/baselines/phase3/`.

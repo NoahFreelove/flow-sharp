@@ -15,9 +15,9 @@ assemblies are split, the rule is checked at namespace level inside `flow-lang.d
 | Forbidden from language | `FlowLang.Audio`, `StandardLibrary.{Audio*, Composition, Harmony, Improv, Midi, Network, Notation, Patterns, Transforms, Generative}`, `TypeSystem.SpecialTypes`, and the DryWetMidi, NAudio and Rug.Osc packages |
 | Hosting (facade, may depend on everything) | `FlowLang.Core` (`FlowEngine`) |
 
-`FlowLang.StandardLibrary` (root) is left unclassified for now. It holds both
-general builtins and the registration hub for every musical module, and gets split
-in Phase 3.
+`FlowLang.StandardLibrary` (root) remains shared at namespace level. Phase 3
+split its core implementations into `flow-language` while retaining the music
+registration facade in `flow-lang`; assembly closure checks enforce that boundary.
 
 ## Ratchet
 
@@ -77,9 +77,10 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
 
 - Music-shaped types that still live in language namespaces are not edges:
   `TypeSystem.PrimitiveTypes` Buffer/Envelope/OscillatorState/Voice/Track types and
-  the Markov/L-system model data in `Runtime`. Phase 3 moves them with the assembly
-  split (`MusicalContext` and the note-stream/progression compilers have moved). The ratchet
-  then catches references back to them.
+  the Markov/L-system model data in `Runtime`. They remain BCL-only after Phase 3;
+  moving them is deferred to later music-model
+  cleanup (`MusicalContext` and the note-stream/progression compilers have moved).
+  The language assembly closure excludes native packages and music assets.
 - The ratchet itself is namespace-based; the assembly split now backs it with the
   compiler. The Web-target `AssemblyReferenceScanTests` scan both assemblies.
 

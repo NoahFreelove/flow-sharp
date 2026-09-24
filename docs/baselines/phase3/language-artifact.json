@@ -1,0 +1,53 @@
+{
+  "configuration": "Release, framework-dependent net10.0",
+  "files": [
+    {
+      "name": "LanguageHost",
+      "bytes": 78904
+    },
+    {
+      "name": "LanguageHost.deps.json",
+      "bytes": 783
+    },
+    {
+      "name": "LanguageHost.dll",
+      "bytes": 11776
+    },
+    {
+      "name": "LanguageHost.pdb",
+      "bytes": 12900
+    },
+    {
+      "name": "LanguageHost.runtimeconfig.json",
+      "bytes": 330
+    },
+    {
+      "name": "collections.flow",
+      "bytes": 1166
+    },
+    {
+      "name": "core.flow",
+      "bytes": 7981
+    },
+    {
+      "name": "flow-language.dll",
+      "bytes": 389120
+    },
+    {
+      "name": "flow-language.pdb",
+      "bytes": 127784
+    }
+  ],
+  "dependencies": {
+    "LanguageHost/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "flow-language/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

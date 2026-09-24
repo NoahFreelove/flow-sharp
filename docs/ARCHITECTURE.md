@@ -2,7 +2,7 @@
 
 # Flow Language Architecture
 
-For the proposed language/music separation and Linux DAW work, see the
+For the ongoing language/music separation and Linux DAW work, see the
 [2026-09-20 restructuring roadmap](plans/2026-09-20-flow-restructuring-roadmap.md).
 That plan describes a target architecture; the tour below describes the existing implementation.
 
@@ -17,7 +17,7 @@ replacement.
 ## What Flow Is, In Architectural Terms
 
 Flow is a single-pass tree-walking interpreter for a statically-typed,
-functional-leaning, music-domain DSL. The interpreter is written in C# 13
+functional-leaning, music-domain DSL. The interpreter is written in C# 14
 targeting .NET 10. There is no bytecode VM, no JIT compilation step, and no
 intermediate representation beyond the AST itself — execution walks the AST
 directly via pattern-matched switch dispatch.
@@ -120,7 +120,7 @@ types.
 
 ### Stage 3 — AST
 
-The AST lives in `flow-lang/Ast/`:
+The AST lives in `flow-language/Ast/`:
 
 - **Expressions** (`Ast/Expressions/`, 17 node types) — `LiteralExpression`,
   `VariableExpression`, `FunctionCallExpression`, `ArrayLiteralExpression`,
@@ -165,11 +165,13 @@ matching overload based on argument types.
 
 ## Project Layout
 
-The solution contains seven projects, organized by responsibility:
+The primary projects are organized by responsibility:
 
 | Project | Role |
 |---------|------|
-| `flow-lang/` | The language library — lexer, parser, AST, type system, interpreter, runtime, standard library, audio pipeline. All other projects depend on this. |
+| `flow-language/` | BCL-only language runtime, core standard library, and extension contracts. |
+| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references `flow-language`. |
+| `scripts/LanguageHost/` | Language-only CLI, REPL and embedding example; references only `flow-language`. |
 | `flow-interpreter/` | Legacy entry point — REPL, watch-mode, script runner. Predates the unified CLI; kept for backwards compatibility. |
 | `flow-cli/` | The shipping `flow` binary — 13 subcommands (`run`, `eval`, `repl`, `watch`, `play`, `render`, `flow2midi`, `midi2flow`, `check`, `new`, `test`, `lsp`, `version`). |
 | `flow-lsp/` | Language Server Protocol 3.17 server over stdio. Powers editor integrations. |
@@ -177,105 +179,55 @@ The solution contains seven projects, organized by responsibility:
 | `flow-jetbrains/` | JetBrains IDE plugin (Gradle/Kotlin project) that drives `flow-lsp` via LSP4IJ. |
 | `vscode-extension/` | VSCode language extension (TypeScript) with bundled per-platform `flow-lsp` binaries. |
 
-### `flow-lang/` internals
-
-The library is organized by pipeline stage rather than by feature:
+### Language and music assemblies
 
 ```
-flow-lang/
-├── Core/              FlowEngine + SourceMap + SourceLocation + Span
-├── Lexing/            SimpleLexer + Token/TokenType + PragmaScanner/Set/Registry
-├── Parsing/           Parser + Parser.NoteStream + TypeParser
-├── Ast/
-│   ├── Expressions/   17 expression record types
-│   ├── Statements/    14 statement record types
-│   ├── Patterns/      6 pattern record types
-│   ├── Elements/      shared element types (proc params, etc.)
-│   └── Program.cs     top-level AST root
-├── TypeSystem/
-│   ├── PrimitiveTypes/   16 primitives (Int, Long, Float, Double, String,
-│   │                     Bool, Number, Buffer, Lazy, Function, Envelope,
-│   │                     OscillatorState, Voice, Track, Symbol, Void)
-│   ├── SpecialTypes/     22 music types (Note, Chord, Sequence, Section,
-│   │                     Song, Tuning, Sfz, MarkovModel, LsystemModel,
-│   │                     Hertz, Cent, Semitone, Decibel, Millisecond,
-│   │                     Second, Beat, Bar, TimeSignature, NoteValue,
-│   │                     MusicalNote, Tuple, Dict)
-│   ├── OverloadResolver.cs   specificity-scored function dispatch
-│   ├── FunctionSignature.cs  signature + named parameter metadata
-│   ├── ArrayType.cs          generic Array<T>
-│   └── TypeChecker.cs        compatibility/conversion helpers
-├── Interpreter/
-│   ├── Interpreter.cs            statement dispatch
-│   ├── ExpressionEvaluator.cs    expression dispatch
-│   ├── ImplicitReturnCollector.cs  collects trailing expressions
-│   ├── PatternMatcher.cs         pattern dispatch for match/sections
-│   └── SectionOverloadDispatch.cs  picks parameterized section by signature
-├── Runtime/
-│   ├── ExecutionContext.cs     call stack, scoping, musical context, PRNG
-│   ├── StackFrame.cs           dictionary-backed variable/function scope
-│   ├── Value.cs                CLR value + Flow type wrapper, factory methods
-│   ├── MusicalContext.cs       tempo/timesig/key/swing/voicePool/tuning stack
-│   ├── NoteStreamCompiler.cs   compiles | ... | into Sequence values
-│   ├── ProgressionCompiler.cs  compiles chord progressions
-│   ├── ModuleLoader.cs         resolves use "@stdlib" + use "relative/path"
-│   ├── PrngRegistry.cs         per-callsite deterministic Random registry
-│   ├── Thunk.cs                memoizing thunk for lazy evaluation
-│   ├── FlowConfig.cs           ~/.config/flow/config.toml binding
-│   ├── DictData.cs             generic Dict<K,V> backing storage
-│   ├── MarkovModelData.cs      Markov chain model storage
-│   └── LsystemModelData.cs     L-system model storage
-├── StandardLibrary/
-│   ├── BuiltInFunctions.cs           registers all C# builtins at startup
-│   ├── InternalFunctionRegistry.cs   signature → lambda mapping
-│   ├── StdLib.cs                     core I/O + arithmetic + control flow
-│   ├── Collections/                  list operations
-│   ├── Audio/
-│   │   ├── SongRenderer.cs           sections → sequences → voices → buffer
-│   │   ├── BarRenderer.cs            voice-block aware bar rendering
-│   │   ├── SequenceRenderer.cs       sequence → audio buffer
-│   │   ├── VoiceAllocator.cs         polyphony / voice stealing
-│   │   ├── SampleCache.cs            bundled-sample lazy-load cache
-│   │   ├── SampledInstrumentRenderer.cs  varispeed sample playback
-│   │   ├── DSP/                      Reverb, Filter, Compressor, Delay,
-│   │   │                             GranularEngine, StretchEngine,
-│   │   │                             PitchShiftEngine, PhaseVocoder, Psola,
-│   │   │                             Fft, Hps, Panner, WindowFunctions
-│   │   ├── Synthesizers/             Piano, Brass, Sax, Bell, Flute, Organ,
-│   │   │                             Strings, Drums, Wavetable
-│   │   ├── Sfz/                      SFZ orchestral sampler (opt-in)
-│   │   ├── Tuning/                   Scala .scl loader
-│   │   ├── Vocalization/             vocal synthesis primitives
-│   │   ├── MidiExport.cs             multi-track SMF emit (DryWetMidi)
-│   │   └── FileIO.cs                 WAV read/write
-│   ├── Harmony/                      ChordParser, ScaleDatabase, Voicings,
-│   │                                 HarmonyFunctions (roman numerals)
-│   ├── Transforms/                   transpose, invert, retrograde, etc.
-│   ├── Patterns/                     13 Tidal-style combinators
-│   ├── Generative/                   Markov, L-system, cellular, chaos
-│   ├── Improv/                       jam + style registry
-│   ├── Notation/                     MusicXML / LilyPond / ABC / MML IO
-│   ├── Composition/                  timeline / voice / track helpers
-│   └── TestFramework/                (test ...) builtin + snapshot/restore
-├── Audio/
-│   ├── AudioPlaybackManager.cs       backend lifecycle owner
-│   ├── IAudioBackend.cs              backend abstraction
-│   └── PulseAudioSimpleBackend.cs    PulseAudio simple API via P/Invoke
-├── Diagnostics/
-│   ├── ErrorReporter.cs              error accumulation (not throwing)
-│   ├── FlowDiagnostic.cs / FlowError.cs
-│   ├── DiagnosticRenderer.cs         Rust-style multi-line diagnostic emit
-│   └── LevenshteinHelper.cs          "did you mean...?" suggestions
-├── Samples/                          CC-BY 4.0 University of Iowa MIS bundle
-├── improv/styles/                    shipped style packs (jazz/blues/classical)
-└── *.flow                            stdlib source modules
+flow-language/                         BCL-only; no project/package dependencies
+  Core/                                SourceMap, SourceLocation, Span
+  Lexing/ Parsing/ Ast/ Syntax/         one grammar, including music syntax
+  TypeSystem/                          core types, TypeCatalog, overload dispatch
+  Interpreter/                         interpreter and DomainBindings extension seam
+  Runtime/                             values, lexical scopes, sessions, module loader,
+                                       conversion/comparison/formatting seams
+  StandardLibrary/                     CoreLibrary, CoreStdLib, CoreCollections,
+                                       InternalFunctionRegistry, Dict operations
+  Diagnostics/                         structured errors and rendering
+  core.flow collections.flow           essential module declarations
+flow-lang/                             music library and compatibility host
+  Core/                                FlowEngine and EngineOptions
+  Music/                               MusicBindings, MusicalContext, MusicSession,
+                                       note-stream/progression/section evaluation
+  TypeSystem/SpecialTypes/              music descriptors, MusicValue factories,
+                                       conversions and MusicTypeCatalog
+  StandardLibrary/                      compatibility registration, music overloads,
+                                       Audio/DSP/Synthesizers/Sfz, Harmony, Transforms,
+                                       Patterns, Generative, Improv, Notation, Composition
+  Audio/                               backend lifecycle and platform adapters
+  Runtime/                             WasmEntry and host configuration loading
+  Samples/ improv/styles/              music assets and lazy style packs
+  *.flow                               @std aggregate and music module declarations
 ```
 
-The 12 stdlib `.flow` files in `flow-lang/` are loaded via `use "@name"`:
-`std` (which auto-imports `@collections` and `@bars`), `collections`, `audio`,
-`bars`, `notation`, `composition`, `patterns`, `generative`, `improv`, `sfz`,
-`notation-io`, `test`. They're copied to the build output via the csproj's
-`<None Update="..." CopyToOutputDirectory>` items.
+`CoreLibrary.Register(registry, context)` installs core implementations without
+importing any declarations. Scripts explicitly import `@core`; `@std` imports
+`@core` and adds the music/non-essential surface. Every music module imports
+`@std`. Neither assembly installs an implicit script prelude. The music host's
+interactive entry points import `@std`; the language-only host imports `@core`
+for `-e` and its line REPL. Style packs load lazily on first use.
+
+Both projects copy their modules to build/publish outputs; Web builds embed them
+as `FlowLang.Stdlib.<name>.flow`. `ModuleLoader` can find those resources across
+loaded assemblies. Core registration is independent of music registration; the
+compatibility host interleaves the core slices at their historical positions to
+preserve overload order. Music syntax evaluates through `DomainBindings` and
+reports an unavailable construct when the host has not installed its bindings.
+Music scope lives in frame slots, and `MusicSession` uses context extensions.
+
+The [Phase 3 baseline](baselines/phase3/README.md) records isolated publish,
+process closure and compatibility-corpus evidence. A few BCL-only music-shaped
+descriptors/model containers remain in the language assembly; moving those is
+still deferred and does not introduce audio packages or assets into its closure.
+
 
 ## Key Subsystems
 
@@ -326,7 +278,7 @@ This matters for dict keys, where reference identity is the contract.
 
 ### Musical context — a runtime stack
 
-`Runtime/MusicalContext.cs` is the runtime equivalent of "what does this note
+`Music/MusicalContext.cs` is the runtime equivalent of "what does this note
 mean in this position?". A musical context tracks the active tempo, time
 signature, key, swing factor, voice pool size, sustain pedal state, and
 tuning system. It's organized as a stack: each `tempo 120 { ... }`,
@@ -337,7 +289,7 @@ blocks naturally override outer ones.
 
 The context system is what lets note streams compile correctly at evaluation
 time. A `| C4 D4 E4 |` literal in source has no notion of tempo or key — those
-are resolved by `Runtime/NoteStreamCompiler.cs` against the active context
+are resolved by `Music/NoteStreamCompiler.cs` against the active context
 when the surrounding statement executes. The same source string produces a
 different `Sequence` value in a `tempo 60` block vs. a `tempo 240` block.
 
@@ -346,17 +298,19 @@ different `Sequence` value in a `tempo 60` block vs. a `tempo 240` block.
 The standard library is split between C# implementations and Flow source:
 
 - **C# builtins** are registered into `InternalFunctionRegistry` at engine
-  startup by `StandardLibrary/BuiltInFunctions.cs`. Each builtin has a
+  startup by `CoreLibrary` (language) and `BuiltInFunctions` (music compatibility
+  host). Each builtin has a
   `FunctionSignature` (name, parameter types, parameter names, varargs flag)
   and a C# lambda that consumes a `Value[]` and returns a `Value`.
-- **Flow stdlib modules** (`.flow` files in `flow-lang/`) provide
+- **Flow stdlib modules** (`.flow` files in `flow-language/` and `flow-lang/`) provide
   composer-friendly forward declarations, helper procs, and module activation
   gates. The `@sfz` and `@notation-io` modules are opt-in: importing them
   flips a runtime gate on `ExecutionContext` (`SfzEnabled`,
   `NotationIoEnabled`) that the corresponding builtins check on each call.
 
 When `FlowEngine` starts up, it registers every C# builtin unconditionally —
-the opt-in gating is purely runtime, controlled by the `use` statement.
+declarations become visible only through explicit imports. Construction loads zero
+modules; interactive defaults are a separate host action.
 
 ### Audio pipeline
 
