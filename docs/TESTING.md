@@ -489,3 +489,14 @@ FLOW_UPDATE_AUDIO_BASELINES=1 dotnet test flow-lang.Tests/flow-lang.Tests.csproj
 Do not enable either update mode in CI. See the [baseline compatibility
 decision](decisions/2026-09-20-baseline-compatibility.md) for the initial portable
 fixture refresh and PCM comparison evidence.
+
+### Shared analysis frontend (restructuring Phase 4)
+
+`Analysis/LanguageAnalysisTests` covers syntax codes/spans, imported diagnostics,
+cycles, explicit module roots/search paths, cancellation and discovery budgets.
+Its CLI subprocess fixture includes file writes, playback, looping and imported
+initializer output: `flow check` must finish without any of those effects.
+`Analysis/ModuleDescriptorTests` checks declaration/runtime binding parity and
+rejects LSP IL calls to engine/audio construction or runtime builtin registration.
+Completion, hover and varargs fixtures use the descriptor path. These tests are
+in the core tier; desktop-specific fixtures are excluded on Web.

@@ -108,7 +108,7 @@ The script downloads the matching `flow-<rid>-v1.5.0.tar.gz` from GitHub Release
 | `flow render script.flow -o out.wav` | Render to WAV |
 | `flow flow2midi script.flow -o out.mid` | Render to MIDI |
 | `flow midi2flow input.mid -o out.flow` | Convert MIDI → round-trippable Flow source |
-| `flow check script.flow` | Parse + type-check only |
+| `flow check script.flow` | Check syntax and top-level imports without execution |
 | `flow new piece-name` | Scaffold a new piece |
 | `flow lsp` | Start the Flow Language Server (stdio) |
 | `flow test [path]` | Run `test_*.flow` files via the pure-Flow test framework |

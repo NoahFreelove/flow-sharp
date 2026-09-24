@@ -11,7 +11,7 @@ assemblies are split, the rule is checked at namespace level inside `flow-lang.d
 
 | Logical component | Namespaces today |
 | --- | --- |
-| Language | `FlowLang.Lexing`, `Parsing`, `Ast*`, `Interpreter`, `Diagnostics`, `Runtime`, `TypeSystem` (except `SpecialTypes`), `StandardLibrary.Dict` |
+| Language | `FlowLang.Lexing`, `Parsing`, `Ast*`, `Interpreter`, `Diagnostics`, `Runtime`, `TypeSystem` (except `SpecialTypes`), `StandardLibrary.Dict`, `Syntax`, `Analysis` |
 | Forbidden from language | `FlowLang.Audio`, `StandardLibrary.{Audio*, Composition, Harmony, Improv, Midi, Network, Notation, Patterns, Transforms, Generative}`, `TypeSystem.SpecialTypes`, and the DryWetMidi, NAudio and Rug.Osc packages |
 | Hosting (facade, may depend on everything) | `FlowLang.Core` (`FlowEngine`) |
 
@@ -35,6 +35,10 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
   baseline refresh.
 
 ## Classification updates
+
+- Phase 4: `FlowLang.Analysis` belongs to the language: shared parsing, diagnostic
+  data, declaration descriptors and non-executing module-source discovery. The
+  dependency ratchet includes it; the forbidden edge set remains empty.
 
 - Phase 3: `FlowLang.Syntax` (grammar tables: note, chord, numeral and type-name
   rules, `Articulation`) is part of the language.

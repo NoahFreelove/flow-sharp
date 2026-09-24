@@ -601,3 +601,14 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   construction. The doc collector also shares `Parse`. `flow check` honors the
   host's configured module search paths through the explicit source provider.
   Verification before the final core gate: 195 frontend/editor tests pass.
+
+- **Interim verification and documentation**: core verifier at `39eb9bc` passes
+  the Desktop solution build, **2,871** main tests + **21** MIDI tests, **14** skips,
+  zero failures and zero tracked-content changes. LSP stdio smoke boots, responds
+  and exits cleanly. `FlowLang.Analysis` is classified as language in the dependency
+  decision/baseline; the ratchet remains empty. Updated CLI, architecture, testing
+  and API docs to describe the implemented syntax/import scope honestly. Evidence:
+  `docs/baselines/phase4/`. Phase 4 remains open: import-aware lexical binding,
+  known call arity/name/type diagnostics, richer shared editor analysis and the
+  unified evaluation/browser adapters still need work. Resume instructions:
+  `docs/plans/handoffs/2026-09-24-phase4-in-progress.md`.

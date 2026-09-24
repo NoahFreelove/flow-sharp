@@ -9,7 +9,8 @@
     "FlowLang.Runtime",
     "FlowLang.TypeSystem",
     "FlowLang.StandardLibrary.Dict",
-    "FlowLang.Syntax"
+    "FlowLang.Syntax",
+    "FlowLang.Analysis"
   ],
   "forbiddenNamespaces": [
     "FlowLang.Audio",

@@ -16,7 +16,7 @@ Run `flow <verb> ...`. The verbs:
 | `flow render <script> -o out.wav` | Run a script that contains a `(writeWav ...)` call |
 | `flow flow2midi <script> -o out.mid` | Run a script that contains a `(writeMidi ...)` call |
 | `flow midi2flow <input.mid> [-o out.flow]` | Convert a MIDI file to Flow source |
-| `flow check <script>` | Validate a script (parses AND executes it) |
+| `flow check <script>` | Check syntax and top-level imports without execution |
 | `flow new <name> [--dir <path>]` | Scaffold a new Flow project from an embedded template |
 | `flow lsp` | Start the Flow Language Server over stdio |
 | `flow test [path]` | Run `test_*.flow` files via the pure-Flow test framework |
@@ -26,7 +26,7 @@ Run `flow <verb> ...`. The verbs:
 A few honest notes:
 
 - **`flow render` / `flow flow2midi`** require the script to already contain the `writeWav` / `writeMidi` call — the `-o` flag is currently informational (it does not inject or redirect the output path). Auto-injection is backlogged.
-- **`flow check`** parses *and* executes the script today; a true parse-only mode is on the backlog. It still exits non-zero on any error, so it works as a pre-commit gate.
+- **`flow check`** checks syntax and resolves top-level imports without executing scripts or module initializers. It exits non-zero on analysis errors. Name, type and overload checking, nested/conditional imports, and runtime behavior remain unchecked; success does not prove a script will run successfully.
 - **`flow play`** does not auto-inject a `(play ...)` — the script must call it.
 - **`flow midi2flow`** takes `--sustain` / `--no-sustain`, `--sfz` / `--no-sfz`, and `--dump` in addition to `-o`. See [Playback and Export](Playback-and-Export.md) for the round-trip workflow.
 

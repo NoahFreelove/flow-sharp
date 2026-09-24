@@ -178,6 +178,7 @@ The solution (`flow-sharp.sln`) contains eight primary C# projects: **flow-langu
 
 ```
 flow-language/          # Flow.Language — BCL only; LanguageClosureTests enforce it
+  Analysis/             # shared Parse, module descriptors, non-executing import analysis
   Core/                 # SourceLocation, Span, SourceMap
   Lexing/               # SimpleLexer (manual, music-literal aware)
   Parsing/              # Parser, TypeParser (recursive descent)
@@ -220,6 +221,12 @@ flow-lang/              # music library + music host (references flow-language)
 `CoreLibrary`, and supports scripts/stdin, `-e` and a line REPL. Scripts explicitly
 import `@core`; interactive modes import it for the user. `LanguageHostTests` checks
 all seven language examples and process closure. See `docs/baselines/phase3/README.md`.
+
+**Static tooling:** `LanguageAnalysis.Parse` is shared by `flow check`, the LSP and
+the doc collector. `Analyze` discovers top-level imports without evaluation.
+`flow check` currently checks syntax/imports only; names, types and overloads remain
+unchecked. LSP builtin signatures come from parsed `.flow` declarations through
+`StdlibSymbolIndex.Descriptors`, without runtime registration or audio construction.
 
 **FlowEngine** (`Core/FlowEngine.cs`) wires `InternalFunctionRegistry` + `ExecutionContext` + `Interpreter` and owns `AudioPlaybackManager`.
 

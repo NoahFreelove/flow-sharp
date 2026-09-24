@@ -63,6 +63,15 @@ ApplyTuningPragma  (resolves file-scope tuning to musical context)
 Interpreter    ──►  Value(s) + side effects (WAV writes, audio playback)
 ```
 
+`flow-language/Analysis` provides a separate, non-executing frontend:
+`LanguageAnalysis.Parse` returns syntax plus coded diagnostics, `Describe` returns
+procedure/import metadata, and `Analyze` follows top-level imports through an
+explicit source provider with cancellation and a module budget. `flow check` uses
+this path; it never evaluates module bodies. The LSP and doc collector share
+`Parse`, and editor builtin signatures come from module declarations without
+constructing a runtime. Lexical binding, static type/overload checks and nested
+imports remain pending; `AnalysisResult.Unchecked` records these limits.
+
 There is no separate type-check pass — types are resolved at runtime as part of
 overload dispatch. There is no AST-rewrite optimization pass. Each stage is
 pure-functional in shape (its output depends only on its input), which makes

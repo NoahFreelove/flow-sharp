@@ -1,14 +1,16 @@
 # Public analysis and evaluation APIs
 
 Status: proposed shape accepted for restructuring Phase 1 (2026-09-22). `Evaluate` and
-cancellation implemented in Phase 2; `Parse`/`Analyze` remain Phase 4.
+cancellation implemented in Phase 2; initial non-executing `Parse`/`Analyze` and
+declaration-based editor metadata implemented in Phase 4 (2026-09-24). Binding
+and the complete unified evaluation diagnostic model remain pending.
 
 ## Context
 
-Today's embedding surface is `FlowEngine.Execute(source, fileName) -> bool` plus
+At the start of restructuring, the embedding surface was `FlowEngine.Execute(source, fileName) -> bool` plus
 `ErrorReporter`, `SourceMap`, `GetLastExpressionResult` and
-`ExecuteScriptAndGetResult`. `flow check` executes the program with console
-suppression; it does not analyze. Most checking happens at evaluation time. The
+`ExecuteScriptAndGetResult`. `flow check` executed the program with console
+suppression rather than analyzing it. Most checking happens at evaluation time. The
 [language contract](../../contracts/language/README.md#what-analysis-can-prove)
 shows that only parse errors are reported before execution; other failures
 surface only on the executed path. Since the Phase 1 semantic fixes, internal
@@ -60,13 +62,35 @@ errors and rich diagnostics, the last value, and the elapsed time.
 `TimeLimit`. Output goes to the engine's `EngineOptions.Output`/`Diagnostics` sinks.
 Internal failures during evaluation are located diagnostics (Phase 1 semantic
 fixes). A separate `HostFailure` outcome and stable diagnostic codes are still open;
-they belong with the unified diagnostic model in Phase 4. `Parse` and `Analyze` do
-not exist yet.
+they belong with the unified diagnostic model in Phase 4.
+
+## Implemented in Phase 4 so far
+
+`LanguageAnalysis.Parse(source, sourceId)` returns `SyntaxTree`, preserving tokens,
+partial AST, legacy errors and coded diagnostics. `Describe(tree)` exposes module
+imports and procedure signatures with documentation and source spans, without
+implementation delegates. `Analyze(tree, IModuleSourceProvider, AnalysisOptions)`
+follows top-level imports with a module budget and cancellation; it never calls
+the interpreter. The filesystem provider uses explicit roots and search paths.
+
+`flow check` uses this path and reports its scope in the success message. Stable
+codes are `flow.syntax.pragma`, `flow.syntax.lex`, `flow.syntax.parse` and
+`flow.module.read`, `flow.module.missing`, `flow.module.limit`. Imported diagnostics
+retain their source identities. The LSP parse adapter and documentation collector
+share `Parse`; LSP syntax diagnostics retain codes and spans. Completion/hover
+metadata comes from parsed standard-library declarations, with no dummy runtime
+registration or audio construction.
+
+This is syntax and top-level import analysis only. `AnalysisResult.Unchecked`
+records lexical binding, overload/type checking, nested/conditional imports and
+dynamic exports, runtime values/effects/capabilities and termination. These remain
+unchecked even when `Success` is true. LSP import-aware binding, the full unified
+evaluation diagnostic model and browser analysis integration remain pending.
 
 ## Compatibility
 
 `FlowEngine.Execute` keeps returning `bool` and populating `ErrorReporter`. The
-CLI keeps its current text output until diagnostic codes exist. The frozen WASM
+CLI check output now includes analysis diagnostic codes and its limited scope. The frozen WASM
 `flow-runtime.js` result shape (`errors[]` with `kind`, `message`, `line?`,
 `column?`) is produced by an adapter from the new model.
 
