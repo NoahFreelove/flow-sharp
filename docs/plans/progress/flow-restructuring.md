@@ -706,3 +706,13 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   All 17 cancellation/model tests pass. Web publish checks also exposed idle
   MSBuild workers retaining output pipes; final verification disables node reuse.
   No tracked-content mutations or audio baseline changes occurred in the first run.
+
+- **Initial-slice verification**: all-tier verifier at `b3834d9` passes the
+  Desktop solution build, **3,022 main + 21 MIDI tests**, **19 skips**, zero
+  failures and zero tracked-content mutations, including audio/corpus and Web
+  publish gates. `MSBUILDDISABLENODEREUSE=1` avoids inherited publish pipes.
+  Evidence: `docs/baselines/phase5/`. Phase 5 remains in progress; snapshot-driven
+  rendering/export, shared transforms and streaming/render contexts are open.
+  Resume: `docs/plans/handoffs/2026-09-24-phase5-in-progress.md`.
+  The generated Web bundle also boots through the unchanged JavaScript adapter:
+  repeated fresh sessions, located parse errors and `150ms` music arithmetic pass.

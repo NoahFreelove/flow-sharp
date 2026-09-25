@@ -1,0 +1,12 @@
+{
+  "test": "FlowLang.Tests.MusicModel.RenderedBufferSequenceTests.LongRepeatedAssemblyAllocatesLinearlyRatherThanCopyingEveryPrefix",
+  "outcome": "Passed",
+  "repeats": 128,
+  "section_frames": 2048,
+  "channels": 2,
+  "legacy_allocated_bytes": 135267912,
+  "linear_allocated_bytes": 2097392,
+  "reduction_factor": 64.49338607184542,
+  "measurement": "GC.GetAllocatedBytesForCurrentThread; assembly only, output equality asserted",
+  "source_trx": "/tmp/flow-phase5-slices-final/flow-lang.Tests.trx"
+}

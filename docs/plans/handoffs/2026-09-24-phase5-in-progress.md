@@ -21,6 +21,17 @@ pitch frequencies are detached, but reusable tuning descriptions are still open.
 Old render/export consumers still use `SongData`; no native snapshot rendering or
 export is claimed yet. Buffer output remains contiguous, not streaming.
 
+## Verification
+
+`5017ab3` updates the render timeout test: faster finite song assembly can finish
+before its deadline, so the fixture now renders small buffers continuously.
+All 17 cancellation/model tests pass. All-tier verification at `b3834d9` passes
+**3,022 main + 21 MIDI tests**, **19 skips**, zero failures and zero tracked-file
+mutations, including audio/corpus and Web publish checks. Evidence is in
+`docs/baselines/phase5/`. Run with `MSBUILDDISABLENODEREUSE=1` to avoid idle
+MSBuild workers retaining the existing Web test helpers' output pipes. The trimmed
+Web bundle also passes the Node session smoke through the unchanged JS adapter.
+
 ## Next work
 
 1. Establish explicit render options/context and native-host snapshot render/export
