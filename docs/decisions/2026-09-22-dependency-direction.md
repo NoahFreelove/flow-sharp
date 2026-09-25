@@ -36,6 +36,14 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
 
 ## Classification updates
 
+- Phase 5 (initial slice): `Flow.Music.Model` is a separate BCL-only assembly in
+  `flow-music-model/`. It contains immutable evaluated score data and timing,
+  with no runtime/language/audio references. `CompositionSnapshotTests` scans
+  its compiled references and type references; the language closure remains
+  BCL-only. `FlowLang.Music.CompositionCompiler` is the music-side bridge in
+  `flow-lang`, which references both assemblies. Renderer/export extraction is
+  still open.
+
 - Phase 4: `FlowLang.Analysis` belongs to the language: shared parsing, diagnostic
   data, declaration descriptors and non-executing module-source discovery. The
   dependency ratchet includes it; the forbidden edge set remains empty.

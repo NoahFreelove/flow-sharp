@@ -185,7 +185,8 @@ The primary projects are organized by responsibility:
 | Project | Role |
 |---------|------|
 | `flow-language/` | BCL-only language runtime, core standard library, and extension contracts. |
-| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references `flow-language`. |
+| `flow-music-model/` | BCL-only immutable evaluated score snapshots and quarter/second timing. |
+| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references language and music model. |
 | `scripts/LanguageHost/` | Language-only CLI, REPL and embedding example; references only `flow-language`. |
 | `flow-interpreter/` | Legacy entry point — REPL, watch-mode, script runner. Predates the unified CLI; kept for backwards compatibility. |
 | `flow-cli/` | The shipping `flow` binary — 13 subcommands (`run`, `eval`, `repl`, `watch`, `play`, `render`, `flow2midi`, `midi2flow`, `check`, `new`, `test`, `lsp`, `version`). |
@@ -193,6 +194,20 @@ The primary projects are organized by responsibility:
 | `flow-midi/` | Standalone MIDI import library + the `midi2flow` CLI logic. Round-trips `.mid` → `.flow` source. |
 | `flow-jetbrains/` | JetBrains IDE plugin (Gradle/Kotlin project) that drives `flow-lsp` via LSP4IJ. |
 | `vscode-extension/` | VSCode language extension (TypeScript) with bundled per-platform `flow-lsp` binaries. |
+
+### Evaluated score boundary (Phase 5 in progress)
+
+`CompositionCompiler` copies evaluated `SongData` into `Flow.Music.Model`
+snapshots without retaining executable section bodies or runtime values. The
+model owns its collections, shares sections across repeated placements, and
+retains timing, provenance and musical controls. Score duration excludes render
+tails and frame rounding. Legacy rendering/export still consume `SongData`.
+
+Song buffer assembly now allocates the result once and copies each output sample
+once, with cancellation checks between bounded chunks. It still retains section
+buffers and returns one contiguous buffer; streaming is open. See the
+[boundary decision](decisions/2026-09-24-composition-snapshot-boundary.md) for
+identity/tuning limits, MIDI audit and remaining migration work.
 
 ### Language and music assemblies
 

@@ -528,3 +528,22 @@ node scripts/ci/wasm-session-smoke.mjs \
 
 This verifies independent repeat runs, located parse errors and music arithmetic;
 it does not require or certify audible playback.
+
+### Music snapshots and assembly allocation (restructuring Phase 5)
+
+`MusicModel/CompositionSnapshotTests` checks the BCL-only assembly closure,
+collection ownership, native construction, Flow compilation parity, source
+origins, tuplets/parallel voices, tuning data, timing and cancellation.
+`RenderedBufferSequenceTests` checks bit-exact concatenation, final-buffer
+ownership, overflow, cancellation between copy chunks and allocation growth.
+The 128-repeat fixture compares against the former prefix-copy algorithm and
+requires at least an eightfold allocation reduction; it is not a wall-clock test.
+
+```bash
+dotnet test flow-lang.Tests/flow-lang.Tests.csproj --filter FullyQualifiedName~MusicModel
+```
+
+Run full verification serially. If idle MSBuild workers retain subprocess output
+pipes during Web-publish checks, use `MSBUILDDISABLENODEREUSE=1` for the verifier.
+The render timeout fixture uses sustained small renders so faster finite-song
+assembly cannot turn expected cancellation into successful completion.
