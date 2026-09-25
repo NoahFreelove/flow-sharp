@@ -88,10 +88,12 @@ public class StaticBindingTests
     {
         var stdlib = new StdlibSymbolIndex(new ParseSession());
         Assert.Contains("collections", stdlib.VisibleModules("core"));
+        Assert.Equal(stdlib.VisibleModules("core"), stdlib.VisibleModules("core.flow"));
         Assert.DoesNotContain("osc", stdlib.VisibleModules("std"));
         Assert.NotEmpty(stdlib.ProcsForModule("core"));
         Assert.NotEmpty(stdlib.ProcsForModule("std"));
     }
+
     [FlowLang.Tests.Helpers.FlowTargetFact("Desktop")]
     public void ImportedSyntaxErrorIsRelatedToTheImportInsteadOfTheWrongDocumentLine()
     {

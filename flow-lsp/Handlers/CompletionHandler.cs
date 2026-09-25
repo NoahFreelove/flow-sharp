@@ -235,8 +235,7 @@ public sealed class CompletionHandler : CompletionHandlerBase
     /// `use` set. Builtins / keywords / snippets / user symbols pass through unchanged —
     /// they're not module-tagged in <see cref="StdlibSymbolIndex"/>.
     ///
-    /// `use "@std"` transitively imports the other stdlib modules (mirrors std.flow's
-    /// `use "@collections"` + `use "@bars"` plus the cross-cutting nature of @std).
+    /// Transitive visibility follows the imports in each module's source.
     /// </summary>
     public static IEnumerable<CompletionItem> FilterByImports(
         IEnumerable<CompletionItem> items, FlowProgram ast, StdlibSymbolIndex stdlib)
@@ -250,11 +249,8 @@ public sealed class CompletionHandler : CompletionHandlerBase
 
         return items.Where(item =>
         {
-            // Only filter items that originated from the stdlib source. The Detail
-            // prefix `(stdlib: @...)` is the discriminator (see StdlibSymbolIndex.Items()
-            // at StdlibSymbolIndex.cs:92-98) — without this guard, a builtin sharing a
-            // name with a stdlib proc (e.g. `print`, declared in both BuiltInFunctions
-            // and std.flow:8) would be wrongly dropped.
+            // Signature items already come from reachable descriptors in production.
+            // Filter the additional module-labelled items by their own provenance.
             if (item.Detail is null || !item.Detail.StartsWith("(stdlib: @", StringComparison.Ordinal))
                 return true;
             var module = item.Detail["(stdlib: @".Length..].TrimEnd(')');

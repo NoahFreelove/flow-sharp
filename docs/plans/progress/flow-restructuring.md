@@ -642,3 +642,11 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   hover and clean shutdown. A Linux strace run observes zero sample-file, device,
   or native audio-library accesses; the IL gate additionally rejects sample-cache
   and style-registry construction/calls. Full final verification follows.
+
+- **Final compatibility cleanup** (2026-09-24): editor visibility accepts the
+  runtime-supported `@core.flow` spelling as well as `@core`, with an explicit
+  regression assertion. Removed the now-unused private WASM diagnostic mapping
+  helpers after switching production to coded results. Post-cleanup verification:
+  25 binding/completion/import tests and 94 evaluation/browser adapter tests pass.
+  This follows the full all-tier gate at `c7476b5` (3,012 main + 21 MIDI, 19 skips,
+  zero failures and zero tracked-content mutations).

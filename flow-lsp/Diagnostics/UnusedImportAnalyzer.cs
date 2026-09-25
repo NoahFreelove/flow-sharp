@@ -20,8 +20,8 @@ namespace FlowLsp.Diagnostics;
 ///    (FunctionCallExpression.Name, VariableExpression.Name,
 ///     MemberAccessExpression.MemberName) into a HashSet&lt;string&gt;.
 /// 3. For each import, derive the module name (strip leading <c>@</c>).
-/// 4. <c>@std</c> special case: expand to <see cref="StdlibSymbolIndex.ModuleNames"/>
-///    so a reference to ANY transitively-imported proc keeps <c>@std</c> alive.
+/// 4. Follow parsed transitive imports through <see cref="StdlibSymbolIndex.VisibleModules"/>.
+///    A reference to a transitively imported procedure keeps the import alive.
 /// 5. Lookup <see cref="StdlibSymbolIndex.ProcsForModule"/> for the import's module;
 ///    if any of those procs' Names appear in the referenced-names set, the import
 ///    is "used" — skip emitting. Otherwise emit one Warning diagnostic.

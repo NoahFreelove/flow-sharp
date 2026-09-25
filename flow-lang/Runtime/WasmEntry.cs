@@ -237,41 +237,6 @@ public static partial class WasmEntry
         }
     }
 
-    /// <summary>
-    /// Maps <see cref="FlowError"/> entries from
-    /// <see cref="ErrorReporter.Errors"/> to the D-48-14 structured
-    /// <see cref="RunError"/> shape JS consumes.
-    /// </summary>
-    /// <remarks>
-    /// The <see cref="FlowError"/> shape carries a single
-    /// <see cref="DiagnosticLevel"/> (Info/Warning/Error) but not a parse
-    /// vs. eval vs. runtime category. The mapping below is conservative:
-    /// any Error-level FlowError becomes kind=<c>"eval"</c> — the catch-all
-    /// for "the script could not run to completion". The top-level catch site
-    /// in <see cref="RunFromJs"/> emits kind=<c>"runtime"</c> for uncaught
-    /// host-side exceptions; kind=<c>"parse"</c> is reserved for future
-    /// per-stage tagging when the ErrorReporter grows a category field (v1.6
-    /// backlog). kind=<c>"cancel"</c> reports a run stopped by the D-48-10 budget
-    /// (added by <see cref="RunFromJs"/>, not by this mapping).
-    /// </remarks>
-    private static RunError[] MapFlowErrors(IEnumerable<FlowError> errors, SourceMap? sourceMap = null)
-    {
-        if (errors == null) return Array.Empty<RunError>();
-        return errors
-            .Where(e => e.Level == DiagnosticLevel.Error)
-            .Select(e =>
-            {
-                int? line = e.Location?.Line > 0 ? e.Location.Line : null;
-                return new RunError(
-                    Kind: "eval",
-                    Message: e.Message ?? string.Empty,
-                    Line: line,
-                    Column: e.Location?.Column > 0 ? e.Location.Column : null,
-                    SourceSnippet: SnippetFor(sourceMap, line));
-            })
-            .ToArray();
-    }
-
     /// <summary>Adapt coded diagnostics to the frozen browser result shape.</summary>
     internal static RunError[] MapEvaluation(EvaluationResult result, SourceMap sourceMap)
         => result.CodedDiagnostics.Where(d => d.Level == DiagnosticLevel.Error).Select(d =>
@@ -287,26 +252,6 @@ public static partial class WasmEntry
                 d.Detail.Suggestion is { } hint ? $"{d.Message} (did you mean '{hint}'?)" : d.Message,
                 line, location.Column > 0 ? location.Column : null, snippet);
         }).ToArray();
-
-    /// <summary>
-    /// sweep-0614 wasm-web: quote the offending source line for the playground's
-    /// Rust-style diagnostic box. <see cref="FlowEngine.Execute"/> registers the
-    /// full source under the <c>"&lt;wasm&gt;"</c> key (the <c>fileName</c> passed
-    /// from <see cref="RunFromJs"/>), so the line is reachable via
-    /// <see cref="SourceMap.TryGetSource"/>. Returns null when no source map, no
-    /// line, or the line is out of range — matching the documented "null when no
-    /// snippet is available" semantics on <see cref="RunError.SourceSnippet"/>.
-    /// </summary>
-    private static string? SnippetFor(SourceMap? sourceMap, int? line)
-    {
-        if (sourceMap == null || line is not int ln || ln < 1) return null;
-        if (!sourceMap.TryGetSource(WasmSourceKey, out var src) || string.IsNullOrEmpty(src))
-            return null;
-        var lines = src.Split('\n');
-        if (ln > lines.Length) return null;
-        // Trim a trailing CR so CRLF-authored snippets render cleanly.
-        return lines[ln - 1].TrimEnd('\r');
-    }
 
     /// <summary>Source-map key <see cref="RunFromJs"/> registers the run source under.</summary>
     private const string WasmSourceKey = "<wasm>";

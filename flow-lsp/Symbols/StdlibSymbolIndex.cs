@@ -8,8 +8,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 namespace FlowLsp.Symbols;
 
 /// <summary>
-/// Snapshot of every top-level <see cref="ProcDeclaration"/> in the 6 stdlib
-/// modules: @std, @audio, @collections, @bars, @notation, @composition.
+/// Snapshot of top-level procedure declarations in the shipped standard library.
 /// Built ONCE at startup via <see cref="ParseSession"/> — stdlib files don't
 /// change during an LSP session, so per-keystroke reparsing is wasted work.
 ///
@@ -89,14 +88,14 @@ public sealed class StdlibSymbolIndex
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var pending = new Stack<string>();
-        pending.Push(module);
+        pending.Push(Path.GetFileNameWithoutExtension(module));
         while (pending.TryPop(out var name))
         {
             if (!seen.Add(name)) continue;
             yield return name;
             var descriptor = Descriptors.FirstOrDefault(d => Path.GetFileNameWithoutExtension(d.Id) == name);
             foreach (var import in descriptor?.Imports ?? [])
-                if (import.FilePath.StartsWith('@')) pending.Push(import.FilePath[1..].Replace(".flow", ""));
+                if (import.FilePath.StartsWith('@')) pending.Push(Path.GetFileNameWithoutExtension(import.FilePath[1..]));
         }
     }
 
