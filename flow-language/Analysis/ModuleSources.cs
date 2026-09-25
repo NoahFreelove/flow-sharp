@@ -12,11 +12,13 @@ public sealed class FileModuleSourceProvider : IModuleSourceProvider
     private readonly string _baseDirectory;
     private readonly string _stdlibDirectory;
     private readonly string[] _searchPaths;
+    private readonly Func<string, string?>? _sourceOverlay;
 
     public FileModuleSourceProvider(string baseDirectory, string? stdlibDirectory = null,
-        IEnumerable<string>? searchPaths = null)
+        IEnumerable<string>? searchPaths = null, Func<string, string?>? sourceOverlay = null)
     {
         _baseDirectory = Path.GetFullPath(baseDirectory);
+        _sourceOverlay = sourceOverlay;
         _stdlibDirectory = Path.GetFullPath(stdlibDirectory ?? AppContext.BaseDirectory);
         _searchPaths = (searchPaths ?? Array.Empty<string>())
             .Select(path => Path.GetFullPath(path, _baseDirectory)).ToArray();
@@ -37,11 +39,18 @@ public sealed class FileModuleSourceProvider : IModuleSourceProvider
             {
                 var candidate = Path.GetFullPath(Path.Combine(directory,
                     requestedPath.EndsWith(".flow", StringComparison.Ordinal) ? requestedPath : requestedPath + ".flow"));
-                if (File.Exists(candidate)) return new SourceDocument(candidate, File.ReadAllText(candidate));
+                if (Read(candidate) is { } source) return source;
             }
             var importer = Path.GetFullPath(importingSourceId, _baseDirectory);
             path = Path.GetFullPath(requestedPath, Path.GetDirectoryName(importer)!);
         }
+        return Read(path);
+    }
+
+    private SourceDocument? Read(string path)
+    {
+        var text = _sourceOverlay?.Invoke(path);
+        if (text is not null) return new SourceDocument(path, text);
         return File.Exists(path) ? new SourceDocument(path, File.ReadAllText(path)) : null;
     }
 }

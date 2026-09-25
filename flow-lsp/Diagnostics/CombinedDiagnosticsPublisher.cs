@@ -68,14 +68,19 @@ public sealed class CombinedDiagnosticsPublisher
     public static IReadOnlyList<Diagnostic> BuildAll(
         ParseResult result, string source, StdlibSymbolIndex stdlib)
     {
-        var parseDiags = result.Syntax is { } syntax
-            ? DiagnosticsPublisher.BuildAnalysisDiagnostics(syntax.Diagnostics)
+        var analysis = result.Analysis ?? (result.Syntax is { } tree
+            ? EditorAnalysis.Analyze(source, tree.Source.Id, stdlib) : null);
+        // Never paint an imported file's line/column onto the active document.
+        var parseDiags = analysis is not null
+            ? DiagnosticsPublisher.BuildAnalysisDiagnostics(EditorAnalysis.DocumentDiagnostics(analysis))
             : DiagnosticsPublisher.BuildDiagnostics(result.Errors);
         var lintDiags      = ScaleLintAnalyzer.Analyze(result.Ast, result.Tokens, source);
         var unusedDiags    = UnusedImportAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib);
         var unreachDiags   = UnreachableSectionAnalyzer.Analyze(result.Ast, result.Tokens, source);
         var shadowDiags    = ShadowedVariableAnalyzer.Analyze(result.Ast, result.Tokens, source);
-        var undefinedDiags = UndefinedSymbolAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib);
+        var undefinedDiags = analysis is null
+            ? UndefinedSymbolAnalyzer.Analyze(result.Ast, result.Tokens, source, stdlib)
+            : Array.Empty<Diagnostic>();
 
         // Phase 31 Plan 31-08 (scope expansion): six-source merge — adds
         // UndefinedSymbolAnalyzer to the 5-source Phase 31 Plan 31-02 set.

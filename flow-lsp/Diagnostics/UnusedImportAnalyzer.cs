@@ -123,7 +123,7 @@ public static class UnusedImportAnalyzer
         StdlibSymbolIndex stdlib)
     {
         // @std and @core transitively import other stdlib modules.
-        foreach (var mod in StdlibSymbolIndex.ModulesVisibleThrough(moduleName))
+        foreach (var mod in stdlib.VisibleModules(moduleName))
         {
             if (HasAnyReferencedProcInModule(mod, referenced, stdlib))
                 return true;

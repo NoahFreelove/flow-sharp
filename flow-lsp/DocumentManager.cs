@@ -78,7 +78,8 @@ public sealed class DocumentManager
         try { await Task.Delay(_debounce, ct); }
         catch (TaskCanceledException) { return; }
         if (ct.IsCancellationRequested) return;
-        await _onParse(uri, text, ct);
+        try { await _onParse(uri, text, ct); }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
     }
 
     private sealed record BufferEntry(string Text, CancellationTokenSource Cts);

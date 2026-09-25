@@ -612,3 +612,15 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   known call arity/name/type diagnostics, richer shared editor analysis and the
   unified evaluation/browser adapters still need work. Resume instructions:
   `docs/plans/handoffs/2026-09-24-phase4-in-progress.md`.
+
+- **C — shared import-aware editor analysis and conservative binding** (2026-09-24):
+  check and LSP diagnostics now share module discovery plus lexical-name and
+  source-procedure call warnings (arity/names and provable primitive literal
+  mismatches). Dynamic values, host overloads/defaults and declaration ordering
+  stay explicitly unknown. Editor imports honor unsaved buffers; imported errors
+  attach to the use statement with related source spans rather than appearing at
+  the wrong document line. Completion/hover use the discovered module descriptors.
+  Stdlib visibility follows actual transitive imports and preserves module owners;
+  corrected the old test claiming @audio did not bring @collections (it does via
+  @std/@core). Verification: 224 analysis, adapter, Phase 17/31 and cancellation
+  tests pass; the preceding run also passed 246 including Phase 48 (5 skips).

@@ -54,6 +54,19 @@ public sealed class DiagnosticsPublisher : IDiagnosticsPublisher
             Source = "flow",
             Severity = LspMappings.ToSeverity(d.Level),
             Message = d.Message,
+            RelatedInformation = new Container<DiagnosticRelatedInformation>(d.Detail.Labels
+                .Where(label => label.Span.Start.FileName is not null)
+                .Select(label => new DiagnosticRelatedInformation
+                {
+                    Message = label.Text,
+                    Location = new Location
+                    {
+                        Uri = DocumentUri.FromFileSystemPath(label.Span.Start.FileName!),
+                        Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
+                            new Position(Math.Max(0, label.Span.Start.Line - 1), Math.Max(0, label.Span.Start.Column - 1)),
+                            new Position(Math.Max(0, label.Span.End.Line - 1), Math.Max(0, label.Span.End.Column - 1))),
+                    },
+                })),
             Range = new OmniSharp.Extensions.LanguageServer.Protocol.Models.Range(
                 new Position(Math.Max(0, d.Span.Start.Line - 1), Math.Max(0, d.Span.Start.Column - 1)),
                 new Position(Math.Max(0, d.Span.End.Line - 1), Math.Max(0, d.Span.End.Column - 1))),

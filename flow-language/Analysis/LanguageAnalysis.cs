@@ -59,6 +59,7 @@ public static class LanguageAnalysis
         var pending = new Queue<SyntaxTree>();
         var seen = new HashSet<string>(StringComparer.Ordinal) { root.Source.Id };
         var modules = new List<ModuleDescriptor>();
+        var dependencies = new List<ModuleDependency>();
         var diagnostics = new List<AnalysisDiagnostic>();
         pending.Enqueue(root);
         while (pending.TryDequeue(out var syntax))
@@ -85,6 +86,7 @@ public static class LanguageAnalysis
                         $"Module '{import.FilePath}' not found", span)));
                     continue;
                 }
+                dependencies.Add(new(syntax.Source.Id, source.Id, span));
                 if (seen.Contains(source.Id)) continue; // cycles and repeated imports need no evaluation
                 if (seen.Count >= options.MaxModules)
                 {
@@ -96,6 +98,9 @@ public static class LanguageAnalysis
                 pending.Enqueue(Parse(source.Text, source.Id));
             }
         }
-        return new AnalysisResult(root, modules.ToArray(), diagnostics.ToArray());
+        var result = new AnalysisResult(root, modules.ToArray(), diagnostics.ToArray()) { Dependencies = dependencies.ToArray() };
+        if (!root.Diagnostics.Any(d => d.Level == DiagnosticLevel.Error))
+            diagnostics.AddRange(StaticBindings.Analyze(result, options.Cancellation));
+        return result with { Diagnostics = diagnostics.ToArray() };
     }
 }

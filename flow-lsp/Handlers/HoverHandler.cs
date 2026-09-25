@@ -117,7 +117,8 @@ public sealed class HoverHandler : HoverHandlerBase
         var uri = request.TextDocument.Uri;
         var text = _docs.GetText(uri) ?? string.Empty;
         var ident = IdentifierAt(text, request.Position);
-        return Task.FromResult(BuildHover(ident, _builtIns, _users, _stdlib, uri));
+        var analysis = EditorAnalysis.Analyze(text, uri.GetFileSystemPath(), _stdlib, _docs, ct);
+        return Task.FromResult(BuildHover(ident, new BuiltInIndex(analysis.Modules), _users, _stdlib, uri));
     }
 
     protected override HoverRegistrationOptions CreateRegistrationOptions(

@@ -34,19 +34,23 @@ public sealed record ModuleDescriptor(SyntaxTree Syntax,
     public string? Name => Syntax.Program.Statements.OfType<ModuleDeclarationStatement>().FirstOrDefault()?.Name;
 }
 
+public sealed record ModuleDependency(string ImporterId, string SourceId, Span ImportSpan);
+
 public sealed record AnalysisOptions(int MaxModules = 256, CancellationToken Cancellation = default);
 
 /// <summary>
 /// Syntax and top-level module discovery. Success does not prove runtime validity.
-/// Binding, overload selection, runtime types and effects remain unchecked in this slice.
+/// Conservative binding and source-procedure call warnings supplement syntax/import errors.
+/// Runtime overload selection, values and effects remain unchecked.
 /// </summary>
 public sealed record AnalysisResult(SyntaxTree Root, IReadOnlyList<ModuleDescriptor> Modules,
     IReadOnlyList<AnalysisDiagnostic> Diagnostics)
 {
+    public IReadOnlyList<ModuleDependency> Dependencies { get; init; } = [];
     public bool Success => Diagnostics.All(d => d.Level != DiagnosticLevel.Error);
     public IReadOnlyList<string> Unchecked { get; } = new[]
     {
-        "Lexical name binding and overload/type checking",
+        "Declaration order, dynamic bindings, host overloads/defaults, and non-literal type inference",
         "Conditional or nested imports and dynamic module exports",
         "Runtime values, effects, capabilities and termination",
     };

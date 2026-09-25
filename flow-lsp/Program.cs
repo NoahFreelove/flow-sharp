@@ -53,10 +53,13 @@ public static class Program
                     dm = new DocumentManager((uri, text, ct) =>
                     {
                         if (ct.IsCancellationRequested) return Task.CompletedTask;
-                        var result = parser.Parse(text, uri.GetFileSystemPath());
+                        var analysis = EditorAnalysis.Analyze(text, uri.GetFileSystemPath(),
+                            sp.GetRequiredService<StdlibSymbolIndex>(), dm, ct);
+                        var result = new ParseResult(analysis.Root.Program, analysis.Root.Tokens, analysis.Root.LegacyErrors)
+                        { Syntax = analysis.Root, Analysis = analysis };
                         // CLOSE-RACE GUARD: if the doc closed during the debounce window,
                         // do NOT publish — that would revive cleared diagnostics.
-                        if (dm!.HasDocument(uri))
+                        if (!ct.IsCancellationRequested && dm!.HasDocument(uri))
                         {
                             users.Update(uri, result.Ast);
                             // Phase 24 Plan 24-04: combined publish merges parse errors and

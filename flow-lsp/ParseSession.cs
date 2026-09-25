@@ -31,4 +31,5 @@ public sealed record ParseResult(
     IReadOnlyList<FlowError> Errors)
 {
     public FlowLang.Analysis.SyntaxTree? Syntax { get; init; }
+    public FlowLang.Analysis.AnalysisResult? Analysis { get; init; }
 }

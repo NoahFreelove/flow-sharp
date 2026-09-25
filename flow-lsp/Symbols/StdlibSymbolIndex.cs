@@ -84,6 +84,22 @@ public sealed class StdlibSymbolIndex
         Descriptors = descriptors.ToArray();
     }
 
+    /// <summary>Actual transitive imports, retaining every module's ownership.</summary>
+    public IEnumerable<string> VisibleModules(string module)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Stack<string>();
+        pending.Push(module);
+        while (pending.TryPop(out var name))
+        {
+            if (!seen.Add(name)) continue;
+            yield return name;
+            var descriptor = Descriptors.FirstOrDefault(d => Path.GetFileNameWithoutExtension(d.Id) == name);
+            foreach (var import in descriptor?.Imports ?? [])
+                if (import.FilePath.StartsWith('@')) pending.Push(import.FilePath[1..].Replace(".flow", ""));
+        }
+    }
+
     public StdProc? Find(string name) =>
         _byName.TryGetValue(name, out var p) ? p : null;
 
@@ -98,11 +114,9 @@ public sealed class StdlibSymbolIndex
     /// </summary>
     public IEnumerable<StdProc> ProcsForModule(string moduleName)
     {
-        foreach (var p in _byName.Values)
-        {
-            if (p.Module == moduleName)
-                yield return p;
-        }
+        return Descriptors.Where(d => Path.GetFileNameWithoutExtension(d.Id) == moduleName)
+            .SelectMany(d => d.Procedures.Select(p => new StdProc(p.Name, moduleName, d.Id)))
+            .DistinctBy(p => p.Name);
     }
 
     /// <summary>
@@ -112,7 +126,8 @@ public sealed class StdlibSymbolIndex
     /// </summary>
     public IEnumerable<CompletionItem> Items()
     {
-        foreach (var p in _byName.Values)
+        foreach (var p in Descriptors.SelectMany(d => d.Procedures.Select(p =>
+            new StdProc(p.Name, Path.GetFileNameWithoutExtension(d.Id), d.Id))).DistinctBy(p => (p.Name, p.Module)))
         {
             yield return new CompletionItem
             {

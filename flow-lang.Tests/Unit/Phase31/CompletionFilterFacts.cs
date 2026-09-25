@@ -117,11 +117,11 @@ public class CompletionFilterFacts
     }
 
     /// <summary>
-    /// `use "@audio"` alone (no `@std`) does NOT transitively pull in other modules.
-    /// A @collections-only proc's stdlib-source emission must be filtered out.
+    /// `@audio` imports `@std`, which imports `@core` and `@collections`.
+    /// Completion follows the actual source graph.
     /// </summary>
     [Fact]
-    public void FilterByImports_NonStdImport_DoesNotTransitivelyExpand()
+    public void FilterByImports_AudioFollowsItsDeclaredTransitiveImports()
     {
         var (bi, ui, si, ki) = MakeIndices();
         var uri = DocumentUri.File("/audio-only.flow");
@@ -138,9 +138,8 @@ public class CompletionFilterFacts
             && i.Detail is not null
             && i.Detail.StartsWith("(stdlib: @audio", System.StringComparison.Ordinal));
 
-        // @collections is NOT imported and NOT transitively pulled by @audio —
-        // its stdlib-source emissions must be filtered.
-        Assert.DoesNotContain(items, i =>
+        // @collections is transitively visible through @audio -> @std -> @core.
+        Assert.Contains(items, i =>
             i.Detail is not null
             && i.Detail.StartsWith("(stdlib: @collections", System.StringComparison.Ordinal));
     }

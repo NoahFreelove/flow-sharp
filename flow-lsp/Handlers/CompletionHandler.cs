@@ -245,7 +245,7 @@ public sealed class CompletionHandler : CompletionHandlerBase
         foreach (var stmt in ast.Statements.OfType<ImportStatement>())
         {
             var mod = ExtractModuleName(stmt.FilePath);
-            if (mod is not null) importedModules.UnionWith(StdlibSymbolIndex.ModulesVisibleThrough(mod));
+            if (mod is not null) importedModules.UnionWith(stdlib.VisibleModules(mod));
         }
 
         return items.Where(item =>
@@ -257,9 +257,8 @@ public sealed class CompletionHandler : CompletionHandlerBase
             // and std.flow:8) would be wrongly dropped.
             if (item.Detail is null || !item.Detail.StartsWith("(stdlib: @", StringComparison.Ordinal))
                 return true;
-            var proc = stdlib.Find(item.Label);
-            if (proc is null) return true;
-            return importedModules.Contains(proc.Module);
+            var module = item.Detail["(stdlib: @".Length..].TrimEnd(')');
+            return importedModules.Contains(module);
         });
     }
 
@@ -433,9 +432,11 @@ public sealed class CompletionHandler : CompletionHandlerBase
         // Per-request re-parse — v1 correctness over completion cache optimization.
         // A future DocumentManager per-URI ParseResult cache could avoid this (tracked
         // in 17-06 SUMMARY as a candidate optimization, not required for correctness).
-        var result = _parser.Parse(text, uri.GetFileSystemPath());
+        var analysis = EditorAnalysis.Analyze(text, uri.GetFileSystemPath(), _stdlib, _docs, cancellationToken);
+        var result = new ParseResult(analysis.Root.Program, analysis.Root.Tokens, analysis.Root.LegacyErrors);
+        var visible = new BuiltInIndex(analysis.Modules);
         var items = BuildItems(uri, text, result.Ast, result.Tokens, request.Position,
-            _builtIns, _users, _stdlib, _keywords);
+            visible, _users, _stdlib, _keywords);
         var list = new CompletionList(items.ToArray(), isIncomplete: false);
         return Task.FromResult(list);
     }
