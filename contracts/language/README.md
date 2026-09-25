@@ -179,12 +179,15 @@ The contract does not duplicate deep suites that already pin these behaviors:
 
 ## What analysis can prove
 
-Most checking happens during evaluation. Type annotations are enforced when a
-value is bound, overloads are resolved from runtime argument types, and many
-failures are only discovered on the executed path (for example a missing
-function or an out-of-range Int binding). Parse errors
-(`calls.infix-rejected`, `procedures.named-args-order`, `generous.unknown-pragma`)
-are the only failures reported before execution. Failures during evaluation are
-always reported at a source location and never end the program early. A future
-analyzer must not claim more than this contract demonstrates; see
-`docs/decisions/2026-09-22-analysis-and-evaluation-api.md`.
+`flow check` now parses and discovers top-level imports without execution. Syntax
+and import errors are reported with codes and source spans. It also warns about
+names without visible declarations and incompatible source-procedure call shapes
+or primitive literal types, using the same analysis as editor diagnostics.
+
+This is not complete type inference or a guarantee of successful evaluation.
+Declaration order, dynamic exports, nested imports, host-specific overloads and
+defaults, non-literal values, capabilities and termination remain runtime checks.
+The existing contracts continue to pin evaluation behavior, including charitable
+semantics and file-scoped strictness; parsed-tree evaluation is tested against
+source evaluation for every contract. See
+`docs/decisions/2026-09-22-analysis-and-evaluation-api.md` for the exact scope.

@@ -12,9 +12,11 @@ verification passes in a fresh clone; see the [Phase 3 record](../../baselines/p
 
 Phase 2 (session ownership, cancellation/budgets, evaluation coordination and
 process isolation) remains complete; see the [Phase 2 record](../../baselines/phase2/README.md).
-**Phase 4 is in progress — honest analysis and shared tooling.** The shared
-non-executing frontend and `flow check` replacement have landed; see the Phase 4
-section below for scope and outstanding work.
+**Phase 4 is complete — honest analysis and shared tooling (2026-09-24).**
+Shared import-aware analysis, metadata-driven editor tooling, parsed-tree
+execution and explicit CLI/browser adapters pass the documented gate. See the
+[Phase 4 record](../../baselines/phase4/README.md) for verification and static limits.
+**Next: Phase 5 — extract the music model and efficient offline renderer.**
 
 Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
 see the [Phase 1 record](../../baselines/phase1/README.md).
@@ -42,6 +44,11 @@ Owner: primary implementation agent. No delegated file ownership.
 | P2-03 Job coordination | verified | `LatestRequestCoordinator<T>`; watch mode migrated; REPL Ctrl+C cancels. |
 | P2-04 Process worker | verified | `ProcessEvaluationWorker` + `flow-interpreter --worker`; kill-and-replace tested. |
 | P2-05 Hosts without console redirection | verified | WASM, `flow check`, `flow doc`, test fixture, minimal host use engine sinks. |
+| P4-01 Shared static frontend | verified | Parse, module/signature descriptors, bounded imports and conservative source binding/call warnings. |
+| P4-02 Non-executing check and editors | verified | Shared CLI/LSP analysis, unsaved module overlays, import-aware completion/hover and related diagnostic locations. |
+| P4-03 Metadata-only introspection | verified | Declaration-based signatures; IL gate and real LSP strace smoke show no runtime/sample/device initialization. |
+| P4-04 Explicit evaluation adapters | verified | Parsed-tree Evaluate, coded results/HostFailure, explicit host session sinks/config, frozen browser JSON adapter. |
+| P4-05 Gate and documented limits | verified | 3,012 main + 21 MIDI tests; Web publish/Node boot; source/parsed contract parity; documented runtime-only checks. |
 
 ## Decisions
 
@@ -66,10 +73,10 @@ Result: **2,753 passed, 9 failed, 19 skipped**, 2,781 total. Local `/tmp` artifa
 
 ## Current gate status
 
-Phase 0, Phase 1 and Phase 2 gates are met for the documented Linux baseline
-(details in the completion sections below). Environmental skips and remaining
-warnings are explicit. Hardware/audio listening validation and remote GitHub
-Actions execution are not claimed. Phase 3 is the next milestone.
+Phases 0–4 meet their documented gates for the Linux baseline (details below).
+Environmental skips, analysis limits and remaining warnings are explicit.
+Hardware/audio listening and remote GitHub Actions execution are not claimed.
+Phase 5 is the next milestone.
 
 ## Completed slice — 2026-09-20
 
@@ -576,7 +583,7 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   with no errors. The refreshed compatibility MinimalHost records zero startup
   modules/styles. Gate evidence and limitations: `docs/baselines/phase3/`.
 
-## Phase 4 in progress — 2026-09-24
+## Phase 4 complete — 2026-09-24
 
 - **A — non-executing frontend and check**: `FlowLang.Analysis` exposes `Parse`,
   declaration descriptors and bounded, cancellable discovery of top-level imports
@@ -650,3 +657,14 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   25 binding/completion/import tests and 94 evaluation/browser adapter tests pass.
   This follows the full all-tier gate at `c7476b5` (3,012 main + 21 MIDI, 19 skips,
   zero failures and zero tracked-content mutations).
+
+- **Phase 4 gate closed** (2026-09-24): full all-tier verification at `c7476b5`
+  and targeted follow-up verification at `85725de` pass. The real LSP process
+  supplies core completion/hover with no sample/device/native audio access in
+  strace. The generated trimmed Web bundle boots under Node through the frozen
+  adapter, preserves fresh sessions on repeat runs, returns located parse errors
+  and evaluates music arithmetic (`150ms`). Seven language examples and all
+  zero-error language contracts pass non-executing check without warnings.
+  Evidence and limits: `docs/baselines/phase4/`. Source-only warnings deliberately
+  leave dynamic/runtime facts unknown; whole-program inference is not claimed.
+  Next milestone: Phase 5. Handoff: `docs/plans/handoffs/2026-09-24-phase4-complete.md`.

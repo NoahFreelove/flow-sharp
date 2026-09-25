@@ -224,8 +224,9 @@ all seven language examples and process closure. See `docs/baselines/phase3/READ
 
 **Static tooling:** `LanguageAnalysis.Parse` is shared by `flow check`, the LSP and
 the doc collector. `Analyze` discovers top-level imports without evaluation.
-`flow check` currently checks syntax/imports only; names, types and overloads remain
-unchecked. LSP builtin signatures come from parsed `.flow` declarations through
+`flow check` checks syntax/imports and emits conservative lexical-name and
+source-procedure call warnings. Dynamic values, host overloads/defaults and
+non-literal type inference remain runtime checks. LSP builtin signatures come from parsed `.flow` declarations through
 `StdlibSymbolIndex.Descriptors`, without runtime registration or audio construction.
 
 **FlowEngine** (`Core/FlowEngine.cs`) wires `InternalFunctionRegistry` + `ExecutionContext` + `Interpreter` and owns `AudioPlaybackManager`.

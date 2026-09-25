@@ -1,5 +1,8 @@
 # Phase 4 in progress — 2026-09-24
 
+Superseded by [the completed Phase 4 handoff](2026-09-24-phase4-complete.md).
+The notes below describe the earlier interim state.
+
 Phase 3 is complete. Continue roadmap Phase 4 (honest analysis/shared tooling).
 Read `CLAUDE.md`, `docs/TESTING.md`, the Phase 4 section of the restructuring
 roadmap, the progress ledger and analysis/evaluation API decision first.

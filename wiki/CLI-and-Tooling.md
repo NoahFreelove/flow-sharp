@@ -26,7 +26,7 @@ Run `flow <verb> ...`. The verbs:
 A few honest notes:
 
 - **`flow render` / `flow flow2midi`** require the script to already contain the `writeWav` / `writeMidi` call — the `-o` flag is currently informational (it does not inject or redirect the output path). Auto-injection is backlogged.
-- **`flow check`** checks syntax and resolves top-level imports without executing scripts or module initializers. It exits non-zero on analysis errors. Name, type and overload checking, nested/conditional imports, and runtime behavior remain unchecked; success does not prove a script will run successfully.
+- **`flow check`** checks syntax and resolves top-level imports without executing scripts or module initializers. It exits non-zero on analysis errors. It also reports conservative name and source-procedure call warnings. Dynamic bindings, host overloads, non-literal types, nested/conditional imports and runtime behavior remain unchecked; success does not prove a script will run successfully.
 - **`flow play`** does not auto-inject a `(play ...)` — the script must call it.
 - **`flow midi2flow`** takes `--sustain` / `--no-sustain`, `--sfz` / `--no-sfz`, and `--dump` in addition to `-o`. See [Playback and Export](Playback-and-Export.md) for the round-trip workflow.
 

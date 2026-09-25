@@ -500,3 +500,31 @@ initializer output: `flow check` must finish without any of those effects.
 rejects LSP IL calls to engine/audio construction or runtime builtin registration.
 Completion, hover and varargs fixtures use the descriptor path. These tests are
 in the core tier; desktop-specific fixtures are excluded on Web.
+
+`StaticBindingTests` covers source-procedure call warnings, lexical scope, dynamic
+uncertainty, actual transitive stdlib visibility, unsaved imported buffers and
+related cross-file diagnostics. `EvaluationAdapterTests` compares parsed-tree and
+source evaluation for every language contract, including codes and spans, and
+checks independent sessions and distinct host failures.
+
+For the Phase 4 process gate (the `--trace` option requires Linux `strace`):
+
+```bash
+python3 scripts/ci/analysis_smoke.py flow-lsp/bin/Debug/net10.0/flow-lsp \
+  --trace --artifacts /tmp/flow-analysis-smoke
+```
+
+This drives actual completion and hover requests, verifies core imports exclude
+OSC completions, requires clean shutdown, and rejects sample-file/device/native
+audio accesses in the trace. It writes evidence outside the checkout.
+
+After a Web publish, exercise the frozen JavaScript adapter under Node:
+
+```bash
+node scripts/ci/wasm-session-smoke.mjs \
+  "$PWD/flow-lang/bin/Release/net10.0/browser-wasm/AppBundle/flow-runtime.js" \
+  /tmp/flow-wasm-session-smoke.json
+```
+
+This verifies independent repeat runs, located parse errors and music arithmetic;
+it does not require or certify audible playback.

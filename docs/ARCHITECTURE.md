@@ -69,8 +69,14 @@ procedure/import metadata, and `Analyze` follows top-level imports through an
 explicit source provider with cancellation and a module budget. `flow check` uses
 this path; it never evaluates module bodies. The LSP and doc collector share
 `Parse`, and editor builtin signatures come from module declarations without
-constructing a runtime. Lexical binding, static type/overload checks and nested
-imports remain pending; `AnalysisResult.Unchecked` records these limits.
+constructing a runtime. The same analysis supplies LSP diagnostics with open-document overlays and related
+locations for imported errors. Lexical scopes and source-procedure call shapes/
+primitive literal types receive conservative warnings. Dynamic bindings, host
+contracts, non-literal inference and nested imports stay unknown;
+`AnalysisResult.Unchecked` records these limits. `FlowEngine.Evaluate(SyntaxTree)`
+executes parsed syntax in an explicit session; coded results retain source spans
+and distinguish host failure, cancellation and timeout. CLI/browser adapters own
+their session sinks and configuration; legacy Execute remains available.
 
 There is no separate type-check pass — types are resolved at runtime as part of
 overload dispatch. There is no AST-rewrite optimization pass. Each stage is
