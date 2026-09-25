@@ -4,24 +4,20 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 
 ## Current milestone
 
-**Phase 3 is complete (2026-09-24).** The BCL-only `flow-language` artifact now
-includes the core library and module assets. `scripts/LanguageHost` runs all seven
-non-musical examples, embedded sessions and a line REPL without the music assembly
-or audio packages. The compatibility host still passes the music corpus. Full
-verification passes in a fresh clone; see the [Phase 3 record](../../baselines/phase3/README.md).
+**Phases 0–4 are complete; Phase 5 is in progress (2026-09-24).**
 
-Phase 2 (session ownership, cancellation/budgets, evaluation coordination and
-process isolation) remains complete; see the [Phase 2 record](../../baselines/phase2/README.md).
-**Phase 4 is complete — honest analysis and shared tooling (2026-09-24).**
-Shared import-aware analysis, metadata-driven editor tooling, parsed-tree
-execution and explicit CLI/browser adapters pass the documented gate. See the
-[Phase 4 record](../../baselines/phase4/README.md) for verification and static limits.
-**Phase 5 is in progress — music model and efficient offline renderer.**
-The detached score boundary and linear song-buffer assembly are implemented;
-full snapshot-driven rendering/export and the remaining gate are still open.
+The language-only runtime, session/job isolation, non-executing analysis and
+shared CLI/LSP/browser adapters have passed their gates. Records:
+[Phase 1](../../baselines/phase1/README.md),
+[Phase 2](../../baselines/phase2/README.md),
+[Phase 3](../../baselines/phase3/README.md),
+[Phase 4](../../baselines/phase4/README.md).
 
-Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
-see the [Phase 1 record](../../baselines/phase1/README.md).
+Phase 5 now has detached score snapshots, linear legacy buffer assembly, and an
+isolated dry sine renderer with bounded PCM output and a native WAV host proof.
+Full instrument/effect routing, snapshot MIDI export, shared editing transforms
+and migration of legacy ambient render services remain open. Phases 6–10 have
+not started. See the roadmap status table and current Phase 5 handoff.
 
 Starting revision: `1e85f6710b6a39c293b0e4361ca57364489c824d`.
 Owner: primary implementation agent. No delegated file ownership.
@@ -716,3 +712,19 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   Resume: `docs/plans/handoffs/2026-09-24-phase5-in-progress.md`.
   The generated Web bundle also boots through the unchanged JavaScript adapter:
   repeated fresh sessions, located parse errors and `150ms` music arithmetic pass.
+
+- **C — isolated native rendering proof**: `Flow.Audio` depends only on the BCL
+  and `Flow.Music.Model`. `SineCompositionRenderer` emits borrowed stereo blocks
+  with explicit sample rate/block size/note budget, cancellation and delivered-frame
+  progress; preparation retains one section's note metadata, not whole-song PCM.
+  An interval sweep visits overlapping voices and preserves source-order mixing.
+  It preserves legacy sine frame rounding, pan/gain, section clipping and pool
+  stealing. Nonzero reverb is rejected; instrument/effect migration is still open.
+  `NoteDuration` now supplies the same articulation/tie/rest/overlap/pedal policy
+  to both snapshot and legacy bar rendering. `scripts/MusicHost` constructs a
+  score without Flow and streams a PCM16 WAV (example encoder, no dither).
+  Targeted native parity, bounded-memory and audio verification follows below.
+  Targeted verification: **156 tests pass**, including all ten new native-render
+  cases, legacy articulation/voice/tuning audio regressions, sine byte guards and
+  language closure. The native host emits a valid 294,000-frame stereo PCM16 WAV
+  at 44,100 Hz and loads neither `flow-lang` nor `flow-language`. Full gate follows.

@@ -36,6 +36,12 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
 
 ## Classification updates
 
+- Phase 5 native rendering slice: `Flow.Audio` (`flow-audio/`) references only
+  `Flow.Music.Model` and the BCL. Artifact tests reject runtime, device and package
+  references. `flow-lang` references it for the shared note-duration policy;
+  `scripts/MusicHost` references it without any language/compatibility assembly.
+  This is a dry sine rendering proof, not extraction of every legacy synthesizer.
+
 - Phase 5 (initial slice): `Flow.Music.Model` is a separate BCL-only assembly in
   `flow-music-model/`. It contains immutable evaluated score data and timing,
   with no runtime/language/audio references. `CompositionSnapshotTests` scans

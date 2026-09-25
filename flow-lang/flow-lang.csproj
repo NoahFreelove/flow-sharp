@@ -104,6 +104,7 @@
            the music library and music host built on it. -->
       <ProjectReference Include="..\flow-language\flow-language.csproj" />
       <ProjectReference Include="..\flow-music-model\flow-music-model.csproj" />
+      <ProjectReference Include="..\flow-audio\flow-audio.csproj" />
     </ItemGroup>
 
     <ItemGroup>

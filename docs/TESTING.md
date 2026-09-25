@@ -547,3 +547,18 @@ Run full verification serially. If idle MSBuild workers retain subprocess output
 pipes during Web-publish checks, use `MSBUILDDISABLENODEREUSE=1` for the verifier.
 The render timeout fixture uses sustained small renders so faster finite-song
 assembly cannot turn expected cancellation into successful completion.
+
+`MusicModel/SnapshotRenderingTests` verifies the model/BCL-only audio assembly,
+bit-exact legacy sine parity (tuplets, negative onsets, ties, overlap, parallel
+voices, pedal, pool stealing, tuning and multiple tempos), Flow/native equality,
+block-size independence, streaming cancellation/progress, explicit failure cases,
+independent concurrent jobs and repeat-independent PCM storage allocation.
+
+The standalone native host proof is reproducible without a language runtime:
+
+```bash
+dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav
+```
+
+It reports loaded assemblies and writes 294,000 stereo PCM16 frames at 44,100 Hz.
+The example encoder is intentionally separate from legacy WAV byte baselines.

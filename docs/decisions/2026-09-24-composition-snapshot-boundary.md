@@ -63,3 +63,34 @@ The next slice should introduce explicit render context/options and a native-hos
 snapshot render/export proof, preserving existing byte/PCM baselines. Then route
 Flow rendering through the same model, consolidate note transforms and add bounded
 output/progress. The full Phase 5 gate remains open.
+
+## Native rendering slice
+
+`flow-audio` builds `Flow.Audio` with only model/BCL references. Its
+`SineCompositionRenderer` consumes snapshots directly and has no current-session
+lookup, asset cache, runtime value or device API. Options specify sample rate,
+block size and a section note-count budget; cancellation and progress are supplied
+per call. Synchronous sink callbacks receive borrowed stereo float blocks and
+must copy anything they retain. Sink errors/cancellation propagate and previously
+delivered output is not rolled back. Progress counts frames accepted by the sink.
+Callbacks must cooperate; hard termination remains the host's responsibility.
+
+The renderer prepares note metadata one section at a time and sweeps active voice
+intervals in bounded output blocks. Repeats reuse metadata/block storage and reset
+sine sample positions. It preserves legacy sine sample math, note versus onset
+rounding, source-order additive mixing, pan/gain, per-sequence pool stealing and
+5 ms fades. Sections clip to notated length, including all-rest sections and
+per-section tempo/frame truncation. `NoteDuration` centralizes articulation,
+tied-rest extension, overlap and pedal tails; legacy `BarRenderer` uses it too.
+
+This is deliberately a dry sine implementation: nonzero reverb is rejected.
+Resolved tuning frequency is used directly. Portamento is retained in snapshots
+but, as in the legacy sine synth, has no audible effect here. Sample instruments,
+Flow lambdas, SFZ, per-instrument release and effect routing still use the legacy
+path. This does not claim the complete Phase 5 render gate.
+
+`scripts/MusicHost` is a non-Flow host that builds a two-tempo score, renders it
+and writes PCM16 WAV blocks. Its small host-owned encoder saturates without
+dither and limits output to RIFF's 32-bit size; it does not replace the existing
+WAV export byte contract. Full MIDI/notation adapters and general-purpose audio
+codec extraction remain open.

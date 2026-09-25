@@ -186,7 +186,9 @@ The primary projects are organized by responsibility:
 |---------|------|
 | `flow-language/` | BCL-only language runtime, core standard library, and extension contracts. |
 | `flow-music-model/` | BCL-only immutable evaluated score snapshots and quarter/second timing. |
-| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references language and music model. |
+| `flow-audio/` | Model + BCL only; dry sine snapshot rendering, bounded stereo blocks and shared note-duration policy. |
+| `scripts/MusicHost/` | Native score-to-WAV proof; references only `flow-audio` and its model dependency. |
+| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references language, music model and audio. |
 | `scripts/LanguageHost/` | Language-only CLI, REPL and embedding example; references only `flow-language`. |
 | `flow-interpreter/` | Legacy entry point — REPL, watch-mode, script runner. Predates the unified CLI; kept for backwards compatibility. |
 | `flow-cli/` | The shipping `flow` binary — 13 subcommands (`run`, `eval`, `repl`, `watch`, `play`, `render`, `flow2midi`, `midi2flow`, `check`, `new`, `test`, `lsp`, `version`). |
@@ -205,7 +207,12 @@ tails and frame rounding. Legacy rendering/export still consume `SongData`.
 
 Song buffer assembly now allocates the result once and copies each output sample
 once, with cancellation checks between bounded chunks. It still retains section
-buffers and returns one contiguous buffer; streaming is open. See the
+buffers and returns one contiguous buffer; streaming on that compatibility path is open. The isolated `Flow.Audio` sine
+renderer already emits bounded borrowed blocks with explicit options,
+cancellation and progress. It shares duration policy with `BarRenderer`, but
+instrument/effect routing and legacy consumer migration are still open. The
+native `scripts/MusicHost` constructs a score and streams a WAV without Flow.
+See the
 [boundary decision](decisions/2026-09-24-composition-snapshot-boundary.md) for
 identity/tuning limits, MIDI audit and remaining migration work.
 

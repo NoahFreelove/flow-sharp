@@ -1,6 +1,6 @@
 # Phase 5 in progress — 2026-09-24
 
-Phases 0–4 are complete. Phase 5 has its first two implementation slices; its full
+Phases 0–4 are complete. Phase 5 has detached score, linear assembly and native sine rendering slices; its full
 gate is **not complete**. Read `CLAUDE.md`, `docs/TESTING.md`, the restructuring
 roadmap, progress ledger and `docs/decisions/2026-09-24-composition-snapshot-boundary.md`.
 
@@ -18,8 +18,18 @@ roadmap, progress ledger and `docs/decisions/2026-09-24-composition-snapshot-bou
 The model preserves authored duration, not rendered tails/frame rounding.
 Compiler IDs are structural/deterministic, not persistent across edits. Resolved
 pitch frequencies are detached, but reusable tuning descriptions are still open.
-Old render/export consumers still use `SongData`; no native snapshot rendering or
-export is claimed yet. Buffer output remains contiguous, not streaming.
+Old Flow render/export consumers still use `SongData`. The new `Flow.Audio`
+sine renderer consumes snapshots directly and streams bounded stereo blocks;
+`scripts/MusicHost` constructs a score and exports WAV without any language or
+compatibility assembly. Legacy buffer output remains contiguous.
+
+The native renderer has explicit options/cancellation/progress, a section note
+budget, per-sequence pool stealing, exact legacy sine timing/mix math and a shared
+`NoteDuration` policy used by `BarRenderer`. It rejects nonzero reverb. No sampled
+instrument, Flow lambda, SFZ, effect or MIDI migration is claimed. The host's PCM16
+encoder is an example without dither; legacy WAV byte contracts stay unchanged.
+Ten native rendering tests include bit-exact legacy comparisons, Flow/native
+parity, block-size independence, repeat allocation, cancellation and concurrency.
 
 ## Verification
 
@@ -34,15 +44,17 @@ Web bundle also passes the Node session smoke through the unchanged JS adapter.
 
 ## Next work
 
-1. Establish explicit render options/context and native-host snapshot render/export
-   proof. Replace ambient session adapters per the session-lifetime decision.
-2. Route Flow through the same model while preserving tuning, articulation, ties,
-   rests, overlap, portamento, parallel voices and per-section tempo behavior.
-3. Consolidate note transforms and MIDI adapters. The boundary decision records
-   the parser/export audit: retain existing CLI quantization and characterize
+1. Extend the snapshot rendering path to existing instrument/effect contracts and
+   explicit render services (caches/RNG/release), replacing ambient adapters per
+   the session-lifetime decision. Native dry sine/WAV proof already exists.
+2. Route Flow through the same snapshot model while preserving current musical
+   behavior and all selected byte/PCM baselines. Add snapshot MIDI export proof.
+3. Consolidate shared editing transforms and MIDI adapters. The boundary decision
+   records the parser/export audit: preserve CLI quantization and characterize
    serial/parallel export differences before migration; separate semantic fixes.
-4. Extract bounded output/progress/cancellation and explicit memory ownership.
-   Preserve byte/PCM baselines and measure realistic long-song memory behavior.
+4. Extend bounded output/progress/cancellation to the full instrument path and
+   measure realistic long-song memory. The native sine path already streams with
+   repeat-independent PCM storage; the legacy path still allocates a full buffer.
 5. Close the full Phase 5 gate only when non-Flow hosts construct, render and
    export the same model and compatibility/performance evidence passes.
 

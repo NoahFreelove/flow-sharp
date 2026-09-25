@@ -88,78 +88,22 @@ public static class BarRenderer
             if (note.IsRest)
                 continue; // Skip rests - they create gaps in the timeline
 
-            // Calculate duration in beats
-            double durationBeats = note.GetBeats(bar.TimeSignature.Denominator);
-
-            // Phase 28 locked articulation duration multipliers (SPEC-4):
-            //   Staccato 25%, Marcato 25% (Staccato-shortened), Legato 110%,
-            //   Tenuto 100%, Accent 100%, Sforzando 100%.
-            // Per-instrument envelope shaping (sustain, release, spike) lands at
-            // the synthesizer in Plan 28-03. Both Legato sources compose: a note
-            // with Articulation.Legato AND DurationOverlap=0.5 ends up rendered
-            // at 1.0 × 1.10 × 1.5 = 1.65 of authored duration (DurationOverlap
-            // multiplier is applied below).
-            switch (note.Articulation)
-            {
-                case Articulation.Staccato:
-                    durationBeats *= 0.25;
-                    break;
-                case Articulation.Marcato:
-                    durationBeats *= 0.25;
-                    break;
-                case Articulation.Legato:
-                    durationBeats *= 1.10;
-                    break;
-                // Tenuto, Accent, Sforzando, Normal — duration unchanged
-            }
-
-            // For tied notes, extend render duration to sustain through subsequent
-            // rest elements in the same voice/bar. This matches the standard musical
-            // interpretation of a tie: the note rings through the following silence.
-            // Crossfade tail is only added when sustain pedal is OFF; otherwise the
-            // sustain extension carries the smoothing and a 100ms crossfade would
-            // add an audible bleed into the next bar's attack (perceived as a grace
-            // note 100ms after the bar boundary).
+            // Keep source-order rest accumulation and the exact legacy duration policy.
+            // The snapshot renderer shares the policy without depending on BarData or AST.
+            double tiedExtension = 0;
             if (note.IsTied)
             {
-                double tiedExtension = 0;
                 for (int j = idx + 1; j < timeline.Count; j++)
                 {
                     var (next, _) = timeline[j];
-                    if (next.IsRest)
-                        tiedExtension += next.GetBeats(bar.TimeSignature.Denominator);
-                    else
-                        break;
-                }
-                durationBeats += tiedExtension;
-
-                if (!sustainPedalActive)
-                {
-                    double overlapSeconds = 0.1;
-                    double overlapBeats = (overlapSeconds / 60.0) * bpm;
-                    durationBeats += overlapBeats;
+                    if (!next.IsRest) break;
+                    tiedExtension += next.GetBeats(bar.TimeSignature.Denominator);
                 }
             }
-
-            // DX-14 legato: extend rendered duration by overlap factor BEFORE rendering audio buffer.
-            // Per CONTEXT D-01: durationOverlap=0.5 -> durationBeats x 1.5.
-            // Per CONTEXT D-02 + Pitfall 3: bar.ToTimeline() already produced offsetBeats; we ONLY
-            // change how long this note's audio buffer plays. Onset is NOT moved here. Polyphonic
-            // mix in SongRenderer sums overlapping voices automatically.
-            if (note.DurationOverlap > 0.0)
-            {
-                durationBeats *= (1.0 + note.DurationOverlap);
-            }
-
-            // Sustain pedal — extend every note's rendered buffer by the section's
-            // pedal-tail. Notes ring through subsequent attacks, mimicking piano
-            // pedal behavior. Onset is unchanged (additive mix handles overlap),
-            // so positions remain correct.
-            if (sustainPedalActive)
-            {
-                double sustainTailBeats = (FlowLang.Music.MusicalContext.SustainTailSeconds * bpm) / 60.0;
-                durationBeats += sustainTailBeats;
-            }
+            double durationBeats = Flow.Audio.NoteDuration.RenderQuarters(
+                note.GetBeats(bar.TimeSignature.Denominator),
+                Enum.Parse<Flow.Music.Model.NoteArticulation>(note.Articulation.ToString()),
+                note.IsTied, tiedExtension, note.DurationOverlap, sustainPedalActive, bpm);
 
             // Render note to audio buffer.
             // Phase 23 Pattern A: tuning threaded from SongRenderer per-section
