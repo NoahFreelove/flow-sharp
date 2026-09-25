@@ -171,7 +171,7 @@ public static class SongRenderer
             return resultValue.As<AudioBuffer>();
         });
 
-        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        var parts = new RenderedBufferSequence(DefaultSampleRate, StereoChannels);
 
         foreach (var sectionRef in song.Sections)
         {
@@ -180,14 +180,11 @@ public static class SongRenderer
 
             var sectionBuffer = RenderSection(sectionData, synth);
 
-            for (int r = 0; r < sectionRef.RepeatCount; r++)
-            {
-                RenderServices.Checkpoint();
-                result = AppendBuffers(result, sectionBuffer);
-            }
+            RenderServices.Checkpoint();
+            parts.Add(sectionBuffer, sectionRef.RepeatCount);
         }
 
-        return MusicValue.Buffer(result);
+        return MusicValue.Buffer(parts.Build(RenderServices.Checkpoint));
     }
 
     /// <summary>
@@ -240,7 +237,7 @@ public static class SongRenderer
         // FlowEngine — preserves pre-Phase-29 backward compatibility).
         RenderServices.Current?.SampleCache?.EagerLoad(song, synthType);
 
-        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        var parts = new RenderedBufferSequence(DefaultSampleRate, StereoChannels);
 
         foreach (var sectionRef in song.Sections)
         {
@@ -250,14 +247,11 @@ public static class SongRenderer
             var sectionBuffer = RenderSection(sectionData, synthType);
 
             // Apply repeat count
-            for (int r = 0; r < sectionRef.RepeatCount; r++)
-            {
-                RenderServices.Checkpoint();
-                result = AppendBuffers(result, sectionBuffer);
-            }
+            RenderServices.Checkpoint();
+            parts.Add(sectionBuffer, sectionRef.RepeatCount);
         }
 
-        return MusicValue.Buffer(result);
+        return MusicValue.Buffer(parts.Build(RenderServices.Checkpoint));
     }
 
     /// <summary>
@@ -303,7 +297,7 @@ public static class SongRenderer
             return synth;
         }
 
-        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        var parts = new RenderedBufferSequence(DefaultSampleRate, StereoChannels);
         foreach (var sectionRef in song.Sections)
         {
             if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
@@ -311,13 +305,10 @@ public static class SongRenderer
                     $"renderSong: section '{sectionRef.Name}' not found in song registry");
 
             var sectionBuffer = RenderSection(sectionData, (Func<string, INoteSynthesizer>)Resolve);
-            for (int r = 0; r < sectionRef.RepeatCount; r++)
-            {
-                RenderServices.Checkpoint();
-                result = AppendBuffers(result, sectionBuffer);
-            }
+            RenderServices.Checkpoint();
+            parts.Add(sectionBuffer, sectionRef.RepeatCount);
         }
-        return result;
+        return parts.Build(RenderServices.Checkpoint);
     }
 
     /// <summary>
@@ -768,7 +759,7 @@ public static class SongRenderer
         var renderer = new SfzRenderer(cache, ctx);
         var adapter = new SfzNoteSynthesizer(renderer, patch);
 
-        AudioBuffer result = new AudioBuffer(0, StereoChannels, DefaultSampleRate);
+        var parts = new RenderedBufferSequence(DefaultSampleRate, StereoChannels);
         foreach (var sectionRef in song.Sections)
         {
             if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
@@ -786,13 +777,10 @@ public static class SongRenderer
             adapter.SectionPan = sectionData.Context?.Pan ?? 0.0;
 
             var sectionBuffer = RenderSection(sectionData, adapter);
-            for (int r = 0; r < sectionRef.RepeatCount; r++)
-            {
-                RenderServices.Checkpoint();
-                result = AppendBuffers(result, sectionBuffer);
-            }
+            RenderServices.Checkpoint();
+            parts.Add(sectionBuffer, sectionRef.RepeatCount);
         }
-        return MusicValue.Buffer(result);
+        return MusicValue.Buffer(parts.Build(RenderServices.Checkpoint));
     }
 
     /// <summary>
@@ -837,18 +825,4 @@ public static class SongRenderer
     }
 #endif // !FLOW_WEB — Phase 47 D-47-08 SFZ dispatch + adapter stripped on Web target.
 
-    /// <summary>
-    /// Concatenates two AudioBuffers end-to-end via Array.Copy.
-    /// </summary>
-    private static AudioBuffer AppendBuffers(AudioBuffer a, AudioBuffer b)
-    {
-        if (a.Frames == 0) return b;
-        if (b.Frames == 0) return a;
-
-        int totalFrames = a.Frames + b.Frames;
-        var result = new AudioBuffer(totalFrames, StereoChannels, DefaultSampleRate);
-        Array.Copy(a.Data, 0, result.Data, 0, a.Data.Length);
-        Array.Copy(b.Data, 0, result.Data, a.Data.Length, b.Data.Length);
-        return result;
-    }
 }

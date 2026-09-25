@@ -686,3 +686,14 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   hosts supply their own IDs. Six snapshot/compilation tests and three language
   dependency-closure tests pass. Rendering still uses the legacy model: this is
   the first boundary slice, not completion of Phase 5.
+
+- **B — linear song-buffer assembly**: string, lambda, automatic-instrument and
+  SFZ rendering now retain completed section buffers and copy each output sample
+  once into the final allocation, instead of repeatedly copying every prefix.
+  Repeats share source storage; final output owns its samples; copies check
+  cancellation every 65,536 samples and reject unrepresentable contiguous sizes.
+  Four assembly tests cover bit-preserving concatenation, empty/negative repeats,
+  ownership, cancellation, and allocation growth. For 128 repeats of 2,048 stereo
+  frames, measured allocations drop from 135,302,544 to 2,097,392 bytes (about 64x).
+  This still returns one contiguous buffer; streaming/render-job extraction remains
+  open. Full audio/corpus/Web verification follows before closing this continuation.
