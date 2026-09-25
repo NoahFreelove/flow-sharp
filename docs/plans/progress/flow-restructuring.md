@@ -16,7 +16,9 @@ process isolation) remains complete; see the [Phase 2 record](../../baselines/ph
 Shared import-aware analysis, metadata-driven editor tooling, parsed-tree
 execution and explicit CLI/browser adapters pass the documented gate. See the
 [Phase 4 record](../../baselines/phase4/README.md) for verification and static limits.
-**Next: Phase 5 — extract the music model and efficient offline renderer.**
+**Phase 5 is in progress — music model and efficient offline renderer.**
+The detached score boundary and linear song-buffer assembly are implemented;
+full snapshot-driven rendering/export and the remaining gate are still open.
 
 Phase 1 (contracts, examples, seam decisions) and its semantic fixes are complete;
 see the [Phase 1 record](../../baselines/phase1/README.md).
@@ -668,3 +670,19 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   Evidence and limits: `docs/baselines/phase4/`. Source-only warnings deliberately
   leave dynamic/runtime facts unknown; whole-program inference is not claimed.
   Next milestone: Phase 5. Handoff: `docs/plans/handoffs/2026-09-24-phase4-complete.md`.
+
+
+## Phase 5 in progress — 2026-09-24
+
+- **A — detached evaluated score**: added the BCL-only `Flow.Music.Model`
+  assembly (`flow-music-model`) with immutable, collection-owning composition,
+  section, sequence, bar and note snapshots. Placements share evaluated sections
+  across repeats; timing is quarter-relative with per-section tempo conversion.
+  `CompositionCompiler` lowers an already evaluated `SongData` without executing
+  or retaining section AST, scopes or runtime values. It preserves rests, parallel
+  voice identities, tuplet fractions, onset shifts, articulation, ties, overlap,
+  portamento, source origins and resolved tuning frequencies. Compiler IDs are
+  deterministic by source identity/structural path, not persistent edit IDs; native
+  hosts supply their own IDs. Six snapshot/compilation tests and three language
+  dependency-closure tests pass. Rendering still uses the legacy model: this is
+  the first boundary slice, not completion of Phase 5.

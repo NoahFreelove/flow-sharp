@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-midi.Tests", "flow-mid
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-language", "flow-language\flow-language.csproj", "{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-music-model", "flow-music-model\flow-music-model.csproj", "{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -152,6 +154,18 @@ Global
 		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x64.Build.0 = Release|Any CPU
 		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x86.ActiveCfg = Release|Any CPU
 		{AC24524F-D8EF-45DF-BC0D-2EEE426DA300}.Release|x86.Build.0 = Release|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Debug|x64.Build.0 = Debug|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Debug|x86.Build.0 = Debug|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Release|x64.ActiveCfg = Release|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Release|x64.Build.0 = Release|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Release|x86.ActiveCfg = Release|Any CPU
+		{31EDE6E3-086F-4034-BC95-58F9E9B74A1B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

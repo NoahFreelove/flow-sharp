@@ -103,6 +103,7 @@
       <!-- Phase 3: the language runtime lives in its own assembly; this project is
            the music library and music host built on it. -->
       <ProjectReference Include="..\flow-language\flow-language.csproj" />
+      <ProjectReference Include="..\flow-music-model\flow-music-model.csproj" />
     </ItemGroup>
 
     <ItemGroup>
