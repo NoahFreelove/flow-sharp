@@ -49,6 +49,8 @@ public enum EvaluationOutcome
     Cancelled,
     /// <summary>The evaluation exceeded <see cref="EvaluationOptions.TimeLimit"/>.</summary>
     TimedOut,
+    /// <summary>An unexpected host failure prevented evaluation.</summary>
+    HostFailure,
 }
 
 /// <summary>What one evaluation produced.</summary>
@@ -60,4 +62,8 @@ public sealed record EvaluationResult(
     TimeSpan Elapsed)
 {
     public bool Succeeded => Outcome == EvaluationOutcome.Succeeded;
+    /// <summary>Stable category codes with the original diagnostic spans/details.</summary>
+    public IReadOnlyList<FlowLang.Analysis.AnalysisDiagnostic> CodedDiagnostics { get; init; } = [];
+    /// <summary>Host-only debugging detail; adapters must not expose stack traces to scripts.</summary>
+    public Exception? HostException { get; init; }
 }

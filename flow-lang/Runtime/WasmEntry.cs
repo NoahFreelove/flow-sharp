@@ -199,7 +199,7 @@ public static partial class WasmEntry
                 catch (Exception ex) { Console.Error.WriteLine($"[runtime] engine recycle: {ex.Message}"); }
                 _sharedEngine = null;
             }
-            _sharedEngine = new FlowEngine(new EngineOptions { Output = output, Diagnostics = diagnostics });
+            _sharedEngine = new FlowEngine(new EngineOptions { Output = output, Diagnostics = diagnostics, Config = FlowConfigPoco.Defaults });
             return _sharedEngine;
         }
     }
@@ -272,25 +272,21 @@ public static partial class WasmEntry
             .ToArray();
     }
 
-    /// <summary>
-    /// Maps rich <see cref="FlowDiagnostic"/> entries (unknown identifiers, match
-    /// exhaustiveness) to the same <see cref="RunError"/> shape; they accumulate
-    /// separately from <see cref="ErrorReporter.Errors"/>.
-    /// </summary>
-    private static IEnumerable<RunError> MapDiagnostics(IEnumerable<FlowDiagnostic> diagnostics, SourceMap? sourceMap)
-    {
-        foreach (var d in diagnostics)
+    /// <summary>Adapt coded diagnostics to the frozen browser result shape.</summary>
+    internal static RunError[] MapEvaluation(EvaluationResult result, SourceMap sourceMap)
+        => result.CodedDiagnostics.Where(d => d.Level == DiagnosticLevel.Error).Select(d =>
         {
-            if (d.Level != DiagnosticLevel.Error) continue;
-            int? line = d.Primary.Start.Line > 0 ? d.Primary.Start.Line : null;
-            yield return new RunError(
-                Kind: "eval",
-                Message: d.Suggestion is { } hint ? $"{d.Message} (did you mean '{hint}'?)" : d.Message,
-                Line: line,
-                Column: d.Primary.Start.Column > 0 ? d.Primary.Start.Column : null,
-                SourceSnippet: SnippetFor(sourceMap, line));
-        }
-    }
+            var location = d.Span.Start;
+            int? line = location.Line > 0 ? location.Line : null;
+            var kind = d.Code.StartsWith("flow.syntax.", StringComparison.Ordinal) ? "parse"
+                : d.Code is "flow.evaluation.cancelled" or "flow.evaluation.timeout" ? "cancel"
+                : d.Code == "flow.host.failure" ? "runtime" : "eval";
+            var snippet = line is not null && sourceMap.TryGetSource(location.FileName ?? WasmSourceKey, out var text)
+                ? text.Split('\n').ElementAtOrDefault(line.Value - 1)?.TrimEnd('\r') : null;
+            return new RunError(kind,
+                d.Detail.Suggestion is { } hint ? $"{d.Message} (did you mean '{hint}'?)" : d.Message,
+                line, location.Column > 0 ? location.Column : null, snippet);
+        }).ToArray();
 
     /// <summary>
     /// sweep-0614 wasm-web: quote the offending source line for the playground's
@@ -368,22 +364,8 @@ public static partial class WasmEntry
             // sweep-0614 wasm-web: thread the engine SourceMap so parse /
             // runtime errors carry the quoted source line for the
             // playground's Rust-style diagnostic box (D-48-14).
-            errors = MapFlowErrors(engine.ErrorReporter.Errors, engine.SourceMap)
-                .Concat(MapDiagnostics(engine.ErrorReporter.Diagnostics, engine.SourceMap))
-                .ToArray();
-            if (evaluation.Outcome == EvaluationOutcome.TimedOut)
-            {
-                // The engine's location-less budget error becomes the D-48-14 "cancel" kind.
-                errors = errors
-                    .Where(e => !(e.Line is null && e.Message.StartsWith("evaluation exceeded", StringComparison.Ordinal)))
-                    .Append(new RunError(
-                        Kind: "cancel",
-                        Message: $"evaluation stopped after its {RunTimeLimit.TotalSeconds:0.###}s time limit",
-                        Line: null,
-                        Column: null,
-                        SourceSnippet: null))
-                    .ToArray();
-            }
+            errors = MapEvaluation(evaluation, engine.SourceMap);
+
         }
         catch (Exception ex)
         {

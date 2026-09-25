@@ -80,7 +80,7 @@ internal static class TestCommand
             var runner = new TestRunner();
             foreach (var file in files)
             {
-                using var engine = new FlowEngine(verbose: false);
+                using var engine = new FlowEngine(new EngineOptions { Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
                 string source;
                 try
                 {
@@ -93,7 +93,7 @@ internal static class TestCommand
                     continue;
                 }
 
-                var executeOk = engine.Execute(source, file);
+                var executeOk = engine.Evaluate(source, file).Succeeded;
                 if (!executeOk)
                 {
                     Console.Error.WriteLine(

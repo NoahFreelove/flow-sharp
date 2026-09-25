@@ -46,7 +46,10 @@ public class ModuleDescriptorTests
             .Where(i => i.OpCode == OpCodes.Call || i.OpCode == OpCodes.Callvirt || i.OpCode == OpCodes.Newobj)
             .Select(i => i.Operand).OfType<MethodReference>()
             .Where(m => m.DeclaringType.FullName is "FlowLang.StandardLibrary.BuiltInFunctions"
-                or "FlowLang.Core.FlowEngine" or "FlowLang.Audio.AudioPlaybackManager")
+                or "FlowLang.Core.FlowEngine" or "FlowLang.Audio.AudioPlaybackManager"
+                or "FlowLang.StandardLibrary.Audio.SampleCache"
+                or "FlowLang.StandardLibrary.Audio.Sfz.SfzSampleCache"
+                or "FlowLang.StandardLibrary.Improv.StyleRegistry")
             .Select(m => m.FullName).ToArray();
         Assert.Empty(forbidden);
     }

@@ -88,10 +88,10 @@ class Program
     {
         try
         {
-            using var engine = new FlowEngine(verbose: verbose);
+            using var engine = new FlowEngine(new EngineOptions { Verbose = verbose, Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
             ConfigureDevice(engine, deviceName);
             engine.ImportInteractiveDefaults();   // -e is interactive: @std is imported
-            var success = engine.Execute(code, "<eval>");
+            var success = engine.Evaluate(code, "<eval>").Succeeded;
 
             if (!success)
             {
@@ -117,9 +117,9 @@ class Program
         try
         {
             var code = Console.In.ReadToEnd();
-            using var engine = new FlowEngine(verbose: verbose);
+            using var engine = new FlowEngine(new EngineOptions { Verbose = verbose, Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
             ConfigureDevice(engine, deviceName);
-            var success = engine.Execute(code, "<stdin>");
+            var success = engine.Evaluate(code, "<stdin>").Succeeded;
 
             if (!success)
             {

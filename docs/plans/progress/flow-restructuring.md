@@ -624,3 +624,21 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   corrected the old test claiming @audio did not bring @collections (it does via
   @std/@core). Verification: 224 analysis, adapter, Phase 17/31 and cancellation
   tests pass; the preceding run also passed 246 including Phase 48 (5 skips).
+
+- **D — explicit evaluation adapters and coded outcomes** (2026-09-24): added
+  `FlowEngine.Evaluate(SyntaxTree)` while retaining source-based Evaluate/Execute.
+  Results expose coded diagnostics and a distinct HostFailure with host-only
+  exception detail; terminal cancellation/failure diagnostics are located and do
+  not relabel earlier evaluation errors. CLI/REPL/watch adapters explicitly supply
+  session sinks/configuration and consume Evaluate. Browser runs use explicit
+  default config and map coded results to the unchanged JSON field shape (parse,
+  eval, cancel, runtime categories; snippets use the diagnostic's own source).
+  Verification: 104 analysis/adapter tests pass, including source-versus-parsed
+  evaluation parity for every language contract, isolated sessions, invalid partial
+  syntax and host failures. Frozen JavaScript and website bundle are unchanged.
+
+- **E — process-level tooling gate** (2026-09-24): new
+  `scripts/ci/analysis_smoke.py` drives real LSP initialization, core completion,
+  hover and clean shutdown. A Linux strace run observes zero sample-file, device,
+  or native audio-library accesses; the IL gate additionally rejects sample-cache
+  and style-registry construction/calls. Full final verification follows.

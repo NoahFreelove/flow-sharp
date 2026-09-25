@@ -1016,7 +1016,7 @@ public class LiveReloadManager : IDisposable
 
         // The engine is owned by the returned LiveRender until the caller has staged
         // its buffers; disposing the render disposes the engine.
-        var engine = new FlowEngine(new EngineOptions { Advisories = advisories });
+        var engine = new FlowEngine(new EngineOptions { Advisories = advisories, Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
         engine.AudioManager.CaptureMode = true;
 
         outcome = engine.Evaluate(source, filePath, new EvaluationOptions

@@ -1,4 +1,5 @@
 using FlowLang.Audio;
+using FlowLang.Analysis;
 using FlowLang.Diagnostics;
 using FlowLang.Lexing;
 using FlowLang.Parsing;
@@ -341,6 +342,13 @@ public class FlowEngine : IDisposable
     /// stops playback it started, and reports an error.
     /// </summary>
     public EvaluationResult Evaluate(string source, string? fileName = null, EvaluationOptions? options = null)
+        => EvaluateCore(source, fileName, options, null);
+
+    /// <summary>Evaluate already parsed syntax in this engine's explicit session.</summary>
+    public EvaluationResult Evaluate(SyntaxTree syntax, EvaluationOptions? options = null)
+        => EvaluateCore(syntax.Source.Text, syntax.Source.Id, options, syntax);
+
+    private EvaluationResult EvaluateCore(string source, string? fileName, EvaluationOptions? options, SyntaxTree? syntax)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         options ??= new EvaluationOptions();
@@ -360,9 +368,13 @@ public class FlowEngine : IDisposable
             ? System.Diagnostics.Stopwatch.GetTimestamp() + (long)(l.TotalSeconds * System.Diagnostics.Stopwatch.Frequency)
             : 0;
         _cancelledDuringCore = false;
+        _hostFailure = null;
+        _terminalDiagnostic = null;
+        _diagnosticCode = "flow.evaluation";
+        _evaluationTokens = syntax?.Tokens ?? [];
         try
         {
-            ExecuteCore(source, fileName);
+            ExecuteCore(source, fileName, syntax);
         }
         finally
         {
@@ -379,7 +391,13 @@ public class FlowEngine : IDisposable
             _errorReporter.ReportError(outcome == EvaluationOutcome.Cancelled
                 ? "evaluation cancelled"
                 : $"evaluation exceeded its time limit of {options.TimeLimit!.Value.TotalSeconds:0.###}s",
-                SourceLocation.Unknown);
+                new SourceLocation(1, 1, fileName));
+            _terminalDiagnostic = _errorReporter.Errors.Last();
+            _terminalCode = outcome == EvaluationOutcome.Cancelled ? "flow.evaluation.cancelled" : "flow.evaluation.timeout";
+        }
+        else if (_hostFailure is not null)
+        {
+            outcome = EvaluationOutcome.HostFailure;
         }
         else
         {
@@ -392,12 +410,27 @@ public class FlowEngine : IDisposable
             _errorReporter.Errors.ToList(),
             _errorReporter.Diagnostics.ToList(),
             outcome == EvaluationOutcome.Succeeded ? _interpreter.GetLastExpressionValue() : null,
-            stopwatch.Elapsed);
+            stopwatch.Elapsed)
+        {
+            CodedDiagnostics = syntax is not null && syntax.Diagnostics.Any(d => d.Level == DiagnosticLevel.Error)
+                ? syntax.Diagnostics
+                : _errorReporter.Errors.Select(e => new AnalysisDiagnostic(ReferenceEquals(e, _terminalDiagnostic) ? _terminalCode : _diagnosticCode,
+                    new FlowDiagnostic(e.Level, e.Message,
+                        _evaluationTokens.FirstOrDefault(t => t.Location == e.Location)?.EffectiveSpan ?? Span.At(e.Location),
+                        Array.Empty<DiagnosticLabel>(), Array.Empty<string>())))
+                    .Concat(_errorReporter.Diagnostics.Select(d => new AnalysisDiagnostic(_diagnosticCode, d))).ToArray(),
+            HostException = _hostFailure,
+        };
     }
 
+    private Exception? _hostFailure;
+    private FlowError? _terminalDiagnostic;
+    private string _terminalCode = "flow.host.failure";
+    private string _diagnosticCode = "flow.evaluation";
+    private IReadOnlyList<Token> _evaluationTokens = [];
     private bool _cancelledDuringCore;
 
-    private bool ExecuteCore(string source, string? fileName)
+    private bool ExecuteCore(string source, string? fileName, SyntaxTree? syntax = null)
     {
         _errorReporter.Clear();
 
@@ -410,29 +443,45 @@ public class FlowEngine : IDisposable
 
         try
         {
-            // 0. Pre-lex: extract file-scope pragmas (Phase 21 D-01).
-            //    Fast path returns the original string reference unchanged when
-            //    no `enable` substring is present — preserves Phase 18 byte-identical
-            //    determinism for legacy .flow files (Pitfall F mitigation).
-            var (pragmaSet, transformedSource) = PragmaScanner.Scan(source, fileName, _errorReporter);
-            if (_errorReporter.HasErrors)
-                return false;
+            Ast.Program program;
+            if (syntax is not null)
+            {
+                foreach (var diagnostic in syntax.Diagnostics) _errorReporter.Report(diagnostic.Detail);
+                if (_errorReporter.HasErrors) return false;
+                program = syntax.Program;
+            }
+            else
+            {
+                // 0. Pre-lex: extract file-scope pragmas (Phase 21 D-01).
+                //    Fast path returns the original string reference unchanged when
+                //    no `enable` substring is present — preserves Phase 18 byte-identical
+                //    determinism for legacy .flow files (Pitfall F mitigation).
+                _diagnosticCode = "flow.syntax.pragma";
+                var (pragmaSet, transformedSource) = PragmaScanner.Scan(source, fileName, _errorReporter);
+                if (_errorReporter.HasErrors)
+                    return false;
 
-            // 1. Lex transformed source into tokens (pragmaSet wired for Plan 21-02).
-            var lexer = new SimpleLexer(transformedSource, _errorReporter, fileName, pragmaSet);
-            var tokens = lexer.Tokenize();
+                // 1. Lex transformed source into tokens (pragmaSet wired for Plan 21-02).
+                _diagnosticCode = "flow.syntax.lex";
+                var lexer = new SimpleLexer(transformedSource, _errorReporter, fileName, pragmaSet);
+                var tokens = lexer.Tokenize();
+                _evaluationTokens = tokens;
 
-            if (_errorReporter.HasErrors)
-                return false;
+                if (_errorReporter.HasErrors)
+                    return false;
 
-            // 2. Parse tokens into AST (pragmaSet attached to Program per D-08).
-            var parser = new Parser(tokens, _errorReporter, pragmaSet);
-            var program = parser.Parse();
+                // 2. Parse tokens into AST (pragmaSet attached to Program per D-08).
+                _diagnosticCode = "flow.syntax.parse";
+                var parser = new Parser(tokens, _errorReporter, pragmaSet);
+                program = parser.Parse();
 
-            if (_errorReporter.HasErrors)
-                return false;
+                if (_errorReporter.HasErrors)
+                    return false;
 
-            // 3. Type check AST (skipped for now - types checked at runtime)
+                // 3. Type check AST (skipped for now - types checked at runtime)
+
+            }
+            _diagnosticCode = "flow.evaluation";
 
             _diagnosticOutput?.WriteLine($"[verbose] Executing {fileName ?? "<eval>"}");
 
@@ -466,7 +515,10 @@ public class FlowEngine : IDisposable
         }
         catch (Exception ex)
         {
-            _errorReporter.ReportError($"Unexpected error: {ex.Message}", SourceLocation.Unknown);
+            _hostFailure = ex;
+            _terminalCode = "flow.host.failure";
+            _errorReporter.ReportError($"Unexpected error: {ex.Message}", new SourceLocation(1, 1, fileName));
+            _terminalDiagnostic = _errorReporter.Errors.Last();
             return false;
         }
     }

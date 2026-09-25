@@ -12,7 +12,7 @@ public class ScriptRunner
         try
         {
             var source = File.ReadAllText(filePath);
-            using var engine = new FlowEngine(verbose: verbose);
+            using var engine = new FlowEngine(new EngineOptions { Verbose = verbose, Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
 
             // Configure audio device if specified
             if (deviceName != null && engine.AudioManager.IsAudioAvailable())
@@ -21,7 +21,7 @@ public class ScriptRunner
                 backend.SetDevice(deviceName);
             }
 
-            var success = engine.Execute(source, filePath);
+            var success = engine.Evaluate(source, filePath).Succeeded;
 
             if (!success)
             {

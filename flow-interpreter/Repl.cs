@@ -41,7 +41,7 @@ public class Repl
 
     public Repl()
     {
-        _engine = new FlowEngine();
+        _engine = new FlowEngine(new EngineOptions { Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
         // Interactive convenience: the REPL starts with @std imported.
         _engine.ImportInteractiveDefaults();
     }
@@ -240,7 +240,7 @@ public class Repl
 
         foreach (var import in imports)
         {
-            _engine.Execute(import, "<repl-init>");
+            _engine.Evaluate(import, "<repl-init>");
             // Clear any errors from auto-import (e.g., if audio not available)
             _engine.ErrorReporter.Clear();
         }
@@ -407,7 +407,7 @@ public class Repl
     public bool ExecuteLineForTesting(string input)
     {
         var lineToExecute = _sessionStrict ? "enable strict;\n" + input : input;
-        _engine.Execute(lineToExecute, "<repl>");
+        _engine.Evaluate(lineToExecute, "<repl>");
         if (_engine.Context.StrictMode != _sessionStrict)
             _sessionStrict = _engine.Context.StrictMode;
         return !_engine.ErrorReporter.HasErrors;

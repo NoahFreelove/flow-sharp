@@ -30,7 +30,7 @@ internal static class EvalCommand
 
             try
             {
-                using var engine = new FlowEngine(verbose: verbose);
+                using var engine = new FlowEngine(new EngineOptions { Verbose = verbose, Output = Console.Out, Diagnostics = Console.Error, Config = FlowLang.Runtime.FlowConfig.Active });
                 if (device != null && engine.AudioManager.IsAudioAvailable())
                 {
                     var backend = engine.AudioManager.GetBackend();
@@ -43,7 +43,7 @@ internal static class EvalCommand
                 }
 
                 engine.ImportInteractiveDefaults();   // eval is interactive: @std is imported
-                var success = engine.Execute(code, "<eval>");
+                var success = engine.Evaluate(code, "<eval>").Succeeded;
 
                 if (!success)
                 {
