@@ -47,6 +47,11 @@ Owner: primary implementation agent. No delegated file ownership.
 | P4-03 Metadata-only introspection | verified | Declaration-based signatures; IL gate and real LSP strace smoke show no runtime/sample/device initialization. |
 | P4-04 Explicit evaluation adapters | verified | Parsed-tree Evaluate, coded results/HostFailure, explicit host session sinks/config, frozen browser JSON adapter. |
 | P4-05 Gate and documented limits | verified | 3,012 main + 21 MIDI tests; Web publish/Node boot; source/parsed contract parity; documented runtime-only checks. |
+| P5-01 Detached evaluated score | verified | BCL-only immutable snapshots, timing, structural IDs and provenance; Flow lowering. |
+| P5-02 Linear legacy assembly | verified | One final allocation/copy, bounded cancellation, measured allocation reduction. |
+| P5-03 Native sine rendering proof | verified | Model-only audio artifact, streaming PCM, native WAV host, shared duration policy and exact legacy sine parity. |
+| P5-04 Full snapshot render/export migration | open | Instruments/effects, MIDI, explicit caches/RNG/release and legacy consumer routing. |
+| P5-05 Shared editing transforms/full gate | open | Shared transforms, full-path streaming, broader compatibility/performance proof. |
 
 ## Decisions
 
@@ -728,3 +733,11 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   cases, legacy articulation/voice/tuning audio regressions, sine byte guards and
   language closure. The native host emits a valid 294,000-frame stereo PCM16 WAV
   at 44,100 Hz and loads neither `flow-lang` nor `flow-language`. Full gate follows.
+
+- **Native-slice verification** (`a6d720a`): full all-tier gate passes **3,032
+  main + 21 MIDI tests**, **19 skips**, no failures and no tracked-file mutations.
+  Generated Web output boots through the unchanged JS adapter and preserves
+  fresh sessions, located parse errors and music arithmetic. Native WAV header,
+  frame count, checksum and loaded assembly evidence are recorded alongside the
+  gate in `docs/baselines/phase5/`. Phase 5 remains open for the full instrument,
+  effect, MIDI and shared-transform migration described in the handoff.

@@ -54,3 +54,44 @@ Compiler IDs are structural, score timing excludes audio tails, and the output
 buffer is still contiguous. Shared transforms, explicit render contexts/options,
 streaming/progress and native-host render/export remain open. See the
 [boundary decision](../../decisions/2026-09-24-composition-snapshot-boundary.md).
+
+## Native streaming renderer — `a6d720a`
+
+The new `Flow.Audio` artifact references only `Flow.Music.Model` and the BCL.
+It renders dry sine snapshots into borrowed stereo blocks with explicit options,
+cancellation, delivered-frame progress and a per-section note budget. It shares
+note-duration policy with the legacy bar renderer. Ten native-render tests cover
+bit-exact legacy sine parity across tuplets, parallel voices, negative onsets,
+ties/rests, overlap, sustain, pool stealing, tuning and section tempos; they also
+cover Flow/native parity, block-size independence, repeat allocation, failures,
+progress/cancellation and concurrent jobs. The broader targeted selection passed
+156 tests before the full gate.
+
+The native host constructs a score with repeats and two tempos and exports a valid
+294,000-frame stereo PCM16 WAV at 44,100 Hz. Its loaded assembly list contains
+neither language nor compatibility runtime; see [native-host.json](native-host.json).
+The host-owned encoder saturates without dither and does not replace legacy WAV
+export. The WAV header was independently decoded and the PCM checksum recorded.
+
+Reproduce the native proof:
+
+```sh
+dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav
+MSBUILDDISABLENODEREUSE=1 python3 scripts/ci/verify.py --tier all \
+  --artifacts /tmp/flow-phase5-native-all
+```
+
+The renderer retains note metadata for a section and reuses output-block storage
+across repeats. It does not allocate PCM for the whole song or individual notes.
+Nonzero reverb is explicitly rejected. Full instrument/effect routing, snapshot
+MIDI export, shared editing transforms and legacy ambient-service migration remain
+open; this evidence does **not** close Phase 5. No hardware playback, fresh-clone
+or remote CI gate is claimed for this slice.
+
+Final all-tier verification at `a6d720a`: **3,032 main + 21 MIDI tests passed**,
+**19 skips**, **0 failures**, **0 tracked-content mutations**. See
+[native-all-verification.json](native-all-verification.json). Generated Web
+output also passes the Node smoke through the unchanged JavaScript adapter:
+fresh repeated sessions, located parse errors and `150ms` music arithmetic. See
+[native-wasm-verification.json](native-wasm-verification.json). The existing
+missing Mono symbol-file warning did not affect execution.

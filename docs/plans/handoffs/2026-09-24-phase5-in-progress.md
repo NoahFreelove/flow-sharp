@@ -33,6 +33,14 @@ parity, block-size independence, repeat allocation, cancellation and concurrency
 
 ## Verification
 
+Latest implementation: `a6d720a` (isolated streaming sine rendering and roadmap
+update). Full all-tier verification passes **3,032 main + 21 MIDI tests**, **19
+skips**, no failures and no tracked-file mutations. The generated Web bundle
+passes the unchanged JS adapter smoke. `scripts/MusicHost` writes a valid
+294,000-frame stereo WAV and loads no language/compatibility assembly. Evidence:
+`docs/baselines/phase5/native-*.json`. This supersedes the initial-slice counts
+below; Phase 5's full instrument/export gate is still open.
+
 `5017ab3` updates the render timeout test: faster finite song assembly can finish
 before its deadline, so the fixture now renders small buffers continuously.
 All 17 cancellation/model tests pass. All-tier verification at `b3834d9` passes

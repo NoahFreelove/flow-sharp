@@ -1,0 +1,14 @@
+{
+  "frames": 294000,
+  "sampleRate": 44100,
+  "channels": 2,
+  "output": "/tmp/flow-native-host.wav",
+  "assemblies": [
+    "Flow.Audio",
+    "Flow.Music.Model",
+    "Microsoft.Win32.Primitives",
+    "MusicHost"
+  ],
+  "wave_header_valid": true,
+  "pcm_sha256": "ed9f1dbf87b39825585957fa76ce9881e07f0aa659639b0ecd7c3d0c3f688522"
+}
