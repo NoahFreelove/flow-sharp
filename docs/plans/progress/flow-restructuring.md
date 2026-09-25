@@ -697,3 +697,12 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   frames, measured allocations drop from 135,302,544 to 2,097,392 bytes (about 64x).
   This still returns one contiguous buffer; streaming/render-job extraction remains
   open. Full audio/corpus/Web verification follows before closing this continuation.
+
+- **Cancellation fixture follow-up**: the first all-tier run passed 3,021 main
+  and 21 MIDI tests with 19 skips; its only failure assumed a finite 400-repeat
+  render could not finish within 300 ms. Linear assembly invalidated that timing
+  assumption. The fixture now renders bounded buffers continuously until its
+  deadline; separate chunk-copy tests assert cancellation within assembly.
+  All 17 cancellation/model tests pass. Web publish checks also exposed idle
+  MSBuild workers retaining output pipes; final verification disables node reuse.
+  No tracked-content mutations or audio baseline changes occurred in the first run.

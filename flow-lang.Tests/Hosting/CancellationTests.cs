@@ -71,14 +71,18 @@ public class CancellationTests
             """, "spin.flow", new EvaluationOptions { TimeLimit = TimeSpan.FromMilliseconds(200) });
         Assert.Equal(EvaluationOutcome.TimedOut, recursion.Outcome);
 
-        // A long render: many repeats of a sampled-piano section.
+        // Sustained rendering work: a finite repeat-heavy render may finish before
+        // the deadline after assembly optimizations. Keep rendering small buffers
+        // until cancellation; bounded-copy checkpoints have a separate unit test.
         var watch = Stopwatch.StartNew();
         var render = engine.Evaluate("""
             use "@std"
             use "@audio"
             section verse { Sequence piano = | C4 E4 G4 C5 | C4 E4 G4 C5 | C4 E4 G4 C5 | C4 E4 G4 C5 | }
-            Song s = [verse*400]
-            Buffer b = (renderSong s "piano")
+            Song s = [verse]
+            while true {
+                Buffer b = (renderSong s "piano")
+            }
             """, "long.flow", new EvaluationOptions { TimeLimit = TimeSpan.FromMilliseconds(300) });
         watch.Stop();
         Assert.Equal(EvaluationOutcome.TimedOut, render.Outcome);
