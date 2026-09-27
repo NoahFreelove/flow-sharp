@@ -16,6 +16,7 @@ namespace FlowLang.StandardLibrary.Notation;
 /// historically also matched <c>horn*</c>; Phase 33 D-16 reassigns <c>horn → 60</c>
 /// (French horn). Likewise <c>bassoon</c> (GM 70) MUST precede the sweep-0614
 /// generic <c>bass</c> entry (GM 32) since both share the <c>bass</c> prefix.
+/// <c>harpsichord</c> (GM 6) MUST precede <c>harp</c> (GM 46) for the same reason.
 /// </para>
 ///
 /// <para>

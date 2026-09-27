@@ -4,10 +4,8 @@ namespace Flow.Music.IO;
 /// The single sequence-name → General MIDI routing table for MIDI, MusicXML and
 /// LilyPond output. Matching is case-insensitive by prefix; order is significant:
 /// specific names precede generic ones (<c>horn</c> before <c>brass</c>,
-/// <c>bassoon</c> before <c>bass</c>). <c>sampler:NAME</c> routes like <c>NAME</c>.
+/// <c>bassoon</c> before <c>bass</c>, <c>harpsichord</c> before <c>harp</c>). <c>sampler:NAME</c> routes like <c>NAME</c>.
 /// Unrecognized names use program 0 on channel 0; drums and timpani use channel 9.
-/// Known legacy quirk, preserved for byte compatibility: <c>harp</c> precedes
-/// <c>harpsichord</c>, so harpsichord names route to harp (46).
 /// </summary>
 public static class InstrumentRouting
 {
@@ -16,7 +14,7 @@ public static class InstrumentRouting
         ("violin", 40, 0), ("viola", 41, 0), ("cello", 42, 0), ("contrabass", 43, 0),
         ("oboe", 68, 0), ("clarinet", 71, 0), ("bassoon", 70, 0), ("horn", 60, 0),
         ("trombone", 57, 0), ("tuba", 58, 0), ("timpani", 47, 9), ("choir", 52, 0),
-        ("harp", 46, 0), ("guitar", 24, 0), ("harpsichord", 6, 0), ("celeste", 8, 0),
+        ("harpsichord", 6, 0), ("harp", 46, 0), ("guitar", 24, 0), ("celeste", 8, 0),
         ("piano", 0, 0), ("brass", 56, 0), ("bass", 32, 0), ("sax", 65, 0),
         ("flute", 73, 0), ("string", 48, 0), ("organ", 19, 0), ("bell", 14, 0),
         ("drum", 0, 9),

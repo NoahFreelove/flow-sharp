@@ -64,6 +64,17 @@ public class SnapshotMidiExportTests
         Assert.DoesNotContain(module.GetTypeReferences(), t => t.Namespace.StartsWith("FlowLang", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData("harpsichord", 6)]
+    [InlineData("sampler:Harpsichord", 6)]
+    [InlineData("harp", 46)]
+    [InlineData("harpLeft", 46)]
+    public void RoutingPrefersSpecificInstrumentNames(string name, int program)
+    {
+        Assert.Equal((program, 0), Flow.Music.IO.InstrumentRouting.ResolveGmProgram(name));
+        Assert.Equal((program, 0), FlowLang.StandardLibrary.Notation.InstrumentRouting.ResolveGmProgram(name));
+    }
+
     public static TheoryData<string> LegacyCorpus => new()
     {
         // Chords, rests, triplets, drum routing, key and per-section tempo, repeats, shared tracks.
