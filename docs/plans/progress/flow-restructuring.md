@@ -741,3 +741,23 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   frame count, checksum and loaded assembly evidence are recorded alongside the
   gate in `docs/baselines/phase5/`. Phase 5 remains open for the full instrument,
   effect, MIDI and shared-transform migration described in the handoff.
+
+- **D — snapshot Standard MIDI File export** (2026-09-27, `3a69b3a`, `c419c14`):
+  new `Flow.Music.IO` (`flow-music-io/`) references only the model, DryWetMidi
+  and the BCL. `MidiCompositionExporter` writes conductor + per-sequence tracks
+  from snapshots; it owns the GM routing and key-signature tables, and legacy
+  `writeMidi`, MusicXML, LilyPond and `midiOut` delegate to them. Output is
+  byte-identical to legacy `writeMidi` for three Flow corpora (chords, rests,
+  triplets/quintuplets/septuplets incl. TPQN 3,360, drums, keys, section tempos,
+  repeats, serial legato/portamento, voice blocks, 3/4). Documented intentional
+  divergences follow the audio timeline: overfull-bar section offsets, voice-block
+  overlap/portamento, rounding absolute positions instead of per-step truncation,
+  later meter/key changes. Independent review found no legacy regression; its
+  note-off rounding finding was fixed test-first (`c419c14`), with meter and
+  28-bit delta validation. `scripts/MusicHost` also writes MIDI with no language
+  assembly loaded. Legacy `writeMidi` bytes are unchanged; rerouting it is a
+  separate user decision. Pre-existing quirk noted, not fixed: `harp` shadows
+  `harpsichord` in GM routing.
+  Verification at `c419c14`: **3,041 main + 21 MIDI tests**, **19 skips**, zero
+  failures and zero tracked-file mutations; Web bundle smoke passes through the
+  unchanged adapter. Evidence: `docs/baselines/phase5/midi-*.json`.

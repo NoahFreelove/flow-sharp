@@ -1,0 +1,24 @@
+{
+  "revision": "c419c14",
+  "command": "dotnet run --project scripts/MusicHost -- OUT.wav OUT.mid",
+  "frames": 294000,
+  "sampleRate": 44100,
+  "channels": 2,
+  "assemblies": [
+    "Flow.Audio",
+    "Flow.Music.IO",
+    "Flow.Music.Model",
+    "Melanchall.DryWetMidi",
+    "Microsoft.Win32.Primitives",
+    "MusicHost"
+  ],
+  "midi": {
+    "bytes": 155,
+    "sha256": "1756bac419eb9d870982556a3ac58d909797edbf3b5e64800d68323e6c2447d6",
+    "header": "4d546864000000060001000201e0",
+    "format": 1,
+    "tracks": 2,
+    "ticksPerQuarter": 480
+  },
+  "readBackBy": "flow midi2flow (tempo-change warning is importer policy)"
+}

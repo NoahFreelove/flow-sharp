@@ -95,3 +95,28 @@ output also passes the Node smoke through the unchanged JavaScript adapter:
 fresh repeated sessions, located parse errors and `150ms` music arithmetic. See
 [native-wasm-verification.json](native-wasm-verification.json). The existing
 missing Mono symbol-file warning did not affect execution.
+
+## Snapshot MIDI export — `3a69b3a`, `c419c14`
+
+`Flow.Music.IO` references only `Flow.Music.Model`, DryWetMidi and the BCL. It
+writes snapshots as Standard MIDI Files and owns the GM routing/key tables that
+legacy MIDI, MusicXML, LilyPond and `midiOut` now delegate to. Nine tests cover
+the artifact boundary, byte-identical output versus legacy `writeMidi` for three
+Flow corpora (including TPQN elevation to 3,360), native readback of tracks,
+routing, tempo/meter/key maps and controllers, rounding/clamping, and failures
+before any byte is written. Intentional score-timing divergences from legacy are
+characterized in the tests and listed in the boundary decision. An independent
+review found no legacy regression; its note-off rounding finding was fixed
+test-first in `c419c14`, together with meter and 28-bit delta validation.
+
+The native host writes the same WAV plus a 155-byte format-1 SMF (480 TPQN, two
+tracks, stable SHA-256 across runs) with no language or compatibility assembly
+loaded; Flow's `midi2flow` reads it back. See [midi-native-host.json](midi-native-host.json).
+
+Final all-tier verification at `c419c14`: **3,041 main + 21 MIDI tests passed**,
+**19 skips**, **0 failures**, **0 tracked-content mutations**
+([midi-all-verification.json](midi-all-verification.json)). The regenerated Web
+bundle includes `Flow.Music.IO.wasm` and passes the unchanged JavaScript adapter
+smoke ([midi-wasm-verification.json](midi-wasm-verification.json)). Legacy
+`writeMidi` output is unchanged; rerouting it through snapshots, instrument/effect
+rendering and shared editing transforms remain open. Phase 5 is not closed.
