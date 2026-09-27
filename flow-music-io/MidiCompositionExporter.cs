@@ -11,7 +11,7 @@ namespace Flow.Music.IO;
 /// per sequence name (case-insensitive, first-occurrence order) routed by
 /// <see cref="InstrumentRouting"/>. Pitches are the snapshot's 12-TET MIDI keys; tuning
 /// cents are not encoded. Ticks round from absolute score positions (onsets before the
-/// song start clamp to 0) at 480 TPQN, raised to fit exact tuplet durations and capped
+/// song start clamp to 0; note-offs round from absolute ends) at 480 TPQN, raised to fit exact tuplet durations and capped
 /// at 9,600. The whole file is validated and built before any byte reaches the stream.
 /// Ties do not merge notes, matching legacy export.
 /// </summary>
@@ -60,6 +60,7 @@ public static class MidiCompositionExporter
         foreach (var occurrence in composition.Timeline())
         {
             cancellation.ThrowIfCancellationRequested();
+            RequireDeltaRange(sectionStart);
             var section = occurrence.Section;
             if (bpm != section.Settings.Bpm)
             {
@@ -106,6 +107,9 @@ public static class MidiCompositionExporter
 
     private static (int, int) Meter(int numerator, int denominator, long tick, List<TimedEvent> events)
     {
+        if (numerator is < 1 or > 255 || denominator is < 1 or > 255 || !int.IsPow2(denominator))
+            throw new ArgumentOutOfRangeException(nameof(numerator), $"Meter {numerator}/{denominator} cannot be written to MIDI");
+        RequireDeltaRange(tick);
         // DryWetMidi encodes the literal denominator as a power of two itself.
         events.Add(new(new TimeSignatureEvent((byte)numerator, (byte)denominator), tick));
         return (numerator, denominator);
@@ -130,7 +134,8 @@ public static class MidiCompositionExporter
             throw new ArgumentException("Note velocity, overlap and portamento must be finite", nameof(note));
         double sounding = note.DurationOverlap > 0 ? note.DurationQuarters * (1.0 + note.DurationOverlap) : note.DurationQuarters;
         long on = Math.Max(0, checked(sectionStart + Ticks(note.OffsetQuarters, tpq)));
-        long off = checked(on + Ticks(sounding, tpq));
+        long off = Math.Max(on, checked(sectionStart + Ticks(note.OffsetQuarters + sounding, tpq)));
+        RequireDeltaRange(off);
         var key = (SevenBitNumber)pitch.MidiKey;
         var velocity = (SevenBitNumber)Math.Clamp((int)(note.Velocity * 127), 1, 127);
         var channel = track.Channel;
@@ -145,6 +150,13 @@ public static class MidiCompositionExporter
         track.Events.Add(new(new NoteOffEvent(key, (SevenBitNumber)0) { Channel = channel }, off));
         if (note.PortamentoMs > 0)
             track.Events.Add(new(new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)0) { Channel = channel }, off));
+    }
+
+    // Absolute ticks bound every delta, keeping each within the SMF 28-bit variable-length limit.
+    private static void RequireDeltaRange(long tick)
+    {
+        if (tick > 0x0FFF_FFFF)
+            throw new InvalidOperationException("Score position exceeds the Standard MIDI File delta-time range");
     }
 
     private static long Ticks(double quarters, int tpq)

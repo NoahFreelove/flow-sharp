@@ -44,9 +44,8 @@ try
     }, options, cancellation.Token);
     if (args.Length == 2)
     {
-        // Built and validated in memory first; the host owns the file.
-        using var midi = File.Create(args[1]);
-        MidiCompositionExporter.Write(composition, midi, cancellation.Token);
+        // Validate and build in memory before creating the host-owned file.
+        File.WriteAllBytes(args[1], MidiCompositionExporter.ToBytes(composition, cancellation.Token));
     }
     Console.WriteLine(JsonSerializer.Serialize(new { frames = delivered, sampleRate = options.SampleRate,
         channels = 2, output = Path.GetFullPath(args[0]), midi = args.Length == 2 ? Path.GetFullPath(args[1]) : null,

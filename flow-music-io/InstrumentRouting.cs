@@ -6,6 +6,8 @@ namespace Flow.Music.IO;
 /// specific names precede generic ones (<c>horn</c> before <c>brass</c>,
 /// <c>bassoon</c> before <c>bass</c>). <c>sampler:NAME</c> routes like <c>NAME</c>.
 /// Unrecognized names use program 0 on channel 0; drums and timpani use channel 9.
+/// Known legacy quirk, preserved for byte compatibility: <c>harp</c> precedes
+/// <c>harpsichord</c>, so harpsichord names route to harp (46).
 /// </summary>
 public static class InstrumentRouting
 {

@@ -104,12 +104,15 @@ order) with the shared `InstrumentRouting` program/channel and prefix-stripped
 track name. It owns the GM routing and key-signature tables; legacy `writeMidi`,
 MusicXML, LilyPond and `midiOut` delegate to them. The file is built and
 validated in memory; validation, tuplet-resolution and cancellation failures
-write nothing to the caller's stream. MIDI keys outside 0–127 are rejected.
+write nothing to the caller's stream. MIDI keys outside 0–127, meters that SMF
+cannot encode and positions beyond the 28-bit delta-time range are rejected.
 
-Timing policy: ticks round (half away from zero) from absolute score positions;
-section starts accumulate rounded section durations, so repeats do not drift.
+Timing policy: note-ons and note-offs round (half away from zero) from absolute
+score positions, so a repeated key never ends its successor early; section
+starts accumulate rounded section durations, so repeats do not drift.
 Resolution is 480 TPQN, raised to LCM(480, 2×d) for exact tuplet denominators
-of placed sections, capped at 9,600. Onsets before the song start clamp to 0.
+of placed sections, capped at 9,600. Onsets before the song start clamp to 0
+while the note keeps its authored end.
 Ties do not merge notes, and pitches stay 12-TET MIDI keys (no pitch bend), as
 in legacy export. Tempo, meter and key events are emitted where they change.
 
@@ -125,8 +128,11 @@ intentionally follows the score/audio timeline where legacy export disagrees:
 - Legacy truncates each note/rest/bar/offset step separately; snapshot export
   rounds absolute positions. They differ only for non-integer tick positions,
   such as swing/humanize offsets or floating-point residue.
-- Legacy emits only the first section's meter and key; snapshot export emits
-  later changes. Legacy computes tuplet resolution from unplaced sections and
+- Legacy emits only the first section's meter and key, taking the meter from the
+  section context; snapshot export takes meters from the first sequence's bars
+  (these differ when a sequence was built under another meter) and emits later
+  changes. Legacy also reads tick-0 settings from a zero-repeat first section,
+  which Flow syntax cannot produce; snapshot export uses the first sounding one. Legacy computes tuplet resolution from unplaced sections and
   ignores tuplets inside voice blocks; snapshot export uses placed notes only.
 
 Legacy `writeMidi` is unchanged. Switching it to the snapshot exporter would

@@ -160,10 +160,12 @@ public class SnapshotMidiExportTests
     [Fact]
     public void TicksRoundFromAbsoluteScorePositionsAndClampBeforeTheSongStart()
     {
-        var sequence = Sequence("piano", 4, Note(-0.25, 1, 60), Note(0.7, 0.3, 62), Note(2.1, 0.7, 64));
+        // Note-offs round from absolute ends too, so a repeated key never ends its successor early.
+        var sequence = Sequence("piano", 4, Note(-0.25, 1, 60), Note(0.75, 1, 60), Note(0.7, 0.3, 62),
+            Note(2.1, 0.7, 64), Note(3 + 10.5 / 480, 10.5 / 480, 65), Note(3 + 21.0 / 480, 0.5, 65));
         var file = Read(MidiCompositionExporter.ToBytes(Score((Section(new(), sequence), 1))));
-        Assert.Equal([(0L, 480L, 60, 80, 0), (336, 480, 62, 80, 0), (1008, 1344, 64, 80, 0)],
-            Notes(file.GetTrackChunks().ElementAt(1)));
+        Assert.Equal([(0L, 360L, 60, 80, 0), (336, 480, 62, 80, 0), (360, 840, 60, 80, 0), (1008, 1344, 64, 80, 0),
+            (1451, 1461, 65, 80, 0), (1461, 1701, 65, 80, 0)], Notes(file.GetTrackChunks().ElementAt(1)));
     }
 
     [Fact]
@@ -195,6 +197,11 @@ public class SnapshotMidiExportTests
         Assert.Contains("exceeds cap 9600", error.Message);
         Assert.Throws<ArgumentOutOfRangeException>(() => MidiCompositionExporter.Write(
             Score((Section(new(), Sequence("piano", 4, Note(0, 1, 128))), 1)), stream));
+        var wideBar = new SequenceSnapshot(Guid.NewGuid(), "piano", 4, [Note(0, 1, 60)], [new(Guid.NewGuid(), 0, 4, 256, 4, false)]);
+        Assert.Throws<ArgumentOutOfRangeException>(() => MidiCompositionExporter.Write(Score((Section(new(), wideBar), 1)), stream));
+        // SMF delta times are 28-bit; refuse positions no reader can represent.
+        Assert.Throws<InvalidOperationException>(() => MidiCompositionExporter.Write(
+            Score((Section(new(), Sequence("piano", 600_000, Note(599_999, 1, 60))), 1)), stream));
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         Assert.Throws<OperationCanceledException>(() => MidiCompositionExporter.Write(
