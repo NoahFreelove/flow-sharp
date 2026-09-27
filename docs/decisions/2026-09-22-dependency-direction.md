@@ -108,3 +108,7 @@ types, fields, signatures, locals or IL operands. The 38 edges from 19 types on
   Collection sort delegates domain ordering to `ValueComparisons.RegisterOrdering`;
   this is separate from numeric equality/common-scale conversion to preserve note
   equality and comparison semantics. The music initializer installs note ordering.
+- Phase 5 MIDI slice: `Flow.Music.IO` (`flow-music-io/`) references only
+  `Flow.Music.Model`, DryWetMidi and the BCL (artifact test enforced). It owns the
+  GM routing and key-signature tables; `flow-lang` delegates to them so legacy and
+  snapshot export cannot drift. `scripts/MusicHost` exports MIDI without Flow.

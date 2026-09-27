@@ -205,47 +205,8 @@ public static class MidiExport
     /// Key signature lookup: Flow key string -> (sharps/flats, minor flag).
     /// MIDI encodes sharps as positive, flats as negative; minor = 1.
     /// </summary>
-    internal static readonly Dictionary<string, (sbyte sharpsFlats, byte minor)> KeySignatureMap =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            // Major keys
-            ["Cmajor"] = (0, 0),
-            ["Gmajor"] = (1, 0),
-            ["Dmajor"] = (2, 0),
-            ["Amajor"] = (3, 0),
-            ["Emajor"] = (4, 0),
-            ["Bmajor"] = (5, 0),
-            ["Fsharpmajor"] = (6, 0),
-            ["Csharpmajor"] = (7, 0),
-            ["Fmajor"] = (-1, 0),
-            ["Bbmajor"] = (-2, 0),
-            ["Ebmajor"] = (-3, 0),
-            ["Abmajor"] = (-4, 0),
-            ["Dbmajor"] = (-5, 0),
-            ["Gbmajor"] = (-6, 0),
-            // Minor keys
-            ["Aminor"] = (0, 1),
-            ["Eminor"] = (1, 1),
-            ["Bminor"] = (2, 1),
-            ["Fsharpminor"] = (3, 1),
-            ["Csharpminor"] = (4, 1),
-            ["Gsharpminor"] = (5, 1),
-            ["Dsharpminor"] = (6, 1),
-            ["Asharpminor"] = (7, 1),
-            ["Dminor"] = (-1, 1),
-            ["Gminor"] = (-2, 1),
-            ["Cminor"] = (-3, 1),
-            ["Fminor"] = (-4, 1),
-            ["Bbminor"] = (-5, 1),
-            ["Ebminor"] = (-6, 1),
-            // Enharmonic equivalents for keys in ValidKeys not covered above
-            ["Dsharpmajor"] = (-3, 0),  // enharmonic with Eb major
-            ["Gsharpmajor"] = (-4, 0),  // enharmonic with Ab major
-            ["Asharpmajor"] = (-2, 0),  // enharmonic with Bb major
-            ["Dbminor"] = (-5, 1),      // enharmonic with C# minor
-            ["Gbminor"] = (-6, 1),      // enharmonic with F# minor
-            ["Abminor"] = (-4, 1),      // enharmonic with G# minor
-        };
+    internal static IReadOnlyDictionary<string, (sbyte sharpsFlats, byte minor)> KeySignatureMap =>
+        Flow.Music.IO.KeySignatures.Map;
 
     /// <summary>
     /// Phase 23 Plan 23-03 Task 2 + Phase 32 D-12 / Pitfall 6: context-dependent registration

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Flow.Music.IO</AssemblyName>
+    <RootNamespace>Flow.Music.IO</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../flow-music-model/flow-music-model.csproj" />
+    <PackageReference Include="Melanchall.DryWetMidi" Version="8.0.3" />
+  </ItemGroup>
+</Project>

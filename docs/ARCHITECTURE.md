@@ -187,8 +187,9 @@ The primary projects are organized by responsibility:
 | `flow-language/` | BCL-only language runtime, core standard library, and extension contracts. |
 | `flow-music-model/` | BCL-only immutable evaluated score snapshots and quarter/second timing. |
 | `flow-audio/` | Model + BCL only; dry sine snapshot rendering, bounded stereo blocks and shared note-duration policy. |
-| `scripts/MusicHost/` | Native score-to-WAV proof; references only `flow-audio` and its model dependency. |
-| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references language, music model and audio. |
+| `flow-music-io/` | Model + DryWetMidi only; snapshot Standard MIDI File export and the single GM routing / key-signature tables. |
+| `scripts/MusicHost/` | Native score-to-WAV/MIDI proof; references only `flow-audio`, `flow-music-io` and their model dependency. |
+| `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references language, music model, audio and music IO. |
 | `scripts/LanguageHost/` | Language-only CLI, REPL and embedding example; references only `flow-language`. |
 | `flow-interpreter/` | Legacy entry point — REPL, watch-mode, script runner. Predates the unified CLI; kept for backwards compatibility. |
 | `flow-cli/` | The shipping `flow` binary — 13 subcommands (`run`, `eval`, `repl`, `watch`, `play`, `render`, `flow2midi`, `midi2flow`, `check`, `new`, `test`, `lsp`, `version`). |

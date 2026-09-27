@@ -1,12 +1,13 @@
 # Native music host
 
 ```sh
-dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav
+dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav [/tmp/flow-native-host.mid]
 ```
 
 Constructs an immutable score with repeats and two tempos, then streams dry sine
 stereo blocks into a PCM16 WAV. Only `Flow.Audio`, `Flow.Music.Model` and the BCL
-are dependencies; the JSON report lists loaded assemblies. The output has 294,000
+are dependencies for audio; the optional MIDI output adds `Flow.Music.IO` and
+DryWetMidi. The JSON report lists loaded assemblies. The output has 294,000
 frames at 44,100 Hz. Ctrl+C cancels cooperatively; partial output is retained.
 
 The renderer supports resolved pitch/tuning, authored timing, articulation,

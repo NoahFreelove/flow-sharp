@@ -1,12 +1,13 @@
 using Flow.Audio;
+using Flow.Music.IO;
 using Flow.Music.Model;
 using System.Text;
 using System.Text.Json;
 
-// Native host proof: score -> bounded PCM blocks -> PCM16 WAV, without a Flow engine.
-if (args.Length != 1)
+// Native host proof: score -> bounded PCM blocks -> PCM16 WAV (and optionally SMF), without a Flow engine.
+if (args.Length is not (1 or 2))
 {
-    Console.Error.WriteLine("Usage: MusicHost OUTPUT.wav");
+    Console.Error.WriteLine("Usage: MusicHost OUTPUT.wav [OUTPUT.mid]");
     return 2;
 }
 var sequence = new SequenceSnapshot(Guid.NewGuid(), "melody", 4,
@@ -41,8 +42,14 @@ try
             writer.Write((short)Math.Round(Math.Clamp(sample, -1f, 1f) * 32767));
         delivered += block.Length / 2;
     }, options, cancellation.Token);
+    if (args.Length == 2)
+    {
+        // Built and validated in memory first; the host owns the file.
+        using var midi = File.Create(args[1]);
+        MidiCompositionExporter.Write(composition, midi, cancellation.Token);
+    }
     Console.WriteLine(JsonSerializer.Serialize(new { frames = delivered, sampleRate = options.SampleRate,
-        channels = 2, output = Path.GetFullPath(args[0]),
+        channels = 2, output = Path.GetFullPath(args[0]), midi = args.Length == 2 ? Path.GetFullPath(args[1]) : null,
         assemblies = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetName().Name)
             .Where(n => n is not null && !n.StartsWith("System") && n != "netstandard").Order().ToArray() }));
     return 0;

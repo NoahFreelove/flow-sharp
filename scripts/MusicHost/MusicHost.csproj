@@ -7,5 +7,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../flow-audio/flow-audio.csproj" />
+    <ProjectReference Include="../../flow-music-io/flow-music-io.csproj" />
   </ItemGroup>
 </Project>

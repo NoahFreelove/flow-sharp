@@ -554,11 +554,18 @@ voices, pedal, pool stealing, tuning and multiple tempos), Flow/native equality,
 block-size independence, streaming cancellation/progress, explicit failure cases,
 independent concurrent jobs and repeat-independent PCM storage allocation.
 
+`MusicModel/SnapshotMidiExportTests` verifies the model/DryWetMidi-only IO
+assembly, byte-identical output against legacy `writeMidi` for three Flow corpora
+(chords, rests, triplets/quintuplets/septuplets with TPQN elevation, drums, keys,
+per-section tempo, repeats, serial legato/portamento, voice blocks, 3/4), native
+track/routing/tempo-map readback, and the intentional score-timing divergences.
+
 The standalone native host proof is reproducible without a language runtime:
 
 ```bash
-dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav
+dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav /tmp/flow-native-host.mid
 ```
 
-It reports loaded assemblies and writes 294,000 stereo PCM16 frames at 44,100 Hz.
-The example encoder is intentionally separate from legacy WAV byte baselines.
+It reports loaded assemblies and writes 294,000 stereo PCM16 frames at 44,100 Hz,
+plus an optional Standard MIDI File. The example WAV encoder is intentionally
+separate from legacy WAV byte baselines.
