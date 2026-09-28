@@ -562,7 +562,9 @@ track/routing/tempo-map readback, and the intentional score-timing divergences.
 
 `MusicModel/NoteEditingTests` pins the shared quantize (grid, halfway, strength,
 swing parity, bar anchoring, chord cohesion, validation) and the Flow `quantize`
-adapter's grid-correct behavior, including unchanged output for straight rhythms.
+adapter's grid-correct behavior, including unchanged output for straight rhythms,
+plus shared transpose spelling/clamping/cent splitting, snapshot transposition and
+Flow `transpose` parity.
 
 The standalone native host proof is reproducible without a language runtime:
 

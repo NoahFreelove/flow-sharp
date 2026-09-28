@@ -95,4 +95,63 @@ public class NoteEditingTests
         Assert.Equal([0.0, 0.575, 1.0, 1.575, 2.0, 2.575, 3.0, 3.575],
             Onsets(Evaluate("(quantize | C4e D4e E4e F4e G4e A4e B4e C5e | EIGHTH 1.0 0.3)")));
     }
+
+    [Theory]
+    [InlineData('B', 3, 0, 1, 'C', 4, 0, 60, false)]
+    [InlineData('E', 4, -1, 2, 'F', 4, 0, 65, false)]
+    [InlineData('A', 4, 0, -2, 'G', 4, 0, 67, false)]
+    [InlineData('C', 4, 0, 1, 'C', 4, 1, 61, false)]    // sharps spelling
+    [InlineData('C', 10, 0, 12, 'E', 10, 0, 136, true)] // clamped to E10
+    [InlineData('F', 0, 0, -12, 'E', 0, 0, 16, true)]   // clamped to E0
+    public void TransposeRespellsWithSharpsAndClampsToTheFlowRange(char letter, int octave, int alteration,
+        int semitones, char expectedLetter, int expectedOctave, int expectedAlteration, int midi, bool clamped)
+    {
+        var result = Transposition.Transpose(letter, octave, alteration, semitones);
+        Assert.Equal((expectedLetter, expectedOctave, expectedAlteration, midi, clamped),
+            (result.Letter, result.Octave, result.Alteration, result.MidiKey, result.Clamped));
+    }
+
+    [Theory]
+    [InlineData(150, 1, 50)]
+    [InlineData(-150, -1, -50)]
+    [InlineData(50, 0, 50)]
+    [InlineData(200, 2, 0)]
+    public void CentsSplitTowardZero(double cents, int semitones, double remainder)
+    {
+        Assert.Equal((semitones, remainder), Transposition.SplitCents(cents));
+    }
+
+    [Fact]
+    public void ApplyTransposesSnapshotPitchesAndRescalesFrequency()
+    {
+        var plain = new NoteEvent(Guid.NewGuid(), "v", 0, 1, new('C', 4, 0, null, 60, 261.6255653005986), Velocity: 0.4);
+        var bent = new NoteEvent(Guid.NewGuid(), "v", 1, 1, new('A', 4, 0, 10, 69, 440));
+        var rest = new NoteEvent(Guid.NewGuid(), "v", 2, 1, null);
+        var source = new SequenceSnapshot(Guid.NewGuid(), "lead", 3, [plain, bent, rest]);
+
+        var result = Transposition.Apply(source, semitones: 3, cents: 50);
+
+        Assert.Equal(new NotePitch('D', 4, 1, 50, 63, 261.6255653005986 * Math.Pow(2, 3.5 / 12)), result.Notes[0].Pitch);
+        Assert.Equal(new NotePitch('C', 5, 0, 60, 72, 440 * Math.Pow(2, 3.5 / 12)), result.Notes[1].Pitch);
+        Assert.Null(result.Notes[2].Pitch);
+        Assert.Equal(plain with { Pitch = null }, result.Notes[0] with { Pitch = null });
+        Assert.Equal(60, source.Notes[0].Pitch!.MidiKey);
+
+        var custom = Transposition.Apply(source, 12, frequency: p => p.MidiKey);
+        Assert.Equal([72.0, 81.0], custom.Notes.Take(2).Select(n => n.Pitch!.FrequencyHz));
+    }
+
+    [Fact]
+    public void FlowTransposeMatchesTheSharedTransform()
+    {
+        var original = Evaluate("| C4q Eb4q [G4 B4]q _q |");
+        var transposed = Evaluate("(transpose | C4q Eb4q [G4 B4]q _q | 5)");
+        static IEnumerable<(char, int, int, int)> Pitches(SequenceData s) => s.Bars.SelectMany(b => b.MusicalNotes)
+            .Where(n => !n.IsRest).Select(n => (n.NoteName, n.Octave, n.Alteration,
+                FlowLang.StandardLibrary.Audio.PitchConversion.GetMidiNote(n.NoteName, n.Octave, n.Alteration)));
+        var expected = Pitches(original).Select(p => Transposition.Transpose(p.Item1, p.Item2, p.Item3, 5))
+            .Select(t => (t.Letter, t.Octave, t.Alteration, t.MidiKey));
+        Assert.Equal(expected, Pitches(transposed));
+        Assert.Equal([('F', 4, 0, 65), ('G', 4, 1, 68), ('C', 5, 0, 72), ('E', 5, 0, 76)], Pitches(transposed));
+    }
 }

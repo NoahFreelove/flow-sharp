@@ -164,3 +164,13 @@ stores the snapped difference. Straight, even rhythms are unchanged. Output
 changes where the old builtin swung every other *note* (e.g. `q e e`), advanced
 its grid cursor over chord tones, or ignored an existing offset at partial
 strength. The `swing N { }` context keeps its own additive, slot-parity shift.
+
+**Transpose**: `Transposition.Transpose` moves a spelled pitch by MIDI key,
+respells with sharps and clamps to Flow's E0–E10 range (reporting clamping so
+Flow keeps its warning); `SplitCents` truncates toward zero (+150c = +1 st +50c).
+Flow `transpose` uses both unchanged. `Transposition.Apply` transposes snapshots,
+adding nonzero cents to each note's offset and rescaling resolved frequency by the
+equal-tempered interval actually applied (exact for 12-TET); callers with another
+tuning pass a frequency resolver, pending a reusable tuning description. Other
+MIDI-based transforms (invert, trill, sequence steps) share the range constants
+and still use their local spelling helpers.

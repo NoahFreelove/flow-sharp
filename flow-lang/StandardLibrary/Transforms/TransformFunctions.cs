@@ -12,8 +12,8 @@ namespace FlowLang.StandardLibrary.Transforms;
 /// </summary>
 public static class TransformFunctions
 {
-    private const int MIDI_MIN = 16;  // E0
-    private const int MIDI_MAX = 136; // E10
+    private const int MIDI_MIN = Flow.Music.Model.Editing.Transposition.LowestKey;  // E0
+    private const int MIDI_MAX = Flow.Music.Model.Editing.Transposition.HighestKey; // E10
 
     public static void Register(InternalFunctionRegistry registry)
     {
@@ -879,8 +879,9 @@ public static class TransformFunctions
         // but truncate-toward-zero keeps the remainder same-sign as the input so a positive
         // request never silently flips a note's spelling downward. We use Math.Truncate so
         // +150c → +1st + 50c and -150c → -1st - 50c (intuitive for composers).
-        int semitones = (int)Math.Truncate(cents / 100.0);
-        double centsRemainder = cents - semitones * 100.0;
+        // Charitable: a non-finite cent amount leaves the sequence untransposed.
+        var (semitones, centsRemainder) = double.IsFinite(cents) && Math.Abs(cents) < 1e11
+            ? Flow.Music.Model.Editing.Transposition.SplitCents(cents) : (0, 0.0);
 
         return MusicValue.Sequence(TransposeBy(seq, semitones, centsRemainder));
     }
@@ -899,18 +900,17 @@ public static class TransformFunctions
         {
             if (note.IsRest) return note;
 
-            int midi = ToMidi(note.NoteName, note.Octave, note.Alteration) + semitones;
-
-            if (midi < MIDI_MIN || midi > MIDI_MAX)
+            // Shared with editing hosts: Flow.Music.Model.Editing.Transposition.
+            var moved = Flow.Music.Model.Editing.Transposition.Transpose(
+                note.NoteName, note.Octave, note.Alteration, semitones);
+            if (moved.Clamped)
             {
-                int clamped = Math.Clamp(midi, MIDI_MIN, MIDI_MAX);
                 FlowConsole.Error.WriteLine(
                     $"Warning: transpose would put {NoteType.Format(note.NoteName, note.Octave, note.Alteration)} " +
-                    $"out of range (MIDI {midi}), clamping to MIDI {clamped}");
-                midi = clamped;
+                    $"out of range (MIDI {moved.RequestedMidiKey}), clamping to MIDI {moved.MidiKey}");
             }
 
-            var (name, oct, alt) = FromMidi(midi);
+            var (name, oct, alt) = (moved.Letter, moved.Octave, moved.Alteration);
             double? newCent = centsRemainder == 0.0
                 ? null                                          // keep existing CentOffset
                 : (note.CentOffset ?? 0.0) + centsRemainder;    // fold remainder into per-note cents
