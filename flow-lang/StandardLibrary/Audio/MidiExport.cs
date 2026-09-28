@@ -1,26 +1,22 @@
-using System.Linq;
-using Melanchall.DryWetMidi.Common;
-using Melanchall.DryWetMidi.Core;
-using Melanchall.DryWetMidi.Interaction;
 using FlowLang.Diagnostics;
 using FlowLang.Runtime;
 using FlowLang.StandardLibrary.Audio.Tuning;
 using FlowLang.TypeSystem;
 using FlowLang.TypeSystem.PrimitiveTypes;
 using FlowLang.TypeSystem.SpecialTypes;
+using Flow.Music.IO;
 using FlowLang.Music;
 
 namespace FlowLang.StandardLibrary.Audio;
 
 /// <summary>
-/// Exports a Flow Song to a Standard MIDI File (.mid) using DryWetMidi.
-/// Walks the SongData hierarchy (sections -> sequences -> bars -> notes)
-/// and produces MIDI events with correct tempo, time signature, key signature,
-/// velocity mapping, and tick-based durations.
+/// Flow's <c>writeMidi</c> binding. The evaluated song is compiled to a detached
+/// composition snapshot and written by <see cref="MidiCompositionExporter"/>, so
+/// Flow and native hosts share one MIDI timing/routing contract (see
+/// docs/decisions/2026-09-24-composition-snapshot-boundary.md).
 /// </summary>
 public static class MidiExport
 {
-    private const int TicksPerQuarterNote = 480;
 
     // -----------------------------------------------------------------------
     // §5.4 in-memory MIDI capture sink (D-48-17 / D-48-18)
@@ -77,6 +73,9 @@ public static class MidiExport
         return bytes;
     }
 
+
+    private const int TicksPerQuarterNote = 480;
+
     /// <summary>
     /// TUP-06 / CONTEXT D-05 / D-USER-E: maximum TPQN supported by Flow's MIDI export.
     /// Songs whose tuplet denominator LCM forces TPQN above this cap raise a clear
@@ -95,6 +94,47 @@ public static class MidiExport
     /// Lcm(a, b) = a × b / Gcd(a, b). Two-line helper next to its sole caller.
     /// </summary>
     private static int Lcm(int a, int b) => a / Gcd(a, b) * b;
+
+    /// <summary>
+    /// MusicXML <c>divisions</c> (the MIDI export now resolves its own TPQN from the
+    /// snapshot with the same formula over placed sections).
+    /// TUP-06: pre-export pass over the Song collecting tuplet denominators from
+    /// MusicalNoteData.DurationFraction values. Computes requiredTPQN = LCM(480,
+    /// 2 × union(denoms)) per CONTEXT D-05. When zero tuplets are present (no
+    /// note has DurationFraction), returns 480 unchanged (CONTEXT D-07 structural
+    /// preservation of Phase 18 byte-identical contract for non-tuplet songs).
+    ///
+    /// When requiredTPQN exceeds MaxTpqn (9600), raises an InvalidOperationException
+    /// with the LOCKED message format from CONTEXT D-06. The error fires BEFORE
+    /// any DryWetMidi MidiFile allocation or disk I/O — atomic, no partial export.
+    /// </summary>
+    internal static int ComputeRequiredTpqn(SongData song)
+    {
+        var denominators = new HashSet<int>();
+        foreach (var section in song.SectionRegistry.Values)
+            foreach (var sequence in section.Sequences.Values)
+                foreach (var bar in sequence.Bars)
+                    foreach (var note in bar.MusicalNotes)
+                        if (note.DurationFraction.HasValue)
+                            denominators.Add(note.DurationFraction.Value.Denom);
+
+        // CONTEXT D-07: zero tuplets → TPQN stays at 480 (Phase 18 byte-identical contract)
+        if (denominators.Count == 0)
+            return TicksPerQuarterNote;
+
+        int requiredTpqn = TicksPerQuarterNote;
+        foreach (var d in denominators)
+            requiredTpqn = Lcm(requiredTpqn, 2 * d);
+
+        if (requiredTpqn > MaxTpqn)
+        {
+            var sortedDenoms = denominators.OrderBy(x => x).ToArray();
+            throw new InvalidOperationException(
+                $"MIDI export requires TPQN={requiredTpqn}, exceeds cap {MaxTpqn} (locked v1.3 D-05). " +
+                $"Tuplet ratios in this song: [{string.Join(", ", sortedDenoms)}]");
+        }
+        return requiredTpqn;
+    }
 
     /// <summary>
     /// Phase 33 D-15 — strips the <c>sampler:</c> prefix from a sequence name
@@ -161,45 +201,6 @@ public static class MidiExport
     /// </summary>
     public static (int gmProgram, int channel) ResolveGmProgram(string seqName)
         => FlowLang.StandardLibrary.Notation.InstrumentRouting.ResolveGmProgram(seqName);
-
-    /// <summary>
-    /// TUP-06: pre-export pass over the Song collecting tuplet denominators from
-    /// MusicalNoteData.DurationFraction values. Computes requiredTPQN = LCM(480,
-    /// 2 × union(denoms)) per CONTEXT D-05. When zero tuplets are present (no
-    /// note has DurationFraction), returns 480 unchanged (CONTEXT D-07 structural
-    /// preservation of Phase 18 byte-identical contract for non-tuplet songs).
-    ///
-    /// When requiredTPQN exceeds MaxTpqn (9600), raises an InvalidOperationException
-    /// with the LOCKED message format from CONTEXT D-06. The error fires BEFORE
-    /// any DryWetMidi MidiFile allocation or disk I/O — atomic, no partial export.
-    /// </summary>
-    internal static int ComputeRequiredTpqn(SongData song)
-    {
-        var denominators = new HashSet<int>();
-        foreach (var section in song.SectionRegistry.Values)
-            foreach (var sequence in section.Sequences.Values)
-                foreach (var bar in sequence.Bars)
-                    foreach (var note in bar.MusicalNotes)
-                        if (note.DurationFraction.HasValue)
-                            denominators.Add(note.DurationFraction.Value.Denom);
-
-        // CONTEXT D-07: zero tuplets → TPQN stays at 480 (Phase 18 byte-identical contract)
-        if (denominators.Count == 0)
-            return TicksPerQuarterNote;
-
-        int requiredTpqn = TicksPerQuarterNote;
-        foreach (var d in denominators)
-            requiredTpqn = Lcm(requiredTpqn, 2 * d);
-
-        if (requiredTpqn > MaxTpqn)
-        {
-            var sortedDenoms = denominators.OrderBy(x => x).ToArray();
-            throw new InvalidOperationException(
-                $"MIDI export requires TPQN={requiredTpqn}, exceeds cap {MaxTpqn} (locked v1.3 D-05). " +
-                $"Tuplet ratios in this song: [{string.Join(", ", sortedDenoms)}]");
-        }
-        return requiredTpqn;
-    }
 
     /// <summary>
     /// Key signature lookup: Flow key string -> (sharps/flats, minor flag).
@@ -276,437 +277,13 @@ public static class MidiExport
         return WriteMidi(args);
     }
 
-    /// <summary>
-    /// Phase 28 SPEC-6 + Phase 33 D-17: per-sequence multi-track accumulator. The
-    /// dictionary value holds the chunk, the events list (mutated as bars are
-    /// walked), and the resolved (GM program, MIDI channel) pair derived from
-    /// the sequence name. Cross-section same-name sequences share the same
-    /// entry — events accumulate in chronological order without any merge step.
-    ///
-    /// Phase 33 D-17: a SequenceTrackName meta-event carrying the
-    /// PREFIX-STRIPPED sequence name is emitted at tick 0 alongside the
-    /// ProgramChange — receiving DAWs display the canonical instrument name
-    /// (e.g. <c>"violin"</c>, NOT <c>"sampler:violin"</c>).
-    /// </summary>
-    private sealed class SequenceTrackInfo
-    {
-        public TrackChunk Chunk { get; } = new TrackChunk();
-        public List<TimedEvent> Events { get; } = new List<TimedEvent>();
-        public int GmProgram { get; }
-        public int Channel { get; }
-
-        public SequenceTrackInfo(int gmProgram, int channel, string trackName)
-        {
-            GmProgram = gmProgram;
-            Channel = channel;
-            // Phase 33 D-17: name the track with the prefix-stripped sequence name
-            // at tick 0, ahead of the ProgramChange. DryWetMidi's
-            // SequenceTrackNameEvent is a meta-event (no channel — it applies
-            // to the whole track). Empty / null names skip the event entirely
-            // so the Phase 28 byte-level chunk count contract isn't violated
-            // by tracks with no name.
-            if (!string.IsNullOrEmpty(trackName))
-            {
-                Events.Add(new TimedEvent(
-                    new SequenceTrackNameEvent(trackName),
-                    0));
-            }
-            // SPEC-6: drum sequences route to channel 9 (GM percussion). All
-            // NoteOn/NoteOff for the drum track use Channel = 9 instead of 0;
-            // the ProgramChange below already carries this channel and every
-            // note event built later sets the same channel inline.
-            Events.Add(new TimedEvent(
-                new ProgramChangeEvent((SevenBitNumber)gmProgram)
-                {
-                    Channel = (FourBitNumber)channel
-                },
-                0));
-        }
-    }
-
-    /// <summary>
-    /// Core MIDI export implementation. Phase 28 SPEC-6: emits one TrackChunk per
-    /// uniqueSequenceName plus the conductor track:
-    ///   Track 0 = conductor (tempo, time sig, key sig meta events)
-    ///   Track 1..N = one per uniqueSequenceName (insertion-order across sections)
-    /// Cross-section same-name sequences concatenate onto the same track. Drum
-    /// sequences route to channel 9; all other names default to channel 0 with a
-    /// per-name GM program from <see cref="ResolveGmProgram"/>.
-    /// </summary>
     private static void ExportMidiInternal(string filepath, SongData song)
     {
-        // TUP-06: pre-export pass — auto-elevate TPQN if tuplets demand it,
-        // raise cap error before any allocation if requiredTPQN > 9600.
-        // Songs with zero tuplets short-circuit to 480 (Phase 18 byte-identical preserved).
-        int ticksPerQuarter = ComputeRequiredTpqn(song);
-
-        var midiFile = new MidiFile();
-        // ticksPerQuarter is bounded by MaxTpqn (9600) which fits short.MaxValue (32767).
-        midiFile.TimeDivision = new TicksPerQuarterNoteTimeDivision((short)ticksPerQuarter);
-
-        // Determine global context from the first section
-        double bpm = 120.0;
-        int timeSigNumerator = 4;
-        int timeSigDenominator = 4;
-        string? key = null;
-
-        if (song.Sections.Count > 0)
-        {
-            var firstSectionRef = song.Sections[0];
-            if (song.SectionRegistry.TryGetValue(firstSectionRef.Name, out var firstSection))
-            {
-                var ctx = firstSection.Context;
-                if (ctx != null)
-                {
-                    bpm = ctx.Tempo ?? bpm;
-                    if (ctx.TimeSignature != null)
-                    {
-                        timeSigNumerator = ctx.TimeSignature.Numerator;
-                        timeSigDenominator = ctx.TimeSignature.Denominator;
-                    }
-                    key = ctx.Key;
-                }
-            }
-        }
-
-        // Track 0: Conductor track with meta events
-        var conductorChunk = new TrackChunk();
-        var conductorEvents = new List<TimedEvent>();
-
-        // Set tempo: microseconds per beat = 60,000,000 / BPM
-        int microsPerBeat = (int)(60_000_000.0 / bpm);
-        conductorEvents.Add(new TimedEvent(
-            new SetTempoEvent(microsPerBeat), 0));
-
-        // DryWetMidi's TimeSignatureEvent takes the literal denominator
-        // (4 for quarter, 8 for eighth, etc.) and handles the power-of-2
-        // encoding internally. Pre-encoding via Math.Log2 here would
-        // double-encode and produce e.g. "4/2" when "4/4" was authored.
-        conductorEvents.Add(new TimedEvent(
-            new TimeSignatureEvent((byte)timeSigNumerator, (byte)timeSigDenominator), 0));
-
-        // Set key signature if available
-        if (key != null && KeySignatureMap.TryGetValue(key, out var keySig))
-        {
-            conductorEvents.Add(new TimedEvent(
-                new KeySignatureEvent(keySig.sharpsFlats, keySig.minor), 0));
-        }
-
-        // sweep-0614: conductor events are committed AFTER the section walk so we
-        // can append per-section SetTempoEvents at section boundaries (multi-tempo
-        // songs previously played every section after the first at the first
-        // section's tempo, diverging from the audio renderer + midiOut which both
-        // honor per-section tempo — D-40-02 parity). The chunk is added to the file
-        // here to keep it at track-0 position; its events are filled below.
-        midiFile.Chunks.Add(conductorChunk);
-
-        // Track the last-emitted tempo so single-tempo songs stay byte-identical
-        // (no redundant SetTempoEvent) and so dedup of consecutive equal tempos
-        // keeps the output minimal.
-        double lastEmittedBpm = bpm;
-
-        // Phase 28 SPEC-6: multi-track — one TrackChunk per uniqueSequenceName.
-        // Insertion-ordered dictionary so the resulting track order matches the
-        // first-occurrence-of-name across the song's section walk.
-        var sequenceTracks = new Dictionary<string, SequenceTrackInfo>(
-            StringComparer.OrdinalIgnoreCase);
-
-        long absoluteTick = 0;
-
-        foreach (var sectionRef in song.Sections)
-        {
-            if (!song.SectionRegistry.TryGetValue(sectionRef.Name, out var sectionData))
-                continue;
-
-            // Get section-specific time signature denominator for beat calculation
-            int sectionTimeSigDenom = timeSigDenominator;
-            if (sectionData.Context?.TimeSignature != null)
-                sectionTimeSigDenom = sectionData.Context.TimeSignature.Denominator;
-
-            // Calculate section length in ticks for repeat offset
-            // TUP-06: thread the per-export ticksPerQuarter through so repeat
-            // offsets stay aligned when TPQN auto-elevates above 480.
-            long sectionLengthTicks = CalculateSectionLengthTicks(sectionData, sectionTimeSigDenom, ticksPerQuarter);
-
-            // sweep-0614: section bpm computed the same way the audio renderer
-            // (SongRenderer) + midiOut do — per-section tempo. Validate, fall back
-            // to the global bpm on a bad value.
-            double sectionBpm = sectionData.Context?.Tempo ?? bpm;
-            if (!MusicalContext.IsValidTempo(sectionBpm))
-                sectionBpm = bpm;
-
-            for (int repeat = 0; repeat < sectionRef.RepeatCount; repeat++)
-            {
-                long sectionStartTick = absoluteTick;
-
-                // sweep-0614: emit a SetTempoEvent at the section boundary whenever
-                // the section tempo differs from the previously emitted one (dedup of
-                // consecutive equal tempos keeps single-tempo output byte-identical —
-                // the tick-0 tempo from the first section already sits in
-                // conductorEvents). This makes a multi-tempo .mid play sections after
-                // the first at the correct speed, matching the audio + midiOut paths.
-                if (sectionBpm != lastEmittedBpm)
-                {
-                    int secMicrosPerBeat = (int)(60_000_000.0 / sectionBpm);
-                    conductorEvents.Add(new TimedEvent(
-                        new SetTempoEvent(secMicrosPerBeat), sectionStartTick));
-                    lastEmittedBpm = sectionBpm;
-                }
-
-                foreach (var (seqName, sequence) in sectionData.Sequences)
-                {
-                    // Phase 28 SPEC-6: lookup-or-create the per-sequence track. Cross-
-                    // section same-name sequences share the same TrackInfo so events
-                    // accumulate sequentially via seqTick = sectionStartTick — the
-                    // outer loop's chronological ordering produces the correct
-                    // tick-sorted SMF without any merge pass.
-                    if (!sequenceTracks.TryGetValue(seqName, out var trackInfo))
-                    {
-                        var (gm, ch) = ResolveGmProgram(seqName);
-                        // Phase 33 D-17: strip the sampler: prefix from the
-                        // track-name meta-event payload (single helper used here
-                        // and at the GM lookup so they cannot drift).
-                        string trackName = StripSamplerPrefix(seqName);
-                        trackInfo = new SequenceTrackInfo(gm, ch, trackName);
-                        sequenceTracks[seqName] = trackInfo;
-                    }
-                    int channel = trackInfo.Channel;
-
-                    long seqTick = sectionStartTick;
-
-                    foreach (var bar in sequence.Bars)
-                    {
-                        int barTimeSigDenom = bar.TimeSignature?.Denominator ?? sectionTimeSigDenom;
-                        long barTick = seqTick;
-
-                        // Phase 28 (SPEC-1) voice-block MIDI export: when the bar carries
-                        // parallel voices, walk each voice's MusicalNotes in turn — each
-                        // resets to barTick (= seqTick) so all voices share the parent's
-                        // onset, producing overlapping NoteOn/NoteOff events on the same
-                        // track. The parent bar's own MusicalNotes is a placeholder
-                        // whole-bar rest (compiler emits this when only voice blocks were
-                        // present), so the existing per-bar loop below is a no-op for
-                        // that case — only the seqTick advance at the end matters.
-                        if (bar.ParallelVoices != null && bar.ParallelVoices.Count > 0)
-                        {
-                            foreach (var voiceBar in bar.ParallelVoices)
-                            {
-                                long voiceTick = seqTick;
-                                long voiceLeadTick = voiceTick;
-                                int voiceTimeSigDenom = voiceBar.TimeSignature?.Denominator ?? barTimeSigDenom;
-                                foreach (var vnote in voiceBar.MusicalNotes)
-                                {
-                                    if (vnote.IsRest)
-                                    {
-                                        voiceTick += (long)(vnote.GetBeats(voiceTimeSigDenom) * ticksPerQuarter);
-                                        continue;
-                                    }
-                                    long vEffectiveTick = vnote.IsChordTone ? voiceLeadTick : voiceTick;
-                                    if (!vnote.IsChordTone) voiceLeadTick = voiceTick;
-                                    // sweep-0614: honor the per-note onset displacement
-                                    // (swing context / quantize transform) on the MIDI tick,
-                                    // mirroring BarType.ToTimeline on the audio path. Default
-                                    // OnsetOffset=0 keeps non-swung/non-quantized export
-                                    // byte-identical.
-                                    vEffectiveTick += (long)(vnote.OnsetOffset * ticksPerQuarter);
-                                    int vMidi = PitchConversion.GetMidiNote(vnote.NoteName, vnote.Octave, vnote.Alteration);
-                                    byte vVel = (byte)Math.Clamp((int)(vnote.Velocity * 127), 1, 127);
-                                    double vBeats = vnote.GetBeats(voiceTimeSigDenom);
-                                    long vDuration = (long)(vBeats * ticksPerQuarter);
-                                    trackInfo.Events.Add(new TimedEvent(
-                                        new NoteOnEvent((SevenBitNumber)(byte)vMidi, (SevenBitNumber)vVel)
-                                        { Channel = (FourBitNumber)channel },
-                                        vEffectiveTick));
-                                    trackInfo.Events.Add(new TimedEvent(
-                                        new NoteOffEvent((SevenBitNumber)(byte)vMidi, (SevenBitNumber)0)
-                                        { Channel = (FourBitNumber)channel },
-                                        vEffectiveTick + vDuration));
-                                    if (!vnote.IsChordTone)
-                                        voiceTick += (long)(vBeats * ticksPerQuarter);
-                                }
-                            }
-                        }
-
-                        // Chord-tone support (mirrors BarType.ToTimeline): the leading note of
-                        // a chord group advances barTick for the whole slot; subsequent
-                        // chord-tones (IsChordTone=true) emit their NoteOn/NoteOff at the
-                        // SAVED leadBarTick and do NOT advance barTick. Without this, a chord
-                        // [C E G]q would export as a sequential MIDI arpeggio instead of a
-                        // simultaneous polyphonic strike.
-                        long leadBarTick = barTick;
-
-                        foreach (var note in bar.MusicalNotes)
-                        {
-                            if (note.IsRest)
-                            {
-                                // Rests advance position but produce no MIDI events
-                                double restBeats = note.GetBeats(barTimeSigDenom);
-                                barTick += (long)(restBeats * ticksPerQuarter);
-                                continue;
-                            }
-
-                            // Choose the tick at which this note's events land.
-                            // Chord-tone: stack on the leading tone's tick.
-                            // Leading/standalone note: use barTick AND record it as the new lead.
-                            long effectiveTick;
-                            if (note.IsChordTone)
-                            {
-                                effectiveTick = leadBarTick;
-                            }
-                            else
-                            {
-                                effectiveTick = barTick;
-                                leadBarTick = barTick;
-                            }
-                            // sweep-0614: honor the per-note onset displacement (swing
-                            // context / quantize transform) on the MIDI tick, mirroring
-                            // BarType.ToTimeline on the audio path so a swing/quantized
-                            // sequence sounds the same exported to .mid as it does rendered
-                            // to WAV. Default OnsetOffset=0 keeps the export byte-identical
-                            // for un-displaced notes.
-                            effectiveTick += (long)(note.OnsetOffset * ticksPerQuarter);
-
-                            int midiNote = PitchConversion.GetMidiNote(
-                                note.NoteName, note.Octave, note.Alteration);
-
-                            // Map velocity: Flow 0.0-1.0 -> MIDI 1-127 (vel 0 = note off in MIDI)
-                            byte velocity = (byte)Math.Clamp((int)(note.Velocity * 127), 1, 127);
-
-                            double beats = note.GetBeats(barTimeSigDenom);
-                            // DX-14 legato: NoteOff lands at extended duration (CONTEXT D-03 — overlapping
-                            // events are valid SMF and the receiving DAW mixes them). When DurationOverlap=0
-                            // (default) extendedBeats == beats and the export is byte-identical to pre-22-06.
-                            double extendedBeats = note.DurationOverlap > 0
-                                ? beats * (1.0 + note.DurationOverlap)
-                                : beats;
-                            long durationTicks = (long)(extendedBeats * ticksPerQuarter);
-
-                            // DX-14 portamento: emit CC65=127 + CC5=mappedValue at note start
-                            // (CONTEXT Claude's Discretion). Linear ms->CC5: 0->0, 100->64, 200->127 clamped.
-                            // V5 (T-22-V5-22, T-22-V5-23): clamp before SevenBitNumber cast — guards both
-                            // upper overflow and negative input.
-                            if (note.PortamentoMs > 0.0)
-                            {
-                                byte cc5Value = (byte)Math.Clamp(
-                                    (int)Math.Round(note.PortamentoMs * 127.0 / 200.0), 0, 127);
-                                trackInfo.Events.Add(new TimedEvent(
-                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)127)
-                                    { Channel = (FourBitNumber)channel },
-                                    effectiveTick));
-                                trackInfo.Events.Add(new TimedEvent(
-                                    new ControlChangeEvent((SevenBitNumber)5, (SevenBitNumber)cc5Value)
-                                    { Channel = (FourBitNumber)channel },
-                                    effectiveTick));
-                            }
-
-                            // NoteOn at current position
-                            trackInfo.Events.Add(new TimedEvent(
-                                new NoteOnEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)velocity)
-                                { Channel = (FourBitNumber)channel },
-                                effectiveTick));
-
-                            // NoteOff at position + extended duration (for legato — overlap with next note)
-                            trackInfo.Events.Add(new TimedEvent(
-                                new NoteOffEvent((SevenBitNumber)(byte)midiNote, (SevenBitNumber)0)
-                                { Channel = (FourBitNumber)channel },
-                                effectiveTick + durationTicks));
-
-                            // DX-14 portamento: bracket-close at note end (CC65=0).
-                            if (note.PortamentoMs > 0.0)
-                            {
-                                trackInfo.Events.Add(new TimedEvent(
-                                    new ControlChangeEvent((SevenBitNumber)65, (SevenBitNumber)0)
-                                    { Channel = (FourBitNumber)channel },
-                                    effectiveTick + durationTicks));
-                            }
-
-                            // CRITICAL (Pitfall 3): advance by ORIGINAL beats, NOT extendedBeats.
-                            // This is what makes legato OVERLAP rather than slow the song down.
-                            // Chord-tones do NOT advance — the lead already advanced for the slot.
-                            if (!note.IsChordTone)
-                                barTick += (long)(beats * ticksPerQuarter);
-                        }
-
-                        // Advance sequence position by bar duration
-                        if (bar.TimeSignature != null)
-                        {
-                            double barBeats = bar.IsPickup
-                                ? bar.GetActualBeats()
-                                : bar.TimeSignature.BarCapacityQuarters;
-                            seqTick += (long)(barBeats * ticksPerQuarter);
-                        }
-                    }
-                }
-
-                absoluteTick += sectionLengthTicks;
-            }
-        }
-
-        // sweep-0614: commit the conductor events now that section-boundary
-        // SetTempoEvents have been appended during the walk. The manager sorts by
-        // tick, so the tick-0 meta events stay first and per-section tempo changes
-        // land at their section start.
-        using (var conductorManager = conductorChunk.ManageTimedEvents())
-        {
-            conductorManager.Objects.Add(conductorEvents);
-        }
-
-        // Phase 28 SPEC-6: append per-sequence tracks in insertion order. Each
-        // track's events were accumulated already; the chunk manager sorts them
-        // by tick within the track.
-        foreach (var info in sequenceTracks.Values)
-        {
-            using var manager = info.Chunk.ManageTimedEvents();
-            manager.Objects.Add(info.Events);
-            midiFile.Chunks.Add(info.Chunk);
-        }
-
-        // §5.4 — capture SMF bytes into the per-thread in-memory sink BEFORE
-        // any file-system write.  The MemoryStream serialization is a second
-        // pass over the already-built MidiFile (DryWetMidi is idempotent here);
-        // the allocation is cheap relative to the note-event build above.
-        try
-        {
-            using var ms = new System.IO.MemoryStream();
-            midiFile.Write(ms);
-            InMemorySink = ms.ToArray();
-        }
-        catch
-        {
-            // Charitable: capture failure must not break the normal file write.
-            InMemorySink = null;
-        }
-
-        // Write the MIDI file to disk
-        midiFile.Write(filepath, overwriteFile: true);
-    }
-
-    /// <summary>
-    /// Calculates the total length of a section in MIDI ticks by summing
-    /// the longest sequence's duration. The ticksPerQuarter parameter (TUP-06)
-    /// is passed in from ExportMidiInternal so repeat offsets honour the
-    /// per-export auto-elevated TPQN rather than the const baseline.
-    /// </summary>
-    private static long CalculateSectionLengthTicks(SectionData section, int timeSigDenominator, int ticksPerQuarter)
-    {
-        double maxBeats = 0;
-
-        foreach (var (name, sequence) in section.Sequences)
-        {
-            double seqBeats = 0;
-            foreach (var bar in sequence.Bars)
-            {
-                if (bar.TimeSignature != null)
-                {
-                    seqBeats += bar.IsPickup
-                        ? bar.GetActualBeats()
-                        : bar.TimeSignature.BarCapacityQuarters;
-                }
-            }
-            if (seqBeats > maxBeats)
-                maxBeats = seqBeats;
-        }
-
-        return (long)(maxBeats * ticksPerQuarter);
+        // Build and validate in memory first: tuplet-resolution or range failures
+        // leave no partial file on disk.
+        var bytes = MidiCompositionExporter.ToBytes(CompositionCompiler.Compile(song, "writeMidi"));
+        // §5.4 — capture SMF bytes for WasmEntry.RunFromJs before any file-system write.
+        InMemorySink = bytes;
+        File.WriteAllBytes(filepath, bytes);
     }
 }

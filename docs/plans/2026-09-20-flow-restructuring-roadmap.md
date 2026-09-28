@@ -518,7 +518,7 @@ Some transforms involve Flow callbacks or higher-order user code. These remain l
 
 ### 9.5 Linux application shell decision
 
-Keep UI framework selection independent of the language split. Evaluate a small native/managed desktop shell versus reusing Svelte in a desktop wrapper. Reuse visual assets and editor expertise where useful, but do not put audio processing or high-frequency DSP transport through a DOM/JSON bridge.
+Keep UI framework selection independent of the language split. Owner direction (2026-09-27): use the owner's work-in-progress C UI kit for music/rhythm applications via C# bindings; the comparison below is superseded except as validation criteria. Reuse visual assets and editor expertise where useful, but do not put audio processing or high-frequency DSP transport through a DOM/JSON bridge.
 
 Prototype a dense piano roll with at least 10,000 visible/project notes, keyboard editing, selection, zoom, and parameter interaction while audio plays. Test input latency, accessibility, packaging, graphics compatibility, and debugging workflow. Select the shell based on this prototype before building the full application.
 
@@ -759,7 +759,7 @@ Confirmed: Linux desktop first; piano-roll-led conventional DAW; Flow-authored p
 | Type-analysis promise | Best-effort static analysis plus documented runtime checks. | Phase 4 |
 | Plugin execution | Flow builds typed DSP graphs; general Flow runs on workers; no AST interpretation in callbacks. | Phase 6/7 |
 | Audio implementation | Compare managed callback path and native/isolation alternative with real measurements. | Phase 6 |
-| Desktop UI | Dense piano-roll prototype to select native/managed shell versus web-based desktop shell. | Phase 6 |
+| Desktop UI | Owner direction (2026-09-27): build on JUI, the owner's C11 immediate-mode UI kit for music/rhythm apps (sibling repo `jui`, see its `docs/integration.md`). The C# host owns the window, GL context, loop and threads; UI↔audio traffic uses atomics and lock-free queues. Prerequisites: JUI canvas/controls (M3a), scroll areas (M3b) and C# bindings (M5, or an interim `LibraryImport` layer). The dense piano-roll prototype validates responsiveness on JUI rather than choosing between shells. | Phase 6 |
 | Units in general language | Preserve behavior; decide general time/quantity placement independently of music. | Phase 3 |
 | Existing MIDI hand splitting | Resolve intended behavior explicitly; an option may support both import workflows. | Phase 0 |
 | Plugin/source versioning | Snapshot dependencies in projects; explicit upgrades. | Phase 7/8 |

@@ -9,8 +9,8 @@ namespace FlowLang.Tests.Integration.Phase48;
 
 /// <summary>
 /// Phase 48 Plan 48-02 — Post-publish assertion that the WASM-published
-/// flow-lang.dll retains its Melanchall.DryWetMidi 8.0.3 assembly reference
-/// reachably. Extends Phase 47-04's compile-time smoke
+/// writeMidi path (flow-lang.dll → Flow.Music.IO.dll) retains its
+/// Melanchall.DryWetMidi 8.0.3 assembly reference reachably. Extends Phase 47-04's compile-time smoke
 /// (<see cref="Phase47.DryWetMidiWasmCompatTests"/>, which proves the API is
 /// callable on Desktop with FlowTarget=Web compiled) into the actual Mono-WASM
 /// publish output (which the linker / trim analyzer could otherwise strip).
@@ -146,19 +146,27 @@ public class DryWetMidiWasmPublishTests
         // Read the published .dll's metadata (NOT the test runner's copy of
         // flow-lang.dll — that's the Desktop build). Mono.Cecil reads the
         // metadata table without IL execution, so this is safe + cheap.
-        using var asm = AssemblyDefinition.ReadAssembly(publishedDll);
-        var refs = asm.MainModule.AssemblyReferences.Select(r => r.Name).ToList();
+        // writeMidi reaches DryWetMidi through Flow.Music.IO (snapshot MIDI export,
+        // 2026-09-27): flow-lang must keep that reference and the IO assembly must keep
+        // DryWetMidi. Mono.Cecil reads metadata without executing IL.
+        static List<string> References(string path)
+        {
+            using var asm = AssemblyDefinition.ReadAssembly(path);
+            return asm.MainModule.AssemblyReferences.Select(r => r.Name).ToList();
+        }
+        var refs = References(publishedDll);
+        Assert.True(refs.Contains("Flow.Music.IO"),
+            $"Expected Flow.Music.IO reference in published flow-lang.dll.\nActual references: {string.Join(", ", refs)}");
 
-        // Trim analyzer + linker should have KEPT the DryWetMidi reference
-        // because MidiExport.cs uses MidiFile.Write / NoteOnEvent / etc.
-        // unconditionally (no #if !FLOW_WEB strip on that file).
-        bool retained = refs.Any(name =>
+        var ioDll = Path.Combine(Path.GetDirectoryName(publishedDll)!, "Flow.Music.IO.dll");
+        Assert.True(File.Exists(ioDll), $"Published Flow.Music.IO.dll missing — expected at {ioDll}");
+        var ioRefs = References(ioDll);
+        bool retained = ioRefs.Any(name =>
             name.StartsWith("Melanchall.DryWetMidi", StringComparison.Ordinal));
-
         Assert.True(retained,
-            $"Expected Melanchall.DryWetMidi assembly reference in published flow-lang.dll " +
+            $"Expected Melanchall.DryWetMidi assembly reference in published Flow.Music.IO.dll " +
             $"(escalate to D-48-17 fallback if absent — strip DryWetMidi from Web build, " +
             $"writeMidi becomes parse-time advisory).\n" +
-            $"Actual references: {string.Join(", ", refs)}");
+            $"Actual references: {string.Join(", ", ioRefs)}");
     }
 }

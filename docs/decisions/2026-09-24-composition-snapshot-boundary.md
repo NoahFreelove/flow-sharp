@@ -116,24 +116,32 @@ while the note keeps its authored end.
 Ties do not merge notes, and pitches stay 12-TET MIDI keys (no pitch bend), as
 in legacy export. Tempo, meter and key events are emitted where they change.
 
-For Flow scores whose ticks are exact integers the output is byte-identical to
-legacy `writeMidi` (three corpora pinned by `SnapshotMidiExportTests`). It
-intentionally follows the score/audio timeline where legacy export disagrees:
+Flow `writeMidi` now compiles the evaluated song and writes through this exporter
+(owner decision, 2026-09-27); the tuning advisory, in-memory Web capture and
+no-partial-file behavior are retained. For scores whose ticks are exact
+integers the bytes equal the previous implementation's (three corpora pinned by
+recorded SHA-256 in `SnapshotMidiExportTests`). Output changed where the previous
+exporter disagreed with the score/audio timeline:
 
-- Legacy advances bars and sections by time-signature capacity, so an overfull
+- The previous exporter advanced bars and sections by time-signature capacity, so an overfull
   monophonic bar (for example nine quarters in 4/4) overlaps the next section;
-  snapshot export places the next section where the audio renderer does.
-- Legacy applies legato overlap and portamento only to serial notes; snapshot
-  export applies them to voice-block notes as well.
-- Legacy truncates each note/rest/bar/offset step separately; snapshot export
-  rounds absolute positions. They differ only for non-integer tick positions,
+  the next section is now placed where the audio renderer does.
+- It applied legato overlap and portamento only to serial notes; voice-block
+  notes now receive them as well.
+- It truncated each note/rest/bar/offset step separately; positions now round
+  from absolute score time. They differ only for non-integer tick positions,
   such as swing/humanize offsets or floating-point residue.
-- Legacy emits only the first section's meter and key, taking the meter from the
-  section context; snapshot export takes meters from the first sequence's bars
-  (these differ when a sequence was built under another meter) and emits later
-  changes. Legacy also reads tick-0 settings from a zero-repeat first section,
-  which Flow syntax cannot produce; snapshot export uses the first sounding one. Legacy computes tuplet resolution from unplaced sections and
-  ignores tuplets inside voice blocks; snapshot export uses placed notes only.
+- It emitted only the first section's meter and key, taking the meter from the
+  section context; meters now come from the first sequence's bars (these differ
+  when a sequence was built under another meter) and later changes are emitted.
+  A zero-repeat first section (not producible from Flow syntax) no longer
+  supplies tick-0 settings.
+- It computed tuplet resolution from unplaced sections and ignored tuplets inside
+  voice blocks; resolution now uses placed notes, including voice blocks.
+- Onsets before the song start clamp to 0 (previously negative event times
+  reached DryWetMidi), and a song
+  referencing a section missing from its registry is an error instead of a
+  silent skip.
 
-Legacy `writeMidi` is unchanged. Switching it to the snapshot exporter would
-change bytes in the cases above and is a separate, user-visible decision.
+MusicXML keeps the previous tuplet-resolution helper for its `divisions`, and
+`midiOut` keeps its own event walk (sharing only the routing table).

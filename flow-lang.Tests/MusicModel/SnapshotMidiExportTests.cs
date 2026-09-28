@@ -38,7 +38,8 @@ public class SnapshotMidiExportTests
         return result.LastValue!.As<SongData>();
     }
 
-    private static byte[] Legacy(SongData song)
+    /// <summary>Flow's <c>writeMidi</c> builtin, which now exports through the snapshot.</summary>
+    private static byte[] WriteMidi(SongData song)
     {
         var path = Path.Combine(Path.GetTempPath(), $"flow-snapshot-midi-{Guid.NewGuid():N}.mid");
         try
@@ -75,9 +76,11 @@ public class SnapshotMidiExportTests
         Assert.Equal((program, 0), FlowLang.StandardLibrary.Notation.InstrumentRouting.ResolveGmProgram(name));
     }
 
-    public static TheoryData<string> LegacyCorpus => new()
+    // SHA-256 and length of each corpus as written by the pre-snapshot writeMidi
+    // implementation (recorded at ac16d0f before it was removed).
+    public static TheoryData<string, string, int> LegacyCorpus => new()
     {
-        // Chords, rests, triplets, drum routing, key and per-section tempo, repeats, shared tracks.
+        { // Chords, rests, triplets, drum routing, key and per-section tempo, repeats, shared tracks.
         """
         key Dmajor {
           tempo 96 { section intro {
@@ -87,8 +90,8 @@ public class SnapshotMidiExportTests
           tempo 140 { section verse { Sequence piano = | D5h. E5q | } }
         }
         Song song = [intro verse*2 intro]
-        """,
-        // Serial legato overlap and portamento controllers, routed programs.
+        """, "f7f8272ddb827fa33824005579086405e7f994a3d5aea65a7cda837c731df752", 328 },
+        { // Serial legato overlap and portamento controllers, routed programs.
         """
         tempo 132 { section verse {
           Sequence strings = (legato | D4q E4q F#4h | 0.5)
@@ -96,8 +99,8 @@ public class SnapshotMidiExportTests
           Sequence brass = | G3w |
         } }
         Song song = [verse*3]
-        """,
-        // Parallel voice blocks without overlap/portamento, 3/4 meter, quintuplets, septuplets (TPQN 3360).
+        """, "44534dd6e6c9e193e52ab5e9a75c70cb84efe44bfa2c01714601b2d63c6a6b5a", 356 },
+        { // Parallel voice blocks without overlap/portamento, 3/4 meter, quintuplets, septuplets (TPQN 3360).
         """
         timesig 3/4 { key Gminor { section waltz {
           Sequence bass = | {voice G2h. } {voice Bb3q D4q G4q} |
@@ -105,17 +108,18 @@ public class SnapshotMidiExportTests
           Sequence harp = | {7:4 G4s A4s Bb4s C5s D5s Eb5s F5s}q _h |
         } } }
         Song song = [waltz*2]
-        """,
+        """, "e29022a7b995cf3fc64251588094296bf51ba2cda3be8ecb6aa480a0ac6d2159", 422 },
     };
 
     [Theory]
     [MemberData(nameof(LegacyCorpus))]
-    public void FlowScoresExportBytesIdenticalToLegacyWriteMidi(string source)
+    public void IntegerTickScoresKeepLegacyWriteMidiBytes(string source, string sha256, int length)
     {
         var song = Evaluate(source);
-        var expected = Legacy(song);
-        var actual = MidiCompositionExporter.ToBytes(CompositionCompiler.Compile(song, "midi.flow"));
-        Assert.Equal(expected, actual);
+        var written = WriteMidi(song);
+        Assert.Equal(length, written.Length);
+        Assert.Equal(sha256, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(written)).ToLowerInvariant());
+        Assert.Equal(written, MidiCompositionExporter.ToBytes(CompositionCompiler.Compile(song, "midi.flow")));
     }
 
     [Fact]
@@ -151,21 +155,19 @@ public class SnapshotMidiExportTests
     }
 
     [Fact]
-    public void ScoreTimingDivergesFromLegacyWhereLegacyDisagreesWithAudio()
+    public void WriteMidiFollowsTheScoreTimeline()
     {
-        // An overfull monophonic bar is nine quarters long in the audio timeline; legacy MIDI
-        // advances the next section by the 4/4 capacity, overlapping the repeat.
+        // An overfull monophonic bar is nine quarters long in the audio timeline; the old
+        // exporter advanced the next section by the 4/4 capacity (1920), overlapping it.
         var song = Evaluate("section run { Sequence piano = | C4q D4q E4q F4q G4q A4q B4q C5h | }\nSong song = [run*2]");
         static long[] Onsets(byte[] midi, int key) =>
             Notes(Read(midi).GetTrackChunks().ElementAt(1)).Where(n => n.key == key).Select(n => n.on).ToArray();
-        Assert.Equal([0L, 1920], Onsets(Legacy(song), 60));
-        Assert.Equal([0L, 9 * 480], Onsets(MidiCompositionExporter.ToBytes(CompositionCompiler.Compile(song, "run")), 60));
+        Assert.Equal([0L, 9 * 480], Onsets(WriteMidi(song), 60));
 
-        // Voice-block notes receive the same overlap extension as serial notes.
+        // Voice-block notes receive the same overlap extension as serial notes (was 960).
         var voices = Evaluate("section v { Sequence piano = (legato | {voice C4h C4h} {voice E4w} | 0.5) }\nSong song = [v]");
         static long FirstOff(byte[] midi) => Notes(Read(midi).GetTrackChunks().ElementAt(1)).First(n => n.key == 60).off;
-        Assert.Equal(960, FirstOff(Legacy(voices)));
-        Assert.Equal(1440, FirstOff(MidiCompositionExporter.ToBytes(CompositionCompiler.Compile(voices, "v"))));
+        Assert.Equal(1440, FirstOff(WriteMidi(voices)));
     }
 
     [Fact]
