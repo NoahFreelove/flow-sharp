@@ -99,8 +99,10 @@ public static class TransformFunctions
     /// are silently corrected — no exception, no error.
     ///
     /// Per CONTEXT D-04..D-06: linear swing offset = swing × (subdivBeats / 2), signed
-    /// (positive = drag offbeat later, negative = push earlier), applied to every other
-    /// subdivision at the requested resolution.
+    /// (positive = drag offbeat later, negative = push earlier). Since 2026-09-27 it applies
+    /// to odd (off-beat) grid positions of each note's real onset, via the shared
+    /// <see cref="Flow.Music.Model.Editing.Quantization"/> (owner decision; previously
+    /// every other note, with chord tones advancing the grid cursor).
     /// </summary>
     public static void RegisterContextDependent(
         InternalFunctionRegistry registry,
@@ -475,9 +477,9 @@ public static class TransformFunctions
     }
 
     /// <summary>
-    /// DX-13 implementation: walks each bar's notes sequentially, computes the nearest grid
-    /// target at the requested resolution (with optional swing shift on every other
-    /// subdivision), and stores the per-note onset displacement in <c>note.OnsetOffset</c>
+    /// DX-13 implementation: walks each bar's notes sequentially, snaps each real onset to
+    /// the grid at the requested resolution (swing on off-beat grid positions), and stores
+    /// the per-note onset displacement in <c>note.OnsetOffset</c>
     /// via the <c>With(...)</c> builder helper. <c>BarType.ToTimeline</c> later adds this
     /// offset to the emitted onset position so audio renderer + MIDI export both honor
     /// quantization without parallel rebuild paths.
@@ -491,61 +493,47 @@ public static class TransformFunctions
         SequenceData seq, NoteValueType.Value resolution,
         double strength, double swing, TimeSignatureData timesig)
     {
-        // sweep-0614: the quantize grid is compared against the per-note onset cursor,
-        // which accumulates GetBeats in QUARTER-note units. The subdivision length must
-        // therefore be quarter-units too (QUARTER = 1.0, EIGHTH = 0.5, SIXTEENTH = 0.25 —
-        // independent of the time-signature denominator). In 4/4 this equals the old
-        // denominator-unit value, so 4/4 quantize stays byte-identical; in non-4/4 the
-        // grid now lines up with the (now quarter-units) timeline.
-        double subdivBeats = NoteValueToQuarters(resolution);
-        // CONTEXT D-04: linear swing offset = swing × (subdivBeats / 2).
-        double swingOffset = swing * (subdivBeats / 2.0);
-
+        // Grid in quarter-note units (meter-independent); the math is the shared
+        // Flow.Music.Model.Editing.Quantization used by editing hosts too.
+        var settings = new Flow.Music.Model.Editing.QuantizeSettings(NoteValueToQuarters(resolution), strength, swing);
         var result = new SequenceData();
         foreach (var bar in seq.Bars)
         {
-            result.AddBar(QuantizeBar(bar, subdivBeats, swingOffset, strength, timesig));
+            result.AddBar(QuantizeBar(bar, settings, timesig));
         }
         return result;
     }
 
     /// <summary>
-    /// Audit 2026-06-09 §4.1: quantizes one bar, recursing into Phase 28 ParallelVoices so
-    /// voice-block sequences keep their content (each voice gets its own beat cursor — voices
-    /// are parallel, all starting at the bar onset). Before this fix QuantizeSequence rebuilt
-    /// <c>new BarData(newNotes, ts)</c> and dropped ParallelVoices, silently muting voiced
-    /// sequences. Per-note rebuild stays on <c>note.With(onsetOffset:)</c> (§4.2-clean already).
+    /// Quantizes one bar against its downbeat, recursing into ParallelVoices (each voice
+    /// starts at the bar onset). Each note's real onset (cursor + existing OnsetOffset;
+    /// chord tones sit on their lead's cursor) is snapped, and the difference from the
+    /// cursor becomes the new OnsetOffset, so notes sharing an onset move together and
+    /// swing lands on off-beat grid positions. <c>note.With</c> preserves other fields.
     /// </summary>
     private static BarData QuantizeBar(
-        BarData bar, double subdivBeats, double swingOffset, double strength, TimeSignatureData timesig)
+        BarData bar, Flow.Music.Model.Editing.QuantizeSettings settings, TimeSignatureData timesig)
     {
         var newNotes = new List<MusicalNoteData>(bar.MusicalNotes.Count);
-        double currentBeat = 0.0;
-        int subdivIdx = 0;
+        double cursor = 0.0, lead = 0.0;
         TimeSignatureData barTs = bar.TimeSignature ?? timesig;
         foreach (var note in bar.MusicalNotes)
         {
-            double targetGrid = Math.Round(currentBeat / subdivBeats) * subdivBeats;
-            // CONTEXT D-06: every other subdivision (the offbeat) receives the swing shift.
-            if (subdivIdx % 2 == 1) targetGrid += swingOffset;
-
-            // strength=1 hard-snap; strength=0 no shift; linear interpolation between.
-            double snappedBeat = currentBeat + strength * (targetGrid - currentBeat);
-            double onsetShift = snappedBeat - currentBeat;
-
-            // Builder-helper rebuild — preserves all other fields, even ones added by
-            // future Phase 22 plans, without naming them here. Rollback-independent.
-            newNotes.Add(note.With(onsetOffset: onsetShift));
-
-            currentBeat += note.GetBeats(barTs.Denominator);
-            subdivIdx++;
+            double position = note.IsChordTone ? lead : cursor;
+            double snapped = Flow.Music.Model.Editing.Quantization.Onset(position + note.OnsetOffset, settings);
+            newNotes.Add(note.With(onsetOffset: snapped - position));
+            if (!note.IsChordTone)
+            {
+                lead = cursor;
+                cursor += note.GetBeats(barTs.Denominator);
+            }
         }
         var newBar = new BarData(newNotes, barTs) { IsPickup = bar.IsPickup };
         if (bar.ParallelVoices != null)
         {
             var voices = new List<BarData>(bar.ParallelVoices.Count);
             foreach (var voiceBar in bar.ParallelVoices)
-                voices.Add(QuantizeBar(voiceBar, subdivBeats, swingOffset, strength, timesig));
+                voices.Add(QuantizeBar(voiceBar, settings, timesig));
             newBar.ParallelVoices = voices;
         }
         return newBar;

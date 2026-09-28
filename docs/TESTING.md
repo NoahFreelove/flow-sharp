@@ -560,6 +560,10 @@ assembly, byte-identical output against legacy `writeMidi` for three Flow corpor
 per-section tempo, repeats, serial legato/portamento, voice blocks, 3/4), native
 track/routing/tempo-map readback, and the intentional score-timing divergences.
 
+`MusicModel/NoteEditingTests` pins the shared quantize (grid, halfway, strength,
+swing parity, bar anchoring, chord cohesion, validation) and the Flow `quantize`
+adapter's grid-correct behavior, including unchanged output for straight rhythms.
+
 The standalone native host proof is reproducible without a language runtime:
 
 ```bash

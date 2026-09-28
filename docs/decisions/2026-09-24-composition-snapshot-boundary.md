@@ -145,3 +145,22 @@ exporter disagreed with the score/audio timeline:
 
 MusicXML keeps the previous tuplet-resolution helper for its `divisions`, and
 `midiOut` keeps its own event walk (sharing only the routing table).
+
+## Shared editing transforms
+
+Editing operations live in the BCL-only model assembly
+(`Flow.Music.Model.Editing`) and are the single implementation behind both Flow
+builtins and editing hosts. Flow builtins keep their mutable-data adapters and
+call the shared per-note functions; hosts apply the same functions to snapshots.
+
+**Quantize** (owner decision, 2026-09-27): `Quantization.Onset` snaps a note's
+real, bar-relative onset to the nearest grid point (halfway snaps later),
+interpolates by strength, and shifts odd grid positions by `swing × grid / 2`.
+Because the result depends only on the onset, notes sharing an onset (chords)
+move together. `Quantization.Apply` quantizes every snapshot event against the
+bar containing its onset. Flow `quantize` now computes each note's real onset
+(bar cursor + existing onset offset; chord tones use their lead's cursor) and
+stores the snapped difference. Straight, even rhythms are unchanged. Output
+changes where the old builtin swung every other *note* (e.g. `q e e`), advanced
+its grid cursor over chord tones, or ignored an existing offset at partial
+strength. The `swing N { }` context keeps its own additive, slot-parity shift.
