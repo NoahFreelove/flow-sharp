@@ -572,6 +572,9 @@ The standalone native host proof is reproducible without a language runtime:
 dotnet run --project scripts/MusicHost -- /tmp/flow-native-host.wav /tmp/flow-native-host.mid
 ```
 
+`scripts/RenderScaleProbe` measures long-song render time, allocation and peak
+working set per process (Release; see `docs/baselines/phase5/README.md`).
+
 It reports loaded assemblies and writes 294,000 stereo PCM16 frames at 44,100 Hz,
 plus an optional Standard MIDI File. The example WAV encoder is intentionally
 separate from legacy WAV byte baselines.

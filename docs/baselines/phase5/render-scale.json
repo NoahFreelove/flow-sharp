@@ -1,0 +1,477 @@
+{
+  "probe": "scripts/RenderScaleProbe (Release)",
+  "workload": "16 s section (two sine sequences, 120 BPM) repeated 4/19/56 times; render only, evaluation excluded; one process per measurement; 3 runs, medians",
+  "implementations": {
+    "pre-linear@48259fa": "legacy renderSong before linear assembly (temporary worktree, -p:LegacyOnly=true)",
+    "linear@efed7c7": "current legacy renderSong (contiguous output)",
+    "native-streaming@efed7c7": "CompositionCompiler + SineCompositionRenderer, discarding blocks"
+  },
+  "machine": {
+    "cpu": "11th Gen Intel(R) Core(TM) i7-11700K @ 3.60GHz",
+    "os": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "dotnet": "10.0.112"
+  },
+  "summary": [
+    {
+      "implementation": "linear@efed7c7",
+      "repeats": 4,
+      "outputSeconds": 64,
+      "medianElapsedMs": 42.3436,
+      "medianAllocatedBytes": 33918848,
+      "medianPeakWorkingSetBytes": 86585344,
+      "medianGen2Collections": 1
+    },
+    {
+      "implementation": "native-streaming@efed7c7",
+      "repeats": 4,
+      "outputSeconds": 64,
+      "medianElapsedMs": 83.091,
+      "medianAllocatedBytes": 79744,
+      "medianPeakWorkingSetBytes": 60837888,
+      "medianGen2Collections": 0
+    },
+    {
+      "implementation": "pre-linear@48259fa",
+      "repeats": 4,
+      "outputSeconds": 64,
+      "medianElapsedMs": 50.5659,
+      "medianAllocatedBytes": 62139296,
+      "medianPeakWorkingSetBytes": 112431104,
+      "medianGen2Collections": 2
+    },
+    {
+      "implementation": "linear@efed7c7",
+      "repeats": 19,
+      "outputSeconds": 304,
+      "medianElapsedMs": 65.1127,
+      "medianAllocatedBytes": 118590848,
+      "medianPeakWorkingSetBytes": 171188224,
+      "medianGen2Collections": 1
+    },
+    {
+      "implementation": "native-streaming@efed7c7",
+      "repeats": 19,
+      "outputSeconds": 304,
+      "medianElapsedMs": 292.8113,
+      "medianAllocatedBytes": 79744,
+      "medianPeakWorkingSetBytes": 61112320,
+      "medianGen2Collections": 0
+    },
+    {
+      "implementation": "pre-linear@48259fa",
+      "repeats": 19,
+      "outputSeconds": 304,
+      "medianElapsedMs": 336.861,
+      "medianAllocatedBytes": 1078207448,
+      "medianPeakWorkingSetBytes": 1084354560,
+      "medianGen2Collections": 7
+    },
+    {
+      "implementation": "linear@efed7c7",
+      "repeats": 56,
+      "outputSeconds": 896,
+      "medianElapsedMs": 111.7355,
+      "medianAllocatedBytes": 327448448,
+      "medianPeakWorkingSetBytes": 380080128,
+      "medianGen2Collections": 1
+    },
+    {
+      "implementation": "native-streaming@efed7c7",
+      "repeats": 56,
+      "outputSeconds": 896,
+      "medianElapsedMs": 817.2435,
+      "medianAllocatedBytes": 79744,
+      "medianPeakWorkingSetBytes": 61091840,
+      "medianGen2Collections": 0
+    },
+    {
+      "implementation": "pre-linear@48259fa",
+      "repeats": 56,
+      "outputSeconds": 896,
+      "medianElapsedMs": 2507.8869,
+      "medianAllocatedBytes": 9014807272,
+      "medianPeakWorkingSetBytes": 7271538688,
+      "medianGen2Collections": 19
+    }
+  ],
+  "runs": [
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 1,
+      "result": {
+        "mode": "legacy",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 81.7575,
+        "allocatedBytes": 62139296,
+        "gen2Collections": 2,
+        "peakWorkingSetBytes": 112533504
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 1,
+      "result": {
+        "mode": "legacy",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 43.6614,
+        "allocatedBytes": 33918848,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 86573056
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 1,
+      "result": {
+        "mode": "native",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 83.6867,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 60837888
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 2,
+      "result": {
+        "mode": "legacy",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 50.2103,
+        "allocatedBytes": 62145200,
+        "gen2Collections": 2,
+        "peakWorkingSetBytes": 112357376
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 2,
+      "result": {
+        "mode": "legacy",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 42.3436,
+        "allocatedBytes": 33918848,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 86638592
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 2,
+      "result": {
+        "mode": "native",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 83.091,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 60846080
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 3,
+      "result": {
+        "mode": "legacy",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 50.5659,
+        "allocatedBytes": 62139296,
+        "gen2Collections": 2,
+        "peakWorkingSetBytes": 112431104
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 3,
+      "result": {
+        "mode": "legacy",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 41.999,
+        "allocatedBytes": 33918848,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 86585344
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 3,
+      "result": {
+        "mode": "native",
+        "repeats": 4,
+        "outputSeconds": 64,
+        "frames": 2822400,
+        "elapsedMs": 81.9498,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 60801024
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 1,
+      "result": {
+        "mode": "legacy",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 336.4099,
+        "allocatedBytes": 1078207736,
+        "gen2Collections": 7,
+        "peakWorkingSetBytes": 1084370944
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 1,
+      "result": {
+        "mode": "legacy",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 65.1127,
+        "allocatedBytes": 118590848,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 171311104
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 1,
+      "result": {
+        "mode": "native",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 291.7469,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 61128704
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 2,
+      "result": {
+        "mode": "legacy",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 336.861,
+        "allocatedBytes": 1078207448,
+        "gen2Collections": 7,
+        "peakWorkingSetBytes": 1084354560
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 2,
+      "result": {
+        "mode": "legacy",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 63.5015,
+        "allocatedBytes": 118590848,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 171188224
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 2,
+      "result": {
+        "mode": "native",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 297.9054,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 61046784
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 3,
+      "result": {
+        "mode": "legacy",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 337.5485,
+        "allocatedBytes": 1078207448,
+        "gen2Collections": 7,
+        "peakWorkingSetBytes": 1084329984
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 3,
+      "result": {
+        "mode": "legacy",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 65.9383,
+        "allocatedBytes": 118590848,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 171147264
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 3,
+      "result": {
+        "mode": "native",
+        "repeats": 19,
+        "outputSeconds": 304,
+        "frames": 13406400,
+        "elapsedMs": 292.8113,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 61112320
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 1,
+      "result": {
+        "mode": "legacy",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 2507.8869,
+        "allocatedBytes": 9014807272,
+        "gen2Collections": 19,
+        "peakWorkingSetBytes": 7271514112
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 1,
+      "result": {
+        "mode": "legacy",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 111.7355,
+        "allocatedBytes": 327448448,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 380096512
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 1,
+      "result": {
+        "mode": "native",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 823.686,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 61190144
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 2,
+      "result": {
+        "mode": "legacy",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 2509.1092,
+        "allocatedBytes": 9014807272,
+        "gen2Collections": 19,
+        "peakWorkingSetBytes": 7271591936
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 2,
+      "result": {
+        "mode": "legacy",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 117.7708,
+        "allocatedBytes": 327448160,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 380080128
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 2,
+      "result": {
+        "mode": "native",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 812.3604,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 60997632
+      }
+    },
+    {
+      "impl": "pre-linear@48259fa",
+      "run": 3,
+      "result": {
+        "mode": "legacy",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 2500.4556,
+        "allocatedBytes": 9014807272,
+        "gen2Collections": 19,
+        "peakWorkingSetBytes": 7271538688
+      }
+    },
+    {
+      "impl": "linear@efed7c7",
+      "run": 3,
+      "result": {
+        "mode": "legacy",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 111.499,
+        "allocatedBytes": 327448448,
+        "gen2Collections": 1,
+        "peakWorkingSetBytes": 379977728
+      }
+    },
+    {
+      "impl": "native-streaming@efed7c7",
+      "run": 3,
+      "result": {
+        "mode": "native",
+        "repeats": 56,
+        "outputSeconds": 896,
+        "frames": 39513600,
+        "elapsedMs": 817.2435,
+        "allocatedBytes": 79744,
+        "gen2Collections": 0,
+        "peakWorkingSetBytes": 61091840
+      }
+    }
+  ]
+}

@@ -129,3 +129,56 @@ through the snapshot exporter. Integer-tick corpora keep their previous bytes
 `3772d92`: **3,045 main + 21 MIDI passed**, **19 skips**, **0 failures**, **0
 tracked-content mutations** ([writemidi-all-verification.json](writemidi-all-verification.json));
 Web smoke passes ([writemidi-wasm-verification.json](writemidi-wasm-verification.json)).
+
+## Shared editing transforms — `6a6a70f`, `efed7c7`
+
+Quantize (grid-correct by owner decision) and transpose live in
+`Flow.Music.Model.Editing` and back both Flow's builtins and snapshot editing.
+All-tier verification at `efed7c7`: **3,071 main + 21 MIDI passed**, **19
+skips**, **0 failures**, **0 tracked-content mutations**
+([transforms-all-verification.json](transforms-all-verification.json)).
+
+## Long-song render scale
+
+[render-scale.json](render-scale.json) measures `scripts/RenderScaleProbe`
+(Release; a 16 s two-sequence sine section repeated to about 1, 5 and 15
+minutes; render only; one process per case; medians of three runs on an
+i7-11700K, .NET 10.0.112). "Pre-linear" is the renderer at `48259fa`, built in
+a temporary worktree.
+
+| Output | Pre-linear `48259fa` | Linear legacy `efed7c7` | Native streaming `efed7c7` |
+|---|---|---|---|
+| 64 s | 62 MB alloc · 112 MB peak · 51 ms | 34 MB · 87 MB · 42 ms | 0.1 MB · 61 MB · 83 ms |
+| 304 s | 1,078 MB · 1,084 MB · 337 ms | 119 MB · 171 MB · 65 ms | 0.1 MB · 61 MB · 293 ms |
+| 896 s | 9,015 MB · 7,272 MB · 2,508 ms | 327 MB · 380 MB · 112 ms | 0.1 MB · 61 MB · 817 ms |
+
+Linear assembly now allocates about the output buffer itself (896 s of stereo
+float is 316 MB); the native path's memory is constant because blocks stream.
+The native path is slower here because it synthesizes every repeat, whereas the
+legacy path renders a section once and copies it. Reproduce:
+
+```sh
+dotnet build scripts/RenderScaleProbe -c Release
+dotnet scripts/RenderScaleProbe/bin/Release/net10.0/RenderScaleProbe.dll legacy 56
+dotnet scripts/RenderScaleProbe/bin/Release/net10.0/RenderScaleProbe.dll native 56
+# pre-linear: git worktree add --detach /tmp/old 48259fa, copy the probe in, build
+# with -p:LegacyOnly=true, run "legacy 56", then remove the worktree.
+```
+
+## Phase 5 gate — closed 2026-09-27
+
+| Gate requirement | Evidence |
+|---|---|
+| A non-Flow host constructs a small composition and renders/exports it | `scripts/MusicHost` writes WAV and MIDI with no language assembly loaded ([native-host.json](native-host.json), [midi-native-host.json](midi-native-host.json)) |
+| Flow produces the same representation | `CompositionCompiler`; Flow/native render equality and bit-exact sine parity (`SnapshotRenderingTests`); Flow `writeMidi` writes through the snapshot (`SnapshotMidiExportTests`) |
+| Long-song memory/copy behavior improves measurably | [allocation.json](allocation.json) and the table above |
+| Tuplets, overlaps, articulation, tuning and tempo changes survive conversion | `CompositionSnapshotTests` plus the bit-exact render and byte-identical MIDI parity corpora |
+
+Closed by owner decision with these limits carried into Phase 6: sampled/SFZ/
+drum/wavetable instruments, section reverb and Flow lambda instruments still
+render through the legacy path and its ambient services (`RenderServices.Current`,
+release `AsyncLocal`); they move to stateful block processors rather than being
+ported twice. Legacy song output remains one contiguous buffer. Compiler IDs are
+structural, not persistent edit IDs (the Phase 8 project model owns those). A
+reusable tuning description, other transforms (invert, retrograde, humanize…),
+`midiOut` and MusicXML/LilyPond export still operate on legacy song data.

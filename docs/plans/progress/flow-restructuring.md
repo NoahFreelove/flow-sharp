@@ -773,3 +773,18 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   `3772d92`: **3,045 main + 21 MIDI**, **19 skips**, zero failures, zero tracked
   mutations; Web smoke passes. Evidence: `docs/baselines/phase5/writemidi-*.json`.
   Owner chose grid-correct shared quantize for the next slice.
+
+- **F — shared editing transforms** (2026-09-27, `6a6a70f`, `efed7c7`):
+  `Flow.Music.Model.Editing` holds grid-correct quantize (owner decision: real
+  bar-relative onsets, halfway later, odd-grid swing, chords together) and
+  transpose (sharp respelling, E0–E10 clamp, cent split toward zero); Flow's
+  `quantize`/`transpose` delegate, snapshots can be edited directly. Straight
+  rhythms and all transpose results are unchanged. Gate at `efed7c7`: **3,071
+  main + 21 MIDI**, **19 skips**, zero failures, zero tracked mutations.
+
+- **Phase 5 gate closed** (2026-09-27, owner decision): `scripts/RenderScaleProbe`
+  measures 15-minute renders at 9.0 GB allocated / 7.3 GB peak (pre-linear
+  `48259fa`) versus 327 MB / 380 MB (linear) and 0.1 MB / 61 MB (native
+  streaming). Gate evidence table and carried limits: `docs/baselines/phase5/README.md`.
+  Legacy instrument/effect rendering moves to Phase 6 block processors instead
+  of a second offline port. Handoff: `docs/plans/handoffs/2026-09-27-phase5-complete.md`.

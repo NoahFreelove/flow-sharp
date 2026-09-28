@@ -1,7 +1,7 @@
 # Flow restructuring and focused DAW roadmap
 
 Date: 2026-09-20  
-Status: Implementation active; Phases 0–4 complete, Phase 5 in progress (2026-09-27).
+Status: Implementation active; Phases 0–5 complete, Phase 6 next (2026-09-27).
 Scope: Preserve Flow's personality, establish an independently usable programming language, and build a focused music workstation on a shared music-processing backend.
 
 Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-language-before-moving-it) · [Current debt](#3-starting-point-and-evidence) · [Architecture](#4-target-architecture) · [Modules](#5-modules-compatibility-and-general-purpose-use) · [Sessions and analysis](#6-sessions-analysis-and-cancellation) · [Audio](#7-music-processing-and-audio-architecture) · [Flow plugins](#8-plugins-written-in-flow) · [DAW workflow](#9-focused-conventional-daw-scope) · [Phases](#10-migration-phases-and-completion-gates) · [Verification](#11-verification-strategy-and-measurable-targets) · [First tickets](#12-work-organization-and-first-implementation-tickets) · [Decisions](#13-decisions-to-record-before-their-dependent-work) · [Effort and risk](#14-effort-risk-and-scope-control) · [Completion](#15-completion-checklist) · [Agent orchestration](#16-agent-orchestration-playbook).
@@ -14,15 +14,15 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 | 2 Session/job isolation | Complete | Session-owned services, cancellation, job coordination and process isolation. |
 | 3 Language extraction | Complete | Independent BCL-only language artifact, CLI/REPL/embedding proof. |
 | 4 Analysis and tooling | Complete | Non-executing check, shared editor metadata/analysis and explicit host adapters. |
-| 5 Music model/offline rendering | In progress | Detached scores and linear legacy assembly verified; isolated sine rendering, streaming native WAV and snapshot MIDI export (legacy-byte parity) implemented. Full instrument/effect migration, rerouting legacy consumers and shared editing transforms remain open. |
-| 6 Audio engine/UI prototypes | Not started | Block engine, transport, measured managed/native choice, responsive shell. |
+| 5 Music model/offline rendering | Complete | Detached scores, linear assembly (15-min render: 9.0 GB → 327 MB allocated), streaming native WAV, snapshot MIDI export (Flow `writeMidi` routed through it) and shared quantize/transpose. Legacy instruments/effects move to Phase 6 block processors. |
+| 6 Audio engine/UI prototypes | Next | Block engine, transport, measured managed/native choice, instrument/effect block processors; JUI shell over GLFW once its C# bindings exist. |
 | 7 Flow plugins | Not started | Public graph authoring, lifecycle, bounded compilation and hot reload. |
 | 8 Project/piano roll | Not started | Editable notes, arrangement, undo, save/reopen and plugin integration. |
 | 9 Complete DAW workflow | Not started | Routing, recording, clips, automation, export and Linux packaging. |
 | 10 Hardening/release | Not started | Stress/recovery tests, compatibility docs and reproducible releases. |
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
-Continue from the [Phase 5 handoff](handoffs/2026-09-27-phase5-in-progress.md).
+Continue from the [Phase 5 completion handoff](handoffs/2026-09-27-phase5-complete.md).
 Later phase descriptions below remain planned work, not shipped capabilities.
 
 ## 1. Direction

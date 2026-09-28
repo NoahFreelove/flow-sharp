@@ -28,6 +28,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-audio", "flow-audio\fl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flow-music-io", "flow-music-io\flow-music-io.csproj", "{7523A3DA-6D56-40EA-AF4B-9BA88204EB91}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenderScaleProbe", "scripts\RenderScaleProbe\RenderScaleProbe.csproj", "{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -194,6 +196,18 @@ Global
 		{7523A3DA-6D56-40EA-AF4B-9BA88204EB91}.Release|x64.Build.0 = Release|Any CPU
 		{7523A3DA-6D56-40EA-AF4B-9BA88204EB91}.Release|x86.ActiveCfg = Release|Any CPU
 		{7523A3DA-6D56-40EA-AF4B-9BA88204EB91}.Release|x86.Build.0 = Release|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Debug|x64.Build.0 = Debug|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Debug|x86.Build.0 = Debug|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Release|x64.ActiveCfg = Release|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Release|x64.Build.0 = Release|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Release|x86.ActiveCfg = Release|Any CPU
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -201,5 +215,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{AC9FC373-E62F-49EC-A97E-3208F5F77A24} = {C4AD9936-F0DF-1090-6077-3D4A6324E662}
 		{F9262CEF-A031-448C-9E2F-4297D5DA2936} = {C4AD9936-F0DF-1090-6077-3D4A6324E662}
+		{9BEA55CF-5653-48B7-8E12-3C4104DBF4B8} = {C4AD9936-F0DF-1090-6077-3D4A6324E662}
 	EndGlobalSection
 EndGlobal
