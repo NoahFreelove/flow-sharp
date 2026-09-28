@@ -761,3 +761,15 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   Verification at `c419c14`: **3,041 main + 21 MIDI tests**, **19 skips**, zero
   failures and zero tracked-file mutations; Web bundle smoke passes through the
   unchanged adapter. Evidence: `docs/baselines/phase5/midi-*.json`.
+
+- **E — owner decisions applied** (2026-09-27): harpsichord now routes to GM 6
+  (`ac16d0f`; `harp` previously shadowed it). Flow `writeMidi` compiles the song
+  and writes through the snapshot exporter (`3772d92`); the old event walk is
+  removed (MusicXML keeps its tuplet-division helper). Integer-tick corpora keep
+  their previous bytes, pinned by SHA-256 recorded before removal; overfull-bar
+  sections and voice-block legato/portamento now follow the audio timeline. The
+  Web publish test now checks flow-lang → Flow.Music.IO → DryWetMidi. JUI (the
+  owner's C11 UI kit) is recorded as the Phase 6+ desktop UI direction. Gate at
+  `3772d92`: **3,045 main + 21 MIDI**, **19 skips**, zero failures, zero tracked
+  mutations; Web smoke passes. Evidence: `docs/baselines/phase5/writemidi-*.json`.
+  Owner chose grid-correct shared quantize for the next slice.

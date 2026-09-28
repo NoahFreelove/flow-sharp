@@ -28,13 +28,15 @@ tracked-file mutations; the regenerated Web bundle passes the unchanged-adapter
 smoke; the native host MIDI is stable (SHA-256 recorded) and readable by
 `midi2flow`. Evidence: `docs/baselines/phase5/midi-*.json` and the README there.
 
-## Open decisions for the owner
+## Owner decisions (2026-09-27)
 
-1. Reroute Flow `writeMidi` through the snapshot exporter? This fixes the
-   overfull-bar section overlap and voice-block legato/portamento omission, but
-   changes bytes for those scores and for non-integer ticks (swing/humanize).
-2. Fix the GM routing quirk where `harp` shadows `harpsichord` (program 6 is
-   unreachable)? Changes MIDI/MusicXML program numbers for harpsichord tracks.
+1. Flow `writeMidi` now writes through the snapshot exporter (`3772d92`).
+2. Harpsichord routes to GM 6 (`ac16d0f`).
+3. Shared quantize is grid-correct: snap real onsets to the grid, swing on
+   off-beat grid positions, chord tones move with their chord. Flow's builtin
+   adopts it (output changes for chords/uneven rhythms).
+4. The Phase 6+ desktop UI is JUI (`../jui`, see its `docs/integration.md`);
+   C# bindings (JUI M5) or an interim `LibraryImport` layer are a prerequisite.
 
 ## Next work
 
@@ -43,8 +45,8 @@ smoke; the native host MIDI is stable (SHA-256 recorded) and readable by
    edits back to legacy `SequenceData` or keeping the builtins on legacy data.
 2. Extend snapshot rendering to instrument/effect contracts with explicit render
    services (caches/RNG/release), replacing ambient adapters.
-3. Route Flow render/export consumers through snapshots, preserving selected
-   byte/PCM baselines; MIDI rerouting waits on decision 1.
+3. Route Flow render consumers through snapshots, preserving selected byte/PCM
+   baselines (MIDI export is done).
 4. Bounded output/progress for the full instrument path; measure long songs.
 5. Close Phase 5 only when non-Flow hosts construct, render and export the same
    model and compatibility/performance evidence passes.

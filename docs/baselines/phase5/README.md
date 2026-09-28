@@ -120,3 +120,12 @@ bundle includes `Flow.Music.IO.wasm` and passes the unchanged JavaScript adapter
 smoke ([midi-wasm-verification.json](midi-wasm-verification.json)). Legacy
 `writeMidi` output is unchanged; rerouting it through snapshots, instrument/effect
 rendering and shared editing transforms remain open. Phase 5 is not closed.
+
+## `writeMidi` through snapshots — `ac16d0f`, `3772d92`
+
+By owner decision, harpsichord routes to GM 6 and Flow `writeMidi` writes
+through the snapshot exporter. Integer-tick corpora keep their previous bytes
+(SHA-256 recorded before the old walk was removed). All-tier verification at
+`3772d92`: **3,045 main + 21 MIDI passed**, **19 skips**, **0 failures**, **0
+tracked-content mutations** ([writemidi-all-verification.json](writemidi-all-verification.json));
+Web smoke passes ([writemidi-wasm-verification.json](writemidi-wasm-verification.json)).
