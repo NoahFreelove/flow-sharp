@@ -649,3 +649,11 @@ Managed-body time excludes native dispatch and runtime pauses before managed ent
 entry gaps and native underflow flags are separate evidence. A native reported
 latency of zero means unavailable here, not zero hardware latency. Short muted
 runs do not close the 30-minute/device/audible gates. See the Phase 6 baseline.
+
+For sustained runs, the callback report also records first-to-last capture span,
+total frames and the 20 longest managed bodies with their times relative to each
+report window. Retain all-callback/startup results when assessing the 70% target.
+A successful process exit is not a timing verdict: explicitly inspect over70Percent,
+overDeadline, outputUnderflows, callbackFault and droppedTimingSamples. The first
+30-minute assessment is in `docs/baselines/phase6/callback-stress-assessment.json`.
+It met the body target but left a 15.686 ms entry gap and device latency unresolved.

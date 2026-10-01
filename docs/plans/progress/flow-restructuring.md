@@ -12,9 +12,9 @@ Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
 Owner direction: finish the music/audio backend and Flow plugin support before
 UI/DAW implementation. Defer the desktop shell. Prepared playback/control/publication
-and a Linux callback prototype are verified, with short real-device/load evidence.
-Next: sustained stress and startup/scheduling analysis before broad DSP/plugin work.
-[Current handoff](../handoffs/2026-10-01-phase6-callback-prototype.md).
+and a Linux callback prototype are verified. The 30-minute isolated-load run met
+the managed-body target; callback spacing/latency and recovery remain open before
+broad DSP/plugin work. [Current handoff](../handoffs/2026-10-01-phase6-sustained-stress.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -939,3 +939,33 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   no UI activity, audible certification, native DSP baseline, device-loss recovery
   or 30-minute stress closure. Isolation looks promising but is not yet the final
   architecture decision. General DSP and Phase 7 remain open.
+
+## Phase 6 — sustained device stress (2026-10-01)
+
+- **P6-06 managed-body target met; full device gate remains open.** Owner requested
+  the stress test. Ran one uninterrupted 1800-second muted reference capture at
+  48 kHz/256 frames with isolated Flow/file/hash/forced-GC load. Same machine,
+  PortAudio/PipeWire backend and default USB sink as P6-05; no builds or suites
+  ran concurrently. Both processes exited successfully and the device closed.
+- **337,508 callbacks**, 86,402,048 frames, 1799.998879 seconds between first/last
+  callback entry. All-callback median **0.113212 ms**, p99 **0.242357 ms**, worst
+  **2.085725 ms** at 147.463 seconds: **39.11%** of the 5.333333 ms block deadline,
+  below the 3.733333 ms (70%) target. Zero body deadline/headroom overruns, native
+  reported underflows, measured body allocations, parent GC collections, dropped
+  timing samples or callback faults. Startup is included in these results.
+- Worker: 254,147 Flow evaluations, 1,065,969,778,688 cached asset bytes read/hashed,
+  GC counts 189,352/188,107/157,586 (worker lifetime slightly exceeds capture).
+  Generation advanced to 2 and one old playback retired. One ordinary command
+  rejection was reported; its reason is not separately logged. No queue discards.
+- **15.686382 ms max entry gap** remains unexplained. Body time excludes native
+  entry/dispatch pauses and telemetry append; no reported underflow does not prove
+  low end-to-end latency. Native output latency is unavailable (reported zero).
+  Frequent mid-score seeks mean this is not a loop-end/EOF stress fixture.
+- Reporting now includes captured span, total frames and top 20 body outliers;
+  callback/workload code is unchanged. Release build and the actual stress run
+  validate this reporting-only change; the previous full regression gate remains
+  the latest suite evidence (3,116 main + 21 MIDI, 19 skips), not a new test run.
+- Durable evidence: `docs/baselines/phase6/callback-isolated-256-30min.json` and
+  `callback-stress-assessment.json`; raw logs: `/tmp/flow-phase6-stress/`.
+  Next: investigate gap timing/backend buffering, 128-frame startup and recovery
+  before broad DSP migration. UI/listening and general plugins remain open.

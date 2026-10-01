@@ -128,7 +128,7 @@ try
         droppedTimingSamples = capture.Dropped, callbackFault = fault,
         parentGcCollections = new[] { collectionsAfter[0] - collectionsBefore[0], collectionsAfter[1] - collectionsBefore[1], collectionsAfter[2] - collectionsBefore[2] },
         load, playback.Generation, retired, playback.RejectedCommands, playback.DiscardedCommands,
-        limitation = "Short muted device probe; managed-body duration excludes native dispatch/entry pauses. Callback spacing and underflows are separate evidence. No UI load, listening certification, native DSP comparison or 30-minute gate closure.",
+        limitation = "Muted device probe; managed-body duration excludes native dispatch/entry pauses. Callback spacing and underflows are separate evidence. Duration alone does not establish a pass. No UI load, listening certification or native DSP comparison.",
     };
     string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(args[2], json + "\n");
@@ -173,6 +173,14 @@ static object Summarize(CallbackSample[] samples)
     return new
     {
         count = samples.Length,
+        capturedSpanSeconds = samples.Length < 2 ? 0 : (samples[^1].StartTicks - samples[0].StartTicks) / (double)Stopwatch.Frequency,
+        renderedFrames = samples.Sum(s => (long)s.Frames),
+        worstCallbacks = samples.OrderByDescending(s => s.ElapsedTicks).Take(20).Select(s => new
+        {
+            secondsFromWindowStart = (s.StartTicks - samples[0].StartTicks) / (double)Stopwatch.Frequency,
+            milliseconds = s.ElapsedTicks * 1000.0 / Stopwatch.Frequency,
+            s.Frames, s.OutputUnderflow, s.AllocatedBytes,
+        }).ToArray(),
         p50Milliseconds = durations.Length == 0 ? 0 : durations[(durations.Length - 1) / 2],
         p99Milliseconds = durations.Length == 0 ? 0 : durations[(int)((durations.Length - 1) * 0.99)],
         maxMilliseconds = durations.Length == 0 ? 0 : durations[^1], maxEntryGapMilliseconds = maxGap,

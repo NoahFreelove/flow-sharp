@@ -105,3 +105,53 @@ callback-wasm-verification.json; logs/TRX in /tmp/flow-phase6-callback-verificat
 These short runs support further isolation experiments. They do not close the
 30-minute stress gate or settle managed/native strategy. No UI load, native DSP
 baseline, device-loss recovery or listening certification was measured.
+
+## Thirty-minute isolated-load stress
+
+2026-10-01: uninterrupted 1800-second capture on the same reference device and
+machine, at 48 kHz/256 frames, with isolated Flow/asset/forced-GC load. No builds
+or suites ran concurrently. Device output was muted after rendering. The Release
+build passed; the probe exited 0 and both parent/worker terminated normally.
+
+| Measurement (all callbacks, including startup) | Result |
+| --- | ---: |
+| Callbacks / frames | 337,508 / 86,402,048 |
+| First-to-last callback span | 1799.998879 s |
+| Median / p99 body duration | 0.113212 / 0.242357 ms |
+| Worst body duration | 2.085725 ms |
+| Block deadline / 70% target | 5.333333 / 3.733333 ms |
+| Worst fraction of deadline | 39.11% |
+| Body deadline misses / 70% overruns | 0 / 0 |
+| Reported output underflows | 0 |
+| Measured body allocations / parent collections | 0 bytes / 0 |
+| Dropped timing samples / callback faults | 0 / false |
+| Maximum entry gap | **15.686382 ms** |
+
+The worst body occurred at 147.463 seconds, not during startup. Generation 2 and
+one retired transport confirm replacement. One ordinary command was rejected;
+the reason is not recorded separately. The worker performed 254,147 Flow
+evaluations and read/hashed 1.066 TB of cached file data, with GC counts
+189,352/188,107/157,586. These are cached reads, not physical disk traffic, and
+worker counts include its slightly longer lifetime.
+
+The managed-body target is met for this workload/configuration. The full device
+and Phase 6 gates remain open: the 15.686 ms entry gap needs scheduling/buffering
+analysis; native reported latency zero is unavailable; muted output is not
+listening certification. No UI load or native DSP comparison was included, and
+frequent mid-score seeks do not stress loop-end/EOF transitions. Callback body
+measurement excludes native entry/dispatch and telemetry append overhead.
+
+Evidence: `callback-isolated-256-30min.json` (unaltered probe output, including the
+20 worst body samples) and `callback-stress-assessment.json` (explicit checks).
+Raw logs/device enumeration: `/tmp/flow-phase6-stress/`. Reporting-only changes
+added span/frame counts/outliers and removed the hard-coded short-run limitation;
+no callback or workload changes were made for this capture. Base commit: c43278b.
+
+Reproduce after enumerating the current device index:
+
+```sh
+scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe 1800 isolated /tmp/callback-stress.json DEVICE_INDEX 256
+```
+
+The full regression suite was not repeated for this report-only change; the
+preceding callback-all-verification.json remains the latest suite evidence.

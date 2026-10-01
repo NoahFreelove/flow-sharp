@@ -1,0 +1,32 @@
+{
+  "baseRevision": "c43278b",
+  "sourceChange": "Reporting only: captured span, frame total, top 20 body outliers, duration-neutral limitation text. Callback/workload unchanged.",
+  "command": "AudioCallbackProbe 1800 isolated /tmp/flow-phase6-stress/isolated-256-30min.json 31 256",
+  "exitCode": 0,
+  "checks": {
+    "thirtyMinuteCapture": true,
+    "correctDeviceFormat": true,
+    "callbackFrameCountMatches": true,
+    "bodyBelow70Percent": true,
+    "noBodyDeadlineMisses": true,
+    "noReportedUnderflows": true,
+    "noMeasuredBodyAllocations": true,
+    "noParentCollections": true,
+    "completeCapture": true,
+    "replacementRetired": true,
+    "loadExecuted": true
+  },
+  "managedBodyTargetMet": true,
+  "deadlineMilliseconds": 5.333333333333333,
+  "headroomTargetMilliseconds": 3.733333333333333,
+  "worstBodyPercentOfDeadline": 39.10734375,
+  "maxEntryGapMilliseconds": 15.686382,
+  "fullPhase6GateComplete": false,
+  "remaining": [
+    "Explain 15.686 ms callback entry gap and unknown native output latency.",
+    "Investigate 128-frame startup/scheduling; this sustained run used 256 frames.",
+    "Device-loss recovery, listening and deferred UI load remain unmeasured.",
+    "Frequent mid-score seeks mean this workload is not loop-end/EOF stress.",
+    "One ordinary command rejection was observed; its reason is not separately logged."
+  ]
+}
