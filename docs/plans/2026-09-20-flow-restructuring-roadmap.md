@@ -15,14 +15,14 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 | 3 Language extraction | Complete | Independent BCL-only language artifact, CLI/REPL/embedding proof. |
 | 4 Analysis and tooling | Complete | Non-executing check, shared editor metadata/analysis and explicit host adapters. |
 | 5 Music model/offline rendering | Complete | Detached scores, linear assembly (15-min render: 9.0 GB → 327 MB allocated), streaming native WAV, snapshot MIDI export (Flow `writeMidi` routed through it) and shared quantize/transpose. Legacy instruments/effects move to Phase 6 block processors. |
-| 6 Audio engine/UI prototypes | Backend in progress | Prepared playback/control/publication and Linux callback prototype verified. 30-minute isolated-load run met the managed-body target; callback spacing/latency, recovery and broader DSP remain open. UI deferred by owner. |
+| 6 Audio engine/UI prototypes | Backend in progress | 30-minute managed-body target met. Follow-up confirmed backend batching/buffering and unavailable PulseAudio underrun flags. Reliable device telemetry/latency and recovery precede broader DSP; UI deferred. |
 | 7 Flow plugins | Not started | Public graph authoring, lifecycle, bounded compilation and hot reload. |
 | 8 Project/piano roll | Not started | Editable notes, arrangement, undo, save/reopen and plugin integration. |
 | 9 Complete DAW workflow | Not started | Routing, recording, clips, automation, export and Linux packaging. |
 | 10 Hardening/release | Not started | Stress/recovery tests, compatibility docs and reproducible releases. |
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
-Continue from the [Phase 6 sustained stress handoff](handoffs/2026-10-01-phase6-sustained-stress.md).
+Continue from the [Phase 6 callback cadence handoff](handoffs/2026-10-01-phase6-callback-cadence.md).
 Owner sequencing update (2026-09-30): finish the music/audio backend and Flow
 plugin support before UI/DAW implementation. Advance Phase 6 backend work and
 Phase 7 prerequisites; defer the Phase 6 desktop shell prototype. This does not
@@ -648,9 +648,11 @@ host commands with protected stop (P6-03). Prepared playback publication and
 off-thread retirement are verified (P6-04); general DSP graphs remain future work.
 Linux PortAudio callback adapter and four short device/load measurements are
 verified (P6-05 prototype). A 30-minute isolated-load run met the managed-body
-headroom/deadline target (P6-06); a 15.686 ms entry gap still needs explanation.
-Next: callback spacing/latency, startup and recovery analysis before choosing the
-managed/native strategy or broadly porting DSP. The full gate
+headroom/deadline target (P6-06); its exact 15.686 ms gap cause remains unknown.
+Cadence follow-up (P6-07) confirms buffered catch-up and 128-frame batching on a
+256-frame PipeWire quantum; PulseAudio callback underrun flags are unavailable.
+Next: reliable underrun/latency telemetry, then startup/recovery evidence before
+choosing the managed/native strategy or broadly porting DSP. The full gate
 remains open; the desktop shell is deferred by owner.
 
 Work:

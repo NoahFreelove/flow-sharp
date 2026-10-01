@@ -65,13 +65,14 @@ try
     }
     int[] collectionsBefore = [GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2)];
     OutputDevice device;
-    string version;
+    string version, underflowObservability;
     double latency, actualRate;
     bool fault;
     int retired = 0;
     using (var output = new PortAudioOutput(probe, deviceIndex))
     {
         device = output.Device; version = output.NativeVersion;
+        underflowObservability = output.UnderflowObservability;
         latency = output.OutputLatencySeconds; actualRate = output.ActualSampleRate;
         output.Start();
         var timer = Stopwatch.StartNew();
@@ -120,15 +121,16 @@ try
     {
         timestampUtc = DateTimeOffset.UtcNow, mode = args[1], seconds, muted = true,
         os = RuntimeInformation.OSDescription, architecture = RuntimeInformation.ProcessArchitecture.ToString(),
-        runtime = RuntimeInformation.FrameworkDescription, cpuCount = Environment.ProcessorCount,
+        runtime = RuntimeInformation.FrameworkDescription, underflowObservability, cpuCount = Environment.ProcessorCount,
         serverGc = GCSettings.IsServerGC, device, nativeVersion = version,
         requestedSampleRate = 48000, actualSampleRate = actualRate, blockFrames,
         reportedOutputLatencySeconds = latency, voices = 32, sequences = 2,
         allCallbacks = Summarize(samples), afterFirstSecond = Summarize(steady),
+        callbackCadence = SummarizeCadence(samples, 48000),
         droppedTimingSamples = capture.Dropped, callbackFault = fault,
         parentGcCollections = new[] { collectionsAfter[0] - collectionsBefore[0], collectionsAfter[1] - collectionsBefore[1], collectionsAfter[2] - collectionsBefore[2] },
         load, playback.Generation, retired, playback.RejectedCommands, playback.DiscardedCommands,
-        limitation = "Muted device probe; managed-body duration excludes native dispatch/entry pauses. Callback spacing and underflows are separate evidence. Duration alone does not establish a pass. No UI load, listening certification or native DSP comparison.",
+        limitation = "Muted device probe; managed-body duration excludes native dispatch/entry pauses. Callback spacing and underflows are separate evidence. Zero callback flags do not establish zero underflows; consult underflowObservability. Duration alone does not establish a pass. No UI load, listening certification or native DSP comparison.",
     };
     string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(args[2], json + "\n");
@@ -186,7 +188,47 @@ static object Summarize(CallbackSample[] samples)
         maxMilliseconds = durations.Length == 0 ? 0 : durations[^1], maxEntryGapMilliseconds = maxGap,
         over70Percent = samples.Count(s => s.ElapsedTicks / (double)Stopwatch.Frequency > s.Frames / 48000.0 * 0.7),
         overDeadline = samples.Count(s => s.ElapsedTicks / (double)Stopwatch.Frequency > s.Frames / 48000.0),
-        outputUnderflows = samples.Count(s => s.OutputUnderflow), allocatedBytes = samples.Sum(s => s.AllocatedBytes),
+        outputUnderflowFlagCount = samples.Count(s => s.OutputUnderflow), allocatedBytes = samples.Sum(s => s.AllocatedBytes),
+    };
+}
+
+static object SummarizeCadence(CallbackSample[] samples, int rate)
+{
+    double Milliseconds(long ticks) => ticks * 1000.0 / Stopwatch.Frequency;
+    var gaps = Enumerable.Range(1, samples.Length - 1).Select(i => new
+    {
+        index = i,
+        gap = Milliseconds(samples[i].StartTicks - samples[i - 1].StartTicks),
+        period = samples[i - 1].Frames * 1000.0 / rate,
+    }).ToArray();
+    var timing = samples.Where(s => s.NativeTiming.HasValue).Select(s => s.NativeTiming!.Value).ToArray();
+    var lead = timing.Select(t => (t.OutputDacSeconds - t.CurrentSeconds) * 1000).Where(double.IsFinite).Order().ToArray();
+    object Describe(int i) => new
+    {
+        index = i,
+        secondsFromStart = (samples[i].StartTicks - samples[0].StartTicks) / (double)Stopwatch.Frequency,
+        entryGapMilliseconds = i == 0 ? 0 : Milliseconds(samples[i].StartTicks - samples[i - 1].StartTicks),
+        bodyMilliseconds = Milliseconds(samples[i].ElapsedTicks),
+        samples[i].Frames, samples[i].StatusFlags, samples[i].NativeTiming,
+    };
+    return new
+    {
+        entryGapP50Milliseconds = gaps.Length == 0 ? 0 : gaps.Select(g => g.gap).Order().ElementAt((gaps.Length - 1) / 2),
+        entryGapP99Milliseconds = gaps.Length == 0 ? 0 : gaps.Select(g => g.gap).Order().ElementAt((int)((gaps.Length - 1) * 0.99)),
+        gapsOverOneAndHalfPeriods = gaps.Count(g => g.gap > g.period * 1.5),
+        gapsUnderHalfPeriod = gaps.Count(g => g.gap < g.period * 0.5),
+        nativeTimingSamples = timing.Length,
+        nativeOutputLeadMilliseconds = lead.Length == 0 ? null : new
+        {
+            min = lead[0], median = lead[(lead.Length - 1) / 2], max = lead[^1],
+            note = "Backend-provided estimate, not measured hardware latency; startup/stale/invalid timing may be present.",
+        },
+        longestGapNeighborhoods = gaps.OrderByDescending(g => g.gap).Take(10).Select(g => new
+        {
+            gapIndex = g.index,
+            callbacks = Enumerable.Range(Math.Max(0, g.index - 2), Math.Min(samples.Length, g.index + 4) - Math.Max(0, g.index - 2))
+                .Select(Describe).ToArray(),
+        }).ToArray(),
     };
 }
 

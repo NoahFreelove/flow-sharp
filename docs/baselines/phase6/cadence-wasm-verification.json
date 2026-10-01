@@ -1,0 +1,12 @@
+{
+  "repeatedFreshSessions": true,
+  "parsedError": {
+    "kind": "parse",
+    "message": "Expected procedure name. Got LParen '(' at <wasm>:1:6",
+    "line": 1,
+    "column": 6,
+    "sourceSnippet": "proc ("
+  },
+  "musicOutput": "150ms",
+  "javascriptAdapterUnchanged": true
+}

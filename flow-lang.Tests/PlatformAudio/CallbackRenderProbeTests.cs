@@ -45,11 +45,40 @@ public class CallbackRenderProbeTests
             Assert.Equal(128, queued.PositionFrames);
             var sample = Assert.Single(probe.Capture().Samples);
             Assert.True(sample.OutputUnderflow);
+            Assert.Null(sample.NativeTiming);
+            Assert.Equal(4UL, sample.StatusFlags);
             Assert.Equal(128, sample.Frames);
             Assert.True(sample.ElapsedTicks >= 0);
             Assert.False(probe.Faulted);
         }
         finally { Marshal.FreeHGlobal(memory); }
+    }
+
+    [Fact]
+    public void NativeTimesAreCopiedBeforeReturnAndNonfiniteValuesAreMissing()
+    {
+        var probe = new CallbackRenderProbe(new QueuedSinePlayback(Source()), 8);
+        nint output = Marshal.AllocHGlobal(256 * sizeof(float));
+        nint times = Marshal.AllocHGlobal(3 * sizeof(double));
+        try
+        {
+            Marshal.Copy(new double[] { 7, 33, 33.025 }, 0, times, 3);
+            Assert.Equal(0, probe.ProcessNative(output, 128, 20, times));
+            Marshal.Copy(new double[] { 9, 44, 44.015 }, 0, times, 3);
+            Assert.Equal(0, probe.ProcessNative(output, 128, 0, times));
+            Marshal.Copy(new double[] { 0, double.NaN, 2 }, 0, times, 3);
+            Assert.Equal(0, probe.ProcessNative(output, 128, 0, times));
+            Marshal.Copy(new double[] { 0, 1, double.PositiveInfinity }, 0, times, 3);
+            Assert.Equal(0, probe.ProcessNative(output, 128, 0, times));
+            var samples = probe.Capture().Samples;
+            Assert.Equal(new NativeCallbackTiming(33, 33.025), samples[0].NativeTiming);
+            Assert.Equal(new NativeCallbackTiming(44, 44.015), samples[1].NativeTiming);
+            Assert.Equal(20UL, samples[0].StatusFlags);
+            Assert.True(samples[0].OutputUnderflow);
+            Assert.Null(samples[2].NativeTiming);
+            Assert.Null(samples[3].NativeTiming);
+        }
+        finally { Marshal.FreeHGlobal(times); Marshal.FreeHGlobal(output); }
     }
 
     [Fact]
@@ -99,16 +128,18 @@ public class CallbackRenderProbeTests
         queued.TryPlay();
         var probe = new CallbackRenderProbe(queued, 400);
         nint memory = Marshal.AllocHGlobal(256 * sizeof(float));
+        nint times = Marshal.AllocHGlobal(3 * sizeof(double));
+        Marshal.Copy(new double[] { 0, 1, 1.025 }, 0, times, 3);
         try
         {
-            for (int i = 0; i < 100; i++) probe.ProcessNative(memory, 128, 0);
+            for (int i = 0; i < 100; i++) probe.ProcessNative(memory, 128, 0, times);
             long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int i = 0; i < 200; i++) probe.ProcessNative(memory, 128, 0);
+            for (int i = 0; i < 200; i++) probe.ProcessNative(memory, 128, 0, times);
             long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
             Assert.Equal(0, allocated);
             Assert.All(probe.Capture().Samples.Skip(100), s => Assert.Equal(0, s.AllocatedBytes));
             Assert.False(probe.Faulted);
         }
-        finally { Marshal.FreeHGlobal(memory); }
+        finally { Marshal.FreeHGlobal(times); Marshal.FreeHGlobal(memory); }
     }
 }

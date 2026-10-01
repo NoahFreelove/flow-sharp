@@ -1,6 +1,12 @@
 # Phase 6 verification — prepared playback
 
-Date: 2026-10-01. This verifies the initial backend slice, not the full Phase 6 gate.
+Date: 2026-10-01. This verifies backend slices, not the full Phase 6 gate.
+
+**Observability correction (cadence audit):** historical `outputUnderflows: 0`
+values below are callback-flag counts. The matching PortAudio PulseAudio backend
+passes zero flags even when its private underrun counter increments. Actual device
+underruns are unknown; no zero-underrun gate is established by those reports.
+Raw evidence is preserved. Managed-body duration/allocation results remain valid.
 
 - Focused music-model tests: 67 passed.
 - Desktop solution build and all-tier tests: 3,079 main + 21 MIDI passed,
@@ -155,3 +161,50 @@ scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe 1800 isolated 
 
 The full regression suite was not repeated for this report-only change; the
 preceding callback-all-verification.json remains the latest suite evidence.
+
+## Cadence follow-up and underflow observability
+
+Two 60-second isolated-load runs, same device/configuration. Read-only `pactl` and
+`pw-top` snapshots were taken during capture. No settings were changed; no
+builds or test suites overlapped capture. This is a diagnostic follow-up, not a repeat 30-minute certification.
+
+| Callback frames | Callbacks | Gap median / p99 ms | Largest gap ms | Native lead median ms | Gaps < half period / > 1.5 periods |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 256 | 11,253 | 5.324 / 5.708 | 8.756 | 20.488 | 1 / 1 |
+| 128 | 22,504 | 0.333 / 5.598 | 22.327 | 22.521 | 11,256 / 11,212 |
+
+PipeWire used 256 frames at 48 kHz in both snapshots. Pulse target length was
+6144 bytes (768 stereo float frames, 16 ms); minimum request was 2048 bytes
+(256 frames). Thus requesting 128 user frames did not halve the driver quantum:
+callbacks were normally delivered in pairs. These settings and native lead
+estimates do not measure end-to-end hardware latency.
+
+At the 256-frame longest gap, managed/native current-time deltas were 8.756/8.768
+ms, body 0.294 ms, and the next gap 1.829 ms. Output DAC time advanced one block;
+estimated lead fell from 20.643 to 17.209 ms, then recovered. At the 128-frame
+longest gap, managed/native deltas were 22.327/22.322 ms, body 0.081 ms, followed
+by sub-millisecond catch-up calls. Estimated lead bottomed at 4.288 ms. These
+observations locate delay before managed processing and show buffering/catch-up;
+they do not identify the exact scheduler event behind the old 15.686 ms maximum.
+
+Both runs: zero body allocations, parent collections, callback faults and dropped
+records. Raw flags zero; actual underruns unknown. Body maxima 2.266/2.032 ms;
+128-frame startup exceeded the 70% target once, with no body deadline misses.
+
+Source audit at PortAudio revision e1b70d33:
+- `pa_linux_pulseaudio_cb.c`: request-processing loop; BeginBufferProcessing flags
+  argument zero; native current/DAC timestamp construction.
+- `pa_linux_pulseaudio.c`: private outputUnderflows increment; StreamInfo latency
+  derived only from buffer-processor frames.
+- `pa_linux_pulseaudio.h`: no public accessor for the private underrun counter.
+
+See [the investigation decision](../../decisions/2026-10-01-callback-cadence.md)
+for pinned upstream links. The older raw JSONs remain untouched; the derived
+30-minute assessment records this observability correction.
+
+Evidence: cadence-pulse-256.json, cadence-pulse-128.json, cadence-server-settings.json
+(sanitized server properties, no machine/user identifiers). Raw snapshots/logs and
+source downloads: /tmp/flow-cadence/. Full gate: **3,117 main + 21 MIDI passed,
+19 skips**, no failures/mutations; Web smoke passed. Focused **105/105** includes
+native timestamp copying and warmed allocation. Gate summaries are adjacent
+cadence-all-verification.json and cadence-wasm-verification.json.

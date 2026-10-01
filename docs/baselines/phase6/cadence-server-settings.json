@@ -1,0 +1,38 @@
+[
+  {
+    "requestedCallbackFrames": 256,
+    "sampleSpecification": "float32le 2ch 48000Hz",
+    "properties": {
+      "client.api": "pipewire-pulse",
+      "node.rate": "1/48000",
+      "node.latency": "256/48000",
+      "pulse.attr.maxlength": "4194304",
+      "pulse.attr.tlength": "6144",
+      "pulse.attr.prebuf": "4104",
+      "pulse.attr.minreq": "2048"
+    },
+    "pwTopActiveDriverQuantumFrames": 256,
+    "pwTopActiveRate": 48000,
+    "bufferTargetFrames": 768,
+    "bufferTargetMilliseconds": 16.0,
+    "minRequestFrames": 256
+  },
+  {
+    "requestedCallbackFrames": 128,
+    "sampleSpecification": "float32le 2ch 48000Hz",
+    "properties": {
+      "client.api": "pipewire-pulse",
+      "node.rate": "1/48000",
+      "node.latency": "256/48000",
+      "pulse.attr.maxlength": "4194304",
+      "pulse.attr.tlength": "6144",
+      "pulse.attr.prebuf": "4104",
+      "pulse.attr.minreq": "2048"
+    },
+    "pwTopActiveDriverQuantumFrames": 256,
+    "pwTopActiveRate": 48000,
+    "bufferTargetFrames": 768,
+    "bufferTargetMilliseconds": 16.0,
+    "minRequestFrames": 256
+  }
+]

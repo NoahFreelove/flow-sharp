@@ -3,8 +3,10 @@ using Flow.Audio;
 
 namespace Flow.Platform.Linux;
 
+public readonly record struct NativeCallbackTiming(double CurrentSeconds, double OutputDacSeconds);
+
 public readonly record struct CallbackSample(long StartTicks, long ElapsedTicks, int Frames,
-    bool OutputUnderflow, long AllocatedBytes);
+    bool OutputUnderflow, long AllocatedBytes, NativeCallbackTiming? NativeTiming = null, ulong StatusFlags = 0);
 
 /// <summary>
 /// Preallocated instrumentation for one audio consumer. Process is callback-owned;
@@ -36,20 +38,25 @@ public sealed class CallbackRenderProbe
 
     public void Process(Span<float> output, bool outputUnderflow = false)
     {
-        long start = Stopwatch.GetTimestamp();
+        ProcessCore(output, Stopwatch.GetTimestamp(), outputUnderflow ? 4UL : 0, null);
+    }
+
+    private void ProcessCore(Span<float> output, long start, ulong flags, NativeCallbackTiming? timing)
+    {
         long before = GC.GetAllocatedBytesForCurrentThread();
         _playback.Read(output);
         if (_mute) output.Clear();
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         long elapsed = Stopwatch.GetTimestamp() - start;
         if (_count < _samples.Length)
-            _samples[_count++] = new(start, elapsed, output.Length / 2, outputUnderflow, allocated);
+            _samples[_count++] = new(start, elapsed, output.Length / 2, (flags & 4) != 0, allocated, timing, flags);
         else _dropped++;
     }
 
     // Native entry boundary shared with the hardware adapter and buffer tests.
-    internal unsafe int ProcessNative(nint output, nuint frames, nuint flags)
+    internal unsafe int ProcessNative(nint output, nuint frames, nuint flags, nint timeInfo = 0)
     {
+        long start = Stopwatch.GetTimestamp();
         if (output == 0 || frames > int.MaxValue / 2)
         {
             Volatile.Write(ref _fault, 1);
@@ -58,7 +65,14 @@ public sealed class CallbackRenderProbe
         var samples = new Span<float>((void*)output, (int)frames * 2);
         try
         {
-            Process(samples, (flags & 4) != 0); // paOutputUnderflow
+            NativeCallbackTiming? timing = null;
+            if (timeInfo != 0)
+            {
+                var native = *(PortAudioNative.CallbackTimeInfo*)timeInfo;
+                if (double.IsFinite(native.CurrentTime) && double.IsFinite(native.OutputDacTime))
+                    timing = new(native.CurrentTime, native.OutputDacTime);
+            }
+            ProcessCore(samples, start, (ulong)flags, timing);
             return 0; // paContinue, including stopped/EOF silence.
         }
         catch

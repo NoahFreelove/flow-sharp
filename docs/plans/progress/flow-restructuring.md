@@ -13,8 +13,9 @@ Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 Owner direction: finish the music/audio backend and Flow plugin support before
 UI/DAW implementation. Defer the desktop shell. Prepared playback/control/publication
 and a Linux callback prototype are verified. The 30-minute isolated-load run met
-the managed-body target; callback spacing/latency and recovery remain open before
-broad DSP/plugin work. [Current handoff](../handoffs/2026-10-01-phase6-sustained-stress.md).
+the managed-body target. Follow-up confirms backend batching/buffering and a
+PulseAudio underrun-reporting blind spot. Reliable telemetry/latency and recovery
+remain open. [Current handoff](../handoffs/2026-10-01-phase6-callback-cadence.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -969,3 +970,41 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   `callback-stress-assessment.json`; raw logs: `/tmp/flow-phase6-stress/`.
   Next: investigate gap timing/backend buffering, 128-frame startup and recovery
   before broad DSP migration. UI/listening and general plugins remain open.
+
+## Phase 6 — callback cadence and observability audit (2026-10-01)
+
+- **P6-07 investigated; device gate still open.** Matching PortAudio e1b70d33
+  PulseAudio source processes server requests in a loop, passing zero status flags
+  to the buffer processor. Its underflow callback increments a private counter;
+  the public extension header exposes rename calls, not that counter. StreamInfo
+  latency is the buffer-processor latency, not full device latency. Earlier zero
+  flag counts therefore cannot certify zero actual underruns. Raw reports remain
+  unchanged; the derived stress assessment now explicitly marks observability
+  unavailable. The 30-minute managed-body result remains valid.
+- Added host API identity, underflow observability classification, native current/
+  DAC timestamps, full flags and longest-gap neighborhoods to the bounded probe.
+  Native timestamp copies reject nonfinite values. Timed samples remain values
+  in preallocated storage; warmed timestamp-enabled callback allocation is zero.
+- Two 60-second isolated-load runs: 256-frame gap median/p99 5.324/5.708 ms;
+  longest gap 8.756 ms followed by 1.829 ms. At that event body time was 0.294 ms,
+  while the estimated output lead shrank from 20.643 to 17.209 ms and recovered.
+  Native DAC progression remained one block. This is buffered late-wakeup/catch-up
+  evidence, not a managed DSP overrun or proof of the original event's exact cause.
+- At 128 frames: 11,256 intervals below half a block period and 11,212 above 1.5
+  periods, over 22,504 callbacks. Longest gap 22.327 ms followed by rapid callbacks;
+  delayed callback body 0.081 ms, estimated lead 4.288 ms. PipeWire ran a 256-frame
+  quantum in both captures; Pulse target buffer 6144 bytes = 768 frames = 16 ms,
+  minimum request 2048 bytes = 256 frames. Native median queued lead ~20.488/22.521
+  ms respectively. These are backend estimates/settings, not measured hardware latency.
+- Both runs had zero measured allocation, parent collections, faults or dropped
+  records; raw underflow flags were zero but actual underruns remain unknown.
+  The 128-frame run again crossed 70% once during startup (2.032 ms), no body
+  deadline miss. No settings were changed; read-only server snapshots were taken.
+- Focused **105/105**; full gate **3,117 main + 21 MIDI passed, 19 skips**, no
+  failures or tracked-file mutations. Web smoke passed. Evidence:
+  `docs/baselines/phase6/cadence-*.json`; raw logs/source audit in `/tmp/flow-cadence/`,
+  full TRX in `/tmp/flow-cadence-verification/`.
+- Next: validate a backend path exposing trustworthy underrun/device timing,
+  then address low-latency configuration, startup and recovery. Do not claim
+  128-frame device latency from a 128-frame callback request, or blame Flow DSP
+  for the original gap without event-level evidence.

@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Flow.Platform.Linux;
 
-public sealed record OutputDevice(int Index, string Name, int Channels, double DefaultSampleRate, double LowLatencySeconds);
+public sealed record OutputDevice(int Index, string Name, int Channels, double DefaultSampleRate, double LowLatencySeconds, int HostApiType, string HostApiName);
 
 /// <summary>
 /// Linux PortAudio v19 callback prototype, float32 interleaved stereo. Lifecycle
@@ -26,6 +26,11 @@ public sealed class PortAudioOutput : IDisposable
     public string NativeVersion { get; }
     public double OutputLatencySeconds { get; }
     public double ActualSampleRate { get; }
+    // Audited e1b70d33 PulseAudio host passes zero callback flags even on underflow.
+    // Other backends/versions are unverified, never implicitly declared reliable.
+    public string UnderflowObservability => Device.HostApiType == 16 && NativeVersion.Contains("e1b70d33", StringComparison.Ordinal)
+        ? "unavailable: audited PulseAudio backend does not forward underflow flags"
+        : "unverified: backend-specific underflow reporting has not been validated";
     public bool CallbackFaulted => _probe.Faulted;
 
     public static OutputDevice[] ListDevices()
@@ -128,15 +133,17 @@ public sealed class PortAudioOutput : IDisposable
     }
 
     private int Render(nint input, nint output, nuint frames, nint timeInfo, nuint flags, nint userData)
-        => _probe.ProcessNative(output, frames, flags);
+        => _probe.ProcessNative(output, frames, flags, timeInfo);
 
     private static OutputDevice GetDevice(int index)
     {
         nint pointer = PortAudioNative.Pa_GetDeviceInfo(index);
         if (pointer == 0) throw new ArgumentOutOfRangeException(nameof(index));
         var info = Marshal.PtrToStructure<PortAudioNative.DeviceInfo>(pointer);
+        var host = Marshal.PtrToStructure<PortAudioNative.HostApiInfo>(PortAudioNative.Pa_GetHostApiInfo(info.HostApi));
         return new(index, Marshal.PtrToStringUTF8(info.Name) ?? "unknown", info.MaxOutputChannels,
-            info.DefaultSampleRate, info.DefaultLowOutputLatency);
+            info.DefaultSampleRate, info.DefaultLowOutputLatency, host.Type,
+            Marshal.PtrToStringUTF8(host.Name) ?? "unknown");
     }
 
     private static void Acquire()

@@ -10,6 +10,18 @@ internal static class PortAudioNative
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate int Callback(nint input, nint output, nuint frames, nint timeInfo, nuint flags, nint userData);
     [StructLayout(LayoutKind.Sequential)]
+    internal struct HostApiInfo
+    {
+        internal int Version, Type;
+        internal nint Name;
+        internal int DeviceCount, DefaultInputDevice, DefaultOutputDevice;
+    }
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct CallbackTimeInfo
+    {
+        internal double InputAdcTime, CurrentTime, OutputDacTime;
+    }
+    [StructLayout(LayoutKind.Sequential)]
     internal struct DeviceInfo
     {
         internal int Version;
@@ -36,6 +48,7 @@ internal static class PortAudioNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int Pa_Terminate();
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int Pa_GetDefaultOutputDevice();
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern nint Pa_GetDeviceInfo(int device);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern nint Pa_GetHostApiInfo(int hostApi);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int Pa_GetDeviceCount();
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern nint Pa_GetErrorText(int error);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern nint Pa_GetVersionText();

@@ -654,6 +654,16 @@ For sustained runs, the callback report also records first-to-last capture span,
 total frames and the 20 longest managed bodies with their times relative to each
 report window. Retain all-callback/startup results when assessing the 70% target.
 A successful process exit is not a timing verdict: explicitly inspect over70Percent,
-overDeadline, outputUnderflows, callbackFault and droppedTimingSamples. The first
+overDeadline, outputUnderflowFlagCount, underflowObservability, callbackFault and droppedTimingSamples. The first
 30-minute assessment is in `docs/baselines/phase6/callback-stress-assessment.json`.
 It met the body target but left a 15.686 ms entry gap and device latency unresolved.
+
+The cadence follow-up records host API identity, full callback flags, optional
+native current/DAC times and the ten longest gap neighborhoods. The matching
+PortAudio PulseAudio backend does not forward underflow flags; zero flags are
+not a device-underrun pass. Current reports use `outputUnderflowFlagCount` and
+an explicit `underflowObservability` classification. Historical raw reports retain
+`outputUnderflows`, which means only the observed callback flags in those files.
+Native times/queued-lead estimates may be stale or invalid and are not hardware
+latency measurements. CallbackRenderProbeTests now also pin native time copying,
+nonfinite handling and allocation with timestamp capture enabled.

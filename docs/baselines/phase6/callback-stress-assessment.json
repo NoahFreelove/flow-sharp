@@ -9,12 +9,12 @@
     "callbackFrameCountMatches": true,
     "bodyBelow70Percent": true,
     "noBodyDeadlineMisses": true,
-    "noReportedUnderflows": true,
     "noMeasuredBodyAllocations": true,
     "noParentCollections": true,
     "completeCapture": true,
     "replacementRetired": true,
-    "loadExecuted": true
+    "loadExecuted": true,
+    "zeroUnderflowFlags": true
   },
   "managedBodyTargetMet": true,
   "deadlineMilliseconds": 5.333333333333333,
@@ -23,10 +23,13 @@
   "maxEntryGapMilliseconds": 15.686382,
   "fullPhase6GateComplete": false,
   "remaining": [
-    "Explain 15.686 ms callback entry gap and unknown native output latency.",
+    "Exact original gap cause is not recoverable; follow-up confirms buffering/batching and late wakeups. Establish reliable underrun telemetry and device latency.",
     "Investigate 128-frame startup/scheduling; this sustained run used 256 frames.",
     "Device-loss recovery, listening and deferred UI load remain unmeasured.",
     "Frequent mid-score seeks mean this workload is not loop-end/EOF stress.",
     "One ordinary command rejection was observed; its reason is not separately logged."
-  ]
+  ],
+  "underflowObservability": "unavailable: matching e1b70d33 PulseAudio backend passes zero flags and keeps its underflow counter private",
+  "actualUnderrunCountKnown": false,
+  "observabilityCorrection": "2026-10-01 source audit and cadence follow-up; raw 30-minute output is preserved unchanged. The managed-body result remains valid, but zero callback flags cannot certify zero device underruns."
 }
