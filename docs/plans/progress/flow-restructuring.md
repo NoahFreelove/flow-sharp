@@ -14,8 +14,9 @@ Owner direction: finish the music/audio backend and Flow plugin support before
 UI/DAW implementation. Defer the desktop shell. Prepared playback/control/publication
 and a Linux callback prototype are verified. The 30-minute isolated-load run met
 the managed-body target. Follow-up confirms backend batching/buffering and a
-PulseAudio underrun-reporting blind spot. Reliable telemetry/latency and recovery
-remain open. [Current handoff](../handoffs/2026-10-01-phase6-callback-cadence.md).
+PulseAudio underrun-reporting blind spot. Callback-starvation detection is now
+calibrated on two ALSA routes; process-wide/server telemetry, latency and recovery
+remain open. [Current handoff](../handoffs/2026-10-01-phase6-underrun-calibration.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -1008,3 +1009,33 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   then address low-latency configuration, startup and recovery. Do not claim
   128-frame device latency from a 128-frame callback request, or blame Flow DSP
   for the original gap without event-level evidence.
+
+
+## Phase 6 — underrun calibration (2026-10-01)
+
+- **P6-08 callback-only detection verified; full device gate open.** A muted-only
+  diagnostic stalls exactly one callback for 100 ms after roughly two seconds.
+  It records the injection and unchanged native flags; it is never performance
+  evidence. A new hardware harness requires a clean baseline, three measured
+  stalls with subsequent native flags, continued callbacks and intact captures.
+- ALSA/pipewire and direct HDA ALSA: baseline zero, each of three stalls produced
+  one native flag. PulseAudio/Default Sink: zero in all trials, expected failure.
+  PipeWire's flag appeared on the callback immediately after each injection.
+  An additional ALSA/pulse single trial also produced no flag.
+- Whole-process SIGSTOP exploration on actual ALSA/pipewire produced a 253.068 ms
+  gap with zero flags; direct HDA ALSA produced one flag. The callback-only pass
+  is deliberately scoped and does not certify GC/server/hardware failure coverage.
+- Device indexes changed during exploration. Added exact HOST/NAME resolution
+  during the same native initialization used to open the stream, with no fallback
+  for missing or ambiguous names. Assessment compares actual routes and config.
+- Normal 60-second isolated-load ALSA/pipewire: 11,253 callbacks, body median/p99/
+  max 0.104/0.209/2.049 ms, max gap 5.624 ms; zero callback flags, allocations,
+  parent GC, 70%/deadline misses, faults or dropped records. This is a short route
+  check, not a replacement for the full sustained workload or physical latency test.
+- Focused **13/13**, Python **5/5**, full **3,123 main + 21 MIDI passed, 19 skips**;
+  Web smoke passed, no full-gate failures or tracked-file mutations. Evidence in
+  `docs/baselines/phase6/underruns/`. No global audio configuration changes.
+- Next: correlate independent server/native counters with controlled whole-process
+  starvation. PipeWire profiler exposes driver/follower xrun counters; validate
+  observation completeness and node identity before claiming coverage. Then measure
+  latency, startup and recovery. Broad DSP/plugin work still awaits the backend gate.

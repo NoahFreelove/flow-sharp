@@ -1,0 +1,47 @@
+{
+  "baselineClean": true,
+  "callbackStarvationDetectionValidated": true,
+  "route": [
+    "ALSA",
+    "HDA Intel PCH: ALC897 Analog (hw:0,0)",
+    "PortAudio V19.7.0-devel, revision e1b70d33",
+    48000,
+    256
+  ],
+  "trials": [
+    {
+      "checks": {
+        "captureIntact": true,
+        "sameRouteAndConfiguration": true,
+        "oneMeasuredStall": true,
+        "underflowFlagAfterStall": true,
+        "callbacksContinuedAfterStall": true
+      },
+      "passed": true,
+      "underflowFlagCount": 1
+    },
+    {
+      "checks": {
+        "captureIntact": true,
+        "sameRouteAndConfiguration": true,
+        "oneMeasuredStall": true,
+        "underflowFlagAfterStall": true,
+        "callbacksContinuedAfterStall": true
+      },
+      "passed": true,
+      "underflowFlagCount": 1
+    },
+    {
+      "checks": {
+        "captureIntact": true,
+        "sameRouteAndConfiguration": true,
+        "oneMeasuredStall": true,
+        "underflowFlagAfterStall": true,
+        "callbacksContinuedAfterStall": true
+      },
+      "passed": true,
+      "underflowFlagCount": 1
+    }
+  ],
+  "scope": "Callback-only starvation detection on the recorded route/configuration. Flags can coalesce; not an exact underrun count. Does not certify whole-process pauses, server/hardware xruns, physical latency or sustained glitch-free playback."
+}

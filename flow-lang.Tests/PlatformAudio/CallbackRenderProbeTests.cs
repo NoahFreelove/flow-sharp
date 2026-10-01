@@ -142,4 +142,31 @@ public class CallbackRenderProbeTests
         }
         finally { Marshal.FreeHGlobal(times); Marshal.FreeHGlobal(memory); }
     }
+
+    [Fact]
+    public void DiagnosticStallIsOnceOnlyMutedAndDoesNotInventUnderflowFlags()
+    {
+        var probe = new CallbackRenderProbe(new QueuedSinePlayback(Source()), 4,
+            stallAfterCallbacks: 1, stallMilliseconds: 1);
+        var output = new float[256];
+        for (int i = 0; i < 4; i++) probe.Process(output);
+        var samples = probe.Capture().Samples;
+        Assert.Equal(1, probe.InjectedStalls);
+        Assert.Equal(new[] { false, true, false, false }, samples.Select(s => s.InjectedStall));
+        Assert.All(samples, s => { Assert.False(s.OutputUnderflow); Assert.Equal(0UL, s.StatusFlags); });
+        Assert.All(output, s => Assert.Equal(0f, s));
+    }
+
+    [Theory]
+    [InlineData(false, 1, 1)]
+    [InlineData(true, -2, 1)]
+    [InlineData(true, -1, 1)]
+    [InlineData(true, 1, 0)]
+    [InlineData(true, 1, 1001)]
+    public void DiagnosticStallRejectsUnsafeOrInconsistentConfiguration(bool mute, int index, int milliseconds)
+    {
+        Assert.Throws<ArgumentException>(() => new CallbackRenderProbe(new QueuedSinePlayback(Source()),
+            4, mute, index, milliseconds));
+    }
+
 }

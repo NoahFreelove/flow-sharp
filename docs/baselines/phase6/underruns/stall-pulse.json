@@ -1,0 +1,1219 @@
+{
+  "diagnosticStall": {
+    "enabled": true,
+    "requestedMilliseconds": 100,
+    "count": 1,
+    "note": "Intentional callback-only starvation; injected runs are not performance evidence. Native flags are never synthesized."
+  },
+  "timestampUtc": "2026-10-01T18:11:05.695131+00:00",
+  "mode": "idle",
+  "seconds": 8,
+  "muted": true,
+  "os": "Ubuntu 26.04 LTS",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.12",
+  "underflowObservability": "unverified: backend-specific underflow reporting has not been validated",
+  "cpuCount": 16,
+  "serverGc": false,
+  "device": {
+    "Index": 23,
+    "Name": "pulse",
+    "Channels": 32,
+    "DefaultSampleRate": 44100,
+    "LowLatencySeconds": 0.008707482993197279,
+    "HostApiType": 8,
+    "HostApiName": "ALSA"
+  },
+  "nativeVersion": "PortAudio V19.7.0-devel, revision e1b70d33",
+  "requestedSampleRate": 48000,
+  "actualSampleRate": 48000,
+  "blockFrames": 256,
+  "reportedOutputLatencySeconds": 0.010666666666666666,
+  "voices": 32,
+  "sequences": 2,
+  "allCallbacks": {
+    "count": 1485,
+    "capturedSpanSeconds": 8.001616181,
+    "renderedFrames": 380160,
+    "worstCallbacks": [
+      {
+        "secondsFromWindowStart": 1.990505082,
+        "milliseconds": 100.218433,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0,
+        "milliseconds": 2.124023,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 5.612120335,
+        "milliseconds": 0.473061,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.075821699,
+        "milliseconds": 0.406572,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.033281154,
+        "milliseconds": 0.358885,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.086526867,
+        "milliseconds": 0.354042,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.07066769,
+        "milliseconds": 0.339063,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.1025558,
+        "milliseconds": 0.336914,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.027879473,
+        "milliseconds": 0.331119,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.038456072,
+        "milliseconds": 0.331043,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.150546305,
+        "milliseconds": 0.326364,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.155893338,
+        "milliseconds": 0.325103,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.022428747,
+        "milliseconds": 0.322517,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.043861867,
+        "milliseconds": 0.318789,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.08113788,
+        "milliseconds": 0.318399,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.161193942,
+        "milliseconds": 0.316557,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.107864561,
+        "milliseconds": 0.31526,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.097118777,
+        "milliseconds": 0.31377,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 1.180027611,
+        "milliseconds": 0.311261,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.14525757,
+        "milliseconds": 0.304788,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      }
+    ],
+    "p50Milliseconds": 0.111882,
+    "p99Milliseconds": 0.316557,
+    "maxMilliseconds": 100.218433,
+    "maxEntryGapMilliseconds": 112.768507,
+    "over70Percent": 1,
+    "overDeadline": 1,
+    "outputUnderflowFlagCount": 0,
+    "allocatedBytes": 0
+  },
+  "afterFirstSecond": {
+    "count": 1295,
+    "capturedSpanSeconds": 6.997822816,
+    "renderedFrames": 331520,
+    "worstCallbacks": [
+      {
+        "secondsFromWindowStart": 0.986711717,
+        "milliseconds": 100.218433,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 4.60832697,
+        "milliseconds": 0.473061,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.176234246,
+        "milliseconds": 0.311261,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 1.173657295,
+        "milliseconds": 0.280453,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.896236124,
+        "milliseconds": 0.275948,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.224187107,
+        "milliseconds": 0.274422,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.186755143,
+        "milliseconds": 0.268397,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.170988166,
+        "milliseconds": 0.263842,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 2.560679467,
+        "milliseconds": 0.262537,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.197418779,
+        "milliseconds": 0.257945,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 5.622080551,
+        "milliseconds": 0.255746,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.207972945,
+        "milliseconds": 0.254606,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.261707851,
+        "milliseconds": 0.253212,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.240112085,
+        "milliseconds": 0.247928,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.229471761,
+        "milliseconds": 0.243697,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 3.573711606,
+        "milliseconds": 0.239991,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 3.370768963,
+        "milliseconds": 0.238766,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.202642522,
+        "milliseconds": 0.236839,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 0.192133718,
+        "milliseconds": 0.235216,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      },
+      {
+        "secondsFromWindowStart": 6.405753879,
+        "milliseconds": 0.233939,
+        "Frames": 256,
+        "OutputUnderflow": false,
+        "AllocatedBytes": 0
+      }
+    ],
+    "p50Milliseconds": 0.111272,
+    "p99Milliseconds": 0.247928,
+    "maxMilliseconds": 100.218433,
+    "maxEntryGapMilliseconds": 112.768507,
+    "over70Percent": 1,
+    "overDeadline": 1,
+    "outputUnderflowFlagCount": 0,
+    "allocatedBytes": 0
+  },
+  "callbackCadence": {
+    "entryGapP50Milliseconds": 5.327047,
+    "entryGapP99Milliseconds": 5.692925,
+    "gapsOverOneAndHalfPeriods": 1,
+    "gapsUnderHalfPeriod": 4,
+    "nativeTimingSamples": 1485,
+    "injectedStallCallbacks": [
+      {
+        "index": 375,
+        "secondsFromStart": 1.990505082,
+        "entryGapMilliseconds": 5.45561,
+        "bodyMilliseconds": 100.218433,
+        "Frames": 256,
+        "StatusFlags": 0,
+        "NativeTiming": {
+          "CurrentSeconds": 1790878259.6718922,
+          "OutputDacSeconds": 1790878259.696413
+        },
+        "InjectedStall": true
+      }
+    ],
+    "underflowFlagCallbacks": [],
+    "underflowFlagRecordsTruncated": false,
+    "nativeOutputLeadMilliseconds": {
+      "min": 0,
+      "median": 24.499893188476562,
+      "max": 31.833410263061523,
+      "note": "Backend-provided estimate, not measured hardware latency; startup/stale/invalid timing may be present."
+    },
+    "longestGapNeighborhoods": [
+      {
+        "gapIndex": 376,
+        "callbacks": [
+          {
+            "index": 374,
+            "secondsFromStart": 1.985049472,
+            "entryGapMilliseconds": 5.20152,
+            "bodyMilliseconds": 0.101469,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878259.6664407,
+              "OutputDacSeconds": 1790878259.6910658
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 375,
+            "secondsFromStart": 1.990505082,
+            "entryGapMilliseconds": 5.45561,
+            "bodyMilliseconds": 100.218433,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878259.6718922,
+              "OutputDacSeconds": 1790878259.696413
+            },
+            "InjectedStall": true
+          },
+          {
+            "index": 376,
+            "secondsFromStart": 2.103273589,
+            "entryGapMilliseconds": 112.768507,
+            "bodyMilliseconds": 0.193091,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878259.7846577,
+              "OutputDacSeconds": 1790878259.7846577
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 377,
+            "secondsFromStart": 2.103617748,
+            "entryGapMilliseconds": 0.344159,
+            "bodyMilliseconds": 0.154945,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878259.7850091,
+              "OutputDacSeconds": 1790878259.7903216
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 378,
+            "secondsFromStart": 2.103787932,
+            "entryGapMilliseconds": 0.170184,
+            "bodyMilliseconds": 0.153551,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878259.7851822,
+              "OutputDacSeconds": 1790878259.795828
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 379,
+            "secondsFromStart": 2.108070504,
+            "entryGapMilliseconds": 4.282572,
+            "bodyMilliseconds": 0.155319,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878259.789451,
+              "OutputDacSeconds": 1790878259.8053885
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1424,
+        "callbacks": [
+          {
+            "index": 1422,
+            "secondsFromStart": 7.67089996,
+            "entryGapMilliseconds": 4.812117,
+            "bodyMilliseconds": 0.098121,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.3522909,
+              "OutputDacSeconds": 1790878265.3786035
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1423,
+            "secondsFromStart": 7.676174702,
+            "entryGapMilliseconds": 5.274742,
+            "bodyMilliseconds": 0.099901,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.3575659,
+              "OutputDacSeconds": 1790878265.383941
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1424,
+            "secondsFromStart": 7.682128087,
+            "entryGapMilliseconds": 5.953385,
+            "bodyMilliseconds": 0.144518,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.3634975,
+              "OutputDacSeconds": 1790878265.3892891
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1425,
+            "secondsFromStart": 7.686919465,
+            "entryGapMilliseconds": 4.791378,
+            "bodyMilliseconds": 0.126113,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.3683038,
+              "OutputDacSeconds": 1790878265.3946164
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1426,
+            "secondsFromStart": 7.692283277,
+            "entryGapMilliseconds": 5.363812,
+            "bodyMilliseconds": 0.104379,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.3736699,
+              "OutputDacSeconds": 1790878265.3999615
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1427,
+            "secondsFromStart": 7.697733222,
+            "entryGapMilliseconds": 5.449945,
+            "bodyMilliseconds": 0.164888,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.3791099,
+              "OutputDacSeconds": 1790878265.4053183
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1327,
+        "callbacks": [
+          {
+            "index": 1325,
+            "secondsFromStart": 7.153902762,
+            "entryGapMilliseconds": 5.569648,
+            "bodyMilliseconds": 0.188996,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.8352644,
+              "OutputDacSeconds": 1790878264.8655145
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1326,
+            "secondsFromStart": 7.158851594,
+            "entryGapMilliseconds": 4.948832,
+            "bodyMilliseconds": 0.108114,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.8402364,
+              "OutputDacSeconds": 1790878264.8708615
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1327,
+            "secondsFromStart": 7.164707091,
+            "entryGapMilliseconds": 5.855497,
+            "bodyMilliseconds": 0.19963,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.8460767,
+              "OutputDacSeconds": 1790878264.8762016
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1328,
+            "secondsFromStart": 7.169981918,
+            "entryGapMilliseconds": 5.274827,
+            "bodyMilliseconds": 0.215071,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.8513286,
+              "OutputDacSeconds": 1790878264.881537
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1329,
+            "secondsFromStart": 7.174965617,
+            "entryGapMilliseconds": 4.983699,
+            "bodyMilliseconds": 0.182978,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.8563461,
+              "OutputDacSeconds": 1790878264.8868878
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1330,
+            "secondsFromStart": 7.180330983,
+            "entryGapMilliseconds": 5.365366,
+            "bodyMilliseconds": 0.172013,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.8617063,
+              "OutputDacSeconds": 1790878264.892248
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 652,
+        "callbacks": [
+          {
+            "index": 650,
+            "secondsFromStart": 3.553489706,
+            "entryGapMilliseconds": 5.391449,
+            "bodyMilliseconds": 0.133518,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878261.2348683,
+              "OutputDacSeconds": 1790878261.2576182
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 651,
+            "secondsFromStart": 3.558623481,
+            "entryGapMilliseconds": 5.133775,
+            "bodyMilliseconds": 0.201354,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878261.2400079,
+              "OutputDacSeconds": 1790878261.2629662
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 652,
+            "secondsFromStart": 3.564472832,
+            "entryGapMilliseconds": 5.849351,
+            "bodyMilliseconds": 0.262537,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878261.245841,
+              "OutputDacSeconds": 1790878261.26832
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 653,
+            "secondsFromStart": 3.569534085,
+            "entryGapMilliseconds": 5.061253,
+            "bodyMilliseconds": 0.193817,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878261.2509127,
+              "OutputDacSeconds": 1790878261.2736626
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 654,
+            "secondsFromStart": 3.574622412,
+            "entryGapMilliseconds": 5.088327,
+            "bodyMilliseconds": 0.165521,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878261.2560058,
+              "OutputDacSeconds": 1790878261.2790058
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 655,
+            "secondsFromStart": 3.579955884,
+            "entryGapMilliseconds": 5.333472,
+            "bodyMilliseconds": 0.155892,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878261.2613428,
+              "OutputDacSeconds": 1790878261.2843635
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 859,
+        "callbacks": [
+          {
+            "index": 857,
+            "secondsFromStart": 4.657309218,
+            "entryGapMilliseconds": 5.384418,
+            "bodyMilliseconds": 0.152882,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878262.3386917,
+              "OutputDacSeconds": 1790878262.3650668
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 858,
+            "secondsFromStart": 4.662715622,
+            "entryGapMilliseconds": 5.406404,
+            "bodyMilliseconds": 0.121896,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878262.344081,
+              "OutputDacSeconds": 1790878262.3706644
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 859,
+            "secondsFromStart": 4.668545399,
+            "entryGapMilliseconds": 5.829777,
+            "bodyMilliseconds": 0.125796,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878262.3499036,
+              "OutputDacSeconds": 1790878262.3760285
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 860,
+            "secondsFromStart": 4.673357866,
+            "entryGapMilliseconds": 4.812467,
+            "bodyMilliseconds": 0.102434,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878262.3547463,
+              "OutputDacSeconds": 1790878262.3813922
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 861,
+            "secondsFromStart": 4.678614997,
+            "entryGapMilliseconds": 5.257131,
+            "bodyMilliseconds": 0.137607,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878262.3600008,
+              "OutputDacSeconds": 1790878262.38673
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 862,
+            "secondsFromStart": 4.683926697,
+            "entryGapMilliseconds": 5.3117,
+            "bodyMilliseconds": 0.150164,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878262.3653147,
+              "OutputDacSeconds": 1790878262.3920856
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1404,
+        "callbacks": [
+          {
+            "index": 1402,
+            "secondsFromStart": 7.564393614,
+            "entryGapMilliseconds": 5.357377,
+            "bodyMilliseconds": 0.106197,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.2457764,
+              "OutputDacSeconds": 1790878265.277193
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1403,
+            "secondsFromStart": 7.569585778,
+            "entryGapMilliseconds": 5.192164,
+            "bodyMilliseconds": 0.106811,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.25096,
+              "OutputDacSeconds": 1790878265.2825227
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1404,
+            "secondsFromStart": 7.57541042,
+            "entryGapMilliseconds": 5.824642,
+            "bodyMilliseconds": 0.141978,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.2567732,
+              "OutputDacSeconds": 1790878265.2878773
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1405,
+            "secondsFromStart": 7.58048738,
+            "entryGapMilliseconds": 5.07696,
+            "bodyMilliseconds": 0.116967,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.2618682,
+              "OutputDacSeconds": 1790878265.2932224
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1406,
+            "secondsFromStart": 7.585595772,
+            "entryGapMilliseconds": 5.108392,
+            "bodyMilliseconds": 0.149714,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.2669806,
+              "OutputDacSeconds": 1790878265.298564
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1407,
+            "secondsFromStart": 7.590882533,
+            "entryGapMilliseconds": 5.286761,
+            "bodyMilliseconds": 0.147739,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.272268,
+              "OutputDacSeconds": 1790878265.3039138
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1157,
+        "callbacks": [
+          {
+            "index": 1155,
+            "secondsFromStart": 6.246851487,
+            "entryGapMilliseconds": 5.352024,
+            "bodyMilliseconds": 0.106793,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878263.928238,
+              "OutputDacSeconds": 1790878263.9566128
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1156,
+            "secondsFromStart": 6.252029754,
+            "entryGapMilliseconds": 5.178267,
+            "bodyMilliseconds": 0.152647,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878263.933406,
+              "OutputDacSeconds": 1790878263.9619477
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1157,
+            "secondsFromStart": 6.257799216,
+            "entryGapMilliseconds": 5.769462,
+            "bodyMilliseconds": 0.132335,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878263.9391763,
+              "OutputDacSeconds": 1790878263.9673014
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1158,
+            "secondsFromStart": 6.262858823,
+            "entryGapMilliseconds": 5.059607,
+            "bodyMilliseconds": 0.109786,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878263.9442403,
+              "OutputDacSeconds": 1790878263.9726362
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1159,
+            "secondsFromStart": 6.268291893,
+            "entryGapMilliseconds": 5.43307,
+            "bodyMilliseconds": 0.10941,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878263.9496746,
+              "OutputDacSeconds": 1790878263.977987
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1160,
+            "secondsFromStart": 6.273527532,
+            "entryGapMilliseconds": 5.235639,
+            "bodyMilliseconds": 0.1138,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878263.9549105,
+              "OutputDacSeconds": 1790878263.9833481
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1370,
+        "callbacks": [
+          {
+            "index": 1368,
+            "secondsFromStart": 7.38294161,
+            "entryGapMilliseconds": 5.385747,
+            "bodyMilliseconds": 0.185789,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0643227,
+              "OutputDacSeconds": 1790878265.095406
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1369,
+            "secondsFromStart": 7.388209523,
+            "entryGapMilliseconds": 5.267913,
+            "bodyMilliseconds": 0.185424,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0695925,
+              "OutputDacSeconds": 1790878265.100759
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1370,
+            "secondsFromStart": 7.393959195,
+            "entryGapMilliseconds": 5.749672,
+            "bodyMilliseconds": 0.190091,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0753338,
+              "OutputDacSeconds": 1790878265.1061046
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1371,
+            "secondsFromStart": 7.398974643,
+            "entryGapMilliseconds": 5.015448,
+            "bodyMilliseconds": 0.162745,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0803554,
+              "OutputDacSeconds": 1790878265.1114388
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1372,
+            "secondsFromStart": 7.404181306,
+            "entryGapMilliseconds": 5.206663,
+            "bodyMilliseconds": 0.174934,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0855706,
+              "OutputDacSeconds": 1790878265.1167998
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1373,
+            "secondsFromStart": 7.409547244,
+            "entryGapMilliseconds": 5.365938,
+            "bodyMilliseconds": 0.233939,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0909336,
+              "OutputDacSeconds": 1790878265.1221418
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1174,
+        "callbacks": [
+          {
+            "index": 1172,
+            "secondsFromStart": 6.337403034,
+            "entryGapMilliseconds": 5.262752,
+            "bodyMilliseconds": 0.105324,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.018794,
+              "OutputDacSeconds": 1790878264.0475023
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1173,
+            "secondsFromStart": 6.342726197,
+            "entryGapMilliseconds": 5.323163,
+            "bodyMilliseconds": 0.128696,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.024109,
+              "OutputDacSeconds": 1790878264.052838
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1174,
+            "secondsFromStart": 6.348465615,
+            "entryGapMilliseconds": 5.739418,
+            "bodyMilliseconds": 0.158254,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.0298338,
+              "OutputDacSeconds": 1790878264.058188
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1175,
+            "secondsFromStart": 6.353778978,
+            "entryGapMilliseconds": 5.313363,
+            "bodyMilliseconds": 0.127959,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.0351534,
+              "OutputDacSeconds": 1790878264.0635283
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1176,
+            "secondsFromStart": 6.358810032,
+            "entryGapMilliseconds": 5.031054,
+            "bodyMilliseconds": 0.105136,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.040196,
+              "OutputDacSeconds": 1790878264.0688834
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1177,
+            "secondsFromStart": 6.364127994,
+            "entryGapMilliseconds": 5.317962,
+            "bodyMilliseconds": 0.115077,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878264.0455127,
+              "OutputDacSeconds": 1790878264.074221
+            },
+            "InjectedStall": false
+          }
+        ]
+      },
+      {
+        "gapIndex": 1359,
+        "callbacks": [
+          {
+            "index": 1357,
+            "secondsFromStart": 7.324121433,
+            "entryGapMilliseconds": 5.40494,
+            "bodyMilliseconds": 0.154144,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.005508,
+              "OutputDacSeconds": 1790878265.0365913
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1358,
+            "secondsFromStart": 7.32946047,
+            "entryGapMilliseconds": 5.339037,
+            "bodyMilliseconds": 0.166133,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0108445,
+              "OutputDacSeconds": 1790878265.0419486
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1359,
+            "secondsFromStart": 7.33519397,
+            "entryGapMilliseconds": 5.7335,
+            "bodyMilliseconds": 0.198119,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.016559,
+              "OutputDacSeconds": 1790878265.047288
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1360,
+            "secondsFromStart": 7.340198776,
+            "entryGapMilliseconds": 5.004806,
+            "bodyMilliseconds": 0.162343,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0215762,
+              "OutputDacSeconds": 1790878265.0526388
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1361,
+            "secondsFromStart": 7.345667504,
+            "entryGapMilliseconds": 5.468728,
+            "bodyMilliseconds": 0.160055,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.027042,
+              "OutputDacSeconds": 1790878265.0579793
+            },
+            "InjectedStall": false
+          },
+          {
+            "index": 1362,
+            "secondsFromStart": 7.350860321,
+            "entryGapMilliseconds": 5.192817,
+            "bodyMilliseconds": 0.15358,
+            "Frames": 256,
+            "StatusFlags": 0,
+            "NativeTiming": {
+              "CurrentSeconds": 1790878265.0322459,
+              "OutputDacSeconds": 1790878265.0633292
+            },
+            "InjectedStall": false
+          }
+        ]
+      }
+    ]
+  },
+  "droppedTimingSamples": 0,
+  "callbackFault": false,
+  "parentGcCollections": [
+    0,
+    0,
+    0
+  ],
+  "load": null,
+  "Generation": 2,
+  "retired": 1,
+  "RejectedCommands": 0,
+  "DiscardedCommands": 0,
+  "limitation": "Muted device probe; managed-body duration excludes native dispatch/entry pauses. Callback spacing and underflows are separate evidence. Zero callback flags do not establish zero underflows; consult underflowObservability. Duration alone does not establish a pass. No UI load, listening certification or native DSP comparison."
+}

@@ -25,20 +25,29 @@ if (args.Length == 1 && args[0] == "--list")
 Console.Error.WriteLine("Use a Release build for callback measurements.");
 return 2;
 #endif
-if (args.Length < 3 || args.Length > 5 || !int.TryParse(args[0], out int seconds) || seconds < 2 || seconds > 1800 ||
+if (args.Length < 3 || args.Length > 6 || !int.TryParse(args[0], out int seconds) || seconds < 2 || seconds > 1800 ||
     args[1] is not ("idle" or "inprocess" or "isolated") ||
-    (args.Length > 3 && !int.TryParse(args[3], out _)) ||
+    (args.Length > 3 && !int.TryParse(args[3], out _) && !args[3].Contains('/')) ||
+    (args.Length > 5 && args[5] != "--starve") ||
     (args.Length > 4 && (!int.TryParse(args[4], out int requestedBlock) || requestedBlock is not (128 or 256))))
 {
-    Console.Error.WriteLine("Usage: AudioCallbackProbe SECONDS idle|inprocess|isolated OUTPUT.json [DEVICE_INDEX] [128|256]\n       AudioCallbackProbe --list\nOutput is muted after rendering. Requires Linux and libportaudio.so.2.");
+    Console.Error.WriteLine("Usage: AudioCallbackProbe SECONDS idle|inprocess|isolated OUTPUT.json [DEVICE_INDEX|HOST/NAME] [128|256] [--starve]\n       AudioCallbackProbe --list\nOutput is muted after rendering. Requires Linux and libportaudio.so.2.");
     return 2;
 }
 int blockFrames = args.Length > 4 ? int.Parse(args[4]) : 256;
-int? deviceIndex = args.Length > 3 ? int.Parse(args[3]) : null;
+int? deviceIndex = args.Length > 3 && int.TryParse(args[3], out int parsedDevice) ? parsedDevice : null;
+string? deviceSelector = args.Length > 3 && deviceIndex is null ? args[3] : null;
+bool starvation = args.Length > 5;
+if (starvation && (seconds < 6 || args[1] != "idle"))
+{
+    Console.Error.WriteLine("--starve requires at least 6 seconds and idle mode; it is a diagnostic, not a performance run.");
+    return 2;
+}
 int capacity = (int)Math.Ceiling((seconds + 10) * 48000.0 / blockFrames);
 var playback = new QueuedSinePlayback(Prepare(440, blockFrames));
 var next = Prepare(660, blockFrames);
-var probe = new CallbackRenderProbe(playback, capacity);
+var probe = new CallbackRenderProbe(playback, capacity,
+    stallAfterCallbacks: starvation ? 2 * 48000 / blockFrames : -1, stallMilliseconds: starvation ? 100 : 0);
 playback.TrySetLoop(0, playback.TotalFrames);
 playback.TryPlay();
 using var cancel = new CancellationTokenSource();
@@ -69,7 +78,7 @@ try
     double latency, actualRate;
     bool fault;
     int retired = 0;
-    using (var output = new PortAudioOutput(probe, deviceIndex))
+    using (var output = new PortAudioOutput(probe, deviceIndex, deviceSelector))
     {
         device = output.Device; version = output.NativeVersion;
         underflowObservability = output.UnderflowObservability;
@@ -119,6 +128,8 @@ try
     var steady = samples.Where(s => s.StartTicks - samples[0].StartTicks >= Stopwatch.Frequency).ToArray();
     var report = new
     {
+        diagnosticStall = new { enabled = starvation, requestedMilliseconds = starvation ? 100 : 0, count = probe.InjectedStalls,
+            note = "Intentional callback-only starvation; injected runs are not performance evidence. Native flags are never synthesized." },
         timestampUtc = DateTimeOffset.UtcNow, mode = args[1], seconds, muted = true,
         os = RuntimeInformation.OSDescription, architecture = RuntimeInformation.ProcessArchitecture.ToString(),
         runtime = RuntimeInformation.FrameworkDescription, underflowObservability, cpuCount = Environment.ProcessorCount,
@@ -143,7 +154,7 @@ catch (Exception error)
     File.WriteAllText(args[2], JsonSerializer.Serialize(new
     {
         success = false, mode = args[1], seconds, deviceIndex, blockFrames,
-        error = error.GetType().Name, message = error.Message,
+        deviceSelector, starvation, error = error.GetType().Name, message = error.Message,
     }, new JsonSerializerOptions { WriteIndented = true }) + "\n");
     return 1;
 }
@@ -209,7 +220,7 @@ static object SummarizeCadence(CallbackSample[] samples, int rate)
         secondsFromStart = (samples[i].StartTicks - samples[0].StartTicks) / (double)Stopwatch.Frequency,
         entryGapMilliseconds = i == 0 ? 0 : Milliseconds(samples[i].StartTicks - samples[i - 1].StartTicks),
         bodyMilliseconds = Milliseconds(samples[i].ElapsedTicks),
-        samples[i].Frames, samples[i].StatusFlags, samples[i].NativeTiming,
+        samples[i].Frames, samples[i].StatusFlags, samples[i].NativeTiming, samples[i].InjectedStall,
     };
     return new
     {
@@ -218,6 +229,9 @@ static object SummarizeCadence(CallbackSample[] samples, int rate)
         gapsOverOneAndHalfPeriods = gaps.Count(g => g.gap > g.period * 1.5),
         gapsUnderHalfPeriod = gaps.Count(g => g.gap < g.period * 0.5),
         nativeTimingSamples = timing.Length,
+        injectedStallCallbacks = Enumerable.Range(0, samples.Length).Where(i => samples[i].InjectedStall).Select(Describe).ToArray(),
+        underflowFlagCallbacks = Enumerable.Range(0, samples.Length).Where(i => samples[i].OutputUnderflow).Take(100).Select(Describe).ToArray(),
+        underflowFlagRecordsTruncated = samples.Count(s => s.OutputUnderflow) > 100,
         nativeOutputLeadMilliseconds = lead.Length == 0 ? null : new
         {
             min = lead[0], median = lead[(lead.Length - 1) / 2], max = lead[^1],

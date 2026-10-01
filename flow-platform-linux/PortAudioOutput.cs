@@ -54,7 +54,7 @@ public sealed class PortAudioOutput : IDisposable
         }
     }
 
-    public PortAudioOutput(CallbackRenderProbe probe, int? deviceIndex = null)
+    public PortAudioOutput(CallbackRenderProbe probe, int? deviceIndex = null, string? deviceSelector = null)
     {
         ArgumentNullException.ThrowIfNull(probe);
         _probe = probe;
@@ -64,7 +64,19 @@ public sealed class PortAudioOutput : IDisposable
             Acquire();
             try
             {
+                if (deviceIndex.HasValue && deviceSelector is not null)
+                    throw new ArgumentException("Choose either a device index or a host/name selector");
                 int index = deviceIndex ?? PortAudioNative.Pa_GetDefaultOutputDevice();
+                if (deviceSelector is not null)
+                {
+                    int count = PortAudioNative.Pa_GetDeviceCount();
+                    Check(count < 0 ? count : 0);
+                    var matches = Enumerable.Range(0, count).Select(GetDevice)
+                        .Where(d => d.Channels >= 2 && $"{d.HostApiName}/{d.Name}" == deviceSelector).ToArray();
+                    if (matches.Length != 1)
+                        throw new ArgumentException($"Device selector must match exactly one stereo output: {deviceSelector} (found {matches.Length})");
+                    index = matches[0].Index;
+                }
                 if (index < 0) throw new InvalidOperationException("No default PortAudio output device is available");
                 Device = GetDevice(index);
                 if (Device.Channels < 2) throw new InvalidOperationException("Output device does not support stereo");

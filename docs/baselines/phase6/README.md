@@ -208,3 +208,15 @@ source downloads: /tmp/flow-cadence/. Full gate: **3,117 main + 21 MIDI passed,
 19 skips**, no failures/mutations; Web smoke passed. Focused **105/105** includes
 native timestamp copying and warmed allocation. Gate summaries are adjacent
 cadence-all-verification.json and cadence-wasm-verification.json.
+
+
+## Native underrun calibration
+
+[P6-08 evidence](underruns/README.md) validates callback-only starvation detection
+on ALSA/pipewire and direct HDA ALSA at 48 kHz / 256 frames. Both passed a clean
+baseline and three explicit muted callback stalls. PulseAudio failed detection
+in all three negative-control trials. A normal 60-second isolated-load PipeWire
+run had zero callback flags/allocations and a 2.049 ms maximum body.
+
+This does not close device reliability: whole-process starvation on ALSA/pipewire
+still produced no flags. Next validate independent server/native telemetry.

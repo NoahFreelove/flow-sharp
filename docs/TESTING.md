@@ -667,3 +667,30 @@ an explicit `underflowObservability` classification. Historical raw reports reta
 Native times/queued-lead estimates may be stale or invalid and are not hardware
 latency measurements. CallbackRenderProbeTests now also pin native time copying,
 nonfinite handling and allocation with timestamp capture enabled.
+
+### Calibrating native underrun flags
+
+Before treating zero flags as meaningful, run the hardware-only calibration
+against an exact named route (enumeration indexes can change):
+
+```sh
+MSBUILDDISABLENODEREUSE=1 dotnet build scripts/AudioCallbackProbe/AudioCallbackProbe.csproj -c Release -p:FlowTarget=Desktop
+python3 -B scripts/ci/audio_underflow_check.py \
+  --probe scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe \
+  --device ALSA/pipewire --artifacts /tmp/flow-underflow-calibration
+python3 -B -m unittest discover -s scripts/ci -p test_audio_underflow_check.py
+```
+
+Use a new artifact directory per run. The hardware harness runs one 8-second
+baseline and three 8-second muted callback-starvation probes serially. Do not
+run builds/full suites alongside captures. An injected 100 ms stall is deliberate;
+its deadline failure is not a performance regression. The probe records the stall
+and native flag callbacks separately, without fabricating flags. `--starve`
+requires idle mode and at least 6 seconds. Ordinary stress runs omit it.
+
+A calibration pass validates only callback-starvation detection on that named
+route/version/rate/block configuration. It does not certify process-wide pauses,
+server/device xruns, exact underrun counts or hardware latency. The audited
+PulseAudio route is a negative control and should fail detection, not be marked
+as an environmental skip. Missing devices and capture failures also return failure.
+See [the calibration decision](decisions/2026-10-01-underrun-calibration.md).

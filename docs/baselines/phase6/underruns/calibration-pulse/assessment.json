@@ -1,0 +1,47 @@
+{
+  "baselineClean": true,
+  "callbackStarvationDetectionValidated": false,
+  "route": [
+    "PulseAudio",
+    "Default Sink",
+    "PortAudio V19.7.0-devel, revision e1b70d33",
+    48000,
+    256
+  ],
+  "trials": [
+    {
+      "checks": {
+        "captureIntact": true,
+        "sameRouteAndConfiguration": true,
+        "oneMeasuredStall": true,
+        "underflowFlagAfterStall": false,
+        "callbacksContinuedAfterStall": true
+      },
+      "passed": false,
+      "underflowFlagCount": 0
+    },
+    {
+      "checks": {
+        "captureIntact": true,
+        "sameRouteAndConfiguration": true,
+        "oneMeasuredStall": true,
+        "underflowFlagAfterStall": false,
+        "callbacksContinuedAfterStall": true
+      },
+      "passed": false,
+      "underflowFlagCount": 0
+    },
+    {
+      "checks": {
+        "captureIntact": true,
+        "sameRouteAndConfiguration": true,
+        "oneMeasuredStall": true,
+        "underflowFlagAfterStall": false,
+        "callbacksContinuedAfterStall": true
+      },
+      "passed": false,
+      "underflowFlagCount": 0
+    }
+  ],
+  "scope": "Callback-only starvation detection on the recorded route/configuration. Flags can coalesce; not an exact underrun count. Does not certify whole-process pauses, server/hardware xruns, physical latency or sustained glitch-free playback."
+}
