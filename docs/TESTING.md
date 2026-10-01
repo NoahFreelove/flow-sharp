@@ -694,3 +694,28 @@ server/device xruns, exact underrun counts or hardware latency. The audited
 PulseAudio route is a negative control and should fail detection, not be marked
 as an environmental skip. Missing devices and capture failures also return failure.
 See [the calibration decision](decisions/2026-10-01-underrun-calibration.md).
+
+### Whole-process pause reporting
+
+`audio_process_pause_check.py` runs a separate PipeWire profiler observer so
+stopping the audio client's entire process does not stop its telemetry source:
+
+```sh
+python3 -B scripts/ci/audio_process_pause_check.py \
+  --probe scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe \
+  --artifacts /tmp/flow-process-pause-check
+python3 -B -m unittest discover -s scripts/ci
+```
+
+Requires a built Release probe, Linux `pw-dump`/`pw-profiler`, and the server's
+profiler interface. Uses ALSA/pipewire at 48 kHz / 256 frames; other routes and
+quanta need separate validation. It runs an 8-second baseline and three paused
+trials serially. Use a new artifact directory and no concurrent builds/full suites.
+Only the harness-owned muted probe receives SIGSTOP/SIGCONT. Failure/interruption
+cleanup resumes/reaps it and stops the observer.
+
+The external node counter and callback flags are separate signals. Assessment
+checks PID/client ownership, serials, sequence/timestamp coverage and counter
+resets before interpreting deltas. Unavailable or discontinuous data fails as
+unknown; a missing profiler is not a pass. Raw registry snapshots contain local
+identifiers and must stay out of commits. See the [evidence and scope](baselines/phase6/process-pause/README.md).

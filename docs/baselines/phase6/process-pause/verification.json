@@ -1,0 +1,7 @@
+{
+  "command": "python3 -B -m unittest discover -s scripts/ci",
+  "passed": 17,
+  "failed": 0,
+  "hardwareCalibrationPassed": true,
+  "runtimeCodeChanged": false
+}

@@ -220,3 +220,12 @@ run had zero callback flags/allocations and a 2.049 ms maximum body.
 
 This does not close device reliability: whole-process starvation on ALSA/pipewire
 still produced no flags. Next validate independent server/native telemetry.
+
+
+## Independent whole-process pause detection
+
+[P6-09 evidence](process-pause/README.md) closes the specific pause-reporting gap:
+a separate PipeWire observer detected all three 250 ms whole-client pauses while
+callback flags remained zero. Baseline and driver counters stayed clean. The
+observer rejects incomplete or unattributable evidence instead of declaring zero
+errors. Combined sustained tests, latency and device recovery remain open.

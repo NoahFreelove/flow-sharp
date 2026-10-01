@@ -1,0 +1,127 @@
+{
+  "processPauseDetectionValidated": true,
+  "profilerVersion": "pw-profiler\nCompiled with libpipewire 1.6.2\nLinked with libpipewire 1.6.2",
+  "trials": [
+    {
+      "status": "clean",
+      "passed": true,
+      "injected": false,
+      "windowSamples": 237,
+      "samplesDuringPauseWindow": 47,
+      "nodeXrunDelta": 0,
+      "driverXrunDelta": 0,
+      "route": [
+        "ALSA",
+        "pipewire",
+        "PortAudio V19.7.0-devel, revision e1b70d33",
+        48000,
+        256
+      ],
+      "target": {
+        "nodeId": 139,
+        "nodeSerial": 1297,
+        "nodeName": "alsa_playback.AudioCallbackProbe",
+        "driverId": 60,
+        "driverSerial": 520,
+        "driverName": "alsa_output.usb-MOONDROP_Discdream_2_Discdream_2-00.analog-stereo"
+      },
+      "startNs": 34583276360734,
+      "confirmedStoppedNs": null,
+      "endNs": 34583526483681,
+      "confirmedPauseMilliseconds": 0,
+      "callbackUnderflowFlags": 0,
+      "maxCallbackGapMilliseconds": 5.55738
+    },
+    {
+      "status": "detected",
+      "passed": true,
+      "injected": true,
+      "windowSamples": 282,
+      "samplesDuringPauseWindow": 92,
+      "nodeXrunDelta": 92,
+      "driverXrunDelta": 0,
+      "route": [
+        "ALSA",
+        "pipewire",
+        "PortAudio V19.7.0-devel, revision e1b70d33",
+        48000,
+        256
+      ],
+      "target": {
+        "nodeId": 139,
+        "nodeSerial": 1316,
+        "nodeName": "alsa_playback.AudioCallbackProbe",
+        "driverId": 60,
+        "driverSerial": 520,
+        "driverName": "alsa_output.usb-MOONDROP_Discdream_2_Discdream_2-00.analog-stereo"
+      },
+      "startNs": 34591774774183,
+      "confirmedStoppedNs": 34591775092759,
+      "endNs": 34592025244644,
+      "confirmedPauseMilliseconds": 250.151885,
+      "callbackUnderflowFlags": 0,
+      "maxCallbackGapMilliseconds": 251.28049
+    },
+    {
+      "status": "detected",
+      "passed": true,
+      "injected": true,
+      "windowSamples": 282,
+      "samplesDuringPauseWindow": 92,
+      "nodeXrunDelta": 92,
+      "driverXrunDelta": 0,
+      "route": [
+        "ALSA",
+        "pipewire",
+        "PortAudio V19.7.0-devel, revision e1b70d33",
+        48000,
+        256
+      ],
+      "target": {
+        "nodeId": 139,
+        "nodeSerial": 1335,
+        "nodeName": "alsa_playback.AudioCallbackProbe",
+        "driverId": 60,
+        "driverSerial": 520,
+        "driverName": "alsa_output.usb-MOONDROP_Discdream_2_Discdream_2-00.analog-stereo"
+      },
+      "startNs": 34600264574613,
+      "confirmedStoppedNs": 34600264881481,
+      "endNs": 34600515030977,
+      "confirmedPauseMilliseconds": 250.149496,
+      "callbackUnderflowFlags": 0,
+      "maxCallbackGapMilliseconds": 254.736228
+    },
+    {
+      "status": "detected",
+      "passed": true,
+      "injected": true,
+      "windowSamples": 283,
+      "samplesDuringPauseWindow": 92,
+      "nodeXrunDelta": 92,
+      "driverXrunDelta": 0,
+      "route": [
+        "ALSA",
+        "pipewire",
+        "PortAudio V19.7.0-devel, revision e1b70d33",
+        48000,
+        256
+      ],
+      "target": {
+        "nodeId": 139,
+        "nodeSerial": 1354,
+        "nodeName": "alsa_playback.AudioCallbackProbe",
+        "driverId": 60,
+        "driverSerial": 520,
+        "driverName": "alsa_output.usb-MOONDROP_Discdream_2_Discdream_2-00.analog-stereo"
+      },
+      "startNs": 34608774963518,
+      "confirmedStoppedNs": 34608775134339,
+      "endNs": 34609025292956,
+      "confirmedPauseMilliseconds": 250.158617,
+      "callbackUnderflowFlags": 0,
+      "maxCallbackGapMilliseconds": 252.973789
+    }
+  ],
+  "scope": "ALSA/pipewire at 48 kHz / 256 frames: external detection of a 250 ms whole-client pause. Node xrun deltas are server scheduling events, not exact lost periods or physical hardware underruns."
+}

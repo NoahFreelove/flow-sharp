@@ -15,14 +15,14 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 | 3 Language extraction | Complete | Independent BCL-only language artifact, CLI/REPL/embedding proof. |
 | 4 Analysis and tooling | Complete | Non-executing check, shared editor metadata/analysis and explicit host adapters. |
 | 5 Music model/offline rendering | Complete | Detached scores, linear assembly (15-min render: 9.0 GB → 327 MB allocated), streaming native WAV, snapshot MIDI export (Flow `writeMidi` routed through it) and shared quantize/transpose. Legacy instruments/effects move to Phase 6 block processors. |
-| 6 Audio engine/UI prototypes | Backend in progress | 30-minute managed-body target met. Callback-starvation detection calibrated on ALSA/pipewire and direct ALSA; PulseAudio flags remain unavailable. Process-wide/server telemetry, latency and recovery remain open; UI deferred. |
+| 6 Audio engine/UI prototypes | Backend in progress | 30-minute managed-body target met. Callback-starvation detection calibrated on ALSA/pipewire and direct ALSA; PulseAudio flags remain unavailable. Independent PipeWire telemetry now detects whole-process pauses. Sustained combined telemetry, latency and recovery remain open; UI deferred. |
 | 7 Flow plugins | Not started | Public graph authoring, lifecycle, bounded compilation and hot reload. |
 | 8 Project/piano roll | Not started | Editable notes, arrangement, undo, save/reopen and plugin integration. |
 | 9 Complete DAW workflow | Not started | Routing, recording, clips, automation, export and Linux packaging. |
 | 10 Hardening/release | Not started | Stress/recovery tests, compatibility docs and reproducible releases. |
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
-Continue from the [Phase 6 underrun calibration handoff](handoffs/2026-10-01-phase6-underrun-calibration.md).
+Continue from the [Phase 6 process-pause observer handoff](handoffs/2026-10-01-phase6-process-pause-observer.md).
 Owner sequencing update (2026-09-30): finish the music/audio backend and Flow
 plugin support before UI/DAW implementation. Advance Phase 6 backend work and
 Phase 7 prerequisites; defer the Phase 6 desktop shell prototype. This does not
@@ -653,9 +653,11 @@ Cadence follow-up (P6-07) confirms buffered catch-up and 128-frame batching on a
 256-frame PipeWire quantum; PulseAudio callback underrun flags are unavailable.
 Callback-only starvation detection now passes baseline plus three injection
 trials on ALSA/pipewire and direct ALSA (P6-08); PulseAudio fails the negative
-control. Whole-process starvation remains invisible on ALSA/pipewire.
-Next: independent server/native telemetry, then latency/startup/recovery evidence
-before choosing the managed/native strategy or broadly porting DSP. The full gate
+control. Callback flags alone miss whole-process starvation; an independent
+PipeWire observer now detects it in all three controlled trials (P6-09).
+Next: combined sustained telemetry and latency/startup/recovery evidence before
+choosing the managed/native strategy or broadly porting DSP. Review the owner's
+ready DAW design against the MVP brief; implementation remains deferred. The full gate
 remains open; the desktop shell is deferred by owner.
 
 Work:

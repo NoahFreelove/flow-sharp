@@ -1,0 +1,1730 @@
+{
+  "status": "detected",
+  "passed": true,
+  "injected": true,
+  "windowSamples": 283,
+  "samplesDuringPauseWindow": 92,
+  "nodeXrunDelta": 92,
+  "driverXrunDelta": 0,
+  "rows": [
+    {
+      "sequence": 9708,
+      "signalNs": 34608270941929,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9709,
+      "signalNs": 34608276278246,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9710,
+      "signalNs": 34608281620039,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9711,
+      "signalNs": 34608286951771,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9712,
+      "signalNs": 34608292278656,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9713,
+      "signalNs": 34608297621102,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9714,
+      "signalNs": 34608302949884,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9715,
+      "signalNs": 34608308283904,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9716,
+      "signalNs": 34608313620342,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9717,
+      "signalNs": 34608318940731,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9718,
+      "signalNs": 34608324279188,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9719,
+      "signalNs": 34608329613954,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9720,
+      "signalNs": 34608334937416,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9721,
+      "signalNs": 34608340295158,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9722,
+      "signalNs": 34608345620694,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9723,
+      "signalNs": 34608350964483,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9724,
+      "signalNs": 34608356283959,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9725,
+      "signalNs": 34608361632537,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9726,
+      "signalNs": 34608367038155,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9727,
+      "signalNs": 34608372311987,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9728,
+      "signalNs": 34608377616901,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9729,
+      "signalNs": 34608382951053,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9730,
+      "signalNs": 34608388289267,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9731,
+      "signalNs": 34608393620402,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9732,
+      "signalNs": 34608398952371,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9733,
+      "signalNs": 34608404324985,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9734,
+      "signalNs": 34608409617134,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9735,
+      "signalNs": 34608414982134,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9736,
+      "signalNs": 34608420311101,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9737,
+      "signalNs": 34608425614569,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9738,
+      "signalNs": 34608431009261,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9739,
+      "signalNs": 34608436298451,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9740,
+      "signalNs": 34608441663159,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9741,
+      "signalNs": 34608446995295,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9742,
+      "signalNs": 34608452326873,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9743,
+      "signalNs": 34608457643016,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9744,
+      "signalNs": 34608463102092,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9745,
+      "signalNs": 34608468286915,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9746,
+      "signalNs": 34608473642756,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9747,
+      "signalNs": 34608478968696,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9748,
+      "signalNs": 34608484299727,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9749,
+      "signalNs": 34608489628885,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9750,
+      "signalNs": 34608494959326,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9751,
+      "signalNs": 34608500292935,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9752,
+      "signalNs": 34608505643024,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9753,
+      "signalNs": 34608510943280,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9754,
+      "signalNs": 34608516280130,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9755,
+      "signalNs": 34608521614104,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9756,
+      "signalNs": 34608526939585,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9757,
+      "signalNs": 34608532276695,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9758,
+      "signalNs": 34608537624320,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9759,
+      "signalNs": 34608542953190,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9760,
+      "signalNs": 34608548277797,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9761,
+      "signalNs": 34608553603335,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9762,
+      "signalNs": 34608559004079,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9763,
+      "signalNs": 34608564293868,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9764,
+      "signalNs": 34608569637441,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9765,
+      "signalNs": 34608574946383,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9766,
+      "signalNs": 34608580275575,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9767,
+      "signalNs": 34608585620325,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9768,
+      "signalNs": 34608590951228,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9769,
+      "signalNs": 34608596280300,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9770,
+      "signalNs": 34608601612908,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9771,
+      "signalNs": 34608606950743,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9772,
+      "signalNs": 34608612279045,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9773,
+      "signalNs": 34608617624610,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9774,
+      "signalNs": 34608622962369,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9775,
+      "signalNs": 34608628292173,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9776,
+      "signalNs": 34608633621698,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9777,
+      "signalNs": 34608638973082,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9778,
+      "signalNs": 34608644281695,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9779,
+      "signalNs": 34608649679008,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9780,
+      "signalNs": 34608654947185,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9781,
+      "signalNs": 34608660281047,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9782,
+      "signalNs": 34608665639939,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9783,
+      "signalNs": 34608670950198,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9784,
+      "signalNs": 34608676278612,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9785,
+      "signalNs": 34608681614295,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9786,
+      "signalNs": 34608686950421,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9787,
+      "signalNs": 34608692276918,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9788,
+      "signalNs": 34608697620370,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9789,
+      "signalNs": 34608702939448,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9790,
+      "signalNs": 34608708278886,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9791,
+      "signalNs": 34608713625709,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9792,
+      "signalNs": 34608718949338,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9793,
+      "signalNs": 34608724296582,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9794,
+      "signalNs": 34608729621664,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9795,
+      "signalNs": 34608734933204,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9796,
+      "signalNs": 34608740329551,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9797,
+      "signalNs": 34608745610222,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9798,
+      "signalNs": 34608750948543,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9799,
+      "signalNs": 34608756273923,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9800,
+      "signalNs": 34608761620642,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9801,
+      "signalNs": 34608766978337,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9802,
+      "signalNs": 34608772279019,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9803,
+      "signalNs": 34608772279019,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9804,
+      "signalNs": 34608777613911,
+      "driverXruns": 0,
+      "nodeXruns": 0
+    },
+    {
+      "sequence": 9805,
+      "signalNs": 34608777613911,
+      "driverXruns": 0,
+      "nodeXruns": 1
+    },
+    {
+      "sequence": 9806,
+      "signalNs": 34608782949096,
+      "driverXruns": 0,
+      "nodeXruns": 1
+    },
+    {
+      "sequence": 9807,
+      "signalNs": 34608782949096,
+      "driverXruns": 0,
+      "nodeXruns": 2
+    },
+    {
+      "sequence": 9808,
+      "signalNs": 34608788278413,
+      "driverXruns": 0,
+      "nodeXruns": 2
+    },
+    {
+      "sequence": 9809,
+      "signalNs": 34608788278413,
+      "driverXruns": 0,
+      "nodeXruns": 3
+    },
+    {
+      "sequence": 9810,
+      "signalNs": 34608793617093,
+      "driverXruns": 0,
+      "nodeXruns": 3
+    },
+    {
+      "sequence": 9811,
+      "signalNs": 34608793617093,
+      "driverXruns": 0,
+      "nodeXruns": 4
+    },
+    {
+      "sequence": 9812,
+      "signalNs": 34608798946841,
+      "driverXruns": 0,
+      "nodeXruns": 4
+    },
+    {
+      "sequence": 9813,
+      "signalNs": 34608798946841,
+      "driverXruns": 0,
+      "nodeXruns": 5
+    },
+    {
+      "sequence": 9814,
+      "signalNs": 34608804278173,
+      "driverXruns": 0,
+      "nodeXruns": 5
+    },
+    {
+      "sequence": 9815,
+      "signalNs": 34608804278173,
+      "driverXruns": 0,
+      "nodeXruns": 6
+    },
+    {
+      "sequence": 9816,
+      "signalNs": 34608809613941,
+      "driverXruns": 0,
+      "nodeXruns": 6
+    },
+    {
+      "sequence": 9817,
+      "signalNs": 34608809613941,
+      "driverXruns": 0,
+      "nodeXruns": 7
+    },
+    {
+      "sequence": 9818,
+      "signalNs": 34608814944033,
+      "driverXruns": 0,
+      "nodeXruns": 7
+    },
+    {
+      "sequence": 9819,
+      "signalNs": 34608814944033,
+      "driverXruns": 0,
+      "nodeXruns": 8
+    },
+    {
+      "sequence": 9820,
+      "signalNs": 34608820279800,
+      "driverXruns": 0,
+      "nodeXruns": 8
+    },
+    {
+      "sequence": 9821,
+      "signalNs": 34608820279800,
+      "driverXruns": 0,
+      "nodeXruns": 9
+    },
+    {
+      "sequence": 9822,
+      "signalNs": 34608825619140,
+      "driverXruns": 0,
+      "nodeXruns": 9
+    },
+    {
+      "sequence": 9823,
+      "signalNs": 34608825619140,
+      "driverXruns": 0,
+      "nodeXruns": 10
+    },
+    {
+      "sequence": 9824,
+      "signalNs": 34608830943645,
+      "driverXruns": 0,
+      "nodeXruns": 10
+    },
+    {
+      "sequence": 9825,
+      "signalNs": 34608830943645,
+      "driverXruns": 0,
+      "nodeXruns": 11
+    },
+    {
+      "sequence": 9826,
+      "signalNs": 34608836282391,
+      "driverXruns": 0,
+      "nodeXruns": 11
+    },
+    {
+      "sequence": 9827,
+      "signalNs": 34608836282391,
+      "driverXruns": 0,
+      "nodeXruns": 12
+    },
+    {
+      "sequence": 9828,
+      "signalNs": 34608841616985,
+      "driverXruns": 0,
+      "nodeXruns": 12
+    },
+    {
+      "sequence": 9829,
+      "signalNs": 34608841616985,
+      "driverXruns": 0,
+      "nodeXruns": 13
+    },
+    {
+      "sequence": 9830,
+      "signalNs": 34608846940408,
+      "driverXruns": 0,
+      "nodeXruns": 13
+    },
+    {
+      "sequence": 9831,
+      "signalNs": 34608846940408,
+      "driverXruns": 0,
+      "nodeXruns": 14
+    },
+    {
+      "sequence": 9832,
+      "signalNs": 34608852324369,
+      "driverXruns": 0,
+      "nodeXruns": 14
+    },
+    {
+      "sequence": 9833,
+      "signalNs": 34608852324369,
+      "driverXruns": 0,
+      "nodeXruns": 15
+    },
+    {
+      "sequence": 9834,
+      "signalNs": 34608857636485,
+      "driverXruns": 0,
+      "nodeXruns": 15
+    },
+    {
+      "sequence": 9835,
+      "signalNs": 34608857636485,
+      "driverXruns": 0,
+      "nodeXruns": 16
+    },
+    {
+      "sequence": 9836,
+      "signalNs": 34608862949977,
+      "driverXruns": 0,
+      "nodeXruns": 16
+    },
+    {
+      "sequence": 9837,
+      "signalNs": 34608862949977,
+      "driverXruns": 0,
+      "nodeXruns": 17
+    },
+    {
+      "sequence": 9838,
+      "signalNs": 34608868282186,
+      "driverXruns": 0,
+      "nodeXruns": 17
+    },
+    {
+      "sequence": 9839,
+      "signalNs": 34608868282186,
+      "driverXruns": 0,
+      "nodeXruns": 18
+    },
+    {
+      "sequence": 9840,
+      "signalNs": 34608873613165,
+      "driverXruns": 0,
+      "nodeXruns": 18
+    },
+    {
+      "sequence": 9841,
+      "signalNs": 34608873613165,
+      "driverXruns": 0,
+      "nodeXruns": 19
+    },
+    {
+      "sequence": 9842,
+      "signalNs": 34608878951835,
+      "driverXruns": 0,
+      "nodeXruns": 19
+    },
+    {
+      "sequence": 9843,
+      "signalNs": 34608878951835,
+      "driverXruns": 0,
+      "nodeXruns": 20
+    },
+    {
+      "sequence": 9844,
+      "signalNs": 34608884279873,
+      "driverXruns": 0,
+      "nodeXruns": 20
+    },
+    {
+      "sequence": 9845,
+      "signalNs": 34608884279873,
+      "driverXruns": 0,
+      "nodeXruns": 21
+    },
+    {
+      "sequence": 9846,
+      "signalNs": 34608889610776,
+      "driverXruns": 0,
+      "nodeXruns": 21
+    },
+    {
+      "sequence": 9847,
+      "signalNs": 34608889610776,
+      "driverXruns": 0,
+      "nodeXruns": 22
+    },
+    {
+      "sequence": 9848,
+      "signalNs": 34608894949655,
+      "driverXruns": 0,
+      "nodeXruns": 22
+    },
+    {
+      "sequence": 9849,
+      "signalNs": 34608894949655,
+      "driverXruns": 0,
+      "nodeXruns": 23
+    },
+    {
+      "sequence": 9850,
+      "signalNs": 34608900277156,
+      "driverXruns": 0,
+      "nodeXruns": 23
+    },
+    {
+      "sequence": 9851,
+      "signalNs": 34608900277156,
+      "driverXruns": 0,
+      "nodeXruns": 24
+    },
+    {
+      "sequence": 9852,
+      "signalNs": 34608905609808,
+      "driverXruns": 0,
+      "nodeXruns": 24
+    },
+    {
+      "sequence": 9853,
+      "signalNs": 34608905609808,
+      "driverXruns": 0,
+      "nodeXruns": 25
+    },
+    {
+      "sequence": 9854,
+      "signalNs": 34608910940404,
+      "driverXruns": 0,
+      "nodeXruns": 25
+    },
+    {
+      "sequence": 9855,
+      "signalNs": 34608910940404,
+      "driverXruns": 0,
+      "nodeXruns": 26
+    },
+    {
+      "sequence": 9856,
+      "signalNs": 34608916275998,
+      "driverXruns": 0,
+      "nodeXruns": 26
+    },
+    {
+      "sequence": 9857,
+      "signalNs": 34608916275998,
+      "driverXruns": 0,
+      "nodeXruns": 27
+    },
+    {
+      "sequence": 9858,
+      "signalNs": 34608921617953,
+      "driverXruns": 0,
+      "nodeXruns": 27
+    },
+    {
+      "sequence": 9859,
+      "signalNs": 34608921617953,
+      "driverXruns": 0,
+      "nodeXruns": 28
+    },
+    {
+      "sequence": 9860,
+      "signalNs": 34608926962008,
+      "driverXruns": 0,
+      "nodeXruns": 28
+    },
+    {
+      "sequence": 9861,
+      "signalNs": 34608926962008,
+      "driverXruns": 0,
+      "nodeXruns": 29
+    },
+    {
+      "sequence": 9862,
+      "signalNs": 34608932274779,
+      "driverXruns": 0,
+      "nodeXruns": 29
+    },
+    {
+      "sequence": 9863,
+      "signalNs": 34608932274779,
+      "driverXruns": 0,
+      "nodeXruns": 30
+    },
+    {
+      "sequence": 9864,
+      "signalNs": 34608937602395,
+      "driverXruns": 0,
+      "nodeXruns": 30
+    },
+    {
+      "sequence": 9865,
+      "signalNs": 34608937602395,
+      "driverXruns": 0,
+      "nodeXruns": 31
+    },
+    {
+      "sequence": 9866,
+      "signalNs": 34608942960182,
+      "driverXruns": 0,
+      "nodeXruns": 31
+    },
+    {
+      "sequence": 9867,
+      "signalNs": 34608942960182,
+      "driverXruns": 0,
+      "nodeXruns": 32
+    },
+    {
+      "sequence": 9868,
+      "signalNs": 34608948320093,
+      "driverXruns": 0,
+      "nodeXruns": 32
+    },
+    {
+      "sequence": 9869,
+      "signalNs": 34608948320093,
+      "driverXruns": 0,
+      "nodeXruns": 33
+    },
+    {
+      "sequence": 9870,
+      "signalNs": 34608953622445,
+      "driverXruns": 0,
+      "nodeXruns": 33
+    },
+    {
+      "sequence": 9871,
+      "signalNs": 34608953622445,
+      "driverXruns": 0,
+      "nodeXruns": 34
+    },
+    {
+      "sequence": 9872,
+      "signalNs": 34608958962614,
+      "driverXruns": 0,
+      "nodeXruns": 34
+    },
+    {
+      "sequence": 9873,
+      "signalNs": 34608958962614,
+      "driverXruns": 0,
+      "nodeXruns": 35
+    },
+    {
+      "sequence": 9874,
+      "signalNs": 34608964277106,
+      "driverXruns": 0,
+      "nodeXruns": 35
+    },
+    {
+      "sequence": 9875,
+      "signalNs": 34608964277106,
+      "driverXruns": 0,
+      "nodeXruns": 36
+    },
+    {
+      "sequence": 9876,
+      "signalNs": 34608969615961,
+      "driverXruns": 0,
+      "nodeXruns": 36
+    },
+    {
+      "sequence": 9877,
+      "signalNs": 34608969615961,
+      "driverXruns": 0,
+      "nodeXruns": 37
+    },
+    {
+      "sequence": 9878,
+      "signalNs": 34608974948212,
+      "driverXruns": 0,
+      "nodeXruns": 37
+    },
+    {
+      "sequence": 9879,
+      "signalNs": 34608974948212,
+      "driverXruns": 0,
+      "nodeXruns": 38
+    },
+    {
+      "sequence": 9880,
+      "signalNs": 34608980277448,
+      "driverXruns": 0,
+      "nodeXruns": 38
+    },
+    {
+      "sequence": 9881,
+      "signalNs": 34608980277448,
+      "driverXruns": 0,
+      "nodeXruns": 39
+    },
+    {
+      "sequence": 9882,
+      "signalNs": 34608985610970,
+      "driverXruns": 0,
+      "nodeXruns": 39
+    },
+    {
+      "sequence": 9883,
+      "signalNs": 34608985610970,
+      "driverXruns": 0,
+      "nodeXruns": 40
+    },
+    {
+      "sequence": 9884,
+      "signalNs": 34608990948484,
+      "driverXruns": 0,
+      "nodeXruns": 40
+    },
+    {
+      "sequence": 9885,
+      "signalNs": 34608990948484,
+      "driverXruns": 0,
+      "nodeXruns": 41
+    },
+    {
+      "sequence": 9886,
+      "signalNs": 34608996272774,
+      "driverXruns": 0,
+      "nodeXruns": 41
+    },
+    {
+      "sequence": 9887,
+      "signalNs": 34608996272774,
+      "driverXruns": 0,
+      "nodeXruns": 42
+    },
+    {
+      "sequence": 9888,
+      "signalNs": 34609001626578,
+      "driverXruns": 0,
+      "nodeXruns": 42
+    },
+    {
+      "sequence": 9889,
+      "signalNs": 34609001626578,
+      "driverXruns": 0,
+      "nodeXruns": 43
+    },
+    {
+      "sequence": 9890,
+      "signalNs": 34609006965347,
+      "driverXruns": 0,
+      "nodeXruns": 43
+    },
+    {
+      "sequence": 9891,
+      "signalNs": 34609006965347,
+      "driverXruns": 0,
+      "nodeXruns": 44
+    },
+    {
+      "sequence": 9892,
+      "signalNs": 34609012272722,
+      "driverXruns": 0,
+      "nodeXruns": 44
+    },
+    {
+      "sequence": 9893,
+      "signalNs": 34609012272722,
+      "driverXruns": 0,
+      "nodeXruns": 45
+    },
+    {
+      "sequence": 9894,
+      "signalNs": 34609017608518,
+      "driverXruns": 0,
+      "nodeXruns": 45
+    },
+    {
+      "sequence": 9895,
+      "signalNs": 34609022938197,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9896,
+      "signalNs": 34609028264369,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9897,
+      "signalNs": 34609033604037,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9898,
+      "signalNs": 34609038930736,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9899,
+      "signalNs": 34609044340461,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9900,
+      "signalNs": 34609049648038,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9901,
+      "signalNs": 34609054971497,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9902,
+      "signalNs": 34609060283410,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9903,
+      "signalNs": 34609065604666,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9904,
+      "signalNs": 34609070943154,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9905,
+      "signalNs": 34609076268301,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9906,
+      "signalNs": 34609081605722,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9907,
+      "signalNs": 34609086937396,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9908,
+      "signalNs": 34609092281034,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9909,
+      "signalNs": 34609097625396,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9910,
+      "signalNs": 34609102929848,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9911,
+      "signalNs": 34609108277557,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9912,
+      "signalNs": 34609113623743,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9913,
+      "signalNs": 34609118931535,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9914,
+      "signalNs": 34609124283000,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9915,
+      "signalNs": 34609129621625,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9916,
+      "signalNs": 34609134943135,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9917,
+      "signalNs": 34609140292273,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9918,
+      "signalNs": 34609145623832,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9919,
+      "signalNs": 34609150990183,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9920,
+      "signalNs": 34609156276357,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9921,
+      "signalNs": 34609161610572,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9922,
+      "signalNs": 34609166936599,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9923,
+      "signalNs": 34609172279286,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9924,
+      "signalNs": 34609177611848,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9925,
+      "signalNs": 34609182934463,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9926,
+      "signalNs": 34609188267159,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9927,
+      "signalNs": 34609193621774,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9928,
+      "signalNs": 34609198928576,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9929,
+      "signalNs": 34609204267943,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9930,
+      "signalNs": 34609209608937,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9931,
+      "signalNs": 34609214928732,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9932,
+      "signalNs": 34609220264404,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9933,
+      "signalNs": 34609225620635,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9934,
+      "signalNs": 34609230939109,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9935,
+      "signalNs": 34609236272749,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9936,
+      "signalNs": 34609241608335,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9937,
+      "signalNs": 34609246933440,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9938,
+      "signalNs": 34609252288692,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9939,
+      "signalNs": 34609257638506,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9940,
+      "signalNs": 34609262930911,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9941,
+      "signalNs": 34609268262785,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9942,
+      "signalNs": 34609273607943,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9943,
+      "signalNs": 34609278922626,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9944,
+      "signalNs": 34609284253796,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9945,
+      "signalNs": 34609289607052,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9946,
+      "signalNs": 34609294920920,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9947,
+      "signalNs": 34609300253744,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9948,
+      "signalNs": 34609305573023,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9949,
+      "signalNs": 34609310917372,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9950,
+      "signalNs": 34609316251199,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9951,
+      "signalNs": 34609321616746,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9952,
+      "signalNs": 34609326921389,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9953,
+      "signalNs": 34609332259435,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9954,
+      "signalNs": 34609337615002,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9955,
+      "signalNs": 34609342931349,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9956,
+      "signalNs": 34609348261908,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9957,
+      "signalNs": 34609353593572,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9958,
+      "signalNs": 34609358930214,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9959,
+      "signalNs": 34609364277104,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9960,
+      "signalNs": 34609369610531,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9961,
+      "signalNs": 34609374918950,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9962,
+      "signalNs": 34609380265970,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9963,
+      "signalNs": 34609385582046,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9964,
+      "signalNs": 34609390914861,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9965,
+      "signalNs": 34609396251190,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9966,
+      "signalNs": 34609401580998,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9967,
+      "signalNs": 34609406913666,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9968,
+      "signalNs": 34609412246048,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9969,
+      "signalNs": 34609417581628,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9970,
+      "signalNs": 34609422915293,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9971,
+      "signalNs": 34609428251107,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9972,
+      "signalNs": 34609433598616,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9973,
+      "signalNs": 34609438933732,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9974,
+      "signalNs": 34609444268073,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9975,
+      "signalNs": 34609449609302,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9976,
+      "signalNs": 34609454912127,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9977,
+      "signalNs": 34609460271697,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9978,
+      "signalNs": 34609465609773,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9979,
+      "signalNs": 34609470986717,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9980,
+      "signalNs": 34609476265972,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9981,
+      "signalNs": 34609481575005,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9982,
+      "signalNs": 34609486918393,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9983,
+      "signalNs": 34609492256877,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9984,
+      "signalNs": 34609497611672,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9985,
+      "signalNs": 34609502910481,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9986,
+      "signalNs": 34609508243826,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9987,
+      "signalNs": 34609513562505,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9988,
+      "signalNs": 34609518904054,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9989,
+      "signalNs": 34609524237488,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    },
+    {
+      "sequence": 9990,
+      "signalNs": 34609529558325,
+      "driverXruns": 0,
+      "nodeXruns": 92
+    }
+  ],
+  "route": [
+    "ALSA",
+    "pipewire",
+    "PortAudio V19.7.0-devel, revision e1b70d33",
+    48000,
+    256
+  ],
+  "target": {
+    "nodeId": 139,
+    "nodeSerial": 1354,
+    "nodeName": "alsa_playback.AudioCallbackProbe",
+    "driverId": 60,
+    "driverSerial": 520,
+    "driverName": "alsa_output.usb-MOONDROP_Discdream_2_Discdream_2-00.analog-stereo"
+  },
+  "startNs": 34608774963518,
+  "confirmedStoppedNs": 34608775134339,
+  "endNs": 34609025292956,
+  "confirmedPauseMilliseconds": 250.158617,
+  "callbackUnderflowFlags": 0,
+  "maxCallbackGapMilliseconds": 252.973789
+}

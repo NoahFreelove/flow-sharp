@@ -15,8 +15,9 @@ UI/DAW implementation. Defer the desktop shell. Prepared playback/control/public
 and a Linux callback prototype are verified. The 30-minute isolated-load run met
 the managed-body target. Follow-up confirms backend batching/buffering and a
 PulseAudio underrun-reporting blind spot. Callback-starvation detection is now
-calibrated on two ALSA routes; process-wide/server telemetry, latency and recovery
-remain open. [Current handoff](../handoffs/2026-10-01-phase6-underrun-calibration.md).
+calibrated on two ALSA routes. An independent PipeWire observer now detects
+whole-process pauses. Combined sustained telemetry, latency and recovery remain
+open. [Current handoff](../handoffs/2026-10-01-phase6-process-pause-observer.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -1039,3 +1040,27 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   starvation. PipeWire profiler exposes driver/follower xrun counters; validate
   observation completeness and node identity before claiming coverage. Then measure
   latency, startup and recovery. Broad DSP/plugin work still awaits the backend gate.
+
+
+## Phase 6 — independent process-pause observer (2026-10-01)
+
+- **P6-09 specific observability gap closed on the tested route.** Added a separate
+  PipeWire-profiler harness for ALSA/pipewire at 48 kHz / 256 frames. One clean
+  baseline plus three 250 ms whole-probe SIGSTOP/SIGCONT trials: callback flags
+  remained zero, while the owned node's xrun delta was 92 each time. Driver delta
+  remained zero. These counters are scheduling signals, not exact lost periods.
+- Ownership uses PID → PipeWire client → output node, with node/driver serials
+  checked before and after. Assessment requires contiguous profiler sequences,
+  sufficient timestamp coverage, stable counters and correlated increments.
+  Missing/reset/truncated data stays unknown. Complete/incomplete notifications
+  may share a timestamp; a regression test preserves that valid case.
+- Harness resumes/reaps its owned child and stops its observer on failure or
+  interruption. Raw registry snapshots remain local; committed evidence contains
+  only selected node/driver identity, counter/timing rows and probe reports.
+- All **17 Python CI-tool tests passed**, including ten new observer tests;
+  hardware baseline and all three pauses passed. No runtime/browser changes;
+  the previous .NET/Web gate was not redundantly rerun. Evidence:
+  `docs/baselines/phase6/process-pause/`.
+- Owner has the DAW design ready. Review it against the saved MVP design brief
+  next; UI implementation still follows backend/plugin readiness. Remaining
+  backend work is combined sustained telemetry, latency, startup and recovery.
