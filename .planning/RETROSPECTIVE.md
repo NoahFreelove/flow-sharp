@@ -21,7 +21,7 @@
 - **Two-pass strict authorship**: Pass 1 from REQUIREMENTS alone, Pass 2 reality-check with empirical assertions. Surfaced format drift (DX-02 Double precision: `str pi` → "3.141592654" not full precision; `Math.PI.ToString()` mismatch), signature corrections (`AudioCore.Mix` is `IReadOnlyList<Value>`, not `(AudioBuffer, AudioBuffer)`), and namespace-layer discrepancies (`SynthesizerFactory` outer namespace vs synth classes in inner namespace) before any commit. Three plans went zero-divergence (13-01, 13-04, 14-03 Outcome A) once requirements were reconciled with shipped behavior.
 - **Charitable interpretation as load-bearing**: 4 criterion-moot/reframe events (TEST-03 P12, DX-06 P14, criterion #3 P15, criterion #4 P16) where original wording contradicted shipped reality. Audit-trail preservation via `*Original audit-trail:*` preamble kept history visible without forcing wrong fixes.
 - **Determinism contract end-to-end**: Synth white-noise RNG (`SynthUtils.Rng`) + TPDF dither RNG (`FileIO.Random`) reseeded at renderSong/writeWav boundaries. Two consecutive runs cmp-clean for both `tutorial.flow` and `showcase.flow` WAV+MIDI. "Code is the score" contract genuinely holds across .NET patch versions.
-- **HUMAN-UAT for non-blocking checkpoints**: Phase 17 `17-HUMAN-UAT.md` (status: partial) instead of fake-passing manual verification. Rows 1-3 surface in `/gsd-progress` and `/gsd-audit-uat`; rows 4-5 explicitly deferred to first release tag (circular dep: marketplace verification needs a tag). Pattern reusable.
+- **HUMAN-UAT for non-blocking checkpoints**: Phase 17 `17-HUMAN-UAT.md` (status: partial) instead of fake-passing manual verification. Rows 1-3 surface in progress and audit uat; rows 4-5 explicitly deferred to first release tag (circular dep: marketplace verification needs a tag). Pattern reusable.
 - **`Closed (audit false positive)` first-class marker**: TEST-01 / TEST-02 retained as audit-trail entries documenting the audit conflated two distinct problems (range-missing for Test 4 vs if-overload for Tests 1-3) and mis-read existing implementation (`break`/`continue` already at `Interpreter.cs:120-124`). Distinct from Pending or Shipped.
 
 ### What Was Inefficient
@@ -45,7 +45,7 @@
 3. **Determinism contracts only hold if every PRNG in the chain is seeded.** Phase 15 found a second unseeded RNG (synth white-noise) one phase after fixing the first (TPDF dither). Audit RNG usage explicitly when claiming "byte-identical" anywhere.
 4. **Document-only closure plans need to be load-bearing** — closure plans (12-06, 13-05, 14-04, 15-07, 16-05) consistently surfaced reframe candidates that wouldn't have appeared during execution. Reserve doc-only plans as their own commit boundary.
 5. **Reserved-token grep gates should be plan-time, not execution-time** — `end`, `_`, `H`, `buf` collisions all forced Rule-3 deviations mid-plan. Plan template should require a reserved-token sweep over new identifier names.
-6. **HUMAN-UAT items don't have to block phase closure** — `status: partial` with explicit rows is honest, surfaces in `/gsd-audit-uat`, and lets non-blocking work proceed. Faking pass would have hidden 3 real verification gaps for Phase 17.
+6. **HUMAN-UAT items don't have to block phase closure** — `status: partial` with explicit rows is honest, surfaces in audit uat, and lets non-blocking work proceed. Faking pass would have hidden 3 real verification gaps for Phase 17.
 
 ### Cost Observations
 - Model mix: not tracked
@@ -77,7 +77,7 @@
 - **Bookkeeping lag.** 16 traceability checkboxes (Phase 35 + 39) stayed `Pending` for weeks despite passing verification; Phase 39 shipped with **0 SUMMARY.md**. Both needed a reconciliation pass at milestone-close audit.
 - **Mid-milestone phase churn.** Phases 42–46 added 2026-05-24/25 and the WASM bullet was carved 41 → 47-49; STATE/ROADMAP summary rows drifted (Phase 39 "Not started", Phase 48 "5/7") and took several reconciliation passes.
 - **In-process seams hid a native bug.** RtMidi.Core 1.0.53's ABI crash (`free(): invalid pointer` on `(midiPorts)`) only surfaced on real hardware — the `CaptureMidiBackend` seam masked it; cost a full Plan 40-04 rework to direct librtmidi P/Invoke.
-- **One large fix run bypassed GSD** (2026-06-09, 56-agent audit + 3-wave fix, 60+ findings) — valuable but outside the planning trail.
+- **One large fix run bypassed previous planning workflow** (2026-06-09, 56-agent audit + 3-wave fix, 60+ findings) — valuable but outside the planning trail.
 
 ### Patterns Established
 - `FlowTarget=Desktop|Web` MSBuild conditioning + `#if !FLOW_WEB` at call sites + Mono.Cecil reflective gate = the cross-platform feature-strip pattern.
@@ -93,7 +93,7 @@
 
 ### Cost Observations
 - Model mix / session count not instrumented this milestone.
-- Largest GSD milestone to date (15 phases); executed largely via autonomous chain with multiple re-verification loops. Notable: the reach track (47–49) carried most of the feasibility risk and absorbed the most rework.
+- Largest previous planning workflow milestone to date (15 phases); executed largely via autonomous chain with multiple re-verification loops. Notable: the reach track (47–49) carried most of the feasibility risk and absorbed the most rework.
 
 ## Cross-Milestone Trends
 

@@ -42,7 +42,7 @@ instruments). The symphony showcase is **the v1.4-closing capability** — the
 last phase before milestone close, after every other v1.4 feature has shipped
 and stabilized.
 
-This seed should be presented during `/gsd-new-milestone` for v1.4 regardless
+This seed should be presented during new milestone for v1.4 regardless
 of milestone theme — the user has explicitly committed to the showcase as the
 v1.4 closer.
 

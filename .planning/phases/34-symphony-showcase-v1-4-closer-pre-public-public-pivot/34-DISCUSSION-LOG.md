@@ -5,7 +5,7 @@
 
 **Date:** 2026-05-16
 **Phase:** 34-symphony-showcase-v1-4-closer-pre-public-public-pivot
-**Mode:** `/gsd-discuss-phase 34 --auto --chain` — fully autonomous; Claude selected the recommended option for every question without an interactive prompt.
+**Mode:** discuss phase 34 --auto --chain — fully autonomous; Claude selected the recommended option for every question without an interactive prompt.
 **Areas auto-selected:** Symphony scope (length + shape + mood), Instrumentation, Flow features showcased, Mix + post-processing, File layout + commit strategy, README + docs updates, Regression test strategy, Composer UAT + iteration, Plan shape.
 
 ---
@@ -358,7 +358,7 @@
 
 ## Open for composer review
 
-Auto-selected decisions the composer may want to override BEFORE plan-phase begins. Edit `34-CONTEXT.md` directly and re-run `/gsd-plan-phase 34` to pick up the change.
+Auto-selected decisions the composer may want to override BEFORE plan-phase begins. Edit `34-CONTEXT.md` directly and re-run plan phase 34 to pick up the change.
 
 - **D-101 (length ≈ 60s):** Composer may want 30s for "social-clip-friendly" or 90s for "full demo" instead. Affects D-102 ABA balance.
 - **D-104 (D minor / 100 BPM):** Composer may prefer a different key or tempo. D minor is recommendation, not lock.

@@ -3,7 +3,7 @@ phase: 24
 slug: scale-linting-flow-lsp
 status: shipped
 verified: 2026-05-04T18:00:00Z
-verifier: gsd-executor (closure plan 24-05)
+verifier: executor (closure plan 24-05)
 score: 3/3 ROADMAP success criteria + 23/23 locked decisions (D-01..D-23) + 68/68 Phase24 Facts + 8/8 ByteIdentical + 1/1 .flow smoke + 677/677 full suite
 overrides_applied: 0
 must_haves_verified: 6
@@ -220,11 +220,11 @@ No new deferred items introduced by Phase 24. Out-of-scope items per CONTEXT `<d
 
 ## Approval
 
-_Reserved for /gsd-verify-work output._
+_Reserved for verify work output._
 
 ---
 
 *Phase: 24-scale-linting-flow-lsp*
 *Verified: 2026-05-04 (executor closure plan 24-05)*
-*Verifier: Claude (gsd-executor)*
+*Verifier: Claude (executor)*
 *Goal: opt-in `enable scaleLint;` pragma activates flow-lsp scale linting — zero flow-lang touch beyond one PragmaRegistry line — ACHIEVED*

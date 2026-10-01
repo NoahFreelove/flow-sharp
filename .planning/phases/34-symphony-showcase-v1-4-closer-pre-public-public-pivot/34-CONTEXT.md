@@ -11,7 +11,7 @@ mode: auto
 
 **Gathered:** 2026-05-16
 **Status:** Plan 34-01 closed; scope expanded by composer to include a 2nd showcase piece (ragtime)
-**Mode:** `/gsd-discuss-phase 34 --auto --chain` — Claude auto-selected every gray area at the recommended option; this CONTEXT.md is the audit trail of those decisions. The composer is the visionary; planner / researcher / executor downstream must treat these decisions as locked unless flagged in `34-DISCUSSION-LOG.md` § "Open for composer review".
+**Mode:** discuss phase 34 --auto --chain — Claude auto-selected every gray area at the recommended option; this CONTEXT.md is the audit trail of those decisions. The composer is the visionary; planner / researcher / executor downstream must treat these decisions as locked unless flagged in `34-DISCUSSION-LOG.md` § "Open for composer review".
 
 **Scope expansion (2026-05-16, after Plan 34-01 symphony sign-off):**
 
@@ -62,7 +62,7 @@ The deliverable set:
 - A CHANGELOG.md file in the repo root — Flow has FEATURES.md + PROJECT.md milestone sections + .planning/MILESTONES.md; per-release notes live in the GitHub Release body, not a tracked CHANGELOG. (D-501)
 - Auto-posting the v1.4.0 announcement to any external platform — Phase 34 ships the draft markdown only; composer chooses platform + timing. (D-602)
 - CI regression test for the symphony render — symphony render requires VSCO-CE which is not present in CI. The Phase 33 synthetic SFZ smoke fixture already exercises the SfzRenderer + parser + loader paths on CI. Symphony render is release-time activity. (D-701)
-- A v1.4.1 / v1.5 roadmap — Phase 34 closes v1.4; the next milestone discussion is a separate `/gsd-new-milestone` invocation.
+- A v1.4.1 / v1.5 roadmap — Phase 34 closes v1.4; the next milestone discussion is a separate new milestone invocation.
 - "Postable on GitHub quality" being a strict measurable criterion — UAT is subjective per the ROADMAP success criterion; D-801 codifies the iteration loop instead.
 
 </domain>
@@ -179,7 +179,7 @@ Decisions that follow from the above without separate user input. Planner may re
 - `.planning/ROADMAP.md` § "Phase 34: Symphony Showcase (v1.4 closer — pre-public → public pivot)" — original phase entry with 5 success criteria.
 - `.planning/REQUIREMENTS.md` — v1.4 requirements ledger (Phase 34 closure rewrites the milestone-completion row).
 - `.planning/PROJECT.md` — flipped to "Shipped: v1.4" at phase closure.
-- `.planning/STATE.md` — current GSD state (last-updated by Phase 33 closure; reset by plan 34-06).
+- `.planning/STATE.md` — current previous planning workflow state (last-updated by Phase 33 closure; reset by plan 34-06).
 - `.planning/MILESTONES.md` — v1.4 closing entry added by plan 34-06.
 
 ### Phase 33 anchors (the SFZ surface the symphony consumes)
@@ -265,7 +265,7 @@ Decisions that follow from the above without separate user input. Planner may re
 - **`docs/announcements/`** — NEW directory under existing `docs/`; first file `v1.4.0.md` per D-603.
 - **`.planning/PROJECT.md`** — "Current State" lines updated per Claude's-Discretion. v1.3 details preserved in the existing `<details>` summary block.
 - **`.planning/ROADMAP.md`** — Phase 34 row marked Complete; v1.4 milestone progress row updated.
-- **`.planning/STATE.md`** — reset by plan 34-06 ("stopped_at: Phase 34 complete (6/6) — v1.4 shipped"); next-milestone field set to "TBD pending /gsd-new-milestone".
+- **`.planning/STATE.md`** — reset by plan 34-06 ("stopped_at: Phase 34 complete (6/6) — v1.4 shipped"); next-milestone field set to "TBD pending new milestone".
 - **`.planning/REQUIREMENTS.md`** — v1.4 entries marked Complete; new file or appended section closes the milestone ledger.
 - **`.planning/MILESTONES.md`** — gains a v1.4 closure entry mirroring the v1.0..v1.3 pattern already in the file.
 - **`CLAUDE.md`** — gains the "Public as of v1.4" footnote under § "Goals" per Claude's-Discretion. No new music-type rows (Tuning + Sfz already shipped Phase 32 + 33). No § "Conventions" changes; § "Music-Specific Language Features" gets a single-line "Symphony showcase: `examples/symphony/symphony.flow` — see README.md § Showcase" reference paragraph appended after the Phase 33 SFZ block.
@@ -281,7 +281,7 @@ Decisions that follow from the above without separate user input. Planner may re
 - **DO NOT auto-post the announcement** (out-of-scope). Phase 34 ships the draft markdown only; composer chooses platform + timing.
 - **DO NOT create a CI regression test for the symphony render** (D-701). VSCO-CE not in CI; synthetic Phase 33 fixture is the load-bearing CI surface for the SFZ subsystem.
 - **DO NOT amend the v1.4.0 tag after publication** — annotated, signed via composer's normal git workflow, immutable. If a fix is needed, ship v1.4.1.
-- **DO NOT touch interpreter code in Phase 34** — pure composition + docs + release work. Any interpreter bug surfaced during composition iteration goes to `/gsd-debug` in a sibling thread, lands as its own commit, and Phase 34 picks up the fix in the next render iteration.
+- **DO NOT touch interpreter code in Phase 34** — pure composition + docs + release work. Any interpreter bug surfaced during composition iteration goes to debug in a sibling thread, lands as its own commit, and Phase 34 picks up the fix in the next render iteration.
 
 </code_context>
 
@@ -316,5 +316,5 @@ Captured during analysis but belong outside Phase 34:
 ---
 
 *Phase: 34-symphony-showcase-v1-4-closer-pre-public-public-pivot*
-*Context gathered: 2026-05-16 via `/gsd-discuss-phase 34 --auto --chain`*
+*Context gathered: 2026-05-16 via discuss phase 34 --auto --chain*
 *Mode: auto — every decision auto-selected at the recommended option; composer reviews `34-DISCUSSION-LOG.md` § "Open for composer review" before plan-phase begins.*

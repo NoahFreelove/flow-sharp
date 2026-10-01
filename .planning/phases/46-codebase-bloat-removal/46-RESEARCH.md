@@ -418,7 +418,7 @@ Add a one-to-two-line "legacy / superseded by X — kept as a usable surface" no
 ### Sampling Rate
 - **Per task commit:** `dotnet build` + targeted `dotnet test --filter` for the touched area.
 - **Per wave/atomic-commit:** full `dotnet test` + the touched `tests/test_*.flow`.
-- **Phase gate (locked, D-18):** full `flow-lang.Tests` + ALL `tests/test_*.flow` + Phase 28 RMS baselines + two-run cmp-clean — all green before `/gsd:verify-work`.
+- **Phase gate (locked, D-18):** full `flow-lang.Tests` + ALL `tests/test_*.flow` + Phase 28 RMS baselines + two-run cmp-clean — all green before verify work.
 
 ### Wave 0 Gaps
 - [ ] `flow-lang.Tests/Unit/Phase46/ProgressionDslTests.cs` — covers CLEAN-12 (mirror `EuclideanSwingTests`).

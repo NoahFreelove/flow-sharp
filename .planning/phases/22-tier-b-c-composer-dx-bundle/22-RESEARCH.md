@@ -764,7 +764,7 @@ public void LoadWav_12Semitones_HalvesSampleCount()
 ### Sampling Rate
 - **Per task commit:** `dotnet test flow-lang.Tests/flow-lang.Tests.csproj --filter "FullyQualifiedName~Phase22"` (Phase 22 Facts only — fast, ~5s)
 - **Per wave merge:** `dotnet test flow-sharp.sln` (full suite — ~30s)
-- **Phase gate:** Full suite green AND `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` 19/19 GREEN before `/gsd-verify-work`
+- **Phase gate:** Full suite green AND `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` 19/19 GREEN before verify work
 
 ### Wave 0 Gaps
 - [ ] `flow-lang.Tests/Unit/Phase22/` directory — new (mirror of Phase21/)
@@ -820,7 +820,7 @@ The `security_enforcement` config flag is unset (= enabled by default). Phase 22
 | Existing .flow scripts must continue to work | Hard requirement — every new function adds an OVERLOAD; existing signatures stay byte-identical. |
 | Functional S-expression style, no infix operators (auto-memory) | All acceptance examples + smoke tests use `(arpeggio Cmaj7 q "up" "linear")` form. No infix introduced. |
 | Charitable interpretation, music > rigid correctness (auto-memory) | DX-11 voicing-on-incomplete-chord (CONTEXT D-07) is the canonical application. DX-13 quantize identity-at-strength-0 is the byte-identity application. |
-| GSD workflow enforcement (CLAUDE.md) | Plans land via `/gsd-execute-phase 22` after `/gsd-plan-phase 22`. |
+| previous planning workflow workflow enforcement (CLAUDE.md) | Plans land via execute phase 22 after plan phase 22. |
 | Ad-hoc edits forbidden | All Phase 22 changes flow through plans. |
 
 ## Sources

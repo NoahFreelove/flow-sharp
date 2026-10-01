@@ -93,7 +93,7 @@ Phase 32 layers a full Scala `.scl` / `.kbm` loader on top of the Phase 23 named
 - **AST nodes are `record` types** (immutable). `TuningContextStatement` must be a `record`. `[VERIFIED]`
 - **No infix arithmetic.** Prefix-only via `(add)`/`(sub)`/`(mul)`/`(div)` builtins. Parser produces `FunctionCallExpression` not `BinaryExpression`. `[VERIFIED]`
 - **Pattern matching (`switch` expressions) for node dispatch** rather than visitor pattern. New `TuningContextStatement` adds a switch case in `Interpreter.cs:97-131`. `[VERIFIED]`
-- **GSD workflow enforcement.** No direct edits outside a GSD command. `[VERIFIED]`
+- **previous planning workflow workflow enforcement.** No direct edits outside a previous planning workflow command. `[VERIFIED]`
 
 ## Domain Context
 

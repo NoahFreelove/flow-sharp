@@ -88,10 +88,6 @@ Output:
 - Zero changes to flow-lang/, flow-interpreter/, *.csproj, or `.flow` stdlib files
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-</execution_context>
-
 <context>
 @CLAUDE.md
 @tests/test_range.flow

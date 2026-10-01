@@ -308,5 +308,5 @@ The "Notes about the example" lines are dropped. This is a minor quality issue â
 ---
 
 _Reviewed: 2026-06-07_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

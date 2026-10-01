@@ -60,11 +60,6 @@ Purpose: Eliminate redundant `Matches`/`CalculateSpecificity` work — the hotte
 Output: `_overloadResolveCache` field + `OverloadCacheKey` struct + cache read in `ResolveFunction`/`TryResolveFunction` + invalidation wired into `DeclareFunction` and `RestoreState` + named-arg/varargs/Void bypass + bench/results-bundle-f + SUMMARY.md.
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @CLAUDE.md
 @.planning/STATE.md

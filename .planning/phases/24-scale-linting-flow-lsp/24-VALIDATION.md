@@ -29,7 +29,7 @@ created: 2026-05-04
 
 - **After every task commit:** Run quick filter (`dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase24"`)
 - **After every plan wave:** Run full xUnit suite (`dotnet test`)
-- **Before `/gsd-verify-work`:** Full suite + Phase 18 byte-identical regression on `tutorial.flow` / `showcase.flow` must be green
+- **Before verify work:** Full suite + Phase 18 byte-identical regression on `tutorial.flow` / `showcase.flow` must be green
 - **Max feedback latency:** ~30 seconds for the per-task filter
 
 ---

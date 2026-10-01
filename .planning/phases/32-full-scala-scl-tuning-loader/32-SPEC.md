@@ -183,4 +183,4 @@ Today (post-Phase 28 baseline):
 
 *Phase: 32-full-scala-scl-tuning-loader*
 *Spec created: 2026-05-10*
-*Next step: /gsd-discuss-phase 32 — implementation decisions (Tuning value internal representation, KBM-default-when-missing handling, ratio-vs-cents internal normalization, error class hierarchy)*
+*Next step: discuss phase 32 — implementation decisions (Tuning value internal representation, KBM-default-when-missing handling, ratio-vs-cents internal normalization, error class hierarchy)*

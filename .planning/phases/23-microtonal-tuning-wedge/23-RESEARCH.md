@@ -768,7 +768,7 @@ private const string ScalaLoaderDeferralPointer =
 ### Sampling Rate
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase23"` (~5 sec)
 - **Per wave merge:** `dotnet test flow-lang.Tests --filter "ByteIdentical|Phase23"` (~30 sec)
-- **Phase gate:** `dotnet test flow-lang.Tests` (full suite, expected ~410+ Facts including ~30 new Phase 23 Facts) — must be GREEN before `/gsd-verify-work`. Plus `for test in tests/test_*.flow; do dotnet run --project flow-interpreter "$test"; done` — every script must exit 0.
+- **Phase gate:** `dotnet test flow-lang.Tests` (full suite, expected ~410+ Facts including ~30 new Phase 23 Facts) — must be GREEN before verify work. Plus `for test in tests/test_*.flow; do dotnet run --project flow-interpreter "$test"; done` — every script must exit 0.
 
 ### Wave 0 Gaps
 - [ ] `flow-lang.Tests/Unit/Phase23/TuningRatioFacts.cs` — pins all 14 mode tables (7 JI + 7 Pythagorean) at the diatonic level + spelling-aware Eb/D# distinction + cent additivity (covers MICR-01 + D-09 + D-10).
@@ -793,7 +793,7 @@ private const string ScalaLoaderDeferralPointer =
 - **Charitable interpretation memory:** D-02 silently roots at C major (no error when no key block); D-10 cents-never-disappear; D-11 / D-13 documented exceptions because the regression is silent and audible. Memory at `~/.claude/projects/-home-noah-Desktop-projects-flow-sharp/memory/feedback_charitable_interpretation.md`.
 - **Language philosophy memory:** D-08 closed-enum tuning system + S-expression-aligned no-arg pragma syntax. Memory at `~/.claude/projects/-home-noah-Desktop-projects-flow-sharp/memory/feedback_language_philosophy.md`.
 - **Project skills (`.claude/skills/`):** No project-specific skills directory exists — `find . -name "SKILL.md"` returns empty. Standard CLAUDE.md guidelines apply.
-- **GSD workflow:** All edits via GSD entry points (`/gsd:execute-phase` for planned phase work). Atomic commits per task with `feat(23-NN): ...` / `test(23-NN): ...` conventional-commit prefix per Phase 18-22 precedent.
+- **previous planning workflow workflow:** All edits via previous planning workflow entry points (execute phase for planned phase work). Atomic commits per task with `feat(23-NN): ...` / `test(23-NN): ...` conventional-commit prefix per Phase 18-22 precedent.
 - **Performance:** Real-time audio playback requires no-GC-pressure in hot paths. Ratio lookup is one dictionary access + one `double` multiply per note — well below the existing `Math.Pow` cost. Cent-offset composition is one extra `Math.Pow` per note ONLY when `CentOffset.HasValue && != 0`.
 - **Compatibility:** All ~70 existing `.flow` test scripts MUST remain byte-identical (regression gate via `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests`). The `tuning == EqualTemperament` short-circuit guarantees this.
 

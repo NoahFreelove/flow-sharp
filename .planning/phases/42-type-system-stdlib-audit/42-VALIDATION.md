@@ -29,7 +29,7 @@ created: 2026-05-24
 
 - **After every task commit:** Run audit-category quick command
 - **After every plan wave:** Run full suite (`dotnet test flow-lang.Tests`) — guards the "Phase 42 ships AUDIT.md only, zero production changes" invariant
-- **Before `/gsd:verify-work`:** Full suite must be green AND AUDIT.md must exist with non-zero gap rows
+- **Before verify work:** Full suite must be green AND AUDIT.md must exist with non-zero gap rows
 - **Max feedback latency:** ~10s (audit run); ~90s (full suite, after each wave)
 
 ---

@@ -138,4 +138,4 @@ No gaps. All 9 must-haves verified. Phase goal achieved.
 ---
 
 _Verified: 2026-04-19_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

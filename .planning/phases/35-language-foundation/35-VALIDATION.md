@@ -31,7 +31,7 @@ Phase 35-introduced `flow test [path]` subcommand becomes a third command tier o
 
 - **After every task commit:** Run `dotnet test --filter "FullyQualifiedName~Phase35"` (≤ 30 s feedback)
 - **After every plan wave:** Run `dotnet test` (≤ 90 s feedback)
-- **Before `/gsd:verify-work`:** Full suite + `.flow` regression loop must be green
+- **Before verify work:** Full suite + `.flow` regression loop must be green
 - **Max feedback latency:** 90 seconds (quick + per-task = ≤ 30 s; wave = ≤ 90 s)
 
 ---

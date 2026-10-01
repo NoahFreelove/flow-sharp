@@ -94,7 +94,7 @@ Per `22-VALIDATION.md`, two items require subjective human listening and cannot 
 | DX-14 portamento glide audibly correct on a real MIDI synth (open `tests/output/dx_portamento.mid` in DAW) | PENDING |
 | DX-15 varispeed pitch shift sounds correct (no clicks/aliasing) when listening to `tests/output/` WAV at +12 semi vs ratio 1.5 vs identity | PENDING |
 
-These can be resolved asynchronously via `/gsd-verify-work` or at the v1.3 milestone HUMAN-UAT roll-up.
+These can be resolved asynchronously via verify work or at the v1.3 milestone HUMAN-UAT roll-up.
 
 ## Patterns Established (Reusable for Downstream Phases)
 

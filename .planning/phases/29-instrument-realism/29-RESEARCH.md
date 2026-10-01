@@ -401,7 +401,7 @@ The planner should:
 ### Sampling Rate
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase29" --nologo` (only Phase 29 tests; ~30 sec)
 - **Per wave merge:** `dotnet test flow-lang.Tests --nologo` (full suite; current ~3-5 min)
-- **Phase gate:** Full suite GREEN before `/gsd-verify-work` and before closure commit
+- **Phase gate:** Full suite GREEN before verify work and before closure commit
 
 ### Wave 0 Gaps (test infrastructure)
 - [ ] `flow-lang.Tests/Integration/Phase29/SampledInstrumentSmokeTests.cs` — covers REQ-1
@@ -586,7 +586,7 @@ For REQ-3's velocity-spectral test:
 
 - Phase: 29-instrument-realism
 - Researched on: 2026-05-10
-- Researcher: orchestrator (inline, due to absence of Agent dispatch tool — produces same artifact a `gsd-phase-researcher` subagent would)
+- Researcher: orchestrator (inline, due to absence of Agent dispatch tool — produces same artifact a phase researcher subagent would)
 - Cross-phase reads: 28-SPEC.md (Phase 28 envelope contract; Phase 29 reuses)
 - Codebase reads (key files): 9 synthesizers in `flow-lang/StandardLibrary/Audio/Synthesizers/`, `NoteSynthesizer.cs`, `FileIO.cs:280-410`, `SongRenderer.cs:85-150`, `Phase18/ByteIdenticalShowcaseTests.cs`
 

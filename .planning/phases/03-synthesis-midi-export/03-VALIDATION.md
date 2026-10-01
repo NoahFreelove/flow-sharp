@@ -29,7 +29,7 @@ created: 2026-04-02
 
 - **After every task commit:** Run `dotnet build --nologo --verbosity quiet && dotnet run --project flow-interpreter tests/test_custom_oscillator.flow`
 - **After every plan wave:** Run full suite
-- **Before `/gsd:verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 30 seconds
 
 ---

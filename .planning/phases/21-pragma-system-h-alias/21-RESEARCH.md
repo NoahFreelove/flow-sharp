@@ -901,7 +901,7 @@ Per Phase 19/20 precedent and `nyquist_validation: true`:
 
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase21"` (~5–15s; covers all 14 Phase 21 unit Facts)
 - **Per wave merge:** `dotnet test` (full suite, ~30–60s; catches regression in Phase 14/19/20 Facts)
-- **Phase gate:** Full `dotnet test` green + integration loop over all `tests/test_*.flow` (no errors) + `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` green before `/gsd-verify-work`
+- **Phase gate:** Full `dotnet test` green + integration loop over all `tests/test_*.flow` (no errors) + `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` green before verify work
 
 ### Wave 0 Gaps
 

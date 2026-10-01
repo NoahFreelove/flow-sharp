@@ -163,7 +163,7 @@ The closure plan needs to:
 
 1. **REQUIREMENTS.md DEFER-05 row:** flip from Pending → `Shipped <edd20b1>` (atomic commit hash); preserve any original audit-trail wording per the `*Original audit-trail:*` preamble convention from Phase 14 DX-06 / Phase 15 ROADMAP #3 reframe.
 2. **ROADMAP.md Phase 20 progress table:** plan 20-03 row → completed; plan count 2/4 → 3/4.
-3. **STATE.md:** advance plan counter (handled by `gsd-sdk query state.advance-plan`); add decisions extracted above; record-metric for 13min duration.
+3. **STATE.md:** advance plan counter (handled by sdk query state.advance-plan); add decisions extracted above; record-metric for 13min duration.
 4. **14-deferred-items.md:** apply strikethrough to DEFER-05 entry preserving original requirement + appending closure note (handling protocol §3, mirrors Phase 15-07 pattern). Closure note should reference commit edd20b1 and SliceNegativeTests.cs.
 5. **20-VERIFICATION.md:** add DEFER-05 acceptance-criteria-to-artifact mapping; re-surface the empty collision grep transcript above for audit completeness.
 6. **FlowScriptData.cs:57 ExpectedErrorScripts removal for test_custom_oscillator.flow:** ALREADY DONE by plan 20-01 (commit d0d17db, noted in 20-01-SUMMARY.md as a Rule 3 deviation). Plan 20-04 does NOT need to re-do this — verify via grep that `test_custom_oscillator.flow` is absent from ExpectedErrorScripts.

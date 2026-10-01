@@ -32,7 +32,7 @@ completed: 2026-04-20
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase14"`
 - **After every plan wave:** Run `dotnet test`
-- **Before `/gsd-verify-work` in plan 14-04:** Full suite green (100% pass, including pre-Phase-14 regression baseline)
+- **Before verify work in plan 14-04:** Full suite green (100% pass, including pre-Phase-14 regression baseline)
 - **Max feedback latency:** ~5 seconds
 
 ---

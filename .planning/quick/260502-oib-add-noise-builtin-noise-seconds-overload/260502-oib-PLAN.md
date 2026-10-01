@@ -59,11 +59,6 @@ Purpose: Closes a documentation/implementation gap (BuiltInDocs.cs:97 advertises
 Output: 4 new Value-returning C# methods, 4 registry entries, 4 `internal proc` declarations in `audio.flow`, and 1 test script that exercises all arities and exits 0.
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @./CLAUDE.md
 @flow-lang/StandardLibrary/Audio/SignalGeneration.cs

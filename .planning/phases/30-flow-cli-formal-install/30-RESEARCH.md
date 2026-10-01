@@ -914,7 +914,7 @@ But default to single-file. The `--dir` flag is a future enhancement; can be def
 
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "Phase30"` (subset, fast)
 - **Per wave merge:** `dotnet test` (full suite — must stay GREEN per ACK list)
-- **Phase gate:** Full suite + `bash scripts/test-install.sh` exit 0 before `/gsd-verify-work`
+- **Phase gate:** Full suite + `bash scripts/test-install.sh` exit 0 before verify work
 
 ### Wave 0 Gaps
 
@@ -1011,4 +1011,4 @@ These directives shape Phase 30's design:
 ---
 
 *Phase: 30-flow-cli-formal-install*
-*Next step: /gsd-discuss-phase 30 — 4 deferred decisions (subcommand framework, TOML parser, config propagation, install.sh dependency); confirm Bug B scope expansion before plan-phase.*
+*Next step: discuss phase 30 — 4 deferred decisions (subcommand framework, TOML parser, config propagation, install.sh dependency); confirm Bug B scope expansion before plan-phase.*

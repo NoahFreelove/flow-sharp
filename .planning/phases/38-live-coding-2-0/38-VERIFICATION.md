@@ -244,4 +244,4 @@ No TBD / FIXME / XXX / unreferenced debt markers found in Phase38-modified files
 ---
 
 _Verified: 2026-05-24_
-_Verifier: Claude (gsd-verifier) — auditing Plan 38-07 closer draft_
+_Verifier: Claude (verifier) — auditing Plan 38-07 closer draft_

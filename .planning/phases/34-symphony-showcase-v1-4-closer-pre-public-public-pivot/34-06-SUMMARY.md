@@ -10,13 +10,13 @@ requires:
 provides:
   - "PROJECT.md Current State flipped to 'Shipped: v1.4 Audio Fidelity, Distribution & Public Showcase (2026-05-16)' with new collapsed v1.4 <details> block above v1.2; v1.3 collapsed block also backfilled."
   - "ROADMAP.md Phase 34 progress-table row flipped from '0/N Spec pending' to '6/6 Complete 2026-05-16'; v1.4 milestones-list line flipped from 🚧 to ✅ with release URL; Phase 34 Plans section expanded from `TBD` to the 6 shipped plan IDs."
-  - "STATE.md frontmatter status: ready_to_plan -> shipped; stopped_at + last_updated + last_activity bumped; progress: 100% (52/52 plans across 7/7 phases). New 'Phase 34 highlights' body block + Resume Instructions pointing at /gsd-new-milestone."
+  - "STATE.md frontmatter status: ready_to_plan -> shipped; stopped_at + last_updated + last_activity bumped; progress: 100% (52/52 plans across 7/7 phases). New 'Phase 34 highlights' body block + Resume Instructions pointing at new milestone."
   - "REQUIREMENTS.md gains '## v1.4 Phase 34 -- Symphony Showcase' cross-insert with SYM-01..05 status table + '## v1.4 Milestone Closure (2026-05-16)' summary block before the existing ## Notes section."
   - ".planning/MILESTONES.md gains v1.4 entry as the topmost milestone above v1.2, full Stats / Delivered / Key-accomplishments / Patterns / Forward-deferred shape; v1.3 entry also backfilled for continuity (was missing from the prior ledger)."
   - "CLAUDE.md gains 'Note (Public as of v1.4)' footnote under § Goals + Symphony + Ragtime showcase reference appended to § Music-Specific Language Features under the Phase 33 SFZ paragraph."
   - ".gitignore gains defensive examples/{symphony,ragtime}/*.{wav,mp3,mid} entries (D-502 enforcement against the silent override of the global *.wav ignore by the existing !examples/{symphony,ragtime}/** allow-list)."
   - "External memory file ~/.claude/projects/-home-noah-Desktop-projects-flow-sharp/memory/project_pre_public_no_legacy_burden.md rewritten in place (YAML frontmatter preserved, originSessionId untouched) — name flipped to 'Flow is public as of v1.4'; body flipped from 'breaking changes are cheap' to 'breaking changes ship through deprecation'. MEMORY.md index entry updated accordingly."
-affects: [v1.4-milestone, next-milestone-discussion, /gsd-new-milestone, post-public-policy]
+affects: [v1.4-milestone, next-milestone-discussion, new milestone, post-public-policy]
 
 tech-stack:
   added: []
@@ -45,13 +45,13 @@ key-decisions:
   - ".gitignore added MIDI variants (`*.mid`) defensively alongside the plan-required `*.wav` + `*.mp3`. The same allow-list silent-override mechanism affects all rendered media -- mid is a natural composer-render artifact via Phase 28 writeMidi. Rule 2 (auto-add adjacent critical functionality)."
   - "PROJECT.md Current State block dropped the 'Current Milestone: v1.3' active block entirely (v1.3 was shipped 2 weeks ago; the document still had it as 'In progress'). Replaced with the new 'Shipped: v1.4' state + 'Next milestone: TBD' pointer. Three collapsed historical <details> blocks now: v1.4 + v1.3 + v1.2 (v1.1 + v1.0 already present below)."
   - "STATE.md Resume Instructions (top) preserved the historical pre-v1.4-close block under a 'Historical' marker rather than deleting it. Future sessions opening STATE.md will see the v1.4 close instruction first; if they need archaeology, the Phase 28/30 pre-close notes are still there."
-  - "MILESTONES.md v1.4 entry's 'Forward-deferred items (v1.5+ candidates)' list is the single source of truth for v1.5 backlog; STATE.md + REQUIREMENTS.md cross-reference it instead of duplicating. Composer at /gsd-new-milestone time reads this one list."
+  - "MILESTONES.md v1.4 entry's 'Forward-deferred items (v1.5+ candidates)' list is the single source of truth for v1.5 backlog; STATE.md + REQUIREMENTS.md cross-reference it instead of duplicating. Composer at new milestone time reads this one list."
   - "Memory file body uses the 'Original pre-public latitude (preserved for historical reference)' trailing paragraph pattern from PATTERNS § 12 -- keeps the historical context for future readers without conflating it with the active rule."
 
 patterns-established:
   - "Pattern: milestone-closure-plan-as-its-own-execution-target. Plans 34-01..34-05 produce the artifacts (showcase pieces, README sections, release tag); plan 34-06 IS the closure. Single-commit atomic landing, no per-task code commits."
   - "Pattern: external memory file rewrite alongside CLAUDE.md footnote — the two MUST land in lockstep or future sessions get a contradictory framing (CLAUDE.md says 'public' but the memory file says 'pre-public'). The plan correctly scoped both."
-  - "Pattern: progress: 100% milestone-state marker. STATE.md frontmatter `progress.percent: 100` + `status: shipped` is the post-milestone resting state, distinct from the in-progress `status: ready_to_plan` / `status: executing` states. /gsd-new-milestone is expected to bump milestone + reset to a fresh status."
+  - "Pattern: progress: 100% milestone-state marker. STATE.md frontmatter `progress.percent: 100` + `status: shipped` is the post-milestone resting state, distinct from the in-progress `status: ready_to_plan` / `status: executing` states. new milestone is expected to bump milestone + reset to a fresh status."
 
 requirements-completed: [SYM-05]
 
@@ -61,7 +61,7 @@ completed: 2026-05-16
 
 # Phase 34 Plan 06: v1.4 Milestone Closure Docs Summary
 
-**v1.4 Audio Fidelity, Distribution & Public Showcase officially shipped 2026-05-16: PROJECT.md / ROADMAP.md / STATE.md / REQUIREMENTS.md / MILESTONES.md flipped to v1.4-shipped, CLAUDE.md gained the "Public as of v1.4" footnote + showcase reference, .gitignore defensively blocks future symphony + ragtime render commits, and the external memory file `project_pre_public_no_legacy_burden.md` was rewritten to reflect Flow's post-public footing — single atomic 7-file commit (`91eb148`) lands the milestone closure. Next session begins with `/gsd-new-milestone` to discuss v1.5+.**
+**v1.4 Audio Fidelity, Distribution & Public Showcase officially shipped 2026-05-16: PROJECT.md / ROADMAP.md / STATE.md / REQUIREMENTS.md / MILESTONES.md flipped to v1.4-shipped, CLAUDE.md gained the "Public as of v1.4" footnote + showcase reference, .gitignore defensively blocks future symphony + ragtime render commits, and the external memory file `project_pre_public_no_legacy_burden.md` was rewritten to reflect Flow's post-public footing — single atomic 7-file commit (`91eb148`) lands the milestone closure. Next session begins with new milestone to discuss v1.5+.**
 
 ## Performance
 
@@ -78,7 +78,7 @@ completed: 2026-05-16
 ### Task 1 — PROJECT.md / ROADMAP.md / STATE.md (top-level milestone state)
 - **PROJECT.md** Current State flipped from `**Shipped:** v1.2 ... **In progress:** v1.3` to `**Shipped:** v1.4 Audio Fidelity, Distribution & Public Showcase (2026-05-16)` + `**Next milestone:** TBD — see .planning/MILESTONES.md`. New collapsed `<details>` block for v1.4 inserted above the existing v1.2 block; v1.3 block also backfilled (was previously the active in-progress milestone — now flipped to a shipped historical entry). Last-updated footer stamp bumped to reflect the closure.
 - **ROADMAP.md** Three coordinated edits: (a) milestones-list line for v1.4 flipped from `🚧` to `✅` with `(shipped 2026-05-16)` + release URL appended; (b) Progress-table row for Phase 34 flipped from `| 34. Symphony Showcase (v1.4 closer) | v1.4 | 0/N | Spec pending | - |` to `| 34. ... | v1.4 | 6/6 | Complete | 2026-05-16 |`; (c) Phase 34 section's `**Plans**: TBD` replaced with the 6-plan listing with per-plan `[x]` checkbox + commit-ref summary line each.
-- **STATE.md** Frontmatter `status: ready_to_plan -> shipped`; `stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16`; `last_updated` + `last_activity` bumped; `progress: { completed_phases: 7, total_phases: 7, completed_plans: 52, total_plans: 52, percent: 100 }`. New `### Phase 34 highlights` body block summarizing the 5 + 6 shipped accomplishments. Resume Instructions (top) preserved as historical context (marked as "Historical"); new lead text points the next session at `/gsd-new-milestone`. Session Continuity block updated.
+- **STATE.md** Frontmatter `status: ready_to_plan -> shipped`; `stopped_at: Phase 34 complete (6/6) -- v1.4 shipped 2026-05-16`; `last_updated` + `last_activity` bumped; `progress: { completed_phases: 7, total_phases: 7, completed_plans: 52, total_plans: 52, percent: 100 }`. New `### Phase 34 highlights` body block summarizing the 5 + 6 shipped accomplishments. Resume Instructions (top) preserved as historical context (marked as "Historical"); new lead text points the next session at new milestone. Session Continuity block updated.
 
 ### Task 2 — REQUIREMENTS.md + MILESTONES.md (requirements + history ledgers)
 - **REQUIREMENTS.md** Two new heading blocks appended before `## Notes`: (1) `## v1.4 Phase 34 — Symphony Showcase` cross-insert with the SYM-01..SYM-05 status table (each row referencing the actual per-plan commits — d684086 for symphony.flow draft, 7b68647 + 463d240 for UAT sign-off, 62b16d5 for symphony README, a00820d for README ## Showcase, 4547204 for v1.4.0 announcement, plus the Plan 34-05 release reference); (2) `## v1.4 Milestone Closure (2026-05-16)` summary block listing the 7 phases, 52 plans, release URL, headline artifacts (both showcase pieces), and v1.5 carryover.
@@ -222,12 +222,12 @@ Verified before SUMMARY commit:
 
 ## Closure Pointer
 
-**v1.4 shipped 2026-05-16.** Next session begins with `/gsd-new-milestone` to discuss the v1.5+ direction.
+**v1.4 shipped 2026-05-16.** Next session begins with new milestone to discuss the v1.5+ direction.
 
 **Pointers for the next session:**
 - Read `.planning/MILESTONES.md` § "v1.4 Audio Fidelity, Distribution & Public Showcase" → "Forward-deferred items (v1.5+ candidates)" — that 11-item list is the v1.5 backlog source of truth.
 - Read `.planning/phases/34-symphony-showcase-v1-4-closer-pre-public-public-pivot/34-HUMAN-UAT.md` for the ragtime `closed_with_followup` notes (warmer-piano timbre / SFZ velocity layers / humanizeGaussian voice-block bug — composer-flagged v1.5 candidates).
-- Read `.planning/STATE.md` § "Resume Instructions (top)" — points at `/gsd-new-milestone` and re-summarizes the v1.5 carryover.
+- Read `.planning/STATE.md` § "Resume Instructions (top)" — points at new milestone and re-summarizes the v1.5 carryover.
 - The CLAUDE.md "Public as of v1.4" footnote + the rewritten memory file are the operational rule for any breaking-change discussion in the v1.5 planning.
 
 ## Links

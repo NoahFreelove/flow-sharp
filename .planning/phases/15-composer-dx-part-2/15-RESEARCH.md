@@ -104,7 +104,7 @@ Both features are purely additive stdlib/grammar extensions with zero new NuGet 
 - **Compatibility:** Existing .flow scripts and test suite must continue to work. 13 call sites of `NoteType.Parse`; DX-07 does not touch these.
 - **Coding:** C# 13, .NET 9 idioms, file-scoped namespaces, record types for AST nodes, pattern matching.
 - **Test framework:** xUnit.v3 3.2.2 + xunit.runner.visualstudio 3.1.5 (`flow-lang.Tests/flow-lang.Tests.csproj`).
-- **GSD workflow enforcement:** All file-changing work must flow through a GSD command (`/gsd:execute-phase` for planned phase work).
+- **previous planning workflow workflow enforcement:** All file-changing work must flow through a previous planning workflow command (execute phase for planned phase work).
 - **User memory — language philosophy:** Keep functional S-expression style, no infix operators, Haskell-inspired. **Implication for tests:** `.flow` test scripts use `(print (str x))` and named-variable assignment conventions, not infix arithmetic.
 - **User memory — charitable interpretation:** Prefer silent-and-documented assumptions over errors; music > rigid correctness. **Implication for D-02/D-03:** `reverbTime 0` → dry (not error), `reverbTime 45` → clamp to 30 (not error); only `reverbTime -N` errors because negative has no defensible musical meaning.
 
@@ -873,7 +873,7 @@ Each test is a concrete xUnit `[Fact]` with an observable-value pin (error text,
 
 - **Per task commit:** `dotnet test flow-lang.Tests/flow-lang.Tests.csproj --filter "FullyQualifiedName~Phase15" --nologo` (< 10 seconds expected for Phase 15 Facts).
 - **Per wave merge:** `dotnet test flow-sharp.sln --nologo` (full suite; Phase 14 baseline was 81 Facts ~30s).
-- **Phase gate:** Full suite green before `/gsd-verify-work`. All Phase 15 Facts GREEN. `tests/test_*.flow` Theory rows GREEN.
+- **Phase gate:** Full suite green before verify work. All Phase 15 Facts GREEN. `tests/test_*.flow` Theory rows GREEN.
 
 ### Wave 0 Gaps
 

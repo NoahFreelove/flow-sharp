@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-05-25
 **Status:** Ready for planning
-**Source:** Research pass via gsd-phase-researcher (2026-05-25, pre-charter)
+**Source:** Research pass via phase researcher (2026-05-25, pre-charter)
 
 ## Domain Context
 

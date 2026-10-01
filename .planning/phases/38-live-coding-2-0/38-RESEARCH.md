@@ -1395,7 +1395,7 @@ public void MicBuffer_FedFixtureWav_ResamplesAndAttenuates20dB()
 
 The following CLAUDE.md directives constrain Phase 38 implementation:
 
-- **GSD workflow enforcement:** All file edits go through GSD commands; no direct repo edits outside the workflow.
+- **previous planning workflow workflow enforcement:** All file edits go through previous planning workflow commands; no direct repo edits outside the workflow.
 - **Goals (in priority order):** Composer ergonomics first; genre-agnostic music-only scope; make easy cases fast. Phase 38's `live { }` block, REPL polish, audio input, and OSC all serve the composer ergonomics goal directly.
 - **Non-goals:** Not general-purpose computation; not maximum runtime efficiency; not type strictness for its own sake; not music-genre-specific. Phase 38 respects all four.
 - **Pre-public no-deprecation latitude (D-v1.5-01):** Breaking changes ship in single commits with in-repo migrators; no `flow migrate` CLI subcommand. Justifies the D-38-09 / D-38-10 / D-38-13 REQUIREMENTS.md wording overrides.
@@ -1862,7 +1862,7 @@ public static class OscFunctions
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter "Phase38.<TaskScopeNamespace>"` (e.g., for Plan 38-04 `dotnet test --filter "Phase38.Repl"`)
 - **Per wave merge:** `dotnet test --filter "Phase38"` (all Phase 38 unit + integration tests) + `for t in tests/test_*_*.flow; do dotnet run --project flow-interpreter "$t"; done` (Flow scripts)
-- **Phase gate:** Full `dotnet test` (all phases) green + all `tests/test_*.flow` pass before `/gsd:verify-work`
+- **Phase gate:** Full `dotnet test` (all phases) green + all `tests/test_*.flow` pass before verify work
 
 ### Wave 0 Gaps
 

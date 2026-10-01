@@ -31,7 +31,7 @@ updated: 2026-04-20
 
 - **After every task commit:** Run quick command — `dotnet test flow-sharp.sln --filter "FullyQualifiedName~Phase17"`
 - **After every plan wave:** Run full suite
-- **Before `/gsd-verify-work`:** Full suite must be green + manual Extension Development Host smoke on Linux + one non-dev OS
+- **Before verify work:** Full suite must be green + manual Extension Development Host smoke on Linux + one non-dev OS
 - **Max feedback latency:** 30 seconds for quick; 90 seconds for full
 
 ---

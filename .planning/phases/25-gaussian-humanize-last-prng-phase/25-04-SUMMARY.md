@@ -111,7 +111,7 @@ STATE.md:
 - Frontmatter progress: `completed_phases` 7→8, `completed_plans` 32→37, `percent` 86→100.
 - Current Focus: `Phase 25 — gaussian-humanize-last-prng-phase` → `Phase 26 — Op Standardization (Prefix-Only)`.
 - Current Position: `Phase: 25 — EXECUTING / Plan: 1 of 5` → `Phase: 26 (Op Standardization, Prefix-Only) — READY TO PLAN / Plan: 0 of TBD`.
-- Resume Instructions (top + bottom) and Session Continuity advanced to v1.3 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25); next steps point at `/gsd-plan-phase 26`.
+- Resume Instructions (top + bottom) and Session Continuity advanced to v1.3 8/10 phases complete (Phases 18, 19, 20, 21, 22, 23, 24, 25); next steps point at plan phase 26.
 - Performance Metrics velocity table gained Phase 25 row: `| 25 | 5 | ~17min | ~3.4min |`.
 
 ### Task 4 — 25-VERIFICATION.md final report

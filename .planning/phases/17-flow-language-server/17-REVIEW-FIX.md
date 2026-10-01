@@ -152,5 +152,5 @@ _None_
 ---
 
 _Fixed: 2026-04-20_
-_Fixer: Claude (gsd-code-fixer)_
+_Fixer: Claude (code fixer)_
 _Iteration: 1_

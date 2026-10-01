@@ -91,12 +91,12 @@
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| One Phase 11 VERIFICATION.md summarizing all 5 verdicts | Standard GSD phase-artifact; 4-column table | ✓ |
+| One Phase 11 VERIFICATION.md summarizing all 5 verdicts | Standard previous planning workflow phase-artifact; 4-column table | ✓ |
 | Separate SPIKE-REPORT.md per claim (5 files) | More granular; harder to review at a glance | |
 | Nothing extra — tests + inline comments are the record | Minimum overhead; relies on Phase 12 planner piecing it together | |
 
 **User's choice:** One `11-VERIFICATION.md` summarizing all 5 verdicts
-**Notes:** Table columns: claim / verdict (Confirmed|Dismissed) / evidence path / next action (→ Phase 12 FIX-07a or Closed). Fits standard GSD phase-artifact conventions.
+**Notes:** Table columns: claim / verdict (Confirmed|Dismissed) / evidence path / next action (→ Phase 12 FIX-07a or Closed). Fits standard previous planning workflow phase-artifact conventions.
 
 ### Q: If a claim confirms a real bug during Phase 11, should the failing test be committed in Phase 11 or Phase 12?
 

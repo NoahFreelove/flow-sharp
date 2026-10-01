@@ -54,7 +54,7 @@ Full details: `milestones/v1.2-ROADMAP.md`
 
 Lead capability: tuplets `{N:M ...}` + arbitrary fractional note durations (`C4/12`). Closes DEFER-01..06 from v1.2, ships the Tier B/C composer DX bundle (arpeggio params, chord voicings, delay sync, microtonal wedge, scale linting, legato/portamento, snap-to-grid quantize, varispeed loadWav), lands a foundational language consistency pass — prefix-only arithmetic standardization (Phase 26) followed by symbols + tuples + generic dicts (Phase 26.1) — and resolves the music-type ergonomics gap surfaced after Phase 25 (Phase 26.2). 41 requirements across 12 phases.
 
-**Locked decisions** (from `/gsd-new-milestone` discussion):
+**Locked decisions** (from new milestone discussion):
 
 - D-01: Tuplet bracket syntax is `{N:M ...}` (braces)
 - D-02: Pragmas are file-scope only, top-of-file only, NOT propagated via `use`
@@ -103,7 +103,7 @@ Full details for the Phase 18–34 detail sections were preserved in `.planning/
 
 Citizenship + reach milestone over the already-shipped v1.4 base. Across 15 phases (35–49) Flow adds 23 picked features + 4 v1.4 carryovers + housekeeping to take Flow from "credible single-author public language" to "real citizen of the music-software world" alongside TidalCycles, Sonic Pi, Strudel, and SuperCollider — extending creative reach (live coding revamp, generative algebra, improv API), ecosystem interop (notation export, real-time MIDI, transport sync), and distribution (WASM playground, cross-platform binaries, docs generator). 104 tracked requirements across 15 phases. Pre-traction no-deprecation latitude is ACTIVE — breaking changes ship in one commit with in-repo migrators.
 
-**Locked decisions** (from `/gsd-new-milestone` discussion + research synthesis):
+**Locked decisions** (from new milestone discussion + research synthesis):
 
 - D-v1.5-01: Pre-traction no-deprecation latitude is ACTIVE — breaking syntax/builtin changes ship in single commits; in-repo migrators only.
 - D-v1.5-02: WASM playground ships on Mono-WASM jiterpreter, NOT NativeAOT-LLVM. Reflection-heavy `InternalFunctionRegistry` would require source-generator pass — deferred to v1.6.

@@ -1,5 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
-
 # Testing Flow
 
 This document is the contributor's guide to Flow's test infrastructure. Flow

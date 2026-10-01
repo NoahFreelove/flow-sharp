@@ -70,11 +70,6 @@ Output:
 - `tests/test_buffer_printing.flow` — exercises both builtins
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @CLAUDE.md
 

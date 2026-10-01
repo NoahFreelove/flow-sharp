@@ -67,11 +67,6 @@ Constraints (LOCKED, from task_scope):
 - xUnit counts MUST match Bundle A baseline (1785/33/1/1819). Zero new failures.
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @./CLAUDE.md
 @.planning/STATE.md
@@ -319,9 +314,9 @@ Write `.planning/quick/260524-rjm-bundle-b-kill-var-lookup-exceptions/SUMMARY.md
 - "## Constraints honored" — edits confined to the 3 allowed files; GetVariable retained; observable behavior identical; two-run cmp-clean preserved; zero PRNG/audio/determinism impact.
 - "## Follow-ups" — note any places where `try { GetVariable } catch` still appears in the codebase that weren't in-scope for Bundle B (do a quick `grep -rn "GetVariable" flow-lang/ | grep -v TryGetVariable | grep -v "Set\|Has\|Declare\|Snapshot\|Restore\|Local\|Accessible"` and list anything not in the 3 touched files as a future-bundle candidate).
 
-Commit via gsd-sdk (one cohesive commit covering both tasks):
+Commit with Git (one cohesive commit covering both tasks):
 
-   `gsd-sdk query commit "perf(runtime): swap try/catch variable lookup for TryGetVariable" --files flow-lang/Runtime/StackFrame.cs flow-lang/Interpreter/ExpressionEvaluator.cs flow-lang/Interpreter/Interpreter.cs .planning/quick/260524-rjm-bundle-b-kill-var-lookup-exceptions/SUMMARY.md bench/results-bundle-b-*.txt`
+   git commit "perf(runtime): swap try/catch variable lookup for TryGetVariable" --files flow-lang/Runtime/StackFrame.cs flow-lang/Interpreter/ExpressionEvaluator.cs flow-lang/Interpreter/Interpreter.cs .planning/quick/260524-rjm-bundle-b-kill-var-lookup-exceptions/SUMMARY.md bench/results-bundle-b-*.txt
   </action>
   <verify>
     <automated>cd /home/noah/Desktop/projects/flow-sharp &amp;&amp; dotnet build -c Release 2>&amp;1 | tail -5 &amp;&amp; dotnet test flow-lang.Tests -c Release --nologo 2>&amp;1 | tail -5 &amp;&amp; ls bench/results-bundle-b-*.txt &amp;&amp; grep -c "Benchmark Results (Bundle B)" .planning/quick/260524-rjm-bundle-b-kill-var-lookup-exceptions/SUMMARY.md</automated>

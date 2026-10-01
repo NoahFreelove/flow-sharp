@@ -4,7 +4,7 @@ slug: op-standardization-prefix-only
 status: paused-mid-execution
 paused: 2026-05-04
 paused_at: Wave 3 (plan 26-04) — about to spawn executor
-resume_with: /gsd-execute-phase 26
+resume_with: execute phase 26
 ---
 
 # Phase 26 — Mid-Execution Handoff
@@ -90,7 +90,7 @@ Procedure summary:
 ## Resume Command
 
 ```
-/gsd-execute-phase 26
+execute phase 26
 ```
 
 The discovery step will skip plans 01/02/03 (have SUMMARY.md) and resume from Wave 3 (plan 26-04).

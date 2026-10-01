@@ -232,7 +232,7 @@ unchanged:
 - [x] examples/output/flow_showcase.wav (2,352,044 B) + .mid (200 B) produced, non-empty
 - [x] dotnet test 287/287 GREEN at phase close
 - [x] REQUIREMENTS.md QOL-03 row flipped to Shipped (commit manifest pinned)
-- [x] STATE.md + ROADMAP.md updated; v1.2 milestone ready for /gsd-complete-milestone
+- [x] STATE.md + ROADMAP.md updated; v1.2 milestone ready for complete milestone
 - [x] examples/output/.gitignore tracked but artifacts ignored (`git ls-files` returns only `.gitignore`)
 - [x] Byte-identical contract holds end-to-end (cmp clean for tutorial+showcase, WAV+MIDI)
 

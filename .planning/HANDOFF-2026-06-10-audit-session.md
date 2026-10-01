@@ -28,7 +28,7 @@ HUMAN-UAT smoke testing which surfaced more bugs (some fixed, some in flight).
 - `.planning/CODEBASE-AUDIT-2026-06-09-FIXPLAN.md` — the wave plan + 7 approved
   decisions (D1-D7: REPL wiring yes, LIVE-03 minimal-honest, trailing-edge debounce
   overriding D-38-05 LOCK, reverb tail yes, lexical scoping both read+write blocking,
-  WASM republish yes, GSD bypassed).
+  WASM republish yes, previous planning workflow bypassed).
 - Verification state at squash: dotnet test 0 failed / 2403 passed / 21 skipped (first
   ever 0-failure run on macOS); 134 .flow scripts; flow-site vitest 133/133; Playwright
   e2e 276/276 (first green since the iOS-6 redesign); Desktop+Web builds; two-run

@@ -36,11 +36,6 @@ Purpose: Composers on short/laptop desktop windows can currently never reach the
 Output: A scrollable pinned sidebar that clears the sticky toolbar, a shared `--toolbar-height` token so the two files can't drift, and a focused Playwright regression guard.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-@$HOME/.claude/gsd-core/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 

@@ -1,7 +1,7 @@
 # Phase 49 — Deferred Items
 
 Out-of-scope discoveries logged during plan execution (NOT fixed — they belong to other
-plans or are pre-existing). See the GSD scope-boundary rule.
+plans or are pre-existing). See the previous planning workflow scope-boundary rule.
 
 ## From Plan 49-02 (design system)
 

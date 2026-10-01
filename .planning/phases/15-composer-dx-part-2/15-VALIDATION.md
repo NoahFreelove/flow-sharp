@@ -31,7 +31,7 @@ verified: 2026-04-25
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests/flow-lang.Tests.csproj --filter "FullyQualifiedName~Phase15" --nologo`
 - **After every plan wave:** Run `dotnet test flow-sharp.sln --nologo`
-- **Before `/gsd-verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 30 seconds
 
 ---

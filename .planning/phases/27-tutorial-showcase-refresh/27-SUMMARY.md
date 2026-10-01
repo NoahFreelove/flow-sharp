@@ -67,7 +67,7 @@ Phase 27 closes v1.3 (12/12 phases). examples/tutorial.flow gains 4 half-numbere
 ### Modified (this plan)
 - `.planning/REQUIREMENTS.md` — QOL-04 entry rewritten per D-101 (full Phase 26.2 surface with createSineTone-Hertz scoped honestly per W4_partial); Traceability table row 200 flipped from `Pending` to `Shipped ace6416`
 - `.planning/ROADMAP.md` — Phase 27 summary line flipped to `[x]` with 5-wave Shipped trailer; detail entry flipped to 5/5 plans `[x]` with per-wave commit hashes; Progress table row flipped to `5/5 | Complete | 2026-05-10`; success criterion #1 expanded with Phase 26.2 surface + DX-15 prose-only honesty
-- `.planning/STATE.md` — frontmatter advanced (`completed_phases: 12`, `completed_plans: 59`, `percent: 100`); Current Position section flipped to v1.3-milestone-shipped; Resume Instructions rewritten to point at `/gsd-complete-milestone v1.3` or v1.4 planning; Performance Metrics table gains 5 Phase 27 rows
+- `.planning/STATE.md` — frontmatter advanced (`completed_phases: 12`, `completed_plans: 59`, `percent: 100`); Current Position section flipped to v1.3-milestone-shipped; Resume Instructions rewritten to point at complete milestone v1.3 or v1.4 planning; Performance Metrics table gains 5 Phase 27 rows
 - `CLAUDE.md` — 8-row Music Types Quick Reference table appended after the Phase 26.2 Hertz bullet
 - `.planning/phases/27-tutorial-showcase-refresh/27-RESEARCH.md` — `## Open Questions` heading flipped to `## Open Questions (RESOLVED)` with 4 inline `**RESOLVED:**` markers (Q1 tuplet-ties yes-safe-form, Q2 NO-microtonal-in-tutorial, Q3 yes-prose-only-scale-lint, Q4 NO-tied-drum-tuplets)
 
@@ -96,7 +96,7 @@ Per Phase 27 closure must-haves block. Detailed grep + test commands are in 27-V
 | ROADMAP Phase 27 detail entry updated with shipped plan list | ✅ `grep -q '\*\*Plans\*\*: 5 plans' .planning/ROADMAP.md && grep -q '27-01-PLAN.md.*Shipped' .planning/ROADMAP.md` |
 | ROADMAP Progress table 27 row flipped to 5/5 Complete | ✅ `grep -q '5/5 | Complete | 2026-05-10' .planning/ROADMAP.md` |
 | STATE.md frontmatter `completed_phases: 12` | ✅ `grep -q "completed_phases: 12" .planning/STATE.md` |
-| STATE.md Resume Instructions point at v1.3-shipped handoff | ✅ `grep -q "gsd-complete-milestone v1.3" .planning/STATE.md` |
+| STATE.md Resume Instructions point at v1.3-shipped handoff | ✅ `grep -q "complete milestone v1.3" .planning/STATE.md` |
 | CLAUDE.md gains 8-row Music Types Quick Reference table | ✅ `grep -q "### Music Types Quick Reference" CLAUDE.md && grep -q '\`-12dB\`' CLAUDE.md && grep -q '\`#foo\`' CLAUDE.md` |
 | 27-RESEARCH.md Open Questions flipped to (RESOLVED) with 4 inline RESOLVED markers | ✅ `grep -q "^## Open Questions (RESOLVED)" .planning/phases/27-tutorial-showcase-refresh/27-RESEARCH.md && [ "$(grep -c '\*\*RESOLVED:\*\*' .planning/phases/27-tutorial-showcase-refresh/27-RESEARCH.md)" -ge 4 ]` |
 | 27-VERIFICATION.md created with grep-audit + smoke transcripts + regression-gate summary | ✅ See 27-VERIFICATION.md frontmatter `status: passed` |
@@ -150,7 +150,7 @@ Phase 27 is documentation-only (tutorial.flow + showcase.flow + companion files 
 
 Phase 27 ships. v1.3 milestone now 12/12 phases complete. Two paths forward:
 
-1. **Release tag + retrospective:** `/gsd-complete-milestone v1.3` — packages the milestone, generates a retrospective summary, tags the release.
+1. **Release tag + retrospective:** complete milestone v1.3 — packages the milestone, generates a retrospective summary, tags the release.
 2. **v1.4 planning:** Phases 28 (MIDI + Audio Polyphony & Articulation Rewrite) and 29 (Instrument Realism) are already in plan-phase (running in parallel agents during this Phase 27 execution). Once their plans are committed, v1.4 architecture work can begin.
 
 Either path is supported by the closure state — REQUIREMENTS-traceability is clean, ROADMAP reflects 12/12, and the new tutorial+showcase surface is the canonical demo a v1.4 contributor or release-tag reviewer encounters first.

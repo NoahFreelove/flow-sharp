@@ -96,7 +96,7 @@ The phase declares no probe-based verification; xUnit test sweeps + the tutorial
 
 ### Requirements Coverage
 
-The plan frontmatter `requirements` fields use SPEC-1..SPEC-7 IDs that map 1:1 to the 7 Requirements section in `32-SPEC.md`. Phase 32 is part of v1.4; the v1.3 `REQUIREMENTS.md` does NOT track SPEC-1..SPEC-7 (the v1.4 milestone REQ file will be opened by `/gsd-new-milestone`). The roadmap entry for Phase 32 explicitly lists "Requirements: SPEC-1, SPEC-2, SPEC-3, SPEC-4, SPEC-5, SPEC-6, SPEC-7" — these are the same 7 success criteria verified above as observable truths.
+The plan frontmatter `requirements` fields use SPEC-1..SPEC-7 IDs that map 1:1 to the 7 Requirements section in `32-SPEC.md`. Phase 32 is part of v1.4; the v1.3 `REQUIREMENTS.md` does NOT track SPEC-1..SPEC-7 (the v1.4 milestone REQ file will be opened by new milestone). The roadmap entry for Phase 32 explicitly lists "Requirements: SPEC-1, SPEC-2, SPEC-3, SPEC-4, SPEC-5, SPEC-6, SPEC-7" — these are the same 7 success criteria verified above as observable truths.
 
 | Requirement | Source Plan(s) | Description | Status | Evidence |
 |-------------|----------------|-------------|--------|----------|
@@ -168,4 +168,4 @@ Phase 32 ships clean. Status: passed.
 ---
 
 _Verified: 2026-05-15T03:52:01Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

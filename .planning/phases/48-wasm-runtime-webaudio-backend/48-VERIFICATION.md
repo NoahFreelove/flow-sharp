@@ -268,7 +268,7 @@ Brotli + System.Text.Json + JsonNode + `[JSImport]`/`[JSExport]` are all BCL).
 
 ## Next Steps
 
-- Phase 49 (flowlang.dev SvelteKit site) unblocked. `/gsd:plan-phase 49` consumes
+- Phase 49 (flowlang.dev SvelteKit site) unblocked. plan phase 49 consumes
   `48-PHASE49-HANDOFF.md` (the flow-runtime.js API contract) + the published AppBundle.
 - v1.6 backlog (logged in `.planning/MILESTONES.md`): Chrome/Chromium WASM audio re-smoke;
   Safari WASM smoke; AudioWorklet + SharedArrayBuffer streaming (D-48-02); NativeAOT-LLVM

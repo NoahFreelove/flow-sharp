@@ -22,7 +22,7 @@ The only "no-analog" pattern is the GitHub user-attachments drag-drop MP3 embed 
 | `CLAUDE.md` | MODIFY | project-instructions for Claude Code | structured Markdown with reserved section headers | itself (preserve all sections; append 1-line footnote under § "Goals" + 1-line cross-reference under § "Music-Specific Language Features") | self-analog |
 | `.planning/PROJECT.md` | MODIFY | project-state truth-source | structured Markdown ("Current State" + `<details>` collapsed milestones) | itself + the existing v1.2 / v1.1 / v1.0 `<details>` pattern (lines 43-64) | self-analog (extend established pattern) |
 | `.planning/ROADMAP.md` | MODIFY | milestone roadmap | structured Markdown (Milestones list + per-phase tables) | itself (Phase 34 row in "Progress" table line 456 flipped from `0/N Spec pending` to `N/N Complete YYYY-MM-DD`; v1.4 milestone line 9 flipped from `🚧 in progress` to `✅ shipped`) | self-analog |
-| `.planning/STATE.md` | MODIFY | GSD live state | YAML frontmatter + body | itself + the Phase 33 closure state (last_updated 2026-05-16; stopped_at = "Phase 34 context gathered" → flips to "Phase 34 complete (6/6) — v1.4 shipped") | self-analog |
+| `.planning/STATE.md` | MODIFY | previous planning workflow live state | YAML frontmatter + body | itself + the Phase 33 closure state (last_updated 2026-05-16; stopped_at = "Phase 34 context gathered" → flips to "Phase 34 complete (6/6) — v1.4 shipped") | self-analog |
 | `.planning/REQUIREMENTS.md` | MODIFY | v1.x requirement ledger | Markdown with REQ-* checkboxes + Phase traceability table | itself — existing "v1.4 Phase 30" + "v1.4 Phase 33" cross-milestone-insert sections at lines 204-253 are the template for a new "v1.4 Phase 34 — Symphony Showcase" section | self-analog (extend Phase 30/33 cross-insert template) |
 | `.planning/MILESTONES.md` | MODIFY | shipped-version history | Markdown with `## v1.X — Shipped YYYY-MM-DD` headers + Stats/Delivered/Key-accomplishments | itself — the v1.2 entry (lines 7-52) and v1.1 entry (lines 55-90) are the template for a new "## v1.4 Audio Fidelity, Distribution & Public Showcase — Shipped" entry inserted ABOVE v1.2 | self-analog (mirror v1.2 entry shape verbatim) |
 | `~/.claude/projects/-home-noah-Desktop-projects-flow-sharp/memory/project_pre_public_no_legacy_burden.md` | MODIFY | Claude auto-memory | YAML frontmatter + Markdown body | itself (preserve frontmatter `name`/`description`/`type`/`originSessionId` verbatim; rewrite body to "Flow was pre-public; v1.4 closure 2026-XX-XX flipped it public.") | self-analog |
@@ -469,7 +469,7 @@ Delivered: per-voice polyphony + Phase 28 articulation envelopes (staccato/legat
 
 ```yaml
 ---
-gsd_state_version: 1.0
+archive_state_version: 1.0
 milestone: v1.4
 milestone_name: Audio Fidelity, Distribution & Public Showcase
 status: shipped                            # was: ready_to_plan
@@ -487,7 +487,7 @@ progress:
 
 **Body updates** — copy the Phase 33 closure note pattern (STATE.md:40-50 "Phase 30 highlights" + lines 51-55 "PHASE 29 STILL GATED..."):
 - Add a "Phase 34 highlights" block summarizing the symphony render + release + announcement.
-- Update "Current Position" (lines 27-32) to reflect "milestone closed; next milestone TBD pending /gsd-new-milestone".
+- Update "Current Position" (lines 27-32) to reflect "milestone closed; next milestone TBD pending new milestone".
 - Update "Resume Instructions" body to a brief "v1.4 shipped; next session begins next-milestone discussion."
 
 **What NOT to change:**

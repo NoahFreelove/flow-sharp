@@ -441,7 +441,6 @@ Loaded via `use "@name"`:
 - Switch expressions for node dispatch (not visitor pattern)
 - External deps: Melanchall.DryWetMidi 8.0.3 (MIDI SMF encoding is error-prone — the library earns its keep) + Rug.Osc 1.2.5 (Phase 38, Desktop-only) + NAudio.Wasapi 2.3.0 (Phase 41 Windows backend, Desktop-only). Pidgin removed 2026-06-09 (never used — SimpleLexer/Parser are manual; gated in AssemblyReferenceScanTests). NOT recommended: NAudio full framework / CSCore (Windows-centric), NWaves (would duplicate hand-built DSP, abandoned at v0.9.6), managed-midi (past project), SIMD (premature)
 
-<!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
 **Flow Language** — interpreted, statically-typed language for music production. C# / .NET 10. Flow operator, music types, note streams, musical-context blocks, full audio pipeline (composition → WAV → real-time playback), MIDI import. For composers, producers, and creative coders.
@@ -449,9 +448,7 @@ Loaded via `use "@name"`:
 **Core value:** users write musical ideas as code and hear them immediately — the language must faithfully translate notation into correct, playable audio.
 
 **Constraints:** target `net10.0`; Linux + macOS playback via `IAudioBackend` (PulseAudio + CoreAudio); minimal external deps (DryWetMidi 8.0.3 + Rug.Osc 1.2.5 + NAudio.Wasapi 2.3.0, all pinned); real-time audio = efficient buffer ops with no GC pressure in hot paths; existing `.flow` scripts and test suite must keep working.
-<!-- GSD:project-end -->
 
-<!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
 **Runtime:** .NET 10 / C# 14 (record types, pattern matching, file-scoped namespaces).
@@ -463,37 +460,25 @@ Loaded via `use "@name"`:
 **Hand-rolled in flow-lang (no library):** voice allocation (Phase 28), custom oscillators (`OscillatorState` + lambda callbacks), sidechain compression (extend `Compressor.cs` with second input), spatial panning (constant-power `cos`/`sin`), WAV loading (reverse of `FileIO.cs` writer), pattern variation (`NoteStreamCompiler` random-choice extension), polyrhythm (parallel `MusicalContext` per voice), beat-synced live reload (`FileSystemWatcher` + bar-quantized reload), loop constructs (new AST + parser + interpreter), string interpolation (lexer + AST node), chord-progression DSL (extends `ChordParser` + `HarmonyFunctions`), sequence visualization (ASCII piano roll from `MusicalNoteData`).
 
 **Rejected libraries:** NAudio full framework / CSCore (Windows-centric cross-platform approach; NAudio.Wasapi specifically IS shipped for WASAPI output but only as the narrow WASAPI-COM shim — the full framework is not); NWaves (would duplicate hand-built DSP, abandoned at v0.9.6); managed-midi (past project — DryWetMidi wins); SIMD / `System.Numerics.Tensors` (premature optimization — sample-by-sample is clear and correct).
-<!-- GSD:stack-end -->
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
 - **Pre-Phase-28 byte-identical determinism for `tutorial.flow` / `showcase.flow` is dropped.** Phase 28's articulation rewrite changes rendered bytes legitimately. Two-run determinism IS preserved (same SHA → byte-identical) — contract in shape, not pinned bytes.
 - **RMS-windowed regression tests** for behavior that legitimately changes bytes but should preserve perceptual fidelity: `flow-lang.Tests/Helpers/RmsRegressionTests.AssertRmsWithinTolerance` (or `AssertWavMatchesBaseline`), SPEC-8 locked ±0.5 dB / 100 ms. Baselines under `flow-lang.Tests/baselines/Phase28/` — committed because the dither RNG is seeded deterministically (Phase 15 Plan 05).
 - **Phase 36 chaos primitives — same-platform determinism only** (D-36-09). `lorenz` + `logistic` are forward-Euler-integrated chaotic systems; chained FP arithmetic diverges exponentially across platforms after ~50 iterations. Same-platform two-run cmp-clean preserved; cross-platform NOT guaranteed for chaos. Cross-platform CI gates MUST exclude Lorenz/logistic fixtures (e.g. `examples/generative/markov_jazz.flow`) from shared-baseline comparison. Markov / L-system / cellular are integer-arithmetic and stay cross-platform deterministic. Other Phase 36 stochastic primitives (`sometimes`/`degrade`/`sparseSeq`/`jam`) route via `PrngRegistry` and inherit the Phase 28/29/33 two-run cmp-clean contract.
-<!-- GSD:conventions-end -->
 
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-Not yet mapped. Follow existing patterns in the codebase.
-<!-- GSD:architecture-end -->
+See [the current architecture](docs/ARCHITECTURE.md) and the restructuring roadmap
+for component boundaries and dependency rules.
 
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
+## Development workflow
 
-Before using Edit/Write/etc., start work through a GSD command so planning artifacts and execution context stay in sync.
+Use [the restructuring roadmap](docs/plans/2026-09-20-flow-restructuring-roadmap.md),
+its [progress ledger](docs/plans/progress/flow-restructuring.md), and the latest
+handoff in `docs/plans/handoffs/` to plan and resume work. Implement changes
+directly, run the relevant checks from `docs/TESTING.md`, and update the ledger
+with evidence and the next ready slice. No external planning commands are required.
 
-- `/gsd:quick` — small fixes, doc updates, ad-hoc tasks
-- `/gsd:debug` — investigation, bug fixing
-- `/gsd:execute-phase` — planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd:profile-user` to generate.
-> This section is managed by `generate-claude-profile` — do not edit manually.
-<!-- GSD:profile-end -->
+The roadmap governs current direction; `.planning/` is historical reference and
+contains fixtures/reports still used by tests. Preserve those assets.

@@ -781,7 +781,7 @@ No new tools, no new services, no environment-variable changes. All tooling alre
 
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase19" --no-build` (~1-2s)
 - **Per wave merge:** `dotnet test flow-sharp.sln --no-build` (~25s — current Phase 18 baseline 306 + ~25-30 new Phase 19 Facts)
-- **Phase gate (before /gsd-verify-work):** Full suite green AND Phase 18 byte-identical Facts re-run AND `cmp` against pre-Phase-19 baselines for tutorial.flow + showcase.flow output
+- **Phase gate (before verify work):** Full suite green AND Phase 18 byte-identical Facts re-run AND `cmp` against pre-Phase-19 baselines for tutorial.flow + showcase.flow output
 
 ### Wave 0 Gaps
 
@@ -865,4 +865,4 @@ Nothing else in the standard threat catalog applies. Phase 19 is intentionally a
 ---
 *Research for: Flow Phase 19 — Tuplets & Arbitrary Fractional Durations*
 *Researched: 2026-04-26*
-*Next step: /gsd-plan-phase 19 — split 8 requirements into 5 plans across 4 waves per CONTEXT D-08..D-13*
+*Next step: plan phase 19 — split 8 requirements into 5 plans across 4 waves per CONTEXT D-08..D-13*

@@ -36,7 +36,7 @@ self-contained; an installable binary closes that gap.
 **Trigger:** Starting v1.4, or any milestone focused on packaging,
 distribution, external-language interop, or end-user tooling.
 
-This seed should be presented during `/gsd-new-milestone` when the
+This seed should be presented during new milestone when the
 milestone scope matches any of:
 - Milestone explicitly scoped to "v1.4"
 - Milestone goals mention "CLI", "install", "packaging", "distribution",

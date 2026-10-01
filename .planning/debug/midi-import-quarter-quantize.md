@@ -87,7 +87,7 @@ expecting: |
   WAV showing 8 attack peaks instead of 4.
 next_action: |
   1. Extend flow-midi/Diagnostics.cs with a tick-by-tick NoteOn dump (composer authorized
-     bypassing GSD for this additive diagnostic). Add option like `--dump-events <N>` that
+     bypassing previous planning workflow for this additive diagnostic). Add option like `--dump-events <N>` that
      prints first N NoteOns: absolute tick, channel, pitch, velocity, duration-to-matching
      NoteOff. Run on examples/ragtime.mid to see the actual rhythmic shape of the first
      8-16 bars and confirm the source has <Q, E, E> pattern as authored.
@@ -112,7 +112,7 @@ tdd_checkpoint: null
 - `flow-midi/Conversion/FlowGenerator.cs` — NoteValue selection / emission. Check whether
   Quarter is a primary output or if it's synthesized from multiple Eighths.
 - `flow-midi/Diagnostics.cs` — needs tick-by-tick NoteOn dump capability for diagnostic;
-  EXTEND with a new flag (composer authorized bypassing GSD for this additive enhancement).
+  EXTEND with a new flag (composer authorized bypassing previous planning workflow for this additive enhancement).
 - `flow-midi/Midi/MidiParser.cs` — confirm NoteOn/NoteOff pairing produces correct tick
   durations from the source file (sanity check; defect is more likely downstream in
   Quantizer, but rule this out first).

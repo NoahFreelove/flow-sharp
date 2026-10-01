@@ -32,10 +32,6 @@ Purpose: Showcase a real, multi-voice composition in the in-browser playground â
 Output: One new `Snippet` object appended to the `SNIPPETS` array in `flow-site/src/lib/playground/snippets.ts`.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @./CLAUDE.md

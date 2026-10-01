@@ -53,11 +53,6 @@ Purpose: A cleaner, professional oscillator spectrum is core to Flow's value (fa
 Output: PolyBLEP saw + square in core flow-lang (present on Desktop AND Web targets); regenerated Phase46 byte guards; a new Phase29 harmonic-richness floor assertion for saw + square; a re-rendered Phase41 showcase baseline.
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @./CLAUDE.md

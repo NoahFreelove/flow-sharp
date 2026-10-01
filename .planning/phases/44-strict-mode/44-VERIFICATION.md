@@ -133,7 +133,7 @@ No debt markers (TBD/FIXME/XXX) found in any of the 13 core Phase 44 production 
 
 None. Phase 44 is a non-UI feature (file-scoped pragma with deterministic error reporting). All verification is programmatic. The cmp-clean SHA was reproduced exactly. The composer-facing fixture suite is the canonical UX surface and each runs to PASS.
 
-Note: Code review surfaced 3 Critical + 9 Warning + 6 Info findings in `44-REVIEW.md` — those are advisory follow-up items (the user can run `/gsd:code-review 44 --fix` afterwards), not phase-blocking gaps. They do not affect goal achievement.
+Note: Code review surfaced 3 Critical + 9 Warning + 6 Info findings in `44-REVIEW.md` — those are advisory follow-up items (the user can run code review 44 --fix afterwards), not phase-blocking gaps. They do not affect goal achievement.
 
 ### Gaps Summary
 
@@ -150,4 +150,4 @@ The Phase 44 SUMMARY-claimed 206/206 Phase 44 GREEN reproduces exactly. Phase 44
 ---
 
 _Verified: 2026-05-25_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

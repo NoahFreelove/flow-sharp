@@ -87,7 +87,7 @@ v1.5 is additive integration into Flow's existing pipeline (Source → Lexer →
 
 ## Implications for Roadmap
 
-Phase structure is **already locked** by PROJECT.md / MILESTONES.md — 7 phases (35–41). Research surfaces sub-order within each phase and which phases warrant deeper research-spawn during `/gsd:plan-phase`.
+Phase structure is **already locked** by PROJECT.md / MILESTONES.md — 7 phases (35–41). Research surfaces sub-order within each phase and which phases warrant deeper research-spawn during plan phase.
 
 ### Phase 35: Language Foundation
 **Rationale:** Bottom of the dependency tree. Pattern matching unblocks Phase 36 parameterized-section destructuring AND Phase 40 MIDI event dispatch. Rust diagnostics improve every later parser change. Test framework lets every later phase land regression coverage.

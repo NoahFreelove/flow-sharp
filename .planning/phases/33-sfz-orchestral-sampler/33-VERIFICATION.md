@@ -156,4 +156,4 @@ No gaps blocking phase closure. All 6 must-have truths verified by code evidence
 ---
 
 _Verified: 2026-05-16T05:03:48Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

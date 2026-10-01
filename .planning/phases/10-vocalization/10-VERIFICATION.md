@@ -142,4 +142,4 @@ The phase delivers a complete, self-contained vocal synthesis subsystem:
 ---
 
 _Verified: 2026-04-03T00:00:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

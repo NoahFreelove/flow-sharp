@@ -843,7 +843,7 @@ public ParseResult Parse(string source, string? path)
 ### Sampling Rate
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase24"` (target ≤30s)
 - **Per wave merge:** `dotnet test` (full suite)
-- **Phase gate:** Full suite green AND `for f in tests/test_*.flow; do dotnet run --project flow-interpreter "$f" || exit 1; done` exits 0 before `/gsd-verify-work`
+- **Phase gate:** Full suite green AND `for f in tests/test_*.flow; do dotnet run --project flow-interpreter "$f" || exit 1; done` exits 0 before verify work
 
 ### Wave 0 Gaps
 - [ ] `flow-lsp/ParseSession.cs` — widen to run `PragmaScanner.Scan` (preconditional refactor — covers Wave 0 latent bug fix)

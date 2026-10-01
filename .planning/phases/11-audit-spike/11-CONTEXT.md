@@ -94,7 +94,7 @@ Produce decisive evidence — either a failing `.flow` test reproducing the bug,
 ### Integration Points
 - `tests/spike/` is a NEW subdirectory — no existing `tests/spike/*.flow` yet. Phase 11 creates it.
 - REQUIREMENTS.md edit in D-04 touches the Stability-Contingent section and the Traceability table.
-- `11-VERIFICATION.md` fits the standard GSD phase-artifact slot (same as `VERIFICATION.md` in earlier phase directories).
+- `11-VERIFICATION.md` fits the standard previous planning workflow phase-artifact slot (same as `VERIFICATION.md` in earlier phase directories).
 
 </code_context>
 

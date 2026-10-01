@@ -424,7 +424,7 @@ public static Value Visualize(IReadOnlyList<Value> args)
 ### Sampling Rate
 - **Per task commit:** `dotnet build && dotnet run --project flow-interpreter tests/test_FEATURE.flow`
 - **Per wave merge:** Full test suite (all `tests/test_*.flow` files)
-- **Phase gate:** Full suite green before `/gsd:verify-work`
+- **Phase gate:** Full suite green before verify work
 
 ### Wave 0 Gaps
 - [ ] `tests/test_for_loop.flow` -- covers LANG-01 (for-each over arrays, notes, nested loops, break/continue)

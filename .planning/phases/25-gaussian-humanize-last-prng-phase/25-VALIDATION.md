@@ -29,7 +29,7 @@ created: 2026-05-04
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase25"` (~7 unit Facts + 2 integration Facts; <30s)
 - **After every plan wave:** Run `dotnet test flow-lang.Tests` (full suite — must stay GREEN)
-- **Before `/gsd-verify-work`:** Full suite green AND two consecutive runs of `examples/showcase.flow` and `examples/tutorial.flow` produce cmp-clean WAV + MIDI output (Phase 18 byte-identical regression contract)
+- **Before verify work:** Full suite green AND two consecutive runs of `examples/showcase.flow` and `examples/tutorial.flow` produce cmp-clean WAV + MIDI output (Phase 18 byte-identical regression contract)
 - **Max feedback latency:** ~30 seconds for the per-task filter
 
 ---

@@ -2,7 +2,7 @@
 A music production language.
 
 ### AI Disclaimer
-This entire repo was vibecoded with the help of the [GSD Framework](https://github.com/gsd-build/get-shit-done) and Claude Opus.
+This repository was built with assistance from Claude Opus.
 I did direct the features and testing so it was mainly supervised - but expect bugs to appear.
 
 

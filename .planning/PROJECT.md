@@ -16,7 +16,7 @@ Users can write musical ideas as code and hear them immediately — the language
 
 **Deferred at close (composer-chosen 2026-06-08; shipped on machine-verified evidence + these as deferred debt):** real hardware MIDI/DAW/JACK UAT (Phase 40); JetBrains Marketplace publish + osx/win exec smoke + the v1.5.0 GitHub Release cut (Phase 41); Chrome/Safari audible audio (Phase 48); live Cloudflare Pages deploy + GitHub OAuth gist + cross-browser audio/visual/SR smoke (Phase 49). By-design defers: MIDI-RT-03 (CoreMIDI/WinMM) + LINK-01 (Ableton Link, GPL) → v1.6. Full list: STATE.md `## Deferred Items` + `.planning/milestones/v1.5-MILESTONE-AUDIT.md`.
 
-**Next milestone:** not yet started — run `/gsd:new-milestone` (questioning → research → requirements → roadmap). Candidate v1.6 themes in `.planning/MILESTONES.md` `## v1.6 Backlog`.
+**Next milestone:** not yet started — run new milestone (questioning → research → requirements → roadmap). Candidate v1.6 themes in `.planning/MILESTONES.md` `## v1.6 Backlog`.
 
 <details>
 <summary>v1.5 Stage, Studio, Web (shipped 2026-06-12)</summary>
@@ -148,7 +148,7 @@ Delivered: diagnostics (--verbose), overload-resolution fixes, honest error repo
 
 ### Active
 
-**v1.5 shipped 2026-06-12.** No active milestone — run `/gsd:new-milestone` to populate v1.6 requirements. Candidate themes parked in `.planning/MILESTONES.md` `## v1.6 Backlog` (e.g. pattern-match decision-tree backend, AudioWorklet/AnalyserNode, live-gist auto-rebuild, full-LSP Monaco, custom domain, piano EQ/sympathetic resonance, per-live-block quantize timelines).
+**v1.5 shipped 2026-06-12.** No active milestone — run new milestone to populate v1.6 requirements. Candidate themes parked in `.planning/MILESTONES.md` `## v1.6 Backlog` (e.g. pattern-match decision-tree backend, AudioWorklet/AnalyserNode, live-gist auto-rebuild, full-LSP Monaco, custom domain, piano EQ/sympathetic resonance, per-live-block quantize timelines).
 
 **Deferred by design (→ v1.6):**
 - MIDI-RT-03: CoreMIDI (macOS) + WinMM (Windows) real-time MIDI backends — same `IMidiBackend` abstraction
@@ -239,4 +239,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-12 — after v1.5 Stage, Studio, Web milestone close (15 phases 35–49 shipped; 103 plans; audit tech_debt, 0 unsatisfied; tagged v1.5.0). Next: `/gsd:new-milestone`.*
+*Last updated: 2026-06-12 — after v1.5 Stage, Studio, Web milestone close (15 phases 35–49 shipped; 103 plans; audit tech_debt, 0 unsatisfied; tagged v1.5.0). Next: new milestone.*

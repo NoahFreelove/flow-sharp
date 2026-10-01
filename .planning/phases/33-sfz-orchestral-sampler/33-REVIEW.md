@@ -273,5 +273,5 @@ if (!int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out v
 ---
 
 _Reviewed: 2026-05-16_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

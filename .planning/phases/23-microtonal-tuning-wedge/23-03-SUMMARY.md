@@ -161,7 +161,7 @@ Two atomic commits per the plan's 2-task structure:
 
 ## TDD Gate Compliance
 
-The plan's `<task type="auto" tdd="true">` markers indicate per-task TDD intent. Both tasks bundled production + test in a single `feat(...)` commit — matching the established Phase 18-23 pattern (test files reference public API that only exists once production code lands; this is the documented Phase 18-22 precedent). Each task's tests GREEN before moving on. The 2-commit sequence is feat → feat, satisfying the GSD per-task atomicity requirement.
+The plan's `<task type="auto" tdd="true">` markers indicate per-task TDD intent. Both tasks bundled production + test in a single `feat(...)` commit — matching the established Phase 18-23 pattern (test files reference public API that only exists once production code lands; this is the documented Phase 18-22 precedent). Each task's tests GREEN before moving on. The 2-commit sequence is feat → feat, satisfying the previous planning workflow per-task atomicity requirement.
 
 ## WARNING-3/4/6/8 Resolution
 

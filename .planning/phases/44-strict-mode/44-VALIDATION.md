@@ -29,7 +29,7 @@ created: 2026-05-24
 
 - **After every task commit:** Run `dotnet test --filter "Category=Phase44"` (~30s)
 - **After every plan wave:** Run `dotnet test` (full suite must stay green)
-- **Before `/gsd:verify-work`:** Full suite green + `tests/strict/*.flow` all run to completion
+- **Before verify work:** Full suite green + `tests/strict/*.flow` all run to completion
 - **Max feedback latency:** ~30 seconds per-task; ~3 minutes per-wave
 
 ---
@@ -131,4 +131,4 @@ All other phase behaviors have automated verification via xUnit + integration sc
 - [ ] Feedback latency < 30s per-task
 - [ ] `nyquist_compliant: true` set in frontmatter after planner finishes
 
-**Approval:** pending — flip to `approved YYYY-MM-DD` after gsd-plan-checker verifies REQ→Plan→Task→Test traceability.
+**Approval:** pending — flip to `approved YYYY-MM-DD` after plan checker verifies REQ→Plan→Task→Test traceability.

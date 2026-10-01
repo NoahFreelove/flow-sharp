@@ -35,7 +35,7 @@ created: 2026-05-10
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase27"`
 - **After every plan wave:** Run Phase 27 + Phase 18 + Phase 25 byte-identical sentinels:
   `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase18.ByteIdentical|FullyQualifiedName~Phase25.ByteIdenticalShowcase|FullyQualifiedName~Phase27"`
-- **Before `/gsd-verify-work`:** Full unit suite GREEN + 4 smoke runs (tutorial, showcase, h_alias, microtonal_ji) all exit 0 with non-empty `.wav` + `.mid` artifacts in `examples/output/`
+- **Before verify work:** Full unit suite GREEN + 4 smoke runs (tutorial, showcase, h_alias, microtonal_ji) all exit 0 with non-empty `.wav` + `.mid` artifacts in `examples/output/`
 - **Max feedback latency:** ~15s (filtered Phase27 facts)
 
 ---

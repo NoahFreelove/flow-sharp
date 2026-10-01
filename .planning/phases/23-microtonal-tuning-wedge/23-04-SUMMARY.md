@@ -169,7 +169,7 @@ Wave 4 is closure / validation — no production code was touched. Per CONTEXT.m
 
 ## TDD Gate Compliance
 
-The plan's `<task type="auto" tdd="true">` markers indicate per-task TDD intent. Both tasks ship test artifacts only (no production code touched), so the cycle reduces to test-write + verify-green. Task 2 follows the established Phase 18-23 pattern of bundling test + verification in a single `test(...)` commit. Each task's tests GREEN before moving on. The 2-commit sequence is `test(23-04): ...` + `test(23-04): ...`, satisfying the GSD per-task atomicity requirement.
+The plan's `<task type="auto" tdd="true">` markers indicate per-task TDD intent. Both tasks ship test artifacts only (no production code touched), so the cycle reduces to test-write + verify-green. Task 2 follows the established Phase 18-23 pattern of bundling test + verification in a single `test(...)` commit. Each task's tests GREEN before moving on. The 2-commit sequence is `test(23-04): ...` + `test(23-04): ...`, satisfying the previous planning workflow per-task atomicity requirement.
 
 ## ROADMAP Phase 23 Success Criteria — Cited Facts
 

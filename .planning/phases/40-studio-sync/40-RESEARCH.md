@@ -539,7 +539,7 @@ internal proc clockSlave (String: port)
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter Phase40` (fast subset) + `dotnet build flow-lang -p:FlowTarget=Web` (strip check)
 - **Per wave merge:** `dotnet test flow-lang.Tests` (full Desktop suite — preserve all prior phases green)
-- **Phase gate:** Full suite green + Web build green + `40-VERIFICATION.md` + the `40-HUMAN-UAT.md` checklist authored before `/gsd:verify-work`
+- **Phase gate:** Full suite green + Web build green + `40-VERIFICATION.md` + the `40-HUMAN-UAT.md` checklist authored before verify work
 
 ### Virtual-MIDI CI strategy (D-40-07)
 - **Mechanism:** RtMidi virtual output port (RtMidi.Core can create a virtual ALSA-seq port) + an `aconnect`/`amidi`-driven capture, OR `snd-virmidi` loopback. **Simplest, most portable:** an **in-process loopback test seam** — a `CaptureMidiBackend` (mirrors OSC's `HandlerInvokeOverride` / `PulseAudioCaptureBackend` `CaptureOverride` test seams) that records sent byte arrays so byte/rate assertions need NO real ALSA. Use snd-virmidi only for the end-to-end HUMAN-UAT-adjacent gate.

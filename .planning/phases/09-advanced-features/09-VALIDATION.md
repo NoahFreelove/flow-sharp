@@ -36,7 +36,7 @@ backfilled: true
 
 - **After every task commit:** Run `dotnet test --filter` scoped to the just-touched Fact class
 - **After every plan wave:** Run `dotnet test flow-sharp.sln`
-- **Before `/gsd-verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 60 seconds
 
 ---

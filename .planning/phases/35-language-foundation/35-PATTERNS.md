@@ -4,7 +4,7 @@
 **Files analyzed:** ~70 new/modified across 5 buckets
 **Analogs found:** 70/70 (every file has an in-codebase precedent)
 
-This map is consumed by `gsd-planner`. Each entry names a concrete analog file + line range; planners reference these directly in plan action sections rather than re-discovering them.
+This map is consumed by planner. Each entry names a concrete analog file + line range; planners reference these directly in plan action sections rather than re-discovering them.
 
 ---
 

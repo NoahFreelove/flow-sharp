@@ -556,7 +556,7 @@ progress:
   completed_plans: <prev + N>
 ```
 
-**Current Position section** (line 24): `Phase 27 — tutorial-showcase-refresh (v1.3 milestone closer)` → `v1.3 milestone shipped 12/12; ready for /gsd-complete-milestone v1.3 OR v1.4 planning`.
+**Current Position section** (line 24): `Phase 27 — tutorial-showcase-refresh (v1.3 milestone closer)` → `v1.3 milestone shipped 12/12; ready for complete milestone v1.3 OR v1.4 planning`.
 
 **Resume Instructions** (top + bottom — lines 31-38, 535-548): rewrite to "v1.3 milestone shipped" forward-pointing instruction.
 

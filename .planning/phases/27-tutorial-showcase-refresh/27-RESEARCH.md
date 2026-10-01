@@ -133,7 +133,7 @@ Tutorial.flow already runs cleanly under v1.3 head (Phase 26.2 closure 86bdd15 l
 | New Phase 27 pragma test | `flow-lang.Tests/Integration/Phase27/Phase27ByteIdenticalPragmaTests.cs` (NEW) | Create: 4 facts (h_alias WAV + h_alias MIDI + microtonal_ji WAV + microtonal_ji MIDI). Copy Phase18 ShowcaseTests.cs verbatim, change script paths and basenames. |
 | REQUIREMENTS QOL-04 | `.planning/REQUIREMENTS.md` line ~127 | Rewrite at closure (D-101): expand to include Phase 26.2 surface (volume, Hertz, Ms-FX, Second-decay, createXxxTone-Hertz, gain-vs-volume split). Mirror DICT-01/02/03 closure rewrite from Phase 26.1 plan 06. |
 | ROADMAP Phase 27 | `.planning/ROADMAP.md` line ~266-275 | Mark Complete at closure; success criteria #1 expanded to include Phase 26.2 surface per D-101. |
-| STATE.md | `.planning/STATE.md` | Advance progress.completed_phases 11→12; current focus → "v1.3 milestone shipped, ready for /gsd-complete-milestone v1.3". |
+| STATE.md | `.planning/STATE.md` | Advance progress.completed_phases 11→12; current focus → "v1.3 milestone shipped, ready for complete milestone v1.3". |
 | CLAUDE.md | `CLAUDE.md` Music-Specific section | Append Music Types Quick Reference table per D-104 (~20 lines, columns: literal | type | IsCompatibleWith | accepted at). |
 | Phase 27 VERIFICATION | `.planning/phases/27-tutorial-showcase-refresh/27-VERIFICATION.md` (NEW) | Mirror Phase 16 + 26.2 VERIFICATION.md shape. |
 | Phase 27 SUMMARY | `.planning/phases/27-tutorial-showcase-refresh/27-SUMMARY.md` (NEW) | Standard closure summary. |
@@ -786,7 +786,7 @@ tempo 120 {
 
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase27"` (Phase 27 facts only, ~4 facts)
 - **Per wave merge:** Phase 27 + Phase 18 + Phase 25 byte-identical sentinels (`dotnet test --filter "FullyQualifiedName~Phase18.ByteIdentical|FullyQualifiedName~Phase25.ByteIdenticalShowcase|FullyQualifiedName~Phase27"`)
-- **Phase gate:** Full unit suite GREEN before `/gsd-verify-work` + tutorial.flow smoke + showcase.flow smoke + h_alias.flow smoke + microtonal_ji.flow smoke
+- **Phase gate:** Full unit suite GREEN before verify work + tutorial.flow smoke + showcase.flow smoke + h_alias.flow smoke + microtonal_ji.flow smoke
 
 ### Wave 0 Gaps
 

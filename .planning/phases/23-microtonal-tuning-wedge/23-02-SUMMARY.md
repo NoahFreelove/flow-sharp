@@ -209,7 +209,7 @@ Each task atomically committed per BLOCKER-1 4-task split:
 
 The plan's `<task type="auto" tdd="true">` markers indicate per-task TDD intent. Task 1 + Task 2 + Task 3 each bundled production + test in a single `feat(...)` commit (the test files reference public API that only exists once production code lands; this is the established Phase 18-22 pattern). Task 4 is a pure `test(...)` commit that adds Facts after all production code is in place, pinning MICR-01 + MICR-02 contracts on the already-shipped pipeline.
 
-The 4-task atomic commit sequence is feat → feat → feat → test, satisfying the GSD per-task atomicity requirement. Each commit's tests GREEN before moving to the next task.
+The 4-task atomic commit sequence is feat → feat → feat → test, satisfying the previous planning workflow per-task atomicity requirement. Each commit's tests GREEN before moving to the next task.
 
 ## BLOCKER-1 Resolution
 

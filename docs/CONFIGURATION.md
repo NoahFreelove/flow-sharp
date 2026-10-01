@@ -1,4 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
 # Configuration
 
 Flow's runtime configuration lives in three places: a single TOML file at

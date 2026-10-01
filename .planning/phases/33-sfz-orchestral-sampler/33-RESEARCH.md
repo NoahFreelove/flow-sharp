@@ -58,8 +58,8 @@ gates for the planner:
   for a (pitch, velocity) renders silence + advisory. Missing `sfz_root` errors
   ONCE with a clear pointer to the config file.
 - **No emojis in code, docs, or commit messages** (CLAUDE.md global rule).
-- **GSD workflow enforcement:** All file edits flow through GSD commands. Use
-  `/gsd:execute-phase` to drive plan execution.
+- **previous planning workflow workflow enforcement:** All file edits flow through previous planning workflow commands. Use
+  execute phase to drive plan execution.
 - **No external users yet (memory: pre-public):** Breaking changes can land in
   a single commit. No deprecation windows needed. SPEC contracts ARE the
   freeze line — Phase 34 turns this public.
@@ -1295,7 +1295,7 @@ the synthetic smoke fixture (SPEC-7).
   (Phase 33 tests only — typically < 30 seconds)
 - **Per wave merge:** `dotnet test flow-sharp.sln --logger "console;verbosity=minimal"`
   (full Flow test suite — guards against Phase 29 byte-identical regression)
-- **Phase gate:** Full suite green + `dotnet test --filter "FullyQualifiedName~Phase33SfzSmoke"` green before `/gsd:verify-work`
+- **Phase gate:** Full suite green + `dotnet test --filter "FullyQualifiedName~Phase33SfzSmoke"` green before verify work
 
 ### Wave 0 Gaps
 

@@ -81,7 +81,7 @@ Downstream agents MUST read `32-SPEC.md` before planning or implementing. Requir
   - `tuning (loadScala "x.scl") { ... }` — inline function call returning `Tuning`.
   - `tuning "x.scl" { ... }` — string-literal sugar that desugars at parse time to `(loadScala "x.scl")`. Error semantics for the literal form surface at the `tuning "x"` line, not at a separate (synthetic) load call.
 
-### Research-surfaced decisions (added 2026-05-13 after `gsd-phase-researcher`)
+### Research-surfaced decisions (added 2026-05-13 after phase researcher)
 
 - **D-16: Fixture filenames + content.** Commit verified Huygens-Fokker archive contents IN-REPO under the SPEC-mandated names: archive `pyth_12.scl` → `pythagorean_12.scl`; archive `ji_12.scl` → `just_5limit.scl`. Document the rename in `flow-lang.Tests/fixtures/scala/LICENSE.md` AND in the destination file's `!` comment header. The `ji_12.scl` content (12 entries, 5-limit-dominant with a 7-limit tritone `7/5` at step 6) is accepted as the `just_5limit.scl` fixture — matches the SPEC's "5 canonical 12-tone-or-larger fixtures" framing.
 - **D-17: License attribution wording = softened community-use.** `LICENSE.md` reads "Released for free use per the long-standing community understanding" + Huygens-Fokker attribution + archive URL + original-filename-to-in-repo-filename mapping. Mirrors how other open-source projects vendor Scala archive files. No upstream contact required.

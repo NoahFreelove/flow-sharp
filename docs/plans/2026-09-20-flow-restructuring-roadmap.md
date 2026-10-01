@@ -23,6 +23,10 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
 Continue from the [Phase 5 completion handoff](handoffs/2026-09-27-phase5-complete.md).
+Owner sequencing update (2026-09-30): finish the music/audio backend and Flow
+plugin support before UI/DAW implementation. Advance Phase 6 backend work and
+Phase 7 prerequisites; defer the Phase 6 desktop shell prototype. This does not
+waive device measurements or claim the full Phase 6 gate is complete.
 Later phase descriptions below remain planned work, not shipped capabilities.
 
 ## 1. Direction
@@ -506,7 +510,41 @@ Versioned project data includes:
 - Source modules/code clips, explicit output bindings, seeds, dependency snapshots.
 - Asset identities/hashes, relative paths, optional embedded content, and missing-asset status.
 
-Use command-based edits with reversible operations. A mouse drag is one undo step, not hundreds; clipboard and transform operations are transactions. Separate document edits from transient playback state and rendered caches.
+Owner requirement (2026-09-30): every undoable document action implements a shared
+interface with `Undo` and `Redo` methods. Each concrete action owns the data needed
+to reverse and reapply its change. This belongs in the UI-independent project
+model; UI gestures submit actions through a shared history service.
+
+Proposed Phase 8 contract (not yet implemented):
+
+```csharp
+public interface IUndoableAction
+{
+    string Description { get; }
+    void Undo();
+    void Redo();
+}
+```
+
+The history service applies a new action through `Redo`, records it only after
+success, and clears the redo branch after a new successful edit. Undo/redo move
+entries between stacks only after success. Actions must validate before mutating
+and restore the prior document if an operation fails. Capture stable target IDs
+and before/after values; redo reuses captured results rather than rerunning a
+random generator or Flow evaluation.
+
+A mouse drag is one undo step; clipboard and multi-note transforms are grouped
+transactions. Composite actions redo children in order and undo in reverse order,
+with rollback on failure. Continuous edits may coalesce only within the same
+gesture and target. Bound retained history memory, and track the saved revision
+so undoing back to it clears the document's dirty state. Keep playback state and
+rendered caches outside document history; publish resulting audio changes through
+the engine's normal safe update path.
+
+Phase 8 acceptance cases include note insert/delete/move and parameter changes,
+independent project histories, grouped drag undo, redo-branch invalidation,
+failure without partial edits or stack movement, deterministic generated edits,
+and save/edit/undo dirty-state behavior. No UI framework dependency is required.
 
 Save atomically and maintain a recoverable autosave/journal policy. Caches must be disposable and reconstructable. Test old project migrations using committed small fixtures. A newer unsupported project version should fail clearly without overwriting the file.
 

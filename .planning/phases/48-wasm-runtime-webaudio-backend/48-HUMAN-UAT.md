@@ -145,7 +145,7 @@ because a library has no WASM app head/entry. So `dotnet.js` has nothing to boot
 bundle-size tests call `WasmEntry.RunFromJs` **in-process on Desktop**, never through
 the browser boot path — so the missing manifest was invisible to the xUnit suite.
 
-**Fix direction (for /gsd:debug):** make `FlowTarget=Web` produce a bootable WASM app
+**Fix direction (for debug):** make `FlowTarget=Web` produce a bootable WASM app
 bundle — e.g. emit `dotnet.boot.js` via the app-bundle target (a wasm app head /
 `OutputType`+`WasmGenerateAppBundle` handling), then reconcile `flow-runtime.js`'s
 `../dotnet.js` import + `wasm/` placement + `index.html` against the new bundle layout.
@@ -154,7 +154,7 @@ catch this class of defect — add a browser/boot smoke or at least a
 "boot-manifest-exists" publish-output assertion).
 
 **Routing (per Closure Conditions):** runtime/build-config defect, NOT a browser-UX
-nit → in-phase repair before Plan 48-07 closer. Handed to `/gsd:debug` (2026-05-30).
+nit → in-phase repair before Plan 48-07 closer. Handed to debug (2026-05-30).
 Firefox/Safari rows deferred until the boot fix lands and Chrome re-smoke passes.
 
 **2026-06-05 — RESOLVED (approved-with-followup).** In-phase repair landed across 9

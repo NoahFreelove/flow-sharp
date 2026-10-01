@@ -188,4 +188,4 @@ Address growing stdlib name-collision pressure (already-real: `gain` vs `volume`
 ---
 
 *Phase: 43-module-names-qualified-imports*
-*Context gathered: 2026-05-24 via /gsd:discuss-phase 43 --auto*
+*Context gathered: 2026-05-24 via discuss phase 43 --auto*

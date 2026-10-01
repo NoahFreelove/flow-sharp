@@ -292,4 +292,4 @@ Per CONTEXT.md §Deferred Ideas (already routed to other v1.3 phases):
 
 *Phase: 21-pragma-system-h-alias*
 *Closed: 2026-04-26*
-*Verifier: Claude (gsd-executor) via plan 21-03 closure*
+*Verifier: Claude (executor) via plan 21-03 closure*

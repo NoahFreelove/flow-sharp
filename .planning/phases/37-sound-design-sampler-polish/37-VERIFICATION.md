@@ -172,7 +172,7 @@ Carried forward from prior pass — explicitly deferred items documented in per-
 ---
 
 _Re-verified: 2026-05-23T18:45:00Z_
-_Verifier: Claude (gsd-verifier, independent re-verification of inline gap-fix at commit `0137c5a`)_
+_Verifier: Claude (verifier, independent re-verification of inline gap-fix at commit `0137c5a`)_
 _Prior HEAD: 8908801 (gaps_found, 10/11)_
 _Current HEAD: 0137c5a (passed, 11/11)_
 _Baseline SHA for failure diff: dea329b (35 baseline failures preserved)_

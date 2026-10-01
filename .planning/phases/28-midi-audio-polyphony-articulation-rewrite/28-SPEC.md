@@ -181,4 +181,4 @@ This phase rewrites the polyphony model, articulation rendering, and MIDI export
 
 *Phase: 28-midi-audio-polyphony-articulation-rewrite*
 *Spec created: 2026-05-10*
-*Next step: /gsd-discuss-phase 28 — implementation decisions (voice-block parser approach, envelope contract design, MIDI track ordering, pool-allocator data structure)*
+*Next step: discuss phase 28 — implementation decisions (voice-block parser approach, envelope contract design, MIDI track ordering, pool-allocator data structure)*

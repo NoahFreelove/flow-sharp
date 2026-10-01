@@ -29,14 +29,14 @@ created: 2026-05-15
 
 - **After every task commit:** Run `dotnet test --filter "FullyQualifiedName~Phase33" --logger "console;verbosity=minimal"`
 - **After every plan wave:** Run `dotnet test flow-sharp.sln --logger "console;verbosity=minimal"` (guards Phase 29 byte-identical regression)
-- **Before `/gsd:verify-work`:** Full suite must be green AND `dotnet test --filter "FullyQualifiedName~Phase33SfzSmoke"` green
+- **Before verify work:** Full suite must be green AND `dotnet test --filter "FullyQualifiedName~Phase33SfzSmoke"` green
 - **Max feedback latency:** 30 seconds for the Phase 33 filter
 
 ---
 
 ## Per-Task Verification Map
 
-> Filled by `/gsd:plan-phase` once PLAN.md files exist. The Requirement column maps to SPEC-1..SPEC-8 (see `33-SPEC.md`). The base test command per requirement is pre-pinned from research.
+> Filled by plan phase once PLAN.md files exist. The Requirement column maps to SPEC-1..SPEC-8 (see `33-SPEC.md`). The base test command per requirement is pre-pinned from research.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|

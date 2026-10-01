@@ -29,7 +29,7 @@ created: 2026-05-10
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase29" --nologo`
 - **After every plan wave:** Run `dotnet test flow-lang.Tests --nologo`
-- **Before `/gsd-verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 30 sec for per-task; 5 min for per-wave
 
 Per SPEC D-34 (test runtime budget): all new Phase 29 unit tests + sample-cache load + varispeed accuracy + articulation-on-sample must complete within 60 seconds total.

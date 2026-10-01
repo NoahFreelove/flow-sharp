@@ -30,7 +30,7 @@ created: 2026-05-01
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests/flow-lang.Tests.csproj --filter "FullyQualifiedName~Phase22"` (Phase 22 Facts only — fast, ~5s)
 - **After every plan wave:** Run `dotnet test flow-sharp.sln` (full suite — ~30s)
-- **Before `/gsd-verify-work`:** Full suite green AND `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` 19/19 GREEN
+- **Before verify work:** Full suite green AND `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` 19/19 GREEN
 - **Max feedback latency:** 30 seconds
 
 ---

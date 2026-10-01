@@ -122,4 +122,4 @@ The parse regression is NOT a gap. The change is correct, the bypass gates are s
 ---
 
 _Verified: 2026-05-24T22:00:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

@@ -247,5 +247,5 @@ Then reference `MusicalContext.DefaultVelocity` from each site. Out of v1 scope 
 ---
 
 _Reviewed: 2026-04-25_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

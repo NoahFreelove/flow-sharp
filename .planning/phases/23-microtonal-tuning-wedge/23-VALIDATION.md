@@ -29,7 +29,7 @@ created: 2026-05-03
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase23"`
 - **After every plan wave:** Run full suite (`dotnet test` + tuning `.flow` scripts + `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests`)
-- **Before `/gsd-verify-work`:** Full suite must be green AND byte-identical regression gate green
+- **Before verify work:** Full suite must be green AND byte-identical regression gate green
 - **Max feedback latency:** 60 seconds (per-task quick run)
 
 ---

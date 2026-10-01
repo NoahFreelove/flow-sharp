@@ -30,7 +30,7 @@ created: 2026-05-16
 
 - **After every task commit:** Composer eyeballs the relevant render artifact (.wav playback or README rendered preview) — Phase 34 produces composer-judgement artifacts, not unit-testable code.
 - **After every plan wave:** N/A — Phase 34 plans are sequential per D-902 + D-903 (no parallel waves).
-- **Before `/gsd:verify-work`:** Full suite (two-run cmp-clean) must be green AND `34-HUMAN-UAT.md` must contain composer sign-off.
+- **Before verify work:** Full suite (two-run cmp-clean) must be green AND `34-HUMAN-UAT.md` must contain composer sign-off.
 - **Max feedback latency:** ~30 seconds (two-run cmp) once `symphony.flow` exists; before then it's "iteration cycle = composer-listening latency".
 
 ---

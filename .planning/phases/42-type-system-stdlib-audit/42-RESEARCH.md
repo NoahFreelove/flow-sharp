@@ -44,7 +44,7 @@ The audit graph has two halves that **must both** be cross-referenced to avoid f
 | Clamp/advisory inventory | StandardLibrary (grep across all subdirs) | Diagnostics (`RenderingDiagnostics.WarnOnce` sentinel keys) | Pure source-text grep — `Math.Clamp\|RenderingDiagnostics.WarnOnce`. File:line pairs go straight into AUDIT-07 table |
 | AUDIT.md authoring | (.planning/phases/42-type-system-stdlib-audit/42-AUDIT.md) | — | Markdown synthesis from extracted tables — no code, no commits to `flow-lang/` |
 | Audit harness | xUnit reflective audit (mirror Phase 29 `LicenseAuditTests`) OR standalone .NET console program | — | Existing precedent for reflective audits; can re-run after each downstream phase to verify gaps closed |
-| graphify integration | `.planning/graphs/` + `gsd-tools graphify` | — | Currently disabled (`graphify.enabled = false` not set in config.json). Either enable + build (Wave 0), or skip and hand-roll — graphify operates at file/module granularity, may be too coarse for FlowType-level edges |
+| graphify integration | `.planning/graphs/` + tools graphify | — | Currently disabled (`graphify.enabled = false` not set in config.json). Either enable + build (Wave 0), or skip and hand-roll — graphify operates at file/module granularity, may be too coarse for FlowType-level edges |
 
 ## Standard Stack
 
@@ -65,7 +65,7 @@ The audit graph has two halves that **must both** be cross-referenced to avoid f
 | **A. Standalone .NET console program** | `flow-lang/Tools/StdlibAuditor/Program.cs` (new) | Self-contained, runnable as `dotnet run --project flow-lang/Tools/StdlibAuditor`; emits AUDIT.md directly | New project to maintain; needs `<ProjectReference>` to flow-lang.csproj |
 | **B. xUnit reflective audit tests** | `flow-lang.Tests/Integration/Phase42/StdlibAuditTests.cs` (new) | Mirrors LicenseAuditTests precedent (Phase 29); auto-runs in CI; can be a recurring health check | xUnit emits per-fact PASS/FAIL — AUDIT.md authored manually from test output |
 | **C. Hand-rolled Bash + grep + jq** | `scripts/stdlib-audit.sh` (new) | No new code; runs anywhere | Misses runtime knowledge (specificity, IsCompatibleWith table); regex is brittle around multi-line `FunctionSignature` constructors |
-| **D. graphify** | `.planning/graphs/graph.json` consumed manually | Reuses existing GSD tooling; structured node/edge output | Currently disabled in config.json; operates at file/module granularity (likely too coarse for FlowType-level edges); needs enable + build + interpret |
+| **D. graphify** | `.planning/graphs/graph.json` consumed manually | Reuses existing previous planning workflow tooling; structured node/edge output | Currently disabled in config.json; operates at file/module granularity (likely too coarse for FlowType-level edges); needs enable + build + interpret |
 
 **Recommendation:** **Approach A (standalone .NET console program)** for the per-pass extractors (registration graph + conversion graph), **plus** **Approach C** (Bash + grep) for the clamp/advisory inventory which is pure source-text. **Skip Approach D** — graphify is module-granular and the audit needs FlowType-granular edges, which require reflection-aware extraction. Discuss-phase should confirm.
 
@@ -141,7 +141,7 @@ No new external packages. Phase 42 uses existing C# reflection + Bash grep.
 ```
 .planning/phases/42-type-system-stdlib-audit/
 ├── 42-RESEARCH.md            # this file
-├── 42-CONTEXT.md             # from /gsd:discuss-phase
+├── 42-CONTEXT.md             # from discuss phase
 ├── 42-{N}-PLAN.md            # per-plan
 ├── 42-AUDIT.md               # ★ THE DELIVERABLE
 ├── 42-AUDIT-data/            # raw extractor outputs
@@ -412,7 +412,7 @@ grep -c "^createAR$" /tmp/flow-callers.txt
 
 ## Project Constraints (from CLAUDE.md)
 
-- **GSD Workflow Enforcement:** Phase 42 runs inside `/gsd:execute-phase 42`. AUDIT.md is created via the GSD planner/executor, not by direct edits outside a GSD workflow.
+- **previous planning workflow Workflow Enforcement:** Phase 42 runs inside execute phase 42. AUDIT.md is created via the previous planning workflow planner/executor, not by direct edits outside a previous planning workflow workflow.
 - **Ergonomics first:** AUDIT.md recommendations should preserve composer ergonomics. A "missing overload" finding is valid only if the composer's natural call shape fails today — `(reverb buf 2.5)` works (Second IsCompatibleWith Double); it is NOT a gap. `(noiseGate -40dB)` failing IS a gap.
 - **Charitable interpretation:** AUDIT-07 (clamp/advisory site list) feeds Phase 44 *additive* strict mode. Charitable behavior remains the **default** — the audit must not recommend removing courtesy fallbacks, only inventorying them for strict-mode opt-in. ROADMAP line 378 makes this explicit.
 - **Genre-agnostic, music-only scope:** Audit recommendations must not propose features whose only justification is non-musical use (e.g., do not propose "add `Hertz → Byte[]` for arbitrary network protocols").
@@ -451,7 +451,7 @@ grep -c "^createAR$" /tmp/flow-callers.txt
 4. **Should AUDIT-08 (prioritization) be researcher-discretion or composer-decided?**
    - What we know: Phase 42 produces a "prioritized" gap list per ROADMAP.
    - What's unclear: Who decides priority — the audit author (Claude) or the composer (Noah)?
-   - Recommendation: Audit author proposes priority HIGH/MEDIUM/LOW with a one-line rationale; composer reviews at `/gsd:verify-work` time and reorders if needed. This is the standard `feedback_ergonomics_priority` pattern.
+   - Recommendation: Audit author proposes priority HIGH/MEDIUM/LOW with a one-line rationale; composer reviews at verify work time and reorders if needed. This is the standard `feedback_ergonomics_priority` pattern.
 
 5. **Does Phase 42 also audit the test-coverage gap for each FlowType?**
    - What we know: ROADMAP scope is "FlowType ↔ builtin-signature graph". Test coverage is a sibling concern.
@@ -464,7 +464,7 @@ grep -c "^createAR$" /tmp/flow-callers.txt
 |---|---|---|---|---|
 | .NET 10 SDK | Approach A — running the audit harness | (assumed yes — used by the rest of the project) | net10.0 | — |
 | bash + grep | Approach C — clamp-site extraction | yes | — | — |
-| node + `gsd-tools` | graphify (if Wave 0 enables it) | yes | per `node /home/noah/.claude/get-shit-done/bin/gsd-tools.cjs graphify status` | Skip graphify; use Approach A only |
+| node + tools | graphify (if Wave 0 enables it) | yes | per the archived planning template | Skip graphify; use Approach A only |
 | `mscore` / external tools | none required for audit | — | — | — |
 
 **Missing dependencies with no fallback:** none.
@@ -493,13 +493,13 @@ grep -c "^createAR$" /tmp/flow-callers.txt
 | AUDIT-05 | Dead-end builtin candidates pruned by `.flow` cross-reference | unit | `dotnet test --filter "FullyQualifiedName~Phase42.DeadEnds.AllCandidatesHaveZeroFlowCallers"` | ❌ Wave 0 |
 | AUDIT-06 | Overload-gap list emitted | smoke | `jq '.overload_gaps \| length' /tmp/g.json` | ❌ Wave 0 |
 | AUDIT-07 | Clamp/advisory site count matches `grep` independently | smoke | `[[ $(wc -l < clamps.txt) -gt 50 ]]` | ❌ Wave 0 |
-| AUDIT-08 | AUDIT.md contains all 7 sections + every finding has phase routing | manual | composer review at `/gsd:verify-work` | n/a |
-| AUDIT-09 | AUDIT.md committed | `gsd-sdk query commit-check 42-AUDIT.md` | n/a | n/a |
+| AUDIT-08 | AUDIT.md contains all 7 sections + every finding has phase routing | manual | composer review at verify work | n/a |
+| AUDIT-09 | AUDIT.md committed | git commit-check 42-AUDIT.md | n/a | n/a |
 
 ### Sampling Rate
 - **Per task commit:** the relevant xUnit filter above (sub-second)
 - **Per wave merge:** full audit harness run + `dotnet test --filter Phase42`
-- **Phase gate:** Full suite green + composer manual review of AUDIT.md before `/gsd:verify-work`
+- **Phase gate:** Full suite green + composer manual review of AUDIT.md before verify work
 
 ### Wave 0 Gaps
 - [ ] `flow-lang/Tools/StdlibAuditor/Program.cs` — Approach A skeleton
@@ -507,7 +507,7 @@ grep -c "^createAR$" /tmp/flow-callers.txt
 - [ ] `flow-lang.Tests/Integration/Phase42/AuditHarnessSelfCheckTests.cs` — harness self-check
 - [ ] `flow-lang.Tests/Integration/Phase42/AsymmetricPairsTests.cs` — known-pair regressions
 - [ ] `flow-lang.Tests/Integration/Phase42/DeadEndCrossReferenceTests.cs` — .flow guard
-- [ ] OPTIONAL: enable graphify in `.planning/config.json` (`graphify.enabled = true`) + `node $HOME/.claude/get-shit-done/bin/gsd-tools.cjs graphify build`
+- [ ] OPTIONAL: enable graphify in `.planning/config.json` (`graphify.enabled = true`) + the archived planning template
 
 ## Security Domain
 
@@ -554,7 +554,7 @@ grep -c "^createAR$" /tmp/flow-callers.txt
 ### Secondary (MEDIUM confidence — read partial, inferred)
 
 - `flow-lang.Tests/Integration/Phase29/RepoSizeTests.cs` — reflective bundle audit precedent (similar shape to what AUDIT-07 would do).
-- `~/.claude/skills/gsd-graphify/SKILL.md` — graphify is config-gated; build chain is `graphify update . && cp graph.json .planning/graphs/`. Module/file granularity (verified by reading the build chain — extracts AST relationships per file).
+- `~/.claude/skillsgraphify/SKILL.md` — graphify is config-gated; build chain is `graphify update . && cp graph.json .planning/graphs/`. Module/file granularity (verified by reading the build chain — extracts AST relationships per file).
 - ROADMAP "v1.5 closeout trio" framing — Phases 42/43/44 are explicit dependency chain. Pre-research confirms Phase 42 has NO `flow-lang/` code changes by design.
 
 ### Tertiary (LOW confidence — flag for verification)

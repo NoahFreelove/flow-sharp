@@ -215,7 +215,7 @@ tasks:
     read_first:
       - .planning/milestones/v1.1-REQUIREMENTS.md  # ONLY
       - .planning/ROADMAP.md                        # Phase 6 section + Phase 13 success criteria ONLY
-      - ~/.claude/get-shit-done/templates/VALIDATION.md
+      - the archived planning template
       - .planning/phases/12-stability/12-VALIDATION.md  # format reference
     forbidden_reads:
       - .planning/phases/06-diagnostics-bug-fixes/06-01-SUMMARY.md
@@ -562,7 +562,7 @@ Each invariant below would fail if the feature under test were removed. Pin type
 
 - **Per task commit:** `dotnet test flow-sharp.sln --filter "FullyQualifiedName~Phase{N}"` (~3-5s scoped)
 - **Per wave merge:** `dotnet test flow-sharp.sln` (~20-25s estimated)
-- **Phase gate:** Full suite green + presence-check of each created VALIDATION.md before `/gsd-verify-work`
+- **Phase gate:** Full suite green + presence-check of each created VALIDATION.md before verify work
 
 ### Wave 0 Gaps
 
@@ -751,7 +751,7 @@ Everything else in the file body stays — the Manual-Only Verifications subsect
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| VERIFICATION.md (goal-backward, post-hoc) | VALIDATION.md (requirements-first, pre-execution pins) | GSD workflow evolution through Phases 6-12 | v1.1 shipped with no VALIDATION.md; Phase 10 draft was first attempt; Phase 13 retroactively backfills for 6-9 |
+| VERIFICATION.md (goal-backward, post-hoc) | VALIDATION.md (requirements-first, pre-execution pins) | previous planning workflow workflow evolution through Phases 6-12 | v1.1 shipped with no VALIDATION.md; Phase 10 draft was first attempt; Phase 13 retroactively backfills for 6-9 |
 | `tests/test_*.flow` with `(print "PASSED")` as success marker | xUnit Theory + `RequiredSentinels` numeric-value pins | Phase 12 Plan 12-01 introduced the Theory harness | Existing scripts still run; Phase 13 layers tightened sentinels on top |
 | Buffer byte-hash pinning (rejected) | Zero-crossing count + frame-count + error-text pinning | D-11 / D-12 | Survives any DSP refactor that preserves sample-rate + duration semantics |
 | Separate rollup plan per phase closure | Closing plan (13-05) carries traceability updates | Phase 11/12 pattern (11-06, 12-06) | Phase 13 follows; 13-05 is leaner because TEST-04 closure is 1-line REQUIREMENTS.md edit |
@@ -785,7 +785,7 @@ Everything else in the file body stays — the Manual-Only Verifications subsect
 - **PulseAudio on Linux:** No playback invoked by Phase 13 tests — all tests are deterministic (no audio-backend dependency).
 - **Performance:** Phase 13 adds ~7 new Facts, ~9 tightened sentinels. Estimated runtime delta +5-10 seconds (tutorial.flow is ~1s, formant synthesis tests ~0.5s each, rest are near-instant C# API calls).
 - **Compatibility:** ALL existing .flow scripts + ALL existing tests must remain GREEN after Phase 13. D-21 forbids modifying existing tests; tightened sentinels are ADDITIVE — they require extra stdout content, not different content.
-- **GSD Workflow Enforcement (CLAUDE.md):** Phase 13 is executed via `/gsd:execute-phase` — no direct edits outside the workflow.
+- **previous planning workflow Workflow Enforcement (CLAUDE.md):** Phase 13 is executed via execute phase — no direct edits outside the workflow.
 - **Language Philosophy (user memory):** Keep functional S-expression style, no infix operators, Haskell-inspired — no impact on Phase 13 (pure documentation authoring, no Flow language edits).
 
 ## Sources
@@ -797,7 +797,7 @@ Everything else in the file body stays — the Manual-Only Verifications subsect
 - `.planning/milestones/v1.1-REQUIREMENTS.md` — the 16 requirements being validated (15 Complete, 1 Invalid)
 - `.planning/milestones/v1.1-MILESTONE-AUDIT.md` — aggregate audit verdict, integration gap identification
 - `.planning/REQUIREMENTS.md` — TEST-04 current entry (line 44)
-- `~/.claude/get-shit-done/templates/VALIDATION.md` — canonical schema
+- the archived planning template — canonical schema
 - `.planning/phases/12-stability/12-VALIDATION.md` — format reference (all sections filled)
 - `.planning/phases/12-stability/12-VERIFICATION.md` — `## Empirical Overrides` pattern reference (lines 167-171)
 - `.planning/phases/10-vocalization/10-VALIDATION.md` — promotion target (existing draft)

@@ -424,5 +424,5 @@ field is uniformly lock-free.
 ---
 
 _Reviewed: 2026-06-06_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

@@ -68,7 +68,7 @@ Composition + docs + release work — single concern boundary per plan; no multi
 
 ## Phase Requirements
 
-Per ROADMAP.md Phase 34 entry: "Requirements: TBD (assigned during /gsd-spec-phase 34)." Phase 34 was discussed via `/gsd-discuss-phase 34 --auto` (no SPEC step) — the CONTEXT.md D-101..D-903 decisions are the de facto requirement surface, with the ROADMAP's 5 success criteria as the outermost gate:
+Per ROADMAP.md Phase 34 entry: "Requirements: TBD (assigned during spec phase 34)." Phase 34 was discussed via discuss phase 34 --auto (no SPEC step) — the CONTEXT.md D-101..D-903 decisions are the de facto requirement surface, with the ROADMAP's 5 success criteria as the outermost gate:
 
 | ID (proposed) | Description (derived from ROADMAP success criteria + CONTEXT decisions) | Research Support |
 |---|---|---|
@@ -284,7 +284,7 @@ This produces C4 held for a whole note while C5→D5→E5→F5 quarter notes pla
 - **Don't activate Scala/JI pragmas in the symphony** — D-302. Symphony stays in 12-TET; microtonal demos live in `examples/scala/intro.flow`.
 - **Don't add a CHANGELOG.md file** — D-501 out-of-scope. PROJECT.md milestone sections + FEATURES.md + `.planning/MILESTONES.md` already cover release history.
 - **Don't auto-post the announcement** — Phase 34 ships draft markdown only.
-- **Don't touch interpreter code in Phase 34** — pure composition + docs + release work. Bugs surfaced during UAT go to `/gsd-debug` in a sibling thread.
+- **Don't touch interpreter code in Phase 34** — pure composition + docs + release work. Bugs surfaced during UAT go to debug in a sibling thread.
 - **Don't amend the v1.4.0 tag after publication** — annotated + immutable. Use v1.4.1 if a fix is needed.
 
 ## Don't Hand-Roll

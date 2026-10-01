@@ -604,7 +604,7 @@ done
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase41"` (the targeted Phase 41 unit/integration subset, < 30 s).
 - **Per wave merge:** `dotnet test` (full xUnit suite) + the Flow `test_*.flow` loop.
-- **Phase gate:** Full suite green + `bash scripts/test_two_run_determinism.sh` on the showcase + `dotnet build flow-lang -p:FlowTarget=Web` exit 0, before `/gsd:verify-work`.
+- **Phase gate:** Full suite green + `bash scripts/test_two_run_determinism.sh` on the showcase + `dotnet build flow-lang -p:FlowTarget=Web` exit 0, before verify work.
 
 ### Wave 0 Gaps
 - [ ] `flow-lang.Tests/.../DocCommentLexTests.cs` — covers DOC-01 (`///` vs `//` vs `/* */`)

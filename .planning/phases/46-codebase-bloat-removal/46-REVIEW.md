@@ -143,5 +143,5 @@ The following were explicitly verified and found sound:
 ---
 
 _Reviewed: 2026-05-30_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: deep_

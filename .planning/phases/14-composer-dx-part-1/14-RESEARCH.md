@@ -1001,7 +1001,7 @@ Plans are wave-1 parallel (D-20) except 14-04. Zero file overlap between 14-01/0
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase14"` (~2-5 seconds)
 - **Per wave merge:** `dotnet test` full suite (~30 seconds at current scale)
-- **Phase gate:** Full suite green before `/gsd-verify-work` in plan 14-04.
+- **Phase gate:** Full suite green before verify work in plan 14-04.
 
 ### Wave 0 Gaps
 - [ ] `flow-lang.Tests/Unit/Phase14/SliceTests.cs` — covers DX-05

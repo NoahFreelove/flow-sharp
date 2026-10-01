@@ -103,4 +103,4 @@ No gaps. The cache + invalidation surface is complete and correctly wired. The o
 ---
 
 _Verified: 2026-05-24_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

@@ -263,5 +263,5 @@ In practice, per RESEARCH Pitfall 1, no existing `.flow` file uses `module` as a
 ---
 
 _Reviewed: 2026-05-24T00:00:00Z_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

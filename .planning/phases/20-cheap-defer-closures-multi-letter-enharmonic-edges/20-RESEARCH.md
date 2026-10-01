@@ -21,11 +21,11 @@ Plan structure recommendation: **3 atomic plans**, one per DEFER, plus one closu
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
 
-**CONTEXT.md does not exist yet for Phase 20.** Phase 20 was planned via `/gsd-research-phase` directly (or this research precedes `/gsd-discuss-phase`). All claims below are flagged as either:
+**CONTEXT.md does not exist yet for Phase 20.** Phase 20 was planned via research phase directly (or this research precedes discuss phase). All claims below are flagged as either:
 
 - **REQ-LOCKED** — quoted verbatim from `.planning/REQUIREMENTS.md` (which has gone through milestone-discussion)
 - **PRECEDENT** — bound by an established v1.2 / Phase 18-19 pattern that any reasonable user would not relitigate
-- **DISCRETION** — Claude's design call, eligible for user override at `/gsd-discuss-phase` time
+- **DISCRETION** — Claude's design call, eligible for user override at discuss phase time
 
 ### REQ-LOCKED (from REQUIREMENTS.md, locked at milestone discussion)
 
@@ -45,10 +45,10 @@ Plan structure recommendation: **3 atomic plans**, one per DEFER, plus one closu
 ### DISCRETION (Claude's call, override-eligible)
 
 - **DEFER-04 no-key flip direction for naturals** — REQUIREMENTS pins E4→Fb4, F4→E#4, B4→Cb5, C4→B#3. *Discretion:* the symmetric inverse (Fb4→E4, E#4→F4, Cb5→B4, B#3→C4) is the obvious choice; double-sharps/double-flats remain non-involutive (F##→G stays as today).
-- **DEFER-04 in-key behavior on edge naturals** — when an in-key match exists for E4 in F major (E is diatonic in F major), should `enharmonic(E4)` in `key Fmajor` return Fb4 or E4? *Discretion:* preserve in-key spelling (return E4 unchanged) because the existing in-key branch is for diatonic respelling, not edge-respelling. Edge-respelling fires only on the no-key fallback path. *(Alternative: always edge-respell naturals; flag for `/gsd-discuss-phase`.)*
+- **DEFER-04 in-key behavior on edge naturals** — when an in-key match exists for E4 in F major (E is diatonic in F major), should `enharmonic(E4)` in `key Fmajor` return Fb4 or E4? *Discretion:* preserve in-key spelling (return E4 unchanged) because the existing in-key branch is for diatonic respelling, not edge-respelling. Edge-respelling fires only on the no-key fallback path. *(Alternative: always edge-respell naturals; flag for discuss phase.)*
 - **DEFER-05 negative-index normalization rule** — Python semantics: `idx < 0` becomes `idx + len`; values still out of range after normalization clamp to `[0, len]`. *Discretion:* preserve silent-clamp for post-normalization out-of-range; only the negative-index INTERPRETATION changes.
 - **DEFER-01 step parameter type** — Int (matches REQUIREMENTS examples). 0-step is undefined; *Discretion:* throw `InvalidOperationException("range step cannot be zero")` mirroring the Phase 12-02 empty-array message style.
-- **Plan structure** — 3 atomic plans + 1 closure (recommended) OR 1 atomic plan covering all three (alternative). Both consistent with Phase 12 / Phase 14 atomic-commit precedent. *Discretion:* recommend 3+1 for bisectability; user may collapse during `/gsd-discuss-phase`.
+- **Plan structure** — 3 atomic plans + 1 closure (recommended) OR 1 atomic plan covering all three (alternative). Both consistent with Phase 12 / Phase 14 atomic-commit precedent. *Discretion:* recommend 3+1 for bisectability; user may collapse during discuss phase.
 - **DEFER-04 algorithm for non-edge naturals** — REQUIREMENTS specifies edges only for E/F/B/C. Naturals D, G, A have no immediate enharmonic edge (D is between C# and Eb; closest "multi-letter" spellings would be D = C## or Ebb, which are double-accidental territory). *Discretion:* for D/G/A naturals, preserve unchanged (return as-is). Only E/F/B/C get edge-respelled.
 </user_constraints>
 
@@ -562,7 +562,7 @@ return Value.Array(elements.Skip(s).Take(e - s).ToArray(), arrayType.ElementType
 |---|-------|---------|---------------|
 | A1 | `(slice arr -5 2)` and existing `Array_NegativeStartClamps` Fact return the same 2 elements under both old (silent clamp) and new (Python) semantics | Pattern 2 verification matrix | If wrong, Phase14/SliceTests.cs needs migration too — increases plan scope by ~3 Facts. **Verified by inspection:** -5 + 5 (count) = 0; clamp(0, 0, 5) = 0; same result as Math.Max(0, -5) = 0. SAFE. |
 | A2 | OverloadResolver disambiguates `range(0, 5)` (2 args) vs `range(0, 10, 2)` (3 args) by arity exact-match before specificity scoring | Pitfall 3 | If wrong, may need to register only 3-arg form with optional step semantics, or use a single varargs signature. **Verified at Phase 14 plan 14-01** — slice ships 2 overloads (Array vs Sequence) with same arity, OverloadResolver disambiguates by arg-0 type. Different-arity overloads are an EASIER case (arity mismatch is grounds for rejection before specificity). LOW risk. |
-| A3 | D, G, A naturals should remain unchanged under DEFER-04 (no edge respelling) | DEFER-04 Pattern 3 | REQUIREMENTS.md is silent on D/G/A. If user wants D → C## or D → Ebb (double-accidental respelling), plan needs rework. RECOMMEND surfacing at /gsd-discuss-phase. Default "unchanged" is conservative. |
+| A3 | D, G, A naturals should remain unchanged under DEFER-04 (no edge respelling) | DEFER-04 Pattern 3 | REQUIREMENTS.md is silent on D/G/A. If user wants D → C## or D → Ebb (double-accidental respelling), plan needs rework. RECOMMEND surfacing at discuss phase. Default "unchanged" is conservative. |
 | A4 | `tests/test_enharmonic.flow` runs as a Theory row with errorCount==0 gate (no RequiredSentinels) | Pitfall 2 | Verified by grep — confirmed not in `RequiredSentinels` dictionary. SAFE. |
 | A5 | `(range 5 0 (sub 0 1))` parses correctly in `.flow` (negative step via binary-subtraction binding) | Pitfall 4 | Phase 14 plan 14-01 establishes this exact precedent for `slice arr negFive 2` — same pattern. SAFE. |
 | A6 | `enharmonic(enharmonic(F##4))` round-trips to G4 (pitch-equivalent to F##4, MIDI 67) but not string-equivalent | Pitfall 8 | HarmonyFunctions.cs:34 already documents F##4 → G4 collapse as non-involutive. REQUIREMENTS.md says "pitch-equivalent" not "string-equivalent". SAFE if Fact uses MIDI equality. |
@@ -640,7 +640,7 @@ All 5 questions resolved at plan-time via auto-mode defaults locked as D-USER-A.
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase20"` (fast, ~2s for new Facts)
 - **Per wave merge:** `dotnet test flow-sharp.sln` (full suite, ~17s baseline + new Facts)
-- **Phase gate:** Full suite GREEN before `/gsd-verify-work`. Plus repository grep transcript in VERIFICATION.md.
+- **Phase gate:** Full suite GREEN before verify work. Plus repository grep transcript in VERIFICATION.md.
 
 ### Wave 0 Gaps
 - [ ] `flow-lang.Tests/Unit/Phase20/` directory creation
@@ -666,7 +666,7 @@ All 5 questions resolved at plan-time via auto-mode defaults locked as D-USER-A.
 
 CLAUDE.md mandates that affect Phase 20 plans:
 
-- **GSD Workflow Enforcement:** All file edits go through GSD commands (`/gsd:execute-phase`, `/gsd:quick`, etc.). No direct repo edits.
+- **previous planning workflow Workflow Enforcement:** All file edits go through previous planning workflow commands (execute phase, quick, etc.). No direct repo edits.
 - **C# Conventions:** .NET 10, nullable reference types, file-scoped namespaces, all under `FlowLang.*` namespace, AST nodes are records, pattern matching for dispatch.
 - **Constraints:** Existing 70+ `.flow` test scripts MUST continue to work; tutorial.flow + showcase.flow byte-identical determinism contract holds (Phase 18 / Phase 19 regression gate).
 - **Minimal Dependencies:** No new packages. Phase 20 explicitly adds zero.

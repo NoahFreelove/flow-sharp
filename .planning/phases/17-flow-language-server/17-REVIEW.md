@@ -264,5 +264,5 @@ at the workflow top level.
 ---
 
 _Reviewed: 2026-04-20_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

@@ -205,7 +205,7 @@ Notes:
    Expected: Each embedded feature behaves per D-06..D-11 spec.
    Why human: Requires VSCode Extension Development Host + interactive UX testing.
 
-**All 3 tests tracked in `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md` with `result: [pending]`** — NOT faked as pass. Per user direction ("Defer to HUMAN-UAT. Close the phase now without blocking on F5"), these resolve asynchronously via `/gsd-verify-work` sessions and do not block phase 17 closure.
+**All 3 tests tracked in `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md` with `result: [pending]`** — NOT faked as pass. Per user direction ("Defer to HUMAN-UAT. Close the phase now without blocking on F5"), these resolve asynchronously via verify work sessions and do not block phase 17 closure.
 
 **Deferred-to-release (NOT tracked in 17-HUMAN-UAT.md) — cannot execute until VSIX artifacts exist:**
 
@@ -226,4 +226,4 @@ Phase 17 is goal-achieved at the code/artifact/CI-setup level.
 ---
 
 _Verified: 2026-04-20T22:00:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

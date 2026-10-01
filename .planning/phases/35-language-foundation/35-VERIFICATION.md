@@ -157,4 +157,4 @@ The v1.5 dependency root is ready: Phase 36 (destructuring uses pattern AST), Ph
 ---
 
 _Verified: 2026-05-19T22:00:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

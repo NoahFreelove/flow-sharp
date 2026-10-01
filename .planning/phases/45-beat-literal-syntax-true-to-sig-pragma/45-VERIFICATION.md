@@ -243,4 +243,4 @@ No gaps. All 26 must-have truths verified against the codebase. Phase goal achie
 ---
 
 _Verified: 2026-05-29_
-_Verifier: Claude (gsd-verifier) — independent of executor self-report_
+_Verifier: Claude (verifier) — independent of executor self-report_

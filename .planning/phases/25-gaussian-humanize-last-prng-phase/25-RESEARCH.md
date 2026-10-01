@@ -95,7 +95,7 @@ The planner MUST honor these — they have the same authority as locked D-IDs:
 - **`Random.Shared` is FORBIDDEN for any byte-identity-critical PRNG draw** — Pitfall 6 at `.planning/research/PITFALLS.md:172`: *"Determinism contracts only hold if every PRNG in the chain is seeded."* Use `new Random(seed)` LOCAL only. `[VERIFIED: PITFALLS.md:166-195]`
 - **Charitable interpretation memory** — silent-and-documented over errors. Negative amount silently clamps to 0; weird inputs get reasonable defaults, not exceptions. `[VERIFIED: ~/.claude/projects/.../feedback_charitable_interpretation.md]`
 - **Functional S-expression style** — calls are `(humanizeGaussian seq 0.1 42)`, not `seq.humanizeGaussian(0.1, 42)`. The std.flow declaration at D-25 is positional. `[VERIFIED: feedback_language_philosophy.md]`
-- **GSD workflow enforcement** — direct repo edits outside a GSD command are prohibited. `[VERIFIED: CLAUDE.md "GSD Workflow Enforcement"]`
+- **previous planning workflow workflow enforcement** — direct repo edits outside a previous planning workflow command are prohibited. `[VERIFIED: CLAUDE.md "previous planning workflow Workflow Enforcement"]`
 
 ## Architectural Responsibility Map
 
@@ -582,7 +582,7 @@ After D-20 lands (additive `humanizeGaussian` call site in showcase.flow), the *
 ### Sampling Rate
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase25"` (~7 unit Facts + 2 integration Facts; <30s)
 - **Per wave merge:** `dotnet test flow-lang.Tests` (full suite — ~287 Facts at last v1.2 count + new Phase 23-25 additions; <2min)
-- **Phase gate:** Full suite green AND `dotnet run --project flow-interpreter examples/showcase.flow` runs to exit 0 producing non-empty `examples/output/flow_showcase.{wav,mid}` AND `dotnet run --project flow-interpreter examples/tutorial.flow` likewise AND `cmp` between two consecutive showcase + tutorial invocations is clean before invoking `/gsd-verify-work`.
+- **Phase gate:** Full suite green AND `dotnet run --project flow-interpreter examples/showcase.flow` runs to exit 0 producing non-empty `examples/output/flow_showcase.{wav,mid}` AND `dotnet run --project flow-interpreter examples/tutorial.flow` likewise AND `cmp` between two consecutive showcase + tutorial invocations is clean before invoking verify work.
 
 ### Wave 0 Gaps
 

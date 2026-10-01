@@ -29,14 +29,14 @@ created: 2026-05-13
 
 - **After every task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase32" -v minimal`
 - **After every plan wave:** `dotnet test flow-lang.Tests -v minimal` (full suite — must not increase the 62 pre-existing Phase 28 PerSynthArticulation failures)
-- **Before `/gsd-verify-work`:** full suite GREEN minus the 62 pre-existing failures; Phase 23 sub-suite (`--filter "FullyQualifiedName~Phase23"`) MUST be 100% GREEN (any regression here = blocker)
+- **Before verify work:** full suite GREEN minus the 62 pre-existing failures; Phase 23 sub-suite (`--filter "FullyQualifiedName~Phase23"`) MUST be 100% GREEN (any regression here = blocker)
 - **Max feedback latency:** ~15 s for sub-suite; ~90 s for full
 
 ---
 
 ## Per-Task Verification Map
 
-> Plan IDs are placeholders until /gsd-plan-phase 32 lands; researcher proposes Wave 0 (fixtures) + 6 implementation waves.
+> Plan IDs are placeholders until plan phase 32 lands; researcher proposes Wave 0 (fixtures) + 6 implementation waves.
 
 | Plan / Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---|---|---|---|---|---|---|---|

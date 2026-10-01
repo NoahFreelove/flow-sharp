@@ -276,5 +276,5 @@ Ratios = new Dictionary<int, (int Num, int Den)>(scl.Ratios);
 ---
 
 _Reviewed: 2026-05-14_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

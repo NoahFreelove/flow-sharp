@@ -580,11 +580,11 @@ if (!string.IsNullOrEmpty(dir))
 
 **Warning signs:** If plan 12-05 edits `ExportWav` but not `ExportWavInternal`, writeWav still breaks on nested paths. Testing only `test_full_song.flow` won't catch this — there's no test that uses `writeWav` with a nested path.
 
-### Pitfall 7: CLAUDE.md GSD enforcement gate
+### Pitfall 7: CLAUDE.md previous planning workflow enforcement gate
 
-**What goes wrong:** CLAUDE.md §"GSD Workflow Enforcement" says: "Before using Edit, Write, or other file-changing tools, start work through a GSD command". This is process guidance for the human operator and doesn't affect plan content, but the plan-checker and executor may surface this as a requirement.
+**What goes wrong:** CLAUDE.md §"previous planning workflow Workflow Enforcement" says: "Before using Edit, Write, or other file-changing tools, start work through a previous planning workflow command". This is process guidance for the human operator and doesn't affect plan content, but the plan-checker and executor may surface this as a requirement.
 
-**How to avoid:** Already addressed — this entire phase is inside the GSD workflow (`/gsd-plan-phase` → phase 12). No action needed.
+**How to avoid:** Already addressed — this entire phase is inside the previous planning workflow workflow (plan phase → phase 12). No action needed.
 
 ## Code Examples
 
@@ -845,7 +845,7 @@ tempo -5 {
 | Config file | `flow-lang.Tests/flow-lang.Tests.csproj` (new) + optional `xunit.runner.json` for Collection config |
 | Quick run command | `dotnet test flow-lang.Tests/ --filter "FullyQualifiedName!~FlowScripts"` (fast: native unit tests only) |
 | Full suite command | `dotnet test flow-lang.Tests/` (includes wrap-as-Theory rows — ~60s) |
-| Phase gate | Full suite green before `/gsd-verify-work` |
+| Phase gate | Full suite green before verify work |
 
 ### Phase Requirements → Test Map
 
@@ -892,7 +892,7 @@ tempo -5 {
 ### Sampling Rate
 - **Per task commit:** `dotnet test flow-lang.Tests/ --filter "FullyQualifiedName!~FlowScripts"` (unit tests, <5s)
 - **Per wave merge:** `dotnet test flow-lang.Tests/` (full suite including wrap-as-Theory, ~60s)
-- **Phase gate:** Full suite green before `/gsd-verify-work` in plan 12-06
+- **Phase gate:** Full suite green before verify work in plan 12-06
 
 ### Wave 0 Gaps
 
@@ -997,7 +997,7 @@ No new security review items specific to Phase 12 beyond what the fixes themselv
 | No new NuGet packages | CLAUDE.md §"Constraints" / STACK.md | **Exception justified:** xUnit is a test framework, not a runtime dependency. CONTEXT D-08 authorizes the new `flow-lang.Tests` project. Plan 12-01 adds xunit.v3 + runner + SDK + coverlet — all test-time only. Runtime production code (flow-lang.csproj, flow-interpreter.csproj) gets NO new packages. |
 | Existing .flow test suite must continue to work | CLAUDE.md §"Constraints — Compatibility" | Wrap-as-Theory (D-09) achieves this — scripts unchanged, runner added. Exception: `tests/test_musical_context_errors.flow` sentinel string update per Pitfall 1. |
 | No GC pressure in hot paths | CLAUDE.md §"Constraints — Performance" | `Lazy<T>` allocates once per Thunk; no change from existing Thunk allocation behavior. `break;` has zero allocation. Not a concern for Phase 12. |
-| GSD Workflow Enforcement | CLAUDE.md §"GSD Workflow Enforcement" | Already in GSD phase 12 — satisfied. |
+| previous planning workflow Workflow Enforcement | CLAUDE.md §"previous planning workflow Workflow Enforcement" | Already in previous planning workflow phase 12 — satisfied. |
 
 ## Metadata
 

@@ -4,20 +4,21 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 
 ## Current milestone
 
-**Phases 0–4 are complete; Phase 5 is in progress (2026-09-24).**
+**Phases 0–5 are complete; Phase 6 backend work is next (2026-09-30).**
 
-The language-only runtime, session/job isolation, non-executing analysis and
-shared CLI/LSP/browser adapters have passed their gates. Records:
-[Phase 1](../../baselines/phase1/README.md),
-[Phase 2](../../baselines/phase2/README.md),
-[Phase 3](../../baselines/phase3/README.md),
-[Phase 4](../../baselines/phase4/README.md).
+The current [Phase 5 handoff](../handoffs/2026-09-27-phase5-complete.md) and
+[gate evidence](../../baselines/phase5/README.md) supersede the earlier open
+Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
-Phase 5 now has detached score snapshots, linear legacy buffer assembly, and an
-isolated dry sine renderer with bounded PCM output and a native WAV host proof.
-Full instrument/effect routing, snapshot MIDI export, shared editing transforms
-and migration of legacy ambient render services remain open. Phases 6–10 have
-not started. See the roadmap status table and current Phase 5 handoff.
+Owner direction: finish the music/audio backend and Flow plugin support before
+UI/DAW implementation. Defer the desktop shell; the next ready slice is prepared
+block playback, followed by transport, device measurements and graph/plugin work.
+The full Phase 6 gate still includes deferred UI and hardware evidence.
+
+Use the roadmap, this ledger and handoffs directly. External planning commands
+are no longer required. Historical `.planning/` records and test assets are
+retained as reference only. The shared action interface with `Undo`/`Redo` and
+history requirements is recorded in roadmap §9.3 for Phase 8.
 
 Starting revision: `1e85f6710b6a39c293b0e4361ca57364489c824d`.
 Owner: primary implementation agent. No delegated file ownership.
@@ -50,8 +51,8 @@ Owner: primary implementation agent. No delegated file ownership.
 | P5-01 Detached evaluated score | verified | BCL-only immutable snapshots, timing, structural IDs and provenance; Flow lowering. |
 | P5-02 Linear legacy assembly | verified | One final allocation/copy, bounded cancellation, measured allocation reduction. |
 | P5-03 Native sine rendering proof | verified | Model-only audio artifact, streaming PCM, native WAV host, shared duration policy and exact legacy sine parity. |
-| P5-04 Full snapshot render/export migration | open | Instruments/effects, MIDI, explicit caches/RNG/release and legacy consumer routing. |
-| P5-05 Shared editing transforms/full gate | open | Shared transforms, full-path streaming, broader compatibility/performance proof. |
+| P5-04 Snapshot export / render carryover | verified / carried | Snapshot MIDI shipped; instruments/effects and explicit caches/RNG/release move to Phase 6. |
+| P5-05 Shared editing transforms/full gate | verified | Shared quantize/transpose and long-song measurements; Phase 5 closed with documented Phase 6 carryover. |
 
 ## Decisions
 
@@ -788,3 +789,20 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   streaming). Gate evidence table and carried limits: `docs/baselines/phase5/README.md`.
   Legacy instrument/effect rendering moves to Phase 6 block processors instead
   of a second offline port. Handoff: `docs/plans/handoffs/2026-09-27-phase5-complete.md`.
+
+## Continuation — 2026-09-30
+
+- Owner retired the external planning workflow. Removed enforcement, template
+  dependencies, command references and machine configuration; preserved design
+  history, fixtures, reports and current roadmap artifacts.
+- Recorded backend/plugins-before-UI sequencing and action-owned undo/redo.
+- Baseline: `dotnet test flow-lang.Tests/flow-lang.Tests.csproj
+  -p:FlowTarget=Desktop --filter FullyQualifiedName~MusicModel --verbosity quiet`
+  passed **59/59**. A preceding `--no-restore` run failed against stale Web
+  restore outputs; the explicit Desktop restore/build resolved it.
+- No audio implementation changes in this cleanup slice. Next: prepared sine
+  block playback with sample parity, seek/reset, bounded preparation and callback
+  allocation checks.
+- Cleanup verification: no retired workflow names remain in tracked text;
+  `git diff --check` passes. Only Markdown and the retired planning config
+  changed; source, tests, fixtures, lockfiles and binary assets are unchanged.

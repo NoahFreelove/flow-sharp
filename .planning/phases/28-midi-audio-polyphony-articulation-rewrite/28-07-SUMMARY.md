@@ -116,7 +116,7 @@ non-default-tolerance-requires-overrideReason check.
 ### Manual UAT (Task 6) — DEFERRED
 
 The plan's Task 6 (composer manual UAT) is BLOCKING for closure.
-Cannot be performed by gsd-executor — requires real-speakers ear-checking
+Cannot be performed by executor — requires real-speakers ear-checking
 on a human's audio system. Two checkboxes remain `[ ]` in
 28-VERIFICATION.md:
 - `ragtime_polyphony.flow` listened — held notes sustain, articulations distinct
@@ -173,4 +173,4 @@ After composer flips both UAT checkboxes:
 2. Edit STATE.md status to `complete`
 3. Final closure commit: `docs(28-07): closure — UAT sign-off`
 4. Phase 29 (Instrument Realism) plans already exist on dev —
-   `/gsd-execute-phase 29` to begin
+   execute phase 29 to begin

@@ -30,7 +30,7 @@ created: 2026-05-30
 
 - **After every task commit:** `dotnet build` (must compile) + targeted `dotnet test --filter` for the affected test class
 - **After every plan wave:** Full `dotnet test` + Phase 28 RMS baselines
-- **Before `/gsd:verify-work`:** Full suite green + every `tests/test_*.flow` exits clean + two-run cmp-clean determinism holds
+- **Before verify work:** Full suite green + every `tests/test_*.flow` exits clean + two-run cmp-clean determinism holds
 - **Max feedback latency:** ~30 seconds (incremental build + filtered test)
 
 ---

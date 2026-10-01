@@ -13,11 +13,11 @@ requires:
     provides: "tutorial.flow expanded with 14 v1.1+v1.2 features across 20 chapters; graduation piece audibly integrates 4 CONTEXT D-07 features; dual writeWav+writeMidi export from same Song value"
 provides:
   - "REQUIREMENTS.md QOL-03 row flipped to Shipped with 4-commit manifest (94d20fb + 5bf93c9 + be18d5c + 1c3b723)"
-  - "ROADMAP.md Phase 16 marked Complete; criterion #4 moot-note appended per CONTEXT D-14; milestone header advanced to 'ready for /gsd-complete-milestone'"
+  - "ROADMAP.md Phase 16 marked Complete; criterion #4 moot-note appended per CONTEXT D-14; milestone header advanced to 'ready for complete milestone'"
   - ".planning/phases/16-tutorial-refresh/16-VERIFICATION.md (NEW) — criteria-to-artifact map for #1-#3 + criterion #4 moot-note + 14 feature grep map + smoke transcripts + commit hash manifest"
   - ".planning/phases/16-tutorial-refresh/16-SUMMARY.md (NEW) — phase rollup: Goal vs Delivered, Plans Shipped, Feature Distribution, Divergences, ROADMAP Evolution, Self-Check"
-  - "STATE.md advanced: completed_phases 6→7, completed_plans 37→41, percent 100, last_updated bumped, Resume Instructions advanced to /gsd-complete-milestone v1.2"
-affects: [v1.2-milestone-close (this plan unblocks /gsd-complete-milestone v1.2)]
+  - "STATE.md advanced: completed_phases 6→7, completed_plans 37→41, percent 100, last_updated bumped, Resume Instructions advanced to complete milestone v1.2"
+affects: [v1.2-milestone-close (this plan unblocks complete milestone v1.2)]
 
 tech-stack:
   added: []
@@ -52,7 +52,7 @@ completed: 2026-04-25
 
 # Phase 16 Plan 05: Closure Summary
 
-**Closes Phase 16 Tutorial Refresh with a single atomic 5-file docs commit: REQUIREMENTS.md QOL-03 row flipped to Shipped (4-commit manifest), ROADMAP.md Phase 16 marked Complete with criterion #4 moot-note per CONTEXT D-14 (4th criterion-moot/reframe in v1.2), STATE.md advanced to completed_phases=7 / completed_plans=41 / percent=100 / status=executing-with-Resume-pointing-to-/gsd-complete-milestone-v1.2, plus authored 16-VERIFICATION.md (criteria-to-artifact map + 14 feature grep map + smoke transcripts + commit hash manifest + audit trail) and 16-SUMMARY.md (phase rollup: Goal vs Delivered + Plans Shipped + Feature Distribution + Divergences + ROADMAP Evolution + Self-Check). v1.2 milestone (Phases 11-17) at 7/7 phases — ready for /gsd-complete-milestone v1.2.**
+**Closes Phase 16 Tutorial Refresh with a single atomic 5-file docs commit: REQUIREMENTS.md QOL-03 row flipped to Shipped (4-commit manifest), ROADMAP.md Phase 16 marked Complete with criterion #4 moot-note per CONTEXT D-14 (4th criterion-moot/reframe in v1.2), STATE.md advanced to completed_phases=7 / completed_plans=41 / percent=100 / status=executing-with-Resume-pointing-to-complete milestone v1.2, plus authored 16-VERIFICATION.md (criteria-to-artifact map + 14 feature grep map + smoke transcripts + commit hash manifest + audit trail) and 16-SUMMARY.md (phase rollup: Goal vs Delivered + Plans Shipped + Feature Distribution + Divergences + ROADMAP Evolution + Self-Check). v1.2 milestone (Phases 11-17) at 7/7 phases — ready for complete milestone v1.2.**
 
 ## Performance
 
@@ -65,13 +65,13 @@ completed: 2026-04-25
 ## Accomplishments
 
 - **REQUIREMENTS.md QOL-03 row flipped to Shipped** — full commit manifest `94d20fb + 5bf93c9 + be18d5c + 1c3b723` pinned with 2026-04-25 date; description expanded to include `writeMidi`, `slice`, enharmonic helpers + flat literals, `reverbTime`, MIDI velocity export via `dynamics`/`crescendo`, `euclidean` swing/humanize (4-arg + 6-arg); criterion #4 moot-note inline; Traceability table updated; footer advanced.
-- **ROADMAP.md Phase 16 row marked Complete** with completion suffix `(completed 2026-04-25; QOL-03 shipped; all 14 features demonstrated; ROADMAP criterion #4 moot per CONTEXT D-14 — C5 dismissed in Phase 11)`. Plans block updated from `**Plans**: TBD`-form to full 5-plan list with `[x]` checkboxes. Criterion #4 moot-note paragraph appended INSIDE the Phase 16 detail block. Progress table row updated `0/?` → `5/5 | Complete | 2026-04-25`. Milestone header advanced from "started 2026-04-18" to "started 2026-04-18; final phase completed 2026-04-25; ready for /gsd-complete-milestone".
+- **ROADMAP.md Phase 16 row marked Complete** with completion suffix `(completed 2026-04-25; QOL-03 shipped; all 14 features demonstrated; ROADMAP criterion #4 moot per CONTEXT D-14 — C5 dismissed in Phase 11)`. Plans block updated from `**Plans**: TBD`-form to full 5-plan list with `[x]` checkboxes. Criterion #4 moot-note paragraph appended INSIDE the Phase 16 detail block. Progress table row updated `0/?` → `5/5 | Complete | 2026-04-25`. Milestone header advanced from "started 2026-04-18" to "started 2026-04-18; final phase completed 2026-04-25; ready for complete milestone".
 - **16-VERIFICATION.md authored** with all 8 required sections: criteria-to-artifact map for ROADMAP success criteria #1-#3 + criterion #4 moot-note (with N/A); 14-feature grep map with actual counts pinned at this commit (writeWav=3, writeMidi=5, mix=3, gain=4, strings=3, organ=2, bell=2, tempoRamp=7, sing=3, tts=3, slice=4, enharmonic=4, flats=3, reverbTime=7, dynamics|crescendo=7, euclidean=4, euclidean 6-arg=3, line-comments=5); smoke transcript pinned (dotnet test 287/287 + tutorial + showcase exit 0 + ls output + git ls-files); byte-identical determinism transcript (cmp clean for both files); criterion #4 moot section with 3-source audit trail; commit hash manifest; threat flags (none); deferred items (DEFER-02..06 unchanged); sign-off checklist (10 boxes all ticked).
 - **16-SUMMARY.md authored** with frontmatter + 11 prose sections (Goal vs Delivered, Plans Shipped with Wave breakdown, Feature Distribution table, Divergences aggregated from per-plan SUMMARYs, ROADMAP Evolution with 5 entries, Deferred Items, Threat Surface, Next Phase = v1.2 milestone closure, Self-Check PASSED).
 - **STATE.md advanced**:
   - Frontmatter `stopped_at` updated to Phase 16 closure summary; `last_updated` bumped; `last_activity` updated; `completed_phases: 6 → 7`; `completed_plans: 37 → 41`; `percent: 90 → 100`.
   - Body §Current Position rewritten to Phase 16 COMPLETE / v1.2 milestone ready.
-  - Body §Resume Instructions rewritten to advance to /gsd-complete-milestone v1.2.
+  - Body §Resume Instructions rewritten to advance to complete milestone v1.2.
   - Body §Performance Metrics — 5 new rows appended for Plans 16-01..16-05.
   - Body §Accumulated Context §Decisions — 5 bullets appended (one per Plan 16-NN).
   - Body §Roadmap Evolution — Phase 16 closure entry appended.
@@ -134,7 +134,7 @@ Verified post-write (this section will be re-confirmed after the closure commit 
 - `grep -cE '^- \[x\] \*\*Phase 16:' .planning/ROADMAP.md` → 1 (PASS)
 - `grep -cF 'moot per CONTEXT D-14' .planning/ROADMAP.md` → 1 (PASS)
 - `grep -cE '16\. Tutorial Refresh \| v1\.2 \| 5/5 \| Complete' .planning/ROADMAP.md` → 1 (PASS)
-- `grep -cF 'ready for /gsd-complete-milestone' .planning/ROADMAP.md` → 1 (PASS)
+- `grep -cF 'ready for complete milestone' .planning/ROADMAP.md` → 1 (PASS)
 - `grep -cE '16-0[1-5]-PLAN\.md' .planning/ROADMAP.md` → 5 (PASS, ≥5)
 - `grep -cE '<PLAN-0[1-4]-HASH>' .planning/REQUIREMENTS.md .planning/ROADMAP.md .planning/phases/16-tutorial-refresh/16-VERIFICATION.md` → 0 (PASS, no placeholders)
 - `grep -cF 'Criterion #4 Moot' 16-VERIFICATION.md` → 1 (PASS)
@@ -142,7 +142,7 @@ Verified post-write (this section will be re-confirmed after the closure commit 
 - `grep -cF 'Self-Check' 16-SUMMARY.md` → 1 (PASS)
 - `grep -cE 'completed_phases: 7' .planning/STATE.md` → 1 (PASS)
 - `grep -cE 'completed_plans: 41' .planning/STATE.md` → 1 (PASS)
-- `grep -cF 'ready for /gsd-complete-milestone v1.2' .planning/STATE.md` → 2 (PASS)
+- `grep -cF 'ready for complete milestone v1.2' .planning/STATE.md` → 2 (PASS)
 - `grep -cF '(((YAML-SEPARATOR)))' 16-VERIFICATION.md 16-SUMMARY.md` → 0 (PASS, all separators replaced)
 
 **Test suite:** `dotnet test flow-sharp.sln --nologo --no-build` → 287/287 GREEN (PASS)
@@ -155,9 +155,9 @@ Verified post-write (this section will be re-confirmed after the closure commit 
 
 ## Next Phase Readiness
 
-- **/gsd-complete-milestone v1.2** ready — all 7 v1.2 phases at Complete; all v1.2 ROADMAP requirements either Shipped, Closed (audit false positive), or marked moot with audit trail; full suite GREEN; tutorial + showcase produce audible artifacts.
-- **No blockers.** Phase 17 HUMAN-UAT items (3 pending in 17-HUMAN-UAT.md, plus rows 4-5 of manual-smoke.md) are orthogonal to milestone closure — they resolve at first release tag, not at /gsd-complete-milestone.
-- **v1.3 planning** can begin once /gsd-complete-milestone v1.2 lands. Likely first targets: deferred items DEFER-02..06 (H-alias via DEFER-03 pragma system; multi-letter enharmonic edges; slice negative-from-end indexing); Tier B/C composer DX (arpeggio params, chord inversions, delay sync to note values, microtonal ratios); per CLAUDE.md project context.
+- **complete milestone v1.2** ready — all 7 v1.2 phases at Complete; all v1.2 ROADMAP requirements either Shipped, Closed (audit false positive), or marked moot with audit trail; full suite GREEN; tutorial + showcase produce audible artifacts.
+- **No blockers.** Phase 17 HUMAN-UAT items (3 pending in 17-HUMAN-UAT.md, plus rows 4-5 of manual-smoke.md) are orthogonal to milestone closure — they resolve at first release tag, not at complete milestone.
+- **v1.3 planning** can begin once complete milestone v1.2 lands. Likely first targets: deferred items DEFER-02..06 (H-alias via DEFER-03 pragma system; multi-letter enharmonic edges; slice negative-from-end indexing); Tier B/C composer DX (arpeggio params, chord inversions, delay sync to note values, microtonal ratios); per CLAUDE.md project context.
 
 ---
 

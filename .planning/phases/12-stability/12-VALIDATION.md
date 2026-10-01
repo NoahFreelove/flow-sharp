@@ -29,7 +29,7 @@ created: 2026-04-19
 
 - **After every task commit:** Run `dotnet test --filter` scoped to the test class for the just-touched fix
 - **After every plan wave:** Run `dotnet test flow-sharp.sln`
-- **Before `/gsd-verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 60 seconds
 
 ---

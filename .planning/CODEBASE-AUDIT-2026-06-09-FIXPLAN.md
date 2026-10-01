@@ -23,7 +23,7 @@
 | D4 | **Reverb tail (§3.8):** extending output past input length is a behavior change (longer buffers, RMS baselines shift). Ship it? | **Yes** — it's what the RT60 overload promises; regen baselines. |
 | D5 | **Dynamic scoping (§2.5):** make user-proc call frames lookup boundaries (semantic change; could break scripts relying on caller-variable reads)? | **Fix write-through at minimum** (assignment must not cross a call boundary); decide read-through after the full `.flow` suite + examples run clean under the stricter mode. |
 | D6 | **WASM republish:** integration wave needs `dotnet workload install wasm-tools` on this Mac + a multi-MB `static/wasm/` commit. OK? | Yes — required for §5.4/5.12/6.3 to actually reach the playground. Add `.gitattributes` in the same commit. |
-| D7 | **GSD:** run this as direct subagent work (bypassing `/gsd:execute-phase`) per your direction, optionally logging it in STATE.md as a quick-task batch? | Bypass with a one-line STATE.md note at the end. |
+| D7 | **previous planning workflow:** run this as direct subagent work (bypassing execute phase) per your direction, optionally logging it in STATE.md as a quick-task batch? | Bypass with a one-line STATE.md note at the end. |
 
 ## 2. Wave 1 — surgical inline fixes (main loop, no agents, ~30 min)
 

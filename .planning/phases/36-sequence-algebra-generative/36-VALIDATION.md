@@ -31,7 +31,7 @@ closed: 2026-05-22
 
 - **After every task commit:** Run `dotnet test --filter "Phase36"` (Phase 36 facts only — fast feedback)
 - **After every plan wave:** Run `dotnet test` (full xUnit suite — verify no Phase 35 / earlier regressions)
-- **Before `/gsd:verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Phase gate:** Two-run cmp-clean integration on `examples/generative/markov_jazz.flow`, `examples/generative/tidal_combinators.flow`, `examples/sections/parameterized.flow` — SHA-256 byte-identical on consecutive renders of WAV+MIDI (Linux)
 - **Max feedback latency:** 120s
 

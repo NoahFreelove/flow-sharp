@@ -175,7 +175,7 @@ Status: ✓ = met minimum, ⚠ = below minimum (planner treats as assumption)
 | 1     | Researcher  | `C4/0` and `C4/1` edge cases?                                               | D-08: `C4/1` = whole note (valid); `C4/0` = parse error citing zero-denominator    |
 | 2     | User add-on | Variable duration suffix like `x:y`?                                        | D-09: Add TUP-08 — `C4/X:Y[suffix]` per-note tuplet shorthand (Option B). Mixed ratios in adjacent notes are legal (independent per-note). Same TPQN auto-elevation path as bracket form. |
 
-Plus 5 milestone-level decisions (D-01..D-05) inherited from `/gsd-new-milestone` discussion:
+Plus 5 milestone-level decisions (D-01..D-05) inherited from new milestone discussion:
 
 - **D-01**: Tuplet bracket syntax is `{N:M ...}` (braces, not parens)
 - **D-02**: Pragmas file-scope only — irrelevant to Phase 19 (Phase 21 territory)
@@ -187,4 +187,4 @@ Plus 5 milestone-level decisions (D-01..D-05) inherited from `/gsd-new-milestone
 
 *Phase: 19-tuplets-arbitrary-fractional-durations*
 *Spec created: 2026-04-26*
-*Next step: /gsd-discuss-phase 19 — implementation decisions (parser dispatch shape, NoteStreamCompiler recursion structure, MIDI delta-time scaling math)*
+*Next step: discuss phase 19 — implementation decisions (parser dispatch shape, NoteStreamCompiler recursion structure, MIDI delta-time scaling math)*

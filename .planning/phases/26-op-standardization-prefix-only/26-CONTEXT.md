@@ -206,11 +206,11 @@ Locked by ROADMAP.md Phase 26 success criteria 1–5 and v1.3 dependency: this p
 
 ### Reviewed Todos (not folded)
 
-None — `gsd-sdk query todo.match-phase 26` was not invoked during this discussion (no todo file pre-existed for this phase). Planner may run it during plan-phase as a standard cross-check.
+None — sdk query todo.match-phase 26 was not invoked during this discussion (no todo file pre-existed for this phase). Planner may run it during plan-phase as a standard cross-check.
 
 </deferred>
 
 ---
 
 *Phase: 26-op-standardization-prefix-only*
-*Context gathered: 2026-05-04 via /gsd-discuss-phase 26 (default interactive mode)*
+*Context gathered: 2026-05-04 via discuss phase 26 (default interactive mode)*

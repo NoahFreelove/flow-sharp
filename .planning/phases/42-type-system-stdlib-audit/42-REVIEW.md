@@ -225,5 +225,5 @@ grep -rho "([a-zA-Z_][a-zA-Z0-9_]*)" "${FLOW_FILES[@]}" 2>/dev/null \
 ---
 
 _Reviewed: 2026-05-24T00:00:00Z_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

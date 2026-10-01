@@ -60,11 +60,6 @@ Output:
 - `.github/workflows/wiki-sync.yml` — manual (`workflow_dispatch`) sync workflow
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @CLAUDE.md
 

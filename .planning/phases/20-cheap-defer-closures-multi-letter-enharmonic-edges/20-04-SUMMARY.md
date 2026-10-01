@@ -164,7 +164,7 @@ Phase 21 requirements:
 - **PRAG-02**: pragmas do NOT propagate across `use` imports
 - **DEFER-02/03**: `enable hAsB;` activates `H` as a `B` alias inside note-stream context only; `H4q` parses identically to `B4q`; outside note streams, `Int H = 5;` continues to compile
 
-Phase 21 entry point: `/gsd-plan-phase 21`.
+Phase 21 entry point: plan phase 21.
 
 ## Phase 18 Byte-Identical Gate
 
@@ -179,7 +179,7 @@ Phase 21 entry point: `/gsd-plan-phase 21`.
 - [x] `.planning/ROADMAP.md` — Progress table `4/4 Complete 2026-04-26` (FOUND)
 - [x] `.planning/STATE.md` — `completed_phases: 3` (FOUND)
 - [x] `.planning/STATE.md` — `[Plan 20-04]` decision entry present (FOUND)
-- [x] `.planning/STATE.md` — Resume Instructions point at `/gsd-plan-phase 21` (FOUND)
+- [x] `.planning/STATE.md` — Resume Instructions point at plan phase 21 (FOUND)
 - [x] `.planning/phases/20-.../20-VERIFICATION.md` — exists; contains 4 `Verified: ✅` lines; ~210 lines (FOUND)
 - [x] `.planning/phases/14-composer-dx-part-1/deferred-items.md` — 2× `CLOSED 2026-04-26 by Phase 20` (FOUND)
 - [x] `.planning/phases/12-stability/deferred-items.md` — 1× `CLOSED 2026-04-26 by Phase 20` (FOUND)

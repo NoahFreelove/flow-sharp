@@ -30,7 +30,7 @@ created: 2026-04-19
 
 - **After every task commit:** `dotnet test --filter` scoped to the just-touched test class (or the full suite if only `RequiredSentinels` entries were added)
 - **After every plan wave:** `dotnet test flow-sharp.sln`
-- **Before `/gsd-verify-work`:** Full suite must be green; every new `*-VALIDATION.md` must exist per presence-check
+- **Before verify work:** Full suite must be green; every new `*-VALIDATION.md` must exist per presence-check
 - **Max feedback latency:** 60 seconds
 
 ---

@@ -139,7 +139,7 @@ Ship the three Tier-A composer DX features scoped in ROADMAP Phase 14 — `slice
 - `tests/test_crescendo.flow` — existing sentinel coverage; untouched.
 
 ### Template references
-- `~/.claude/get-shit-done/templates/VALIDATION.md` — canonical VALIDATION.md schema if plan 14-04 decides to ship `14-VALIDATION.md` (Claude's Discretion per last bullet of §Claude's Discretion)
+- the archived planning template — canonical VALIDATION.md schema if plan 14-04 decides to ship `14-VALIDATION.md` (Claude's Discretion per last bullet of §Claude's Discretion)
 - `.planning/phases/13-nyquist-validation-backfill/13-VERIFICATION.md` — format reference for `## Divergences` logging in 14-03 if DX-08 goes Pass 2 RED
 
 </canonical_refs>

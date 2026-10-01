@@ -162,7 +162,7 @@ Before any Task 2 edits, `grep -E '"as"' flow-lang/Lexing/SimpleLexer.cs` return
 
 ## Downstream Unblocked
 
-- **Phase 35 fully closed for v1.5 deliverables.** REQUIREMENTS.md LANG-01 (Plan 35-05) + LANG-02 (Plan 35-06) + LANG-03 (Plan 35-07) + LANG-04 (Plan 35-03 multi-line diagnostics) + TEST-01..02 (Plan 35-04) + HK-01..04 (Plan 35-02) checkboxes can all flip to complete after the orchestrator's STATE/ROADMAP/REQUIREMENTS update pass and gsd-verifier's 35-VERIFICATION.md.
+- **Phase 35 fully closed for v1.5 deliverables.** REQUIREMENTS.md LANG-01 (Plan 35-05) + LANG-02 (Plan 35-06) + LANG-03 (Plan 35-07) + LANG-04 (Plan 35-03 multi-line diagnostics) + TEST-01..02 (Plan 35-04) + HK-01..04 (Plan 35-02) checkboxes can all flip to complete after the orchestrator's STATE/ROADMAP/REQUIREMENTS update pass and verifier's 35-VERIFICATION.md.
 - **Composer ergonomics for tutorial / showcase**: the `as` annotation replaces the three-line boilerplate `Sequence m = (transpose seq 2); Sequence n = (legato m 0.5); (render n)` with the inline single-line `seq -> (transpose 2) as m -> (legato 0.5) as n -> render`. Available immediately for v1.5 phase rewrites and any tutorial chapter that wants to demonstrate intermediate-value naming inside a chain.
 - **Future v1.6 backlog candidates**: parenthesized form `(EXPR as NAME)` per RESEARCH OQ5 (deferred indefinitely; no compelling use case at this time); `as` for import aliases (e.g., `use "@audio" as a`) — would require parser surface in `ParseImport` not in `ParseFlowExpression`; the `TryConsumeAsClause` helper is reusable if/when that ships.
 

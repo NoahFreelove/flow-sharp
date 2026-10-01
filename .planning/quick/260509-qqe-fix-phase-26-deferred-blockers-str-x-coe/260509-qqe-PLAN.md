@@ -58,11 +58,6 @@ Purpose: unblock Phase 26.1 and restore the Phase 18 ByteIdentical Tutorial guar
 Output: three atomic commits — Commit 1 (Blocker 1: resolver fix + xUnit Fact), Commit 2 (Blocker 3: hand-fix all 6 sites), Commit 3 (housekeeping). The orchestrator handles the docs commit for PLAN/SUMMARY/STATE-table separately.
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @.planning/phases/26-op-standardization-prefix-only/.continue-here.md

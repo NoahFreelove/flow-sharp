@@ -34,7 +34,7 @@ created: 2026-06-05
 
 - **After every task commit:** `pnpm -C flow-site vitest run` (fast unit pass: docs transform, slug kebab, share encode/decode, worker CSRF)
 - **After every plan wave:** `pnpm -C flow-site vitest run && pnpm -C flow-site playwright test`
-- **Before `/gsd:verify-work` (Plan 49-08 gate):** full suite incl. `pnpm -C flow-site lhci autorun` green; cross-browser HUMAN-UAT (Chrome / Firefox / Safari + mobile) re-smokes audio (Phase 48 HANDOFF §7 left Chrome/Safari audio unverified)
+- **Before verify work (Plan 49-08 gate):** full suite incl. `pnpm -C flow-site lhci autorun` green; cross-browser HUMAN-UAT (Chrome / Firefox / Safari + mobile) re-smokes audio (Phase 48 HANDOFF §7 left Chrome/Safari audio unverified)
 - **Max feedback latency:** ~30s (unit) — no watch-mode flags in CI
 
 ---

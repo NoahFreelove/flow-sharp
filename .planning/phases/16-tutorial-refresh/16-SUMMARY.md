@@ -16,7 +16,7 @@ provides:
   - "examples/showcase.flow rewritten — v1.2 ambient mood piece (reverbTime + euclidean humanize + dynamics)"
   - "examples/output/ directory + .gitignore — discoverable output location alongside the example sources"
   - "ROADMAP criterion #4 moot-note documented — fourth criterion-moot/reframe in v1.2 (Phase 12 TEST-03, Phase 14 DX-06, Phase 15 #3, Phase 16 #4)"
-affects: [v1.2-milestone-close (this is the final phase; /gsd-complete-milestone v1.2 next)]
+affects: [v1.2-milestone-close (this is the final phase; complete milestone v1.2 next)]
 
 tech-stack:
   added: []
@@ -143,7 +143,7 @@ since v1.0 stop atrophying unused.
 - **16-05** (this plan) — REQUIREMENTS QOL-03 Shipped marker + ROADMAP
   Phase 16 complete + criterion #4 moot-note + 16-VERIFICATION.md +
   16-SUMMARY.md (this file) + STATE.md advance. Single atomic docs
-  commit; v1.2 milestone ready for /gsd-complete-milestone.
+  commit; v1.2 milestone ready for complete milestone.
 
 ---
 
@@ -232,7 +232,7 @@ Aggregate from per-plan SUMMARYs (full detail in each
 
 - **2026-04-25:** Phase 16 completed. v1.2 milestone progress advances
   from 6/7 phases to **7/7** — all v1.2 phases complete. Milestone is
-  ready for closure via `/gsd-complete-milestone v1.2`.
+  ready for closure via complete milestone v1.2.
 - **2026-04-25:** ROADMAP Phase 16 row marked Complete; Plans 16-01
   through 16-05 all checked; Progress table row updated `0/?` → `5/5`
   with completion date 2026-04-25.
@@ -245,7 +245,7 @@ Aggregate from per-plan SUMMARYs (full detail in each
   #4 moot.
 - **2026-04-25:** ROADMAP milestone header advanced from "started
   2026-04-18" to "started 2026-04-18; final phase completed
-  2026-04-25; ready for /gsd-complete-milestone".
+  2026-04-25; ready for complete milestone".
 - **2026-04-25:** REQUIREMENTS QOL-03 row flipped to Shipped with
   4-commit manifest (`94d20fb + 5bf93c9 + be18d5c + 1c3b723`);
   Traceability table updated; footer advanced.
@@ -287,14 +287,14 @@ of generated artifacts (`git ls-files examples/output/` returns only
 
 ## Next Phase
 
-**v1.2 milestone closure** via `/gsd-complete-milestone v1.2`. After
+**v1.2 milestone closure** via complete milestone v1.2. After
 the milestone closes, the project enters v1.3 planning.
 
 Phase 17 HUMAN-UAT items (3 pending tests in
 `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md`, plus 2
 deferred-to-first-tag rows for non-dev OS + Marketplace/OpenVSX
 publish verification) remain orthogonal to milestone closure — they
-resolve at first release tag, not at /gsd-complete-milestone.
+resolve at first release tag, not at complete milestone.
 
 ---
 
@@ -310,7 +310,7 @@ closure commit:
   \*\*Phase 16:"` → 1); Plan list 5/5 checked; Progress table row
   updated to `5/5 | Complete | 2026-04-25`; criterion #4 moot-note
   appended (`grep -c "moot per CONTEXT D-14"` → 1); milestone header
-  advanced (`grep -c "ready for /gsd-complete-milestone"` → 1)
+  advanced (`grep -c "ready for complete milestone"` → 1)
 - `16-VERIFICATION.md` (NEW) — exists with all 8 required sections;
   feature grep map pinned with actual counts; smoke transcript
   pinned; commit hash manifest pinned; criterion #4 moot-note with
@@ -318,7 +318,7 @@ closure commit:
 - `16-SUMMARY.md` (NEW) — this file
 - `.planning/STATE.md` updated (Phase 16 closed, completed_phases 6
   → 7, total_plans + completed_plans both 41, milestone progress
-  recomputed, Resume Instructions advanced to /gsd-complete-milestone
+  recomputed, Resume Instructions advanced to complete milestone
   v1.2, accumulated-context bullets added for Plans 16-01..16-05)
 - `dotnet test flow-sharp.sln --nologo --no-build` → 287/287 GREEN at
   HEAD

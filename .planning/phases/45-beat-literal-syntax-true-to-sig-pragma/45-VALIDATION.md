@@ -31,14 +31,14 @@ created: 2026-05-25
 
 - **After every task commit:** Run quick command (Phase45 filter, ~20s)
 - **After every plan wave:** Run full suite + `.flow` smoke
-- **Before `/gsd:verify-work`:** Full suite must be green + `.flow` smoke must exit 0
+- **Before verify work:** Full suite must be green + `.flow` smoke must exit 0
 - **Max feedback latency:** ~20 seconds (quick) — well under any practical bound for the 6-wave plan
 
 ---
 
 ## Per-Task Verification Map
 
-> Populated by gsd-planner after PLAN.md files are generated. The 6 signals from
+> Populated by planner after PLAN.md files are generated. The 6 signals from
 > RESEARCH.md (Lexer / AST / Pragma / Multiplier / Constructor / Tutorial-smoke)
 > map to ~50 xUnit cases + 4 `.flow` smoke scripts. Each task's `<acceptance_criteria>`
 > must reference at least one Fact/Theory or `.flow` smoke command.

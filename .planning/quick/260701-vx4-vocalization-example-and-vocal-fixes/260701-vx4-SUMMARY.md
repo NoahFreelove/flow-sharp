@@ -107,7 +107,7 @@ old and new runtimes:
 |-------|--------|-------|
 | flow-lang charitable fixes (`FormantData.cs` + `TtsHook.cs`) | **44da382** | Folded by the orchestrator into the concurrent vqz commit due to a shared-index collision (see below); the message credits vx4 (`… + charitable vocal fixes [260701-vqz+vx4]`). |
 | Example + manifest (`vocal-choir.flow` + `manifest.json`) | **da00212** | Committed with explicit paths (`git commit --only -- …`) to stay race-safe. |
-| GSD planning artifacts | this commit | PLAN.md + SUMMARY.md + STATE.md row. |
+| previous planning workflow planning artifacts | this commit | PLAN.md + SUMMARY.md + STATE.md row. |
 
 ## Notes / deviations
 

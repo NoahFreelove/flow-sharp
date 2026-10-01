@@ -59,7 +59,7 @@ the `/tmp/piano_warmth_smoke.flow` smoke test below.
 
 **sign-off:** Auto-approved at 2026-05-23 (auto-mode policy: human-verify
 checkpoints auto-approve except blocking-human gates per
-`/get-shit-done/references/checkpoints.md`). Composer can override by
+the archived planning template). Composer can override by
 appending a "Composer Re-Listen" subsection below with a different
 verdict and the date.
 

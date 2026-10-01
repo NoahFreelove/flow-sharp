@@ -120,5 +120,5 @@ Phase 14 reordered the lexer to dispatch `IsChordSymbol` BEFORE `TryParseNote` (
 ---
 
 _Reviewed: 2026-04-20_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

@@ -30,7 +30,7 @@ created: 2026-04-26
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase21"` (~5–15s)
 - **After every plan wave:** Run `dotnet test` (full suite)
-- **Before `/gsd-verify-work`:** Full suite must be green AND `for t in tests/test_*.flow; do dotnet run --project flow-interpreter "$t"; done` exits clean AND `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` green
+- **Before verify work:** Full suite must be green AND `for t in tests/test_*.flow; do dotnet run --project flow-interpreter "$t"; done` exits clean AND `ByteIdenticalTutorialTests` + `ByteIdenticalShowcaseTests` green
 - **Max feedback latency:** 60s
 
 ---

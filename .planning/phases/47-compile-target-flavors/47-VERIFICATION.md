@@ -142,5 +142,5 @@ With these edits, `dotnet build flow-lang.Tests -p:FlowTarget=Web` now exits 0, 
 
 ## Next Steps
 
-- Phase 48 unblocked. `/gsd:plan-phase 48` consumes Phase 47 deliverables: FlowTarget=Web build infrastructure + WebAudioBackend stub + AssemblyReferenceScanTests invariant + DryWetMidi WASM-compat verified.
+- Phase 48 unblocked. plan phase 48 consumes Phase 47 deliverables: FlowTarget=Web build infrastructure + WebAudioBackend stub + AssemblyReferenceScanTests invariant + DryWetMidi WASM-compat verified.
 - Phase 49 (flowlang.dev site) blocked on Phase 48.

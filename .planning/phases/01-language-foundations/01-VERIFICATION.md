@@ -112,4 +112,4 @@ No gaps. All four observable truths are verified. All 15 artifacts exist, are su
 ---
 
 _Verified: 2026-03-29_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

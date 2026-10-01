@@ -16,7 +16,7 @@ provides:
   - "docs/editor-setup/neovim.md + helix.md — per-editor setup guides with prerequisites, configuration, troubleshooting, cross-links"
   - "docs/editor-setup/generic-lsp.md — Emacs (lsp-mode + eglot), Zed, Cursor, Windsurf, Sublime/Kate/coc.nvim guidance; shared LSP contract table for any editor not explicitly covered"
   - "docs/editor-setup/manual-smoke.md — Phase 17 closure checklist covering all 5 manual-only-verification rows from 17-VALIDATION.md (rows 1-3 executable today, rows 4-5 deferred to first release tag push as HUMAN-UAT items)"
-  - ".planning/phases/17-flow-language-server/17-HUMAN-UAT.md — persistent HUMAN-UAT session file (GSD UAT template) tracking manual-smoke rows 1-3 as 3 pending tests surfaced via /gsd-progress and /gsd-audit-uat; rows 4-5 explicitly deferred to first release tag milestone via an in-file note so no circular wait blocks phase closure"
+  - ".planning/phases/17-flow-language-server/17-HUMAN-UAT.md — persistent HUMAN-UAT session file (previous planning workflow UAT template) tracking manual-smoke rows 1-3 as 3 pending tests surfaced via progress and audit uat; rows 4-5 explicitly deferred to first release tag milestone via an in-file note so no circular wait blocks phase closure"
   - "vscode-extension/README.md — end-user-facing extension description: features, Marketplace + OpenVSX install, VSCode >= 1.85.0 requirement, no-.NET-runtime promise, configuration reference table (flow.server.path + flow.trace.server), manual-binary-override guidance with Pitfall 6 stdlib-files reminder, troubleshooting, non-VSCode handoff to docs/editor-setup/, repo + issues links, publisher placeholder disclosure (108 lines)"
   - ".planning/phases/17-flow-language-server/17-MARKETPLACE-SETUP.md — one-time human-only runbook: VSCode Marketplace publisher creation + VSCE_PAT (Azure DevOps Marketplace.Manage scope, 1y max expiry), OpenVSX publisher + namespace claim (Pitfall 8) + OVSX_PAT, GitHub Actions secret wiring, workflow_dispatch dry-run procedure, first tag push procedure, rotation calendar (2-month advance reminder), troubleshooting table, 17-row status checklist for tracking completion of each step"
   - "README.md (top-level) — Editor support section announcing VSCode extension (Marketplace + OpenVSX) + pointer to docs/editor-setup/ for non-VSCode editors"
@@ -55,7 +55,7 @@ key-decisions:
   - "Azure DevOps scope named `Marketplace.Manage` (not `Marketplace.Publish`) — the VSCE documentation uses Publish vocabulary but Azure DevOps UI labels it Manage. Runbook documents both vocabularies to avoid confusion when Noah executes Step 1.3."
   - "Rotation calendar entries — VSCE_PAT has 1-year max expiry (hard ceiling); OVSX_PAT has no documented expiry but rotate annually for hygiene. 2-month advance reminder for VSCE_PAT lets the replacement PAT go through one real tag push before the old one is revoked."
   - "Deferred rows 4 + 5 from manual-smoke to first-release-tag — because rows 4 (non-dev OS test) and 5 (Marketplace + OpenVSX publish) literally CANNOT happen today without the VSIX artifacts existing on the marketplaces, blocking Phase 17 on them would create a circular dependency (phase closure awaiting tag push awaiting phase closure). Treating them as HUMAN-UAT items scoped to the release-tag milestone is the clean resolution."
-  - "Manual-smoke checkpoint resolution (2026-04-20): Task 3 closed by deferring rows 1-3 to HUMAN-UAT rather than blocking phase closure on a synchronous F5 session. Authored 17-HUMAN-UAT.md using the GSD UAT template so the 3 active tests surface in /gsd-progress and /gsd-audit-uat and can resolve independently of phase-close. NOT faked as a pass — each test is explicitly recorded result: [pending] awaiting human verification. This pattern (HUMAN-UAT handoff from a final manual-verify checkpoint) is reusable for any future phase that cannot auto-verify a UI/UX behavior and must not block on a synchronous human session."
+  - "Manual-smoke checkpoint resolution (2026-04-20): Task 3 closed by deferring rows 1-3 to HUMAN-UAT rather than blocking phase closure on a synchronous F5 session. Authored 17-HUMAN-UAT.md using the previous planning workflow UAT template so the 3 active tests surface in progress and audit uat and can resolve independently of phase-close. NOT faked as a pass — each test is explicitly recorded result: [pending] awaiting human verification. This pattern (HUMAN-UAT handoff from a final manual-verify checkpoint) is reusable for any future phase that cannot auto-verify a UI/UX behavior and must not block on a synchronous human session."
   - ".gitignore allowlist for docs/**/*.md: the repo's global *.md ignore was chosen for AI-generated-documentation hygiene (only .planning/, CLAUDE.md, and the few explicitly-allowed extension files pass through). Editor-setup docs are user-facing prose and must be trackable. Added !docs/, !docs/**/*.md, and !README.md in a commented block distinct from the existing vscode-extension/ allowlist."
 
 patterns-established:
@@ -75,7 +75,7 @@ phase17-fact-count-at-close: 96 (0 failed, 0 skipped, all green under `dotnet te
 
 # Phase 17 Plan 08: Non-VSCode editor docs + Marketplace/OpenVSX setup + Extension Dev Host manual smoke + phase closure Summary
 
-**Wave 7 closed (complete with HUMAN-UAT deferred): docs/editor-setup/ landed with 4 markdown guides (README, neovim, helix, generic-lsp, manual-smoke) + 2 raw-snippet reference files (nvim-lspconfig.lua, helix-languages.toml) closing D-13's second clause; 17-MARKETPLACE-SETUP.md runbook captures every one-time human-only step for VSCode Marketplace (Azure DevOps publisher + VSCE_PAT with Marketplace.Manage scope + 1y rotation) and OpenVSX (namespace claim via `npx ovsx create-namespace` closing Pitfall 8 + OVSX_PAT + annual hygiene rotation) with a 17-row status checklist for audit-trail tracking; vscode-extension/README.md expanded 32→108 lines with features list, Marketplace + OpenVSX install path, flow.server.path + flow.trace.server configuration reference table, manual-binary-override guidance, and cross-link to docs/editor-setup/ for non-VSCode editors; top-level README.md gained an Editor support section announcing the extension. Manual smoke checklist authored into docs/editor-setup/manual-smoke.md covering all 5 manual-only-verification rows from 17-VALIDATION.md (rows 1-3 executable today via F5 in EDH, rows 4-5 deferred to first release tag push as HUMAN-UAT items). Task 3 resolved by explicit user direction: rows 1-3 tracked as pending tests in .planning/phases/17-flow-language-server/17-HUMAN-UAT.md (surfaced via /gsd-progress and /gsd-audit-uat) and rows 4-5 deferred to first release tag — phase 17 closes now without blocking on a synchronous F5 session. Phase17 Fact count at plan close: 96/96 green (docs-only, unchanged from 17-07).**
+**Wave 7 closed (complete with HUMAN-UAT deferred): docs/editor-setup/ landed with 4 markdown guides (README, neovim, helix, generic-lsp, manual-smoke) + 2 raw-snippet reference files (nvim-lspconfig.lua, helix-languages.toml) closing D-13's second clause; 17-MARKETPLACE-SETUP.md runbook captures every one-time human-only step for VSCode Marketplace (Azure DevOps publisher + VSCE_PAT with Marketplace.Manage scope + 1y rotation) and OpenVSX (namespace claim via `npx ovsx create-namespace` closing Pitfall 8 + OVSX_PAT + annual hygiene rotation) with a 17-row status checklist for audit-trail tracking; vscode-extension/README.md expanded 32→108 lines with features list, Marketplace + OpenVSX install path, flow.server.path + flow.trace.server configuration reference table, manual-binary-override guidance, and cross-link to docs/editor-setup/ for non-VSCode editors; top-level README.md gained an Editor support section announcing the extension. Manual smoke checklist authored into docs/editor-setup/manual-smoke.md covering all 5 manual-only-verification rows from 17-VALIDATION.md (rows 1-3 executable today via F5 in EDH, rows 4-5 deferred to first release tag push as HUMAN-UAT items). Task 3 resolved by explicit user direction: rows 1-3 tracked as pending tests in .planning/phases/17-flow-language-server/17-HUMAN-UAT.md (surfaced via progress and audit uat) and rows 4-5 deferred to first release tag — phase 17 closes now without blocking on a synchronous F5 session. Phase17 Fact count at plan close: 96/96 green (docs-only, unchanged from 17-07).**
 
 ## Performance
 
@@ -128,7 +128,7 @@ phase17-fact-count-at-close: 96 (0 failed, 0 skipped, all green under `dotnet te
   - Summary table: rows 1–3 required for Phase 17 closure, rows 4–5 deferred.
   - Resume signal format: `smoke: clear` / `smoke: partial - <desc>` / `smoke: blocked - <desc>`.
 
-**Task 3 — DEFERRED to HUMAN-UAT (final commit).** Per user direction ("Defer to HUMAN-UAT. Close the phase now without blocking on F5. Record rows 1–3 as HUMAN-UAT items so they appear in /gsd-progress and /gsd-audit-uat. Rows 4–5 stay deferred to first release tag. Do NOT fake a pass — record explicitly as pending human verification."), rows 1–3 are now tracked in `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md` as 3 pending tests using the GSD UAT template. Rows 4–5 remain deferred to the first release tag milestone and are NOT tracked in this HUMAN-UAT file — they surface after `git push origin v*` triggers the publish workflow. Phase 17 closes without a synchronous F5 session; the UAT results drip in over time via `/gsd-verify-work` sessions.
+**Task 3 — DEFERRED to HUMAN-UAT (final commit).** Per user direction ("Defer to HUMAN-UAT. Close the phase now without blocking on F5. Record rows 1–3 as HUMAN-UAT items so they appear in progress and audit uat. Rows 4–5 stay deferred to first release tag. Do NOT fake a pass — record explicitly as pending human verification."), rows 1–3 are now tracked in `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md` as 3 pending tests using the previous planning workflow UAT template. Rows 4–5 remain deferred to the first release tag milestone and are NOT tracked in this HUMAN-UAT file — they surface after `git push origin v*` triggers the publish workflow. Phase 17 closes without a synchronous F5 session; the UAT results drip in over time via verify work sessions.
 
 ## Task Commits
 
@@ -150,7 +150,7 @@ phase17-fact-count-at-close: 96 (0 failed, 0 skipped, all green under `dotnet te
 - `docs/editor-setup/generic-lsp.md` — Emacs + Zed + Cursor + Windsurf + others guide
 - `docs/editor-setup/manual-smoke.md` — Phase 17 closure checklist
 - `.planning/phases/17-flow-language-server/17-MARKETPLACE-SETUP.md` — one-time setup runbook
-- `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md` — HUMAN-UAT session file (GSD UAT template; 3 pending tests for rows 1-3)
+- `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md` — HUMAN-UAT session file (previous planning workflow UAT template; 3 pending tests for rows 1-3)
 
 ### Modified (3)
 
@@ -190,7 +190,7 @@ Verified after each commit:
 
 ### Tracked in 17-HUMAN-UAT.md (pending human verification of Phase 17 artifacts)
 
-Rows 1–3 of `docs/editor-setup/manual-smoke.md` are recorded as 3 explicitly-pending tests in `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md`. They surface in `/gsd-progress` and `/gsd-audit-uat` output and resolve asynchronously whenever Noah runs the Extension Development Host F5 session — Phase 17 closes now and the tests drip in over time, NOT faked as a pass:
+Rows 1–3 of `docs/editor-setup/manual-smoke.md` are recorded as 3 explicitly-pending tests in `.planning/phases/17-flow-language-server/17-HUMAN-UAT.md`. They surface in progress and audit uat output and resolve asynchronously whenever Noah runs the Extension Development Host F5 session — Phase 17 closes now and the tests drip in over time, NOT faked as a pass:
 
 - **HUMAN-UAT Test 1 — D-04/D-05 syntax highlighting matches flow-editor/ categories** (11-item tick list) — pending.
 - **HUMAN-UAT Test 2 — D-04 TM→semantic token transition (0–300ms window)** — pending.
@@ -215,7 +215,7 @@ Phase 17 closure does NOT require any of these to complete today — the artifac
 
 ## Self-Check: PASSED
 
-All files created/modified are present on disk; all 4 plan commits are reachable in `git log`; 17-HUMAN-UAT.md is authored using the GSD UAT template and surfaces 3 pending tests; Phase17 Fact count at plan close is 96/96 green.
+All files created/modified are present on disk; all 4 plan commits are reachable in `git log`; 17-HUMAN-UAT.md is authored using the previous planning workflow UAT template and surfaces 3 pending tests; Phase17 Fact count at plan close is 96/96 green.
 
 Files:
 
@@ -252,7 +252,7 @@ Deletion safety:
 ## Closeout notes
 
 - Plan 17-08 is the final plan in Phase 17. ROADMAP Phase 17 row advances to 8/8 Complete with this commit.
-- Phase 17 itself is ready for `/gsd-verify-work` (or tagged as complete) now that 17-08 closes. The 3 pending HUMAN-UAT tests are persistent and do not block phase-close under the deferral pattern — they resolve asynchronously in a subsequent `/gsd-verify-work` session.
+- Phase 17 itself is ready for verify work (or tagged as complete) now that 17-08 closes. The 3 pending HUMAN-UAT tests are persistent and do not block phase-close under the deferral pattern — they resolve asynchronously in a subsequent verify work session.
 - First release tag push (`git tag v0.1.0 && git push origin v0.1.0`) remains a separate human-action event gated by the 17-MARKETPLACE-SETUP.md runbook steps, the publisher-ID finalization, and a green rows 1–3 in 17-HUMAN-UAT.md.
 
 ---

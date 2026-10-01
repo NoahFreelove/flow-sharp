@@ -47,11 +47,6 @@ the existing MusicalContext stack the rest of the language already respects.
 Output: 3 modified C# files + 1 new xUnit regression test.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-@$HOME/.claude/gsd-core/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @CLAUDE.md

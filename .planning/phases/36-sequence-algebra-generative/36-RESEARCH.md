@@ -94,7 +94,7 @@ These constrain every plan in Phase 36:
 - **No reflection-heavy additions.** Phase 41 WASM playground is on Mono-WASM jiterpreter; new reflection in v1.5 is rejected unless gated behind `[DynamicallyAccessedMembers]`. The named-arg backfill is direct list construction (not reflection over C# method signatures).
 - **`tempo` / `timesig` / `key` / `swing` / `voicePool` / `tuning` are reserved context-block keywords.** Section names + parameter names must not collide; Phase 36 adds NO new context-block keywords.
 - **Prefix-only arithmetic.** No infix `+ - * /`. All combinator implementations + generative formulas use `(add)` / `(sub)` / `(mul)` / `(div)` / `(neg)`.
-- **GSD Workflow Enforcement.** Edits go through GSD commands; Phase 36 execution runs through `/gsd:execute-phase 36`.
+- **previous planning workflow Workflow Enforcement.** Edits go through previous planning workflow commands; Phase 36 execution runs through execute phase 36.
 
 ## Architectural Responsibility Map
 
@@ -1357,7 +1357,7 @@ Framework install: NONE — xUnit.v3 + `flow test` CLI already exist; no new tes
 - `/home/noah/Desktop/projects/flow-sharp/.planning/phases/35-language-foundation/35-06-SUMMARY.md` (Music-aware extractors, CapturedPragmas)
 - `/home/noah/Desktop/projects/flow-sharp/.planning/phases/35-language-foundation/35-07-SUMMARY.md` (`-> CALL as NAME` IntermediateName)
 - `/home/noah/Desktop/projects/flow-sharp/.planning/phases/35-language-foundation/35-03-SUMMARY.md` (DiagnosticRenderer + LevenshteinHelper)
-- `/home/noah/Desktop/projects/flow-sharp/CLAUDE.md` (Phase 28 articulation rules; two-run cmp-clean contract; prefix-only arithmetic; music-types literal syntax; GSD enforcement)
+- `/home/noah/Desktop/projects/flow-sharp/CLAUDE.md` (Phase 28 articulation rules; two-run cmp-clean contract; prefix-only arithmetic; music-types literal syntax; previous planning workflow enforcement)
 - `/home/noah/Desktop/projects/flow-sharp/flow-lang/Ast/Patterns/Pattern.cs` + family (Phase 35 reuse target)
 - `/home/noah/Desktop/projects/flow-sharp/flow-lang/Ast/Statements/SectionDeclaration.cs` (current parameterless shape — extension target for SECT-01)
 - `/home/noah/Desktop/projects/flow-sharp/flow-lang/Parsing/Parser.cs` lines 484-508 (ParseSectionDeclaration — extension target)

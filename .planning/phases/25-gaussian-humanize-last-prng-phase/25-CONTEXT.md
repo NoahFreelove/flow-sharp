@@ -2,7 +2,7 @@
 
 **Gathered:** 2026-05-04
 **Status:** Ready for planning
-**Source:** /gsd-discuss-phase 25 --auto (single-pass auto mode)
+**Source:** discuss phase 25 --auto (single-pass auto mode)
 
 <domain>
 ## Phase Boundary
@@ -115,7 +115,7 @@ Locked by REQUIREMENTS.md DEFER-06 (lines 109–110), PROJECT.md decision D-04 (
 
 ### Folded Todos
 
-None — `gsd-sdk query todo.match-phase 25` returned 0 matches.
+None — sdk query todo.match-phase 25 returned 0 matches.
 
 </decisions>
 
@@ -212,12 +212,12 @@ None — `gsd-sdk query todo.match-phase 25` returned 0 matches.
 
 ### Reviewed Todos (not folded)
 
-None — no todos surfaced for Phase 25 (`gsd-sdk query todo.match-phase 25` returned 0 matches).
+None — no todos surfaced for Phase 25 (sdk query todo.match-phase 25 returned 0 matches).
 
 </deferred>
 
 ---
 
 *Phase: 25-gaussian-humanize-last-prng-phase*
-*Context gathered: 2026-05-04 via /gsd-discuss-phase 25 --auto (single-pass auto mode)*
+*Context gathered: 2026-05-04 via discuss phase 25 --auto (single-pass auto mode)*
 *Auto-mode log: All 10 gray areas auto-selected; recommended option chosen for each per modes/auto.md.*

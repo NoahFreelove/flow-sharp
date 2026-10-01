@@ -594,7 +594,7 @@ function offerDownload(bytes: Uint8Array, name: string, mime: string) {
 ### Sampling Rate
 - **Per task commit:** `pnpm vitest run` (fast unit pass: transform, slug, encode, worker)
 - **Per wave merge:** `pnpm vitest run && pnpm playwright test`
-- **Phase gate (Plan 49-08):** full suite incl. `pnpm lhci autorun` green before `/gsd:verify-work`; cross-browser HUMAN-UAT (Chrome/Firefox/Safari + mobile) re-smokes audio (HANDOFF §7 — Chrome/Safari unverified by Phase 48).
+- **Phase gate (Plan 49-08):** full suite incl. `pnpm lhci autorun` green before verify work; cross-browser HUMAN-UAT (Chrome/Firefox/Safari + mobile) re-smokes audio (HANDOFF §7 — Chrome/Safari unverified by Phase 48).
 
 ### Wave 0 Gaps
 - [ ] `vitest.config.ts` + `playwright.config.ts` + `lighthouserc.cjs` — no test infra exists (greenfield)

@@ -193,4 +193,4 @@ The `RenderSectionWithTimeline` inconsistency and the weak `test_panning.flow` a
 ---
 
 _Verified: 2026-04-02T07:30:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

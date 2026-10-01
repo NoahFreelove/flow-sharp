@@ -46,7 +46,7 @@ or built-in LSP support is mechanical.
 **Trigger:** Starting a new milestone after v1.3 closes, or any milestone
 focused on developer experience / editor tooling.
 
-This seed should be presented during `/gsd-new-milestone` when the milestone
+This seed should be presented during new milestone when the milestone
 scope matches any of these conditions:
 - Milestone explicitly scoped to "v1.4" or to LSP / editor / tooling work
 - Milestone goals mention "developer experience", "DX", "IDE", "editor",

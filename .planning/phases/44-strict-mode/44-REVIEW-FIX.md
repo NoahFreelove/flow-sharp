@@ -228,5 +228,5 @@ and should receive a human-verification pass before the phase advances:
 ---
 
 _Fixed: 2026-05-25_
-_Fixer: Claude (gsd-code-fixer)_
+_Fixer: Claude (code fixer)_
 _Iteration: 1_

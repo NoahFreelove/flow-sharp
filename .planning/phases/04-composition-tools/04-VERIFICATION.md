@@ -156,4 +156,4 @@ Two gaps require attention:
 ---
 
 _Verified: 2026-04-02_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

@@ -3,7 +3,7 @@ phase: 28
 slug: midi-audio-polyphony-articulation-rewrite
 status: awaiting-uat
 verified: pending-manual-uat
-verifier: gsd-executor (autonomous resume)
+verifier: executor (autonomous resume)
 score: 9/9 SPEC requirements + 105/105 Phase28 Facts + 14/14 Phase18/25/27 ByteIdentical + 985/985 full unit suite (Manual UAT pending)
 overrides_applied: 0
 must_haves_verified: 23

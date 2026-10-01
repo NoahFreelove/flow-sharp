@@ -145,4 +145,4 @@ The only items requiring verification are the audio experience itself (bar-bound
 ---
 
 _Verified: 2026-04-03_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

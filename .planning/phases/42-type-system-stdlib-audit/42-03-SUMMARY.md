@@ -113,7 +113,7 @@ None — plan executed exactly as written. Plan 01 and Plan 02's deliverables we
 
 The one nuance worth surfacing (NOT a deviation per Rule 1-4):
 
-- **Task 3 auto-approval pathway exercised.** The plan's Task 3 is a `checkpoint:human-verify` with `gate="blocking"`. The /gsd:execute-phase orchestrator passed AUTO_MODE=true in the prompt context, so per the auto-mode protocol the checkpoint auto-approves and continues (gate=`blocking` is NOT `blocking-human`, NOT a package-legitimacy gate). The sign-off block in AUDIT.md documents what was auto-approved + the composer revision path. This is the intended auto-mode behavior, not a deviation.
+- **Task 3 auto-approval pathway exercised.** The plan's Task 3 is a `checkpoint:human-verify` with `gate="blocking"`. The execute phase orchestrator passed AUTO_MODE=true in the prompt context, so per the auto-mode protocol the checkpoint auto-approves and continues (gate=`blocking` is NOT `blocking-human`, NOT a package-legitimacy gate). The sign-off block in AUDIT.md documents what was auto-approved + the composer revision path. This is the intended auto-mode behavior, not a deviation.
 
 ## Issues Encountered
 

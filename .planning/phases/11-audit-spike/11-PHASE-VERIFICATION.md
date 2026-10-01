@@ -140,4 +140,4 @@ The phase goal is achieved: the v1.2 team has decisive evidence (4 GREEN dismiss
 ---
 
 *Verified: 2026-04-18*
-*Verifier: Claude (gsd-verifier)*
+*Verifier: Claude (verifier)*

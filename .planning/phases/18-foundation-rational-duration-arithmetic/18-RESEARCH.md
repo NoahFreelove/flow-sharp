@@ -343,7 +343,7 @@ Verbatim directives that bind Phase 18 plans:
 - **External dependency: Pidgin parser combinator (referenced but unused)** — do NOT add new dependencies for Fraction.
 - **Existing .flow scripts and test suite must continue to work** — binding constraint; this IS the byte-identical determinism contract.
 - **No GC pressure in hot paths** — `readonly record struct` is stack-allocated; avoid `class Fraction`.
-- **GSD Workflow Enforcement: do not make direct repo edits outside a GSD workflow** — applies to plan execution, not research.
+- **previous planning workflow Workflow Enforcement: do not make direct repo edits outside a previous planning workflow workflow** — applies to plan execution, not research.
 
 ---
 

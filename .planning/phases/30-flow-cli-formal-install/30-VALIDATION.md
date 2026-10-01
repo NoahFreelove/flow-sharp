@@ -30,7 +30,7 @@ created: 2026-05-10
 
 - **After every task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase30" --logger "console;verbosity=minimal"` (subset, fast)
 - **After every plan wave:** `dotnet test` (full solution suite — must stay GREEN per Phase 18/25/27/28 backward-compat ACK contract)
-- **Phase gate:** Full suite + `bash scripts/test-install.sh` exit 0 before `/gsd-verify-work`
+- **Phase gate:** Full suite + `bash scripts/test-install.sh` exit 0 before verify work
 - **Max feedback latency:** 30 seconds (Phase 30 subset); 90 seconds (full suite including Phase 28 RmsRegression facts)
 
 ---

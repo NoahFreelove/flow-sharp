@@ -199,4 +199,4 @@ Phase 12 is closed. Next: Phase 13 Nyquist Validation Backfill (TEST-04).
 
 *Phase: 12-stability*
 *Verified: 2026-04-19 (plan 12-06 rollup) + 2026-04-19 (independent re-verification)*
-*Verifier: Claude (gsd-verifier)*
+*Verifier: Claude (verifier)*

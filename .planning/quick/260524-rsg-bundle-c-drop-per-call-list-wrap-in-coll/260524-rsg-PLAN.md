@@ -28,11 +28,6 @@ behavior change; full test suite GREEN at the Bundle B baseline (1785 pass /
 deferred items, not Bundle-C-caused).
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @CLAUDE.md
 @flow-lang/StandardLibrary/Collections.cs
@@ -252,7 +247,7 @@ escape analysis (.NET 10 may have caught this), or the list internal
 buffer reuse via the pool somewhere upstream.
 
 (E) The SUMMARY should follow the standard quick summary template
-(`@$HOME/.claude/get-shit-done/templates/summary.md`) for the top
+(the archived planning template) for the top
 sections (problem / approach / files-touched / test results / known
 issues), with the bench section AFTER the standard sections.
 

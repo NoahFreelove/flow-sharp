@@ -34,7 +34,7 @@ closed: 2026-05-23
 
 - **After every task commit:** `dotnet test --filter "FullyQualifiedName~Phase37&Category!=Slow"` (≤30 s — unit + lightweight integration)
 - **After every plan wave:** `dotnet test --filter "FullyQualifiedName~Phase37"` (≤2 min — full Phase 37 suite)
-- **Before `/gsd:verify-work`:** Full `dotnet test` must be green
+- **Before verify work:** Full `dotnet test` must be green
 - **Max feedback latency:** 30 seconds per task
 
 ---

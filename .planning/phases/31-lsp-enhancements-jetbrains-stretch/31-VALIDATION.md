@@ -48,7 +48,7 @@ created: 2026-05-12
 
 - **Per task commit:** `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase31"` (under 10s budget per SPEC constraint)
 - **Per wave merge:** `dotnet test --logger "console;verbosity=minimal"` (full suite) + `cd vscode-extension && npm run test:grammar`
-- **Phase gate:** Full suite green + grammar snapshot green + manual UAT (SPEC-7 stretch + SPEC-5 VSCode dev-host smoke) before `/gsd-verify-work`
+- **Phase gate:** Full suite green + grammar snapshot green + manual UAT (SPEC-7 stretch + SPEC-5 VSCode dev-host smoke) before verify work
 - **Max feedback latency:** 10 sec for per-task; 5 min for per-wave
 
 ---

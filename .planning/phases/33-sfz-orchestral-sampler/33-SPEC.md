@@ -412,4 +412,4 @@ Today (post-Phase 32 baseline — Phase 32 closed 2026-05-15 at 9b0e69c):
 
 *Phase: 33-sfz-orchestral-sampler*
 *Spec created: 2026-05-15*
-*Next step: /gsd-discuss-phase 33 — implementation decisions (parser line discipline, region storage shape, varispeed reuse vs duplication, etc.)*
+*Next step: discuss phase 33 — implementation decisions (parser line discipline, region storage shape, varispeed reuse vs duplication, etc.)*

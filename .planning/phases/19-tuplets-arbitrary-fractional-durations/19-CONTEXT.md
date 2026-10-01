@@ -205,4 +205,4 @@ None surfaced during this discussion that aren't already deferred to other v1.3 
 
 *Phase: 19-tuplets-arbitrary-fractional-durations*
 *Context gathered: 2026-04-26*
-*Next step: /gsd-plan-phase 19 — break 8 requirements into 5 plans across 3 waves*
+*Next step: plan phase 19 — break 8 requirements into 5 plans across 3 waves*

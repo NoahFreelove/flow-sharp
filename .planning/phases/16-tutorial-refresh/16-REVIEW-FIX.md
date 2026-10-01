@@ -108,5 +108,5 @@ All 7 findings from `16-REVIEW.md` are now resolved (2 warnings in iteration 1 +
 ---
 
 _Fixed: 2026-04-25_
-_Fixer: Claude (gsd-code-fixer)_
+_Fixer: Claude (code fixer)_
 _Iteration: 2_

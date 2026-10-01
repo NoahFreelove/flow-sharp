@@ -3,7 +3,7 @@ phase: 25
 slug: gaussian-humanize-last-prng-phase
 status: shipped
 verified: 2026-05-04T23:50:00Z
-verifier: gsd-executor (closure plan 25-04)
+verifier: executor (closure plan 25-04)
 score: 3/3 ROADMAP success criteria + 25/25 locked decisions (D-01..D-25) + 13/13 Phase25 Facts + 19/19 Phase18 byte-identical regression + 691/691 full suite + 4/4 manual two-run cmp-clean
 overrides_applied: 0
 must_haves_verified: 8
@@ -350,12 +350,12 @@ No new deferred items introduced by Phase 25. Out-of-scope items per CONTEXT `<d
 
 ## Approval
 
-_Reserved for /gsd-verify-work output._
+_Reserved for verify work output._
 
 ---
 
 *Phase: 25-gaussian-humanize-last-prng-phase*
 *Verified: 2026-05-04 (executor closure plan 25-04)*
-*Verifier: Claude (gsd-executor)*
+*Verifier: Claude (executor)*
 *Goal: ship `humanizeGaussian()` Box-Muller velocity perturbation as a SEPARATE function from existing uniform `humanize()`, preserving the v1.2 byte-identical determinism contract for tutorial.flow + showcase.flow as the LAST PRNG-touching phase per binding pre-ordering #5 — ACHIEVED*
 *Phase 25 was the LAST PRNG-touching phase per binding pre-ordering #5. After this, no further PRNG changes are allowed in v1.3.*

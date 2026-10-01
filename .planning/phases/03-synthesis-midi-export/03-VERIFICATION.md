@@ -151,4 +151,4 @@ One latent code issue: bars without an explicit `TimeSignature` property on the 
 ---
 
 _Verified: 2026-04-02T23:59:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

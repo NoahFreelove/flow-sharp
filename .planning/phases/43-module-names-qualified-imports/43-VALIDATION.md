@@ -31,7 +31,7 @@ created: 2026-05-24
 
 - **After every task commit:** Run quick command (`--filter "FullyQualifiedName~Phase43"`)
 - **After every plan wave:** Run xUnit full suite (`dotnet test flow-lang.Tests`)
-- **Before `/gsd:verify-work`:** xUnit full suite green (modulo pre-existing 34) + 123 `.flow` happy-path scripts green
+- **Before verify work:** xUnit full suite green (modulo pre-existing 34) + 123 `.flow` happy-path scripts green
 - **Max feedback latency:** ~15s (quick) / ~90s (xUnit full) / ~120s (`.flow` suite)
 
 ---

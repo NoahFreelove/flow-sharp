@@ -40,11 +40,6 @@ Purpose: Faithful sustained playback for real SFZ orchestral libraries. A held s
 Output: `SfzRenderer` extends the rendered buffer to authoredFrames + releaseFrames for sustained articulations when `ampeg_release > 0`, holding sustain to the authored end and appending a continuous exponential release tail; staccato/marcato and ampeg_release-absent patches stay byte-identical. New tests pin the hold-at-end / tail-length / continuity behavior; one length-pinned articulation assertion is refreshed for the tail. Changes stay inside `StandardLibrary/Audio/Sfz/` — Desktop-only, Web-stripped, no new guards.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-@$HOME/.claude/gsd-core/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @CLAUDE.md

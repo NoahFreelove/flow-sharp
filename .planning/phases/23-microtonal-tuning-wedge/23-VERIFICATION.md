@@ -3,7 +3,7 @@ phase: 23
 slug: microtonal-tuning-wedge
 status: shipped
 verified: 2026-05-03T00:00:00Z
-verifier: gsd-verifier (goal-backward)
+verifier: verifier (goal-backward)
 score: 4/4 ROADMAP success criteria + 14/14 locked decisions + 91/91 Phase23 Facts + 8/8 ByteIdentical + 5/5 .flow smokes + 608/608 full suite
 overrides_applied: 0
 must_haves_verified: 4
@@ -197,5 +197,5 @@ Phase 23 (Microtonal Tuning, Wedge) ships clean. v1.3 milestone advances **5/10 
 
 *Phase: 23-microtonal-tuning-wedge*
 *Verified: 2026-05-03 (goal-backward, codebase-evidence verifier)*
-*Verifier: Claude (gsd-verifier)*
+*Verifier: Claude (verifier)*
 *Supersedes: executor's draft 23-VERIFICATION.md (no scope reduction; canonical rewrite)*

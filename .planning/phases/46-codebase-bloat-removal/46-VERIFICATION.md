@@ -141,4 +141,4 @@ No gaps. All 11 observable truths verified against the actual codebase:
 ---
 
 _Verified: 2026-05-30_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

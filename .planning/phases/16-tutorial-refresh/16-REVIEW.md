@@ -263,5 +263,5 @@ the showcase's `| mp _ _ ...` line without requiring source-diving.
 ---
 
 _Reviewed: 2026-04-25_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

@@ -31,7 +31,7 @@ promoted: 2026-04-19
 
 - **After every task commit:** Run `dotnet run --project flow-interpreter tests/test_vocalization.flow`
 - **After every plan wave:** Run `for test in tests/test_*.flow; do dotnet run --project flow-interpreter "$test"; done`
-- **Before `/gsd:verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 5 seconds
 
 ---

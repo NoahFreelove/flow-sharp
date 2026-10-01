@@ -144,4 +144,4 @@ The foundation is ready for Phase 19's tuplet `{N:M ...}` and arbitrary-fraction
 ---
 
 _Verified: 2026-04-26T13:08:00Z_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

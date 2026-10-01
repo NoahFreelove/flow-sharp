@@ -54,11 +54,6 @@ mechanics doing the work.
 Output: 9 modified core C# files, 1 new .flow test, CLAUDE.md doc touch.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-@$HOME/.claude/gsd-core/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @CLAUDE.md

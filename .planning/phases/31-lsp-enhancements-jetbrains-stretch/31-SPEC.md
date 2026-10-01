@@ -178,4 +178,4 @@ Today (post-Phase 28 baseline):
 
 *Phase: 31-lsp-enhancements-jetbrains-stretch*
 *Spec created: 2026-05-10*
-*Next step: /gsd-discuss-phase 31 — implementation decisions (Unicode `…` vs ASCII `...` for varargs rendering; `enable noScaleLint;` opposite-pragma vs silent-by-default for scaleLint default; specific TextMate grammar scope names; LSP4IJ version pin)*
+*Next step: discuss phase 31 — implementation decisions (Unicode `…` vs ASCII `...` for varargs rendering; `enable noScaleLint;` opposite-pragma vs silent-by-default for scaleLint default; specific TextMate grammar scope names; LSP4IJ version pin)*

@@ -253,4 +253,4 @@ Phase 40 status is `human_needed` because 6 hardware/perceptual behaviors requir
 ---
 
 _Verified: 2026-06-06_
-_Verifier: Claude (gsd-verifier)_
+_Verifier: Claude (verifier)_

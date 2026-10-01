@@ -29,7 +29,7 @@ created: 2026-05-10
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase28"`
 - **After every plan wave:** Run `dotnet test flow-lang.Tests` (full suite — guards backward compat with Phase 22 LegatoFacts and Phase 18/25/27 ByteIdentical)
-- **Before `/gsd-verify-work`:** Full suite must be green AND manual UAT sign-off in `28-VERIFICATION.md` for both ragtime fixtures
+- **Before verify work:** Full suite must be green AND manual UAT sign-off in `28-VERIFICATION.md` for both ragtime fixtures
 - **Max feedback latency:** 30 seconds (full Phase 28 suite); 60 seconds (full Phase 1–28 suite)
 
 ---

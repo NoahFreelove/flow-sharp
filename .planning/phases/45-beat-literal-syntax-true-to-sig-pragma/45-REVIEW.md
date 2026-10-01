@@ -136,5 +136,5 @@ returns null TimeSignature today`) if clarity is desired.
 ---
 
 _Reviewed: 2026-05-29_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

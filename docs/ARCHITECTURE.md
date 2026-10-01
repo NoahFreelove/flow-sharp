@@ -1,5 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
-
 # Flow Language Architecture
 
 For the ongoing language/music separation and Linux DAW work, see the

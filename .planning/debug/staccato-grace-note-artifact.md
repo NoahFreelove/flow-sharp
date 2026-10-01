@@ -14,10 +14,10 @@ trigger: |
   UAT sign-off in .planning/phases/28-midi-audio-polyphony-articulation-rewrite/28-VERIFICATION.md.
 
   Related but orthogonal: composer also reported flow-midi importer mis-quantizes
-  Q-E-E rhythm to E-rest-E-rest-E (Bug B in /gsd-debug briefing). That is
+  Q-E-E rhythm to E-rest-E-rest-E (Bug B in debug briefing). That is
   NOT Phase 28 (ragtime_imported.flow has zero articulation markers) — it
   lives in flow-midi/Conversion/Quantizer.cs. Will be filed as a separate
-  /gsd-debug session after this one resolves.
+  debug session after this one resolves.
 created: 2026-05-10
 updated: 2026-05-10
 ---

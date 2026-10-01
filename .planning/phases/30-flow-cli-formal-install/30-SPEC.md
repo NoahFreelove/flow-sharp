@@ -44,7 +44,7 @@ This phase consolidates rather than rewrites — most of the logic exists, the w
 
 2. **Self-contained Linux x64 binary via `dotnet publish`**: One artifact, no .NET runtime install required on the target machine.
    - Current: No published artifact; running Flow requires `dotnet` on PATH
-   - Target: `dotnet publish flow-cli -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false` produces a single `flow` binary plus a `Samples/` (Phase 29) + stdlib `.flow` files in the publish directory. Total bundle size budget: ≤ 120 MB (allows .NET runtime + DryWetMidi + stdlib + Phase 29 5 MB samples). Trimmed=false because reflection in `gsd-sdk` / overload resolver / module loader may pull surprising types
+   - Target: `dotnet publish flow-cli -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false` produces a single `flow` binary plus a `Samples/` (Phase 29) + stdlib `.flow` files in the publish directory. Total bundle size budget: ≤ 120 MB (allows .NET runtime + DryWetMidi + stdlib + Phase 29 5 MB samples). Trimmed=false because reflection in sdk / overload resolver / module loader may pull surprising types
    - Acceptance: Publish produces a self-contained directory. Running `./flow run script.flow` from the publish dir works on a clean Linux x64 system with PulseAudio installed and no .NET runtime
 
 3. **Install script with system-wide + per-user modes**: `scripts/install.sh` supports both install locations via a flag.
@@ -174,4 +174,4 @@ This phase consolidates rather than rewrites — most of the logic exists, the w
 
 *Phase: 30-flow-cli-formal-install*
 *Spec created: 2026-05-10*
-*Next step: /gsd-discuss-phase 30 — implementation decisions (subcommand framework choice, TOML parser choice, config propagation mechanism, install.sh dependency on dotnet sdk vs prebuilt artifact)*
+*Next step: discuss phase 30 — implementation decisions (subcommand framework choice, TOML parser choice, config propagation mechanism, install.sh dependency on dotnet sdk vs prebuilt artifact)*

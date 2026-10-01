@@ -417,5 +417,5 @@ during editor mount + a Run, so the tight CSP is proven against the real Monaco 
 ---
 
 _Reviewed: 2026-06-05_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

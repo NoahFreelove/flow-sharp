@@ -30,7 +30,7 @@ created: 2026-06-06
 
 - **After every task commit:** `dotnet test flow-lang.Tests --filter FullyQualifiedName~Phase40` + `dotnet build flow-lang -p:FlowTarget=Web`
 - **After every plan wave:** `dotnet test flow-lang.Tests` (full Desktop suite — keep all prior phases green)
-- **Before `/gsd:verify-work`:** Full suite green + Web build green + `40-HUMAN-UAT.md` authored
+- **Before verify work:** Full suite green + Web build green + `40-HUMAN-UAT.md` authored
 - **Max feedback latency:** ~120 seconds
 
 ---

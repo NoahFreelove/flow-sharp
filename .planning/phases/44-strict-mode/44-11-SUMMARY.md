@@ -218,7 +218,7 @@ None — no external configuration introduced. Composers can browse `tests/stric
 
 Phase 44 is **feature-complete**. All 15 REQ-STRICT-NN requirements complete (01..15). The strict-mode surface is composer-facing + integration-tested + determinism-pinned. Subsequent strict-mode evolution (the v1.6 `strictPurity` / `strictLengths` sub-pragma candidates documented in CONTEXT.md `<deferred>`) can use Plan 44-11's fixture pattern + `StrictFlowScriptSuiteTests` + `Phase44TwoRunDeterminismTests` as the regression baseline.
 
-The `/gsd:verify-work` audit can now run against Phase 44 and verify:
+The verify work audit can now run against Phase 44 and verify:
 - All 15 REQ-STRICT-NN requirements traced to their pinning xUnit tests.
 - All 7 composer-facing fixtures runnable end-to-end via the integration phase-gate.
 - Two-run cmp-clean preserved across the entire strict-mode introduction.

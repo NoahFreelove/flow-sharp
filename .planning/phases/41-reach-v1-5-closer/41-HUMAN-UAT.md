@@ -2,7 +2,7 @@
 
 **Status:** Phase 41 closed **Complete (HUMAN-UAT deferred)** 2026-06-08.
 - **Rows 1–5 CANCELLED** (composer 2026-06-08): the cross-platform **hardware** gates (Windows/macOS audible playback, osx-x64/osx-arm64/win-x64 binary execution) are cancelled — this is a Linux-only box with no Mac/Windows hardware. The code shipped and the Linux-side machine half is automated (probe-gated `IsAvailable()==false`, Web build green, 5 RID binaries cross-compiled + `.sha256`-checksummed); the audible/executable confirmation simply won't be performed. Not faked, not pending — **cancelled by decision**.
-- **Rows 6–7 DEFERRED** (not cancelled): JetBrains Marketplace publish + v1.5.0 GitHub Release are external-account/publish actions, not hardware. They stay as standing debt for whenever the composer chooses to publish; re-run via `/gsd:verify-work 41`.
+- **Rows 6–7 DEFERRED** (not cancelled): JetBrains Marketplace publish + v1.5.0 GitHub Release are external-account/publish actions, not hardware. They stay as standing debt for whenever the composer chooses to publish; re-run via verify work 41.
 Original status: **execution-complete-pending-HUMAN-UAT**.
 
 > **"Flag, don't fake" — `feedback_autonomous_phase_execution` + D-02.** The autonomous
@@ -83,7 +83,7 @@ Phase 41 was closed **Complete (HUMAN-UAT deferred)** 2026-06-08. Revised condit
 - **Row 7** (v1.5.0 GitHub Release) — DEFERRED; cut by the composer with all `.sha256` verified
   whenever the composer chooses to release.
 
-Rows 6–7 are optional publish steps, not blockers. Re-run `/gsd:verify-work 41` if/when taken.
+Rows 6–7 are optional publish steps, not blockers. Re-run verify work 41 if/when taken.
 
 A row that fails with a blocking defect routes through the closer: in-phase repair if it is a
 Flow-side bug, or a documented v1.6 deferral. Cross-platform/external-account verification is

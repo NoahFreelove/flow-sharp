@@ -30,7 +30,7 @@ created: 2026-06-07
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase41"` (< 30 s)
 - **After every plan wave:** Run `dotnet test` (full xUnit) + the Flow `test_*.flow` loop
-- **Before `/gsd:verify-work`:** Full suite green + `bash scripts/test_two_run_determinism.sh` on the showcase + `dotnet build flow-lang -p:FlowTarget=Web` exit 0
+- **Before verify work:** Full suite green + `bash scripts/test_two_run_determinism.sh` on the showcase + `dotnet build flow-lang -p:FlowTarget=Web` exit 0
 - **Max feedback latency:** 30 s
 
 ---

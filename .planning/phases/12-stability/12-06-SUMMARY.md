@@ -15,10 +15,10 @@ requires:
 
 provides:
   - "REQUIREMENTS.md reflects shipped reality: FIX-05/06/07a marked Shipped with commit hashes; TEST-01/02 closed as audit false positives (audit-trail preserved); TEST-03 reframed around real failure modes"
-  - ".planning/phases/12-stability/12-VERIFICATION.md — Phase 11-style rollup with one row per requirement, Nyquist invariants, ROADMAP success criteria status (criterion 4 NOT TRIGGERED per F-02), and readiness signal for /gsd-verify-work"
+  - ".planning/phases/12-stability/12-VERIFICATION.md — Phase 11-style rollup with one row per requirement, Nyquist invariants, ROADMAP success criteria status (criterion 4 NOT TRIGGERED per F-02), and readiness signal for verify work"
   - "Traceability table rows for FIX-05 → Shipped 6e5a960; FIX-06 → Shipped 557923a; FIX-07a → Shipped 327aa3c+fd9d801; TEST-01 → Closed (false positive); TEST-02 → Closed (false positive); TEST-03 → Shipped 9afbe7a+c09cd82 (reframed)"
 
-affects: [phase-13-nyquist, phase-14-dx, phase-15-dx, phase-16-tutorial, /gsd-verify-work]
+affects: [phase-13-nyquist, phase-14-dx, phase-15-dx, phase-16-tutorial, verify work]
 
 tech-stack:
   added: []
@@ -60,11 +60,11 @@ metrics:
 
 # Phase 12 Plan 06: REQUIREMENTS Closure + 12-VERIFICATION.md Rollup Summary
 
-**Closed out Phase 12 with two documentation-only commits: REQUIREMENTS.md now reflects shipped reality (4 Shipped / 2 Closed across 6 requirements) and `.planning/phases/12-stability/12-VERIFICATION.md` provides a Phase-11-style rollup with per-requirement commit hashes, Nyquist invariants, ROADMAP success-criteria status (criterion 4 NOT TRIGGERED per F-02), and readiness signal for `/gsd-verify-work`.**
+**Closed out Phase 12 with two documentation-only commits: REQUIREMENTS.md now reflects shipped reality (4 Shipped / 2 Closed across 6 requirements) and `.planning/phases/12-stability/12-VERIFICATION.md` provides a Phase-11-style rollup with per-requirement commit hashes, Nyquist invariants, ROADMAP success-criteria status (criterion 4 NOT TRIGGERED per F-02), and readiness signal for verify work.**
 
 ## One-liner
 
-Phase 12 documentation closed; all 6 requirement IDs have definitive status (`Shipped <hash>` or `Closed (audit false positive)`); full suite 68/68 green; Phase 12 ready for `/gsd-verify-work`.
+Phase 12 documentation closed; all 6 requirement IDs have definitive status (`Shipped <hash>` or `Closed (audit false positive)`); full suite 68/68 green; Phase 12 ready for verify work.
 
 ## What Was Built
 
@@ -87,7 +87,7 @@ Phase 12 documentation closed; all 6 requirement IDs have definitive status (`Sh
 - AUDIT-VERIFIED Markers section lists the Interpreter.cs:292 Confirmed→Fixed update
 - Empirical Overrides section captures D-02 extension, D-16 generalization, TypesEqual tightening, sentinel update, parser-ambiguity workaround, net10.0 doc lag — for downstream auditor context
 - Deferred Items section documents DEFER-01 with forward-reference, proposed implementation, and recommended target phase
-- Ready for `/gsd-verify-work` section summarizes passing automated gates
+- Ready for verify work section summarizes passing automated gates
 - **Commit:** `b5a8702` — `docs(12-06): write 12-VERIFICATION.md rollup pointing to FIX-* commit hashes`
 
 ## Commits Referenced by 12-VERIFICATION.md
@@ -125,7 +125,7 @@ dotnet test flow-sharp.sln
 # Failed:     0, Passed:    68, Skipped:     0, Total:    68, Duration: 14 s
 ```
 
-68/68 green. No regressions. No new failures. Readiness gate for `/gsd-verify-work` satisfied.
+68/68 green. No regressions. No new failures. Readiness gate for verify work satisfied.
 
 ## Decisions Made
 

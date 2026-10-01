@@ -874,7 +874,7 @@ Skip remainder per researcher convention.
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter "Category=Phase44"` (~30s — Phase 44 negative + positive suites)
 - **Per wave merge:** `dotnet test` (~2-3min — full suite green)
-- **Phase gate:** Full suite green + `tests/strict/*.flow` all run to completion before `/gsd:verify-work`
+- **Phase gate:** Full suite green + `tests/strict/*.flow` all run to completion before verify work
 
 ### Wave 0 Gaps
 

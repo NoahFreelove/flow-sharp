@@ -1,7 +1,7 @@
 # Flow Interpreter Optimization Sweep — 2026-05-24
 
 Six-bundle micro-optimization sweep against the Flow language interpreter.
-Each bundle landed as its own `/gsd:quick` task with atomic commit, full xUnit
+Each bundle landed as its own quick task with atomic commit, full xUnit
 verification, and benchmark capture. Two-run cmp-clean determinism preserved
 across every bundle (Phase 36 PRNG-routing contract intact).
 
@@ -52,7 +52,7 @@ unchanged after all bundles.
 
 - Harness: `bench/run.sh` runs each `bench_*.flow` 5× via `/usr/bin/time -f "%e %M"` against a Release build (`dotnet build -c Release`).
 - Stddev under 5% of mean on all bench scripts across the sweep (bench_collections had higher noise post-Bundle-F at σ=0.464; mean still firmly below baseline).
-- Each bundle ran through `/gsd:quick` (or `/gsd:quick --validate` for Bundles E and F) with planner → optional plan-checker → executor → optional verifier.
+- Each bundle used planning, implementation and verification steps; Bundles E and F also ran plan validation.
 - Each bundle's PLAN.md and SUMMARY.md preserved under `.planning/quick/260524-<id>-bundle-*/` for audit.
 
 ## Files modified across the sweep

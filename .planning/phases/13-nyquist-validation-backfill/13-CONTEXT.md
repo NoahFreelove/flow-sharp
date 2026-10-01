@@ -24,7 +24,7 @@ Retroactively author a `VALIDATION.md` for each v1.1 production phase (6–10), 
 - Cross-phase AUDIT.md rollup in v1.1-MILESTONE-AUDIT.md style — `.planning/milestones/v1.1-MILESTONE-AUDIT.md` already exists and is sufficient
 - Re-litigating INVALID FIX-04 (already reclassified in v1.1 audit; no validation test authored for it)
 - Fixing the v1.1-audit-flagged §integration gap (`section { gain N { | notes | } }`) — already resolved per REQUIREMENTS.md §FIX-02 commit 2156690; Phase 6 VALIDATION.md pins it via test, not fixes it
-- /gsd-validate-phase tooling run itself — Phase 13 HAND-AUTHORS the VALIDATION.md files rather than invoking gsd-nyquist-auditor (the auditor was designed to fill gaps in an existing VALIDATION.md, not author one from scratch)
+- validate phase tooling run itself — Phase 13 HAND-AUTHORS the VALIDATION.md files rather than invoking nyquist auditor (the auditor was designed to fill gaps in an existing VALIDATION.md, not author one from scratch)
 
 </domain>
 
@@ -108,7 +108,7 @@ Retroactively author a `VALIDATION.md` for each v1.1 production phase (6–10), 
 - `.planning/phases/10-vocalization/10-01-PLAN.md`, `10-01-SUMMARY.md`, `10-02-PLAN.md`, `10-02-SUMMARY.md`, `10-VALIDATION.md` (existing draft — target of 13-05 promotion), `10-VERIFICATION.md`
 
 ### Template and examples
-- `~/.claude/get-shit-done/templates/VALIDATION.md` — canonical schema + sign-off checklist
+- the archived planning template — canonical schema + sign-off checklist
 - `.planning/phases/12-stability/12-VALIDATION.md` — working example with all sections filled in correctly
 - `.planning/phases/12-stability/12-VERIFICATION.md` — format reference for `## Divergences` / `## Empirical Overrides` pattern that Phase 13 mirrors
 
@@ -119,8 +119,8 @@ Retroactively author a `VALIDATION.md` for each v1.1 production phase (6–10), 
 - `flow-lang.Tests/Unit/CollectionsTests.cs`, `Unit/ThunkTests.cs`, `Unit/InterpreterTests.cs` — example Fact patterns from Phase 12
 
 ### Agent contract (reference only — not used directly)
-- `~/.claude/agents/gsd-nyquist-auditor.md` — describes the gap-filling auditor that `/gsd-validate-phase` would invoke. Phase 13 authors the VALIDATION.md by hand rather than running the auditor, because the auditor targets existing-VALIDATION gap filling, not greenfield authoring.
-- `~/.claude/get-shit-done/workflows/validate-phase.md` — reference for what a Nyquist audit output looks like
+- `~/.claude/agentsnyquist auditor.md` — describes the gap-filling auditor that validate phase would invoke. Phase 13 authors the VALIDATION.md by hand rather than running the auditor, because the auditor targets existing-VALIDATION gap filling, not greenfield authoring.
+- the archived planning template — reference for what a Nyquist audit output looks like
 
 ### Code under validation (READ-ONLY, Pass 2 only)
 - `flow-lang/Diagnostics/` — QOL-01 `--verbose` flag implementation
@@ -147,7 +147,7 @@ Retroactively author a `VALIDATION.md` for each v1.1 production phase (6–10), 
 ### Established Patterns
 - **xUnit Fact file layout** (`Unit/` for pure C# API, `Integration/` folder to be created) — follow Phase 12 Unit/ pattern
 - **Atomic commits per VALIDATION.md** (ROADMAP/Phase 11 D-08) — one commit per phase's validation file, plus additional commits only if new Fact files are added
-- **VALIDATION.md frontmatter schema** (`phase`, `slug`, `status`, `nyquist_compliant`, `wave_0_complete`, `created`) — matches `~/.claude/get-shit-done/templates/VALIDATION.md` verbatim
+- **VALIDATION.md frontmatter schema** (`phase`, `slug`, `status`, `nyquist_compliant`, `wave_0_complete`, `created`) — matches the archived planning template verbatim
 - **Two-pass authorship record** — Pass 1 author writes `## Draft from REQUIREMENTS.md` section, Pass 2 author fills `## Implementation Map` + `## Divergences` sections; final file keeps both for audit trail
 
 ### Integration Points

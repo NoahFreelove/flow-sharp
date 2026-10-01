@@ -1,5 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
-
 # Development
 
 This guide is for developers who want to contribute to **Flow itself** — the
@@ -309,33 +307,20 @@ If you add a new stdlib `.flow` file, update the verification loop in
 `scripts/publish.sh` and add a `<None Update>` block to
 `flow-lang/flow-lang.csproj` — see "Adding a Stdlib `.flow` Module" above.
 
-## GSD Workflow
+## Roadmap workflow
 
-This project uses the **GSD workflow** for any change beyond a one-line
-typo fix. From `CLAUDE.md`:
-
-> Before using Edit, Write, or other file-changing tools, start work through a
-> GSD command so planning artifacts and execution context stay in sync.
-
-Entry points:
-
-- `/gsd:quick` — small fixes, doc updates, ad-hoc tasks.
-- `/gsd:debug` — investigation and bug fixing.
-- `/gsd:execute-phase` — planned phase work (the canonical path for new
-  features). Phase folders under `.planning/phases/` capture context, decisions,
-  research, plans, and verification per phase.
-
-Direct repo edits outside a GSD workflow are reserved for the rare cases the
-user explicitly asks to bypass it. Contributors should route through
-`/gsd:quick` even for what feels like a one-shot edit — it's how the project
-keeps `CLAUDE.md`, `ROADMAP.md`, and the phase artifacts truthful.
+Use the [restructuring roadmap](plans/2026-09-20-flow-restructuring-roadmap.md),
+[progress ledger](plans/progress/flow-restructuring.md), and latest handoff in
+`docs/plans/handoffs/`. Implement directly, verify the affected behavior, and
+record results and remaining work in the ledger. Historical `.planning/`
+documents retain design evidence and test assets; they do not govern new work.
 
 ## Code Review Norms
 
-Reviewers (and the GSD planner) check for these:
+Reviewers check for these:
 
-- **GSD workflow used.** Non-trivial PRs should reference the phase folder or
-  the GSD command that produced them.
+- **Roadmap and evidence updated.** Non-trivial PRs should identify the roadmap
+  slice, relevant checks, and remaining limits.
 - **No new external dependencies without justification.** The guiding principle
   is *minimal dependencies* (see CLAUDE.md Technology Stack). Hand-roll first;
   reach for a NuGet package only when the alternative is a serious correctness

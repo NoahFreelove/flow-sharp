@@ -105,9 +105,9 @@ completed: 2026-06-05
 **2. [Rule 1 — Bug] Corrupt STATE.md progress counters**
 - **Found during:** Task 3 (STATE.md frontmatter flip)
 - **Issue:** `completed_plans: 252` is impossible (> `total_plans: 84`); `completed_phases: 9` was stale vs. the 10-phase Phase Map. The orchestrator explicitly warned the cited baseline numbers were illustrative and to compute the real values.
-- **Fix:** Recomputed from the v1.5 Phase Map via `gsd-sdk query roadmap.analyze` (11 shipped phases / 78 plans) → `completed_phases: 11`, `completed_plans: 78`, `percent: 93`.
+- **Fix:** Recomputed from the v1.5 Phase Map via the archived roadmap analysis (11 shipped phases / 78 plans) → `completed_phases: 11`, `completed_plans: 78`, `percent: 93`.
 - **Files modified:** `.planning/STATE.md`
-- **Verification:** `gsd-sdk query roadmap.analyze` cross-check; Phase Map row + progress line now self-consistent (11/15).
+- **Verification:** the archived roadmap analysis cross-check; Phase Map row + progress line now self-consistent (11/15).
 - **Committed in:** `684fc00`
 
 ---
@@ -125,7 +125,7 @@ None — closer is documentation/bookkeeping only. (`wasm-tools` workload is a p
 
 ## Next Phase Readiness
 
-- **Phase 49 (flowlang.dev SvelteKit site) unblocked.** `/gsd:plan-phase 49` consumes `48-PHASE49-HANDOFF.md` (frozen flow-runtime.js API contract) + the published AppBundle.
+- **Phase 49 (flowlang.dev SvelteKit site) unblocked.** plan phase 49 consumes `48-PHASE49-HANDOFF.md` (frozen flow-runtime.js API contract) + the published AppBundle.
 - Phase 40 (Studio Sync) + Phase 41 (Reach + v1.5 Closer) still pending for milestone close.
 - v1.6 backlog seeded (MILESTONES.md): Chrome/Chromium audio re-smoke, Safari smoke, AudioWorklet+SAB streaming, NativeAOT-LLVM, worker-thread preemptive 30s cap.
 

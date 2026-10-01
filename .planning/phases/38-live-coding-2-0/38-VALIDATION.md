@@ -31,7 +31,7 @@ approved: 2026-05-23
 
 - **After every task commit:** Run `dotnet test flow-lang.Tests --filter "FullyQualifiedName~Phase38.{plan_id_underscored}"` (per-plan filter — keeps quick feedback under 15s)
 - **After every plan wave:** Run quick command (above) for all completed Plan-IDs in the wave
-- **Before `/gsd:verify-work`:** Full suite must be green
+- **Before verify work:** Full suite must be green
 - **Max feedback latency:** 15 seconds (per-plan xUnit slice)
 
 ---

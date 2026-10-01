@@ -70,11 +70,6 @@ Purpose (ergonomics): composers shouldn't have to memorize "is this quality regi
 Output: One enriched parser, one new builtin, one new flow-script regression. All callers of `ChordParser.TryParse` get the expanded vocabulary automatically (NoteStreamCompiler, ScaleDatabase, lexer chord-symbol recognition).
 </objective>
 
-<execution_context>
-@$HOME/.claude/get-shit-done/workflows/execute-plan.md
-@$HOME/.claude/get-shit-done/templates/summary.md
-</execution_context>
-
 <context>
 @./CLAUDE.md
 @.planning/STATE.md

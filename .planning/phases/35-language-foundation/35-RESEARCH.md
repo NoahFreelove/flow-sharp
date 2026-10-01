@@ -805,7 +805,7 @@ CLAUDE.md directives that constrain Phase 35:
 | **Genre-agnostic, music-only scope** | Pattern matching's music-aware extractors (chord quality, roman numeral, articulation) are mandatory — pattern matching that only matched language constructs (Int, String, Bool) would fail the "music-only justification" filter. LANG-02 enforces this. |
 | **Pre-traction no-deprecation latitude ACTIVE (D-v1.5-01)** | Span migration may add Span as a new field without keeping a legacy "no-Span" code path. AST records can rev shape in one commit per the existing pattern. |
 | **Pre-Phase-28 byte-identical determinism dropped; two-run determinism preserved; RMS-windowed ±0.5dB / 100ms tolerance** | `(assertWithinDb)` is the Flow-surface expression of this contract — directly wraps `RmsRegressionTests.AssertRmsWithinTolerance`. The framework formalizes existing C# behavior. |
-| **GSD Workflow Enforcement: file-changing tools only via GSD commands** | Phase 35 work happens via `/gsd:execute-phase 35` — no direct edits |
+| **previous planning workflow Workflow Enforcement: file-changing tools only via previous planning workflow commands** | Phase 35 work happens via execute phase 35 — no direct edits |
 | **Goals: easy cases fast; flexible cases flexible** | Naive pattern-match decision (Open Question 1): "easy cases fast" supports linear-scan with small arm count; "flexible cases flexible" supports decision-tree later if profiling demands |
 
 No CLAUDE.md directive blocks any Phase 35 deliverable.

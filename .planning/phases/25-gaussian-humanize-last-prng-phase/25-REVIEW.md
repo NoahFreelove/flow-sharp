@@ -248,5 +248,5 @@ The phase ships.
 ---
 
 _Reviewed: 2026-05-04_
-_Reviewer: Claude (gsd-code-reviewer)_
+_Reviewer: Claude (code reviewer)_
 _Depth: standard_

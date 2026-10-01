@@ -52,7 +52,7 @@ Extracted from `20-RESEARCH.md` §Validation Architecture — separate file per 
 
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase20"` (fast, ~2s for new Facts)
 - **Per wave merge:** `dotnet test flow-sharp.sln` (full suite, ~17s baseline + new Facts)
-- **Phase gate:** Full suite GREEN before `/gsd-verify-work`. Plus repository grep transcript in VERIFICATION.md and Phase 18 regression-gate confirmation.
+- **Phase gate:** Full suite GREEN before verify work. Plus repository grep transcript in VERIFICATION.md and Phase 18 regression-gate confirmation.
 
 ## Wave 0 Gaps
 

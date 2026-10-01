@@ -156,4 +156,4 @@ Total: **6 sites across 4 files** — exactly matches the planner's audit.
 
 ## Note for Orchestrator
 
-The orchestrator handles the docs commit (PLAN/SUMMARY/STATE-table) separately as the fourth and final commit per the standard /gsd:quick flow. This SUMMARY.md is one of the inputs to that orchestrator commit, alongside any STATE.md table updates the orchestrator chooses to apply.
+The orchestrator handles the docs commit (PLAN/SUMMARY/STATE-table) separately as the fourth and final commit per the standard quick flow. This SUMMARY.md is one of the inputs to that orchestrator commit, alongside any STATE.md table updates the orchestrator chooses to apply.

@@ -50,7 +50,7 @@ Closeout scope (this plan):
 | REQ-AUDIT-05 | Dead-end builtin candidates cross-referenced against `.flow` callers (Pitfall 1 false-positive guard) | `42-AUDIT.md §4` cross-references 5 dead-end candidates against `42-AUDIT-data/flow-proc-decls.txt` (327 unique procs) + `42-AUDIT-data/flow-call-sites.txt` (4114 unique call-site tokens). Outcome: **zero genuine dead-ends** — all 5 candidates (`?`, `??`, `??reset`, `??set`, `inspect`) are parser-syntactic or REPL-only sites. Matches Pitfall 1 sanity check (>20-entry lists are false-positive floods; our 5-entry list resolved 100% via cross-reference) | CLOSED — Plan 42-02 + 42-03 commits `a0858f4` + `76972b4` |
 | REQ-AUDIT-06 | Overload gap surface derived from JSON `overload_gap_candidates` + ergonomics test applied | `42-AUDIT.md §5` enumerates 85 raw candidates; §5a (1 HIGH = `pitchShift(Buffer, Hertz)` design-decision-required) + §5b (70+ candidates CULLED to v1.6-backlog because music-typed call works today via `IsCompatibleWith` widening — `(reverb buf 2.5s)` already resolves via `Second → Double` per CLAUDE.md Music Types Quick Reference) + §5c (verified-OK pairs `transpose(Sequence, Semitone)` + `transpose(Sequence, Cent)`) | CLOSED — Plan 42-01 + 42-03 commits `3c74e70` + `76972b4` |
 | REQ-AUDIT-07 | Clamp & advisory inventory complete (load-bearing for Phase 44 Axis B per ROADMAP line 380) | `42-AUDIT-data/all-clamps.txt` (72 sites) + `42-AUDIT-data/input-clamps.txt` (13 sites — Phase 44 Axis B candidates per Pitfall 4 heuristic) + `42-AUDIT-data/advisory-sites.txt` (117 `WarnOnce` sites) + `42-AUDIT-data/charitable-sites.txt` (110 charitable-fallback markers). `42-AUDIT.md §6a` enumerates 13 input-perimeter clamps with proposed strict-mode error messages; `§6b` groups 117 advisory sites across 19 stdlib modules with HIGH/MEDIUM/LOW Phase 44 priorities; `§6c` pointer for bespoke-pattern discovery sweep. `ClampGrepConsistencyTests` 6/6 PASS pins baseline counts | CLOSED — Plan 42-02 + 42-03 commits `a0858f4` + `763a9fc` + `76972b4` |
-| REQ-AUDIT-08 | Composer-approved prioritization (§7 routing) | `42-AUDIT.md §7` has 53 routing tags across `→ Phase 43` / `→ Phase 44` / `→ v1.6-backlog` / `→ not a gap`. Composer Review Sign-Off block at AUDIT.md line 259-277: **Auto-approved 2026-05-24** via `/gsd:execute-phase --auto` chain mode (D-42-03-F). The checkpoint type was `human-verify` with `gate="blocking"` (NOT `blocking-human` / NOT package legitimacy), so auto-mode protocol auto-approved and continued. Per-row stable-identifier survives Phase 43 renames — a future composer who disagrees with a specific row can issue a follow-up Quick task to re-classify | CLOSED — Plan 42-03 commit `d512158` |
+| REQ-AUDIT-08 | Composer-approved prioritization (§7 routing) | `42-AUDIT.md §7` has 53 routing tags across `→ Phase 43` / `→ Phase 44` / `→ v1.6-backlog` / `→ not a gap`. Composer Review Sign-Off block at AUDIT.md line 259-277: **Auto-approved 2026-05-24** via execute phase --auto chain mode (D-42-03-F). The checkpoint type was `human-verify` with `gate="blocking"` (NOT `blocking-human` / NOT package legitimacy), so auto-mode protocol auto-approved and continued. Per-row stable-identifier survives Phase 43 renames — a future composer who disagrees with a specific row can issue a follow-up Quick task to re-classify | CLOSED — Plan 42-03 commit `d512158` |
 | REQ-AUDIT-09 | `42-AUDIT.md` committed; tracking files updated (ROADMAP / STATE / REQUIREMENTS) | `42-AUDIT.md` committed in `76972b4` (Plan 42-03 Task 1). Tracking-file sweep lands in THIS plan's Task 2 commit (see `.planning/ROADMAP.md` Phase 42 row → 4/4 Complete; `.planning/STATE.md` frontmatter `stopped_at` updated; `.planning/REQUIREMENTS.md` Phase 42 cross-insert with REQ-AUDIT-01..09 table) | CLOSED — Plan 42-03 commit `76972b4` (AUDIT.md) + Plan 42-04 (this closer) tracking-file commit |
 
 All 9 REQ-AUDIT-NN closed; zero gaps remain at Phase 42 boundary.
@@ -150,7 +150,7 @@ None of these are blockers — they describe limitations of the audit's mechanic
 
 ## Downstream Consumers
 
-Phase 43 plan-phase (spawned by `/gsd:plan-phase 43` when scheduled) consumes:
+Phase 43 plan-phase (spawned by plan phase 43 when scheduled) consumes:
 
 - `42-AUDIT.md §1` — orphan classification (BeatType anchor + reference-identity-type non-orphans)
 - `42-AUDIT.md §2` — Beat ↔ Second context-aware conversion design hint (Pitfall 3: must be a builtin, not a `FlowType` override, because tempo-context is runtime state)
@@ -159,7 +159,7 @@ Phase 43 plan-phase (spawned by `/gsd:plan-phase 43` when scheduled) consumes:
 - `42-AUDIT.md §5` — overload-gap routing (only `pitchShift(Buffer, Hertz)` design-decision-required)
 - `42-AUDIT.md §7a` — Phase 43 HIGH/MEDIUM/LOW candidate table
 
-Phase 44 plan-phase (spawned by `/gsd:plan-phase 44` when scheduled) consumes:
+Phase 44 plan-phase (spawned by plan phase 44 when scheduled) consumes:
 
 - `42-AUDIT.md §2` — explicit-conversion-builtin shapes (`(db x)`, `(cents x)`, `(hz x)`, `(ms x)`, `(sec x)` — matches ROADMAP line 372)
 - `42-AUDIT.md §6a` — 13 input-perimeter clamps with proposed strict-mode error messages (Axis B sites — load-bearing per ROADMAP line 380)

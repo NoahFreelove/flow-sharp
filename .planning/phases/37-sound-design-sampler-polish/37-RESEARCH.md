@@ -628,7 +628,7 @@ Alternative: add BOTH D5 + A4 if file-size budget allows. Each sample is ~150 KB
 ### Sampling Rate
 - **Per task commit:** `dotnet test --filter "FullyQualifiedName~Phase37&Category!=Slow"` (≤30 s — unit + lightweight integration)
 - **Per wave merge:** `dotnet test --filter "FullyQualifiedName~Phase37"` (≤2 min — full Phase 37 suite)
-- **Phase gate:** Full `dotnet test` green before `/gsd:verify-work`
+- **Phase gate:** Full `dotnet test` green before verify work
 
 ### Wave 0 Gaps
 
@@ -700,7 +700,7 @@ Phase 37 is pure audio DSP + sample loading — no network, no auth, no user-inp
 | A9 | YIN voicing threshold 0.1 works on music (not just speech) | Pattern 2 | LOW — YIN paper validates on music; community implementations use same default |
 | A10 | Granular per-FlowEngine cache uses same lifetime as Phase 29 SampleCache | Pattern 4 | LOW — Phase 29 precedent is well-tested; no new cache invalidation logic needed |
 
-**Items needing user confirmation before plan-phase locks them:** A4 (release default), A5 (synthesized mp acceptability), A8 (SAMP-03 multiplier shape). All three are composer-perceptual and should be discussed at `/gsd:discuss-phase` if planner wants to escalate.
+**Items needing user confirmation before plan-phase locks them:** A4 (release default), A5 (synthesized mp acceptability), A8 (SAMP-03 multiplier shape). All three are composer-perceptual and should be discussed at discuss phase if planner wants to escalate.
 
 ## Open Questions
 

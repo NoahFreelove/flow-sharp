@@ -693,7 +693,7 @@ becomes:
 
 ### `.planning/STATE.md` + `.planning/ROADMAP.md` (phase-completion workflow)
 
-Out of plan scope — the phase-completion workflow handles these. No analog-excerpt required in PATTERNS.md; the `/gsd-execute-phase` closure step edits them.
+Out of plan scope — the phase-completion workflow handles these. No analog-excerpt required in PATTERNS.md; the execute phase closure step edits them.
 
 ---
 
@@ -867,7 +867,7 @@ Plan 13-05 carries the extra closure commit: `docs(traceability): close TEST-04 
 - `.planning/phases/10-vocalization/` (existing draft to promote)
 - `.planning/REQUIREMENTS.md` (TEST-03 closure pattern)
 - `flow-lang.Tests/` (all files)
-- `~/.claude/get-shit-done/templates/VALIDATION.md` (canonical schema)
+- the archived planning template (canonical schema)
 
 **Files read during mapping:**
 - `.planning/phases/13-nyquist-validation-backfill/13-CONTEXT.md`
@@ -883,7 +883,7 @@ Plan 13-05 carries the extra closure commit: `docs(traceability): close TEST-04 
 - `flow-lang.Tests/Unit/CollectionsTests.cs`
 - `flow-lang.Tests/Unit/ThunkTests.cs`
 - `flow-lang.Tests/flow-lang.Tests.csproj`
-- `~/.claude/get-shit-done/templates/VALIDATION.md`
+- the archived planning template
 
 **Total files scanned:** 14
 **Pattern extraction date:** 2026-04-19

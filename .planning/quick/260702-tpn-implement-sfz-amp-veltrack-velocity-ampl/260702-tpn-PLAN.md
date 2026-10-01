@@ -40,11 +40,6 @@ Purpose: Faithful musical dynamics. With the curve, vel 32 (pp) → gain (32/127
 Output: `amp_veltrack` added to the SFZ opcode whitelist + a new `SfzRegion.AmpVeltrack` field (default 100.0) flowing through the header cascade; a per-region velocity gain applied once per rendered note body in `SfzRenderer`; new tests pinning the curve math + loudness ordering; and a refresh of the one render test whose fixed-reference assertion is invalidated by the velocity-squared curve. No new Flow surface (amp_veltrack is an internal SFZ opcode, no composer-facing builtin). Changes stay inside `StandardLibrary/Audio/Sfz/` — Desktop-only, Web-stripped, no new guards.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-@$HOME/.claude/gsd-core/templates/summary.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @CLAUDE.md

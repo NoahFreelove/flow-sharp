@@ -34,10 +34,6 @@ Purpose: silence is the only musically-correct reading of a rest section (charit
 Output: a one-branch fix in the single core `RenderSection` overload + a focused xUnit regression suite.
 </objective>
 
-<execution_context>
-@$HOME/.claude/gsd-core/workflows/execute-plan.md
-</execution_context>
-
 <context>
 @.planning/STATE.md
 @flow-lang/StandardLibrary/Audio/SongRenderer.cs

@@ -66,7 +66,7 @@ session can confirm audio actually comes out and the autoplay policy is honored)
 The scaffold (`48-HUMAN-UAT.md`, 3 browser rows + reproducible steps + closure conditions)
 landed 2026-05-30. The **first browser smoke immediately surfaced a BLOCKING boot failure** in
 Chrome: `dotnet.boot.js` 404. Per the plan's Closure Conditions this routed to in-phase repair
-(`/gsd:debug`) rather than a deferral — it was a runtime/build-config defect, not a UX nit.
+(debug) rather than a deferral — it was a runtime/build-config defect, not a UX nit.
 
 ## In-phase repair (9 commits)
 

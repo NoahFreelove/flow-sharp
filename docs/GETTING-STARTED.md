@@ -1,4 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
 # Getting Started with Flow
 
 Welcome. Flow is a statically-typed programming language for music

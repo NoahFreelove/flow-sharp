@@ -260,7 +260,7 @@ Per RESEARCH §Open Question 1 + harness blind spots discovered during authoring
 
 §7 prioritization is composer-reviewable at the Plan 42-03 Task 3 checkpoint per AUDIT-08.
 
-**Status:** ⚡ Auto-approved (2026-05-24) via /gsd:execute-phase --auto chain mode.
+**Status:** ⚡ Auto-approved (2026-05-24) via execute phase --auto chain mode.
 
 The checkpoint type is `human-verify` (gate=`blocking`, NOT `blocking-human` / NOT package-legitimacy), so the auto-mode protocol auto-approves and continues. A composer revisiting this AUDIT.md later who disagrees with §7 prioritization can issue a follow-up Quick task to re-classify specific rows — Pitfall 7 stable-identifier rule (name + signature) makes per-row edits safe across Phase 43 renames.
 
