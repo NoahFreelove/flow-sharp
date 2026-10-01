@@ -26,6 +26,7 @@
        deferral table); closed here at the phase closer. Mirrors the Plan 47-01
        conditional <Compile Remove> pattern verbatim. -->
   <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+    <Compile Remove="PlatformAudio/**/*.cs" />
     <Compile Remove="Integration\Phase33\SfzArticulationTests.cs" />
     <Compile Remove="Integration\Phase37\DrumPitchShiftAutoTests.cs" />
     <Compile Remove="Integration\Phase37\SfzDrumsLoadTest.cs" />
@@ -95,6 +96,10 @@
          stripped namespaces. Package-legitimacy gate (Task 0) ratified
          (canonical maintainer jbevain, 1.4B+ downloads, zero transitive deps). -->
     <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
+    <ProjectReference Include="../flow-platform-linux/flow-platform-linux.csproj" />
   </ItemGroup>
 
   <ItemGroup>

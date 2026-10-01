@@ -1,0 +1,68 @@
+{
+  "timestampUtc": "2026-10-01T15:40:54.0610681+00:00",
+  "mode": "isolated",
+  "seconds": 20,
+  "muted": true,
+  "os": "Ubuntu 26.04 LTS",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.12",
+  "cpuCount": 16,
+  "serverGc": false,
+  "device": {
+    "Index": 31,
+    "Name": "Default Sink",
+    "Channels": 32,
+    "DefaultSampleRate": 48000,
+    "LowLatencySeconds": 0.01
+  },
+  "nativeVersion": "PortAudio V19.7.0-devel, revision e1b70d33",
+  "requestedSampleRate": 48000,
+  "actualSampleRate": 48000,
+  "blockFrames": 128,
+  "reportedOutputLatencySeconds": 0,
+  "voices": 32,
+  "sequences": 2,
+  "allCallbacks": {
+    "count": 7504,
+    "p50Milliseconds": 0.0485,
+    "p99Milliseconds": 0.096844,
+    "maxMilliseconds": 1.88344,
+    "maxEntryGapMilliseconds": 5.680862,
+    "over70Percent": 1,
+    "overDeadline": 0,
+    "outputUnderflows": 0,
+    "allocatedBytes": 0
+  },
+  "afterFirstSecond": {
+    "count": 7126,
+    "p50Milliseconds": 0.048472,
+    "p99Milliseconds": 0.091716,
+    "maxMilliseconds": 0.139744,
+    "maxEntryGapMilliseconds": 5.680862,
+    "over70Percent": 0,
+    "overDeadline": 0,
+    "outputUnderflows": 0,
+    "allocatedBytes": 0
+  },
+  "droppedTimingSamples": 0,
+  "callbackFault": false,
+  "parentGcCollections": [
+    0,
+    0,
+    0
+  ],
+  "load": {
+    "Iterations": 5710,
+    "AssetBytesRead": 23949475840,
+    "GcCollections": [
+      3559,
+      2852,
+      2849
+    ]
+  },
+  "Generation": 2,
+  "retired": 1,
+  "RejectedCommands": 1,
+  "DiscardedCommands": 0,
+  "limitation": "Short muted device probe; managed-body duration excludes native dispatch/entry pauses. Callback spacing and underflows are separate evidence. No UI load, listening certification, native DSP comparison or 30-minute gate closure."
+}

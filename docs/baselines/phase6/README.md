@@ -62,3 +62,46 @@ Logs/TRX: `/tmp/flow-phase6-publication/`. Reproduce using the commands above wi
 `--artifacts /tmp/flow-phase6-publication` and `/tmp/flow-phase6-publication-wasm.json`
 as the smoke output. General DSP/native-resource lifecycle and device timing remain
 open; this is a dry-sine protocol proof, not seamless plugin hot reload.
+
+## Linux callback prototype measurements
+
+2026-10-01, four independent 20-second muted real-device runs. Reference machine:
+Ubuntu 26.04 x64, Intel i7-11700K (8 cores/16 threads), .NET 10.0.12 workstation GC;
+libportaudio2 19.7.0+git20260206.e1b70d33-0ubuntu1, PipeWire/PulseAudio 1.6.2,
+Default Sink routed to MOONDROP Discdream 2 USB. No device configuration changed.
+32 sine voices in two sequences at 48 kHz; control/replacement operations enabled.
+Builds and test suites were not run concurrently with the measurement windows.
+
+| Load / frames | Callbacks | Steady p99 ms | Steady max ms | All max ms | Max entry gap ms | Reported underflows | Body deadline misses |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Idle / 256 | 3753 | 0.141 | 0.316 | 1.679 | 5.640 | 0 | 0 |
+| In-process / 256 | 3753 | 0.320 | 2.526 | 2.526 | 9.919 | 0 | 0 |
+| Isolated / 256 | 3752 | 0.190 | 0.459 | 1.705 | 5.753 | 0 | 0 |
+| Isolated / 128 | 7504 | 0.092 | 0.140 | 1.883 | 5.681 | 0 | 0 |
+
+Steady excludes the first second; full startup samples remain summarized in JSON.
+All measured callback-body allocations and dropped timing samples were zero.
+The 128-frame startup maximum exceeded 70% of its 2.667 ms deadline once. Native
+reported latency was zero (unavailable); entry gaps can reflect batching/scheduling
+and must not be equated directly to body deadline misses or hardware latency.
+
+In-process load evaluated Flow 4,474 times, read/hashed 18.8 GB through a cached
+4 MiB temporary file, and forced full collections every eight iterations. Parent
+GC counts were 2,272/1,713/1,713. Isolated runs kept parent GC counts zero; child
+counters include its slightly longer lifetime around the capture window. Muting
+happens after DSP, so these runs exercise rendering without claiming audible UAT.
+
+Raw summaries: callback-idle-256.json, callback-inprocess-256.json,
+callback-isolated-256.json and callback-isolated-128.json. Invalid-device behavior
+is recorded in callback-unavailable-device.json (expected exit 1). Reproduction
+commands are in docs/TESTING.md; indices are local and must be enumerated.
+Raw logs: /tmp/flow-phase6-callback/.
+
+Full gate: **3,116 main + 21 MIDI passed, 19 skips**, no failures or tracked-file
+mutations; Web smoke passes. Focused **104/104** includes six hardware-free
+callback tests. Verification artifacts: callback-all-verification.json and
+callback-wasm-verification.json; logs/TRX in /tmp/flow-phase6-callback-verification/.
+
+These short runs support further isolation experiments. They do not close the
+30-minute stress gate or settle managed/native strategy. No UI load, native DSP
+baseline, device-loss recovery or listening certification was measured.

@@ -611,3 +611,41 @@ old transport exactly once. Warmed callback installation allocates zero bytes;
 preparation and transport construction are deliberately outside that measurement.
 These tests certify the dry-sine publication protocol, not seamless plugin reload,
 native-resource disposal or device callback deadlines.
+
+### Linux callback prototype (restructuring Phase 6)
+
+`PlatformAudio/CallbackRenderProbeTests` runs without hardware: assembly closure,
+unmanaged stereo output parity/muting, underflow capture, exception-to-silence/abort,
+bounded timing storage and zero warmed callback allocation. The platform reference
+and these tests are excluded from the Web test target. No ordinary test opens an
+audio device; existing Flow.Audio model/BCL closure tests still apply.
+
+Explicit Linux measurements require system `libportaudio.so.2` (v19), an output
+device/session and a Release build. No native binary is bundled or new NuGet used.
+
+```sh
+MSBUILDDISABLENODEREUSE=1 dotnet build scripts/AudioCallbackProbe -c Release -p:FlowTarget=Desktop
+scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe --list
+# Device indices are local/ephemeral; choose one from --list rather than copying 31.
+scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe 20 idle /tmp/callback-idle.json DEVICE_INDEX 256
+scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe 20 inprocess /tmp/callback-load.json DEVICE_INDEX 256
+scripts/AudioCallbackProbe/bin/Release/net10.0/AudioCallbackProbe 20 isolated /tmp/callback-isolated.json DEVICE_INDEX 256
+```
+
+The probe renders 32 voices, exercises control/replacement and mutes device output.
+Load includes repeated Flow evaluation, cached 4 MiB file reads/hashing and forced
+GC every eight iterations. Isolated load runs in a child process; the child stays
+active throughout capture. Timings include startup and separately report after
+the first second. Capture happens only after native close joins callbacks.
+
+Use 128 as the final argument for the smaller-block check; up to 1800 seconds is
+supported for sustained testing. Do not run suites/builds in parallel with timing
+probes. Exit 1 indicates native/worker/callback failure or dropped timing storage;
+headroom/deadline/underflow counts are data in the report, not exit-code assertions.
+A failing device produces a structured error report. Native device enumeration may
+emit ALSA diagnostics to stderr even when the selected output succeeds.
+
+Managed-body time excludes native dispatch and runtime pauses before managed entry;
+entry gaps and native underflow flags are separate evidence. A native reported
+latency of zero means unavailable here, not zero hardware latency. Short muted
+runs do not close the 30-minute/device/audible gates. See the Phase 6 baseline.

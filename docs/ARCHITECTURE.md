@@ -184,7 +184,8 @@ The primary projects are organized by responsibility:
 |---------|------|
 | `flow-language/` | BCL-only language runtime, core standard library, and extension contracts. |
 | `flow-music-model/` | BCL-only immutable evaluated score snapshots and quarter/second timing. |
-| `flow-audio/` | Model + BCL only; dry sine snapshot rendering, bounded stereo blocks and shared note-duration policy. |
+| `flow-audio/` | Model + BCL only; dry sine rendering, prepared playback, frame transport, bounded commands and playback publication/retirement. |
+| `flow-platform-linux/` | Flow.Audio + BCL; optional Linux PortAudio callback adapter and bounded timing instrumentation. No language dependency. |
 | `flow-music-io/` | Model + DryWetMidi only; snapshot Standard MIDI File export and the single GM routing / key-signature tables. |
 | `scripts/MusicHost/` | Native score-to-WAV/MIDI proof; references only `flow-audio`, `flow-music-io` and their model dependency. |
 | `flow-lang/` | Music library, audio pipeline, and compatibility host (`FlowEngine`); references language, music model, audio and music IO. |

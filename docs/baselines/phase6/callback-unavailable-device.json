@@ -1,0 +1,9 @@
+{
+  "success": false,
+  "mode": "idle",
+  "seconds": 2,
+  "deviceIndex": 99999,
+  "blockFrames": 256,
+  "error": "ArgumentOutOfRangeException",
+  "message": "Specified argument was out of the range of valid values. (Parameter \u0027index\u0027)"
+}

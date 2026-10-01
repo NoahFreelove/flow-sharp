@@ -11,10 +11,10 @@ The current [Phase 5 handoff](../handoffs/2026-09-27-phase5-complete.md) and
 Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
 Owner direction: finish the music/audio backend and Flow plugin support before
-UI/DAW implementation. Defer the desktop shell. Prepared playback, frame transport,
-bounded commands and playback publication/retirement are verified. Next: a Linux
-callback adapter and measurements under load, before broad DSP/plugin work. Handoff:
-[Phase 6 playback publication](../handoffs/2026-10-01-phase6-publication.md).
+UI/DAW implementation. Defer the desktop shell. Prepared playback/control/publication
+and a Linux callback prototype are verified, with short real-device/load evidence.
+Next: sustained stress and startup/scheduling analysis before broad DSP/plugin work.
+[Current handoff](../handoffs/2026-10-01-phase6-callback-prototype.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -904,3 +904,38 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   reload. Native resources, tails/crossfades and continuous state transfer are
   still open. Next: a callback-capable Linux adapter and headless timing/underrun
   probe under background Flow/GC load, before broader processor migration.
+
+## Phase 6 — Linux callback prototype (2026-10-01)
+
+- **P6-05 prototype verified; device gate remains open**: `Flow.Platform.Linux`
+  references Flow.Audio + BCL and binds the installed `libportaudio.so.2` v19 ABI.
+  It opens stereo float callbacks at the prepared sample rate/block size, roots
+  the managed delegate through native close, contains callback faults with
+  silence/abort, and keeps lifecycle/disposal on the control thread. This is an
+  opt-in prototype; existing Flow playback routing and Web closure are unchanged.
+- `scripts/AudioCallbackProbe` runs 32 sine voices in two sequences through the
+  prepared transport, commands and publication path. It mutes after rendering,
+  bounds timing storage, and records managed-body distributions/maxima, entry
+  gaps, underflow flags, allocations, GC counts and device/runtime metadata.
+  Background modes: idle, in-process Flow/file/hash/forced-GC work, isolated worker.
+- Four 20-second real-device runs at 48 kHz: 256-frame idle/in-process/isolated and
+  128-frame isolated. All reported zero underflows, body deadline misses and body
+  allocations. Steady 256-frame maxima: 0.316 / 2.526 / 0.459 ms; entry gaps:
+  5.640 / 9.919 / 5.753 ms. The 128-frame startup maximum (1.883 ms) crossed the
+  70% target once; steady maximum was 0.140 ms. Startup is preserved in evidence.
+- Reference machine: Ubuntu 26.04 x64, i7-11700K, .NET 10.0.12 workstation GC,
+  PortAudio 19.7.0 development build, PipeWire 1.6.2 PulseAudio service, default
+  sink routed to MOONDROP Discdream 2 USB. Reported output latency was zero and
+  is treated as unavailable, not zero physical latency. Output was muted.
+- Six hardware-free tests cover assembly closure, native-buffer parity/muting,
+  underflow capture, fault containment, bounded telemetry and warmed allocation.
+  Focused tests **104/104**. Full gate: **3,116 main + 21 MIDI passed, 19 skips**,
+  no failures or tracked-file mutations. Web smoke passes. Invalid device index
+  also exits 1 with structured error evidence and no playback.
+- Evidence: `docs/baselines/phase6/callback-*.json`; raw logs:
+  `/tmp/flow-phase6-callback/`, TRX/build: `/tmp/flow-phase6-callback-verification/`.
+  Decision context: `docs/decisions/2026-10-01-audio-callback-prototype.md`.
+- Limits: short runs, managed-body timing excludes native entry/dispatch pauses;
+  no UI activity, audible certification, native DSP baseline, device-loss recovery
+  or 30-minute stress closure. Isolation looks promising but is not yet the final
+  architecture decision. General DSP and Phase 7 remain open.
