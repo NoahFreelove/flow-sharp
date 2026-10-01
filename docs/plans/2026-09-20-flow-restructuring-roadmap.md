@@ -15,14 +15,14 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 | 3 Language extraction | Complete | Independent BCL-only language artifact, CLI/REPL/embedding proof. |
 | 4 Analysis and tooling | Complete | Non-executing check, shared editor metadata/analysis and explicit host adapters. |
 | 5 Music model/offline rendering | Complete | Detached scores, linear assembly (15-min render: 9.0 GB → 327 MB allocated), streaming native WAV, snapshot MIDI export (Flow `writeMidi` routed through it) and shared quantize/transpose. Legacy instruments/effects move to Phase 6 block processors. |
-| 6 Audio engine/UI prototypes | Backend in progress | Prepared sine playback, frame transport and bounded host commands verified. Graph publication, device measurements and instrument/effect processors next; UI deferred by owner. |
+| 6 Audio engine/UI prototypes | Backend in progress | Prepared sine playback, transport, bounded commands and playback publication/retirement verified. Callback device measurements and instrument/effect processors next; UI deferred by owner. |
 | 7 Flow plugins | Not started | Public graph authoring, lifecycle, bounded compilation and hot reload. |
 | 8 Project/piano roll | Not started | Editable notes, arrangement, undo, save/reopen and plugin integration. |
 | 9 Complete DAW workflow | Not started | Routing, recording, clips, automation, export and Linux packaging. |
 | 10 Hardening/release | Not started | Stress/recovery tests, compatibility docs and reproducible releases. |
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
-Continue from the [Phase 6 command queue handoff](handoffs/2026-10-01-phase6-command-queue.md).
+Continue from the [Phase 6 playback publication handoff](handoffs/2026-10-01-phase6-publication.md).
 Owner sequencing update (2026-09-30): finish the music/audio backend and Flow
 plugin support before UI/DAW implementation. Advance Phase 6 backend work and
 Phase 7 prerequisites; defer the Phase 6 desktop shell prototype. This does not
@@ -644,8 +644,9 @@ Gate: a non-Flow host constructs a small composition and renders/exports it; Flo
 
 Completed backend slices: prepared dry-sine block playback (P6-01) and single-owner
 frame transport with play/pause/stop/seek/loop (P6-02), and bounded single-producer
-host commands with protected stop (P6-03). Next: graph publication/retirement,
-then callback device measurements. The full gate
+host commands with protected stop (P6-03). Prepared playback publication and
+off-thread retirement are verified (P6-04); general DSP graphs remain future work.
+Next: callback-capable Linux adapter and device measurements. The full gate
 remains open; the desktop shell is deferred by owner.
 
 Work:

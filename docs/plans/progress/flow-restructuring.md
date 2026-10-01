@@ -11,10 +11,10 @@ The current [Phase 5 handoff](../handoffs/2026-09-27-phase5-complete.md) and
 Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
 Owner direction: finish the music/audio backend and Flow plugin support before
-UI/DAW implementation. Defer the desktop shell. Prepared playback, frame transport
-and bounded host commands are verified; the next ready slice is graph publication
-and retirement, followed by device measurements and plugin work. Current handoff:
-[Phase 6 command queue](../handoffs/2026-10-01-phase6-command-queue.md).
+UI/DAW implementation. Defer the desktop shell. Prepared playback, frame transport,
+bounded commands and playback publication/retirement are verified. Next: a Linux
+callback adapter and measurements under load, before broad DSP/plugin work. Handoff:
+[Phase 6 playback publication](../handoffs/2026-10-01-phase6-publication.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -878,3 +878,29 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   commands. No live-note events/note-off recovery, parameter coalescing or device
   deadline claim. Next: graph publication/retirement, including generation policy
   for queued score-relative commands, then a Linux callback prototype.
+
+## Phase 6 — prepared playback publication (2026-10-01)
+
+- **P6-04 verified**: `QueuedSinePlayback.TryReplace` publishes a prepared source
+  at a nonempty audio block boundary. Construction/reset occurs on the control
+  thread. One pending and one retired slot bound host retention; publication
+  returns false until the previous retired transport is collected. Successful
+  `TryTakeRetired` transfers old transport ownership off-thread after audio release.
+- Replacement starts stopped at zero without a loop. Old queued commands are
+  discarded; new commands are rejected while replacement is pending. Acknowledgment
+  releases submissions only after the new generation, length and status are
+  published, preventing old-score seeks/loops from entering a shorter score.
+  Stop wins over replacement at a boundary observing both. Sample rate and block
+  limit must match; invalid/backpressured replacement preserves caller ownership.
+- Eight new cases cover parity after shorter-score replacement, empty scores,
+  rejection/ownership, stop precedence, invalid/empty callback buffers, 2,000
+  concurrent swaps with exact-once retirement, and zero callback allocation.
+  Focused tests: **98/98**. All-tier gate: **3,110 main + 21 MIDI passed,
+  19 skipped**, zero failures or tracked-file mutations. Web smoke passes.
+- Evidence: `docs/baselines/phase6/publication-*.json`; raw logs/TRX:
+  `/tmp/flow-phase6-publication/`. Handoff:
+  `docs/plans/handoffs/2026-10-01-phase6-publication.md`.
+- This is dry-sine publication, not a general DSP graph or seamless plugin hot
+  reload. Native resources, tails/crossfades and continuous state transfer are
+  still open. Next: a callback-capable Linux adapter and headless timing/underrun
+  probe under background Flow/GC load, before broader processor migration.

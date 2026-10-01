@@ -602,3 +602,12 @@ zero warmed allocation. Concurrent tests exercise 100,000 ordered commands and
 5,000 stop/ack cycles with a bounded timeout. These cover the documented single
 producer/single consumer contract; they do not establish device deadlines or
 multi-producer support.
+
+`MusicModel/PlaybackPublicationTests` checks prepared-source installation at block
+boundaries, stale-command discard, shorter/empty scores, stop precedence, pending
+and retired slot backpressure, rejected-source ownership, format validation and
+invalid/empty reads. Concurrent stress swaps 2,000 generations and reclaims each
+old transport exactly once. Warmed callback installation allocates zero bytes;
+preparation and transport construction are deliberately outside that measurement.
+These tests certify the dry-sine publication protocol, not seamless plugin reload,
+native-resource disposal or device callback deadlines.

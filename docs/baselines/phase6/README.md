@@ -47,3 +47,18 @@ The Web adapter smoke passed. Summaries: `queue-all-verification.json` and
 Reproduce using the commands above with `--artifacts /tmp/flow-phase6-queue`
 and `/tmp/flow-phase6-queue-wasm.json` as the smoke output. Concurrency tests
 exercise the single-producer/single-consumer protocol, not hard real-time safety.
+
+## Prepared playback publication slice
+
+2026-10-01: bounded replacement and control-thread retirement in `QueuedSinePlayback`.
+Focused tests: **98/98**. All-tier verification: **3,110 main + 21 MIDI passed,
+19 prerequisite skips**, no failures or tracked-file mutations. Web adapter smoke
+passes. Eight new cases cover smaller/empty scores, stale-command handling,
+stop precedence, ownership/backpressure, 2,000 concurrent swaps and zero warmed
+callback installation allocation. Preparation/allocation is off the measured path.
+
+Summaries: `publication-all-verification.json`, `publication-wasm-verification.json`.
+Logs/TRX: `/tmp/flow-phase6-publication/`. Reproduce using the commands above with
+`--artifacts /tmp/flow-phase6-publication` and `/tmp/flow-phase6-publication-wasm.json`
+as the smoke output. General DSP/native-resource lifecycle and device timing remain
+open; this is a dry-sine protocol proof, not seamless plugin hot reload.
