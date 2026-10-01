@@ -20,3 +20,16 @@ node scripts/ci/wasm-session-smoke.mjs "$PWD/flow-lang/bin/Release/net10.0/brows
 
 Summaries are adjacent JSON files; raw logs/TRX are in the temporary artifact path.
 Local allocation tests do not establish hard real-time safety or immunity to GC.
+
+## Frame transport slice
+
+2026-10-01: `PreparedSineTransport` adds single-owner play/pause/stop/seek/loop.
+Fourteen new cases preserve reference samples and require zero warmed allocation.
+The all-tier gate passed **3,093 main + 21 MIDI**, with 19 prerequisite skips,
+zero failures and zero tracked-file mutations. Web adapter smoke also passed.
+The adjacent `transport-all-verification.json` and `transport-wasm-verification.json`
+record the results; raw logs/TRX are at `/tmp/flow-phase6-transport/`.
+
+Reproduce with the commands above using `--artifacts /tmp/flow-phase6-transport`
+and `/tmp/flow-phase6-transport-wasm.json` for the smoke output. This slice does
+not establish device deadlines or cross-thread transport safety.

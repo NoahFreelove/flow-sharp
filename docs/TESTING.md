@@ -587,3 +587,10 @@ and boundary crossings and requires zero bytes allocated. The existing four
 legacy sine parity cases also run through prepared playback (ties, pedal, tuning,
 voice stealing and parallel voices). These prove behavior and local allocation,
 not audio-device deadlines or freedom from runtime-wide GC pauses.
+
+`MusicModel/PreparedSineTransportTests` checks play/pause/resume/stop/seek state,
+reference-sample equality over section/repeat/tempo crossings, exact and partial
+EOF, lead-in and half-open loop ranges, one-frame loops, long frame positions,
+empty scores/buffers, and invalid-call atomicity in every state. Warmed reads and
+transport commands allocate zero bytes. The transport is single-owner; these
+checks do not certify cross-thread control, audio deadlines or click-free loops.

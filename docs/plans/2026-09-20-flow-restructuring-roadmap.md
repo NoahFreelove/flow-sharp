@@ -22,7 +22,7 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 | 10 Hardening/release | Not started | Stress/recovery tests, compatibility docs and reproducible releases. |
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
-Continue from the [Phase 6 prepared playback handoff](handoffs/2026-10-01-phase6-prepared-playback.md).
+Continue from the [Phase 6 transport handoff](handoffs/2026-10-01-phase6-transport.md).
 Owner sequencing update (2026-09-30): finish the music/audio backend and Flow
 plugin support before UI/DAW implementation. Advance Phase 6 backend work and
 Phase 7 prerequisites; defer the Phase 6 desktop shell prototype. This does not
@@ -641,6 +641,11 @@ Work:
 Gate: a non-Flow host constructs a small composition and renders/exports it; Flow produces the same representation; long-song memory/copy behavior improves measurably; tuplets, overlaps, articulation, tuning, and tempo changes survive conversion.
 
 ### Phase 6 — Prove the audio engine and desktop shell
+
+Completed backend slices: prepared dry-sine block playback (P6-01) and single-owner
+frame transport with play/pause/stop/seek/loop (P6-02). Next: bounded host commands
+and graph publication/retirement, then callback device measurements. The full gate
+remains open; the desktop shell is deferred by owner.
 
 Work:
 

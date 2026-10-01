@@ -11,8 +11,10 @@ The current [Phase 5 handoff](../handoffs/2026-09-27-phase5-complete.md) and
 Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
 Owner direction: finish the music/audio backend and Flow plugin support before
-UI/DAW implementation. Defer the desktop shell. Prepared block playback is verified; the next ready
-slice is transport, followed by command queues, device measurements and graph/plugin work.
+UI/DAW implementation. Defer the desktop shell. Prepared playback and frame transport
+are verified; the next ready slice is bounded host commands and graph publication,
+followed by device measurements and plugin work. Current backend handoff:
+[Phase 6 transport](../handoffs/2026-10-01-phase6-transport.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -829,3 +831,26 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   lifecycle, transport, event queue or graph publication yet. Full Phase 6 remains
   open; UI is deferred by owner. Handoff:
   `docs/plans/handoffs/2026-10-01-phase6-prepared-playback.md`.
+
+## Phase 6 — frame transport (2026-10-01)
+
+- **P6-02 verified**: `Flow.Audio.PreparedSineTransport` takes exclusive ownership
+  of a prepared sine cursor. Play/resume, pause, stop/rewind, exact seek and
+  half-open loop ranges operate without UI timers. Reads advance score frames;
+  paused/stopped output is silent, EOF stops at the end, and loop wraps work
+  within a block and at exact block boundaries. Invalid calls preserve state.
+- Loop configuration preserves position; playback before the start is a lead-in,
+  and positions at/past the end wrap on the next playing read. Stop preserves
+  loop settings. EOF does not auto-restart; stop/seek explicitly selects replay.
+- Fourteen new cases cover reference-sample equality across tempos/repeats,
+  state transitions, partial/exact EOF, empty scores/buffers, one-frame loops,
+  long frame positions, validation and zero warmed operation allocation.
+- Full all-tier gate: **3,093 main + 21 MIDI passed, 19 skipped**, zero failures
+  and zero tracked-content mutations. Web adapter smoke passes. Evidence:
+  `docs/baselines/phase6/transport-*.json`; raw logs/TRX:
+  `/tmp/flow-phase6-transport/`. Initial focused run passed 80 cases before the
+  final long-frame loop case, which passed in the full run.
+- Single-owner dry-sine prototype only: no command queue, device integration,
+  crossfade, effect tails or deadline claim. Next: bounded host commands and
+  graph publication/retirement, then Linux callback timing under load. Handoff:
+  `docs/plans/handoffs/2026-10-01-phase6-transport.md`.
