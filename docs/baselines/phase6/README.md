@@ -33,3 +33,17 @@ record the results; raw logs/TRX are at `/tmp/flow-phase6-transport/`.
 Reproduce with the commands above using `--artifacts /tmp/flow-phase6-transport`
 and `/tmp/flow-phase6-transport-wasm.json` for the smoke output. This slice does
 not establish device deadlines or cross-thread transport safety.
+
+## Bounded host command slice
+
+2026-10-01: `QueuedSinePlayback` adds a bounded FIFO and stop recovery independent
+of FIFO capacity. Focused music-model tests passed 90/90. Nine new cases cover
+sample parity, saturation, wraparound, concurrent commands/stop acknowledgment,
+validation and zero warmed allocation. All-tier verification passed **3,102 main
++ 21 MIDI**, with 19 prerequisite skips, no failures or tracked-file mutations.
+The Web adapter smoke passed. Summaries: `queue-all-verification.json` and
+`queue-wasm-verification.json`; logs/TRX: `/tmp/flow-phase6-queue/`.
+
+Reproduce using the commands above with `--artifacts /tmp/flow-phase6-queue`
+and `/tmp/flow-phase6-queue-wasm.json` as the smoke output. Concurrency tests
+exercise the single-producer/single-consumer protocol, not hard real-time safety.

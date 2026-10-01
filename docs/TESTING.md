@@ -594,3 +594,11 @@ EOF, lead-in and half-open loop ranges, one-frame loops, long frame positions,
 empty scores/buffers, and invalid-call atomicity in every state. Warmed reads and
 transport commands allocate zero bytes. The transport is single-owner; these
 checks do not certify cross-thread control, audio deadlines or click-free loops.
+
+`MusicModel/QueuedSinePlaybackTests` checks block-boundary command order and sample
+parity, capacity-one and non-power-of-two FIFO wraparound, explicit overflow,
+stop recovery through saturation, invalid/empty reads, producer validation and
+zero warmed allocation. Concurrent tests exercise 100,000 ordered commands and
+5,000 stop/ack cycles with a bounded timeout. These cover the documented single
+producer/single consumer contract; they do not establish device deadlines or
+multi-producer support.

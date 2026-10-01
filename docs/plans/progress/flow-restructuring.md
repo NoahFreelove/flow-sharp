@@ -11,10 +11,10 @@ The current [Phase 5 handoff](../handoffs/2026-09-27-phase5-complete.md) and
 Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
 Owner direction: finish the music/audio backend and Flow plugin support before
-UI/DAW implementation. Defer the desktop shell. Prepared playback and frame transport
-are verified; the next ready slice is bounded host commands and graph publication,
-followed by device measurements and plugin work. Current backend handoff:
-[Phase 6 transport](../handoffs/2026-10-01-phase6-transport.md).
+UI/DAW implementation. Defer the desktop shell. Prepared playback, frame transport
+and bounded host commands are verified; the next ready slice is graph publication
+and retirement, followed by device measurements and plugin work. Current handoff:
+[Phase 6 command queue](../handoffs/2026-10-01-phase6-command-queue.md).
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -854,3 +854,27 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
   crossfade, effect tails or deadline claim. Next: bounded host commands and
   graph publication/retirement, then Linux callback timing under load. Handoff:
   `docs/plans/handoffs/2026-10-01-phase6-transport.md`.
+
+## Phase 6 — bounded host commands (2026-10-01)
+
+- **P6-03 verified**: `Flow.Audio.QueuedSinePlayback` owns a transport and a
+  preallocated single-producer/single-consumer FIFO. One control thread submits
+  play/pause/seek/loop commands; one audio thread consumes a bounded batch at each
+  nonempty block boundary. The source remains exclusively audio-owned.
+- Ordinary overflow returns false without overwriting accepted commands.
+  `RequestStop` uses a separate coalescing flag: the consumer discards the old
+  queue, stops/rewinds, and acknowledges. Normal commands are rejected while stop
+  is pending. Rejection/discard counters and separate atomic state/position
+  observations provide host feedback without reading mutable DSP state directly.
+- Nine new cases cover sample parity, capacity-one/non-power-of-two wraparound,
+  saturation, stop recovery, invalid-call atomicity, 100,000 concurrent commands,
+  5,000 concurrent stop/ack cycles, and zero warmed allocation. Focused music-model
+  run: **90/90 passed**. Full all-tier gate: **3,102 main + 21 MIDI passed,
+  19 skipped**, zero failures and zero tracked-file mutations. Web smoke passes.
+- Evidence: `docs/baselines/phase6/queue-*.json`; logs/TRX:
+  `/tmp/flow-phase6-queue/`. Handoff:
+  `docs/plans/handoffs/2026-10-01-phase6-command-queue.md`.
+- Limits: one producer, one consumer, fixed prepared score, block-boundary
+  commands. No live-note events/note-off recovery, parameter coalescing or device
+  deadline claim. Next: graph publication/retirement, including generation policy
+  for queued score-relative commands, then a Linux callback prototype.
