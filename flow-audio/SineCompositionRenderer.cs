@@ -9,7 +9,7 @@ namespace Flow.Audio;
 /// </summary>
 public static class SineCompositionRenderer
 {
-    private sealed class Voice(NoteEvent note, long frames, long startFrame, double onsetSeconds)
+    internal sealed class Voice(NoteEvent note, long frames, long startFrame, double onsetSeconds)
     {
         public NoteEvent Note { get; } = note;
         public long Frames { get; } = frames;
@@ -91,23 +91,7 @@ public static class SineCompositionRenderer
                     foreach (var voice in active)
                     {
                         cancellation.ThrowIfCancellationRequested();
-                        long from = Math.Max(start, voice.StartFrame);
-                        long to = Math.Min(start + count, checked(voice.StartFrame + voice.CutFrames));
-                        int fade = voice.CutFrames < voice.Frames
-                            ? (int)Math.Min((int)(0.005 * options.SampleRate), voice.CutFrames) : 0;
-                        for (long frame = from; frame < to; frame++)
-                        {
-                            // Absolute-time formula and float operation order preserve the sine baseline.
-                            long local = frame - voice.StartFrame;
-                            double time = local / (double)options.SampleRate;
-                            float sample = (float)(0.3 * voice.Note.Velocity *
-                                Math.Sin(2.0 * Math.PI * voice.Note.Pitch!.FrequencyHz * time));
-                            if (fade > 0 && local >= voice.CutFrames - fade)
-                                sample *= 1.0f - ((float)(local - (voice.CutFrames - fade)) / fade);
-                            int dest = (int)(frame - start) * 2;
-                            block[dest] += sample * left;
-                            block[dest + 1] += sample * right;
-                        }
+                        MixVoice(voice, block.AsSpan(0, count * 2), start, options.SampleRate, left, right);
                     }
                     cancellation.ThrowIfCancellationRequested();
                     sink(block.AsMemory(0, count * 2));
@@ -122,7 +106,30 @@ public static class SineCompositionRenderer
         cancellation.ThrowIfCancellationRequested();
     }
 
-    private static List<Voice> Prepare(SectionSnapshot section, int sampleRate, CancellationToken cancellation)
+    // Shared sample kernel: keep operation order identical to legacy sine output.
+    internal static void MixVoice(Voice voice, Span<float> output, long start,
+        int sampleRate, float left, float right)
+    {
+        long from = Math.Max(start, voice.StartFrame);
+        long to = Math.Min(start + output.Length / 2, checked(voice.StartFrame + voice.CutFrames));
+        int fade = voice.CutFrames < voice.Frames
+            ? (int)Math.Min((int)(0.005 * sampleRate), voice.CutFrames) : 0;
+        for (long frame = from; frame < to; frame++)
+        {
+            // Absolute-time formula and float operation order preserve the sine baseline.
+            long local = frame - voice.StartFrame;
+            double time = local / (double)sampleRate;
+            float sample = (float)(0.3 * voice.Note.Velocity *
+                Math.Sin(2.0 * Math.PI * voice.Note.Pitch!.FrequencyHz * time));
+            if (fade > 0 && local >= voice.CutFrames - fade)
+                sample *= 1.0f - ((float)(local - (voice.CutFrames - fade)) / fade);
+            int dest = (int)(frame - start) * 2;
+            output[dest] += sample * left;
+            output[dest + 1] += sample * right;
+        }
+    }
+
+    internal static List<Voice> Prepare(SectionSnapshot section, int sampleRate, CancellationToken cancellation)
     {
         var all = new List<Voice>();
         double bpm = section.Settings.Bpm;
@@ -189,7 +196,7 @@ public static class SineCompositionRenderer
         }
     }
 
-    private static long SectionFrames(SectionSnapshot section, int rate) =>
+    internal static long SectionFrames(SectionSnapshot section, int rate) =>
         Frames(section.DurationQuarters * (60.0 / section.Settings.Bpm) * rate);
 
     private static long Frames(double value)

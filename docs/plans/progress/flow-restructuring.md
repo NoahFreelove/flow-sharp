@@ -4,15 +4,15 @@ Roadmap: [Flow restructuring and focused DAW](../2026-09-20-flow-restructuring-r
 
 ## Current milestone
 
-**Phases 0–5 are complete; Phase 6 backend work is next (2026-09-30).**
+**Phases 0–5 are complete; Phase 6 backend work is in progress (2026-10-01).**
 
 The current [Phase 5 handoff](../handoffs/2026-09-27-phase5-complete.md) and
 [gate evidence](../../baselines/phase5/README.md) supersede the earlier open
 Phase 5 entries below. Instrument/effect migration carries into Phase 6.
 
 Owner direction: finish the music/audio backend and Flow plugin support before
-UI/DAW implementation. Defer the desktop shell; the next ready slice is prepared
-block playback, followed by transport, device measurements and graph/plugin work.
+UI/DAW implementation. Defer the desktop shell. Prepared block playback is verified; the next ready
+slice is transport, followed by command queues, device measurements and graph/plugin work.
 The full Phase 6 gate still includes deferred UI and hardware evidence.
 
 Use the roadmap, this ledger and handoffs directly. External planning commands
@@ -806,3 +806,26 @@ below. The BCL-only music-shaped descriptors remain optional later cleanup.
 - Cleanup verification: no retired workflow names remain in tracked text;
   `git diff --check` passes. Only Markdown and the retired planning config
   changed; source, tests, fixtures, lockfiles and binary assets are unchanged.
+
+## Phase 6 — prepared sine playback (2026-10-01)
+
+- **P6-01 verified**: `Flow.Audio.PreparedSinePlayback` prepares the entire score
+  off-thread, shares metadata by section object across placements/repeats, and
+  retains no PCM. Global authored-note and placement budgets bound preparation.
+  `Read(Span<float>)` fills caller-owned stereo blocks across tempo/section/repeat
+  boundaries; `Seek`/`Reset` reproduce the exact dry-sine timeline. EOF zero-fills
+  the remainder. Invalid buffers/seeks do not mutate output or cursor.
+- Shared voice preparation and sample kernel preserve offline and legacy bits;
+  the offline renderer still prepares only one section at a time. No automatic
+  migration of Flow rendering or legacy instruments is implied.
+- Eight new test cases plus four expanded legacy parity cases cover boundaries,
+  seek into held/stolen notes, budgets, cancellation, independent cursors, empty
+  scores, huge compact repeats and zero steady-state managed allocation.
+- Full all-tier gate: **3,079 main + 21 MIDI passed, 19 skipped**, zero failures,
+  zero tracked-content mutations. Web JavaScript smoke passes. Durable evidence:
+  `docs/baselines/phase6/`; raw logs/TRX: `/tmp/flow-phase6-prepared/`.
+- Limits: dry sine only, section-clipped tails, single-owner cursor, a source-order
+  voice scan per section/block, no device deadline measurement. No generic node
+  lifecycle, transport, event queue or graph publication yet. Full Phase 6 remains
+  open; UI is deferred by owner. Handoff:
+  `docs/plans/handoffs/2026-10-01-phase6-prepared-playback.md`.

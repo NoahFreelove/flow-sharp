@@ -576,3 +576,14 @@ working set per process (Release; see `docs/baselines/phase5/README.md`).
 It reports loaded assemblies and writes 294,000 stereo PCM16 frames at 44,100 Hz,
 plus an optional Standard MIDI File. The example WAV encoder is intentionally
 separate from legacy WAV byte baselines.
+
+### Prepared block playback (restructuring Phase 6)
+
+`MusicModel/PreparedSinePlaybackTests` verifies pull/offline sample parity,
+variable block sizes, partial/empty/EOF buffers, section/repeat/tempo crossings,
+seek/reset, independent cursors, preparation limits, cancellation and compact
+large repeats. A warmed thread-allocation check includes reads, seeks, resets
+and boundary crossings and requires zero bytes allocated. The existing four
+legacy sine parity cases also run through prepared playback (ties, pedal, tuning,
+voice stealing and parallel voices). These prove behavior and local allocation,
+not audio-device deadlines or freedom from runtime-wide GC pauses.

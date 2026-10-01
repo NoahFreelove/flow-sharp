@@ -70,6 +70,15 @@ public class SnapshotRenderingTests
         var actual = Render(snapshot, 997);
         Assert.Equal(expected.Data.Length, actual.Length);
         Assert.Equal(expected.Data.Select(BitConverter.SingleToInt32Bits), actual.Select(BitConverter.SingleToInt32Bits));
+        var playback = PreparedSinePlayback.Prepare(snapshot, new(BlockFrames: 997));
+        var pulled = new List<float>();
+        var block = new float[1994];
+        while (playback.PositionFrames < playback.TotalFrames)
+        {
+            int count = playback.Read(block);
+            pulled.AddRange(block.AsSpan(0, count * 2).ToArray());
+        }
+        Assert.Equal(expected.Data.Select(BitConverter.SingleToInt32Bits), pulled.Select(BitConverter.SingleToInt32Bits));
     }
 
     [Fact]
