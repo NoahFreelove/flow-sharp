@@ -9,6 +9,13 @@ public sealed record EngineOptions
     /// <summary>Receives <c>print</c> output. Null follows <see cref="Console.Out"/> at write time.</summary>
     public TextWriter? Output { get; init; }
 
+    /// <summary>Optional host native-call policy, checked at invocation (including
+    /// aliases/callbacks), not declaration. Null preserves ordinary script access.</summary>
+    public Func<FlowLang.TypeSystem.FunctionSignature, bool>? NativeFunctionPolicy { get; init; }
+    /// <summary>Whether legacy sampled instruments may discover files on disk.
+    /// Restricted DAW workers instead use explicitly supplied sample assets.</summary>
+    public bool AllowImplicitSampleFiles { get; init; } = true;
+
     /// <summary>Receives advisories and warnings. Null follows <see cref="Console.Error"/> at write time.</summary>
     public TextWriter? Diagnostics { get; init; }
 

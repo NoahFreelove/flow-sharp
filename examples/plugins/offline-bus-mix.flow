@@ -1,0 +1,6 @@
+use "@flowDaw"
+proc process (Dict<String, Double>: context, Buffers: inputs)
+    AudioGraph signal = (dawMix "sum" (dawInput "left" 0) (dawInput "right" 1))
+    AudioGraph level = (dawGain "level" signal (get context "parameter:gain"))
+    (dawResult "processed" (dawAudio (dawProcess level inputs)))
+end proc

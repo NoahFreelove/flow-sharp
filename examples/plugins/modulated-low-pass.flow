@@ -1,0 +1,14 @@
+use "@flowDaw"
+
+Note: A stereo one-pole low-pass with a Flow-composed cutoff LFO.
+proc build (Dict<String, Double>: context)
+    AudioGraph input = (dawInput "input" 0)
+    AudioGraph base = (dawValue "base" 1000.0)
+    AudioGraph depth = (dawValue "depth" 500.0)
+    AudioGraph rate = (dawValue "rate" 2.0)
+    AudioGraph lfo = (dawSineOsc "lfo" rate)
+    AudioGraph movement = (dawMultiply "movement" lfo depth)
+    AudioGraph cutoff = (dawMix "cutoff" base movement)
+    AudioGraph output = (dawLowPass "filter" input cutoff)
+    (dawResult "effect" output)
+end proc

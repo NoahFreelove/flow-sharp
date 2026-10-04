@@ -15,7 +15,7 @@ public static class TypeNames
         "OscillatorState", "Envelope", "Beat", "Voice", "Track", "NoteValue", "TimeSignature",
         "Sequence", "MusicalNote", "Chord", "Symbol", "Section", "Song", "Tuning", "Sfz",
         "MarkovModel", "LsystemModel", "OscHandle", "MidiDevice", "ClockHandle", "JackHandle",
-        "Function",
+        "Function", "AudioGraph", "DawInstrument", "DawAudio", "DawResult", "DawAutomation", "DawProject", "DawClip", "DawTrack", "DawNote", "DawNoteSequence",
     };
 
     /// <summary>Generic type constructors written with angle brackets or alone.</summary>
@@ -32,7 +32,7 @@ public static class TypeNames
         "OscillatorState", "Envelope", "Beat", "Voice", "Track", "NoteValue", "TimeSignature",
         "Sequence", "MusicalNote", "Chord", "Symbol", "Section", "Song", "Tuning", "Sfz",
         "MarkovModel", "LsystemModel", "OscHandle", "MidiDevice", "ClockHandle", "JackHandle",
-        "Function",
+        "Function", "AudioGraph", "DawInstrument", "DawAudio", "DawResult", "DawAutomation", "DawProject", "DawClip", "DawTrack", "DawNote", "DawNoteSequence",
     };
 
     /// <summary>
@@ -44,7 +44,7 @@ public static class TypeNames
     {
         "Void", "Int", "Float", "Long", "Double", "String", "Bool", "Number", "Buf", "Buffer",
         "Note", "Bar", "Semitone", "Cent", "Millisecond", "Second", "Decibel", "Hertz",
-        "MusicalNote", "Function", "Chord", "Section", "Song", "OscillatorState", "Envelope",
+        "MusicalNote", "Function", "AudioGraph", "DawInstrument", "DawAudio", "DawResult", "DawAutomation", "DawProject", "DawClip", "DawTrack", "DawNote", "DawNoteSequence", "Chord", "Section", "Song", "OscillatorState", "Envelope",
         "Beat", "Voice", "Track", "NoteValue", "TimeSignature", "Sequence", "Symbol",
     };
 }

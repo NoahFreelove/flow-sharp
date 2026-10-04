@@ -1,0 +1,12 @@
+use "@flowDaw"
+
+Note: Replace this asset ID with a project audio asset granted to this source.
+Note: The host supplies captured PCM; this generator never opens a file.
+proc generate (Dict<String, Double>: context)
+    DawAudio sample = (dawAssetSample "11111111-1111-1111-1111-111111111111")
+    DawInstrument instrument = (dawSampler sample 440.0 8 0ms 20ms)
+    section phrase { Sequence notes = | A4q C5q E5q A5q | }
+    Song score = [phrase]
+    DawResult music = (dawCombine (dawResult "main" score) (dawResult "synth" instrument))
+    (dawCombine music (dawResult "mixer" (dawGain "master" (dawInput "track" 0) 0.25)))
+end proc

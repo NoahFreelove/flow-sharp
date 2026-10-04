@@ -328,3 +328,14 @@ flow-lang.Tests/Fixtures/Phase37/*.wav
 # tracked despite the global *.flow ignore (older ones were force-added).
 !flow-lang/*.flow
 !flow-language/*.flow
+
+# Browser workspace prototype verification sources.
+!flow-workspace/tests/
+!flow-workspace/tests/*.mjs
+flow-workspace/__pycache__/
+scripts/ci/__pycache__/
+
+# Authored DAW examples and the tiny pinned sampler asset are source fixtures.
+!examples/instruments/*.flow
+!examples/plugins/*.flow
+!examples/plugins/assets/kick.wav

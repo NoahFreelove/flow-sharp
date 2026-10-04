@@ -1,0 +1,24 @@
+{
+  "Version": 1,
+  "Manifest": "{\"ApiVersion\":1,\"Id\":\"flow.examples.modulated-low-pass\",\"Name\":\"Modulated low-pass\",\"Author\":\"Flow examples\",\"License\":\"Repository terms\",\"Version\":\"1.0.0\",\"SourceSha256\":\"407d6870a56b88a3f75ea71d92b12b85aef87e98a12f4034cd77d011a587e15f\",\"Builder\":\"build\",\"Kind\":\"AudioEffect\",\"AudioInputs\":1,\"AudioOutputs\":1,\"NoteInput\":false,\"NoteOutput\":false,\"MinimumSampleRate\":8000,\"MaximumSampleRate\":192000,\"MaximumBlockFrames\":4096,\"StateSchema\":\"reset-v1\",\"StatePolicy\":\"Reset\",\"Parameters\":[{\"Id\":\"base\",\"Name\":\"Cutoff\",\"Unit\":\"Hz\",\"Minimum\":20,\"Maximum\":20000,\"Default\":1000,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"depth\",\"Name\":\"Depth\",\"Unit\":\"Hz\",\"Minimum\":0,\"Maximum\":10000,\"Default\":500,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"rate\",\"Name\":\"LFO rate\",\"Unit\":\"Hz\",\"Minimum\":0.01,\"Maximum\":100,\"Default\":2,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]}],\"Dependencies\":[]}",
+  "Source": "use \"@flowDaw\"\n\nNote: A stereo one-pole low-pass with a Flow-composed cutoff LFO.\nproc build (Dict<String, Double>: context)\n    AudioGraph input = (dawInput \"input\" 0)\n    AudioGraph base = (dawValue \"base\" 1000.0)\n    AudioGraph depth = (dawValue \"depth\" 500.0)\n    AudioGraph rate = (dawValue \"rate\" 2.0)\n    AudioGraph lfo = (dawSineOsc \"lfo\" rate)\n    AudioGraph movement = (dawMultiply \"movement\" lfo depth)\n    AudioGraph cutoff = (dawMix \"cutoff\" base movement)\n    AudioGraph output = (dawLowPass \"filter\" input cutoff)\n    (dawResult \"effect\" output)\nend proc\n",
+  "OutputLayer": "effect",
+  "Targets": [
+    {
+      "ParameterId": "base",
+      "NodeId": "base",
+      "DeviceParameterId": "value"
+    },
+    {
+      "ParameterId": "depth",
+      "NodeId": "depth",
+      "DeviceParameterId": "value"
+    },
+    {
+      "ParameterId": "rate",
+      "NodeId": "rate",
+      "DeviceParameterId": "value"
+    }
+  ],
+  "Dependencies": []
+}

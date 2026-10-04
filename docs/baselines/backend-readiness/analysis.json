@@ -1,0 +1,7 @@
+{
+  "completion": true,
+  "hover": true,
+  "clean_exit": true,
+  "traced": true,
+  "device_or_sample_accesses": []
+}

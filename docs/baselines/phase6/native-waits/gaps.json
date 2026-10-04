@@ -1,0 +1,243 @@
+{
+  "callbackThreadId": 35140,
+  "clockUncertaintyNs": 743637,
+  "captureComplete": true,
+  "gaps": [
+    {
+      "callbackIndex": 2995,
+      "secondsFromStart": 15.977195981,
+      "gapMilliseconds": 15.413416,
+      "statusFlags": 0,
+      "startNs": 6832022017972,
+      "endNs": 6832037431388,
+      "coverage": "unknown",
+      "bracketMilliseconds": 44.255053,
+      "cpuMilliseconds": 2.70835,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 52,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {},
+      "observedWaitChannels": {},
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 21.89527,
+      "insideSamples": 0
+    },
+    {
+      "callbackIndex": 3008,
+      "secondsFromStart": 16.042160337,
+      "gapMilliseconds": 10.950475,
+      "statusFlags": 0,
+      "startNs": 6832091445269,
+      "endNs": 6832102395744,
+      "coverage": "sampled",
+      "bracketMilliseconds": 42.375132,
+      "cpuMilliseconds": 2.15167,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 60,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {
+        "t (tracing stop)": 1
+      },
+      "observedWaitChannels": {
+        "0": 1
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 21.117669,
+      "insideSamples": 1
+    },
+    {
+      "callbackIndex": 5941,
+      "secondsFromStart": 31.687088288,
+      "gapMilliseconds": 13.383819,
+      "statusFlags": 0,
+      "startNs": 6847733939876,
+      "endNs": 6847747323695,
+      "coverage": "sampled",
+      "bracketMilliseconds": 42.078442,
+      "cpuMilliseconds": 2.119806,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 57,
+      "involuntarySwitchDelta": 1,
+      "observedStates": {
+        "R (running)": 1
+      },
+      "observedWaitChannels": {
+        "0": 1
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 21.363867,
+      "insideSamples": 1
+    },
+    {
+      "callbackIndex": 5949,
+      "secondsFromStart": 31.727234565,
+      "gapMilliseconds": 11.218385,
+      "statusFlags": 0,
+      "startNs": 6847776251587,
+      "endNs": 6847787469972,
+      "coverage": "sampled",
+      "bracketMilliseconds": 43.610758,
+      "cpuMilliseconds": 1.885764,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 61,
+      "involuntarySwitchDelta": 5,
+      "observedStates": {
+        "R (running)": 1
+      },
+      "observedWaitChannels": {
+        "0": 1
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 21.540756,
+      "insideSamples": 1
+    },
+    {
+      "callbackIndex": 6505,
+      "secondsFromStart": 34.692230416,
+      "gapMilliseconds": 10.57652,
+      "statusFlags": 0,
+      "startNs": 6850741889303,
+      "endNs": 6850752465823,
+      "coverage": "unknown",
+      "bracketMilliseconds": 21.033447,
+      "cpuMilliseconds": 1.085796,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 34,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {},
+      "observedWaitChannels": {},
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.209725,
+      "insideSamples": 0
+    },
+    {
+      "callbackIndex": 93046,
+      "secondsFromStart": 496.233626781,
+      "gapMilliseconds": 10.721755,
+      "statusFlags": 0,
+      "startNs": 7312283140433,
+      "endNs": 7312293862188,
+      "coverage": "unknown",
+      "bracketMilliseconds": 41.939862,
+      "cpuMilliseconds": 2.14768,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 63,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {},
+      "observedWaitChannels": {},
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 21.010899,
+      "insideSamples": 0
+    },
+    {
+      "callbackIndex": 93086,
+      "secondsFromStart": 496.447226273,
+      "gapMilliseconds": 10.920267,
+      "statusFlags": 0,
+      "startNs": 7312496541413,
+      "endNs": 7312507461680,
+      "coverage": "sampled",
+      "bracketMilliseconds": 41.120048,
+      "cpuMilliseconds": 1.883054,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 60,
+      "involuntarySwitchDelta": 1,
+      "observedStates": {
+        "S (sleeping)": 1
+      },
+      "observedWaitChannels": {
+        "poll_schedule_timeout.constprop.0": 1
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.538979,
+      "insideSamples": 1
+    },
+    {
+      "callbackIndex": 93114,
+      "secondsFromStart": 496.597269689,
+      "gapMilliseconds": 10.929985,
+      "statusFlags": 0,
+      "startNs": 7312646575111,
+      "endNs": 7312657505096,
+      "coverage": "unknown",
+      "bracketMilliseconds": 40.616056,
+      "cpuMilliseconds": 1.65757,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 53,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {},
+      "observedWaitChannels": {},
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.132994,
+      "insideSamples": 0
+    },
+    {
+      "callbackIndex": 93753,
+      "secondsFromStart": 500.004302949,
+      "gapMilliseconds": 10.928144,
+      "statusFlags": 0,
+      "startNs": 7316053610212,
+      "endNs": 7316064538356,
+      "coverage": "unknown",
+      "bracketMilliseconds": 21.403466,
+      "cpuMilliseconds": 0.58963,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 29,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {},
+      "observedWaitChannels": {},
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.925371,
+      "insideSamples": 0
+    },
+    {
+      "callbackIndex": 95295,
+      "secondsFromStart": 508.234152908,
+      "gapMilliseconds": 11.611094,
+      "statusFlags": 0,
+      "startNs": 7324282777221,
+      "endNs": 7324294388315,
+      "coverage": "sampled",
+      "bracketMilliseconds": 43.346692,
+      "cpuMilliseconds": 1.638613,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 66,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {
+        "S (sleeping)": 1
+      },
+      "observedWaitChannels": {
+        "poll_schedule_timeout.constprop.0": 1
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 22.764952,
+      "insideSamples": 1
+    }
+  ],
+  "observerCost": {
+    "type": "end",
+    "userSeconds": 9.019072,
+    "systemSeconds": 2.854773
+  },
+  "scope": "20ms snapshots are not a scheduler trace. Counter deltas cover bracketing samples, not exactly the callback gap. Missing/slow sampling is unknown. Null runqueue wait means schedstats disabled. R state includes runnable as well as running. Sleeping/wchan samples show where the thread was observed, not what caused a missed wakeup; zero involuntary switches does not exclude CPU contention."
+}

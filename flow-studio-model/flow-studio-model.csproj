@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Flow.Studio.Model</AssemblyName>
+    <RootNamespace>Flow.Studio.Model</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../flow-music-model/flow-music-model.csproj" />
+    <ProjectReference Include="../flow-audio/flow-audio.csproj" />
+  </ItemGroup>
+</Project>

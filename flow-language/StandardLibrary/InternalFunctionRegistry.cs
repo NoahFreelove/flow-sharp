@@ -11,12 +11,23 @@ public class InternalFunctionRegistry
 {
     private readonly Dictionary<string, List<(FunctionSignature Signature, Func<IReadOnlyList<Value>, Value> Implementation)>> _implementations = new();
 
+    private readonly Func<FunctionSignature, bool>? _invocationPolicy;
+    public InternalFunctionRegistry() : this(null) { }
+    public InternalFunctionRegistry(Func<FunctionSignature, bool>? invocationPolicy)
+    { _invocationPolicy = invocationPolicy; }
+    private Func<IReadOnlyList<Value>, Value> Guard(FunctionSignature signature, Func<IReadOnlyList<Value>, Value> implementation)
+    {
+        if (_invocationPolicy is null) return implementation;
+        return arguments => _invocationPolicy(signature) ? implementation(arguments)
+            : throw new InvalidOperationException($"Native function '{signature.Name}' is unavailable in this host");
+    }
+
     public virtual void Register(string name, FunctionSignature signature, Func<IReadOnlyList<Value>, Value> implementation)
     {
         if (!_implementations.ContainsKey(name))
             _implementations[name] = [];
 
-        _implementations[name].Add((signature, implementation));
+        _implementations[name].Add((signature, Guard(signature, implementation)));
     }
 
     public bool TryGetImplementation(string name, FunctionSignature requestedSignature, out Func<IReadOnlyList<Value>, Value>? implementation, out FunctionSignature? registeredSignature)
@@ -210,7 +221,7 @@ public class InternalFunctionRegistry
     {
         _implementations[name] = new List<(FunctionSignature, Func<IReadOnlyList<Value>, Value>)>
         {
-            (signature, implementation)
+            (signature, Guard(signature, implementation))
         };
     }
 }

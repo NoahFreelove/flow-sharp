@@ -10,7 +10,7 @@ public sealed record OutputDevice(int Index, string Name, int Channels, double D
 /// Dispose closes/joins native callbacks before releasing the rooted delegate.
 /// Explicit disposal is required; there is no audio-thread finalizer cleanup.
 /// </summary>
-public sealed class PortAudioOutput : IDisposable
+public sealed class PortAudioOutput : IPlaybackOutputStream
 {
     // Serialize this adapter's process-global PortAudio lifecycle. Separate native
     // clients must coordinate externally; no lock is taken by the audio callback.

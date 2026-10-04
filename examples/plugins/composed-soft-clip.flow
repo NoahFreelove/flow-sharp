@@ -1,0 +1,15 @@
+use "@flowDaw"
+
+Note: A waveshaper composed from sample operations, not a matching device builtin.
+Note: Parameter nodes retain stable IDs and can be smoothed or automated by the host.
+proc build (Dict<String, Double>: context)
+    AudioGraph input = (dawInput "input" 0)
+    AudioGraph drive = (dawValue "drive" 2.0)
+    AudioGraph bias = (dawValue "bias" 0.1)
+    AudioGraph level = (dawValue "level" 1.0)
+    AudioGraph driven = (dawMultiply "driven" input drive)
+    AudioGraph shifted = (dawMix "shifted" driven bias)
+    AudioGraph shaped = (dawTanh "shaped" shifted)
+    AudioGraph output = (dawMultiply "output" shaped level)
+    (dawResult "effect" output)
+end proc

@@ -1,0 +1,101 @@
+[
+  {
+    "trial": 1,
+    "largestGap": {
+      "callbackIndex": 212,
+      "secondsFromStart": 1.379879942,
+      "gapMilliseconds": 255.5128,
+      "statusFlags": 0,
+      "startNs": 6475560290314,
+      "endNs": 6475815803114,
+      "coverage": "sampled",
+      "bracketMilliseconds": 281.745082,
+      "cpuMilliseconds": 0.779873,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 9,
+      "involuntarySwitchDelta": 3,
+      "observedStates": {
+        "T (stopped)": 13
+      },
+      "observedWaitChannels": {
+        "do_signal_stop": 13
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.206356,
+      "insideSamples": 13
+    },
+    "observerCost": {
+      "type": "end",
+      "userSeconds": 0.131204,
+      "systemSeconds": 0.045817
+    }
+  },
+  {
+    "trial": 2,
+    "largestGap": {
+      "callbackIndex": 193,
+      "secondsFromStart": 1.277780318,
+      "gapMilliseconds": 254.087871,
+      "statusFlags": 0,
+      "startNs": 6483939986764,
+      "endNs": 6484194074635,
+      "coverage": "sampled",
+      "bracketMilliseconds": 262.086987,
+      "cpuMilliseconds": 0.552005,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 4,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {
+        "T (stopped)": 12
+      },
+      "observedWaitChannels": {
+        "do_signal_stop": 12
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.201589,
+      "insideSamples": 12
+    },
+    "observerCost": {
+      "type": "end",
+      "userSeconds": 0.16439199999999998,
+      "systemSeconds": 0.058428
+    }
+  },
+  {
+    "trial": 3,
+    "largestGap": {
+      "callbackIndex": 194,
+      "secondsFromStart": 1.281096222,
+      "gapMilliseconds": 252.347159,
+      "statusFlags": 0,
+      "startNs": 6492425180590,
+      "endNs": 6492677527749,
+      "coverage": "sampled",
+      "bracketMilliseconds": 282.03908,
+      "cpuMilliseconds": 0.964568,
+      "runqueueWaitMilliseconds": null,
+      "voluntarySwitchDelta": 9,
+      "involuntarySwitchDelta": 0,
+      "observedStates": {
+        "T (stopped)": 13
+      },
+      "observedWaitChannels": {
+        "do_signal_stop": 13
+      },
+      "policies": [
+        0
+      ],
+      "maxSamplerIntervalMilliseconds": 20.180737,
+      "insideSamples": 13
+    },
+    "observerCost": {
+      "type": "end",
+      "userSeconds": 0.14374099999999998,
+      "systemSeconds": 0.0455
+    }
+  }
+]

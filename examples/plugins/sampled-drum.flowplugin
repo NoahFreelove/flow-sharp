@@ -1,0 +1,30 @@
+{
+  "Version": 1,
+  "Manifest": "{\"ApiVersion\":1,\"Id\":\"flow.examples.sampled-drum\",\"Name\":\"Sampled drum\",\"Author\":\"Flow examples\",\"License\":\"Repository terms\",\"Version\":\"1.0.0\",\"SourceSha256\":\"9248cb47373af13c32045e02d454e4ff285ca733385713aeae4a663cc287a3b6\",\"Builder\":\"build\",\"Kind\":\"Instrument\",\"AudioInputs\":0,\"AudioOutputs\":1,\"NoteInput\":true,\"NoteOutput\":false,\"MinimumSampleRate\":8000,\"MaximumSampleRate\":192000,\"MaximumBlockFrames\":4096,\"StateSchema\":\"reset-v1\",\"StatePolicy\":\"Reset\",\"Parameters\":[{\"Id\":\"level\",\"Name\":\"Level\",\"Unit\":\"linear\",\"Minimum\":0,\"Maximum\":1,\"Default\":0.25,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"cutoff\",\"Name\":\"Cutoff\",\"Unit\":\"Hz\",\"Minimum\":20,\"Maximum\":12000,\"Default\":500,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"release\",\"Name\":\"Release\",\"Unit\":\"ms\",\"Minimum\":0,\"Maximum\":5000,\"Default\":120,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":0,\"RequiresRebuild\":true,\"Labels\":[]}],\"Dependencies\":[{\"Id\":\"kick\",\"Version\":\"1\",\"Sha256\":\"0e0a8cc52184d361351e58e8f753f9f060cbd8cbe5c47cc4feb1b1db418b2c79\"}]}",
+  "Source": "use \"@flowDaw\"\n\nNote: Each prepared voice receives pitch Hz, gate and velocity on buses 0, 1 and 2.\nproc build (Dict<String, Double>: context)\n    AudioGraph pitch = (dawInput \"pitch\" 0)\n    AudioGraph gate = (dawInput \"gate\" 1)\n    AudioGraph velocity = (dawInput \"velocity\" 2)\n    AudioGraph envelope = (dawAdsr \"envelope\" gate 5ms 80ms 0.6 120ms)\n    AudioGraph saw = (dawSample \"reader\" pitch gate 0 110.0)\n    AudioGraph cutoff = (dawMix \"cutoff\" (dawValue \"baseCutoff\" 500.0) (dawMultiply \"sweep\" envelope (dawValue \"depth\" 2500.0)))\n    AudioGraph tone = (dawLowPass \"filter\" saw cutoff)\n    AudioGraph shaped = (dawMultiply \"shaped\" tone envelope)\n    AudioGraph output = (dawMultiply \"output\" shaped velocity)\n    DawAudio sample = (dawPluginSample \"kick\")\n    Dict<Int, DawAudio> assets = (dict 0 sample)\n    DawInstrument synth = (dawSampleInstrument (dawGain \"level\" output 0.25) 16 assets)\n    (dawResult \"instrument\" synth)\nend proc\n",
+  "OutputLayer": "instrument",
+  "Targets": [
+    {
+      "ParameterId": "level",
+      "NodeId": "level",
+      "DeviceParameterId": "gain"
+    },
+    {
+      "ParameterId": "cutoff",
+      "NodeId": "baseCutoff",
+      "DeviceParameterId": "value"
+    },
+    {
+      "ParameterId": "release",
+      "NodeId": "envelope",
+      "DeviceParameterId": "releaseMs"
+    }
+  ],
+  "Dependencies": [
+    {
+      "Id": "kick",
+      "Version": "1",
+      "Base64": "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"
+    }
+  ]
+}

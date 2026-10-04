@@ -6,9 +6,11 @@ configuration changes. Raw registry snapshots stay local: they contain user IDs.
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import signal
 import subprocess
+import sys
 import time
 
 from audio_underflow_check import intact, identity
@@ -38,7 +40,7 @@ def node_identity(registry, pid):
             'driverId': driver['id'], 'driverSerial': dp['object.serial'], 'driverName': dp['node.name']}
 
 
-def profile_rows(records, target):
+def profile_rows(records, target, *, validate_clock=True):
     # pw-profiler 1.6.2 emits a flat JSON array, groups starting with info, and
     # an empty final object on graceful shutdown. Truncation is not zero errors.
     if not records or records[-1] != {}:
@@ -72,10 +74,10 @@ def profile_rows(records, target):
         if follower and follower['name'] != target['nodeName']:
             raise Unavailable('Follower name changed')
         clocks = [r for r in group if r.get('type') == 'clock']
-        if len(clocks) != 1 or clocks[0]['rate'] != '1/48000' or clocks[0]['duration'] != 256:
+        if len(clocks) != 1 or (validate_clock and (clocks[0]['rate'] != '1/48000' or clocks[0]['duration'] != 256)):
             raise Unavailable('Unexpected or missing driver rate/quantum')
         rows.append({'sequence': group[0]['count'], 'signalNs': driver['signal'],
-                     'driverXruns': driver['xrun_count'],
+                     'driverXruns': driver['xrun_count'], 'rate': clocks[0]['rate'], 'quantum': clocks[0]['duration'],
                      'nodeXruns': follower['xrun_count'] if follower else None})
     return rows
 
@@ -89,6 +91,8 @@ def assess_window(rows, start, end, injected):
     window = rows[before[-1]:after[0] + 1]
     if len(window) < 2 or any(r['nodeXruns'] is None for r in window):
         raise Unavailable('Follower missing inside observation window')
+    if any(r.get('rate', '1/48000') != '1/48000' or r.get('quantum', 256) != 256 for r in window):
+        raise Unavailable('Driver rate/quantum changed inside observation window')
     # Complete and incomplete notifications can share the same driver signal
     # timestamp. The profiler sequence still advances for each notification.
     for a, b in zip(window, window[1:]):
@@ -116,16 +120,30 @@ def read_registry():
     return json.loads(subprocess.check_output(['pw-dump'], timeout=5))
 
 
-def run_trial(probe, folder, injected):
+def run_trial(probe, folder, injected, *, seconds=8, mode="idle", observation_seconds=.25, scheduler=False, native_trace=False):
+    if seconds < 8 or seconds > 1800 or mode not in ("idle", "isolated", "inprocess"):
+        raise ValueError("Invalid probe duration or mode")
+    if observation_seconds <= 0 or observation_seconds > seconds - 4 or (injected and observation_seconds != .25):
+        raise ValueError("Observation must fit inside capture; pause injection is fixed at 250ms")
     folder.mkdir()
-    observer = child = None
+    observer = child = sampler = None
     pause_sent = False
+    completed = False
     with (folder / 'profiler.raw.json').open('w') as raw, (folder / 'profiler.log').open('w') as errors, \
             (folder / 'probe.stdout.log').open('w') as output, (folder / 'probe.stderr.log').open('w') as stderr:
         try:
             observer = subprocess.Popen(['pw-profiler', '-J'], stdout=raw, stderr=errors)
-            child = subprocess.Popen([str(probe.resolve()), '8', 'idle', str((folder / 'probe.json').resolve()),
-                                      'ALSA/pipewire', '256'], stdout=output, stderr=stderr)
+            command = [str(probe.resolve()), str(seconds), mode, str((folder / 'probe.json').resolve()),
+                       'ALSA/pipewire', '256']
+            if native_trace:
+                # -D keeps the tracee's original PID/parent relation; the tracer is a grandchild.
+                command = ['strace', '-D', '-f', '-ttt', '-T', '-e', 'trace=poll,ppoll',
+                           '-o', str(folder / 'native-poll.raw.log'), '--'] + command
+            child = subprocess.Popen(command, stdout=output, stderr=stderr, start_new_session=True)
+            if scheduler:
+                sampler = subprocess.Popen([sys.executable, str(Path(__file__).with_name('audio_scheduler_capture.py')),
+                    '--pid', str(child.pid), '--output', str(folder / 'scheduler.raw.jsonl'),
+                    '--identity', str(folder / 'probe.json.thread')], stdout=stderr, stderr=stderr)
             deadline = time.monotonic() + 4
             while True:
                 if child.poll() is not None or observer.poll() is not None:
@@ -153,7 +171,7 @@ def run_trial(probe, folder, injected):
                     time.sleep(.001)
             confirmed = time.monotonic_ns()
             try:
-                time.sleep(.25)
+                time.sleep(observation_seconds)
             finally:
                 if pause_sent:
                     child.send_signal(signal.SIGCONT)
@@ -178,10 +196,11 @@ def run_trial(probe, folder, injected):
             if observer.returncode != 0:
                 raise Unavailable('Observer did not shut down cleanly')
             records = json.loads((folder / 'profiler.raw.json').read_text())
-            result = assess_window(profile_rows(records, target), start, end, injected)
+            result = assess_window(profile_rows(records, target, validate_clock=False), start, end, injected)
             report = json.loads((folder / 'probe.json').read_text())
             if not intact(report) or identity(report)[:2] != ('ALSA', 'pipewire') or report['diagnosticStall']['enabled']:
                 raise Unavailable('Probe capture or selected route invalid')
+            result.update(serverTelemetryPassed=result['passed'], serverTelemetryStatus=result['status'])
             if not injected and report['allCallbacks']['outputUnderflowFlagCount'] != 0:
                 result.update(status='failed', passed=False)
             if injected and report['allCallbacks']['maxEntryGapMilliseconds'] < 200:
@@ -190,12 +209,25 @@ def run_trial(probe, folder, injected):
                           endNs=end, confirmedPauseMilliseconds=(end-confirmed)/1e6 if injected else 0,
                           callbackUnderflowFlags=report['allCallbacks']['outputUnderflowFlagCount'],
                           maxCallbackGapMilliseconds=report['allCallbacks']['maxEntryGapMilliseconds'])
+            completed = True
             return result
         finally:
-            if child is not None and child.poll() is None:
-                if pause_sent:
+            if sampler is not None:
+                if sampler.poll() is None:
+                    sampler.terminate()
+                    try:
+                        sampler.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        sampler.kill()
+                        sampler.wait(timeout=5)
+            if child is not None and (not completed or child.poll() is None):
+                if pause_sent and child.poll() is None:
                     child.send_signal(signal.SIGCONT)
-                child.kill()
+                # Kill owned descendants even if the probe exited before its worker/tracer.
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
                 child.wait(timeout=5)
             if observer is not None and observer.poll() is None:
                 observer.terminate()
@@ -209,6 +241,7 @@ def run_trial(probe, folder, injected):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--probe', type=Path, required=True)
+    parser.add_argument('--scheduler', action='store_true', help='Capture owned-thread scheduling samples during calibration')
     parser.add_argument('--artifacts', type=Path, required=True, help='New directory; raw files contain local identifiers')
     args = parser.parse_args()
     args.artifacts.mkdir(parents=True, exist_ok=False)
@@ -216,7 +249,7 @@ def main():
     try:
         version = subprocess.check_output(['pw-profiler', '--version'], text=True, timeout=5).strip()
         for name in ['baseline', 'paused-1', 'paused-2', 'paused-3']:
-            result = run_trial(args.probe, args.artifacts / name, name != 'baseline')
+            result = run_trial(args.probe, args.artifacts / name, name != 'baseline', scheduler=args.scheduler)
             (args.artifacts / f'{name}.json').write_text(json.dumps(result, indent=2) + '\n')
             results.append({k: v for k, v in result.items() if k != 'rows'})
             print(f"{name}: {result['status']}; node delta {result['nodeXrunDelta']}; callback flags {result['callbackUnderflowFlags']}", flush=True)

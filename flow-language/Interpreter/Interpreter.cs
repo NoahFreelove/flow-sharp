@@ -404,7 +404,7 @@ public class Interpreter : IFunctionInvoker
                 // Charitable interpretation + Phase 47's established "advisory at
                 // import-time for stripped features" pattern: skip the missing
                 // overload and emit a one-shot advisory (keyed per proc-name so it
-                // fires at most once per name per process). Calling the builtin
+                // fires at most once per name in the active engine session). Calling the builtin
                 // in-browser then yields a normal "function not found" — acceptable,
                 // since the implementation is genuinely stripped by design.
                 //

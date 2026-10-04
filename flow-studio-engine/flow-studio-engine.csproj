@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Flow.Studio.Engine</AssemblyName>
+    <RootNamespace>Flow.Studio.Engine</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="flow-lang.Tests" />
+    <ProjectReference Include="../flow-studio-model/flow-studio-model.csproj" />
+    <ProjectReference Include="../flow-audio/flow-audio.csproj" />
+  </ItemGroup>
+</Project>

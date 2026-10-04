@@ -1,0 +1,47 @@
+{
+  "Version": 1,
+  "Arrangement": "{\"Version\":1,\"Id\":\"00000000-0000-0000-0000-000000000001\",\"Tempo\":[{\"Quarter\":0,\"Bpm\":120},{\"Quarter\":8,\"Bpm\":90}],\"Meter\":[{\"Bar\":1,\"Numerator\":4,\"Denominator\":4},{\"Bar\":3,\"Numerator\":3,\"Denominator\":4}],\"ScoreClips\":[{\"Id\":\"00000000-0000-0000-0000-000000000004\",\"TrackId\":\"00000000-0000-0000-0000-000000000002\",\"SourceId\":\"00000000-0000-0000-0000-000000000005\",\"LayerId\":\"notes\",\"AnchorQuarters\":4,\"SourceOffsetQuarters\":1,\"LengthQuarters\":3,\"Nudge\":{\"Milliseconds\":12.5}}],\"AudioClips\":[{\"Id\":\"00000000-0000-0000-0000-000000000006\",\"TrackId\":\"00000000-0000-0000-0000-000000000003\",\"SourceId\":\"00000000-0000-0000-0000-000000000007\",\"AnchorQuarters\":8,\"SourceOffsetFrames\":9007199254740993,\"LengthFrames\":4096,\"SampleRate\":48000,\"Nudge\":{\"Milliseconds\":-7}}]}",
+  "Context": {
+    "Revision": 7,
+    "Seed": 42,
+    "Tempo": [
+      {
+        "Quarter": 0,
+        "Bpm": 120
+      },
+      {
+        "Quarter": 8,
+        "Bpm": 90
+      }
+    ],
+    "Meter": [
+      {
+        "Bar": 1,
+        "Numerator": 4,
+        "Denominator": 4
+      },
+      {
+        "Bar": 3,
+        "Numerator": 3,
+        "Denominator": 4
+      }
+    ],
+    "Parameters": {
+      "density": 0.75
+    }
+  },
+  "Sources": [],
+  "Tracks": [
+    {
+      "Id": "00000000-0000-0000-0000-000000000002",
+      "Name": "Lead",
+      "InstrumentBinding": null
+    },
+    {
+      "Id": "00000000-0000-0000-0000-000000000003",
+      "Name": "Audio",
+      "InstrumentBinding": null
+    }
+  ],
+  "GraphBinding": null
+}

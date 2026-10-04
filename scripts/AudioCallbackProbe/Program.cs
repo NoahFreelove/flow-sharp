@@ -43,13 +43,19 @@ if (starvation && (seconds < 6 || args[1] != "idle"))
     Console.Error.WriteLine("--starve requires at least 6 seconds and idle mode; it is a diagnostic, not a performance run.");
     return 2;
 }
+long clockBefore = Stopwatch.GetTimestamp();
+long monotonicNs = DiagnosticClock.ReadMonotonicNs();
+long realtimeNs = DiagnosticClock.ReadRealtimeNs();
+long clockAfter = Stopwatch.GetTimestamp();
+long preparationStarted = Stopwatch.GetTimestamp();
 int capacity = (int)Math.Ceiling((seconds + 10) * 48000.0 / blockFrames);
 var playback = new QueuedSinePlayback(Prepare(440, blockFrames));
 var next = Prepare(660, blockFrames);
 var probe = new CallbackRenderProbe(playback, capacity,
-    stallAfterCallbacks: starvation ? 2 * 48000 / blockFrames : -1, stallMilliseconds: starvation ? 100 : 0);
+    stallAfterCallbacks: starvation ? 2 * 48000 / blockFrames : -1, stallMilliseconds: starvation ? 100 : 0, captureThreadIdentity: true);
 playback.TrySetLoop(0, playback.TotalFrames);
 playback.TryPlay();
+double preparationMilliseconds = Stopwatch.GetElapsedTime(preparationStarted).TotalMilliseconds;
 using var cancel = new CancellationTokenSource();
 using var loadReady = new ManualResetEventSlim();
 Task<LoadResult>? loadTask = null;
@@ -78,18 +84,32 @@ try
     double latency, actualRate;
     bool fault;
     int retired = 0;
+    long openStarted = Stopwatch.GetTimestamp(), startRequested = 0, closeStarted = 0;
+    double openMilliseconds = 0, startMilliseconds = 0;
     using (var output = new PortAudioOutput(probe, deviceIndex, deviceSelector))
     {
+        openMilliseconds = Stopwatch.GetElapsedTime(openStarted).TotalMilliseconds;
         device = output.Device; version = output.NativeVersion;
         underflowObservability = output.UnderflowObservability;
         latency = output.OutputLatencySeconds; actualRate = output.ActualSampleRate;
+        startRequested = Stopwatch.GetTimestamp();
         output.Start();
+        startMilliseconds = Stopwatch.GetElapsedTime(startRequested).TotalMilliseconds;
         var timer = Stopwatch.StartNew();
         bool paused = false, resumed = false, replaced = false, restarted = false, stopped = false, replayed = false;
         long lastSeekSecond = -1;
+        bool identityPublished = false;
         while (timer.Elapsed.TotalSeconds < seconds)
         {
             if (!output.IsActive) throw new InvalidOperationException($"Device callback stopped; callbackFault={output.CallbackFaulted}");
+            if (!identityPublished && probe.NativeThreadId > 0)
+            {
+                // Publish once from the control thread, never from the native callback.
+                string identityPath = args[2] + ".thread";
+                File.WriteAllText(identityPath + ".tmp", $"{Environment.ProcessId} {probe.NativeThreadId}\n");
+                File.Move(identityPath + ".tmp", identityPath, overwrite: true);
+                identityPublished = true;
+            }
             double elapsed = timer.Elapsed.TotalSeconds;
             if (!paused && elapsed > seconds * 0.2) paused = playback.TryPause();
             if (paused && !resumed && elapsed > seconds * 0.2 + 0.05) resumed = playback.TryPlay();
@@ -111,7 +131,9 @@ try
             Thread.Sleep(10);
         }
         fault = output.CallbackFaulted;
+        closeStarted = Stopwatch.GetTimestamp();
     } // Native close joins callbacks before Capture or source ownership is released.
+    double closeMilliseconds = Stopwatch.GetElapsedTime(closeStarted).TotalMilliseconds;
     int[] collectionsAfter = [GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2)];
     cancel.Cancel();
     LoadResult? load = loadTask is null ? null : await loadTask;
@@ -126,6 +148,10 @@ try
     var samples = capture.Samples;
     if (samples.Length == 0) throw new InvalidOperationException("No callbacks captured");
     var steady = samples.Where(s => s.StartTicks - samples[0].StartTicks >= Stopwatch.Frequency).ToArray();
+    long endClockBefore = Stopwatch.GetTimestamp();
+    long endMonotonicNs = DiagnosticClock.ReadMonotonicNs();
+    long endRealtimeNs = DiagnosticClock.ReadRealtimeNs();
+    long endClockAfter = Stopwatch.GetTimestamp();
     var report = new
     {
         diagnosticStall = new { enabled = starvation, requestedMilliseconds = starvation ? 100 : 0, count = probe.InjectedStalls,
@@ -136,8 +162,16 @@ try
         serverGc = GCSettings.IsServerGC, device, nativeVersion = version,
         requestedSampleRate = 48000, actualSampleRate = actualRate, blockFrames,
         reportedOutputLatencySeconds = latency, voices = 32, sequences = 2,
+        lifecycle = new { preparationMilliseconds, openMilliseconds, startMilliseconds, closeMilliseconds,
+            firstCallbackAfterStartRequestMilliseconds = (samples[0].StartTicks - startRequested) * 1000.0 / Stopwatch.Frequency,
+            note = "Wall-clock control-thread startup/teardown timings; first callback entry is not first audible sample or physical output latency. Isolated worker startup is excluded from preparation/open." },
         allCallbacks = Summarize(samples), afterFirstSecond = Summarize(steady),
         callbackCadence = SummarizeCadence(samples, 48000),
+        diagnosticClock = new { stopwatchBeforeTicks = clockBefore, stopwatchAfterTicks = clockAfter,
+            monotonicNs, realtimeNs, stopwatchFrequency = Stopwatch.Frequency, firstCallbackStartTicks = samples[0].StartTicks,
+            nativeCallbackThreadId = probe.NativeThreadId },
+        diagnosticClockEnd = new { stopwatchBeforeTicks = endClockBefore, stopwatchAfterTicks = endClockAfter,
+            monotonicNs = endMonotonicNs, realtimeNs = endRealtimeNs },
         droppedTimingSamples = capture.Dropped, callbackFault = fault,
         parentGcCollections = new[] { collectionsAfter[0] - collectionsBefore[0], collectionsAfter[1] - collectionsBefore[1], collectionsAfter[2] - collectionsBefore[2] },
         load, playback.Generation, retired, playback.RejectedCommands, playback.DiscardedCommands,
@@ -272,3 +306,18 @@ static LoadResult RunLoad(CancellationToken cancel, Action ready)
     finally { File.Delete(path); }
 }
 internal sealed record LoadResult(long Iterations, long AssetBytesRead, int[] GcCollections);
+
+internal static class DiagnosticClock
+{
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Timespec { public nint Seconds; public nint Nanoseconds; }
+    [DllImport("libc", EntryPoint = "clock_gettime", SetLastError = true)]
+    private static extern int ClockGetTime(int clock, out Timespec value);
+    public static long ReadMonotonicNs() => ReadNs(1);
+    public static long ReadRealtimeNs() => ReadNs(0);
+    private static long ReadNs(int clock)
+    {
+        if (ClockGetTime(clock, out var time) != 0) throw new InvalidOperationException("Diagnostic clock unavailable");
+        return checked((long)time.Seconds * 1_000_000_000 + (long)time.Nanoseconds);
+    }
+}

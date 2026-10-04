@@ -1,0 +1,8 @@
+{
+  "Version": 1,
+  "Manifest": "{\"ApiVersion\":1,\"Id\":\"flow.examples.octave-velocity\",\"Name\":\"Octave and velocity\",\"Author\":\"Flow examples\",\"License\":\"Unspecified\",\"Version\":\"1\",\"SourceSha256\":\"0f635c938b5f8fa4f8e4b13d9e29d3f5810985135f41fbb0da25e19ec0398ce6\",\"Builder\":\"process\",\"Kind\":\"NoteTransform\",\"AudioInputs\":0,\"AudioOutputs\":0,\"NoteInput\":true,\"NoteOutput\":true,\"MinimumSampleRate\":8000,\"MaximumSampleRate\":96000,\"MaximumBlockFrames\":256,\"StateSchema\":\"1\",\"StatePolicy\":\"Reset\",\"Parameters\":[{\"Id\":\"velocity\",\"Name\":\"Velocity\",\"Unit\":\"linear\",\"Minimum\":0,\"Maximum\":1,\"Default\":0.5,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":0,\"RequiresRebuild\":true,\"Labels\":[]}],\"Dependencies\":[]}",
+  "Source": "use \"@flowDaw\"\nproc process (Dict<String, Double>: context, DawNoteSequence: input)\n    DawNoteSequence moved = (dawTransposeNotes input 12)\n    DawNotes notes = (map (dawNotes moved) (fn DawNote n => (dawNoteVelocity n (get context \"parameter:velocity\"))))\n    (dawResult \"notes\" (dawNoteSequence notes (dawNoteDuration moved)))\nend proc\n",
+  "OutputLayer": "notes",
+  "Targets": [],
+  "Dependencies": []
+}

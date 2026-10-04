@@ -71,6 +71,13 @@ public sealed class LatestRequestCoordinator<T> : IDisposable where T : class
     public Task<JobCompletion<T>> Submit(Func<CancellationToken, JobResult<T>> work)
     {
         ArgumentNullException.ThrowIfNull(work);
+        return SubmitAsync(token => Task.FromResult(work(token)));
+    }
+
+    /// <summary>Async work follows the same latest-generation publication rule.</summary>
+    public Task<JobCompletion<T>> SubmitAsync(Func<CancellationToken, Task<JobResult<T>>> work)
+    {
+        ArgumentNullException.ThrowIfNull(work);
         long generation;
         CancellationTokenSource cts;
         Task? previous;
@@ -99,7 +106,7 @@ public sealed class LatestRequestCoordinator<T> : IDisposable where T : class
                 Interlocked.Increment(ref _active);
                 try
                 {
-                    result = work(cts.Token);
+                    result = await work(cts.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {

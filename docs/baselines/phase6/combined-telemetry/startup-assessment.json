@@ -1,0 +1,51 @@
+{
+  "trials": [
+    {
+      "trial": 1,
+      "passed": true,
+      "lifecycle": {
+        "preparationMilliseconds": 19.6362,
+        "openMilliseconds": 306.0479,
+        "startMilliseconds": 0.2482,
+        "closeMilliseconds": 3.9966,
+        "firstCallbackAfterStartRequestMilliseconds": 44.633049,
+        "note": "Wall-clock control-thread startup/teardown timings; first callback entry is not first audible sample or physical output latency. Isolated worker startup is excluded from preparation/open."
+      },
+      "callbackFlags": 0,
+      "nodeXrunDelta": 0,
+      "driverXrunDelta": 0
+    },
+    {
+      "trial": 2,
+      "passed": true,
+      "lifecycle": {
+        "preparationMilliseconds": 21.6934,
+        "openMilliseconds": 369.0584,
+        "startMilliseconds": 0.3878,
+        "closeMilliseconds": 4.0833,
+        "firstCallbackAfterStartRequestMilliseconds": 62.565837,
+        "note": "Wall-clock control-thread startup/teardown timings; first callback entry is not first audible sample or physical output latency. Isolated worker startup is excluded from preparation/open."
+      },
+      "callbackFlags": 0,
+      "nodeXrunDelta": 0,
+      "driverXrunDelta": 0
+    },
+    {
+      "trial": 3,
+      "passed": true,
+      "lifecycle": {
+        "preparationMilliseconds": 27.0494,
+        "openMilliseconds": 303.6424,
+        "startMilliseconds": 0.304,
+        "closeMilliseconds": 2.4347,
+        "firstCallbackAfterStartRequestMilliseconds": 65.662234,
+        "note": "Wall-clock control-thread startup/teardown timings; first callback entry is not first audible sample or physical output latency. Isolated worker startup is excluded from preparation/open."
+      },
+      "callbackFlags": 0,
+      "nodeXrunDelta": 0,
+      "driverXrunDelta": 0
+    }
+  ],
+  "scope": "Three fresh-process eight-second idle 48k/256 ALSA/pipewire starts, not same-process reopen or device-loss recovery. Four-second observation window with bracketing; reported timings are measured values, not a product latency acceptance threshold.",
+  "fullPhase6GateComplete": false
+}

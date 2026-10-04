@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+<style>body{margin:0;background:#0e1116;color:#edeff5;font-family:'JetBrains Mono',monospace}a{color:#a9c6e8}a:hover{color:#edeff5}.mdi:before{line-height:1}</style>
+</helmet>
+<section style="padding:64px;display:flex;flex-direction:column;gap:40px;background:#0e1116;min-height:100vh;font-family:'JetBrains Mono',monospace;color:#edeff5">
+<div style="display:flex;flex-direction:column;gap:14px;max-width:2560px">
+<div style="font:600 28px/36px 'JetBrains Mono'">Flow MVP · workspace layouts at 2560×1440</div>
+<div style="font:400 16px/24px 'JetBrains Mono';color:#969cad;max-width:1500px;text-wrap:pretty">Three layout options sharing one state: switching a screen updates all three. Everything inside the frames is clickable: transport, M/S/R, clips, notes, tabs, faders, knobs, drag-numbers (drag sideways), generator, Flow build. Pink tags mark milestone dependencies.</div>
+<div style="display:flex;gap:10px;align-items:center;margin-top:6px">
+<div style="font:500 12px/16px 'JetBrains Mono';letter-spacing:1.5px;color:#969cad;margin-right:8px">SCREEN</div>
+<sc-for list="{{ screens }}" as="sc" hint-placeholder-count="5">
+<div style="height:40px" onClick="{{ sc.onClick }}"><div style="{{ sc.style }}">{{ sc.label }}</div></div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:120px;align-items:flex-start">
+<sc-for list="{{ layouts }}" as="L" hint-placeholder-count="3">
+<div id="{{ L.id }}" style="display:flex;flex-direction:column;gap:28px;width:2560px;flex:none">
+<div style="display:flex;align-items:center;gap:18px">
+<div style="font:700 22px/30px 'JetBrains Mono';background:#a9c6e8;color:#141921;padding:2px 12px">{{ L.id }}</div>
+<div style="font:600 22px/30px 'JetBrains Mono'">{{ L.name }}</div>
+<div style="font:400 16px/24px 'JetBrains Mono';color:#969cad">{{ L.tag }}</div>
+</div>
+
+<div style="width:2560px;height:1440px;position:relative;overflow:hidden;background:linear-gradient(180deg,#23272f,#1b1f26 45%,#141921);box-shadow:0 0 0 1px #0c0e13,0 30px 80px rgba(0,0,0,.6);font:400 12px/17px 'JetBrains Mono',monospace;color:#edeff5;user-select:none">
+<div style="{{ L.grid }}">
+
+<div style="grid-area:t;position:relative;display:flex;align-items:center;gap:6px;padding:0 10px;background:linear-gradient(#2a2f39,#20242d 55%,#191d25);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.45),0 0 0 1px #0d0f14">
+<div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;font:600 15px 'JetBrains Mono';color:#fff;background:linear-gradient(100deg,#a9c6e8,#6f8fb5 55%,#48607e);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 0 #1e2a3a">F</div>
+<div style="display:flex;flex-direction:column;width:190px;padding-left:6px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">PROJECT</div>
+<div style="display:flex;gap:6px;align-items:center"><span>{{ projName }}</span><sc-if value="{{ dirty }}" hint-placeholder-val="{{ true }}"><span style="color:#ffb020">• EDITED</span></sc-if></div>
+</div>
+<div style="width:2px;height:30px;background:#0b0d11;box-shadow:1px 0 0 rgba(255,255,255,.06);margin:0 4px"></div>
+<div style="width:30px;height:30px" onClick="{{ onRewind }}"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-skip-previous"></i></div></div>
+<div style="width:30px;height:30px" onClick="{{ onPlay }}"><div style="{{ playFace }}"><i class="{{ playIcon }}"></i></div></div>
+<div style="width:30px;height:30px" onClick="{{ onStop }}"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-stop"></i></div></div>
+<div style="width:30px;height:30px" onClick="{{ onRec }}"><div style="{{ recFace }}"><i class="mdi mdi-record"></i></div></div>
+<div style="width:2px;height:30px;background:#0b0d11;box-shadow:1px 0 0 rgba(255,255,255,.06);margin:0 4px"></div>
+<div style="width:140px;height:30px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font:600 15px/21px 'JetBrains Mono';background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000">{{ clock }}</div>
+<div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;cursor:ew-resize;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000" onPointerDown="{{ onBpm }}"><span>{{ bpm }}</span><span style="font:500 9px 'JetBrains Mono';letter-spacing:1px;color:#6e7484">BPM</span></div>
+<div style="width:70px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><span>4/4</span><span style="font:500 9px 'JetBrains Mono';letter-spacing:1px;color:#6e7484">SIG</span></div>
+<div style="width:30px;height:30px" onClick="{{ onLoop }}"><div style="{{ loopFace }}"><i class="mdi mdi-repeat"></i></div></div>
+<div style="width:30px;height:30px" onClick="{{ onMetro }}"><div style="{{ metroFace }}"><i class="mdi mdi-metronome"></i></div></div>
+<div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><span>1</span><span style="font:500 9px 'JetBrains Mono';letter-spacing:1px;color:#6e7484">COUNT-IN</span></div>
+<div style="display:flex;gap:4px;margin-left:8px">
+<sc-for list="{{ beatDots }}" as="d" hint-placeholder-count="4"><div style="{{ d }}"></div></sc-for>
+</div>
+<div style="flex:1"></div>
+<div style="width:30px;height:30px" onClick="{{ onUndo }}"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-undo"></i></div></div>
+<div style="width:30px;height:30px" onClick="{{ onRedo }}"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-redo"></i></div></div>
+<div style="height:30px" onClick="{{ onSave }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-content-save" style="font-size:14px"></i>SAVE</div></div>
+<div style="height:30px"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;color:#fff;background:linear-gradient(#cfe0f3,#a9c6e8 42%,#5f7ea3);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 0 #22303f,0 5px 8px rgba(0,0,0,.5);text-shadow:0 1px 0 rgba(0,0,0,.35)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-export" style="font-size:14px"></i>EXPORT WAV</div></div>
+<div style="width:2px;height:30px;background:#0b0d11;box-shadow:1px 0 0 rgba(255,255,255,.06);margin:0 4px"></div>
+<div style="display:flex;flex-direction:column;width:200px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">AUDIO · PIPEWIRE</div>
+<div style="display:flex;gap:6px;align-items:center"><span style="width:7px;height:7px;background:#48c07a;box-shadow:0 0 6px #48c07a"></span>48 kHz · 256 · 5.3 ms</div>
+</div>
+<sc-if value="{{ showMs }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;z-index:20;right:6px;bottom:-9px;padding:1px 6px;background:#ff5fa2;color:#14171e;font:700 10px/14px 'JetBrains Mono';pointer-events:none">BEAT DOTS M4 · ALIGNMENT M3b</div></sc-if>
+</div>
+
+<div style="grid-area:b;position:relative;min-height:0;display:flex;flex-direction:column;gap:6px;padding:10px;background:linear-gradient(#2a2f39,#20242d 55%,#191d25);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.45),0 0 0 1px #0d0f14">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">BROWSER</div>
+<div style="height:30px;box-sizing:border-box;padding:0 8px;display:flex;gap:8px;align-items:center;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><i class="mdi mdi-magnify" style="font-size:15px;color:#6e7484"></i><span style="width:1px;height:14px;background:#a9c6e8"></span></div>
+<div style="display:flex;gap:3px;height:28px">
+<sc-for list="{{ bsegs }}" as="g" hint-placeholder-count="5"><div style="flex:1;height:28px" onClick="{{ g.onClick }}"><div style="{{ g.style }}">{{ g.label }}</div></div></sc-for>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:#0a0c11;box-shadow:inset 0 3px 7px rgba(0,0,0,.8),inset 0 0 0 1px #000;padding:3px 0">
+<sc-for list="{{ bitems }}" as="it" hint-placeholder-count="6">
+<div style="{{ it.style }}" onClick="{{ it.onClick }}" style-hover="filter:brightness(1.25)"><i class="{{ it.icon }}" style="font-size:14px;color:#969cad"></i><span style="flex:1">{{ it.name }}</span><span style="font:500 9px 'JetBrains Mono';letter-spacing:1px;color:#6e7484">{{ it.meta }}</span></div>
+</sc-for>
+</div>
+<div style="display:flex;gap:6px;align-items:center">
+<div style="width:30px;height:30px"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)"><i class="mdi mdi-headphones"></i></div></div>
+<div style="flex:1;height:30px"><div style="height:27px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-plus" style="font-size:14px"></i>ADD TO {{ addTarget }}</div></div>
+</div>
+<sc-if value="{{ showMs }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;z-index:20;right:6px;top:6px;padding:1px 6px;background:#ff5fa2;color:#14171e;font:700 10px/14px 'JetBrains Mono';pointer-events:none">LIST + SCROLL M3b · FILTER: REQUEST</div></sc-if>
+</div>
+
+<div style="{{ L.aWrap }}">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;padding:10px;background:linear-gradient(#2a2f39,#20242d 55%,#191d25);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.45),0 0 0 1px #0d0f14">
+<div style="display:flex;gap:6px;align-items:center;height:30px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;width:120px">ARRANGEMENT</div>
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">SNAP</div>
+<div style="display:flex;gap:3px;width:220px">
+<sc-for list="{{ arrSnap }}" as="g" hint-placeholder-count="4"><div style="flex:1;height:28px" onClick="{{ g.onClick }}"><div style="{{ g.style }}">{{ g.label }}</div></div></sc-for>
+</div>
+<div style="width:30px;height:30px;margin-left:10px"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)"><i class="mdi mdi-magnify-minus-outline"></i></div></div>
+<div style="width:30px;height:30px"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)"><i class="mdi mdi-magnify-plus-outline"></i></div></div>
+<div style="height:30px;margin-left:10px" onClick="{{ onAddTrack }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-plus" style="font-size:14px"></i>TRACK</div></div>
+<div style="flex:1"></div>
+<div style="color:#6e7484">{{ arrInfo }}</div>
+</div>
+<div style="flex:1;min-height:0;position:relative;overflow:hidden;display:flex;flex-direction:column;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<div style="height:26px;flex:none;display:flex;border-bottom:1px solid #000">
+<div style="width:280px;flex:none;display:flex;align-items:center;padding-left:12px;box-sizing:border-box;font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#6e7484;background:#14171e">{{ trackCount }}</div>
+<div style="flex:1;position:relative;background:linear-gradient(#1a1e27,#12151c)">
+<div style="{{ loopStyle }}"></div>
+<sc-for list="{{ bars }}" as="br" hint-placeholder-count="8"><div style="{{ br.style }}">{{ br.n }}</div></sc-for>
+</div>
+</div>
+<sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<i class="mdi mdi-music-note-plus" style="font-size:36px;color:#48607e"></i>
+<div style="font:600 15px/21px 'JetBrains Mono'">Empty project</div>
+<div style="color:#969cad">Add a track to start. Instruments, effects and generators live in the browser.</div>
+<div style="display:flex;gap:10px;margin-top:6px">
+<div style="height:30px" onClick="{{ onAddTrack }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;color:#fff;background:linear-gradient(#cfe0f3,#a9c6e8 42%,#5f7ea3);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 0 #22303f,0 5px 8px rgba(0,0,0,.5);text-shadow:0 1px 0 rgba(0,0,0,.35)"><i class="mdi mdi-piano" style="font-size:14px"></i>INSTRUMENT TRACK</div></div>
+<div style="height:30px" onClick="{{ onAddTrack }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)"><i class="mdi mdi-waveform" style="font-size:14px"></i>AUDIO TRACK</div></div>
+<div style="height:30px" onClick="{{ onGoGen }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)"><i class="mdi mdi-auto-fix" style="font-size:14px"></i>GENERATE WITH FLOW</div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px;margin-top:22px;width:420px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">RECENT</div>
+<sc-for list="{{ recents }}" as="rc" hint-placeholder-count="3"><div style="display:flex;gap:8px;height:24px;align-items:center;cursor:pointer;color:#edeff5" style-hover="color:#a9c6e8"><i class="mdi mdi-file-music-outline" style="color:#6e7484"></i><span style="flex:1">{{ rc.n }}</span><span style="color:#6e7484">{{ rc.d }}</span></div></sc-for>
+</div>
+</div>
+</sc-if>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+<div style="{{ r.rowStyle }}">
+<sc-if value="{{ r.isTrack }}" hint-placeholder-val="{{ true }}">
+<div style="width:280px;flex:none;display:flex;gap:9px;padding:8px 10px 8px 0;box-sizing:border-box;background:linear-gradient(#262a33,#1c2028);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset -1px 0 0 #000">
+<div style="{{ r.chip }}"></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+<div style="display:flex;gap:6px;align-items:center"><i class="{{ r.icon }}" style="font-size:13px;color:#969cad"></i><span style="font-weight:600">{{ r.name }}</span></div>
+<div style="color:#6e7484;white-space:nowrap;overflow:hidden">{{ r.dev }}</div>
+</div>
+<div style="display:flex;gap:4px">
+<div style="width:26px;height:25px" onClick="{{ r.onM }}"><div style="{{ r.m }}">M</div></div>
+<div style="width:26px;height:25px" onClick="{{ r.onS }}"><div style="{{ r.s }}">S</div></div>
+<div style="width:26px;height:25px" onClick="{{ r.onR }}"><div style="{{ r.r }}">R</div></div>
+</div>
+</div>
+<div style="{{ r.lane }}">
+<sc-for list="{{ r.clips }}" as="c" hint-placeholder-count="2">
+<div style="{{ c.style }}" onClick="{{ c.onClick }}">
+<div style="{{ c.head }}"><span>{{ c.name }}</span><sc-if value="{{ c.gen }}" hint-placeholder-val="{{ false }}"><span style="padding:0 4px;background:#14171e;color:#ffcc3d;font:700 9px/13px 'JetBrains Mono'">{{ c.badge }}</span></sc-if></div>
+<sc-for list="{{ c.minis }}" as="m" hint-placeholder-count="0"><div style="{{ m }}"></div></sc-for>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ r.isAuto }}" hint-placeholder-val="{{ false }}">
+<div style="width:280px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 10px 0 22px;box-sizing:border-box;background:#171a21;box-shadow:inset -1px 0 0 #000">
+<div style="display:flex;gap:6px;align-items:center;color:#969cad"><i class="mdi mdi-chart-timeline-variant" style="font-size:13px"></i><span>LowpassDrive · cutoff</span></div>
+<div style="display:flex;gap:3px;width:110px">
+<sc-for list="{{ autoSegs }}" as="g" hint-placeholder-count="2"><div style="flex:1;height:22px" onClick="{{ g.onClick }}"><div style="{{ g.style }}">{{ g.label }}</div></div></sc-for>
+</div>
+</div>
+<div style="flex:1;position:relative;min-width:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.06) 0 1px,transparent 1px calc(100% / 8)),#0d1016">
+<svg viewBox="0 0 1000 100" preserveAspectRatio="none" style="position:absolute;inset:6px 0;width:100%;height:calc(100% - 12px)"><polyline points="{{ autoPts }}" fill="none" stroke="#ffcc3d" strokeWidth="2" vectorEffect="non-scaling-stroke"></polyline></svg>
+<sc-for list="{{ autoDots }}" as="ad" hint-placeholder-count="6"><div style="{{ ad }}"></div></sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:280px;right:0;top:0;bottom:0;pointer-events:none"><div style="{{ playhead }}"></div></div>
+</sc-if>
+</div>
+</div>
+<sc-if value="{{ showMs }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;z-index:20;right:16px;top:16px;padding:1px 6px;background:#ff5fa2;color:#14171e;font:700 10px/14px 'JetBrains Mono';pointer-events:none">CANVAS NOW · SCROLL XY M3b · M/S/R LATCH M3b · TRACK COLOURS + DRAG BETWEEN TRACKS: REQUEST</div></sc-if>
+</div>
+
+<div style="{{ L.pWrap }}">
+<div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10px 10px;background:linear-gradient(#2a2f39,#20242d 55%,#191d25);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.45),0 0 0 1px #0d0f14">
+<div style="height:36px;flex:none;display:flex;align-items:stretch;gap:2px;border-bottom:2px solid #0b0d11">
+<sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="4"><div style="{{ tb.style }}" onClick="{{ tb.onClick }}" style-hover="color:#edeff5"><i class="{{ tb.icon }}" style="font-size:14px"></i>{{ tb.label }}</div></sc-for>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;color:#6e7484;padding-right:10px">{{ panelInfo }}</div>
+<div style="display:flex;align-items:center"><div style="width:30px;height:30px"><div style="height:27px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;background:linear-gradient(#353b48,#272c37);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 2px 0 #14171e"><i class="mdi mdi-chevron-down"></i></div></div></div>
+</div>
+
+<sc-if value="{{ tabPiano }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:6px">
+<div style="height:30px;flex:none;display:flex;gap:6px;align-items:center">
+<div style="display:flex;gap:6px;align-items:center;width:160px"><span style="width:8px;height:8px;background:#66ff91;box-shadow:0 0 5px #66ff91"></span><span style="font-weight:600">{{ prClip }}</span></div>
+<div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><span>4</span><span style="font:500 9px 'JetBrains Mono';letter-spacing:1px;color:#6e7484">BARS</span></div>
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;margin-left:8px">SNAP</div>
+<div style="display:flex;gap:3px;width:200px">
+<sc-for list="{{ prSnap }}" as="g" hint-placeholder-count="4"><div style="flex:1;height:28px" onClick="{{ g.onClick }}"><div style="{{ g.style }}">{{ g.label }}</div></div></sc-for>
+</div>
+<div style="height:30px;margin-left:8px" onClick="{{ onQuantize }}"><div style="height:27px;padding:0 14px;display:flex;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)">QUANTIZE</div></div>
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;margin-left:8px">TRANSPOSE</div>
+<sc-for list="{{ transp }}" as="tp" hint-placeholder-count="4"><div style="height:30px" onClick="{{ tp.onClick }}"><div style="height:27px;padding:0 10px;display:flex;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)">{{ tp.label }}</div></div></sc-for>
+<div style="flex:1"></div>
+<div style="color:#969cad">{{ selInfo }}</div>
+</div>
+<div style="flex:1;min-height:0;display:flex;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<div style="width:64px;flex:none;display:flex;flex-direction:column;padding:1px 0">
+<sc-for list="{{ prKeys }}" as="k" hint-placeholder-count="12"><div style="{{ k.style }}">{{ k.label }}</div></sc-for>
+</div>
+<div style="flex:1;position:relative;min-width:0;margin:1px 1px 1px 0">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column">
+<sc-for list="{{ prRows }}" as="pr" hint-placeholder-count="12"><div style="{{ pr }}"></div></sc-for>
+</div>
+<div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(255,255,255,.16) 0 1px,transparent 1px 25%),repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px 6.25%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 1.5625%)"></div>
+<sc-for list="{{ prNotes }}" as="n" hint-placeholder-count="10"><div style="{{ n.style }}" onClick="{{ n.onClick }}" style-hover="filter:brightness(1.15)"></div></sc-for>
+<div style="{{ prPlay }}"></div>
+</div>
+</div>
+<div style="height:110px;flex:none;display:flex;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<div style="width:64px;flex:none;display:flex;flex-direction:column;justify-content:space-between;padding:8px 0 8px 8px;box-sizing:border-box">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">VEL</div>
+<div style="font:600 15px/21px 'JetBrains Mono'">{{ selVel }}</div>
+</div>
+<div style="flex:1;position:relative;min-width:0;cursor:ns-resize;margin:8px 1px 6px 0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.1) 0 1px,transparent 1px 25%)" onPointerDown="{{ onVel }}">
+<sc-for list="{{ prVel }}" as="v" hint-placeholder-count="10"><div style="{{ v.stem }}"><div style="{{ v.cap }}"></div></div></sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabGen }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;gap:6px">
+<div style="flex:1.1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;gap:8px;align-items:center;height:30px"><div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:#14171e;color:#a9c6e8;font-weight:700">1</div><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">SOURCE</div><span>drums.flow</span><span style="color:#6e7484">· read-only here</span><div style="flex:1"></div>
+<div style="height:30px" onClick="{{ onOpenGenSource }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-code-braces" style="font-size:14px"></i>EDIT SOURCE</div></div>
+</div>
+<div style="flex:1;min-height:0;overflow:hidden;padding:6px 0;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<sc-for list="{{ genSrc }}" as="ln" hint-placeholder-count="10">
+<div style="display:flex;height:18px;line-height:18px"><div style="width:40px;flex:none;text-align:right;padding-right:10px;color:#454b59">{{ ln.n }}</div><div style="white-space:pre;padding-left:10px;box-shadow:inset 1px 0 0 #1a1e27"><sc-for list="{{ ln.toks }}" as="tk" hint-placeholder-count="3"><span style="{{ tk.s }}">{{ tk.t }}</span></sc-for></div></div>
+</sc-for>
+</div>
+</div>
+<div style="width:2px;background:#0b0d11;box-shadow:1px 0 0 rgba(255,255,255,.06)"></div>
+<div style="{{ genMid }}">
+<div style="display:flex;gap:8px;align-items:center;height:30px"><div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:#14171e;color:#a9c6e8;font-weight:700">2</div><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">PREVIEW</div><span style="color:#6e7484">{{ genCount }}</span></div>
+<div style="display:flex;gap:6px;align-items:flex-end">
+<div style="display:flex;flex-direction:column;gap:3px"><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">STEPS</div><div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;cursor:ew-resize;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000" onPointerDown="{{ onSteps }}"><span>{{ steps }}</span></div></div>
+<div style="display:flex;flex-direction:column;gap:3px"><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">PULSES</div><div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;cursor:ew-resize;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000" onPointerDown="{{ onPulses }}"><span>{{ pulses }}</span></div></div>
+<div style="display:flex;flex-direction:column;gap:3px"><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">ROTATION</div><div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;cursor:ew-resize;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000" onPointerDown="{{ onRot }}"><span>{{ rot }}</span></div></div>
+<div style="display:flex;flex-direction:column;gap:3px;margin-left:10px"><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">SEED</div><div style="display:flex;gap:6px"><div style="width:84px;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000">{{ seed }}</div>
+<div style="width:30px;height:30px" onClick="{{ onSeedLock }}"><div style="{{ lockFace }}"><i class="{{ lockIcon }}"></i></div></div></div></div>
+<div style="flex:1"></div>
+<div style="height:30px" onClick="{{ onVariation }}"><div style="{{ varFace }}"><i class="mdi mdi-dice-5" style="font-size:14px"></i>NEW VARIATION</div></div>
+</div>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;padding:10px;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<sc-for list="{{ genRows }}" as="gr" hint-placeholder-count="3">
+<div style="flex:1;display:flex;gap:8px;align-items:stretch;min-height:0"><div style="width:56px;display:flex;align-items:center;font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">{{ gr.name }}</div><div style="flex:1;display:flex;gap:3px"><sc-for list="{{ gr.cells }}" as="ce" hint-placeholder-count="16"><div style="{{ ce }}"></div></sc-for></div></div>
+</sc-for>
+</div>
+</div>
+<div style="width:2px;background:#0b0d11;box-shadow:1px 0 0 rgba(255,255,255,.06)"></div>
+<div style="width:380px;flex:none;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;gap:8px;align-items:center;height:30px"><div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:#14171e;color:#a9c6e8;font-weight:700">3</div><div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">CONVERT TO NOTES</div></div>
+<sc-if value="{{ notConverted }}" hint-placeholder-val="{{ true }}">
+<div style="color:#969cad;line-height:20px">The clip plays the generator live. Converting writes {{ genCount }} into an editable note clip. Source, settings and seed stay attached; note edits never change the source.</div>
+<div style="height:30px" onClick="{{ onConvert }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;color:#fff;background:linear-gradient(#cfe0f3,#a9c6e8 42%,#5f7ea3);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 0 #22303f,0 5px 8px rgba(0,0,0,.5);text-shadow:0 1px 0 rgba(0,0,0,.35)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-music-note-plus" style="font-size:14px"></i>CONVERT TO NOTES</div></div>
+</sc-if>
+<sc-if value="{{ converted }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;align-items:center;color:#48c07a"><i class="mdi mdi-check-circle" style="font-size:15px"></i>Converted · notes are editable</div>
+<div style="color:#969cad;line-height:20px">Source and seed {{ seed }} are kept as reference. Regenerating creates a new clip instead of overwriting this one.</div>
+<div style="height:30px" onClick="{{ onOpenPiano }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-piano" style="font-size:14px"></i>OPEN IN PIANO ROLL</div></div>
+<div style="height:30px" onClick="{{ onUnconvert }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;color:#aab1c4;background:linear-gradient(#262b36,#1d222b);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 2px 0 #12151b" style-hover="filter:brightness(1.15)">UNDO CONVERT</div></div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabDev }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;gap:6px;padding-top:4px">
+<sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}"><div style="flex:1;display:flex;align-items:center;justify-content:center;color:#6e7484">No track selected.</div></sc-if>
+<sc-for list="{{ devices }}" as="dv" hint-placeholder-count="3">
+<div style="{{ dv.card }}">
+<div style="display:flex;gap:6px;align-items:center;height:30px">
+<i class="mdi mdi-drag-vertical" style="font-size:16px;color:#6e7484;cursor:grab"></i>
+<div style="width:30px;height:30px" onClick="{{ dv.onBypass }}"><div style="{{ dv.pwr }}"><i class="mdi mdi-power"></i></div></div>
+<div style="display:flex;flex-direction:column"><span style="font-weight:600">{{ dv.name }}</span><span style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">{{ dv.type }}</span></div>
+</div>
+<div style="display:flex;gap:6px;justify-content:space-between;padding:8px 4px">
+<sc-for list="{{ dv.knobs }}" as="k" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:56px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">{{ k.lbl }}</div>
+<div style="width:36px;height:36px;position:relative;cursor:ns-resize" onPointerDown="{{ k.onDown }}">
+<div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 225deg,#06070a 0 270deg,transparent 0)"></div>
+<div style="{{ k.arc }}"></div>
+<div style="position:absolute;inset:6px;border-radius:50%;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 0 #14171e,0 3px 5px rgba(0,0,0,.6)"><div style="{{ k.ptr }}"><div style="position:absolute;left:50%;top:2px;width:2px;height:8px;margin-left:-1px;background:#eef1f8"></div></div></div>
+</div>
+<div style="color:#969cad;height:17px">{{ k.txt }}</div>
+</div>
+</sc-for>
+</div>
+<div style="flex:1"></div>
+<div style="display:flex;gap:6px">
+<div style="flex:1;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><span>{{ dv.preset }}</span><i class="mdi mdi-chevron-down" style="color:#6e7484"></i></div>
+<sc-if value="{{ dv.flow }}" hint-placeholder-val="{{ false }}"><div style="height:30px" onClick="{{ onOpenFxSource }}"><div style="height:27px;padding:0 12px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-code-braces" style="font-size:14px"></i>EDIT SOURCE</div></div></sc-if>
+</div>
+</div>
+</sc-for>
+<sc-if value="{{ notEmpty }}" hint-placeholder-val="{{ true }}">
+<div style="width:200px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#6e7484;box-shadow:inset 0 0 0 1px #2a2f39;cursor:pointer" style-hover="color:#edeff5"><i class="mdi mdi-plus" style="font-size:20px"></i>ADD DEVICE</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ tabMix }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;min-height:0;display:flex;gap:6px;padding-top:4px">
+<sc-for list="{{ strips }}" as="st" hint-placeholder-count="7">
+<div style="{{ st.box }}">
+<div style="display:flex;gap:6px;align-items:center;font-weight:600"><span style="{{ st.chip }}"></span>{{ st.name }}</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">PAN</div>
+<div style="width:36px;height:36px;position:relative;cursor:ns-resize" onPointerDown="{{ st.onPan }}">
+<div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 225deg,#06070a 0 270deg,transparent 0)"></div>
+<div style="{{ st.arc }}"></div>
+<div style="position:absolute;inset:6px;border-radius:50%;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 0 #14171e,0 3px 5px rgba(0,0,0,.6)"><div style="{{ st.ptr }}"><div style="position:absolute;left:50%;top:2px;width:2px;height:8px;margin-left:-1px;background:#eef1f8"></div></div></div>
+</div>
+<div style="color:#969cad">{{ st.panTxt }}</div>
+</div>
+<div style="display:flex;gap:3px;justify-content:center">
+<div style="width:26px;height:25px" onClick="{{ st.onM }}"><div style="{{ st.m }}">M</div></div>
+<sc-if value="{{ st.notMaster }}" hint-placeholder-val="{{ true }}">
+<div style="width:26px;height:25px" onClick="{{ st.onS }}"><div style="{{ st.s }}">S</div></div>
+<div style="width:26px;height:25px" onClick="{{ st.onR }}"><div style="{{ st.r }}">R</div></div>
+</sc-if>
+</div>
+<div style="flex:1;min-height:0;display:flex;gap:3px;justify-content:center">
+<div style="position:relative;width:20px">
+<sc-for list="{{ scale }}" as="sc" hint-placeholder-count="6"><span style="{{ sc.style }}">{{ sc.t }}</span></sc-for>
+</div>
+<div style="position:relative;width:26px;cursor:ns-resize" onPointerDown="{{ st.onFader }}">
+<div style="position:absolute;left:9px;width:8px;top:7px;bottom:7px;background:linear-gradient(90deg,#08090d,#151922);box-shadow:inset 2px 0 5px rgba(0,0,0,.85),0 0 0 1px #000"></div>
+<div style="{{ st.cap }}"><div style="position:absolute;left:3px;right:3px;top:6px;height:2px;background:linear-gradient(#454b5b,#6a7181)"></div></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:3px;padding:7px 0">
+<div style="{{ st.clipLed }}" onClick="{{ st.onClip }}"></div>
+<div style="flex:1;display:flex;gap:2px">
+<div style="position:relative;width:7px;background:#06070a;box-shadow:inset 0 2px 4px #000,0 0 0 1px #000"><div style="position:absolute;inset:1px;opacity:.12;background:linear-gradient(0deg,#48c07a 0 50%,#ffb020 50% 71%,#ff3b4e 71% 100%)"></div><div style="{{ st.lvL }}"></div><div style="position:absolute;inset:1px;background:repeating-linear-gradient(0deg,transparent 0 3px,#06070a 3px 4px)"></div></div>
+<div style="position:relative;width:7px;background:#06070a;box-shadow:inset 0 2px 4px #000,0 0 0 1px #000"><div style="position:absolute;inset:1px;opacity:.12;background:linear-gradient(0deg,#48c07a 0 50%,#ffb020 50% 71%,#ff3b4e 71% 100%)"></div><div style="{{ st.lvR }}"></div><div style="position:absolute;inset:1px;background:repeating-linear-gradient(0deg,transparent 0 3px,#06070a 3px 4px)"></div></div>
+</div>
+</div>
+</div>
+<div style="height:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000">{{ st.db }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ showMs }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;z-index:20;right:52px;top:-9px;padding:1px 6px;background:#ff5fa2;color:#14171e;font:700 10px/14px 'JetBrains Mono';pointer-events:none">TABS + SPLITTER M3b · PRESET DROPDOWN M3d · DEVICE REORDER M3b</div></sc-if>
+</div>
+</div>
+
+<div style="{{ L.fWrap }}">
+<div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:0 10px 10px;background:linear-gradient(#2a2f39,#20242d 55%,#191d25);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.45),0 0 0 1px #0d0f14">
+<div style="height:36px;flex:none;display:flex;align-items:stretch;gap:2px;border-bottom:2px solid #0b0d11">
+<div style="display:flex;align-items:center;padding-right:12px;font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">FLOW</div>
+<sc-for list="{{ files }}" as="fl" hint-placeholder-count="3"><div style="{{ fl.style }}" onClick="{{ fl.onClick }}" style-hover="color:#edeff5"><i class="mdi mdi-file-code-outline" style="font-size:14px"></i>{{ fl.name }}<sc-if value="{{ fl.dirty }}" hint-placeholder-val="{{ false }}"><span style="color:#ffb020">•</span></sc-if></div></sc-for>
+<div style="flex:1"></div>
+<div style="display:flex;align-items:center;gap:8px">
+<div style="{{ buildChip }}"><i class="{{ buildIcon }}" style="font-size:14px"></i>{{ buildText }}</div>
+<sc-if value="{{ building }}" hint-placeholder-val="{{ false }}">
+<div style="width:120px;height:12px;position:relative;overflow:hidden;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><div style="{{ buildProg }}"></div></div>
+<div style="height:30px" onClick="{{ onCancel }}"><div style="height:27px;padding:0 12px;display:flex;align-items:center;cursor:pointer;color:#aab1c4;background:linear-gradient(#262b36,#1d222b);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 2px 0 #12151b">CANCEL</div></div>
+</sc-if>
+<div style="height:30px" onClick="{{ onBuild }}"><div style="height:27px;padding:0 14px;display:flex;gap:6px;align-items:center;cursor:pointer;color:#fff;background:linear-gradient(#cfe0f3,#a9c6e8 42%,#5f7ea3);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 3px 0 #22303f,0 5px 8px rgba(0,0,0,.5);text-shadow:0 1px 0 rgba(0,0,0,.35)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-hammer-wrench" style="font-size:14px"></i>BUILD + APPLY</div></div>
+<div style="height:30px" onClick="{{ L.onExpand }}"><div style="height:27px;padding:0 12px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="{{ L.expandIcon }}" style="font-size:14px"></i>{{ L.expandLabel }}</div></div>
+</div>
+</div>
+<div style="flex:1;min-height:0;display:flex;gap:6px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<div style="flex:1;min-height:0;overflow:hidden;padding:6px 0;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<sc-for list="{{ codeLines }}" as="ln" hint-placeholder-count="12">
+<div style="{{ ln.row }}"><div style="{{ ln.gut }}">{{ ln.n }}</div><div style="white-space:pre;padding-left:12px;box-shadow:inset 1px 0 0 #1a1e27;flex:1"><sc-for list="{{ ln.toks }}" as="tk" hint-placeholder-count="3"><span style="{{ tk.s }}">{{ tk.t }}</span></sc-for><sc-if value="{{ ln.hasMsg }}" hint-placeholder-val="{{ false }}"><span style="{{ ln.msgStyle }}">{{ ln.msg }}</span></sc-if></div></div>
+</sc-for>
+</div>
+<div style="height:170px;flex:none;display:flex;flex-direction:column;background:#0a0c11;box-shadow:inset 0 3px 8px rgba(0,0,0,.85),inset 0 0 0 1px #000">
+<div style="height:30px;display:flex;gap:2px;padding:0 6px;border-bottom:1px solid #1a1e27">
+<sc-for list="{{ ptabs }}" as="pt" hint-placeholder-count="2"><div style="{{ pt.style }}" onClick="{{ pt.onClick }}">{{ pt.label }}</div></sc-for>
+</div>
+<sc-if value="{{ showProblems }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ problems }}" as="pb" hint-placeholder-count="2">
+<div style="height:30px;display:flex;gap:10px;align-items:center;padding:0 10px;border-bottom:1px solid #12151c"><i class="{{ pb.icon }}" style="{{ pb.iconStyle }}"></i><span style="color:#6e7484;width:44px">{{ pb.code }}</span><span style="flex:1;white-space:nowrap;overflow:hidden">{{ pb.msg }}</span><span style="color:#6e7484">{{ pb.loc }}</span>
+<sc-if value="{{ pb.hasFix }}" hint-placeholder-val="{{ false }}"><div style="height:24px" onClick="{{ onQuickFix }}"><div style="height:22px;padding:0 10px;display:flex;gap:6px;align-items:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 2px 0 #14171e" style-hover="filter:brightness(1.1)"><i class="mdi mdi-lightbulb-on-outline" style="font-size:13px"></i>FIX: cutoff</div></div></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ noProblems }}" hint-placeholder-val="{{ false }}"><div style="padding:10px;color:#6e7484">No problems.</div></sc-if>
+</sc-if>
+<sc-if value="{{ showOutput }}" hint-placeholder-val="{{ false }}">
+<div style="padding:6px 10px;display:flex;flex-direction:column">
+<sc-for list="{{ outLines }}" as="ol" hint-placeholder-count="4"><div style="{{ ol.s }}">{{ ol.t }}</div></sc-for>
+</div>
+</sc-if>
+</div>
+</div>
+<div style="width:400px;flex:none;display:flex;flex-direction:column;gap:10px;padding:10px;box-sizing:border-box;background:linear-gradient(#232731,#1b1f27);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 0 1px #0d0f14">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">{{ pvTitle }}</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:8px;height:24px"><span style="width:7px;height:7px;background:#48c07a;box-shadow:0 0 6px #48c07a"></span><span style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;width:70px">RUNNING</span><span style="font-weight:600">{{ runVer }}</span><span style="color:#6e7484">on LEAD · slot 2</span></div>
+<div style="display:flex;align-items:center;gap:8px;height:24px"><span style="{{ srcLed }}"></span><span style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;width:70px">SOURCE</span><span style="font-weight:600">{{ srcVer }}</span><span style="color:#6e7484">{{ srcNote }}</span></div>
+</div>
+<div style="height:2px;background:#0b0d11;box-shadow:0 1px 0 rgba(255,255,255,.06)"></div>
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">PARAMETERS · FROM DECLARED PARAMS</div>
+<div style="display:flex;justify-content:space-between">
+<sc-for list="{{ flowKnobs }}" as="k" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px;width:80px">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">{{ k.lbl }}</div>
+<div style="width:36px;height:36px;position:relative;cursor:ns-resize" onPointerDown="{{ k.onDown }}">
+<div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 225deg,#06070a 0 270deg,transparent 0)"></div>
+<div style="{{ k.arc }}"></div>
+<div style="position:absolute;inset:6px;border-radius:50%;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 2px 0 #14171e,0 3px 5px rgba(0,0,0,.6)"><div style="{{ k.ptr }}"><div style="position:absolute;left:50%;top:2px;width:2px;height:8px;margin-left:-1px;background:#eef1f8"></div></div></div>
+</div>
+<div style="color:#969cad;height:17px">{{ k.txt }}</div>
+</div>
+</sc-for>
+</div>
+<div style="display:flex;gap:6px">
+<div style="flex:1;height:30px"><div style="height:27px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-headphones" style="font-size:14px"></i>AUDITION</div></div>
+<div style="flex:1;height:30px"><div style="height:27px;display:flex;gap:6px;align-items:center;justify-content:center;cursor:pointer;background:linear-gradient(#4a5161,#394050 52%,#2b3140);box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)" style-hover="filter:brightness(1.1)"><i class="mdi mdi-compare-horizontal" style="font-size:14px"></i>A/B RUNNING</div></div>
+</div>
+<div style="flex:1"></div>
+<div style="color:#6e7484;line-height:18px">Edits apply only after a successful build. A failed build leaves the running version playing.</div>
+</div>
+</div>
+<sc-if value="{{ showMs }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;z-index:20;right:16px;top:-9px;padding:1px 6px;background:#ff5fa2;color:#14171e;font:700 10px/14px 'JetBrains Mono';pointer-events:none">CODE EDITOR M3c · COMPLETION + HOVER M3d</div></sc-if>
+</div>
+</div>
+
+<div style="grid-area:i;position:relative;min-height:0;display:flex;flex-direction:column;gap:6px;padding:10px;background:linear-gradient(#2a2f39,#20242d 55%,#191d25);box-shadow:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -2px 0 rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.45),0 0 0 1px #0d0f14;overflow:hidden">
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">INSPECTOR · {{ selKind }}</div>
+<div style="height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;gap:8px;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><span style="{{ selChip }}"></span>{{ selName }}</div>
+<sc-for list="{{ selRows }}" as="sr" hint-placeholder-count="4"><div style="display:flex;height:24px;align-items:center;gap:8px"><span style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;width:96px">{{ sr.k }}</span><span style="flex:1">{{ sr.v }}</span></div></sc-for>
+<div style="height:2px;background:#0b0d11;box-shadow:0 1px 0 rgba(255,255,255,.06);margin:4px 0"></div>
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">MUSICAL CONTEXT</div>
+<sc-for list="{{ ctxRows }}" as="cr" hint-placeholder-count="3"><div style="display:flex;height:30px;align-items:center;gap:8px"><span style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad;width:70px">{{ cr.k }}</span><div style="flex:1;height:30px;box-sizing:border-box;padding:0 8px;display:flex;align-items:center;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000">{{ cr.v }}</div><span style="{{ cr.srcStyle }}">{{ cr.src }}</span></div></sc-for>
+<div style="height:2px;background:#0b0d11;box-shadow:0 1px 0 rgba(255,255,255,.06);margin:4px 0"></div>
+<div style="font:500 9px/13px 'JetBrains Mono';letter-spacing:1px;color:#969cad">HISTORY</div>
+<div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:#0a0c11;box-shadow:inset 0 3px 7px rgba(0,0,0,.8),inset 0 0 0 1px #000;padding:3px 0">
+<sc-for list="{{ history }}" as="h" hint-placeholder-count="5"><div style="{{ h.style }}"><i class="mdi mdi-history" style="font-size:13px;color:#6e7484"></i>{{ h.t }}</div></sc-for>
+</div>
+<sc-if value="{{ showMs }}" hint-placeholder-val="{{ true }}"><div style="position:absolute;z-index:20;right:6px;top:6px;padding:1px 6px;background:#ff5fa2;color:#14171e;font:700 10px/14px 'JetBrains Mono';pointer-events:none">COLLAPSE M3b · HISTORY LIST M3b</div></sc-if>
+</div>
+
+<div style="grid-area:s;display:flex;align-items:center;gap:16px;padding:0 10px;color:#969cad">
+<span style="display:flex;gap:6px;align-items:center"><span style="{{ idleLed }}"></span>{{ idleText }}</span>
+<span>DSP</span>
+<div style="width:110px;height:12px;position:relative;overflow:hidden;background:linear-gradient(#08090d,#151922);box-shadow:inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000"><div style="{{ dspBar }}"></div></div>
+<span style="width:40px">{{ dspTxt }}</span>
+<span>XRUNS —</span>
+<span>Scarlett 2i2 · connected</span>
+<div style="flex:1"></div>
+<span>{{ lastUndo }}</span>
+<span style="color:#6e7484">autosaved 14:02</span>
+</div>
+
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px;font:400 16px/26px 'JetBrains Mono';color:#969cad">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 13px/20px 'JetBrains Mono';letter-spacing:2px;color:#edeff5">REGIONS + RESIZE</div><sc-for list="{{ L.regions }}" as="x" hint-placeholder-count="5"><div style="text-wrap:pretty">{{ x }}</div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 13px/20px 'JetBrains Mono';letter-spacing:2px;color:#edeff5">TRADE-OFF</div><sc-for list="{{ L.trade }}" as="x" hint-placeholder-count="2"><div style="text-wrap:pretty">{{ x }}</div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 13px/20px 'JetBrains Mono';letter-spacing:2px;color:#edeff5">LAYOUT-SPECIFIC NEEDS</div><sc-for list="{{ L.needs }}" as="x" hint-placeholder-count="2"><div style="text-wrap:pretty">{{ x }}</div></sc-for></div>
+</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:48px;max-width:2560px;font:400 16px/26px 'JetBrains Mono';color:#969cad;padding-top:20px;border-top:1px solid #23272f">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 13px/20px 'JetBrains Mono';letter-spacing:2px;color:#edeff5">KEYBOARD · ALL LAYOUTS</div><sc-for list="{{ specKeys }}" as="x" hint-placeholder-count="6"><div>{{ x }}</div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 13px/20px 'JetBrains Mono';letter-spacing:2px;color:#edeff5">MUSIC</div><sc-for list="{{ specMusic }}" as="x" hint-placeholder-count="4"><div style="text-wrap:pretty">{{ x }}</div></sc-for></div>
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font:600 13px/20px 'JetBrains Mono';letter-spacing:2px;color:#edeff5">REQUESTS TO JUI</div><sc-for list="{{ specNeeds }}" as="x" hint-placeholder-count="6"><div style="text-wrap:pretty">{{ x }}</div></sc-for></div>
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showMilestones&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;trackHeight&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;64&quot;,&quot;76&quot;,&quot;96&quot;],&quot;default&quot;:&quot;76&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const AC='#a9c6e8',OK='#48c07a',WARN='#ffb020',DANGER='#ff3b4e',DIM='#969cad',MUTE='#6e7484',INK='#edeff5',BARS=32;
+const TRACKS=[
+ {name:'KICK',dev:'Flow Kick',col:'#ff4e6f',icon:'mdi mdi-music-note'},
+ {name:'DRUMS',dev:'Euclid Kit · generated',col:'#ffcc3d',icon:'mdi mdi-auto-fix'},
+ {name:'BASS',dev:'Flow Sub',col:'#4fc0ff',icon:'mdi mdi-music-note'},
+ {name:'LEAD',dev:'Saw Lead + 2 effects',col:'#66ff91',icon:'mdi mdi-music-note'},
+ {name:'PAD',dev:'Glass Pad',col:'#9a5cff',icon:'mdi mdi-music-note'},
+ {name:'VOX',dev:'Audio · vox_take3.wav',col:'#ff9a5c',icon:'mdi mdi-waveform'}];
+const CLIPS=[
+ {id:'kick1',tr:0,s:0,l:8,name:'KICK'},{id:'kick2',tr:0,s:8,l:24,name:'KICK'},
+ {id:'drums1',tr:1,s:8,l:16,name:'EUCLID',gen:true},
+ {id:'bass1',tr:2,s:0,l:16,name:'BASS A'},{id:'bass2',tr:2,s:16,l:16,name:'BASS B'},
+ {id:'lead1',tr:3,s:8,l:4,name:'LEAD A'},{id:'lead2',tr:3,s:12,l:4,name:'LEAD A'},{id:'lead3',tr:3,s:20,l:8,name:'LEAD B'},
+ {id:'pad1',tr:4,s:0,l:32,name:'PAD'},{id:'vox1',tr:5,s:16,l:12,name:'vox_take3.wav',audio:true}];
+const NOTES=[[0,2,69,96],[2,2,72,88],[4,4,76,104],[8,2,74,92],[10,2,72,84],[12,4,69,90],[16,3,67,80],[19,1,69,70],[20,4,72,96],[24,2,74,88],[26,2,76,92],[28,4,79,110],[32,2,77,90],[34,2,76,84],[36,6,74,96],[44,2,72,80],[46,2,71,76],[48,8,69,100],[56,4,64,72],[60,4,67,84]].map(([s,l,p,v])=>({s,l,p,v}));
+const HI=83,LO=60,NR=24;
+const FILES=[
+{name:'lowpass_drive.flow',src:['// LowpassDrive · resonant low-pass with soft drive','effect LowpassDrive {','  param cutoff = 1800 hz   range 40..18000  taper log','  param reso   = 0.35      range 0..1','  param drive  = 4.0 db    range 0..24','  param mix    = 1.0       range 0..1','','  process(input) {','    let x = saturate(input * gain(drive))','    let y = svf.lowpass(x, cutof, reso)','    output = mix(input, y, mix)','  }','}']},
+{name:'drums.flow',src:['// Euclid Kit · generator','generator Drums(seed) {','  param steps  = 16  range 4..32','  param pulses = 5   range 1..steps','  param rot    = 2   range 0..steps','','  kick  = euclid(steps, pulses, rot) |> note(C1)','  snare = every(steps / 2, offset: steps / 4) |> note(D1)','  hat   = euclid(steps, 11) |> note(F#1)','            |> vel(random(seed, 60..96))','  return kick + snare + hat','}']},
+{name:'song.flow',src:['// song context','tempo  124','meter  4/4','key    A minor','tuning "12-TET"']}];
+const KW=new Set(['effect','generator','param','range','taper','process','let','return','tempo','meter','key','tuning','output']);
+const UNIT=new Set(['hz','db','log','minor','offset']);
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function tok(line,err){const out=[];const re=/(\/\/.*)|("[^"]*")|(\d+(?:\.\d+)?)|([A-Za-z_][\w]*)|(\s+)|(.)/g;let m;
+ while((m=re.exec(line))){const [t,com,str,num,id,ws,op]=m;const s={color:INK,fontWeight:400,fontStyle:'normal'};
+  if(com){s.color=MUTE;s.fontStyle='italic'}else if(str)s.color='#7bd19f';else if(num)s.color='#ffc151';
+  else if(id){if(KW.has(id)){s.color=AC;s.fontWeight=700}else if(UNIT.has(id))s.color=DIM;else if(err&&id===err){s.textDecoration='underline wavy '+DANGER;s.textUnderlineOffset='4px'}else if(/^\s*\(/.test(line.slice(re.lastIndex)))s.fontWeight=700;}
+  else if(op)s.color=DIM;
+  out.push({t,s});}
+ return out;}
+const eu=(n,k,r)=>{const a=[];for(let i=0;i<n;i++)a.push(((i*k)%n)<k);return a.map((_,i)=>a[(i+r)%n]);};
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fDb=p=>p<=0?-Infinity:20*Math.log10(2*p*p*p);
+const d2f=db=>Math.cbrt(Math.pow(10,db/20)/2);
+const fmtDb=db=>!isFinite(db)?'-∞':(db>0?'+':'')+db.toFixed(1);
+const WELL={background:'linear-gradient(#08090d,#151922)',boxShadow:'inset 0 2px 5px rgba(0,0,0,.8),inset 0 0 0 1px #000'};
+
+class Component extends DCLogic {
+ state={screen:'work',tab:'piano',sel:'lead1',playing:false,rec:false,pos:8,loop:true,metro:true,bpm:124,
+  mute:[false,false,false,false,false,false,false],solo:[false,false,false,false,false,false,false],arm:[false,false,false,true,false,false,false],
+  vol:[.76,.72,.77,.74,.66,.73,.79],pan:[0,0,0,-.2,.3,.1,0],clip:[false,false,true,false,false,false,false],
+  sel3:{9:true,10:true,11:true},vel:NOTES.map(n=>n.v),shift:0,steps:16,pulses:5,rot:2,seed:4127,seedLock:false,converted:false,
+  build:'edited',fixed:false,file:0,ptab:0,cat:0,brow:1,bypass:[false,false,false],arrSnap:0,prSnap:2,
+  devK:[[.62,.3,.12,.45],[.55,.35,.17,1],[.4,.3,.5,.6]],autoMode:'lin',hist:5,t:0,dirty:true,prog:0};
+ componentDidMount(){
+  this._mv=e=>this.onMove(e);this._up=()=>{this.drag=null};
+  window.addEventListener('pointermove',this._mv);window.addEventListener('pointerup',this._up);
+  this._key=e=>{const tg=e.target&&e.target.tagName;if(tg==='INPUT'||tg==='TEXTAREA')return;if(e.code==='Space'){e.preventDefault();this.setState(s=>({playing:!s.playing}));}};
+  window.addEventListener('keydown',this._key);
+  this._iv=setInterval(()=>{const s=this.state;
+   if(s.build==='compiling'){this.setState(x=>({prog:Math.min(1,x.prog+.035)}));}
+   if(!s.playing)return;
+   this.setState(x=>{let pos=x.pos+.04*x.bpm/60/4;if(x.loop&&pos>=16)pos=8;if(pos>=32)pos=0;return{pos,t:x.t+.04};});},40);
+ }
+ componentWillUnmount(){window.removeEventListener('pointermove',this._mv);window.removeEventListener('pointerup',this._up);window.removeEventListener('keydown',this._key);clearInterval(this._iv);clearTimeout(this._bt);}
+ startDrag(e,kind,i,j){e.preventDefault();e.stopPropagation();const s=this.state;let v0;
+  if(kind==='fader')v0=s.vol[i];else if(kind==='pan')v0=s.pan[i];else if(kind==='dk')v0=s.devK[i][j];else if(kind==='num')v0=s[i];else if(kind==='vel')v0=s.vel.slice();
+  this.drag={kind,i,j,x:e.clientX,y:e.clientY,v0};}
+ onMove(e){const d=this.drag;if(!d)return;const dx=e.clientX-d.x,dy=e.clientY-d.y,f=e.shiftKey?.1:1;
+  if(d.kind==='fader')this.setState(s=>{const vol=s.vol.slice();vol[d.i]=cl(d.v0-dy/300*f,0,1);return{vol,dirty:true};});
+  else if(d.kind==='pan')this.setState(s=>{const pan=s.pan.slice();pan[d.i]=cl(d.v0-dy/80*f,-1,1);return{pan};});
+  else if(d.kind==='dk')this.setState(s=>{const devK=s.devK.map(r=>r.slice());devK[d.i][d.j]=cl(d.v0-dy/160*f,0,1);return{devK};});
+  else if(d.kind==='num'){const R={steps:[4,32],pulses:[1,32],rot:[0,31],bpm:[40,240]}[d.i];const v=cl(Math.round(d.v0+dx/8*f),R[0],R[1]);
+   this.setState(s=>{const o={[d.i]:v};if(d.i==='steps'){o.pulses=Math.min(s.pulses,v);o.rot=Math.min(s.rot,v-1);}if(d.i==='pulses')o.pulses=Math.min(v,s.steps);if(d.i==='rot')o.rot=Math.min(v,s.steps-1);return o;});}
+  else if(d.kind==='vel')this.setState(s=>({vel:d.v0.map((v,k)=>s.sel3[k]?cl(Math.round(v-dy*.6),1,127):v)}));}
+ go(k){const P={work:{tab:'piano',sel:'lead1',file:0},gen:{tab:'gen',sel:'drums1',file:1},mix:{tab:'mix',sel:'lead1',file:0},flow:{tab:'dev',sel:'lead1',file:0},empty:{tab:'dev',sel:null,file:2}}[k];this.setState({screen:k,...P});}
+ doBuild(){if(this.state.build==='compiling')return;this.setState({build:'compiling',prog:0,ptab:1});clearTimeout(this._bt);
+  this._bt=setTimeout(()=>this.setState(s=>({build:s.fixed?'ok':'failed',prog:1,ptab:s.fixed?1:0})),1400);}
+ key(on,col){const b={height:27,display:'flex',alignItems:'center',justifyContent:'center',gap:6,fontSize:16,cursor:'pointer'};
+  return on?{...b,transform:'translateY(3px)',color:col||AC,background:'linear-gradient(#1a1e27,#232833)',textShadow:`0 0 8px ${col||AC}`,boxShadow:`inset 0 3px 7px rgba(0,0,0,.8),inset 0 0 0 1px color-mix(in srgb, ${col||AC} 45%, transparent)`}
+   :{...b,color:INK,background:'linear-gradient(#4a5161,#394050 52%,#2b3140)',boxShadow:'inset 0 1px 0 rgba(255,255,255,.32),0 3px 0 #14171e,0 5px 7px rgba(0,0,0,.5)'};}
+ small(on,col){const b={height:22,display:'flex',alignItems:'center',justifyContent:'center',font:"700 10px 'JetBrains Mono'",cursor:'pointer'};
+  return on?{...b,transform:'translateY(3px)',color:col,background:'linear-gradient(#1a1e27,#232833)',textShadow:`0 0 6px ${col}`,boxShadow:'inset 0 3px 7px rgba(0,0,0,.8)'}
+   :{...b,color:'#c3c9d8',background:'linear-gradient(#454c5d,#333947)',boxShadow:'inset 0 1px 0 rgba(255,255,255,.22),0 3px 0 #14171e,0 4px 5px rgba(0,0,0,.5)'};}
+ segs(labels,idx,pick,h){h=h||28;return labels.map((label,i)=>({label,onClick:()=>pick(i),style:i===idx?{height:h-3,display:'flex',alignItems:'center',justifyContent:'center',transform:'translateY(3px)',cursor:'pointer',font:"500 11px 'JetBrains Mono'",color:'#fff',background:'linear-gradient(#1a1e27,#232833)',boxShadow:`inset 0 3px 7px rgba(0,0,0,.8),inset 0 0 0 1px ${AC}`}
+  :{height:h-3,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',font:"500 11px 'JetBrains Mono'",color:'#c3c9d8',background:'linear-gradient(#454c5d,#333947)',boxShadow:'inset 0 1px 0 rgba(255,255,255,.22),0 3px 0 #14171e,0 4px 5px rgba(0,0,0,.5)'}}));}
+ knob(v,bip,lbl,txt,onDown){const ang=bip?v*135:-135+v*270;let g;
+  if(bip)g=v>=0?`conic-gradient(from 0deg, ${AC} 0 ${ang}deg, transparent 0)`:`conic-gradient(from ${ang}deg, ${AC} 0 ${-ang}deg, transparent 0)`;
+  else g=`conic-gradient(from 225deg, ${AC} 0 ${v*270}deg, transparent 0)`;
+  return{lbl,txt,onDown,arc:{position:'absolute',inset:0,borderRadius:'50%',background:g},ptr:{position:'absolute',inset:0,transform:`rotate(${ang}deg)`}};}
+ renderVals(){
+  const s=this.state,P=this.props,showMs=P.showMilestones??true,th=Number(P.trackHeight??76);
+  const flow=s.screen==='flow',empty=s.screen==='empty',anySolo=s.solo.some(x=>x);
+  const exp=()=>this.go(flow?'work':'flow');
+  const wrap=(area,show)=>({gridArea:area,display:show?'flex':'none',minWidth:0,minHeight:0,position:'relative'});
+  const G=(c,r,a)=>({display:'grid',width:'100%',height:'100%',boxSizing:'border-box',padding:6,gap:6,gridTemplateColumns:c,gridTemplateRows:r,gridTemplateAreas:a});
+  const layouts=[
+   {id:'1a',name:'Classic',tag:'Browser left, inspector right, bottom panel between them. Flow editor replaces arrangement + bottom.',
+    grid:G('320px minmax(0,1fr) 360px','50px minmax(0,1fr) 540px 26px',flow?'"t t t" "b f i" "b f i" "s s s"':'"t t t" "b a i" "b p i" "s s s"'),
+    aWrap:wrap('a',!flow),pWrap:wrap('p',!flow),fWrap:wrap('f',flow),onExpand:exp,expandLabel:'CLOSE EDITOR',expandIcon:'mdi mdi-close',
+    regions:['Transport 50 fixed. Status 26 fixed.','Browser 320 (min 240, max 420), splitter, double-click collapses. List scrolls Y.','Arrangement flex 1 (min 480 × 240). Track headers 280 fixed; timeline canvas scrolls X + Y; zoom redraws the canvas.','Bottom panel 540 (min 200, max 70% of height), splitter above, collapses to its tab row.','Inspector 360 (min 280, max 480), collapses to 0.','Flow editor (Edit source) takes the arrangement + bottom area; browser and inspector stay.'],
+    trade:['Most familiar DAW arrangement. The bottom panel loses 680 px of width to the two side columns, which is the mixer’s main cost at 1140 wide.'],
+    needs:['Splitters on both axes, nested (M3b).']},
+   {id:'1b',name:'Stacked sides',tag:'Browser over inspector in one left column; bottom panel spans the full window.',
+    grid:G('360px minmax(0,1fr)','50px minmax(0,1fr) 400px 540px 26px',flow?'"t t" "b f" "i f" "p p" "s s"':'"t t" "b a" "i a" "p p" "s s"'),
+    aWrap:wrap('a',!flow),pWrap:wrap('p',true),fWrap:wrap('f',flow),onExpand:exp,expandLabel:'CLOSE EDITOR',expandIcon:'mdi mdi-close',
+    regions:['Left column 360 (min 280, max 480): browser flex 1 over inspector 400, vertical splitter between.','Arrangement takes the full remaining width.','Bottom panel spans the window, 540 (min 200, max 70%), splitter above.','Flow editor replaces the arrangement only; the bottom panel stays under it as the musical or device preview.'],
+    trade:['Widest timeline and widest mixer. Browser list is shorter, and the inspector is far from the bottom-panel content it describes.'],
+    needs:['A splitter whose pane can be hidden while its siblings keep their sizes (arrangement swapped for editor).']},
+   {id:'1c',name:'Source beside',tag:'Bottom row splits: musical view left, Flow source right, always visible.',
+    grid:G(`300px minmax(0,1fr) ${flow?1460:900}px 340px`,`50px minmax(0,1fr) ${flow?800:560}px 26px`,'"t t t t" "b a a i" "b p f i" "s s s s"'),
+    aWrap:wrap('a',true),pWrap:wrap('p',true),fWrap:wrap('f',true),onExpand:exp,expandLabel:flow?'SHRINK':'EXPAND',expandIcon:flow?'mdi mdi-arrow-collapse':'mdi mdi-arrow-expand',
+    regions:['Browser 300, inspector 340, both collapsible.','Bottom row 560 (min 240): musical view flex 1 | Flow source 900 (min 560, max 60%), vertical splitter.','Source follows the selection: generator source for a generated clip, effect source for a Flow device.','Expand grows the source pane to 1460 and the bottom row to 800.'],
+    trade:['Flow is never more than a glance away, which suits generated clips. At 1140 wide the source pane must collapse by default, so this layout needs a narrow-window rule.'],
+    needs:['Splitter inside a splitter pane (vertical within horizontal).','A breakpoint rule: collapse the source pane below a window width.']}];
+  const clipObj=c=>{const t=TRACKS[c.tr],sel=s.sel===c.id,gen=c.gen&&!s.converted;const col=t.col;
+   const minis=[];
+   if(c.audio){for(let i=0;i<120;i++){const h=18+Math.abs(Math.sin(i*.37)*Math.sin(i*.11+1))*64;minis.push({position:'absolute',left:`${i/120*100}%`,width:`${.6/120*100}%`,top:`${50-h/2+8}%`,height:`${h*.8}%`,background:`color-mix(in srgb, ${col} 65%, #fff)`,opacity:.7});}}
+   else if(c.gen){const pat=eu(s.steps,s.pulses,s.rot),r=rng(s.seed);const n=c.l*16;for(let i=0;i<n;i++){const st=i%s.steps;if(pat[st])minis.push({position:'absolute',left:`${i/n*100}%`,width:'2px',top:'70%',height:'14%',background:col,opacity:gen?.6:1});const hat=eu(s.steps,Math.min(s.steps,11),0)[st];if(hat)minis.push({position:'absolute',left:`${i/n*100}%`,width:'2px',top:'34%',height:'10%',background:col,opacity:(gen?.35:.7)*(.5+r()*.5)});}}
+   else{const r=rng(c.s*7+c.tr*13+3);const n=c.l*3;for(let i=0;i<n;i++){if(r()<.25)continue;minis.push({position:'absolute',left:`${i/n*100}%`,width:`${(1+Math.floor(r()*2))/n*90}%`,top:`${28+r()*56}%`,height:'3px',background:`color-mix(in srgb, ${col} 75%, #fff)`});}}
+   return{name:c.name,gen:!!c.gen,badge:s.converted?'NOTES':'GEN',minis,
+    onClick:()=>this.setState({sel:c.id,tab:c.gen?'gen':(s.tab==='gen'?'piano':s.tab),screen:c.gen?'gen':(s.screen==='gen'?'work':s.screen),file:c.gen?1:s.file}),
+    style:{position:'absolute',left:`calc(${c.s/BARS*100}% + 1px)`,width:`calc(${c.l/BARS*100}% - 2px)`,top:3,bottom:3,boxSizing:'border-box',overflow:'hidden',cursor:'pointer',
+     background:gen?`repeating-linear-gradient(135deg, color-mix(in srgb, ${col} 18%, #12151c) 0 6px, color-mix(in srgb, ${col} 10%, #12151c) 6px 12px)`:`color-mix(in srgb, ${col} 20%, #12151c)`,
+     border:gen?`1px dashed color-mix(in srgb, ${col} 70%, #000)`:`1px solid color-mix(in srgb, ${col} 45%, #000)`,
+     boxShadow:sel?`0 0 0 2px ${AC}, inset 0 0 0 1px ${AC}`:'none'},
+    head:{position:'relative',zIndex:2,display:'flex',gap:6,alignItems:'center',height:16,padding:'0 6px',font:"600 10px/16px 'JetBrains Mono'",color:INK,whiteSpace:'nowrap',overflow:'hidden',background:sel?`color-mix(in srgb, ${col} 55%, #12151c)`:`color-mix(in srgb, ${col} 35%, #12151c)`}};};
+  const rows=[];
+  if(!empty)TRACKS.forEach((t,i)=>{const dim=s.mute[i]||(anySolo&&!s.solo[i]);
+   rows.push({isTrack:true,isAuto:false,name:t.name,dev:t.dev,icon:t.icon,
+    rowStyle:{display:'flex',height:th,flex:'none',borderBottom:'1px solid #000'},
+    chip:{width:4,alignSelf:'stretch',background:t.col,boxShadow:`0 0 6px color-mix(in srgb, ${t.col} 50%, transparent)`},
+    lane:{flex:1,position:'relative',minWidth:0,opacity:dim?.45:1,background:'repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 1px,transparent 1px calc(100% / 8)),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px calc(100% / 32)),#0c0f15'},
+    m:this.small(s.mute[i],WARN),s:this.small(s.solo[i],AC),r:this.small(s.arm[i],DANGER),
+    onM:()=>this.setState(x=>{const a=x.mute.slice();a[i]=!a[i];return{mute:a};}),
+    onS:()=>this.setState(x=>{const a=x.solo.slice();a[i]=!a[i];return{solo:a};}),
+    onR:()=>this.setState(x=>{const a=x.arm.slice();a[i]=!a[i];return{arm:a};}),
+    clips:CLIPS.filter(c=>c.tr===i).map(clipObj)});
+   if(i===3)rows.push({isTrack:false,isAuto:true,rowStyle:{display:'flex',height:62,flex:'none',borderBottom:'1px solid #000'},clips:[]});});
+  const AP=[[0,30],[8,30],[12,75],[16,75],[16,40],[24,85],[28,55],[32,55]];
+  let pts=[];AP.forEach(([b,v],k)=>{const x=b/BARS*1000,y=100-v;if(s.autoMode==='step'&&k>0)pts.push(`${x},${100-AP[k-1][1]}`);pts.push(`${x},${y}`);});
+  const autoDots=AP.map(([b,v])=>({position:'absolute',left:`calc(${b/BARS*100}% - 4px)`,top:`calc(6px + ${(100-v)/100} * (100% - 12px) - 4px)`,width:8,height:8,background:'#ffcc3d',boxShadow:'0 1px 0 #000'}));
+  const bars=[];for(let b=0;b<BARS;b+=4)bars.push({n:b+1,style:{position:'absolute',left:`${b/BARS*100}%`,top:0,bottom:0,paddingLeft:5,display:'flex',alignItems:'center',borderLeft:'1px solid #3a404d',color:DIM}});
+  const bar=Math.floor(s.pos)+1,beat=Math.floor((s.pos%1)*4)+1,tick=Math.floor(((s.pos*4)%1)*960);
+  const p3=n=>String(n).padStart(3,'0');
+  // piano roll
+  const prKeys=[],prRows=[];for(let p=HI;p>=LO;p--){const blk=[1,3,6,8,10].includes(p%12);
+   prKeys.push({label:p%12===0?'C'+(Math.floor(p/12)-1):'',style:{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'flex-end',paddingRight:6,font:"400 9px 'JetBrains Mono'",color:'#14171e',background:blk?'linear-gradient(90deg,#1a1d24,#2b303a 60%)':'linear-gradient(90deg,#aeb5c6,#e3e7ef)',borderBottom:'1px solid #0a0c11',marginRight:blk?18:0}});
+   prRows.push({flex:1,minHeight:0,background:blk?'#0b0e13':'#11151d',borderBottom:p%12===0?'1px solid #2a2f39':'1px solid #0a0c11'});}
+  const col=TRACKS[3].col,selN=Object.keys(s.sel3).filter(k=>s.sel3[k]).map(Number);
+  const prNotes=NOTES.map((n,k)=>{const p=n.p+s.shift,sel=!!s.sel3[k];if(p<LO||p>HI)return null;return{onClick:()=>this.setState(x=>({sel3:{...x.sel3,[k]:!x.sel3[k]}})),
+   style:{position:'absolute',boxSizing:'border-box',cursor:'pointer',left:`calc(${n.s/64*100}% + 1px)`,width:`calc(${n.l/64*100}% - 2px)`,top:`calc(${(HI-p)/NR*100}% + 1px)`,height:`calc(${100/NR}% - 2px)`,
+    background:sel?'linear-gradient(#e2edf9,#a9c6e8 55%,#7e9fc6)':`linear-gradient(color-mix(in srgb, ${col} 70%, #fff), ${col} 55%, color-mix(in srgb, ${col} 60%, #000))`,
+    filter:sel?'none':`brightness(${.55+.45*s.vel[k]/127})`,boxShadow:sel?'0 0 0 1px #fff, 0 1px 3px #000':'inset 0 1px 0 rgba(255,255,255,.4), 0 1px 2px rgba(0,0,0,.7)'}};}).filter(Boolean);
+  const prVel=NOTES.map((n,k)=>{const sel=!!s.sel3[k];return{stem:{position:'absolute',left:`calc(${n.s/64*100}% + 2px)`,bottom:0,width:2,height:`${s.vel[k]/127*100}%`,background:sel?AC:`color-mix(in srgb, ${col} 55%, #12151c)`},
+   cap:{position:'absolute',left:-3,top:-3,width:8,height:6,background:sel?AC:col,boxShadow:sel?`0 0 6px ${AC}`:'none'}};});
+  const pin=s.pos>=8&&s.pos<12;
+  const prPlay={position:'absolute',top:0,bottom:0,width:2,left:`${(s.pos-8)/4*100}%`,background:'#fff',display:pin?'block':'none',pointerEvents:'none'};
+  const sv=selN.length?Math.round(selN.reduce((a,k)=>a+s.vel[k],0)/selN.length):'—';
+  // generator
+  const pat=eu(s.steps,s.pulses,s.rot),hat=eu(s.steps,Math.min(s.steps,11),0),r=rng(s.seed);
+  const cur=s.playing&&s.pos>=8&&s.pos<24?Math.floor((s.pos-8)*16)%s.steps:-1;
+  const cell=(on,v,i)=>({flex:1,minWidth:0,boxSizing:'border-box',background:on?`color-mix(in srgb, #ffcc3d ${Math.round(35+v/127*65)}%, #1a1e27)`:'#0c0f15',boxShadow:on?'inset 0 1px 0 rgba(255,255,255,.35), 0 2px 0 #14171e':'inset 0 1px 2px #000, inset 0 0 0 1px #151922',outline:i===cur?`2px solid ${AC}`:'none',outlineOffset:'-2px'});
+  const hv=hat.map(()=>60+Math.floor(r()*36));
+  const genRows=[{name:'HAT',cells:hat.map((o,i)=>cell(o,hv[i],i))},{name:'SNARE',cells:pat.map((_,i)=>cell(i===Math.round(s.steps/4)||i===Math.round(s.steps*3/4),100,i))},{name:'KICK',cells:pat.map((o,i)=>cell(o,112,i))}];
+  const nCount=(pat.filter(Boolean).length+hat.filter(Boolean).length+2)*Math.round(256/s.steps);
+  // mixer
+  const SC=[6,0,-6,-12,-24,-48];
+  const scale=SC.map(d=>{const f=d2f(d);return{t:d>0?'+'+d:String(d),style:{position:'absolute',right:0,top:`calc(7px + ${(1-f)*100}% - ${(1-f)*14}px)`,transform:'translateY(-50%)',font:"400 9px/9px 'JetBrains Mono'",color:d===0?DIM:MUTE}};});
+  const strips=[...TRACKS,{name:'MASTER',col:AC}].map((t,i)=>{const master=i===6,p=s.vol[i];
+   const sil=!s.playing||s.mute[i]||(!master&&anySolo&&!s.solo[i]);
+   const base=sil?0:cl((.55+.3*Math.abs(Math.sin(s.t*(2.1+i*.7)+i)))*(p/.79),0,1);
+   const lv=v=>({position:'absolute',inset:1,background:'linear-gradient(0deg,#48c07a 0 50%,#ffb020 50% 71%,#ff3b4e 71% 100%)',clipPath:`inset(${(1-v)*100}% 0 0 0)`});
+   const kn=this.knob(s.pan[i],true);
+   return{name:t.name,notMaster:!master,
+    box:{width:master?118:104,flex:'none',boxSizing:'border-box',display:'flex',flexDirection:'column',gap:8,padding:8,background:'linear-gradient(#2c313b,#1e222a)',boxShadow:'inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px #0d0f14,0 2px 6px rgba(0,0,0,.45)'},
+    chip:{width:8,height:8,background:t.col,boxShadow:`0 0 5px ${t.col}`},arc:kn.arc,ptr:kn.ptr,
+    panTxt:Math.abs(s.pan[i])<.005?'C':(s.pan[i]<0?'L':'R')+Math.round(Math.abs(s.pan[i])*100),
+    onPan:e=>this.startDrag(e,'pan',i),onFader:e=>this.startDrag(e,'fader',i),
+    m:this.small(s.mute[i],WARN),s:this.small(s.solo[i],AC),r:this.small(s.arm[i],DANGER),
+    onM:()=>this.setState(x=>{const a=x.mute.slice();a[i]=!a[i];return{mute:a};}),
+    onS:()=>this.setState(x=>{const a=x.solo.slice();a[i]=!a[i];return{solo:a};}),
+    onR:()=>this.setState(x=>{const a=x.arm.slice();a[i]=!a[i];return{arm:a};}),
+    cap:{position:'absolute',left:0,width:26,height:14,top:`calc(${(1-p)*100}% - ${(1-p)*14}px)`,background:'linear-gradient(180deg,#e9edf6,#aeb5c6 45%,#7c8397 55%,#cfd5e2)',boxShadow:'0 3px 6px rgba(0,0,0,.75),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(0,0,0,.4)'},
+    lvL:lv(base*(s.pan[i]>0?1-s.pan[i]*.5:1)),lvR:lv(base*(s.pan[i]<0?1+s.pan[i]*.5:1)),
+    clipLed:{width:16,height:5,cursor:'pointer',background:s.clip[i]?DANGER:'#2a1216',boxShadow:s.clip[i]?`0 0 6px ${DANGER}`:'inset 0 1px 2px #000'},
+    onClip:()=>this.setState(x=>{const a=x.clip.slice();a[i]=false;return{clip:a};}),db:fmtDb(fDb(p))};});
+  // devices
+  const K=s.devK;
+  const fk=[['CUTOFF',v=>Math.round(40*Math.pow(450,v))+'Hz'],['RESO',v=>v.toFixed(2)],['DRIVE',v=>(v*24).toFixed(1)+'dB'],['MIX',v=>Math.round(v*100)+'%']];
+  const DEV=[{name:'Saw Lead',type:'INSTRUMENT · FLOW',flow:false,preset:'Night Drive',k:[['CUTOFF',v=>Math.round(40*Math.pow(450,v))+'Hz'],['RES',v=>v.toFixed(2)],['ATTACK',v=>Math.round(v*400)+'ms'],['RELEASE',v=>Math.round(v*2000)+'ms']]},
+   {name:'LowpassDrive',type:'EFFECT · FLOW · '+(s.build==='ok'?'v13':'v12'),flow:true,preset:'Init',k:fk},
+   {name:'Delay',type:'EFFECT · BUILT-IN',flow:false,preset:'1/8 dotted',k:[['TIME',v=>(v*1000|0)+'ms'],['FEEDBK',v=>Math.round(v*100)+'%'],['MIX',v=>Math.round(v*100)+'%'],['TONE',v=>v.toFixed(2)]]}];
+  const devices=empty?[]:DEV.map((d,i)=>({name:d.name,type:d.type,flow:d.flow,preset:d.preset,onBypass:()=>this.setState(x=>{const a=x.bypass.slice();a[i]=!a[i];return{bypass:a};}),
+   pwr:{...this.key(false),fontSize:15,color:s.bypass[i]?MUTE:OK,textShadow:s.bypass[i]?'none':`0 0 6px ${OK}`},
+   card:{width:300,flex:'none',boxSizing:'border-box',display:'flex',flexDirection:'column',gap:6,padding:10,opacity:s.bypass[i]?.55:1,background:'linear-gradient(#2c313b,#1e222a)',boxShadow:d.flow&&s.screen==='flow'?`inset 0 0 0 1px ${AC},0 2px 6px rgba(0,0,0,.45)`:'inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px #0d0f14,0 2px 6px rgba(0,0,0,.45)'},
+   knobs:d.k.map(([l,f],j)=>this.knob(K[i][j],false,l,f(K[i][j]),e=>this.startDrag(e,'dk',i,j)))}));
+  const flowKnobs=fk.map(([l,f],j)=>this.knob(K[1][j],false,l,f(K[1][j]),e=>this.startDrag(e,'dk',1,j)));
+  // flow code
+  const err=s.file===0&&!s.fixed?'cutof':null;
+  const src=FILES[s.file].src.map(l=>s.fixed?l.replace('cutof,','cutoff,'):l);
+  const codeLines=src.map((l,k)=>{const isErr=s.file===0&&!s.fixed&&k===9,isW=s.file===0&&k===10;return{n:k+1,toks:tok(l,err),
+   row:{display:'flex',height:18,lineHeight:'18px',background:isErr?'rgba(255,59,78,.08)':(k===9?'rgba(255,255,255,.035)':'transparent')},
+   gut:{width:44,flex:'none',textAlign:'right',paddingRight:10,boxSizing:'border-box',color:isErr?DANGER:(isW?WARN:'#454b59')},
+   hasMsg:isErr||isW,msg:isErr?"    E104 unknown name 'cutof'":"    W031 'mix' shadows mix()",msgStyle:{color:isErr?DANGER:WARN,fontStyle:'italic'}};});
+  const genSrc=FILES[1].src.map((l,k)=>({n:k+1,toks:tok(l)}));
+  const B=s.build;
+  const chip=(c,bg)=>({height:24,padding:'0 10px',display:'flex',gap:6,alignItems:'center',color:c,background:bg,boxShadow:'inset 0 0 0 1px rgba(0,0,0,.6)'});
+  const bc={edited:[chip(WARN,'#2a2416'),'mdi mdi-pencil','v13 EDITED · NOT BUILT'],compiling:[chip(AC,'#1a2230'),'mdi mdi-cog','COMPILING v13'],failed:[chip(DANGER,'#2a1418'),'mdi mdi-alert-circle','BUILD FAILED · v12 STILL PLAYING'],ok:[chip(OK,'#142a1e'),'mdi mdi-check-circle','v13 RUNNING']}[B];
+  const problems=[];
+  if(!s.fixed)problems.push({icon:'mdi mdi-alert-circle',iconStyle:{color:DANGER,fontSize:15},code:'E104',msg:"unknown name 'cutof'. Did you mean 'cutoff'?",loc:'lowpass_drive.flow:10:28',hasFix:true});
+  problems.push({icon:'mdi mdi-alert',iconStyle:{color:WARN,fontSize:15},code:'W031',msg:"param 'mix' shadows the built-in mix()",loc:'lowpass_drive.flow:11:14',hasFix:false});
+  const OUT={edited:['$ flow build lowpass_drive.flow','not built since last edit'],compiling:['$ flow build lowpass_drive.flow','parsing… ok','checking…'],failed:['$ flow build lowpass_drive.flow','parsing… ok','checking… 1 error, 1 warning','build failed · v12 keeps running on LEAD slot 2'],ok:['$ flow build lowpass_drive.flow','parsing… ok','checking… 0 errors, 1 warning','compiled v13 in 0.84 s','swapped LEAD slot 2 at bar boundary · undo: Ctrl+Z']}[B];
+  const outLines=OUT.map((t,k)=>({t,s:{height:20,lineHeight:'20px',color:t.startsWith('build failed')?DANGER:t.startsWith('compiled')?OK:(k===0?INK:DIM)}}));
+  const tabStyle=on=>({display:'flex',gap:6,alignItems:'center',padding:'0 14px',cursor:'pointer',color:on?INK:DIM,boxShadow:on?`inset 0 -2px 0 ${AC}`:'none',marginBottom:-2,whiteSpace:'nowrap'});
+  // browser
+  const BR=[[['Saw Lead','FLOW','mdi mdi-sine-wave'],['Flow Sub','FLOW','mdi mdi-sine-wave'],['Glass Pad','FLOW','mdi mdi-sine-wave'],['Flow Kick','FLOW','mdi mdi-sine-wave'],['FM Bell','FLOW','mdi mdi-sine-wave'],['Sampler','BUILT-IN','mdi mdi-piano']],
+   [['LowpassDrive','FLOW','mdi mdi-tune-vertical'],['Bitcrush','FLOW','mdi mdi-tune-vertical'],['Delay','BUILT-IN','mdi mdi-tune-vertical'],['Plate Reverb','BUILT-IN','mdi mdi-tune-vertical'],['Compressor','BUILT-IN','mdi mdi-tune-vertical'],['EQ 3-band','BUILT-IN','mdi mdi-tune-vertical']],
+   [['Euclid Kit','RHYTHM','mdi mdi-auto-fix'],['Arpeggiator','CHORD','mdi mdi-auto-fix'],['Progression','CHORD','mdi mdi-auto-fix'],['Random Walk','MELODY','mdi mdi-auto-fix'],['Invert','TRANSFORM','mdi mdi-swap-vertical'],['Reverse','TRANSFORM','mdi mdi-swap-horizontal']],
+   [['Saw Lead / Night Drive','PRESET','mdi mdi-tune'],['Saw Lead / Init','PRESET','mdi mdi-tune'],['Glass Pad / Wide','PRESET','mdi mdi-tune'],['Delay / 1/8 dotted','PRESET','mdi mdi-tune']],
+   [['vox_take3.wav','0:24','mdi mdi-waveform'],['vox_take2.wav','0:22','mdi mdi-waveform'],['pad_bounce.wav','1:02','mdi mdi-waveform'],['night_drive_v2.mid','MIDI','mdi mdi-midi']]];
+  const bitems=BR[s.cat].map(([name,meta,icon],k)=>({name,meta,icon,onClick:()=>this.setState({brow:k}),style:{height:30,flex:'none',display:'flex',gap:8,alignItems:'center',padding:'0 10px',cursor:'pointer',background:k===s.brow?'linear-gradient(#3a4a60,#2c3a4c)':'transparent',boxShadow:k===s.brow?`inset 0 1px 0 rgba(255,255,255,.15), inset 0 0 0 1px ${AC}`:'none'}}));
+  // inspector
+  const cObj=CLIPS.find(c=>c.id===s.sel);
+  let selKind='CLIP',selName='LEAD A',selRows=[],selChip={width:8,height:8,background:col};
+  if(empty){selKind='PROJECT';selName='untitled.flow';selChip={width:8,height:8,background:MUTE};selRows=[{k:'SAMPLE RATE',v:'48 kHz'},{k:'LENGTH',v:'empty'},{k:'AUTOSAVE',v:'every 2 min'}];}
+  else if(cObj&&cObj.gen){selKind='GENERATED CLIP';selName='EUCLID · DRUMS';selChip={width:8,height:8,background:'#ffcc3d'};selRows=[{k:'SOURCE',v:'drums.flow'},{k:'SETTINGS',v:`${s.steps} steps · ${s.pulses} pulses · rot ${s.rot}`},{k:'SEED',v:s.seed+(s.seedLock?' · locked':'')},{k:'STATE',v:s.converted?'converted to notes':'generated · notes read-only'}];}
+  else if(cObj){selKind='CLIP';selName=cObj.name;selChip={width:8,height:8,background:TRACKS[cObj.tr].col};selRows=[{k:'TRACK',v:TRACKS[cObj.tr].name},{k:'START',v:'bar '+(cObj.s+1)},{k:'LENGTH',v:cObj.l+' bars'},{k:'NOTES',v:cObj.tr===3?`${NOTES.length} · ${selN.length} selected`:'—'}];}
+  const ctxRows=[{k:'TEMPO',v:s.bpm+' BPM',src:'PROJECT'},{k:'KEY',v:'A minor',src:empty?'PROJECT':'LOCAL'},{k:'TUNING',v:'12-TET',src:'PROJECT'}].map(x=>({...x,srcStyle:{width:64,font:"500 9px/13px 'JetBrains Mono'",letterSpacing:1,color:x.src==='LOCAL'?WARN:MUTE}}));
+  const H=['New project','Add track LEAD','Draw 20 notes','Duplicate LEAD A','Generate EUCLID','Velocity · 3 notes'];
+  const history=H.map((t,k)=>({t,style:{height:26,flex:'none',display:'flex',gap:8,alignItems:'center',padding:'0 10px',color:k>s.hist?MUTE:INK,background:k===s.hist?'linear-gradient(#3a4a60,#2c3a4c)':'transparent',boxShadow:k===s.hist?`inset 0 0 0 1px ${AC}`:'none',fontStyle:k>s.hist?'italic':'normal'}}));
+  const scr=[['work','Workspace'],['gen','Generated clip'],['mix','Mixer'],['flow','Flow editor'],['empty','Empty project']];
+  const tabs=[['piano','PIANO ROLL','mdi mdi-piano'],['gen','GENERATOR','mdi mdi-auto-fix'],['dev','DEVICES','mdi mdi-tune-vertical'],['mix','MIXER','mdi mdi-tune-vertical-variant']].map(([k,label,icon])=>({label,icon,style:tabStyle(s.tab===k),onClick:()=>this.setState({tab:k})}));
+  return{layouts,rows,bars,showMs,empty,notEmpty:!empty,
+   screens:scr.map(([k,label])=>({label,onClick:()=>this.go(k),style:{...this.key(s.screen===k),height:37,padding:'0 18px',font:"500 14px 'JetBrains Mono'"}})),
+   projName:empty?'untitled.flow':'night_drive.flow',dirty:s.dirty,clock:`${p3(bar)} · ${beat} · ${p3(tick)}`,bpm:s.bpm.toFixed(1),
+   playFace:this.key(s.playing,OK),playIcon:s.playing?'mdi mdi-pause':'mdi mdi-play',recFace:this.key(s.rec,DANGER),loopFace:this.key(s.loop),metroFace:this.key(s.metro),
+   onPlay:()=>this.setState(x=>({playing:!x.playing})),onStop:()=>this.setState({playing:false,pos:8}),onRewind:()=>this.setState({pos:0}),onRec:()=>this.setState(x=>({rec:!x.rec})),
+   onLoop:()=>this.setState(x=>({loop:!x.loop})),onMetro:()=>this.setState(x=>({metro:!x.metro})),onBpm:e=>this.startDrag(e,'num','bpm'),
+   onUndo:()=>this.setState(x=>({hist:Math.max(0,x.hist-1)})),onRedo:()=>this.setState(x=>({hist:Math.min(H.length-1,x.hist+1)})),onSave:()=>this.setState({dirty:false}),
+   beatDots:[0,1,2,3].map(i=>{const on=s.playing&&beat-1===i;return{width:9,height:9,background:on?(i===0?AC:'#48607e'):'#232833',boxShadow:on?`0 0 8px ${i===0?AC:'#48607e'}`:'inset 0 1px 2px #000'};}),
+   bsegs:this.segs(['INST','FX','GEN','PRST','FILE'],s.cat,i=>this.setState({cat:i,brow:0})),bitems,addTarget:empty?'NEW TRACK':'LEAD',
+   arrSnap:this.segs(['BAR','1/4','1/8','1/16'],s.arrSnap,i=>this.setState({arrSnap:i})),arrInfo:empty?'':'32 bars · 1:02 · loop 9–16',trackCount:empty?'NO TRACKS':'6 TRACKS',
+   onAddTrack:()=>this.go('work'),onGoGen:()=>this.go('gen'),recents:[{n:'night_drive.flow',d:'today'},{n:'sketch_0912.flow',d:'12 Sep'},{n:'tape_loops.flow',d:'2 Sep'}],
+   loopStyle:{position:'absolute',top:0,bottom:0,left:`${8/BARS*100}%`,width:`${8/BARS*100}%`,display:s.loop?'block':'none',background:'rgba(111,143,181,.28)',boxShadow:`inset 2px 0 0 ${AC}, inset -2px 0 0 ${AC}`},
+   playhead:{position:'absolute',top:0,bottom:0,width:2,left:`${s.pos/BARS*100}%`,background:'#fff',boxShadow:'0 0 6px rgba(169,198,232,.6)'},
+   autoSegs:this.segs(['LIN','STEP'],s.autoMode==='lin'?0:1,i=>this.setState({autoMode:i?'step':'lin'}),22),autoPts:pts.join(' '),autoDots,
+   tabs,tabPiano:s.tab==='piano',tabGen:s.tab==='gen',tabDev:s.tab==='dev',tabMix:s.tab==='mix',
+   panelInfo:{piano:'LEAD · LEAD A',gen:'DRUMS · EUCLID',dev:empty?'':'LEAD · 3 DEVICES',mix:'6 TRACKS + MASTER'}[s.tab],
+   prClip:cObj&&!cObj.gen?cObj.name:'LEAD A',prSnap:this.segs(['1/4','1/8','1/16','1/32'],s.prSnap,i=>this.setState({prSnap:i})),
+   onQuantize:()=>{},transp:[['OCT−',-12],['−1',-1],['+1',1],['OCT+',12]].map(([label,d])=>({label,onClick:()=>this.setState(x=>({shift:cl(x.shift+d,-12,12)}))})),
+   selInfo:`${selN.length} of ${NOTES.length} selected · click notes to select · drag the velocity lane`,selVel:sv,prKeys,prRows,prNotes,prVel,prPlay,onVel:e=>this.startDrag(e,'vel'),
+   genSrc,genRows,genCount:nCount+' notes over 16 bars',steps:s.steps,pulses:s.pulses,rot:s.rot,seed:s.seed,
+   genMid:{flex:1.4,minWidth:0,display:'flex',flexDirection:'column',gap:6,opacity:s.converted?.45:1,pointerEvents:s.converted?'none':'auto'},
+   onSteps:e=>this.startDrag(e,'num','steps'),onPulses:e=>this.startDrag(e,'num','pulses'),onRot:e=>this.startDrag(e,'num','rot'),
+   lockFace:{...this.key(s.seedLock),fontSize:15},lockIcon:s.seedLock?'mdi mdi-lock':'mdi mdi-lock-open-variant',onSeedLock:()=>this.setState(x=>({seedLock:!x.seedLock})),
+   varFace:{...this.key(false),padding:'0 14px',fontSize:12,opacity:s.seedLock?.45:1,boxShadow:s.seedLock?'none':this.key(false).boxShadow},
+   onVariation:()=>{if(!s.seedLock)this.setState(x=>({seed:1000+Math.floor(Math.random()*8999)}));},
+   converted:s.converted,notConverted:!s.converted,onConvert:()=>this.setState({converted:true}),onUnconvert:()=>this.setState({converted:false}),onOpenPiano:()=>this.setState({tab:'piano',sel:'lead1',screen:'work'}),
+   onOpenGenSource:()=>this.setState({screen:'flow',file:1}),onOpenFxSource:()=>this.setState({screen:'flow',file:0}),
+   devices,strips,scale,flowKnobs,
+   files:FILES.map((f,k)=>({name:f.name,dirty:k===0&&B!=='ok',style:tabStyle(s.file===k),onClick:()=>this.setState({file:k})})),
+   codeLines,buildChip:bc[0],buildIcon:bc[1],buildText:bc[2],building:B==='compiling',buildProg:{position:'absolute',left:2,top:2,bottom:2,width:`calc(${s.prog*100}% - 4px)`,background:'linear-gradient(90deg,#a9c6e8,#6f8fb5)'},
+   onBuild:()=>this.doBuild(),onCancel:()=>{clearTimeout(this._bt);this.setState({build:'edited'});},onQuickFix:()=>this.setState({fixed:true,build:'edited'}),
+   ptabs:[['PROBLEMS · '+problems.length,0],['OUTPUT',1]].map(([label,k])=>({label,onClick:()=>this.setState({ptab:k}),style:{...tabStyle(s.ptab===k),font:"500 10px 'JetBrains Mono'",letterSpacing:1}})),
+   showProblems:s.ptab===0,showOutput:s.ptab===1,problems,noProblems:problems.length===0,outLines,
+   pvTitle:'DEVICE PREVIEW · LOWPASSDRIVE',runVer:B==='ok'?'v13':'v12',srcVer:'v13',srcNote:B==='ok'?'built · matches running':(B==='failed'?'failed to build':'edited, not built'),
+   srcLed:{width:7,height:7,background:B==='ok'?OK:(B==='failed'?DANGER:WARN),boxShadow:`0 0 6px ${B==='ok'?OK:(B==='failed'?DANGER:WARN)}`},
+   selKind,selName,selRows,selChip,ctxRows,history,
+   idleLed:{width:7,height:7,background:s.playing?OK:'#232833',boxShadow:s.playing?`0 0 6px ${OK}`:'inset 0 1px 2px #000'},idleText:s.playing?'PLAYING · DRAWING FRAMES':'IDLE · NO FRAMES',
+   dspBar:{position:'absolute',left:2,top:2,bottom:2,width:`calc(${s.playing?22:3}% - 4px)`,background:'linear-gradient(90deg,#a9c6e8,#6f8fb5)'},dspTxt:(s.playing?22:3)+'%',
+   lastUndo:'undo: '+H[s.hist],
+   specKeys:['Tab: transport → browser search → browser list → track list → arrangement → bottom tabs → bottom content → inspector.','Space play/pause · R record · L loop · C metronome · Home rewind','Ctrl+Z / Ctrl+Shift+Z undo/redo (one drag = one step)','Ctrl+S save · Ctrl+E export · Ctrl+F browser search','Ctrl+D duplicate · S split at playhead · Del delete · Q quantize','↑/↓ transpose selection, Ctrl+↑/↓ octave','Alt+1…4 bottom tabs · Ctrl+B build Flow · F8 next problem · Esc cancel build or close editor'],
+   specMusic:['Tier A only on clickable controls: play key LED, record LED, beat dots, primary Export glow, LEDs on device power keys.','Tier B: logo glow and beat dots in the transport.','Generator preview highlights the current step with light only. Playhead moves with time, not the beat.','No tier C anywhere: this is an editor.'],
+   specNeeds:['Track colours as theme data tokens (used on chips, clips, notes).','Drag clips between tracks; drag browser items onto tracks.','List filtering for browser search (text field + list today).','Small latching keycap size (26 × 22) for M/S/R in dense headers.','Canvas text clipping for clip names.','Resize cursors over splitters; grab cursor for device reorder.','Annotation layer in the code editor for inline diagnostic text (M3c).']};
+ }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+use "@flowDaw"
+
+Note: Each prepared voice receives pitch Hz, gate and velocity on buses 0, 1 and 2.
+proc build (Dict<String, Double>: context)
+    AudioGraph pitch = (dawInput "pitch" 0)
+    AudioGraph gate = (dawInput "gate" 1)
+    AudioGraph velocity = (dawInput "velocity" 2)
+    AudioGraph envelope = (dawAdsr "envelope" gate 5ms 80ms 0.6 120ms)
+    AudioGraph saw = (dawSawOsc "oscillator" pitch)
+    AudioGraph cutoff = (dawMix "cutoff" (dawValue "baseCutoff" 500.0) (dawMultiply "sweep" envelope (dawValue "depth" 2500.0)))
+    AudioGraph tone = (dawLowPass "filter" saw cutoff)
+    AudioGraph shaped = (dawMultiply "shaped" tone envelope)
+    AudioGraph output = (dawMultiply "output" shaped velocity)
+    DawInstrument synth = (dawGraphInstrument (dawGain "level" output 0.25) 16)
+    (dawResult "instrument" synth)
+end proc

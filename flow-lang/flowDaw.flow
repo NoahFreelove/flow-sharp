@@ -1,0 +1,146 @@
+Note: DAW authoring API v1. Import exposes helpers; it never starts generation or writes MIDI.
+use "@std"
+
+Note: Return a named score layer directly from the descriptor's entry procedure.
+Note: More layers can be added with the standard immutable dict set/merge operations.
+internal proc dawResult (Song: song)
+internal proc dawResult (String: layer, Song: song)
+
+Note: Immutable versioned audio graph authoring; no device opens during construction.
+internal proc dawInput (String: id, Int: bus)
+internal proc dawDevice (String: id, String: device, Int: version, AudioGraph: input, Dict<String, Double>: parameters, Bool: bypass)
+internal proc dawGain (String: id, AudioGraph: input, Double: gain)
+internal proc dawPan (String: id, AudioGraph: input, Double: pan)
+internal proc dawDrive (String: id, AudioGraph: input, Double: drive)
+internal proc dawMix (String: id, AudioGraph: left, AudioGraph: right)
+internal proc dawSum (String: id, AudioGraphs: inputs)
+
+Note: Offline buffer preview uses the same prepared kernels as live processing.
+internal proc dawProcess (AudioGraph: graph, Buffer: input)
+internal proc dawProcess (AudioGraph: graph, Buffers: inputs)
+
+Note: Version-1 tuned-note sine instrument. Voice/envelope edits require preparation.
+internal proc dawSine (Int: voices, Millisecond: attack, Millisecond: release)
+
+Note: Copies a rendered/processed stereo buffer into an immutable audio source.
+internal proc dawAudio (Buffer: buffer)
+Note: Source-frame gain envelope; frame values are strings for exact 64-bit identity.
+internal proc dawClipEnvelope (DawClip: clip, Double: gain, String: startFrame, String: lengthFrames, String: fadeInFrames, String: fadeOutFrames)
+
+Note: Named heterogeneous results; duplicate names within a role are rejected.
+internal proc dawResult (String: layer, DawAudio: audio)
+internal proc dawResult (String: layer, AudioGraph: graph)
+internal proc dawResult (String: layer, DawInstrument: instrument)
+internal proc dawCombine (DawResult: left, DawResult: right)
+internal proc dawCombine (Dict<String, Song>: left, DawResult: right)
+internal proc dawCombine (DawResult: left, Dict<String, Song>: right)
+internal proc dawCombine (Dict<String, Song>: left, Dict<String, Song>: right)
+
+Note: Finite delay with 1–16 echoes; time/repeat edits require preparation. Wet and feedback ramp.
+internal proc dawDelay (String: id, AudioGraph: input, Millisecond: time, Int: repeats, Double: feedback, Double: wet)
+
+Note: One-shot stereo sampler; rootHz is the recorded pitch. Linear interpolation; no loop.
+internal proc dawSampler (DawAudio: sample, Double: rootHz, Int: voices, Millisecond: attack, Millisecond: release)
+
+Note: Musical automation with stable lane/graph IDs and quarter-to-value points. True means linear.
+internal proc dawCurve (String: id, String: graphBinding, String: node, String: parameter, Dict<Double, Double>: points, Bool: linear)
+Note: Preview explicit curves against a quarter-to-BPM map through the same project lowering path.
+internal proc dawProcess (AudioGraph: graph, Buffer: input, DawAutomations: curves, Dict<Double, Double>: tempoMap)
+internal proc dawProcess (AudioGraph: graph, Buffers: inputs, DawAutomations: curves, Dict<Double, Double>: tempoMap)
+
+Note: Restore detached project resources without executing saved code or opening asset files.
+internal proc dawProjectSnapshot (String: snapshot)
+Note: Captured build context. Info strings preserve exact 64-bit revisions/budget ticks. Tempo keys are quarters; meter keys are one-based bars.
+internal proc dawContextInfo ()
+Note: Resolve captured host PCM by project asset identity, never a file path.
+internal proc dawAssetSample (String: assetId)
+internal proc dawTempoMap ()
+internal proc dawMeterNumerators ()
+internal proc dawMeterDenominators ()
+Note: Portable offline export defaults; hardware sessions still use their negotiated format.
+internal proc dawRenderSettings (DawProject: project, Int: sampleRate, Int: blockFrames)
+Note: Persist the selected project sample identities for an ordinary generator's future builds.
+internal proc dawAssetGrants (DawProject: project, String: sourceId, Strings: assetIds)
+Note: Captured tuning text, not paths. Empty Scala/keyboardMap selects the named system; accepted notes change only on explicit regeneration.
+internal proc dawProjectTuning (DawProject: project, String: system, String: key, String: scala, String: keyboardMap)
+internal proc dawPlaceScore (DawProject: project, String: id, String: track, String: source, String: layer, Double: anchor, Double: offset, Double: length, Double: nudgeMs)
+Note: Audio source offsets/lengths use decimal strings for exact 64-bit frame counts.
+internal proc dawPlaceAudio (DawProject: project, String: id, String: track, String: source, Double: anchor, String: offsetFrames, String: lengthFrames, Int: sampleRate, Double: nudgeMs)
+
+Note: Detached clips and one-pass arrangement construction. dawArrange replaces the clip list.
+internal proc dawScoreClip (String: id, String: track, String: source, String: layer, Double: anchor, Double: offset, Double: length, Double: nudgeMs)
+internal proc dawAudioClip (String: id, String: track, String: source, Double: anchor, String: offsetFrames, String: lengthFrames, Int: sampleRate, Double: nudgeMs)
+internal proc dawArrange (DawProject: project, DawClips: clips)
+internal proc dawRelativeOffsetMs (DawClip: clip, Double: offsetMs)
+Note: Prefer typed time; the Double overload is retained for existing generated code.
+internal proc dawRelativeOffsetMs (DawClip: clip, Millisecond: offset)
+internal proc dawRelativeOffsetMs (DawClip: clip, Second: offset)
+internal proc dawSetOffsetMs (DawClip: clip, Millisecond: offset)
+internal proc dawSetOffsetMs (DawClip: clip, Second: offset)
+Note: Step tempo keyed by quarters; meter numerator/denominator maps share one-based bar keys. Clip windows and nudge are preserved.
+internal proc dawProjectTiming (DawProject: project, Dict<Double, Double>: tempo, Dict<Int, Int>: numerators, Dict<Int, Int>: denominators)
+internal proc dawAlignToBar (DawProject: project, DawClip: clip, Int: bar)
+internal proc dawSplitScore (DawClip: clip, Double: localQuarter, String: rightId)
+internal proc dawSplitAudio (DawProject: project, DawClip: clip, String: localFrame, String: rightId)
+Note: Trim moves the left edge by a signed source delta and sets the new length, preserving surviving event times and nudge.
+internal proc dawTrimScore (DawClip: clip, Double: startDeltaQuarters, Double: lengthQuarters)
+internal proc dawTrimAudio (DawProject: project, DawClip: clip, String: startDeltaFrames, String: lengthFrames)
+Note: Repeat returns additional linked copies, excluding the original, with caller-supplied distinct IDs. Audio repeats use sample duration through the tempo map.
+internal proc dawRepeatScore (DawClip: clip, Strings: copyIds)
+internal proc dawRepeatAudio (DawProject: project, DawClip: clip, Strings: copyIds)
+Note: Reconstruct a named project graph output with explicit shared device definitions.
+internal proc dawProjectGraph (DawProject: project, String: sourceId, String: layer, AudioGraph: graph)
+internal proc dawProjectCurves (DawProject: project, DawAutomations: curves)
+internal proc dawTrack (String: id, String: name, String: instrumentBinding)
+internal proc dawTrack (String: id, String: name, String: instrumentBinding, Int: inputBus)
+Note: Muted tracks remain silent even when soloed; multiple solo tracks are audible together. State gates track output after inserts.
+internal proc dawTrack (String: id, String: name, String: instrumentBinding, Int: inputBus, Bool: muted, Bool: solo)
+Note: Opaque sRGB color encoded as an integer R*65536+G*256+B; -1 selects automatic frontend color.
+internal proc dawTrackColor (DawTrack: track, Int: rgb)
+internal proc dawRouting (DawProject: project, DawTracks: tracks, String: graphBinding)
+internal proc dawRouting (DawProject: project, String: graphBinding)
+internal proc dawInsertEffect (DawProject: project, String: trackId, String: effectBinding, Bool: bypassed)
+internal proc dawProjectInstrument (DawProject: project, String: sourceId, String: layer, DawInstrument: instrument)
+internal proc dawProjectSample (DawProject: project, String: sourceId, String: layer)
+Note: Detached authored event; empty letter and zero Hz represent a rest. Rational/origin are optional metadata strings.
+internal proc dawNote (String: noteId, String: voiceId, Double: offsetQuarters, Double: durationQuarters, String: pitchLetter, Int: pitchOctave, Int: pitchAlteration, String: centText, Int: midiKey, Double: frequencyHz, Double: noteVelocity, Int: noteArticulation, Bool: isTied, Double: overlapQuarters, Double: portamentoMilliseconds, String: rationalText, String: originText)
+internal proc dawProjectNotes (DawProject: project, String: sourceId, String: layer, String: sectionId, String: sequenceId, DawNotes: notes)
+
+Note: Composable stereo sample streams. Value nodes are smoothed/automatable parameter signals.
+internal proc dawValue (String: id, Double: value)
+internal proc dawMultiply (String: id, AudioGraph: left, AudioGraph: right)
+internal proc dawTanh (String: id, AudioGraph: input)
+
+Note: Per-channel Hz streams drive oscillator frequency and one-pole filter cutoff.
+internal proc dawSineOsc (String: id, AudioGraph: frequency)
+internal proc dawLowPass (String: id, AudioGraph: input, AudioGraph: cutoff)
+
+Note: Linear gate-driven envelope. Timing/settings edits require graph preparation.
+internal proc dawAdsr (String: id, AudioGraph: gate, Millisecond: attack, Millisecond: decay, Double: sustain, Millisecond: release)
+
+Note: Per-voice graph buses: 0 pitch Hz, 1 gate, 2 velocity. Graph owns its envelope.
+internal proc dawGraphInstrument (AudioGraph: graph, Int: voices)
+
+Note: Edge-corrected saw and fixed 50-percent square; frequency input in Hz.
+internal proc dawSawOsc (String: id, AudioGraph: frequency)
+internal proc dawSquareOsc (String: id, AudioGraph: frequency)
+
+Note: Public plugin parameter curve in project musical time.
+internal proc dawPluginCurve (String: id, String: binding, String: parameter, Dict<Double, Double>: points, Bool: linear)
+
+Note: Gate-triggered one-shot stereo samples; slot bindings are immutable instrument assets.
+internal proc dawSample (String: id, AudioGraph: frequency, AudioGraph: gate, Int: asset, Double: rootHz)
+internal proc dawSampleInstrument (AudioGraph: graph, Int: voices, Dict<Int, DawAudio>: samples)
+internal proc dawProjectGraphSample (DawProject: project, String: source, String: layer, Int: slot)
+
+Note: Decode a hash-pinned WAVE dependency by ID during a declared plugin build only.
+internal proc dawPluginSample (String: dependency)
+
+Note: Detached note windows for input-consuming processors; no MIDI file is written.
+internal proc dawResult (String: layer, DawNoteSequence: notes)
+internal proc dawNoteSequence (DawNotes: notes, Double: durationQuarters)
+internal proc dawNotes (DawNoteSequence: input)
+internal proc dawNoteDuration (DawNoteSequence: input)
+internal proc dawTransposeNotes (DawNoteSequence: input, Int: semitones)
+internal proc dawNoteVelocity (DawNote: note)
+internal proc dawNoteVelocity (DawNote: note, Double: velocity)

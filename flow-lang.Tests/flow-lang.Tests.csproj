@@ -85,6 +85,48 @@
     <Compile Remove="Integration\Phase41\CoreAudioBackendAvailabilityTests.cs" />
   </ItemGroup>
 
+  <!-- Desktop executable/configuration/process tests have no Web runtime surface.
+       Shared language, model, graph and DAW authoring tests remain compiled. -->
+  <ItemGroup Condition="'$(FlowTarget)' == 'Web'">
+    <!-- Additional native SFZ, OSC and CoreAudio tests added after the original Web split. -->
+    <Compile Remove="Integration/Audit0609/CoreAudioDrainTests.cs" />
+    <Compile Remove="Integration/Audit0609/OscBlobRoundTripTests.cs" />
+    <Compile Remove="Integration/Audit0609/OscFutureTimetagCancelTests.cs" />
+    <Compile Remove="Integration/Audit0609/OscHandlerThreadSafetyTests.cs" />
+    <Compile Remove="Integration/Phase37/SfzRoundRobinEagerLoadTests.cs" />
+    <Compile Remove="Integration/Phase37/SfzVelocityCrossfadeRenderTests.cs" />
+    <Compile Remove="Integration/Quick260702Tpn/SfzAmpVeltrackTests.cs" />
+    <Compile Remove="Integration/Quick260702Vud/SfzAmpegReleaseTailTests.cs" />
+    <Compile Remove="Integration/Quick260702Wz7/SfzLegatoRenderTests.cs" />
+    <Compile Remove="Integration/Sweep0614/OscMsgBundleSweepTests.cs" />
+    <!-- The corpus pins desktop imports and substitutes native microphone input. -->
+    <Compile Remove="Characterization/CorpusCharacterizationTests.cs" />
+    <Compile Remove="Integration/Phase38/LibPulseSingleCopyTests.cs" />
+    <Compile Remove="Hosting/ProcessWorkerTests.cs" />
+    <Compile Remove="Hosting/WatchModeEditTests.cs" />
+    <Compile Remove="Integration/Audit0609/D2MinimalPrngReseedTests.cs" />
+    <Compile Remove="Integration/Audit0609/DocExampleIndexAlignmentTests.cs" />
+    <Compile Remove="Integration/Audit0609/FormatAtSwapTests.cs" />
+    <Compile Remove="Integration/Audit0609/LiveStatusPanelTests.cs" />
+    <Compile Remove="Integration/Phase38/AnsiPanelRenderTests.cs" />
+    <Compile Remove="Integration/Phase38/PanelTtyFallbackTests.cs" />
+    <Compile Remove="Integration/Phase38/PrngReseedAtSwapTests.cs" />
+    <Compile Remove="Integration/Phase38/ReplCompletionTests.cs" />
+    <Compile Remove="Integration/Phase38/ReplHelpMetaCommandTests.cs" />
+    <Compile Remove="Integration/Phase38/ReplHistorySearchTests.cs" />
+    <Compile Remove="Integration/Phase38/ReplMultiLineTests.cs" />
+    <Compile Remove="Integration/Phase38/ReplWiringTests.cs" />
+    <Compile Remove="Integration/Phase38/TimeoutRevertTests.cs" />
+    <Compile Remove="Integration/Phase38/WatchDebounceTests.cs" />
+    <Compile Remove="Integration/Phase41/DocCacheTests.cs" />
+    <Compile Remove="Integration/Phase41/DocExampleExecTests.cs" />
+    <Compile Remove="Integration/Phase41/FlowDocGenTests.cs" />
+    <Compile Remove="Integration/Phase44/ReplStrictMetaCommandTests.cs" />
+    <Compile Remove="Integration/Sweep0614/InterpreterConfigLoadSweepTests.cs" />
+    <Compile Remove="Integration/Sweep0614/WatchAdvisoryDedupSweepTests.cs" />
+    <Compile Remove="StudioModel/ProcessGeneratorTests.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="xunit.v3" Version="3.2.2" />
@@ -100,20 +142,23 @@
 
   <ItemGroup Condition="'$(FlowTarget)' != 'Web'">
     <ProjectReference Include="../flow-platform-linux/flow-platform-linux.csproj" />
+    <ProjectReference Include="../flow-studio-host/flow-studio-host.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\flow-lang\flow-lang.csproj" />
+    <ProjectReference Include="../flow-studio-model/flow-studio-model.csproj" />
+    <ProjectReference Include="../flow-studio-engine/flow-studio-engine.csproj" />
     <ProjectReference Include="..\scripts\LanguageHost\LanguageHost.csproj" />
     <ProjectReference Include="..\flow-lsp\flow-lsp.csproj" />
     <ProjectReference Include="..\flow-midi\flow-midi.csproj" />
-    <ProjectReference Include="..\flow-interpreter\flow-interpreter.csproj" />
+    <ProjectReference Include="..\flow-interpreter\flow-interpreter.csproj" Condition="'$(FlowTarget)' != 'Web'" />
     <!-- Phase 41 Plan 41-03 DOC-01/02 — the flow doc generator (DocCollector /
          DocExampleRunner / Html+MarkdownEmitter / ContentHashCache / DocCommand)
          lives under flow-cli/Doc/. FlowDocGenTests / DocCacheTests /
          DocExampleExecTests exercise it directly, so the test project references
          flow-cli (an Exe project — a referencing test project is supported). -->
-    <ProjectReference Include="..\flow-cli\flow-cli.csproj" />
+    <ProjectReference Include="..\flow-cli\flow-cli.csproj" Condition="'$(FlowTarget)' != 'Web'" />
   </ItemGroup>
 
   <ItemGroup>
@@ -130,6 +175,9 @@
          shared-process runner; the browser is single-threaded so this changes
          nothing about runtime behavior. -->
     <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="fixtures/projects/*.flowproject">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="fixtures\midi\ragtime_q_ee.mid">

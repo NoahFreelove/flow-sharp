@@ -1,0 +1,1 @@
+{"name":"flow-workspace-prototype","private":true,"type":"module","scripts":{"start":"python3 serve.py","test":"node --test tests/*.test.mjs"}}

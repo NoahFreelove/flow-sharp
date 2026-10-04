@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Flow.Audio;
 
 namespace Flow.Platform.Linux;
@@ -24,6 +25,11 @@ public sealed class CallbackRenderProbe
     private int _fault;
     private readonly int _stallAfterCallbacks;
     private readonly int _stallMilliseconds;
+    private readonly bool _captureThreadIdentity;
+    private int _nativeThreadId;
+    public int NativeThreadId => Volatile.Read(ref _nativeThreadId);
+    [DllImport("libc", EntryPoint = "gettid")]
+    private static extern int GetThreadId();
     private int _callbacks;
     private int _injectedStalls;
     public int InjectedStalls => Volatile.Read(ref _injectedStalls);
@@ -33,13 +39,16 @@ public sealed class CallbackRenderProbe
     public int BlockFrames => _playback.MaxBlockFrames;
 
     public CallbackRenderProbe(QueuedSinePlayback playback, int sampleCapacity = 400_000, bool mute = true,
-        int stallAfterCallbacks = -1, int stallMilliseconds = 0)
+        int stallAfterCallbacks = -1, int stallMilliseconds = 0, bool captureThreadIdentity = false)
     {
         ArgumentNullException.ThrowIfNull(playback);
         if (sampleCapacity < 1 || sampleCapacity > 2_000_000) throw new ArgumentOutOfRangeException(nameof(sampleCapacity));
         if (stallAfterCallbacks < -1 || stallMilliseconds < 0 || stallMilliseconds > 1000 ||
             (stallAfterCallbacks == -1) != (stallMilliseconds == 0) || (stallMilliseconds > 0 && !mute))
             throw new ArgumentException("Diagnostic starvation requires muted output, a callback index and a 1–1000 ms stall");
+        if (captureThreadIdentity && !OperatingSystem.IsLinux())
+            throw new PlatformNotSupportedException("Native diagnostic thread identity requires Linux");
+        _captureThreadIdentity = captureThreadIdentity;
         _stallAfterCallbacks = stallAfterCallbacks;
         _stallMilliseconds = stallMilliseconds;
         _playback = playback;
@@ -84,6 +93,9 @@ public sealed class CallbackRenderProbe
         var samples = new Span<float>((void*)output, (int)frames * 2);
         try
         {
+            // Opt-in diagnostic identity, one syscall on the first native callback only.
+            if (_captureThreadIdentity && _nativeThreadId == 0)
+                Volatile.Write(ref _nativeThreadId, GetThreadId());
             NativeCallbackTiming? timing = null;
             if (timeInfo != 0)
             {

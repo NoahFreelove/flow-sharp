@@ -1,5 +1,5 @@
-# registered native signatures: 643
-# reachable through an `internal proc` surface: 637
+# registered native signatures: 730
+# reachable through an `internal proc` surface: 724
 # registered without a surface (unreachable from Flow):
   addNoteToBar(Bar, MusicalNote)
   createSineTone(Double, Double, Double)

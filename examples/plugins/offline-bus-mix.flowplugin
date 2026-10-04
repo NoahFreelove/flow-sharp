@@ -1,0 +1,8 @@
+{
+  "Version": 1,
+  "Manifest": "{\"ApiVersion\":1,\"Id\":\"flow.examples.offline-bus-mix\",\"Name\":\"Offline bus mix\",\"Author\":\"Flow examples\",\"License\":\"Unspecified\",\"Version\":\"1\",\"SourceSha256\":\"cda13de0b65f00c050cffead1ad0694ca785e89c57a319f4576c3519948d3562\",\"Builder\":\"process\",\"Kind\":\"OfflineAudio\",\"AudioInputs\":2,\"AudioOutputs\":1,\"NoteInput\":false,\"NoteOutput\":false,\"MinimumSampleRate\":8000,\"MaximumSampleRate\":96000,\"MaximumBlockFrames\":256,\"StateSchema\":\"1\",\"StatePolicy\":\"Reset\",\"Parameters\":[{\"Id\":\"gain\",\"Name\":\"Gain\",\"Unit\":\"linear\",\"Minimum\":0,\"Maximum\":2,\"Default\":0.5,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":0,\"RequiresRebuild\":true,\"Labels\":[]}],\"Dependencies\":[]}",
+  "Source": "use \"@flowDaw\"\nproc process (Dict<String, Double>: context, Buffers: inputs)\n    AudioGraph signal = (dawMix \"sum\" (dawInput \"left\" 0) (dawInput \"right\" 1))\n    AudioGraph level = (dawGain \"level\" signal (get context \"parameter:gain\"))\n    (dawResult \"processed\" (dawAudio (dawProcess level inputs)))\nend proc\n",
+  "OutputLayer": "processed",
+  "Targets": [],
+  "Dependencies": []
+}

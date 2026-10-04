@@ -65,9 +65,13 @@ public class SampleCache
         ["bell"] = (new[] { 72 }, new[] { "mf" }),                          // C5
     };
 
-    public SampleCache(string samplesRoot = "flow-lang/Samples")
+    private readonly bool _allowFileAccess;
+    public SampleCache(string samplesRoot = "flow-lang/Samples") : this(samplesRoot, true) { }
+
+    public SampleCache(string samplesRoot, bool allowFileAccess)
     {
         _samplesRoot = samplesRoot;
+        _allowFileAccess = allowFileAccess;
     }
 
     /// <summary>
@@ -93,6 +97,8 @@ public class SampleCache
             return;
         }
 
+        if (!_allowFileAccess)
+            throw new InvalidOperationException("DAW sampled instruments require host-provided assets; implicit sample-file access is unavailable");
         // Sorted-ascending pitch list for nearest-neighbour lookup at render time.
         _availablePitches[instrument] = manifest.pitches.OrderBy(p => p).ToList();
         // Iterate sorted to keep file-load order deterministic across runs (Pitfall 5).

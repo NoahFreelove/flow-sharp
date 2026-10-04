@@ -18,6 +18,27 @@ public class CallbackRenderProbeTests
     }
 
     [Fact]
+    public void NativeThreadIdentityIsOptInAndMatchesALiveLinuxThread()
+    {
+        if (!OperatingSystem.IsLinux()) return;
+        var plain = new CallbackRenderProbe(new QueuedSinePlayback(Source()), 4);
+        var diagnostic = new CallbackRenderProbe(new QueuedSinePlayback(Source()), 4, captureThreadIdentity: true);
+        nint memory = Marshal.AllocHGlobal(256 * sizeof(float));
+        try
+        {
+            Assert.Equal(0, plain.ProcessNative(memory, 128, 0));
+            Assert.Equal(0, plain.NativeThreadId);
+            Assert.Equal(0, diagnostic.ProcessNative(memory, 128, 0));
+            int thread = diagnostic.NativeThreadId;
+            Assert.True(thread > 0);
+            Assert.True(Directory.Exists($"/proc/self/task/{thread}"));
+            Assert.Equal(0, diagnostic.ProcessNative(memory, 128, 0));
+            Assert.Equal(thread, diagnostic.NativeThreadId);
+        }
+        finally { Marshal.FreeHGlobal(memory); }
+    }
+
+    [Fact]
     public void PlatformArtifactDoesNotReferenceLanguageOrMusicHost()
     {
         using var module = ModuleDefinition.ReadModule(typeof(PortAudioOutput).Assembly.Location);

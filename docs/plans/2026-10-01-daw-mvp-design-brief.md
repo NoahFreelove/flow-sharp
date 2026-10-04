@@ -90,5 +90,7 @@ Create track → add instrument → draw notes → arrange clips → generate a 
 
 ## Engineering continuation
 
-The next engineering slice remains reliable underrun reporting. See the
-[callback cadence handoff](handoffs/2026-10-01-phase6-callback-cadence.md).
+Current sequencing follows the owner's 2026-10-04 direction: finish backend
+readiness, then integrate the approved design with JUI. Historical callback-gap
+diagnosis is deferred. See the [current readiness audit](handoffs/2026-10-04-backend-readiness-audit.md)
+for implemented features, remaining backend work and separate hardware gates.

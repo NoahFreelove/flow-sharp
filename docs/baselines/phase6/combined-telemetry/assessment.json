@@ -1,0 +1,39 @@
+{
+  "status": "failed",
+  "checks": {
+    "captureIntact": true,
+    "calibratedRoute": true,
+    "frameCountMatches": true,
+    "notInjected": true,
+    "durationCaptured": true,
+    "observerCoverage": true,
+    "observerClean": true,
+    "zeroCallbackFlags": false,
+    "bodyHeadroom": true,
+    "bodyDeadline": true,
+    "noBodyAllocations": true,
+    "noParentCollections": true,
+    "replacementRetired": true,
+    "isolatedLoadExecuted": true
+  },
+  "sustainedTargetMet": false,
+  "fullPhase6GateComplete": false,
+  "requestedSeconds": 300,
+  "route": [
+    "ALSA",
+    "pipewire",
+    "PortAudio V19.7.0-devel, revision e1b70d33",
+    48000,
+    256
+  ],
+  "callbackUnderflowFlags": 1,
+  "nodeXrunDelta": 0,
+  "driverXrunDelta": 0,
+  "worstBodyMilliseconds": 1.857083,
+  "maxCallbackGapMilliseconds": 120.984807,
+  "reportedOutputLatencySeconds": 0.010666666666666666,
+  "scope": "Callback metrics cover the full muted capture; external telemetry covers the bracketed steady observation window only. Server counters are scheduling events, not exact physical underrun counts. Zero reported output latency is unavailable. No startup, device recovery, listening, UI or general DSP certification.",
+  "profilerVersion": "pw-profiler\nCompiled with libpipewire 1.6.2\nLinked with libpipewire 1.6.2",
+  "assessmentNote": "Reassessed preserved capture with separated server-only status and callback flags; original combined assessment retained in /tmp.",
+  "probeDllSha256": "b498dfedb349e12004ee56263b29ee343afbdc6f535702d27daf537c8d5304db"
+}

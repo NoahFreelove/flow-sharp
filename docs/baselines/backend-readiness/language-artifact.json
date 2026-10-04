@@ -1,0 +1,16 @@
+{
+  "passed": 7,
+  "examples": [
+    "examples/language/collections.flow",
+    "examples/language/dict-aggregation.flow",
+    "examples/language/lazy.flow",
+    "examples/language/modules/report.flow",
+    "examples/language/pattern-dispatch.flow",
+    "examples/language/recursion-trees.flow",
+    "examples/language/tuple-pipelines.flow"
+  ],
+  "dependencyLibraries": [
+    "LanguageHost/1.0.0",
+    "flow-language/1.0.0"
+  ]
+}

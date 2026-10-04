@@ -15,6 +15,34 @@ public class QueuedSinePlaybackTests
     }
 
     [Fact]
+    public void RecordingClockPublishesCompletedBlocksAndTracksAcceptedChanges()
+    {
+        var queue = new QueuedSinePlayback(Source(), 1);
+        Assert.False(queue.TryReadClock(out _));
+        Assert.True(queue.TryPlay());
+        long version = queue.ControlVersion;
+        Assert.True(queue.CommandsPending);
+        Assert.False(queue.TryPause()); Assert.Equal(version, queue.ControlVersion);
+        var buffer = new float[128];
+        queue.Read(buffer);
+        Assert.False(queue.CommandsPending);
+        Assert.True(queue.TryReadClock(out var clock));
+        Assert.Equal(64, clock.PositionFrames); Assert.Equal(TransportState.Playing, clock.State);
+        Assert.Equal(1, clock.Generation); Assert.False(clock.LoopEnabled); Assert.True(clock.Timestamp > 0);
+        Assert.True(queue.TrySetLoop(0, 100)); queue.Read(buffer);
+        Assert.True(queue.TryReadClock(out clock)); Assert.True(clock.LoopEnabled);
+        Assert.Equal(version + 1, queue.ControlVersion);
+        queue.RequestStop(); Assert.Equal(version + 2, queue.ControlVersion);
+        queue.Read(buffer); Assert.True(queue.TryReadClock(out clock));
+        Assert.Equal(0, clock.PositionFrames); Assert.Equal(TransportState.Stopped, clock.State);
+        // Clock publication/reads retain the callback's allocation-free contract.
+        queue.Read(buffer); queue.TryReadClock(out _);
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 100; i++) { queue.Read(buffer); queue.TryReadClock(out _); }
+        Assert.Equal(allocated, GC.GetAllocatedBytesForCurrentThread());
+    }
+
+    [Fact]
     public void CommandsApplyInOrderAtBlockBoundariesAndMatchDirectPlayback()
     {
         var queued = new QueuedSinePlayback(Source(), 4);

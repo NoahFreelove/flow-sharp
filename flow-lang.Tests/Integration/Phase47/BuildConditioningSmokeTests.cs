@@ -34,24 +34,8 @@ public class BuildConditioningSmokeTests
             "Could not locate repo root from " + AppContext.BaseDirectory);
     }
 
-    private static (int exitCode, string stdout, string stderr) RunDotnetBuild(string args)
-    {
-        var repoRoot = FindRepoRoot();
-        var psi = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = "build flow-lang/flow-lang.csproj " + args + " -v quiet --nologo",
-            WorkingDirectory = repoRoot,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        using var p = Process.Start(psi)!;
-        string stdout = p.StandardOutput.ReadToEnd();
-        string stderr = p.StandardError.ReadToEnd();
-        p.WaitForExit(120_000);
-        return (p.ExitCode, stdout, stderr);
-    }
+    private static (int exitCode, string stdout, string stderr) RunDotnetBuild(string args) =>
+        FlowLang.Tests.Helpers.DotnetBuildProcess.Run("build", args, FindRepoRoot(), TimeSpan.FromMinutes(2));
 
     [Fact]
     public void DesktopBuild_ExitCodeIsZero()

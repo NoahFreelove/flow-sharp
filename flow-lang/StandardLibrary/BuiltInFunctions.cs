@@ -815,7 +815,7 @@ public static class BuiltInFunctions
 
     }
 
-    private static void RegisterBars(InternalFunctionRegistry registry)
+    internal static void RegisterBars(InternalFunctionRegistry registry)
     {
         // ===== Bar Operations =====
 
@@ -864,7 +864,7 @@ public static class BuiltInFunctions
         registry.Register("getTimeSignature", getTimeSignatureSignature, Bars.GetTimeSignature);
     }
 
-    private static void RegisterMusicalNotationFunctions(InternalFunctionRegistry registry)
+    internal static void RegisterMusicalNotationFunctions(InternalFunctionRegistry registry)
     {
         // ===== Musical Note Creation =====
 
@@ -1190,7 +1190,7 @@ public static class BuiltInFunctions
     //
     // Base velocity: reads MusicalContext.Velocity ?? 0.63 (matches
     // NoteStreamCompiler.cs:341 default-mf semantics).
-    private static void RegisterEuclideanOverloads(
+    internal static void RegisterEuclideanOverloads(
         InternalFunctionRegistry registry,
         FlowLang.Runtime.ExecutionContext context)
     {

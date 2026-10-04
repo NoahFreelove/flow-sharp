@@ -21,6 +21,8 @@ class Program
         // Worker mode: evaluate requests from a host over a JSON-lines protocol on
         // stdin/stdout (FlowLang.Hosting.ProcessEvaluationWorker). The host may kill
         // this process to stop a runaway evaluation.
+        if (args.Length == 1 && args[0] == "--daw-worker")
+            return FlowLang.Hosting.GeneratorWorkerServer.RunAsync(Console.In, Console.Out).GetAwaiter().GetResult();
         if (args.Length == 1 && args[0] == "--worker")
             return FlowLang.Hosting.EvaluationWorkerServer.Run(Console.In, Console.Out);
 

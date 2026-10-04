@@ -1,0 +1,6 @@
+use "@flowDaw"
+proc process (Dict<String, Double>: context, DawNoteSequence: input)
+    DawNoteSequence moved = (dawTransposeNotes input 12)
+    DawNotes notes = (map (dawNotes moved) (fn DawNote n => (dawNoteVelocity n (get context "parameter:velocity"))))
+    (dawResult "notes" (dawNoteSequence notes (dawNoteDuration moved)))
+end proc

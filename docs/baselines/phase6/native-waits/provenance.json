@@ -1,0 +1,20 @@
+{
+  "rawTraceSha256": "abe0b6272c014d8e46e1df86c982676a41de28ac2058aa0b7556519de5a49330",
+  "probeDllSha256": "541a6cd080c274a807bd67e4f2242e309c50a7f92bf9dbd310154969a1eba8b6",
+  "qualification": {
+    "callbackThreadId": 34698,
+    "completedPollCalls": 4508,
+    "clockOffsetDriftNs": 30482,
+    "clockBracketUncertaintyNs": 797665,
+    "correlation": "available",
+    "parseErrors": [],
+    "timeouts": 1,
+    "interruptedCalls": 0,
+    "longestPollMilliseconds": 6.099,
+    "underflowGaps": [],
+    "scope": "Only poll/ppoll are traced, not all native waits or CPU scheduling. ptrace perturbs timing. Real-time clock endpoints bound observed drift, not transient clock jumps; correlation is approximate. Clean traced runs do not close an earlier untraced failure."
+  },
+  "tracingPerturbsTiming": true,
+  "original121msGapReproduced": false,
+  "rootCauseEstablished": false
+}

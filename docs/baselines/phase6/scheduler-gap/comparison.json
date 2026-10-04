@@ -1,0 +1,113 @@
+{
+  "trials": [
+    {
+      "mode": "idle",
+      "seconds": 300,
+      "callbackFlags": 0,
+      "maxGapMs": 11.659875,
+      "maxBodyMs": 3.294627,
+      "samplerCpuSeconds": 28.869489
+    },
+    {
+      "mode": "isolated",
+      "seconds": 300,
+      "callbackFlags": 0,
+      "maxGapMs": 7.890571,
+      "maxBodyMs": 1.905117,
+      "samplerCpuSeconds": 30.092135
+    }
+  ],
+  "controls": [
+    {
+      "trial": 1,
+      "clockUncertaintyNs": 511909,
+      "gap": {
+        "callbackIndex": 180,
+        "secondsFromStart": 1.208474388,
+        "gapMilliseconds": 253.298422,
+        "statusFlags": 0,
+        "startNs": 12880384909929,
+        "endNs": 12880638208351,
+        "coverage": "sampled",
+        "bracketMilliseconds": 262.515897,
+        "cpuMilliseconds": 0.359507,
+        "runqueueWaitMilliseconds": null,
+        "voluntarySwitchDelta": 5,
+        "involuntarySwitchDelta": 0,
+        "observedStates": {
+          "T (stopped)": 12
+        },
+        "observedWaitChannels": {
+          "do_signal_stop": 12
+        },
+        "policies": [
+          0
+        ],
+        "maxSamplerIntervalMilliseconds": 20.200934,
+        "insideSamples": 12
+      }
+    },
+    {
+      "trial": 2,
+      "clockUncertaintyNs": 605207,
+      "gap": {
+        "callbackIndex": 182,
+        "secondsFromStart": 1.219956672,
+        "gapMilliseconds": 254.193037,
+        "statusFlags": 0,
+        "startNs": 12888881161962,
+        "endNs": 12889135354999,
+        "coverage": "sampled",
+        "bracketMilliseconds": 283.028664,
+        "cpuMilliseconds": 1.00544,
+        "runqueueWaitMilliseconds": null,
+        "voluntarySwitchDelta": 9,
+        "involuntarySwitchDelta": 0,
+        "observedStates": {
+          "T (stopped)": 13
+        },
+        "observedWaitChannels": {
+          "do_signal_stop": 13
+        },
+        "policies": [
+          0
+        ],
+        "maxSamplerIntervalMilliseconds": 20.185829,
+        "insideSamples": 13
+      }
+    },
+    {
+      "trial": 3,
+      "clockUncertaintyNs": 1215558,
+      "gap": {
+        "callbackIndex": 185,
+        "secondsFromStart": 1.232142523,
+        "gapMilliseconds": 250.44943,
+        "statusFlags": 0,
+        "startNs": 12897392621245,
+        "endNs": 12897643070675,
+        "coverage": "sampled",
+        "bracketMilliseconds": 282.780836,
+        "cpuMilliseconds": 0.953917,
+        "runqueueWaitMilliseconds": null,
+        "voluntarySwitchDelta": 7,
+        "involuntarySwitchDelta": 0,
+        "observedStates": {
+          "T (stopped)": 12
+        },
+        "observedWaitChannels": {
+          "do_signal_stop": 12
+        },
+        "policies": [
+          0
+        ],
+        "maxSamplerIntervalMilliseconds": 20.209384,
+        "insideSamples": 12
+      }
+    }
+  ],
+  "originalGapReproduced": false,
+  "rootCauseEstablished": false,
+  "fullPhase6GateComplete": false,
+  "probeDllSha256": "5714b1929348404ef759e408c62bbd2d336a7493a57b5a0963f3cba1dbfe36be"
+}

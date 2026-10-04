@@ -18,6 +18,7 @@ public class ModuleSurfaceCharacterizationTests
     [
         "@std", "@collections", "@bars", "@notation", "@composition", "@audio", "@patterns",
         "@generative", "@improv", "@notation-io", "@test", "@sfz", "@osc", "@midi", "@jack",
+        "@flowDaw",
     ];
 
     private static SortedSet<string> Visible(FlowEngine engine)
@@ -61,6 +62,10 @@ public class ModuleSurfaceCharacterizationTests
     public void NativeRegistrationsAndTheirSurfaceAreUnchanged()
     {
         using var engine = TypeSystemCharacterizationTests.LoadAllModules();
+        // The legacy overload-resolution fixture intentionally keeps its old module
+        // set. Registration reachability must also include the new DAW surface.
+        Assert.True(engine.Execute("use \"@flowDaw\"", "<daw-module>"),
+            engine.ErrorReporter.FormatAll(engine.SourceMap, useColor: false));
         var frame = engine.Context.GlobalFrame;
         var bound = new HashSet<string>(StringComparer.Ordinal);
         foreach (var name in frame.GetFunctionNames())

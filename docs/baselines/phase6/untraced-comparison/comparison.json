@@ -1,0 +1,32 @@
+{
+  "comparabilityChecks": {
+    "sameProbeDll": true,
+    "sameDriverName": true,
+    "sameDriverSerial": true,
+    "sameRouteAndFormat": true,
+    "sameRequestedDuration": true,
+    "sameRuntime": true,
+    "sameMode": true
+  },
+  "probeDllSha256": "541a6cd080c274a807bd67e4f2242e309c50a7f92bf9dbd310154969a1eba8b6",
+  "driverName": "alsa_output.usb-MOONDROP_Discdream_2_Discdream_2-00.analog-stereo",
+  "driverSerial": 63,
+  "traced": {
+    "nodeXrunDelta": 5,
+    "callbackFlags": 0,
+    "maxGapMs": 15.413416,
+    "worstBodyMs": 2.393791,
+    "evaluations": 106282
+  },
+  "untraced": {
+    "nodeXrunDelta": 0,
+    "callbackFlags": 0,
+    "maxGapMs": 9.19233,
+    "worstBodyMs": 2.013491,
+    "evaluations": 151019
+  },
+  "evaluationIncreasePercent": 42.0927344235148,
+  "originalGapResolved": false,
+  "fullPhase6GateComplete": false,
+  "scope": "Sequential observational pair with matching measured configuration; not randomized or sufficient to attribute cause. Sampler and server observer remain active. Earlier untraced 121ms failure remains valid."
+}

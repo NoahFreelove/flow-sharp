@@ -75,10 +75,27 @@ public class ModuleLoader
     /// Loads a module from the given path.
     /// Returns Loaded on success, AlreadyLoaded if previously imported, Error on failure.
     /// </summary>
+    /// <summary>Optional host-owned import source provider. When set, every import
+    /// uses it exclusively, including transitive imports; no filesystem fallback.
+    /// Configure before evaluation and keep the provider immutable for the session.</summary>
+    public Func<string, string, ResolvedModuleSource>? SourceResolver { get; set; }
+
     public ModuleLoadResult LoadModule(string path, string currentFile, ExecutionContext context, Core.SourceLocation? importLocation = null)
     {
-        var resolvedPath = ResolvePath(path, currentFile);
         var errorLocation = importLocation ?? Core.SourceLocation.Unknown;
+        ResolvedModuleSource? supplied = null;
+        string resolvedPath;
+        try
+        {
+            if (SourceResolver is { } resolver)
+            {
+                supplied = resolver(path, currentFile) ?? throw new InvalidOperationException("Import provider returned no source");
+                resolvedPath = supplied.Identity;
+            }
+            else resolvedPath = ResolvePath(path, currentFile);
+        }
+        catch (Exception error)
+        { _errorReporter.ReportError($"Import rejected: {error.Message}", errorLocation); return ModuleLoadResult.Error; }
 
         if (_loadedModules.Contains(resolvedPath))
             return ModuleLoadResult.AlreadyLoaded;
@@ -132,7 +149,8 @@ public class ModuleLoader
             //     createSineTone/play — declared as `internal proc` in std.flow)
             //     is missing, yielding `[eval] Function '<name>' not found`.
             string source;
-            if (File.Exists(resolvedPath))
+            if (supplied is not null) source = supplied.Source;
+            else if (File.Exists(resolvedPath))
             {
                 source = File.ReadAllText(resolvedPath);
             }
@@ -366,6 +384,16 @@ public class ModuleLoader
     /// original "file not found" diagnostic still fires for genuinely-missing
     /// imports. See debug session wasm-boot-no-app-bundle (cycle 4).</para>
     /// </summary>
+    public static string ReadBundledModule(string name)
+    {
+        if (string.IsNullOrEmpty(name) || name.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('_' or '-')))
+            throw new ArgumentException("Invalid bundled module name");
+        string path = ResolveStdlibPath(name);
+        if (File.Exists(path)) return File.ReadAllText(path);
+        if (TryReadEmbeddedModule(path, out var source)) return source;
+        throw new FileNotFoundException("Bundled module unavailable", name);
+    }
+
     private static bool TryReadEmbeddedModule(string resolvedPath, out string source)
     {
         source = string.Empty;
@@ -456,3 +484,5 @@ public class ModuleLoader
                 yield return asm;
     }
 }
+
+public sealed record ResolvedModuleSource(string Identity, string Source);

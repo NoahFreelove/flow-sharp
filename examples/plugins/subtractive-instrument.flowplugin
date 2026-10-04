@@ -1,0 +1,24 @@
+{
+  "Version": 1,
+  "Manifest": "{\"ApiVersion\":1,\"Id\":\"flow.examples.subtractive-instrument\",\"Name\":\"Subtractive instrument\",\"Author\":\"Flow examples\",\"License\":\"Repository terms\",\"Version\":\"1.0.0\",\"SourceSha256\":\"64b414066f52d7148539968eb0898a41f3fddee1b097d18addc7cb8c66593441\",\"Builder\":\"build\",\"Kind\":\"Instrument\",\"AudioInputs\":0,\"AudioOutputs\":1,\"NoteInput\":true,\"NoteOutput\":false,\"MinimumSampleRate\":8000,\"MaximumSampleRate\":192000,\"MaximumBlockFrames\":4096,\"StateSchema\":\"reset-v1\",\"StatePolicy\":\"Reset\",\"Parameters\":[{\"Id\":\"level\",\"Name\":\"Level\",\"Unit\":\"linear\",\"Minimum\":0,\"Maximum\":1,\"Default\":0.25,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"cutoff\",\"Name\":\"Cutoff\",\"Unit\":\"Hz\",\"Minimum\":20,\"Maximum\":12000,\"Default\":500,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"release\",\"Name\":\"Release\",\"Unit\":\"ms\",\"Minimum\":0,\"Maximum\":5000,\"Default\":120,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":0,\"RequiresRebuild\":true,\"Labels\":[]}],\"Dependencies\":[]}",
+  "Source": "use \"@flowDaw\"\n\nNote: Each prepared voice receives pitch Hz, gate and velocity on buses 0, 1 and 2.\nproc build (Dict<String, Double>: context)\n    AudioGraph pitch = (dawInput \"pitch\" 0)\n    AudioGraph gate = (dawInput \"gate\" 1)\n    AudioGraph velocity = (dawInput \"velocity\" 2)\n    AudioGraph envelope = (dawAdsr \"envelope\" gate 5ms 80ms 0.6 120ms)\n    AudioGraph saw = (dawSawOsc \"oscillator\" pitch)\n    AudioGraph cutoff = (dawMix \"cutoff\" (dawValue \"baseCutoff\" 500.0) (dawMultiply \"sweep\" envelope (dawValue \"depth\" 2500.0)))\n    AudioGraph tone = (dawLowPass \"filter\" saw cutoff)\n    AudioGraph shaped = (dawMultiply \"shaped\" tone envelope)\n    AudioGraph output = (dawMultiply \"output\" shaped velocity)\n    DawInstrument synth = (dawGraphInstrument (dawGain \"level\" output 0.25) 16)\n    (dawResult \"instrument\" synth)\nend proc\n",
+  "OutputLayer": "instrument",
+  "Targets": [
+    {
+      "ParameterId": "level",
+      "NodeId": "level",
+      "DeviceParameterId": "gain"
+    },
+    {
+      "ParameterId": "cutoff",
+      "NodeId": "baseCutoff",
+      "DeviceParameterId": "value"
+    },
+    {
+      "ParameterId": "release",
+      "NodeId": "envelope",
+      "DeviceParameterId": "releaseMs"
+    }
+  ],
+  "Dependencies": []
+}

@@ -1,0 +1,24 @@
+{
+  "Version": 1,
+  "Manifest": "{\"ApiVersion\":1,\"Id\":\"flow.examples.composed-soft-clip\",\"Name\":\"Composed soft clip\",\"Author\":\"Flow examples\",\"License\":\"Repository terms\",\"Version\":\"1.0.0\",\"SourceSha256\":\"39e526f5e97be40b840dd3bbcbfc3fcb160fcbb48a78b2668989484aa1e5abf0\",\"Builder\":\"build\",\"Kind\":\"AudioEffect\",\"AudioInputs\":1,\"AudioOutputs\":1,\"NoteInput\":false,\"NoteOutput\":false,\"MinimumSampleRate\":8000,\"MaximumSampleRate\":192000,\"MaximumBlockFrames\":4096,\"StateSchema\":\"reset-v1\",\"StatePolicy\":\"Reset\",\"Parameters\":[{\"Id\":\"drive\",\"Name\":\"Drive\",\"Unit\":\"linear\",\"Minimum\":1,\"Maximum\":32,\"Default\":2,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"bias\",\"Name\":\"Bias\",\"Unit\":\"linear\",\"Minimum\":-1,\"Maximum\":1,\"Default\":0.1,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]},{\"Id\":\"level\",\"Name\":\"Output level\",\"Unit\":\"linear\",\"Minimum\":0,\"Maximum\":2,\"Default\":1,\"Scale\":\"Linear\",\"SmoothingMilliseconds\":5,\"RequiresRebuild\":false,\"Labels\":[]}],\"Dependencies\":[]}",
+  "Source": "use \"@flowDaw\"\n\nNote: A waveshaper composed from sample operations, not a matching device builtin.\nNote: Parameter nodes retain stable IDs and can be smoothed or automated by the host.\nproc build (Dict<String, Double>: context)\n    AudioGraph input = (dawInput \"input\" 0)\n    AudioGraph drive = (dawValue \"drive\" 2.0)\n    AudioGraph bias = (dawValue \"bias\" 0.1)\n    AudioGraph level = (dawValue \"level\" 1.0)\n    AudioGraph driven = (dawMultiply \"driven\" input drive)\n    AudioGraph shifted = (dawMix \"shifted\" driven bias)\n    AudioGraph shaped = (dawTanh \"shaped\" shifted)\n    AudioGraph output = (dawMultiply \"output\" shaped level)\n    (dawResult \"effect\" output)\nend proc\n",
+  "OutputLayer": "effect",
+  "Targets": [
+    {
+      "ParameterId": "drive",
+      "NodeId": "drive",
+      "DeviceParameterId": "value"
+    },
+    {
+      "ParameterId": "bias",
+      "NodeId": "bias",
+      "DeviceParameterId": "value"
+    },
+    {
+      "ParameterId": "level",
+      "NodeId": "level",
+      "DeviceParameterId": "value"
+    }
+  ],
+  "Dependencies": []
+}

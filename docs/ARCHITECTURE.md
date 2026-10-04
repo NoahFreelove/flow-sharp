@@ -30,12 +30,10 @@ The architecture is shaped by three design priorities, in order:
    Section, Song, Tuning, Sfz) is designed to serve a symphony as readily as
    a death metal track. No genre is privileged in the type system or the
    standard library.
-3. **Minimal external dependencies.** Flow ships with two real third-party
-   libraries: `Melanchall.DryWetMidi` (MIDI file IO — the one thing not worth
-   hand-rolling) and `OmniSharp.Extensions.LanguageServer` (LSP protocol
-   plumbing for the LSP server). Everything else — lexing, parsing, type
-   resolution, audio synthesis, DSP, SFZ orchestral sampling, MusicXML/LilyPond
-   IO, MIDI parsing for `midi2flow` — is hand-rolled C# inside this repo.
+3. **Explicit dependency boundaries.** The language-only runtime and music model
+   use the BCL. Compatibility and platform hosts add MIDI IO, configuration,
+   OSC, device and editor dependencies as needed. Their package references are
+   target-specific; they do not belong in the language-only dependency closure.
 
 ## Execution Pipeline
 
@@ -184,7 +182,10 @@ The primary projects are organized by responsibility:
 |---------|------|
 | `flow-language/` | BCL-only language runtime, core standard library, and extension contracts. |
 | `flow-music-model/` | BCL-only immutable evaluated score snapshots and quarter/second timing. |
-| `flow-audio/` | Model + BCL only; dry sine rendering, prepared playback, frame transport, bounded commands and playback publication/retirement. |
+| `flow-audio/` | Prepared synthesis/sampling and shared DSP graphs, automation, clip playback, transport, bounded commands and publication/retirement. No interpreter. |
+| `flow-studio-model/` | Immutable projects, sources/bindings, clips, routing, assets, commands/history and versioned persistence. No interpreter or UI. |
+| `flow-studio-engine/` | Project-to-prepared-playback compilation, effect chains, asset preparation, export and metronome. No interpreter or UI. |
+| `flow-studio-host/` | Composes project, Flow workers, audio/MIDI devices, recording, monitoring, autosave and recovery. Native UI remains separate. |
 | `flow-platform-linux/` | Flow.Audio + BCL; optional Linux PortAudio callback adapter and bounded timing instrumentation. No language dependency. |
 | `flow-music-io/` | Model + DryWetMidi only; snapshot Standard MIDI File export and the single GM routing / key-signature tables. |
 | `scripts/MusicHost/` | Native score-to-WAV/MIDI proof; references only `flow-audio`, `flow-music-io` and their model dependency. |
@@ -197,20 +198,24 @@ The primary projects are organized by responsibility:
 | `flow-jetbrains/` | JetBrains IDE plugin (Gradle/Kotlin project) that drives `flow-lsp` via LSP4IJ. |
 | `vscode-extension/` | VSCode language extension (TypeScript) with bundled per-platform `flow-lsp` binaries. |
 
-### Evaluated score boundary (Phase 5 in progress)
+### Evaluated score and DAW boundaries
 
 `CompositionCompiler` copies evaluated `SongData` into `Flow.Music.Model`
 snapshots without retaining executable section bodies or runtime values. The
 model owns its collections, shares sections across repeated placements, and
 retains timing, provenance and musical controls. Score duration excludes render
-tails and frame rounding. Legacy rendering/export still consume `SongData`.
+tails and frame rounding. The compatibility renderer still accepts `SongData`;
+the DAW consumes detached results and prepared graphs. Flow MIDI export uses the
+snapshot export path.
 
 Song buffer assembly now allocates the result once and copies each output sample
 once, with cancellation checks between bounded chunks. It still retains section
 buffers and returns one contiguous buffer; streaming on that compatibility path is open. The isolated `Flow.Audio` sine
 renderer already emits bounded borrowed blocks with explicit options,
 cancellation and progress. It shares duration policy with `BarRenderer`, but
-instrument/effect routing and legacy consumer migration are still open. The
+the DAW also supports routed instruments/effects through `ProjectCompiler` and
+`ArrangementCompiler`. Legacy full-buffer DSP is not automatically a real-time
+device: supported prepared primitives have shared Flow and native kernels. The
 native `scripts/MusicHost` constructs a score and streams a WAV without Flow.
 See the
 [boundary decision](decisions/2026-09-24-composition-snapshot-boundary.md) for
@@ -496,16 +501,27 @@ matches the C-include / Lisp-load tradition more than the Python/JavaScript
 module tradition, and it's deliberate — composers shouldn't have to think
 about namespaces while writing music.
 
-### Single-engine-per-process convention
+### Session ownership and workers
 
-`FlowEngine` exposes some static accessors (`CurrentSampleCache`,
-`CurrentSfzSampleCache`, `CurrentExecutionContext`) used by the static
-`SongRenderer` class. This is safe under the project convention that one
-process owns one `FlowEngine`. The convention is documented in
-`FlowEngine.cs` next to each static field. Concurrent-engine support (e.g.
-for a server hosting multiple sessions) would require refactoring those
-fields through `ExecutionContext` — the comments call this out as a
-v1.5+ refactor target.
+Each `FlowEngine` owns `SessionServices`, with output/diagnostic sinks,
+configuration, cancellation/budget and domain services. `MusicSession` owns music
+state and caches. Independent engines can run concurrently; this does not promise
+concurrent evaluation on the same engine. Transitional compatibility call sites
+use an `AsyncLocal` session scope rather than static current-engine cache fields.
+Hosts should supply explicit sinks instead of relying on default console output.
+
+DAW generation runs off the audio thread. Ordinary generators use reviewed native
+capabilities and bundled imports; sample access uses host-captured asset grants.
+Packaged plugins carry pinned dependencies. Process workers bound execution and
+support termination, but are not an OS sandbox. Results are detached, validated
+and accepted only for the captured source/context. Failed or stale builds retain
+the last accepted document and sound.
+
+`ProjectPlaybackSession` prepares snapshots on workers and publishes them through
+the bounded audio queue. The callback owns prepared DSP/transport state; it does
+not evaluate Flow, load assets or mutate the project. Offline bounce and live
+playback use the same kernels. Seek resets transient effect state; continuous
+range export renders its prefix to preserve effect history before the range.
 
 ## Dependency Philosophy
 
@@ -514,9 +530,10 @@ Flow's NuGet manifest is intentionally short:
 | Project | External dependency | Why |
 |---------|--------------------|-----|
 | `flow-lang` | `Melanchall.DryWetMidi` 8.0.3 | Standard MIDI Format is too tedious to hand-roll correctly (variable-length encoding, delta times, multi-track chunks, tempo maps). Library is actively maintained, .NET Standard 2.0, compatible with .NET 10. |
-| `flow-lang` | `Pidgin` 3.5.1 | Historical — referenced but unused. A v1.5 cleanup target. |
 | `flow-cli` | `System.CommandLine` 2.0.7 | Subcommand parsing + help generation. Standard Microsoft library. |
-| `flow-cli` | `Tomlyn` 2.3.2 | Parses `~/.config/flow/config.toml`. |
+| `flow-lang` | `Tomlyn` 2.3.2, `Rug.Osc` 1.2.5 | Desktop configuration and OSC compatibility services. |
+| `flow-lang` | `NAudio.Wasapi` 2.3.0 | Conditional Windows audio backend. |
+| `flow-music-io` | `Melanchall.DryWetMidi` 8.0.3 | Detached score/project MIDI interchange. |
 | `flow-lsp` | `OmniSharp.Extensions.LanguageServer` 0.19.9 | LSP 3.17 protocol plumbing — same reasoning as DryWetMidi: not worth hand-rolling. Trimming is intentionally disabled because OmniSharp uses reflection. |
 
 Everything else is hand-rolled in this repo: lexing, parsing, AST, type

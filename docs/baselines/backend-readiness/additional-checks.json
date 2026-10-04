@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-04",
+  "affectedBackend": {
+    "passed": 579,
+    "skipped": 0,
+    "failed": 0,
+    "log": "/tmp/flow-track-color-regression.log"
+  },
+  "web": {
+    "passed": 449,
+    "skipped": 7,
+    "failed": 0,
+    "log": "/tmp/flow-backend-web-final.log"
+  },
+  "wasmPublish": {
+    "exitCode": 0,
+    "log": "/tmp/flow-backend-wasm-final.log"
+  },
+  "desktopReleaseBuild": {
+    "exitCode": 0,
+    "warnings": 427,
+    "errors": 0,
+    "log": "/tmp/flow-backend-desktop-final.log"
+  },
+  "verificationScripts": {
+    "passed": 37,
+    "log": "/tmp/flow-readiness-ci-tests.log"
+  },
+  "prototype": {
+    "testFilesPassed": 2,
+    "runtimeSmokeExitCode": 0,
+    "layers": 3,
+    "notes": 48,
+    "durationQuarters": 16,
+    "logs": [
+      "/tmp/flow-readiness-prototype-tests.log",
+      "/tmp/flow-readiness-prototype-runtime.log"
+    ],
+    "limitation": "Node WASM smoke, not browser UI. Release symbol-map warning emitted."
+  },
+  "exclusions": [
+    "Native JUI interaction and responsiveness",
+    "Physical MIDI/output latency and unplug/recovery",
+    "Linux installer/release qualification",
+    "Owner-deferred historical callback-gap investigation"
+  ]
+}

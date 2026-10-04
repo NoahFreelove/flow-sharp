@@ -1,5 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <!-- Captured DAW styles are available without filesystem discovery on every target. -->
+    <ItemGroup>
+      <EmbeddedResource Include="improv\styles\jazz.flow">
+        <LogicalName>FlowLang.Stdlib.improv/styles/jazz.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="improv\styles\blues.flow">
+        <LogicalName>FlowLang.Stdlib.improv/styles/blues.flow</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="improv\styles\classical.flow">
+        <LogicalName>FlowLang.Stdlib.improv/styles/classical.flow</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <RootNamespace>FlowLang</RootNamespace>
@@ -276,6 +289,9 @@
            osc.flow are NOT embedded (stripped on Web per Phase 47 D-47-03; the
            ModuleLoader Web strip-gate rejects @sfz/@osc before any read). See debug
            session wasm-boot-no-app-bundle (cycle 4). -->
+      <EmbeddedResource Include="flowDaw.flow">
+        <LogicalName>FlowLang.Stdlib.flowDaw.flow</LogicalName>
+      </EmbeddedResource>
       <EmbeddedResource Include="std.flow">
         <LogicalName>FlowLang.Stdlib.std.flow</LogicalName>
       </EmbeddedResource>
@@ -303,15 +319,6 @@
       <EmbeddedResource Include="patterns.flow">
         <LogicalName>FlowLang.Stdlib.patterns.flow</LogicalName>
       </EmbeddedResource>
-      <EmbeddedResource Include="improv\styles\jazz.flow">
-        <LogicalName>FlowLang.Stdlib.improv/styles/jazz.flow</LogicalName>
-      </EmbeddedResource>
-      <EmbeddedResource Include="improv\styles\blues.flow">
-        <LogicalName>FlowLang.Stdlib.improv/styles/blues.flow</LogicalName>
-      </EmbeddedResource>
-      <EmbeddedResource Include="improv\styles\classical.flow">
-        <LogicalName>FlowLang.Stdlib.improv/styles/classical.flow</LogicalName>
-      </EmbeddedResource>
     </ItemGroup>
 
     <!-- Phase 35 HK-03: expose internals to the xUnit project so
@@ -322,6 +329,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="flowDaw.flow">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </None>
       <None Update="std.flow">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
@@ -413,4 +424,7 @@
       </None>
     </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../flow-studio-model/flow-studio-model.csproj" />
+  </ItemGroup>
 </Project>

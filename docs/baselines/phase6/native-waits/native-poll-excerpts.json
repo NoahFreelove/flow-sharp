@@ -1,0 +1,5 @@
+[
+  "35140 1791068779.338130 poll([{fd=81, events=POLLIN|POLLERR|POLLNVAL}], 1, 6) = 1 ([{fd=81, revents=POLLIN}]) <0.007497>",
+  "35140 1791069247.626041 poll([{fd=81, events=POLLIN|POLLERR|POLLNVAL}], 1, 6) = 0 (Timeout) <0.010583>",
+  "35140 1791069311.034051 poll([{fd=81, events=POLLIN|POLLERR|POLLNVAL}], 1, 6) = 0 (Timeout) <0.009434>"
+]

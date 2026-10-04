@@ -87,28 +87,8 @@ public class WasmStdlibEmbedTests
             "Could not locate repo root from " + AppContext.BaseDirectory);
     }
 
-    private static (int exitCode, string stdout, string stderr) RunDotnetPublish(string args)
-    {
-        var repoRoot = FindRepoRoot();
-        var psi = new ProcessStartInfo
-        {
-            FileName = "dotnet",
-            Arguments = "publish flow-lang/flow-lang.csproj " + args + " -v quiet --nologo",
-            WorkingDirectory = repoRoot,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        using var p = Process.Start(psi)!;
-        string stdout = p.StandardOutput.ReadToEnd();
-        string stderr = p.StandardError.ReadToEnd();
-        if (!p.WaitForExit(600_000))
-        {
-            try { p.Kill(); } catch { /* best-effort */ }
-            return (-1, stdout, stderr + "\n[test] WaitForExit timed out at 10 minutes");
-        }
-        return (p.ExitCode, stdout, stderr);
-    }
+    private static (int exitCode, string stdout, string stderr) RunDotnetPublish(string args) =>
+        FlowLang.Tests.Helpers.DotnetBuildProcess.Run("publish", args, FindRepoRoot(), TimeSpan.FromMinutes(10));
 
     /// <summary>
     /// Locate the TRIMMED (linked) flow-lang.dll — the real artifact the Webcil

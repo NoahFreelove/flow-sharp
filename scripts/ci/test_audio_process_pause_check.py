@@ -45,6 +45,15 @@ class ProcessPauseTests(unittest.TestCase):
         data[225]['signalNs']=data[224]['signalNs']
         self.assertTrue(assess_window(data,1_000_000_000,1_250_000_000,True)['passed'])
 
+    def test_quantum_outside_window_is_ignored_but_inside_is_unknown(self):
+        data=rows()
+        data[0]['quantum']=2048
+        data[-1]['quantum']=2048
+        self.assertTrue(assess_window(data,1_000_000_000,1_250_000_000,False)['passed'])
+        data[225]['quantum']=2048
+        with self.assertRaises(Unavailable):
+            assess_window(data,1_000_000_000,1_250_000_000,False)
+
     def test_missing_bracketing_samples_is_unknown(self):
         with self.assertRaises(Unavailable):
             assess_window(rows()[190:260],1_000_000_000,1_250_000_000,True)
@@ -73,14 +82,29 @@ class ProcessPauseTests(unittest.TestCase):
                 patch('audio_process_pause_check.read_registry', return_value=[]), \
                 patch('audio_process_pause_check.node_identity', return_value={}), \
                 patch('audio_process_pause_check.time.sleep'), \
+                patch('audio_process_pause_check.os.killpg') as kill_group, \
                 patch.object(Path,'read_text',side_effect=KeyboardInterrupt):
             with self.assertRaises(KeyboardInterrupt):
                 run_trial(Path('/fake/probe'),Path(directory)/'trial',True)
         self.assertEqual([call(signal.SIGSTOP),call(signal.SIGCONT)],child.send_signal.call_args_list)
-        child.kill.assert_called_once()
+        kill_group.assert_called_once_with(child.pid, signal.SIGKILL)
         child.wait.assert_called_once()
         observer.terminate.assert_called_once()
         observer.wait.assert_called_once()
+
+    def test_scheduler_is_reaped_when_probe_startup_fails(self):
+        observer=Mock();child=Mock(pid=12345);sampler=Mock()
+        child.poll.return_value=1
+        observer.poll.return_value=sampler.poll.return_value=None
+        with tempfile.TemporaryDirectory() as directory, \
+                patch('audio_process_pause_check.subprocess.Popen',side_effect=[observer,child,sampler]), \
+                patch('audio_process_pause_check.os.killpg') as kill_group:
+            with self.assertRaises(Unavailable):
+                run_trial(Path('/fake/probe'),Path(directory)/'trial',False,scheduler=True)
+        kill_group.assert_called_once_with(child.pid,signal.SIGKILL)
+        sampler.terminate.assert_called_once()
+        sampler.wait.assert_called_once()
+        observer.terminate.assert_called_once()
 
     def test_pid_ownership_and_serials_not_display_name(self):
         registry=[{'id':1,'type':'PipeWire:Interface:Client','info':{'props':{'application.process.id':99}}},

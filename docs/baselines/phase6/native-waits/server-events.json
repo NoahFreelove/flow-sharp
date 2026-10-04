@@ -1,0 +1,1511 @@
+{
+  "events": [
+    {
+      "secondsFromFirstCallback": 31.726151313,
+      "signalNs": 6847786386720,
+      "delta": 1,
+      "nearbyCallbackRecords": [
+        {
+          "index": 5941,
+          "secondsFromStart": 31.687088288,
+          "entryGapMilliseconds": 13.383819,
+          "bodyMilliseconds": 0.206859,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.74697287,
+            "OutputDacSeconds": 6847.7622853699995
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5942,
+          "secondsFromStart": 31.687299174,
+          "entryGapMilliseconds": 0.210886,
+          "bodyMilliseconds": 0.202959,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.747192178,
+            "OutputDacSeconds": 6847.767629678
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5943,
+          "secondsFromStart": 31.689395792,
+          "entryGapMilliseconds": 2.096618,
+          "bodyMilliseconds": 0.225766,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.749268368,
+            "OutputDacSeconds": 6847.772955868
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5944,
+          "secondsFromStart": 31.697410266,
+          "entryGapMilliseconds": 8.014474,
+          "bodyMilliseconds": 0.174275,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.757271495,
+            "OutputDacSeconds": 6847.778292328334
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5947,
+          "secondsFromStart": 31.713314192,
+          "entryGapMilliseconds": 7.955414,
+          "bodyMilliseconds": 0.200216,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.773183376,
+            "OutputDacSeconds": 6847.794287542667
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5948,
+          "secondsFromStart": 31.71601618,
+          "entryGapMilliseconds": 2.701988,
+          "bodyMilliseconds": 0.124955,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.775900942,
+            "OutputDacSeconds": 6847.799609275333
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5949,
+          "secondsFromStart": 31.727234565,
+          "entryGapMilliseconds": 11.218385,
+          "bodyMilliseconds": 0.112231,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.78711244,
+            "OutputDacSeconds": 6847.804945773333
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5950,
+          "secondsFromStart": 31.727348642,
+          "entryGapMilliseconds": 0.114077,
+          "bodyMilliseconds": 0.097448,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.787242559,
+            "OutputDacSeconds": 6847.810284225667
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5951,
+          "secondsFromStart": 31.731974221,
+          "entryGapMilliseconds": 4.625579,
+          "bodyMilliseconds": 0.166405,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.791857657,
+            "OutputDacSeconds": 6847.815628490333
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 5952,
+          "secondsFromStart": 31.739412493,
+          "entryGapMilliseconds": 7.438272,
+          "bodyMilliseconds": 0.169307,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 6847.799288222,
+            "OutputDacSeconds": 6847.820954888666
+          },
+          "InjectedStall": false
+        }
+      ],
+      "nearbyPollTimeouts": 2,
+      "longestNearbyPollMilliseconds": 7.497,
+      "serverRows": [
+        {
+          "sequence": 15519,
+          "signalNs": 6847738346444,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15520,
+          "signalNs": 6847743676214,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15521,
+          "signalNs": 6847749007775,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15522,
+          "signalNs": 6847754403505,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15523,
+          "signalNs": 6847759722806,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15524,
+          "signalNs": 6847765009043,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15525,
+          "signalNs": 6847770338542,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15526,
+          "signalNs": 6847775688375,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15527,
+          "signalNs": 6847775688375,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15528,
+          "signalNs": 6847781082773,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 0
+        },
+        {
+          "sequence": 15529,
+          "signalNs": 6847786386720,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15530,
+          "signalNs": 6847791678147,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15531,
+          "signalNs": 6847797056549,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15532,
+          "signalNs": 6847802352436,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15533,
+          "signalNs": 6847807704478,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15534,
+          "signalNs": 6847813044292,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15535,
+          "signalNs": 6847818349221,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15536,
+          "signalNs": 6847823643719,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15537,
+          "signalNs": 6847829057989,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 15538,
+          "signalNs": 6847834406386,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        }
+      ],
+      "nativePollCalls": [
+        {
+          "startRealtimeNs": 1791068779319438000,
+          "durationNs": 38000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779320037000,
+          "durationNs": 33000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779320163000,
+          "durationNs": 1587000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779322146000,
+          "durationNs": 15000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779324163000,
+          "durationNs": 4550000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779331164000,
+          "durationNs": 26000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779331372000,
+          "durationNs": 2385000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779334033000,
+          "durationNs": 11000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779334117000,
+          "durationNs": 3632000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779338048000,
+          "durationNs": 10000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779338130000,
+          "durationNs": 7497000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779346041000,
+          "durationNs": 12000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779346144000,
+          "durationNs": 2261000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779348654000,
+          "durationNs": 13000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779348729000,
+          "durationNs": 7028000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779358340000,
+          "durationNs": 1005000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779359962000,
+          "durationNs": 8000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779360624000,
+          "durationNs": 3729000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779364653000,
+          "durationNs": 192000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779364930000,
+          "durationNs": 5784000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779372445000,
+          "durationNs": 24000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779372582000,
+          "durationNs": 5045000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779378764000,
+          "durationNs": 80000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779378962000,
+          "durationNs": 3733000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779383115000,
+          "durationNs": 44000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779383317000,
+          "durationNs": 2704000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779386536000,
+          "durationNs": 1330000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779388643000,
+          "durationNs": 7019000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779395775000,
+          "durationNs": 14000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779396099000,
+          "durationNs": 11000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779396168000,
+          "durationNs": 1156000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779397626000,
+          "durationNs": 10000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779397705000,
+          "durationNs": 5770000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779403845000,
+          "durationNs": 12000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779403961000,
+          "durationNs": 3253000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779407628000,
+          "durationNs": 11000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791068779407752000,
+          "durationNs": 4664000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        }
+      ]
+    },
+    {
+      "secondsFromFirstCallback": 500.003580819,
+      "signalNs": 7316063816226,
+      "delta": 2,
+      "nearbyCallbackRecords": [
+        {
+          "index": 93751,
+          "secondsFromStart": 499.988071957,
+          "entryGapMilliseconds": 5.315174,
+          "bodyMilliseconds": 0.157691,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 7316.047959572,
+            "OutputDacSeconds": 7316.0717929053335
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 93752,
+          "secondsFromStart": 499.993374805,
+          "entryGapMilliseconds": 5.302848,
+          "bodyMilliseconds": 0.105013,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 7316.053260352,
+            "OutputDacSeconds": 7316.077114518666
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 93753,
+          "secondsFromStart": 500.004302949,
+          "entryGapMilliseconds": 10.928144,
+          "bodyMilliseconds": 0.150778,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 7316.064192321,
+            "OutputDacSeconds": 7316.087796487666
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 93754,
+          "secondsFromStart": 500.012956455,
+          "entryGapMilliseconds": 8.653506,
+          "bodyMilliseconds": 0.159528,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 7316.072843806,
+            "OutputDacSeconds": 7316.093114639333
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 93755,
+          "secondsFromStart": 500.014689397,
+          "entryGapMilliseconds": 1.732942,
+          "bodyMilliseconds": 0.152482,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 7316.074580068,
+            "OutputDacSeconds": 7316.098455068
+          },
+          "InjectedStall": false
+        },
+        {
+          "index": 93756,
+          "secondsFromStart": 500.02010508,
+          "entryGapMilliseconds": 5.415683,
+          "bodyMilliseconds": 0.130651,
+          "Frames": 256,
+          "StatusFlags": 0,
+          "NativeTiming": {
+            "CurrentSeconds": 7316.079991166,
+            "OutputDacSeconds": 7316.103782832666
+          },
+          "InjectedStall": false
+        }
+      ],
+      "nearbyPollTimeouts": 2,
+      "longestNearbyPollMilliseconds": 10.583,
+      "serverRows": [
+        {
+          "sequence": 103324,
+          "signalNs": 7316015841326,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103325,
+          "signalNs": 7316021199694,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103326,
+          "signalNs": 7316026482252,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103327,
+          "signalNs": 7316031812374,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103328,
+          "signalNs": 7316037171782,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103329,
+          "signalNs": 7316042485932,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103330,
+          "signalNs": 7316047812938,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103331,
+          "signalNs": 7316053150607,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103332,
+          "signalNs": 7316053150607,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103333,
+          "signalNs": 7316058486430,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 1
+        },
+        {
+          "sequence": 103334,
+          "signalNs": 7316063816226,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103335,
+          "signalNs": 7316069199876,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103336,
+          "signalNs": 7316074482065,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103337,
+          "signalNs": 7316079842453,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103338,
+          "signalNs": 7316085142199,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103339,
+          "signalNs": 7316090480183,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103340,
+          "signalNs": 7316095835631,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103341,
+          "signalNs": 7316101145578,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103342,
+          "signalNs": 7316106483072,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 103343,
+          "signalNs": 7316111794059,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        }
+      ],
+      "nativePollCalls": [
+        {
+          "startRealtimeNs": 1791069247588686000,
+          "durationNs": 6000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247588731000,
+          "durationNs": 5191000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247594184000,
+          "durationNs": 5000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247594252000,
+          "durationNs": 6364000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247603934000,
+          "durationNs": 650000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247606174000,
+          "durationNs": 19000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247606428000,
+          "durationNs": 246000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247608636000,
+          "durationNs": 1200000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247610084000,
+          "durationNs": 4000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247610152000,
+          "durationNs": 5034000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247615430000,
+          "durationNs": 12000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247615501000,
+          "durationNs": 5005000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247620760000,
+          "durationNs": 2840000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247623675000,
+          "durationNs": 2125000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247625988000,
+          "durationNs": 4000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247626041000,
+          "durationNs": 10583000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247636681000,
+          "durationNs": 47000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247636967000,
+          "durationNs": 12000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247637022000,
+          "durationNs": 6592000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247645637000,
+          "durationNs": 15000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247645754000,
+          "durationNs": 1373000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247647353000,
+          "durationNs": 12000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247647409000,
+          "durationNs": 5108000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247652752000,
+          "durationNs": 8000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247652815000,
+          "durationNs": 4993000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247658071000,
+          "durationNs": 425000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247658596000,
+          "durationNs": 4523000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247663373000,
+          "durationNs": 10000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247663439000,
+          "durationNs": 5046000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247668656000,
+          "durationNs": 5000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247668700000,
+          "durationNs": 5111000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247674012000,
+          "durationNs": 19000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247674136000,
+          "durationNs": 7507000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247681698000,
+          "durationNs": 885000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247682839000,
+          "durationNs": 10000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247682893000,
+          "durationNs": 2757000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247685868000,
+          "durationNs": 13000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069247685922000,
+          "durationNs": 5110000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        }
+      ]
+    },
+    {
+      "secondsFromFirstCallback": 563.410179028,
+      "signalNs": 7379470414435,
+      "delta": 2,
+      "nearbyCallbackRecords": [],
+      "nearbyPollTimeouts": 3,
+      "longestNearbyPollMilliseconds": 9.434,
+      "serverRows": [
+        {
+          "sequence": 115214,
+          "signalNs": 7379422413263,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115215,
+          "signalNs": 7379427749094,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115216,
+          "signalNs": 7379433094904,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115217,
+          "signalNs": 7379438412213,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115218,
+          "signalNs": 7379443744042,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115219,
+          "signalNs": 7379449066020,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115220,
+          "signalNs": 7379454410960,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115221,
+          "signalNs": 7379459746395,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115222,
+          "signalNs": 7379459746395,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115223,
+          "signalNs": 7379465101530,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 3
+        },
+        {
+          "sequence": 115224,
+          "signalNs": 7379470414435,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115225,
+          "signalNs": 7379475746948,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115226,
+          "signalNs": 7379481061792,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115227,
+          "signalNs": 7379486411404,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115228,
+          "signalNs": 7379491742341,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115229,
+          "signalNs": 7379497084033,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115230,
+          "signalNs": 7379502418282,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115231,
+          "signalNs": 7379507742313,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115232,
+          "signalNs": 7379513060532,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        },
+        {
+          "sequence": 115233,
+          "signalNs": 7379518408906,
+          "driverXruns": 0,
+          "rate": "1/48000",
+          "quantum": 256,
+          "nodeXruns": 5
+        }
+      ],
+      "nativePollCalls": [
+        {
+          "startRealtimeNs": 1791069310995534000,
+          "durationNs": 8000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069310995580000,
+          "durationNs": 5127000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311000943000,
+          "durationNs": 10000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311001013000,
+          "durationNs": 4819000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311005991000,
+          "durationNs": 5000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311006041000,
+          "durationNs": 7045000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311013311000,
+          "durationNs": 7000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311013368000,
+          "durationNs": 3055000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311016617000,
+          "durationNs": 19000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311016726000,
+          "durationNs": 5076000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311022047000,
+          "durationNs": 12000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311022129000,
+          "durationNs": 4962000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311029916000,
+          "durationNs": 676000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311033663000,
+          "durationNs": 55000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311033980000,
+          "durationNs": 11000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311034051000,
+          "durationNs": 9434000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311043527000,
+          "durationNs": 31000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311043788000,
+          "durationNs": 9000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311043839000,
+          "durationNs": 4890000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311050053000,
+          "durationNs": 88000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311050722000,
+          "durationNs": 2987000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311053894000,
+          "durationNs": 7000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311053936000,
+          "durationNs": 7783000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311061898000,
+          "durationNs": 7000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311061949000,
+          "durationNs": 2588000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311065169000,
+          "durationNs": 8000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311065244000,
+          "durationNs": 4513000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311069932000,
+          "durationNs": 5000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311069976000,
+          "durationNs": 5195000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311075418000,
+          "durationNs": 9000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311075481000,
+          "durationNs": 7136000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311082718000,
+          "durationNs": 7000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311082966000,
+          "durationNs": 16000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311083033000,
+          "durationNs": 2679000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311085939000,
+          "durationNs": 8000,
+          "kind": "poll",
+          "timeout": false,
+          "interrupted": false
+        },
+        {
+          "startRealtimeNs": 1791069311085991000,
+          "durationNs": 8626000,
+          "kind": "poll",
+          "timeout": true,
+          "interrupted": false
+        }
+      ]
+    }
+  ],
+  "clockCorrelation": "available",
+  "clockAlignmentApproximate": true,
+  "windowMilliseconds": 50,
+  "scope": "Counter update time, not exact failure onset. Native poll entry timestamps within +/-50ms. Callback records are only retained longest-gap neighborhoods, not a full trace. Proximity alone does not establish cause."
+}

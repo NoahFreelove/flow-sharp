@@ -1,0 +1,11 @@
+{
+  "status": "clean",
+  "passed": true,
+  "injected": false,
+  "windowSamples": 55689,
+  "samplesDuringPauseWindow": 55501,
+  "nodeXrunDelta": 0,
+  "driverXrunDelta": 0,
+  "startNs": 11802358080366,
+  "endNs": 12098358240416
+}

@@ -1,0 +1,22 @@
+use "@flowDaw"
+use "@audio"
+
+Note: Build a short in-memory sample, then play it through a graph envelope and velocity.
+Note: One-shot playback uses linear resampling; it does not loop or stream.
+proc generate (Dict<String, Double>: context)
+    AudioGraph pitch = (dawInput "pitch" 0)
+    AudioGraph gate = (dawInput "gate" 1)
+    AudioGraph velocity = (dawInput "velocity" 2)
+    AudioGraph envelope = (dawAdsr "envelope" gate 5ms 80ms 0.6 120ms)
+    AudioGraph tone = (dawSample "reader" pitch gate 0 440.0)
+    AudioGraph shaped = (dawMultiply "shaped" tone envelope)
+    AudioGraph output = (dawMultiply "output" shaped velocity)
+    Buffer recorded = (createSineTone 0.1 440.0 0.5)
+    DawAudio sample = (dawAudio recorded)
+    Dict<Int, DawAudio> assets = (dict 0 sample)
+    DawInstrument synth = (dawSampleInstrument output 16 assets)
+    section phrase { Sequence notes = | A4q C5q E5q A5q | }
+    Song score = [phrase]
+    DawResult music = (dawCombine (dawResult "main" score) (dawResult "synth" synth))
+    (dawCombine music (dawResult "mixer" (dawGain "master" (dawInput "track" 0) 0.25)))
+end proc

@@ -1,12 +1,21 @@
 # Flow restructuring and focused DAW roadmap
 
 Date: 2026-09-20  
-Status: Implementation active; Phases 0–5 complete, Phase 6 backend in progress (2026-10-01).
+Status: Phases 0–5 complete; backend ready for native frontend integration (2026-10-04). Native UI, hardware and release gates remain open.
 Scope: Preserve Flow's personality, establish an independently usable programming language, and build a focused music workstation on a shared music-processing backend.
 
 Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-language-before-moving-it) · [Current debt](#3-starting-point-and-evidence) · [Architecture](#4-target-architecture) · [Modules](#5-modules-compatibility-and-general-purpose-use) · [Sessions and analysis](#6-sessions-analysis-and-cancellation) · [Audio](#7-music-processing-and-audio-architecture) · [Flow plugins](#8-plugins-written-in-flow) · [DAW workflow](#9-focused-conventional-daw-scope) · [Phases](#10-migration-phases-and-completion-gates) · [Verification](#11-verification-strategy-and-measurable-targets) · [First tickets](#12-work-organization-and-first-implementation-tickets) · [Decisions](#13-decisions-to-record-before-their-dependent-work) · [Effort and risk](#14-effort-risk-and-scope-control) · [Completion](#15-completion-checklist) · [Agent orchestration](#16-agent-orchestration-playbook).
 
-## Implementation status — 2026-10-01
+## Implementation status — 2026-10-04
+
+The [backend readiness audit](handoffs/2026-10-04-backend-readiness-audit.md)
+now verifies the backend scope needed for the native DAW. Final core: **3,543
+passed, 14 skipped**; long compatibility tier: **34 passed**; current Web checks:
+**449 passed, 7 skipped**. Actual WASM publish, restored Desktop build, standalone
+language artifact and traced editor-tooling smoke passed. Start the next stage
+from the [native integration handoff](../design/flow-workspace/NATIVE-INTEGRATION.md).
+The phase table retains open full-phase gates because frontend, hardware and
+release acceptance are broader than backend readiness.
 
 | Phase | Status | Outcome / next gate |
 | --- | --- | --- |
@@ -16,18 +25,30 @@ Navigation: [Direction](#1-direction) · [Language contract](#2-preserve-the-lan
 | 4 Analysis and tooling | Complete | Non-executing check, shared editor metadata/analysis and explicit host adapters. |
 | 5 Music model/offline rendering | Complete | Detached scores, linear assembly (15-min render: 9.0 GB → 327 MB allocated), streaming native WAV, snapshot MIDI export (Flow `writeMidi` routed through it) and shared quantize/transpose. Legacy instruments/effects move to Phase 6 block processors. |
 | 6 Audio engine/UI prototypes | Backend in progress | 30-minute managed-body target met. Callback-starvation detection calibrated on ALSA/pipewire and direct ALSA; PulseAudio flags remain unavailable. Independent PipeWire telemetry now detects whole-process pauses. Sustained combined telemetry, latency and recovery remain open; UI deferred. |
-| 7 Flow plugins | Not started | Public graph authoring, lifecycle, bounded compilation and hot reload. |
-| 8 Project/piano roll | Not started | Editable notes, arrangement, undo, save/reopen and plugin integration. |
-| 9 Complete DAW workflow | Not started | Routing, recording, clips, automation, export and Linux packaging. |
+| 7 Flow plugins | Backend in progress | Isolated generators; pinned effect/instrument packages; prepared synth/sampler graphs; live controls/automation; sample access, Flow export, presets, independent instances, effect chains, compatible reload and captured offline-audio/note-transform clip processing implemented through P7-44. Integrated lifecycle qualification and remaining export/recovery workflows remain open. |
+| 8 Project/piano roll | Backend in progress | Stable source/output bindings, clip operations, editable notes, captured undo/redo, project save/reopen, portable assets, waveform preparation, routing, automation and executable project export implemented. Native frontend integration remains deferred. |
+| 9 Complete DAW workflow | Backend pieces implemented | Routing, clips, automation, project export, captured MIDI takes and native input ownership have backend paths. MIDI host recording supports empty projects and extension beyond existing clips. Shared live voices, pre-effect monitor routing, acknowledged activation and shared native input ownership are implemented through P9-10. Captured project bounce and aligned processed-stem export are implemented. Polled host autosave and explicit recovery APIs are implemented. Integrated qualification, frontend wiring and Linux packaging remain open. |
 | 10 Hardening/release | Not started | Stress/recovery tests, compatibility docs and reproducible releases. |
 
 The [progress ledger](progress/flow-restructuring.md) records commits and evidence.
-Continue from the [Phase 6 process-pause observer handoff](handoffs/2026-10-01-phase6-process-pause-observer.md).
+Continue with the native integration handoff above; the readiness audit records
+verified backend requirements and explicitly separate open gates.
+Owner direction (2026-10-04): continue autonomously through backend readiness for
+the DAW frontend, including Flow integration. Defer further callback-gap diagnosis;
+make routine implementation choices within the established contracts.
+P8-12 now supplies a clean default project whose routed devices come from saved
+Flow code, plus acknowledged playback diagnostics and meter access. See the
+[default project handoff](handoffs/2026-10-04-default-project.md).
 Owner sequencing update (2026-09-30): finish the music/audio backend and Flow
 plugin support before UI/DAW implementation. Advance Phase 6 backend work and
 Phase 7 prerequisites; defer the Phase 6 desktop shell prototype. This does not
 waive device measurements or claim the full Phase 6 gate is complete.
-Later phase descriptions below remain planned work, not shipped capabilities.
+The phase narratives below include historical slice reports whose “next” and
+“remaining” statements have been superseded. Use the current readiness audit for
+backend status; phase gates involving native UI, hardware and release remain open.
+The final current verification follows saved track colors/schema 17. Compact
+reports are committed under `docs/baselines/backend-readiness`; both core and long
+runs left tracked source content unchanged. Earlier checkpoint counts are history.
 
 ## 1. Direction
 
@@ -384,6 +405,8 @@ Keep offline rendering driven by the same musical scheduling rules as playback. 
 
 ## 8. Plugins written in Flow
 
+Authoring and arrangement contract (2026-10-02): [Flow DAW contracts](../design/flow-workspace/FLOW-DAW-CONTRACTS.md). This establishes direct structured generator output via `@flowDaw`, shared Flow/visual processing definitions, explicit clip timing/split semantics, and functional first-version DSP reset/tail policies. The proposed APIs still require implementation; MIDI is an export adapter, not the DAW composition boundary.
+
 This is a first-class product requirement, not a future VST wrapper. A musician should be able to build an instrument, an effect, or a note-processing tool in Flow and use it in the same workstation as the bundled devices.
 
 ### 8.1 Execution model
@@ -515,7 +538,7 @@ interface with `Undo` and `Redo` methods. Each concrete action owns the data nee
 to reverse and reapply its change. This belongs in the UI-independent project
 model; UI gestures submit actions through a shared history service.
 
-Proposed Phase 8 contract (not yet implemented):
+Implemented initial Phase 8 contract in `Flow.Studio.Model` (P8-01):
 
 ```csharp
 public interface IUndoableAction
@@ -655,10 +678,50 @@ Callback-only starvation detection now passes baseline plus three injection
 trials on ALSA/pipewire and direct ALSA (P6-08); PulseAudio fails the negative
 control. Callback flags alone miss whole-process starvation; an independent
 PipeWire observer now detects it in all three controlled trials (P6-09).
-Next: combined sustained telemetry and latency/startup/recovery evidence before
-choosing the managed/native strategy or broadly porting DSP. Review the owner's
-ready DAW design against the MVP brief; implementation remains deferred. The full gate
-remains open; the desktop shell is deferred by owner.
+Combined sustained telemetry is now implemented (P6-10): a five-minute isolated-load
+run recorded one native underflow after a 120.98 ms entry gap despite zero server
+counter increments. The clean-playback gate failed; measured DSP body headroom
+remained within target. Three short startup/teardown trials passed, but device-loss
+recovery and physical latency remain unverified. See the [combined telemetry handoff](handoffs/2026-10-02-phase6-combined-telemetry.md).
+Scheduling follow-up (P6-11) validated callback-thread/time correlation against three
+controlled pauses. Matched five-minute idle and isolated-load runs were clean;
+the original 121 ms fault did not recur and its cause remains unknown. See the
+[scheduling investigation](handoffs/2026-10-02-phase6-gap-scheduling.md).
+Native-wait follow-up (P6-12) reduced sampler cost to about 2% of one core. A
+ten-minute traced isolated-load run recorded five client-node scheduling counter
+increments with zero callback underflow flags; the combined gate failed. Nearby
+poll timeouts exceeded their requested 6 ms, but tracer overhead and scheduler
+delay are not distinguished. The original 121 ms gap remains unreproduced. See
+the [native-wait investigation](handoffs/2026-10-03-phase6-native-waits.md).
+The matching ten-minute run without native tracing passed (P6-13): zero callback
+flags and node/driver increments, with a largest callback gap of 9.19 ms. The
+probe, output driver and measured configuration matched; one sequential pair
+does not establish that tracing caused the earlier events or resolve the original
+121 ms failure. See the [untraced comparison](handoffs/2026-10-03-phase6-untraced-comparison.md).
+Owner direction (2026-10-04): defer further callback-gap investigation and prioritize
+DAW features. Existing anomaly evidence is retained, but it does not block feature
+work. Output lifecycle support (P6-14) now provides explicit connect/disconnect,
+stream-health polling, fault status and stopped reconnection, including safe
+ownership retention when teardown fails. This is covered by simulated stream
+failures; physical unplug/replug behavior remains unverified. See the
+[output session handoff](handoffs/2026-10-04-phase6-output-session.md).
+P6-15 adds the shared gain/pan/drive/sum graph, smoothing and metering, connected
+to generic prepared sources, callback transport and publication. Flow authoring,
+construction-code reconstruction and buffer preview execute the same kernels.
+See the [shared graph handoff](handoffs/2026-10-04-shared-audio-graph.md).
+P6-16 adds score-window lowering through project tempo to bounded note voices,
+with retrigger on cuts/seek, release tails, missing-source silence and provenance.
+Flow generator/instrument → arrangement → graph → callback matches offline output.
+See the [arrangement playback handoff](handoffs/2026-10-04-arrangement-note-playback.md).
+P6-17 adds immutable decoded audio assets, source-frame windows, missing/shortened
+asset silence, bounded overlapping playback and mixed note/audio track buses.
+Same-rate playback preserves samples; differing rates currently use explicitly
+reported linear conversion. See the [audio clip handoff](handoffs/2026-10-04-audio-clip-playback.md).
+Next: structured audio/graph generation output, source/device binding, asset
+persistence and additional processor lifecycle; retain engine qualification. The owner reviewed the
+browser workspace prototype and approved its overall direction; its musical
+bridge remains temporary. Establish the linked Flow DAW contracts before the
+native JUI port. The full engine gate remains open; the native shell is not yet implemented.
 
 Work:
 
@@ -669,10 +732,58 @@ Work:
 
 Gate: a headless test rig plays/loops/seeks multiple tracks while background Flow jobs run; callback timing and underruns are recorded; a measured target-machine configuration is selected; the UI prototype remains responsive.
 
+P6-18 adds shared finite delay processing and graph-tail playback, including reset
+and bypass behavior, bounded ring buffers and matching Flow preview tails. See the
+[delay handoff](handoffs/2026-10-04-shared-delay-tails.md).
+
+P6-19 adds the shared one-shot sampler, tuned-frequency pitch playback and bounded
+voices; P7-08 exposes it as `dawSampler` with persisted/isolated result support.
+See the [sampler handoff](handoffs/2026-10-04-shared-sampler.md).
+
+P6-20 adds sample-accurate step/linear automation evaluation and absolute-frame
+seek restoration. Project persistence and Flow authoring remain required; see the
+[automation kernel handoff](handoffs/2026-10-04-automation-kernel.md).
+
+P6-21 adds bounded, coherent audio-to-UI meter reads; see the
+[meter snapshot handoff](handoffs/2026-10-04-meter-snapshots.md).
+P6-22 connects immutable project preparation to live queue publication with
+latest-result checks, retry under backpressure and audio-owner acknowledgement.
+Host worker scheduling and device integration remain open; see the
+[publication handoff](handoffs/2026-10-04-project-playback-publication.md).
+P6-23 supplies one running preparation worker and one coalesced pending snapshot,
+control-thread completion polling, failure recovery and joined shutdown. Device
+and generator lifecycle composition remains open; see the
+[bounded preparation handoff](handoffs/2026-10-04-bounded-playback-preparation.md).
+P6-24 composes preparation and Linux output in `flow-studio-host`, with joined
+offline publication, reconnect acknowledgement and retryable device-close failure.
+Isolated generator lifecycle integration remains open; see the
+[playback session handoff](handoffs/2026-10-04-playback-session.md).
+
 ### Phase 7 — Ship the first Flow plugin system
+
+P7-15 connects isolated generation to the DAW host with bounded per-source request
+coalescing, atomic document acceptance, playback preparation and joined shutdown.
+See the [generator host handoff](handoffs/2026-10-04-project-generator-host.md).
+
+P7-01 implements `@flowDaw`, versioned composition-generator entry descriptors,
+named detached score outputs and cooperative latest-request build handling.
+The executable template returns tuned musical data directly without MIDI writes.
+P7-02 adds one-process-per-build generation, hard process timeout/cancellation,
+kill/join, bounded validated result transport and detached score serialization.
+P7-03 adds versioned shared effect/mixing definitions, preparation buffer limits,
+Flow graph authoring/export and playback integration. Instrument/event graphs,
+additional stateful effects, full authoring context, and document
+acceptance transactions remain open. P7-04 adds the first Flow `DawInstrument`
+definition (`dawSine`), bounded note voices/release and arrangement integration;
+this is not yet general user-authored instrument DSP. P7-05 adds Flow `DawAudio`
+asset values and audio-clip playback. P7-06 adds mixed named score/audio/graph/instrument
+results, `dawCombine`, and version-2 isolated-worker transport with exact bounded PCM
+interchange. Larger external assets remain open. P8-02 implements atomic document acceptance and
+stable output binding reconciliation, with accepted outputs resolved for playback. See the [mixed result handoff](handoffs/2026-10-04-mixed-generator-results.md).
 
 Work:
 
+- Implement the Flow DAW authoring contract: `@flowDaw`, direct structured generator results, and a versioned shared device catalog.
 - Define plugin descriptor/API version, parameter types, signal types, graph builder, and validation/lowering.
 - Reuse bounded evaluation workers; preload assets and enforce graph/voice/memory limits.
 - Implement instrument/effect lifecycle, note controls, latency/tail metadata, and safe hot reload.
@@ -683,9 +794,16 @@ Gate: a user can author a new useful plugin in Flow without touching C#; two ins
 
 ### Phase 8 — Build the project model and piano-roll workflow
 
+P8-01 provides host-neutral score/audio clips, tempo/meter maps, shared placement
+operations, snapshot document actions, bounded history and versioned arrangement
+save/reopen. This foundation was pulled forward for the common playback/Flow
+boundary. Full project data, source/device/asset binding, note editing and native
+UI remain open. See the [arrangement handoff](handoffs/2026-10-04-backend-arrangement-foundation.md).
+
 Work:
 
 - Implement versioned project data, commands/undo, save/reopen, autosave, asset/plugin manifests, and migrations.
+- Implement the shared placement/source-window operations and timing policies in the Flow DAW contract, including bar alignment, local split and millisecond nudges.
 - Deliver piano-roll editing, velocity controls, note audition, clip arrangement, and shared transforms.
 - Integrate Flow plugin instances and metadata-driven device panels.
 - Add generated clip conversion into editable notes without pretending to reverse arbitrary code.
@@ -815,7 +933,7 @@ Confirmed: Linux desktop first; piano-roll-led conventional DAW; Flow-authored p
 | Type-analysis promise | Best-effort static analysis plus documented runtime checks. | Phase 4 |
 | Plugin execution | Flow builds typed DSP graphs; general Flow runs on workers; no AST interpretation in callbacks. | Phase 6/7 |
 | Audio implementation | Compare managed callback path and native/isolation alternative with real measurements. | Phase 6 |
-| Desktop UI | Owner direction (2026-09-27): build on JUI, the owner's C11 immediate-mode UI kit for music/rhythm apps (sibling repo `jui`, see its `docs/integration.md`). The C# host owns the window, GL context, loop and threads through GLFW 3.4 (Wayland/X11), bound with a small hand-written `LibraryImport` layer; JUI's GL renderer loads its own entry points via `glfwGetProcAddress`, so no managed OpenGL package is needed. UI↔audio traffic uses atomics and lock-free queues. Prerequisites: JUI canvas/controls (M3a), scroll areas (M3b) and C# bindings (M5, or an interim `LibraryImport` layer). The dense piano-roll prototype validates responsiveness on JUI rather than choosing between shells. | Phase 6 |
+| Desktop UI | Owner direction (2026-09-27): build on JUI, the owner's C11 immediate-mode UI kit for music/rhythm apps (sibling repo `jui`, see its `docs/integration.md`). The C# host owns the window, GL context, loop and threads through GLFW 3.4 (Wayland/X11), bound with a small hand-written `LibraryImport` layer; JUI's GL renderer loads its own entry points via `glfwGetProcAddress`, so no managed OpenGL package is needed. UI↔audio traffic uses atomics and lock-free queues. Owner update (2026-10-04): JUI M1–M7 and C# bindings are complete. Use local `../jui/build/packages/Jui.0.10.0.nupkg` (net10.0, Linux x64 native asset); package load and headless frame/disposal verified. See the [package integration note](handoffs/2026-10-04-jui-package.md). The dense piano-roll prototype validates responsiveness on JUI rather than choosing between shells. | Phase 6 |
 | Units in general language | Preserve behavior; decide general time/quantity placement independently of music. | Phase 3 |
 | Existing MIDI hand splitting | Resolve intended behavior explicitly; an option may support both import workflows. | Phase 0 |
 | Plugin/source versioning | Snapshot dependencies in projects; explicit upgrades. | Phase 7/8 |

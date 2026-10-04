@@ -98,56 +98,29 @@ public class WasmStrippedBuiltinSurfaceTests
     }
 
     [FlowTargetFact("Web")]
-    public void StdBootstrap_IsClean_WhenLoadSfzImplStripped_OnWeb()
+    public void ExplicitStdImportIsCleanWhenLoadSfzImplIsStrippedOnWeb()
     {
-        RenderingDiagnostics.ResetForTesting();
-        var origErr = Console.Error;
-        using var sw = new StringWriter();
-        Console.SetError(sw);
-        FlowEngine engine;
-        try
-        {
-            // FlowEngine ctor bootstraps @std (cycle-4 fix), which declares the
-            // loadSfz surface whose impl is stripped on Web. The ctor must NOT
-            // accumulate a "No C# implementation"/loadSfz error.
-            engine = new FlowEngine();
-        }
-        finally
-        {
-            Console.SetError(origErr);
-        }
-
+        using var diagnostics = new StringWriter();
+        using var engine = new FlowEngine(new EngineOptions { Output = TextWriter.Null, Diagnostics = diagnostics });
+        Assert.Empty(engine.ErrorReporter.Errors);
+        Assert.Equal("", diagnostics.ToString()); // The engine has no implicit prelude.
+        Assert.True(engine.Execute("use \"@std\"", "<std>"));
         Assert.DoesNotContain(engine.ErrorReporter.Errors,
-            e => e.ToString().Contains("No C# implementation found"));
-        Assert.DoesNotContain(engine.ErrorReporter.Errors,
-            e => e.ToString().Contains("loadSfz"));
-        var stderr = sw.ToString();
-        Assert.Contains("[target] builtin 'loadSfz' unavailable on Web target", stderr);
+            e => e.ToString().Contains("No C# implementation found") || e.ToString().Contains("loadSfz"));
+        Assert.Contains("[target] builtin 'loadSfz' unavailable on Web target", diagnostics.ToString());
     }
 
     [FlowTargetFact("Web")]
-    public void StrippedBuiltinAdvisory_FiresAtMostOncePerName_OnWeb()
+    public void StrippedBuiltinAdvisoryIsDeduplicatedWithinEachIndependentSession()
     {
-        RenderingDiagnostics.ResetForTesting();
-        var origErr = Console.Error;
-        using var sw = new StringWriter();
-        Console.SetError(sw);
-        try
+        for (int i = 0; i < 2; i++)
         {
-            // Two engines each re-declare the micBuffer surface; the WarnOnce
-            // sentinel "target:stripped-builtin:micBuffer" must dedup so the
-            // advisory text appears at most once across both imports.
-            new FlowEngine().Execute("use \"@audio\"\n", "<a>");
-            new FlowEngine().Execute("use \"@audio\"\n", "<b>");
+            using var diagnostics = new StringWriter();
+            using var engine = new FlowEngine(new EngineOptions { Output = TextWriter.Null, Diagnostics = diagnostics });
+            Assert.True(engine.Execute("use \"@audio\"", "<first>"));
+            Assert.True(engine.Execute("use \"@audio\"", "<second>"));
+            int occurrences = diagnostics.ToString().Split("[target] builtin 'micBuffer' unavailable").Length - 1;
+            Assert.Equal(1, occurrences); // A previous engine must not suppress this engine's warning.
         }
-        finally
-        {
-            Console.SetError(origErr);
-        }
-
-        var stderr = sw.ToString();
-        var occurrences = stderr.Split("[target] builtin 'micBuffer' unavailable").Length - 1;
-        Assert.True(occurrences <= 1,
-            $"micBuffer stripped-builtin advisory must fire at most once per process; saw {occurrences}.");
     }
 }

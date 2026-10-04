@@ -1,0 +1,14 @@
+{
+  "callbackThreadId": 35140,
+  "completedPollCalls": 225065,
+  "clockOffsetDriftNs": 29670,
+  "clockBracketUncertaintyNs": 745564,
+  "correlation": "available",
+  "parseErrors": [],
+  "timeouts": 113,
+  "interruptedCalls": 0,
+  "longestBetweenPollMilliseconds": 5.788,
+  "longestPollMilliseconds": 10.583,
+  "underflowGaps": [],
+  "scope": "Only poll/ppoll are traced, not all native waits or CPU scheduling. ptrace perturbs timing. Real-time clock endpoints bound observed drift, not transient clock jumps; correlation is approximate. Clean traced runs do not close an earlier untraced failure."
+}

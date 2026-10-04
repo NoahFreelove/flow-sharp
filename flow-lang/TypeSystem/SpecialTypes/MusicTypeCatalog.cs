@@ -25,6 +25,16 @@ internal static class MusicTypeCatalog
             return NoteType.ToMidiNote(na, oa, aa).CompareTo(NoteType.ToMidiNote(nb, ob, ab));
         });
         var catalog = TypeCatalog.Default;
+        catalog.Register("DawResult", DawResultType.Instance);
+        catalog.Register("DawAudio", DawAudioType.Instance);
+        catalog.Register("DawNote", DawNoteType.Instance);
+        catalog.Register("DawNoteSequence", DawNoteSequenceType.Instance);
+        catalog.Register("DawTrack", DawTrackType.Instance);
+        catalog.Register("DawClip", DawClipType.Instance);
+        catalog.Register("DawProject", DawProjectType.Instance);
+        catalog.Register("DawAutomation", DawAutomationType.Instance);
+        catalog.Register("DawInstrument", DawInstrumentType.Instance);
+        catalog.Register("AudioGraph", AudioGraphType.Instance);
         catalog.Register("Buffer", BufferType.Instance);
         catalog.Register("Note", NoteType.Instance);
         catalog.Register("Bar", BarType.Instance);

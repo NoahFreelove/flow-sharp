@@ -9,7 +9,7 @@ namespace Flow.Audio;
 /// This is a bounded prototype, not a device-deadline guarantee: each block scans
 /// the current section's prepared voices in source order to preserve sample bits.
 /// </summary>
-public sealed class PreparedSinePlayback
+public sealed class PreparedSinePlayback : IPreparedAudioPlayback
 {
     private sealed record Section(long Frames, SineCompositionRenderer.Voice[] Voices,
         float Left, float Right);

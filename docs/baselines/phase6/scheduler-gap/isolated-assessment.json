@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "checks": {
+    "captureIntact": true,
+    "calibratedRoute": true,
+    "frameCountMatches": true,
+    "notInjected": true,
+    "durationCaptured": true,
+    "observerCoverage": true,
+    "observerClean": true,
+    "zeroCallbackFlags": true,
+    "bodyHeadroom": true,
+    "bodyDeadline": true,
+    "noBodyAllocations": true,
+    "noParentCollections": true,
+    "replacementRetired": true,
+    "loadModeMatches": true
+  },
+  "sustainedTargetMet": true,
+  "fullPhase6GateComplete": false,
+  "requestedSeconds": 300,
+  "route": [
+    "ALSA",
+    "pipewire",
+    "PortAudio V19.7.0-devel, revision e1b70d33",
+    48000,
+    256
+  ],
+  "callbackUnderflowFlags": 0,
+  "nodeXrunDelta": 0,
+  "driverXrunDelta": 0,
+  "worstBodyMilliseconds": 1.905117,
+  "maxCallbackGapMilliseconds": 7.890571,
+  "reportedOutputLatencySeconds": 0.010666666666666666,
+  "scope": "Callback metrics cover the full muted capture; external telemetry covers the bracketed steady observation window only. Server counters are scheduling events, not exact physical underrun counts. Zero reported output latency is unavailable. No startup, device recovery, listening, UI or general DSP certification.",
+  "schedulerCaptureRequested": true,
+  "profilerVersion": "pw-profiler\nCompiled with libpipewire 1.6.2\nLinked with libpipewire 1.6.2"
+}

@@ -15,13 +15,7 @@ public static class Panner
     /// <returns>A new stereo buffer with panning applied. Mono inputs are promoted to stereo.</returns>
     public static AudioBuffer Apply(AudioBuffer input, float pan)
     {
-        // Clamp pan to [-1.0, 1.0]
-        pan = Math.Clamp(pan, -1f, 1f);
-
-        // Map pan from [-1, 1] to [0, PI/2] for constant-power law
-        float angle = (pan + 1f) * 0.25f * MathF.PI;
-        float leftGain = MathF.Cos(angle);
-        float rightGain = MathF.Sin(angle);
+        Flow.Audio.Graph.StereoPanKernel.Gains(pan, out float leftGain, out float rightGain);
 
         // Always create stereo output (mono promoted to stereo)
         var result = new AudioBuffer(input.Frames, 2, input.SampleRate);

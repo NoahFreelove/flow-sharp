@@ -150,7 +150,7 @@ public class FlowEngine : IDisposable
         using var scope = _session.Enter();
         bool verbose = options.Verbose;
         _audioManager = new AudioPlaybackManager();
-        _sampleCache = new SampleCache();
+        _sampleCache = new SampleCache("flow-lang/Samples", options.AllowImplicitSampleFiles);
 #if !FLOW_WEB
         // Phase 33 Plan 33-07 — per-engine SFZ sample cache.
         // Phase 47 D-47-08: SFZ subsystem stripped on Web target.
@@ -159,7 +159,7 @@ public class FlowEngine : IDisposable
         _diagnosticOutput = verbose ? _session.Diagnostics : null;
 
         // Create internal function registry and register C# implementations
-        var internalRegistry = new InternalFunctionRegistry();
+        var internalRegistry = new InternalFunctionRegistry(options.NativeFunctionPolicy);
         BuiltInFunctions.RegisterAllImplementations(internalRegistry, _audioManager);
 
         _context = new RuntimeContext(_errorReporter, internalRegistry, _diagnosticOutput)
@@ -310,6 +310,8 @@ public class FlowEngine : IDisposable
         // directly (PRNG-SANCTIONED). Reuses MarkovFunctions.TrainMarkov +
         // GenerateMarkov via internal-method exposure.
         JamFunctions.RegisterContextDependent(internalRegistry, _context);
+        FlowLang.StandardLibrary.Daw.DawFunctions.Register(internalRegistry);
+        FlowLang.StandardLibrary.Daw.DawGraphFunctions.Register(internalRegistry);
         _moduleLoader = new ModuleLoader(_errorReporter, _diagnosticOutput);
         // REQ-4 (Plan 30-03): seed the loader's AdditionalSearchPaths from the active
         // config singleton. Empty list when no config.toml is loaded — zero-cost no-op
